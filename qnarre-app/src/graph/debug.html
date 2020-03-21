@@ -1,0 +1,92 @@
+<!doctype html>
+
+<meta charset="utf-8">
+<title>Dagre Debug Console</title>
+
+<script src="../build/dagre.js"></script>
+<script src="http://cpettitt.github.io/project/graphlib-dot/latest/graphlib-dot.js"></script>
+<script src="http://d3js.org/d3.v3.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.14.1/lodash.js"></script>
+
+<style>
+body {
+  color: #333;
+}
+
+#wrapper {
+  width: 1000px;
+  margin: 0 auto;
+}
+
+#inputPanel {
+  width: 350px;
+  float: left;
+  padding-right: 10%
+}
+
+#inputPanel textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+textarea.error {
+  color: #f33;
+  border: 1px solid #f33;
+}
+
+#resultPanel {
+  width: 550px;
+  float: left;
+}
+
+#resultPanel svg {
+  border: 1px solid #333;
+}
+</style>
+
+<style>
+.node rect {
+  stroke: #333;
+  fill: #fff;
+}
+
+.subgraph rect {
+  stroke: #333;
+  fill: #333;
+  fill-opacity: 0.15;
+}
+
+.edge rect {
+  fill: #fff;
+}
+
+path.edge {
+  stroke: #333;
+  fill: none;
+}
+</style>
+
+<div id="wrapper">
+  <h1>Dagre Debug Console</h1>
+
+  <div id="inputPanel">
+    <textarea rows=25 onkeyup="renderDot();"></textarea>
+    <input type="checkbox" id="timing" name="timing">Enable timing instrumentation</input>
+  </div>
+
+  <div id="resultPanel">
+    <svg id="svg" width="550px" height="550px">
+      <defs>
+        <marker id="arrowhead" viewBox="0 0 10 10" refx=8 refy=5
+                markerUnits="strokeWidth" markerWidth=8 markerHeight=5
+                orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+</div>
+
+<script>
+  ...
+</script>
