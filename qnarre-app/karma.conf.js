@@ -1,8 +1,7 @@
-// Karma configuration file, see link for more information
-// https://karma-runner.github.io/1.0/config/configuration-file.html
+'use strict';
 
-module.exports = function (config) {
-  config.set({
+module.exports = function(karma) {
+  karma.set({
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
     plugins: [
@@ -13,7 +12,7 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma')
     ],
     client: {
-      clearContext: false // leave Jasmine Spec Runner output visible in browser
+      clearContext: false
     },
     coverageIstanbulReporter: {
       dir: require('path').join(__dirname, './coverage/qnarre-app'),
@@ -23,10 +22,12 @@ module.exports = function (config) {
     reporters: ['progress', 'kjhtml'],
     port: 9876,
     colors: true,
-    logLevel: config.LOG_INFO,
+    logLevel: karma.LOG_INFO,
     autoWatch: true,
     browsers: ['Chrome'],
     singleRun: false,
-    restartOnFileChange: true
+    restartOnFileChange: true,
+    preprocessors: {},
+    concurrency: Infinity
   });
 };
