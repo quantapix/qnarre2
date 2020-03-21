@@ -1,0 +1,3 @@
+# Trends, Costs And Profits While Identifying Motives
+
+In progress...

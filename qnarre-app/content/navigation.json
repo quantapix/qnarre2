@@ -1,0 +1,387 @@
+{
+  "TopBar": [
+    {
+      "url": "stimulus",
+      "title": "Stimulus"
+    },
+    {
+      "url": "technology",
+      "title": "Technology"
+    },
+    {
+      "url": "analytics",
+      "title": "Analytics"
+    },
+    {
+      "url": "story",
+      "title": "Story"
+    }
+  ],
+  "TopBarNarrow": [
+    {
+      "title": "About Qnarre",
+      "children": [
+        {
+          "url": "stimulus",
+          "title": "Stimulus"
+        },
+        {
+          "url": "technology",
+          "title": "Technology"
+        },
+        {
+          "url": "analytics",
+          "title": "Analytics"
+        },
+        {
+          "url": "story",
+          "title": "Story"
+        }
+      ]
+    }
+  ],
+  "SideNav": [
+    {
+      "url": "teaser",
+      "title": "Teaser Deck",
+      "tooltip": "High level introduction to Qnarre"
+    },
+    {
+      "title": "Modeling Activism",
+      "tooltip": "Ideological judicial activism leads to chaos",
+      "children": [
+        {
+          "url": "stimulus",
+          "title": "Overview",
+          "tooltip": "Overview of our motivation"
+        },
+        {
+          "url": "stimulus/simulation",
+          "title": "Reductio Ad Absurdum",
+          "tooltip": "A hypothetical judicial simulation"
+        },
+        {
+          "url": "stimulus/concepts",
+          "title": "Conceptual Object Model",
+          "tooltip": "Conceptual model of an 'emotional' domain"
+        },
+        {
+          "url": "stimulus/report",
+          "title": "Based On A True Story",
+          "tooltip": "A sample Qnarre report of actual judgments"
+        }
+      ]
+    },
+    {
+      "title": "Available Technology",
+      "tooltip": "Advanced TensorFlow 2.0 tooling elements",
+      "children": [
+        {
+          "url": "technology",
+          "title": "Overview",
+          "tooltip": "Overview of our advanced tooling"
+        },
+        {
+          "url": "technology/trackable",
+          "title": "Trackable Persistance",
+          "tooltip": "A pervasive persistence infrastructure"
+        },
+        {
+          "url": "technology/gpus",
+          "title": "Many Smaller GPUs",
+          "tooltip": "Elegant in-model distribution"
+        },
+        {
+          "url": "technology/dataset",
+          "title": "Dataset For Tensors",
+          "tooltip": "The tensor 'highway' on-ramp"
+        },
+        {
+          "url": "technology/masking",
+          "title": "Unified Masking",
+          "tooltip": "Unified adaptable masking that follows"
+        },
+        {
+          "url": "technology/ragged",
+          "title": "Ragged At Last",
+          "tooltip": "Ragged tensors especially for text processing"
+        },
+        {
+          "url": "technology/layers",
+          "title": "Layer Proliferation",
+          "tooltip": "Complexity through layer proliferation"
+        },
+        {
+          "url": "technology/custom",
+          "title": "Custom Layers",
+          "tooltip": "Custom Keras layers without the drawbacks"
+        },
+        {
+          "url": "technology/autograph",
+          "title": "Data-Driven Autograph",
+          "tooltip": "Intuitive data-driven control at last"
+        },
+        {
+          "url": "technology/metrics",
+          "title": "Modular Metrics",
+          "tooltip": "Modular and reusable metrics all the way"
+        },
+        {
+          "url": "technology/callbacks",
+          "title": "Callbacks Extended",
+          "tooltip": "Keras callbacks: extending their scope and usage"
+        }
+      ]
+    },
+    {
+      "title": "Fast Proxy Model",
+      "tooltip": "A flexible, scalable and testable prototyping model",
+      "children": [
+        {
+          "url": "proxy",
+          "title": "Overview",
+          "tooltip": "Overview of our approach"
+        },
+        {
+          "url": "proxy/conflict",
+          "title": "Predatory Profits",
+          "tooltip": "Predatory profits of 'high-conflict' divorces"
+        },
+        {
+          "url": "proxy/objects",
+          "title": "Psychological Profiling",
+          "tooltip": "Psychological non-profiles of 'frequent fliers'"
+        },
+        {
+          "url": "proxy/activism",
+          "title": "Fabricated Conflicts",
+          "tooltip": "From fabricated conflicts to ideological activism"
+        },
+        {
+          "url": "proxy/metrics",
+          "title": "Representative Metrics",
+          "tooltip": "Representative metrics through statistical modeling"
+        },
+        {
+          "url": "proxy/protect",
+          "title": "Protect From Predators",
+          "tooltip": "Learn, adapt and protect from predators"
+        }
+      ]
+    },
+    {
+      "title": "Parsing Engine",
+      "tooltip": "Converted statistical natural language parser",
+      "children": [
+        {
+          "url": "parser",
+          "title": "Overview",
+          "tooltip": "Overview of our engine"
+        }
+      ]
+    },
+    {
+      "title": "Analyzing Conflicts",
+      "tooltip": "Court contradictions analytically evaluated",
+      "children": [
+        {
+          "url": "analytics",
+          "title": "Overview",
+          "tooltip": "Overview of our objectives"
+        },
+        {
+          "url": "analytics/prepare",
+          "title": "Preparing Documents",
+          "tooltip": "Preparing and normalizing legal documents"
+        },
+        {
+          "url": "analytics/extract",
+          "title": "Extracting Narratives",
+          "tooltip": "Tagging with topics and extracting narratives"
+        },
+        {
+          "url": "analytics/output",
+          "title": "Standardized Output",
+          "tooltip": "Standardized output and flexible reporting"
+        },
+        {
+          "url": "analytics/graph",
+          "title": "Conflict Graph",
+          "tooltip": "Presenting and interpreting inferred conflict graphs"
+        },
+        {
+          "url": "analytics/analyze",
+          "title": "Irrefutable Analytics",
+          "tooltip": "Irrefutable analytics to unmask ruthless 'cover-ups'"
+        }
+      ]
+    },
+    {
+      "title": "Qnarre App",
+      "tooltip": "From Angular front-end to TensorFlow back-end: the Qnarre app",
+      "children": [
+        {
+          "url": "app",
+          "title": "Overview",
+          "tooltip": "Overview of our product"
+        },
+        {
+          "url": "app/profits",
+          "title": "Motives And Profits",
+          "tooltip": "Trends, costs and profits while identifying motives"
+        }
+      ]
+    },
+    {
+      "title": "API Reference",
+      "tooltip": "Qnarre CLI command and API reference",
+      "children": [
+        {
+          "url": "app/cli",
+          "title": "CLI Overview",
+          "tooltip": "An introduction to the CLI tool, commands, and syntax"
+        },
+        {
+          "url": "app/config",
+          "title": "Configuration",
+          "tooltip": "Workspace and project structure, configuration files"
+        },
+        {
+          "url": "app/api",
+          "title": "Qnarre API",
+          "tooltip": "Details of the packages, classes, interfaces, and types"
+        }
+      ]
+    },
+    {
+      "title": "Family Tragedy",
+      "tooltip": "Deliberate tragedy with endless scope",
+      "children": [
+        {
+          "url": "story",
+          "title": "Overview",
+          "tooltip": "Overview of story"
+        },
+        {
+          "url": "story/tragedy/court",
+          "title": "To Family Court",
+          "tooltip": "June 30, 2017 open letter"
+        },
+        {
+          "url": "story/tragedy/enforcement",
+          "title": "To Law Enforcement",
+          "tooltip": "July 17, 2017 open letter"
+        },
+        {
+          "url": "story/tragedy/deutsch",
+          "title": "\"Elite\" Child Predator",
+          "tooltip": "A corrupt \"elite\" child predator"
+        },
+        {
+          "url": "story/tragedy/professionals",
+          "title": "Professionals Colluding",
+          "tooltip": "Professionals colluding with child abuse"
+        }
+      ]
+    },
+    {
+      "title": "Law Targeting Children",
+      "tooltip": "Divorce law rigged to torture children",
+      "children": [
+        {
+          "url": "story/rigged/trauma",
+          "title": "Boy's Medical Trauma",
+          "tooltip": "Deep medical trauma of little boy"
+        },
+        {
+          "url": "story/rigged/torture",
+          "title": "Law Rigged Against Children",
+          "tooltip": "Divorce law rigged to torture children"
+        },
+        {
+          "url": "story/rigged/sanction",
+          "title": "Privileges And Attorneys",
+          "tooltip": "Privileges and call to sanction attorneys"
+        }
+      ]
+    },
+    {
+      "title": "Escalate To Disrupt",
+      "tooltip": "Lonely path to Supreme Court",
+      "children": [
+        {
+          "url": "story/disrupt/path",
+          "title": "Further Appeals Review",
+          "tooltip": "Lonely path to Supreme Court"
+        },
+        {
+          "url": "story/disrupt/appeals",
+          "title": "Appeals Process",
+          "tooltip": "Appeals process has started"
+        },
+        {
+          "url": "story/disrupt/response",
+          "title": "Response To Complaints",
+          "tooltip": "Response to parallel complaints"
+        },
+        {
+          "url": "story/disrupt/pleadings",
+          "title": "Repeated Pleadings",
+          "tooltip": "Repeated pleadings for relief"
+        }
+      ]
+    }
+  ],
+  "Footer": [
+    {
+      "title": "Resources",
+      "children": [
+        {
+          "url": "about",
+          "title": "About",
+          "tooltip": "About Qnarre"
+        },
+        {
+          "url": "resources",
+          "title": "Resources",
+          "tooltip": "Qnarre resources"
+        },
+        {
+          "url": "https://qnarre.com/",
+          "title": "Blog",
+          "tooltip": "Qnarre Blog"
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "children": [
+        {
+          "url": "https://github.com/quantapix/qnarre/issues",
+          "title": "Report Issues",
+          "tooltip": "Post issues and suggestions on github"
+        }
+      ]
+    },
+    {
+      "title": "Community",
+      "children": [
+        {
+          "url": "https://twitter.com/qnarre",
+          "title": "Twitter",
+          "tooltip": "Twitter"
+        },
+        {
+          "url": "https://github.com/quantapix/qnarre",
+          "title": "GitHub",
+          "tooltip": "GitHub"
+        },
+        {
+          "url": "contribute",
+          "title": "Contribute",
+          "tooltip": "Contribute to Qnarre"
+        }
+      ]
+    }
+  ]
+}
