@@ -1,0 +1,35 @@
+tr-ui-timeline-view {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+/* The "throbber": a spinning loading indicator */
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+#throbber {
+  animation: spin 1s infinite linear;
+  color: black;
+  font-size: 256px;
+  /* Display in the upper center of the screen */
+  position: fixed;
+  z-index: 10;
+  top: 200px;
+  left: 50%;
+  width: 256px;
+  margin-left: -128px;
+  /* Center within that box */
+  line-height: 256px;
+  text-align: center;
+  pointer-events: none;
+
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+#throbber.active {
+  opacity: 0.15;
+  /* Wait a short time before showing the throbber (no delay for hiding). */
+  transition-delay: 0.3s;
+}

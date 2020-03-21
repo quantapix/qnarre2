@@ -1,0 +1,37 @@
+#search-container {
+  width: 100%;
+  overflow: visible;
+}
+
+#runs-regex {
+  width: 100%;
+}
+
+#search-results-anchor {
+  position: relative;
+}
+
+#search-results {
+  color: #fff;
+  position: absolute;
+  max-height: 200px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  text-align: right;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#search-match {
+  background: var(--tb-orange-strong);
+  padding: 3px;
+  float: right;
+  width: 100%;
+  box-sizing: border-box;
+  direction: rtl;
+}
+
+#search-match:hover {
+  background: var(--tb-orange-weak);
+  cursor: pointer;
+}

@@ -1,0 +1,31 @@
+<mat-toolbar class="qnr-toolbar">
+  <span class="brand">Qnarre Graph</span>
+  <span class="plugins">
+    <mat-tab-group
+      [selectedIndex]="getActiveIndex()"
+      (selectedTabChange)="onActiveChanged($event)"
+      animationDuration="100ms"
+    >
+      <mat-tab
+        *ngFor="let plugin of actives"
+        [label]="plugin.tabName"
+        [disabled]="!plugin.enabled"
+      >
+      </mat-tab>
+    </mat-tab-group>
+    <mat-form-field floatLabel="never" *ngIf="disableds.length > 0">
+      <mat-label>Inactive</mat-label>
+      <mat-select
+        [value]="selected"
+        (selectionChange)="onDisabledChanged($event)"
+      >
+        <mat-option *ngFor="let plugin of disableds" [value]="plugin.id">
+          {{ plugin.tabName }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </span>
+  <span class="settings">
+    <qnr-settings-button></qnr-settings-button>
+  </span>
+</mat-toolbar>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<link rel="import" href="../../tf-imports/polymer.html" />
+<script type="module" src="../qnr-graph.js"></script>
+<link rel="import" href="../../qnr-graph-common/qnr-graph-common.html" />
+<link rel="import" href="../../qnr-graph-loader/qnr-graph-loader.html" />
+<link rel="import" href="../../iron-demo-helpers/demo-snippet.html" />
+<title>TF Graph Demo</title>
+<style>
+  #demo-container {
+    border: 2px solid #808080;
+    width: 1000px;
+    height: 600px;
+  }
+</style>
+<demo-snippet>
+  <template>
+    <dom-module id="qnr-graph-demo">
+      <template>
+        <!-- We first use the graph loader to load and parse a pbtxt file into a graph object. -->
+        <qnr-graph-loader
+          id="loader"
+          datasets="[[_datasets]]"
+          selected-dataset="[[_selectedDataset]]"
+          out-graph="{{_graph}}"
+        >
+        </qnr-graph-loader>
+
+        <!-- We color ops in the graph by XLA cluster. -->
+        <qnr-graph id="graph" color-by="xla_cluster"></qnr-graph>
+      </template>
+      <script type="module">
+        import '../qnr-graph.js';
+
+        Polymer({
+          is: 'qnr-graph-demo',
+          properties: {
+            // We tell the graph loader to load a specific pbtxt file.
+            _datasets: {
+              type: Array,
+              value: [
+                {
+                  name: 'Graph with XLA Clusters Specified',
+                  path: 'data/graph.pbtxt'
+                }
+              ]
+            },
+            _selectedDataset: {
+              type: Number,
+              value: 0
+            },
+
+            // This property will be updated by the graph loader.
+            _graph: {
+              type: Object
+            }
+          },
+          observers: ['_graphUpdated(_graph)'],
+          _graphUpdated: function(slimGraph) {
+            const tracker = tf.graph.util.getTracker(this.$.loader);
+            const hierarchyTracker = tf.graph.util.getSubtaskTracker(
+              tracker,
+              100,
+              'Namespace hierarchy'
+            );
+            const hierarchyOptions = {};
+            tf.graph.hierarchy
+              .build(slimGraph, hierarchyOptions, hierarchyTracker)
+              .then(
+                function(graphHierarchy) {
+                  // We have parsed and built the graph object from a pbtxt file. Render the graph.
+                  this.$.graph.set('basicGraph', slimGraph);
+                  this.$.graph.set('graphHierarchy', graphHierarchy);
+                }.bind(this)
+              );
+          }
+        });
+      </script>
+    </dom-module>
+    <div id="demo-container">
+      <qnr-graph-demo></qnr-graph-demo>
+    </div>
+  </template>
+</demo-snippet>

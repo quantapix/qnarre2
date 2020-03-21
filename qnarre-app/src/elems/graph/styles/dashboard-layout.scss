@@ -1,0 +1,34 @@
+/* include="scrollbar-style" */
+:host {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+#sidebar {
+  flex: 0 0 var(--qnr-dashboard-layout-sidebar-basis, 25%);
+  height: 100%;
+  max-width: var(--qnr-dashboard-layout-sidebar-max-width, 350px);
+  min-width: var(--qnr-dashboard-layout-sidebar-min-width, 270px);
+  overflow-y: auto;
+  text-overflow: ellipsis;
+}
+
+#center {
+  flex-grow: 1;
+  flex-shrink: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+::slotted([slot='center']) {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 100%;
+  will-change: transform;
+}
+
+.qnr-graph-dashboard #center {
+  background: #fff;
+}

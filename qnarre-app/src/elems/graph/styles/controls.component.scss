@@ -1,0 +1,240 @@
+:host {
+  color: gray;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  width: 100%;
+}
+
+paper-dropdown-menu {
+  --paper-dropdown-menu-input: {
+    padding: 0;
+    color: gray;
+  }
+  --iron-icon-width: 15px;
+  --iron-icon-height: 15px;
+  --primary-text-color: gray;
+  --paper-item-min-height: 30px;
+}
+
+paper-button[raised].keyboard-focus {
+  font-weight: normal;
+}
+
+.run-dropdown {
+  --paper-input-container: {
+    padding: 8px 0 8px 10px;
+  }
+}
+
+.color-dropdown {
+  --paper-input-container: {
+    padding: 9px 0 0 13px;
+  }
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+table td {
+  padding: 0;
+  margin: 0;
+}
+
+.allcontrols {
+  padding: 0 20px 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.legend-holder {
+  background: #e9e9e9;
+  border-top: 1px solid #ccc;
+  box-sizing: border-box;
+  color: #555;
+  padding: 15px 20px;
+  width: 100%;
+}
+
+.toggle-legend-button {
+  max-height: 20px;
+  max-width: 20px;
+  padding: 0;
+}
+
+.toggle-legend-text {
+  vertical-align: middle;
+}
+
+paper-radio-button {
+  display: block;
+  padding: 5px;
+}
+svg.icon,
+qnr-graph-icon {
+  width: 60px;
+  height: 18px;
+}
+.domainValues {
+  margin-bottom: 10px;
+  width: 165px;
+}
+.domainStart {
+  float: left;
+}
+.domainEnd {
+  float: right;
+}
+.colorBox {
+  width: 20px;
+}
+
+.image-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.help-icon {
+  height: 15px;
+  margin: 0;
+  padding: 0;
+}
+
+.gray {
+  color: #666;
+}
+
+.title {
+  font-size: 16px;
+  margin: 8px 5px 8px 0;
+  color: black;
+}
+.title small {
+  font-weight: normal;
+}
+.deviceList,
+.clusterList {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#file {
+  padding: 8px 0;
+}
+
+.color-legend-row {
+  align-items: center;
+  clear: both;
+  display: flex;
+  height: 20px;
+  margin-top: 5px;
+}
+
+.color-legend-row .label,
+.color-legend-row svg,
+.color-legend-row qnr-graph-icon {
+  flex: 0 0 40px;
+  margin-right: 20px;
+}
+
+.devices-checkbox input {
+  text-align: left;
+  vertical-align: middle;
+}
+
+.control-holder .icon-button {
+  font-size: 14px;
+  margin: 0 -5px;
+  padding: 5px;
+}
+
+.button-text {
+  padding-left: 20px;
+  text-transform: none;
+}
+
+.upload-button {
+  width: 165px;
+  height: 25px;
+  text-transform: none;
+  margin-top: 4px;
+}
+
+.button-icon {
+  width: 26px;
+  height: 26px;
+  color: var(--paper-orange-500);
+}
+
+.hidden-input {
+  height: 0px;
+  width: 0px;
+  overflow: hidden;
+}
+
+.allcontrols .control-holder {
+  clear: both;
+  display: flex;
+  justify-content: space-between;
+}
+
+.allcontrols .control-holder paper-radio-group {
+  margin-top: 5px;
+}
+
+span.counter {
+  font-size: 13px;
+  color: gray;
+}
+
+.runs paper-item {
+  --paper-item: {
+    white-space: nowrap;
+  }
+}
+
+table.control-holder {
+  border: 0;
+  border-collapse: collapse;
+}
+
+table.qnr-graph-controls td.input-element-table-data {
+  padding: 0 0 0 20px;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.color-text {
+  overflow: hidden;
+}
+
+/** Override inline styles that suppress pointer events for disabled buttons. Otherwise, the */
+/*  tooltips do not appear. */
+paper-radio-group paper-radio-button {
+  pointer-events: auto !important;
+}
+
+.legend-clarifier {
+  color: #266236;
+  cursor: help;
+  display: inline-block;
+  text-decoration: underline;
+}
+
+.legend-clarifier paper-tooltip {
+  width: 150px;
+}
+
+/** Otherwise, polymer UI controls appear atop node search. */
+qnr-graph-node-search {
+  z-index: 1;
+  width: 100%;
+}
+
+paper-dropdown-menu {
+  flex-grow: 1;
+}

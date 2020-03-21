@@ -1,0 +1,155 @@
+:host {
+  height: 100%;
+  display: block;
+  background-color: var(--paper-grey-100);
+}
+
+#toolbar {
+  background-color: var(--tb-toolbar-background-color, var(--tb-orange-strong));
+  -webkit-font-smoothing: antialiased;
+}
+
+.toolbar-title {
+  font-size: 20px;
+  margin-left: 10px;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  display: var(--tb-toolbar-title-display, block);
+}
+
+.toolbar-message {
+  opacity: 0.7;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+paper-tabs {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  --paper-tabs-selection-bar-color: white;
+  --paper-tabs-content: {
+    -webkit-font-smoothing: antialiased;
+    text-transform: uppercase;
+  }
+}
+
+paper-dropdown-menu {
+  --paper-input-container-color: rgba(255, 255, 255, 0.8);
+  --paper-input-container-focus-color: white;
+  --paper-input-container-input-color: white;
+  --paper-dropdown-menu-icon: {
+    color: white;
+  }
+  --paper-dropdown-menu-input: {
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  --paper-input-container-label: {
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+paper-dropdown-menu paper-item {
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+#inactive-dashboards-menu {
+  --paper-listbox-background-color: var(
+    --tb-toolbar-background-color,
+    var(--tb-orange-strong)
+  );
+  --paper-listbox-color: white;
+}
+
+.global-actions {
+  display: inline-flex; /* Ensure that icons stay aligned */
+  justify-content: flex-end;
+  align-items: center;
+  text-align: right;
+  color: white;
+}
+
+.global-actions a {
+  color: white;
+}
+
+#toolbar-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#content-pane {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: stretch;
+  width: 100%;
+}
+
+#content {
+  flex: 1 1;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  height: 100%;
+}
+
+/* Hide unselected dashboards. We still display them within a container
+   of height 0 since Plottable produces degenerate charts when charts are
+   reloaded while not displayed. */
+.dashboard-container:not([data-selected]) {
+  max-height: 0;
+  overflow: hidden;
+  position: relative;
+  /** We further make containers invisible. Some elements may anchor to
+      the viewport instead of the container, in which case setting the max
+      height here to 0 will not hide them. */
+  visibility: hidden;
+}
+
+.dashboard-container iframe {
+  border: none;
+  height: 100%;
+  width: 100%;
+}
+
+.warning-message {
+  max-width: 540px;
+  margin: 80px auto 0 auto;
+}
+
+[disabled] {
+  opacity: 0.2;
+  color: white;
+}
+
+#reload-button.refreshing {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

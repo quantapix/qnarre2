@@ -1,0 +1,20 @@
+<div
+  id="list-item"
+  on-mouseover="(_nodeListener)"
+  on-mouseout="(_nodeListener)"
+  on-click="(_nodeListener)"
+>
+  <div class\$="{{ _fadedClass(itemRenderInfo) }}">
+    <qnr-node-icon
+      class="node-icon"
+      height="12"
+      color-by="[[colorBy]]"
+      color-by-params="[[colorByParams]]"
+      node="[[itemNode]]"
+      render-info="[[itemRenderInfo]]"
+      template-index="[[templateIndex]]"
+    ></qnr-node-icon>
+    <span title\$="[[name]]">[[name]]</span>
+    <span class="edge-label">[[edgeLabel]]</span>
+  </div>
+</div>

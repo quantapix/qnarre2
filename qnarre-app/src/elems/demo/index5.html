@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<link rel="import" href="../../tf-imports/polymer.html" />
+<script type="module" src="../qnr-graph-info.js"></script>
+<link rel="import" href="../../qnr-graph-common/qnr-graph-common.html" />
+<link rel="import" href="../../qnr-graph-loader/qnr-graph-loader.html" />
+<link rel="import" href="../../iron-demo-helpers/demo-snippet.html" />
+<title>TF Graph Info Demo</title>
+<style>
+  #demo-container {
+    border: 2px solid #808080;
+    width: 1000px;
+    height: 600px;
+  }
+</style>
+<demo-snippet>
+  <template>
+    <dom-module id="qnr-graph-info-demo">
+      <template>
+        <!-- We first use the graph loader to load and parse a pbtxt file into a graph object. -->
+        <qnr-graph-loader
+          id="loader"
+          datasets="[[_datasets]]"
+          selected-dataset="[[_selectedDataset]]"
+          out-graph="{{_graph}}"
+        >
+        </qnr-graph-loader>
+
+        <qnr-graph-info id="info" title="selected"></qnr-graph-info>
+      </template>
+      <script type="module">
+import '../qnr-graph-info.js';
+
+Polymer({
+  is: 'qnr-graph-info-demo',
+  properties: {
+    // We tell the graph loader to load a specific pbtxt file.
+    _datasets: {
+      type: Array,
+      value: [
+        {
+          name: 'Graph with XLA Clusters Specified',
+          path: 'data/graph.pbtxt',
+        },
+      ],
+    },
+    _selectedDataset: {
+      type: Number,
+      value: 0,
+    },
+
+    // This property will be updated by the graph loader.
+    _graph: {
+      type: Object,
+    },
+  },
+  observers: ['_graphUpdated(_graph)'],
+  _graphUpdated: function(slimGraph) {
+    const tracker = tf.graph.util.getTracker(this.$.loader);
+    const hierarchyTracker = tf.graph.util.getSubtaskTracker(
+      tracker,
+      100,
+      'Namespace hierarchy'
+    );
+    const hierarchyOptions = {};
+    tf.graph.hierarchy
+      .build(slimGraph, hierarchyOptions, hierarchyTracker)
+      .then(
+        function(graphHierarchy) {
+          // We have parsed and built the graph object from a pbtxt file. Show info.
+          this.$.info.set('graph', slimGraph);
+          this.$.info.set('graphHierarchy', graphHierarchy);
+
+          // Select a node within that graph.
+          this.$.info.set(
+            'selectedNode',
+            'GradientDescent/learning_rate'
+          );
+        }.bind(this)
+      );
+  },
+});
+</script>
+    </dom-module>
+    <div id="demo-container">
+      <qnr-graph-info-demo></qnr-graph-info-demo>
+    </div>
+  </template>
+</demo-snippet>

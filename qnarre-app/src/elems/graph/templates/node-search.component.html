@@ -1,0 +1,15 @@
+<div id="search-container">
+  <paper-input
+    id="runs-regex"
+    label="Search nodes. Regexes supported."
+    value="{{ _rawRegexInput }}"
+  >
+  </paper-input>
+  <div id="search-results-anchor">
+    <div id="search-results">
+      <template is="dom-repeat" items="[[_regexMatches]]">
+        <div id="search-match" on-click="(_matchClicked)">[[item]]</div>
+      </template>
+    </div>
+  </div>
+</div>

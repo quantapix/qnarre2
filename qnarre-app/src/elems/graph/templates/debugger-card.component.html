@@ -1,0 +1,100 @@
+<paper-material elevation="1" class="card health-pill-legend">
+  <div class="title">
+    Enable all (not just sampled) steps. Requires slow disk read.
+  </div>
+  <paper-toggle-button
+    id="enableAllStepsModeToggle"
+    checked="{{ allStepsModeEnabled }}"
+  >
+  </paper-toggle-button>
+  <h2>
+    Step of Health Pills:
+    <template is="dom-if" if="[[allStepsModeEnabled]]">
+      <input
+        type="number"
+        id="health-pill-step-number-input"
+        min="0"
+        max="[[_biggestStepEverSeen]]"
+        value="{{specificHealthStep::input}}"
+      />
+    </template>
+    <template is="dom-if" if="[[!allStepsModeEnabled]]">
+      [[_currentStepDisplayValue]]
+    </template>
+    <paper-spinner-lite
+      active=""
+      hidden\$="[[!areHealthsLoading]]"
+      id="health-pills-loading-spinner"
+    ></paper-spinner-lite>
+  </h2>
+  <template is="dom-if" if="[[allStepsModeEnabled]]">
+    <paper-slider
+      id="health-pill-step-slider"
+      immediate-value="{{ specificHealthStep }}"
+      max="[[_biggestStepEverSeen]]"
+      snaps=""
+      step="1"
+      value="{{ specificHealthStep }}"
+    ></paper-slider>
+  </template>
+  <template is="dom-if" if="[[!allStepsModeEnabled]]">
+    <template is="dom-if" if="[[_maxStepIndex]]">
+      <paper-slider
+        id="health-pill-step-slider"
+        immediate-value="{{ healthPillStepIndex }}"
+        max="[[_maxStepIndex]]"
+        snaps=""
+        step="1"
+        value="{{ healthPillStepIndex }}"
+      ></paper-slider>
+    </template>
+  </template>
+  <h2>
+    Health Pill
+    <template is="dom-if" if="[[healthPillValuesForSelectedNode]]">
+      Counts for Selected Node
+    </template>
+    <template is="dom-if" if="[[!healthPillValuesForSelectedNode]]">
+      Legend
+    </template>
+  </h2>
+  <template is="dom-repeat" items="[[healthPillEntries]]">
+    <div class="health-pill-entry">
+      <div
+        class="color-preview"
+        style="background:[[item.background_color]]"
+      ></div>
+      <div class="color-label">[[item.label]]</div>
+      <div class="tensor-count">
+        [[_computeTensorCountString(healthPillValuesForSelectedNode, index)]]
+      </div>
+    </div>
+  </template>
+  <div hidden\$="[[!_hasDebuggerNumericAlerts(debuggerNumericAlerts)]]">
+    <h2 id="numeric-alerts-header">Numeric Alerts</h2>
+    <p>
+      Alerts are sorted from top to bottom by increasing timestamp.
+    </p>
+    <div id="numeric-alerts-table-container">
+      <table id="numeric-alerts-table">
+        <thead>
+          <tr>
+            <th>First Offense</th>
+            <th>Tensor (Device)</th>
+            <th id="event-counts-th">Event Counts</th>
+          </tr>
+        </thead>
+        <tbody id="numeric-alerts-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <template
+    is="dom-if"
+    if="[[!_hasDebuggerNumericAlerts(debuggerNumericAlerts)]]"
+  >
+    <p class="no-numeric-alerts-notification">
+      No numeric alerts so far. That is likely good. Alerts indicate the
+      presence of NaN or (+/-) Infinity values, which may be concerning.
+    </p>
+  </template>
+</paper-material>

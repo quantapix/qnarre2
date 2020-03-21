@@ -1,0 +1,45 @@
+:host /deep/ {
+  font-family: 'Roboto', sans-serif;
+}
+
+.main {
+  position: absolute;
+  right: 0;
+  left: 250px;
+  height: 100%;
+}
+
+.side {
+  border: 1px solid black;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  width: 250px;
+}
+
+qnr-graph-controls {
+  flex-grow: 1;
+}
+
+.all {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.container {
+  height: 650px;
+}
+
+/* The no-toolbar class will hide the div.side element, and move div.main over
+to the left hand side. */
+.container.no-toolbar .main {
+  left: 0;
+}
+
+.container.no-toolbar .side {
+  display: none;
+}

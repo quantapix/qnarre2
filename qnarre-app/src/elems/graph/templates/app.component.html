@@ -1,0 +1,31 @@
+<div class="container">
+  <div class="all">
+    <div class="side">
+      <qnr-graph-controls
+        color-by-params="[[colorByParams]]"
+        color-by="{{ colorBy }}"
+        selected-file="{{ selectedFile }}"
+        on-fit-tap="(_fit)"
+        trace-ins="{{ _traceInputs }}"
+      ></qnr-graph-controls>
+      <qnr-graph-loader
+        id="loader"
+        out-graph-hierarchy="{{ graphHierarchy }}"
+        out-graph="{{ graph }}"
+        progress="{{ _progress }}"
+        selected-file="[[selectedFile]]"
+      ></qnr-graph-loader>
+    </div>
+    <div class="main">
+      <qnr-graph-board
+        id="graph-board"
+        graph-hierarchy="[[graphHierarchy]]"
+        graph="[[graph]]"
+        progress="[[_progress]]"
+        color-by="[[colorBy]]"
+        color-by-params="{{ colorByParams }}"
+        trace-ins="[[_traceInputs]]"
+      ></qnr-graph-board>
+    </div>
+  </div>
+</div>

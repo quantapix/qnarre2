@@ -1,0 +1,260 @@
+<paper-item>
+  <paper-item-body two-line="">
+    <div>
+      <paper-icon-button
+        icon="{{ _getToggleIcon(_expanded) }}"
+        on-click="(_toggleExpanded)"
+        class="toggle-button"
+      >
+      </paper-icon-button>
+      <div class="node-name" id="nodetitle"></div>
+    </div>
+    <div secondary="">
+      <qnr-node-icon
+        class="node-icon"
+        node="[[_node]]"
+        render-info="[[_getRenderInfo(nodeName, renderHierarchy)]]"
+        color-by="[[colorBy]]"
+        template-index="[[_templateIndex]]"
+      ></qnr-node-icon>
+      <template is="dom-if" if="{{ _node.op }}">
+        <div class="subtitle">
+          Operation:
+          <span>[[_node.op]]</span>
+        </div>
+      </template>
+      <template is="dom-if" if="{{ _node.metag }}">
+        <div class="subtitle">
+          Subgraph:
+          <span>[[_node.cardinality]]</span> nodes
+        </div>
+      </template>
+    </div>
+  </paper-item-body>
+</paper-item>
+<iron-collapse opened="{{ _expanded }}">
+  <template is="dom-if" if="{{ _expanded }}" restamp="true">
+    <div class="expandedInfo">
+      <div class="sub-list-group attributes">
+        Attributes (<span>[[_attributes.length]]</span>)
+        <iron-list class="sub-list" id="attributesList" items="[[_attributes]]">
+          <template>
+            <div>
+              <div class="attr-left">[[item.key]]</div>
+              <div class="attr-right">[[item.value]]</div>
+            </div>
+          </template>
+        </iron-list>
+      </div>
+
+      <template is="dom-if" if="{{ _device }}">
+        <div class="sub-list-group device">
+          <div class="attr-left">Device</div>
+          <div class="attr-right">[[_device]]</div>
+        </div>
+      </template>
+
+      <div class="sub-list-group predecessors">
+        Inputs (<span>[[_totalPredecessors]]</span>)
+        <iron-list
+          class="sub-list"
+          id="insList"
+          items="[[_predecessors.regular]]"
+        >
+          <template>
+            <qnr-node-list-item
+              class="non-control-list-item"
+              card-node="[[_node]]"
+              item-node="[[item.node]]"
+              edge-label="[[item.edgeLabel]]"
+              item-render-info="[[item.renderInfo]]"
+              name="[[item.name]]"
+              item-type="predecessors"
+              color-by="[[colorBy]]"
+              template-index="[[_templateIndex]]"
+            >
+            </qnr-node-list-item>
+          </template>
+        </iron-list>
+        <template is="dom-if" if="[[_predecessors.control.length]]">
+          <div class="controlDeps">
+            <div class="controlLine">
+              <paper-icon-button
+                icon="{{ _getToggleIcon(_openedControlPred) }}"
+                on-click="(_toggleControlPred)"
+                class="control-toggle-button"
+              >
+              </paper-icon-button>
+              Control dependencies
+            </div>
+            <iron-collapse opened="{{ _openedControlPred }}" no-animation="">
+              <template
+                is="dom-if"
+                if="{{ _openedControlPred }}"
+                restamp="true"
+              >
+                <iron-list class="sub-list" items="[[_predecessors.control]]">
+                  <template>
+                    <qnr-node-list-item
+                      card-node="[[_node]]"
+                      item-node="[[item.node]]"
+                      item-render-info="[[item.renderInfo]]"
+                      name="[[item.name]]"
+                      item-type="predecessors"
+                      color-by="[[colorBy]]"
+                      template-index="[[_templateIndex]]"
+                    >
+                    </qnr-node-list-item>
+                  </template>
+                </iron-list>
+              </template>
+            </iron-collapse>
+          </div>
+        </template>
+      </div>
+
+      <div class="sub-list-group successors">
+        Outputs (<span>[[_totalSuccessors]]</span>)
+        <iron-list
+          class="sub-list"
+          id="outputsList"
+          items="[[_successors.regular]]"
+        >
+          <template>
+            <qnr-node-list-item
+              class="non-control-list-item"
+              card-node="[[_node]]"
+              item-node="[[item.node]]"
+              edge-label="[[item.edgeLabel]]"
+              item-render-info="[[item.renderInfo]]"
+              name="[[item.name]]"
+              item-type="successor"
+              color-by="[[colorBy]]"
+              template-index="[[_templateIndex]]"
+            >
+            </qnr-node-list-item>
+          </template>
+        </iron-list>
+        <template is="dom-if" if="[[_successors.control.length]]">
+          <div class="controlDeps">
+            <div class="controlLine">
+              <paper-icon-button
+                icon="{{ _getToggleIcon(_openedControlSucc) }}"
+                on-click="(_toggleControlSucc)"
+                class="control-toggle-button"
+              >
+              </paper-icon-button>
+              Control dependencies
+            </div>
+            <iron-collapse opened="{{ _openedControlSucc }}" no-animation="">
+              <template
+                is="dom-if"
+                if="{{ _openedControlSucc }}"
+                restamp="true"
+              >
+                <iron-list class="sub-list" items="[[_successors.control]]">
+                  <template>
+                    <qnr-node-list-item
+                      card-node="[[_node]]"
+                      item-node="[[item.node]]"
+                      item-render-info="[[item.renderInfo]]"
+                      name="[[item.name]]"
+                      item-type="successors"
+                      color-by="[[colorBy]]"
+                      template-index="[[_templateIndex]]"
+                    >
+                    </qnr-node-list-item>
+                  </template>
+                </iron-list>
+              </template>
+            </iron-collapse>
+          </div>
+        </template>
+      </div>
+      <template is="dom-if" if="{{ _isDisplayable }}">
+        <div class="sub-list-group node-stats">
+          Node Stats
+          <div class="sub-list-table">
+            <template is="dom-if" if="{{ _nodeStats.totalBytes }}">
+              <div class="sub-list-table-row">
+                <div class="sub-list-table-cell">Memory</div>
+                <div class="sub-list-table-cell">
+                  [[_nodeStatsFormattedBytes]]
+                </div>
+              </div>
+            </template>
+            <template is="dom-if" if="{{ _getTotalMicros(_nodeStats) }}">
+              <div class="sub-list-table-row">
+                <div class="sub-list-table-cell">Compute Time</div>
+                <div class="sub-list-table-cell">
+                  [[_nodeStatsFormattedComputeTime]]
+                </div>
+              </div>
+            </template>
+            <template is="dom-if" if="{{ _nodeStats.outputSize }}">
+              <div class="sub-list-table-row">
+                <div class="sub-list-table-cell">Tensor Output Sizes</div>
+                <div class="sub-list-table-cell">
+                  <template
+                    is="dom-repeat"
+                    items="{{ _nodeStatsFormattedOutputSizes }}"
+                  >
+                    [[item]] <br />
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <template is="dom-if" if="[[_functionUsages.length]]">
+        <div class="sub-list-group predecessors">
+          Usages of the Function (<span>[[_functionUsages.length]]</span>)
+          <iron-list
+            class="sub-list"
+            id="functionUsagesList"
+            items="[[_functionUsages]]"
+          >
+            <template>
+              <qnr-node-list-item
+                class="non-control-list-item"
+                card-node="[[_node]]"
+                item-node="[[item]]"
+                name="[[item.name]]"
+                item-type="functionUsages"
+                color-by="[[colorBy]]"
+                template-index="[[_templateIndex]]"
+              >
+              </qnr-node-list-item>
+            </template>
+          </iron-list>
+        </div>
+      </template>
+
+      <template is="dom-if" if="[[!_isLibraryFn(_node)]]">
+        <div class="toggle-include-group">
+          <paper-button
+            raised=""
+            class="toggle-include"
+            on-click="(_toggleInclude)"
+          >
+            <span>[[_auxButtonText]]</span>
+          </paper-button>
+        </div>
+      </template>
+
+      <template is="dom-if" if="{{ _isInSeries(_node) }}">
+        <div class="toggle-include-group">
+          <paper-button
+            raised=""
+            class="toggle-include"
+            on-click="(_toggleGroup)"
+          >
+            <span>[[_groupButtonText]]</span>
+          </paper-button>
+        </div>
+      </template>
+    </div>
+  </template>
+</iron-collapse>

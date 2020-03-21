@@ -1,0 +1,74 @@
+:host {
+  max-height: 500px;
+}
+
+.incompatible-ops-list {
+  height: 350px;
+  max-height: 400px;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+}
+
+iron-list {
+  flex: 1 1 auto;
+}
+
+paper-item {
+  padding: 0;
+  background: #e9e9e9;
+}
+
+paper-item-body[two-line] {
+  min-height: 0;
+  padding: 8px 12px 4px;
+}
+
+.expandedInfo {
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 12pt;
+  width: 100%;
+}
+
+.node-name {
+  white-space: normal;
+  word-wrap: break-word;
+  font-size: 14pt;
+  font-weight: 500;
+}
+
+.subtitle {
+  font-size: 12pt;
+  color: #5e5e5e;
+}
+
+.toggle-button {
+  float: right;
+  max-height: 20px;
+  max-width: 20px;
+  padding: 0;
+}
+
+.non-control-list-item {
+  padding-left: 10px;
+}
+
+div.op-compat-display {
+  margin-top: 10px;
+  display: inline-block;
+}
+
+svg.op-compat {
+  width: 250px;
+  height: 25px;
+  float: left;
+}
+
+div.op-compat-value {
+  float: right;
+  height: 100%;
+  font-size: 14px;
+  color: black;
+  margin-left: 10px;
+}

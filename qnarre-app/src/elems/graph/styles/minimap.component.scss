@@ -1,0 +1,27 @@
+:host {
+  background-color: white;
+  transition: opacity 0.3s linear;
+  pointer-events: auto;
+}
+
+:host(.hidden) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+canvas {
+  border: 1px solid #999;
+}
+
+rect {
+  fill: white;
+  stroke: #111111;
+  stroke-width: 1px;
+  fill-opacity: 0;
+  filter: url(#minimapDropShadow);
+  cursor: move;
+}
+
+svg {
+  position: absolute;
+}

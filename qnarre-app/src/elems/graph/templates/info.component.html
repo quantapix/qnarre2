@@ -1,0 +1,38 @@
+<template is="dom-if" if="{{ selectedNode }}">
+  <paper-material elevation="1" class="card">
+    <qnr-node-info
+      graph-hierarchy="[[graphHierarchy]]"
+      flat-graph="[[graph]]"
+      node-name="[[selectedNode]]"
+      node-include="[[selectedNodeInclude]]"
+      highlighted-node="{{ highlightedNode }}"
+      color-by="[[colorBy]]"
+    >
+    </qnr-node-info>
+  </paper-material>
+</template>
+<template is="dom-if" if="[[_equals(colorBy, 'op_compatibility')]]">
+  <qnr-graph-op-compat-card
+    graph-hierarchy="[[graphHierarchy]]"
+    hierarchy-params="[[hierarchyParams]]"
+    color-by="[[colorBy]]"
+    node-title="[[compatNodeTitle]]"
+  >
+  </qnr-graph-op-compat-card>
+</template>
+<template
+  is="dom-if"
+  if="[[_healthPillsAvailable(debuggerDataEnabled, nodeNamesToHealths)]]"
+>
+  <qnr-graph-debugger-card
+    debugger-numeric-alerts="[[debuggerNumericAlerts]]"
+    node-names-to-health-pills="[[nodeNamesToHealths]]"
+    selected-node="{{ selectedNode }}"
+    highlighted-node="{{ highlightedNode }}"
+    are-health-pills-loading="[[areHealthsLoading]]"
+    all-steps-mode-enabled="{{ allStepsModeEnabled }}"
+    specific-health-pill-step="{{ specificHealthStep }}"
+    health-pill-step-index="{{ healthPillStepIndex }}"
+  >
+  </qnr-graph-debugger-card>
+</template>

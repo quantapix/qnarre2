@@ -1,0 +1,77 @@
+paper-input {
+  --paper-input-container-focus-color: var(--tb-orange-strong);
+  --paper-input-container-input: {
+    font-size: 14px;
+  }
+  --paper-input-container-label: {
+    font-size: 14px;
+  }
+}
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+#outer-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
+  word-wrap: break-word;
+}
+.name-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  display: flex;
+  flex-direction: row;
+  font-size: 13px;
+  word-break: break-all; /* makes wrapping of hyperparam strings better */
+}
+.icon-container {
+  flex-grow: 0;
+  flex-shrink: 0;
+  padding-left: 2px;
+}
+.checkbox {
+  padding-left: 2px;
+  width: 18px;
+  height: 18px;
+}
+.isolator {
+  width: 18px;
+  height: 18px;
+  padding: 0px;
+}
+.isolator-container {
+  padding-left: 6px;
+  padding-right: 3px;
+}
+.checkbox-container {
+  padding-left: 2px;
+}
+.item-label-container {
+  padding-left: 5px;
+  flex-grow: 1;
+  flex-shrink: 1;
+  width: 0px; /* hack to get the flex-grow to work properly */
+}
+.tooltip-value-container {
+  display: flex;
+  justify-content: center;
+  flex-grow: 0;
+  flex-shrink: 0;
+  text-align: right;
+  padding-left: 2px;
+}
+.vertical-align-container {
+  display: flex;
+  justify-content: center;
+}
+.vertical-align-container .vertical-align-center {
+  align-self: center;
+}
+.vertical-align-container .vertical-align-top {
+  align-self: start;
+}

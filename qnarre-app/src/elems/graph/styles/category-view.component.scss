@@ -1,0 +1,125 @@
+:host {
+  display: block;
+  margin: 0 5px 1px 10px;
+}
+
+:host(:first-of-type) {
+  margin-top: 10px;
+}
+
+:host(:last-of-type) {
+  margin-bottom: 20px;
+}
+
+.heading {
+  background-color: white;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  font-size: 15px;
+  line-height: 1;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heading::-moz-focus-inner {
+  padding: 10px 15px;
+}
+
+[open-button] {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+[open-button] .expand-arrow {
+  transform: rotateZ(180deg);
+}
+
+.name {
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.light {
+  color: var(--paper-grey-500);
+}
+
+.category-name {
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 0;
+}
+
+.count {
+  margin: 0 5px;
+  font-size: 12px;
+  color: var(--paper-grey-500);
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.heading::-moz-focus-inner {
+  padding: 10px 15px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border-top: none;
+  border: 1px solid #dedede;
+  padding: 15px;
+}
+
+.light {
+  color: var(--paper-grey-500);
+}
+
+#controls-container {
+  justify-content: center;
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+#controls-container paper-button {
+  display: inline-block;
+}
+
+.big-page-buttons {
+  display: flex;
+}
+
+.big-page-buttons paper-button {
+  background-color: var(--tb-ui-light-accent);
+  color: var(--tb-ui-dark-accent);
+  display: inline-block;
+  flex-basis: 0;
+  flex-grow: 1;
+  flex-shrink: 1;
+  font-size: 13px;
+}
+
+.big-page-buttons paper-button[disabled] {
+  background: none;
+}
+
+slot {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+#page-input {
+  display: inline-block;
+  width: var(--tf-category-paginated-view-page-input-width, 100%);
+}

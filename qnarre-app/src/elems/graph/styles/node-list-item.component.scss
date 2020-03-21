@@ -1,0 +1,41 @@
+#list-item {
+  width: 100%;
+  color: #565656;
+  font-size: 11pt;
+  font-weight: 400;
+  position: relative;
+  display: inline-block;
+}
+
+#list-item:hover {
+  background-color: var(--google-yellow-100);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+#list-item span {
+  margin-left: 40px;
+}
+
+#list-item.excluded span {
+  color: #999;
+}
+
+#list-item span.edge-label {
+  float: right;
+  font-size: 10px;
+  margin-left: 3px;
+  margin-right: 5px;
+}
+
+.node-icon {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+}
+
+.faded span {
+  color: var(--tb-graph-faded);
+}

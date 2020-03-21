@@ -1,0 +1,38 @@
+:host {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:host([_maybe-rendered-in-bad-state]) vz-line-chart {
+  visibility: hidden;
+}
+
+#chart-and-spinner-container {
+  display: flex;
+  flex-grow: 1;
+  position: relative;
+}
+
+#loading-spinner-container {
+  align-items: center;
+  bottom: 0;
+  display: flex;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+vz-line-chart2 {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+vz-line-chart2[data-loading] {
+  opacity: 0.3;
+}
