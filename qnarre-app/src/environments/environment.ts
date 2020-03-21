@@ -1,5 +1,6 @@
 export const environment = {
-  production: false
+  production: false,
+  mode: 'stable'
 };
 
 // import 'zone.js/dist/zone-error';
