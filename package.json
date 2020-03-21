@@ -1,0 +1,20 @@
+{
+  "name": "qnr-dev",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "qblk:~/repos/qnr-dev.git",
+  "author": "quantapix <quantapix@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@angular/cli": "next",
+    "@typescript-eslint/eslint-plugin": "",
+    "@typescript-eslint/parser": "",
+    "eslint-config-google": "",
+    "eslint-config-prettier": "",
+    "eslint-plugin-jasmine": "",
+    "eslint-plugin-prettier": "",
+    "eslint": "",
+    "prettier": "",
+    "typescript": ""
+  }
+}
