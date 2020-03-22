@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import * as util from './util';
+import * as util from '../../graph/scene/util';
 
 @Component({
   selector: 'qnr-card-heading',

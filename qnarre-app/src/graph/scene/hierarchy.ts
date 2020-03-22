@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import * as qg from './graph';
 import * as qp from './params';
 import * as qt from './types';
-import * as qu from '../../elems/graph/util';
+import * as qu from './util';
 import * as proto from './proto';
 import * as template from './template';
 

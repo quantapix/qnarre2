@@ -6,7 +6,7 @@ import * as qg from '../../graph/scene/graph';
 import * as qh from '../../graph/scene/hierarchy';
 import * as qr from '../../graph/scene/render';
 import * as qt from '../../graph/scene/types';
-import * as qu from './util';
+import * as qu from '../../graph/scene/util';
 
 @Component({
   selector: 'qnr-graph',

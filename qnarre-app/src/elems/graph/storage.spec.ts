@@ -1,4 +1,4 @@
-import * as util from './util';
+import * as util from '../../graph/scene/util';
 
 function setHash(hash) {
   util.setFakeHash(hash);

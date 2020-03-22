@@ -1,5 +1,5 @@
 import * as qt from './types';
-import * as qu from '../../elems/graph/util';
+import * as qu from './util';
 import * as qg from './graph';
 import * as qs from './scene';
 import * as qp from './params';

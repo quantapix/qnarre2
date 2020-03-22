@@ -1,4 +1,4 @@
-import * as util from '../../elems/graph/util';
+import * as util from './util';
 import * as loader from './loader';
 
 describe('parser', () => {

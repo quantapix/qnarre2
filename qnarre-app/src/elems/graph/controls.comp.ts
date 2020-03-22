@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {SelectionType} from '../../graph/scene/types';
 import * as render from '../../graph/scene/render';
 import * as proto from '../../graph/scene/proto';
-import * as util from './util';
+import * as util from '../../graph/scene/util';
 
 interface DeviceNameExclude {
   regex: RegExp;

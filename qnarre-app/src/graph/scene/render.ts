@@ -2,7 +2,7 @@
 /* eslint-disable no-case-declarations */
 import * as _ from 'lodash';
 import * as d3 from 'd3';
-import * as qu from '../../elems/graph/util';
+import * as qu from './util';
 import * as qt from './types';
 import * as qg from './graph';
 import * as edge from './edge';

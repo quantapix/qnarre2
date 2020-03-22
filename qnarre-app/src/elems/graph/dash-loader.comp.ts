@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import * as backend from '../../graph/scene/backend';
 import * as loader from '../../graph/scene/loader';
 import * as q_graph from '../../graph/scene/graph';
-import * as util from './util';
+import * as util from '../../graph/scene/util';
 import * as hierarchy from '../../graph/scene/hierarchy';
 import * as op from '../../graph/scene/op';
 

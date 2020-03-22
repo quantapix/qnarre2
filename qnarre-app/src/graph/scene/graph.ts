@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as proto from './proto';
 import * as qp from './params';
 import * as qt from './types';
-import * as qu from '../../elems/graph/util';
+import * as qu from './util';
 
 export function createGraph<N, E>(
   name: string,

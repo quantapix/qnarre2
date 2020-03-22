@@ -10,7 +10,7 @@ import * as qp from './params';
 import * as qr from './render';
 import * as qs from './scene';
 import * as qt from './types';
-import * as qu from '../../elems/graph/util';
+import * as qu from './util';
 
 export function buildGroup(group, ndata: qr.Ndata[], elem: qs.GraphElem) {
   const container = qs.selectOrCreate(group, 'g', qt.Class.Node.CONTAINER);

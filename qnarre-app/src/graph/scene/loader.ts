@@ -4,7 +4,7 @@ import * as qg from './graph';
 import * as qh from './hierarchy';
 import * as qp from './params';
 import * as qt from './types';
-import * as qu from '../../elems/graph/util';
+import * as qu from './util';
 import * as proto from './proto';
 
 export function loadText(path: string) {
