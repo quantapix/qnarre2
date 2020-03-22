@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import * as qt from './types';
+import * as qt from '../../graph/scene/types';
 
 /* eslint-disable no-constant-condition */
 

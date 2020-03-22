@@ -1,4 +1,4 @@
-import * as qb from './backend';
+import * as qb from '../../graph/scene/backend';
 import * as qu from './util';
 
 type StringDict = {[key: string]: string};
