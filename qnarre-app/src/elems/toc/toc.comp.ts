@@ -13,22 +13,22 @@ import {startWith, subscribeOn, takeUntil} from 'rxjs/operators';
 import {ScrollService} from '../../services/scroll.service';
 import {TocItem, TocService} from '../../services/toc.service';
 
-type TocType = 'None' | 'Floating' | 'EmbeddedSimple' | 'EmbeddedExpandable';
+type TocType = 'None' | 'Floating' | 'Embedded' | 'Expandable';
 
 @Component({
   selector: 'qnr-toc',
-  templateUrl: 'toc.component.html',
+  templateUrl: 'toc.comp.html',
   styles: []
 })
-export class TocComponent implements OnInit, AfterViewInit, OnDestroy {
-  activeIndex: number | null = null;
+export class TocComp implements OnInit, AfterViewInit, OnDestroy {
+  index: number | null = null;
   type: TocType = 'None';
   isCollapsed = true;
   isEmbedded = false;
-  @ViewChildren('tocItem') private items: QueryList<ElementRef>;
+  @ViewChildren('tocItem') private items = {} as QueryList<ElementRef>;
   private onDestroy = new Subject();
   primaryMax = 4;
-  tocList: TocItem[];
+  tocList = [] as TocItem[];
 
   constructor(
     private scroll: ScrollService,
@@ -46,8 +46,8 @@ export class TocComponent implements OnInit, AfterViewInit, OnDestroy {
         c > 0
           ? this.isEmbedded
             ? c > this.primaryMax
-              ? 'EmbeddedExpandable'
-              : 'EmbeddedSimple'
+              ? 'Expandable'
+              : 'Embedded'
             : 'Floating'
           : 'None';
     });
@@ -55,27 +55,23 @@ export class TocComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     if (!this.isEmbedded) {
-      // We use the `asap` scheduler because updates to `activeItemIndex` are triggered by DOM changes,
-      // which, in turn, are caused by the rendering that happened due to a ChangeDetection.
-      // Without asap, we would be updating the model while still in a ChangeDetection handler, which is disallowed by Angular.
       combineLatest([
         this.toc.activeItemIndex.pipe(subscribeOn(asapScheduler)),
         this.items.changes.pipe(startWith(this.items))
       ])
         .pipe(takeUntil(this.onDestroy))
-        .subscribe(([index, items]) => {
-          this.activeIndex = index;
-          if (index === null || index >= items.length) {
+        .subscribe(([i, items]) => {
+          this.index = i;
+          if (i === null || i >= items.length) {
             return;
           }
-          const e = items.toArray()[index].nativeElement;
+          const e = items.toArray()[i].nativeElement;
           const p = e.offsetParent;
-          const eRect = e.getBoundingClientRect();
-          const pRect = p.getBoundingClientRect();
-          const isInViewport =
-            eRect.top >= pRect.top && eRect.bottom <= pRect.bottom;
+          const er = e.getBoundingClientRect();
+          const pr = p.getBoundingClientRect();
+          const isInViewport = er.top >= pr.top && er.bottom <= pr.bottom;
           if (!isInViewport) {
-            p.scrollTop += eRect.top - pRect.top - p.clientHeight / 2;
+            p.scrollTop += er.top - pr.top - p.clientHeight / 2;
           }
         });
     }
@@ -85,11 +81,9 @@ export class TocComponent implements OnInit, AfterViewInit, OnDestroy {
     this.onDestroy.next();
   }
 
-  toggle(canScroll = true) {
+  toggle(scroll = true) {
     this.isCollapsed = !this.isCollapsed;
-    if (canScroll && this.isCollapsed) {
-      this.toTop();
-    }
+    if (scroll && this.isCollapsed) this.toTop();
   }
 
   toTop() {
@@ -97,6 +91,6 @@ export class TocComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 }
 
-function count<T>(array: T[], fn: (item: T) => boolean) {
-  return array.reduce((result, item) => (fn(item) ? result + 1 : result), 0);
+function count<T>(a: T[], fn: (i: T) => boolean) {
+  return a.reduce((r, i) => (fn(i) ? r + 1 : r), 0);
 }

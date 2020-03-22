@@ -4,11 +4,11 @@ import {Title, Meta} from '@angular/platform-browser';
 import {Observable} from 'rxjs';
 
 import {Contents} from '../services/docs.service';
-import {ViewerComponent} from '../components/viewer.component';
+import {ViewerComponent} from '../comps/viewer.component';
 import {LoggerService} from '../services/logger.service';
 import {TocService} from '../services/toc.service';
 import {MockLogger} from './logger.service';
-import {ElementsLoader} from '../elements/loader';
+import {ElemsLoader} from '../elems/loader';
 
 export class TestViewerComponent extends ViewerComponent {
   curr: HTMLElement;
@@ -50,9 +50,9 @@ export class MockTocService {
   reset = jasmine.createSpy('TocService#reset');
 }
 
-export class MockElementsLoader {
+export class MockElemsLoader {
   loadContainedCustomElements = jasmine.createSpy(
-    'MockElementsLoader#loadContainedCustomElements'
+    'MockElemsLoader#loadContainedCustomElements'
   );
 }
 
@@ -63,7 +63,7 @@ export class MockElementsLoader {
     {provide: Title, useClass: MockTitle},
     {provide: Meta, useClass: MockMeta},
     {provide: TocService, useClass: MockTocService},
-    {provide: ElementsLoader, useClass: MockElementsLoader}
+    {provide: ElemsLoader, useClass: MockElemsLoader}
   ]
 })
 export class TestModule {}

@@ -1,25 +1,25 @@
 import {Component, ElementRef, Input, OnInit} from '@angular/core';
 
 import {LoggerService} from '../services/logger.service';
-import {ElementsLoader} from './loader';
+import {ElemsLoader} from './loader';
 
 @Component({
-  selector: 'qnr-element',
+  selector: 'qnr-elem',
   template: ''
 })
-export class ElementComponent implements OnInit {
+export class ElemsComp implements OnInit {
   @Input() selector = '';
 
   constructor(
     private ref: ElementRef,
-    private loader: ElementsLoader,
+    private loader: ElemsLoader,
     private logger: LoggerService
   ) {}
 
   ngOnInit() {
     if (!this.selector || /[^\w-]/.test(this.selector)) {
       this.logger.error(
-        new Error(`Invalid selector for 'qnr-element': ${this.selector}`)
+        new Error(`Invalid selector for 'qnr-elem': ${this.selector}`)
       );
       return;
     }

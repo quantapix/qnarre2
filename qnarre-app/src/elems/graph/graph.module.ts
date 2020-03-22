@@ -1,7 +1,7 @@
 import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
-import {WithElement} from '../registry';
+import {WithElem} from '../registry';
 import {MinimapComponent} from './minimap.component';
 import {SceneComponent} from './scene.component';
 import {GraphComponent} from './graph.component';
@@ -60,8 +60,8 @@ import {QnarreComponent} from './qnarre.component';
   entryComponents: [MinimapComponent],
   exports: [MinimapComponent]
 })
-export class GraphModule implements WithElement {
-  customElementComponent: Type<any> = MinimapComponent;
+export class GraphModule implements WithElem {
+  elemComp: Type<any> = MinimapComponent;
 }
 
 // services: renderHierarchy, selectedNode

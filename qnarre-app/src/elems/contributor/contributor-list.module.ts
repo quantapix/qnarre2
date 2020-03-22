@@ -4,7 +4,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {ContributorListComponent} from './contributor-list.component';
 import {ContributorService} from './contributor.service';
 import {ContributorComponent} from './contributor.component';
-import {WithElement} from '../../elements/registry';
+import {WithElem} from '../registry';
 
 @NgModule({
   imports: [CommonModule, MatIconModule],
@@ -12,6 +12,6 @@ import {WithElement} from '../../elements/registry';
   entryComponents: [ContributorListComponent],
   providers: [ContributorService]
 })
-export class ContributorListModule implements WithElement {
-  customElementComponent: Type<any> = ContributorListComponent;
+export class ContributorListModule implements WithElem {
+  elemComp: Type<any> = ContributorListComponent;
 }

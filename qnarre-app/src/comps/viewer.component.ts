@@ -18,7 +18,7 @@ import {
 } from '../services/docs.service';
 import {LoggerService} from '../services/logger.service';
 import {TocService} from '../services/toc.service';
-import {ElementsLoader} from '../elements/loader';
+import {ElemsLoader} from '../elems/loader';
 
 export const NO_ANIMATIONS = 'no-animations';
 
@@ -58,7 +58,7 @@ export class ViewerComponent implements OnDestroy {
     private title: Title,
     private meta: Meta,
     private toc: TocService,
-    private loader: ElementsLoader
+    private loader: ElemsLoader
   ) {
     this.host = ref.nativeElement;
     this.host.innerHTML = initContent;

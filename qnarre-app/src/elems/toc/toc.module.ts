@@ -2,14 +2,14 @@ import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 
-import {WithElement} from '../registry';
-import {TocComponent} from './toc.component';
+import {WithElem} from '../registry';
+import {TocComp} from './toc.comp';
 
 @NgModule({
   imports: [CommonModule, MatIconModule],
-  declarations: [TocComponent],
-  entryComponents: [TocComponent]
+  declarations: [TocComp],
+  entryComponents: [TocComp]
 })
-export class TocModule implements WithElement {
-  customElementComponent: Type<any> = TocComponent;
+export class TocModule implements WithElem {
+  elemComp: Type<any> = TocComp;
 }

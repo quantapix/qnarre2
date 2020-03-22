@@ -4,13 +4,13 @@ import {HttpClientModule} from '@angular/common/http';
 
 import {ServicesModule} from '../../services/services.module';
 import {AnnouncementBarComponent} from './announcement-bar.component';
-import {WithElement} from '../registry';
+import {WithElem} from '../registry';
 
 @NgModule({
   imports: [CommonModule, ServicesModule, HttpClientModule],
   declarations: [AnnouncementBarComponent],
   entryComponents: [AnnouncementBarComponent]
 })
-export class AnnouncementBarModule implements WithElement {
-  customElementComponent: Type<any> = AnnouncementBarComponent;
+export class AnnouncementBarModule implements WithElem {
+  elemComp: Type<any> = AnnouncementBarComponent;
 }

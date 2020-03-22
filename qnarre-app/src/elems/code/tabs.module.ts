@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {MatCardModule} from '@angular/material/card';
 import {MatTabsModule} from '@angular/material/tabs';
 
-import {WithElement} from '../registry';
+import {WithElem} from '../registry';
 import {CodeModule} from './code.module';
 import {TabsComponent} from './tabs.component';
 
@@ -13,6 +13,6 @@ import {TabsComponent} from './tabs.component';
   entryComponents: [TabsComponent],
   exports: [TabsComponent]
 })
-export class TabsModule implements WithElement {
-  customElementComponent: Type<any> = TabsComponent;
+export class TabsModule implements WithElem {
+  elemComp: Type<any> = TabsComponent;
 }

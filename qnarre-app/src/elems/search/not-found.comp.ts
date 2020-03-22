@@ -7,24 +7,24 @@ import {SearchService} from '../../search/search.service';
 import {LocationService} from '../../services/location.service';
 
 @Component({
-  selector: 'qnr-file-not-found-search',
+  selector: 'qnr-not-found',
   template: `
     <p>Let's see if any of these search results help...</p>
     <qnr-search-results
       class="embedded"
-      [searchResults]="searchResults | async"
+      [results]="results | async"
     ></qnr-search-results>
   `
 })
-export class FileNotFoundSearchComponent implements OnInit {
-  searchResults: Observable<Results>;
+export class NotFoundComp implements OnInit {
+  results = {} as Observable<Results>;
   constructor(
     private location: LocationService,
     private search: SearchService
   ) {}
 
   ngOnInit() {
-    this.searchResults = this.location.path.pipe(
+    this.results = this.location.path.pipe(
       switchMap(path => {
         const query = path.split(/\W+/).join(' ');
         return this.search.search(query);

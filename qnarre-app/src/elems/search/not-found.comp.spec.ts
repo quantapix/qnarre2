@@ -2,30 +2,30 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 import {LocationService} from '../../services/location.service';
-import {MockLocationService} from '../../testing/location.service';
+import {MockLocation} from '../../testing/location.service';
 import {Results} from '../../search/types';
 import {ResultsComponent} from '../../search/results.component';
 import {SearchService} from '../../search/search.service';
-import {FileNotFoundSearchComponent} from './file-not-found-search.component';
+import {NotFoundComp} from './not-found.comp';
 
-describe('FileNotFoundSearchComponent', () => {
-  let fixture: ComponentFixture<FileNotFoundSearchComponent>;
+describe('NotFoundComp', () => {
+  let fixture: ComponentFixture<NotFoundComp>;
   let searchService: SearchService;
   let searchResultSubject: Subject<Results>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [FileNotFoundSearchComponent, ResultsComponent],
+      declarations: [NotFoundComp, ResultsComponent],
       providers: [
         {
           provide: LocationService,
-          useValue: new MockLocationService('base/initial-url?some-query')
+          useValue: new MockLocation('base/initial-url?some-query')
         },
         SearchService
       ]
     });
 
-    fixture = TestBed.createComponent(FileNotFoundSearchComponent);
+    fixture = TestBed.createComponent(NotFoundComp);
     searchService = TestBed.inject(SearchService);
     searchResultSubject = new Subject<Results>();
     spyOn(searchService, 'search').and.callFake(() =>
@@ -39,14 +39,14 @@ describe('FileNotFoundSearchComponent', () => {
   });
 
   it('should pass through any results to the `qnr-search-results` component', () => {
-    const searchResultsComponent = fixture.debugElement.query(
+    const resultsComponent = fixture.debugElement.query(
       By.directive(ResultsComponent)
     ).componentInstance;
-    expect(searchResultsComponent.searchResults).toBe(null);
+    expect(resultsComponent.results).toBe(null);
 
     const results = {query: 'base initial url', results: []};
     searchResultSubject.next(results);
     fixture.detectChanges();
-    expect(searchResultsComponent.searchResults).toEqual(results);
+    expect(resultsComponent.results).toEqual(results);
   });
 });

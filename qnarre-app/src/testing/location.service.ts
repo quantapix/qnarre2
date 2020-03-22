@@ -6,7 +6,7 @@ export class MockLocation {
   currentUrl = this.urlSubject
     .asObservable()
     .pipe(map(url => this.stripSlashes(url)));
-  currentPath = this.currentUrl.pipe(map(url => url.match(/[^?#]*/)[0]));
+  currentPath = this.currentUrl.pipe(map(url => url.match(/[^?#]*/)?.[0]));
   search = jasmine.createSpy('search').and.returnValue({});
   setSearch = jasmine.createSpy('setSearch');
   go = jasmine

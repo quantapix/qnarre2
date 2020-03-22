@@ -2,18 +2,18 @@ import {Compiler, Inject, Injectable, Type} from '@angular/core';
 import {NgModuleFactory, NgModuleRef} from '@angular/core';
 import {createCustomElement} from '@angular/elements';
 import {LoadChildrenCallback} from '@angular/router';
-import {from, Observable, of} from 'rxjs';
+import {from, of} from 'rxjs';
 
-import {LOAD_CALLBACKS_TOKEN, WithElement} from './registry';
+import {LOAD_CBS_TOKEN, WithElem} from './registry';
 
 @Injectable()
-export class ElementsLoader {
+export class ElemsLoader {
   private cbs: Map<string, LoadChildrenCallback>;
   private ps = new Map<string, Promise<void>>();
 
   constructor(
     private ref: NgModuleRef<any>,
-    @Inject(LOAD_CALLBACKS_TOKEN) cbs: Map<string, LoadChildrenCallback>,
+    @Inject(LOAD_CBS_TOKEN) cbs: Map<string, LoadChildrenCallback>,
     private compiler: Compiler
   ) {
     this.cbs = new Map(cbs);
@@ -29,14 +29,10 @@ export class ElementsLoader {
   }
 
   load(sel: string) {
-    if (this.ps.has(sel)) {
-      return this.ps.get(sel);
-    }
+    if (this.ps.has(sel)) return this.ps.get(sel);
     if (this.cbs.has(sel)) {
-      const cb = this.cbs.get(sel);
-      const p = (cb() as Promise<
-        NgModuleFactory<WithElement> | Type<WithElement>
-      >)
+      const cb = this.cbs.get(sel)!;
+      const p = (cb() as Promise<NgModuleFactory<WithElem> | Type<WithElem>>)
         .then(m => {
           if (m instanceof NgModuleFactory) {
             return m;
@@ -46,7 +42,7 @@ export class ElementsLoader {
         })
         .then(f => {
           const r = f.create(this.ref.injector);
-          const c = r.instance.customElementComponent;
+          const c = r.instance.elemComp;
           const injector = r.injector;
           customElements.define(sel, createCustomElement(c, {injector}));
           return customElements.whenDefined(sel);

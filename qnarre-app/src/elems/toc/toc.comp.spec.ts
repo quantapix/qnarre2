@@ -3,13 +3,13 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {asapScheduler, BehaviorSubject} from 'rxjs';
 
-import {TocComponent} from './toc.component';
+import {TocComp} from './toc.comp';
 import {ScrollService} from '../../services/scroll.service';
 import {TocItem, TocService} from '../../services/toc.service';
 
-describe('TocComponent', () => {
-  let tocComponentDe: DebugElement;
-  let c: TocComponent;
+describe('TocComp', () => {
+  let de: DebugElement;
+  let c: TocComp;
   let toc: TestTocService;
   let page: {
     listItems: DebugElement[];
@@ -20,22 +20,16 @@ describe('TocComponent', () => {
   };
   function setPage(): typeof page {
     return {
-      listItems: tocComponentDe.queryAll(By.css('ul.toc-list>li')),
-      tocHeading: tocComponentDe.query(By.css('.toc-heading')),
-      tocHeadingButtonEmbedded: tocComponentDe.query(
-        By.css('button.toc-heading.embedded')
-      ),
-      tocH1Heading: tocComponentDe.query(By.css('.h1')),
-      tocMoreButton: tocComponentDe.query(By.css('button.toc-more-items'))
+      listItems: de.queryAll(By.css('ul.toc-list>li')),
+      tocHeading: de.query(By.css('.toc-heading')),
+      tocHeadingButtonEmbedded: de.query(By.css('button.toc-heading.embedded')),
+      tocH1Heading: de.query(By.css('.h1')),
+      tocMoreButton: de.query(By.css('button.toc-more-items'))
     };
   }
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [
-        HostEmbeddedTocComponent,
-        HostNotEmbeddedTocComponent,
-        TocComponent
-      ],
+      declarations: [EmbeddedTocComp, UnembeddedTocComp, TocComp],
       providers: [
         {provide: ScrollService, useClass: TestScrollService},
         {provide: TocService, useClass: TestTocService}
@@ -44,11 +38,11 @@ describe('TocComponent', () => {
     });
   });
   describe('when embedded in doc body', () => {
-    let f: ComponentFixture<HostEmbeddedTocComponent>;
+    let f: ComponentFixture<EmbeddedTocComp>;
     beforeEach(() => {
-      f = TestBed.createComponent(HostEmbeddedTocComponent);
-      tocComponentDe = f.debugElement.children[0];
-      c = tocComponentDe.componentInstance;
+      f = TestBed.createComponent(EmbeddedTocComp);
+      de = f.debugElement.children[0];
+      c = de.componentInstance;
       toc = (TestBed.inject(TocService) as unknown) as TestTocService;
     });
     it('should create c', () => {
@@ -66,19 +60,19 @@ describe('TocComponent', () => {
       it('should not display anything when no h2 or h3 TocItems', () => {
         toc.tocList.next([tocItem('H1', 'h1')]);
         f.detectChanges();
-        expect(tocComponentDe.children.length).toEqual(0);
+        expect(de.children.length).toEqual(0);
       });
       it('should update when the TocItems are updated', () => {
         toc.tocList.next([tocItem('Heading A')]);
         f.detectChanges();
-        expect(tocComponentDe.queryAll(By.css('li')).length).toBe(1);
+        expect(de.queryAll(By.css('li')).length).toBe(1);
         toc.tocList.next([
           tocItem('Heading A'),
           tocItem('Heading B'),
           tocItem('Heading C')
         ]);
         f.detectChanges();
-        expect(tocComponentDe.queryAll(By.css('li')).length).toBe(3);
+        expect(de.queryAll(By.css('li')).length).toBe(3);
       });
       it('should only display H2 and H3 TocItems', () => {
         toc.tocList.next([
@@ -87,20 +81,18 @@ describe('TocComponent', () => {
           tocItem('Heading C', 'h3')
         ]);
         f.detectChanges();
-        const tocItems = tocComponentDe.queryAll(By.css('li'));
-        const textContents = tocItems.map(item =>
-          item.nativeNode.textContent.trim()
-        );
-        expect(tocItems.length).toBe(2);
-        expect(textContents.find(text => text === 'Heading A')).toBeFalsy();
-        expect(textContents.find(text => text === 'Heading B')).toBeTruthy();
-        expect(textContents.find(text => text === 'Heading C')).toBeTruthy();
+        const ts = de.queryAll(By.css('li'));
+        const tc = ts.map(i => i.nativeNode.textContent.trim());
+        expect(ts.length).toBe(2);
+        expect(tc.find(t => t === 'Heading A')).toBeFalsy();
+        expect(tc.find(t => t === 'Heading B')).toBeTruthy();
+        expect(tc.find(t => t === 'Heading C')).toBeTruthy();
         expect(setPage().tocH1Heading).toBeFalsy();
       });
       it('should stop listening for TocItems once destroyed', () => {
         toc.tocList.next([tocItem('Heading A')]);
         f.detectChanges();
-        expect(tocComponentDe.queryAll(By.css('li')).length).toBe(1);
+        expect(de.queryAll(By.css('li')).length).toBe(1);
         c.ngOnDestroy();
         toc.tocList.next([
           tocItem('Heading A', 'h1'),
@@ -108,7 +100,7 @@ describe('TocComponent', () => {
           tocItem('Heading C')
         ]);
         f.detectChanges();
-        expect(tocComponentDe.queryAll(By.css('li')).length).toBe(1);
+        expect(de.queryAll(By.css('li')).length).toBe(1);
       });
       describe('when fewer than `maxPrimary` TocItems', () => {
         beforeEach(() => {
@@ -125,7 +117,7 @@ describe('TocComponent', () => {
           expect(page.listItems.length).toEqual(4);
         });
         it('should not have secondary items', () => {
-          expect(c.type).toEqual('EmbeddedSimple');
+          expect(c.type).toEqual('Embedded');
           const aSecond = page.listItems.find(item => item.classes.secondary);
           expect(aSecond).toBeFalsy('should not find a secondary');
         });
@@ -138,13 +130,13 @@ describe('TocComponent', () => {
       });
 
       describe('when many TocItems', () => {
-        let spy: jasmine.Spy;
+        let spy: any;
         beforeEach(() => {
           f.detectChanges();
           page = setPage();
           spy = ((TestBed.inject(
             ScrollService
-          ) as unknown) as TestScrollService).scrollToTop;
+          ) as unknown) as TestScrollService).toTop;
         });
         it('should have more than 4 displayed items', () => {
           expect(page.listItems.length).toBeGreaterThan(4);
@@ -154,23 +146,22 @@ describe('TocComponent', () => {
             'should not find h1 item'
           );
         });
-        it('should be in "collapsed" (not expanded) state at the start', () => {
+        it('should be in collapsed state at start', () => {
           expect(c.isCollapsed).toBeTruthy();
         });
-        it('should have "collapsed" class at the start', () => {
-          expect(tocComponentDe.children[0].classes.collapsed).toEqual(true);
+        it('should have "collapsed" class at start', () => {
+          expect(de.children[0].classes.collapsed).toEqual(true);
         });
-        it('should display expando buttons', () => {
+        it('should display expand buttons', () => {
           expect(page.tocHeadingButtonEmbedded).toBeTruthy(
             'top expand/collapse button'
           );
           expect(page.tocMoreButton).toBeTruthy('bottom more button');
         });
         it('should have secondary items', () => {
-          expect(c.type).toEqual('EmbeddedExpandable');
+          expect(c.type).toEqual('Expandable');
         });
-        // CSS will hide items with the secondary class when collapsed
-        it('should have secondary item with a secondary class', () => {
+        it('should have secondary item with secondary class', () => {
           const aSecondary = page.listItems.find(
             item => item.classes.secondary
           );
@@ -186,7 +177,7 @@ describe('TocComponent', () => {
             expect(c.isCollapsed).toEqual(false);
           });
           it('should not have "collapsed" class', () => {
-            expect(tocComponentDe.children[0].classes.collapsed).toBeFalsy();
+            expect(de.children[0].classes.collapsed).toBeFalsy();
           });
           it('should not scroll', () => {
             expect(spy).not.toHaveBeenCalled();
@@ -212,7 +203,7 @@ describe('TocComponent', () => {
             expect(c.isCollapsed).toEqual(false);
           });
           it('should not have "collapsed" class', () => {
-            expect(tocComponentDe.children[0].classes.collapsed).toBeFalsy();
+            expect(de.children[0].classes.collapsed).toBeFalsy();
           });
           it('should not scroll', () => {
             expect(spy).not.toHaveBeenCalled();
@@ -238,11 +229,11 @@ describe('TocComponent', () => {
   });
 
   describe('when in side panel (not embedded)', () => {
-    let f: ComponentFixture<HostNotEmbeddedTocComponent>;
+    let f: ComponentFixture<UnembeddedTocComp>;
     beforeEach(() => {
-      f = TestBed.createComponent(HostNotEmbeddedTocComponent);
-      tocComponentDe = f.debugElement.children[0];
-      c = tocComponentDe.componentInstance;
+      f = TestBed.createComponent(UnembeddedTocComp);
+      de = f.debugElement.children[0];
+      c = de.componentInstance;
       toc = (TestBed.inject(TocService) as unknown) as TestTocService;
       f.detectChanges();
       page = setPage();
@@ -253,14 +244,14 @@ describe('TocComponent', () => {
       expect(c.type).toEqual('Floating');
     });
     it('should display all items (including h1s)', () => {
-      expect(page.listItems.length).toEqual(getTestTocList().length);
+      expect(page.listItems.length).toEqual(tocList().length);
     });
     it('should not have secondary items', () => {
       expect(c.type).toEqual('Floating');
       const aSecond = page.listItems.find(item => item.classes.secondary);
       expect(aSecond).toBeFalsy('should not find a secondary');
     });
-    it('should not display expando buttons', () => {
+    it('should not display expand buttons', () => {
       expect(page.tocHeadingButtonEmbedded).toBeFalsy(
         'top expand/collapse button'
       );
@@ -270,43 +261,43 @@ describe('TocComponent', () => {
       expect(page.tocH1Heading).toBeTruthy();
     });
 
-    describe('#activeIndex', () => {
-      it("should keep track of `TocService`'s `activeItemIndex`", () => {
-        expect(c.activeIndex).toBeNull();
-        toc.setActiveIndex(42);
-        expect(c.activeIndex).toBe(42);
-        toc.setActiveIndex(null);
-        expect(c.activeIndex).toBeNull();
+    describe('#index', () => {
+      it("should keep track of `TocService`'s `index`", () => {
+        expect(c.index).toBeNull();
+        toc.setIndex(42);
+        expect(c.index).toBe(42);
+        toc.setIndex(null);
+        expect(c.index).toBeNull();
       });
-      it('should stop tracking `activeItemIndex` once destroyed', () => {
-        toc.setActiveIndex(42);
-        expect(c.activeIndex).toBe(42);
+      it('should stop tracking `index` once destroyed', () => {
+        toc.setIndex(42);
+        expect(c.index).toBe(42);
         c.ngOnDestroy();
-        toc.setActiveIndex(43);
-        expect(c.activeIndex).toBe(42);
-        toc.setActiveIndex(null);
-        expect(c.activeIndex).toBe(42);
+        toc.setIndex(43);
+        expect(c.index).toBe(42);
+        toc.setIndex(null);
+        expect(c.index).toBe(42);
       });
 
-      it('should set the `active` class to the active anchor (and only that)', () => {
+      it('should set `active` class to active anchor', () => {
         expect(page.listItems.findIndex(By.css('.active'))).toBe(-1);
-        c.activeIndex = 1;
+        c.index = 1;
         f.detectChanges();
         expect(page.listItems.filter(By.css('.active')).length).toBe(1);
         expect(page.listItems.findIndex(By.css('.active'))).toBe(1);
-        c.activeIndex = null;
+        c.index = null;
         f.detectChanges();
         expect(page.listItems.filter(By.css('.active')).length).toBe(0);
         expect(page.listItems.findIndex(By.css('.active'))).toBe(-1);
-        c.activeIndex = 0;
+        c.index = 0;
         f.detectChanges();
         expect(page.listItems.filter(By.css('.active')).length).toBe(1);
         expect(page.listItems.findIndex(By.css('.active'))).toBe(0);
-        c.activeIndex = 1337;
+        c.index = 1337;
         f.detectChanges();
         expect(page.listItems.filter(By.css('.active')).length).toBe(0);
         expect(page.listItems.findIndex(By.css('.active'))).toBe(-1);
-        c.activeIndex = page.listItems.length - 1;
+        c.index = page.listItems.length - 1;
         f.detectChanges();
         expect(page.listItems.filter(By.css('.active')).length).toBe(1);
         expect(page.listItems.findIndex(By.css('.active'))).toBe(
@@ -314,83 +305,83 @@ describe('TocComponent', () => {
         );
       });
 
-      it('should re-apply the `active` class when the list elements change', () => {
-        const getActiveTextContent = () =>
+      it('should re-apply `active` class when list elements change', () => {
+        const t = () =>
           page.listItems
-            .find(By.css('.active'))
+            .find(By.css('.active'))!
             .nativeElement.textContent.trim();
-        c.activeIndex = 1;
+        c.index = 1;
         f.detectChanges();
-        expect(getActiveTextContent()).toBe('Heading one');
+        expect(t()).toBe('Heading one');
         c.tocList = [tocItem('New 1'), tocItem('New 2')];
         f.detectChanges();
         page = setPage();
-        expect(getActiveTextContent()).toBe('New 2');
+        expect(t()).toBe('New 2');
         c.tocList.unshift(tocItem('New 0'));
         f.detectChanges();
         page = setPage();
-        expect(getActiveTextContent()).toBe('New 1');
+        expect(t()).toBe('New 1');
         c.tocList = [tocItem('Very New 1')];
         f.detectChanges();
         page = setPage();
         expect(page.listItems.findIndex(By.css('.active'))).toBe(-1);
-        c.activeIndex = 0;
+        c.index = 0;
         f.detectChanges();
-        expect(getActiveTextContent()).toBe('Very New 1');
+        expect(t()).toBe('Very New 1');
       });
 
-      describe('should scroll the active ToC item into viewport (if not already visible)', () => {
-        let parentScrollTop: number;
+      describe('should scroll active ToC item into viewport', () => {
+        let pst: number;
         beforeEach(() => {
-          const hostElem = f.nativeElement;
-          const firstItem = page.listItems[0].nativeElement;
-          Object.assign(hostElem.style, {
+          const e = f.nativeElement;
+          const i = page.listItems[0].nativeElement;
+          Object.assign(e.style, {
             display: 'block',
-            maxHeight: `${hostElem.clientHeight - firstItem.clientHeight}px`,
+            maxHeight: `${e.clientHeight - i.clientHeight}px`,
             overflow: 'auto',
             position: 'relative'
           });
-          Object.defineProperty(hostElem, 'scrollTop', {
-            get: () => parentScrollTop,
-            set: v => (parentScrollTop = v)
+          Object.defineProperty(e, 'scrollTop', {
+            get: () => pst,
+            set: v => (pst = v)
           });
-          parentScrollTop = 0;
+          pst = 0;
         });
-        it('when the `activeIndex` changes', () => {
-          toc.setActiveIndex(0);
+        it('when `index` changes', () => {
+          toc.setIndex(0);
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
-          toc.setActiveIndex(1);
+          expect(pst).toBe(0);
+          toc.setIndex(1);
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
-          toc.setActiveIndex(page.listItems.length - 1);
+          expect(pst).toBe(0);
+          toc.setIndex(page.listItems.length - 1);
           f.detectChanges();
-          expect(parentScrollTop).toBeGreaterThan(0);
+          expect(pst).toBeGreaterThan(0);
         });
-        it('when the `tocList` changes', () => {
-          const tocList = c.tocList;
+        it('when `tocList` changes', () => {
+          const tl = c.tocList;
           c.tocList = [];
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
-          toc.setActiveIndex(tocList.length - 1);
+          expect(pst).toBe(0);
+          toc.setIndex(tocList.length - 1);
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
-          c.tocList = tocList;
+          expect(pst).toBe(0);
+          c.tocList = tl;
           f.detectChanges();
-          expect(parentScrollTop).toBeGreaterThan(0);
+          expect(pst).toBeGreaterThan(0);
         });
         it('not after it has been destroyed', () => {
-          const tocList = c.tocList;
+          const tl = c.tocList;
           c.ngOnDestroy();
-          toc.setActiveIndex(page.listItems.length - 1);
+          toc.setIndex(page.listItems.length - 1);
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
+          expect(pst).toBe(0);
           c.tocList = [];
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
-          c.tocList = tocList;
+          expect(pst).toBe(0);
+          c.tocList = tl;
           f.detectChanges();
-          expect(parentScrollTop).toBe(0);
+          expect(pst).toBe(0);
         });
       });
     });
@@ -401,24 +392,24 @@ describe('TocComponent', () => {
   selector: 'qnr-embedded-host',
   template: '<qnr-toc class="embedded"></qnr-toc>'
 })
-class HostEmbeddedTocComponent {}
+class EmbeddedTocComp {}
 
 @Component({
   selector: 'qnr-not-embedded-host',
   template: '<qnr-toc></qnr-toc>'
 })
-class HostNotEmbeddedTocComponent {}
+class UnembeddedTocComp {}
 
 class TestScrollService {
-  scrollToTop = jasmine.createSpy('scrollToTop');
+  toTop = jasmine.createSpy('toTop');
 }
 
 class TestTocService {
-  tocList = new BehaviorSubject<TocItem[]>(getTestTocList());
-  activeItemIndex = new BehaviorSubject<number | null>(null);
+  tocList = new BehaviorSubject<TocItem[]>(tocList());
+  index = new BehaviorSubject<number | null>(null);
 
-  setActiveIndex(index: number | null) {
-    this.activeItemIndex.next(index);
+  setIndex(i: number | null) {
+    this.index.next(i);
     if (asapScheduler.actions.length > 0) {
       asapScheduler.flush();
     }
@@ -429,7 +420,7 @@ function tocItem(title: string, level = 'h2', href = '', content = title) {
   return {title, href, level, content};
 }
 
-function getTestTocList() {
+function tocList() {
   return [
     tocItem('Title', 'h1', 'fizz/buzz#title', 'Title'),
     tocItem(

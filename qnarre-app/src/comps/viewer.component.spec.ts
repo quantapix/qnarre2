@@ -6,9 +6,9 @@ import {Observable, asapScheduler, of} from 'rxjs';
 
 import {FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs.service';
 import {LoggerService} from '../services/logger.service';
-import {ElementsModule} from '../elems/elems.module';
+import {ElemsModule} from '../elems/elems.module';
 import {TocService} from '../services/toc.service';
-import {ElementsLoader} from '../elems/loader';
+import {ElemsLoader} from '../elems/loader';
 import {
   MockTitle,
   MockTocService,
@@ -16,7 +16,7 @@ import {
   TestViewerComponent,
   TestModule,
   TestParentComponent,
-  MockElementsLoader
+  MockElemsLoader
 } from '../testing/viewer';
 import {MockLogger} from '../testing/logger.service';
 import {ViewerComponent, NO_ANIMATIONS} from './viewer.component';
@@ -32,7 +32,7 @@ describe('ViewerComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [ElementsModule, TestModule]
+      imports: [ElemsModule, TestModule]
     });
     parentFixture = TestBed.createComponent(TestParentComponent);
     parent = parentFixture.componentInstance;
@@ -270,10 +270,10 @@ describe('ViewerComponent', () => {
     const doRender = (contents: string | null, id = 'foo') =>
       viewer.render({contents, id}).toPromise();
     beforeEach(() => {
-      const elementsLoader = (TestBed.inject(ElementsLoader) as Partial<
-        ElementsLoader
-      >) as MockElementsLoader;
-      loadElementsSpy = elementsLoader.loadContainedCustomElements.and.callFake(
+      const ElemsLoader = (TestBed.inject(ElemsLoader) as Partial<
+        ElemsLoader
+      >) as MockElemsLoader;
+      loadElementsSpy = ElemsLoader.loadContainedCustomElements.and.callFake(
         () => of(undefined)
       );
       prep = spyOn(viewer, 'prepare');

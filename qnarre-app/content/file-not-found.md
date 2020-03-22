@@ -7,4 +7,4 @@
         <p>We're sorry. The page you are looking for cannot be found.</p>
     </div>
 </div>
-<qnr-file-not-found-search></qnr-file-not-found-search>
+<qnr-not-found></qnr-not-found>

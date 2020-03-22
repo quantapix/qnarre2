@@ -3,7 +3,7 @@
   "parserOptions": {
     "ecmaVersion": 2020,
     "sourceType": "module",
-    "tsconfigRootDir": "/Users/qpix/clone/qnr-dev/qnarre-ng",
+    "tsconfigRootDir": "/Users/qpix/clone/qnarre2/qnarre-app",
     "project": ["./tsconfig.json"]
   },
   "plugins": ["@typescript-eslint", "prettier"],
