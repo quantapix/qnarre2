@@ -4,7 +4,7 @@ import {Injectable} from '@angular/core';
 import {Ndata, Ldata, ForceGraph} from './model';
 
 @Injectable()
-export class SceneService {
+export class SceneServ {
   applyZoomable(selem: any, celem: any) {
     const svg = d3.select(selem);
     const c = d3.select(celem);

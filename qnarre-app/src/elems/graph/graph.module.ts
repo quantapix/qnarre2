@@ -4,7 +4,7 @@ import {CommonModule} from '@angular/common';
 import {WithElem} from '../registry';
 import {MinimapComponent} from './minimap.component';
 import {SceneComponent} from './scene.component';
-import {GraphComponent} from './graph.component';
+import {GraphComp} from './graph.component';
 import {AppComponent} from './app.component';
 import {BoardComponent} from './board.component';
 import {ControlsComponent} from './controls.component';
@@ -33,7 +33,7 @@ import {QnarreComponent} from './qnarre.component';
   declarations: [
     MinimapComponent,
     SceneComponent,
-    GraphComponent,
+    GraphComp,
     AppComponent,
     BoardComponent,
     ControlsComponent,

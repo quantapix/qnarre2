@@ -1,6 +1,6 @@
 import {Directive, Input, ElementRef, OnInit} from '@angular/core';
 
-import {SceneService} from './scene.service';
+import {SceneServ} from './scene.serv';
 
 @Directive({
   selector: '[zoomableOf]'
@@ -8,7 +8,7 @@ import {SceneService} from './scene.service';
 export class ZoomableDirective implements OnInit {
   @Input('zoomableOf') zoomableOf = {} as ElementRef;
 
-  constructor(private scene: SceneService, private elem: ElementRef) {}
+  constructor(private scene: SceneServ, private elem: ElementRef) {}
 
   ngOnInit() {
     this.scene.applyZoomable(this.zoomableOf, this.elem.nativeElement);

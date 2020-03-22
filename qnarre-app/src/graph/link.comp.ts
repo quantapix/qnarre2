@@ -12,8 +12,8 @@ import {Ldata} from './model';
       [attr.y2]="link.ns[1].y"
     ></svg:line>
   `,
-  styleUrls: ['./link.component.scss']
+  styleUrls: ['./link.comp.scss']
 })
-export class LinkComponent {
+export class LinkComp {
   @Input('linkVisual') link = {} as Ldata;
 }

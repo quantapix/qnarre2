@@ -7,7 +7,7 @@ import {
   OnInit,
   AfterViewInit
 } from '@angular/core';
-import {SceneService} from './scene.service';
+import {SceneServ} from './scene.serv';
 import {Ndata, Ldata, ForceGraph} from './model';
 
 @Component({
@@ -26,15 +26,15 @@ import {Ndata, Ldata, ForceGraph} from './model';
       </g>
     </svg>
   `,
-  styleUrls: ['./graph.component.scss']
+  styleUrls: ['./graph.comp.scss']
 })
-export class GraphComponent implements OnInit, AfterViewInit {
+export class GraphComp implements OnInit, AfterViewInit {
   @Input('nodes') nodes = [] as Ndata[];
   @Input('links') links = [] as Ldata[];
   opts = {w: 800, h: 600};
   graph?: ForceGraph;
 
-  constructor(private scene: SceneService, private ref: ChangeDetectorRef) {}
+  constructor(private scene: SceneServ, private ref: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.graph = this.scene.getForceGraph(this.nodes, this.links, this.opts);

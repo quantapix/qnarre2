@@ -15,15 +15,15 @@ import {AppRoutingModule} from './app-routing.module';
 import {AuthModule} from './auth/auth.module';
 import {HeroesModule} from './heroes/heroes.module';
 
-import {GraphComponent} from '../graph/graph.component';
-import {LinkComponent} from '../graph/link.component';
-import {NodeComponent} from '../graph/node.component';
+import {GraphComp} from '../graph/graph.comp';
+import {LinkComp} from '../graph/link.comp';
+import {NodeComp} from '../graph/node.comp';
 
-import {DraggableDirective} from '../graph/draggable.directive';
-import {ZoomableDirective} from '../graph/zoomable.directive';
+import {DraggableDirective} from '../graph/draggable.comp';
+import {ZoomableDirective} from '../graph/zoomable.comp';
 
 import {DataService} from '../graph/data.service';
-import {SceneService} from '../graph/scene.service';
+import {SceneServ} from '../graph/scene.serv';
 
 @NgModule({
   imports: [
@@ -38,14 +38,14 @@ import {SceneService} from '../graph/scene.service';
   declarations: [
     AppComponent,
     ComposeMessageComponent,
-    GraphComponent,
-    LinkComponent,
-    NodeComponent,
+    GraphComp,
+    LinkComp,
+    NodeComp,
     DraggableDirective,
     ZoomableDirective,
     PageNotFoundComponent
   ],
-  providers: [DataService, SceneService],
+  providers: [DataService, SceneServ],
   bootstrap: [AppComponent]
 })
 export class AppModule {

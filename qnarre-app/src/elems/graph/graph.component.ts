@@ -13,7 +13,7 @@ import * as qu from './util';
   templateUrl: './templates/graph.component.html',
   styleUrls: ['./styles/graph.component.scss']
 })
-export class GraphComponent implements OnInit {
+export class GraphComp implements OnInit {
   title: string;
   graph: any;
   stats: any;

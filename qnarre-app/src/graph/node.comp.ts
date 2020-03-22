@@ -17,8 +17,8 @@ import {Ndata} from './model';
       </svg:text>
     </svg:g>
   `,
-  styleUrls: ['./node.component.scss']
+  styleUrls: ['./node.comp.scss']
 })
-export class NodeComponent {
+export class NodeComp {
   @Input('nodeVisual') node = {} as Ndata;
 }
