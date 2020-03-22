@@ -63,6 +63,21 @@ export interface Opts extends qg.Opts {
   ranksep: number;
 }
 
+export interface NormInput {
+  name: string;
+  outKey: string;
+  isCtrlDep: boolean;
+}
+
+export interface BuildParams {
+  enableEmbed: boolean;
+  inEmbedTypes: string[];
+  outEmbedTypes: string[];
+  refEdges: qt.Dict<boolean>;
+}
+
+export type EdgeShape = number[];
+
 export interface EdgeObject {
   v: string;
   w: string;
@@ -75,75 +90,6 @@ export interface BaseEdge extends EdgeObject {
   isControlDep: boolean;
 }
 
-export interface NormInput {
-  name: string;
-  outKey: string;
-  isControlDep: boolean;
-}
-
-export interface BuildParams {
-  enableEmbed: boolean;
-  inEmbedTypes: string[];
-  outEmbedTypes: string[];
-  refEdges: qt.Dict<boolean>;
-}
-
-export interface Node {
-  name: string;
-  type: NodeType;
-  isGroup: boolean;
-  cardinality: number;
-  parent?: Node;
-  stats?: NodeStats;
-  include?: IncludeType;
-  attributes: qt.Dict<any>;
-}
-
-export interface BridgeNode extends Node {
-  inbound: boolean;
-}
-
-export interface EllipsisNode extends Node {
-  countMore: number;
-  setCountMore(count: number): void;
-}
-
-export type EdgeShape = number[];
-
-export interface OpNode extends Node {
-  op: string;
-  device?: string;
-  cluster?: string;
-  series?: string;
-  attr: {key: string; value: any}[];
-  ins: NormInput[];
-  outShapes: qt.Dict<EdgeShape>;
-  inEmbeds: OpNode[];
-  outEmbeds: OpNode[];
-  compatible: boolean;
-  fInputIdx?: number;
-  fOutputIdx?: number;
-}
-
-export interface GroupNode extends Node {
-  metag: Graph<GroupNode | OpNode, MetaEdge>;
-  bridgeg?: Graph<GroupNode | OpNode, MetaEdge>;
-  deviceHisto: qt.Dict<number>;
-  clusterHisto: qt.Dict<number>;
-  compatHisto: {compatible: number; incompatible: number};
-  noControlEdges: boolean;
-}
-
-export interface MetaNode extends GroupNode {
-  depth: number;
-  template?: string;
-  opHistogram: qt.Dict<number>;
-  assocFn?: string;
-  getFirstChild(): GroupNode | OpNode;
-  getRootOp(): OpNode;
-  leaves(): string[];
-}
-
 export interface MetaEdge extends EdgeObject {
   bases: BaseEdge[];
   inbound?: boolean;
@@ -154,35 +100,9 @@ export interface MetaEdge extends EdgeObject {
   addBase(e: BaseEdge, h: Hierarchy): void;
 }
 
-export interface SeriesNode extends GroupNode {
-  hasLoop: boolean;
-  prefix: string;
-  suffix: string;
-  parentName: string;
-  cluster: number;
-  ids: number[];
-}
-
 export interface LibraryFn {
   node: MetaNode;
   usages: Node[];
-}
-
-export class SlimGraph {
-  nodes = {} as qt.Dict<OpNode>;
-  edges = [] as BaseEdge[];
-  addEdge(src: string, dst: OpNode, ni: NormInput, ps: BuildParams, i: number) {
-    if (src !== dst.name) {
-      const isRef = ps.refEdges[dst.op + ' ' + i] === true;
-      this.edges.push({
-        v: src,
-        w: dst.name,
-        outKey: ni.outKey,
-        isControlDep: ni.isControlDep,
-        isRef
-      });
-    }
-  }
 }
 
 export interface Edges {
@@ -242,7 +162,7 @@ export const Class = {
     SELECTED: 'selectededge',
     STRUCTURAL: 'structural'
   },
-  Annotation: {
+  Anno: {
     OUTBOX: 'out-annotations',
     INBOX: 'in-annotations',
     GROUP: 'annotation',

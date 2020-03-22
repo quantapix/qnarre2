@@ -9,7 +9,18 @@ export interface Gdata extends qt.Opts {
   type: string | number;
 }
 
-export function createGraph<G extends Gdata, N, E>(
+export interface Ndata {
+  name: string;
+  type: qt.NodeType;
+  isGroup: boolean;
+  cardinality: number;
+  parent?: Ndata;
+  stats?: qt.NodeStats;
+  include?: boolean;
+  attrs: qt.Dict<any>;
+}
+
+export function createGraph<G extends Gdata, N extends Ndata, E>(
   name: string,
   type: string | number,
   opts = {} as qt.Opts
@@ -23,35 +34,38 @@ export function createGraph<G extends Gdata, N, E>(
   return g;
 }
 
-export class EllipsisNode implements qt.EllipsisNode {
+export class EllipsisN implements Ndata {
   name = '';
   type = qt.NodeType.ELLIPSIS;
   isGroup = false;
   cardinality = 1;
-  parent?: qt.Node;
+  parent?: Ndata;
   stats?: qt.NodeStats;
-  include?: qt.InclusionType;
-  attributes = {} as qt.Dict<any>;
-  countMore = 0;
-  constructor(count: number) {
-    this.setCountMore(count);
+  include?: boolean;
+  attrs = {} as qt.Dict<any>;
+  more = 0;
+  constructor(m: number) {
+    this.setMore(m);
   }
-
-  setCountMore(c: number) {
-    this.countMore = c;
-    this.name = '... ' + c + ' more';
+  setMore(m: number) {
+    this.more = m;
+    this.name = '... ' + m + ' more';
   }
 }
 
-export class OpNode implements qt.OpNode {
+export interface BridgeN extends Ndata {
+  inbound: boolean;
+}
+
+export class OpN implements Ndata {
   name: string;
   type = qt.NodeType.OP;
   isGroup = false;
   cardinality = 1;
-  parent?: qt.Node;
+  parent?: Ndata;
   stats?: qt.NodeStats;
-  include?: qt.InclusionType;
-  attributes = {} as qt.Dict<any>;
+  include?: boolean;
+  attrs = {} as qt.Dict<any>;
   op: string;
   device?: string;
   cluster?: string;
@@ -59,40 +73,34 @@ export class OpNode implements qt.OpNode {
   attr: {key: string; value: any}[];
   ins: qt.NormInput[];
   outShapes: qt.Dict<qt.EdgeShape>;
-  inEmbeds: qt.OpNode[] = [];
-  outEmbeds: qt.OpNode[] = [];
+  inEmbeds = [] as OpN[];
+  outEmbeds = [] as OpN[];
   compatible = false;
   fInputIdx?: number;
   fOutputIdx?: number;
-  constructor(def: proto.NodeDef) {
-    this.name = def.name;
-    this.op = def.op;
-    this.device = def.device;
-    this.cluster = extractCluster(def.attr);
-    this.attr = def.attr;
-    this.ins = normalizeIns(def.input);
-    this.outShapes = extractShapes(def.attr);
+  constructor(d: proto.NodeDef) {
+    this.name = d.name;
+    this.op = d.op;
+    this.device = d.device;
+    this.cluster = extractCluster(d.attr);
+    this.attr = d.attr;
+    this.ins = normIns(d.input);
+    this.outShapes = extractShapes(d.attr);
   }
 }
 
-function extractCluster(
-  pairs: Array<{key: string; value: any}>
-): string | undefined {
-  for (let i = 0; i < pairs.length; i++) {
-    if (pairs[i].key === '_cluster') {
-      return pairs[i].value['s'];
-    }
+function extractCluster(ps: Array<{key: string; value: any}>) {
+  for (let i = 0; i < ps.length; i++) {
+    if (ps[i].key === '_cluster') return ps[i].value['s'] as string;
   }
   return undefined;
 }
 
-function normalizeIns(ins: string[]): qt.NormInput[] {
+function normIns(ins: string[]) {
   const ns = [] as qt.NormInput[];
-  _.each(ins, i => {
-    const isControlDep = i.startsWith('^');
-    if (isControlDep) {
-      i = i.substring(1);
-    }
+  ins.forEach(i => {
+    const isCtrlDep = i.startsWith('^');
+    if (isCtrlDep) i = i.substring(1);
     let name = i;
     let outKey = '0';
     let m = i.match(/(.*):(\w+:\d+)$/);
@@ -107,17 +115,17 @@ function normalizeIns(ins: string[]): qt.NormInput[] {
       }
     }
     if (ns.length === 0 || name !== ns[ns.length - 1].name) {
-      ns.push({name, outKey, isControlDep});
+      ns.push({name, outKey, isCtrlDep});
     }
   });
   return ns;
 }
 
 function extractShapes(
-  pairs: Array<{key: string; value: any}>
+  ps: Array<{key: string; value: any}>
 ): qt.Dict<qt.EdgeShape> {
-  for (let i = 0; i < pairs.length; i++) {
-    const {key, value} = pairs[i];
+  for (let i = 0; i < ps.length; i++) {
+    const {key, value} = ps[i];
     if (key === '_output_shapes') {
       const r = value.list.shape.map((s: any) => {
         if (s.unknown_rank) return undefined;
@@ -126,61 +134,69 @@ function extractShapes(
         }
         return s.dim.map((d: {size: number}) => d.size);
       });
-      pairs.splice(i, 1);
+      ps.splice(i, 1);
       return r;
     }
   }
   return {};
 }
 
-export class MetaNode implements qt.MetaNode {
+export interface GroupN extends Ndata {
+  meta: qt.Graph<Gdata, GroupN | OpN, MetaE>;
+  bridge?: qt.Graph<Gdata, GroupN | OpN, MetaE>;
+  deviceHisto: qt.Dict<number>;
+  clusterHisto: qt.Dict<number>;
+  compatHisto: {compats: number; incompats: number};
+  noCtrlEdges?: boolean;
+}
+
+export class MetaN implements GroupN {
   name: string;
   type = qt.NodeType.META;
   isGroup = true;
   cardinality = 0;
-  parent?: qt.Node;
+  parent?: Ndata;
   stats?: qt.NodeStats;
-  include?: qt.InclusionType;
-  attributes = {} as qt.Dict<any>;
-  metag: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>;
-  bridgeg?: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>;
+  include?: boolean;
+  attrs = {} as qt.Dict<any>;
+  meta: qt.Graph<Gdata, GroupN | OpN, MetaE>;
+  bridge?: qt.Graph<Gdata, GroupN | OpN, MetaE>;
   deviceHisto = {} as qt.Dict<number>;
   clusterHisto = {} as qt.Dict<number>;
-  compatHisto: {compatible: number; incompatible: number};
-  noControlEdges = false;
+  compatHisto: {compats: number; incompats: number};
   depth = 1;
   template?: string;
-  opHistogram = {} as qt.Dict<number>;
+  opHisto = {} as qt.Dict<number>;
   assocFn?: string;
 
-  constructor(name: string, opt = {}) {
+  constructor(name: string, opt = {} as qt.Opts) {
     this.name = name;
-    this.metag = createGraph<qt.GroupNode | qt.OpNode, qt.MetaEdge>(
+    this.meta = createGraph<Gdata, GroupN | OpN, MetaE>(
       name,
       qt.GraphType.META,
       opt
     );
-    this.compatHisto = {compatible: 0, incompatible: 0};
+    this.compatHisto = {compats: 0, incompats: 0};
   }
 
-  getFirstChild() {
-    return this.metag.node(this.metag.nodes()[0]);
+  firstChild() {
+    return this.meta.node(this.meta.nodes()[0]);
   }
 
-  getRootOp() {
+  rootOp() {
     const s = this.name.split('/');
-    const root = this.name + '/(' + s[s.length - 1] + ')';
-    return this.metag.node(root) as qt.OpNode;
+    const r = this.name + '/(' + s[s.length - 1] + ')';
+    return this.meta.node(r) as OpN;
   }
 
   leaves() {
     const ls = [] as string[];
-    const queue = [this] as qt.Node[];
-    while (queue.length) {
-      const n = queue.shift()!;
+    const q = [this] as Ndata[];
+    while (q.length) {
+      const n = q.shift()!;
       if (n.isGroup) {
-        const m = (n as qt.GroupNode).metag;
-        _.each(m.nodes(), n => queue.push(m.node(n)));
+        const m = (n as GroupN).meta;
+        m.nodes().forEach(n => q.push(m.node(n)!));
       } else {
         ls.push(n.name);
       }
@@ -189,11 +205,7 @@ export class MetaNode implements qt.MetaNode {
   }
 }
 
-export function createMetaNode(name: string, opt = {}): qt.MetaNode {
-  return new MetaNode(name, opt);
-}
-
-export class MetaEdge implements qt.MetaEdge {
+export class MetaE implements qt.MetaEdge {
   v: string;
   w: string;
   bases: qt.BaseEdge[] = [];
@@ -224,7 +236,7 @@ export class MetaEdge implements qt.MetaEdge {
 }
 
 function sizeOfEdge(e: qt.BaseEdge, h: qt.Hierarchy) {
-  const n = h.node(e.v) as qt.OpNode;
+  const n = h.node(e.v) as OpN;
   if (!n.outShapes) return 1;
   h.hasShapeInfo = true;
   const vs = Object.keys(n.outShapes)
@@ -233,63 +245,40 @@ function sizeOfEdge(e: qt.BaseEdge, h: qt.Hierarchy) {
   return _.sum(vs);
 }
 
-export function createMetaEdge(v: string, w: string): qt.MetaEdge {
-  return new MetaEdge(v, w);
-}
-
-class SeriesNode implements qt.SeriesNode {
+export class SeriesN implements GroupN {
   name: string;
   type = qt.NodeType.SERIES;
   isGroup = true;
   cardinality = 0;
-  parent?: qt.Node;
+  parent?: Ndata;
   stats?: qt.NodeStats;
-  include?: qt.InclusionType;
-  attributes = {} as qt.Dict<any>;
-  metag: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>;
-  bridgeg?: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>;
+  include?: boolean;
+  attrs = {} as qt.Dict<any>;
+  meta: qt.Graph<Gdata, GroupN | OpN, MetaE>;
+  bridge?: qt.Graph<Gdata, GroupN | OpN, MetaE>;
   deviceHisto = {} as qt.Dict<number>;
   clusterHisto = {} as qt.Dict<number>;
-  compatHisto: {compatible: number; incompatible: number};
+  compatHisto: {compats: number; incompats: number};
   noControlEdges = false;
   hasLoop = false;
-  prefix: string;
-  suffix: string;
-  parentName: string;
-  cluster: number;
   ids = [] as number[];
 
   constructor(
-    prefix: string,
-    suffix: string,
-    parentName: string,
-    cluster: number,
+    public prefix: string,
+    public suffix: string,
+    public parentName: string,
+    public cluster: number,
     name: string,
-    options: qt.Opts
+    opt = {} as qt.Opts
   ) {
     this.name = name || getSeriesNodeName(prefix, suffix, parentName);
-    this.metag = createGraph<MetaNode, qt.MetaEdge>(
+    this.meta = createGraph<Gdata, MetaN, MetaE>(
       name,
       qt.GraphType.SERIES,
-      options
+      opt
     );
-    this.compatHisto = {compatible: 0, incompatible: 0};
-    this.prefix = prefix;
-    this.suffix = suffix;
-    this.parentName = parentName;
-    this.cluster = cluster;
+    this.compatHisto = {compats: 0, incompats: 0};
   }
-}
-
-export function createSeriesNode(
-  prefix: string,
-  suffix: string,
-  parent: string,
-  cluster: number,
-  name: string,
-  opts: qt.Opts
-): qt.SeriesNode {
-  return new SeriesNode(prefix, suffix, parent, cluster, name, opts);
 }
 
 export function getSeriesNodeName(
@@ -312,8 +301,31 @@ export function getStrictName(name: string) {
   return name + qp.NAMESPACE_DELIM + '(' + s[s.length - 1] + ')';
 }
 
+export class SlimGraph {
+  nodes = {} as qt.Dict<OpN>;
+  edges = [] as BaseEdge[];
+  addEdge(
+    src: string,
+    dst: OpN,
+    ni: qt.NormInput,
+    ps: qt.BuildParams,
+    i: number
+  ) {
+    if (src !== dst.name) {
+      const isRef = ps.refEdges[dst.op + ' ' + i] === true;
+      this.edges.push({
+        v: src,
+        w: dst.name,
+        outKey: ni.outKey,
+        isControlDep: ni.isCtrlDep,
+        isRef
+      });
+    }
+  }
+}
+
 export function mergeStats(
-  g: qt.SlimGraph,
+  g: SlimGraph,
   stats: proto.StepStats,
   devices?: qt.Dict<boolean>
 ) {
@@ -365,20 +377,20 @@ export async function build(
   def: proto.GraphDef,
   ps: qt.BuildParams,
   t: qu.Tracker
-): Promise<qt.SlimGraph> {
-  const inEmbed = {} as qt.Dict<qt.OpNode>;
-  const outEmbed = {} as qt.Dict<qt.OpNode>;
-  const outEmbeds = {} as qt.Dict<qt.OpNode[]>;
+): Promise<SlimGraph> {
+  const inEmbed = {} as qt.Dict<OpN>;
+  const outEmbed = {} as qt.Dict<OpN>;
+  const outEmbeds = {} as qt.Dict<OpN[]>;
   const isInPred = embedPredicate(ps.inEmbedTypes);
   const isOutPred = embedPredicate(ps.outEmbedTypes);
   const enames = [] as string[];
   const raws = def.node;
   const names = new Array<string>(raws.length);
   const nodes = await t.runAsyncTask('Normalizing names', 30, () => {
-    const ops = new Array<OpNode>(raws.length);
+    const ops = new Array<OpN>(raws.length);
     let i = 0;
     function processRaw(raw: proto.NodeDef) {
-      const o = new OpNode(raw);
+      const o = new OpN(raw);
       if (isInPred(o)) {
         enames.push(o.name);
         inEmbed[o.name] = o;
@@ -468,7 +480,7 @@ export async function build(
   });
   return t.runAsyncTask('Building the data structure', 70, () => {
     const norms = mapStrictHierarchy(names, enames);
-    const g = new qt.SlimGraph();
+    const g = new SlimGraph();
     _.each(nodes, n => {
       const nn = norms[n.name] || n.name;
       g.nodes[nn] = n;
@@ -503,7 +515,7 @@ export async function build(
 }
 
 function embedPredicate(types: string[]) {
-  return (n: qt.OpNode) => {
+  return (n: OpN) => {
     for (let i = 0; i < types.length; i++) {
       const re = new RegExp(types[i]);
       if (typeof n.op === 'string' && n.op.match(re)) return true;
@@ -541,8 +553,8 @@ function mapStrictHierarchy(names: string[], enames: string[]) {
 }
 
 export function areDegreesSimilar(
-  g1: qt.Graph<any, any>,
-  g2: qt.Graph<any, any>
+  g1: qt.Graph<any, any, any>,
+  g2: qt.Graph<any, any, any>
 ) {
   const ds1 = degrees(g1);
   const ds2 = degrees(g2);
@@ -554,10 +566,10 @@ export function areDegreesSimilar(
   return true;
 }
 
-function degrees(g: qt.Graph<any, any>) {
+function degrees(g: qt.Graph<any, any, any>) {
   return g
     .nodes()
-    .map(n => g.neighbors(n).length)
+    .map(n => g.neighbors(n)?.length)
     .sort();
 }
 
@@ -578,8 +590,8 @@ export function getHierarchicalPath(name: string, series?: qt.Dict<string>) {
   return p;
 }
 
-export function getIncludeNodeButtonString(inc: qt.InclusionType) {
-  if (inc === qt.InclusionType.EXCLUDE) {
+export function getIncludeNodeButtonString(inc?: boolean) {
+  if (!inc) {
     return 'Add to main graph';
   } else {
     return 'Remove from main graph';
