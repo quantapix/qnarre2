@@ -14,6 +14,8 @@ export interface ArrayLike<T> {
   item(i: number): T | undefined;
 }
 
+export type Dir = 'tb' | 'bt' | 'lr' | 'rl';
+
 export interface Point {
   x: number;
   y: number;

@@ -4,13 +4,22 @@ import * as qp from './params';
 import * as qt from './types';
 import * as qu from './util';
 
-export function createGraph<N, E>(
+export interface Gdata extends qt.Opts {
+  name: string;
+  type: string | number;
+}
+
+export function createGraph<G extends Gdata, N, E>(
   name: string,
   type: string | number,
-  opts?: qt.GraphOptions
+  opts = {} as qt.Opts
 ) {
-  const g = new qt.Graph<N, E>(opts);
-  g.setGraph({name, rankdir: opts?.rankdir ?? 'BT', type});
+  const g = new qt.Graph<G, N, E>(opts);
+  const d = opts as G;
+  d.name = name;
+  d.type = type;
+  d.rankdir = d.rankdir ?? 'bt';
+  g.setData(d);
   return g;
 }
 
@@ -256,7 +265,7 @@ class SeriesNode implements qt.SeriesNode {
     parentName: string,
     cluster: number,
     name: string,
-    options: qt.GraphOptions
+    options: qt.Opts
   ) {
     this.name = name || getSeriesNodeName(prefix, suffix, parentName);
     this.metag = createGraph<MetaNode, qt.MetaEdge>(
@@ -278,7 +287,7 @@ export function createSeriesNode(
   parent: string,
   cluster: number,
   name: string,
-  opts: qt.GraphOptions
+  opts: qt.Opts
 ): qt.SeriesNode {
   return new SeriesNode(prefix, suffix, parent, cluster, name, opts);
 }

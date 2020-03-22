@@ -17,13 +17,13 @@ class Hierarchy implements qt.Hierarchy {
   templates = {} as qt.Dict<qt.Template>;
   hasShapeInfo = false;
   maxMetaEdgeSize = 1;
-  options: qt.GraphOptions;
+  options: qt.Opts;
   orderings = {} as qt.Dict<qt.Dict<number>>;
   private index: qt.Dict<qt.GroupNode | qt.OpNode>;
 
-  constructor(options: qt.GraphOptions) {
+  constructor(options: qt.Opts) {
     this.options = options || {};
-    this.options.compound = true;
+    this.options.isCompound = true;
     this.root = qg.createMetaNode(qp.ROOT_NAME, this.options);
     this.index = {};
     this.index[qp.ROOT_NAME] = this.root;
@@ -483,7 +483,7 @@ function clusterNodes(g: Graph) {
   );
 }
 
-function detectBySuffixes(cl: Cluster, g: Graph, opts: qt.GraphOptions) {
+function detectBySuffixes(cl: Cluster, g: Graph, opts: qt.Opts) {
   const series = {} as qt.Dict<qt.SeriesNode>;
   _.each(cl, (ns, cluster: string) => {
     if (ns.length <= 1) return;
@@ -529,7 +529,7 @@ function detectBySuffixes(cl: Cluster, g: Graph, opts: qt.GraphOptions) {
   return series;
 }
 
-function detectSeries(cl: Cluster, g: Graph, opts: qt.GraphOptions) {
+function detectSeries(cl: Cluster, g: Graph, opts: qt.Opts) {
   const series = {} as qt.Dict<qt.SeriesNode>;
   _.each(cl, function(ns, cluster: string) {
     if (ns.length <= 1) return;
@@ -617,7 +617,7 @@ function addSeries(
   ns: qt.SeriesNode[],
   dict: qt.Dict<qt.SeriesNode>,
   cluster: number,
-  opts: qt.GraphOptions
+  opts: qt.Opts
 ) {
   if (ns.length > 1) {
     const name = qg.getSeriesNodeName(

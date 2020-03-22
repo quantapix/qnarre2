@@ -5,7 +5,7 @@ import * as qg from './graph';
 import * as qt from './types';
 
 export interface Gdata {
-  rankdir: string;
+  rankdir: qt.Dir;
 }
 export interface Ndata extends qg.Named, qt.Point, qt.Area {}
 export interface Edata extends qg.Named, qt.Point, qt.Area {
@@ -17,13 +17,13 @@ export interface Graph<G extends Gdata, N extends Ndata, E extends Edata>
 
 export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
   adjustCoords() {
-    const d = this.data?.rankdir.toLowerCase();
+    const d = this.data?.rankdir;
     if (d === 'lr' || d === 'rl') this.swapWH();
     return this;
   }
 
   undoCoords() {
-    const d = this.data!.rankdir.toLowerCase();
+    const d = this.data!.rankdir;
     if (d === 'bt' || d === 'rl') this.reverseY();
     if (d === 'lr' || d === 'rl') {
       this.swapXY();

@@ -1,52 +1,9 @@
-import * as proto from './proto';
+import * as qg from '../graph';
+import * as qt from '../types';
+import * as qp from './proto';
 
-export interface Dict<T> {
-  [k: string]: T;
-}
-
-export interface GraphOptions {
-  compound?: boolean;
-  name?: string;
-  rankdir?: 'TB' | 'BT' | 'LR' | 'RL';
-  type?: string | number;
-  ranksep?: number;
-  nodesep?: number;
-  edgesep?: number;
-}
-
-export interface EdgeObject {
-  v: string;
-  w: string;
-  name?: string;
-}
-
-export declare class Graph<N, E> {
-  constructor(opt?: any);
-  setNode(name: string, value?: N): void;
-  hasNode(name: string): boolean;
-  setEdge(fromName: string, toName: string, value?: E): void;
-  hasEdge(fromName: string, toName: string): boolean;
-  edge(fromName: string, toName: string): E;
-  edge(edgeObject: EdgeObject): E;
-  removeEdge(v: string, w: string): void;
-  nodes(): string[];
-  node(name: string): N;
-  setGraph(options: GraphOptions): void;
-  graph(): GraphOptions;
-  nodeCount(): number;
-  neighbors(name: string): string[];
-  successors(name: string): string[];
-  predecessors(name: string): string[];
-  edges(): EdgeObject[];
-  outEdges(name: string): E[];
-  inEdges(name: string): E[];
-  sources(): string[];
-  removeNode(name: string): void;
-  removeNode(name: string): Graph<N, E>;
-  setParent(name: string, parentName: string): void;
-}
-
-export declare const dagre: {layout(graph: Graph<any, any>): void};
+export {Dict, Dir} from '../types';
+export {Graph} from '../graph';
 
 export enum GraphType {
   FULL,
@@ -58,6 +15,7 @@ export enum GraphType {
   BRIDGE,
   EDGE
 }
+
 export enum NodeType {
   META,
   OP,
@@ -66,7 +24,7 @@ export enum NodeType {
   ELLIPSIS
 }
 
-export enum InclusionType {
+export enum IncludeType {
   INCLUDE,
   EXCLUDE
 }
@@ -76,16 +34,16 @@ export enum SeriesType {
   UNGROUP
 }
 
-export enum AnnotationType {
+export enum AnnoType {
   SHORTCUT,
   CONSTANT,
   SUMMARY,
   ELLIPSIS
 }
 
-export enum SelectionType {
+export enum SelectType {
   OP_GRAPH = 'op_graph',
-  CONCEPTUAL_GRAPH = 'conceptual_graph',
+  CONCEPT_GRAPH = 'concept_graph',
   PROFILE = 'profile'
 }
 
@@ -96,6 +54,19 @@ export enum ColorBy {
   TIME,
   MEMORY,
   COMPAT
+}
+
+export interface Opts extends qg.Opts {
+  rankdir: qt.Dir;
+  edgesep: number;
+  nodesep: number;
+  ranksep: number;
+}
+
+export interface EdgeObject {
+  v: string;
+  w: string;
+  name?: string;
 }
 
 export interface BaseEdge extends EdgeObject {
@@ -114,7 +85,7 @@ export interface BuildParams {
   enableEmbed: boolean;
   inEmbedTypes: string[];
   outEmbedTypes: string[];
-  refEdges: Dict<boolean>;
+  refEdges: qt.Dict<boolean>;
 }
 
 export interface Node {
@@ -124,8 +95,8 @@ export interface Node {
   cardinality: number;
   parent?: Node;
   stats?: NodeStats;
-  include?: InclusionType;
-  attributes: Dict<any>;
+  include?: IncludeType;
+  attributes: qt.Dict<any>;
 }
 
 export interface BridgeNode extends Node {
@@ -146,7 +117,7 @@ export interface OpNode extends Node {
   series?: string;
   attr: {key: string; value: any}[];
   ins: NormInput[];
-  outShapes: Dict<EdgeShape>;
+  outShapes: qt.Dict<EdgeShape>;
   inEmbeds: OpNode[];
   outEmbeds: OpNode[];
   compatible: boolean;
@@ -157,8 +128,8 @@ export interface OpNode extends Node {
 export interface GroupNode extends Node {
   metag: Graph<GroupNode | OpNode, MetaEdge>;
   bridgeg?: Graph<GroupNode | OpNode, MetaEdge>;
-  deviceHisto: Dict<number>;
-  clusterHisto: Dict<number>;
+  deviceHisto: qt.Dict<number>;
+  clusterHisto: qt.Dict<number>;
   compatHisto: {compatible: number; incompatible: number};
   noControlEdges: boolean;
 }
@@ -166,7 +137,7 @@ export interface GroupNode extends Node {
 export interface MetaNode extends GroupNode {
   depth: number;
   template?: string;
-  opHistogram: Dict<number>;
+  opHistogram: qt.Dict<number>;
   assocFn?: string;
   getFirstChild(): GroupNode | OpNode;
   getRootOp(): OpNode;
@@ -198,7 +169,7 @@ export interface LibraryFn {
 }
 
 export class SlimGraph {
-  nodes = {} as Dict<OpNode>;
+  nodes = {} as qt.Dict<OpNode>;
   edges = [] as BaseEdge[];
   addEdge(src: string, dst: OpNode, ni: NormInput, ps: BuildParams, i: number) {
     if (src !== dst.name) {
@@ -223,28 +194,28 @@ export type Template = {names: string[]; level: number};
 
 export interface Hierarchy {
   root: MetaNode;
-  libraryFns: Dict<LibraryFn>;
+  libraryFns: qt.Dict<LibraryFn>;
   devices: string[];
   clusters: string[];
-  templates: Dict<Template>;
+  templates: qt.Dict<Template>;
   hasShapeInfo: boolean;
   maxMetaEdgeSize: number;
-  options: GraphOptions;
+  options: Opts;
   node(n?: string): GroupNode | OpNode | undefined;
   setNode(n: string, g: GroupNode | OpNode): void;
-  getNodeMap(): Dict<GroupNode | OpNode>;
+  getNodeMap(): qt.Dict<GroupNode | OpNode>;
   getBridge(n: string): Graph<GroupNode | OpNode, MetaEdge> | undefined;
   getPreds(n: string): Edges;
   getSuccs(n: string): Edges;
-  getOrdering(n: string): Dict<number>;
+  getOrdering(n: string): qt.Dict<number>;
   getIndexer(): (n: string) => number;
-  mergeStats(s: proto.StepStats): void;
+  mergeStats(s: qp.StepStats): void;
 }
 
 export interface HierarchyParams {
   verifyTemplate: boolean;
   seriesMinSize: number;
-  seriesMap: Dict<SeriesType>;
+  seriesMap: qt.Dict<SeriesType>;
   rankdir: 'TB' | 'BT' | 'LR' | 'RL';
   usePatterns: boolean;
 }
@@ -256,7 +227,7 @@ export const Class = {
     SHAPE: 'nodeshape',
     COLOR_TARGET: 'nodecolortarget',
     LABEL: 'nodelabel',
-    BUTTON_CONTAINER: 'buttoncontainer',
+    BUTTON_CONT: 'buttoncontainer',
     BUTTON_CIRCLE: 'buttoncircle',
     EXPAND_BUTTON: 'expandbutton',
     COLLAPSE_BUTTON: 'collapsebutton'

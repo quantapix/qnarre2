@@ -821,10 +821,10 @@ export class GroupNdata extends Ndata {
   isolatedOutExtract: Ndata[];
   libraryFnsExtract: Ndata[];
 
-  constructor(public node: qt.GroupNode, opts: qt.GraphOptions) {
+  constructor(public node: qt.GroupNode, opts: qt.Opts) {
     super(node);
     const g = node.metag.graph();
-    opts.compound = true;
+    opts.isCompound = true;
     this.coreGraph = qg.createGraph<Ndata, MetaEdata>(
       g.name!,
       qt.GraphType.CORE,
