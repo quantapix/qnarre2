@@ -208,6 +208,38 @@ export class Nmeta extends Ngroup {
   }
 }
 
+export class Nseries extends Ngroup {
+  hasLoop = false;
+  ids = [] as number[];
+
+  constructor(
+    public prefix: string,
+    public suffix: string,
+    public parentName: string,
+    public cluster: number,
+    name = seriesName(prefix, suffix, parentName),
+    opt = {} as qt.Opts
+  ) {
+    super(
+      name,
+      qt.NodeType.SERIES,
+      createGraph<Gdata, Nmeta, Emeta>(name, qt.GraphType.SERIES, opt)
+    );
+  }
+}
+
+export function seriesName(
+  pre: string,
+  suf: string,
+  p: string,
+  s?: number,
+  e?: number
+) {
+  let n = s !== undefined && e !== undefined ? '[' + s + '-' + e + ']' : '#';
+  n = pre + n + suf;
+  return (p ? p + '/' : '') + n;
+}
+
 export interface Edata extends qt.Named {
   isRef: boolean;
   outKey: string;
@@ -265,46 +297,10 @@ function sizeOfEdge(e: Edata, h: qt.Hierarchy) {
   return _.sum(vs);
 }
 
-export class Nseries extends Ngroup {
-  hasLoop = false;
-  ids = [] as number[];
-
-  constructor(
-    public prefix: string,
-    public suffix: string,
-    public parentName: string,
-    public cluster: number,
-    name = seriesName(prefix, suffix, parentName),
-    opt = {} as qt.Opts
-  ) {
-    super(
-      name,
-      qt.NodeType.SERIES,
-      createGraph<Gdata, Nmeta, Emeta>(name, qt.GraphType.SERIES, opt)
-    );
-  }
-}
-
-export function seriesName(
-  pre: string,
-  suf: string,
-  p: string,
-  s?: number,
-  e?: number
-) {
-  let n = s !== undefined && e !== undefined ? '[' + s + '-' + e + ']' : '#';
-  n = pre + n + suf;
-  return (p ? p + '/' : '') + n;
-}
-
-export function strictName(name: string) {
-  const s = name.split(qp.NAMESPACE_DELIM);
-  return name + qp.NAMESPACE_DELIM + '(' + s[s.length - 1] + ')';
-}
-
 export class SlimGraph {
   nodes = {} as qt.Dict<Noper>;
   edges = [] as BaseEdge[];
+
   addEdge(
     src: string,
     dst: Noper,
@@ -323,55 +319,56 @@ export class SlimGraph {
       });
     }
   }
+
+  mergeStats(g: SlimGraph, stats: proto.StepStats, devices?: qt.Dict<boolean>) {
+    _.each(g.nodes, n => (n.stats = undefined));
+    _.each(stats.dev_stats, ds => {
+      if (devices && !devices[ds.device]) return;
+      _.each(ds.node_stats, ns => {
+        const n =
+          ns.node_name in g.nodes ? ns.node_name : strictName(ns.node_name);
+        if (!(n in g.nodes)) return;
+        let bytes = 0;
+        if (ns.memory) {
+          _.each(ns.memory, m => {
+            if (m.total_bytes) {
+              if (m.total_bytes > 0) {
+                bytes += Number(m.total_bytes);
+              } else {
+                console.log('ignoring negative memory allocation for ' + n);
+              }
+            }
+          });
+        }
+        let size = [] as number[][];
+        if (ns.output) {
+          size = _.map(ns.output, o =>
+            _.map(o.tensor_description.shape.dim, d => d.size)
+          );
+        }
+        g.nodes[n].device = ds.device;
+        if (!g.nodes[n].stats) {
+          g.nodes[n].stats = new qt.NodeStats(size);
+        }
+        g.nodes[n].stats?.addBytes(bytes);
+        if (ns.all_end_rel_micros) {
+          if (ns.all_end_rel_micros > 0) {
+            g.nodes[n].stats?.addTime(
+              ns.all_start_micros,
+              ns.all_start_micros + ns.all_end_rel_micros
+            );
+          } else {
+            console.log('ignoring negative runtime for ' + n);
+          }
+        }
+      });
+    });
+  }
 }
 
-export function mergeStats(
-  g: SlimGraph,
-  stats: proto.StepStats,
-  devices?: qt.Dict<boolean>
-) {
-  _.each(g.nodes, n => (n.stats = undefined));
-  _.each(stats.dev_stats, ds => {
-    if (devices && !devices[ds.device]) return;
-    _.each(ds.node_stats, ns => {
-      const n =
-        ns.node_name in g.nodes ? ns.node_name : strictName(ns.node_name);
-      if (!(n in g.nodes)) return;
-      let bytes = 0;
-      if (ns.memory) {
-        _.each(ns.memory, m => {
-          if (m.total_bytes) {
-            if (m.total_bytes > 0) {
-              bytes += Number(m.total_bytes);
-            } else {
-              console.log('ignoring negative memory allocation for ' + n);
-            }
-          }
-        });
-      }
-      let size = [] as number[][];
-      if (ns.output) {
-        size = _.map(ns.output, o =>
-          _.map(o.tensor_description.shape.dim, d => d.size)
-        );
-      }
-      g.nodes[n].device = ds.device;
-      if (!g.nodes[n].stats) {
-        g.nodes[n].stats = new qt.NodeStats(size);
-      }
-      g.nodes[n].stats?.addBytes(bytes);
-      if (ns.all_end_rel_micros) {
-        if (ns.all_end_rel_micros > 0) {
-          g.nodes[n].stats?.addTime(
-            ns.all_start_micros,
-            ns.all_start_micros + ns.all_end_rel_micros
-          );
-        } else {
-          console.log('ignoring negative runtime for ' + n);
-        }
-      }
-    });
-  });
+export function strictName(n: string) {
+  const s = n.split(qp.NAMESPACE_DELIM);
+  return n + qp.NAMESPACE_DELIM + '(' + s[s.length - 1] + ')';
 }
 
 export async function build(
