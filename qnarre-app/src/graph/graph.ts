@@ -325,6 +325,21 @@ export class Graph<G, N, E> {
     return undefined;
   }
 
+  degrees() {
+    return this.nodes()
+      .map(n => this.neighbors(n)?.length)
+      .sort();
+  }
+
+  isSimilar(other: this) {
+    const d1 = this.degrees();
+    const d2 = other.degrees();
+    for (let i = 0; i < d1.length; i++) {
+      if (d1[i] !== d2[i]) return false;
+    }
+    return true;
+  }
+
   isSubgraph(x: any) {
     return !!this.children(x)?.length;
   }

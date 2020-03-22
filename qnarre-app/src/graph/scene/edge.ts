@@ -85,7 +85,7 @@ export function buildGroup(
 }
 
 export function getLabelForBaseEdge(e: qt.BaseEdge, gdata: qr.Gdata) {
-  const n = gdata.getNodeByName(e.v) as qt.OpNode;
+  const n = gdata.getNodeByName(e.v) as qt.Noper;
   if (!n.outShapes || _.isEmpty(n.outShapes)) return undefined;
   const shape = n.outShapes[e.outKey];
   if (!shape) return undefined;
@@ -93,7 +93,7 @@ export function getLabelForBaseEdge(e: qt.BaseEdge, gdata: qr.Gdata) {
   return shape.map(s => (s === -1 ? '?' : s)).join(TENSOR_SHAPE_DELIM);
 }
 
-export function getLabelForEdge(e: qt.MetaEdge, gdata: qr.Gdata) {
+export function getLabelForEdge(e: qg.Emeta, gdata: qr.Gdata) {
   if (gdata.edgeLabelFunction) return gdata.edgeLabelFunction(e, gdata);
   const isMulti = e.bases.length > 1;
   return isMulti

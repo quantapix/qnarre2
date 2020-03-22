@@ -7,10 +7,38 @@ import * as qu from './util';
 import * as proto from './proto';
 import * as template from './template';
 
-type Graph = qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>;
+type Graph = qt.Graph<qg.Ngroup | qt.Noper, qg.Emeta>;
+
+export interface HierarchyParams {
+  verifyTemplate: boolean;
+  seriesMinSize: number;
+  seriesMap: qt.Dict<SeriesType>;
+  rankdir: qt.Dir;
+  usePatterns: boolean;
+}
+
+export interface Hierarchy {
+  root: MetaNode;
+  libraryFns: qt.Dict<LibraryFn>;
+  devices: string[];
+  clusters: string[];
+  templates: qt.Dict<Template>;
+  hasShapeInfo: boolean;
+  maxMetaEdgeSize: number;
+  options: Opts;
+  node(n?: string): GroupNode | OpNode | undefined;
+  setNode(n: string, g: GroupNode | OpNode): void;
+  getNodeMap(): qt.Dict<GroupNode | OpNode>;
+  getBridge(n: string): Graph<GroupNode | OpNode, MetaEdge> | undefined;
+  getPreds(n: string): Edges;
+  getSuccs(n: string): Edges;
+  getOrdering(n: string): qt.Dict<number>;
+  getIndexer(): (n: string) => number;
+  mergeStats(s: qp.StepStats): void;
+}
 
 class Hierarchy implements qt.Hierarchy {
-  root: qt.MetaNode;
+  root: qg.Nmeta;
   libraryFns = {} as qt.Dict<qt.LibraryFn>;
   devices = [] as string[];
   clusters = [] as string[];
@@ -19,7 +47,7 @@ class Hierarchy implements qt.Hierarchy {
   maxMetaEdgeSize = 1;
   options: qt.Opts;
   orderings = {} as qt.Dict<qt.Dict<number>>;
-  private index: qt.Dict<qt.GroupNode | qt.OpNode>;
+  private index: qt.Dict<qg.Ngroup | qt.Noper>;
 
   constructor(options: qt.Opts) {
     this.options = options || {};
@@ -31,7 +59,7 @@ class Hierarchy implements qt.Hierarchy {
   node(name?: string) {
     return name ? this.index[name] : undefined;
   }
-  setNode(name: string, node: qt.GroupNode | qt.OpNode) {
+  setNode(name: string, node: qg.Ngroup | qt.Noper) {
     this.index[name] = node;
   }
   getNodeMap() {
@@ -42,12 +70,13 @@ class Hierarchy implements qt.Hierarchy {
     if (!n) throw Error('Could not find node: ' + name);
     if (!('metag' in n)) return undefined;
     if (n.bridgeg) return n.bridgeg;
-    const b = (n.bridgeg = qg.createGraph<
-      qt.GroupNode | qt.OpNode,
-      qt.MetaEdge
-    >('BRIDGEGRAPH', qt.GraphType.BRIDGE, this.options));
+    const b = (n.bridgeg = qg.createGraph<qg.Ngroup | qt.Noper, qg.Emeta>(
+      'BRIDGEGRAPH',
+      qt.GraphType.BRIDGE,
+      this.options
+    ));
     if (!n.parent || !('metag' in n.parent)) return b;
-    const p = n.parent as qt.GroupNode;
+    const p = n.parent as qg.Ngroup;
     _.each([p.metag, this.getBridge(p.name)], (g?: Graph) => {
       g?.edges()
         .filter(e => e.v === name || e.w === name)
@@ -82,13 +111,13 @@ class Hierarchy implements qt.Hierarchy {
     if (!n) throw Error('Could not find node: ' + name);
     const preds = this.getOneWays(n, true);
     if (!n.isGroup) {
-      _.each((n as qt.OpNode).inEmbeds, (en: qt.OpNode) => {
-        _.each((n as qt.OpNode).ins, (ni: qt.NormInput) => {
+      _.each((n as qt.Noper).inEmbeds, (en: qt.Noper) => {
+        _.each((n as qt.Noper).ins, (ni: qt.NormInput) => {
           if (ni.name === en.name) {
             const m = new qg.MetaEdge(en.name, name);
             m.addBase(
               {
-                isControlDep: ni.isControlDep,
+                isControl: ni.isControl,
                 outKey: ni.outKey,
                 isRef: false,
                 v: en.name,
@@ -108,13 +137,13 @@ class Hierarchy implements qt.Hierarchy {
     if (!n) throw Error('Could not find node: ' + name);
     const succs = this.getOneWays(n, false);
     if (!n.isGroup) {
-      _.each((n as qt.OpNode).outEmbeds, (en: qt.OpNode) => {
+      _.each((n as qt.Noper).outEmbeds, (en: qt.Noper) => {
         _.each(en.ins, (ni: qt.NormInput) => {
           if (ni.name === name) {
             const metaedge = new qg.MetaEdge(name, en.name);
             metaedge.addBase(
               {
-                isControlDep: ni.isControlDep,
+                isControl: ni.isControl,
                 outKey: ni.outKey,
                 isRef: false,
                 v: name,
@@ -129,10 +158,10 @@ class Hierarchy implements qt.Hierarchy {
     }
     return succs;
   }
-  getOneWays(node: qt.GroupNode | qt.OpNode, inbound: boolean): qt.Edges {
+  getOneWays(node: qg.Ngroup | qt.Noper, inbound: boolean): qt.Edges {
     const es = new Edges();
     if (!node.parent || !node.parent.isGroup) return es;
-    const p = node.parent as qt.GroupNode;
+    const p = node.parent as qg.Ngroup;
     const m = p.metag;
     const b = this.getBridge(parent.name);
     es.updateTargets(m, node, inbound);
@@ -146,7 +175,7 @@ class Hierarchy implements qt.Hierarchy {
     if (name in this.orderings) return this.orderings[name];
     const succs = {} as qt.Dict<string[]>;
     const dests = {} as qt.Dict<boolean>;
-    const m = (node as qt.GroupNode).metag;
+    const m = (node as qg.Ngroup).metag;
     _.each(m.edges(), (e: qt.EdgeObject) => {
       if (!m.edge(e).numRegular) return;
       if (!(e.v in succs)) {
@@ -175,7 +204,7 @@ class Hierarchy implements qt.Hierarchy {
     return (t: string) => index(t) as number;
   }
   addNodes(g: qt.SlimGraph) {
-    const map = {} as qt.Dict<qt.OpNode[]>;
+    const map = {} as qt.Dict<qt.Noper[]>;
     _.each(g.nodes, n => {
       const path = qg.getHierarchicalPath(n.name);
       let p = this.root;
@@ -211,7 +240,7 @@ class Hierarchy implements qt.Hierarchy {
         });
         if (i === path.length - 1) break;
         const name = path[i];
-        let c = this.node(name) as qt.MetaNode;
+        let c = this.node(name) as qg.Nmeta;
         if (!c) {
           c = qg.createMetaNode(name, this.options);
           c.parent = p;
@@ -263,7 +292,7 @@ class Hierarchy implements qt.Hierarchy {
         di--;
         if (si < 0 || di < 0) throw Error('No difference in ancestor paths');
       }
-      const a = map[src[si + 1]] as qt.GroupNode;
+      const a = map[src[si + 1]] as qg.Ngroup;
       const s = src[si];
       const d = dst[di];
       let m = a.metag.edge(s, d);
@@ -271,7 +300,7 @@ class Hierarchy implements qt.Hierarchy {
         m = qg.createMetaEdge(s, d);
         a.metag.setEdge(s, d, m);
       }
-      if (!a.noControlEdges && !e.isControlDep) a.noControlEdges = true;
+      if (!a.noControls && !e.isControl) a.noControls = true;
       m.addBase(e, this);
     });
   }
@@ -279,7 +308,7 @@ class Hierarchy implements qt.Hierarchy {
     const ds = {} as qt.Dict<boolean>;
     const cs = {} as qt.Dict<boolean>;
     _.each(this.root.leaves(), n => {
-      const d = this.node(n) as qt.OpNode;
+      const d = this.node(n) as qt.Noper;
       if (d.device) ds[d.device] = true;
       if (d.cluster) cs[d.cluster] = true;
     });
@@ -288,40 +317,40 @@ class Hierarchy implements qt.Hierarchy {
     _.each(this.getNodeMap(), n => {
       if (n.isGroup) {
         n.stats = new qt.NodeStats([]);
-        (n as qt.GroupNode).deviceHisto = {};
+        (n as qg.Ngroup).deviceHisto = {};
       }
     });
     _.each(this.root.leaves(), n => {
-      const d = this.node(n) as qt.OpNode;
-      let nd = d as qt.GroupNode | qt.OpNode;
+      const d = this.node(n) as qt.Noper;
+      let nd = d as qg.Ngroup | qt.Noper;
       while (nd.parent) {
         if (d.device) {
-          const h = (nd.parent as qt.GroupNode).deviceHisto;
+          const h = (nd.parent as qg.Ngroup).deviceHisto;
           h[d.device] = (h[d.device] || 0) + 1;
         }
         if (d.cluster) {
-          const h = (nd.parent as qt.GroupNode).clusterHisto;
+          const h = (nd.parent as qg.Ngroup).clusterHisto;
           h[d.cluster] = (h[d.cluster] || 0) + 1;
         }
         if (d.stats) nd.parent?.stats?.combine(d.stats);
-        nd = nd.parent as qt.GroupNode;
+        nd = nd.parent as qg.Ngroup;
       }
     });
   }
   getIncompatibleOps(ps: qt.HierarchyParams) {
-    const ns = [] as (qt.GroupNode | qt.OpNode)[];
-    const added = {} as qt.Dict<qt.SeriesNode>;
+    const ns = [] as (qg.Ngroup | qt.Noper)[];
+    const added = {} as qt.Dict<qt.Nseries>;
     _.each(this.root.leaves(), n => {
       const d = this.node(n);
       if (d?.type === qt.NodeType.OP) {
-        const nd = d as qt.OpNode;
+        const nd = d as qt.Noper;
         if (!nd.compatible) {
           if (nd.series) {
             if (ps && ps.seriesMap[nd.series] === qt.SeriesType.UNGROUP) {
               ns.push(nd);
             } else {
               if (!added[nd.series]) {
-                const ss = this.node(nd.series) as qt.SeriesNode;
+                const ss = this.node(nd.series) as qt.Nseries;
                 if (ss) {
                   added[nd.series] = ss;
                   ns.push(ss);
@@ -343,8 +372,8 @@ class Hierarchy implements qt.Hierarchy {
 }
 
 class Edges implements qt.Edges {
-  control = [] as qt.MetaEdge[];
-  regular = [] as qt.MetaEdge[];
+  control = [] as qg.Emeta[];
+  regular = [] as qg.Emeta[];
 
   updateTargets(g: Graph, n: qt.Node, inbound: boolean) {
     const es = inbound ? g.inEdges(n.name) : g.outEdges(n.name);
@@ -396,7 +425,7 @@ export async function build(
 }
 
 function groupSeries(
-  metanode: qt.MetaNode,
+  metanode: qg.Nmeta,
   h: qt.Hierarchy,
   names: qt.Dict<string>,
   thresh: number,
@@ -407,16 +436,16 @@ function groupSeries(
   _.each(metag.nodes(), n => {
     const c = metag.node(n);
     if (c.type === qt.NodeType.META) {
-      groupSeries(c as qt.MetaNode, h, names, thresh, map, patterns);
+      groupSeries(c as qg.Nmeta, h, names, thresh, map, patterns);
     }
   });
   const cs = clusterNodes(metag);
   const fn = patterns ? detectSeries : detectBySuffixes;
   const dict = fn(cs, metag, h.options);
-  _.each(dict, (sn: qt.SeriesNode, name: string) => {
+  _.each(dict, (sn: qt.Nseries, name: string) => {
     const ns = sn.metag.nodes();
     _.each(ns, n => {
-      const c = <qt.OpNode>metag.node(n);
+      const c = <qt.Noper>metag.node(n);
       if (!c.series) c.series = name;
     });
     if (ns.length < thresh && !(sn.name in map)) {
@@ -428,7 +457,7 @@ function groupSeries(
     h.setNode(name, sn);
     metag.setNode(name, sn);
     _.each(ns, n => {
-      const c = <qt.OpNode>metag.node(n);
+      const c = <qt.Noper>metag.node(n);
       sn.metag.setNode(n, c);
       sn.parent = c.parent;
       sn.cardinality++;
@@ -472,7 +501,7 @@ function clusterNodes(g: Graph) {
     (cl: Cluster, n: string) => {
       const c = g.node(n);
       if (c.type === qt.NodeType.META) return cl;
-      const o = (c as qt.OpNode).op;
+      const o = (c as qt.Noper).op;
       if (o) {
         cl[o] = cl[o] || [];
         cl[o].push(c.name);
@@ -484,10 +513,10 @@ function clusterNodes(g: Graph) {
 }
 
 function detectBySuffixes(cl: Cluster, g: Graph, opts: qt.Opts) {
-  const series = {} as qt.Dict<qt.SeriesNode>;
+  const series = {} as qt.Dict<qt.Nseries>;
   _.each(cl, (ns, cluster: string) => {
     if (ns.length <= 1) return;
-    const d = {} as qt.Dict<qt.SeriesNode[]>;
+    const d = {} as qt.Dict<qt.Nseries[]>;
     _.each(ns, name => {
       const isGroup = name.endsWith('*');
       const path = name.split('/');
@@ -505,9 +534,9 @@ function detectBySuffixes(cl: Cluster, g: Graph, opts: qt.Opts) {
         id = 0;
         suf = isGroup ? '*' : '';
       }
-      const sn = qg.getSeriesNodeName(pre, suf, parent);
+      const sn = qg.seriesName(pre, suf, parent);
       d[sn] = d[sn] || [];
-      const n = qg.createSeriesNode(pre, suf, parent, +id, name, opts);
+      const n = qg.createNseries(pre, suf, parent, +id, name, opts);
       d[sn].push(n);
     });
     _.each(d, (ns2, _n) => {
@@ -530,10 +559,10 @@ function detectBySuffixes(cl: Cluster, g: Graph, opts: qt.Opts) {
 }
 
 function detectSeries(cl: Cluster, g: Graph, opts: qt.Opts) {
-  const series = {} as qt.Dict<qt.SeriesNode>;
+  const series = {} as qt.Dict<qt.Nseries>;
   _.each(cl, function(ns, cluster: string) {
     if (ns.length <= 1) return;
-    const fd = {} as qt.Dict<qt.SeriesNode>;
+    const fd = {} as qt.Dict<qt.Nseries>;
     const bd = {} as qt.Dict<any[]>;
     _.each(ns, name => {
       const isGroup = name.endsWith('*');
@@ -552,9 +581,9 @@ function detectSeries(cl: Cluster, g: Graph, opts: qt.Opts) {
         pre = leaf.slice(0, matches.index);
         id = matches[0];
         suf = leaf.slice(matches.index + matches[0].length);
-        sn = qg.getSeriesNodeName(pre, suf, parent);
+        sn = qg.seriesName(pre, suf, parent);
         if (!fd[sn]) {
-          fd[sn] = qg.createSeriesNode(pre, suf, parent, +id, name, opts);
+          fd[sn] = qg.createNseries(pre, suf, parent, +id, name, opts);
         }
         fd[sn].ids.push(+id);
         bd[name] = bd[name] || [];
@@ -564,16 +593,16 @@ function detectSeries(cl: Cluster, g: Graph, opts: qt.Opts) {
         pre = isGroup ? leaf.substr(0, leaf.length - 1) : leaf;
         id = 0;
         suf = isGroup ? '*' : '';
-        sn = qg.getSeriesNodeName(pre, suf, parent);
+        sn = qg.seriesName(pre, suf, parent);
         if (!fd[sn]) {
-          fd[sn] = qg.createSeriesNode(pre, suf, parent, +id, name, opts);
+          fd[sn] = qg.createNseries(pre, suf, parent, +id, name, opts);
         }
         fd[sn].ids.push(id);
         bd[name] = bd[name] || [];
         bd[name].push([sn, id]);
       }
     });
-    const d = {} as qt.Dict<qt.SeriesNode[]>;
+    const d = {} as qt.Dict<qt.Nseries[]>;
     _.each(bd, (ids, name) => {
       ids.sort((a, b) => {
         return fd[b[0]].ids.length - fd[a[0]].ids.length;
@@ -583,7 +612,7 @@ function detectSeries(cl: Cluster, g: Graph, opts: qt.Opts) {
       d[sn] = d[sn] || [];
       const path = name.split('/');
       const parent = path.slice(0, path.length - 1).join('/');
-      const n = qg.createSeriesNode(
+      const n = qg.createNseries(
         fd[sn].prefix,
         fd[sn].suffix,
         parent,
@@ -614,20 +643,20 @@ function detectSeries(cl: Cluster, g: Graph, opts: qt.Opts) {
 
 function addSeries(
   g: Graph,
-  ns: qt.SeriesNode[],
-  dict: qt.Dict<qt.SeriesNode>,
+  ns: qt.Nseries[],
+  dict: qt.Dict<qt.Nseries>,
   cluster: number,
   opts: qt.Opts
 ) {
   if (ns.length > 1) {
-    const name = qg.getSeriesNodeName(
+    const name = qg.seriesName(
       ns[0].prefix,
       ns[0].suffix,
       ns[0].parentName,
       ns[0].cluster,
       ns[ns.length - 1].cluster
     );
-    const node = qg.createSeriesNode(
+    const node = qg.createNseries(
       ns[0].prefix,
       ns[0].suffix,
       ns[0].parentName,

@@ -89,7 +89,7 @@ export class NodeIconComponent implements OnInit {
 
   _isVertical(inputNode, inputVertical) {
     if (inputNode) {
-      return inputNode.noControlEdges;
+      return inputNode.noControls;
     }
     return !!inputVertical;
   }

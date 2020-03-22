@@ -2,7 +2,7 @@ import * as qt from './types';
 import * as qp from './params';
 
 export interface CompatibilityProvider {
-  opValid: (opNode: qt.OpNode) => boolean;
+  opValid: (opNode: qt.Noper) => boolean;
 }
 
 export class TpuCompatibilityProvider implements CompatibilityProvider {
@@ -393,7 +393,7 @@ export class TpuCompatibilityProvider implements CompatibilityProvider {
     return opDevice.toLowerCase().search('tpu') == -1;
   }
 
-  opValid(opNode: qt.OpNode) {
+  opValid(opNode: qt.Noper) {
     if (opNode.name.search(qp.LIBRARY_PREFIX) == 0) {
       return true;
     }

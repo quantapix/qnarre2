@@ -15,7 +15,7 @@ export interface EdgeThicknessFunction {
 }
 
 export interface EdgeLabelFunction {
-  (e: qt.MetaEdge, d: Gdata): string;
+  (e: qg.Emeta, d: Gdata): string;
 }
 
 const PARAMS = {
@@ -132,7 +132,7 @@ export class Gdata {
     const n = this.hierarchy.node(name);
     if (!n) return undefined;
     const d = n.isGroup
-      ? new GroupNdata(n as qt.GroupNode, this.hierarchy.options)
+      ? new GroupNdata(n as qg.Ngroup, this.hierarchy.options)
       : new Ndata(n);
     this.index[name] = d;
     this.renderedOpNames.push(name);
@@ -145,20 +145,20 @@ export class Gdata {
     let ch: qt.Dict<number> | undefined;
     let oc;
     if (n.isGroup) {
-      dh = (n as qt.GroupNode).deviceHisto;
-      ch = (n as qt.GroupNode).clusterHisto;
-      const compat = (n as qt.GroupNode).compatHisto.compatible;
-      const incompat = (n as qt.GroupNode).compatHisto.incompatible;
+      dh = (n as qg.Ngroup).deviceHisto;
+      ch = (n as qg.Ngroup).clusterHisto;
+      const compat = (n as qg.Ngroup).compatHisto.compatible;
+      const incompat = (n as qg.Ngroup).compatHisto.incompatible;
       if (compat != 0 || incompat != 0) {
         oc = compat / (compat + incompat);
       }
     } else {
-      let n = (d.node as qt.OpNode).device;
+      let n = (d.node as qg.Noper).device;
       if (n) dh = {[n]: 1};
-      n = (d.node as qt.OpNode).cluster;
+      n = (d.node as qg.Noper).cluster;
       if (n) ch = {[n]: 1};
       if (d.node.type === qt.NodeType.OP) {
-        oc = (d.node as qt.OpNode).compatible ? 1 : 0;
+        oc = (d.node as qg.Noper).compatible ? 1 : 0;
       }
     }
     if (dh) {
@@ -215,17 +215,17 @@ export class Gdata {
   }
 
   private cloneAndAddFunctionOpNode(
-    m: qt.MetaNode,
+    m: qg.Nmeta,
     fnName: string,
-    node: qt.OpNode,
+    node: qg.Noper,
     prefix: string
-  ): qt.OpNode {
+  ): qg.Noper {
     const newName = node.name.replace(fnName, prefix);
     let n = m.metag.node(newName);
     if (n) {
-      return n as qt.OpNode;
+      return n as qg.Noper;
     }
-    n = new qg.OpNode({
+    n = new qg.Noper({
       name: newName,
       input: [],
       device: node.device,
@@ -246,7 +246,7 @@ export class Gdata {
     n.parent = m;
     m.metag.setNode(n.name, n);
     this.hierarchy.setNode(n.name, n);
-    const update = (e: qt.OpNode) => {
+    const update = (e: qg.Noper) => {
       return this.cloneAndAddFunctionOpNode(m, fnName, e, prefix);
     };
     n.inEmbeds = node.inEmbeds.map(update);
@@ -255,12 +255,12 @@ export class Gdata {
   }
 
   private cloneLibMeta(
-    g: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>,
-    n: qt.OpNode,
-    libn: qt.MetaNode,
+    g: qt.Graph<qg.Ngroup | qg.Noper, qg.Emeta>,
+    n: qg.Noper,
+    libn: qg.Nmeta,
     oldPre: string,
     prefix: string
-  ): qt.MetaNode {
+  ): qg.Nmeta {
     const dict = {} as qt.Dict<qt.Node>;
     const m = this.cloneLibMetaHelper(g, n, libn, oldPre, prefix, dict);
     if (!_.isEmpty(dict)) this.patchEdgesFromFunctionOutputs(n, dict);
@@ -268,13 +268,13 @@ export class Gdata {
   }
 
   private cloneLibMetaHelper(
-    g: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>,
-    old: qt.OpNode,
-    libn: qt.MetaNode,
+    g: qt.Graph<qg.Ngroup | qg.Noper, qg.Emeta>,
+    old: qg.Noper,
+    libn: qg.Nmeta,
     oldPre: string,
     prefix: string,
     dict: qt.Dict<qt.Node>
-  ): qt.MetaNode {
+  ): qg.Nmeta {
     const n = qg.createMetaNode(libn.name.replace(oldPre, prefix));
     n.depth = libn.depth;
     n.cardinality = libn.cardinality;
@@ -282,7 +282,7 @@ export class Gdata {
     n.opHistogram = _.clone(libn.opHistogram);
     n.deviceHisto = _.clone(libn.deviceHisto);
     n.clusterHisto = _.clone(libn.clusterHisto);
-    n.noControlEdges = libn.noControlEdges;
+    n.noControls = libn.noControls;
     n.include = libn.include;
     n.attributes = _.clone(libn.attributes);
     n.assocFn = libn.assocFn;
@@ -293,7 +293,7 @@ export class Gdata {
           const n2 = this.cloneLibMetaHelper(
             g,
             old,
-            o as qt.MetaNode,
+            o as qg.Nmeta,
             oldPre,
             prefix,
             dict
@@ -306,7 +306,7 @@ export class Gdata {
           const n3 = this.cloneAndAddFunctionOpNode(
             n,
             oldPre,
-            o as qt.OpNode,
+            o as qg.Noper,
             prefix
           );
           if (_.isNumber(n3.fInputIdx))
@@ -322,8 +322,8 @@ export class Gdata {
   }
 
   private cloneLibraryMetaNodeEdges(
-    libn: qt.MetaNode,
-    newMetaNode: qt.MetaNode,
+    libn: qg.Nmeta,
+    newMetaNode: qg.Nmeta,
     oldPre: string,
     prefix: string
   ) {
@@ -353,16 +353,16 @@ export class Gdata {
     });
   }
 
-  private patchEdgesIntoFunctionInputs(old: qt.OpNode, node: qt.OpNode) {
+  private patchEdgesIntoFunctionInputs(old: qg.Noper, node: qg.Noper) {
     let i = _.min([node.fInputIdx, old.ins.length - 1])!;
     let inp = _.clone(old.ins[i]);
-    while (inp.isControlDep) {
+    while (inp.isControl) {
       i++;
       inp = old.ins[i];
     }
     node.ins.push(inp);
     const es = this.hierarchy.getPreds(old.name);
-    let me: qt.MetaEdge | undefined;
+    let me: qg.Emeta | undefined;
     let count = 0;
     _.each(es.regular, e => {
       count += e.numRegular;
@@ -374,14 +374,11 @@ export class Gdata {
     });
   }
 
-  private patchEdgesFromFunctionOutputs(
-    old: qt.OpNode,
-    dict: qt.Dict<qt.Node>
-  ) {
+  private patchEdgesFromFunctionOutputs(old: qg.Noper, dict: qt.Dict<qt.Node>) {
     const es = this.hierarchy.getSuccs(old.name);
     _.each(es.regular, me => {
       _.each(me.bases, e => {
-        const n = this.hierarchy.node(e.w) as qt.OpNode;
+        const n = this.hierarchy.node(e.w) as qg.Noper;
         _.each(n.ins, ni => {
           if (ni.name === old.name) {
             const o = dict[ni.outKey];
@@ -406,11 +403,11 @@ export class Gdata {
     const ndata = d as GroupNdata;
     const metaG = ndata.node.metag;
     const coreG = ndata.coreGraph;
-    const os = [] as qt.OpNode[];
-    const cs = [] as qt.MetaNode[];
+    const os = [] as qg.Noper[];
+    const cs = [] as qg.Nmeta[];
     if (!_.isEmpty(this.hierarchy.libraryFns)) {
       _.each(metaG.nodes(), n => {
-        const o = metaG.node(n) as qt.OpNode;
+        const o = metaG.node(n) as qg.Noper;
         const fd = this.hierarchy.libraryFns[o.op];
         if (!fd || n.startsWith(qp.LIBRARY_PREFIX)) return;
         const c = this.cloneLibMeta(metaG, o, fd.node, fd.node.name, o.name);
@@ -429,13 +426,13 @@ export class Gdata {
       const cn = cd.node;
       coreG.setNode(n, cd);
       if (!cn.isGroup) {
-        _.each((cn as qt.OpNode).inEmbeds, e => {
+        _.each((cn as qg.Noper).inEmbeds, e => {
           const ed = new Ndata(e);
           const md = new MetaEdata();
           addInAnno(cd, e, ed, md, qt.AnnotationType.CONSTANT);
           this.index[e.name] = ed;
         });
-        _.each((cn as qt.OpNode).outEmbeds, e => {
+        _.each((cn as qg.Noper).outEmbeds, e => {
           const ed = new Ndata(e);
           const md = new MetaEdata();
           addOutAnno(cd, e, ed, md, qt.AnnotationType.SUMMARY);
@@ -529,7 +526,7 @@ export class Gdata {
         let topn = pd.node;
         while (tope.adjoiningMetaEdge) {
           tope = tope.adjoiningMetaEdge;
-          topn = topn.parent as qt.GroupNode;
+          topn = topn.parent as qg.Ngroup;
         }
         const o = this.hierarchy.getOrdering(topn.name);
         const e = tope.metaedge!;
@@ -555,7 +552,7 @@ export class Gdata {
       if (!bd) {
         let bpd = coreG.node(bpn);
         if (!bpd) {
-          const p: qt.BridgeNode = {
+          const p: qt.Nbridge = {
             name: bpn,
             type: qt.NodeType.BRIDGE,
             isGroup: false,
@@ -567,7 +564,7 @@ export class Gdata {
           this.index[bpn] = bpd;
           coreG.setNode(bpn, bpd);
         }
-        const n: qt.BridgeNode = {
+        const n: qt.Nbridge = {
           name: bn,
           type: qt.NodeType.BRIDGE,
           isGroup: false,
@@ -599,7 +596,7 @@ export class Gdata {
         const sn = bridgeName(inbound, nodeName, 'STRUCTURAL_TARGET');
         let sd = coreG.node(sn);
         if (!sd) {
-          const bn: qt.BridgeNode = {
+          const bn: qt.Nbridge = {
             name: sn,
             type: qt.NodeType.BRIDGE,
             isGroup: false,
@@ -623,7 +620,7 @@ export class Gdata {
   }
 
   private buildSubhierarchiesForNeededFunctions(
-    g: qt.Graph<qt.GroupNode | qt.OpNode, qt.MetaEdge>
+    g: qt.Graph<qg.Ngroup | qg.Noper, qg.Emeta>
   ) {
     _.each(g.edges(), l => {
       const me = g.edge(l);
@@ -636,7 +633,7 @@ export class Gdata {
           if (n) {
             if (
               n.type === qt.NodeType.OP &&
-              this.hierarchy.libraryFns[(n as qt.OpNode).op]
+              this.hierarchy.libraryFns[(n as qg.Noper).op]
             ) {
               for (let j = 1; j < front.length; j++) {
                 const nn = front.slice(0, j).join(qp.NAMESPACE_DELIM);
@@ -704,11 +701,11 @@ export class AnnotationList {
     const type = qt.AnnotationType.ELLIPSIS;
     const last = this.list[this.list.length - 1];
     if (last.type === type) {
-      const e = last.node as qt.EllipsisNode;
+      const e = last.node as qt.Nellipsis;
       e.setCountMore(++e.countMore);
       return;
     }
-    const e = new qg.EllipsisNode(1);
+    const e = new qg.Nellipsis(1);
     this.list.push(new Annotation(e, new Ndata(e), undefined, type, a.isIn));
   }
 }
@@ -748,7 +745,7 @@ export class Ndata {
     this.displayName = node.name.substring(
       node.name.lastIndexOf(qp.NAMESPACE_DELIM) + 1
     );
-    if (node.type === qt.NodeType.META && (node as qt.MetaNode).assocFn) {
+    if (node.type === qt.NodeType.META && (node as qg.Nmeta).assocFn) {
       const m = this.displayName.match(nodeDisplayNameRegex);
       if (m) {
         this.displayName = m[1];
@@ -772,7 +769,7 @@ export class MetaEdata {
   endMarkerId = '';
   isFadedOut = false;
 
-  constructor(public metaedge?: qt.MetaEdge) {}
+  constructor(public metaedge?: qg.Emeta) {}
 }
 
 function addInAnno(
@@ -821,7 +818,7 @@ export class GroupNdata extends Ndata {
   isolatedOutExtract: Ndata[];
   libraryFnsExtract: Ndata[];
 
-  constructor(public node: qt.GroupNode, opts: qt.Opts) {
+  constructor(public node: qg.Ngroup, opts: qt.Opts) {
     super(node);
     const g = node.metag.graph();
     opts.isCompound = true;
@@ -895,10 +892,10 @@ export function makeInExtract(ndata: GroupNdata, n: string, detach?: boolean) {
 function hasTypeIn(node: qt.Node, types: string[]) {
   if (node.type === qt.NodeType.OP) {
     for (let i = 0; i < types.length; i++) {
-      if ((node as qt.OpNode).op === types[i]) return true;
+      if ((node as qg.Noper).op === types[i]) return true;
     }
   } else if (node.type === qt.NodeType.META) {
-    const root = (node as qt.MetaNode).getRootOp();
+    const root = (node as qg.Nmeta).getRootOp();
     if (root) {
       for (let i = 0; i < types.length; i++) {
         if (root.op === types[i]) return true;

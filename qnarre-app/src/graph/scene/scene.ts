@@ -410,7 +410,7 @@ export function addHealth(
     if (ndata.labelOffset < 0) py += ndata.labelOffset;
     group.setAttribute('transform', 'translate(' + px + ', ' + py + ')');
     if (es[2] || es[3] || es[4]) {
-      const n = ndata.node as qt.OpNode;
+      const n = ndata.node as qt.Noper;
       const a = n.attr;
       if (a && a.length) {
         for (let i = 0; i < a.length; i++) {

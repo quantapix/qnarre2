@@ -2,9 +2,9 @@ import * as _ from 'lodash';
 import * as qt from './types';
 import * as qg from './graph';
 
-type Node = qt.OpNode | qt.GroupNode;
-type Group = {nodes: qt.MetaNode[]; level: number};
-type Cluster = {node: qt.MetaNode; names: string[]};
+type Node = qt.Noper | qg.Ngroup;
+type Group = {nodes: qg.Nmeta[]; level: number};
+type Cluster = {node: qg.Nmeta; names: string[]};
 
 export function detect(h: qt.Hierarchy, verify: boolean) {
   const gs = toGroups(h);
@@ -22,7 +22,7 @@ function toGroups(h: qt.Hierarchy) {
   const gs = Object.keys(map).reduce((r, name) => {
     const n: Node = map[name];
     if (n.type !== qt.NodeType.META) return r;
-    const m = n as qt.MetaNode;
+    const m = n as qg.Nmeta;
     const s = getSignature(m);
     const level = name.split('/').length - 1;
     const t = r[s] || {nodes: [], level};
@@ -37,12 +37,12 @@ function toGroups(h: qt.Hierarchy) {
       const {nodes} = g;
       if (nodes.length > 1) return true;
       const n = nodes[0];
-      return n.type === qt.NodeType.META && (n as qt.MetaNode).assocFn;
+      return n.type === qt.NodeType.META && (n as qg.Nmeta).assocFn;
     })
     .sort(([_, g]) => g.nodes[0].depth);
 }
 
-function getSignature(m: qt.MetaNode) {
+function getSignature(m: qg.Nmeta) {
   const ps = _.map(
     {
       depth: m.depth,
@@ -138,25 +138,25 @@ function areSimilar(g1: qt.Graph<any, any>, g2: qt.Graph<any, any>) {
 }
 
 function areNodesSimilar(
-  n1: qt.OpNode | qt.MetaNode | qt.SeriesNode,
-  n2: qt.OpNode | qt.MetaNode | qt.SeriesNode
+  n1: qt.Noper | qg.Nmeta | qt.Nseries,
+  n2: qt.Noper | qg.Nmeta | qt.Nseries
 ) {
   const t = n1.type;
   if (t === n2.type) {
     if (n1.type === qt.NodeType.META) {
-      const m = n1 as qt.MetaNode;
-      return m.template && m.template === (n2 as qt.MetaNode).template;
+      const m = n1 as qg.Nmeta;
+      return m.template && m.template === (n2 as qg.Nmeta).template;
     } else if (t === qt.NodeType.OP) {
-      return (n1 as qt.OpNode).op === (n2 as qt.OpNode).op;
+      return (n1 as qt.Noper).op === (n2 as qt.Noper).op;
     } else if (t === qt.NodeType.SERIES) {
-      const s1 = n1 as qt.SeriesNode;
-      const s2 = n2 as qt.SeriesNode;
+      const s1 = n1 as qt.Nseries;
+      const s2 = n2 as qt.Nseries;
       const c = s1.metag.nodeCount();
       return (
         c === s2.metag.nodeCount() &&
         (c === 0 ||
-          (s1.metag.node(s1.metag.nodes()[0]) as qt.OpNode).op ===
-            (s2.metag.node(s2.metag.nodes()[0]) as qt.OpNode).op)
+          (s1.metag.node(s1.metag.nodes()[0]) as qt.Noper).op ===
+            (s2.metag.node(s2.metag.nodes()[0]) as qt.Noper).op)
       );
     }
   }
@@ -164,13 +164,13 @@ function areNodesSimilar(
 }
 
 function sortNodes(
-  g: qt.Graph<qt.MetaNode | qt.OpNode, qt.MetaEdge>,
+  g: qt.Graph<qg.Nmeta | qt.Noper, qg.Emeta>,
   ns: string[],
   prefix: string
 ) {
   return _.sortBy(ns, [
-    n => (g.node(n) as qt.OpNode).op,
-    n => (g.node(n) as qt.MetaNode).template,
+    n => (g.node(n) as qt.Noper).op,
+    n => (g.node(n) as qg.Nmeta).template,
     n => g.neighbors(n).length,
     n => g.predecessors(n).length,
     n => g.successors(n).length,

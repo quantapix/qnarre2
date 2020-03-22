@@ -37,7 +37,7 @@ function computeFill(type: GraphIconType, fillOverride?: string) {
     case GraphIconType.META:
       return params.MetaNodeColors.DEFAULT_FILL;
     case GraphIconType.SERIES:
-      return params.SeriesNodeColors.DEFAULT_FILL;
+      return params.NseriesColors.DEFAULT_FILL;
     default:
       return params.OpNodeColors.DEFAULT_FILL;
   }
@@ -49,7 +49,7 @@ function computeStroke(type: GraphIconType, strokeOverride?: string) {
     case GraphIconType.META:
       return params.MetaNodeColors.DEFAULT_STROKE;
     case GraphIconType.SERIES:
-      return params.SeriesNodeColors.DEFAULT_STROKE;
+      return params.NseriesColors.DEFAULT_STROKE;
     default:
       return params.OpNodeColors.DEFAULT_STROKE;
   }

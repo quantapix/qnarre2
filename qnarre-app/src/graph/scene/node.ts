@@ -165,24 +165,24 @@ export function canBeInSeries(node: qt.Node) {
 export function getSeriesName(node: qt.Node) {
   if (!node) return undefined;
   if (node.type === qt.NodeType.SERIES) return node.name;
-  if (node.type === qt.NodeType.OP) return (node as qt.OpNode).series;
+  if (node.type === qt.NodeType.OP) return (node as qt.Noper).series;
   return undefined;
 }
 
 function getContainingSeries(node: qt.Node) {
-  let s: qt.SeriesNode | undefined;
+  let s: qt.Nseries | undefined;
   if (node) {
     if (node.type === qt.NodeType.SERIES) {
-      s = node as qt.SeriesNode;
+      s = node as qt.Nseries;
     } else if (node.parent && node.parent.type === qt.NodeType.SERIES) {
-      s = node.parent as qt.SeriesNode;
+      s = node.parent as qt.Nseries;
     }
   }
   return s;
 }
 
 export function getGroupSettingLabel(node: qt.Node) {
-  return qg.getGroupSeriesNodeButtonString(
+  return qg.getGroupNseriesButtonString(
     getContainingSeries(node) ? qt.SeriesType.GROUP : qt.SeriesType.UNGROUP
   );
 }
@@ -268,7 +268,7 @@ export function buildShape(group, d, nodeClass: string) {
   const g = qs.selectOrCreate(group, 'g', nodeClass);
   switch (d.node.type) {
     case qt.NodeType.OP:
-      const n = d.node as qt.OpNode;
+      const n = d.node as qt.Noper;
       if (_.isNumber(n.fInputIdx) || _.isNumber(n.fOutputIdx)) {
         qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR_TARGET);
         break;
@@ -279,7 +279,7 @@ export function buildShape(group, d, nodeClass: string) {
       let t = 'annotation';
       const ndata = d as qr.GroupNdata;
       if (ndata.coreGraph) {
-        t = ndata.node.noControlEdges ? 'vertical' : 'horizontal';
+        t = ndata.node.noControls ? 'vertical' : 'horizontal';
       }
       const cs = [qt.Class.Node.COLOR_TARGET];
       if (ndata.isFadedOut) cs.push('faded-ellipse');
@@ -329,7 +329,7 @@ function position(group, d: qr.Ndata) {
   const cx = ql.computeCXPositionOfNodeShape(d);
   switch (d.node.type) {
     case qt.NodeType.OP: {
-      const n = d.node as qt.OpNode;
+      const n = d.node as qt.Noper;
       if (_.isNumber(n.fInputIdx) || _.isNumber(n.fOutputIdx)) {
         const sh = qs.selectChild(g, 'polygon');
         qs.positionTriangle(sh, d.x, d.y, d.coreBox.width, d.coreBox.height);
@@ -423,7 +423,7 @@ export function getFillForNode(
   switch (colorBy) {
     case qt.ColorBy.STRUCTURE:
       if (renderInfo.node.type === qt.NodeType.META) {
-        const tid = (renderInfo.node as qt.MetaNode).template;
+        const tid = (renderInfo.node as qg.Nmeta).template;
         return tid === null
           ? colorParams.UNKNOWN
           : colorParams.STRUCTURE_PALETTE(templateIndex(tid), isExpanded);
@@ -432,12 +432,12 @@ export function getFillForNode(
       } else if (renderInfo.node.type === qt.NodeType.BRIDGE) {
         return renderInfo.structural
           ? '#f0e'
-          : (renderInfo.node as qt.BridgeNode).inbound
+          : (renderInfo.node as qt.Nbridge).inbound
           ? '#0ef'
           : '#fe0';
-      } else if (_.isNumber((renderInfo.node as qt.OpNode).fInputIdx)) {
+      } else if (_.isNumber((renderInfo.node as qt.Noper).fInputIdx)) {
         return '#795548';
-      } else if (_.isNumber((renderInfo.node as qt.OpNode).fOutputIdx)) {
+      } else if (_.isNumber((renderInfo.node as qt.Noper).fOutputIdx)) {
         return '#009688';
       } else {
         return 'white';
@@ -574,9 +574,9 @@ export function updateInputTrace(
 
 function _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
   let os = [] as Array<qg.OpNode>;
-  const n = gdata.getNodeByName(name) as qt.GroupNode | qt.OpNode;
+  const n = gdata.getNodeByName(name) as qg.Ngroup | qt.Noper;
   if (n instanceof qg.OpNode) return [n].concat(n.inEmbeds);
-  const ns = (n as qt.GroupNode).metag.nodes();
+  const ns = (n as qg.Ngroup).metag.nodes();
   _.each(ns, n => {
     os = os.concat(_getAllContainedOpNodes(n, gdata));
   });
@@ -585,13 +585,13 @@ function _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
 
 interface VisibleParent {
   visibleParent: qt.Node;
-  opNodes: qt.OpNode[];
+  opNodes: qt.Noper[];
 }
 
 function traceAllInputsOfOpNode(
   root: SVGElement,
   gdata: qr.Gdata,
-  startNode: qt.OpNode,
+  startNode: qt.Noper,
   allTracedNodes: Record<string, any>
 ) {
   if (allTracedNodes[startNode.name]) {
@@ -609,8 +609,8 @@ function traceAllInputsOfOpNode(
     let resolvedNode = gdata.getNodeByName(node.name);
     if (resolvedNode === undefined) return;
     if (resolvedNode instanceof qg.MetaNode) {
-      const resolvedNodeName = qg.getStrictName(resolvedNode.name);
-      resolvedNode = gdata.getNodeByName(resolvedNodeName) as qt.OpNode;
+      const resolvedNodeName = qg.strictName(resolvedNode.name);
+      resolvedNode = gdata.getNodeByName(resolvedNodeName) as qt.Noper;
     }
     const visibleParent = getVisibleParent(gdata, resolvedNode);
     const visibleInputsEntry = visibleInputs[visibleParent.name];
@@ -642,7 +642,7 @@ function traceAllInputsOfOpNode(
   }
   _.forOwn(visibleInputs, function(visibleParentInfo: VisibleParent, key) {
     const node = visibleParentInfo.visibleParent;
-    _.each(visibleParentInfo.opNodes, function(opNode: qt.OpNode) {
+    _.each(visibleParentInfo.opNodes, function(opNode: qt.Noper) {
       allTracedNodes = traceAllInputsOfOpNode(
         root,
         gdata,

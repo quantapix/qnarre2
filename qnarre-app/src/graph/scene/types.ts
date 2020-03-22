@@ -1,9 +1,8 @@
 import * as qg from '../graph';
 import * as qt from '../types';
-import * as qp from './proto';
 
 export {Dict, Dir} from '../types';
-export {Graph} from '../graph';
+export {Named, Link, Graph} from '../graph';
 
 export enum GraphType {
   FULL,
@@ -24,12 +23,7 @@ export enum NodeType {
   ELLIPSIS
 }
 
-export enum IncludeType {
-  INCLUDE,
-  EXCLUDE
-}
-
-export enum SeriesType {
+export enum XSeriesType {
   GROUP,
   UNGROUP
 }
@@ -66,7 +60,7 @@ export interface Opts extends qg.Opts {
 export interface NormInput {
   name: string;
   outKey: string;
-  isCtrlDep: boolean;
+  isControl: boolean;
 }
 
 export interface BuildParams {
@@ -76,68 +70,52 @@ export interface BuildParams {
   refEdges: qt.Dict<boolean>;
 }
 
-export type EdgeShape = number[];
-
-export interface EdgeObject {
-  v: string;
-  w: string;
-  name?: string;
+export interface Tracker {
+  setMessage(m: string): void;
+  reportError(m: string, e: Error): void;
+  updateProgress(i: number): void;
 }
 
-export interface BaseEdge extends EdgeObject {
-  isRef: boolean;
-  outKey: string;
-  isControlDep: boolean;
+export interface Health {
+  device: string;
+  node: string;
+  slot: number;
+  dtype: string;
+  shape: number[];
+  value: number[];
+  time: number;
+  step: number;
 }
 
-export interface MetaEdge extends EdgeObject {
-  bases: BaseEdge[];
-  inbound?: boolean;
-  numRegular: number;
-  numControl: number;
-  numRef: number;
-  size: number;
-  addBase(e: BaseEdge, h: Hierarchy): void;
+export interface HealthEntry {
+  background: string;
+  label: string;
 }
 
-export interface LibraryFn {
-  node: MetaNode;
-  usages: Node[];
-}
+export class NodeStats {
+  bytes?: number;
+  start?: number;
+  end?: number;
 
-export interface Edges {
-  control: MetaEdge[];
-  regular: MetaEdge[];
-}
+  constructor(public size: number[][]) {}
 
-export type Template = {names: string[]; level: number};
-
-export interface Hierarchy {
-  root: MetaNode;
-  libraryFns: qt.Dict<LibraryFn>;
-  devices: string[];
-  clusters: string[];
-  templates: qt.Dict<Template>;
-  hasShapeInfo: boolean;
-  maxMetaEdgeSize: number;
-  options: Opts;
-  node(n?: string): GroupNode | OpNode | undefined;
-  setNode(n: string, g: GroupNode | OpNode): void;
-  getNodeMap(): qt.Dict<GroupNode | OpNode>;
-  getBridge(n: string): Graph<GroupNode | OpNode, MetaEdge> | undefined;
-  getPreds(n: string): Edges;
-  getSuccs(n: string): Edges;
-  getOrdering(n: string): qt.Dict<number>;
-  getIndexer(): (n: string) => number;
-  mergeStats(s: qp.StepStats): void;
-}
-
-export interface HierarchyParams {
-  verifyTemplate: boolean;
-  seriesMinSize: number;
-  seriesMap: qt.Dict<SeriesType>;
-  rankdir: 'TB' | 'BT' | 'LR' | 'RL';
-  usePatterns: boolean;
+  addBytes(b: number) {
+    this.bytes = Math.max(this.bytes ?? 0, b);
+  }
+  addTime(s: number, e: number) {
+    this.start = Math.min(this.start ?? Infinity, s);
+    this.end = Math.max(this.end ?? 0, e);
+  }
+  combine(ss: NodeStats) {
+    this.bytes = this.bytes ?? 0 + (ss.bytes ?? 0);
+    if (ss.getMicros() !== undefined) this.addTime(ss.start!, ss.end!);
+  }
+  getMicros() {
+    if (this.start !== undefined && this.end !== undefined) {
+      return this.end - this.start;
+    }
+    return undefined;
+  }
 }
 
 export const Class = {
@@ -186,55 +164,3 @@ export const Class = {
   BRIDGENODE: 'bridge',
   ELLIPSISNODE: 'ellipsis'
 };
-
-export interface Tracker {
-  setMessage(m: string): void;
-  reportError(m: string, err: Error): void;
-  updateProgress(inc: number): void;
-}
-
-export interface Health {
-  device_name: string;
-  node_name: string;
-  output_slot: number;
-  dtype: string;
-  shape: number[];
-  value: number[];
-  wall_time: number;
-  step: number;
-}
-
-export interface HealthEntry {
-  background_color: string;
-  label: string;
-}
-
-export class NodeStats {
-  size: number[][];
-  bytes?: number;
-  start?: number;
-  end?: number;
-
-  constructor(size: number[][]) {
-    this.size = size;
-  }
-  addBytes(bytes: number) {
-    this.bytes = Math.max(this.bytes ?? 0, bytes);
-  }
-  addTime(start: number, end: number) {
-    this.start = Math.min(this.start ?? Infinity, start);
-    this.end = Math.max(this.end ?? 0, end);
-  }
-  combine(stats: NodeStats) {
-    this.bytes = this.bytes ?? 0 + (stats.bytes ?? 0);
-    if (stats.getMicros() !== undefined) {
-      this.addTime(stats.start!, stats.end!);
-    }
-  }
-  getMicros() {
-    if (this.start !== undefined && this.end !== undefined) {
-      return this.end - this.start;
-    }
-    return undefined;
-  }
-}

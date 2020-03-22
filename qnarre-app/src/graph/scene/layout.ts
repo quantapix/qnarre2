@@ -11,7 +11,7 @@ export function layoutScene(d: qr.GroupNdata) {
   if (d.node.type === qt.NodeType.META) {
     layoutMetaNode(d);
   } else if (d.node.type === qt.NodeType.SERIES) {
-    layoutSeriesNode(d);
+    layoutNseries(d);
   }
 }
 
@@ -54,7 +54,7 @@ function layoutChildren(d: qr.GroupNdata) {
           layoutScene(c as qr.GroupNdata);
         } else {
           const g = c as qr.GroupNdata;
-          const series = g.node.noControlEdges
+          const series = g.node.noControls
             ? qp.PARAMS.nodeSize.series.vertical
             : qp.PARAMS.nodeSize.series.horizontal;
           _.extend(c, series);
@@ -214,7 +214,7 @@ function layoutMetaNode(d: qr.GroupNdata) {
   d.height = d.paddingTop + d.coreBox.height + d.paddingBottom;
 }
 
-function layoutSeriesNode(d: qr.GroupNdata) {
+function layoutNseries(d: qr.GroupNdata) {
   const g = d.coreGraph;
   const ps = qp.PARAMS.subscene.series;
   _.extend(d, ps);
