@@ -269,7 +269,7 @@ export function buildShape(group, d, nodeClass: string) {
   switch (d.node.type) {
     case qt.NodeType.OP:
       const n = d.node as qt.Noper;
-      if (_.isNumber(n.fInputIdx) || _.isNumber(n.fOutputIdx)) {
+      if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
         qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR_TARGET);
         break;
       }
@@ -330,7 +330,7 @@ function position(group, d: qr.Ndata) {
   switch (d.node.type) {
     case qt.NodeType.OP: {
       const n = d.node as qt.Noper;
-      if (_.isNumber(n.fInputIdx) || _.isNumber(n.fOutputIdx)) {
+      if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
         const sh = qs.selectChild(g, 'polygon');
         qs.positionTriangle(sh, d.x, d.y, d.coreBox.width, d.coreBox.height);
       } else {
@@ -435,9 +435,9 @@ export function getFillForNode(
           : (renderInfo.node as qt.Nbridge).inbound
           ? '#0ef'
           : '#fe0';
-      } else if (_.isNumber((renderInfo.node as qt.Noper).fInputIdx)) {
+      } else if (_.isNumber((renderInfo.node as qt.Noper).inIdx)) {
         return '#795548';
-      } else if (_.isNumber((renderInfo.node as qt.Noper).fOutputIdx)) {
+      } else if (_.isNumber((renderInfo.node as qt.Noper).outIdx)) {
         return '#009688';
       } else {
         return 'white';

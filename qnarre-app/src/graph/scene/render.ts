@@ -236,8 +236,8 @@ export class Gdata {
     n.include = node.include;
     n.outShapes = _.cloneDeep(node.outShapes);
     n.cluster = node.cluster;
-    n.fInputIdx = node.fInputIdx;
-    n.fOutputIdx = node.fOutputIdx;
+    n.inIdx = node.inIdx;
+    n.outIdx = node.outIdx;
     n.ins = node.ins.map(ni => {
       const newNormInput = _.clone(ni);
       newNormInput.name = ni.name.replace(fnName, prefix);
@@ -309,9 +309,8 @@ export class Gdata {
             o as qg.Noper,
             prefix
           );
-          if (_.isNumber(n3.fInputIdx))
-            this.patchEdgesIntoFunctionInputs(old, n3);
-          if (_.isNumber(n3.fOutputIdx)) dict[n3.fOutputIdx] = n3;
+          if (_.isNumber(n3.inIdx)) this.patchEdgesIntoFunctionInputs(old, n3);
+          if (_.isNumber(n3.outIdx)) dict[n3.outIdx] = n3;
           break;
         default:
           console.warn(o.name + ' is neither metanode nor opnode.');
@@ -354,7 +353,7 @@ export class Gdata {
   }
 
   private patchEdgesIntoFunctionInputs(old: qg.Noper, node: qg.Noper) {
-    let i = _.min([node.fInputIdx, old.ins.length - 1])!;
+    let i = _.min([node.inIdx, old.ins.length - 1])!;
     let inp = _.clone(old.ins[i]);
     while (inp.isControl) {
       i++;

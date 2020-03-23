@@ -79,8 +79,8 @@ export class Noper implements Ndata {
   inEmbeds = [] as Noper[];
   outEmbeds = [] as Noper[];
   compatible = false;
-  fInputIdx?: number;
-  fOutputIdx?: number;
+  inIdx?: number;
+  outIdx?: number;
 
   constructor(d: proto.NodeDef) {
     this.name = d.name;
@@ -93,7 +93,7 @@ export class Noper implements Ndata {
   }
 }
 
-function extractCluster(ps: Array<{key: string; value: any}>) {
+function extractCluster(ps: {key: string; value: any}[]) {
   for (let i = 0; i < ps.length; i++) {
     if (ps[i].key === '_cluster') return ps[i].value['s'] as string;
   }
@@ -125,7 +125,7 @@ function normIns(ins: string[]) {
   return ns;
 }
 
-function extractShapes(ps: Array<{key: string; value: any}>) {
+function extractShapes(ps: {key: string; value: any}[]) {
   for (let i = 0; i < ps.length; i++) {
     const {key, value} = ps[i];
     if (key === '_output_shapes') {
@@ -145,7 +145,7 @@ function extractShapes(ps: Array<{key: string; value: any}>) {
 
 type Histos = qt.Dict<qt.Dict<number>>;
 
-abstract class Ngroup implements Ndata {
+export abstract class Ngroup implements Ndata {
   isGroup = true;
   cardinality = 0;
   parent?: Ndata;
@@ -240,23 +240,23 @@ export function seriesName(
   return (p ? p + '/' : '') + n;
 }
 
+export interface LibraryFn {
+  meta: Nmeta;
+  usages: Node[];
+}
+
+export type Template = {names: string[]; level: number};
+
 export interface Edata extends qt.Named {
   isRef: boolean;
   outKey: string;
   isControl: boolean;
 }
 
-export interface LibraryFn {
-  meta: Nmeta;
-  usages: Node[];
-}
-
 export interface Edges {
   control: Nmeta[];
   regular: Nmeta[];
 }
-
-export type Template = {names: string[]; level: number};
 
 export class Emeta implements Edata {
   isRef = false;
@@ -274,26 +274,26 @@ export class Emeta implements Edata {
     this.w = w;
   }
 
-  addBase(e: Edata, h: qt.Hierarchy) {
-    this.bases.push(e);
-    if (e.isControl) {
+  addBase(l: qt.Link<Edata>, h: qt.Hierarchy) {
+    this.bases.push(l);
+    if (l.data?.isControl) {
       this.numControl += 1;
     } else {
       this.numRegular += 1;
     }
-    if (e.isRef) this.numRef += 1;
-    this.size += sizeOfEdge(e, h);
+    if (l.data?.isRef) this.numRef += 1;
+    this.size += sizeOf(l, h);
     h.maxEmetadgeSize = Math.max(h.maxEmetadgeSize, this.size);
   }
 }
 
-function sizeOfEdge(e: Edata, h: qt.Hierarchy) {
-  const n = h.node(e.v) as Noper;
+function sizeOf(l: qt.Link<Edata>, h: qt.Hierarchy) {
+  const n = h.node(l.nodes[0]) as Noper;
   if (!n.outShapes.length) return 1;
   h.hasShapeInfo = true;
-  const vs = Object.keys(n.outShapes)
-    .map(k => n.outShapes[k])
-    .map(s => (s ? s.reduce((acc, v) => acc * (v === -1 ? 1 : v), 1) : 1));
+  const vs = n.outShapes.map(s =>
+    s.reduce((a, v) => a * (v === -1 ? 1 : v), 1)
+  );
   return _.sum(vs);
 }
 
@@ -322,35 +322,35 @@ export class SlimGraph {
 
   mergeStats(g: SlimGraph, stats: proto.StepStats, devices?: qt.Dict<boolean>) {
     _.each(g.nodes, n => (n.stats = undefined));
-    _.each(stats.dev_stats, ds => {
+    stats.dev_stats.forEach(ds => {
       if (devices && !devices[ds.device]) return;
-      _.each(ds.node_stats, ns => {
+      ds.node_stats.forEach(ns => {
         const n =
           ns.node_name in g.nodes ? ns.node_name : strictName(ns.node_name);
         if (!(n in g.nodes)) return;
-        let bytes = 0;
+        let b = 0;
         if (ns.memory) {
           _.each(ns.memory, m => {
             if (m.total_bytes) {
               if (m.total_bytes > 0) {
-                bytes += Number(m.total_bytes);
+                b += Number(m.total_bytes);
               } else {
-                console.log('ignoring negative memory allocation for ' + n);
+                console.log('ignoring negative memory for ' + n);
               }
             }
           });
         }
-        let size = [] as number[][];
+        let s = [] as number[][];
         if (ns.output) {
-          size = _.map(ns.output, o =>
-            _.map(o.tensor_description.shape.dim, d => d.size)
+          s = ns.output.map(o =>
+            o.tensor_description.shape.dim.map(d => d.size)
           );
         }
         g.nodes[n].device = ds.device;
         if (!g.nodes[n].stats) {
-          g.nodes[n].stats = new qt.NodeStats(size);
+          g.nodes[n].stats = new qt.NodeStats(s);
         }
-        g.nodes[n].stats?.addBytes(bytes);
+        g.nodes[n].stats?.addBytes(b);
         if (ns.all_end_rel_micros) {
           if (ns.all_end_rel_micros > 0) {
             g.nodes[n].stats?.addTime(
@@ -378,132 +378,112 @@ export async function build(
 ): Promise<SlimGraph> {
   const inEmbed = {} as qt.Dict<Noper>;
   const outEmbed = {} as qt.Dict<Noper>;
-  const outEmbeds = {} as qt.Dict<Noper[]>;
-  const isInPred = embedPredicate(ps.inEmbedTypes);
-  const isOutPred = embedPredicate(ps.outEmbedTypes);
-  const enames = [] as string[];
+  const outs = {} as qt.Dict<Noper[]>;
+  const isIn = embedPredicate(ps.inEmbedTypes);
+  const isOut = embedPredicate(ps.outEmbedTypes);
+  const es = [] as string[];
   const raws = def.node;
-  const names = new Array<string>(raws.length);
+  const ns = new Array<string>(raws.length);
   const nodes = await t.runAsyncTask('Normalizing names', 30, () => {
     const ops = new Array<Noper>(raws.length);
     let i = 0;
-    function processRaw(raw: proto.NodeDef) {
-      const o = new Noper(raw);
-      if (isInPred(o)) {
-        enames.push(o.name);
+    function raw(p: proto.NodeDef) {
+      const o = new Noper(p);
+      if (isIn(o)) {
+        es.push(o.name);
         inEmbed[o.name] = o;
         return o;
       }
-      if (isOutPred(o)) {
-        enames.push(o.name);
+      if (isOut(o)) {
+        es.push(o.name);
         outEmbed[o.name] = o;
-        _.each(o.ins, inp => {
+        o.ins.forEach(inp => {
           const n = inp.name;
-          outEmbeds[n] = outEmbeds[n] || [];
-          outEmbeds[n].push(o);
+          outs[n] = outs[n] || [];
+          outs[n].push(o);
         });
         return o;
       }
       ops[i] = o;
-      names[i] = o.name;
+      ns[i] = o.name;
       i++;
       return o;
     }
-    _.each(raws, processRaw);
-    function processFn(fn: proto.FunctionDef) {
-      const fname = qp.LIBRARY_PREFIX + fn.signature.name;
-      processRaw({name: fname, input: [], device: '', op: '', attr: []});
+    raws.forEach(raw);
+    function process(fn: proto.FunctionDef) {
+      const f = qp.LIBRARY_PREFIX + fn.signature.name;
+      raw({name: f, input: [], device: '', op: '', attr: []});
       let args = fn.signature.input_arg;
       if (args.length) {
         let idx = 0;
         // eslint-disable-next-line no-inner-declarations
-        function processInput(arg: proto.ArgDef) {
-          const o = processRaw({
-            name: fname + qp.NAMESPACE_DELIM + arg.name,
+        function input(arg: proto.ArgDef) {
+          const o = raw({
+            name: f + qp.NAMESPACE_DELIM + arg.name,
             input: [],
             device: '',
             op: 'input_arg',
             attr: [{key: 'T', value: {type: arg.type}}]
           });
-          o.fInputIdx = idx;
+          o.inIdx = idx;
           idx++;
         }
-        /*
-        if (args['name']) {
-          processInput(args['name']);
-        } else {
-          _.each(args, processInput);
-        }
-        */
-        _.each(args, processInput);
+        args.forEach(input);
       }
       const onames = {} as qt.Dict<any>;
       args = fn.signature.output_arg;
       if (args.length) {
         let idx = 0;
         // eslint-disable-next-line no-inner-declarations
-        function processOutput(arg: proto.ArgDef) {
-          onames[fname + qp.NAMESPACE_DELIM + arg.name] = idx;
+        function output(arg: proto.ArgDef) {
+          onames[f + qp.NAMESPACE_DELIM + arg.name] = idx;
           idx++;
         }
-        /*
-        if (args['name']) {
-          processOutput(args['name']);
-        } else {
-          _.each(args, processOutput);
-        }
-        */
-        _.each(args, processOutput);
+        args.forEach(output);
       }
-      _.each(fn.node_def, raw => {
-        raw.name = fname + '/' + raw.name;
-        if (typeof raw.input === 'string') {
-          raw.input = [raw.input];
-        }
-        const o = processRaw(raw);
-        if (_.isNumber(onames[raw.name])) {
-          o.fOutputIdx = onames[raw.name];
-        }
-        _.each(o.ins, ni => {
-          ni.name = fname + qp.NAMESPACE_DELIM + ni.name;
+      fn.node_def.forEach(r => {
+        r.name = f + '/' + r.name;
+        if (typeof r.input === 'string') r.input = [r.input];
+        const o = raw(r);
+        if (_.isNumber(onames[r.name])) o.outIdx = onames[r.name];
+        o.ins.forEach(n => {
+          n.name = f + qp.NAMESPACE_DELIM + n.name;
         });
       });
     }
-    if (def.library && def.library.function) {
-      _.each(def.library.function, processFn);
-    }
+    def.library?.function?.forEach(process);
     ops.splice(i);
-    names.splice(i);
+    ns.splice(i);
     return ops;
   });
-  return t.runAsyncTask('Building the data structure', 70, () => {
-    const norms = mapStrictHierarchy(names, enames);
+  return t.runAsyncTask('Building data structure', 70, () => {
+    const norms = mapStrictHierarchy(ns, es);
     const g = new SlimGraph();
-    _.each(nodes, n => {
+    nodes.forEach(n => {
       const nn = norms[n.name] || n.name;
       g.nodes[nn] = n;
-      if (n.name in outEmbeds) {
-        n.outEmbeds = outEmbeds[n.name];
-        _.each(n.outEmbeds, n2 => (n2.name = norms[n2.name] || n2.name));
+      if (n.name in outs) {
+        n.outEmbeds = outs[n.name];
+        n.outEmbeds.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
       }
       n.name = nn;
     });
-    _.each(nodes, n => {
-      _.each(n.ins, (inp, i) => {
-        const name = inp.name;
-        if (name in inEmbed) {
-          const ie = inEmbed[name];
+    nodes.forEach(n => {
+      n.ins.forEach((inp, i) => {
+        const nn = inp.name;
+        if (nn in inEmbed) {
+          const ie = inEmbed[nn];
           n.inEmbeds.push(ie);
           for (const e of ie.ins) {
             g.addEdge(norms[e.name] || e.name, n, e, ps, i);
           }
-        } else if (name in outEmbed) {
-          const oe = outEmbed[name];
+        } else if (nn in outEmbed) {
+          const oe = outEmbed[nn];
           for (const e of oe.ins) {
             g.addEdge(norms[e.name] || e.name, n, inp, ps, i);
           }
         } else {
-          g.addEdge(norms[name] || name, n, inp, ps, i);
+          g.addEdge(norms[nn] || nn, n, inp, ps, i);
         }
       });
     });
@@ -528,7 +508,9 @@ function mapStrictHierarchy(names: string[], enames: string[]) {
   names.sort();
   for (let i = 0; i < names.length - 1; ++i) {
     const n0 = names[i];
-    _.each(getHierarchicalPath(n0).slice(0, -1), ps => (es[ps] = true));
+    getHierarchicalPath(n0)
+      .slice(0, -1)
+      .forEach(p => (es[p] = true));
     for (let j = i + 1; j < names.length; ++j) {
       const n1 = names[j];
       if (_.startsWith(n1, n0)) {
@@ -544,7 +526,7 @@ function mapStrictHierarchy(names: string[], enames: string[]) {
       }
     }
   }
-  _.each(enames, e => {
+  enames.forEach(e => {
     if (e in es) m[e] = strictName(e);
   });
   return m;
@@ -559,9 +541,7 @@ export function getHierarchicalPath(name: string, series?: qt.Dict<string>) {
   }
   if (series) {
     const n = series[name];
-    if (n) {
-      p.push(n);
-    }
+    if (n) p.push(n);
   }
   p.push(name);
   return p;
