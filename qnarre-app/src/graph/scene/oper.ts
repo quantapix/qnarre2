@@ -1,11 +1,11 @@
-import * as qt from './types';
+import * as qg from './graph';
 import * as qp from './params';
 
 export interface CompatibilityProvider {
-  opValid: (opNode: qt.Noper) => boolean;
+  valid: (n: qg.Noper) => boolean;
 }
 
-export class TpuCompatibilityProvider implements CompatibilityProvider {
+export class TpuCompatibility implements CompatibilityProvider {
   static readonly WHITELIST = [
     'Abs',
     'Acos',
@@ -383,47 +383,33 @@ export class TpuCompatibilityProvider implements CompatibilityProvider {
     'StatsAggregatorSummary'
   ];
 
-  private isNotTpuOp(opDevice: string) {
-    if (opDevice.toLowerCase().search('cpu:') != -1) {
-      return true;
-    }
-    if (opDevice.toLowerCase().search('gpu:') != -1) {
-      return true;
-    }
-    return opDevice.toLowerCase().search('tpu') == -1;
+  private notTpuOp(d: string) {
+    if (d.toLowerCase().search('cpu:') != -1) return true;
+    if (d.toLowerCase().search('gpu:') != -1) return true;
+    return d.toLowerCase().search('tpu') == -1;
   }
 
-  opValid(opNode: qt.Noper) {
-    if (opNode.name.search(qp.LIBRARY_PREFIX) == 0) {
-      return true;
-    }
-    if (!opNode.op) {
-      return true;
-    }
-    if (opNode.device && this.isNotTpuOp(opNode.device)) {
-      return true;
-    }
-    if (opNode.device && opNode.device.search('TPU_SYSTEM') != -1) {
-      return true;
-    }
-    return _.includes(TpuCompatibilityProvider.WHITELIST, opNode.op);
+  valid(n: qg.Noper) {
+    if (n.name.search(qp.LIBRARY_PREFIX) == 0) return true;
+    if (!n.op) return true;
+    if (n.device && this.notTpuOp(n.device)) return true;
+    if (n.device && n.device.search('TPU_SYSTEM') != -1) return true;
+    return _.includes(TpuCompatibility.WHITELIST, n.op);
   }
 }
 
 export function checkOpsForCompatibility(
-  g: qt.SlimGraph,
-  provider: CompatibilityProvider
+  g: qg.SlimGraph,
+  p: CompatibilityProvider
 ) {
-  if (provider === null) {
-    throw new Error('Compatibility provider required, but got: ' + provider);
-  }
-  _.each(g.nodes, node => {
-    node.compatible = provider.opValid(node);
-    _.each(node.inEmbeds, node => {
-      node.compatible = provider.opValid(node);
+  if (p === null) throw new Error('Compatibility provider required, : ' + p);
+  _.each(g.nodes, n => {
+    n.compatible = p.valid(n);
+    n.inEmbeds.forEach(n2 => {
+      n2.compatible = p.valid(n2);
     });
-    _.each(node.outEmbeds, node => {
-      node.compatible = provider.opValid(node);
+    n.outEmbeds.forEach(n2 => {
+      n2.compatible = p.valid(n2);
     });
   });
 }

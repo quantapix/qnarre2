@@ -166,10 +166,7 @@ export class DashboardComponent implements OnInit {
       // Either this dashboard is already initialized ... or we are not yet ready to initialize.
       return;
     }
-    this.set(
-      '_compatibilityProvider',
-      new tf.graph.op.TpuCompatibilityProvider()
-    );
+    this.set('_compatibilityProvider', new tf.graph.op.TpuCompatibility());
     // Set this to true so we only initialize once.
     this._initialized = true;
     this._fetchDataset().then(dataset => {

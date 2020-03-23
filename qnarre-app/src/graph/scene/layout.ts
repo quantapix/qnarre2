@@ -31,7 +31,7 @@ function layoutChildren(d: qr.GroupNdata) {
   const cs = d.coreGraph
     .nodes()
     .map(n => d.coreGraph.node(n))
-    .concat(d.isolatedInExtract, d.isolatedOutExtract, d.libraryFnsExtract);
+    .concat(d.isolatedInExtract, d.isolatedOutExtract, d.libfnsExtract);
   cs.forEach(c => {
     switch (c.node.type) {
       case qt.NodeType.OP:
@@ -176,12 +176,12 @@ function layoutMetaNode(d: qr.GroupNdata) {
     },
     0
   );
-  const fw = d.libraryFnsExtract.length
-    ? _.max(d.libraryFnsExtract.map(d => d.width))
+  const fw = d.libfnsExtract.length
+    ? _.max(d.libfnsExtract.map(d => d.width))
     : null;
-  d.libraryFnsBox.width = fw != null ? fw : 0;
-  d.libraryFnsBox.height = _.reduce(
-    d.libraryFnsExtract,
+  d.libfnsBox.width = fw != null ? fw : 0;
+  d.libfnsBox.height = _.reduce(
+    d.libfnsExtract,
     (h, c, i) => {
       const y = i > 0 ? ps.extractYOffset : 0;
       c.x = 0;
@@ -193,7 +193,7 @@ function layoutMetaNode(d: qr.GroupNdata) {
   let numParts = 0;
   if (d.isolatedInExtract.length > 0) numParts++;
   if (d.isolatedOutExtract.length > 0) numParts++;
-  if (d.libraryFnsExtract.length > 0) numParts++;
+  if (d.libfnsExtract.length > 0) numParts++;
   if (d.coreGraph.nodeCount() > 0) numParts++;
   const offset = qp.PARAMS.subscene.meta.extractXOffset;
   const padding = numParts <= 1 ? 0 : numParts * offset;
@@ -201,13 +201,13 @@ function layoutMetaNode(d: qr.GroupNdata) {
     MIN_AUX_WIDTH,
     d.inExtractBox.width + d.outExtractBox.width
   );
-  d.coreBox.width += auxWidth + padding + d.libraryFnsBox.width + padding;
+  d.coreBox.width += auxWidth + padding + d.libfnsBox.width + padding;
   d.coreBox.height =
     ps.labelHeight +
     Math.max(
       d.inExtractBox.height,
       d.coreBox.height,
-      d.libraryFnsBox.height,
+      d.libfnsBox.height,
       d.outExtractBox.height
     );
   d.width = d.coreBox.width + ps.paddingLeft + ps.paddingRight;

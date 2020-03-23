@@ -1,5 +1,5 @@
 /* eslint-disable no-case-declarations */
-import * as op from './op';
+import * as op from './oper';
 import * as qg from './graph';
 import * as qh from './hierarchy';
 import * as qp from './params';
@@ -49,7 +49,7 @@ export function loadHierarchicalGraph(
   t: qu.Tracker,
   path?: string,
   blob?: Blob,
-  p: op.CompatibilityProvider = new op.TpuCompatibilityProvider(),
+  p: op.CompatibilityProvider = new op.TpuCompatibility(),
   ps: qt.HierarchyParams = qp.DefaultHierarchyParams
 ) {
   const dT = t.getSubtaskTracker('Data', 30);

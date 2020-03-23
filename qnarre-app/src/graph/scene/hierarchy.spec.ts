@@ -128,7 +128,7 @@ describe('hierarchy', () => {
       .build(this.slimGraph, this.options, this.dummyTracker)
       .then(hierarchy => {
         if (!hierarchy) throw new Error('Expected hierarchy to be built');
-        expect(hierarchy.hasShapeInfo).to.be.true;
+        expect(hierarchy.hasShape).to.be.true;
         expect(hierarchy.maxMetaEdgeSize).to.equal(20000);
         expect(hierarchy.root.metag.edge('Q', 'Y')).to.exist;
         expect(hierarchy.root.metag.edge('W', 'Y')).to.exist;

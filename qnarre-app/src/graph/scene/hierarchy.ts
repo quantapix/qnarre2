@@ -7,99 +7,93 @@ import * as qu from './util';
 import * as proto from './proto';
 import * as template from './template';
 
-export interface HierarchyParams {
-  verifyTemplate: boolean;
-  seriesMinSize: number;
-  seriesMap: qt.Dict<SeriesType>;
-  rankdir: qt.Dir;
-  usePatterns: boolean;
-}
-
 class Hierarchy {
   root: qg.Nmeta;
-  libraryFns = {} as qt.Dict<qg.LibraryFn>;
+  libfns = {} as qt.Dict<qg.LibraryFn>;
   devices = [] as string[];
   clusters = [] as string[];
   templates = {} as qt.Dict<qg.Template>;
-  hasShapeInfo = false;
+  hasShape = false;
   maxMetaEdgeSize = 1;
-  options: qt.Opts;
-  orderings = {} as qt.Dict<qt.Dict<number>>;
-  private index: qt.Dict<qg.Ngroup | qg.Noper>;
+  orders = {} as qt.Dict<qt.Dict<number>>;
+  private ns: qt.Dict<qg.Ngroup | qg.Noper>;
 
-  constructor(options: qt.Opts) {
-    this.options = options || {};
-    this.options.isCompound = true;
-    this.root = qg.createMetaNode(qp.ROOT_NAME, this.options);
-    this.index = {};
-    this.index[qp.ROOT_NAME] = this.root;
+  constructor(public opts = {} as qt.Opts) {
+    this.opts.isCompound = true;
+    this.root = new qg.Nmeta(qp.ROOT_NAME, this.opts);
+    this.ns = {};
+    this.ns[qp.ROOT_NAME] = this.root;
   }
-  node(name?: string) {
-    return name ? this.index[name] : undefined;
+  node(x: any) {
+    return this.ns[String(x)];
   }
-  setNode(name: string, node: qg.Ngroup | qg.Noper) {
-    this.index[name] = node;
+  setNode(x: any, n: qg.Ngroup | qg.Noper) {
+    this.ns[String(x)] = n;
+    return this;
   }
-  getNodeMap() {
-    return this.index;
+  nodes() {
+    return this.ns;
   }
-  getBridge(name: string): Graph | undefined {
-    const n = this.index[name];
-    if (!n) throw Error('Could not find node: ' + name);
-    if (!('metag' in n)) return undefined;
+  bridge(x: any) {
+    const nn = String(x);
+    const n = this.ns[nn];
+    if (!n || !('meta' in n)) return undefined;
     if (n.bridge) return n.bridge;
-    const b = (n.bridge = qg.createGraph<qg.Ngroup | qg.Noper, qg.Emeta>(
+    const b = qg.createGraph<qg.Gdata, qg.Ngroup | qg.Noper, qg.Emeta>(
       'BRIDGEGRAPH',
       qt.GraphType.BRIDGE,
-      this.options
-    ));
-    if (!n.parent || !('metag' in n.parent)) return b;
+      this.opts
+    );
+    n.bridge = b;
     const p = n.parent as qg.Ngroup;
-    _.each([p.metag, this.getBridge(p.name)], (g?: Graph) => {
-      g?.edges()
-        .filter(e => e.v === name || e.w === name)
-        .forEach(ed => {
-          const inbound = ed.w === name;
-          _.each(g.edge(ed).bases, (e: qt.BaseEdge) => {
-            const [desc, other] = inbound ? [e.w, ed.v] : [e.v, ed.w];
-            const c = this.getChildName(name, desc);
-            const d = {v: inbound ? other : c, w: inbound ? c : other};
-            let m = b.edge(d as qt.EdgeObject);
+    if (!p || !('meta' in p)) return b;
+    [p.meta, this.bridge(p.name)].forEach(g => {
+      g?.links()
+        .filter(l => l.nodes[0] === nn || l.nodes[1] === nn)
+        .forEach(l => {
+          const inbound = l.nodes[1] === nn;
+          g.edge(l)!.bases.forEach(l2 => {
+            let [desc, n1] = l2.nodes;
+            if (inbound) [n1, desc] = l2.nodes;
+            const c = this.childName(nn, desc)!;
+            const d = [inbound ? n1 : c, inbound ? c : n1];
+            let m = b.edge(d);
             if (!m) {
-              m = qg.createMetaEdge(d.v, d.w);
+              m = new qg.Emeta(d);
               m.inbound = inbound;
-              b.setEdge(d.v, d.w, m);
+              b.setEdge(d, m);
             }
-            m.addBase(e, this);
+            m.addBase(l, this);
           });
         });
     });
     return b;
   }
-  getChildName(name: string, desc: string) {
-    let n = this.index[desc] as qg.Ndata | undefined;
-    while (n) {
-      if (n.parent?.name === name) return n.name;
-      n = n.parent;
+  childName(n: string, desc: string) {
+    let d = this.ns[desc] as qg.Ndata | undefined;
+    while (d) {
+      if (d.parent?.name === n) return d.name;
+      d = d.parent;
     }
-    throw Error('No named child for descendant: ' + desc);
+    throw Error('No child for descendant: ' + desc);
   }
-  getPreds(name: string) {
-    const n = this.index[name];
-    if (!n) throw Error('Could not find node: ' + name);
-    const preds = this.getOneWays(n, true);
+  preds(x: any) {
+    const nn = String(x);
+    const n = this.ns[nn];
+    if (!n) throw Error('Could not find node: ' + nn);
+    const preds = this.oneWays(n, true);
     if (!n.isGroup) {
       (n as qg.Noper).inEmbeds.forEach(en => {
         (n as qg.Noper).ins.forEach(ni => {
           if (ni.name === en.name) {
-            const m = new qg.Emeta(en.name, name);
+            const m = new qg.Emeta(en.name, nn);
             m.addBase(
               {
                 isControl: ni.isControl,
                 outKey: ni.outKey,
                 isRef: false,
                 v: en.name,
-                w: name
+                w: nn
               },
               this
             );
@@ -110,10 +104,10 @@ class Hierarchy {
     }
     return preds;
   }
-  getSuccs(name: string) {
-    const n = this.index[name];
+  succs(name: string) {
+    const n = this.ns[name];
     if (!n) throw Error('Could not find node: ' + name);
-    const succs = this.getOneWays(n, false);
+    const succs = this.oneWays(n, false);
     if (!n.isGroup) {
       (n as qg.Noper).outEmbeds.forEach(en => {
         en.ins.forEach(ni => {
@@ -136,7 +130,7 @@ class Hierarchy {
     }
     return succs;
   }
-  getOneWays(node: qg.Ngroup | qg.Noper, inbound: boolean): qg.Edges {
+  oneWays(node: qg.Ngroup | qg.Noper, inbound: boolean): qg.Edges {
     const es = new qg.Edges();
     if (!node.parent || !node.parent.isGroup) return es;
     const p = node.parent as qg.Ngroup;
@@ -147,10 +141,10 @@ class Hierarchy {
     return es;
   }
   getOrdering(name: string): qt.Dict<number> {
-    const node = this.index[name];
+    const node = this.ns[name];
     if (!node) throw Error('Could not find node: ' + name);
     if (!node.isGroup) return {};
-    if (name in this.orderings) return this.orderings[name];
+    if (name in this.orders) return this.orders[name];
     const succs = {} as qt.Dict<string[]>;
     const dests = {} as qt.Dict<boolean>;
     const m = (node as qg.Ngroup).meta;
@@ -163,7 +157,7 @@ class Hierarchy {
       dests[e.w] = true;
     });
     const queue: string[] = _.difference(_.keys(succs), _.keys(dests));
-    const ord = (this.orderings[name] = {} as qt.Dict<number>);
+    const ord = (this.orders[name] = {} as qt.Dict<number>);
     let i = 0;
     while (queue.length) {
       const c = queue.shift()!;
@@ -184,7 +178,7 @@ class Hierarchy {
   addNodes(g: qg.SlimGraph) {
     const map = {} as qt.Dict<qg.Noper[]>;
     _.each(g.nodes, n => {
-      const path = qg.getHierarchicalPath(n.name);
+      const path = qg.hierarchyPath(n.name);
       let p = this.root;
       p.depth = Math.max(path.length, p.depth);
       if (!map[n.op]) map[n.op] = [];
@@ -220,14 +214,14 @@ class Hierarchy {
         const name = path[i];
         let c = this.node(name) as qg.Nmeta;
         if (!c) {
-          c = qg.createMetaNode(name, this.options);
+          c = qg.createMetaNode(name, this.opts);
           c.parent = p;
           this.setNode(name, c);
           p.meta.setNode(name, c);
           if (name.startsWith(qp.LIBRARY_PREFIX) && p.name === qp.ROOT_NAME) {
             const fn = name.substring(qp.LIBRARY_PREFIX.length);
             if (!map[fn]) map[fn] = [];
-            this.libraryFns[fn] = {
+            this.libfns[fn] = {
               node: c,
               usages: map[fn]
             };
@@ -349,6 +343,14 @@ class Hierarchy {
   }
 }
 
+export interface HierarchyParams {
+  verifyTemplate: boolean;
+  seriesMinSize: number;
+  seriesMap: qt.Dict<SeriesType>;
+  rankdir: qt.Dir;
+  usePatterns: boolean;
+}
+
 class Edges implements qt.Edges {
   control = [] as qg.Emeta[];
   regular = [] as qg.Emeta[];
@@ -419,7 +421,7 @@ function groupSeries(
   });
   const cs = clusterNodes(meta);
   const fn = patterns ? detectSeries : detectBySuffixes;
-  const dict = fn(cs, meta, h.options);
+  const dict = fn(cs, meta, h.opts);
   _.each(dict, (sn: qg.Nseries, name: string) => {
     const ns = sn.meta.nodes();
     ns.forEach(n => {

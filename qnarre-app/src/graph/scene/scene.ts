@@ -179,9 +179,9 @@ export function buildGroup(
   } else {
     selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
   }
-  if (ndata.libraryFnsExtract.length > 0) {
+  if (ndata.libfnsExtract.length > 0) {
     const g = selectOrCreate(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY);
-    qn.buildGroup(g, ndata.libraryFnsExtract, elem);
+    qn.buildGroup(g, ndata.libfnsExtract, elem);
   } else {
     selectChild(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY).remove();
   }
@@ -203,7 +203,7 @@ function position(scene, ndata: qr.GroupNdata) {
   translate(selectChild(scene, 'g', qt.Class.Scene.CORE), 0, y);
   const hasIn = ndata.isolatedInExtract.length > 0;
   const hasOut = ndata.isolatedOutExtract.length > 0;
-  const hasLib = ndata.libraryFnsExtract.length > 0;
+  const hasLib = ndata.libfnsExtract.length > 0;
   const offset = qp.PARAMS.subscene.meta.extractXOffset;
   let w = 0;
   if (hasIn) w += ndata.outExtractBox.width;
@@ -218,7 +218,7 @@ function position(scene, ndata: qr.GroupNdata) {
         ndata.outExtractBox.width -
         (hasOut ? offset : 0);
     }
-    x -= ndata.libraryFnsBox.width - (hasLib ? offset : 0);
+    x -= ndata.libfnsBox.width - (hasLib ? offset : 0);
     translate(selectChild(scene, 'g', qt.Class.Scene.INEXTRACT), x, y);
   }
   if (hasOut) {
@@ -228,11 +228,11 @@ function position(scene, ndata: qr.GroupNdata) {
     } else {
       x -= ndata.outExtractBox.width / 2;
     }
-    x -= ndata.libraryFnsBox.width - (hasLib ? offset : 0);
+    x -= ndata.libfnsBox.width - (hasLib ? offset : 0);
     translate(selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
   }
   if (hasLib) {
-    const x = ndata.coreBox.width - ndata.libraryFnsBox.width / 2;
+    const x = ndata.coreBox.width - ndata.libfnsBox.width / 2;
     translate(selectChild(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY), x, y);
   }
 }

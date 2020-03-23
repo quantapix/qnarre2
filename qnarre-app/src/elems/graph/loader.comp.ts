@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import * as loader from '../../graph/scene/loader';
 import * as util from '../../graph/scene/util';
-import * as op from '../../graph/scene/op';
+import * as op from '../../graph/scene/oper';
 
 @Component({
   selector: 'qnr-graph-loader',
@@ -12,7 +12,7 @@ export class LoaderComponent implements OnInit {
   datasets: Array<{name: string; path: string}>;
   selectedData = 0;
   selectedFile: any;
-  compatibilityProvider = () => new op.TpuCompatibilityProvider();
+  compatibilityProvider = () => new op.TpuCompatibility();
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   overridingHierarchyParams = () => {};
   progress: {value: number; msg: string}; // notify

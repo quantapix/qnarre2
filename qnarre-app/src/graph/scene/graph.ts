@@ -5,14 +5,14 @@ import * as qt from './types';
 import * as qu from './util';
 
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
-  name: string,
-  type: string | number,
-  opts = {} as qt.Opts
+  n: string,
+  t: string | number,
+  o = {} as qt.Opts
 ) {
-  const g = new qt.Graph<G, N, E>(opts);
-  const d = opts as G;
-  d.name = name;
-  d.type = type;
+  const g = new qt.Graph<G, N, E>(o);
+  const d = o as G;
+  d.name = n;
+  d.type = t;
   d.rankdir = d.rankdir ?? 'bt';
   g.setData(d);
   return g;
@@ -173,11 +173,11 @@ export class Nmeta extends Ngroup {
   template?: string;
   assocFn?: string;
 
-  constructor(name: string, opt = {} as qt.Opts) {
+  constructor(n: string, o = {} as qt.Opts) {
     super(
-      name,
+      n,
       qt.NodeType.META,
-      createGraph<Gdata, Ngroup | Noper, Emeta>(name, qt.GraphType.META, opt)
+      createGraph<Gdata, Ngroup | Noper, Emeta>(n, qt.GraphType.META, o)
     );
     this.histo.op = {} as qt.Dict<number>;
   }
@@ -217,13 +217,13 @@ export class Nseries extends Ngroup {
     public suffix: string,
     public parentName: string,
     public cluster: number,
-    name = seriesName(prefix, suffix, parentName),
-    opt = {} as qt.Opts
+    n = seriesName(prefix, suffix, parentName),
+    o = {} as qt.Opts
   ) {
     super(
-      name,
+      n,
       qt.NodeType.SERIES,
-      createGraph<Gdata, Nmeta, Emeta>(name, qt.GraphType.SERIES, opt)
+      createGraph<Gdata, Nmeta, Emeta>(n, qt.GraphType.SERIES, o)
     );
   }
 }
@@ -269,7 +269,7 @@ export class Emeta implements Edata {
   numRef = 0;
   size = 0;
 
-  constructor(v: string, w: string) {
+  constructor(ns: string[]) {
     this.v = v;
     this.w = w;
   }
@@ -290,7 +290,7 @@ export class Emeta implements Edata {
 function sizeOf(l: qt.Link<Edata>, h: qt.Hierarchy) {
   const n = h.node(l.nodes[0]) as Noper;
   if (!n.outShapes.length) return 1;
-  h.hasShapeInfo = true;
+  h.hasShape = true;
   const vs = n.outShapes.map(s =>
     s.reduce((a, v) => a * (v === -1 ? 1 : v), 1)
   );
@@ -379,8 +379,8 @@ export async function build(
   const inEmbed = {} as qt.Dict<Noper>;
   const outEmbed = {} as qt.Dict<Noper>;
   const outs = {} as qt.Dict<Noper[]>;
-  const isIn = embedPredicate(ps.inEmbedTypes);
-  const isOut = embedPredicate(ps.outEmbedTypes);
+  const isIn = embedPred(ps.inEmbedTypes);
+  const isOut = embedPred(ps.outEmbedTypes);
   const es = [] as string[];
   const raws = def.node;
   const ns = new Array<string>(raws.length);
@@ -457,7 +457,7 @@ export async function build(
     return ops;
   });
   return t.runAsyncTask('Building data structure', 70, () => {
-    const norms = mapStrictHierarchy(ns, es);
+    const norms = mapHierarchy(ns, es);
     const g = new SlimGraph();
     nodes.forEach(n => {
       const nn = norms[n.name] || n.name;
@@ -492,7 +492,7 @@ export async function build(
   });
 }
 
-function embedPredicate(types: string[]) {
+function embedPred(types: string[]) {
   return (n: Noper) => {
     for (let i = 0; i < types.length; i++) {
       const re = new RegExp(types[i]);
@@ -502,13 +502,13 @@ function embedPredicate(types: string[]) {
   };
 }
 
-function mapStrictHierarchy(names: string[], enames: string[]) {
+function mapHierarchy(names: string[], enames: string[]) {
   const m = {} as qt.Dict<string>;
   const es = {} as qt.Dict<boolean>;
   names.sort();
   for (let i = 0; i < names.length - 1; ++i) {
     const n0 = names[i];
-    getHierarchicalPath(n0)
+    hierarchyPath(n0)
       .slice(0, -1)
       .forEach(p => (es[p] = true));
     for (let j = i + 1; j < names.length; ++j) {
@@ -532,7 +532,7 @@ function mapStrictHierarchy(names: string[], enames: string[]) {
   return m;
 }
 
-export function getHierarchicalPath(name: string, series?: qt.Dict<string>) {
+export function hierarchyPath(name: string, series?: qt.Dict<string>) {
   const p = [] as string[];
   let i = name.indexOf(qp.NAMESPACE_DELIM);
   while (i >= 0) {

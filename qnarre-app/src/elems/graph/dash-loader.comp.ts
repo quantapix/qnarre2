@@ -4,7 +4,7 @@ import * as loader from '../../graph/scene/loader';
 import * as q_graph from '../../graph/scene/graph';
 import * as util from '../../graph/scene/util';
 import * as hierarchy from '../../graph/scene/hierarchy';
-import * as op from '../../graph/scene/op';
+import * as op from '../../graph/scene/oper';
 
 @Component({
   selector: 'qnr-graph-dashboard-loader',
@@ -17,7 +17,7 @@ export class DashboardLoaderComponent implements OnInit {
   progress: {value: number; msg: string}; // notify
   selection: any;
   selectedFile: any;
-  compatibilityProvider = () => new op.TpuCompatibilityProvider();
+  compatibilityProvider = () => new op.TpuCompatibility();
   hierarchyParams = () => hierarchy.DefaultHierarchyParams;
   outGraphHierarchy: any; // readOnly, notify
   outGraph: any; // readOnly, notify

@@ -231,7 +231,7 @@ export class NodeInfoComponent implements OnInit {
       return [];
     }
 
-    const libraryFunctionData = hierarchy.libraryFns[node.assocFn];
+    const libraryFunctionData = hierarchy.libfns[node.assocFn];
     if (!libraryFunctionData) {
       // This is no function.
       return [];

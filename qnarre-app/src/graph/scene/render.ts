@@ -96,7 +96,7 @@ export class Gdata {
       .scaleLinear<string, string>()
       .domain([0, maxTime])
       .range(PARAMS.minMaxColors);
-    this.edgeWidthSizedBasedScale = this.hierarchy.hasShapeInfo
+    this.edgeWidthSizedBasedScale = this.hierarchy.hasShape
       ? edge.EDGE_WIDTH_SIZE_BASED_SCALE
       : d3
           .scaleLinear()
@@ -177,7 +177,7 @@ export class Gdata {
   }
 
   getNearestVisibleAncestor(name: string) {
-    const path = qg.getHierarchicalPath(name);
+    const path = qg.hierarchyPath(name);
     let i = 0;
     let node: Ndata | undefined;
     let n = name;
@@ -404,10 +404,10 @@ export class Gdata {
     const coreG = ndata.coreGraph;
     const os = [] as qg.Noper[];
     const cs = [] as qg.Nmeta[];
-    if (!_.isEmpty(this.hierarchy.libraryFns)) {
+    if (!_.isEmpty(this.hierarchy.libfns)) {
       _.each(metaG.nodes(), n => {
         const o = metaG.node(n) as qg.Noper;
-        const fd = this.hierarchy.libraryFns[o.op];
+        const fd = this.hierarchy.libfns[o.op];
         if (!fd || n.startsWith(qp.LIBRARY_PREFIX)) return;
         const c = this.cloneLibMeta(metaG, o, fd.node, fd.node.name, o.name);
         os.push(o);
@@ -448,14 +448,14 @@ export class Gdata {
     if (PARAMS.enableExtraction && ndata.node.type === qt.NodeType.META) {
       extractHighDegrees(ndata);
     }
-    if (!_.isEmpty(this.hierarchy.libraryFns)) {
+    if (!_.isEmpty(this.hierarchy.libfns)) {
       this.buildSubhierarchiesForNeededFunctions(metaG);
     }
     if (nodeName === qp.ROOT_NAME) {
-      _.forOwn(this.hierarchy.libraryFns, fd => {
+      _.forOwn(this.hierarchy.libfns, fd => {
         const n = fd.node;
         const cd = this.getOrCreateRenderNodeByName(n.name)!;
-        ndata.libraryFnsExtract.push(cd);
+        ndata.libfnsExtract.push(cd);
         cd.node.include = qt.InclusionType.EXCLUDE;
         coreG.removeNode(n.name);
       });
@@ -632,7 +632,7 @@ export class Gdata {
           if (n) {
             if (
               n.type === qt.NodeType.OP &&
-              this.hierarchy.libraryFns[(n as qg.Noper).op]
+              this.hierarchy.libfns[(n as qg.Noper).op]
             ) {
               for (let j = 1; j < front.length; j++) {
                 const nn = front.slice(0, j).join(qp.NAMESPACE_DELIM);
@@ -812,10 +812,10 @@ export class GroupNdata extends Ndata {
   coreGraph: qt.Graph<Ndata, MetaEdata>;
   inExtractBox: {width: number; height: number};
   outExtractBox: {width: number; height: number};
-  libraryFnsBox: {width: number; height: number};
+  libfnsBox: {width: number; height: number};
   isolatedInExtract: Ndata[];
   isolatedOutExtract: Ndata[];
-  libraryFnsExtract: Ndata[];
+  libfnsExtract: Ndata[];
 
   constructor(public node: qg.Ngroup, opts: qt.Opts) {
     super(node);
@@ -828,10 +828,10 @@ export class GroupNdata extends Ndata {
     );
     this.inExtractBox = {width: 0, height: 0};
     this.outExtractBox = {width: 0, height: 0};
-    this.libraryFnsBox = {width: 0, height: 0};
+    this.libfnsBox = {width: 0, height: 0};
     this.isolatedInExtract = [];
     this.isolatedOutExtract = [];
-    this.libraryFnsExtract = [];
+    this.libfnsExtract = [];
   }
 }
 
