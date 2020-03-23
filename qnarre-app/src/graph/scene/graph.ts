@@ -4,6 +4,19 @@ import * as qp from './params';
 import * as qt from './types';
 import * as qu from './util';
 
+export interface Gdata extends qt.Named, qt.Opts {
+  type: string | number;
+}
+
+export interface Ndata extends qt.Named {
+  type: qt.NodeType;
+  cardinality: number;
+  parent?: Ngroup;
+  stats?: qt.NodeStats;
+  include?: boolean;
+  attrs: qt.Dict<any>;
+}
+
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   n: string,
   t: string | number,
@@ -18,22 +31,8 @@ export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   return g;
 }
 
-export type MetaGraph = qt.Graph<Gdata, Ngroup | Noper, Emeta>;
-export type BridgeGraph = qt.Graph<Gdata, Ngroup | Noper, Emeta>;
-
-export interface Gdata extends qt.Named, qt.Opts {
-  type: string | number;
-}
-
-export interface Ndata extends qt.Named {
-  type: qt.NodeType;
-  isGroup: boolean;
-  cardinality: number;
-  parent?: Ndata;
-  stats?: qt.NodeStats;
-  include?: boolean;
-  attrs: qt.Dict<any>;
-}
+export type MetaGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
+export type BridgeGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 
 export interface Nbridge extends Ndata {
   inbound: boolean;
@@ -42,9 +41,8 @@ export interface Nbridge extends Ndata {
 export class Nellipsis implements Ndata {
   name = '';
   type = qt.NodeType.ELLIPSIS;
-  isGroup = false;
   cardinality = 1;
-  parent?: Ndata;
+  parent?: Ngroup;
   stats?: qt.NodeStats;
   include?: boolean;
   attrs = {} as qt.Dict<any>;
@@ -63,9 +61,8 @@ export type Shapes = number[][];
 export class Noper implements Ndata {
   name: string;
   type = qt.NodeType.OP;
-  isGroup = false;
   cardinality = 1;
-  parent?: Ndata;
+  parent?: Ngroup;
   stats?: qt.NodeStats;
   include?: boolean;
   attrs = {} as qt.Dict<any>;
@@ -146,9 +143,8 @@ function extractShapes(ps: {key: string; value: any}[]) {
 type Histos = qt.Dict<qt.Dict<number>>;
 
 export abstract class Ngroup implements Ndata {
-  isGroup = true;
   cardinality = 0;
-  parent?: Ndata;
+  parent?: Ngroup;
   stats?: qt.NodeStats;
   include?: boolean;
   attrs = {} as qt.Dict<any>;
@@ -166,6 +162,10 @@ export abstract class Ngroup implements Ndata {
     this.histo.op = {} as qt.Dict<number>;
     this.histo.compat = {compats: 0, incompats: 0};
   }
+}
+
+export function isGroup(n?: any): n is Ngroup {
+  return !!n && 'meta' in n;
 }
 
 export class Nmeta extends Ngroup {
@@ -197,7 +197,7 @@ export class Nmeta extends Ngroup {
     const q = [this] as Ndata[];
     while (q.length) {
       const n = q.shift()!;
-      if (n.isGroup) {
+      if (isGroup(n)) {
         const m = (n as Ngroup).meta;
         m.nodes().forEach(n => q.push(m.node(n)!));
       } else {
@@ -248,8 +248,8 @@ export interface LibraryFn {
 export type Template = {names: string[]; level: number};
 
 export interface Edata extends qt.Named {
-  isRef: boolean;
   outKey: string;
+  isRef: boolean;
   isControl: boolean;
 }
 
@@ -258,43 +258,35 @@ export interface Edges {
   regular: Nmeta[];
 }
 
+interface Hierarchy {
+  maxEdgeSize: number;
+  sizeOf(l: qt.Link<Emeta>): number;
+}
+
 export class Emeta implements Edata {
-  isRef = false;
   outKey = '';
+  isRef = false;
   isControl = false;
-  bases = [] as qt.Link<Edata>[];
-  inbound?: boolean;
+  links = [] as qt.Link<Edata>[];
   numRegular = 0;
   numControl = 0;
   numRef = 0;
   size = 0;
 
-  constructor(ns: string[]) {
-    this.v = v;
-    this.w = w;
-  }
+  constructor(public inbound?: boolean) {}
 
-  addBase(l: qt.Link<Edata>, h: qt.Hierarchy) {
-    this.bases.push(l);
+  addLink(l: qt.Link<Emeta>, h: Hierarchy) {
+    this.links.push(l);
     if (l.data?.isControl) {
       this.numControl += 1;
     } else {
       this.numRegular += 1;
     }
     if (l.data?.isRef) this.numRef += 1;
-    this.size += sizeOf(l, h);
-    h.maxEmetadgeSize = Math.max(h.maxEmetadgeSize, this.size);
+    this.size += h.sizeOf(l);
+    h.maxEdgeSize = Math.max(h.maxEdgeSize, s);
+    return this;
   }
-}
-
-function sizeOf(l: qt.Link<Edata>, h: qt.Hierarchy) {
-  const n = h.node(l.nodes[0]) as Noper;
-  if (!n.outShapes.length) return 1;
-  h.hasShape = true;
-  const vs = n.outShapes.map(s =>
-    s.reduce((a, v) => a * (v === -1 ? 1 : v), 1)
-  );
-  return _.sum(vs);
 }
 
 export class SlimGraph {

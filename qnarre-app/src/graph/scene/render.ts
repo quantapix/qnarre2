@@ -100,7 +100,7 @@ export class Gdata {
       ? edge.EDGE_WIDTH_SIZE_BASED_SCALE
       : d3
           .scaleLinear()
-          .domain([1, this.hierarchy.maxMetaEdgeSize])
+          .domain([1, this.hierarchy.maxEdgeSize])
           .range([qp.MIN_EDGE_WIDTH, qp.MAX_EDGE_WIDTH]);
   }
 

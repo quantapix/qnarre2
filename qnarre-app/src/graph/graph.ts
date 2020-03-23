@@ -37,8 +37,8 @@ export class Link<E> implements Named {
   }
 }
 
-class Nodes<N> extends Map<string, N | undefined> {}
-class Edges<E> extends Map<string, Link<E>> {}
+export class Nodes<N> extends Map<string, N | undefined> {}
+export class Edges<E> extends Map<string, Link<E>> {}
 
 const ROOT = '';
 

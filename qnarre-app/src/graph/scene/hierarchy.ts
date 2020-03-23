@@ -7,86 +7,106 @@ import * as qu from './util';
 import * as proto from './proto';
 import * as template from './template';
 
+type Ngroup = qg.Ngroup | qg.Noper;
+type Emeta = qg.Emeta;
+
 class Hierarchy {
   root: qg.Nmeta;
-  libfns = {} as qt.Dict<qg.LibraryFn>;
+  hasShape = false;
+  maxEdgeSize = 1;
   devices = [] as string[];
   clusters = [] as string[];
-  templates = {} as qt.Dict<qg.Template>;
-  hasShape = false;
-  maxMetaEdgeSize = 1;
+  libfns = {} as qt.Dict<qg.LibraryFn>;
   orders = {} as qt.Dict<qt.Dict<number>>;
-  private ns: qt.Dict<qg.Ngroup | qg.Noper>;
+  templates = {} as qt.Dict<qg.Template>;
+  private _nodes = new qt.Nodes<Ngroup>();
+  private _edges = new qt.Edges<Emeta>();
 
   constructor(public opts = {} as qt.Opts) {
     this.opts.isCompound = true;
     this.root = new qg.Nmeta(qp.ROOT_NAME, this.opts);
-    this.ns = {};
-    this.ns[qp.ROOT_NAME] = this.root;
+    this.setNode(qp.ROOT_NAME, this.root);
   }
+
+  nodes() {
+    return Array.from(this._nodes.keys());
+  }
+
   node(x: any) {
-    return this.ns[String(x)];
+    return this._nodes.get(String(x));
   }
-  setNode(x: any, n: qg.Ngroup | qg.Noper) {
-    this.ns[String(x)] = n;
+
+  setNode(x: any, d?: Ngroup) {
+    const n = String(x);
+    this._nodes.set(n, d);
     return this;
   }
-  nodes() {
-    return this.ns;
-  }
+
   bridge(x: any) {
-    const nn = String(x);
-    const n = this.ns[nn];
-    if (!n || !('meta' in n)) return undefined;
-    if (n.bridge) return n.bridge;
-    const b = qg.createGraph<qg.Gdata, qg.Ngroup | qg.Noper, qg.Emeta>(
+    const n = String(x);
+    const nd = this.node(n);
+    if (!qg.isGroup(nd)) return undefined;
+    if (nd.bridge) return nd.bridge;
+    const b = qg.createGraph<qg.Gdata, Ngroup, Emeta>(
       'BRIDGEGRAPH',
       qt.GraphType.BRIDGE,
       this.opts
     );
-    n.bridge = b;
-    const p = n.parent as qg.Ngroup;
-    if (!p || !('meta' in p)) return b;
-    [p.meta, this.bridge(p.name)].forEach(g => {
-      g?.links()
-        .filter(l => l.nodes[0] === nn || l.nodes[1] === nn)
-        .forEach(l => {
-          const inbound = l.nodes[1] === nn;
-          g.edge(l)!.bases.forEach(l2 => {
-            let [desc, n1] = l2.nodes;
-            if (inbound) [n1, desc] = l2.nodes;
-            const c = this.childName(nn, desc)!;
-            const d = [inbound ? n1 : c, inbound ? c : n1];
-            let m = b.edge(d);
-            if (!m) {
-              m = new qg.Emeta(d);
-              m.inbound = inbound;
-              b.setEdge(d, m);
-            }
-            m.addBase(l, this);
+    nd.bridge = b;
+    const p = nd.parent;
+    if (p) {
+      [p.meta, this.bridge(p.name)].forEach(g => {
+        g?.links()
+          .filter(l => l.nodes[0] === n || l.nodes[1] === n)
+          .forEach(l => {
+            const inbound = l.nodes[1] === n;
+            g.edge(l)!.links.forEach(l2 => {
+              let [desc, n1] = l2.nodes;
+              if (inbound) [n1, desc] = l2.nodes;
+              const c = this.childName(n, desc)!;
+              const d = [inbound ? n1 : c, inbound ? c : n1];
+              let m = b.edge(d);
+              if (!m) {
+                m = new qg.Emeta(inbound);
+                b.setEdge(d, m);
+              }
+              m.addLink(b.link(d)!, this);
+            });
           });
-        });
-    });
+      });
+    }
     return b;
   }
-  childName(n: string, desc: string) {
-    let d = this.ns[desc] as qg.Ndata | undefined;
+
+  childName(n: string, desc: any) {
+    let d = this.node(desc);
     while (d) {
       if (d.parent?.name === n) return d.name;
       d = d.parent;
     }
-    throw Error('No child for descendant: ' + desc);
+    throw Error('No child for desc: ' + desc);
   }
+
+  sizeOf(l: qt.Link<Emeta>) {
+    const n = this.node(l.nodes[0]) as qg.Noper;
+    if (!n.outShapes.length) return 1;
+    this.hasShape = true;
+    const vs = n.outShapes.map(s =>
+      s.reduce((a, v) => a * (v === -1 ? 1 : v), 1)
+    );
+    return _.sum(vs);
+  }
+
   preds(x: any) {
-    const nn = String(x);
-    const n = this.ns[nn];
-    if (!n) throw Error('Could not find node: ' + nn);
-    const preds = this.oneWays(n, true);
-    if (!n.isGroup) {
-      (n as qg.Noper).inEmbeds.forEach(en => {
-        (n as qg.Noper).ins.forEach(ni => {
+    const n = String(x);
+    const nd = this.node(n);
+    if (!nd) throw Error('Could not find node: ' + n);
+    const preds = this.oneWays(nd, true);
+    if (!qg.isGroup(nd)) {
+      nd.inEmbeds.forEach(en => {
+        nd.ins.forEach(ni => {
           if (ni.name === en.name) {
-            const m = new qg.Emeta(en.name, nn);
+            const m = new qg.Emeta(en.name, n);
             m.addBase(
               {
                 isControl: ni.isControl,
@@ -104,12 +124,14 @@ class Hierarchy {
     }
     return preds;
   }
-  succs(name: string) {
-    const n = this.ns[name];
-    if (!n) throw Error('Could not find node: ' + name);
+
+  succs(x: any) {
+    const n = String(x);
+    const nd = this.node(n);
+    if (!nd) throw Error('Could not find node: ' + n);
     const succs = this.oneWays(n, false);
-    if (!n.isGroup) {
-      (n as qg.Noper).outEmbeds.forEach(en => {
+    if (!qg.isGroup(nd)) {
+      nd.outEmbeds.forEach(en => {
         en.ins.forEach(ni => {
           if (ni.name === name) {
             const metaedge = new qg.Emeta(name, en.name);
@@ -130,6 +152,7 @@ class Hierarchy {
     }
     return succs;
   }
+
   oneWays(node: qg.Ngroup | qg.Noper, inbound: boolean): qg.Edges {
     const es = new qg.Edges();
     if (!node.parent || !node.parent.isGroup) return es;
@@ -140,6 +163,7 @@ class Hierarchy {
     if (b) es.updateTargets(b, node, inbound);
     return es;
   }
+
   getOrdering(name: string): qt.Dict<number> {
     const node = this.ns[name];
     if (!node) throw Error('Could not find node: ' + name);

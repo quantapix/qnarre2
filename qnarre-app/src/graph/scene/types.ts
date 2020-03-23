@@ -2,7 +2,7 @@ import * as qg from '../graph';
 import * as qt from '../types';
 
 export {Dict, Dir} from '../types';
-export {Named, Link, Graph} from '../graph';
+export {Named, Nodes, Edges, Link, Graph} from '../graph';
 
 export enum GraphType {
   FULL,
