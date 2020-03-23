@@ -1,16 +1,17 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
+
 import * as qg from './graph';
 import * as qp from './params';
 import * as qt from './types';
 import * as qu from './util';
 import * as proto from './proto';
-import * as template from './template';
+import * as templ from './template';
 
 type Ngroup = qg.Ngroup | qg.Noper;
 type Emeta = qg.Emeta;
 
-class Hierarchy {
+class Hierarchy implements qg.Hierarchy {
   root: qg.Nmeta;
   hasShape = false;
   maxEdgeSize = 1;
@@ -87,84 +88,79 @@ class Hierarchy {
     throw Error('No child for desc: ' + desc);
   }
 
-  sizeOf(l: qt.Link<Emeta>) {
+  sizeOf(l: qt.Link<qg.Edata>) {
     const n = this.node(l.nodes[0]) as qg.Noper;
-    if (!n.outShapes.length) return 1;
+    if (!n.shapes.length) return 1;
     this.hasShape = true;
-    const vs = n.outShapes.map(s =>
-      s.reduce((a, v) => a * (v === -1 ? 1 : v), 1)
-    );
+    const vs = n.shapes.map(s => s.reduce((a, v) => a * (v === -1 ? 1 : v), 1));
     return _.sum(vs);
   }
 
-  preds(x: any) {
-    const n = String(x);
+  preds(n: string) {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
-    const preds = this.oneWays(nd, true);
+    const ps = this.oneWays(nd, true);
     if (!qg.isGroup(nd)) {
-      nd.inEmbeds.forEach(en => {
-        nd.ins.forEach(ni => {
-          if (ni.name === en.name) {
-            const m = new qg.Emeta(en.name, n);
-            m.addBase(
-              {
-                isControl: ni.isControl,
-                outKey: ni.outKey,
-                isRef: false,
-                v: en.name,
-                w: nn
-              },
-              this
-            );
-            preds.regular.push(m);
+      nd.inbeds.forEach(b => {
+        nd.ins.forEach(i => {
+          if (i.name === b.name) {
+            const m = new qg.Emeta(true);
+            const l = new qt.Link<qg.Edata>([b.name, n], this.opts);
+            l.data = {
+              isControl: i.isControl,
+              isRef: false,
+              out: i.out
+            } as qg.Edata;
+            m.addLink(l, this);
+            ps.regular.push(m);
           }
         });
       });
     }
-    return preds;
+    return ps;
   }
 
-  succs(x: any) {
-    const n = String(x);
+  succs(n: string) {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
-    const succs = this.oneWays(n, false);
+    const ss = this.oneWays(nd, false);
     if (!qg.isGroup(nd)) {
-      nd.outEmbeds.forEach(en => {
-        en.ins.forEach(ni => {
-          if (ni.name === name) {
-            const metaedge = new qg.Emeta(name, en.name);
-            metaedge.addBase(
-              {
-                isControl: ni.isControl,
-                outKey: ni.outKey,
-                isRef: false,
-                v: name,
-                w: en.name
-              },
-              this
-            );
-            succs.regular.push(metaedge);
+      nd.outbeds.forEach(b => {
+        b.ins.forEach(i => {
+          if (i.name === n) {
+            const m = new qg.Emeta();
+            const l = new qt.Link<qg.Edata>([n, b.name], this.opts);
+            l.data = {
+              isControl: i.isControl,
+              isRef: false,
+              out: i.out
+            } as qg.Edata;
+            m.addLink(l, this);
+            ss.regular.push(m);
           }
         });
       });
     }
-    return succs;
+    return ss;
   }
 
-  oneWays(node: qg.Ngroup | qg.Noper, inbound: boolean): qg.Edges {
-    const es = new qg.Edges();
-    if (!node.parent || !node.parent.isGroup) return es;
-    const p = node.parent as qg.Ngroup;
-    const m = p.meta;
-    const b = this.getBridge(parent.name);
-    es.updateTargets(m, node, inbound);
-    if (b) es.updateTargets(b, node, inbound);
+  oneWays(n: Ngroup, inbound: boolean) {
+    const es = new Edges();
+    const p = n.parent;
+    if (p) {
+      const m = p.meta;
+      let ls = inbound ? m.inLinks(p.name) : m.outLinks(p.name);
+      es.update(ls);
+      const b = this.bridge(p.name);
+      if (b) {
+        ls = inbound ? b.inLinks(p.name) : b.outLinks(p.name);
+        es.update(ls);
+      }
+    }
     return es;
   }
 
-  getOrdering(name: string): qt.Dict<number> {
+  ordering(name: string): qt.Dict<number> {
     const node = this.ns[name];
     if (!node) throw Error('Could not find node: ' + name);
     if (!node.isGroup) return {};
@@ -191,14 +187,16 @@ class Hierarchy {
     }
     return ord;
   }
-  getIndexer(): (n: string) => number {
-    const names = d3.keys(this.templates ?? {});
-    const index = d3
+
+  indexer(): (n: string) => number {
+    const ns = d3.keys(this.templates ?? {});
+    const idx = d3
       .scaleOrdinal()
-      .domain(names)
-      .range(d3.range(0, names.length));
-    return (t: string) => index(t) as number;
+      .domain(ns)
+      .range(d3.range(0, ns.length));
+    return (t: string) => idx(t) as number;
   }
+
   addNodes(g: qg.SlimGraph) {
     const map = {} as qt.Dict<qg.Noper[]>;
     _.each(g.nodes, n => {
@@ -220,14 +218,14 @@ class Hierarchy {
         } else {
           p.histo.compat.incompats = (p.histo.compat.incompats || 0) + 1;
         }
-        n.inEmbeds.forEach(e => {
+        n.inbeds.forEach(e => {
           if (e.compatible) {
             p.histo.compat.compats = (p.histo.compat.compats || 0) + 1;
           } else {
             p.histo.compat.incompats = (p.histo.compat.incompats || 0) + 1;
           }
         });
-        n.outEmbeds.forEach(e => {
+        n.outbeds.forEach(e => {
           if (e.compatible) {
             p.histo.compat.compats = (p.histo.compat.compats || 0) + 1;
           } else {
@@ -257,16 +255,17 @@ class Hierarchy {
       this.setNode(n.name, n);
       n.parent = p;
       p.meta.setNode(n.name, n);
-      n.inEmbeds.forEach(e => {
+      n.inbeds.forEach(e => {
         this.setNode(e.name, e);
         e.parent = n;
       });
-      n.outEmbeds.forEach(e => {
+      n.outbeds.forEach(e => {
         this.setNode(e.name, e);
         e.parent = n;
       });
     });
   }
+
   addEdges(g: qg.SlimGraph, _series: qt.Dict<string>) {
     const map = this.getNodeMap();
     const src = [] as string[];
@@ -300,6 +299,7 @@ class Hierarchy {
       m!.addBase(e, this);
     });
   }
+
   mergeStats(_stats: proto.StepStats) {
     const ds = {} as qt.Dict<boolean>;
     const cs = {} as qt.Dict<boolean>;
@@ -310,33 +310,36 @@ class Hierarchy {
     });
     this.devices = _.keys(ds);
     this.clusters = _.keys(cs);
-    _.each(this.getNodeMap(), n => {
-      if (n.isGroup) {
-        n.stats = new qt.NodeStats([]);
-        (n as qg.Ngroup).histo.device = {};
+    this.nodes().forEach(n => {
+      const nd = this.node(n);
+      if (qg.isGroup(nd)) {
+        nd.stats = new qt.NodeStats([]);
+        nd.histo.device = {};
       }
     });
     this.root.leaves().forEach(n => {
-      const d = this.node(n) as qg.Noper;
-      let nd = d as qg.Ngroup | qg.Noper;
-      while (nd.parent) {
-        if (d.device) {
-          const h = (nd.parent as qg.Ngroup).histo.device;
-          h[d.device] = (h[d.device] || 0) + 1;
+      let nd = this.node(n);
+      while (nd?.parent) {
+        if (!qg.isGroup(nd)) {
+          if (nd.device) {
+            const h = nd.parent!.histo.device;
+            h[nd.device] = (h[nd.device] || 0) + 1;
+          }
+          if (nd.cluster) {
+            const h = nd.parent!.histo.cluster;
+            h[nd.cluster] = (h[nd.cluster] || 0) + 1;
+          }
+          if (nd.stats) nd.parent?.stats?.combine(nd.stats);
         }
-        if (d.cluster) {
-          const h = (nd.parent as qg.Ngroup).histo.cluster;
-          h[d.cluster] = (h[d.cluster] || 0) + 1;
-        }
-        if (d.stats) nd.parent?.stats?.combine(d.stats);
-        nd = nd.parent as qg.Ngroup;
+        nd = nd.parent;
       }
     });
   }
-  getIncompatsOps(ps: HierarchyParams) {
-    const ns = [] as (qg.Ngroup | qg.Noper)[];
+
+  incompats(ps: Params) {
+    const ns = [] as Ngroup[];
     const added = {} as qt.Dict<qg.Nseries>;
-    _.each(this.root.leaves(), n => {
+    this.root.leaves().forEach(n => {
       const d = this.node(n);
       if (d?.type === qt.NodeType.OP) {
         const nd = d as qg.Noper;
@@ -355,10 +358,10 @@ class Hierarchy {
             }
           } else ns.push(nd);
         }
-        nd.inEmbeds.forEach(e => {
+        nd.inbeds.forEach(e => {
           if (!e.compatible) ns.push(e);
         });
-        nd.outEmbeds.forEach(e => {
+        nd.outbeds.forEach(e => {
           if (!e.compatible) ns.push(e);
         });
       }
@@ -367,7 +370,20 @@ class Hierarchy {
   }
 }
 
-export interface HierarchyParams {
+class Edges {
+  control = [] as qg.Emeta[];
+  regular = [] as qg.Emeta[];
+
+  update(ls?: qt.Link<Emeta>[]) {
+    ls?.forEach(l => {
+      const m = l.data!;
+      const ts = m.num.regular ? this.regular : this.control;
+      ts.push(m);
+    });
+  }
+}
+
+export interface Params {
   verifyTemplate: boolean;
   seriesMinSize: number;
   seriesMap: qt.Dict<SeriesType>;
@@ -375,23 +391,9 @@ export interface HierarchyParams {
   usePatterns: boolean;
 }
 
-class Edges implements qt.Edges {
-  control = [] as qg.Emeta[];
-  regular = [] as qg.Emeta[];
-
-  updateTargets(g: Graph, n: qg.Ndata, inbound: boolean) {
-    const es = inbound ? g.inEdges(n.name) : g.outEdges(n.name);
-    _.each(es, (e: qt.EdgeObject) => {
-      const m = g.edge(e);
-      const ts = m.numRegular ? this.regular : this.control;
-      ts.push(m);
-    });
-  }
-}
-
 export async function build(
   g: qg.SlimGraph,
-  ps: HierarchyParams,
+  ps: Params,
   t: qu.Tracker
 ): Promise<Hierarchy> {
   const h = new Hierarchy({rankdir: ps.rankdir});
@@ -423,7 +425,7 @@ export async function build(
   await t.runAsyncTask(
     'Finding similars',
     30,
-    () => (h.templates = template.detect(h, ps.verifyTemplate))
+    () => (h.templates = templ.detect(h, ps.verifyTemplate))
   );
   return h;
 }
@@ -439,7 +441,7 @@ function groupSeries(
   const meta = mn.meta;
   meta.nodes().forEach(n => {
     const c = meta.node(n);
-    if (c?.type === qg.NdataType.META) {
+    if (c?.type === qt.NodeType.META) {
       groupSeries(c as qg.Nmeta, h, names, thresh, map, patterns);
     }
   });
@@ -474,14 +476,14 @@ function groupSeries(
       } else {
         sn.histo.compat.incompats = (sn.histo.compat.incompats || 0) + 1;
       }
-      c.inEmbeds.forEach(e => {
+      c.inbeds.forEach(e => {
         if (e.compatible) {
           sn.histo.compat.compats = (sn.histo.compat.compats || 0) + 1;
         } else {
           sn.histo.compat.incompats = (sn.histo.compat.incompats || 0) + 1;
         }
       });
-      c.outEmbeds.forEach(e => {
+      c.outbeds.forEach(e => {
         if (e.compatible) {
           sn.histo.compat.compats = (sn.histo.compat.compats || 0) + 1;
         } else {

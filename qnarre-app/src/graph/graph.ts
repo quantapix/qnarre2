@@ -4,8 +4,8 @@ export interface Named {
   name?: string;
 }
 
-export function isNamed(n?: Named | string | number): n is Named {
-  return n ? typeof n !== 'string' && typeof n !== 'number' : false;
+export function isNamed(x?: Named | string | number): x is Named {
+  return x ? typeof x !== 'string' && typeof x !== 'number' : false;
 }
 
 export interface Opts {

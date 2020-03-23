@@ -8,13 +8,16 @@ export interface Gdata extends qt.Named, qt.Opts {
   type: string | number;
 }
 
-export interface Ndata extends qt.Named {
-  type: qt.NodeType;
-  cardinality: number;
+export abstract class Ndata implements qt.Named {
   parent?: Ngroup;
   stats?: qt.NodeStats;
   include?: boolean;
-  attrs: qt.Dict<any>;
+  attrs = {} as qt.Dict<any>;
+  constructor(
+    public name: string,
+    public type: qt.NodeType,
+    public cardinality = 1
+  ) {}
 }
 
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
@@ -38,18 +41,14 @@ export interface Nbridge extends Ndata {
   inbound: boolean;
 }
 
-export class Nellipsis implements Ndata {
-  name = '';
-  type = qt.NodeType.ELLIPSIS;
-  cardinality = 1;
-  parent?: Ngroup;
-  stats?: qt.NodeStats;
-  include?: boolean;
-  attrs = {} as qt.Dict<any>;
+export class Nellipsis extends Ndata {
   more = 0;
+
   constructor(m: number) {
+    super('', qt.NodeType.ELLIPSIS);
     this.setMore(m);
   }
+
   setMore(m: number) {
     this.more = m;
     this.name = '... ' + m + ' more';
@@ -58,71 +57,64 @@ export class Nellipsis implements Ndata {
 
 export type Shapes = number[][];
 
-export class Noper implements Ndata {
-  name: string;
-  type = qt.NodeType.OP;
-  cardinality = 1;
-  parent?: Ngroup;
-  stats?: qt.NodeStats;
-  include?: boolean;
-  attrs = {} as qt.Dict<any>;
+export class Noper extends Ndata {
   op: string;
   device?: string;
   cluster?: string;
   series?: string;
   attr: {key: string; value: any}[];
-  ins: qt.NormInput[];
-  outShapes: Shapes;
-  inEmbeds = [] as Noper[];
-  outEmbeds = [] as Noper[];
-  compatible = false;
+  ins: qt.Input[];
+  inbeds = [] as Noper[];
+  outbeds = [] as Noper[];
+  shapes: Shapes;
   inIdx?: number;
   outIdx?: number;
+  compatible = false;
 
   constructor(d: proto.NodeDef) {
-    this.name = d.name;
+    super(d.name, qt.NodeType.OP);
     this.op = d.op;
     this.device = d.device;
-    this.cluster = extractCluster(d.attr);
+    this.cluster = cluster(d.attr);
     this.attr = d.attr;
-    this.ins = normIns(d.input);
-    this.outShapes = extractShapes(d.attr);
+    this.ins = inputs(d.input);
+    this.shapes = shapes(d.attr);
   }
 }
 
-function extractCluster(ps: {key: string; value: any}[]) {
+function cluster(ps: {key: string; value: any}[]) {
   for (let i = 0; i < ps.length; i++) {
     if (ps[i].key === '_cluster') return ps[i].value['s'] as string;
   }
   return undefined;
 }
 
-function normIns(ins: string[]) {
-  const ns = [] as qt.NormInput[];
-  ins.forEach(i => {
-    const isControl = i.startsWith('^');
-    if (isControl) i = i.substring(1);
-    let name = i;
-    let outKey = '0';
-    let m = i.match(/(.*):(\w+:\d+)$/);
+function inputs(ns: string[]) {
+  const ins = [] as qt.Input[];
+  ns.forEach(n => {
+    const isControl = n.startsWith('^');
+    if (isControl) n = n.substring(1);
+    let name = n;
+    let out = '0';
+    let m = n.match(/(.*):(\w+:\d+)$/);
     if (m) {
       name = m[1];
-      outKey = m[2];
+      out = m[2];
     } else {
-      m = i.match(/(.*):(\d+)$/);
+      m = n.match(/(.*):(\d+)$/);
       if (m) {
         name = m[1];
-        outKey = m[2];
+        out = m[2];
       }
     }
-    if (ns.length === 0 || name !== ns[ns.length - 1].name) {
-      ns.push({name, outKey, isControl});
+    if (ins.length === 0 || ins[ins.length - 1].name !== name) {
+      ins.push({isControl, name, out});
     }
   });
-  return ns;
+  return ins;
 }
 
-function extractShapes(ps: {key: string; value: any}[]) {
+function shapes(ps: {key: string; value: any}[]) {
   for (let i = 0; i < ps.length; i++) {
     const {key, value} = ps[i];
     if (key === '_output_shapes') {
@@ -142,21 +134,13 @@ function extractShapes(ps: {key: string; value: any}[]) {
 
 type Histos = qt.Dict<qt.Dict<number>>;
 
-export abstract class Ngroup implements Ndata {
-  cardinality = 0;
-  parent?: Ngroup;
-  stats?: qt.NodeStats;
-  include?: boolean;
-  attrs = {} as qt.Dict<any>;
+export abstract class Ngroup extends Ndata {
   bridge?: BridgeGraph;
   histo = {} as Histos;
   noControls?: boolean;
 
-  constructor(
-    public name: string,
-    public type: qt.NodeType,
-    public meta: MetaGraph
-  ) {
+  constructor(n: string, t: qt.NodeType, public meta: MetaGraph) {
+    super(n, t, 0);
     this.histo.cluster = {} as qt.Dict<number>;
     this.histo.device = {} as qt.Dict<number>;
     this.histo.op = {} as qt.Dict<number>;
@@ -164,8 +148,8 @@ export abstract class Ngroup implements Ndata {
   }
 }
 
-export function isGroup(n?: any): n is Ngroup {
-  return !!n && 'meta' in n;
+export function isGroup(x?: any): x is Ngroup {
+  return !!x && 'meta' in x;
 }
 
 export class Nmeta extends Ngroup {
@@ -248,43 +232,36 @@ export interface LibraryFn {
 export type Template = {names: string[]; level: number};
 
 export interface Edata extends qt.Named {
-  outKey: string;
-  isRef: boolean;
   isControl: boolean;
+  isRef: boolean;
+  out: string;
 }
 
-export interface Edges {
-  control: Nmeta[];
-  regular: Nmeta[];
-}
-
-interface Hierarchy {
+export interface Hierarchy {
   maxEdgeSize: number;
-  sizeOf(l: qt.Link<Emeta>): number;
+  sizeOf(l: qt.Link<Edata>): number;
 }
 
 export class Emeta implements Edata {
-  outKey = '';
-  isRef = false;
   isControl = false;
+  isRef = false;
+  out = '';
   links = [] as qt.Link<Edata>[];
-  numRegular = 0;
-  numControl = 0;
-  numRef = 0;
+  num = {regular: 0, control: 0, ref: 0};
   size = 0;
 
   constructor(public inbound?: boolean) {}
 
-  addLink(l: qt.Link<Emeta>, h: Hierarchy) {
+  addLink(l: qt.Link<Edata>, h: Hierarchy) {
     this.links.push(l);
     if (l.data?.isControl) {
-      this.numControl += 1;
+      this.num.control += 1;
     } else {
-      this.numRegular += 1;
+      this.num.regular += 1;
     }
-    if (l.data?.isRef) this.numRef += 1;
+    if (l.data?.isRef) this.num.ref += 1;
     this.size += h.sizeOf(l);
-    h.maxEdgeSize = Math.max(h.maxEdgeSize, s);
+    h.maxEdgeSize = Math.max(h.maxEdgeSize, this.size);
     return this;
   }
 }
@@ -296,30 +273,30 @@ export class SlimGraph {
   addEdge(
     src: string,
     dst: Noper,
-    ni: qt.NormInput,
+    inp: qt.Input,
     ps: qt.BuildParams,
     i: number
   ) {
     if (src !== dst.name) {
       const isRef = ps.refEdges[dst.op + ' ' + i] === true;
       this.edges.push({
+        isControl: inp.isControl,
+        isRef,
+        out: inp.out,
         v: src,
-        w: dst.name,
-        outKey: ni.outKey,
-        isControl: ni.isControl,
-        isRef
+        w: dst.name
       });
     }
   }
 
-  mergeStats(g: SlimGraph, stats: proto.StepStats, devices?: qt.Dict<boolean>) {
-    _.each(g.nodes, n => (n.stats = undefined));
+  mergeStats(stats: proto.StepStats, devices?: qt.Dict<boolean>) {
+    _.each(this.nodes, n => (n.stats = undefined));
     stats.dev_stats.forEach(ds => {
       if (devices && !devices[ds.device]) return;
       ds.node_stats.forEach(ns => {
         const n =
-          ns.node_name in g.nodes ? ns.node_name : strictName(ns.node_name);
-        if (!(n in g.nodes)) return;
+          ns.node_name in this.nodes ? ns.node_name : strictName(ns.node_name);
+        if (!(n in this.nodes)) return;
         let b = 0;
         if (ns.memory) {
           _.each(ns.memory, m => {
@@ -338,14 +315,14 @@ export class SlimGraph {
             o.tensor_description.shape.dim.map(d => d.size)
           );
         }
-        g.nodes[n].device = ds.device;
-        if (!g.nodes[n].stats) {
-          g.nodes[n].stats = new qt.NodeStats(s);
+        this.nodes[n].device = ds.device;
+        if (!this.nodes[n].stats) {
+          this.nodes[n].stats = new qt.NodeStats(s);
         }
-        g.nodes[n].stats?.addBytes(b);
+        this.nodes[n].stats?.addBytes(b);
         if (ns.all_end_rel_micros) {
           if (ns.all_end_rel_micros > 0) {
-            g.nodes[n].stats?.addTime(
+            this.nodes[n].stats?.addTime(
               ns.all_start_micros,
               ns.all_start_micros + ns.all_end_rel_micros
             );
@@ -455,8 +432,8 @@ export async function build(
       const nn = norms[n.name] || n.name;
       g.nodes[nn] = n;
       if (n.name in outs) {
-        n.outEmbeds = outs[n.name];
-        n.outEmbeds.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
+        n.outbeds = outs[n.name];
+        n.outbeds.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
       }
       n.name = nn;
     });
@@ -465,7 +442,7 @@ export async function build(
         const nn = inp.name;
         if (nn in inEmbed) {
           const ie = inEmbed[nn];
-          n.inEmbeds.push(ie);
+          n.inbeds.push(ie);
           for (const e of ie.ins) {
             g.addEdge(norms[e.name] || e.name, n, e, ps, i);
           }

@@ -57,10 +57,10 @@ export interface Opts extends qg.Opts {
   ranksep: number;
 }
 
-export interface NormInput {
-  name: string;
-  outKey: string;
+export interface Input {
   isControl: boolean;
+  name: string;
+  out: string;
 }
 
 export interface BuildParams {
