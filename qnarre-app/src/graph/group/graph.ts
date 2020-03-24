@@ -36,32 +36,15 @@ export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
 export type MetaGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 export type BridgeGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 
-export function clusterOps(g: MetaGraph) {
-  return _.reduce(
-    g.nodes(),
-    (c, n: string) => {
-      const nd = g.node(n);
-      if (isGroup(nd)) return c;
-      const o = nd?.op;
-      if (o) {
-        c[o] = c[o] || [];
-        c[o].push(nd?.name!);
-      }
-      return c;
-    },
-    {} as qt.Dict<string[]>
-  );
-}
-
 export interface Nbridge extends Ndata {
   inbound: boolean;
 }
 
-export class Nellipsis extends Ndata {
+export class Ndots extends Ndata {
   more = 0;
 
   constructor(m: number) {
-    super('', qt.NodeType.ELLIPSIS);
+    super('', qt.NodeType.DOTS);
     this.setMore(m);
   }
 
@@ -78,7 +61,7 @@ export class Noper extends Ndata {
   op: string;
   device?: string;
   cluster?: string;
-  series?: string;
+  list?: string;
   attr: {key: string; value: any}[];
   ins: qt.Input[];
   inbeds = [] as Noper[];
@@ -241,7 +224,11 @@ export class Nmeta extends Ngroup {
   }
 }
 
-export class Nseries extends Ngroup {
+export function isMeta(x?: any): x is Nmeta {
+  return x?.type === qt.NodeType.META;
+}
+
+export class Nlist extends Ngroup {
   hasLoop = false;
   ids = [] as number[];
 
@@ -250,18 +237,18 @@ export class Nseries extends Ngroup {
     public suffix: string,
     public pName: string,
     public cluster: number,
-    n = seriesName(prefix, suffix, pName),
+    n = listName(prefix, suffix, pName),
     o = {} as qt.Opts
   ) {
     super(
       n,
-      qt.NodeType.SERIES,
-      createGraph<Gdata, Nmeta, Emeta>(n, qt.GraphType.SERIES, o)
+      qt.NodeType.LIST,
+      createGraph<Gdata, Nmeta, Emeta>(n, qt.GraphType.LIST, o)
     );
   }
 }
 
-export function seriesName(
+export function listName(
   pre: string,
   suf: string,
   p: string,

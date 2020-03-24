@@ -10,8 +10,8 @@ export function layoutScene(d: qr.GroupNdata) {
   if (d.node.isGroup) layoutChildren(d);
   if (d.node.type === qt.NodeType.META) {
     layoutMetaNode(d);
-  } else if (d.node.type === qt.NodeType.SERIES) {
-    layoutNseries(d);
+  } else if (d.node.type === qt.NodeType.LIST) {
+    layoutNlist(d);
   }
 }
 
@@ -48,7 +48,7 @@ function layoutChildren(d: qr.GroupNdata) {
           layoutScene(c as qr.GroupNdata);
         }
         break;
-      case qt.NodeType.SERIES:
+      case qt.NodeType.LIST:
         if (c.expanded) {
           _.extend(c, qp.PARAMS.nodeSize.series.expanded);
           layoutScene(c as qr.GroupNdata);
@@ -214,7 +214,7 @@ function layoutMetaNode(d: qr.GroupNdata) {
   d.height = d.paddingTop + d.coreBox.height + d.paddingBottom;
 }
 
-function layoutNseries(d: qr.GroupNdata) {
+function layoutNlist(d: qr.GroupNdata) {
   const g = d.coreGraph;
   const ps = qp.PARAMS.subscene.series;
   _.extend(d, ps);
@@ -308,7 +308,7 @@ function sizeAnnotation(a: qr.Annotation) {
         _.extend(a, qp.PARAMS.shortcutSize.op);
       } else if (a.node.type === qt.NodeType.META) {
         _.extend(a, qp.PARAMS.shortcutSize.meta);
-      } else if (a.node.type === qt.NodeType.SERIES) {
+      } else if (a.node.type === qt.NodeType.LIST) {
         _.extend(a, qp.PARAMS.shortcutSize.series);
       } else {
         throw Error('Invalid node type: ' + a.node.type);

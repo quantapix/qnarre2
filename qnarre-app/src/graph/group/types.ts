@@ -8,7 +8,7 @@ export enum GraphType {
   FULL,
   EMBEDDED,
   META,
-  SERIES,
+  LIST,
   CORE,
   SHADOW,
   BRIDGE,
@@ -18,16 +18,16 @@ export enum GraphType {
 export enum NodeType {
   META,
   OPER,
-  SERIES,
+  LIST,
   BRIDGE,
-  ELLIPSIS
+  DOTS
 }
 
 export enum AnnoType {
   SHORTCUT,
   CONSTANT,
   SUMMARY,
-  ELLIPSIS
+  DOTS
 }
 
 export enum SelectType {
@@ -117,7 +117,7 @@ export const Class = {
     EDGE: 'annotation-edge',
     CONTROL_EDGE: 'annotation-control-edge',
     LABEL: 'annotation-label',
-    ELLIPSIS: 'annotation-ellipsis'
+    DOTS: 'annotation-ellipsis'
   },
   Scene: {
     GROUP: 'scene',
@@ -129,7 +129,7 @@ export const Class = {
   Subscene: {GROUP: 'subscene'},
   OPNODE: 'op',
   METANODE: 'meta',
-  SERIESNODE: 'series',
+  LISTNODE: 'series',
   BRIDGENODE: 'bridge',
-  ELLIPSISNODE: 'ellipsis'
+  DOTSNODE: 'ellipsis'
 };

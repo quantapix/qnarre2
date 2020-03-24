@@ -164,25 +164,25 @@ export function canBeInSeries(node: qt.Node) {
 
 export function getSeriesName(node: qt.Node) {
   if (!node) return undefined;
-  if (node.type === qt.NodeType.SERIES) return node.name;
+  if (node.type === qt.NodeType.LIST) return node.name;
   if (node.type === qt.NodeType.OP) return (node as qt.Noper).series;
   return undefined;
 }
 
 function getContainingSeries(node: qt.Node) {
-  let s: qt.Nseries | undefined;
+  let s: qt.Nlist | undefined;
   if (node) {
-    if (node.type === qt.NodeType.SERIES) {
-      s = node as qt.Nseries;
-    } else if (node.parent && node.parent.type === qt.NodeType.SERIES) {
-      s = node.parent as qt.Nseries;
+    if (node.type === qt.NodeType.LIST) {
+      s = node as qt.Nlist;
+    } else if (node.parent && node.parent.type === qt.NodeType.LIST) {
+      s = node.parent as qt.Nlist;
     }
   }
   return s;
 }
 
 export function getGroupSettingLabel(node: qt.Node) {
-  return qg.getGroupNseriesButtonString(
+  return qg.getGroupNlistButtonString(
     getContainingSeries(node) ? qt.SeriesType.GROUP : qt.SeriesType.UNGROUP
   );
 }
@@ -275,7 +275,7 @@ export function buildShape(group, d, nodeClass: string) {
       }
       qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR_TARGET);
       break;
-    case qt.NodeType.SERIES:
+    case qt.NodeType.LIST:
       let t = 'annotation';
       const ndata = d as qr.GroupNdata;
       if (ndata.coreGraph) {
@@ -313,12 +313,12 @@ export function nodeClass(d: qr.Ndata) {
       return qt.Class.OPNODE;
     case qt.NodeType.META:
       return qt.Class.METANODE;
-    case qt.NodeType.SERIES:
-      return qt.Class.SERIESNODE;
+    case qt.NodeType.LIST:
+      return qt.Class.LISTNODE;
     case qt.NodeType.BRIDGE:
       return qt.Class.BRIDGENODE;
-    case qt.NodeType.ELLIPSIS:
-      return qt.Class.ELLIPSISNODE;
+    case qt.NodeType.DOTS:
+      return qt.Class.DOTSNODE;
     default:
       throw Error('Unrecognized node type: ' + d.node.type);
   }
@@ -352,7 +352,7 @@ function position(group, d: qr.Ndata) {
       }
       break;
     }
-    case qt.NodeType.SERIES: {
+    case qt.NodeType.LIST: {
       const sh = qs.selectChild(g, 'use');
       if (d.expanded) {
         qs.positionRect(sh, d.x, d.y, d.width, d.height);
@@ -427,7 +427,7 @@ export function getFillForNode(
         return tid === null
           ? colorParams.UNKNOWN
           : colorParams.STRUCTURE_PALETTE(templateIndex(tid), isExpanded);
-      } else if (renderInfo.node.type === qt.NodeType.SERIES) {
+      } else if (renderInfo.node.type === qt.NodeType.LIST) {
         return isExpanded ? colorParams.EXPANDED_COLOR : 'white';
       } else if (renderInfo.node.type === qt.NodeType.BRIDGE) {
         return renderInfo.structural

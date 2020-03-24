@@ -98,8 +98,8 @@ function areSimilar(
 }
 
 function nodeSimilar(
-  n1: qg.Noper | qg.Nmeta | qg.Nseries,
-  n2: qg.Noper | qg.Nmeta | qg.Nseries
+  n1: qg.Noper | qg.Nmeta | qg.Nlist,
+  n2: qg.Noper | qg.Nmeta | qg.Nlist
 ) {
   const t = n1.type;
   if (t === n2.type) {
@@ -108,9 +108,9 @@ function nodeSimilar(
       return m.template && m.template === (n2 as qg.Nmeta).template;
     } else if (t === qt.NodeType.OPER) {
       return (n1 as qg.Noper).op === (n2 as qg.Noper).op;
-    } else if (t === qt.NodeType.SERIES) {
-      const s1 = n1 as qg.Nseries;
-      const s2 = n2 as qg.Nseries;
+    } else if (t === qt.NodeType.LIST) {
+      const s1 = n1 as qg.Nlist;
+      const s2 = n2 as qg.Nlist;
       const c = s1.meta.nodeCount;
       return (
         c === s2.meta.nodeCount &&

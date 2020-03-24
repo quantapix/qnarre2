@@ -24,11 +24,11 @@ export function buildGroup(cont, annos: qr.AnnotationList, d: qr.Ndata, elem) {
       if (me && !me.numRegular) t += ' ' + qt.Class.Annotation.CONTROL_EDGE;
       if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
       qe.appendEdge(g, a, elem, t);
-      if (a.type !== qt.AnnotationType.ELLIPSIS) {
+      if (a.type !== qt.AnnotationType.DOTS) {
         addAnnotationLabelFromNode(g, a);
         buildShape(g, a);
       } else {
-        addAnnotationLabel(g, a.node.name, a, qt.Class.Annotation.ELLIPSIS);
+        addAnnotationLabel(g, a.node.name, a, qt.Class.Annotation.DOTS);
       }
     })
     .merge(gs)
@@ -44,7 +44,7 @@ export function buildGroup(cont, annos: qr.AnnotationList, d: qr.Ndata, elem) {
     .each((a: qr.Annotation) => {
       const g = d3.select(this);
       update(g, d, a, elem);
-      if (a.type !== qt.AnnotationType.ELLIPSIS) addInteraction(g, d, a, elem);
+      if (a.type !== qt.AnnotationType.DOTS) addInteraction(g, d, a, elem);
     });
   gs.exit()
     .each((a: qr.Annotation) => {
@@ -120,7 +120,7 @@ function addInteraction(sel, d: qr.Ndata, anno: qr.Annotation, elem) {
 
 function update(group, d: qr.Ndata, a: qr.Annotation, elem) {
   const cx = ql.computeCXPositionOfNodeShape(d);
-  if (a.ndata && a.type !== qt.AnnotationType.ELLIPSIS) {
+  if (a.ndata && a.type !== qt.AnnotationType.DOTS) {
     qn.stylize(group, a.ndata, elem, qt.Class.Annotation.NODE);
   }
   if (a.type === qt.AnnotationType.SUMMARY) a.width += 10;

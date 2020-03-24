@@ -164,7 +164,7 @@ export function buildGroup(
     },
     [] as qr.Ndata[]
   );
-  if (ndata.node.type === qt.NodeType.SERIES) cores.reverse();
+  if (ndata.node.type === qt.NodeType.LIST) cores.reverse();
   qe.buildGroup(g, ndata.coreGraph, elem);
   qn.buildGroup(g, cores, elem);
   if (ndata.isolatedInExtract.length > 0) {
@@ -197,7 +197,7 @@ export function buildGroup(
 
 function position(scene, ndata: qr.GroupNdata) {
   const y =
-    ndata.node.type === qt.NodeType.SERIES
+    ndata.node.type === qt.NodeType.LIST
       ? 0
       : qp.PARAMS.subscene.meta.labelHeight;
   translate(selectChild(scene, 'g', qt.Class.Scene.CORE), 0, y);
@@ -286,7 +286,7 @@ export function positionButton(button, ndata: qr.Ndata) {
   const h = ndata.expanded ? ndata.height : ndata.coreBox.height;
   let x = cx + w / 2 - 6;
   let y = ndata.y - h / 2 + 6;
-  if (ndata.node.type === qt.NodeType.SERIES && !ndata.expanded) {
+  if (ndata.node.type === qt.NodeType.LIST && !ndata.expanded) {
     x += 10;
     y -= 2;
   }

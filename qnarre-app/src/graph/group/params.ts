@@ -293,7 +293,7 @@ export const NmetaColors = {
   GRADIENT_OUTLINE: '#888'
 };
 
-export const NseriesColors = {
+export const NlistColors = {
   DEFAULT_FILL: 'white',
   DEFAULT_STROKE: '#b2b2b2'
 };

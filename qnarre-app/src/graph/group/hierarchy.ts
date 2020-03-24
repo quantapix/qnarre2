@@ -7,8 +7,8 @@ import * as qs from './slim';
 import * as qt from './types';
 import * as qu from './util';
 
+import * as meta from './meta';
 import * as proto from './proto';
-import * as series from './series';
 import * as template from './template';
 
 type Ngroup = qg.Ngroup | qg.Noper;
@@ -309,20 +309,20 @@ export class Hierarchy implements qg.Hierarchy {
 
   incompats(ps: Params) {
     const ns = [] as Ngroup[];
-    const added = {} as qt.Dict<qg.Nseries>;
+    const added = {} as qt.Dict<qg.Nlist>;
     this.root.leaves().forEach(n => {
       const d = this.node(n);
       if (d?.type === qt.NodeType.OPER) {
         const nd = d as qg.Noper;
         if (!nd.compatible) {
-          if (nd.series) {
-            if (ps && ps.groups[nd.series] === false) {
+          if (nd.list) {
+            if (ps && ps.groups[nd.list] === false) {
               ns.push(nd);
             } else {
-              if (!added[nd.series]) {
-                const ss = this.node(nd.series) as qg.Nseries;
+              if (!added[nd.list]) {
+                const ss = this.node(nd.list) as qg.Nlist;
                 if (ss) {
-                  added[nd.series] = ss;
+                  added[nd.list] = ss;
                   ns.push(ss);
                 }
               }
@@ -392,7 +392,6 @@ export async function build(
   t: qu.Tracker
 ): Promise<Hierarchy> {
   const h = new Hierarchy({rankdir: ps.rankdir} as qt.Opts);
-  const ss = {} as qt.Dict<string>;
   await t.runAsyncTask('Add nodes', 20, () => {
     const ds = {} as qt.Dict<boolean>;
     const cs = {} as qt.Dict<boolean>;
@@ -404,10 +403,11 @@ export async function build(
     h.clusters = _.keys(cs);
     h.addNodes(g);
   });
+  const ns = {} as qt.Dict<string>;
   await t.runAsyncTask('Find series', 20, () => {
-    if (ps.thresh > 0) series.group(h.root, h, ss, ps);
+    if (ps.thresh > 0) meta.build(h.root.meta, h, ns, ps);
   });
-  await t.runAsyncTask('Add edges', 30, () => h.addEdges(g, ss));
+  await t.runAsyncTask('Add edges', 30, () => h.addEdges(g, ns));
   await t.runAsyncTask(
     'Find similars',
     30,

@@ -397,7 +397,7 @@ export class Gdata {
     if (nodeName in this.hasSubhierarchy) return;
     this.hasSubhierarchy[nodeName] = true;
     const d = this.index[nodeName];
-    if (d.node.type !== qt.NodeType.META && d.node.type !== qt.NodeType.SERIES)
+    if (d.node.type !== qt.NodeType.META && d.node.type !== qt.NodeType.LIST)
       return;
     const ndata = d as GroupNdata;
     const metaG = ndata.node.metag;
@@ -697,14 +697,14 @@ export class AnnotationList {
       this.list.push(a);
       return;
     }
-    const type = qt.AnnotationType.ELLIPSIS;
+    const type = qt.AnnotationType.DOTS;
     const last = this.list[this.list.length - 1];
     if (last.type === type) {
-      const e = last.node as qt.Nellipsis;
+      const e = last.node as qt.Ndots;
       e.setCountMore(++e.countMore);
       return;
     }
-    const e = new qg.Nellipsis(1);
+    const e = new qg.Ndots(1);
     this.list.push(new Annotation(e, new Ndata(e), undefined, type, a.isIn));
   }
 }
@@ -800,7 +800,7 @@ function setGraphDepth(g: qt.Graph<Ndata, any>, depth: number) {
     if (depth > 0) {
       switch (d.node.type) {
         case qt.NodeType.META:
-        case qt.NodeType.SERIES:
+        case qt.NodeType.LIST:
           setGroupNodeDepth(d as GroupNdata, depth - 1);
           break;
       }
