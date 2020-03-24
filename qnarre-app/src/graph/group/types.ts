@@ -23,11 +23,6 @@ export enum NodeType {
   ELLIPSIS
 }
 
-export enum XSeriesType {
-  GROUP,
-  UNGROUP
-}
-
 export enum AnnoType {
   SHORTCUT,
   CONSTANT,

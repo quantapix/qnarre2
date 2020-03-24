@@ -36,6 +36,23 @@ export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
 export type MetaGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 export type BridgeGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 
+export function clusterOps(g: MetaGraph) {
+  return _.reduce(
+    g.nodes(),
+    (c, n: string) => {
+      const nd = g.node(n);
+      if (isGroup(nd)) return c;
+      const o = nd?.op;
+      if (o) {
+        c[o] = c[o] || [];
+        c[o].push(nd?.name!);
+      }
+      return c;
+    },
+    {} as qt.Dict<string[]>
+  );
+}
+
 export interface Nbridge extends Ndata {
   inbound: boolean;
 }
@@ -57,6 +74,7 @@ export class Nellipsis extends Ndata {
 export type Shapes = number[][];
 
 export class Noper extends Ndata {
+  parent?: Noper | Ngroup;
   op: string;
   device?: string;
   cluster?: string;
@@ -230,9 +248,9 @@ export class Nseries extends Ngroup {
   constructor(
     public prefix: string,
     public suffix: string,
-    public parentName: string,
+    public pName: string,
     public cluster: number,
-    n = seriesName(prefix, suffix, parentName),
+    n = seriesName(prefix, suffix, pName),
     o = {} as qt.Opts
   ) {
     super(
