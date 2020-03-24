@@ -19,7 +19,7 @@ class Hierarchy implements qg.Hierarchy {
   clusters = [] as string[];
   libfns = {} as qt.Dict<qg.LibraryFn>;
   orders = {} as qt.Dict<qt.Dict<number>>;
-  templates = {} as qt.Dict<qg.Template>;
+  templs = {} as qt.Dict<qg.Template>;
   private _nodes = new qt.Nodes<Ngroup>();
   private _edges = new qt.Edges<Emeta>();
 
@@ -80,7 +80,7 @@ class Hierarchy implements qg.Hierarchy {
   }
 
   childName(n: string, desc: any) {
-    let d = this.node(desc);
+    let d: qg.Ndata | undefined = this.node(desc);
     while (d) {
       if (d.parent?.name === n) return d.name;
       d = d.parent;
@@ -147,7 +147,7 @@ class Hierarchy implements qg.Hierarchy {
   oneWays(n: Ngroup, inbound: boolean) {
     const es = new Edges();
     const p = n.parent;
-    if (p) {
+    if (qg.isGroup(p)) {
       const m = p.meta;
       let ls = inbound ? m.inLinks(p.name) : m.outLinks(p.name);
       es.update(ls);
@@ -160,36 +160,37 @@ class Hierarchy implements qg.Hierarchy {
     return es;
   }
 
-  ordering(name: string): qt.Dict<number> {
-    const node = this.ns[name];
-    if (!node) throw Error('Could not find node: ' + name);
-    if (!node.isGroup) return {};
-    if (name in this.orders) return this.orders[name];
-    const succs = {} as qt.Dict<string[]>;
-    const dests = {} as qt.Dict<boolean>;
-    const m = (node as qg.Ngroup).meta;
-    _.each(m.edges(), (e: qt.Link<qg.Edata>) => {
-      if (!m.edge(e).numRegular) return;
-      if (!(e.v in succs)) {
-        succs[e.v] = [];
+  order(n: string) {
+    const nd = this.node(n);
+    if (!nd) throw Error('Could not find node: ' + n);
+    const o = {} as qt.Dict<number>;
+    if (qg.isGroup(nd)) {
+      if (n in this.orders) return this.orders[n];
+      const succs = {} as qt.Dict<string[]>;
+      const dests = {} as qt.Dict<boolean>;
+      const m = nd.meta;
+      m.links().forEach(l => {
+        if (!m.edge(l)?.num.regular) return;
+        const [n0, n1] = l.nodes;
+        if (!(n0 in succs)) succs[n0] = [];
+        succs[n0].push(n1);
+        dests[n1] = true;
+      });
+      const q: string[] = _.difference(_.keys(succs), _.keys(dests));
+      this.orders[n] = o;
+      let i = 0;
+      while (q.length) {
+        const c = q.shift()!;
+        o[c] = i++;
+        _.each(succs[c], (s: string) => q.push(s));
+        delete succs[c];
       }
-      succs[e.v].push(e.w);
-      dests[e.w] = true;
-    });
-    const queue: string[] = _.difference(_.keys(succs), _.keys(dests));
-    const ord = (this.orders[name] = {} as qt.Dict<number>);
-    let i = 0;
-    while (queue.length) {
-      const c = queue.shift()!;
-      ord[c] = i++;
-      _.each(succs[c], (s: string) => queue.push(s));
-      delete succs[c];
     }
-    return ord;
+    return o;
   }
 
   indexer(): (n: string) => number {
-    const ns = d3.keys(this.templates ?? {});
+    const ns = d3.keys(this.templs ?? {});
     const idx = d3
       .scaleOrdinal()
       .domain(ns)
@@ -198,105 +199,81 @@ class Hierarchy implements qg.Hierarchy {
   }
 
   addNodes(g: qg.SlimGraph) {
-    const map = {} as qt.Dict<qg.Noper[]>;
-    _.each(g.nodes, n => {
-      const path = qg.hierarchyPath(n.name);
+    const os = {} as qt.Dict<qg.Noper[]>;
+    _.each(g.opers, o => {
+      const path = qg.hierarchyPath(o.name);
       let p = this.root;
       p.depth = Math.max(path.length, p.depth);
-      if (!map[n.op]) map[n.op] = [];
-      map[n.op].push(n);
+      if (!os[o.op]) os[o.op] = [];
+      os[o.op].push(o);
       for (let i = 0; i < path.length; i++) {
         p.depth = Math.max(p.depth, path.length - i);
-        p.cardinality += n.cardinality;
-        p.histo.op[n.op] = (p.histo.op[n.op] || 0) + 1;
-        if (n.device)
-          p.histo.device[n.device] = (p.histo.device[n.device] || 0) + 1;
-        if (n.cluster)
-          p.histo.cluster[n.cluster] = (p.histo.cluster[n.cluster] || 0) + 1;
-        if (n.compatible) {
-          p.histo.compat.compats = (p.histo.compat.compats || 0) + 1;
-        } else {
-          p.histo.compat.incompats = (p.histo.compat.incompats || 0) + 1;
-        }
-        n.inbeds.forEach(e => {
-          if (e.compatible) {
-            p.histo.compat.compats = (p.histo.compat.compats || 0) + 1;
-          } else {
-            p.histo.compat.incompats = (p.histo.compat.incompats || 0) + 1;
-          }
-        });
-        n.outbeds.forEach(e => {
-          if (e.compatible) {
-            p.histo.compat.compats = (p.histo.compat.compats || 0) + 1;
-          } else {
-            p.histo.compat.incompats = (p.histo.compat.incompats || 0) + 1;
-          }
-        });
+        p.cardinality += o.cardinality;
+        p.incHistoFrom(o);
+        p.incCompatFrom(o);
+        o.inbeds.forEach(b => p.incCompatFrom(b));
+        o.outbeds.forEach(b => p.incCompatFrom(b));
         if (i === path.length - 1) break;
-        const name = path[i];
-        let c = this.node(name) as qg.Nmeta;
-        if (!c) {
-          c = qg.createMetaNode(name, this.opts);
-          c.parent = p;
-          this.setNode(name, c);
-          p.meta.setNode(name, c);
-          if (name.startsWith(qp.LIBRARY_PREFIX) && p.name === qp.ROOT_NAME) {
-            const fn = name.substring(qp.LIBRARY_PREFIX.length);
-            if (!map[fn]) map[fn] = [];
-            this.libfns[fn] = {
-              node: c,
-              usages: map[fn]
-            };
-            c.assocFn = fn;
+        const n = path[i];
+        let meta = this.node(n) as qg.Nmeta;
+        if (!meta) {
+          meta = new qg.Nmeta(n, this.opts);
+          meta.parent = p;
+          this.setNode(n, meta);
+          p.meta.setNode(n, meta);
+          if (n.startsWith(qp.LIBRARY_PREFIX) && p.name === qp.ROOT_NAME) {
+            const f = n.substring(qp.LIBRARY_PREFIX.length);
+            if (!os[f]) os[f] = [];
+            this.libfns[f] = {meta, usages: os[f]};
+            meta.assocFn = f;
           }
         }
-        p = c;
+        p = meta;
       }
-      this.setNode(n.name, n);
-      n.parent = p;
-      p.meta.setNode(n.name, n);
-      n.inbeds.forEach(e => {
-        this.setNode(e.name, e);
-        e.parent = n;
+      this.setNode(o.name, o);
+      o.parent = p;
+      p.meta.setNode(o.name, o);
+      o.inbeds.forEach(b => {
+        this.setNode(b.name, b);
+        b.parent = o;
       });
-      n.outbeds.forEach(e => {
-        this.setNode(e.name, e);
-        e.parent = n;
+      o.outbeds.forEach(b => {
+        this.setNode(b.name, b);
+        b.parent = o;
       });
     });
+    return this;
   }
 
   addEdges(g: qg.SlimGraph, _series: qt.Dict<string>) {
-    const map = this.getNodeMap();
     const src = [] as string[];
     const dst = [] as string[];
-    function getPath(path: string[], n?: qg.Ndata) {
+    function path(p: string[], n?: qg.Ndata) {
       let i = 0;
       while (n) {
-        path[i++] = n.name!;
+        p[i++] = n.name;
         n = n.parent;
       }
       return i - 1;
     }
-    g.edges.forEach(e => {
-      let si = getPath(src, g.nodes[e.v]);
-      let di = getPath(dst, g.nodes[e.w]);
+    g.links.forEach(l => {
+      let si = path(src, g.opers[l.nodes[0]]);
+      let di = path(dst, g.opers[l.nodes[1]]);
       if (si === -1 || di === -1) return;
       while (src[si] === dst[di]) {
         si--;
         di--;
-        if (si < 0 || di < 0) throw Error('No difference in ancestor paths');
+        if (si < 0 || di < 0) throw Error('No difference in ancestors');
       }
-      const a = map[src[si + 1]] as qg.Ngroup;
-      const s = src[si];
-      const d = dst[di];
-      let m = a.meta.edge(s, d);
+      const n = this.node(src[si + 1]) as qg.Ngroup;
+      const sd = [src[si], dst[di]];
+      let m = n.meta.edge(sd);
       if (!m) {
-        m = qg.createMetaEdge(s, d);
-        a.meta.setEdge(s, d, m);
+        m = new qg.Emeta();
+        n.meta.setEdge(sd, m);
       }
-      if (!a.noControls && !e.isControl) a.noControls = true;
-      m!.addBase(e, this);
+      if (!n.noControls && !m.isControl) n.noControls = true;
+      m!.addLink(n.meta.link(sd)!, this);
     });
   }
 
@@ -318,20 +295,12 @@ class Hierarchy implements qg.Hierarchy {
       }
     });
     this.root.leaves().forEach(n => {
-      let nd = this.node(n);
+      let nd: qg.Ndata | undefined = this.node(n);
       while (nd?.parent) {
-        if (!qg.isGroup(nd)) {
-          if (nd.device) {
-            const h = nd.parent!.histo.device;
-            h[nd.device] = (h[nd.device] || 0) + 1;
-          }
-          if (nd.cluster) {
-            const h = nd.parent!.histo.cluster;
-            h[nd.cluster] = (h[nd.cluster] || 0) + 1;
-          }
-          if (nd.stats) nd.parent?.stats?.combine(nd.stats);
-        }
-        nd = nd.parent;
+        const p = nd.parent;
+        if (!qg.isGroup(nd) && qg.isGroup(p)) p.incHistoFrom(nd);
+        if (nd.stats) p?.stats?.combine(nd.stats);
+        nd = p;
       }
     });
   }
@@ -425,7 +394,7 @@ export async function build(
   await t.runAsyncTask(
     'Finding similars',
     30,
-    () => (h.templates = templ.detect(h, ps.verifyTemplate))
+    () => (h.templs = templ.detect(h, ps.verifyTemplate))
   );
   return h;
 }

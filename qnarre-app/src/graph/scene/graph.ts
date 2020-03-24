@@ -9,7 +9,7 @@ export interface Gdata extends qt.Named, qt.Opts {
 }
 
 export abstract class Ndata implements qt.Named {
-  parent?: Ngroup;
+  parent?: Ndata;
   stats?: qt.NodeStats;
   include?: boolean;
   attrs = {} as qt.Dict<any>;
@@ -135,16 +135,35 @@ function shapes(ps: {key: string; value: any}[]) {
 type Histos = qt.Dict<qt.Dict<number>>;
 
 export abstract class Ngroup extends Ndata {
+  parent?: Ngroup;
   bridge?: BridgeGraph;
   histo = {} as Histos;
   noControls?: boolean;
 
   constructor(n: string, t: qt.NodeType, public meta: MetaGraph) {
     super(n, t, 0);
-    this.histo.cluster = {} as qt.Dict<number>;
     this.histo.device = {} as qt.Dict<number>;
-    this.histo.op = {} as qt.Dict<number>;
+    this.histo.cluster = {} as qt.Dict<number>;
     this.histo.compat = {compats: 0, incompats: 0};
+  }
+
+  incHistoFrom(src: any) {
+    _.keys(this.histo).forEach(k => {
+      const n = src[k];
+      if (n) {
+        const t = this.histo[k];
+        t[n] = (t[n] ?? 0) + 1;
+      }
+    });
+  }
+
+  incCompatFrom(src: any) {
+    const c = this.histo.compat;
+    if (src.compatible) {
+      c.compats += 1;
+    } else {
+      c.incompats += 1;
+    }
   }
 }
 
@@ -226,7 +245,7 @@ export function seriesName(
 
 export interface LibraryFn {
   meta: Nmeta;
-  usages: Node[];
+  usages: Noper[];
 }
 
 export type Template = {names: string[]; level: number};
@@ -267,36 +286,32 @@ export class Emeta implements Edata {
 }
 
 export class SlimGraph {
-  nodes = {} as qt.Dict<Noper>;
-  edges = [] as BaseEdge[];
+  opers = {} as qt.Dict<Noper>;
+  links = [] as qt.Link<Edata>[];
 
-  addEdge(
-    src: string,
-    dst: Noper,
-    inp: qt.Input,
-    ps: qt.BuildParams,
-    i: number
-  ) {
-    if (src !== dst.name) {
-      const isRef = ps.refEdges[dst.op + ' ' + i] === true;
-      this.edges.push({
+  constructor(public opts = {} as qt.Opts) {}
+
+  addLink(s: string, d: Noper, inp: qt.Input, ps: qt.BuildParams, i: number) {
+    if (s !== d.name) {
+      const isRef = ps.refEdges[d.op + ' ' + i] === true;
+      const l = new qt.Link<Edata>([s, d.name], this.opts);
+      l.data = {
         isControl: inp.isControl,
         isRef,
-        out: inp.out,
-        v: src,
-        w: dst.name
-      });
+        out: inp.out
+      } as Edata;
+      this.links.push(l);
     }
   }
 
   mergeStats(stats: proto.StepStats, devices?: qt.Dict<boolean>) {
-    _.each(this.nodes, n => (n.stats = undefined));
+    _.each(this.opers, o => (o.stats = undefined));
     stats.dev_stats.forEach(ds => {
       if (devices && !devices[ds.device]) return;
       ds.node_stats.forEach(ns => {
-        const n =
-          ns.node_name in this.nodes ? ns.node_name : strictName(ns.node_name);
-        if (!(n in this.nodes)) return;
+        const o =
+          ns.node_name in this.opers ? ns.node_name : strictName(ns.node_name);
+        if (!(o in this.opers)) return;
         let b = 0;
         if (ns.memory) {
           _.each(ns.memory, m => {
@@ -304,7 +319,7 @@ export class SlimGraph {
               if (m.total_bytes > 0) {
                 b += Number(m.total_bytes);
               } else {
-                console.log('ignoring negative memory for ' + n);
+                console.log('ignoring negative memory for ' + o);
               }
             }
           });
@@ -315,19 +330,19 @@ export class SlimGraph {
             o.tensor_description.shape.dim.map(d => d.size)
           );
         }
-        this.nodes[n].device = ds.device;
-        if (!this.nodes[n].stats) {
-          this.nodes[n].stats = new qt.NodeStats(s);
+        this.opers[o].device = ds.device;
+        if (!this.opers[o].stats) {
+          this.opers[o].stats = new qt.NodeStats(s);
         }
-        this.nodes[n].stats?.addBytes(b);
+        this.opers[o].stats?.addBytes(b);
         if (ns.all_end_rel_micros) {
           if (ns.all_end_rel_micros > 0) {
-            this.nodes[n].stats?.addTime(
+            this.opers[o].stats?.addTime(
               ns.all_start_micros,
               ns.all_start_micros + ns.all_end_rel_micros
             );
           } else {
-            console.log('ignoring negative runtime for ' + n);
+            console.log('ignoring negative runtime for ' + o);
           }
         }
       });
@@ -353,7 +368,7 @@ export async function build(
   const es = [] as string[];
   const raws = def.node;
   const ns = new Array<string>(raws.length);
-  const nodes = await t.runAsyncTask('Normalizing names', 30, () => {
+  const opers = await t.runAsyncTask('Normalizing names', 30, () => {
     const ops = new Array<Noper>(raws.length);
     let i = 0;
     function raw(p: proto.NodeDef) {
@@ -428,31 +443,31 @@ export async function build(
   return t.runAsyncTask('Building data structure', 70, () => {
     const norms = mapHierarchy(ns, es);
     const g = new SlimGraph();
-    nodes.forEach(n => {
-      const nn = norms[n.name] || n.name;
-      g.nodes[nn] = n;
-      if (n.name in outs) {
-        n.outbeds = outs[n.name];
-        n.outbeds.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
+    opers.forEach(o => {
+      const nn = norms[o.name] || o.name;
+      g.opers[nn] = o;
+      if (o.name in outs) {
+        o.outbeds = outs[o.name];
+        o.outbeds.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
       }
-      n.name = nn;
+      o.name = nn;
     });
-    nodes.forEach(n => {
-      n.ins.forEach((inp, i) => {
+    opers.forEach(o => {
+      o.ins.forEach((inp, i) => {
         const nn = inp.name;
         if (nn in inEmbed) {
           const ie = inEmbed[nn];
-          n.inbeds.push(ie);
+          o.inbeds.push(ie);
           for (const e of ie.ins) {
-            g.addEdge(norms[e.name] || e.name, n, e, ps, i);
+            g.addLink(norms[e.name] || e.name, o, e, ps, i);
           }
         } else if (nn in outEmbed) {
           const oe = outEmbed[nn];
           for (const e of oe.ins) {
-            g.addEdge(norms[e.name] || e.name, n, inp, ps, i);
+            g.addLink(norms[e.name] || e.name, o, inp, ps, i);
           }
         } else {
-          g.addEdge(norms[nn] || nn, n, inp, ps, i);
+          g.addLink(norms[nn] || nn, o, inp, ps, i);
         }
       });
     });
