@@ -12,21 +12,70 @@ import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './util';
 
-export function buildGroup(group, ndata: qr.Ndata[], elem: qs.GraphElem) {
+export class Ndata extends qg.Ndata {
+  expanded = false;
+  inAnnotations = new AnnotationList();
+  outAnnotations = new AnnotationList();
+  x = 0;
+  y = 0;
+  width = 0;
+  height = 0;
+  coreBox = {width: 0, height: 0};
+  inboxWidth = 0;
+  outboxWidth = 0;
+  excluded = false;
+  structural = false;
+  labelOffset = 0;
+  radius = 0;
+  labelHeight = 0;
+  paddingTop = 0;
+  paddingLeft = 0;
+  paddingRight = 0;
+  paddingBottom = 0;
+  isInExtract = false;
+  isOutExtract = false;
+  isLibraryFn = false;
+  deviceColors = [] as Array<{color: string; proportion: number}>;
+  clusterColors = [] as Array<{color: string; proportion: number}>;
+  compatibilityColors = [] as Array<{color: string; proportion: number}>;
+  memoryColor = '';
+  computeTimeColor = '';
+  isFadedOut = false;
+  displayName: string;
+
+  constructor(public node: qt.Node) {
+    this.displayName = node.name.substring(
+      node.name.lastIndexOf(qp.NAMESPACE_DELIM) + 1
+    );
+    if (node.type === qt.NodeType.META && (node as qg.Nmeta).assocFn) {
+      const m = this.displayName.match(nodeDisplayNameRegex);
+      if (m) {
+        this.displayName = m[1];
+      } else if (_.startsWith(this.displayName, qp.LIBRARY_PREFIX)) {
+        this.displayName = this.displayName.substring(qp.LIBRARY_PREFIX.length);
+      }
+    }
+  }
+  isInCore(): boolean {
+    return !this.isInExtract && !this.isOutExtract && !this.isLibraryFn;
+  }
+}
+
+export function buildGroup(group, ndata: Ndata[], elem: qs.GraphElem) {
   const container = qs.selectOrCreate(group, 'g', qt.Class.Node.CONTAINER);
   const gs = (container as any)
     .selectAll(() => this.childNodes)
-    .data(ndata, (d: qr.Ndata) => d.node.name + ':' + d.node.type);
+    .data(ndata, (d: Ndata) => d.node.name + ':' + d.node.type);
   gs.enter()
     .append('g')
-    .attr('data-name', (d: qr.Ndata) => d.node.name)
-    .each((d: qr.Ndata) => {
+    .attr('data-name', (d: Ndata) => d.node.name)
+    .each((d: Ndata) => {
       const g = d3.select(this);
       elem.addNodeGroup(d.node.name, g);
     })
     .merge(gs)
-    .attr('class', (d: qr.Ndata) => qt.Class.Node.GROUP + ' ' + nodeClass(d))
-    .each((d: qr.Ndata) => {
+    .attr('class', (d: Ndata) => qt.Class.Node.GROUP + ' ' + nodeClass(d))
+    .each((d: Ndata) => {
       const g = d3.select(this);
       const inb = qs.selectOrCreate(g, 'g', qt.Class.Annotation.INBOX);
       qa.buildGroup(inb, d.inAnnotations, d, elem);
@@ -42,7 +91,7 @@ export function buildGroup(group, ndata: qr.Ndata[], elem: qs.GraphElem) {
       position(g, d);
     });
   gs.exit()
-    .each((d: qr.Ndata) => {
+    .each((d: Ndata) => {
       elem.removeNodeGroup(d.node.name);
       const g = d3.select(this);
       if (d.inAnnotations.list.length > 0) {
@@ -70,7 +119,7 @@ function subBuild(group, ndata: qr.GroupNdata, elem: qs.GraphElem) {
   return null;
 }
 
-function subPosition(group, d: qr.Ndata) {
+function subPosition(group, d: Ndata) {
   const x0 = d.x - d.width / 2.0 + d.paddingLeft;
   const y0 = d.y - d.height / 2.0 + d.paddingTop;
 
@@ -78,7 +127,7 @@ function subPosition(group, d: qr.Ndata) {
   qs.translate(subscene, x0, y0);
 }
 
-function addButton(sel, d: qr.Ndata, elem: qs.GraphElem) {
+function addButton(sel, d: Ndata, elem: qs.GraphElem) {
   const group = qs.selectOrCreate(sel, 'g', qt.Class.Node.BUTTON_CONTAINER);
   qs.selectOrCreate(group, 'circle', qt.Class.Node.BUTTON_CIRCLE);
   qs.selectOrCreate(group, 'path', qt.Class.Node.EXPAND_BUTTON).attr(
@@ -98,7 +147,7 @@ function addButton(sel, d: qr.Ndata, elem: qs.GraphElem) {
 
 function addInteraction(
   sel,
-  d: qr.Ndata,
+  d: Ndata,
   elem: qs.GraphElem,
   disableInteraction?: boolean
 ) {
@@ -108,26 +157,26 @@ function addInteraction(
   }
   const fn = qm.getMenu(elem, getContextMenu(d.node, elem));
   sel
-    .on('dblclick', (d: qr.Ndata) => {
+    .on('dblclick', (d: Ndata) => {
       elem.fire('node-toggle-expand', {name: d.node.name});
     })
-    .on('mouseover', (d: qr.Ndata) => {
+    .on('mouseover', (d: Ndata) => {
       if (elem.isNodeExpanded(d)) {
         return;
       }
       elem.fire('node-highlight', {name: d.node.name});
     })
-    .on('mouseout', (d: qr.Ndata) => {
+    .on('mouseout', (d: Ndata) => {
       if (elem.isNodeExpanded(d)) {
         return;
       }
       elem.fire('node-unhighlight', {name: d.node.name});
     })
-    .on('click', (d: qr.Ndata) => {
+    .on('click', (d: Ndata) => {
       (<Event>d3.event).stopPropagation();
       elem.fire('node-select', {name: d.node.name});
     })
-    .on('menu', (d: qr.Ndata, i) => {
+    .on('menu', (d: Ndata, i) => {
       elem.fire('node-select', {name: d.node.name});
       fn.call(d, i);
     });
@@ -147,7 +196,7 @@ export function getContextMenu(node: qt.Node, elem) {
   if (elem.nodeContextMenuItems) m = m.concat(elem.nodeContextMenuItems);
   if (canBeInSeries(node)) {
     m.push({
-      title: (_: qr.Ndata) => getGroupSettingLabel(node),
+      title: (_: Ndata) => getGroupSettingLabel(node),
       action: (elm, d, i) => {
         elem.fire('node-toggle-seriesgroup', {
           name: getSeriesName(node)
@@ -187,7 +236,7 @@ export function getGroupSettingLabel(node: qt.Node) {
   );
 }
 
-function labelBuild(group, ndata: qr.Ndata, elem: qs.GraphElem) {
+function labelBuild(group, ndata: Ndata, elem: qs.GraphElem) {
   let t = ndata.displayName;
   const useScale = ndata.node.type === qt.NodeType.META && !ndata.expanded;
   const label = qs.selectOrCreate(group, 'text', qt.Class.Node.LABEL);
@@ -208,7 +257,7 @@ function labelBuild(group, ndata: qr.Ndata, elem: qs.GraphElem) {
 export function enforceLabelWidth(
   sel,
   type: qt.NodeType | number,
-  ndata?: qr.Ndata
+  ndata?: Ndata
 ) {
   const n = sel.node() as SVGTextElement;
   let l = n.getComputedTextLength();
@@ -307,7 +356,7 @@ export function buildShape(group, d, nodeClass: string) {
   return g;
 }
 
-export function nodeClass(d: qr.Ndata) {
+export function nodeClass(d: Ndata) {
   switch (d.node.type) {
     case qt.NodeType.OP:
       return qt.Class.OPNODE;
@@ -324,7 +373,7 @@ export function nodeClass(d: qr.Ndata) {
   }
 }
 
-function position(group, d: qr.Ndata) {
+function position(group, d: Ndata) {
   const g = qs.selectChild(group, 'g', qt.Class.Node.SHAPE);
   const cx = ql.computeCXPositionOfNodeShape(d);
   switch (d.node.type) {
@@ -415,7 +464,7 @@ export function removeGradientDefinitions(root: SVGElement) {
 export function getFillForNode(
   templateIndex,
   colorBy,
-  renderInfo: qr.Ndata,
+  renderInfo: Ndata,
   isExpanded: boolean,
   root?: SVGElement
 ) {
@@ -490,7 +539,7 @@ export function getFillForNode(
 
 export function stylize(
   group,
-  renderInfo: qr.Ndata,
+  renderInfo: Ndata,
   elem: qs.GraphElem,
   nodeClass?
 ) {

@@ -9,6 +9,67 @@ import * as qr from './render';
 import * as qs from './scene';
 import * as qt from './types';
 
+export class Annotation {
+  node: qt.Node;
+  ndata: Ndata;
+  edata?: MetaEdata;
+  type: qt.AnnotationType;
+  dx = 0;
+  dy = 0;
+  width = 0;
+  height = 0;
+  v?: string;
+  w?: string;
+  isIn: boolean;
+  labelOffset = 0;
+  points = [] as {dx: number; dy: number}[];
+
+  constructor(
+    node: qt.Node,
+    ndata: Ndata,
+    edata: MetaEdata | undefined,
+    type: qt.AnnotationType,
+    isIn: boolean
+  ) {
+    this.node = node;
+    this.ndata = ndata;
+    this.edata = edata;
+    this.type = type;
+    if (edata && edata.metaedge) {
+      this.v = edata.metaedge.v;
+      this.w = edata.metaedge.w;
+    }
+    this.isIn = isIn;
+  }
+}
+
+export class AnnotationList {
+  list: Annotation[];
+  names: qt.Dict<boolean>;
+
+  constructor() {
+    this.list = [];
+    this.names = {};
+  }
+  push(a: Annotation) {
+    if (a.node.name in this.names) return;
+    this.names[a.node.name] = true;
+    if (this.list.length < PARAMS.maxAnnotations) {
+      this.list.push(a);
+      return;
+    }
+    const type = qt.AnnotationType.DOTS;
+    const last = this.list[this.list.length - 1];
+    if (last.type === type) {
+      const e = last.node as qt.Ndots;
+      e.setCountMore(++e.countMore);
+      return;
+    }
+    const e = new qg.Ndots(1);
+    this.list.push(new Annotation(e, new Ndata(e), undefined, type, a.isIn));
+  }
+}
+
 export function buildGroup(cont, annos: qr.AnnotationList, d: qr.Ndata, elem) {
   const gs = cont
     .selectAll(() => this.childNodes)

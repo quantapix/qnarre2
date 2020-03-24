@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
+
 import * as qt from './types';
 import * as qr from './render';
 import * as qp from './params';

@@ -27,8 +27,24 @@ const CENTER_EDGE_LABEL_MIN_STROKE_WIDTH = 2.5;
 export type EdgeData = {
   v: string;
   w: string;
-  label: qr.MetaEdata;
+  label: Emeta;
 };
+
+export class Emeta implements qg.Edata {
+  isControl = false;
+  isRef = false;
+  out = '';
+  adjoiningMetaEdge?: Emeta;
+  structural = false;
+  weight = 1;
+  points = [] as Point[];
+  edgeGroup?: d3.Selection<Emeta & any, any, any, any>;
+  startMarkerId = '';
+  endMarkerId = '';
+  isFadedOut = false;
+
+  constructor(public metaedge?: qg.Emeta) {}
+}
 
 export interface EdgeSelectionCallback {
   (d: EdgeData): void;
@@ -40,7 +56,7 @@ export function getEdgeKey(d: EdgeData) {
 
 export function buildGroup(
   scene,
-  g: qt.Graph<qr.Ndata, qr.MetaEdata>,
+  g: qt.Graph<qr.Ndata, Emeta>,
   gelem: qs.GraphElem
 ) {
   const elem = gelem as any;
