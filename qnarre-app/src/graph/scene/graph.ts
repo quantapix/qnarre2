@@ -72,7 +72,7 @@ export class Noper extends Ndata {
   compatible = false;
 
   constructor(d: proto.NodeDef) {
-    super(d.name, qt.NodeType.OP);
+    super(d.name, qt.NodeType.OPER);
     this.op = d.op;
     this.device = d.device;
     this.cluster = cluster(d.attr);
@@ -209,6 +209,19 @@ export class Nmeta extends Ngroup {
     }
     return ls;
   }
+
+  signature() {
+    const ps = _.map(
+      {
+        depth: this.depth,
+        '|N|': this.meta.nodeCount,
+        '|E|': this.meta.edgeCount
+      },
+      (v, k) => k + '=' + v
+    ).join(' ');
+    const os = _.map(this.histo.op, (n, o) => o + '=' + n).join(',');
+    return ps + ' [ops] ' + os;
+  }
 }
 
 export class Nseries extends Ngroup {
@@ -242,13 +255,6 @@ export function seriesName(
   n = pre + n + suf;
   return (p ? p + '/' : '') + n;
 }
-
-export interface LibraryFn {
-  meta: Nmeta;
-  usages: Noper[];
-}
-
-export type Template = {names: string[]; level: number};
 
 export interface Edata extends qt.Named {
   isControl: boolean;
@@ -284,6 +290,15 @@ export class Emeta implements Edata {
     return this;
   }
 }
+
+export interface LibraryFn {
+  meta: Nmeta;
+  usages: Noper[];
+}
+
+export type Template = {names: string[]; level: number};
+export type Group = {nodes: Nmeta[]; level: number};
+export type Cluster = {node: Nmeta; names: string[]};
 
 export class SlimGraph {
   opers = {} as qt.Dict<Noper>;

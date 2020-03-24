@@ -11,7 +11,7 @@ import * as templ from './template';
 type Ngroup = qg.Ngroup | qg.Noper;
 type Emeta = qg.Emeta;
 
-class Hierarchy implements qg.Hierarchy {
+export class Hierarchy implements qg.Hierarchy {
   root: qg.Nmeta;
   hasShape = false;
   maxEdgeSize = 1;
@@ -19,7 +19,7 @@ class Hierarchy implements qg.Hierarchy {
   clusters = [] as string[];
   libfns = {} as qt.Dict<qg.LibraryFn>;
   orders = {} as qt.Dict<qt.Dict<number>>;
-  templs = {} as qt.Dict<qg.Template>;
+  templates = {} as qt.Dict<qg.Template>;
   private _nodes = new qt.Nodes<Ngroup>();
   private _edges = new qt.Edges<Emeta>();
 
@@ -190,7 +190,7 @@ class Hierarchy implements qg.Hierarchy {
   }
 
   indexer(): (n: string) => number {
-    const ns = d3.keys(this.templs ?? {});
+    const ns = d3.keys(this.templates ?? {});
     const idx = d3
       .scaleOrdinal()
       .domain(ns)
@@ -337,6 +337,31 @@ class Hierarchy implements qg.Hierarchy {
     });
     return ns;
   }
+
+  groups() {
+    const map = this.getNodeMap();
+    const gs = Object.keys(map).reduce((r, name) => {
+      const n: Ngroup = map[name];
+      if (n.type !== qt.NodeType.META) return r;
+      const m = n as qg.Nmeta;
+      const s = getSignature(m);
+      const level = name.split('/').length - 1;
+      const t = r[s] || {nodes: [], level};
+      r[s] = t;
+      t.nodes.push(m);
+      if (t.level > level) t.level = level;
+      return r;
+    }, {} as qt.Dict<Group>);
+    return Object.keys(gs)
+      .map(k => [k, gs[k]] as [string, Group])
+      .filter(([_, g]) => {
+        const {nodes} = g;
+        if (nodes.length > 1) return true;
+        const n = nodes[0];
+        return n.type === qt.NodeType.META && (n as qg.Nmeta).assocFn;
+      })
+      .sort(([_, g]) => g.nodes[0].depth);
+  }
 }
 
 class Edges {
@@ -394,7 +419,7 @@ export async function build(
   await t.runAsyncTask(
     'Finding similars',
     30,
-    () => (h.templs = templ.detect(h, ps.verifyTemplate))
+    () => (h.templates = templ.detect(h, ps.verifyTemplate))
   );
   return h;
 }

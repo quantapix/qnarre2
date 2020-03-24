@@ -17,7 +17,7 @@ export enum GraphType {
 
 export enum NodeType {
   META,
-  OP,
+  OPER,
   SERIES,
   BRIDGE,
   ELLIPSIS
