@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import * as params from '../../graph/scene/params';
-import * as hierarchy from '../../graph/scene/hierarchy';
+import * as params from '../../graph/group/params';
+import * as hierarchy from '../../graph/group/hierarchy';
 
 @Component({
   selector: 'qnr-op-compat-list-item',
@@ -125,8 +125,8 @@ export class OpCompatCardComponent implements OnInit {
     type: string;
     computed: '_getOpCompatScoreLabel(_opCompatScore)';
   };
-  _opCompatColor = params.OpNodeColors.COMPATIBLE;
-  _opIncompatColor = params.OpNodeColors.INCOMPATIBLE;
+  _opCompatColor = params.NoperColors.COMPATIBLE;
+  _opIncompatColor = params.NoperColors.INCOMPATIBLE;
   _totalIncompatOps: number; //  computed: '_getTotalIncompatibleOps(graphHierarchy)';
 
   constructor() {}

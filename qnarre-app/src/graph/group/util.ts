@@ -314,3 +314,27 @@ export function aggregateTagInfo(
 function ngettext(k: number, enSingular: string, enPlural: string): string {
   return k === 1 ? enSingular : enPlural;
 }
+
+export function includeButtonString(inc?: boolean) {
+  if (!inc) {
+    return 'Add to main graph';
+  } else {
+    return 'Remove from main graph';
+  }
+}
+
+export function groupButtonString(group?: boolean) {
+  if (!group) {
+    return 'Group these nodes';
+  } else {
+    return 'Ungroup these nodes';
+  }
+}
+
+export function toggleGroup(map: qt.Dict<boolean>, n: string) {
+  if (!(n in map) || map[n] === true) {
+    map[n] = false;
+  } else {
+    map[n] = true;
+  }
+}

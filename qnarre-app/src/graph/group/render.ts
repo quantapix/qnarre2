@@ -69,7 +69,7 @@ export class Gdata {
       .range(
         _.map(
           d3.range(this.hierarchy.devices.length),
-          qp.MetaNodeColors.DEVICE_PALETTE
+          qp.NmetaColors.DEVICE_PALETTE
         )
       );
     this.clusterColorMap = d3
@@ -78,7 +78,7 @@ export class Gdata {
       .range(
         _.map(
           d3.range(this.hierarchy.clusters.length),
-          qp.MetaNodeColors.CLUSTER_PALETTE
+          qp.NmetaColors.CLUSTER_PALETTE
         )
       );
     const top = this.hierarchy.root.metag;
@@ -169,8 +169,8 @@ export class Gdata {
     }
     if (oc) {
       d.compatibilityColors = [
-        {color: qp.OpNodeColors.COMPATIBLE, proportion: oc},
-        {color: qp.OpNodeColors.INCOMPATIBLE, proportion: 1 - oc}
+        {color: qp.NoperColors.COMPATIBLE, proportion: oc},
+        {color: qp.NoperColors.INCOMPATIBLE, proportion: 1 - oc}
       ];
     }
     return this.index[name];
@@ -221,7 +221,7 @@ export class Gdata {
     prefix: string
   ): qg.Noper {
     const newName = node.name.replace(fnName, prefix);
-    let n = m.metag.node(newName);
+    let n = m.meta.node(newName);
     if (n) {
       return n as qg.Noper;
     }
@@ -244,7 +244,7 @@ export class Gdata {
       return newNormInput;
     });
     n.parent = m;
-    m.metag.setNode(n.name, n);
+    m.meta.setNode(n.name, n);
     this.hierarchy.setNode(n.name, n);
     const update = (e: qg.Noper) => {
       return this.cloneAndAddFunctionOpNode(m, fnName, e, prefix);
@@ -286,8 +286,8 @@ export class Gdata {
     n.include = libn.include;
     n.attributes = _.clone(libn.attributes);
     n.assocFn = libn.assocFn;
-    _.each(libn.metag.nodes(), nn => {
-      const o = libn.metag.node(nn);
+    _.each(libn.meta.nodes(), nn => {
+      const o = libn.meta.node(nn);
       switch (o.type) {
         case qt.NodeType.META:
           const n2 = this.cloneLibMetaHelper(
@@ -299,7 +299,7 @@ export class Gdata {
             dict
           );
           n2.parent = n;
-          n.metag.setNode(n2.name, n2);
+          n.meta.setNode(n2.name, n2);
           this.hierarchy.setNode(n2.name, n2);
           break;
         case qt.NodeType.OP:
@@ -326,8 +326,8 @@ export class Gdata {
     oldPre: string,
     prefix: string
   ) {
-    _.each(libn.metag.edges(), (edgeObject: qt.EdgeObject) => {
-      const edge = libn.metag.edge(edgeObject);
+    _.each(libn.meta.edges(), (edgeObject: qt.EdgeObject) => {
+      const edge = libn.meta.edge(edgeObject);
       const newV = edge.v.replace(oldPre, prefix);
       const newW = edge.w.replace(oldPre, prefix);
       const newMetaEdge = new qg.MetaEdge(newV, newW);
@@ -344,10 +344,10 @@ export class Gdata {
           return newBaseEdge;
         });
       }
-      if (newMetaNode.metag.node(newW)) {
-        newMetaNode.metag.setEdge(newV, newW, newMetaEdge);
+      if (newMetaNode.meta.node(newW)) {
+        newMetaNode.meta.setEdge(newV, newW, newMetaEdge);
       } else {
-        newMetaNode.metag.setEdge(newW, newV, newMetaEdge);
+        newMetaNode.meta.setEdge(newW, newV, newMetaEdge);
       }
     });
   }
@@ -819,7 +819,7 @@ export class GroupNdata extends Ndata {
 
   constructor(public node: qg.Ngroup, opts: qt.Opts) {
     super(node);
-    const g = node.metag.graph();
+    const g = node.meta.graph();
     opts.isCompound = true;
     this.coreGraph = qg.createGraph<Ndata, MetaEdata>(
       g.name!,

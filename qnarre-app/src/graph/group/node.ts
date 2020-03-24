@@ -419,7 +419,7 @@ export function getFillForNode(
   isExpanded: boolean,
   root?: SVGElement
 ) {
-  const colorParams = qp.MetaNodeColors;
+  const colorParams = qp.NmetaColors;
   switch (colorBy) {
     case qt.ColorBy.STRUCTURE:
       if (renderInfo.node.type === qt.NodeType.META) {
@@ -521,7 +521,7 @@ export function stylize(
 
 export function getStrokeForFill(fill: string) {
   return fill.startsWith('url')
-    ? qp.MetaNodeColors.GRADIENT_OUTLINE
+    ? qp.NmetaColors.GRADIENT_OUTLINE
     : d3
         .rgb(fill)
         .darker()

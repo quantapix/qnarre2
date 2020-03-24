@@ -1,6 +1,6 @@
 /* eslint-disable no-constant-condition */
 import {Component, OnInit} from '@angular/core';
-import * as backend from '../../graph/scene/backend';
+import * as backend from '../../graph/group/backend';
 import * as color_scale from './color-scale';
 import * as storage from './storage';
 

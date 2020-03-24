@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import * as render from '../../graph/scene/render';
-import * as scene from '../../graph/scene/scene';
+import * as render from '../../graph/group/render';
+import * as scene from '../../graph/group/scene';
 
 @Component({
   selector: 'qnr-graph-debugger-card',

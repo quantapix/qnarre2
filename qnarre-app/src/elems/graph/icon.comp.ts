@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import * as params from '../../graph/scene/params';
+import * as params from '../../graph/group/params';
 
 export enum GraphIconType {
   CONST = 'CONST',
@@ -35,11 +35,11 @@ function computeFill(type: GraphIconType, fillOverride?: string) {
   if (fillOverride) return fillOverride;
   switch (type) {
     case GraphIconType.META:
-      return params.MetaNodeColors.DEFAULT_FILL;
+      return params.NmetaColors.DEFAULT_FILL;
     case GraphIconType.SERIES:
       return params.NseriesColors.DEFAULT_FILL;
     default:
-      return params.OpNodeColors.DEFAULT_FILL;
+      return params.NoperColors.DEFAULT_FILL;
   }
 }
 
@@ -47,11 +47,11 @@ function computeStroke(type: GraphIconType, strokeOverride?: string) {
   if (strokeOverride) return strokeOverride;
   switch (type) {
     case GraphIconType.META:
-      return params.MetaNodeColors.DEFAULT_STROKE;
+      return params.NmetaColors.DEFAULT_STROKE;
     case GraphIconType.SERIES:
       return params.NseriesColors.DEFAULT_STROKE;
     default:
-      return params.OpNodeColors.DEFAULT_STROKE;
+      return params.NoperColors.DEFAULT_STROKE;
   }
 
   function isType(type: GraphIconType, targetType: GraphIconType) {

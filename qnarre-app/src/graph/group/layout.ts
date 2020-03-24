@@ -34,7 +34,7 @@ function layoutChildren(d: qr.GroupNdata) {
     .concat(d.isolatedInExtract, d.isolatedOutExtract, d.libfnsExtract);
   cs.forEach(c => {
     switch (c.node.type) {
-      case qt.NodeType.OP:
+      case qt.NodeType.OPER:
         _.extend(c, qp.PARAMS.nodeSize.op);
         break;
       case qt.NodeType.BRIDGE:
@@ -300,11 +300,11 @@ function layoutAnnotation(d: qr.Ndata) {
 
 function sizeAnnotation(a: qr.Annotation) {
   switch (a.type) {
-    case qt.AnnotationType.CONSTANT:
+    case qt.AnnoType.CONSTANT:
       _.extend(a, qp.PARAMS.constant.size);
       break;
-    case qt.AnnotationType.SHORTCUT:
-      if (a.node.type === qt.NodeType.OP) {
+    case qt.AnnoType.SHORTCUT:
+      if (a.node.type === qt.NodeType.OPER) {
         _.extend(a, qp.PARAMS.shortcutSize.op);
       } else if (a.node.type === qt.NodeType.META) {
         _.extend(a, qp.PARAMS.shortcutSize.meta);
@@ -314,7 +314,7 @@ function sizeAnnotation(a: qr.Annotation) {
         throw Error('Invalid node type: ' + a.node.type);
       }
       break;
-    case qt.AnnotationType.SUMMARY:
+    case qt.AnnoType.SUMMARY:
       _.extend(a, qp.PARAMS.constant.size);
       break;
   }

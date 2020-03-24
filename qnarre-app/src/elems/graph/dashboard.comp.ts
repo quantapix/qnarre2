@@ -2,7 +2,7 @@ import * as vz_sorting from 'vz_sorting';
 import * as storage from './storage';
 
 import {Component, OnInit} from '@angular/core';
-import * as backend from '../../graph/scene/backend';
+import * as backend from '../../graph/group/backend';
 
 const RUN_STORAGE_KEY = 'run';
 

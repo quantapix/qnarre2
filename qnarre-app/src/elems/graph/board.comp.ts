@@ -1,5 +1,5 @@
 import {Component, OnInit, Input} from '@angular/core';
-import * as q_graph from '../../graph/scene/graph';
+import * as q_graph from '../../graph/group/graph';
 
 @Component({
   selector: 'qnr-graph-board',

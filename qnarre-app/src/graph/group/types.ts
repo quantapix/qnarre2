@@ -63,10 +63,10 @@ export interface Input {
   out: string;
 }
 
-export interface BuildParams {
-  enableEmbed: boolean;
-  inEmbedTypes: string[];
-  outEmbedTypes: string[];
+export interface Params {
+  embed: boolean;
+  inbedTypes: string[];
+  outbedTypes: string[];
   refEdges: qt.Dict<boolean>;
 }
 
@@ -90,32 +90,6 @@ export interface Health {
 export interface HealthEntry {
   background: string;
   label: string;
-}
-
-export class NodeStats {
-  bytes?: number;
-  start?: number;
-  end?: number;
-
-  constructor(public size: number[][]) {}
-
-  addBytes(b: number) {
-    this.bytes = Math.max(this.bytes ?? 0, b);
-  }
-  addTime(s: number, e: number) {
-    this.start = Math.min(this.start ?? Infinity, s);
-    this.end = Math.max(this.end ?? 0, e);
-  }
-  combine(ss: NodeStats) {
-    this.bytes = this.bytes ?? 0 + (ss.bytes ?? 0);
-    if (ss.getMicros() !== undefined) this.addTime(ss.start!, ss.end!);
-  }
-  getMicros() {
-    if (this.start !== undefined && this.end !== undefined) {
-      return this.end - this.start;
-    }
-    return undefined;
-  }
 }
 
 export const Class = {

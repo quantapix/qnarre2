@@ -119,7 +119,7 @@ export const PARAMS = {
   }
 };
 
-export const DefaultHierarchyParams = {
+export const HierarchyParams = {
   verifyTemplate: true,
   seriesMinSize: 5,
   seriesMap: {},
@@ -127,10 +127,10 @@ export const DefaultHierarchyParams = {
   usePatterns: false
 };
 
-export const DefaultBuildParams: qt.BuildParams = {
-  enableEmbed: true,
-  inEmbedTypes: ['Const'],
-  outEmbedTypes: ['^[a-zA-Z]+Summary$'],
+export const BuildParams: qt.Params = {
+  embed: true,
+  inbedTypes: ['Const'],
+  outbedTypes: ['^[a-zA-Z]+Summary$'],
   refEdges: {
     'Assign 0': true,
     'AssignAdd 0': true,
@@ -260,14 +260,14 @@ export const OP_GROUP_COLORS = [
   return m;
 }, {} as {[k: string]: any});
 
-export const OpNodeColors = {
+export const NoperColors = {
   DEFAULT_FILL: '#ffffff',
   DEFAULT_STROKE: '#b2b2b2',
   COMPATIBLE: '#0f9d58',
   INCOMPATIBLE: '#db4437'
 };
 
-export const MetaNodeColors = {
+export const NmetaColors = {
   DEFAULT_FILL: '#d9d9d9',
   DEFAULT_STROKE: '#a6a6a6',
   SATURATION: 0.6,
@@ -275,7 +275,7 @@ export const MetaNodeColors = {
   EXPANDED_COLOR: '#f0f0f0',
   HUES: [220, 100, 180, 40, 20, 340, 260, 300, 140, 60],
   STRUCTURE_PALETTE(id: number, lightened?: boolean) {
-    const hues = MetaNodeColors.HUES;
+    const hues = NmetaColors.HUES;
     const n = hues.length;
     const hue = hues[id % n];
     const m = Math.sin((hue * Math.PI) / 360);
@@ -284,10 +284,10 @@ export const MetaNodeColors = {
     return d3.hsl(hue, 0.01 * sat, 0.01 * light).toString();
   },
   DEVICE_PALETTE(index: number): string {
-    return MetaNodeColors.STRUCTURE_PALETTE(index);
+    return NmetaColors.STRUCTURE_PALETTE(index);
   },
   CLUSTER_PALETTE(index: number): string {
-    return MetaNodeColors.STRUCTURE_PALETTE(index);
+    return NmetaColors.STRUCTURE_PALETTE(index);
   },
   UNKNOWN: '#eee',
   GRADIENT_OUTLINE: '#888'
@@ -300,27 +300,27 @@ export const NseriesColors = {
 
 export const healthEntries: qt.HealthEntry[] = [
   {
-    background_color: '#CC2F2C',
+    background: '#CC2F2C',
     label: 'NaN'
   },
   {
-    background_color: '#FF8D00',
+    background: '#FF8D00',
     label: '-∞'
   },
   {
-    background_color: '#EAEAEA',
+    background: '#EAEAEA',
     label: '-'
   },
   {
-    background_color: '#A5A5A5',
+    background: '#A5A5A5',
     label: '0'
   },
   {
-    background_color: '#262626',
+    background: '#262626',
     label: '+'
   },
   {
-    background_color: '#003ED4',
+    background: '#003ED4',
     label: '+∞'
   }
 ];

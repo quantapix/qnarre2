@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
-import * as loader from '../../graph/scene/loader';
-import * as util from '../../graph/scene/util';
-import * as op from '../../graph/scene/oper';
+import * as loader from '../../graph/group/loader';
+import * as util from '../../graph/group/util';
+import * as op from '../../graph/group/oper';
 
 @Component({
   selector: 'qnr-graph-loader',

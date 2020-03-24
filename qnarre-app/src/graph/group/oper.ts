@@ -1,4 +1,5 @@
 import * as qg from './graph';
+import * as qs from './slim';
 import * as qp from './params';
 
 export interface CompatibilityProvider {
@@ -399,11 +400,11 @@ export class TpuCompatibility implements CompatibilityProvider {
 }
 
 export function checkOpsForCompatibility(
-  g: qg.SlimGraph,
+  g: qs.SlimGraph,
   p: CompatibilityProvider
 ) {
   if (p === null) throw new Error('Compatibility provider required, : ' + p);
-  _.each(g.nodes, n => {
+  _.each(g.opers, n => {
     n.compatible = p.valid(n);
     n.inbeds.forEach(n2 => {
       n2.compatible = p.valid(n2);

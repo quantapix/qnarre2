@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import {Component, OnInit} from '@angular/core';
-import {Minimap} from '../../graph/scene/minimap';
+import {Minimap} from '../../graph/group/minimap';
 
 @Component({
   selector: 'qnr-graph-minimap',

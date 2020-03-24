@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 
 import * as qg from './graph';
 import * as qp from './params';
+import * as qs from './slim';
 import * as qt from './types';
 import * as qu from './util';
 import * as proto from './proto';
@@ -198,10 +199,10 @@ export class Hierarchy implements qg.Hierarchy {
     return (t: string) => idx(t) as number;
   }
 
-  addNodes(g: qg.SlimGraph) {
+  addNodes(g: qs.SlimGraph) {
     const os = {} as qt.Dict<qg.Noper[]>;
     _.each(g.opers, o => {
-      const path = qg.hierarchyPath(o.name);
+      const path = qs.hierarchyPath(o.name);
       let p = this.root;
       p.depth = Math.max(path.length, p.depth);
       if (!os[o.op]) os[o.op] = [];
@@ -245,7 +246,7 @@ export class Hierarchy implements qg.Hierarchy {
     return this;
   }
 
-  addEdges(g: qg.SlimGraph, _series: qt.Dict<string>) {
+  addEdges(g: qs.SlimGraph, _series: qt.Dict<string>) {
     const src = [] as string[];
     const dst = [] as string[];
     function path(p: string[], n?: qg.Ndata) {
@@ -290,7 +291,7 @@ export class Hierarchy implements qg.Hierarchy {
     this.nodes().forEach(n => {
       const nd = this.node(n);
       if (qg.isGroup(nd)) {
-        nd.stats = new qt.NodeStats([]);
+        nd.stats = new qg.Stats([]);
         nd.histo.device = {};
       }
     });
@@ -310,7 +311,7 @@ export class Hierarchy implements qg.Hierarchy {
     const added = {} as qt.Dict<qg.Nseries>;
     this.root.leaves().forEach(n => {
       const d = this.node(n);
-      if (d?.type === qt.NodeType.OP) {
+      if (d?.type === qt.NodeType.OPER) {
         const nd = d as qg.Noper;
         if (!nd.compatible) {
           if (nd.series) {
@@ -344,16 +345,16 @@ export class Hierarchy implements qg.Hierarchy {
       const n: Ngroup = map[name];
       if (n.type !== qt.NodeType.META) return r;
       const m = n as qg.Nmeta;
-      const s = getSignature(m);
+      const s = m.signature();
       const level = name.split('/').length - 1;
       const t = r[s] || {nodes: [], level};
       r[s] = t;
       t.nodes.push(m);
       if (t.level > level) t.level = level;
       return r;
-    }, {} as qt.Dict<Group>);
+    }, {} as qt.Dict<qg.Group>);
     return Object.keys(gs)
-      .map(k => [k, gs[k]] as [string, Group])
+      .map(k => [k, gs[k]] as [string, qg.Group])
       .filter(([_, g]) => {
         const {nodes} = g;
         if (nodes.length > 1) return true;
@@ -386,7 +387,7 @@ export interface Params {
 }
 
 export async function build(
-  g: qg.SlimGraph,
+  g: qs.SlimGraph,
   ps: Params,
   t: qu.Tracker
 ): Promise<Hierarchy> {
