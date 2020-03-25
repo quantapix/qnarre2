@@ -306,7 +306,7 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
     const g = qs.selectOrCreate(group, 'g', nodeClass);
     switch (d.node.type) {
       case qt.NodeType.OP:
-        const n = d.node as qt.Noper;
+        const n = d.node as qg.Noper;
         if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
           qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR_TARGET);
           break;
@@ -343,6 +343,87 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
         throw Error('Unrecognized node type: ' + d.node.type);
     }
     return g;
+  }
+
+  stylize(s: qt.Selection, elem: qs.GraphElem, nodeClass?) {
+    nodeClass = nodeClass || qt.Class.Node.SHAPE;
+    const isHighlighted = elem.isNodeHighlighted(this.name);
+    const isSelected = elem.isNodeSelected(this.name);
+    const isExtract = this.isInExtract || this.isOutExtract || this.isLibraryFn;
+    const isExpanded = this.expanded && nodeClass !== qt.Class.Annotation.NODE;
+    const isFadedOut = this.isFadedOut;
+    s.classed('highlighted', isHighlighted);
+    s.classed('selected', isSelected);
+    s.classed('extract', isExtract);
+    s.classed('expanded', isExpanded);
+    s.classed('faded', isFadedOut);
+    const n = s.select('.' + nodeClass + ' .' + qt.Class.Node.COLOR_TARGET);
+    const fill = getFillForNode(
+      elem.templateIndex,
+      qt.ColorBy[elem.colorBy.toUpperCase()],
+      this,
+      isExpanded,
+      elem.getGraphSvgRoot()
+    );
+    n.style('fill', fill);
+    n.style('stroke', isSelected ? null : getStrokeForFill(fill));
+  }
+
+  getFillForNode(
+    templateIndex,
+    colorBy,
+    isExpanded: boolean,
+    root?: SVGElement
+  ) {
+    const cs = qp.MetaColors;
+    switch (colorBy) {
+      case qt.ColorBy.STRUCTURE:
+        if (this.type === qt.NodeType.META) {
+          const tid = (this as qg.Nmeta).template;
+          return tid === null
+            ? cs.UNKNOWN
+            : cs.STRUCTURE(templateIndex(tid), isExpanded);
+        } else if (this.type === qt.NodeType.LIST) {
+          return isExpanded ? cs.EXPANDED : 'white';
+        } else if (this.type === qt.NodeType.BRIDGE) {
+          return this.structural
+            ? '#f0e'
+            : (this as qg.Nbridge).inbound
+            ? '#0ef'
+            : '#fe0';
+        } else if (_.isNumber((this as qg.Noper).inIdx)) {
+          return '#795548';
+        } else if (_.isNumber((this as qg.Noper).outIdx)) {
+          return '#009688';
+        } else {
+          return 'white';
+        }
+      case qt.ColorBy.DEVICE:
+        if (this.deviceColors == null) return cs.UNKNOWN;
+        return isExpanded
+          ? cs.EXPANDED
+          : getGradient('device-' + this.name, this.deviceColors, root);
+      case qt.ColorBy.CLUSTER:
+        if (this.clusterColors == null) return cs.UNKNOWN;
+        return isExpanded
+          ? cs.EXPANDED
+          : getGradient('xla-' + this.name, this.clusterColors, root);
+      case qt.ColorBy.TIME:
+        return isExpanded ? cs.EXPANDED : this.computeTimeColor || cs.UNKNOWN;
+      case qt.ColorBy.MEMORY:
+        return isExpanded ? cs.EXPANDED : this.memoryColor || cs.UNKNOWN;
+      case qt.ColorBy.COMPAT:
+        if (this.compatibilityColors == null) return cs.UNKNOWN;
+        return isExpanded
+          ? cs.EXPANDED
+          : getGradient(
+              'op-compat-' + this.name,
+              this.compatibilityColors,
+              root
+            );
+      default:
+        throw new Error('Unknown color');
+    }
   }
 }
 
@@ -454,249 +535,13 @@ export function removeGradientDefinitions(root: SVGElement) {
     .remove();
 }
 
-export function getFillForNode(
-  templateIndex,
-  colorBy,
-  renderInfo: Ndata,
-  isExpanded: boolean,
-  root?: SVGElement
-) {
-  const colorParams = qp.NmetaColors;
-  switch (colorBy) {
-    case qt.ColorBy.STRUCTURE:
-      if (renderInfo.node.type === qt.NodeType.META) {
-        const tid = (renderInfo.node as qg.Nmeta).template;
-        return tid === null
-          ? colorParams.UNKNOWN
-          : colorParams.STRUCTURE_PALETTE(templateIndex(tid), isExpanded);
-      } else if (renderInfo.node.type === qt.NodeType.LIST) {
-        return isExpanded ? colorParams.EXPANDED_COLOR : 'white';
-      } else if (renderInfo.node.type === qt.NodeType.BRIDGE) {
-        return renderInfo.structural
-          ? '#f0e'
-          : (renderInfo.node as qt.Nbridge).inbound
-          ? '#0ef'
-          : '#fe0';
-      } else if (_.isNumber((renderInfo.node as qt.Noper).inIdx)) {
-        return '#795548';
-      } else if (_.isNumber((renderInfo.node as qt.Noper).outIdx)) {
-        return '#009688';
-      } else {
-        return 'white';
-      }
-    case qt.ColorBy.DEVICE:
-      if (renderInfo.deviceColors == null) {
-        return colorParams.UNKNOWN;
-      }
-      return isExpanded
-        ? colorParams.EXPANDED_COLOR
-        : getGradient(
-            'device-' + renderInfo.node.name,
-            renderInfo.deviceColors,
-            root
-          );
-    case qt.ColorBy.CLUSTER:
-      if (renderInfo.clusterColors == null) {
-        return colorParams.UNKNOWN;
-      }
-      return isExpanded
-        ? colorParams.EXPANDED_COLOR
-        : getGradient(
-            'xla-' + renderInfo.node.name,
-            renderInfo.clusterColors,
-            root
-          );
-    case qt.ColorBy.TIME:
-      return isExpanded
-        ? colorParams.EXPANDED_COLOR
-        : renderInfo.computeTimeColor || colorParams.UNKNOWN;
-    case qt.ColorBy.MEMORY:
-      return isExpanded
-        ? colorParams.EXPANDED_COLOR
-        : renderInfo.memoryColor || colorParams.UNKNOWN;
-    case qt.ColorBy.COMPAT:
-      if (renderInfo.compatibilityColors == null) {
-        return colorParams.UNKNOWN;
-      }
-      return isExpanded
-        ? colorParams.EXPANDED_COLOR
-        : getGradient(
-            'op-compat-' + renderInfo.node.name,
-            renderInfo.compatibilityColors,
-            root
-          );
-    default:
-      throw new Error('Unknown case to color nodes by');
-  }
-}
-
-export function stylize(
-  group,
-  renderInfo: Ndata,
-  elem: qs.GraphElem,
-  nodeClass?
-) {
-  nodeClass = nodeClass || qt.Class.Node.SHAPE;
-  const isHighlighted = elem.isNodeHighlighted(renderInfo.node.name);
-  const isSelected = elem.isNodeSelected(renderInfo.node.name);
-  const isExtract =
-    renderInfo.isInExtract || renderInfo.isOutExtract || renderInfo.isLibraryFn;
-  const isExpanded =
-    renderInfo.expanded && nodeClass !== qt.Class.Annotation.NODE;
-  const isFadedOut = renderInfo.isFadedOut;
-  group.classed('highlighted', isHighlighted);
-  group.classed('selected', isSelected);
-  group.classed('extract', isExtract);
-  group.classed('expanded', isExpanded);
-  group.classed('faded', isFadedOut);
-  const n = group.select('.' + nodeClass + ' .' + qt.Class.Node.COLOR_TARGET);
-  const fill = getFillForNode(
-    elem.templateIndex,
-    qt.ColorBy[elem.colorBy.toUpperCase()],
-    renderInfo,
-    isExpanded,
-    elem.getGraphSvgRoot()
-  );
-  n.style('fill', fill);
-  n.style('stroke', isSelected ? null : getStrokeForFill(fill));
-}
-
 export function getStrokeForFill(fill: string) {
   return fill.startsWith('url')
-    ? qp.NmetaColors.GRADIENT_OUTLINE
+    ? qp.MetaColors.GRADIENT
     : d3
         .rgb(fill)
         .darker()
         .toString();
-}
-
-export function updateInputTrace(
-  root: SVGElement,
-  gdata: qr.Gdata,
-  selectedNodeName: string,
-  trace: boolean
-) {
-  const r = d3.select(root);
-  r.selectAll('.input-highlight').classed('input-highlight', false);
-  r.selectAll('.non-input').classed('non-input', false);
-  r.selectAll('.input-parent').classed('input-parent', false);
-  r.selectAll('.input-child').classed('input-child', false);
-  r.selectAll('.input-edge-highlight').classed('input-edge-highlight', false);
-  r.selectAll('.non-input-edge-highlight').classed(
-    'non-input-edge-highlight',
-    false
-  );
-  r.selectAll('.input-highlight-selected').classed(
-    'input-highlight-selected',
-    false
-  );
-  if (!gdata || !trace || !selectedNodeName) return;
-  const opNodes = _getAllContainedOpNodes(selectedNodeName, gdata);
-  let allTracedNodes = {};
-  _.each(opNodes, function(node) {
-    allTracedNodes = traceAllInputsOfOpNode(root, gdata, node, allTracedNodes);
-  });
-  const highlightedNodes = Object.keys(allTracedNodes);
-  const visibleNodes = findVisibleParents(gdata, highlightedNodes);
-  markParents(root, visibleNodes);
-  r.selectAll(
-    'g.node:not(.selected):not(.input-highlight)' +
-      ':not(.input-parent):not(.input-children)'
-  )
-    .classed('non-input', true)
-    .each(d => {
-      const nodeName = d.node.name;
-      r.selectAll(`[data-name="${nodeName}"]`).classed('non-input', true);
-    });
-  r.selectAll('g.edge:not(.input-edge-highlight)').classed(
-    'non-input-edge-highlight',
-    true
-  );
-}
-
-function _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
-  let os = [] as Array<qg.OpNode>;
-  const n = gdata.getNodeByName(name) as qg.Nclus | qt.Noper;
-  if (n instanceof qg.OpNode) return [n].concat(n.inEmbeds);
-  const ns = (n as qg.Nclus).metag.nodes();
-  _.each(ns, n => {
-    os = os.concat(_getAllContainedOpNodes(n, gdata));
-  });
-  return os;
-}
-
-interface VisibleParent {
-  visibleParent: qt.Node;
-  opNodes: qt.Noper[];
-}
-
-function traceAllInputsOfOpNode(
-  root: SVGElement,
-  gdata: qr.Gdata,
-  startNode: qt.Noper,
-  allTracedNodes: Record<string, any>
-) {
-  if (allTracedNodes[startNode.name]) {
-    return allTracedNodes;
-  } else {
-    allTracedNodes[startNode.name] = true;
-  }
-  const ins = startNode.ins;
-  const currentVisibleParent = getVisibleParent(gdata, startNode);
-  d3.select(root)
-    .select(`.node[data-name="${currentVisibleParent.name}"]`)
-    .classed('input-highlight', true);
-  const visibleInputs = {};
-  _.each(ins, function(node) {
-    let resolvedNode = gdata.getNodeByName(node.name);
-    if (resolvedNode === undefined) return;
-    if (resolvedNode instanceof qg.MetaNode) {
-      const resolvedNodeName = qg.strictName(resolvedNode.name);
-      resolvedNode = gdata.getNodeByName(resolvedNodeName) as qt.Noper;
-    }
-    const visibleParent = getVisibleParent(gdata, resolvedNode);
-    const visibleInputsEntry = visibleInputs[visibleParent.name];
-    if (visibleInputsEntry) {
-      visibleInputsEntry.opNodes.push(resolvedNode);
-    } else {
-      visibleInputs[visibleParent.name] = {
-        visibleParent: visibleParent,
-        opNodes: [resolvedNode]
-      } as VisibleParent;
-    }
-  });
-  const starts = {};
-  const idxStarts = [currentVisibleParent];
-  starts[currentVisibleParent.name] = {
-    traced: false,
-    index: 0,
-    connectionEndpoints: []
-  };
-  let node = currentVisibleParent;
-  for (let index = 1; node.name !== qp.ROOT_NAME; index++) {
-    node = node.parent;
-    starts[node.name] = {
-      traced: false,
-      index: index,
-      connectionEndpoints: []
-    };
-    idxStarts[index] = node;
-  }
-  _.forOwn(visibleInputs, function(visibleParentInfo: VisibleParent, key) {
-    const node = visibleParentInfo.visibleParent;
-    _.each(visibleParentInfo.opNodes, function(opNode: qt.Noper) {
-      allTracedNodes = traceAllInputsOfOpNode(
-        root,
-        gdata,
-        opNode,
-        allTracedNodes
-      );
-    });
-    if (node.name !== currentVisibleParent.name) {
-      createVisibleTrace(root, node, starts, idxStarts);
-    }
-  });
-  return allTracedNodes;
 }
 
 function createVisibleTrace(
@@ -735,16 +580,6 @@ function createVisibleTrace(
   }
 }
 
-function findVisibleParents(gdata: qr.Gdata, ns: string[]) {
-  const ps = {} as qt.Dict<qt.Node>;
-  _.each(ns, nn => {
-    const n = gdata.getNodeByName(nn);
-    const p = getVisibleParent(gdata, n);
-    if (p) ps[p.name] = p;
-  });
-  return ps;
-}
-
 function markParents(root: SVGElement, ns: qt.Dict<qt.Node>) {
   _.forOwn(ns, (n?: qt.Node) => {
     while (n && n.name !== qp.ROOT_NAME) {
@@ -760,20 +595,4 @@ function markParents(root: SVGElement, ns: qt.Dict<qt.Node>) {
       n = n.parent;
     }
   });
-}
-
-export function getVisibleParent(gdata: qr.Gdata, node?: qt.Node) {
-  let p = node;
-  let found = false;
-  while (!found) {
-    node = p;
-    p = node?.parent;
-    if (!p) {
-      found = true;
-    } else {
-      const n = gdata.getNdataByName(p.name);
-      if (n && (n.expanded || p instanceof qg.OpNode)) found = true;
-    }
-  }
-  return node;
 }

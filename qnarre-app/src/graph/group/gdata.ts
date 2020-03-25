@@ -37,6 +37,11 @@ const nodeDisplayNameRegex = new RegExp(
   '^(?:' + qp.LIBRARY_PREFIX + ')?(\\w+)_[a-z0-9]{8}(?:_\\d+)?$'
 );
 
+interface VisibleParent {
+  visibleParent: qt.Node;
+  opNodes: qg.Noper[];
+}
+
 export class Gdata {
   index = {} as qt.Dict<Ndata>;
   renderedOpNames = [] as string[];
@@ -212,6 +217,161 @@ export class Gdata {
 
   getNamesOfRenderedOps(): string[] {
     return this.renderedOpNames;
+  }
+
+  _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
+    let os = [] as Array<qg.OpNode>;
+    const n = gdata.getNodeByName(name) as qg.Nclus | qg.Noper;
+    if (n instanceof qg.OpNode) return [n].concat(n.inEmbeds);
+    const ns = (n as qg.Nclus).metag.nodes();
+    _.each(ns, n => {
+      os = os.concat(_getAllContainedOpNodes(n, gdata));
+    });
+    return os;
+  }
+
+  getVisibleParent(gdata: qr.Gdata, node?: qt.Node) {
+    let p = node;
+    let found = false;
+    while (!found) {
+      node = p;
+      p = node?.parent;
+      if (!p) {
+        found = true;
+      } else {
+        const n = gdata.getNdataByName(p.name);
+        if (n && (n.expanded || p instanceof qg.OpNode)) found = true;
+      }
+    }
+    return node;
+  }
+
+  findVisibleParents(gdata: qr.Gdata, ns: string[]) {
+    const ps = {} as qt.Dict<qt.Node>;
+    _.each(ns, nn => {
+      const n = gdata.getNodeByName(nn);
+      const p = getVisibleParent(gdata, n);
+      if (p) ps[p.name] = p;
+    });
+    return ps;
+  }
+
+  traceAllInputsOfOpNode(
+    root: SVGElement,
+    gdata: qr.Gdata,
+    startNode: qg.Noper,
+    allTracedNodes: Record<string, any>
+  ) {
+    if (allTracedNodes[startNode.name]) {
+      return allTracedNodes;
+    } else {
+      allTracedNodes[startNode.name] = true;
+    }
+    const ins = startNode.ins;
+    const currentVisibleParent = getVisibleParent(gdata, startNode);
+    d3.select(root)
+      .select(`.node[data-name="${currentVisibleParent.name}"]`)
+      .classed('input-highlight', true);
+    const visibleInputs = {};
+    _.each(ins, function(node) {
+      let resolvedNode = gdata.getNodeByName(node.name);
+      if (resolvedNode === undefined) return;
+      if (resolvedNode instanceof qg.MetaNode) {
+        const resolvedNodeName = qg.strictName(resolvedNode.name);
+        resolvedNode = gdata.getNodeByName(resolvedNodeName) as qg.Noper;
+      }
+      const visibleParent = getVisibleParent(gdata, resolvedNode);
+      const visibleInputsEntry = visibleInputs[visibleParent.name];
+      if (visibleInputsEntry) {
+        visibleInputsEntry.opNodes.push(resolvedNode);
+      } else {
+        visibleInputs[visibleParent.name] = {
+          visibleParent: visibleParent,
+          opNodes: [resolvedNode]
+        } as VisibleParent;
+      }
+    });
+    const starts = {};
+    const idxStarts = [currentVisibleParent];
+    starts[currentVisibleParent.name] = {
+      traced: false,
+      index: 0,
+      connectionEndpoints: []
+    };
+    let node = currentVisibleParent;
+    for (let index = 1; node.name !== qp.ROOT_NAME; index++) {
+      node = node.parent;
+      starts[node.name] = {
+        traced: false,
+        index: index,
+        connectionEndpoints: []
+      };
+      idxStarts[index] = node;
+    }
+    _.forOwn(visibleInputs, function(visibleParentInfo: VisibleParent, key) {
+      const node = visibleParentInfo.visibleParent;
+      _.each(visibleParentInfo.opNodes, function(opNode: qg.Noper) {
+        allTracedNodes = traceAllInputsOfOpNode(
+          root,
+          gdata,
+          opNode,
+          allTracedNodes
+        );
+      });
+      if (node.name !== currentVisibleParent.name) {
+        createVisibleTrace(root, node, starts, idxStarts);
+      }
+    });
+    return allTracedNodes;
+  }
+
+  updateInputTrace(
+    root: SVGElement,
+    gdata: qr.Gdata,
+    selectedNodeName: string,
+    trace: boolean
+  ) {
+    const r = d3.select(root);
+    r.selectAll('.input-highlight').classed('input-highlight', false);
+    r.selectAll('.non-input').classed('non-input', false);
+    r.selectAll('.input-parent').classed('input-parent', false);
+    r.selectAll('.input-child').classed('input-child', false);
+    r.selectAll('.input-edge-highlight').classed('input-edge-highlight', false);
+    r.selectAll('.non-input-edge-highlight').classed(
+      'non-input-edge-highlight',
+      false
+    );
+    r.selectAll('.input-highlight-selected').classed(
+      'input-highlight-selected',
+      false
+    );
+    if (!gdata || !trace || !selectedNodeName) return;
+    const opNodes = _getAllContainedOpNodes(selectedNodeName, gdata);
+    let allTracedNodes = {};
+    _.each(opNodes, function(node) {
+      allTracedNodes = traceAllInputsOfOpNode(
+        root,
+        gdata,
+        node,
+        allTracedNodes
+      );
+    });
+    const highlightedNodes = Object.keys(allTracedNodes);
+    const visibleNodes = findVisibleParents(gdata, highlightedNodes);
+    markParents(root, visibleNodes);
+    r.selectAll(
+      'g.node:not(.selected):not(.input-highlight)' +
+        ':not(.input-parent):not(.input-children)'
+    )
+      .classed('non-input', true)
+      .each(d => {
+        const nodeName = d.node.name;
+        r.selectAll(`[data-name="${nodeName}"]`).classed('non-input', true);
+      });
+    r.selectAll('g.edge:not(.input-edge-highlight)').classed(
+      'non-input-edge-highlight',
+      true
+    );
   }
 
   private cloneAndAddFunctionOpNode(

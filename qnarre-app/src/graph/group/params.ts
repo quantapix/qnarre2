@@ -260,22 +260,22 @@ export const OP_GROUP_COLORS = [
   return m;
 }, {} as {[k: string]: any});
 
-export const NoperColors = {
+export const OperColors = {
   DEFAULT_FILL: '#ffffff',
   DEFAULT_STROKE: '#b2b2b2',
   COMPATIBLE: '#0f9d58',
   INCOMPATIBLE: '#db4437'
 };
 
-export const NmetaColors = {
+export const MetaColors = {
   DEFAULT_FILL: '#d9d9d9',
   DEFAULT_STROKE: '#a6a6a6',
   SATURATION: 0.6,
   LIGHTNESS: 0.85,
-  EXPANDED_COLOR: '#f0f0f0',
+  EXPANDED: '#f0f0f0',
   HUES: [220, 100, 180, 40, 20, 340, 260, 300, 140, 60],
-  STRUCTURE_PALETTE(id: number, lightened?: boolean) {
-    const hues = NmetaColors.HUES;
+  STRUCTURE(id: number, lightened?: boolean) {
+    const hues = MetaColors.HUES;
     const n = hues.length;
     const hue = hues[id % n];
     const m = Math.sin((hue * Math.PI) / 360);
@@ -283,17 +283,17 @@ export const NmetaColors = {
     const light = lightened ? 95 : 80;
     return d3.hsl(hue, 0.01 * sat, 0.01 * light).toString();
   },
-  DEVICE_PALETTE(index: number): string {
-    return NmetaColors.STRUCTURE_PALETTE(index);
+  DEVICE(index: number): string {
+    return MetaColors.STRUCTURE(index);
   },
-  CLUSTER_PALETTE(index: number): string {
-    return NmetaColors.STRUCTURE_PALETTE(index);
+  CLUSTER(index: number): string {
+    return MetaColors.STRUCTURE(index);
   },
   UNKNOWN: '#eee',
-  GRADIENT_OUTLINE: '#888'
+  GRADIENT: '#888'
 };
 
-export const NlistColors = {
+export const ListColors = {
   DEFAULT_FILL: 'white',
   DEFAULT_STROKE: '#b2b2b2'
 };
