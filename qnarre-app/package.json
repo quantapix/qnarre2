@@ -29,7 +29,7 @@
     "@webcomponents/custom-elements": "",
     "d3": "",
     "lodash": "",
-    "rxjs": "",
+    "rxjs": "next",
     "tslib": "",
     "zone.js": ""
   },

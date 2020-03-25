@@ -7,6 +7,12 @@
   "license": "MIT",
   "devDependencies": {
     "@angular/cli": "next",
+    "@bazel/bazel": "",
+    "@bazel/ibazel": "",
+    "@bazel/jasmine": "",
+    "@bazel/karma": "",
+    "@bazel/protractor": "",
+    "@bazel/typescript": "",
     "@typescript-eslint/eslint-plugin": "",
     "@typescript-eslint/parser": "",
     "eslint-config-google": "",
