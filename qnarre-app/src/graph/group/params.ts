@@ -1,11 +1,11 @@
 import * as d3 from 'd3';
 import * as qt from './types';
 
-export const ROOT_NAME = '__root__';
-export const NAMESPACE_DELIM = '/';
-export const LIBRARY_PREFIX = '__function_library__';
+export const ROOT = '__root__';
+export const SLASH = '/';
+export const LIB_PRE = '__function_library__';
 
-export const EDGE_KEY_DELIM = '--';
+export const KEY_DELIM = '--';
 export const MIN_EDGE_WIDTH = 0.75;
 export const MAX_EDGE_WIDTH = 12;
 

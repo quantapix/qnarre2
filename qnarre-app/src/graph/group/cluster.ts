@@ -8,7 +8,7 @@ import * as qe from './edata';
 import * as qs from './scene';
 import {PARAMS as PS} from './params';
 
-export class Nclus extends qn.Ndata {
+export class Nclus extends qn.Ndata implements qg.Nclus {
   core: qt.Graph<qg.Gdata, qn.Ndata, qe.Emeta>;
   inExtractBox: {w: number; h: number};
   outExtractBox: {w: number; h: number};
@@ -16,6 +16,8 @@ export class Nclus extends qn.Ndata {
   isolatedInExtract: qn.Ndata[];
   isolatedOutExtract: qn.Ndata[];
   libfnsExtract: qn.Ndata[];
+  histo = {} as qg.Histos;
+  noControls?: boolean;
 
   constructor(public node: qg.Nclus, opts: qt.Opts) {
     super(node);
@@ -34,8 +36,8 @@ export class Nclus extends qn.Ndata {
     this.libfnsExtract = [];
   }
 
-  setGroupNodeDepth(depth: number): void {
-    if (this.core) setGraphDepth(this.core, depth);
+  setDepth(depth: number): void {
+    if (this.core) this.core.setDepth(this.core, depth);
   }
 
   subBuild(s: qt.Selection, e: qs.GraphElem) {
@@ -52,9 +54,9 @@ export class Nclus extends qn.Ndata {
     const g = this.core;
     const nd = g.node(n)!;
     nd.isOutExtract = true;
-    _.each(g.preds(n), p => createShortcut(g, [p, n]));
+    _.each(g.preds(n), p => g.createShortcut([p, n]));
     if (PS.detachAllEdgesForHighDegree || detach) {
-      _.each(g.succs(n), s => createShortcut(g, [n, s]));
+      _.each(g.succs(n), s => g.createShortcut([n, s]));
     }
     if (g.neighbors(n)?.length === 0) {
       nd.include = false;
@@ -67,9 +69,9 @@ export class Nclus extends qn.Ndata {
     const g = this.core;
     const nd = g.node(n)!;
     nd.isInExtract = true;
-    _.each(g.succs(n), s => createShortcut(g, [n, s]));
+    _.each(g.succs(n), s => g.createShortcut([n, s]));
     if (PS.detachAllEdgesForHighDegree || detach) {
-      _.each(g.preds(n), p => createShortcut(g, [p, n]));
+      _.each(g.preds(n), p => g.createShortcut([p, n]));
     }
     if (g.neighbors(n)?.length === 0) {
       nd.include = false;
@@ -80,9 +82,9 @@ export class Nclus extends qn.Ndata {
 
   extractSpecifiedNodes() {
     const g = this.core;
-    _.each(g.nodes(), n => {
+    g.nodes().forEach(n => {
       const nd = g.node(n)!;
-      if (!nd.include && !n.startsWith(qp.LIBRARY_PREFIX)) {
+      if (!nd.include && !n.startsWith(qp.LIB_PRE)) {
         if (g.outLinks(n)!.length > g.inLinks(n)!.length) {
           this.makeOutExtract(n, true);
         } else {
@@ -94,10 +96,10 @@ export class Nclus extends qn.Ndata {
 
   extractPredefinedSink() {
     const g = this.core;
-    _.each(g.nodes(), n => {
+    g.nodes().forEach(n => {
       const nd = g.node(n)!;
       if (nd.include) return;
-      if (hasTypeIn(nd, PS.outExtractTypes)) {
+      if (nd.hasTypeIn(PS.outExtractTypes)) {
         this.makeOutExtract(n);
       }
     });
@@ -105,10 +107,10 @@ export class Nclus extends qn.Ndata {
 
   extractPredefinedSource() {
     const g = this.core;
-    _.each(g.nodes(), n => {
+    g.nodes().forEach(n => {
       const nd = g.node(n)!;
       if (nd.include) return;
-      if (hasTypeIn(nd, PS.inExtractTypes)) {
+      if (nd.hasTypeIn(PS.inExtractTypes)) {
         this.makeInExtract(n);
       }
     });
@@ -119,7 +121,7 @@ export class Nclus extends qn.Ndata {
     const ins = {} as qt.Dict<number>;
     const outs = {} as qt.Dict<number>;
     let count = 0;
-    _.each(g.nodes(), n => {
+    g.nodes().forEach(n => {
       const nd = g.node(n)!;
       if (nd.include) return;
       let ind = _.reduce(
@@ -182,7 +184,7 @@ export class Nclus extends qn.Ndata {
     });
     _.each(ls, (ls2, _) => {
       if (ls2.length > PS.maxControlDegree) {
-        ls2.forEach(l => createShortcut(g, l.nodes));
+        ls2.forEach(l => g.createShortcut(l.nodes));
       }
     });
   }
@@ -233,35 +235,4 @@ export function mapIndexToHue(id: number): number {
   const MAX_HUE = 359;
   const COLOR_RANGE = MAX_HUE - MIN_HUE;
   return MIN_HUE + ((COLOR_RANGE * GOLDEN_RATIO * id) % COLOR_RANGE);
-}
-
-function createShortcut(
-  g: qt.Graph<qg.Gdata, qn.Ndata, qe.Emeta>,
-  ns: string[]
-) {
-  const s = g.node(ns[0]);
-  const d = g.node(ns[1]);
-  const e = g.edge(ns);
-  if (s?.include && d?.include) {
-    return;
-  }
-  addOutAnno(s, d, e, qt.AnnoType.SHORTCUT);
-  addInAnno(d, s, s, e, qt.AnnoType.SHORTCUT);
-  g.delEdge(ns);
-}
-
-function hasTypeIn(n: qn.Ndata, types: string[]) {
-  if (n.type === qt.NodeType.OPER) {
-    for (let i = 0; i < types.length; i++) {
-      if ((n as any).op === types[i]) return true;
-    }
-  } else if (n.type === qt.NodeType.META) {
-    const root = (n as any).getRootOp();
-    if (root) {
-      for (let i = 0; i < types.length; i++) {
-        if (root.op === types[i]) return true;
-      }
-    }
-  }
-  return false;
 }

@@ -33,10 +33,6 @@ const PARAMS = {
   maxAnnotations: 5
 };
 
-const nodeDisplayNameRegex = new RegExp(
-  '^(?:' + qp.LIBRARY_PREFIX + ')?(\\w+)_[a-z0-9]{8}(?:_\\d+)?$'
-);
-
 interface VisibleParent {
   visibleParent: qt.Node;
   opNodes: qg.Noper[];
@@ -777,35 +773,6 @@ export class Gdata {
       });
     });
   }
-
-  private buildSubhierarchiesForNeededFunctions(
-    g: qt.Graph<qg.Nclus | qg.Noper, qg.Emeta>
-  ) {
-    _.each(g.edges(), l => {
-      const me = g.edge(l);
-      const ed = new MetaEdata(me);
-      _.forEach(ed.metaedge?.bases, e => {
-        const ps = e.v.split(qp.NAMESPACE_DELIM);
-        for (let i = ps.length; i >= 0; i--) {
-          const front = ps.slice(0, i);
-          const n = this.hierarchy.node(front.join(qp.NAMESPACE_DELIM));
-          if (n) {
-            if (
-              n.type === qt.NodeType.OP &&
-              this.hierarchy.libfns[(n as qg.Noper).op]
-            ) {
-              for (let j = 1; j < front.length; j++) {
-                const nn = front.slice(0, j).join(qp.NAMESPACE_DELIM);
-                if (!nn) continue;
-                this.buildSubhierarchy(nn);
-              }
-            }
-            break;
-          }
-        }
-      });
-    });
-  }
 }
 
 function addInAnno(
@@ -828,19 +795,4 @@ function addOutAnno(
 ) {
   const a = new Annotation(succ, ndata, edge, type, false);
   node.outAnnotations.push(a);
-}
-
-function setGraphDepth(g: qt.Graph<Ndata, any>, depth: number) {
-  _.each(g.nodes(), n => {
-    const d = g.node(n);
-    d.expanded = depth > 1;
-    if (depth > 0) {
-      switch (d.node.type) {
-        case qt.NodeType.META:
-        case qt.NodeType.LIST:
-          setGroupNodeDepth(d as GroupNdata, depth - 1);
-          break;
-      }
-    }
-  });
 }

@@ -214,7 +214,7 @@ export abstract class GraphElem extends HTMLElement {
   abstract fire(eventName: string, daat: any): void;
   abstract addNodeGroup(name: string, selection: qt.Selection): void;
   abstract removeNodeGroup(name: string): void;
-  abstract removeAnnotationGroup(name: string): void;
+  abstract removeAnnotationGroup(n: string, nd: any): void;
   abstract isNodeExpanded(node: qn.Ndata): boolean;
   abstract isNodeHighlighted(nodeName: string): boolean;
   abstract isNodeSelected(nodeName: string): boolean;

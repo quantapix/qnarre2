@@ -3,10 +3,10 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qa from './annotation';
+import * as qc from './cluster';
 import * as qg from './graph';
 import * as ql from './layout';
 import * as qp from './params';
-import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './util';
@@ -24,6 +24,10 @@ class Rect implements qt.Rect {
 }
 
 interface _Ndata extends qg.Ndata {}
+
+const nameRegex = new RegExp(
+  '^(?:' + qp.LIB_PRE + ')?(\\w+)_[a-z0-9]{8}(?:_\\d+)?$'
+);
 
 export class Ndata implements qt.Point, qt.Area, _Ndata {
   parent?: Ndata;
@@ -55,30 +59,43 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
   compatibilityColors = [] as Array<{color: string; proportion: number}>;
   memoryColor = '';
   computeTimeColor = '';
-  isFadedOut = false;
-  displayName: string;
+  faded = false;
+  display: string;
 
   constructor(
     public name: string,
     public type: qt.NodeType,
-    public cardinality = 1,
-    public node: qt.Node
+    public cardinality = 1
   ) {
-    this.displayName = node.name.substring(
-      node.name.lastIndexOf(qp.NAMESPACE_DELIM) + 1
-    );
-    if (node.type === qt.NodeType.META && (node as qg.Nmeta).assocFn) {
-      const m = this.displayName.match(nodeDisplayNameRegex);
+    this.display = name.substring(name.lastIndexOf(qp.SLASH) + 1);
+    if (type === qt.NodeType.META && (this as qg.Nmeta).assocFn) {
+      const m = this.display.match(nameRegex);
       if (m) {
-        this.displayName = m[1];
-      } else if (_.startsWith(this.displayName, qp.LIBRARY_PREFIX)) {
-        this.displayName = this.displayName.substring(qp.LIBRARY_PREFIX.length);
+        this.display = m[1];
+      } else if (_.startsWith(this.display, qp.LIB_PRE)) {
+        this.display = this.display.substring(qp.LIB_PRE.length);
       }
     }
   }
 
   isInCore(): boolean {
     return !this.isInExtract && !this.isOutExtract && !this.isLibraryFn;
+  }
+
+  hasTypeIn(types: string[]) {
+    if (this.type === qt.NodeType.OPER) {
+      for (let i = 0; i < types.length; i++) {
+        if ((n as any).op === types[i]) return true;
+      }
+    } else if (this.type === qt.NodeType.META) {
+      const root = (n as any).getRootOp();
+      if (root) {
+        for (let i = 0; i < types.length; i++) {
+          if (root.op === types[i]) return true;
+        }
+      }
+    }
+    return false;
   }
 
   subPosition(s: qt.Selection) {
@@ -199,15 +216,16 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
   }
 
   labelBuild(s: qt.Selection, e: qs.GraphElem) {
-    let t = this.displayName;
+    let t = this.display;
     const scale = this.type === qt.NodeType.META && !this.expanded;
     const label = qs.selectOrCreate(s, 'text', qt.Class.Node.LABEL);
     const n = label.node() as HTMLElement;
     n.parent.appendChild(n);
     label.attr('dy', '.35em').attr('text-anchor', 'middle');
     if (scale) {
-      if (t.length > e.maxMetaNodeLabelLength) {
-        t = t.substr(0, e.maxMetaNodeLabelLength - 2) + '...';
+      const max = e.maxMetaNodeLabelLength;
+      if (max && t.length > max) {
+        t = t.substr(0, max - 2) + '...';
       }
       const fs = labelFontScale(e);
       label.attr('font-size', fs(t.length) + 'px');
@@ -252,15 +270,15 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
     const cx = ql.computeCXPositionOfNodeShape(d);
     switch (this.type) {
       case qt.NodeType.OPER: {
-        const n = this as qg.Noper;
-        if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
-          const sh = qs.selectChild(g, 'polygon');
+        const od = this as qg.Noper;
+        if (_.isNumber(od.inIdx) || _.isNumber(od.outIdx)) {
+          const sc = qs.selectChild(g, 'polygon');
           const r = new Rect(this.x, this.y, this.coreBox.w, this.coreBox.h);
-          qs.positionTriangle(sh, r);
+          qs.positionTriangle(sc, r);
         } else {
-          const sh = qs.selectChild(g, 'ellipse');
+          const sc = qs.selectChild(g, 'ellipse');
           const r = new Rect(cx, this.y, this.coreBox.w, this.coreBox.h);
-          qs.positionEllipse(sh, r);
+          qs.positionEllipse(sc, r);
         }
         labelPosition(s, cx, this.y, this.labelOffset);
         break;
@@ -302,79 +320,72 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
     }
   }
 
-  buildShape(s: qt.Selection, nodeClass: string) {
-    const g = qs.selectOrCreate(group, 'g', nodeClass);
-    switch (d.node.type) {
-      case qt.NodeType.OP:
-        const n = d.node as qg.Noper;
-        if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
-          qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR_TARGET);
+  buildShape(s: qt.Selection, c: string) {
+    const g = qs.selectOrCreate(s, 'g', c);
+    switch (this.type) {
+      case qt.NodeType.OPER:
+        const od = this as qg.Noper;
+        if (_.isNumber(od.inIdx) || _.isNumber(od.outIdx)) {
+          qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR);
           break;
         }
-        qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR_TARGET);
+        qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR);
         break;
       case qt.NodeType.LIST:
         let t = 'annotation';
-        const ndata = d as qr.GroupNdata;
-        if (ndata.coreGraph) {
-          t = ndata.node.noControls ? 'vertical' : 'horizontal';
+        const cd = this as qc.Nclus;
+        if (cd.core) {
+          t = cd.noControls ? 'vertical' : 'horizontal';
         }
-        const cs = [qt.Class.Node.COLOR_TARGET];
-        if (ndata.isFadedOut) cs.push('faded-ellipse');
+        const cs = [qt.Class.Node.COLOR];
+        if (this.faded) cs.push('faded-ellipse');
         qs.selectOrCreate(g, 'use', cs).attr(
           'xlink:href',
           '#op-series-' + t + '-stamp'
         );
-        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
-          .attr('rx', d.radius)
-          .attr('ry', d.radius);
+        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
+          .attr('rx', this.radius)
+          .attr('ry', this.radius);
         break;
       case qt.NodeType.BRIDGE:
-        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
-          .attr('rx', d.radius)
-          .attr('ry', d.radius);
+        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
+          .attr('rx', this.radius)
+          .attr('ry', this.radius);
         break;
       case qt.NodeType.META:
-        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
-          .attr('rx', d.radius)
-          .attr('ry', d.radius);
+        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
+          .attr('rx', this.radius)
+          .attr('ry', this.radius);
         break;
       default:
-        throw Error('Unrecognized node type: ' + d.node.type);
+        throw Error('Unrecognized type: ' + this.type);
     }
     return g;
   }
 
-  stylize(s: qt.Selection, elem: qs.GraphElem, nodeClass?) {
-    nodeClass = nodeClass || qt.Class.Node.SHAPE;
-    const isHighlighted = elem.isNodeHighlighted(this.name);
-    const isSelected = elem.isNodeSelected(this.name);
-    const isExtract = this.isInExtract || this.isOutExtract || this.isLibraryFn;
-    const isExpanded = this.expanded && nodeClass !== qt.Class.Annotation.NODE;
-    const isFadedOut = this.isFadedOut;
-    s.classed('highlighted', isHighlighted);
-    s.classed('selected', isSelected);
-    s.classed('extract', isExtract);
-    s.classed('expanded', isExpanded);
-    s.classed('faded', isFadedOut);
-    const n = s.select('.' + nodeClass + ' .' + qt.Class.Node.COLOR_TARGET);
-    const fill = getFillForNode(
-      elem.templateIndex,
-      qt.ColorBy[elem.colorBy.toUpperCase()],
-      this,
-      isExpanded,
-      elem.getGraphSvgRoot()
+  stylize(s: qt.Selection, e: qs.GraphElem, c?: string) {
+    c = c ?? qt.Class.Node.SHAPE;
+    const highlighted = e.isNodeHighlighted(this.name);
+    const selected = e.isNodeSelected(this.name);
+    const extract = this.isInExtract || this.isOutExtract || this.isLibraryFn;
+    const expanded = this.expanded && c !== qt.Class.Anno.NODE;
+    s.classed('highlighted', highlighted);
+    s.classed('selected', selected);
+    s.classed('extract', extract);
+    s.classed('expanded', expanded);
+    s.classed('faded', this.faded);
+    const n = s.select('.' + c + ' .' + qt.Class.Node.COLOR);
+    const fill = this.getFillForNode(
+      e.templateIndex,
+      qt.ColorBy[e.colorBy.toUpperCase()],
+      expanded,
+      e.getGraphSvgRoot()
     );
     n.style('fill', fill);
-    n.style('stroke', isSelected ? null : getStrokeForFill(fill));
+    n.style('stroke', () => (selected ? null : strokeForFill(fill)));
   }
 
-  getFillForNode(
-    templateIndex,
-    colorBy,
-    isExpanded: boolean,
-    root?: SVGElement
-  ) {
+  getFillForNode(indexer, colorBy, isExpanded: boolean, root?: SVGElement) {
     const cs = qp.MetaColors;
     switch (colorBy) {
       case qt.ColorBy.STRUCTURE:
@@ -382,7 +393,7 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
           const tid = (this as qg.Nmeta).template;
           return tid === null
             ? cs.UNKNOWN
-            : cs.STRUCTURE(templateIndex(tid), isExpanded);
+            : cs.STRUCTURE(indexer(tid), isExpanded);
         } else if (this.type === qt.NodeType.LIST) {
           return isExpanded ? cs.EXPANDED : 'white';
         } else if (this.type === qt.NodeType.BRIDGE) {
@@ -402,12 +413,12 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
         if (this.deviceColors == null) return cs.UNKNOWN;
         return isExpanded
           ? cs.EXPANDED
-          : getGradient('device-' + this.name, this.deviceColors, root);
+          : grad('device-' + this.name, this.deviceColors, root);
       case qt.ColorBy.CLUSTER:
         if (this.clusterColors == null) return cs.UNKNOWN;
         return isExpanded
           ? cs.EXPANDED
-          : getGradient('xla-' + this.name, this.clusterColors, root);
+          : grad('xla-' + this.name, this.clusterColors, root);
       case qt.ColorBy.TIME:
         return isExpanded ? cs.EXPANDED : this.computeTimeColor || cs.UNKNOWN;
       case qt.ColorBy.MEMORY:
@@ -416,59 +427,57 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
         if (this.compatibilityColors == null) return cs.UNKNOWN;
         return isExpanded
           ? cs.EXPANDED
-          : getGradient(
-              'op-compat-' + this.name,
-              this.compatibilityColors,
-              root
-            );
+          : grad('op-compat-' + this.name, this.compatibilityColors, root);
       default:
         throw new Error('Unknown color');
     }
   }
 }
 
-export function buildGroup(group, ndata: Ndata[], elem: qs.GraphElem) {
-  const container = qs.selectOrCreate(group, 'g', qt.Class.Node.CONTAINER);
-  const gs = (container as any)
-    .selectAll(() => this.childNodes)
-    .data(ndata, (d: Ndata) => d.node.name + ':' + d.node.type);
+export function buildGroup(s: qt.Selection, ds: Ndata[], e: qs.GraphElem) {
+  const c = qs.selectOrCreate(s, 'g', qt.Class.Node.CONTAINER);
+  const gs = c
+    .selectAll<any, Ndata>(function() {
+      return this.childNodes;
+    })
+    .data(ds, nd => nd.name + ':' + nd.type);
   gs.enter()
     .append('g')
-    .attr('data-name', (d: Ndata) => d.node.name)
-    .each((d: Ndata) => {
+    .attr('data-name', nd => nd.name)
+    .each(function(nd) {
       const g = d3.select(this);
-      elem.addNodeGroup(d.node.name, g);
+      e.addNodeGroup(nd.name, g);
     })
     .merge(gs)
-    .attr('class', (d: Ndata) => qt.Class.Node.GROUP + ' ' + nodeClass(d))
-    .each((d: Ndata) => {
+    .attr('class', nd => qt.Class.Node.GROUP + ' ' + nd.nodeClass())
+    .each(function(nd) {
       const g = d3.select(this);
-      const inb = qs.selectOrCreate(g, 'g', qt.Class.Annotation.INBOX);
-      qa.buildGroup(inb, d.inAnnotations, d, elem);
-      const outb = qs.selectOrCreate(g, 'g', qt.Class.Annotation.OUTBOX);
-      qa.buildGroup(outb, d.outAnnotations, d, elem);
-      const sh = buildShape(g, d, qt.Class.Node.SHAPE);
-      if (d.node.isClus) addButton(sh, d, elem);
-      addInteraction(sh, d, elem);
-      subBuild(g, <qr.GroupNdata>d, elem);
-      const label = labelBuild(g, d, elem);
-      addInteraction(label, d, elem, d.node.type === qt.NodeType.META);
-      stylize(g, d, elem);
-      position(g, d);
+      const inb = qs.selectOrCreate(g, 'g', qt.Class.Anno.INBOX);
+      qa.buildGroup(inb, nd.inAnnotations, nd, e);
+      const outb = qs.selectOrCreate(g, 'g', qt.Class.Anno.OUTBOX);
+      qa.buildGroup(outb, nd.outAnnotations, nd, e);
+      const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
+      if (qg.isClus(nd)) nd.addButton(s2, e);
+      nd.addInteraction(s2, e);
+      (nd as qc.Nclus).subBuild(g, e);
+      const label = nd.labelBuild(g, e);
+      nd.addInteraction(label, e, nd.type === qt.NodeType.META);
+      nd.stylize(g, e);
+      nd.position(g);
     });
-  gs.exit()
-    .each((d: Ndata) => {
-      elem.removeNodeGroup(d.node.name);
+  gs.exit<Ndata>()
+    .each(function(nd) {
+      e.removeNodeGroup(nd.name);
       const g = d3.select(this);
-      if (d.inAnnotations.list.length > 0) {
-        g.select('.' + qt.Class.Annotation.INBOX)
-          .selectAll('.' + qt.Class.Annotation.GROUP)
-          .each(a => elem.removeAnnotationGroup(a, d));
+      if (nd.inAnnotations.list.length > 0) {
+        g.select('.' + qt.Class.Anno.INBOX)
+          .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
+          .each(a => e.removeAnnotationGroup(a, nd));
       }
-      if (d.outAnnotations.list.length > 0) {
-        g.select('.' + qt.Class.Annotation.OUTBOX)
-          .selectAll('.' + qt.Class.Annotation.GROUP)
-          .each(a => elem.removeAnnotationGroup(a, d));
+      if (nd.outAnnotations.list.length > 0) {
+        g.select('.' + qt.Class.Anno.OUTBOX)
+          .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
+          .each(a => e.removeAnnotationGroup(a, nd));
       }
     })
     .remove();
@@ -498,48 +507,46 @@ function labelPosition(s: qt.Selection, x: number, y: number, off: number) {
     .attr('y', y + off);
 }
 
-function getGradient(
+function grad(
   id: string,
-  colors: Array<{color: string; proportion: number}>,
-  root?: SVGElement
+  cs: {color: string; proportion: number}[],
+  e?: SVGElement
 ) {
-  const escId = qu.escapeQuerySelector(id);
-  if (!root) return `url(#${escId})`;
-  const r = d3.select(root);
-  let defs = r.select('defs#_graph-gradients');
-  if (defs.empty()) defs = r.append('defs').attr('id', '_graph-gradients');
-  let grad = defs.select('linearGradient#' + escId);
-  if (grad.empty()) {
-    grad = defs.append('linearGradient').attr('id', id);
-    grad.selectAll('*').remove();
-    let cumulativeProportion = 0;
-    _.each(colors, c => {
+  const ei = qu.escapeQuerySelector(id);
+  if (!e) return `url(#${ei})`;
+  const r = d3.select(e);
+  let s: qt.Selection = r.select('defs#_graph-gradients');
+  if (s.empty()) s = r.append('defs').attr('id', '_graph-gradients');
+  let g: qt.Selection = s.select('linearGradient#' + ei);
+  if (g.empty()) {
+    g = s.append('linearGradient').attr('id', id);
+    g.selectAll('*').remove();
+    let p = 0;
+    cs.forEach(c => {
       const color = c.color;
-      grad
-        .append('stop')
-        .attr('offset', cumulativeProportion)
+      g.append('stop')
+        .attr('offset', p)
         .attr('stop-color', color);
-      grad
-        .append('stop')
-        .attr('offset', cumulativeProportion + d.proportion)
+      g.append('stop')
+        .attr('offset', p + c.proportion)
         .attr('stop-color', color);
-      cumulativeProportion += c.proportion;
+      p += c.proportion;
     });
   }
-  return `url(#${escId})`;
+  return `url(#${ei})`;
 }
 
-export function removeGradientDefinitions(root: SVGElement) {
-  d3.select(root)
+export function delGradDefs(r: SVGElement) {
+  d3.select(r)
     .select('defs#_graph-gradients')
     .remove();
 }
 
-export function getStrokeForFill(fill: string) {
-  return fill.startsWith('url')
+export function strokeForFill(f: string) {
+  return f.startsWith('url')
     ? qp.MetaColors.GRADIENT
     : d3
-        .rgb(fill)
+        .rgb(f)
         .darker()
         .toString();
 }
@@ -582,7 +589,7 @@ function createVisibleTrace(
 
 function markParents(root: SVGElement, ns: qt.Dict<qt.Node>) {
   _.forOwn(ns, (n?: qt.Node) => {
-    while (n && n.name !== qp.ROOT_NAME) {
+    while (n && n.name !== qp.ROOT) {
       const s = d3.select(root).select(`.node[data-name="${n.name}"]`);
       if (
         s.nodes().length &&

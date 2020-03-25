@@ -132,7 +132,7 @@ function shapes(ps: {key: string; value: any}[]) {
   return [] as Shapes;
 }
 
-type Histos = qt.Dict<qt.Dict<number>>;
+export type Histos = qt.Dict<qt.Dict<number>>;
 
 export abstract class Nclus extends Ndata {
   parent?: Nclus;
@@ -327,5 +327,60 @@ export class Stats {
       return this.end - this.start;
     }
     return undefined;
+  }
+}
+
+export class Graph<G, N, E> extends qt.Graph<G, N, E> {
+  setDepth(depth: number) {
+    this.nodes().forEach(n => {
+      const nd = this.node(n);
+      nd.expanded = depth > 1;
+      if (depth > 0) {
+        switch (nd.type) {
+          case qt.NodeType.META:
+          case qt.NodeType.LIST:
+            (nd as Nclus).setDepth(depth - 1);
+            break;
+        }
+      }
+    });
+  }
+
+  createShortcut(ns: string[]) {
+    const s = this.node(ns[0]);
+    const d = this.node(ns[1]);
+    const e = this.edge(ns);
+    if (s?.include && d?.include) return;
+
+    addOutAnno(s, d, e, qt.AnnoType.SHORTCUT);
+    addInAnno(d, s, s, e, qt.AnnoType.SHORTCUT);
+    this.delEdge(ns);
+  }
+
+  buildSubhierarchiesForNeededFunctions() {
+    this.links().forEach(l => {
+      const me = this.edge(l);
+      const ed = new MetaEdata(me);
+      _.forEach(ed.metaedge?.bases, e => {
+        const ps = e.v.split(qp.SLASH);
+        for (let i = ps.length; i >= 0; i--) {
+          const front = ps.slice(0, i);
+          const n = this.hierarchy.node(front.join(qp.SLASH));
+          if (n) {
+            if (
+              n.type === qt.NodeType.OPER &&
+              this.hierarchy.libfns[(n as qg.Noper).op]
+            ) {
+              for (let j = 1; j < front.length; j++) {
+                const nn = front.slice(0, j).join(qp.SLASH);
+                if (!nn) continue;
+                this.data?.buildSubhierarchy(nn);
+              }
+            }
+            break;
+          }
+        }
+      });
+    });
   }
 }

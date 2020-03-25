@@ -92,7 +92,7 @@ export const Class = {
     CONTAINER: 'nodes',
     GROUP: 'node',
     SHAPE: 'nodeshape',
-    C_TARGET: 'nodecolortarget',
+    COLOR: 'nodecolortarget',
     LABEL: 'nodelabel',
     B_CONTAINER: 'buttoncontainer',
     B_CIRCLE: 'buttoncircle',
