@@ -5,6 +5,7 @@ import * as qg from './graph';
 import * as qp from './params';
 import * as qn from './ndata';
 import * as qe from './edata';
+import * as qs from './scene';
 import {PARAMS as PS} from './params';
 
 export class Nclus extends qn.Ndata {
@@ -35,6 +36,16 @@ export class Nclus extends qn.Ndata {
 
   setGroupNodeDepth(depth: number): void {
     if (this.core) setGraphDepth(this.core, depth);
+  }
+
+  subBuild(s: qt.Selection, e: qs.GraphElem) {
+    if (qg.isClus(this)) {
+      if (this.expanded) {
+        return qs.buildGroup(s, this, e, qt.Class.Subscene.GROUP);
+      }
+      qs.selectChild(s, 'g', qt.Class.Subscene.GROUP).remove();
+    }
+    return null;
   }
 
   makeOutExtract(n: string, detach?: boolean) {

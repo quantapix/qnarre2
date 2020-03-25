@@ -315,15 +315,15 @@ function ngettext(k: number, enSingular: string, enPlural: string): string {
   return k === 1 ? enSingular : enPlural;
 }
 
-export function includeButtonString(inc?: boolean) {
-  if (!inc) {
+export function includeButtonString(include?: boolean): string {
+  if (!include) {
     return 'Add to main graph';
   } else {
     return 'Remove from main graph';
   }
 }
 
-export function groupButtonString(group?: boolean) {
+export function groupButtonString(group?: boolean): string {
   if (!group) {
     return 'Group these nodes';
   } else {

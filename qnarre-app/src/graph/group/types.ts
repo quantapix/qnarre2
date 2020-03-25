@@ -1,7 +1,7 @@
 import * as qg from '../graph';
 import * as qt from '../types';
 
-export {Dict, Dir, Point, Area, Rect, Selection} from '../types';
+export {Dict, Dir, Point, Area, Pad, Rect, Selection} from '../types';
 export {Named, Nodes, Edges, Link, Graph} from '../graph';
 
 export enum GraphType {
@@ -92,18 +92,18 @@ export const Class = {
     CONTAINER: 'nodes',
     GROUP: 'node',
     SHAPE: 'nodeshape',
-    COLOR_TARGET: 'nodecolortarget',
+    C_TARGET: 'nodecolortarget',
     LABEL: 'nodelabel',
-    BUTTON_CONT: 'buttoncontainer',
-    BUTTON_CIRCLE: 'buttoncircle',
-    EXPAND_BUTTON: 'expandbutton',
-    COLLAPSE_BUTTON: 'collapsebutton'
+    B_CONTAINER: 'buttoncontainer',
+    B_CIRCLE: 'buttoncircle',
+    E_BUTTON: 'expandbutton',
+    C_BUTTON: 'collapsebutton'
   },
   Edge: {
     CONTAINER: 'edges',
     GROUP: 'edge',
     LINE: 'edgeline',
-    REFERENCE_EDGE: 'referenceedge',
+    REF_EDGE: 'referenceedge',
     REF_LINE: 'refline',
     SELECTABLE: 'selectableedge',
     SELECTED: 'selectededge',
@@ -115,21 +115,21 @@ export const Class = {
     GROUP: 'annotation',
     NODE: 'annotation-node',
     EDGE: 'annotation-edge',
-    CONTROL_EDGE: 'annotation-control-edge',
+    CTRL_EDGE: 'annotation-control-edge',
     LABEL: 'annotation-label',
     DOTS: 'annotation-ellipsis'
   },
   Scene: {
     GROUP: 'scene',
     CORE: 'core',
-    FUNCTION_LIBRARY: 'function-library',
+    LIBRARY: 'function-library',
     INEXTRACT: 'in-extract',
     OUTEXTRACT: 'out-extract'
   },
   Subscene: {GROUP: 'subscene'},
-  OPNODE: 'op',
-  METANODE: 'meta',
-  LISTNODE: 'series',
-  BRIDGENODE: 'bridge',
-  DOTSNODE: 'ellipsis'
+  OPER: 'op',
+  META: 'meta',
+  LIST: 'series',
+  BRIDGE: 'bridge',
+  DOTS: 'ellipsis'
 };

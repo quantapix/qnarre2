@@ -5,12 +5,23 @@ import * as d3 from 'd3';
 import * as qa from './annotation';
 import * as qg from './graph';
 import * as ql from './layout';
-import * as qm from '../../elems/graph/contextmenu';
 import * as qp from './params';
 import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './util';
+
+import * as menu from '../../elems/graph/contextmenu';
+import {PARAMS as PS} from './params';
+
+class Rect implements qt.Rect {
+  constructor(
+    public x: number,
+    public y: number,
+    public w: number,
+    public h: number
+  ) {}
+}
 
 interface _Ndata extends qg.Ndata {}
 
@@ -25,6 +36,7 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
   w = 0;
   h = 0;
   coreBox = {w: 0, h: 0} as qt.Area;
+  pad = {} as qt.Pad;
 
   inAnnotations = new qa.AnnoList();
   outAnnotations = new qa.AnnoList();
@@ -35,10 +47,6 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
   labelOffset = 0;
   radius = 0;
   labelHeight = 0;
-  paddingTop = 0;
-  paddingLeft = 0;
-  paddingRight = 0;
-  paddingBottom = 0;
   isInExtract = false;
   isOutExtract = false;
   isLibraryFn = false;
@@ -71,6 +79,270 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
 
   isInCore(): boolean {
     return !this.isInExtract && !this.isOutExtract && !this.isLibraryFn;
+  }
+
+  subPosition(s: qt.Selection) {
+    const x = this.x - this.w / 2.0 + this.pad.left;
+    const y = this.y - this.h / 2.0 + this.pad.top;
+    const sub = qs.selectChild(s, 'g', qt.Class.Subscene.GROUP);
+    qs.translate(sub, x, y);
+  }
+
+  canBeInList() {
+    return !!this.listName();
+  }
+
+  listName() {
+    if (this.type === qt.NodeType.LIST) return this.name;
+    if (this.type === qt.NodeType.OPER) return (this as qg.Noper).list;
+    return undefined;
+  }
+
+  containingList() {
+    if (this.type === qt.NodeType.LIST) return this as qg.Nlist;
+    const p = this.parent;
+    if (p?.type === qt.NodeType.LIST) return p! as qg.Nlist;
+    return undefined;
+  }
+
+  groupSettingLabel() {
+    return qu.groupButtonString(!!this.containingList());
+  }
+
+  contextMenu(e: qs.GraphElem) {
+    let m = [
+      {
+        title: function(this: Ndata) {
+          return qu.includeButtonString(this.include);
+        },
+        action: function(this: Ndata) {
+          e.fire('node-toggle-extract', {name: this.name});
+        }
+      }
+    ];
+    if (e.nodeContextMenuItems) m = m.concat(e.nodeContextMenuItems);
+    if (this.canBeInList()) {
+      m.push({
+        title: function(this: Ndata) {
+          return qu.groupButtonString(!!this.containingList());
+        },
+        action: function(this: Ndata) {
+          e.fire('node-toggle-seriesgroup', {
+            name: this.listName()
+          });
+        }
+      });
+    }
+    return m;
+  }
+
+  nodeClass() {
+    switch (this.type) {
+      case qt.NodeType.OPER:
+        return qt.Class.OPER;
+      case qt.NodeType.META:
+        return qt.Class.META;
+      case qt.NodeType.LIST:
+        return qt.Class.LIST;
+      case qt.NodeType.BRIDGE:
+        return qt.Class.BRIDGE;
+      case qt.NodeType.DOTS:
+        return qt.Class.DOTS;
+      default:
+        throw Error('Unrecognized type: ' + this.type);
+    }
+  }
+
+  addButton(s: qt.Selection, e: qs.GraphElem) {
+    const g = qs.selectOrCreate(s, 'g', qt.Class.Node.B_CONTAINER);
+    qs.selectOrCreate(g, 'circle', qt.Class.Node.B_CIRCLE);
+    qs.selectOrCreate(g, 'path', qt.Class.Node.E_BUTTON).attr(
+      'd',
+      'M0,-2.2 V2.2 M-2.2,0 H2.2'
+    );
+    qs.selectOrCreate(g, 'path', qt.Class.Node.C_BUTTON).attr(
+      'd',
+      'M-2.2,0 H2.2'
+    );
+    g.on('click', (d: this) => {
+      d3.event.stopPropagation();
+      e.fire('node-toggle-expand', {name: d.name});
+    });
+    qs.positionButton(g, this);
+  }
+
+  addInteraction(s: qt.Selection, e: qs.GraphElem, disable?: boolean) {
+    if (disable) {
+      s.attr('pointer-events', 'none');
+      return;
+    }
+    const f = menu.getMenu(e, this.contextMenu(e));
+    s.on('dblclick', (d: this) => {
+      e.fire('node-toggle-expand', {name: d.name});
+    })
+      .on('mouseover', (d: this) => {
+        if (e.isNodeExpanded(d)) return;
+        e.fire('node-highlight', {name: d.name});
+      })
+      .on('mouseout', (d: this) => {
+        if (e.isNodeExpanded(d)) return;
+        e.fire('node-unhighlight', {name: d.name});
+      })
+      .on('click', (d: this) => {
+        d3.event.stopPropagation();
+        e.fire('node-select', {name: d.name});
+      })
+      .on('menu', (d: this, i) => {
+        e.fire('node-select', {name: d.name});
+        f.call(d, i);
+      });
+  }
+
+  labelBuild(s: qt.Selection, e: qs.GraphElem) {
+    let t = this.displayName;
+    const scale = this.type === qt.NodeType.META && !this.expanded;
+    const label = qs.selectOrCreate(s, 'text', qt.Class.Node.LABEL);
+    const n = label.node() as HTMLElement;
+    n.parent.appendChild(n);
+    label.attr('dy', '.35em').attr('text-anchor', 'middle');
+    if (scale) {
+      if (t.length > e.maxMetaNodeLabelLength) {
+        t = t.substr(0, e.maxMetaNodeLabelLength - 2) + '...';
+      }
+      const fs = labelFontScale(e);
+      label.attr('font-size', fs(t.length) + 'px');
+    }
+    this.enforceLabelWidth(label.text(t));
+    return label;
+  }
+
+  enforceLabelWidth(s: qt.Selection) {
+    const e = s.node() as SVGTextElement;
+    let l = e.getComputedTextLength();
+    let max: number | undefined;
+    switch (this.type) {
+      case qt.NodeType.META:
+        if (!this.expanded) max = PS.nodeSize.meta.maxLabelWidth;
+        break;
+      case qt.NodeType.OPER:
+        max = PS.nodeSize.op.maxLabelWidth;
+        break;
+      case -1:
+        max = PS.annotations.maxLabelWidth;
+        break;
+      default:
+        break;
+    }
+    if (!max || l <= max) return;
+    let i = 1;
+    while (e.getSubStringLength(0, i) < max) {
+      i++;
+    }
+    let t = e.textContent?.substr(0, i);
+    do {
+      t = t?.substr(0, t.length - 1);
+      e.textContent = t + '...';
+      l = e.getComputedTextLength();
+    } while (l > max && t && t.length > 0);
+    return s.append('title').text(e.textContent);
+  }
+
+  position(s: qt.Selection) {
+    const g = qs.selectChild(s, 'g', qt.Class.Node.SHAPE);
+    const cx = ql.computeCXPositionOfNodeShape(d);
+    switch (this.type) {
+      case qt.NodeType.OPER: {
+        const n = this as qg.Noper;
+        if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
+          const sh = qs.selectChild(g, 'polygon');
+          const r = new Rect(this.x, this.y, this.coreBox.w, this.coreBox.h);
+          qs.positionTriangle(sh, r);
+        } else {
+          const sh = qs.selectChild(g, 'ellipse');
+          const r = new Rect(cx, this.y, this.coreBox.w, this.coreBox.h);
+          qs.positionEllipse(sh, r);
+        }
+        labelPosition(s, cx, this.y, this.labelOffset);
+        break;
+      }
+      case qt.NodeType.META: {
+        const sa = g.selectAll('rect');
+        if (this.expanded) {
+          qs.positionRect(sa, this);
+          this.subPosition(s);
+          labelPosition(s, cx, this.y, -this.h / 2 + this.labelHeight / 2);
+        } else {
+          const r = new Rect(cx, this.y, this.coreBox.w, this.coreBox.h);
+          qs.positionRect(sa, r);
+          labelPosition(s, cx, this.y, 0);
+        }
+        break;
+      }
+      case qt.NodeType.LIST: {
+        const sc = qs.selectChild(g, 'use');
+        if (this.expanded) {
+          qs.positionRect(sc, this);
+          this.subPosition(s);
+          labelPosition(s, cx, this.y, -this.h / 2 + this.labelHeight / 2);
+        } else {
+          const r = new Rect(cx, this.y, this.coreBox.w, this.coreBox.h);
+          qs.positionRect(sc, r);
+          labelPosition(s, cx, this.y, this.labelOffset);
+        }
+        break;
+      }
+      case qt.NodeType.BRIDGE: {
+        const sc = qs.selectChild(g, 'rect');
+        qs.positionRect(sc, this);
+        break;
+      }
+      default: {
+        throw Error('Unrecognized type: ' + this.type);
+      }
+    }
+  }
+
+  buildShape(s: qt.Selection, nodeClass: string) {
+    const g = qs.selectOrCreate(group, 'g', nodeClass);
+    switch (d.node.type) {
+      case qt.NodeType.OP:
+        const n = d.node as qt.Noper;
+        if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
+          qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR_TARGET);
+          break;
+        }
+        qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR_TARGET);
+        break;
+      case qt.NodeType.LIST:
+        let t = 'annotation';
+        const ndata = d as qr.GroupNdata;
+        if (ndata.coreGraph) {
+          t = ndata.node.noControls ? 'vertical' : 'horizontal';
+        }
+        const cs = [qt.Class.Node.COLOR_TARGET];
+        if (ndata.isFadedOut) cs.push('faded-ellipse');
+        qs.selectOrCreate(g, 'use', cs).attr(
+          'xlink:href',
+          '#op-series-' + t + '-stamp'
+        );
+        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
+          .attr('rx', d.radius)
+          .attr('ry', d.radius);
+        break;
+      case qt.NodeType.BRIDGE:
+        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
+          .attr('rx', d.radius)
+          .attr('ry', d.radius);
+        break;
+      case qt.NodeType.META:
+        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
+          .attr('rx', d.radius)
+          .attr('ry', d.radius);
+        break;
+      default:
+        throw Error('Unrecognized node type: ' + d.node.type);
+    }
+    return g;
   }
 }
 
@@ -122,319 +394,27 @@ export function buildGroup(group, ndata: Ndata[], elem: qs.GraphElem) {
   return gs;
 }
 
-function subBuild(group, ndata: qr.GroupNdata, elem: qs.GraphElem) {
-  if (ndata.node.isClus) {
-    if (ndata.expanded) {
-      return qs.buildGroup(group, ndata, elem, qt.Class.Subscene.GROUP);
-    }
-    qs.selectChild(group, 'g', qt.Class.Subscene.GROUP).remove();
-  }
-  return null;
-}
-
-function subPosition(group, d: Ndata) {
-  const x0 = d.x - d.width / 2.0 + d.paddingLeft;
-  const y0 = d.y - d.height / 2.0 + d.paddingTop;
-
-  const subscene = qs.selectChild(group, 'g', qt.Class.Subscene.GROUP);
-  qs.translate(subscene, x0, y0);
-}
-
-function addButton(sel, d: Ndata, elem: qs.GraphElem) {
-  const group = qs.selectOrCreate(sel, 'g', qt.Class.Node.BUTTON_CONTAINER);
-  qs.selectOrCreate(group, 'circle', qt.Class.Node.BUTTON_CIRCLE);
-  qs.selectOrCreate(group, 'path', qt.Class.Node.EXPAND_BUTTON).attr(
-    'd',
-    'M0,-2.2 V2.2 M-2.2,0 H2.2'
-  );
-  qs.selectOrCreate(group, 'path', qt.Class.Node.COLLAPSE_BUTTON).attr(
-    'd',
-    'M-2.2,0 H2.2'
-  );
-  (group as any).on('click', (d: any) => {
-    (<Event>d3.event).stopPropagation();
-    elem.fire('node-toggle-expand', {name: d.node.name});
-  });
-  qs.positionButton(group, d);
-}
-
-function addInteraction(
-  sel,
-  d: Ndata,
-  elem: qs.GraphElem,
-  disableInteraction?: boolean
-) {
-  if (disableInteraction) {
-    sel.attr('pointer-events', 'none');
-    return;
-  }
-  const fn = qm.getMenu(elem, getContextMenu(d.node, elem));
-  sel
-    .on('dblclick', (d: Ndata) => {
-      elem.fire('node-toggle-expand', {name: d.node.name});
-    })
-    .on('mouseover', (d: Ndata) => {
-      if (elem.isNodeExpanded(d)) {
-        return;
-      }
-      elem.fire('node-highlight', {name: d.node.name});
-    })
-    .on('mouseout', (d: Ndata) => {
-      if (elem.isNodeExpanded(d)) {
-        return;
-      }
-      elem.fire('node-unhighlight', {name: d.node.name});
-    })
-    .on('click', (d: Ndata) => {
-      (<Event>d3.event).stopPropagation();
-      elem.fire('node-select', {name: d.node.name});
-    })
-    .on('menu', (d: Ndata, i) => {
-      elem.fire('node-select', {name: d.node.name});
-      fn.call(d, i);
-    });
-}
-
-export function getContextMenu(node: qt.Node, elem) {
-  let m = [
-    {
-      title: (d): string => {
-        return qg.getIncludeNodeButtonString(node.include);
-      },
-      action: (elm, d, i) => {
-        elem.fire('node-toggle-extract', {name: node.name});
-      }
-    }
-  ];
-  if (elem.nodeContextMenuItems) m = m.concat(elem.nodeContextMenuItems);
-  if (canBeInSeries(node)) {
-    m.push({
-      title: (_: Ndata) => getGroupSettingLabel(node),
-      action: (elm, d, i) => {
-        elem.fire('node-toggle-seriesgroup', {
-          name: getSeriesName(node)
-        });
-      }
-    });
-  }
-  return m;
-}
-
-export function canBeInSeries(node: qt.Node) {
-  return getSeriesName(node) !== null;
-}
-
-export function getSeriesName(node: qt.Node) {
-  if (!node) return undefined;
-  if (node.type === qt.NodeType.LIST) return node.name;
-  if (node.type === qt.NodeType.OP) return (node as qt.Noper).series;
-  return undefined;
-}
-
-function getContainingSeries(node: qt.Node) {
-  let s: qt.Nlist | undefined;
-  if (node) {
-    if (node.type === qt.NodeType.LIST) {
-      s = node as qt.Nlist;
-    } else if (node.parent && node.parent.type === qt.NodeType.LIST) {
-      s = node.parent as qt.Nlist;
-    }
-  }
-  return s;
-}
-
-export function getGroupSettingLabel(node: qt.Node) {
-  return qg.getGroupNlistButtonString(
-    getContainingSeries(node) ? qt.SeriesType.GROUP : qt.SeriesType.UNGROUP
-  );
-}
-
-function labelBuild(group, ndata: Ndata, elem: qs.GraphElem) {
-  let t = ndata.displayName;
-  const useScale = ndata.node.type === qt.NodeType.META && !ndata.expanded;
-  const label = qs.selectOrCreate(group, 'text', qt.Class.Node.LABEL);
-  const n = <HTMLElement>label.node();
-  n.parent.appendChild(n);
-  label.attr('dy', '.35em').attr('text-anchor', 'middle');
-  if (useScale) {
-    if (t.length > elem.maxMetaNodeLabelLength) {
-      t = t.substr(0, elem.maxMetaNodeLabelLength - 2) + '...';
-    }
-    const scale = getLabelFontScale(elem);
-    label.attr('font-size', scale(t.length) + 'px');
-  }
-  enforceLabelWidth(label.text(t), ndata.node.type, ndata);
-  return label;
-}
-
-export function enforceLabelWidth(
-  sel,
-  type: qt.NodeType | number,
-  ndata?: Ndata
-) {
-  const n = sel.node() as SVGTextElement;
-  let l = n.getComputedTextLength();
-  let max: number | undefined;
-  switch (type) {
-    case qt.NodeType.META:
-      if (ndata && !ndata.expanded) max = qp.PARAMS.nodeSize.meta.maxLabelWidth;
-      break;
-    case qt.NodeType.OP:
-      max = qp.PARAMS.nodeSize.op.maxLabelWidth;
-      break;
-    case -1:
-      max = qp.PARAMS.annotations.maxLabelWidth;
-      break;
-    default:
-      break;
-  }
-  if (!max || l <= max) return;
-  let i = 1;
-  while (n.getSubStringLength(0, i) < max) {
-    i++;
-  }
-  let t = n.textContent?.substr(0, i);
-  do {
-    t = t?.substr(0, t.length - 1);
-    n.textContent = t + '...';
-    l = n.getComputedTextLength();
-  } while (l > max && t && t.length > 0);
-  return sel.append('title').text(n.textContent);
-}
 let scale: d3.ScaleLinear<number, number> | undefined;
-function getLabelFontScale(elem) {
+
+function labelFontScale(e: qs.GraphElem) {
   if (!scale) {
     scale = d3
       .scaleLinear()
-      .domain([
-        elem.maxMetaNodeLabelLengthLargeFont,
-        elem.maxMetaNodeLabelLength
-      ])
+      .domain([e.maxMetaNodeLabelLengthLargeFont, e.maxMetaNodeLabelLength])
       .range([
-        elem.maxMetaNodeLabelLengthFontSize,
-        elem.minMetaNodeLabelLengthFontSize
+        e.maxMetaNodeLabelLengthFontSize,
+        e.minMetaNodeLabelLengthFontSize
       ])
       .clamp(true);
   }
   return scale;
 }
 
-function labelPosition(group, cx: number, cy: number, yOffset: number) {
-  qs.selectChild(group, 'text', qt.Class.Node.LABEL)
+function labelPosition(s: qt.Selection, x: number, y: number, off: number) {
+  qs.selectChild(s, 'text', qt.Class.Node.LABEL)
     .transition()
-    .attr('x', cx)
-    .attr('y', cy + yOffset);
-}
-
-export function buildShape(group, d, nodeClass: string) {
-  const g = qs.selectOrCreate(group, 'g', nodeClass);
-  switch (d.node.type) {
-    case qt.NodeType.OP:
-      const n = d.node as qt.Noper;
-      if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
-        qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR_TARGET);
-        break;
-      }
-      qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR_TARGET);
-      break;
-    case qt.NodeType.LIST:
-      let t = 'annotation';
-      const ndata = d as qr.GroupNdata;
-      if (ndata.coreGraph) {
-        t = ndata.node.noControls ? 'vertical' : 'horizontal';
-      }
-      const cs = [qt.Class.Node.COLOR_TARGET];
-      if (ndata.isFadedOut) cs.push('faded-ellipse');
-      qs.selectOrCreate(g, 'use', cs).attr(
-        'xlink:href',
-        '#op-series-' + t + '-stamp'
-      );
-      qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
-        .attr('rx', d.radius)
-        .attr('ry', d.radius);
-      break;
-    case qt.NodeType.BRIDGE:
-      qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
-        .attr('rx', d.radius)
-        .attr('ry', d.radius);
-      break;
-    case qt.NodeType.META:
-      qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR_TARGET)
-        .attr('rx', d.radius)
-        .attr('ry', d.radius);
-      break;
-    default:
-      throw Error('Unrecognized node type: ' + d.node.type);
-  }
-  return g;
-}
-
-export function nodeClass(d: Ndata) {
-  switch (d.node.type) {
-    case qt.NodeType.OP:
-      return qt.Class.OPNODE;
-    case qt.NodeType.META:
-      return qt.Class.METANODE;
-    case qt.NodeType.LIST:
-      return qt.Class.LISTNODE;
-    case qt.NodeType.BRIDGE:
-      return qt.Class.BRIDGENODE;
-    case qt.NodeType.DOTS:
-      return qt.Class.DOTSNODE;
-    default:
-      throw Error('Unrecognized node type: ' + d.node.type);
-  }
-}
-
-function position(group, d: Ndata) {
-  const g = qs.selectChild(group, 'g', qt.Class.Node.SHAPE);
-  const cx = ql.computeCXPositionOfNodeShape(d);
-  switch (d.node.type) {
-    case qt.NodeType.OP: {
-      const n = d.node as qt.Noper;
-      if (_.isNumber(n.inIdx) || _.isNumber(n.outIdx)) {
-        const sh = qs.selectChild(g, 'polygon');
-        qs.positionTriangle(sh, d.x, d.y, d.coreBox.width, d.coreBox.height);
-      } else {
-        const sh = qs.selectChild(g, 'ellipse');
-        qs.positionEllipse(sh, cx, d.y, d.coreBox.width, d.coreBox.height);
-      }
-      labelPosition(group, cx, d.y, d.labelOffset);
-      break;
-    }
-    case qt.NodeType.META: {
-      const sh = g.selectAll('rect');
-      if (d.expanded) {
-        qs.positionRect(sh, d.x, d.y, d.width, d.height);
-        subPosition(group, d);
-        labelPosition(group, cx, d.y, -d.height / 2 + d.labelHeight / 2);
-      } else {
-        qs.positionRect(sh, cx, d.y, d.coreBox.width, d.coreBox.height);
-        labelPosition(group, cx, d.y, 0);
-      }
-      break;
-    }
-    case qt.NodeType.LIST: {
-      const sh = qs.selectChild(g, 'use');
-      if (d.expanded) {
-        qs.positionRect(sh, d.x, d.y, d.width, d.height);
-        subPosition(group, d);
-        labelPosition(group, cx, d.y, -d.height / 2 + d.labelHeight / 2);
-      } else {
-        qs.positionRect(sh, cx, d.y, d.coreBox.width, d.coreBox.height);
-        labelPosition(group, cx, d.y, d.labelOffset);
-      }
-      break;
-    }
-    case qt.NodeType.BRIDGE: {
-      const sh = qs.selectChild(g, 'rect');
-      qs.positionRect(sh, d.x, d.y, d.width, d.height);
-      break;
-    }
-    default: {
-      throw Error('Unrecognized node type: ' + d.node.type);
-    }
-  }
+    .attr('x', x)
+    .attr('y', y + off);
 }
 
 function getGradient(
