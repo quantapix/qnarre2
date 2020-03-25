@@ -11,7 +11,7 @@ import * as meta from './meta';
 import * as proto from './proto';
 import * as template from './template';
 
-type Ngroup = qg.Ngroup | qg.Noper;
+type Nclus = qg.Nclus | qg.Noper;
 type Emeta = qg.Emeta;
 
 export class Hierarchy implements qg.Hierarchy {
@@ -23,7 +23,7 @@ export class Hierarchy implements qg.Hierarchy {
   libfns = {} as qt.Dict<qg.LibraryFn>;
   orders = {} as qt.Dict<qt.Dict<number>>;
   templates = {} as qt.Dict<qg.Template>;
-  private _nodes = new qt.Nodes<Ngroup>();
+  private _nodes = new qt.Nodes<Nclus>();
 
   constructor(public opts = {} as qt.Opts) {
     this.opts.isCompound = true;
@@ -39,7 +39,7 @@ export class Hierarchy implements qg.Hierarchy {
     return this._nodes.get(String(x));
   }
 
-  setNode(x: any, d?: Ngroup) {
+  setNode(x: any, d?: Nclus) {
     const n = String(x);
     this._nodes.set(n, d);
     return this;
@@ -48,9 +48,9 @@ export class Hierarchy implements qg.Hierarchy {
   bridge(x: any) {
     const n = String(x);
     const nd = this.node(n);
-    if (!qg.isGroup(nd)) return undefined;
+    if (!qg.isClus(nd)) return undefined;
     if (nd.bridge) return nd.bridge;
-    const b = qg.createGraph<qg.Gdata, Ngroup, Emeta>(
+    const b = qg.createGraph<qg.Gdata, Nclus, Emeta>(
       'BRIDGEGRAPH',
       qt.GraphType.BRIDGE,
       this.opts
@@ -102,7 +102,7 @@ export class Hierarchy implements qg.Hierarchy {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
     const ps = this.oneWays(nd, true);
-    if (!qg.isGroup(nd)) {
+    if (!qg.isClus(nd)) {
       nd.inbeds.forEach(b => {
         nd.ins.forEach(i => {
           if (i.name === b.name) {
@@ -126,7 +126,7 @@ export class Hierarchy implements qg.Hierarchy {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
     const ss = this.oneWays(nd, false);
-    if (!qg.isGroup(nd)) {
+    if (!qg.isClus(nd)) {
       nd.outbeds.forEach(b => {
         b.ins.forEach(i => {
           if (i.name === n) {
@@ -146,10 +146,10 @@ export class Hierarchy implements qg.Hierarchy {
     return ss;
   }
 
-  oneWays(n: Ngroup, inbound: boolean) {
+  oneWays(n: Nclus, inbound: boolean) {
     const es = new Edges();
     const p = n.parent;
-    if (qg.isGroup(p)) {
+    if (qg.isClus(p)) {
       const m = p.meta;
       let ls = inbound ? m.inLinks(p.name) : m.outLinks(p.name);
       es.update(ls);
@@ -166,7 +166,7 @@ export class Hierarchy implements qg.Hierarchy {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
     const o = {} as qt.Dict<number>;
-    if (qg.isGroup(nd)) {
+    if (qg.isClus(nd)) {
       if (n in this.orders) return this.orders[n];
       const succs = {} as qt.Dict<string[]>;
       const dests = {} as qt.Dict<boolean>;
@@ -267,7 +267,7 @@ export class Hierarchy implements qg.Hierarchy {
         di--;
         if (si < 0 || di < 0) throw Error('No difference in ancestors');
       }
-      const n = this.node(src[si + 1]) as qg.Ngroup;
+      const n = this.node(src[si + 1]) as qg.Nclus;
       const sd = [src[si], dst[di]];
       let m = n.meta.edge(sd);
       if (!m) {
@@ -291,7 +291,7 @@ export class Hierarchy implements qg.Hierarchy {
     this.clusters = _.keys(cs);
     this.nodes().forEach(n => {
       const nd = this.node(n);
-      if (qg.isGroup(nd)) {
+      if (qg.isClus(nd)) {
         nd.stats = new qg.Stats([]);
         nd.histo.device = {};
       }
@@ -300,7 +300,7 @@ export class Hierarchy implements qg.Hierarchy {
       let nd: qg.Ndata | undefined = this.node(n);
       while (nd?.parent) {
         const p = nd.parent;
-        if (!qg.isGroup(nd) && qg.isGroup(p)) p.incHistoFrom(nd);
+        if (!qg.isClus(nd) && qg.isClus(p)) p.incHistoFrom(nd);
         if (nd.stats) p?.stats?.combine(nd.stats);
         nd = p;
       }
@@ -308,7 +308,7 @@ export class Hierarchy implements qg.Hierarchy {
   }
 
   incompats(ps: Params) {
-    const ns = [] as Ngroup[];
+    const ns = [] as Nclus[];
     const added = {} as qt.Dict<qg.Nlist>;
     this.root.leaves().forEach(n => {
       const d = this.node(n);

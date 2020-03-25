@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 import * as qu from './util';
 import * as qt from './types';
 import * as qg from './graph';
-import * as edge from './edge';
+import * as edge from './edata';
 import * as qp from './params';
 
 export type Point = {x: number; y: number};
@@ -131,8 +131,8 @@ export class Gdata {
     if (name in this.index) return this.index[name];
     const n = this.hierarchy.node(name);
     if (!n) return undefined;
-    const d = n.isGroup
-      ? new GroupNdata(n as qg.Ngroup, this.hierarchy.options)
+    const d = n.isClus
+      ? new GroupNdata(n as qg.Nclus, this.hierarchy.options)
       : new Ndata(n);
     this.index[name] = d;
     this.renderedOpNames.push(name);
@@ -144,11 +144,11 @@ export class Gdata {
     let dh: qt.Dict<number> | undefined;
     let ch: qt.Dict<number> | undefined;
     let oc;
-    if (n.isGroup) {
-      dh = (n as qg.Ngroup).deviceHisto;
-      ch = (n as qg.Ngroup).clusterHisto;
-      const compat = (n as qg.Ngroup).compatHisto.compatible;
-      const incompat = (n as qg.Ngroup).compatHisto.incompatible;
+    if (n.isClus) {
+      dh = (n as qg.Nclus).deviceHisto;
+      ch = (n as qg.Nclus).clusterHisto;
+      const compat = (n as qg.Nclus).compatHisto.compatible;
+      const incompat = (n as qg.Nclus).compatHisto.incompatible;
       if (compat != 0 || incompat != 0) {
         oc = compat / (compat + incompat);
       }
@@ -255,7 +255,7 @@ export class Gdata {
   }
 
   private cloneLibMeta(
-    g: qt.Graph<qg.Ngroup | qg.Noper, qg.Emeta>,
+    g: qt.Graph<qg.Nclus | qg.Noper, qg.Emeta>,
     n: qg.Noper,
     libn: qg.Nmeta,
     oldPre: string,
@@ -268,7 +268,7 @@ export class Gdata {
   }
 
   private cloneLibMetaHelper(
-    g: qt.Graph<qg.Ngroup | qg.Noper, qg.Emeta>,
+    g: qt.Graph<qg.Nclus | qg.Noper, qg.Emeta>,
     old: qg.Noper,
     libn: qg.Nmeta,
     oldPre: string,
@@ -424,7 +424,7 @@ export class Gdata {
       const cd = this.getOrCreateRenderNodeByName(n)!;
       const cn = cd.node;
       coreG.setNode(n, cd);
-      if (!cn.isGroup) {
+      if (!cn.isClus) {
         _.each((cn as qg.Noper).inEmbeds, e => {
           const ed = new Ndata(e);
           const md = new MetaEdata();
@@ -525,7 +525,7 @@ export class Gdata {
         let topn = pd.node;
         while (tope.adjoiningMetaEdge) {
           tope = tope.adjoiningMetaEdge;
-          topn = topn.parent as qg.Ngroup;
+          topn = topn.parent as qg.Nclus;
         }
         const o = this.hierarchy.getOrdering(topn.name);
         const e = tope.metaedge!;
@@ -554,7 +554,7 @@ export class Gdata {
           const p: qt.Nbridge = {
             name: bpn,
             type: qt.NodeType.BRIDGE,
-            isGroup: false,
+            isClus: false,
             cardinality: 0,
             inbound: inbound,
             attributes: {}
@@ -566,7 +566,7 @@ export class Gdata {
         const n: qt.Nbridge = {
           name: bn,
           type: qt.NodeType.BRIDGE,
-          isGroup: false,
+          isClus: false,
           cardinality: 1,
           inbound: inbound,
           attributes: {}
@@ -598,7 +598,7 @@ export class Gdata {
           const bn: qt.Nbridge = {
             name: sn,
             type: qt.NodeType.BRIDGE,
-            isGroup: false,
+            isClus: false,
             cardinality: 1,
             inbound: inbound,
             attributes: {}
@@ -619,7 +619,7 @@ export class Gdata {
   }
 
   private buildSubhierarchiesForNeededFunctions(
-    g: qt.Graph<qg.Ngroup | qg.Noper, qg.Emeta>
+    g: qt.Graph<qg.Nclus | qg.Noper, qg.Emeta>
   ) {
     _.each(g.edges(), l => {
       const me = g.edge(l);

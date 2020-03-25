@@ -33,8 +33,8 @@ export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   return g;
 }
 
-export type MetaGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
-export type BridgeGraph<N = Ngroup | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
+export type MetaGraph<N = Nclus | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
+export type BridgeGraph<N = Nclus | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 
 export interface Nbridge extends Ndata {
   inbound: boolean;
@@ -57,7 +57,7 @@ export class Ndots extends Ndata {
 export type Shapes = number[][];
 
 export class Noper extends Ndata {
-  parent?: Noper | Ngroup;
+  parent?: Noper | Nclus;
   op: string;
   device?: string;
   cluster?: string;
@@ -134,8 +134,8 @@ function shapes(ps: {key: string; value: any}[]) {
 
 type Histos = qt.Dict<qt.Dict<number>>;
 
-export abstract class Ngroup extends Ndata {
-  parent?: Ngroup;
+export abstract class Nclus extends Ndata {
+  parent?: Nclus;
   bridge?: BridgeGraph;
   histo = {} as Histos;
   noControls?: boolean;
@@ -167,11 +167,11 @@ export abstract class Ngroup extends Ndata {
   }
 }
 
-export function isGroup(x?: any): x is Ngroup {
+export function isClus(x?: any): x is Nclus {
   return !!x && 'meta' in x;
 }
 
-export class Nmeta extends Ngroup {
+export class Nmeta extends Nclus {
   depth = 1;
   template?: string;
   assocFn?: string;
@@ -180,7 +180,7 @@ export class Nmeta extends Ngroup {
     super(
       n,
       qt.NodeType.META,
-      createGraph<Gdata, Ngroup | Noper, Emeta>(n, qt.GraphType.META, o)
+      createGraph<Gdata, Nclus | Noper, Emeta>(n, qt.GraphType.META, o)
     );
     this.histo.op = {} as qt.Dict<number>;
   }
@@ -200,8 +200,8 @@ export class Nmeta extends Ngroup {
     const q = [this] as Ndata[];
     while (q.length) {
       const n = q.shift()!;
-      if (isGroup(n)) {
-        const m = (n as Ngroup).meta;
+      if (isClus(n)) {
+        const m = (n as Nclus).meta;
         m.nodes().forEach(n => q.push(m.node(n)!));
       } else {
         ls.push(n.name!);
@@ -228,7 +228,7 @@ export function isMeta(x?: any): x is Nmeta {
   return x?.type === qt.NodeType.META;
 }
 
-export class Nlist extends Ngroup {
+export class Nlist extends Nclus {
   hasLoop = false;
   ids = [] as number[];
 

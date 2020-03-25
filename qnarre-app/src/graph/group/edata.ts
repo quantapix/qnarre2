@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qp from './params';
-import * as qr from './render';
+import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
 

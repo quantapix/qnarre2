@@ -51,7 +51,7 @@ export function cluster(g: qg.MetaGraph) {
     g.nodes(),
     (c, n: string) => {
       const nd = g.node(n);
-      if (qg.isGroup(nd)) return c;
+      if (qg.isClus(nd)) return c;
       const o = nd?.op;
       if (o) {
         c[o] = c[o] || [];
@@ -70,7 +70,7 @@ function detect(g: qg.MetaGraph, c: Cluster, opts: qt.Opts) {
     const ss = {} as qt.Dict<qg.Nlist>;
     const back = {} as qt.Dict<[string, string][]>;
     ns.forEach(n => {
-      const isGroup = n.endsWith('*');
+      const isClus = n.endsWith('*');
       const path = n.split('/');
       const leaf = path[path.length - 1];
       const parent = path.slice(0, path.length - 1).join('/');
@@ -93,9 +93,9 @@ function detect(g: qg.MetaGraph, c: Cluster, opts: qt.Opts) {
         back[n].push([sn, id]);
       }
       if (matched < 1) {
-        pre = isGroup ? leaf.substr(0, leaf.length - 1) : leaf;
+        pre = isClus ? leaf.substr(0, leaf.length - 1) : leaf;
         id = '0';
-        suf = isGroup ? '*' : '';
+        suf = isClus ? '*' : '';
         sn = qg.listName(pre, suf, parent);
         if (!ss[sn]) ss[sn] = new qg.Nlist(pre, suf, parent, +id, n, opts);
         ss[sn].ids.push(+id);
@@ -146,7 +146,7 @@ function collect(g: qg.MetaGraph, c: Cluster, opts: qt.Opts) {
     if (ns.length <= 1) return;
     const cs = {} as qt.Dict<qg.Nlist[]>;
     ns.forEach(n => {
-      const isGroup = n.endsWith('*');
+      const isClus = n.endsWith('*');
       const path = n.split('/');
       const leaf = path[path.length - 1];
       const parent = path.slice(0, path.length - 1).join('/');
@@ -158,8 +158,8 @@ function collect(g: qg.MetaGraph, c: Cluster, opts: qt.Opts) {
         pre = matches[1];
         id = matches[2];
       } else {
-        pre = isGroup ? leaf.substr(0, leaf.length - 1) : leaf;
-        suf = isGroup ? '*' : '';
+        pre = isClus ? leaf.substr(0, leaf.length - 1) : leaf;
+        suf = isClus ? '*' : '';
       }
       const sn = qg.listName(pre, suf, parent);
       cs[sn] = cs[sn] || [];

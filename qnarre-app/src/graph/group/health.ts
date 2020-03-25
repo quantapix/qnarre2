@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
-import * as qn from './node';
+import * as qn from './ndata';
 import * as qp from './params';
 import * as qt from './types';
 import * as qg from './graph';

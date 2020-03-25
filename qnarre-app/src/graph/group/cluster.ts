@@ -3,11 +3,11 @@ import * as _ from 'lodash';
 import * as qt from './types';
 import * as qg from './graph';
 import * as qp from './params';
-import * as qn from './node';
-import * as qe from './edge';
+import * as qn from './ndata';
+import * as qe from './edata';
 import {PARAMS as PS} from './params';
 
-export class Ngroup extends qn.Ndata {
+export class Nclus extends qn.Ndata {
   core: qt.Graph<qg.Gdata, qn.Ndata, qe.Emeta>;
   inExtractBox: {w: number; h: number};
   outExtractBox: {w: number; h: number};
@@ -16,7 +16,7 @@ export class Ngroup extends qn.Ndata {
   isolatedOutExtract: qn.Ndata[];
   libfnsExtract: qn.Ndata[];
 
-  constructor(public node: qg.Ngroup, opts: qt.Opts) {
+  constructor(public node: qg.Nclus, opts: qt.Opts) {
     super(node);
     const g = node.meta.data!;
     opts.isCompound = true;
@@ -25,9 +25,9 @@ export class Ngroup extends qn.Ndata {
       qt.GraphType.CORE,
       opts
     );
-    this.inExtractBox = {width: 0, height: 0};
-    this.outExtractBox = {width: 0, height: 0};
-    this.libfnsBox = {width: 0, height: 0};
+    this.inExtractBox = {w: 0, h: 0};
+    this.outExtractBox = {w: 0, h: 0};
+    this.libfnsBox = {w: 0, h: 0};
     this.isolatedInExtract = [];
     this.isolatedOutExtract = [];
     this.libfnsExtract = [];

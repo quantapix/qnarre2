@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {SelectionType} from '../../graph/group/types';
-import * as render from '../../graph/group/render';
+import * as render from '../../graph/group/gdata';
 import * as proto from '../../graph/group/proto';
 import * as util from '../../graph/group/util';
 

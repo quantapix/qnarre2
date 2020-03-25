@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import * as q_graph from '../../graph/group/graph';
-import * as render from '../../graph/group/render';
-import * as q_node from '../../graph/group/node';
+import * as render from '../../graph/group/gdata';
+import * as q_node from '../../graph/group/ndata';
 import * as icon from './icon.comp';
 
 @Component({

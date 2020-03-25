@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import * as render from '../../graph/group/render';
+import * as render from '../../graph/group/gdata';
 import * as scene from '../../graph/group/scene';
 
 @Component({

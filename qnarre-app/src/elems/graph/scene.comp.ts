@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import {Component, OnInit, Input} from '@angular/core';
 
 import * as ql from '../../graph/group/layout';
-import * as qn from '../../graph/group/node';
+import * as qn from '../../graph/group/ndata';
 import * as qp from '../../graph/group/params';
 import * as qs from '../../graph/group/scene';
 import * as qt from '../../graph/group/types';

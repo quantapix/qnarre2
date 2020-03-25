@@ -1,13 +1,12 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
-import * as qe from './edge';
+import * as qc from './cluster';
+import * as qe from './edata';
 import * as ql from './layout';
-import * as qn from './node';
-import * as qr from './render';
+import * as qn from './ndata';
+import * as qr from './gdata';
 import * as qt from './types';
-import * as qg from './graph';
-import * as group from './group';
 import {PARAMS as PS} from './params';
 
 export function selectOrCreate(
@@ -226,7 +225,7 @@ export abstract class GraphElem extends HTMLElement {
 
 export function buildGroup(
   s: qt.Selection,
-  gd: group.Ngroup,
+  gd: qc.Nclus,
   e: GraphElem,
   cg: string
 ) {
@@ -274,38 +273,38 @@ export function buildGroup(
   return scene;
 }
 
-function position(s: qt.Selection, gd: group.Ngroup) {
-  const y = gd.type === qt.NodeType.LIST ? 0 : PS.subscene.meta.labelHeight;
+function position(s: qt.Selection, cd: qc.Nclus) {
+  const y = cd.type === qt.NodeType.LIST ? 0 : PS.subscene.meta.labelHeight;
   translate(selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
-  const ins = gd.isolatedInExtract.length > 0;
-  const outs = gd.isolatedOutExtract.length > 0;
-  const libs = gd.libfnsExtract.length > 0;
+  const ins = cd.isolatedInExtract.length > 0;
+  const outs = cd.isolatedOutExtract.length > 0;
+  const libs = cd.libfnsExtract.length > 0;
   const off = PS.subscene.meta.extractXOffset;
   let w = 0;
-  if (ins) w += gd.outExtractBox.w;
-  if (outs) w += gd.outExtractBox.w;
+  if (ins) w += cd.outExtractBox.w;
+  if (outs) w += cd.outExtractBox.w;
   if (ins) {
-    let x = gd.coreBox.w;
+    let x = cd.coreBox.w;
     if (w < ql.MIN_AUX_WIDTH) {
-      x -= ql.MIN_AUX_WIDTH + gd.inExtractBox.w / 2;
+      x -= ql.MIN_AUX_WIDTH + cd.inExtractBox.w / 2;
     } else {
-      x -= gd.inExtractBox.w / 2 - gd.outExtractBox.w - (outs ? off : 0);
+      x -= cd.inExtractBox.w / 2 - cd.outExtractBox.w - (outs ? off : 0);
     }
-    x -= gd.libfnsBox.w - (libs ? off : 0);
+    x -= cd.libfnsBox.w - (libs ? off : 0);
     translate(selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
   }
   if (outs) {
-    let x = gd.coreBox.w;
+    let x = cd.coreBox.w;
     if (w < ql.MIN_AUX_WIDTH) {
-      x -= ql.MIN_AUX_WIDTH + gd.outExtractBox.w / 2;
+      x -= ql.MIN_AUX_WIDTH + cd.outExtractBox.w / 2;
     } else {
-      x -= gd.outExtractBox.w / 2;
+      x -= cd.outExtractBox.w / 2;
     }
-    x -= gd.libfnsBox.w - (libs ? off : 0);
+    x -= cd.libfnsBox.w - (libs ? off : 0);
     translate(selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
   }
   if (libs) {
-    const x = gd.coreBox.w - gd.libfnsBox.w / 2;
+    const x = cd.coreBox.w - cd.libfnsBox.w / 2;
     translate(selectChild(s, 'g', qt.Class.Scene.FUNCTION_LIBRARY), x, y);
   }
 }

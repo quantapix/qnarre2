@@ -7,7 +7,7 @@ import * as qg from './graph';
 import * as ql from './layout';
 import * as qm from '../../elems/graph/contextmenu';
 import * as qp from './params';
-import * as qr from './render';
+import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './util';
@@ -95,7 +95,7 @@ export function buildGroup(group, ndata: Ndata[], elem: qs.GraphElem) {
       const outb = qs.selectOrCreate(g, 'g', qt.Class.Annotation.OUTBOX);
       qa.buildGroup(outb, d.outAnnotations, d, elem);
       const sh = buildShape(g, d, qt.Class.Node.SHAPE);
-      if (d.node.isGroup) addButton(sh, d, elem);
+      if (d.node.isClus) addButton(sh, d, elem);
       addInteraction(sh, d, elem);
       subBuild(g, <qr.GroupNdata>d, elem);
       const label = labelBuild(g, d, elem);
@@ -123,7 +123,7 @@ export function buildGroup(group, ndata: Ndata[], elem: qs.GraphElem) {
 }
 
 function subBuild(group, ndata: qr.GroupNdata, elem: qs.GraphElem) {
-  if (ndata.node.isGroup) {
+  if (ndata.node.isClus) {
     if (ndata.expanded) {
       return qs.buildGroup(group, ndata, elem, qt.Class.Subscene.GROUP);
     }
@@ -636,9 +636,9 @@ export function updateInputTrace(
 
 function _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
   let os = [] as Array<qg.OpNode>;
-  const n = gdata.getNodeByName(name) as qg.Ngroup | qt.Noper;
+  const n = gdata.getNodeByName(name) as qg.Nclus | qt.Noper;
   if (n instanceof qg.OpNode) return [n].concat(n.inEmbeds);
-  const ns = (n as qg.Ngroup).metag.nodes();
+  const ns = (n as qg.Nclus).metag.nodes();
   _.each(ns, n => {
     os = os.concat(_getAllContainedOpNodes(n, gdata));
   });
