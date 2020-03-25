@@ -171,7 +171,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
       const ed = this.edge(l)!;
       ed.minlen *= 2;
       if (ed.labelPos.toLowerCase() !== 'c') {
-        if (d.rankdir === 'TB' || d.rankdir === 'BT') {
+        if (d.rankdir === 'tb' || d.rankdir === 'bt') {
           ed.w += ed.offset;
         } else {
           ed.h += ed.offset;

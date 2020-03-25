@@ -9,9 +9,9 @@ import {PARAMS as PS} from './params';
 
 export class Ngroup extends qn.Ndata {
   core: qt.Graph<qg.Gdata, qn.Ndata, qe.Emeta>;
-  inExtractBox: {width: number; height: number};
-  outExtractBox: {width: number; height: number};
-  libfnsBox: {width: number; height: number};
+  inExtractBox: {w: number; h: number};
+  outExtractBox: {w: number; h: number};
+  libfnsBox: {w: number; h: number};
   isolatedInExtract: qn.Ndata[];
   isolatedOutExtract: qn.Ndata[];
   libfnsExtract: qn.Ndata[];

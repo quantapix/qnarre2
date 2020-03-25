@@ -12,15 +12,22 @@ import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './util';
 
-export class Ndata extends qg.Ndata {
+interface _Ndata extends qg.Ndata {}
+
+export class Ndata implements qt.Point, qt.Area, _Ndata {
+  parent?: Ndata;
+  stats?: qg.Stats;
+  include?: boolean;
+  attrs = {} as qt.Dict<any>;
   expanded = false;
-  inAnnotations = new AnnotationList();
-  outAnnotations = new AnnotationList();
   x = 0;
   y = 0;
-  width = 0;
-  height = 0;
-  coreBox = {width: 0, height: 0};
+  w = 0;
+  h = 0;
+  coreBox = {w: 0, h: 0} as qt.Area;
+
+  inAnnotations = new qa.AnnoList();
+  outAnnotations = new qa.AnnoList();
   inboxWidth = 0;
   outboxWidth = 0;
   excluded = false;
@@ -43,7 +50,12 @@ export class Ndata extends qg.Ndata {
   isFadedOut = false;
   displayName: string;
 
-  constructor(public node: qt.Node) {
+  constructor(
+    public name: string,
+    public type: qt.NodeType,
+    public cardinality = 1,
+    public node: qt.Node
+  ) {
     this.displayName = node.name.substring(
       node.name.lastIndexOf(qp.NAMESPACE_DELIM) + 1
     );
@@ -56,6 +68,7 @@ export class Ndata extends qg.Ndata {
       }
     }
   }
+
   isInCore(): boolean {
     return !this.isInExtract && !this.isOutExtract && !this.isLibraryFn;
   }

@@ -4,140 +4,52 @@ import * as d3 from 'd3';
 import * as qe from './edge';
 import * as ql from './layout';
 import * as qn from './node';
-import * as qp from './params';
 import * as qr from './render';
 import * as qt from './types';
-
-const MINIMAP_BOX_WIDTH = 320;
-const MINIMAP_BOX_HEIGHT = 150;
-
-export type Selection = d3.Selection<any, any, any, any>;
-
-export abstract class GraphElem extends HTMLElement {
-  maxMetaNodeLabelLength?: number;
-  maxMetaNodeLabelLengthLargeFont?: number;
-  maxMetaNodeLabelLengthFontSize?: number;
-  templateIndex?: () => {};
-  colorBy = '';
-  abstract fire(eventName: string, daat: any): void;
-  abstract addNodeGroup(name: string, selection: Selection): void;
-  abstract removeNodeGroup(name: string): void;
-  abstract removeAnnotationGroup(name: string): void;
-  abstract isNodeExpanded(node: qr.Ndata): boolean;
-  abstract isNodeHighlighted(nodeName: string): boolean;
-  abstract isNodeSelected(nodeName: string): boolean;
-  abstract getAnnotationGroupsIndex(name: string): Selection;
-  abstract getGraphSvgRoot(): SVGElement;
-  abstract getContextMenu(): HTMLElement;
-}
-
-export function fit(svg: SVGElement, zoomG, d3zoom, callback: () => void) {
-  const r = svg.getBoundingClientRect();
-  let size;
-  try {
-    size = zoomG.getBBox();
-    if (size.width === 0) return;
-  } catch (e) {
-    return;
-  }
-  const scale = 0.9 * Math.min(r.width / size.width, r.height / size.height, 2);
-  const ps = qp.PARAMS.graph;
-  const t = d3.zoomIdentity
-    .scale(scale)
-    .translate(ps.padding.paddingLeft, ps.padding.paddingTop);
-  d3.select(svg)
-    .transition()
-    .duration(500)
-    .call(d3zoom.transform, t)
-    .on('end.fitted', () => {
-      d3zoom.on('end.fitted', null);
-      callback();
-    });
-}
-
-export function panToNode(name: string, svg: SVGSVGElement, _zoomG, d3zoom) {
-  const node = d3
-    .select(svg)
-    .select(`[data-name="${name}"]`)
-    .node() as SVGAElement;
-  if (!node) {
-    console.warn(`panToNode() failed for "${name}"`);
-    return false;
-  }
-  const box = node.getBBox();
-  const ctm = node.getScreenCTM();
-  let tl = svg.createSVGPoint();
-  let br = svg.createSVGPoint();
-  tl.x = box.x;
-  tl.y = box.y;
-  br.x = box.x + box.width;
-  br.y = box.y + box.height;
-  tl = tl.matrixTransform(ctm ?? undefined);
-  br = br.matrixTransform(ctm ?? undefined);
-  function isOutside(s: number, e: number, lower: number, upper: number) {
-    return !(s > lower && e < upper);
-  }
-  const r = svg.getBoundingClientRect();
-  const hBound = r.left + r.width - MINIMAP_BOX_WIDTH;
-  const vBound = r.top + r.height - MINIMAP_BOX_HEIGHT;
-  if (
-    isOutside(tl.x, br.x, r.left, hBound) ||
-    isOutside(tl.y, br.y, r.top, vBound)
-  ) {
-    const cX = (tl.x + br.x) / 2;
-    const cY = (tl.y + br.y) / 2;
-    const dx = r.left + r.width / 2 - cX;
-    const dy = r.top + r.height / 2 - cY;
-    const t = d3.zoomTransform(svg);
-    d3.select(svg)
-      .transition()
-      .duration(500)
-      .call(d3zoom.translateBy, dx / t.k, dy / t.k);
-    return true;
-  }
-  return false;
-}
+import * as qg from './graph';
+import * as group from './group';
+import {PARAMS as PS} from './params';
 
 export function selectOrCreate(
-  cont,
-  tag: string,
-  name?: string | string[],
+  s: qt.Selection,
+  t: string,
+  n?: string | string[],
   before = false
-): Selection {
-  const c = selectChild(cont, tag, name);
+): qt.Selection {
+  const c = selectChild(s, t, n);
   if (!c.empty()) return c;
-  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  if (name instanceof Array) {
-    for (let i = 0; i < name.length; i++) {
-      e.classList.add(name[i]);
+  const e = document.createElementNS('http://www.w3.org/2000/svg', t);
+  if (n instanceof Array) {
+    for (let i = 0; i < n.length; i++) {
+      e.classList.add(n[i]);
     }
-  } else if (name) {
-    e.classList.add(name);
+  } else if (n) {
+    e.classList.add(n);
   }
   if (before) {
-    cont.node().insertBefore(e, before);
+    s.node().insertBefore(e, before);
   } else {
-    cont.node().appendChild(e);
+    s.node().appendChild(e);
   }
-  return d3.select(e).datum(cont.datum());
+  return d3.select(e).datum(s.datum());
 }
 
 export function selectChild(
-  cont,
-  tag: string,
-  name?: string | string[]
-): Selection {
-  const cs = cont.node().childNodes;
+  s: qt.Selection,
+  t: string,
+  n?: string | string[]
+): qt.Selection {
+  const cs = s.node().childNodes;
   for (let i = 0; i < cs.length; i++) {
     const c = cs[i];
-    if (c.tagName === tag) {
-      if (name instanceof Array) {
+    if (c.tagName === t) {
+      if (n instanceof Array) {
         let hasAll = true;
-        for (let j = 0; j < name.length; j++) {
-          hasAll = hasAll && c.classList.contains(name[j]);
+        for (let j = 0; j < n.length; j++) {
+          hasAll = hasAll && c.classList.contains(n[j]);
         }
         if (hasAll) return d3.select(c);
-      } else if (!name || c.classList.contains(name)) {
+      } else if (!n || c.classList.contains(n)) {
         return d3.select(c);
       }
     }
@@ -145,96 +57,67 @@ export function selectChild(
   return d3.select(null);
 }
 
-export function buildGroup(
-  cont,
-  ndata: qr.GroupNdata,
-  elem: GraphElem,
-  sClass: string
-): Selection {
-  sClass = sClass || qt.Class.Scene.GROUP;
-  const isNew = selectChild(cont, 'g', sClass).empty();
-  const scene = selectOrCreate(cont, 'g', sClass);
-  const g = selectOrCreate(scene, 'g', qt.Class.Scene.CORE);
-  const cores = _.reduce(
-    ndata.coreGraph.nodes(),
-    (ds, n) => {
-      const d = ndata.coreGraph.node(n);
-      if (!d.excluded) ds.push(d);
-      return ds;
-    },
-    [] as qr.Ndata[]
-  );
-  if (ndata.node.type === qt.NodeType.LIST) cores.reverse();
-  qe.buildGroup(g, ndata.coreGraph, elem);
-  qn.buildGroup(g, cores, elem);
-  if (ndata.isolatedInExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
-    qn.buildGroup(g, ndata.isolatedInExtract, elem);
-  } else {
-    selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
-  }
-  if (ndata.isolatedOutExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
-    qn.buildGroup(g, ndata.isolatedOutExtract, elem);
-  } else {
-    selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
-  }
-  if (ndata.libfnsExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY);
-    qn.buildGroup(g, ndata.libfnsExtract, elem);
-  } else {
-    selectChild(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY).remove();
-  }
-  position(scene, ndata);
-  if (isNew) {
-    scene
-      .attr('opacity', 0)
-      .transition()
-      .attr('opacity', 1);
-  }
-  return scene;
+export function positionRect(s: qt.Selection, r: qt.Rect) {
+  s.transition()
+    .attr('x', r.x - r.w / 2)
+    .attr('y', r.y - r.h / 2)
+    .attr('width', r.w)
+    .attr('height', r.h);
 }
 
-function position(scene, ndata: qr.GroupNdata) {
-  const y =
-    ndata.node.type === qt.NodeType.LIST
-      ? 0
-      : qp.PARAMS.subscene.meta.labelHeight;
-  translate(selectChild(scene, 'g', qt.Class.Scene.CORE), 0, y);
-  const hasIn = ndata.isolatedInExtract.length > 0;
-  const hasOut = ndata.isolatedOutExtract.length > 0;
-  const hasLib = ndata.libfnsExtract.length > 0;
-  const offset = qp.PARAMS.subscene.meta.extractXOffset;
-  let w = 0;
-  if (hasIn) w += ndata.outExtractBox.width;
-  if (hasOut) w += ndata.outExtractBox.width;
-  if (hasIn) {
-    let x = ndata.coreBox.width;
-    if (w < ql.MIN_AUX_WIDTH) {
-      x -= ql.MIN_AUX_WIDTH + ndata.inExtractBox.width / 2;
-    } else {
-      x -=
-        ndata.inExtractBox.width / 2 -
-        ndata.outExtractBox.width -
-        (hasOut ? offset : 0);
-    }
-    x -= ndata.libfnsBox.width - (hasLib ? offset : 0);
-    translate(selectChild(scene, 'g', qt.Class.Scene.INEXTRACT), x, y);
+export function positionTriangle(s: qt.Selection, r: qt.Rect) {
+  const h = r.h / 2;
+  const w = r.w / 2;
+  const ps = [
+    [r.x, r.y - h],
+    [r.x + w, r.y + h],
+    [r.x - w, r.y + h]
+  ];
+  s.transition().attr('points', ps.map(p => p.join(',')).join(' '));
+}
+
+export function positionEllipse(s: qt.Selection, r: qt.Rect) {
+  s.transition()
+    .attr('cx', r.x)
+    .attr('cy', r.y)
+    .attr('rx', r.w / 2)
+    .attr('ry', r.h / 2);
+}
+
+export function positionButton(s: qt.Selection, nd: qn.Ndata) {
+  const cx = ql.computeCXPositionOfNodeShape(nd);
+  const w = nd.expanded ? nd.w : nd.coreBox.w;
+  const h = nd.expanded ? nd.h : nd.coreBox.h;
+  let x = cx + w / 2 - 6;
+  let y = nd.y - h / 2 + 6;
+  if (nd.type === qt.NodeType.LIST && !nd.expanded) {
+    x += 10;
+    y -= 2;
   }
-  if (hasOut) {
-    let x = ndata.coreBox.width;
-    if (w < ql.MIN_AUX_WIDTH) {
-      x -= ql.MIN_AUX_WIDTH + ndata.outExtractBox.width / 2;
-    } else {
-      x -= ndata.outExtractBox.width / 2;
-    }
-    x -= ndata.libfnsBox.width - (hasLib ? offset : 0);
-    translate(selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
+  const t = 'translate(' + x + ',' + y + ')';
+  s.selectAll('path')
+    .transition()
+    .attr('transform', t);
+  s.select('circle')
+    .transition()
+    .attr({cx: x, cy: y, r: PS.nodeSize.meta.expandButtonRadius});
+}
+
+export function expandUntilNodeIsShown(scene, gd: qr.Gdata, name: string) {
+  const ns = name.split('/');
+  const m = ns[ns.length - 1].match(/(.*):\w+/);
+  if (m?.length === 2) ns[ns.length - 1] = m[1];
+  let n = ns[0];
+  let nd = gd.getNdataByName(n);
+  for (let i = 1; i < ns.length; i++) {
+    if (nd?.type === qt.NodeType.OPER) break;
+    gd.buildSubhierarchy(n);
+    nd!.expanded = true;
+    scene.setNodeExpanded(nd);
+    n += '/' + ns[i];
+    nd = gd.getNdataByName(n);
   }
-  if (hasLib) {
-    const x = ndata.coreBox.width - ndata.libfnsBox.width / 2;
-    translate(selectChild(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY), x, y);
-  }
+  return nd?.name;
 }
 
 export function addGraphClickListener(group, elem) {
@@ -243,256 +126,186 @@ export function addGraphClickListener(group, elem) {
   });
 }
 
-export function translate(sel, x: number, y: number) {
-  if (sel.attr('transform')) sel = sel.transition('position');
-  sel.attr('transform', 'translate(' + x + ',' + y + ')');
+export function translate(s: qt.Selection, x: number, y: number) {
+  if (s.attr('transform')) s = s.transition('position');
+  s.attr('transform', 'translate(' + x + ',' + y + ')');
 }
 
-export function positionRect(
-  rect,
-  cx: number,
-  cy: number,
-  width: number,
-  height: number
+export function fit(
+  s: SVGElement,
+  zoom: SVGGElement,
+  d3zoom: any,
+  cb: () => void
 ) {
-  rect
+  const r = s.getBoundingClientRect();
+  let a: DOMRect;
+  try {
+    a = zoom.getBBox();
+    if (a.width === 0) return;
+  } catch (e) {
+    return;
+  }
+  const scale = 0.9 * Math.min(r.width / a.width, r.height / a.height, 2);
+  const ps = PS.graph;
+  const t = d3.zoomIdentity.scale(scale).translate(ps.pad.left, ps.pad.top);
+  d3.select(s)
     .transition()
-    .attr('x', cx - width / 2)
-    .attr('y', cy - height / 2)
-    .attr('width', width)
-    .attr('height', height);
+    .duration(500)
+    .call(d3zoom.transform, t)
+    .on('end.fitted', () => {
+      d3zoom.on('end.fitted', null);
+      cb();
+    });
 }
 
-export function positionTriangle(
-  polygon,
-  cx: number,
-  cy: number,
-  width: number,
-  height: number
+export function panToNode(
+  n: string,
+  s: SVGSVGElement,
+  _zoom: SVGGElement,
+  d3zoom: any
 ) {
-  const h = height / 2;
-  const w = width / 2;
-  const ps = [
-    [cx, cy - h],
-    [cx + w, cy + h],
-    [cx - w, cy + h]
-  ];
-  polygon.transition().attr('points', ps.map(p => p.join(',')).join(' '));
-}
-
-export function positionButton(button, ndata: qr.Ndata) {
-  const cx = ql.computeCXPositionOfNodeShape(ndata);
-  const w = ndata.expanded ? ndata.width : ndata.coreBox.width;
-  const h = ndata.expanded ? ndata.height : ndata.coreBox.height;
-  let x = cx + w / 2 - 6;
-  let y = ndata.y - h / 2 + 6;
-  if (ndata.node.type === qt.NodeType.LIST && !ndata.expanded) {
-    x += 10;
-    y -= 2;
+  const e = d3
+    .select(s)
+    .select(`[data-name="${n}"]`)
+    .node() as SVGAElement;
+  if (!e) {
+    console.warn(`panToNode() failed for "${n}"`);
+    return false;
   }
-  const t = 'translate(' + x + ',' + y + ')';
-  button
-    .selectAll('path')
-    .transition()
-    .attr('transform', t);
-  button
-    .select('circle')
-    .transition()
-    .attr({cx: x, cy: y, r: qp.PARAMS.nodeSize.meta.expandButtonRadius});
+  const b = e.getBBox();
+  const c = e.getScreenCTM();
+  let tl = s.createSVGPoint();
+  let br = s.createSVGPoint();
+  tl.x = b.x;
+  tl.y = b.y;
+  br.x = b.x + b.width;
+  br.y = b.y + b.height;
+  tl = tl.matrixTransform(c ?? undefined);
+  br = br.matrixTransform(c ?? undefined);
+  function isOut(s: number, e: number, l: number, u: number) {
+    return !(s > l && e < u);
+  }
+  const r = s.getBoundingClientRect();
+  const h = r.left + r.width - MINIMAP_BOX_WIDTH;
+  const v = r.top + r.height - MINIMAP_BOX_HEIGHT;
+  if (isOut(tl.x, br.x, r.left, h) || isOut(tl.y, br.y, r.top, v)) {
+    const x = (tl.x + br.x) / 2;
+    const y = (tl.y + br.y) / 2;
+    const dx = r.left + r.width / 2 - x;
+    const dy = r.top + r.height / 2 - y;
+    const t = d3.zoomTransform(s);
+    d3.select(s)
+      .transition()
+      .duration(500)
+      .call(d3zoom.translateBy, dx / t.k, dy / t.k);
+    return true;
+  }
+  return false;
 }
 
-export function positionEllipse(
-  ellipse,
-  cx: number,
-  cy: number,
-  width: number,
-  height: number
+const MINIMAP_BOX_WIDTH = 320;
+const MINIMAP_BOX_HEIGHT = 150;
+
+export abstract class GraphElem extends HTMLElement {
+  maxMetaNodeLabelLength?: number;
+  maxMetaNodeLabelLengthLargeFont?: number;
+  maxMetaNodeLabelLengthFontSize?: number;
+  templateIndex?: () => {};
+  colorBy = '';
+  abstract fire(eventName: string, daat: any): void;
+  abstract addNodeGroup(name: string, selection: qt.Selection): void;
+  abstract removeNodeGroup(name: string): void;
+  abstract removeAnnotationGroup(name: string): void;
+  abstract isNodeExpanded(node: qn.Ndata): boolean;
+  abstract isNodeHighlighted(nodeName: string): boolean;
+  abstract isNodeSelected(nodeName: string): boolean;
+  abstract getAnnotationGroupsIndex(name: string): qt.Selection;
+  abstract getGraphSvgRoot(): SVGElement;
+  abstract getContextMenu(): HTMLElement;
+}
+
+export function buildGroup(
+  s: qt.Selection,
+  gd: group.Ngroup,
+  e: GraphElem,
+  cg: string
 ) {
-  ellipse
-    .transition()
-    .attr('cx', cx)
-    .attr('cy', cy)
-    .attr('rx', width / 2)
-    .attr('ry', height / 2);
-}
-
-export function expandUntilNodeIsShown(scene, gdata: qr.Gdata, name: string) {
-  const ns = name.split('/');
-  const m = ns[ns.length - 1].match(/(.*):\w+/);
-  if (m?.length === 2) ns[ns.length - 1] = m[1];
-  let n = ns[0];
-  let ndata = gdata.getNdataByName(n);
-  for (let i = 1; i < ns.length; i++) {
-    if (ndata?.node.type === qt.NodeType.OP) break;
-    gdata.buildSubhierarchy(n);
-    ndata!.expanded = true;
-    scene.setNodeExpanded(ndata);
-    n += '/' + ns[i];
-    ndata = gdata.getNdataByName(n);
-  }
-  return ndata?.node.name;
-}
-
-interface HealthStats {
-  min: number;
-  max: number;
-  mean: number;
-  stddev: number;
-}
-
-export function addHealth(
-  elem: SVGElement,
-  health: qt.Health,
-  ndata: qr.Ndata,
-  id: number,
-  width = 60,
-  height = 10,
-  y = 0,
-  x?: number
-) {
-  d3.select(elem.parent as any)
-    .selectAll('.health-pill')
-    .remove();
-  if (!health) return;
-  const d = health.value;
-  const es = d.slice(2, 8);
-  const nan = es[0];
-  const negInf = es[1];
-  const posInf = es[5];
-  const total = d[1];
-  const stats: HealthStats = {
-    min: d[8],
-    max: d[9],
-    mean: d[10],
-    stddev: Math.sqrt(d[11])
-  };
-  if (ndata && ndata.node.type === qt.NodeType.OP) {
-    width /= 2;
-    height /= 2;
-  }
-  const group = document.createElementNS(qp.SVG_NAMESPACE, 'g');
-  group.classList.add('health-pill');
-  const defs = document.createElementNS(qp.SVG_NAMESPACE, 'defs');
-  group.appendChild(defs);
-  const grad = document.createElementNS(qp.SVG_NAMESPACE, 'linearGradient');
-  const gradId = 'health-pill-gradient-' + id;
-  grad.setAttribute('id', gradId);
-  let count = 0;
-  let offset = '0%';
-  for (let i = 0; i < es.length; i++) {
-    if (!es[i]) continue;
-    count += es[i];
-    const s0 = document.createElementNS(qp.SVG_NAMESPACE, 'stop');
-    s0.setAttribute('offset', offset);
-    s0.setAttribute('stop-color', qp.healthEntries[i].background_color);
-    grad.appendChild(s0);
-    const s1 = document.createElementNS(qp.SVG_NAMESPACE, 'stop');
-    const percent = (count * 100) / total + '%';
-    s1.setAttribute('offset', percent);
-    s1.setAttribute('stop-color', qp.healthEntries[i].background_color);
-    grad.appendChild(s1);
-    offset = percent;
-  }
-  defs.appendChild(grad);
-  const rect = document.createElementNS(qp.SVG_NAMESPACE, 'rect');
-  rect.setAttribute('fill', 'url(#' + gradId + ')');
-  rect.setAttribute('width', String(width));
-  rect.setAttribute('height', String(height));
-  rect.setAttribute('y', String(y));
-  group.appendChild(rect);
-  const title = document.createElementNS(qp.SVG_NAMESPACE, 'title');
-  title.textContent = getHealthText(health, total, es, stats);
-  group.appendChild(title);
-  let round = false;
-  if (ndata != null) {
-    const px = ndata.x - width / 2;
-    let py = ndata.y - height - ndata.height / 2 - 2;
-    if (ndata.labelOffset < 0) py += ndata.labelOffset;
-    group.setAttribute('transform', 'translate(' + px + ', ' + py + ')');
-    if (es[2] || es[3] || es[4]) {
-      const n = ndata.node as qt.Noper;
-      const a = n.attr;
-      if (a && a.length) {
-        for (let i = 0; i < a.length; i++) {
-          if (a[i].key === 'T') {
-            const o = a[i].value['type'];
-            round = o && /^DT_(BOOL|INT|UINT)/.test(o);
-            break;
-          }
-        }
-      }
-    }
-  }
-  const svg = document.createElementNS(qp.SVG_NAMESPACE, 'text');
-  if (Number.isFinite(stats.min) && Number.isFinite(stats.max)) {
-    const min = renderHealthStat(stats.min, round);
-    const max = renderHealthStat(stats.max, round);
-    if (total > 1) {
-      svg.textContent = min + ' ~ ' + max;
-    } else {
-      svg.textContent = min;
-    }
-    if (nan > 0 || negInf > 0 || posInf > 0) {
-      svg.textContent += ' (';
-      const bad: string[] = [];
-      if (nan > 0) bad.push(`NaN×${nan}`);
-      if (negInf > 0) bad.push(`-∞×${negInf}`);
-      if (posInf > 0) bad.push(`+∞×${posInf}`);
-      svg.textContent += bad.join('; ') + ')';
-    }
+  cg = cg || qt.Class.Scene.GROUP;
+  const empty = selectChild(s, 'g', cg).empty();
+  const scene = selectOrCreate(s, 'g', cg);
+  const sg = selectOrCreate(scene, 'g', qt.Class.Scene.CORE);
+  const ds = _.reduce(
+    gd.core.nodes(),
+    (ds, n) => {
+      const nd = gd.core.node(n);
+      if (nd && !nd.excluded) ds.push(nd);
+      return ds;
+    },
+    [] as qn.Ndata[]
+  );
+  if (gd.type === qt.NodeType.LIST) ds.reverse();
+  qe.buildGroup(sg, gd.core, e);
+  qn.buildGroup(sg, ds, e);
+  if (gd.isolatedInExtract.length > 0) {
+    const g = selectOrCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
+    qn.buildGroup(g, gd.isolatedInExtract, e);
   } else {
-    svg.textContent = '(No finite elements)';
+    selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
   }
-  svg.classList.add('health-pill-stats');
-  if (x === undefined) x = width / 2;
-  svg.setAttribute('x', String(x));
-  svg.setAttribute('y', String(y - 2));
-  group.appendChild(svg);
-  // Polymer.dom(elem.parent).appendChild(group);
+  if (gd.isolatedOutExtract.length > 0) {
+    const g = selectOrCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
+    qn.buildGroup(g, gd.isolatedOutExtract, e);
+  } else {
+    selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
+  }
+  if (gd.libfnsExtract.length > 0) {
+    const g = selectOrCreate(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY);
+    qn.buildGroup(g, gd.libfnsExtract, e);
+  } else {
+    selectChild(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY).remove();
+  }
+  position(scene, gd);
+  if (empty) {
+    scene
+      .attr('opacity', 0)
+      .transition()
+      .attr('opacity', 1);
+  }
+  return scene;
 }
 
-export function addAllHealths(
-  root: SVGElement,
-  dict: qt.Dict<qt.Health[]>,
-  idx: number
-) {
-  if (!dict) return;
-  let i = 1;
-  const r = d3.select(root);
-  r.selectAll('g.nodeshape').each(d => {
-    const ndata = d as qr.Ndata;
-    const hs = dict[ndata.node.name];
-    const h = hs ? hs[idx] : undefined;
-    if (h) addHealth(this as SVGElement, h, ndata, i++);
-  });
-}
-
-export function renderHealthStat(stat: number, round: boolean) {
-  if (round) return stat.toFixed(0);
-  if (Math.abs(stat) >= 1) return stat.toFixed(1);
-  return stat.toExponential(1);
-}
-
-function getHealthText(
-  h: qt.Health,
-  total: number,
-  es: number[],
-  stats: HealthStats
-) {
-  let t = 'Device: ' + h.device_name + '\n';
-  t += 'dtype: ' + h.dtype + '\n';
-  let shape = '(scalar)';
-  if (h.shape.length > 0) shape = '(' + h.shape.join(',') + ')';
-  t += '\nshape: ' + shape + '\n\n';
-  t += '#(elements): ' + total + '\n';
-  const ns = [] as string[];
-  for (let i = 0; i < es.length; i++) {
-    if (es[i] > 0) ns.push('#(' + qp.healthEntries[i].label + '): ' + es[i]);
+function position(s: qt.Selection, gd: group.Ngroup) {
+  const y = gd.type === qt.NodeType.LIST ? 0 : PS.subscene.meta.labelHeight;
+  translate(selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
+  const ins = gd.isolatedInExtract.length > 0;
+  const outs = gd.isolatedOutExtract.length > 0;
+  const libs = gd.libfnsExtract.length > 0;
+  const off = PS.subscene.meta.extractXOffset;
+  let w = 0;
+  if (ins) w += gd.outExtractBox.w;
+  if (outs) w += gd.outExtractBox.w;
+  if (ins) {
+    let x = gd.coreBox.w;
+    if (w < ql.MIN_AUX_WIDTH) {
+      x -= ql.MIN_AUX_WIDTH + gd.inExtractBox.w / 2;
+    } else {
+      x -= gd.inExtractBox.w / 2 - gd.outExtractBox.w - (outs ? off : 0);
+    }
+    x -= gd.libfnsBox.w - (libs ? off : 0);
+    translate(selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
   }
-  t += ns.join(', ') + '\n\n';
-  if (stats.max >= stats.min) {
-    t += 'min: ' + stats.min + ', max: ' + stats.max + '\n';
-    t += 'mean: ' + stats.mean + ', stddev: ' + stats.stddev;
+  if (outs) {
+    let x = gd.coreBox.w;
+    if (w < ql.MIN_AUX_WIDTH) {
+      x -= ql.MIN_AUX_WIDTH + gd.outExtractBox.w / 2;
+    } else {
+      x -= gd.outExtractBox.w / 2;
+    }
+    x -= gd.libfnsBox.w - (libs ? off : 0);
+    translate(selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
   }
-  return t;
+  if (libs) {
+    const x = gd.coreBox.w - gd.libfnsBox.w / 2;
+    translate(selectChild(s, 'g', qt.Class.Scene.FUNCTION_LIBRARY), x, y);
+  }
 }

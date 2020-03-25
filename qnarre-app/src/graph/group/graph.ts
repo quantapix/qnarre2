@@ -1,13 +1,13 @@
 import * as _ from 'lodash';
 
-import * as proto from './proto';
 import * as qt from './types';
+import * as proto from './proto';
 
 export interface Gdata extends qt.Named, qt.Opts {
   type: string | number;
 }
 
-export abstract class Ndata implements qt.Named {
+export abstract class Ndata {
   parent?: Ndata;
   stats?: Stats;
   include?: boolean;
