@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 
-import * as qg from './graph';
+import * as qg from './core/graph';
 
 @Injectable()
 export class DataService {

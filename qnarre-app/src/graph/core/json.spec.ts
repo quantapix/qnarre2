@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import * as _ from 'lodash';
 
-import * as qj from './json';
 import * as qg from './graph';
+import * as qj from './json';
+import * as qt from './types';
 import * as qu from './utils';
 
 interface Gdata {
   foo: any;
 }
-interface Ndata extends qg.Named {
+interface Ndata extends qt.Named {
   foo: any;
 }
-interface Edata extends qg.Named {
+interface Edata extends qt.Named {
   foo: any;
 }
 

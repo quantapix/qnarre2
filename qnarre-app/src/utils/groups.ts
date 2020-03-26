@@ -1,4 +1,4 @@
-import * as qt from '../graph/types';
+import * as qt from '../graph/core/types';
 
 interface Proxy<D> {
   __data__: D;

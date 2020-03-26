@@ -2,7 +2,7 @@ import {dispatch} from 'd3-dispatch';
 import {timer} from 'd3-timer';
 
 import * as qf from './force';
-import * as qt from './types';
+import * as qt from './core/types';
 
 export class Decay {
   tgt = 0;

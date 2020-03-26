@@ -2,7 +2,7 @@ import {EventEmitter} from '@angular/core';
 
 import * as qf from './force';
 import * as qs from './simulation';
-import * as qt from './types';
+import * as qt from './core/types';
 
 const Params = {
   links: 1 / 50,

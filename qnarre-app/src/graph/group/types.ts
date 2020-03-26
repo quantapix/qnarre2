@@ -1,7 +1,7 @@
-import * as qg from '../graph';
-import * as qt from '../types';
+import * as qg from '../core/graph';
+import * as qt from '../core/types';
 
-export {Area, Dict, Dir, Pad, Point, Rect, Selection} from '../types';
+export {Area, Dict, Dir, Pad, Point, Rect, Selection} from '../core/types';
 
 export enum GraphType {
   FULL,

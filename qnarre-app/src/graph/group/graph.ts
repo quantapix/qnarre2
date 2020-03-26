@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 
-import * as qg from '../graph';
+import * as qg from '../core/graph';
 import * as qt from './types';
 import * as qu from './utils';
 
-export {Link, Nodes} from '../graph';
+export {Link, Nodes} from '../core/graph';
 
 export interface Gdata extends qt.Opts {
   name: string;

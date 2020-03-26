@@ -1,7 +1,7 @@
 import {quadtree} from 'd3-quadtree';
 
-import * as qt from './types';
-import * as qu from './utils';
+import * as qt from './core/types';
+import * as qu from './core/utils';
 
 interface Velocity {
   vx: number;
