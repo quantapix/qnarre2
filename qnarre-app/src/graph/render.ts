@@ -46,7 +46,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
       });
       if (!nd.label) nd.label = {} as qt.Label;
       if (!this.children(n)?.length) nd.label.txt = n;
-      if (!nd.pad) nd.pad = {} as qt.Pad;
+      if (!nd.pad) nd.pad = new qt.Pad();
       _.defaults(nd.pad, {
         left: 10,
         right: 10,

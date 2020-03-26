@@ -2,7 +2,6 @@ import * as qg from '../graph';
 import * as qt from '../types';
 
 export {Area, Dict, Dir, Pad, Point, Rect, Selection} from '../types';
-export {Link, Nodes} from '../graph';
 
 export enum GraphType {
   FULL,
@@ -31,8 +30,8 @@ export enum AnnoType {
 }
 
 export enum SelectType {
-  OP_GRAPH = 'op_graph',
-  CONCEPT_GRAPH = 'concept_graph',
+  OPER = 'op_graph',
+  CONCEPT = 'concept_graph',
   PROFILE = 'profile'
 }
 
@@ -53,22 +52,34 @@ export interface Opts extends qg.Opts {
 }
 
 export interface Input {
-  isControl: boolean;
+  control?: boolean;
   name: string;
   out: string;
 }
 
-export interface Params {
-  embed: boolean;
-  inbedTypes: string[];
-  outbedTypes: string[];
-  refEdges: qt.Dict<boolean>;
-}
+export type Shapes = number[][];
+
+export type Histos = qt.Dict<qt.Dict<number>>;
 
 export interface Tracker {
   setMessage(m: string): void;
   reportError(m: string, e: Error): void;
   updateProgress(i: number): void;
+}
+
+export interface HierarchyPs {
+  thresh: number;
+  rankdir: qt.Dir;
+  verify?: boolean;
+  patterns?: boolean;
+  groups: qt.Dict<boolean>;
+}
+
+export interface BuildPs {
+  embed?: boolean;
+  inbedTs: string[];
+  outbedTs: string[];
+  refs: qt.Dict<boolean>;
 }
 
 export interface Health {

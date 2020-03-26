@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 
 import * as qg from './graph';
+import * as qn from './ndata';
 import * as qp from './params';
 import * as qt from './types';
 import * as qu from './utils';
@@ -9,16 +10,16 @@ import * as proto from './proto';
 
 export class SlimGraph {
   opers = {} as qt.Dict<qg.Noper>;
-  links = [] as qt.Link<qg.Edata>[];
+  links = [] as qg.Link<qg.Edata>[];
 
   constructor(public opts = {} as qt.Opts) {}
 
-  addLink(s: string, d: qg.Noper, inp: qt.Input, ps: qt.Params, i: number) {
+  addLink(s: string, d: qg.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
     if (s !== d.name) {
-      const isRef = ps.refEdges[d.op + ' ' + i] === true;
-      const l = new qt.Link<qg.Edata>([s, d.name], this.opts);
+      const isRef = ps.refs[d.op + ' ' + i] === true;
+      const l = new qg.Link<qg.Edata>([s, d.name], this.opts);
       l.data = {
-        isControl: inp.isControl,
+        isControl: inp.control,
         isRef,
         out: inp.out
       } as qg.Edata;
@@ -79,14 +80,14 @@ function strictName(n: string) {
 
 export async function build(
   def: proto.GraphDef,
-  ps: qt.Params,
+  ps: qt.BuildPs,
   t: qu.Tracker
 ): Promise<SlimGraph> {
   const inEmbed = {} as qt.Dict<qg.Noper>;
   const outEmbed = {} as qt.Dict<qg.Noper>;
   const outs = {} as qt.Dict<qg.Noper[]>;
-  const isIn = embedPred(ps.inbedTypes);
-  const isOut = embedPred(ps.outbedTypes);
+  const isIn = embedPred(ps.inbedTs);
+  const isOut = embedPred(ps.outbedTs);
   const es = [] as string[];
   const raws = def.node;
   const ns = new Array<string>(raws.length);
@@ -94,7 +95,7 @@ export async function build(
     const ops = new Array<qg.Noper>(raws.length);
     let i = 0;
     function raw(p: proto.NodeDef) {
-      const o = new qg.Noper(p);
+      const o = new qn.Noper(p);
       if (isIn(o)) {
         es.push(o.name);
         inEmbed[o.name] = o;

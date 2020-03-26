@@ -15,10 +15,10 @@ export class Graph<
   N extends qn.Ndata,
   E extends qe.Emeta
 > extends qg.Graph<G, N, E> {
-  build(h: qh.Hierarchy, names: qt.Dict<string>, ps: qh.Params) {
+  build(h: qh.Hierarchy, names: qt.Dict<string>, ps: qt.HierarchyPs) {
     this.nodes().forEach(n => {
       const nd = this.node(n);
-      if (qg.isMeta(nd)) this.build(nd.meta, h, names, ps);
+      if (qg.isMeta(nd)) nd.meta.build(h, names, ps);
     });
     const f = ps.patterns ? this.detect : this.collect;
     const ss = f(this.cluster(), h.opts);
@@ -38,7 +38,7 @@ export class Graph<
         const nd = (this.node(n) as any) as qg.Noper;
         s.meta.setNode(n, nd);
         s.parent = nd.parent as any;
-        s.cardinality++;
+        s.cardin++;
         s.incHistoFrom(nd);
         s.incCompatFrom(nd);
         nd.inbeds.forEach(b => s.incCompatFrom(b));

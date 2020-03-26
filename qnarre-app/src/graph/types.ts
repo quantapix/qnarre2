@@ -56,12 +56,16 @@ export interface Border {
   right: string[];
 }
 
-export interface Pad extends Point {
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-  v: number;
+export class Pad {
+  x?: number;
+  y?: number;
+  v?: number;
+  constructor(
+    public top = 0,
+    public bottom = 0,
+    public left = 0,
+    public right = 0
+  ) {}
 }
 
 export interface Arrow {

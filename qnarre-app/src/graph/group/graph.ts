@@ -4,7 +4,7 @@ import * as qg from '../graph';
 import * as qt from './types';
 import * as qu from './utils';
 
-import {NodeDef} from './proto';
+export {Link, Nodes} from '../graph';
 
 export interface Gdata extends qt.Opts {
   name: string;
@@ -17,34 +17,19 @@ export abstract class Ndata {
   include?: boolean;
   expanded?: boolean;
   attrs = {} as qt.Dict<any>;
-  constructor(
-    public name: string,
-    public type: qt.NodeType,
-    public cardinality = 1
-  ) {}
+  constructor(public type: qt.NodeType, public name = '', public cardin = 1) {}
 }
 
 export interface Nbridge extends Ndata {
-  inbound: boolean;
+  inbound?: boolean;
 }
 
-export class Ndots extends Ndata {
-  more = 0;
-
-  constructor(m: number) {
-    super('', qt.NodeType.DOTS);
-    this.setMore(m);
-  }
-
-  setMore(m: number) {
-    this.more = m;
-    this.name = '... ' + m + ' more';
-  }
+export interface Ndots extends Ndata {
+  more: number;
+  setMore(m: number): this;
 }
 
-export type Shapes = number[][];
-
-export class Noper extends Ndata {
+export interface Noper extends Ndata {
   parent?: Noper | Nclus;
   op: string;
   device?: string;
@@ -52,93 +37,31 @@ export class Noper extends Ndata {
   list?: string;
   attr: {key: string; value: any}[];
   ins: qt.Input[];
-  inbeds = [] as Noper[];
-  outbeds = [] as Noper[];
-  shapes: Shapes;
+  inbeds: Noper[];
+  outbeds: Noper[];
+  shapes: qt.Shapes;
   inIdx?: number;
   outIdx?: number;
-  compatible = false;
-
-  constructor(d: NodeDef) {
-    super(d.name, qt.NodeType.OPER);
-    this.op = d.op;
-    this.device = d.device;
-    this.cluster = cluster(d.attr);
-    this.attr = d.attr;
-    this.ins = inputs(d.input);
-    this.shapes = shapes(d.attr);
-  }
+  compatible?: boolean;
 }
 
 export function isOper(x?: any): x is Noper {
   return x?.type === qt.NodeType.OPER;
 }
 
-function cluster(ps: {key: string; value: any}[]) {
-  for (let i = 0; i < ps.length; i++) {
-    if (ps[i].key === '_cluster') return ps[i].value['s'] as string;
-  }
-  return undefined;
-}
-
-function inputs(ns: string[]) {
-  const ins = [] as qt.Input[];
-  ns.forEach(n => {
-    const isControl = n.startsWith('^');
-    if (isControl) n = n.substring(1);
-    let name = n;
-    let out = '0';
-    let m = n.match(/(.*):(\w+:\d+)$/);
-    if (m) {
-      name = m[1];
-      out = m[2];
-    } else {
-      m = n.match(/(.*):(\d+)$/);
-      if (m) {
-        name = m[1];
-        out = m[2];
-      }
-    }
-    if (ins.length === 0 || ins[ins.length - 1].name !== name) {
-      ins.push({isControl, name, out});
-    }
-  });
-  return ins;
-}
-
-function shapes(ps: {key: string; value: any}[]) {
-  for (let i = 0; i < ps.length; i++) {
-    const {key, value} = ps[i];
-    if (key === '_output_shapes') {
-      const r = value.list.shape.map((s: any) => {
-        if (s.unknown_rank) return undefined;
-        if (s.dim == null || (s.dim.length === 1 && s.dim[0].size == null)) {
-          return [];
-        }
-        return s.dim.map((d: {size: number}) => d.size);
-      });
-      ps.splice(i, 1);
-      return r as Shapes;
-    }
-  }
-  return [] as Shapes;
-}
-
-export type MetaGraph<N = Nclus | Noper, E = Emeta> = qg.Graph<Gdata, N, E>;
-export type BridgeGraph<N = Nclus | Noper, E = Emeta> = qg.Graph<Gdata, N, E>;
-
-export type Histos = qt.Dict<qt.Dict<number>>;
+type _Graph = qg.Graph<Gdata, Ndata, Emeta>;
 
 export abstract class Nclus extends Ndata {
+  core?: _Graph;
   parent?: Nclus;
-  bridge?: BridgeGraph;
-  histo = {} as Histos;
+  bridge?: _Graph;
+  histo = {} as qt.Histos;
   noControls?: boolean;
 
-  constructor(n: string, t: qt.NodeType, public meta: MetaGraph) {
+  constructor(n: string, t: qt.NodeType, public meta: _Graph) {
     super(n, t, 0);
-    this.histo.device = {} as qt.Dict<number>;
-    this.histo.cluster = {} as qt.Dict<number>;
+    this.histo.device = {};
+    this.histo.cluster = {};
     this.histo.compat = {compats: 0, incompats: 0};
   }
 
@@ -250,6 +173,10 @@ export class Nlist extends Nclus {
   }
 }
 
+export function isList(x?: any): x is Nlist {
+  return x?.type === qt.NodeType.LIST;
+}
+
 export function listName(
   pre: string,
   suf: string,
@@ -263,7 +190,7 @@ export function listName(
 }
 
 export interface Edata {
-  name: string;
+  name?: string;
   control?: boolean;
   ref?: boolean;
   out: string;
@@ -275,7 +202,7 @@ export interface Hierarchy {
 }
 
 export class Emeta implements Edata {
-  name = '';
+  name?: string;
   control?: boolean;
   ref?: boolean;
   out = '';

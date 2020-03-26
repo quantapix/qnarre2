@@ -23,7 +23,7 @@ export class Hierarchy implements qg.Hierarchy {
   libfns = {} as qt.Dict<qg.Library>;
   orders = {} as qt.Dict<qt.Dict<number>>;
   templates = {} as qt.Dict<qg.Template>;
-  private _nodes = new qt.Nodes<Nclus>();
+  private _nodes = new qg.Nodes<Nclus>();
 
   constructor(public opts = {} as qt.Opts) {
     this.opts.isCompound = true;
@@ -90,7 +90,7 @@ export class Hierarchy implements qg.Hierarchy {
     throw Error('No child for desc: ' + desc);
   }
 
-  sizeOf(l: qt.Link<qg.Edata>) {
+  sizeOf(l: qg.Link<qg.Edata>) {
     const n = this.node(l.nodes[0]) as qg.Noper;
     if (!n.shapes.length) return 1;
     this.hasShape = true;
@@ -107,10 +107,9 @@ export class Hierarchy implements qg.Hierarchy {
         nd.ins.forEach(i => {
           if (i.name === b.name) {
             const m = new qg.Emeta(true);
-            const l = new qt.Link<qg.Edata>([b.name, n], this.opts);
+            const l = new qg.Link<qg.Edata>([b.name, n], this.opts);
             l.data = {
-              isControl: i.isControl,
-              isRef: false,
+              control: i.control,
               out: i.out
             } as qg.Edata;
             m.addLink(l, this);
@@ -131,10 +130,9 @@ export class Hierarchy implements qg.Hierarchy {
         b.ins.forEach(i => {
           if (i.name === n) {
             const m = new qg.Emeta();
-            const l = new qt.Link<qg.Edata>([n, b.name], this.opts);
+            const l = new qg.Link<qg.Edata>([n, b.name], this.opts);
             l.data = {
-              isControl: i.isControl,
-              isRef: false,
+              control: i.control,
               out: i.out
             } as qg.Edata;
             m.addLink(l, this);
@@ -210,7 +208,7 @@ export class Hierarchy implements qg.Hierarchy {
       os[o.op].push(o);
       for (let i = 0; i < path.length; i++) {
         p.depth = Math.max(p.depth, path.length - i);
-        p.cardinality += o.cardinality;
+        p.cardin += o.cardin;
         p.incHistoFrom(o);
         p.incCompatFrom(o);
         o.inbeds.forEach(b => p.incCompatFrom(b));
@@ -274,7 +272,7 @@ export class Hierarchy implements qg.Hierarchy {
         m = new qg.Emeta();
         n.meta.setEdge(sd, m);
       }
-      if (!n.noControls && !m.isControl) n.noControls = true;
+      if (!n.noControls && !m.control) n.noControls = true;
       m!.addLink(n.meta.link(sd)!, this);
     });
   }
@@ -307,7 +305,7 @@ export class Hierarchy implements qg.Hierarchy {
     });
   }
 
-  incompats(ps: Params) {
+  incompats(ps: qt.HierarchyPs) {
     const ns = [] as Nclus[];
     const added = {} as qt.Dict<qg.Nlist>;
     this.root.leaves().forEach(n => {
@@ -369,7 +367,7 @@ class Edges {
   control = [] as qg.Emeta[];
   regular = [] as qg.Emeta[];
 
-  update(ls?: qt.Link<Emeta>[]) {
+  update(ls?: qg.Link<Emeta>[]) {
     ls?.forEach(l => {
       const m = l.data!;
       const ts = m.num.regular ? this.regular : this.control;
@@ -378,17 +376,9 @@ class Edges {
   }
 }
 
-export interface Params {
-  thresh: number;
-  rankdir: qt.Dir;
-  verify: boolean;
-  patterns: boolean;
-  groups: qt.Dict<boolean>;
-}
-
 export async function build(
   g: qs.SlimGraph,
-  ps: Params,
+  ps: qt.HierarchyPs,
   t: qu.Tracker
 ): Promise<Hierarchy> {
   const h = new Hierarchy({rankdir: ps.rankdir} as qt.Opts);
@@ -411,7 +401,7 @@ export async function build(
   await t.runAsyncTask(
     'Find similars',
     30,
-    () => (h.templates = template.detect(h, ps.verify))
+    () => (h.templates = template.detect(h, !!ps.verify))
   );
   return h;
 }

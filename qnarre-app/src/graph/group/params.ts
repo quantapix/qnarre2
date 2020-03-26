@@ -1,20 +1,25 @@
 import * as d3 from 'd3';
+
 import * as qt from './types';
 
 export const ROOT = '__root__';
 export const SLASH = '/';
 export const LIB_PRE = '__function_library__';
 
+export const displayRegex = new RegExp(
+  '^(?:' + LIB_PRE + ')?(\\w+)_[a-z0-9]{8}(?:_\\d+)?$'
+);
+
 export const MIN_AUX_WIDTH = 140;
 
 export const KEY_DELIM = '--';
-export const MIN_EDGE_WIDTH = 0.75;
-export const MAX_EDGE_WIDTH = 12;
+export const MIN_E_WIDTH = 0.75;
+export const MAX_E_WIDTH = 12;
 
-export const LARGE_ATTRS_KEY = '_too_large_attrs';
-export const LIMIT_ATTR_SIZE = 1024;
+export const LARGE_KEY = '_too_large_attrs';
+export const ATTR_SIZE = 1024;
 
-export const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+export const SVG_SPACE = 'http://www.w3.org/2000/svg';
 
 export const PARAMS = {
   animation: {
@@ -112,19 +117,19 @@ export const PARAMS = {
   }
 };
 
-export const HierarchyParams = {
-  verifyTemplate: true,
-  seriesMinSize: 5,
-  seriesMap: {},
-  rankdir: 'BT' as 'TB' | 'BT' | 'LR' | 'RL',
-  usePatterns: false
+export const HierarchyPs: qt.HierarchyPs = {
+  thresh: NaN,
+  rankdir: 'bt' as qt.Dir,
+  verify: true,
+  groups: {}
+  // seriesMinSize: 5,
+  // seriesMap: {},
 };
 
-export const BuildParams: qt.Params = {
-  embed: true,
-  inbedTypes: ['Const'],
-  outbedTypes: ['^[a-zA-Z]+Summary$'],
-  refEdges: {
+export const BuildPs: qt.BuildPs = {
+  inbedTs: ['Const'],
+  outbedTs: ['^[a-zA-Z]+Summary$'],
+  refs: {
     'Assign 0': true,
     'AssignAdd 0': true,
     'AssignSub 0': true,
@@ -141,7 +146,7 @@ export const BuildParams: qt.Params = {
   }
 };
 
-export const GdataParams = {
+export const GdataPs = {
   enableExtraction: true,
   minNodeCountForExtraction: 15,
   minDegreeForExtraction: 5,
@@ -269,44 +274,44 @@ export const OP_GROUP_COLORS = [
 }, {} as {[k: string]: any});
 
 export const OperColors = {
-  DEFAULT_FILL: '#ffffff',
-  DEFAULT_STROKE: '#b2b2b2',
-  COMPATIBLE: '#0f9d58',
-  INCOMPATIBLE: '#db4437'
+  FILL: '#ffffff',
+  STROKE: '#b2b2b2',
+  COMPAT: '#0f9d58',
+  INCOMPAT: '#db4437'
 };
 
 export const MetaColors = {
-  DEFAULT_FILL: '#d9d9d9',
-  DEFAULT_STROKE: '#a6a6a6',
-  SATURATION: 0.6,
+  UNKNOWN: '#eee',
+  FILL: '#d9d9d9',
+  STROKE: '#a6a6a6',
+  GRADIENT: '#888',
   LIGHTNESS: 0.85,
+  SATURATION: 0.6,
   EXPANDED: '#f0f0f0',
   HUES: [220, 100, 180, 40, 20, 340, 260, 300, 140, 60],
-  STRUCTURE(id: number, lightened?: boolean) {
+  STRUCT(id: number, lighten?: boolean) {
     const hues = MetaColors.HUES;
     const n = hues.length;
     const hue = hues[id % n];
     const m = Math.sin((hue * Math.PI) / 360);
-    const sat = lightened ? 30 : 90 - 60 * m;
-    const light = lightened ? 95 : 80;
+    const sat = lighten ? 30 : 90 - 60 * m;
+    const light = lighten ? 95 : 80;
     return d3.hsl(hue, 0.01 * sat, 0.01 * light).toString();
   },
-  DEVICE(index: number): string {
-    return MetaColors.STRUCTURE(index);
+  DEVICE(i: number): string {
+    return MetaColors.STRUCT(i);
   },
-  CLUSTER(index: number): string {
-    return MetaColors.STRUCTURE(index);
-  },
-  UNKNOWN: '#eee',
-  GRADIENT: '#888'
+  CLUSTER(i: number): string {
+    return MetaColors.STRUCT(i);
+  }
 };
 
 export const ListColors = {
-  DEFAULT_FILL: 'white',
-  DEFAULT_STROKE: '#b2b2b2'
+  FILL: 'white',
+  STROKE: '#b2b2b2'
 };
 
-export const healthEntries: qt.HealthEntry[] = [
+export const healthEs: qt.HealthEntry[] = [
   {
     background: '#CC2F2C',
     label: 'NaN'

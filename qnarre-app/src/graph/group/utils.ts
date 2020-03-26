@@ -16,6 +16,56 @@ export function stringToBuffer(s: string) {
   return buf;
 }
 
+export function cluster(ps: {key: string; value: any}[]) {
+  for (let i = 0; i < ps.length; i++) {
+    if (ps[i].key === '_cluster') return ps[i].value['s'] as string;
+  }
+  return undefined;
+}
+
+export function inputs(ns: string[]) {
+  const ins = [] as qt.Input[];
+  ns.forEach(n => {
+    const control = n.startsWith('^');
+    if (control) n = n.substring(1);
+    let name = n;
+    let out = '0';
+    let m = n.match(/(.*):(\w+:\d+)$/);
+    if (m) {
+      name = m[1];
+      out = m[2];
+    } else {
+      m = n.match(/(.*):(\d+)$/);
+      if (m) {
+        name = m[1];
+        out = m[2];
+      }
+    }
+    if (ins.length === 0 || ins[ins.length - 1].name !== name) {
+      ins.push({control, name, out});
+    }
+  });
+  return ins;
+}
+
+export function shapes(ps: {key: string; value: any}[]) {
+  for (let i = 0; i < ps.length; i++) {
+    const {key, value} = ps[i];
+    if (key === '_output_shapes') {
+      const r = value.list.shape.map((s: any) => {
+        if (s.unknown_rank) return undefined;
+        if (s.dim == null || (s.dim.length === 1 && s.dim[0].size == null)) {
+          return [];
+        }
+        return s.dim.map((d: {size: number}) => d.size);
+      });
+      ps.splice(i, 1);
+      return r as qt.Shapes;
+    }
+  }
+  return [] as qt.Shapes;
+}
+
 export class Stats {
   bytes?: number;
   start?: number;
@@ -51,7 +101,7 @@ export function time<T>(m: string, task: () => T) {
 
 const ASYNC_TASK_DELAY = 20;
 
-export function getTracker(c: any) {
+export function tracker(c: any) {
   return new Tracker({
     setMessage: msg => {
       c.set('progress', {value: c.progress.value, msg});
