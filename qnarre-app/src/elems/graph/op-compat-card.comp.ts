@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import * as params from '../../graph/group/params';
-import * as hierarchy from '../../graph/group/hierarchy';
+import * as params from '../../graph/params';
+import * as hierarchy from '../../graph/hierarchy';
 
 @Component({
   selector: 'qnr-op-compat-list-item',

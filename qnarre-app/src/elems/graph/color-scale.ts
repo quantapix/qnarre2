@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-import * as qb from '../../graph/group/backend';
+import * as qb from '../../graph/backend';
 import {standard} from './palettes';
 
 // Example usage:

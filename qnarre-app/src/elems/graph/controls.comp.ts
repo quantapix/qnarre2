@@ -1,8 +1,8 @@
 import {Component, OnInit} from '@angular/core';
-import {SelectionType} from '../../graph/group/types';
-import * as render from '../../graph/group/gdata';
-import * as proto from '../../graph/group/proto';
-import * as util from '../../graph/group/utils';
+import {SelectionType} from '../../graph/types';
+import * as render from '../../graph/gdata';
+import * as proto from '../../graph/proto';
+import * as util from '../../graph/utils';
 
 interface DeviceNameExclude {
   regex: RegExp;

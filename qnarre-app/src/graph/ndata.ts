@@ -11,7 +11,7 @@ import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './utils';
 
-import * as menu from '../../elems/graph/contextmenu';
+import * as menu from '../elems/graph/contextmenu';
 import {PARAMS as PS} from './params';
 import {NodeDef} from './proto';
 

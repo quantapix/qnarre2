@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import * as backend from '../../graph/group/backend';
+import * as backend from '../../graph/backend';
 
 /**
  * @typedef {{

@@ -1,4 +1,4 @@
-import * as categ_utils from '../../graph/group/category';
+import * as categ_utils from '../../graph/category';
 
 const {expect} = chai;
 

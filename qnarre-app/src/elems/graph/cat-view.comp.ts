@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import * as categ_utils from '../../graph/group/category';
+import * as categ_utils from '../../graph/category';
 import * as storage from './storage';
 
 const LIMIT_LOCAL_STORAGE_KEY = 'TF.TensorBoard.PaginatedView.limit';

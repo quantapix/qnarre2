@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 import * as qe from './edata';
 import * as ql from './layout';
-import * as qm from '../../elems/graph/contextmenu';
+import * as qm from '../elems/graph/contextmenu';
 import * as qn from './ndata';
 import * as qr from './gdata';
 import * as qs from './scene';

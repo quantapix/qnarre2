@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import * as params from '../../graph/group/params';
+import * as params from '../../graph/params';
 
 export enum GraphIconType {
   CONST = 'CONST',

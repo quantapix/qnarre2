@@ -1,10 +1,10 @@
 import {Component, OnInit} from '@angular/core';
-import * as backend from '../../graph/group/backend';
-import * as loader from '../../graph/group/loader';
-import * as q_graph from '../../graph/group/graph';
-import * as util from '../../graph/group/utils';
-import * as hierarchy from '../../graph/group/hierarchy';
-import * as op from '../../graph/group/oper';
+import * as backend from '../../graph/backend';
+import * as loader from '../../graph/loader';
+import * as q_graph from '../../graph/graph';
+import * as util from '../../graph/utils';
+import * as hierarchy from '../../graph/hierarchy';
+import * as op from '../../graph/oper';
 
 @Component({
   selector: 'qnr-graph-dashboard-loader',

@@ -2,12 +2,12 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 import {Component, OnInit, Input} from '@angular/core';
 
-import * as ql from '../../graph/group/layout';
-import * as qn from '../../graph/group/ndata';
-import * as qp from '../../graph/group/params';
-import * as qs from '../../graph/group/scene';
-import * as qt from '../../graph/group/types';
-import * as qu from '../../graph/group/utils';
+import * as ql from '../../graph/layout';
+import * as qn from '../../graph/ndata';
+import * as qp from '../../graph/params';
+import * as qs from '../../graph/scene';
+import * as qt from '../../graph/types';
+import * as qu from '../../graph/utils';
 
 @Component({
   selector: 'qnr-graph-scene',
