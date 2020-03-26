@@ -1,4 +1,4 @@
-import * as util from './util';
+import * as util from './utils';
 import * as graph from './graph';
 import * as hierarchy from './hierarchy';
 import * as loader from './loader';

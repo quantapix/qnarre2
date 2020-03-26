@@ -1,4 +1,4 @@
-import * as util from './util';
+import * as util from './utils';
 
 describe('util', () => {
   it('remove common prefix', () => {

@@ -1,5 +1,5 @@
 import * as qb from '../../graph/group/backend';
-import * as qu from '../../graph/group/util';
+import * as qu from '../../graph/group/utils';
 
 type StringDict = {[key: string]: string};
 export const TAB = '__tab__';

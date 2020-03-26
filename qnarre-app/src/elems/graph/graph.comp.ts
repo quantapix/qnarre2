@@ -6,7 +6,7 @@ import * as qg from '../../graph/group/graph';
 import * as qh from '../../graph/group/hierarchy';
 import * as qr from '../../graph/group/gdata';
 import * as qt from '../../graph/group/types';
-import * as qu from '../../graph/group/util';
+import * as qu from '../../graph/group/utils';
 
 @Component({
   selector: 'qnr-graph',

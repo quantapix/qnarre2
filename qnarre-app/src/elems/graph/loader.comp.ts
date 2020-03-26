@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import * as loader from '../../graph/group/loader';
-import * as util from '../../graph/group/util';
+import * as util from '../../graph/group/utils';
 import * as op from '../../graph/group/oper';
 
 @Component({

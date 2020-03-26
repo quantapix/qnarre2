@@ -9,7 +9,7 @@ import * as ql from './layout';
 import * as qp from './params';
 import * as qs from './scene';
 import * as qt from './types';
-import * as qu from './util';
+import * as qu from './utils';
 
 import * as menu from '../../elems/graph/contextmenu';
 import {PARAMS as PS} from './params';
@@ -34,7 +34,7 @@ export class Ndata implements qt.Point, qt.Area, _Ndata {
   stats?: qg.Stats;
   include?: boolean;
   attrs = {} as qt.Dict<any>;
-  expanded = false;
+  expanded?: boolean;
   x = 0;
   y = 0;
   w = 0;

@@ -1,9 +1,6 @@
 import * as qg from '../graph';
 import * as qt from '../types';
 
-export {Dict, Dir, Point, Area, Pad, Rect, Selection} from '../types';
-export {Named, Nodes, Edges, Link, Graph} from '../graph';
-
 export enum GraphType {
   FULL,
   EMBEDDED,

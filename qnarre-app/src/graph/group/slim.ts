@@ -3,7 +3,7 @@ import * as proto from './proto';
 import * as qg from './graph';
 import * as qp from './params';
 import * as qt from './types';
-import * as qu from './util';
+import * as qu from './utils';
 
 export class SlimGraph {
   opers = {} as qt.Dict<qg.Noper>;

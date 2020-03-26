@@ -1,4 +1,4 @@
-import * as util from '../../graph/group/util';
+import * as util from '../../graph/group/utils';
 
 function setHash(hash) {
   util.setFakeHash(hash);

@@ -5,7 +5,7 @@ import * as qg from './graph';
 import * as qp from './params';
 import * as qs from './slim';
 import * as qt from './types';
-import * as qu from './util';
+import * as qu from './utils';
 
 import * as meta from './meta';
 import * as proto from './proto';

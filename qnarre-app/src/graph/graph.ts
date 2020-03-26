@@ -1,12 +1,5 @@
+import * as qt from './types';
 import * as qu from './utils';
-
-export interface Named {
-  name?: string;
-}
-
-export function isNamed(x?: Named | string | number): x is Named {
-  return x ? typeof x !== 'string' && typeof x !== 'number' : false;
-}
 
 export interface Opts {
   isCompound?: boolean;
@@ -14,7 +7,7 @@ export interface Opts {
   isMultiple?: boolean;
 }
 
-export class Link<E> implements Named {
+export class Link<E> implements qt.Named {
   readonly nodes: string[];
   readonly edge: string;
   data?: E;
@@ -159,7 +152,7 @@ export class Graph<G, N, E> {
     const n = String(x);
     const setIt = () => {
       const nd = d ?? this._defNode(n);
-      if (isNamed(nd)) nd.name = nd.name ?? n;
+      if (qt.isNamed(nd)) nd.name = nd.name ?? n;
       this._nodes.set(n, nd);
     };
     if (this._nodes.has(n)) {
@@ -188,7 +181,7 @@ export class Graph<G, N, E> {
     const setIt = (l: Link<E>) => {
       const ed = d ?? this._defEdge(l);
       if (ed || l.data) {
-        if (isNamed(ed)) ed.name = ed.name ?? l.name;
+        if (qt.isNamed(ed)) ed.name = ed.name ?? l.name;
         l.data = ed;
       }
     };

@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 
-export type Selection = d3.Selection<any, any, any, any>;
-
 export type Scalar = string | number | boolean;
+
+export type Selection = d3.Selection<any, any, any, any>;
 
 export interface Dict<T> {
   [k: string]: T;
@@ -12,6 +12,14 @@ export interface ArrayLike<T> {
   [i: number]: T;
   length: number;
   item(i: number): T | undefined;
+}
+
+export interface Named {
+  name?: string;
+}
+
+export function isNamed(x?: Named | string | number): x is Named {
+  return x ? typeof x !== 'string' && typeof x !== 'number' : false;
 }
 
 export type Dir = 'tb' | 'bt' | 'lr' | 'rl';

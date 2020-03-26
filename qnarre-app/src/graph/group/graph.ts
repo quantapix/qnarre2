@@ -1,40 +1,29 @@
 import * as _ from 'lodash';
 
+import * as qg from '../graph';
 import * as qt from './types';
+import {Dict} from '../types';
+import * as qu from './utils';
+
 import * as proto from './proto';
 
-export interface Gdata extends qt.Named, qt.Opts {
+export interface Gdata extends qt.Opts {
+  name: string;
   type: string | number;
 }
 
 export abstract class Ndata {
   parent?: Ndata;
-  stats?: Stats;
+  stats?: qu.Stats;
   include?: boolean;
-  attrs = {} as qt.Dict<any>;
+  expanded?: boolean;
+  attrs = {} as Dict<any>;
   constructor(
     public name: string,
     public type: qt.NodeType,
     public cardinality = 1
   ) {}
 }
-
-export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
-  n: string,
-  t: string | number,
-  o = {} as qt.Opts
-) {
-  const g = new qt.Graph<G, N, E>(o);
-  const d = o as G;
-  d.name = n;
-  d.type = t;
-  d.rankdir = d.rankdir ?? 'bt';
-  g.setData(d);
-  return g;
-}
-
-export type MetaGraph<N = Nclus | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
-export type BridgeGraph<N = Nclus | Noper, E = Emeta> = qt.Graph<Gdata, N, E>;
 
 export interface Nbridge extends Ndata {
   inbound: boolean;
@@ -132,7 +121,10 @@ function shapes(ps: {key: string; value: any}[]) {
   return [] as Shapes;
 }
 
-export type Histos = qt.Dict<qt.Dict<number>>;
+export type MetaGraph<N = Nclus | Noper, E = Emeta> = qg.Graph<Gdata, N, E>;
+export type BridgeGraph<N = Nclus | Noper, E = Emeta> = qg.Graph<Gdata, N, E>;
+
+export type Histos = Dict<Dict<number>>;
 
 export abstract class Nclus extends Ndata {
   parent?: Nclus;
@@ -142,8 +134,8 @@ export abstract class Nclus extends Ndata {
 
   constructor(n: string, t: qt.NodeType, public meta: MetaGraph) {
     super(n, t, 0);
-    this.histo.device = {} as qt.Dict<number>;
-    this.histo.cluster = {} as qt.Dict<number>;
+    this.histo.device = {} as Dict<number>;
+    this.histo.cluster = {} as Dict<number>;
     this.histo.compat = {compats: 0, incompats: 0};
   }
 
@@ -165,6 +157,8 @@ export abstract class Nclus extends Ndata {
       c.incompats += 1;
     }
   }
+
+  setDepth(_d: number) {}
 }
 
 export function isClus(x?: any): x is Nclus {
@@ -182,7 +176,7 @@ export class Nmeta extends Nclus {
       qt.NodeType.META,
       createGraph<Gdata, Nclus | Noper, Emeta>(n, qt.GraphType.META, o)
     );
-    this.histo.op = {} as qt.Dict<number>;
+    this.histo.op = {} as Dict<number>;
   }
 
   firstChild() {
@@ -228,6 +222,11 @@ export function isMeta(x?: any): x is Nmeta {
   return x?.type === qt.NodeType.META;
 }
 
+export interface Library {
+  meta: Nmeta;
+  usages: Noper[];
+}
+
 export class Nlist extends Nclus {
   hasLoop = false;
   ids = [] as number[];
@@ -260,7 +259,8 @@ export function listName(
   return (p ? p + '/' : '') + n;
 }
 
-export interface Edata extends qt.Named {
+export interface Edata {
+  name: string;
   isControl: boolean;
   isRef: boolean;
   out: string;
@@ -268,20 +268,21 @@ export interface Edata extends qt.Named {
 
 export interface Hierarchy {
   maxEdgeSize: number;
-  sizeOf(l: qt.Link<Edata>): number;
+  sizeOf(l: qg.Link<Edata>): number;
 }
 
 export class Emeta implements Edata {
+  name = '';
   isControl = false;
   isRef = false;
   out = '';
-  links = [] as qt.Link<Edata>[];
+  links = [] as qg.Link<Edata>[];
   num = {regular: 0, control: 0, ref: 0};
   size = 0;
 
   constructor(public inbound?: boolean) {}
 
-  addLink(l: qt.Link<Edata>, h: Hierarchy) {
+  addLink(l: qg.Link<Edata>, h: Hierarchy) {
     this.links.push(l);
     if (l.data?.isControl) {
       this.num.control += 1;
@@ -295,51 +296,25 @@ export class Emeta implements Edata {
   }
 }
 
-export interface LibraryFn {
-  meta: Nmeta;
-  usages: Noper[];
-}
-
 export type Template = {names: string[]; level: number};
 export type Group = {nodes: Nmeta[]; level: number};
 export type Cluster = {node: Nmeta; names: string[]};
 
-export class Stats {
-  bytes?: number;
-  start?: number;
-  end?: number;
-
-  constructor(public size: number[][]) {}
-
-  addBytes(b: number) {
-    this.bytes = Math.max(this.bytes ?? 0, b);
-  }
-  addTime(s: number, e: number) {
-    this.start = Math.min(this.start ?? Infinity, s);
-    this.end = Math.max(this.end ?? 0, e);
-  }
-  combine(ss: Stats) {
-    this.bytes = this.bytes ?? 0 + (ss.bytes ?? 0);
-    if (ss.getMicros() !== undefined) this.addTime(ss.start!, ss.end!);
-  }
-  getMicros() {
-    if (this.start !== undefined && this.end !== undefined) {
-      return this.end - this.start;
-    }
-    return undefined;
-  }
-}
-
-export class Graph<G, N, E> extends qt.Graph<G, N, E> {
-  setDepth(depth: number) {
+export class Graph<
+  G extends Gdata,
+  N extends Ndata,
+  E extends Edata
+> extends qg.Graph<G, N, E> {
+  setDepth(d: number) {
     this.nodes().forEach(n => {
-      const nd = this.node(n);
-      nd.expanded = depth > 1;
-      if (depth > 0) {
+      const nd = this.node(n)!;
+      nd.expanded = d > 1;
+      if (d > 0) {
         switch (nd.type) {
           case qt.NodeType.META:
           case qt.NodeType.LIST:
-            (nd as Nclus).setDepth(depth - 1);
+            const cd: Nclus = nd as any;
+            cd.setDepth(d - 1);
             break;
         }
       }
@@ -351,7 +326,6 @@ export class Graph<G, N, E> extends qt.Graph<G, N, E> {
     const d = this.node(ns[1]);
     const e = this.edge(ns);
     if (s?.include && d?.include) return;
-
     addOutAnno(s, d, e, qt.AnnoType.SHORTCUT);
     addInAnno(d, s, s, e, qt.AnnoType.SHORTCUT);
     this.delEdge(ns);
@@ -360,7 +334,7 @@ export class Graph<G, N, E> extends qt.Graph<G, N, E> {
   buildSubhierarchiesForNeededFunctions() {
     this.links().forEach(l => {
       const me = this.edge(l);
-      const ed = new MetaEdata(me);
+      const ed = new Emeta(me);
       _.forEach(ed.metaedge?.bases, e => {
         const ps = e.v.split(qp.SLASH);
         for (let i = ps.length; i >= 0; i--) {
@@ -369,7 +343,7 @@ export class Graph<G, N, E> extends qt.Graph<G, N, E> {
           if (n) {
             if (
               n.type === qt.NodeType.OPER &&
-              this.hierarchy.libfns[(n as qg.Noper).op]
+              this.hierarchy.libfns[(n as Noper).op]
             ) {
               for (let j = 1; j < front.length; j++) {
                 const nn = front.slice(0, j).join(qp.SLASH);
@@ -383,4 +357,18 @@ export class Graph<G, N, E> extends qt.Graph<G, N, E> {
       });
     });
   }
+}
+
+export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
+  n: string,
+  t: string | number,
+  o = {} as qt.Opts
+) {
+  const g = new qg.Graph<G, N, E>(o);
+  const d = o as G;
+  d.name = n;
+  d.type = t;
+  d.rankdir = d.rankdir ?? 'bt';
+  g.setData(d);
+  return g;
 }

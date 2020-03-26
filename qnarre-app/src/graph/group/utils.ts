@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
+
 import * as qt from './types';
+import * as qtt from '../types';
 
 /* eslint-disable no-constant-condition */
 
@@ -15,6 +17,32 @@ export function stringToBuffer(s: string) {
     v[i] = s.charCodeAt(i);
   }
   return buf;
+}
+
+export class Stats {
+  bytes?: number;
+  start?: number;
+  end?: number;
+
+  constructor(public size: number[][]) {}
+
+  addBytes(b: number) {
+    this.bytes = Math.max(this.bytes ?? 0, b);
+  }
+  addTime(s: number, e: number) {
+    this.start = Math.min(this.start ?? Infinity, s);
+    this.end = Math.max(this.end ?? 0, e);
+  }
+  combine(ss: Stats) {
+    this.bytes = this.bytes ?? 0 + (ss.bytes ?? 0);
+    if (ss.getMicros() !== undefined) this.addTime(ss.start!, ss.end!);
+  }
+  getMicros() {
+    if (this.start !== undefined && this.end !== undefined) {
+      return this.end - this.start;
+    }
+    return undefined;
+  }
 }
 
 export function time<T>(m: string, task: () => T) {
@@ -156,7 +184,7 @@ export function convertUnits(v: number, us: Units, idx = 0): string {
   return Number(v.toPrecision(3)) + ' ' + us[idx].symbol;
 }
 
-export function isDisplayable(s: qt.NodeStats) {
+export function isDisplayable(s: Stats) {
   if (s && (s.bytes || s.getMicros() || s.size)) {
     return true;
   }
@@ -331,7 +359,7 @@ export function groupButtonString(group?: boolean): string {
   }
 }
 
-export function toggleGroup(map: qt.Dict<boolean>, n: string) {
+export function toggleGroup(map: qtt.Dict<boolean>, n: string) {
   if (!(n in map) || map[n] === true) {
     map[n] = false;
   } else {

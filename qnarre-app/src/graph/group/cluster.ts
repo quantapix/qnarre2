@@ -36,8 +36,8 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     this.libfnsExtract = [];
   }
 
-  setDepth(depth: number): void {
-    if (this.core) this.core.setDepth(this.core, depth);
+  setDepth(d: number): void {
+    if (this.core) this.core.setDepth(this.core, d);
   }
 
   subBuild(s: qt.Selection, e: qs.GraphElem) {

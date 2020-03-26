@@ -7,7 +7,7 @@ import * as qn from '../../graph/group/ndata';
 import * as qp from '../../graph/group/params';
 import * as qs from '../../graph/group/scene';
 import * as qt from '../../graph/group/types';
-import * as qu from '../../graph/group/util';
+import * as qu from '../../graph/group/utils';
 
 @Component({
   selector: 'qnr-graph-scene',
