@@ -10,7 +10,29 @@ import * as qs from './scene';
 import * as qt from './types';
 import * as qg from './graph';
 
-export class AnnoList {
+export class Anno implements qg.Anno {
+  x = 0;
+  y = 0;
+  w = 0;
+  h = 0;
+  nodes?: string[];
+  points = [] as qt.Point[];
+  offset = 0;
+
+  constructor(
+    public ndata: qg.Ndata,
+    public edata: qg.Edata,
+    public type: qt.AnnoT,
+    public isIn: boolean
+  ) {
+    if (emeta && emeta.metaedge) {
+      this.v = edata.metaedge.v;
+      this.w = edata.metaedge.w;
+    }
+  }
+}
+
+export class AnnoList implements qg.AnnoList {
   list: qg.Anno[];
   names: qt.Dict<boolean>;
 
@@ -25,10 +47,10 @@ export class AnnoList {
       this.list.push(a);
       return;
     }
-    const type = qt.AnnoType.DOTS;
+    const type = qt.AnnoT.DOTS;
     const last = this.list[this.list.length - 1];
     if (last.type === type) {
-      const e = last.node as qt.Ndots;
+      const e = last.node as qg.Ndots;
       e.setCountMore(++e.countMore);
       return;
     }
@@ -52,7 +74,7 @@ export function buildGroup(cont, annos: AnnoList, d: qr.Ndata, elem) {
       if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL_EDGE;
       if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
       qe.appendEdge(g, a, elem, t);
-      if (a.type !== qt.AnnoType.DOTS) {
+      if (a.type !== qt.AnnoT.DOTS) {
         addAnnoLabelFromNode(g, a);
         buildShape(g, a);
       } else {
@@ -72,7 +94,7 @@ export function buildGroup(cont, annos: AnnoList, d: qr.Ndata, elem) {
     .each((a: Anno) => {
       const g = d3.select(this);
       update(g, d, a, elem);
-      if (a.type !== qt.AnnoType.DOTS) addInteraction(g, d, a, elem);
+      if (a.type !== qt.AnnoT.DOTS) addInteraction(g, d, a, elem);
     });
   gs.exit()
     .each((a: Anno) => {
@@ -88,7 +110,7 @@ function annotationToClassName(t: qt.AnnoType) {
 }
 
 function buildShape(group, a: Anno) {
-  if (a.type === qt.AnnoType.SUMMARY) {
+  if (a.type === qt.AnnoT.SUMMARY) {
     const s = qs.selectOrCreate(group, 'use');
     s.attr('class', 'summary')
       .attr('xlink:href', '#summary-icon')
@@ -138,17 +160,17 @@ function addInteraction(sel, d: qr.Ndata, anno: Anno, elem) {
         hostName: d.node.name
       });
     });
-  if (anno.type !== qt.AnnoType.SUMMARY && anno.type !== qt.AnnoType.CONSTANT) {
+  if (anno.type !== qt.AnnoT.SUMMARY && anno.type !== qt.AnnoT.CONSTANT) {
     sel.on('contextmenu', qm.getMenu(elem, qn.getContextMenu(anno.node, elem)));
   }
 }
 
 function update(group, d: qr.Ndata, a: Anno, elem) {
   const cx = ql.computeCXPositionOfNodeShape(d);
-  if (a.ndata && a.type !== qt.AnnoType.DOTS) {
+  if (a.ndata && a.type !== qt.AnnoT.DOTS) {
     qn.stylize(group, a.ndata, elem, qt.Class.Anno.NODE);
   }
-  if (a.type === qt.AnnoType.SUMMARY) a.width += 10;
+  if (a.type === qt.AnnoT.SUMMARY) a.width += 10;
   group
     .select('text.' + qt.Class.Anno.LABEL)
     .transition()

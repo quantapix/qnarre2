@@ -3,7 +3,7 @@ import * as qt from './core/types';
 
 export {Area, Dict, Dir, Pad, Point, Rect, Selection} from './core/types';
 
-export enum GraphType {
+export enum GdataT {
   FULL,
   EMBEDDED,
   META,
@@ -14,7 +14,7 @@ export enum GraphType {
   EDGE
 }
 
-export enum NodeType {
+export enum NdataT {
   META,
   OPER,
   LIST,
@@ -22,14 +22,14 @@ export enum NodeType {
   DOTS
 }
 
-export enum AnnoType {
+export enum AnnoT {
   SHORTCUT,
   CONSTANT,
   SUMMARY,
   DOTS
 }
 
-export enum SelectType {
+export enum SelectT {
   OPER = 'op_graph',
   CONCEPT = 'concept_graph',
   PROFILE = 'profile'

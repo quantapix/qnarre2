@@ -4,8 +4,9 @@ import * as d3 from 'd3';
 import * as qt from './types';
 import * as qr from './gdata';
 import * as qp from './params';
+import * as qg from './graph';
 
-export function layoutScene(d: qr.GroupNdata) {
+export function layoutScene(d: qg.Nclus) {
   if (d.node.isClus) layoutChildren(d);
   if (d.node.type === qt.NodeType.META) {
     layoutMetaNode(d);
@@ -14,19 +15,7 @@ export function layoutScene(d: qr.GroupNdata) {
   }
 }
 
-function updateTotalWidthOfNode(d: qr.Ndata) {
-  d.inboxWidth =
-    d.inAnnotations.list.length > 0 ? qp.PARAMS.annotations.inboxWidth : 0;
-  d.outboxWidth =
-    d.outAnnotations.list.length > 0 ? qp.PARAMS.annotations.outboxWidth : 0;
-  d.coreBox.width = d.width;
-  d.coreBox.height = d.height;
-  const l = d.displayName.length;
-  const w = 3;
-  d.width = Math.max(d.coreBox.width + d.inboxWidth + d.outboxWidth, l * w);
-}
-
-function layoutChildren(d: qr.GroupNdata) {
+function layoutChildren(d: qg.Nclus) {
   const cs = d.coreGraph
     .nodes()
     .map(n => d.coreGraph.node(n))
@@ -44,15 +33,15 @@ function layoutChildren(d: qr.GroupNdata) {
           _.extend(c, qp.PARAMS.nodeSize.meta);
           c.height = qp.PARAMS.nodeSize.meta.height(c.node.cardinality);
         } else {
-          layoutScene(c as qr.GroupNdata);
+          layoutScene(c as qg.Nclus);
         }
         break;
       case qt.NodeType.LIST:
         if (c.expanded) {
           _.extend(c, qp.PARAMS.nodeSize.series.expanded);
-          layoutScene(c as qr.GroupNdata);
+          layoutScene(c as qg.Nclus);
         } else {
-          const g = c as qr.GroupNdata;
+          const g = c as qg.Nclus;
           const series = g.node.noControls
             ? qp.PARAMS.nodeSize.series.vertical
             : qp.PARAMS.nodeSize.series.horizontal;
@@ -143,7 +132,7 @@ function layout(g: qt.Graph<qr.Ndata, qr.MetaEdata>, ps) {
   return {width: maxX - minX, height: maxY - minY};
 }
 
-function layoutMetaNode(d: qr.GroupNdata) {
+function layoutMetaNode(d: qg.Nclus) {
   const ps = qp.PARAMS.subscene.meta;
   _.extend(d, ps);
   _.extend(d.coreBox, layout(d.coreGraph, qp.PARAMS.graph.meta));
@@ -213,7 +202,7 @@ function layoutMetaNode(d: qr.GroupNdata) {
   d.height = d.paddingTop + d.coreBox.height + d.paddingBottom;
 }
 
-function layoutNlist(d: qr.GroupNdata) {
+function layoutNlist(d: qg.Nclus) {
   const g = d.coreGraph;
   const ps = qp.PARAMS.subscene.series;
   _.extend(d, ps);
@@ -319,19 +308,13 @@ function sizeAnnotation(a: qr.Annotation) {
   }
 }
 
-export function computeCXPositionOfNodeShape(d: qr.Ndata) {
-  if (d.expanded) return d.x;
-  const dx = d.inAnnotations.list.length ? d.inboxWidth : 0;
-  return d.x - d.width / 2 + dx + d.coreBox.width / 2;
-}
-
-function angleBetweenTwoPoints(a: qr.Point, b: qr.Point) {
+function angleBetweenTwoPoints(a: qt.Point, b: qt.Point) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   return (180 * Math.atan(dy / dx)) / Math.PI;
 }
 
-function isStraightLine(ps: qr.Point[]) {
+function isStraightLine(ps: qt.Point[]) {
   let angle = angleBetweenTwoPoints(ps[0], ps[1]);
   for (let i = 1; i < ps.length - 1; i++) {
     const n = angleBetweenTwoPoints(ps[i], ps[i + 1]);
@@ -339,24 +322,4 @@ function isStraightLine(ps: qr.Point[]) {
     angle = n;
   }
   return true;
-}
-
-function intersectPointAndNode(p: qr.Point, d: qr.Ndata) {
-  const cx = d.expanded ? d.x : computeCXPositionOfNodeShape(d);
-  const cy = d.y;
-  const dx = p.x - cx;
-  const dy = p.y - cy;
-  let w = d.expanded ? d.width : d.coreBox.width;
-  let h = d.expanded ? d.height : d.coreBox.height;
-  let deltaX: number, deltaY: number;
-  if ((Math.abs(dy) * w) / 2 > (Math.abs(dx) * h) / 2) {
-    if (dy < 0) h = -h;
-    deltaX = dy === 0 ? 0 : ((h / 2) * dx) / dy;
-    deltaY = h / 2;
-  } else {
-    if (dx < 0) w = -w;
-    deltaX = w / 2;
-    deltaY = dx === 0 ? 0 : ((w / 2) * dy) / dx;
-  }
-  return {x: cx + deltaX, y: cy + deltaY} as qr.Point;
 }

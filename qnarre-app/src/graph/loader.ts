@@ -50,7 +50,7 @@ export function loadHierarchicalGraph(
   path?: string,
   blob?: Blob,
   p: op.CompatibilityProvider = new op.TpuCompatibility(),
-  ps = qp.HierarchyParams
+  ps = qp.HierarchyPs
 ) {
   const dT = t.getSubtaskTracker('Data', 30);
   const gT = t.getSubtaskTracker('Graph', 20);
@@ -59,7 +59,7 @@ export function loadHierarchicalGraph(
     .then(
       g => {
         if (!g.node) throw new Error('The graph is empty');
-        return qg.build(g, qp.BuildParams, gT);
+        return qg.build(g, qp.BuildPs, gT);
       },
       () => {
         throw new Error('Malformed GraphDef');

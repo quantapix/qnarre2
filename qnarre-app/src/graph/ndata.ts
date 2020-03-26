@@ -11,9 +11,9 @@ import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './utils';
 
-import * as menu from '../elems/graph/contextmenu';
-import {PARAMS as PS} from './params';
 import {NodeDef} from './proto';
+import {PARAMS as PS} from './params';
+import * as menu from '../elems/graph/contextmenu';
 
 export class Ndata implements qt.Rect, qg.Ndata {
   x = 0;
@@ -21,31 +21,27 @@ export class Ndata implements qt.Rect, qg.Ndata {
   w = 0;
   h = 0;
   r = 0;
-  inW = 0;
-  outW = 0;
-  labelH = 0;
-  labelOff = 0;
+  label = {h: 0, off: 0};
+  width = {in: 0, out: 0};
   display: string;
-  parent?: Ndata;
+  parent?: qg.Ndata;
   stats?: qu.Stats;
   faded?: boolean;
-  library?: boolean;
   include?: boolean;
   excluded?: boolean;
   expanded?: boolean;
   structural?: boolean;
-  inExtract?: boolean;
-  outExtract?: boolean;
   pad = new qt.Pad();
   box = new qt.Area();
   attrs = {} as qt.Dict<any>;
   color = {} as qt.Dict<string>;
   shade: qt.Dict<qt.Shade[]>;
   annos: qt.Dict<qa.AnnoList>;
+  extract = {} as qt.Dict<boolean>;
 
-  constructor(public type: qt.NodeType, public name = '', public cardin = 1) {
+  constructor(public type: qt.NdataT, public name = '', public cardin = 1) {
     this.display = name.substring(name.lastIndexOf(qp.SLASH) + 1);
-    if (type === qt.NodeType.META && ((this as any) as qg.Nmeta).assocFn) {
+    if (qg.isMeta(this) && this.assoc) {
       const m = this.display.match(qp.displayRegex);
       if (m) {
         this.display = m[1];
@@ -58,19 +54,19 @@ export class Ndata implements qt.Rect, qg.Ndata {
   }
 
   isInCore() {
-    return !this.inExtract && !this.outExtract && !this.library;
+    return !this.extract.in && !this.extract.out && !this.extract.lib;
   }
 
   hasTypeIn(ts: string[]) {
-    if (this.type === qt.NodeType.OPER) {
+    if (qg.isOper(this)) {
       for (let i = 0; i < ts.length; i++) {
-        if ((n as any).op === ts[i]) return true;
+        if (this.op === ts[i]) return true;
       }
-    } else if (this.type === qt.NodeType.META) {
-      const root = (n as any).getRootOp();
-      if (root) {
+    } else if (qg.isMeta(this)) {
+      const r = this.rootOp();
+      if (r) {
         for (let i = 0; i < ts.length; i++) {
-          if (root.op === ts[i]) return true;
+          if (r.op === ts[i]) return true;
         }
       }
     }
@@ -89,15 +85,15 @@ export class Ndata implements qt.Rect, qg.Ndata {
   }
 
   listName() {
-    if (this.type === qt.NodeType.LIST) return this.name;
-    if (this.type === qt.NodeType.OPER) return ((this as any) as Noper).list;
+    if (qg.isList(this)) return this.name;
+    if (qg.isOper(this)) return this.list;
     return undefined;
   }
 
   containingList() {
-    if (this.type === qt.NodeType.LIST) return (this as any) as qg.Nlist;
+    if (qg.isList(this)) return this as qg.Nlist;
     const p = this.parent;
-    if (p?.type === qt.NodeType.LIST) return (p as any) as qg.Nlist;
+    if (qg.isList(p)) return p as qg.Nlist;
     return undefined;
   }
 
@@ -134,15 +130,15 @@ export class Ndata implements qt.Rect, qg.Ndata {
 
   nodeClass() {
     switch (this.type) {
-      case qt.NodeType.OPER:
+      case qt.NdataT.OPER:
         return qt.Class.OPER;
-      case qt.NodeType.META:
+      case qt.NdataT.META:
         return qt.Class.META;
-      case qt.NodeType.LIST:
+      case qt.NdataT.LIST:
         return qt.Class.LIST;
-      case qt.NodeType.BRIDGE:
+      case qt.NdataT.BRIDGE:
         return qt.Class.BRIDGE;
-      case qt.NodeType.DOTS:
+      case qt.NdataT.DOTS:
         return qt.Class.DOTS;
       default:
         throw Error('Unrecognized type: ' + this.type);
@@ -194,19 +190,21 @@ export class Ndata implements qt.Rect, qg.Ndata {
       });
   }
 
-  addInAnno(nd: Ndata, em: qg.Emeta, t: qt.AnnoType) {
-    const a = new qg.Anno(nd, em, t, true);
+  addInAnno(nd: qg.Ndata, em: qg.Edata, t: qt.AnnoT) {
+    const a = new qa.Anno(nd, em, t, true);
     this.annos.in.push(a);
+    return this;
   }
 
-  addOutAnno(nd: Ndata, em: qg.Emeta, t: qt.AnnoType) {
-    const a = new qg.Anno(nd, em, t, false);
+  addOutAnno(nd: qg.Ndata, em: qg.Edata, t: qt.AnnoT) {
+    const a = new qa.Anno(nd, em, t, false);
     this.annos.out.push(a);
+    return this;
   }
 
   labelBuild(s: qt.Selection, e: qs.GraphElem) {
     let t = this.display;
-    const scale = this.type === qt.NodeType.META && !this.expanded;
+    const scale = this.type === qt.NdataT.META && !this.expanded;
     const l = qs.selectOrCreate(s, 'text', qt.Class.Node.LABEL);
     const n = l.node();
     n.parent.appendChild(n);
@@ -226,10 +224,10 @@ export class Ndata implements qt.Rect, qg.Ndata {
     let l = e.getComputedTextLength();
     let max: number | undefined;
     switch (this.type) {
-      case qt.NodeType.META:
+      case qt.NdataT.META:
         if (!this.expanded) max = PS.nodeSize.meta.maxLabelWidth;
         break;
-      case qt.NodeType.OPER:
+      case qt.NdataT.OPER:
         max = PS.nodeSize.oper.maxLabelWidth;
         break;
       case -1:
@@ -252,12 +250,38 @@ export class Ndata implements qt.Rect, qg.Ndata {
     return s.append('title').text(e.textContent);
   }
 
+  computeCXPositionOfNodeShape() {
+    if (this.expanded) return this.x;
+    const dx = this.annos.in.list.length ? this.width.in : 0;
+    return this.x - this.w / 2 + dx + this.box.w / 2;
+  }
+
+  intersectPointAndNode(p: qt.Point) {
+    const x = this.expanded ? this.x : this.computeCXPositionOfNodeShape();
+    const y = this.y;
+    const dx = p.x - x;
+    const dy = p.y - y;
+    let w = this.expanded ? this.w : this.box.w;
+    let h = this.expanded ? this.h : this.box.h;
+    let deltaX: number, deltaY: number;
+    if ((Math.abs(dy) * w) / 2 > (Math.abs(dx) * h) / 2) {
+      if (dy < 0) h = -h;
+      deltaX = dy === 0 ? 0 : ((h / 2) * dx) / dy;
+      deltaY = h / 2;
+    } else {
+      if (dx < 0) w = -w;
+      deltaX = w / 2;
+      deltaY = dx === 0 ? 0 : ((w / 2) * dy) / dx;
+    }
+    return {x: x + deltaX, y: y + deltaY} as qt.Point;
+  }
+
   position(s: qt.Selection) {
     const g = qs.selectChild(s, 'g', qt.Class.Node.SHAPE);
-    const cx = ql.computeCXPositionOfNodeShape(this);
+    const cx = this.computeCXPositionOfNodeShape();
     switch (this.type) {
-      case qt.NodeType.OPER: {
-        const od = (this as any) as Noper;
+      case qt.NdataT.OPER: {
+        const od = (this as any) as qg.Noper;
         if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
           const sc = qs.selectChild(g, 'polygon');
           const r = new qt.Rect(this.x, this.y, this.box.w, this.box.h);
@@ -267,15 +291,15 @@ export class Ndata implements qt.Rect, qg.Ndata {
           const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
           qs.positionEllipse(sc, r);
         }
-        labelPosition(s, cx, this.y, this.labelOff);
+        labelPosition(s, cx, this.y, this.label.off);
         break;
       }
-      case qt.NodeType.META: {
+      case qt.NdataT.META: {
         const sa = g.selectAll('rect');
         if (this.expanded) {
           qs.positionRect(sa, this);
           this.subPosition(s);
-          labelPosition(s, cx, this.y, -this.h / 2 + this.labelH / 2);
+          labelPosition(s, cx, this.y, -this.h / 2 + this.label.h / 2);
         } else {
           const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
           qs.positionRect(sa, r);
@@ -283,20 +307,20 @@ export class Ndata implements qt.Rect, qg.Ndata {
         }
         break;
       }
-      case qt.NodeType.LIST: {
+      case qt.NdataT.LIST: {
         const sc = qs.selectChild(g, 'use');
         if (this.expanded) {
           qs.positionRect(sc, this);
           this.subPosition(s);
-          labelPosition(s, cx, this.y, -this.h / 2 + this.labelH / 2);
+          labelPosition(s, cx, this.y, -this.h / 2 + this.label.h / 2);
         } else {
           const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
           qs.positionRect(sc, r);
-          labelPosition(s, cx, this.y, this.labelOff);
+          labelPosition(s, cx, this.y, this.label.off);
         }
         break;
       }
-      case qt.NodeType.BRIDGE: {
+      case qt.NdataT.BRIDGE: {
         const sc = qs.selectChild(g, 'rect');
         qs.positionRect(sc, this);
         break;
@@ -307,18 +331,30 @@ export class Ndata implements qt.Rect, qg.Ndata {
     }
   }
 
+  updateTotalWidthOfNode() {
+    this.width.in =
+      this.annos.in.list.length > 0 ? qp.PARAMS.annotations.inboxWidth : 0;
+    this.width.out =
+      this.annos.out.list.length > 0 ? qp.PARAMS.annotations.outboxWidth : 0;
+    this.box.w = this.w;
+    this.box.h = this.h;
+    const l = this.display.length;
+    const w = 3;
+    this.w = Math.max(this.box.w + this.width.in + this.width.out, l * w);
+  }
+
   buildShape(s: qt.Selection, c: string) {
     const g = qs.selectOrCreate(s, 'g', c);
     switch (this.type) {
-      case qt.NodeType.OPER:
-        const od = (this as any) as Noper;
+      case qt.NdataT.OPER:
+        const od = (this as any) as qg.Noper;
         if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
           qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR);
           break;
         }
         qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR);
         break;
-      case qt.NodeType.LIST:
+      case qt.NdataT.LIST:
         let t = 'annotation';
         const cd = (this as any) as qg.Nclus;
         if (cd.core) {
@@ -334,12 +370,12 @@ export class Ndata implements qt.Rect, qg.Ndata {
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
-      case qt.NodeType.BRIDGE:
+      case qt.NdataT.BRIDGE:
         qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
-      case qt.NodeType.META:
+      case qt.NdataT.META:
         qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
@@ -352,24 +388,24 @@ export class Ndata implements qt.Rect, qg.Ndata {
 
   stylize(s: qt.Selection, e: qs.GraphElem, c?: string) {
     c = c ?? qt.Class.Node.SHAPE;
-    const highlighted = e.isNodeHighlighted(this.name);
-    const selected = e.isNodeSelected(this.name);
-    const extract = this.inExtract || this.outExtract || this.library;
-    const expanded = this.expanded && c !== qt.Class.Anno.NODE;
-    s.classed('highlighted', highlighted);
-    s.classed('selected', selected);
-    s.classed('extract', !!extract);
-    s.classed('expanded', !!expanded);
+    const high = e.isNodeHighlighted(this.name);
+    const sel = e.isNodeSelected(this.name);
+    const ext = this.extract.in || this.extract.out || this.extract.lib;
+    const exp = this.expanded && c !== qt.Class.Anno.NODE;
+    s.classed('highlighted', high);
+    s.classed('selected', sel);
+    s.classed('extract', !!ext);
+    s.classed('expanded', !!exp);
     s.classed('faded', !!this.faded);
     const n = s.select('.' + c + ' .' + qt.Class.Node.COLOR);
     const fill = this.getFillForNode(
       e.templateIndex,
       e.colorBy.toUpperCase() as qt.ColorBy,
-      expanded,
+      exp,
       e.getGraphSvgRoot()
     );
     n.style('fill', fill);
-    n.style('stroke', () => (selected ? null : strokeForFill(fill)));
+    n.style('stroke', () => (sel ? null : strokeForFill(fill)));
   }
 
   getFillForNode(
@@ -381,20 +417,20 @@ export class Ndata implements qt.Rect, qg.Ndata {
     const cs = qp.MetaColors;
     switch (cb) {
       case qt.ColorBy.STRUCTURE:
-        if (this.type === qt.NodeType.META) {
+        if (this.type === qt.NdataT.META) {
           const tid = ((this as any) as qg.Nmeta).template;
           return tid === null ? cs.UNKNOWN : cs.STRUCT(indexer(tid), expanded);
-        } else if (this.type === qt.NodeType.LIST) {
+        } else if (qg.isList(this)) {
           return expanded ? cs.EXPANDED : 'white';
-        } else if (this.type === qt.NodeType.BRIDGE) {
+        } else if (this.type === qt.NdataT.BRIDGE) {
           return this.structural
             ? '#f0e'
             : ((this as any) as qg.Nbridge).inbound
             ? '#0ef'
             : '#fe0';
-        } else if (_.isNumber(((this as any) as Noper).index.in)) {
+        } else if (qg.isOper(this) && _.isNumber(this.index.in)) {
           return '#795548';
-        } else if (_.isNumber(((this as any) as Noper).index.out)) {
+        } else if (qg.isOper(this) && _.isNumber(this.index.out)) {
           return '#009688';
         } else {
           return 'white';
@@ -431,7 +467,7 @@ export class Nbridge extends Ndata implements qg.Nbridge {
 export class Ndots extends Ndata implements qg.Ndots {
   more = 0;
   constructor(m: number) {
-    super(qt.NodeType.DOTS);
+    super(qt.NdataT.DOTS);
     this.setMore(m);
   }
   setMore(m: number) {
@@ -442,7 +478,7 @@ export class Ndots extends Ndata implements qg.Ndots {
 }
 
 export class Noper extends Ndata implements qg.Noper {
-  parent?: Noper | qg.Nclus;
+  parent?: qg.Noper | qg.Nclus;
   op: string;
   device?: string;
   cluster?: string;
@@ -451,11 +487,11 @@ export class Noper extends Ndata implements qg.Noper {
   ins: qt.Input[];
   shapes: qt.Shapes;
   index = {} as qt.Dict<number>;
-  embeds: qt.Dict<Noper[]>;
+  embeds: qt.Dict<qg.Noper[]>;
   compatible?: boolean;
 
   constructor(d: NodeDef) {
-    super(qt.NodeType.OPER, d.name);
+    super(qt.NdataT.OPER, d.name);
     this.op = d.op;
     this.device = d.device;
     this.cluster = qu.cluster(d.attr);
@@ -532,7 +568,7 @@ function labelFontScale(e: qs.GraphElem) {
 export function buildGroup(s: qt.Selection, ds: Ndata[], e: qs.GraphElem) {
   const c = qs.selectOrCreate(s, 'g', qt.Class.Node.CONTAINER);
   const gs = c
-    .selectAll<any, Ndata>(function() {
+    .selectAll<any, qg.Ndata>(function() {
       return this.childNodes;
     })
     .data(ds, nd => nd.name + ':' + nd.type);
@@ -554,9 +590,9 @@ export function buildGroup(s: qt.Selection, ds: Ndata[], e: qs.GraphElem) {
       const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
       if (qg.isClus(nd)) nd.addButton(s2, e);
       nd.addInteraction(s2, e);
-      (nd as qg.Nclus).subBuild(g, e);
+      if (qg.isClus(nd)) nd.subBuild(g, e);
       const label = nd.labelBuild(g, e);
-      nd.addInteraction(label, e, nd.type === qt.NodeType.META);
+      nd.addInteraction(label, e, nd.type === qt.NdataT.META);
       nd.stylize(g, e);
       nd.position(g);
     });

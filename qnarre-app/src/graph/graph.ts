@@ -7,17 +7,32 @@ import * as qu from './utils';
 export {Link, Nodes} from './core/graph';
 
 export interface Gdata extends qt.Opts {
-  name: string;
-  type: string | number;
+  type: qt.GdataT;
+  name?: string;
 }
 
-export abstract class Ndata {
+export interface Ndata {
+  type: qt.NdataT;
+  name?: string;
+  cardin: number;
   parent?: Ndata;
   stats?: qu.Stats;
   include?: boolean;
+  excluded?: boolean;
   expanded?: boolean;
-  attrs = {} as qt.Dict<any>;
-  constructor(public type: qt.NodeType, public name = '', public cardin = 1) {}
+  attrs: qt.Dict<any>;
+  annos: qt.Dict<AnnoList>;
+  extract: qt.Dict<boolean>;
+  hasTypeIn(ts: string[]): boolean;
+  addInAnno(n: Ndata, e: Edata, t: qt.AnnoT): this;
+  addOutAnno(n: Ndata, e: Edata, t: qt.AnnoT): this;
+}
+
+export interface Edata {
+  name?: string;
+  control?: boolean;
+  ref?: boolean;
+  out: string;
 }
 
 export interface Nbridge extends Ndata {
@@ -44,17 +59,18 @@ export interface Noper extends Ndata {
 }
 
 export function isOper(x?: any): x is Noper {
-  return x?.type === qt.NodeType.OPER;
+  return x?.type === qt.NdataT.OPER;
 }
 
 export interface Nclus extends Ndata {
-  core: any;
-  meta: any;
-  parent?: any;
-  bridge?: any;
+  core: Cgraph;
+  meta: Mgraph;
+  parent?: Nclus;
+  bridge?: Bgraph;
   histo: qt.Histos;
   noControls?: boolean;
   setDepth(d: number): this;
+  subBuild(s: any, e: any): any;
 }
 
 export function isClus(x?: any): x is Nclus {
@@ -65,15 +81,11 @@ export interface Nmeta extends Nclus {
   template?: string;
   assoc?: string;
   depth: number;
+  rootOp(): Noper | undefined;
 }
 
 export function isMeta(x?: any): x is Nmeta {
-  return x?.type === qt.NodeType.META;
-}
-
-export interface Library {
-  meta: Nmeta;
-  usages: Noper[];
+  return x?.type === qt.NdataT.META;
 }
 
 export interface Nlist extends Nclus {
@@ -86,19 +98,7 @@ export interface Nlist extends Nclus {
 }
 
 export function isList(x?: any): x is Nlist {
-  return x?.type === qt.NodeType.LIST;
-}
-
-export interface Edata {
-  name?: string;
-  control?: boolean;
-  ref?: boolean;
-  out: string;
-}
-
-export interface Hierarchy {
-  maxEdgeSize: number;
-  sizeOf(l: qg.Link<Edata>): number;
+  return x?.type === qt.NdataT.LIST;
 }
 
 export class Emeta implements Edata {
@@ -130,26 +130,29 @@ export type Template = {names: string[]; level: number};
 export type Group = {nodes: Nmeta[]; level: number};
 export type Cluster = {node: Nmeta; names: string[]};
 
-export class Anno {
-  x = 0;
-  y = 0;
-  w = 0;
-  h = 0;
-  nodes?: string[];
-  points = [] as {dx: number; dy: number}[];
-  labelOffset = 0;
+export interface Hierarchy {
+  maxEdgeSize: number;
+  sizeOf(l: qg.Link<Edata>): number;
+}
 
-  constructor(
-    public ndata: Ndata,
-    public emeta: Emeta,
-    public type: qt.AnnoType,
-    public isIn: boolean
-  ) {
-    if (emeta && emeta.metaedge) {
-      this.v = edata.metaedge.v;
-      this.w = edata.metaedge.w;
-    }
-  }
+export interface Library {
+  meta: Nmeta;
+  usages: Noper[];
+}
+
+export interface Anno extends qt.Rect {
+  type: qt.AnnoT;
+  ndata: Ndata;
+  edata: Edata;
+  isIn?: boolean;
+  nodes?: string[];
+  points: qt.Point[];
+  offset: number;
+}
+
+export interface AnnoList {
+  list: Anno[];
+  names: qt.Dict<boolean>;
 }
 
 export class Graph<
@@ -163,8 +166,8 @@ export class Graph<
       nd.expanded = d > 1;
       if (d > 0) {
         switch (nd.type) {
-          case qt.NodeType.META:
-          case qt.NodeType.LIST:
+          case qt.NdataT.META:
+          case qt.NdataT.LIST:
             const cd: Nclus = nd as any;
             cd.setDepth(d - 1);
             break;
@@ -174,19 +177,23 @@ export class Graph<
   }
 
   createShortcut(ns: string[]) {
-    const s = this.node(ns[0]);
-    const d = this.node(ns[1]);
-    const e = this.edge(ns);
-    if (s?.include && d?.include) return;
-    s.addOutAnno(d, e, qt.AnnoType.SHORTCUT);
-    d.addInAnno(s, e, qt.AnnoType.SHORTCUT);
+    const s = this.node(ns[0])!;
+    const d = this.node(ns[1])!;
+    const e = this.edge(ns)!;
+    if (s.include && d.include) return;
+    s.addOutAnno(d, e, qt.AnnoT.SHORTCUT);
+    d.addInAnno(s, e, qt.AnnoT.SHORTCUT);
     this.delEdge(ns);
   }
 }
 
+export type Bgraph = Graph<>;
+export type Cgraph = Graph<Gdata, Ndata, Edata>;
+export type Mgraph = Graph<>;
+
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
+  t: qt.GdataT,
   n: string,
-  t: string | number,
   o = {} as qt.Opts
 ) {
   const g = new Graph<G, N, E>(o);
