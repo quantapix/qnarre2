@@ -1,12 +1,14 @@
 import * as _ from 'lodash';
 
-import * as qg from './graph';
+import * as qc from './cluster';
 import * as qd from './gdata';
-import * as qn from './ndata';
-import * as qh from './hierarchy';
-import * as qt from './types';
 import * as qe from './edata';
+import * as qg from './graph';
+import * as qh from './hierarchy';
+import * as qn from './ndata';
 import * as qp from './params';
+import * as qt from './types';
+import * as qu from './utils';
 
 type Cluster = qt.Dict<string[]>;
 
@@ -21,29 +23,29 @@ export class Graph<
       if (qg.isMeta(nd)) nd.meta.build(h, names, ps);
     });
     const f = ps.patterns ? this.detect : this.collect;
-    const ss = f(this.cluster(), h.opts);
-    _.each(ss, (s: qg.Nlist, n: string) => {
-      const ns = s.meta.nodes();
+    const ls = f(this.cluster(), h.opts);
+    _.each(ls, (l, n) => {
+      const ns = l.meta.nodes();
       ns.forEach(n => {
         const nd = (this.node(n) as any) as qg.Noper;
         if (!nd.list) nd.list = n;
       });
-      if (ns.length < ps.thresh && !(s.name in ps.groups)) {
-        ps.groups[s.name] = false;
+      if (ns.length < ps.thresh && !(l.name in ps.groups)) {
+        ps.groups[l.name] = false;
       }
-      if (s.name in ps.groups && ps.groups[s.name] === false) return;
-      h.setNode(n, s);
-      this.setNode(n, s);
+      if (l.name in ps.groups && ps.groups[l.name] === false) return;
+      h.setNode(n, l);
+      this.setNode(n, l as qn.Ndata);
       ns.forEach(n => {
-        const nd = (this.node(n) as any) as qg.Noper;
-        s.meta.setNode(n, nd);
-        s.parent = nd.parent as any;
-        s.cardin++;
-        s.incHistoFrom(nd);
-        s.incCompatFrom(nd);
-        nd.inbeds.forEach(b => s.incCompatFrom(b));
-        nd.outbeds.forEach(b => s.incCompatFrom(b));
-        nd.parent = s;
+        const nd = (this.node(n) as any) as qn.Noper;
+        l.meta.setNode(n, nd);
+        l.parent = nd.parent as any;
+        l.cardin++;
+        qu.updateHistos(l.histo, nd);
+        qu.updateCompat(l.histo, nd);
+        nd.embeds.in.forEach(b => qu.updateCompat(l.histo, b));
+        nd.embeds.out.forEach(b => qu.updateCompat(l.histo, b));
+        nd.parent = l;
         names[n] = n;
         this.delNode(n);
       });
@@ -97,7 +99,7 @@ export class Graph<
   }
 
   detect(c: Cluster, opts: qt.Opts) {
-    const lists = {} as qt.Dict<qg.Nlist>;
+    const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
       const ss = {} as qt.Dict<qg.Nlist>;
@@ -119,8 +121,8 @@ export class Graph<
           pre = leaf.slice(0, matches.index);
           id = matches[0];
           suf = leaf.slice(matches.index + matches[0].length);
-          sn = qg.listName(pre, suf, parent);
-          if (!ss[sn]) ss[sn] = new qg.Nlist(pre, suf, parent, +id, n, opts);
+          sn = qu.listName(pre, suf, parent);
+          if (!ss[sn]) ss[sn] = new qc.Nlist(pre, suf, parent, +id, n, opts);
           ss[sn].ids.push(+id);
           back[n] = back[n] || [];
           back[n].push([sn, id]);
@@ -129,8 +131,8 @@ export class Graph<
           pre = isClus ? leaf.substr(0, leaf.length - 1) : leaf;
           id = '0';
           suf = isClus ? '*' : '';
-          sn = qg.listName(pre, suf, parent);
-          if (!ss[sn]) ss[sn] = new qg.Nlist(pre, suf, parent, +id, n, opts);
+          sn = qu.listName(pre, suf, parent);
+          if (!ss[sn]) ss[sn] = new qc.Nlist(pre, suf, parent, +id, n, opts);
           ss[sn].ids.push(+id);
           back[n] = back[n] || [];
           back[n].push([sn, id]);
@@ -144,7 +146,7 @@ export class Graph<
         cs[sn] = cs[sn] || [];
         const path = n.split('/');
         const parent = path.slice(0, path.length - 1).join('/');
-        const s = new qg.Nlist(
+        const s = new qc.Nlist(
           ss[sn].prefix,
           ss[sn].suffix,
           parent,
@@ -174,7 +176,7 @@ export class Graph<
   }
 
   collect(c: Cluster, opts: qt.Opts) {
-    const lists = {} as qt.Dict<qg.Nlist>;
+    const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
       const cs = {} as qt.Dict<qg.Nlist[]>;
@@ -194,9 +196,9 @@ export class Graph<
           pre = isClus ? leaf.substr(0, leaf.length - 1) : leaf;
           suf = isClus ? '*' : '';
         }
-        const sn = qg.listName(pre, suf, parent);
+        const sn = qu.listName(pre, suf, parent);
         cs[sn] = cs[sn] || [];
-        const s = new qg.Nlist(pre, suf, parent, +id, n, opts);
+        const s = new qc.Nlist(pre, suf, parent, +id, n, opts);
         cs[sn].push(s);
       });
       _.each(cs, (ns2, _) => {
@@ -225,14 +227,14 @@ export class Graph<
     opts: qt.Opts
   ) {
     if (c.length > 1) {
-      const name = qg.listName(
+      const name = qu.listName(
         c[0].prefix,
         c[0].suffix,
         c[0].pName,
         c[0].cluster,
         c[c.length - 1].cluster
       );
-      const nd = new qg.Nlist(
+      const nd = new qc.Nlist(
         c[0].prefix,
         c[0].suffix,
         c[0].pName,

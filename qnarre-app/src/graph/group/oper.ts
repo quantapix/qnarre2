@@ -406,10 +406,10 @@ export function checkOpsForCompatibility(
   if (p === null) throw new Error('Compatibility provider required, : ' + p);
   _.each(g.opers, n => {
     n.compatible = p.valid(n);
-    n.inbeds.forEach(n2 => {
+    n.embeds.in.forEach(n2 => {
       n2.compatible = p.valid(n2);
     });
-    n.outbeds.forEach(n2 => {
+    n.embeds.out.forEach(n2 => {
       n2.compatible = p.valid(n2);
     });
   });

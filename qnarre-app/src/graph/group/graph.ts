@@ -37,11 +37,9 @@ export interface Noper extends Ndata {
   list?: string;
   attr: {key: string; value: any}[];
   ins: qt.Input[];
-  inbeds: Noper[];
-  outbeds: Noper[];
   shapes: qt.Shapes;
-  inIdx?: number;
-  outIdx?: number;
+  index: qt.Dict<number>;
+  embeds: qt.Dict<Noper[]>;
   compatible?: boolean;
 }
 
@@ -49,99 +47,24 @@ export function isOper(x?: any): x is Noper {
   return x?.type === qt.NodeType.OPER;
 }
 
-type _Graph = qg.Graph<Gdata, Ndata, Emeta>;
-
-export abstract class Nclus extends Ndata {
-  core?: _Graph;
-  parent?: Nclus;
-  bridge?: _Graph;
-  histo = {} as qt.Histos;
+export interface Nclus extends Ndata {
+  core: any;
+  meta: any;
+  parent?: any;
+  bridge?: any;
+  histo: qt.Histos;
   noControls?: boolean;
-
-  constructor(n: string, t: qt.NodeType, public meta: _Graph) {
-    super(n, t, 0);
-    this.histo.device = {};
-    this.histo.cluster = {};
-    this.histo.compat = {compats: 0, incompats: 0};
-  }
-
-  incHistoFrom(src: any) {
-    _.keys(this.histo).forEach(k => {
-      const n = src[k];
-      if (n) {
-        const t = this.histo[k];
-        t[n] = (t[n] ?? 0) + 1;
-      }
-    });
-  }
-
-  incCompatFrom(src: any) {
-    const c = this.histo.compat;
-    if (src.compatible) {
-      c.compats += 1;
-    } else {
-      c.incompats += 1;
-    }
-  }
-
-  setDepth(_d: number) {}
+  setDepth(d: number): this;
 }
 
 export function isClus(x?: any): x is Nclus {
   return !!x && 'meta' in x;
 }
 
-export class Nmeta extends Nclus {
-  depth = 1;
+export interface Nmeta extends Nclus {
   template?: string;
-  assocFn?: string;
-
-  constructor(n: string, o = {} as qt.Opts) {
-    super(
-      n,
-      qt.NodeType.META,
-      createGraph<Gdata, Nclus | Noper, Emeta>(n, qt.GraphType.META, o)
-    );
-    this.histo.op = {} as qt.Dict<number>;
-  }
-
-  firstChild() {
-    return this.meta.node(this.meta.nodes()[0]);
-  }
-
-  rootOp() {
-    const s = this.name.split('/');
-    const r = this.name + '/(' + s[s.length - 1] + ')';
-    return this.meta.node(r) as Noper;
-  }
-
-  leaves() {
-    const ls = [] as string[];
-    const q = [this] as Ndata[];
-    while (q.length) {
-      const n = q.shift()!;
-      if (isClus(n)) {
-        const m = (n as Nclus).meta;
-        m.nodes().forEach(n => q.push(m.node(n)!));
-      } else {
-        ls.push(n.name!);
-      }
-    }
-    return ls;
-  }
-
-  signature() {
-    const ps = _.map(
-      {
-        depth: this.depth,
-        '|N|': this.meta.nodeCount,
-        '|E|': this.meta.edgeCount
-      },
-      (v, k) => k + '=' + v
-    ).join(' ');
-    const os = _.map(this.histo.op, (n, o) => o + '=' + n).join(',');
-    return ps + ' [ops] ' + os;
-  }
+  assoc?: string;
+  depth: number;
 }
 
 export function isMeta(x?: any): x is Nmeta {
@@ -153,40 +76,17 @@ export interface Library {
   usages: Noper[];
 }
 
-export class Nlist extends Nclus {
+export interface Nlist extends Nclus {
+  prefix: string;
+  suffix: string;
+  pName: string;
+  cluster: number;
   loop?: boolean;
-  ids = [] as number[];
-
-  constructor(
-    public prefix: string,
-    public suffix: string,
-    public pName: string,
-    public cluster: number,
-    n = listName(prefix, suffix, pName),
-    o = {} as qt.Opts
-  ) {
-    super(
-      n,
-      qt.NodeType.LIST,
-      createGraph<Gdata, Nmeta, Emeta>(n, qt.GraphType.LIST, o)
-    );
-  }
+  ids: number[];
 }
 
 export function isList(x?: any): x is Nlist {
   return x?.type === qt.NodeType.LIST;
-}
-
-export function listName(
-  pre: string,
-  suf: string,
-  p: string,
-  s?: number,
-  e?: number
-) {
-  let n = s !== undefined && e !== undefined ? '[' + s + '-' + e + ']' : '#';
-  n = pre + n + suf;
-  return (p ? p + '/' : '') + n;
 }
 
 export interface Edata {
@@ -289,7 +189,7 @@ export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   t: string | number,
   o = {} as qt.Opts
 ) {
-  const g = new qg.Graph<G, N, E>(o);
+  const g = new Graph<G, N, E>(o);
   const d = o as G;
   d.name = n;
   d.type = t;

@@ -66,6 +66,37 @@ export function shapes(ps: {key: string; value: any}[]) {
   return [] as qt.Shapes;
 }
 
+export function listName(
+  pre: string,
+  suf: string,
+  p: string,
+  s?: number,
+  e?: number
+) {
+  let n = s !== undefined && e !== undefined ? '[' + s + '-' + e + ']' : '#';
+  n = pre + n + suf;
+  return (p ? p + '/' : '') + n;
+}
+
+export function updateHistos(hs: qt.Histos, src: any) {
+  _.keys(hs).forEach(k => {
+    const n = src[k];
+    if (n) {
+      const t = hs[k];
+      t[n] = (t[n] ?? 0) + 1;
+    }
+  });
+}
+
+export function updateCompat(hs: qt.Histos, src: any) {
+  const c = hs.compat;
+  if (src.compatible) {
+    c.compats += 1;
+  } else {
+    c.incompats += 1;
+  }
+}
+
 export class Stats {
   bytes?: number;
   start?: number;
@@ -90,6 +121,14 @@ export class Stats {
     }
     return undefined;
   }
+}
+
+export function mapIndexToHue(id: number): number {
+  const GOLDEN_RATIO = 1.61803398875;
+  const MIN_HUE = 1;
+  const MAX_HUE = 359;
+  const COLOR_RANGE = MAX_HUE - MIN_HUE;
+  return MIN_HUE + ((COLOR_RANGE * GOLDEN_RATIO * id) % COLOR_RANGE);
 }
 
 export function time<T>(m: string, task: () => T) {

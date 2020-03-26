@@ -58,8 +58,8 @@ export interface Input {
 }
 
 export type Shapes = number[][];
-
 export type Histos = qt.Dict<qt.Dict<number>>;
+export type Shade = {color: string; perc: number};
 
 export interface Tracker {
   setMessage(m: string): void;

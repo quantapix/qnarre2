@@ -25,6 +25,7 @@ export class Ndata implements qt.Rect, qg.Ndata {
   outW = 0;
   labelH = 0;
   labelOff = 0;
+  display: string;
   parent?: Ndata;
   stats?: qu.Stats;
   faded?: boolean;
@@ -35,15 +36,12 @@ export class Ndata implements qt.Rect, qg.Ndata {
   structural?: boolean;
   inExtract?: boolean;
   outExtract?: boolean;
-  display: string;
   pad = new qt.Pad();
   box = new qt.Area();
-  inAnnos = new qa.AnnoList();
-  outAnnos = new qa.AnnoList();
   attrs = {} as qt.Dict<any>;
-  colors = {} as qt.Dict<{color: string; perc: number}[]>;
-  memColor = '';
-  timeColor = '';
+  color = {} as qt.Dict<string>;
+  shade: qt.Dict<qt.Shade[]>;
+  annos: qt.Dict<qa.AnnoList>;
 
   constructor(public type: qt.NodeType, public name = '', public cardin = 1) {
     this.display = name.substring(name.lastIndexOf(qp.SLASH) + 1);
@@ -55,9 +53,8 @@ export class Ndata implements qt.Rect, qg.Ndata {
         this.display = this.display.substring(qp.LIB_PRE.length);
       }
     }
-    this.colors.device = [];
-    this.colors.cluster = [];
-    this.colors.compat = [];
+    this.shade = {device: [], cluster: [], compat: []};
+    this.annos = {in: new qa.AnnoList(), out: new qa.AnnoList()};
   }
 
   isInCore() {
@@ -199,12 +196,12 @@ export class Ndata implements qt.Rect, qg.Ndata {
 
   addInAnno(nd: Ndata, em: qg.Emeta, t: qt.AnnoType) {
     const a = new qg.Anno(nd, em, t, true);
-    this.inAnnos.push(a);
+    this.annos.in.push(a);
   }
 
   addOutAnno(nd: Ndata, em: qg.Emeta, t: qt.AnnoType) {
     const a = new qg.Anno(nd, em, t, false);
-    this.outAnnos.push(a);
+    this.annos.out.push(a);
   }
 
   labelBuild(s: qt.Selection, e: qs.GraphElem) {
@@ -261,7 +258,7 @@ export class Ndata implements qt.Rect, qg.Ndata {
     switch (this.type) {
       case qt.NodeType.OPER: {
         const od = (this as any) as Noper;
-        if (_.isNumber(od.inIdx) || _.isNumber(od.outIdx)) {
+        if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
           const sc = qs.selectChild(g, 'polygon');
           const r = new qt.Rect(this.x, this.y, this.box.w, this.box.h);
           qs.positionTriangle(sc, r);
@@ -315,7 +312,7 @@ export class Ndata implements qt.Rect, qg.Ndata {
     switch (this.type) {
       case qt.NodeType.OPER:
         const od = (this as any) as Noper;
-        if (_.isNumber(od.inIdx) || _.isNumber(od.outIdx)) {
+        if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
           qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR);
           break;
         }
@@ -395,32 +392,32 @@ export class Ndata implements qt.Rect, qg.Ndata {
             : ((this as any) as qg.Nbridge).inbound
             ? '#0ef'
             : '#fe0';
-        } else if (_.isNumber(((this as any) as Noper).inIdx)) {
+        } else if (_.isNumber(((this as any) as Noper).index.in)) {
           return '#795548';
-        } else if (_.isNumber(((this as any) as Noper).outIdx)) {
+        } else if (_.isNumber(((this as any) as Noper).index.out)) {
           return '#009688';
         } else {
           return 'white';
         }
       case qt.ColorBy.DEVICE:
-        if (!this.colors.device) return cs.UNKNOWN;
+        if (!this.shade.device) return cs.UNKNOWN;
         return expanded
           ? cs.EXPANDED
-          : grad('device-' + this.name, this.colors.device, root);
+          : grad('device-' + this.name, this.shade.device, root);
       case qt.ColorBy.CLUSTER:
-        if (!this.colors.cluster) return cs.UNKNOWN;
+        if (!this.shade.cluster) return cs.UNKNOWN;
         return expanded
           ? cs.EXPANDED
-          : grad('xla-' + this.name, this.colors.cluster, root);
+          : grad('xla-' + this.name, this.shade.cluster, root);
       case qt.ColorBy.TIME:
-        return expanded ? cs.EXPANDED : this.timeColor || cs.UNKNOWN;
+        return expanded ? cs.EXPANDED : this.color.time || cs.UNKNOWN;
       case qt.ColorBy.MEMORY:
-        return expanded ? cs.EXPANDED : this.memColor || cs.UNKNOWN;
+        return expanded ? cs.EXPANDED : this.color.mem || cs.UNKNOWN;
       case qt.ColorBy.COMPAT:
-        if (!this.colors.compat) return cs.UNKNOWN;
+        if (!this.shade.compat) return cs.UNKNOWN;
         return expanded
           ? cs.EXPANDED
-          : grad('op-compat-' + this.name, this.colors.compat);
+          : grad('op-compat-' + this.name, this.shade.compat);
       default:
         throw new Error('Unknown color');
     }
@@ -452,12 +449,10 @@ export class Noper extends Ndata implements qg.Noper {
   list?: string;
   attr: {key: string; value: any}[];
   ins: qt.Input[];
-  inbeds = [] as Noper[];
-  outbeds = [] as Noper[];
   shapes: qt.Shapes;
-  inIdx?: number;
-  outIdx?: number;
-  compatible = false;
+  index = {} as qt.Dict<number>;
+  embeds: qt.Dict<Noper[]>;
+  compatible?: boolean;
 
   constructor(d: NodeDef) {
     super(qt.NodeType.OPER, d.name);
@@ -467,6 +462,7 @@ export class Noper extends Ndata implements qg.Noper {
     this.attr = d.attr;
     this.ins = qu.inputs(d.input);
     this.shapes = qu.shapes(d.attr);
+    this.embeds = {in: [], out: []};
   }
 }
 
@@ -486,7 +482,7 @@ function labelPosition(s: qt.Selection, x: number, y: number, off: number) {
     .attr('y', y + off);
 }
 
-function grad(id: string, cs: {color: string; perc: number}[], e?: SVGElement) {
+function grad(id: string, cs: qt.Shade[], e?: SVGElement) {
   const ei = qu.escapeQuerySelector(id);
   if (!e) return `url(#${ei})`;
   const r = d3.select(e);
@@ -552,9 +548,9 @@ export function buildGroup(s: qt.Selection, ds: Ndata[], e: qs.GraphElem) {
     .each(function(nd) {
       const g = d3.select(this);
       const inb = qs.selectOrCreate(g, 'g', qt.Class.Anno.INBOX);
-      qa.buildGroup(inb, nd.inAnnos, nd, e);
+      qa.buildGroup(inb, nd.annos.in, nd, e);
       const outb = qs.selectOrCreate(g, 'g', qt.Class.Anno.OUTBOX);
-      qa.buildGroup(outb, nd.outAnnos, nd, e);
+      qa.buildGroup(outb, nd.annos.out, nd, e);
       const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
       if (qg.isClus(nd)) nd.addButton(s2, e);
       nd.addInteraction(s2, e);
@@ -568,12 +564,12 @@ export function buildGroup(s: qt.Selection, ds: Ndata[], e: qs.GraphElem) {
     .each(function(nd) {
       e.removeNodeGroup(nd.name);
       const g = d3.select(this);
-      if (nd.inAnnos.list.length > 0) {
+      if (nd.annos.in.list.length > 0) {
         g.select('.' + qt.Class.Anno.INBOX)
           .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
           .each(a => e.removeAnnotationGroup(a, nd));
       }
-      if (nd.outAnnos.list.length > 0) {
+      if (nd.annos.out.list.length > 0) {
         g.select('.' + qt.Class.Anno.OUTBOX)
           .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
           .each(a => e.removeAnnotationGroup(a, nd));

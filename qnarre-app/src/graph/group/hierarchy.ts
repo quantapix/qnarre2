@@ -1,7 +1,9 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
+import * as qc from './cluster';
 import * as qg from './graph';
+import * as qn from './ndata';
 import * as qp from './params';
 import * as qs from './slim';
 import * as qt from './types';
@@ -11,11 +13,11 @@ import * as meta from './meta';
 import * as proto from './proto';
 import * as template from './template';
 
-type Nclus = qg.Nclus | qg.Noper;
+type Nclus = qc.Nclus | qn.Noper;
 type Emeta = qg.Emeta;
 
 export class Hierarchy implements qg.Hierarchy {
-  root: qg.Nmeta;
+  root: qc.Nmeta;
   hasShape = false;
   maxEdgeSize = 1;
   devices = [] as string[];
@@ -27,7 +29,7 @@ export class Hierarchy implements qg.Hierarchy {
 
   constructor(public opts = {} as qt.Opts) {
     this.opts.isCompound = true;
-    this.root = new qg.Nmeta(qp.ROOT, this.opts);
+    this.root = new qc.Nmeta(qp.ROOT, this.opts);
     this.setNode(qp.ROOT, this.root);
   }
 
@@ -82,7 +84,7 @@ export class Hierarchy implements qg.Hierarchy {
   }
 
   childName(n: string, desc: any) {
-    let d: qg.Ndata | undefined = this.node(desc);
+    let d: qn.Ndata | undefined = this.node(desc);
     while (d) {
       if (d.parent?.name === n) return d.name;
       d = d.parent;
@@ -91,7 +93,7 @@ export class Hierarchy implements qg.Hierarchy {
   }
 
   sizeOf(l: qg.Link<qg.Edata>) {
-    const n = this.node(l.nodes[0]) as qg.Noper;
+    const n = this.node(l.nodes[0]) as qn.Noper;
     if (!n.shapes.length) return 1;
     this.hasShape = true;
     const vs = n.shapes.map(s => s.reduce((a, v) => a * (v === -1 ? 1 : v), 1));
@@ -103,7 +105,7 @@ export class Hierarchy implements qg.Hierarchy {
     if (!nd) throw Error('Could not find node: ' + n);
     const ps = this.oneWays(nd, true);
     if (!qg.isClus(nd)) {
-      nd.inbeds.forEach(b => {
+      nd.embeds.in.forEach(b => {
         nd.ins.forEach(i => {
           if (i.name === b.name) {
             const m = new qg.Emeta(true);
@@ -126,7 +128,7 @@ export class Hierarchy implements qg.Hierarchy {
     if (!nd) throw Error('Could not find node: ' + n);
     const ss = this.oneWays(nd, false);
     if (!qg.isClus(nd)) {
-      nd.outbeds.forEach(b => {
+      nd.embeds.out.forEach(b => {
         b.ins.forEach(i => {
           if (i.name === n) {
             const m = new qg.Emeta();
@@ -199,7 +201,7 @@ export class Hierarchy implements qg.Hierarchy {
   }
 
   addNodes(g: qs.SlimGraph) {
-    const os = {} as qt.Dict<qg.Noper[]>;
+    const os = {} as qt.Dict<qn.Noper[]>;
     _.each(g.opers, o => {
       const path = qs.hierarchyPath(o.name);
       let p = this.root;
@@ -209,15 +211,15 @@ export class Hierarchy implements qg.Hierarchy {
       for (let i = 0; i < path.length; i++) {
         p.depth = Math.max(p.depth, path.length - i);
         p.cardin += o.cardin;
-        p.incHistoFrom(o);
-        p.incCompatFrom(o);
-        o.inbeds.forEach(b => p.incCompatFrom(b));
-        o.outbeds.forEach(b => p.incCompatFrom(b));
+        qu.updateHistos(p.histo, o);
+        qu.updateCompat(p.histo, o);
+        o.embeds.in.forEach(b => qu.updateCompat(p.histo, b));
+        o.embeds.out.forEach(b => qu.updateCompat(p.histo, b));
         if (i === path.length - 1) break;
         const n = path[i];
-        let meta = this.node(n) as qg.Nmeta;
+        let meta = this.node(n) as qc.Nmeta;
         if (!meta) {
-          meta = new qg.Nmeta(n, this.opts);
+          meta = new qc.Nmeta(n, this.opts);
           meta.parent = p;
           this.setNode(n, meta);
           p.meta.setNode(n, meta);
@@ -225,7 +227,7 @@ export class Hierarchy implements qg.Hierarchy {
             const f = n.substring(qp.LIB_PRE.length);
             if (!os[f]) os[f] = [];
             this.libfns[f] = {meta, usages: os[f]};
-            meta.assocFn = f;
+            meta.assoc = f;
           }
         }
         p = meta;
@@ -233,11 +235,11 @@ export class Hierarchy implements qg.Hierarchy {
       this.setNode(o.name, o);
       o.parent = p;
       p.meta.setNode(o.name, o);
-      o.inbeds.forEach(b => {
+      o.embeds.in.forEach(b => {
         this.setNode(b.name, b);
         b.parent = o;
       });
-      o.outbeds.forEach(b => {
+      o.embeds.out.forEach(b => {
         this.setNode(b.name, b);
         b.parent = o;
       });
@@ -248,7 +250,7 @@ export class Hierarchy implements qg.Hierarchy {
   addEdges(g: qs.SlimGraph, _series: qt.Dict<string>) {
     const src = [] as string[];
     const dst = [] as string[];
-    function path(p: string[], n?: qg.Ndata) {
+    function path(p: string[], n?: qn.Ndata) {
       let i = 0;
       while (n) {
         p[i++] = n.name;
@@ -265,7 +267,7 @@ export class Hierarchy implements qg.Hierarchy {
         di--;
         if (si < 0 || di < 0) throw Error('No difference in ancestors');
       }
-      const n = this.node(src[si + 1]) as qg.Nclus;
+      const n = this.node(src[si + 1]) as qc.Nclus;
       const sd = [src[si], dst[di]];
       let m = n.meta.edge(sd);
       if (!m) {
@@ -298,7 +300,7 @@ export class Hierarchy implements qg.Hierarchy {
       let nd: qg.Ndata | undefined = this.node(n);
       while (nd?.parent) {
         const p = nd.parent;
-        if (!qg.isClus(nd) && qg.isClus(p)) p.incHistoFrom(nd);
+        if (!qg.isClus(nd) && qg.isClus(p)) qu.updateHistos(p.histo, nd);
         if (nd.stats) p?.stats?.combine(nd.stats);
         nd = p;
       }
@@ -307,18 +309,18 @@ export class Hierarchy implements qg.Hierarchy {
 
   incompats(ps: qt.HierarchyPs) {
     const ns = [] as Nclus[];
-    const added = {} as qt.Dict<qg.Nlist>;
+    const added = {} as qt.Dict<qc.Nlist>;
     this.root.leaves().forEach(n => {
       const d = this.node(n);
       if (d?.type === qt.NodeType.OPER) {
-        const nd = d as qg.Noper;
+        const nd = d as qn.Noper;
         if (!nd.compatible) {
           if (nd.list) {
             if (ps && ps.groups[nd.list] === false) {
               ns.push(nd);
             } else {
               if (!added[nd.list]) {
-                const ss = this.node(nd.list) as qg.Nlist;
+                const ss = this.node(nd.list) as qc.Nlist;
                 if (ss) {
                   added[nd.list] = ss;
                   ns.push(ss);
@@ -327,10 +329,10 @@ export class Hierarchy implements qg.Hierarchy {
             }
           } else ns.push(nd);
         }
-        nd.inbeds.forEach(e => {
+        nd.embeds.in.forEach(e => {
           if (!e.compatible) ns.push(e);
         });
-        nd.outbeds.forEach(e => {
+        nd.embeds.out.forEach(e => {
           if (!e.compatible) ns.push(e);
         });
       }
@@ -342,7 +344,7 @@ export class Hierarchy implements qg.Hierarchy {
     const gs = this.nodes().reduce((a, n) => {
       const nd = this.node(n)!;
       if (nd.type !== qt.NodeType.META) return a;
-      const m = nd as qg.Nmeta;
+      const m = nd as qc.Nmeta;
       const s = m.signature();
       const level = n.split('/').length - 1;
       const t = a[s] || {nodes: [], level};
@@ -357,7 +359,7 @@ export class Hierarchy implements qg.Hierarchy {
         const {nodes} = g;
         if (nodes.length > 1) return true;
         const n = nodes[0];
-        return n.type === qt.NodeType.META && n.assocFn;
+        return n.type === qt.NodeType.META && n.assoc;
       })
       .sort(([_, g]) => g.nodes[0].depth);
   }

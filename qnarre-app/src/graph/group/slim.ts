@@ -9,12 +9,12 @@ import * as qu from './utils';
 import * as proto from './proto';
 
 export class SlimGraph {
-  opers = {} as qt.Dict<qg.Noper>;
+  opers = {} as qt.Dict<qn.Noper>;
   links = [] as qg.Link<qg.Edata>[];
 
   constructor(public opts = {} as qt.Opts) {}
 
-  addLink(s: string, d: qg.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
+  addLink(s: string, d: qn.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
     if (s !== d.name) {
       const isRef = ps.refs[d.op + ' ' + i] === true;
       const l = new qg.Link<qg.Edata>([s, d.name], this.opts);
@@ -83,16 +83,16 @@ export async function build(
   ps: qt.BuildPs,
   t: qu.Tracker
 ): Promise<SlimGraph> {
-  const inEmbed = {} as qt.Dict<qg.Noper>;
-  const outEmbed = {} as qt.Dict<qg.Noper>;
-  const outs = {} as qt.Dict<qg.Noper[]>;
+  const inEmbed = {} as qt.Dict<qn.Noper>;
+  const outEmbed = {} as qt.Dict<qn.Noper>;
+  const outs = {} as qt.Dict<qn.Noper[]>;
   const isIn = embedPred(ps.inbedTs);
   const isOut = embedPred(ps.outbedTs);
   const es = [] as string[];
   const raws = def.node;
   const ns = new Array<string>(raws.length);
   const opers = await t.runAsyncTask('Normalizing names', 30, () => {
-    const ops = new Array<qg.Noper>(raws.length);
+    const ops = new Array<qn.Noper>(raws.length);
     let i = 0;
     function raw(p: proto.NodeDef) {
       const o = new qn.Noper(p);
@@ -132,7 +132,7 @@ export async function build(
             op: 'input_arg',
             attr: [{key: 'T', value: {type: arg.type}}]
           });
-          o.inIdx = idx;
+          o.index.in = idx;
           idx++;
         }
         args.forEach(input);
@@ -152,7 +152,7 @@ export async function build(
         r.name = f + '/' + r.name;
         if (typeof r.input === 'string') r.input = [r.input];
         const o = raw(r);
-        if (_.isNumber(onames[r.name])) o.outIdx = onames[r.name];
+        if (_.isNumber(onames[r.name])) o.index.out = onames[r.name];
         o.ins.forEach(n => {
           n.name = f + qp.SLASH + n.name;
         });
@@ -170,8 +170,8 @@ export async function build(
       const nn = norms[o.name] || o.name;
       g.opers[nn] = o;
       if (o.name in outs) {
-        o.outbeds = outs[o.name];
-        o.outbeds.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
+        o.embeds.out = outs[o.name];
+        o.embeds.out.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
       }
       o.name = nn;
     });
@@ -180,7 +180,7 @@ export async function build(
         const nn = inp.name;
         if (nn in inEmbed) {
           const ie = inEmbed[nn];
-          o.inbeds.push(ie);
+          o.embeds.in.push(ie);
           for (const e of ie.ins) {
             g.addLink(norms[e.name] || e.name, o, e, ps, i);
           }
@@ -200,7 +200,7 @@ export async function build(
 }
 
 function embedPred(types: string[]) {
-  return (n: qg.Noper) => {
+  return (n: qn.Noper) => {
     for (let i = 0; i < types.length; i++) {
       const re = new RegExp(types[i]);
       if (typeof n.op === 'string' && n.op.match(re)) return true;
