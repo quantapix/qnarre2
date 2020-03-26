@@ -9,6 +9,7 @@ import * as qo from './order';
 import * as qp from './position';
 import * as qr from './rank';
 import * as qs from './sort';
+import * as qt from './types';
 import * as qu from './utils';
 
 type QA = qa.Graph<ql.Gdata, ql.Ndata, ql.Edata>;
@@ -89,10 +90,10 @@ describe('layout', () => {
   });
 
   describe('can layout edge with long label with rankdir =', () => {
-    ['TB', 'BT', 'LR', 'RL'].forEach(rd => {
+    ['tb', 'bt', 'lr', 'rl'].forEach(rd => {
       it(rd, () => {
         g.data!.nodesep = g.data!.edgesep = 10;
-        g.data!.rankdir = rd;
+        g.data!.rankdir = rd as qt.Dir;
         ['a', 'b', 'c', 'd'].forEach(n =>
           g.setNode(n, {w: 10, h: 10} as ql.Ndata)
         );
@@ -104,7 +105,7 @@ describe('layout', () => {
         g.setEdge(['b', 'd'], {w: 1, h: 1} as ql.Edata);
         g.runLayout();
         let p1, p2;
-        if (rd === 'TB' || rd === 'BT') {
+        if (rd === 'tb' || rd === 'bt') {
           p1 = g.edge(['a', 'c'])!;
           p2 = g.edge(['b', 'd'])!;
         } else {
@@ -117,10 +118,10 @@ describe('layout', () => {
   });
 
   describe('can apply an offset with rankdir =', () => {
-    ['TB', 'BT', 'LR', 'RL'].forEach(rd => {
+    ['tb', 'bt', 'lr', 'rl'].forEach(rd => {
       it(rd, () => {
         g.data!.nodesep = g.data!.edgesep = 10;
-        g.data!.rankdir = rd;
+        g.data!.rankdir = rd as qt.Dir;
         ['a', 'b', 'c', 'd'].forEach(n =>
           g.setNode(n, {w: 10, h: 10} as ql.Ndata)
         );
@@ -137,7 +138,7 @@ describe('layout', () => {
           offset: 1000
         } as ql.Edata);
         g.runLayout();
-        if (rd === 'TB' || rd === 'BT') {
+        if (rd === 'tb' || rd === 'bt') {
           expect(g.edge(['a', 'b'])!.x - g.edge(['a', 'b'])!.points[0].x).toBe(
             -1000 - 10 / 2
           );
@@ -221,10 +222,10 @@ describe('layout', () => {
   });
 
   describe('can layout self loop', () => {
-    ['TB', 'BT', 'LR', 'RL'].forEach(rd => {
+    ['tb', 'bt', 'lr', 'rl'].forEach(rd => {
       it('in rankdir = ' + rd, () => {
         g.data!.edgesep = 75;
-        g.data!.rankdir = rd;
+        g.data!.rankdir = rd as qt.Dir;
         g.setNode('a', {w: 100, h: 100} as ql.Ndata);
         g.setEdge(['a', 'a'], {w: 50, h: 50} as ql.Edata);
         g.runLayout();
@@ -232,7 +233,7 @@ describe('layout', () => {
         const points = g.edge(['a', 'a'])!.points;
         expect(points.length).toBe(7);
         points.forEach(p => {
-          if (rd !== 'LR' && rd !== 'RL') {
+          if (rd !== 'lr' && rd !== 'rl') {
             expect(p.x).toBeGreaterThan(nodeA.x);
             expect(Math.abs(p.y - nodeA.y)).toBeLessThanOrEqual(nodeA.h / 2);
           } else {
@@ -272,7 +273,7 @@ describe('layout', () => {
       expect(g.node('sg')!.y).toBeGreaterThan(50 / 2);
     }
     ['tb', 'bt', 'lr', 'rl'].forEach(rd => {
-      g.data!.rankdir = rd;
+      g.data!.rankdir = rd as qt.Dir;
       g.runLayout();
       check();
     });
@@ -285,9 +286,9 @@ describe('layout', () => {
   });
 
   describe('ensures coords in bounding box for graph', () => {
-    ['TB', 'BT', 'LR', 'RL'].forEach(rd => {
+    ['tb', 'bt', 'lr', 'rl'].forEach(rd => {
       describe(rd, () => {
-        beforeEach(() => (g.data!.rankdir = rd));
+        beforeEach(() => (g.data!.rankdir = rd as qt.Dir));
         it('node', () => {
           g.setNode('a', {w: 100, h: 200} as ql.Ndata);
           g.runLayout();
@@ -304,7 +305,7 @@ describe('layout', () => {
             offset: 0
           } as ql.Edata);
           g.runLayout();
-          if (rd === 'TB' || rd === 'BT') {
+          if (rd === 'tb' || rd === 'bt') {
             expect(g.edge(['a', 'b'])!.x).toBe(1000 / 2);
           } else {
             expect(g.edge(['a', 'b'])!.y).toBe(2000 / 2);

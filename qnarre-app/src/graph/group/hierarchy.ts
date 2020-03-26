@@ -20,15 +20,15 @@ export class Hierarchy implements qg.Hierarchy {
   maxEdgeSize = 1;
   devices = [] as string[];
   clusters = [] as string[];
-  libfns = {} as qt.Dict<qg.LibraryFn>;
+  libfns = {} as qt.Dict<qg.Library>;
   orders = {} as qt.Dict<qt.Dict<number>>;
   templates = {} as qt.Dict<qg.Template>;
   private _nodes = new qt.Nodes<Nclus>();
 
   constructor(public opts = {} as qt.Opts) {
     this.opts.isCompound = true;
-    this.root = new qg.Nmeta(qp.ROOT_NAME, this.opts);
-    this.setNode(qp.ROOT_NAME, this.root);
+    this.root = new qg.Nmeta(qp.ROOT, this.opts);
+    this.setNode(qp.ROOT, this.root);
   }
 
   nodes() {
@@ -223,8 +223,8 @@ export class Hierarchy implements qg.Hierarchy {
           meta.parent = p;
           this.setNode(n, meta);
           p.meta.setNode(n, meta);
-          if (n.startsWith(qp.LIBRARY_PREFIX) && p.name === qp.ROOT_NAME) {
-            const f = n.substring(qp.LIBRARY_PREFIX.length);
+          if (n.startsWith(qp.LIB_PRE) && p.name === qp.ROOT) {
+            const f = n.substring(qp.LIB_PRE.length);
             if (!os[f]) os[f] = [];
             this.libfns[f] = {meta, usages: os[f]};
             meta.assocFn = f;
@@ -292,7 +292,7 @@ export class Hierarchy implements qg.Hierarchy {
     this.nodes().forEach(n => {
       const nd = this.node(n);
       if (qg.isClus(nd)) {
-        nd.stats = new qg.Stats([]);
+        nd.stats = new qu.Stats([]);
         nd.histo.device = {};
       }
     });

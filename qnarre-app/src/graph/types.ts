@@ -24,21 +24,20 @@ export function isNamed(x?: Named | string | number): x is Named {
 
 export type Dir = 'tb' | 'bt' | 'lr' | 'rl';
 
-export interface Point {
-  x: number;
-  y: number;
+export class Point {
+  constructor(public x = 0, public y = 0) {}
 }
 
-export interface Area {
-  w: number;
-  h: number;
+export class Area {
+  constructor(public w = 0, public h = 0) {}
 }
 
-export interface Rect extends Point, Area {}
+export class Rect {
+  constructor(public x = 0, public y = 0, public w = 0, public h = 0) {}
+}
 
-export interface Radius {
-  rx: number;
-  ry: number;
+export class Radius {
+  constructor(public rx = 0, public ry = 0) {}
 }
 
 export interface Label {

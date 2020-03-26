@@ -215,6 +215,23 @@ export class Gdata {
     return this.renderedOpNames;
   }
 
+  expandUntilNodeIsShown(scene, name: string) {
+    const ns = name.split('/');
+    const m = ns[ns.length - 1].match(/(.*):\w+/);
+    if (m?.length === 2) ns[ns.length - 1] = m[1];
+    let n = ns[0];
+    let nd = this.getNdataByName(n);
+    for (let i = 1; i < ns.length; i++) {
+      if (nd?.type === qt.NodeType.OPER) break;
+      this.buildSubhierarchy(n);
+      nd!.expanded = true;
+      scene.setNodeExpanded(nd);
+      n += '/' + ns[i];
+      nd = this.getNdataByName(n);
+    }
+    return nd?.name;
+  }
+
   _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
     let os = [] as Array<qg.OpNode>;
     const n = gdata.getNodeByName(name) as qg.Nclus | qg.Noper;
@@ -772,6 +789,59 @@ export class Gdata {
         inbound ? coreG.setEdge(sn, n, sed) : coreG.setEdge(n, sn, sed);
       });
     });
+  }
+}
+
+function markParents(root: SVGElement, ns: qt.Dict<qt.Node>) {
+  _.forOwn(ns, (n?: qt.Node) => {
+    while (n && n.name !== qp.ROOT) {
+      const s = d3.select(root).select(`.node[data-name="${n.name}"]`);
+      if (
+        s.nodes().length &&
+        !s.classed('input-highlight') &&
+        !s.classed('selected') &&
+        !s.classed('op')
+      ) {
+        s.classed('input-parent', true);
+      }
+      n = n.parent;
+    }
+  });
+}
+
+function createVisibleTrace(
+  root: SVGElement,
+  node: qt.Node,
+  starts: qt.Dict<number>,
+  idxStarts: qt.Node[]
+) {
+  let n: qt.Node | undefined = node;
+  let prev = n;
+  const pairs = [];
+  while (n && !starts[n.name]) {
+    if (prev?.name !== n.name) pairs.push([prev, n]);
+    prev = n;
+    n = n?.parent;
+  }
+  const s = starts[node.name].index;
+  const sn = idxStarts[Math.max(s - 1, 0)].name;
+  const r = d3.select(root);
+  r.selectAll(`[data-edge="${prev.name}--${sn}"]`).classed(
+    'input-edge-highlight',
+    true
+  );
+  _.each(pairs, p => {
+    const inner = p[0];
+    const outer = p[1];
+    const sel = `[data-edge="${inner.name}--${sn}` + `~~${outer.name}~~OUT"]`;
+    r.selectAll(sel).classed('input-edge-highlight', true);
+  });
+  for (let i = 1; i < s; i++) {
+    const inner = idxStarts[i - 1];
+    const outer = idxStarts[i];
+    const sel =
+      `[data-edge="${prev.name}~~${outer.name}` + `~~IN--${inner.name}"]`;
+    r.selectAll(sel).classed('input-edge-highlight', true);
   }
 }
 

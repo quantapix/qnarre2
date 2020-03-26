@@ -2,10 +2,9 @@ import * as _ from 'lodash';
 
 import * as qg from '../graph';
 import * as qt from './types';
-import {Dict} from '../types';
 import * as qu from './utils';
 
-import * as proto from './proto';
+import {NodeDef} from './proto';
 
 export interface Gdata extends qt.Opts {
   name: string;
@@ -17,7 +16,7 @@ export abstract class Ndata {
   stats?: qu.Stats;
   include?: boolean;
   expanded?: boolean;
-  attrs = {} as Dict<any>;
+  attrs = {} as qt.Dict<any>;
   constructor(
     public name: string,
     public type: qt.NodeType,
@@ -60,7 +59,7 @@ export class Noper extends Ndata {
   outIdx?: number;
   compatible = false;
 
-  constructor(d: proto.NodeDef) {
+  constructor(d: NodeDef) {
     super(d.name, qt.NodeType.OPER);
     this.op = d.op;
     this.device = d.device;
@@ -124,7 +123,7 @@ function shapes(ps: {key: string; value: any}[]) {
 export type MetaGraph<N = Nclus | Noper, E = Emeta> = qg.Graph<Gdata, N, E>;
 export type BridgeGraph<N = Nclus | Noper, E = Emeta> = qg.Graph<Gdata, N, E>;
 
-export type Histos = Dict<Dict<number>>;
+export type Histos = qt.Dict<qt.Dict<number>>;
 
 export abstract class Nclus extends Ndata {
   parent?: Nclus;
@@ -134,8 +133,8 @@ export abstract class Nclus extends Ndata {
 
   constructor(n: string, t: qt.NodeType, public meta: MetaGraph) {
     super(n, t, 0);
-    this.histo.device = {} as Dict<number>;
-    this.histo.cluster = {} as Dict<number>;
+    this.histo.device = {} as qt.Dict<number>;
+    this.histo.cluster = {} as qt.Dict<number>;
     this.histo.compat = {compats: 0, incompats: 0};
   }
 
@@ -176,7 +175,7 @@ export class Nmeta extends Nclus {
       qt.NodeType.META,
       createGraph<Gdata, Nclus | Noper, Emeta>(n, qt.GraphType.META, o)
     );
-    this.histo.op = {} as Dict<number>;
+    this.histo.op = {} as qt.Dict<number>;
   }
 
   firstChild() {

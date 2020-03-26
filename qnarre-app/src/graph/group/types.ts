@@ -1,6 +1,9 @@
 import * as qg from '../graph';
 import * as qt from '../types';
 
+export {Area, Dict, Dir, Pad, Rect, Selection} from '../types';
+export {Link, Nodes} from '../graph';
+
 export enum GraphType {
   FULL,
   EMBEDDED,
@@ -34,12 +37,12 @@ export enum SelectType {
 }
 
 export enum ColorBy {
-  STRUCTURE,
-  DEVICE,
-  CLUSTER,
-  TIME,
-  MEMORY,
-  COMPAT
+  STRUCTURE = 'STRUCTURE',
+  DEVICE = 'DEVICE',
+  CLUSTER = 'CLUSTER',
+  TIME = 'TIME',
+  MEMORY = 'MEMORY',
+  COMPAT = 'COMPAT'
 }
 
 export interface Opts extends qg.Opts {

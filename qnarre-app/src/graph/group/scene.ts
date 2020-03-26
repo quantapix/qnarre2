@@ -5,8 +5,8 @@ import * as qc from './cluster';
 import * as qe from './edata';
 import * as ql from './layout';
 import * as qn from './ndata';
-import * as qr from './gdata';
 import * as qt from './types';
+
 import {PARAMS as PS} from './params';
 
 export function selectOrCreate(
@@ -85,8 +85,8 @@ export function positionEllipse(s: qt.Selection, r: qt.Rect) {
 
 export function positionButton(s: qt.Selection, nd: qn.Ndata) {
   const cx = ql.computeCXPositionOfNodeShape(nd);
-  const w = nd.expanded ? nd.w : nd.coreBox.w;
-  const h = nd.expanded ? nd.h : nd.coreBox.h;
+  const w = nd.expanded ? nd.w : nd.box.w;
+  const h = nd.expanded ? nd.h : nd.box.h;
   let x = cx + w / 2 - 6;
   let y = nd.y - h / 2 + 6;
   if (nd.type === qt.NodeType.LIST && !nd.expanded) {
@@ -99,34 +99,19 @@ export function positionButton(s: qt.Selection, nd: qn.Ndata) {
     .attr('transform', t);
   s.select('circle')
     .transition()
-    .attr({cx: x, cy: y, r: PS.nodeSize.meta.expandButtonRadius});
+    .attr('cx', x)
+    .attr('cy', y)
+    .attr('r', PS.nodeSize.meta.expandButtonRadius);
 }
 
-export function expandUntilNodeIsShown(scene, gd: qr.Gdata, name: string) {
-  const ns = name.split('/');
-  const m = ns[ns.length - 1].match(/(.*):\w+/);
-  if (m?.length === 2) ns[ns.length - 1] = m[1];
-  let n = ns[0];
-  let nd = gd.getNdataByName(n);
-  for (let i = 1; i < ns.length; i++) {
-    if (nd?.type === qt.NodeType.OPER) break;
-    gd.buildSubhierarchy(n);
-    nd!.expanded = true;
-    scene.setNodeExpanded(nd);
-    n += '/' + ns[i];
-    nd = gd.getNdataByName(n);
-  }
-  return nd?.name;
-}
-
-export function addGraphClickListener(group, elem) {
+export function addGraphClickListener(group: any, elem: any) {
   d3.select(group).on('click', () => {
     elem.fire('graph-select');
   });
 }
 
 export function translate(s: qt.Selection, x: number, y: number) {
-  if (s.attr('transform')) s = s.transition('position');
+  if (s.attr('transform')) s = s.transition('position') as any;
   s.attr('transform', 'translate(' + x + ',' + y + ')');
 }
 
@@ -208,6 +193,7 @@ const MINIMAP_BOX_HEIGHT = 150;
 export abstract class GraphElem extends HTMLElement {
   maxMetaNodeLabelLength?: number;
   maxMetaNodeLabelLengthLargeFont?: number;
+  minMetaNodeLabelLengthFontSize?: number;
   maxMetaNodeLabelLengthFontSize?: number;
   templateIndex?: () => {};
   colorBy = '';
@@ -258,10 +244,10 @@ export function buildGroup(
     selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
   }
   if (gd.libfnsExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY);
+    const g = selectOrCreate(scene, 'g', qt.Class.Scene.LIBRARY);
     qn.buildGroup(g, gd.libfnsExtract, e);
   } else {
-    selectChild(scene, 'g', qt.Class.Scene.FUNCTION_LIBRARY).remove();
+    selectChild(scene, 'g', qt.Class.Scene.LIBRARY).remove();
   }
   position(scene, gd);
   if (empty) {
@@ -284,7 +270,7 @@ function position(s: qt.Selection, cd: qc.Nclus) {
   if (ins) w += cd.outExtractBox.w;
   if (outs) w += cd.outExtractBox.w;
   if (ins) {
-    let x = cd.coreBox.w;
+    let x = cd.box.w;
     if (w < ql.MIN_AUX_WIDTH) {
       x -= ql.MIN_AUX_WIDTH + cd.inExtractBox.w / 2;
     } else {
@@ -294,7 +280,7 @@ function position(s: qt.Selection, cd: qc.Nclus) {
     translate(selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
   }
   if (outs) {
-    let x = cd.coreBox.w;
+    let x = cd.box.w;
     if (w < ql.MIN_AUX_WIDTH) {
       x -= ql.MIN_AUX_WIDTH + cd.outExtractBox.w / 2;
     } else {
@@ -304,7 +290,7 @@ function position(s: qt.Selection, cd: qc.Nclus) {
     translate(selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
   }
   if (libs) {
-    const x = cd.coreBox.w - cd.libfnsBox.w / 2;
-    translate(selectChild(s, 'g', qt.Class.Scene.FUNCTION_LIBRARY), x, y);
+    const x = cd.box.w - cd.libfnsBox.w / 2;
+    translate(selectChild(s, 'g', qt.Class.Scene.LIBRARY), x, y);
   }
 }

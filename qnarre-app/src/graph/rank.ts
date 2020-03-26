@@ -1,19 +1,20 @@
 import * as _ from 'lodash';
 
 import * as qg from './graph';
+import * as qt from './types';
 import * as qu from './utils';
 
 export interface Gdata {
   ranker: string;
   rankFactor: number;
 }
-export interface Ndata extends qg.Named {
+export interface Ndata extends qt.Named {
   parent: string;
   rank: number;
   low: number;
   lim: number;
 }
-export interface Edata extends qg.Named {
+export interface Edata extends qt.Named {
   weight: number;
   minlen: number;
   cutval: number;

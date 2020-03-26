@@ -7,8 +7,8 @@ import * as qt from './types';
 export interface Gdata {
   rankdir: qt.Dir;
 }
-export interface Ndata extends qg.Named, qt.Point, qt.Area {}
-export interface Edata extends qg.Named, qt.Point, qt.Area {
+export interface Ndata extends qt.Named, qt.Point, qt.Area {}
+export interface Edata extends qt.Named, qt.Point, qt.Area {
   points: qt.Point[];
 }
 

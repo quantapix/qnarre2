@@ -1,9 +1,6 @@
 import * as _ from 'lodash';
 
 import * as qt from './types';
-import * as qtt from '../types';
-
-/* eslint-disable no-constant-condition */
 
 export function escapeQuerySelector(sel: string): string {
   return sel.replace(/([:.[\],/\\()])/g, '\\$1');
@@ -359,7 +356,7 @@ export function groupButtonString(group?: boolean): string {
   }
 }
 
-export function toggleGroup(map: qtt.Dict<boolean>, n: string) {
+export function toggleGroup(map: qt.Dict<boolean>, n: string) {
   if (!(n in map) || map[n] === true) {
     map[n] = false;
   } else {

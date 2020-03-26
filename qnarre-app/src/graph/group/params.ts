@@ -29,23 +29,17 @@ export const PARAMS = {
       rankSep: 25,
       edgeSep: 5
     },
-    padding: {paddingTop: 40, paddingLeft: 20}
+    pad: {top: 40, left: 20}
   },
   subscene: {
     meta: {
-      paddingTop: 10,
-      paddingBottom: 10,
-      paddingLeft: 10,
-      paddingRight: 10,
+      pad: {top: 10, bottom: 10, left: 10, right: 10},
       labelHeight: 20,
       extractXOffset: 15,
       extractYOffset: 20
     },
     series: {
-      paddingTop: 10,
-      paddingBottom: 10,
-      paddingLeft: 10,
-      paddingRight: 10,
+      pad: {top: 10, bottom: 10, left: 10, right: 10},
       labelHeight: 10
     }
   },
@@ -61,44 +55,41 @@ export const PARAMS = {
         .clamp(true),
       expandButtonRadius: 3
     },
-    op: {
-      width: 15,
-      height: 6,
+    oper: {
+      w: 15,
+      h: 6,
       radius: 3,
       labelOffset: -8,
       maxLabelWidth: 30
     },
-    series: {
+    list: {
       expanded: {
         radius: 10,
         labelOffset: 0
       },
       vertical: {
-        width: 16,
-        height: 13,
+        w: 16,
+        h: 13,
         labelOffset: -13
       },
       horizontal: {
-        width: 24,
-        height: 8,
+        w: 24,
+        h: 8,
         radius: 10,
         labelOffset: -10
       }
     },
     bridge: {
-      width: 20,
-      height: 20,
+      w: 20,
+      h: 20,
       radius: 2,
       labelOffset: 0
     }
   },
   shortcutSize: {
-    op: {width: 10, height: 4},
-    meta: {width: 12, height: 4, radius: 1},
-    series: {
-      width: 14,
-      height: 4
-    }
+    oper: {w: 10, h: 4},
+    meta: {w: 12, h: 4, radius: 1},
+    list: {w: 14, h: 4}
   },
   annotations: {
     inboxWidth: 50,

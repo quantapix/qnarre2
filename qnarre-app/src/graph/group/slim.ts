@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
-import * as proto from './proto';
+
 import * as qg from './graph';
 import * as qp from './params';
 import * as qt from './types';
 import * as qu from './utils';
+
+import * as proto from './proto';
 
 export class SlimGraph {
   opers = {} as qt.Dict<qg.Noper>;
@@ -52,7 +54,7 @@ export class SlimGraph {
         }
         this.opers[o].device = ds.device;
         if (!this.opers[o].stats) {
-          this.opers[o].stats = new qg.Stats(s);
+          this.opers[o].stats = new qu.Stats(s);
         }
         this.opers[o].stats?.addBytes(b);
         if (ns.all_end_rel_micros) {
@@ -71,8 +73,8 @@ export class SlimGraph {
 }
 
 function strictName(n: string) {
-  const s = n.split(qp.NAMESPACE_DELIM);
-  return n + qp.NAMESPACE_DELIM + '(' + s[s.length - 1] + ')';
+  const s = n.split(qp.SLASH);
+  return n + qp.SLASH + '(' + s[s.length - 1] + ')';
 }
 
 export async function build(
@@ -115,7 +117,7 @@ export async function build(
     }
     raws.forEach(raw);
     function process(fn: proto.FunctionDef) {
-      const f = qp.LIBRARY_PREFIX + fn.signature.name;
+      const f = qp.LIB_PRE + fn.signature.name;
       raw({name: f, input: [], device: '', op: '', attr: []});
       let args = fn.signature.input_arg;
       if (args.length) {
@@ -123,7 +125,7 @@ export async function build(
         // eslint-disable-next-line no-inner-declarations
         function input(arg: proto.ArgDef) {
           const o = raw({
-            name: f + qp.NAMESPACE_DELIM + arg.name,
+            name: f + qp.SLASH + arg.name,
             input: [],
             device: '',
             op: 'input_arg',
@@ -140,7 +142,7 @@ export async function build(
         let idx = 0;
         // eslint-disable-next-line no-inner-declarations
         function output(arg: proto.ArgDef) {
-          onames[f + qp.NAMESPACE_DELIM + arg.name] = idx;
+          onames[f + qp.SLASH + arg.name] = idx;
           idx++;
         }
         args.forEach(output);
@@ -151,7 +153,7 @@ export async function build(
         const o = raw(r);
         if (_.isNumber(onames[r.name])) o.outIdx = onames[r.name];
         o.ins.forEach(n => {
-          n.name = f + qp.NAMESPACE_DELIM + n.name;
+          n.name = f + qp.SLASH + n.name;
         });
       });
     }
@@ -218,10 +220,7 @@ function mapHierarchy(names: string[], enames: string[]) {
     for (let j = i + 1; j < names.length; ++j) {
       const n1 = names[j];
       if (_.startsWith(n1, n0)) {
-        if (
-          n1.length > n0.length &&
-          n1.charAt(n0.length) === qp.NAMESPACE_DELIM
-        ) {
+        if (n1.length > n0.length && n1.charAt(n0.length) === qp.SLASH) {
           m[n0] = strictName(n0);
           break;
         }
@@ -238,10 +237,10 @@ function mapHierarchy(names: string[], enames: string[]) {
 
 export function hierarchyPath(name: string, series?: qt.Dict<string>) {
   const p = [] as string[];
-  let i = name.indexOf(qp.NAMESPACE_DELIM);
+  let i = name.indexOf(qp.SLASH);
   while (i >= 0) {
     p.push(name.substring(0, i));
-    i = name.indexOf(qp.NAMESPACE_DELIM, i + 1);
+    i = name.indexOf(qp.SLASH, i + 1);
   }
   if (series) {
     const n = series[name];

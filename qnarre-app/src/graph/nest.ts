@@ -9,7 +9,7 @@ export interface Gdata {
   nestRoot: string;
   rankFactor: number;
 }
-export interface Ndata extends qg.Named, qt.Area {
+export interface Ndata extends qt.Named, qt.Area {
   border: qt.Border;
   borderType: string;
   fake: boolean | string;
@@ -18,7 +18,7 @@ export interface Ndata extends qg.Named, qt.Area {
   minRank: number;
   rank: number;
 }
-export interface Edata extends qg.Named {
+export interface Edata extends qt.Named {
   minlen: number;
   nestEdge: boolean;
   weight: number;
