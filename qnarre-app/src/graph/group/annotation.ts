@@ -8,43 +8,10 @@ import * as qn from './ndata';
 import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
-
-export class Anno {
-  node: qt.Node;
-  ndata: Ndata;
-  edata?: MetaEdata;
-  type: qt.AnnoType;
-  dx = 0;
-  dy = 0;
-  width = 0;
-  height = 0;
-  v?: string;
-  w?: string;
-  isIn: boolean;
-  labelOffset = 0;
-  points = [] as {dx: number; dy: number}[];
-
-  constructor(
-    node: qt.Node,
-    ndata: Ndata,
-    edata: MetaEdata | undefined,
-    type: qt.AnnoType,
-    isIn: boolean
-  ) {
-    this.node = node;
-    this.ndata = ndata;
-    this.edata = edata;
-    this.type = type;
-    if (edata && edata.metaedge) {
-      this.v = edata.metaedge.v;
-      this.w = edata.metaedge.w;
-    }
-    this.isIn = isIn;
-  }
-}
+import * as qg from './graph';
 
 export class AnnoList {
-  list: Anno[];
+  list: qg.Anno[];
   names: qt.Dict<boolean>;
 
   constructor() {

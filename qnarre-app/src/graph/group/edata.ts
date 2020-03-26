@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qp from './params';
+import * as qg from './graph';
 import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
@@ -30,20 +31,19 @@ export type EdgeData = {
   label: Emeta;
 };
 
-export class Emeta implements qg.Edata {
-  isControl = false;
-  isRef = false;
-  out = '';
+export class Emeta extends qg.Emeta {
+  faded?: boolean;
+  structural?: boolean;
   adjoiningMetaEdge?: Emeta;
-  structural = false;
   weight = 1;
-  points = [] as Point[];
-  edgeGroup?: d3.Selection<Emeta & any, any, any, any>;
+  points = [] as qt.Point[];
+  edgeGroup?: qt.Selection;
   startMarkerId = '';
   endMarkerId = '';
-  isFadedOut = false;
 
-  constructor(public metaedge?: qg.Emeta) {}
+  constructor(public metaedge?: qg.Emeta, inbound?: boolean) {
+    super(inbound);
+  }
 }
 
 export interface EdgeSelectionCallback {
@@ -70,13 +70,15 @@ export function buildGroup(
   );
   const container = qs.selectOrCreate(scene, 'g', qt.Class.Edge.CONTAINER);
   const gs = (container as any)
-    .selectAll(() => this.childNodes)
+    .selectAll(function() {
+      return this.childNodes;
+    })
     .data(es, getEdgeKey);
   gs.enter()
     .append('g')
     .attr('class', qt.Class.Edge.GROUP)
     .attr('data-edge', getEdgeKey)
-    .each((d: EdgeData) => {
+    .each(function(d) {
       const g = d3.select(this);
       d.label.edgeGroup = g;
       elem._edgeGroupIndex[getEdgeKey(d)] = g;
@@ -98,23 +100,6 @@ export function buildGroup(
     .each((d: EdgeData) => delete elem._edgeGroupIndex[getEdgeKey(d)])
     .remove();
   return gs;
-}
-
-export function getLabelForBaseEdge(e: qt.BaseEdge, gdata: qr.Gdata) {
-  const n = gdata.getNodeByName(e.v) as qt.Noper;
-  if (!n.outShapes || _.isEmpty(n.outShapes)) return undefined;
-  const shape = n.outShapes[e.outKey];
-  if (!shape) return undefined;
-  if (shape.length === 0) return 'scalar';
-  return shape.map(s => (s === -1 ? '?' : s)).join(TENSOR_SHAPE_DELIM);
-}
-
-export function getLabelForEdge(e: qg.Emeta, gdata: qr.Gdata) {
-  if (gdata.edgeLabelFunction) return gdata.edgeLabelFunction(e, gdata);
-  const isMulti = e.bases.length > 1;
-  return isMulti
-    ? e.bases.length + ' tensors'
-    : getLabelForBaseEdge(e.bases[0], gdata);
 }
 
 function getPathSegmentIndexAtLength(

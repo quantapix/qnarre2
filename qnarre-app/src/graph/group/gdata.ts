@@ -1,37 +1,22 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable no-case-declarations */
 import * as _ from 'lodash';
 import * as d3 from 'd3';
-import * as qu from './utils';
-import * as qt from './types';
-import * as qg from './graph';
-import * as edge from './edata';
-import * as qp from './params';
 
-export type Point = {x: number; y: number};
+import * as qe from './edata';
+import * as qg from './graph';
+import * as qp from './params';
+import * as qt from './types';
+import * as qu from './utils';
+import * as qn from './ndata';
+import * as qh from './hierarchy';
+import {GdataParams as PS} from './params';
 
 export interface EdgeThicknessFunction {
-  (d: edge.EdgeData, edgeClass: string): number;
+  (ed: qg.Edata, c: string): number;
 }
 
 export interface EdgeLabelFunction {
-  (e: qg.Emeta, d: Gdata): string;
+  (e: qg.Emeta, gd: Gdata): string;
 }
-
-const PARAMS = {
-  enableExtraction: true,
-  minNodeCountForExtraction: 15,
-  minDegreeForExtraction: 5,
-  maxControlDegree: 4,
-  maxBridgePathDegree: 4,
-  outExtractTypes: ['NoOp'],
-  inExtractTypes: [],
-  detachAllEdgesForHighDegree: true,
-  extractIsolatedNodesWithAnnotationsOnOneSide: true,
-  enableBridgegraph: true,
-  minMaxColors: ['#fff5f0', '#fb6a4a'],
-  maxAnnotations: 5
-};
 
 interface VisibleParent {
   visibleParent: qt.Node;
@@ -39,7 +24,7 @@ interface VisibleParent {
 }
 
 export class Gdata {
-  index = {} as qt.Dict<Ndata>;
+  index = {} as qt.Dict<qn.Ndata>;
   renderedOpNames = [] as string[];
   deviceColorMap = {} as d3.ScaleOrdinal<string, string>;
   clusterColorMap = {} as d3.ScaleOrdinal<string, string>;
@@ -49,14 +34,14 @@ export class Gdata {
     | d3.ScaleLinear<number, number>
     | d3.ScalePower<number, number>;
   hasSubhierarchy = {} as qt.Dict<boolean>;
-  root: GroupNdata;
+  root: qg.Nclus;
   traceInputs = false;
   edgeLabelFunction?: EdgeLabelFunction;
   edgeWidthFunction?: EdgeThicknessFunction;
 
-  constructor(public hierarchy: qt.Hierarchy, public displayingStats: boolean) {
+  constructor(public hierarchy: qh.Hierarchy, public displayingStats: boolean) {
     this.computeScales();
-    this.root = new GroupNdata(hierarchy.root, hierarchy.options);
+    this.root = new qg.Nclus(hierarchy.root, hierarchy.options);
     this.root.expanded = true;
     this.index[hierarchy.root.name] = this.root;
     this.renderedOpNames.push(hierarchy.root.name);
@@ -68,37 +53,31 @@ export class Gdata {
       .scaleOrdinal<string>()
       .domain(this.hierarchy.devices)
       .range(
-        _.map(
-          d3.range(this.hierarchy.devices.length),
-          qp.NmetaColors.DEVICE_PALETTE
-        )
+        _.map(d3.range(this.hierarchy.devices.length), qp.MetaColors.DEVICE)
       );
     this.clusterColorMap = d3
       .scaleOrdinal<string>()
       .domain(this.hierarchy.clusters)
       .range(
-        _.map(
-          d3.range(this.hierarchy.clusters.length),
-          qp.NmetaColors.CLUSTER_PALETTE
-        )
+        _.map(d3.range(this.hierarchy.clusters.length), qp.MetaColors.CLUSTER)
       );
-    const top = this.hierarchy.root.metag;
+    const top = this.hierarchy.root.meta;
     const maxMemory = d3.max(top.nodes(), n => {
-      return top.node(n).stats?.bytes;
+      return top.node(n)?.stats?.bytes;
     })!;
     this.memoryUsageScale = d3
       .scaleLinear<string, string>()
       .domain([0, maxMemory])
-      .range(PARAMS.minMaxColors);
+      .range(PS.minMaxColors);
     const maxTime = d3.max(top.nodes(), n => {
-      return top.node(n).stats?.getMicros();
+      return top.node(n)?.stats?.getMicros();
     })!;
     this.computeTimeScale = d3
       .scaleLinear<string, string>()
       .domain([0, maxTime])
-      .range(PARAMS.minMaxColors);
+      .range(PS.minMaxColors);
     this.edgeWidthSizedBasedScale = this.hierarchy.hasShape
-      ? edge.EDGE_WIDTH_SIZE_BASED_SCALE
+      ? qe.EDGE_WIDTH_SIZE_BASED_SCALE
       : d3
           .scaleLinear()
           .domain([1, this.hierarchy.maxEdgeSize])
@@ -128,13 +107,13 @@ export class Gdata {
     return [];
   }
 
-  getOrCreateRenderNodeByName(name: string): Ndata | undefined {
+  getOrCreateRenderNodeByName(name: string): qn.Ndata | undefined {
     if (name in this.index) return this.index[name];
     const n = this.hierarchy.node(name);
     if (!n) return undefined;
-    const d = n.isClus
-      ? new GroupNdata(n as qg.Nclus, this.hierarchy.options)
-      : new Ndata(n);
+    const d = qg.isClus(n)
+      ? new qg.Nclus(n as qg.Nclus, this.hierarchy.options)
+      : new qn.Ndata(n);
     this.index[name] = d;
     this.renderedOpNames.push(name);
     if (n.stats) {
@@ -145,20 +124,20 @@ export class Gdata {
     let dh: qt.Dict<number> | undefined;
     let ch: qt.Dict<number> | undefined;
     let oc;
-    if (n.isClus) {
-      dh = (n as qg.Nclus).deviceHisto;
-      ch = (n as qg.Nclus).clusterHisto;
-      const compat = (n as qg.Nclus).compatHisto.compatible;
-      const incompat = (n as qg.Nclus).compatHisto.incompatible;
-      if (compat != 0 || incompat != 0) {
-        oc = compat / (compat + incompat);
+    if (qg.isClus(n)) {
+      dh = (n as qg.Nclus).histo.device;
+      ch = (n as qg.Nclus).histo.cluster;
+      const compats = (n as qg.Nclus).histo.compat.compats;
+      const incompats = (n as qg.Nclus).histo.compat.incompats;
+      if (compats != 0 || incompats != 0) {
+        oc = compats / (compats + incompats);
       }
     } else {
       let n = (d.node as qg.Noper).device;
       if (n) dh = {[n]: 1};
       n = (d.node as qg.Noper).cluster;
       if (n) ch = {[n]: 1};
-      if (d.node.type === qt.NodeType.OP) {
+      if (d.node.type === qt.NodeType.OPER) {
         oc = (d.node as qg.Noper).compatible ? 1 : 0;
       }
     }
@@ -170,8 +149,8 @@ export class Gdata {
     }
     if (oc) {
       d.compatibilityColors = [
-        {color: qp.NoperColors.COMPATIBLE, proportion: oc},
-        {color: qp.NoperColors.INCOMPATIBLE, proportion: 1 - oc}
+        {color: qp.OperColors.COMPATIBLE, proportion: oc},
+        {color: qp.OperColors.INCOMPATIBLE, proportion: 1 - oc}
       ];
     }
     return this.index[name];
@@ -180,7 +159,7 @@ export class Gdata {
   getNearestVisibleAncestor(name: string) {
     const path = qg.hierarchyPath(name);
     let i = 0;
-    let node: Ndata | undefined;
+    let node: qn.Ndata | undefined;
     let n = name;
     for (; i < path.length; i++) {
       n = path[i];
@@ -195,20 +174,37 @@ export class Gdata {
     return n;
   }
 
-  setDepth(depth: number) {
-    setGroupNodeDepth(this.root, +depth);
+  setDepth(d: number) {
+    this.root.setDepth(d);
   }
 
-  isNodeAuxiliary(node: Ndata) {
-    const p = this.getNdataByName(node.node.parent?.name) as GroupNdata;
+  isNodeAuxiliary(nd: qn.Ndata) {
+    const p = this.getNdataByName(nd.parent?.name) as qg.Nclus;
     let found = _.find(p.isolatedInExtract, n => {
-      return n.node.name === node.node.name;
+      return n.node.name === nd.name;
     });
     if (found) return true;
     found = _.find(p.isolatedOutExtract, n => {
-      return n.node.name === node.node.name;
+      return n.node.name === nd.name;
     });
     return !!found;
+  }
+
+  getLabelForBaseEdge(e: qt.BaseEdge) {
+    const n = this.getNodeByName(e.v) as qg.Noper;
+    if (!n.outShapes || _.isEmpty(n.outShapes)) return undefined;
+    const shape = n.outShapes[e.outKey];
+    if (!shape) return undefined;
+    if (shape.length === 0) return 'scalar';
+    return shape.map(s => (s === -1 ? '?' : s)).join(TENSOR_SHAPE_DELIM);
+  }
+
+  getLabelForEdge(e: qg.Emeta) {
+    if (this.edgeLabelFunction) return this.edgeLabelFunction(e);
+    const isMulti = e.bases.length > 1;
+    return isMulti
+      ? e.bases.length + ' tensors'
+      : this.getLabelForBaseEdge(e.bases[0]);
   }
 
   getNamesOfRenderedOps(): string[] {
@@ -232,18 +228,18 @@ export class Gdata {
     return nd?.name;
   }
 
-  _getAllContainedOpNodes(name: string, gdata: qr.Gdata) {
-    let os = [] as Array<qg.OpNode>;
-    const n = gdata.getNodeByName(name) as qg.Nclus | qg.Noper;
-    if (n instanceof qg.OpNode) return [n].concat(n.inEmbeds);
-    const ns = (n as qg.Nclus).metag.nodes();
+  _getAllContainedOpNodes(name: string) {
+    let os = [] as qg.Noper[];
+    const n = this.getNodeByName(name);
+    if (n instanceof qg.Noper) return [n].concat(n.inEmbeds);
+    const ns = (n as qg.Nclus).meta.nodes();
     _.each(ns, n => {
-      os = os.concat(_getAllContainedOpNodes(n, gdata));
+      os = os.concat(this._getAllContainedOpNodes(n));
     });
     return os;
   }
 
-  getVisibleParent(gdata: qr.Gdata, node?: qt.Node) {
+  getVisibleParent(node?: qn.Ndata) {
     let p = node;
     let found = false;
     while (!found) {
@@ -252,18 +248,18 @@ export class Gdata {
       if (!p) {
         found = true;
       } else {
-        const n = gdata.getNdataByName(p.name);
-        if (n && (n.expanded || p instanceof qg.OpNode)) found = true;
+        const n = this.getNdataByName(p.name);
+        if (n && (n.expanded || p instanceof qg.Noper)) found = true;
       }
     }
     return node;
   }
 
-  findVisibleParents(gdata: qr.Gdata, ns: string[]) {
-    const ps = {} as qt.Dict<qt.Node>;
+  findVisibleParents(ns: string[]) {
+    const ps = {} as qt.Dict<qn.Ndata>;
     _.each(ns, nn => {
-      const n = gdata.getNodeByName(nn);
-      const p = getVisibleParent(gdata, n);
+      const n = this.getNodeByName(nn);
+      const p = this.getVisibleParent(n);
       if (p) ps[p.name] = p;
     });
     return ps;
@@ -271,7 +267,6 @@ export class Gdata {
 
   traceAllInputsOfOpNode(
     root: SVGElement,
-    gdata: qr.Gdata,
     startNode: qg.Noper,
     allTracedNodes: Record<string, any>
   ) {
@@ -281,19 +276,19 @@ export class Gdata {
       allTracedNodes[startNode.name] = true;
     }
     const ins = startNode.ins;
-    const currentVisibleParent = getVisibleParent(gdata, startNode);
+    const currentVisibleParent = this.getVisibleParent(startNode);
     d3.select(root)
-      .select(`.node[data-name="${currentVisibleParent.name}"]`)
+      .select(`.node[data-name="${currentVisibleParent?.name}"]`)
       .classed('input-highlight', true);
     const visibleInputs = {};
-    _.each(ins, function(node) {
-      let resolvedNode = gdata.getNodeByName(node.name);
+    _.each(ins, nd => {
+      let resolvedNode = this.getNodeByName(nd.name);
       if (resolvedNode === undefined) return;
-      if (resolvedNode instanceof qg.MetaNode) {
+      if (resolvedNode instanceof qg.Nmeta) {
         const resolvedNodeName = qg.strictName(resolvedNode.name);
-        resolvedNode = gdata.getNodeByName(resolvedNodeName) as qg.Noper;
+        resolvedNode = this.getNodeByName(resolvedNodeName) as qg.Noper;
       }
-      const visibleParent = getVisibleParent(gdata, resolvedNode);
+      const visibleParent = this.getVisibleParent(resolvedNode);
       const visibleInputsEntry = visibleInputs[visibleParent.name];
       if (visibleInputsEntry) {
         visibleInputsEntry.opNodes.push(resolvedNode);
@@ -312,8 +307,8 @@ export class Gdata {
       connectionEndpoints: []
     };
     let node = currentVisibleParent;
-    for (let index = 1; node.name !== qp.ROOT_NAME; index++) {
-      node = node.parent;
+    for (let index = 1; node?.name !== qp.ROOT; index++) {
+      node = node?.parent;
       starts[node.name] = {
         traced: false,
         index: index,
@@ -323,10 +318,9 @@ export class Gdata {
     }
     _.forOwn(visibleInputs, function(visibleParentInfo: VisibleParent, key) {
       const node = visibleParentInfo.visibleParent;
-      _.each(visibleParentInfo.opNodes, function(opNode: qg.Noper) {
-        allTracedNodes = traceAllInputsOfOpNode(
+      _.each(visibleParentInfo.opNodes, (opNode: qg.Noper) => {
+        allTracedNodes = this.traceAllInputsOfOpNode(
           root,
-          gdata,
           opNode,
           allTracedNodes
         );
@@ -338,12 +332,7 @@ export class Gdata {
     return allTracedNodes;
   }
 
-  updateInputTrace(
-    root: SVGElement,
-    gdata: qr.Gdata,
-    selectedNodeName: string,
-    trace: boolean
-  ) {
+  updateInputTrace(root: SVGElement, selectedNodeName: string, trace: boolean) {
     const r = d3.select(root);
     r.selectAll('.input-highlight').classed('input-highlight', false);
     r.selectAll('.non-input').classed('non-input', false);
@@ -358,19 +347,14 @@ export class Gdata {
       'input-highlight-selected',
       false
     );
-    if (!gdata || !trace || !selectedNodeName) return;
-    const opNodes = _getAllContainedOpNodes(selectedNodeName, gdata);
+    if (!trace || !selectedNodeName) return;
+    const opNodes = this._getAllContainedOpNodes(selectedNodeName);
     let allTracedNodes = {};
-    _.each(opNodes, function(node) {
-      allTracedNodes = traceAllInputsOfOpNode(
-        root,
-        gdata,
-        node,
-        allTracedNodes
-      );
+    _.each(opNodes, node => {
+      allTracedNodes = this.traceAllInputsOfOpNode(root, node, allTracedNodes);
     });
     const highlightedNodes = Object.keys(allTracedNodes);
-    const visibleNodes = findVisibleParents(gdata, highlightedNodes);
+    const visibleNodes = this.findVisibleParents(highlightedNodes);
     markParents(root, visibleNodes);
     r.selectAll(
       'g.node:not(.selected):not(.input-highlight)' +
@@ -378,7 +362,7 @@ export class Gdata {
     )
       .classed('non-input', true)
       .each(d => {
-        const nodeName = d.node.name;
+        const nodeName = d.name;
         r.selectAll(`[data-name="${nodeName}"]`).classed('non-input', true);
       });
     r.selectAll('g.edge:not(.input-edge-highlight)').classed(
@@ -387,7 +371,7 @@ export class Gdata {
     );
   }
 
-  private cloneAndAddFunctionOpNode(
+  cloneAndAddFunctionOpNode(
     m: qg.Nmeta,
     fnName: string,
     node: qg.Noper,
@@ -453,8 +437,8 @@ export class Gdata {
     n.cardinality = libn.cardinality;
     n.template = libn.template;
     n.opHistogram = _.clone(libn.opHistogram);
-    n.deviceHisto = _.clone(libn.deviceHisto);
-    n.clusterHisto = _.clone(libn.clusterHisto);
+    n.histo.device = _.clone(libn.histo.device);
+    n.histo.cluster = _.clone(libn.histo.cluster);
     n.noControls = libn.noControls;
     n.include = libn.include;
     n.attributes = _.clone(libn.attributes);
@@ -475,7 +459,7 @@ export class Gdata {
           n.meta.setNode(n2.name, n2);
           this.hierarchy.setNode(n2.name, n2);
           break;
-        case qt.NodeType.OP:
+        case qt.NodeType.OPER:
           const n3 = this.cloneAndAddFunctionOpNode(
             n,
             oldPre,
@@ -572,9 +556,9 @@ export class Gdata {
     const d = this.index[nodeName];
     if (d.node.type !== qt.NodeType.META && d.node.type !== qt.NodeType.LIST)
       return;
-    const ndata = d as GroupNdata;
-    const metaG = ndata.node.metag;
-    const coreG = ndata.coreGraph;
+    const ndata = d as qg.Nclus;
+    const metaG = qn.ndata.node.metag;
+    const coreG = qn.ndata.coreGraph;
     const os = [] as qg.Noper[];
     const cs = [] as qg.Nmeta[];
     if (!_.isEmpty(this.hierarchy.libfns)) {
@@ -599,13 +583,13 @@ export class Gdata {
       coreG.setNode(n, cd);
       if (!cn.isClus) {
         _.each((cn as qg.Noper).inEmbeds, e => {
-          const ed = new Ndata(e);
+          const ed = new qn.Ndata(e);
           const md = new MetaEdata();
           addInAnno(cd, e, ed, md, qt.AnnotationType.CONSTANT);
           this.index[e.name] = ed;
         });
         _.each((cn as qg.Noper).outEmbeds, e => {
-          const ed = new Ndata(e);
+          const ed = new qn.Ndata(e);
           const md = new MetaEdata();
           addOutAnno(cd, e, ed, md, qt.AnnotationType.SUMMARY);
           this.index[e.name] = ed;
@@ -618,24 +602,24 @@ export class Gdata {
       md.isFadedOut = this.index[e.v].isFadedOut || this.index[e.w].isFadedOut;
       coreG.setEdge(e.v, e.w, md);
     });
-    if (PARAMS.enableExtraction && ndata.node.type === qt.NodeType.META) {
+    if (PS.enableExtraction && qn.ndata.node.type === qt.NodeType.META) {
       extractHighDegrees(ndata);
     }
     if (!_.isEmpty(this.hierarchy.libfns)) {
-      this.buildSubhierarchiesForNeededFunctions(metaG);
+      metaG.buildSubhierarchiesForNeededFunctions();
     }
     if (nodeName === qp.ROOT_NAME) {
       _.forOwn(this.hierarchy.libfns, fd => {
         const n = fd.node;
         const cd = this.getOrCreateRenderNodeByName(n.name)!;
-        ndata.libfnsExtract.push(cd);
+        qn.ndata.libfnsExtract.push(cd);
         cd.node.include = qt.InclusionType.EXCLUDE;
         coreG.removeNode(n.name);
       });
     }
-    const parent = ndata.node.parent;
+    const parent = qn.ndata.node.parent;
     if (!parent) return;
-    const pd = this.index[parent.name] as GroupNdata;
+    const pd = this.index[parent.name] as qg.Nclus;
     function bridgeName(inbound: boolean, ...rest: string[]) {
       return rest.concat([inbound ? 'IN' : 'OUT']).join('~~');
     }
@@ -665,20 +649,15 @@ export class Gdata {
       const rd0 = this.index[n0];
       const rd1 = this.index[n1];
       const isControl =
-        !ed.numRegular && counts.control[n1] > PARAMS.maxControlDegree;
+        !ed.numRegular && counts.control[n1] > PS.maxControlDegree;
       const [, annos] = inbound
         ? [ndata.inAnnotations, rd0.inAnnotations]
         : [ndata.outAnnotations, rd0.outAnnotations];
       const c = (inbound ? counts.out : counts.in)[n1];
-      const isOther = c > PARAMS.maxBridgePathDegree;
+      const isOther = c > PS.maxBridgePathDegree;
       let adjoining: MetaEdata | undefined;
       let canDraw = false;
-      if (
-        PARAMS.enableBridgegraph &&
-        !isOther &&
-        !isControl &&
-        rd0.isInCore()
-      ) {
+      if (PS.enableBridgegraph && !isOther && !isControl && rd0.isInCore()) {
         const find = (t: string) => {
           console.log(d);
           const l: qt.EdgeObject = inbound
@@ -732,7 +711,7 @@ export class Gdata {
             inbound: inbound,
             attributes: {}
           };
-          bpd = new Ndata(p);
+          bpd = new qn.Ndata(p);
           this.index[bpn] = bpd;
           coreG.setNode(bpn, bpd);
         }
@@ -744,7 +723,7 @@ export class Gdata {
           inbound: inbound,
           attributes: {}
         };
-        bd = new Ndata(n);
+        bd = new qn.Ndata(n);
         this.index[bn] = bd;
         coreG.setNode(bn, bd);
         coreG.setParent(bn, bpn);
@@ -776,7 +755,7 @@ export class Gdata {
             inbound: inbound,
             attributes: {}
           };
-          sd = new Ndata(bn);
+          sd = new qn.Ndata(bn);
           sd.structural = true;
           this.index[sn] = sd;
           coreG.setNode(sn, sd);
@@ -843,26 +822,4 @@ function createVisibleTrace(
       `[data-edge="${prev.name}~~${outer.name}` + `~~IN--${inner.name}"]`;
     r.selectAll(sel).classed('input-edge-highlight', true);
   }
-}
-
-function addInAnno(
-  node: Ndata,
-  pred: qt.Node,
-  ndata: Ndata,
-  edge: MetaEdata,
-  type: qt.AnnotationType
-) {
-  const a = new Annotation(pred, ndata, edge, type, true);
-  node.inAnnotations.push(a);
-}
-
-function addOutAnno(
-  node: Ndata,
-  succ: qt.Node,
-  ndata: Ndata,
-  edge: MetaEdata,
-  type: qt.AnnotationType
-) {
-  const a = new Annotation(succ, ndata, edge, type, false);
-  node.outAnnotations.push(a);
 }

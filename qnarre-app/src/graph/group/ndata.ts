@@ -204,6 +204,16 @@ export class Ndata implements qt.Rect, qg.Ndata {
       });
   }
 
+  addInAnno(nd: Ndata, em: qg.Emeta, t: qt.AnnoType) {
+    const a = new qg.Anno(nd, em, t, true);
+    this.inAnnotations.push(a);
+  }
+
+  addOutAnno(nd: Ndata, em: qg.Emeta, t: qt.AnnoType) {
+    const a = new qg.Anno(nd, em, t, false);
+    this.outAnnotations.push(a);
+  }
+
   labelBuild(s: qt.Selection, e: qs.GraphElem) {
     let t = this.display;
     const scale = this.type === qt.NodeType.META && !this.expanded;

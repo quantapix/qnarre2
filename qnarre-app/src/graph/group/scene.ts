@@ -1,8 +1,6 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
-import * as qc from './cluster';
-import * as qe from './edata';
 import * as ql from './layout';
 import * as qn from './ndata';
 import * as qt from './types';
@@ -207,90 +205,4 @@ export abstract class GraphElem extends HTMLElement {
   abstract getAnnotationGroupsIndex(name: string): qt.Selection;
   abstract getGraphSvgRoot(): SVGElement;
   abstract getContextMenu(): HTMLElement;
-}
-
-export function buildGroup(
-  s: qt.Selection,
-  gd: qc.Nclus,
-  e: GraphElem,
-  cg: string
-) {
-  cg = cg || qt.Class.Scene.GROUP;
-  const empty = selectChild(s, 'g', cg).empty();
-  const scene = selectOrCreate(s, 'g', cg);
-  const sg = selectOrCreate(scene, 'g', qt.Class.Scene.CORE);
-  const ds = _.reduce(
-    gd.core.nodes(),
-    (ds, n) => {
-      const nd = gd.core.node(n);
-      if (nd && !nd.excluded) ds.push(nd);
-      return ds;
-    },
-    [] as qn.Ndata[]
-  );
-  if (gd.type === qt.NodeType.LIST) ds.reverse();
-  qe.buildGroup(sg, gd.core, e);
-  qn.buildGroup(sg, ds, e);
-  if (gd.isolatedInExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
-    qn.buildGroup(g, gd.isolatedInExtract, e);
-  } else {
-    selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
-  }
-  if (gd.isolatedOutExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
-    qn.buildGroup(g, gd.isolatedOutExtract, e);
-  } else {
-    selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
-  }
-  if (gd.libfnsExtract.length > 0) {
-    const g = selectOrCreate(scene, 'g', qt.Class.Scene.LIBRARY);
-    qn.buildGroup(g, gd.libfnsExtract, e);
-  } else {
-    selectChild(scene, 'g', qt.Class.Scene.LIBRARY).remove();
-  }
-  position(scene, gd);
-  if (empty) {
-    scene
-      .attr('opacity', 0)
-      .transition()
-      .attr('opacity', 1);
-  }
-  return scene;
-}
-
-function position(s: qt.Selection, cd: qc.Nclus) {
-  const y = cd.type === qt.NodeType.LIST ? 0 : PS.subscene.meta.labelHeight;
-  translate(selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
-  const ins = cd.isolatedInExtract.length > 0;
-  const outs = cd.isolatedOutExtract.length > 0;
-  const libs = cd.libfnsExtract.length > 0;
-  const off = PS.subscene.meta.extractXOffset;
-  let w = 0;
-  if (ins) w += cd.outExtractBox.w;
-  if (outs) w += cd.outExtractBox.w;
-  if (ins) {
-    let x = cd.box.w;
-    if (w < ql.MIN_AUX_WIDTH) {
-      x -= ql.MIN_AUX_WIDTH + cd.inExtractBox.w / 2;
-    } else {
-      x -= cd.inExtractBox.w / 2 - cd.outExtractBox.w - (outs ? off : 0);
-    }
-    x -= cd.libfnsBox.w - (libs ? off : 0);
-    translate(selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
-  }
-  if (outs) {
-    let x = cd.box.w;
-    if (w < ql.MIN_AUX_WIDTH) {
-      x -= ql.MIN_AUX_WIDTH + cd.outExtractBox.w / 2;
-    } else {
-      x -= cd.outExtractBox.w / 2;
-    }
-    x -= cd.libfnsBox.w - (libs ? off : 0);
-    translate(selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
-  }
-  if (libs) {
-    const x = cd.box.w - cd.libfnsBox.w / 2;
-    translate(selectChild(s, 'g', qt.Class.Scene.LIBRARY), x, y);
-  }
 }

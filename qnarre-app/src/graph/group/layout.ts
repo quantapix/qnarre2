@@ -5,8 +5,6 @@ import * as qt from './types';
 import * as qr from './gdata';
 import * as qp from './params';
 
-export const MIN_AUX_WIDTH = 140;
-
 export function layoutScene(d: qr.GroupNdata) {
   if (d.node.isClus) layoutChildren(d);
   if (d.node.type === qt.NodeType.META) {
@@ -199,7 +197,7 @@ function layoutMetaNode(d: qr.GroupNdata) {
   const offset = qp.PARAMS.subscene.meta.extractXOffset;
   const padding = numParts <= 1 ? 0 : numParts * offset;
   const auxWidth = Math.max(
-    MIN_AUX_WIDTH,
+    ps.MIN_AUX_WIDTH,
     d.inExtractBox.width + d.outExtractBox.width
   );
   d.coreBox.width += auxWidth + padding + d.libfnsBox.width + padding;

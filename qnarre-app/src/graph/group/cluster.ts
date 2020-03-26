@@ -9,7 +9,7 @@ import * as qs from './scene';
 import {PARAMS as PS} from './params';
 
 export class Nclus extends qn.Ndata implements qg.Nclus {
-  core: qt.Graph<qg.Gdata, qn.Ndata, qe.Emeta>;
+  core: qg.Graph<qg.Gdata, qn.Ndata, qe.Emeta>;
   inExtractBox: {w: number; h: number};
   outExtractBox: {w: number; h: number};
   libfnsBox: {w: number; h: number};
@@ -36,14 +36,95 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     this.libfnsExtract = [];
   }
 
+  buildGroup(s: qt.Selection, e: qs.GraphElem, cg: string) {
+    cg = cg || qt.Class.Scene.GROUP;
+    const empty = qs.selectChild(s, 'g', cg).empty();
+    const scene = qs.selectOrCreate(s, 'g', cg);
+    const sg = qs.selectOrCreate(scene, 'g', qt.Class.Scene.CORE);
+    const ds = _.reduce(
+      this.core.nodes(),
+      (ds, n) => {
+        const nd = this.core.node(n);
+        if (nd && !nd.excluded) ds.push(nd);
+        return ds;
+      },
+      [] as qn.Ndata[]
+    );
+    if (this.type === qt.NodeType.LIST) ds.reverse();
+    qe.buildGroup(sg, this.core, e);
+    qn.buildGroup(sg, ds, e);
+    if (this.isolatedInExtract.length > 0) {
+      const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
+      qn.buildGroup(g, this.isolatedInExtract, e);
+    } else {
+      qs.selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
+    }
+    if (this.isolatedOutExtract.length > 0) {
+      const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
+      qn.buildGroup(g, this.isolatedOutExtract, e);
+    } else {
+      qs.selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
+    }
+    if (this.libfnsExtract.length > 0) {
+      const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.LIBRARY);
+      qn.buildGroup(g, this.libfnsExtract, e);
+    } else {
+      qs.selectChild(scene, 'g', qt.Class.Scene.LIBRARY).remove();
+    }
+    this.position(scene);
+    if (empty) {
+      scene
+        .attr('opacity', 0)
+        .transition()
+        .attr('opacity', 1);
+    }
+    return scene;
+  }
+
+  position(s: qt.Selection) {
+    const y = this.type === qt.NodeType.LIST ? 0 : PS.subscene.meta.labelHeight;
+    qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
+    const ins = this.isolatedInExtract.length > 0;
+    const outs = this.isolatedOutExtract.length > 0;
+    const libs = this.libfnsExtract.length > 0;
+    const off = PS.subscene.meta.extractXOffset;
+    let w = 0;
+    if (ins) w += this.outExtractBox.w;
+    if (outs) w += this.outExtractBox.w;
+    if (ins) {
+      let x = this.box.w;
+      if (w < qp.MIN_AUX_WIDTH) {
+        x -= qp.MIN_AUX_WIDTH + this.inExtractBox.w / 2;
+      } else {
+        x -= this.inExtractBox.w / 2 - this.outExtractBox.w - (outs ? off : 0);
+      }
+      x -= this.libfnsBox.w - (libs ? off : 0);
+      qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
+    }
+    if (outs) {
+      let x = this.box.w;
+      if (w < qp.MIN_AUX_WIDTH) {
+        x -= qp.MIN_AUX_WIDTH + this.outExtractBox.w / 2;
+      } else {
+        x -= this.outExtractBox.w / 2;
+      }
+      x -= this.libfnsBox.w - (libs ? off : 0);
+      qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
+    }
+    if (libs) {
+      const x = this.box.w - this.libfnsBox.w / 2;
+      qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.LIBRARY), x, y);
+    }
+  }
+
   setDepth(d: number): void {
-    if (this.core) this.core.setDepth(this.core, d);
+    if (this.core) this.core.setDepth(d);
   }
 
   subBuild(s: qt.Selection, e: qs.GraphElem) {
     if (qg.isClus(this)) {
       if (this.expanded) {
-        return qs.buildGroup(s, this, e, qt.Class.Subscene.GROUP);
+        return this.buildGroup(s, e, qt.Class.Subscene.GROUP);
       }
       qs.selectChild(s, 'g', qt.Class.Subscene.GROUP).remove();
     }

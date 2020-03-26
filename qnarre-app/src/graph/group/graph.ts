@@ -70,6 +70,10 @@ export class Noper extends Ndata {
   }
 }
 
+export function isOper(x?: any): x is Noper {
+  return x?.type === qt.NodeType.OPER;
+}
+
 function cluster(ps: {key: string; value: any}[]) {
   for (let i = 0; i < ps.length; i++) {
     if (ps[i].key === '_cluster') return ps[i].value['s'] as string;
@@ -227,7 +231,7 @@ export interface Library {
 }
 
 export class Nlist extends Nclus {
-  hasLoop = false;
+  loop?: boolean;
   ids = [] as number[];
 
   constructor(
@@ -260,8 +264,8 @@ export function listName(
 
 export interface Edata {
   name: string;
-  isControl: boolean;
-  isRef: boolean;
+  control?: boolean;
+  ref?: boolean;
   out: string;
 }
 
@@ -272,8 +276,8 @@ export interface Hierarchy {
 
 export class Emeta implements Edata {
   name = '';
-  isControl = false;
-  isRef = false;
+  control?: boolean;
+  ref?: boolean;
   out = '';
   links = [] as qg.Link<Edata>[];
   num = {regular: 0, control: 0, ref: 0};
@@ -283,12 +287,12 @@ export class Emeta implements Edata {
 
   addLink(l: qg.Link<Edata>, h: Hierarchy) {
     this.links.push(l);
-    if (l.data?.isControl) {
+    if (l.data?.control) {
       this.num.control += 1;
     } else {
       this.num.regular += 1;
     }
-    if (l.data?.isRef) this.num.ref += 1;
+    if (l.data?.ref) this.num.ref += 1;
     this.size += h.sizeOf(l);
     h.maxEdgeSize = Math.max(h.maxEdgeSize, this.size);
     return this;
@@ -298,6 +302,28 @@ export class Emeta implements Edata {
 export type Template = {names: string[]; level: number};
 export type Group = {nodes: Nmeta[]; level: number};
 export type Cluster = {node: Nmeta; names: string[]};
+
+export class Anno {
+  x = 0;
+  y = 0;
+  w = 0;
+  h = 0;
+  nodes?: string[];
+  points = [] as {dx: number; dy: number}[];
+  labelOffset = 0;
+
+  constructor(
+    public ndata: Ndata,
+    public emeta: Emeta,
+    public type: qt.AnnoType,
+    public isIn: boolean
+  ) {
+    if (emeta && emeta.metaedge) {
+      this.v = edata.metaedge.v;
+      this.w = edata.metaedge.w;
+    }
+  }
+}
 
 export class Graph<
   G extends Gdata,
@@ -325,36 +351,9 @@ export class Graph<
     const d = this.node(ns[1]);
     const e = this.edge(ns);
     if (s?.include && d?.include) return;
-    addOutAnno(s, d, e, qt.AnnoType.SHORTCUT);
-    addInAnno(d, s, s, e, qt.AnnoType.SHORTCUT);
+    s.addOutAnno(d, e, qt.AnnoType.SHORTCUT);
+    d.addInAnno(s, e, qt.AnnoType.SHORTCUT);
     this.delEdge(ns);
-  }
-
-  buildSubhierarchiesForNeededFunctions() {
-    this.links().forEach(l => {
-      const me = this.edge(l);
-      const ed = new Emeta(me);
-      _.forEach(ed.metaedge?.bases, e => {
-        const ps = e.v.split(qp.SLASH);
-        for (let i = ps.length; i >= 0; i--) {
-          const front = ps.slice(0, i);
-          const n = this.hierarchy.node(front.join(qp.SLASH));
-          if (n) {
-            if (
-              n.type === qt.NodeType.OPER &&
-              this.hierarchy.libfns[(n as Noper).op]
-            ) {
-              for (let j = 1; j < front.length; j++) {
-                const nn = front.slice(0, j).join(qp.SLASH);
-                if (!nn) continue;
-                this.data?.buildSubhierarchy(nn);
-              }
-            }
-            break;
-          }
-        }
-      });
-    });
   }
 }
 

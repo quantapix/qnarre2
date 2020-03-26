@@ -5,6 +5,8 @@ export const ROOT = '__root__';
 export const SLASH = '/';
 export const LIB_PRE = '__function_library__';
 
+export const MIN_AUX_WIDTH = 140;
+
 export const KEY_DELIM = '--';
 export const MIN_EDGE_WIDTH = 0.75;
 export const MAX_EDGE_WIDTH = 12;
@@ -137,6 +139,21 @@ export const BuildParams: qt.Params = {
     'scatter_sub 0': true,
     'scatter_update 0': true
   }
+};
+
+export const GdataParams = {
+  enableExtraction: true,
+  minNodeCountForExtraction: 15,
+  minDegreeForExtraction: 5,
+  maxControlDegree: 4,
+  maxBridgePathDegree: 4,
+  outExtractTypes: ['NoOp'],
+  inExtractTypes: [],
+  detachAllEdgesForHighDegree: true,
+  extractIsolatedNodesWithAnnotationsOnOneSide: true,
+  enableBridgegraph: true,
+  minMaxColors: ['#fff5f0', '#fb6a4a'],
+  maxAnnotations: 5
 };
 
 export const COLORS = [
