@@ -316,7 +316,7 @@ export class Nmeta extends Nclus implements qg.Nmeta {
     super(
       qt.NdataT.META,
       n,
-      qg.createGraph<qg.Gdata, qn.Ndata, qe.Emeta>(qt.GdataT.META, n, o),
+      qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.META, n, o),
       o
     );
     this.histo.op = {} as qt.Dict<number>;
@@ -377,7 +377,7 @@ export class Nlist extends Nclus implements qg.Nlist {
     super(
       qt.NdataT.LIST,
       n,
-      qg.createGraph<qg.Gdata, qg.Ndata, qe.Emeta>(qt.GdataT.LIST, n, o),
+      qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.LIST, n, o),
       o
     );
   }

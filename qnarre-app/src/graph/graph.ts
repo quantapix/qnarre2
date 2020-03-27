@@ -187,9 +187,9 @@ export class Graph<
   }
 }
 
-export type Bgraph = Graph<>;
+export type Bgraph = Graph<Gdata, Ndata, Edata>;
 export type Cgraph = Graph<Gdata, Ndata, Edata>;
-export type Mgraph = Graph<>;
+export type Mgraph = Graph<Gdata, Ndata, Edata>;
 
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   t: qt.GdataT,

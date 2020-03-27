@@ -27,24 +27,26 @@ export class Graph<
     _.each(ls, (l, n) => {
       const ns = l.meta.nodes();
       ns.forEach(n => {
-        const nd = (this.node(n) as any) as qg.Noper;
-        if (!nd.list) nd.list = n;
+        const nd = this.node(n);
+        if (qg.isOper(nd) && !nd.list) nd.list = n;
       });
       if (ns.length < ps.thresh && !(l.name in ps.groups)) {
         ps.groups[l.name] = false;
       }
       if (l.name in ps.groups && ps.groups[l.name] === false) return;
       h.setNode(n, l);
-      this.setNode(n, l as qn.Ndata);
+      this.setNode(n, l);
       ns.forEach(n => {
-        const nd = (this.node(n) as any) as qn.Noper;
+        const nd = this.node(n)!;
         l.meta.setNode(n, nd);
         l.parent = nd.parent as any;
         l.cardin++;
         qu.updateHistos(l.histo, nd);
         qu.updateCompat(l.histo, nd);
-        nd.embeds.in.forEach(b => qu.updateCompat(l.histo, b));
-        nd.embeds.out.forEach(b => qu.updateCompat(l.histo, b));
+        if (qg.isOper(nd)) {
+          nd.embeds.in.forEach(b => qu.updateCompat(l.histo, b));
+          nd.embeds.out.forEach(b => qu.updateCompat(l.histo, b));
+        }
         nd.parent = l;
         names[n] = n;
         this.delNode(n);
@@ -54,22 +56,18 @@ export class Graph<
 
   buildSubhierarchiesForNeededFunctions() {
     this.links().forEach(l => {
-      const me = this.edge(l);
-      const ed = new qe.Emeta(me);
-      _.forEach(ed.metaedge?.bases, e => {
+      const ed = this.edge(l);
+      const m = new qe.Emeta(ed);
+      _.forEach(m.metaedge?.bases, e => {
         const ps = e.v.split(qp.SLASH);
         for (let i = ps.length; i >= 0; i--) {
           const front = ps.slice(0, i);
-          const n = this.data?.hierarchy.node(front.join(qp.SLASH));
-          if (n) {
-            if (
-              n.type === qt.NodeType.OPER &&
-              this.data?.hierarchy.libfns[(n as qg.Noper).op]
-            ) {
+          const nd = this.data?.hierarchy.node(front.join(qp.SLASH));
+          if (nd) {
+            if (qg.isOper(nd) && this.data?.hierarchy.libfns[nd.op]) {
               for (let j = 1; j < front.length; j++) {
-                const nn = front.slice(0, j).join(qp.SLASH);
-                if (!nn) continue;
-                this.data?.buildSubhierarchy(nn);
+                const n = front.slice(0, j).join(qp.SLASH);
+                if (n) this.data?.buildSubhierarchy(n);
               }
             }
             break;
@@ -102,7 +100,7 @@ export class Graph<
     const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
-      const ss = {} as qt.Dict<qg.Nlist>;
+      const ls = {} as qt.Dict<qg.Nlist>;
       const back = {} as qt.Dict<[string, string][]>;
       ns.forEach(n => {
         const isClus = n.endsWith('*');
@@ -122,8 +120,8 @@ export class Graph<
           id = matches[0];
           suf = leaf.slice(matches.index + matches[0].length);
           sn = qu.listName(pre, suf, parent);
-          if (!ss[sn]) ss[sn] = new qc.Nlist(pre, suf, parent, +id, n, opts);
-          ss[sn].ids.push(+id);
+          if (!ls[sn]) ls[sn] = new qc.Nlist(pre, suf, parent, +id, n, opts);
+          ls[sn].ids.push(+id);
           back[n] = back[n] || [];
           back[n].push([sn, id]);
         }
@@ -132,23 +130,23 @@ export class Graph<
           id = '0';
           suf = isClus ? '*' : '';
           sn = qu.listName(pre, suf, parent);
-          if (!ss[sn]) ss[sn] = new qc.Nlist(pre, suf, parent, +id, n, opts);
-          ss[sn].ids.push(+id);
+          if (!ls[sn]) ls[sn] = new qc.Nlist(pre, suf, parent, +id, n, opts);
+          ls[sn].ids.push(+id);
           back[n] = back[n] || [];
           back[n].push([sn, id]);
         }
       });
       const cs = {} as qt.Dict<qg.Nlist[]>;
       _.each(back, (ids, n) => {
-        ids.sort((a, b) => ss[b[0]].ids.length - ss[a[0]].ids.length);
+        ids.sort((a, b) => ls[b[0]].ids.length - ls[a[0]].ids.length);
         const sn = ids[0][0];
         const id = ids[0][1];
         cs[sn] = cs[sn] || [];
         const path = n.split('/');
         const parent = path.slice(0, path.length - 1).join('/');
         const s = new qc.Nlist(
-          ss[sn].prefix,
-          ss[sn].suffix,
+          ls[sn].prefix,
+          ls[sn].suffix,
           parent,
           +id,
           n,
@@ -159,17 +157,17 @@ export class Graph<
       _.each(cs, (ns2, _) => {
         if (ns2.length < 2) return;
         ns2.sort((a, b) => +a.cluster - +b.cluster);
-        let c = [ns2[0]];
+        let l = [ns2[0]];
         for (let i = 1; i < ns2.length; i++) {
           const n = ns2[i];
-          if (n.cluster === c[c.length - 1].cluster + 1) {
-            c.push(n);
+          if (n.cluster === l[l.length - 1].cluster + 1) {
+            l.push(n);
             continue;
           }
-          this.addList(c, lists, +cluster, opts);
-          c = [n];
+          this.addList(l, lists, +cluster, opts);
+          l = [n];
         }
-        this.addList(c, lists, +cluster, opts);
+        this.addList(l, lists, +cluster, opts);
       });
     });
     return lists;
@@ -179,7 +177,7 @@ export class Graph<
     const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
-      const cs = {} as qt.Dict<qg.Nlist[]>;
+      const ls = {} as qt.Dict<qg.Nlist[]>;
       ns.forEach(n => {
         const isClus = n.endsWith('*');
         const path = n.split('/');
@@ -197,52 +195,52 @@ export class Graph<
           suf = isClus ? '*' : '';
         }
         const sn = qu.listName(pre, suf, parent);
-        cs[sn] = cs[sn] || [];
+        ls[sn] = ls[sn] || [];
         const s = new qc.Nlist(pre, suf, parent, +id, n, opts);
-        cs[sn].push(s);
+        ls[sn].push(s);
       });
-      _.each(cs, (ns2, _) => {
+      _.each(ls, (ns2, _) => {
         if (ns2.length < 2) return;
         ns2.sort((a, b) => +a.cluster - +b.cluster);
-        let c = [ns2[0]];
+        let l = [ns2[0]];
         for (let i = 1; i < ns2.length; i++) {
           const n = ns2[i];
-          if (n.cluster === c[c.length - 1].cluster + 1) {
-            c.push(n);
+          if (n.cluster === l[l.length - 1].cluster + 1) {
+            l.push(n);
             continue;
           }
-          this.addList(c, lists, +cluster, opts);
-          c = [n];
+          this.addList(l, lists, +cluster, opts);
+          l = [n];
         }
-        this.addList(c, lists, +cluster, opts);
+        this.addList(l, lists, +cluster, opts);
       });
     });
     return lists;
   }
 
   addList(
-    c: qg.Nlist[],
+    l: qg.Nlist[],
     ls: qt.Dict<qg.Nlist>,
     cluster: number,
     opts: qt.Opts
   ) {
-    if (c.length > 1) {
+    if (l.length > 1) {
       const name = qu.listName(
-        c[0].prefix,
-        c[0].suffix,
-        c[0].pName,
-        c[0].cluster,
-        c[c.length - 1].cluster
+        l[0].prefix,
+        l[0].suffix,
+        l[0].pName,
+        l[0].cluster,
+        l[l.length - 1].cluster
       );
       const nd = new qc.Nlist(
-        c[0].prefix,
-        c[0].suffix,
-        c[0].pName,
+        l[0].prefix,
+        l[0].suffix,
+        l[0].pName,
         cluster,
         name,
         opts
       );
-      c.forEach(n => {
+      l.forEach(n => {
         nd.ids.push(n.cluster);
         nd.meta.setNode(n.name, this.node(n.name));
       });
