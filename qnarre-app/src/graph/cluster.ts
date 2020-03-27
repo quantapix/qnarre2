@@ -15,22 +15,27 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
   core: qg.Cgraph;
   parent?: Nclus;
   bridge?: qg.Bgraph;
-  histo: qt.Histos;
   noControls?: boolean;
-  areas: qt.Dict<qt.Area>;
-  isolated: qt.Dict<qn.Ndata[]>;
+  areas = {in: new qt.Area(), out: new qt.Area(), lib: new qt.Area()};
+  isolated = {
+    in: [] as qn.Ndata[],
+    out: [] as qn.Ndata[],
+    lib: [] as qn.Ndata[]
+  };
+  histo = {
+    dev: {} as qt.Histo,
+    clus: {} as qt.Histo,
+    comp: {compats: 0, incompats: 0}
+  };
 
   constructor(t: qt.NdataT, public meta: qg.Mgraph, opts: qg.Opts) {
     super(t, meta.data!.name!);
     opts.isCompound = true;
     this.core = qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(
       qt.GdataT.CORE,
-      meta.data!.name!,
+      meta.data!.name,
       opts
     );
-    this.histo = {device: {}, cluster: {}, compat: {compats: 0, incompats: 0}};
-    this.areas = {in: new qt.Area(), out: new qt.Area(), lib: new qt.Area()};
-    this.isolated = {in: [], out: [], lib: []};
   }
 
   buildGroup(s: qt.Selection, e: qs.GraphElem, cg: string) {
@@ -312,6 +317,12 @@ export class Nmeta extends Nclus implements qg.Nmeta {
   template?: string;
   assoc?: string;
   depth = 1;
+  histo = {
+    op: {} as qt.Histo,
+    dev: {} as qt.Histo,
+    clus: {} as qt.Histo,
+    comp: {compats: 0, incompats: 0}
+  };
 
   constructor(n: string, o = {} as qg.Opts) {
     super(
@@ -319,7 +330,6 @@ export class Nmeta extends Nclus implements qg.Nmeta {
       qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.META, n, o),
       o
     );
-    this.histo.op = {} as qt.Dict<number>;
   }
 
   firstChild() {
@@ -342,7 +352,7 @@ export class Nmeta extends Nclus implements qg.Nmeta {
         const m = nd.meta;
         m.nodes().forEach(n => q.push(m.node(n)!));
       } else {
-        ls.push(nd.name!);
+        ls.push(nd.name);
       }
     }
     return ls;

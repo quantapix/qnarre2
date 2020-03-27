@@ -45,7 +45,7 @@ export const PARAMS = {
       extractXOffset: 15,
       extractYOffset: 20
     },
-    series: {
+    list: {
       pad: {top: 10, bottom: 10, left: 10, right: 10},
       labelHeight: 10
     }

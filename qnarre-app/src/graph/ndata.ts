@@ -13,7 +13,7 @@ import {NodeDef} from './proto';
 import {PARAMS as PS} from './params';
 import * as menu from '../elems/graph/contextmenu';
 
-export class Ndata implements qt.Rect, qg.Ndata {
+export class Ndata implements qg.Ndata {
   x = 0;
   y = 0;
   w = 0;
@@ -33,9 +33,13 @@ export class Ndata implements qt.Rect, qg.Ndata {
   box = new qt.Area();
   attrs = {} as qt.Dict<any>;
   color = {} as qt.Dict<string>;
-  shade: qt.Dict<qt.Shade[]>;
-  annos: qt.Dict<qa.AnnoList>;
-  extract = {} as qt.Dict<boolean>;
+  annos = {in: new qa.AnnoList(), out: new qa.AnnoList()};
+  extract = {} as {in: boolean; out: boolean; lib: boolean};
+  shade = {
+    dev: [] as qt.Shade[],
+    clus: [] as qt.Shade[],
+    comp: [] as qt.Shade[]
+  };
 
   constructor(public type: qt.NdataT, public name = '', public cardin = 1) {
     this.display = name.substring(name.lastIndexOf(qp.SLASH) + 1);
@@ -47,8 +51,6 @@ export class Ndata implements qt.Rect, qg.Ndata {
         this.display = this.display.substring(qp.LIB_PRE.length);
       }
     }
-    this.shade = {device: [], cluster: [], compat: []};
-    this.annos = {in: new qa.AnnoList(), out: new qa.AnnoList()};
   }
 
   isInCore() {
@@ -434,24 +436,24 @@ export class Ndata implements qt.Rect, qg.Ndata {
           return 'white';
         }
       case qt.ColorBy.DEVICE:
-        if (!this.shade.device) return cs.UNKNOWN;
+        if (!this.shade.dev) return cs.UNKNOWN;
         return expanded
           ? cs.EXPANDED
-          : grad('device-' + this.name, this.shade.device, root);
+          : grad('device-' + this.name, this.shade.dev, root);
       case qt.ColorBy.CLUSTER:
-        if (!this.shade.cluster) return cs.UNKNOWN;
+        if (!this.shade.clus) return cs.UNKNOWN;
         return expanded
           ? cs.EXPANDED
-          : grad('xla-' + this.name, this.shade.cluster, root);
+          : grad('xla-' + this.name, this.shade.clus, root);
       case qt.ColorBy.TIME:
         return expanded ? cs.EXPANDED : this.color.time || cs.UNKNOWN;
       case qt.ColorBy.MEMORY:
         return expanded ? cs.EXPANDED : this.color.mem || cs.UNKNOWN;
       case qt.ColorBy.COMPAT:
-        if (!this.shade.compat) return cs.UNKNOWN;
+        if (!this.shade.comp) return cs.UNKNOWN;
         return expanded
           ? cs.EXPANDED
-          : grad('op-compat-' + this.name, this.shade.compat);
+          : grad('op-compat-' + this.name, this.shade.comp);
       default:
         throw new Error('Unknown color');
     }
@@ -478,25 +480,24 @@ export class Ndots extends Ndata implements qg.Ndots {
 export class Noper extends Ndata implements qg.Noper {
   parent?: qg.Noper | qg.Nclus;
   op: string;
-  device?: string;
-  cluster?: string;
+  dev?: string;
+  clus?: string;
   list?: string;
-  attr: {key: string; value: any}[];
+  compatible?: boolean;
   ins: qt.Input[];
   shapes: qt.Shapes;
-  index = {} as qt.Dict<number>;
-  embeds: qt.Dict<qg.Noper[]>;
-  compatible?: boolean;
+  index = {} as {in: number; out: number};
+  attr: {key: string; value: any}[];
+  embeds = {in: [] as qg.Noper[], out: [] as qg.Noper[]};
 
   constructor(d: NodeDef) {
     super(qt.NdataT.OPER, d.name);
     this.op = d.op;
-    this.device = d.device;
-    this.cluster = qu.cluster(d.attr);
+    this.dev = d.device;
+    this.clus = qu.cluster(d.attr);
     this.attr = d.attr;
     this.ins = qu.inputs(d.input);
     this.shapes = qu.shapes(d.attr);
-    this.embeds = {in: [], out: []};
   }
 }
 

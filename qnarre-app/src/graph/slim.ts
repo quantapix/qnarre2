@@ -16,21 +16,21 @@ export class SlimGraph {
 
   addLink(s: string, d: qn.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
     if (s !== d.name) {
-      const isRef = ps.refs[d.op + ' ' + i] === true;
+      const ref = ps.refs[d.op + ' ' + i] === true;
       const l = new qg.Link<qg.Edata>([s, d.name], this.opts);
       l.data = {
-        isControl: inp.control,
-        isRef,
+        control: inp.control,
+        ref,
         out: inp.out
       } as qg.Edata;
       this.links.push(l);
     }
   }
 
-  mergeStats(stats: proto.StepStats, devices?: qt.Dict<boolean>) {
+  mergeStats(stats: proto.StepStats, devs?: qt.Dict<boolean>) {
     _.each(this.opers, o => (o.stats = undefined));
     stats.dev_stats.forEach(ds => {
-      if (devices && !devices[ds.device]) return;
+      if (devs && !devs[ds.device]) return;
       ds.node_stats.forEach(ns => {
         const o =
           ns.node_name in this.opers
@@ -55,7 +55,7 @@ export class SlimGraph {
             o.tensor_description.shape.dim.map(d => d.size)
           );
         }
-        this.opers[o].device = ds.device;
+        this.opers[o].dev = ds.device;
         if (!this.opers[o].stats) {
           this.opers[o].stats = new qu.Stats(s);
         }

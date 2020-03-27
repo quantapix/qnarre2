@@ -16,17 +16,17 @@ type Linear = d3.ScaleLinear<string, string>;
 type Ordinal = d3.ScaleOrdinal<string, string>;
 
 export class Gdata implements qg.Gdata {
+  name = '';
   type = qt.GdataT.CORE;
   rankdir = 'bt' as qt.Dir;
   edgesep = NaN;
   nodesep = NaN;
   ranksep = NaN;
-  name?: string;
   root: qc.Nclus;
   nds = {} as qt.Dict<qn.Ndata>;
   hasSubhier = {} as qt.Dict<boolean>;
-  colors: qt.Dict<Ordinal>;
-  scales: qt.Dict<Linear>;
+  colors = {} as {dev: Ordinal; clus: Ordinal};
+  scales = {} as {mem: Linear; time: Linear};
   renderedOpNames = [] as string[];
   edgeWidthSizedBasedScale = {} as
     | d3.ScaleLinear<number, number>
@@ -36,8 +36,6 @@ export class Gdata implements qg.Gdata {
   edgeWidthFunction?: EdgeThicknessFunction;
 
   constructor(public hier: qh.Hierarchy, public displaying: boolean) {
-    this.colors = {device: {} as Ordinal, cluster: {} as Ordinal};
-    this.scales = {mem: {} as Linear, time: {} as Linear};
     this.initScales();
     this.root = new qc.Nclus(hier.root, hier.opts);
     this.root.expanded = true;
@@ -47,11 +45,11 @@ export class Gdata implements qg.Gdata {
   }
 
   initScales() {
-    this.colors.device = d3
+    this.colors.dev = d3
       .scaleOrdinal<string>()
       .domain(this.hier.devices)
       .range(d3.range(this.hier.devices.length).map(qp.MetaColors.DEVICE));
-    this.colors.cluster = d3
+    this.colors.clus = d3
       .scaleOrdinal<string>()
       .domain(this.hier.clusters)
       .range(_.map(d3.range(this.hier.clusters.length), qp.MetaColors.CLUSTER));
@@ -100,22 +98,20 @@ export class Gdata implements qg.Gdata {
     let hc: qt.Histo | undefined;
     let oc;
     if (qg.isClus(n)) {
-      hd = n.histo.device;
-      hc = n.histo.cluster;
-      const cs = n.histo.compat.compats;
-      const ics = n.histo.compat.incompats;
+      hd = n.histo.dev;
+      hc = n.histo.clus;
+      const cs = n.histo.comp.compats;
+      const ics = n.histo.comp.incompats;
       if (cs != 0 || ics != 0) oc = cs / (cs + ics);
     } else {
-      let n = (nd.node as qg.Noper).device;
-      if (n) dh = {[n]: 1};
-      n = (d.node as qg.Noper).cluster;
-      if (n) ch = {[n]: 1};
-      if (d.node.type === qt.NdataT.OPER) {
-        oc = (d.node as qg.Noper).compatible ? 1 : 0;
-      }
+      if (n.dev) hd = {[n.dev]: 1};
+      if (n.clus) hd = {[n.clus]: 1};
+      //if (d.node.type === qt.NdataT.OPER) {
+      //  oc = (d.node as qg.Noper).compatible ? 1 : 0;
+      //}
     }
-    if (hd) nd.shade.device = qu.shade(hd, this.colors.device);
-    if (hc) nd.shade.cluster = qu.shade(hc, this.colors.cluster);
+    if (hd) nd.shade.dev = qu.shade(hd, this.colors.dev);
+    if (hc) nd.shade.clus = qu.shade(hc, this.colors.clus);
     if (oc) {
       nd.shade.compat = [
         {color: qp.OperColors.COMPAT, perc: oc},
@@ -229,14 +225,14 @@ export class Gdata implements qg.Gdata {
     ns.forEach(n => {
       const nd = this.getNodeByName(n);
       const p = this.getVisibleParent(nd);
-      if (p) ps[p.name!] = p;
+      if (p) ps[p.name] = p;
     });
     return ps;
   }
 
   traceAllInputsOfOpNode(root: SVGElement, n: qg.Noper, ns: qt.Dict<any>) {
-    if (ns[n.name!]) return ns;
-    else ns[n.name!] = true;
+    if (ns[n.name]) return ns;
+    else ns[n.name] = true;
     const ins = n.ins;
     const p = this.getVisibleParent(n)!;
     d3.select(root)
@@ -248,11 +244,11 @@ export class Gdata implements qg.Gdata {
       if (!nd) return;
       if (qg.isMeta(nd)) nd = this.getNodeByName(qu.strictName(nd.name));
       const vp = this.getVisibleParent(nd)!;
-      const v = vins[vp.name!];
+      const v = vins[vp.name];
       if (v) {
         v.opNodes.push(nd);
       } else {
-        vins[vp.name!] = {
+        vins[vp.name] = {
           visibleParent: vp,
           opNodes: [nd]
         } as VisibleParent;
@@ -260,7 +256,7 @@ export class Gdata implements qg.Gdata {
     });
     const starts = {} as qt.Dict<any>;
     const nds = [p];
-    starts[p.name!] = {
+    starts[p.name] = {
       idx: 0,
       ends: [],
       traced: false
@@ -268,7 +264,7 @@ export class Gdata implements qg.Gdata {
     let nd = p;
     for (let idx = 1; nd?.name !== qp.ROOT; idx++) {
       nd = nd?.parent;
-      starts[nd.name!] = {
+      starts[nd.name] = {
         idx,
         ends: [],
         traced: false
@@ -343,8 +339,8 @@ export class Gdata implements qg.Gdata {
     o.include = node.include;
     o.outShapes = _.cloneDeep(node.outShapes);
     o.cluster = node.cluster;
-    o.inIdx = node.inIdx;
-    o.outIdx = node.outIdx;
+    o.index.in = node.index.in;
+    o.index.out = node.index.out;
     o.ins = node.ins.map(ni => {
       const newNormInput = _.clone(ni);
       newNormInput.name = ni.name.replace(fnName, pre);
@@ -356,8 +352,8 @@ export class Gdata implements qg.Gdata {
     const update = (e: qg.Noper) => {
       return this.cloneAndAddFunctionOpNode(m, fnName, e, pre);
     };
-    o.inEmbeds = node.inEmbeds.map(update);
-    o.outEmbeds = node.outEmbeds.map(update);
+    o.embeds.in = node.embeds.in.map(update);
+    o.embeds.out = node.embeds.out.map(update);
     return o;
   }
 
@@ -416,7 +412,8 @@ export class Gdata implements qg.Gdata {
             o as qg.Noper,
             prefix
           );
-          if (_.isNumber(n3.inIdx)) this.patchEdgesIntoFunctionInputs(old, n3);
+          if (_.isNumber(n3.index.in))
+            this.patchEdgesIntoFunctionInputs(old, n3);
           if (_.isNumber(n3.outIdx)) dict[n3.outIdx] = n3;
           break;
         default:
@@ -460,9 +457,9 @@ export class Gdata implements qg.Gdata {
   }
 
   private patchEdgesIntoFunctionInputs(old: qg.Noper, node: qg.Noper) {
-    let i = _.min([node.inIdx, old.ins.length - 1])!;
+    let i = _.min([node.index.in, old.ins.length - 1])!;
     let inp = _.clone(old.ins[i]);
-    while (inp.isControl) {
+    while (inp.control) {
       i++;
       inp = old.ins[i];
     }
@@ -540,12 +537,12 @@ function createTrace(
   const pairs = [] as [qg.Ndata, qg.Ndata][];
   let n: qg.Ndata | undefined = nd;
   let prev = n;
-  while (n && !starts[n.name!]) {
+  while (n && !starts[n.name]) {
     if (prev?.name !== n.name) pairs.push([prev, n]);
     prev = n;
     n = n?.parent;
   }
-  const s = starts[nd.name!].idx;
+  const s = starts[nd.name].idx;
   const sn = nds[Math.max(s - 1, 0)].name;
   const r = d3.select(root);
   r.selectAll(`[data-edge="${prev.name}--${sn}"]`).classed(

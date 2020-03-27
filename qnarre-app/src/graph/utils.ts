@@ -84,7 +84,7 @@ export function listName(
   return (p ? p + '/' : '') + n;
 }
 
-export function updateHistos(hs: qt.Histos, src: any) {
+export function updateHistos(hs: {[k: string]: qt.Histo}, src: any) {
   _.keys(hs).forEach(k => {
     const n = src[k];
     if (n) {
@@ -94,8 +94,11 @@ export function updateHistos(hs: qt.Histos, src: any) {
   });
 }
 
-export function updateCompat(hs: qt.Histos, src: any) {
-  const c = hs.compat;
+export function updateCompat(
+  hs: {comp: {compats: number; incompats: number}},
+  src: any
+) {
+  const c = hs.comp;
   if (src.compatible) {
     c.compats += 1;
   } else {

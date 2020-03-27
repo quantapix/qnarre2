@@ -284,8 +284,8 @@ export class Hierarchy implements qg.Hierarchy {
     const cs = {} as qt.Dict<boolean>;
     this.root.leaves().forEach(n => {
       const d = this.node(n) as qg.Noper;
-      if (d.device) ds[d.device] = true;
-      if (d.cluster) cs[d.cluster] = true;
+      if (d.dev) ds[d.dev] = true;
+      if (d.clus) cs[d.clus] = true;
     });
     this.devices = _.keys(ds);
     this.clusters = _.keys(cs);
@@ -293,7 +293,7 @@ export class Hierarchy implements qg.Hierarchy {
       const nd = this.node(n);
       if (qg.isClus(nd)) {
         nd.stats = new qu.Stats([]);
-        nd.histo.device = {};
+        nd.histo.dev = {};
       }
     });
     this.root.leaves().forEach(n => {
@@ -388,8 +388,8 @@ export async function build(
     const ds = {} as qt.Dict<boolean>;
     const cs = {} as qt.Dict<boolean>;
     _.each(g.opers, o => {
-      if (o.device) ds[o.device] = true;
-      if (o.cluster) cs[o.cluster] = true;
+      if (o.dev) ds[o.dev] = true;
+      if (o.clus) cs[o.clus] = true;
     });
     h.devices = _.keys(ds);
     h.clusters = _.keys(cs);

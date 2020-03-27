@@ -15,31 +15,36 @@ export interface Opts extends qg.Opts {
 
 export interface Gdata extends Opts {
   type: qt.GdataT;
-  name?: string;
+  name: string;
 }
 
-export interface Ndata {
+export interface Ndata extends qt.Rect {
   type: qt.NdataT;
-  name?: string;
+  name: string;
   cardin: number;
   parent?: Ndata;
   stats?: qu.Stats;
   include?: boolean;
   excluded?: boolean;
   expanded?: boolean;
+  pad: qt.Pad;
+  box: qt.Area;
   attrs: qt.Dict<any>;
-  annos: qt.Dict<AnnoList>;
-  extract: qt.Dict<boolean>;
+  annos: {in: AnnoList; out: AnnoList};
+  extract: {in: boolean; out: boolean; lib: boolean};
   hasTypeIn(ts: string[]): boolean;
   addInAnno(n: Ndata, e: Edata, t: qt.AnnoT): this;
   addOutAnno(n: Ndata, e: Edata, t: qt.AnnoT): this;
+  updateTotalWidthOfNode(): void;
 }
 
 export interface Edata {
-  name?: string;
+  name: string;
+  structural?: boolean;
   control?: boolean;
   ref?: boolean;
   out: string;
+  points: qt.Point[];
 }
 
 export interface Nbridge extends Ndata {
@@ -54,15 +59,15 @@ export interface Ndots extends Ndata {
 export interface Noper extends Ndata {
   parent?: Noper | Nclus;
   op: string;
-  device?: string;
-  cluster?: string;
+  dev?: string;
+  clus?: string;
   list?: string;
-  attr: {key: string; value: any}[];
+  compatible?: boolean;
   ins: qt.Input[];
   shapes: qt.Shapes;
-  index: qt.Dict<number>;
-  embeds: qt.Dict<Noper[]>;
-  compatible?: boolean;
+  index: {in: number; out: number};
+  attr: {key: string; value: any}[];
+  embeds: {in: Noper[]; out: Noper[]};
 }
 
 export function isOper(x?: any): x is Noper {
@@ -74,8 +79,14 @@ export interface Nclus extends Ndata {
   meta: Mgraph;
   parent?: Nclus;
   bridge?: Bgraph;
-  histo: qt.Histos;
   noControls?: boolean;
+  areas: {in: qt.Area; out: qt.Area; lib: qt.Area};
+  isolated: {in: Ndata[]; out: Ndata[]; lib: Ndata[]};
+  histo: {
+    dev: qt.Histo;
+    clus: qt.Histo;
+    comp: {compats: number; incompats: number};
+  };
   setDepth(d: number): this;
   subBuild(s: any, e: any): any;
 }
@@ -109,7 +120,7 @@ export function isList(x?: any): x is Nlist {
 }
 
 export class Emeta implements Edata {
-  name?: string;
+  name = '';
   control?: boolean;
   ref?: boolean;
   out = '';

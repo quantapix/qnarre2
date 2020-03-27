@@ -45,14 +45,13 @@ export enum ColorBy {
 }
 
 export interface Input {
-  control?: boolean;
   name: string;
   out: string;
+  control?: boolean;
 }
 
 export type Shapes = number[][];
 export type Histo = qt.Dict<number>;
-export type Histos = qt.Dict<Histo>;
 export type Shade = {color: string; perc: number};
 
 export interface Tracker {

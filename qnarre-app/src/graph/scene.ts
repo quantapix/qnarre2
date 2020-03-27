@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
-import * as ql from './layout';
 import * as qn from './ndata';
 import * as qt from './types';
 
@@ -82,12 +81,12 @@ export function positionEllipse(s: qt.Selection, r: qt.Rect) {
 }
 
 export function positionButton(s: qt.Selection, nd: qn.Ndata) {
-  const cx = ql.computeCXPositionOfNodeShape(nd);
+  const cx = nd.computeCXPositionOfNodeShape();
   const w = nd.expanded ? nd.w : nd.box.w;
   const h = nd.expanded ? nd.h : nd.box.h;
   let x = cx + w / 2 - 6;
   let y = nd.y - h / 2 + 6;
-  if (nd.type === qt.NodeType.LIST && !nd.expanded) {
+  if (nd.type === qt.NdataT.LIST && !nd.expanded) {
     x += 10;
     y -= 2;
   }
