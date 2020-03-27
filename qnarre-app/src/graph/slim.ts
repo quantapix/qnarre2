@@ -12,7 +12,7 @@ export class SlimGraph {
   opers = {} as qt.Dict<qn.Noper>;
   links = [] as qg.Link<qg.Edata>[];
 
-  constructor(public opts = {} as qt.Opts) {}
+  constructor(public opts = {} as qg.Opts) {}
 
   addLink(s: string, d: qn.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
     if (s !== d.name) {
@@ -33,7 +33,9 @@ export class SlimGraph {
       if (devices && !devices[ds.device]) return;
       ds.node_stats.forEach(ns => {
         const o =
-          ns.node_name in this.opers ? ns.node_name : strictName(ns.node_name);
+          ns.node_name in this.opers
+            ? ns.node_name
+            : qu.strictName(ns.node_name);
         if (!(o in this.opers)) return;
         let b = 0;
         if (ns.memory) {
@@ -71,11 +73,6 @@ export class SlimGraph {
       });
     });
   }
-}
-
-function strictName(n: string) {
-  const s = n.split(qp.SLASH);
-  return n + qp.SLASH + '(' + s[s.length - 1] + ')';
 }
 
 export async function build(
@@ -164,14 +161,14 @@ export async function build(
     return ops;
   });
   return t.runAsyncTask('Building data structure', 70, () => {
-    const norms = mapHierarchy(ns, es);
+    const norms = mapHier(ns, es);
     const g = new SlimGraph();
     opers.forEach(o => {
       const nn = norms[o.name] || o.name;
       g.opers[nn] = o;
       if (o.name in outs) {
         o.embeds.out = outs[o.name];
-        o.embeds.out.forEach(n2 => (n2.name = norms[n2.name] || n2.name));
+        o.embeds.out.forEach(n2 => (n2.name = norms[n2.name!] || n2.name));
       }
       o.name = nn;
     });
@@ -209,20 +206,20 @@ function embedPred(types: string[]) {
   };
 }
 
-function mapHierarchy(names: string[], enames: string[]) {
+function mapHier(names: string[], enames: string[]) {
   const m = {} as qt.Dict<string>;
   const es = {} as qt.Dict<boolean>;
   names.sort();
   for (let i = 0; i < names.length - 1; ++i) {
     const n0 = names[i];
-    hierarchyPath(n0)
+    hierPath(n0)
       .slice(0, -1)
       .forEach(p => (es[p] = true));
     for (let j = i + 1; j < names.length; ++j) {
       const n1 = names[j];
       if (_.startsWith(n1, n0)) {
         if (n1.length > n0.length && n1.charAt(n0.length) === qp.SLASH) {
-          m[n0] = strictName(n0);
+          m[n0] = qu.strictName(n0);
           break;
         }
       } else {
@@ -231,12 +228,12 @@ function mapHierarchy(names: string[], enames: string[]) {
     }
   }
   enames.forEach(e => {
-    if (e in es) m[e] = strictName(e);
+    if (e in es) m[e] = qu.strictName(e);
   });
   return m;
 }
 
-export function hierarchyPath(name: string, series?: qt.Dict<string>) {
+export function hierPath(name: string, series?: qt.Dict<string>) {
   const p = [] as string[];
   let i = name.indexOf(qp.SLASH);
   while (i >= 0) {

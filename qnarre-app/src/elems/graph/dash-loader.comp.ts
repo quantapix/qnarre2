@@ -4,7 +4,7 @@ import * as loader from '../../graph/loader';
 import * as q_graph from '../../graph/graph';
 import * as util from '../../graph/utils';
 import * as hierarchy from '../../graph/hierarchy';
-import * as op from '../../graph/oper';
+import * as op from '../../graph/compat';
 
 @Component({
   selector: 'qnr-graph-dashboard-loader',

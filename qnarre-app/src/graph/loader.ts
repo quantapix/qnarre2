@@ -1,5 +1,5 @@
 /* eslint-disable no-case-declarations */
-import * as op from './oper';
+import * as op from './compat';
 import * as qg from './graph';
 import * as qh from './hierarchy';
 import * as qp from './params';

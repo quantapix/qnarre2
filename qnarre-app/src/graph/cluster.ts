@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 
+import * as qb from './build';
 import * as qe from './edata';
 import * as qg from './graph';
 import * as qn from './ndata';
@@ -19,8 +20,8 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
   areas: qt.Dict<qt.Area>;
   isolated: qt.Dict<qn.Ndata[]>;
 
-  constructor(t: qt.NdataT, n: string, public meta: qg.Mgraph, opts: qt.Opts) {
-    super(t, n);
+  constructor(t: qt.NdataT, public meta: qg.Mgraph, opts: qg.Opts) {
+    super(t, meta.data!.name!);
     opts.isCompound = true;
     this.core = qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(
       qt.GdataT.CORE,
@@ -47,23 +48,23 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       [] as qn.Ndata[]
     );
     if (this.type === qt.NdataT.LIST) ds.reverse();
-    qe.buildGroup(sg, this.core, e);
-    qn.buildGroup(sg, ds, e);
+    this.core.buildGroup(sg, e);
+    qb.buildGroup(sg, ds, e);
     if (this.isolated.in.length > 0) {
       const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
-      qn.buildGroup(g, this.isolated.in, e);
+      qb.buildGroup(g, this.isolated.in, e);
     } else {
       qs.selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
     }
     if (this.isolated.out.length > 0) {
       const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
-      qn.buildGroup(g, this.isolated.out, e);
+      qb.buildGroup(g, this.isolated.out, e);
     } else {
       qs.selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
     }
     if (this.isolated.lib.length > 0) {
       const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.LIBRARY);
-      qn.buildGroup(g, this.isolated.lib, e);
+      qb.buildGroup(g, this.isolated.lib, e);
     } else {
       qs.selectChild(scene, 'g', qt.Class.Scene.LIBRARY).remove();
     }
@@ -312,10 +313,9 @@ export class Nmeta extends Nclus implements qg.Nmeta {
   assoc?: string;
   depth = 1;
 
-  constructor(n: string, o = {} as qt.Opts) {
+  constructor(n: string, o = {} as qg.Opts) {
     super(
       qt.NdataT.META,
-      n,
       qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.META, n, o),
       o
     );
@@ -372,11 +372,10 @@ export class Nlist extends Nclus implements qg.Nlist {
     public pName: string,
     public cluster: number,
     n = qu.listName(prefix, suffix, pName),
-    o = {} as qt.Opts
+    o = {} as qg.Opts
   ) {
     super(
       qt.NdataT.LIST,
-      n,
       qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.LIST, n, o),
       o
     );

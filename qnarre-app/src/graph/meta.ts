@@ -62,12 +62,12 @@ export class Graph<
         const ps = e.v.split(qp.SLASH);
         for (let i = ps.length; i >= 0; i--) {
           const front = ps.slice(0, i);
-          const nd = this.data?.hierarchy.node(front.join(qp.SLASH));
+          const nd = this.data?.hier.node(front.join(qp.SLASH));
           if (nd) {
-            if (qg.isOper(nd) && this.data?.hierarchy.libfns[nd.op]) {
+            if (qg.isOper(nd) && this.data?.hier.libfns[nd.op]) {
               for (let j = 1; j < front.length; j++) {
                 const n = front.slice(0, j).join(qp.SLASH);
-                if (n) this.data?.buildSubhierarchy(n);
+                if (n) this.data?.buildSubhier(n);
               }
             }
             break;
@@ -96,7 +96,7 @@ export class Graph<
     );
   }
 
-  detect(c: Cluster, opts: qt.Opts) {
+  detect(c: Cluster, opts: qg.Opts) {
     const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
@@ -173,7 +173,7 @@ export class Graph<
     return lists;
   }
 
-  collect(c: Cluster, opts: qt.Opts) {
+  collect(c: Cluster, opts: qg.Opts) {
     const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
@@ -222,7 +222,7 @@ export class Graph<
     l: qg.Nlist[],
     ls: qt.Dict<qg.Nlist>,
     cluster: number,
-    opts: qt.Opts
+    opts: qg.Opts
   ) {
     if (l.length > 1) {
       const name = qu.listName(

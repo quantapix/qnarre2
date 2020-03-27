@@ -6,7 +6,14 @@ import * as qu from './utils';
 
 export {Link, Nodes} from './core/graph';
 
-export interface Gdata extends qt.Opts {
+export interface Opts extends qg.Opts {
+  rankdir: qt.Dir;
+  edgesep: number;
+  nodesep: number;
+  ranksep: number;
+}
+
+export interface Gdata extends Opts {
   type: qt.GdataT;
   name?: string;
 }
@@ -194,7 +201,7 @@ export type Mgraph = Graph<Gdata, Ndata, Edata>;
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   t: qt.GdataT,
   n: string,
-  o = {} as qt.Opts
+  o = {} as Opts
 ) {
   const g = new Graph<G, N, E>(o);
   const d = o as G;

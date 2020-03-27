@@ -27,7 +27,7 @@ export class Hierarchy implements qg.Hierarchy {
   templates = {} as qt.Dict<qg.Template>;
   private _nodes = new qg.Nodes<Nclus>();
 
-  constructor(public opts = {} as qt.Opts) {
+  constructor(public opts = {} as qg.Opts) {
     this.opts.isCompound = true;
     this.root = new qc.Nmeta(qp.ROOT, this.opts);
     this.setNode(qp.ROOT, this.root);
@@ -53,8 +53,8 @@ export class Hierarchy implements qg.Hierarchy {
     if (!qg.isClus(nd)) return undefined;
     if (nd.bridge) return nd.bridge;
     const b = qg.createGraph<qg.Gdata, Nclus, Emeta>(
+      qt.GdataT.BRIDGE,
       'BRIDGEGRAPH',
-      qt.GraphType.BRIDGE,
       this.opts
     );
     nd.bridge = b;
@@ -203,7 +203,7 @@ export class Hierarchy implements qg.Hierarchy {
   addNodes(g: qs.SlimGraph) {
     const os = {} as qt.Dict<qn.Noper[]>;
     _.each(g.opers, o => {
-      const path = qs.hierarchyPath(o.name);
+      const path = qs.hierPath(o.name);
       let p = this.root;
       p.depth = Math.max(path.length, p.depth);
       if (!os[o.op]) os[o.op] = [];
@@ -312,7 +312,7 @@ export class Hierarchy implements qg.Hierarchy {
     const added = {} as qt.Dict<qc.Nlist>;
     this.root.leaves().forEach(n => {
       const d = this.node(n);
-      if (d?.type === qt.NodeType.OPER) {
+      if (d?.type === qt.NdataT.OPER) {
         const nd = d as qn.Noper;
         if (!nd.compatible) {
           if (nd.list) {
@@ -343,7 +343,7 @@ export class Hierarchy implements qg.Hierarchy {
   groups() {
     const gs = this.nodes().reduce((a, n) => {
       const nd = this.node(n)!;
-      if (nd.type !== qt.NodeType.META) return a;
+      if (nd.type !== qt.NdataT.META) return a;
       const m = nd as qc.Nmeta;
       const s = m.signature();
       const level = n.split('/').length - 1;
@@ -359,7 +359,7 @@ export class Hierarchy implements qg.Hierarchy {
         const {nodes} = g;
         if (nodes.length > 1) return true;
         const n = nodes[0];
-        return n.type === qt.NodeType.META && n.assoc;
+        return n.type === qt.NdataT.META && n.assoc;
       })
       .sort(([_, g]) => g.nodes[0].depth);
   }
@@ -383,7 +383,7 @@ export async function build(
   ps: qt.HierarchyPs,
   t: qu.Tracker
 ): Promise<Hierarchy> {
-  const h = new Hierarchy({rankdir: ps.rankdir} as qt.Opts);
+  const h = new Hierarchy({rankdir: ps.rankdir} as qg.Opts);
   await t.runAsyncTask('Add nodes', 20, () => {
     const ds = {} as qt.Dict<boolean>;
     const cs = {} as qt.Dict<boolean>;

@@ -3,9 +3,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qa from './anno';
-//import * as qc from './cluster';
 import * as qg from './graph';
-//import * as ql from './layout';
 import * as qp from './params';
 import * as qs from './scene';
 import * as qt from './types';
@@ -563,54 +561,4 @@ function labelFontScale(e: qs.GraphElem) {
       .clamp(true);
   }
   return scale;
-}
-
-export function buildGroup(s: qt.Selection, ds: Ndata[], e: qs.GraphElem) {
-  const c = qs.selectOrCreate(s, 'g', qt.Class.Node.CONTAINER);
-  const gs = c
-    .selectAll<any, qg.Ndata>(function() {
-      return this.childNodes;
-    })
-    .data(ds, nd => nd.name + ':' + nd.type);
-  gs.enter()
-    .append('g')
-    .attr('data-name', nd => nd.name)
-    .each(function(nd) {
-      const g = d3.select(this);
-      e.addNodeGroup(nd.name, g);
-    })
-    .merge(gs)
-    .attr('class', nd => qt.Class.Node.GROUP + ' ' + nd.nodeClass())
-    .each(function(nd) {
-      const g = d3.select(this);
-      const inb = qs.selectOrCreate(g, 'g', qt.Class.Anno.INBOX);
-      qa.buildGroup(inb, nd.annos.in, nd, e);
-      const outb = qs.selectOrCreate(g, 'g', qt.Class.Anno.OUTBOX);
-      qa.buildGroup(outb, nd.annos.out, nd, e);
-      const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
-      if (qg.isClus(nd)) nd.addButton(s2, e);
-      nd.addInteraction(s2, e);
-      if (qg.isClus(nd)) nd.subBuild(g, e);
-      const label = nd.labelBuild(g, e);
-      nd.addInteraction(label, e, nd.type === qt.NdataT.META);
-      nd.stylize(g, e);
-      nd.position(g);
-    });
-  gs.exit<Ndata>()
-    .each(function(nd) {
-      e.removeNodeGroup(nd.name);
-      const g = d3.select(this);
-      if (nd.annos.in.list.length > 0) {
-        g.select('.' + qt.Class.Anno.INBOX)
-          .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
-          .each(a => e.removeAnnotationGroup(a, nd));
-      }
-      if (nd.annos.out.list.length > 0) {
-        g.select('.' + qt.Class.Anno.OUTBOX)
-          .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
-          .each(a => e.removeAnnotationGroup(a, nd));
-      }
-    })
-    .remove();
-  return gs;
 }

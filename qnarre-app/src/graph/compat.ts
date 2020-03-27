@@ -391,7 +391,7 @@ export class TpuCompatibility implements CompatibilityProvider {
   }
 
   valid(n: qg.Noper) {
-    if (n.name.search(qp.LIB_PRE) == 0) return true;
+    if (n.name?.search(qp.LIB_PRE) == 0) return true;
     if (!n.op) return true;
     if (n.device && this.notTpuOp(n.device)) return true;
     if (n.device && n.device.search('TPU_SYSTEM') != -1) return true;

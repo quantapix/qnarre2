@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 
+import * as qp from './params';
 import * as qt from './types';
 
 export function escapeQuerySelector(sel: string): string {
@@ -14,6 +15,11 @@ export function stringToBuffer(s: string) {
     v[i] = s.charCodeAt(i);
   }
   return buf;
+}
+
+export function strictName(n: string) {
+  const s = n.split(qp.SLASH);
+  return n + qp.SLASH + '(' + s[s.length - 1] + ')';
 }
 
 export function cluster(ps: {key: string; value: any}[]) {
@@ -82,8 +88,8 @@ export function updateHistos(hs: qt.Histos, src: any) {
   _.keys(hs).forEach(k => {
     const n = src[k];
     if (n) {
-      const t = hs[k];
-      t[n] = (t[n] ?? 0) + 1;
+      const h = hs[k];
+      h[n] = (h[n] ?? 0) + 1;
     }
   });
 }
@@ -95,6 +101,20 @@ export function updateCompat(hs: qt.Histos, src: any) {
   } else {
     c.incompats += 1;
   }
+}
+
+export function shade(h: qt.Histo, cs: d3.ScaleOrdinal<string, string>) {
+  if (_.keys(h).length > 0) {
+    const c = _.sum(_.keys(h).map(k => h[k]));
+    return _.keys(h).map(
+      k =>
+        ({
+          color: cs(k),
+          perc: h[k] / c
+        } as qt.Shade)
+    );
+  }
+  return [] as qt.Shade[];
 }
 
 export class Stats {
@@ -270,11 +290,8 @@ export function convertUnits(v: number, us: Units, idx = 0): string {
   return Number(v.toPrecision(3)) + ' ' + us[idx].symbol;
 }
 
-export function isDisplayable(s: Stats) {
-  if (s && (s.bytes || s.getMicros() || s.size)) {
-    return true;
-  }
-  return false;
+export function displayable(s: Stats) {
+  return s && (s.bytes || s.getMicros() || s.size);
 }
 
 export function removePrefix(ss: string[]) {

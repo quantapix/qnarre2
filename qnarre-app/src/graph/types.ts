@@ -44,13 +44,6 @@ export enum ColorBy {
   COMPAT = 'COMPAT'
 }
 
-export interface Opts extends qg.Opts {
-  rankdir: qt.Dir;
-  edgesep: number;
-  nodesep: number;
-  ranksep: number;
-}
-
 export interface Input {
   control?: boolean;
   name: string;
@@ -58,7 +51,8 @@ export interface Input {
 }
 
 export type Shapes = number[][];
-export type Histos = qt.Dict<qt.Dict<number>>;
+export type Histo = qt.Dict<number>;
+export type Histos = qt.Dict<Histo>;
 export type Shade = {color: string; perc: number};
 
 export interface Tracker {

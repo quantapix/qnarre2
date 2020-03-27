@@ -54,54 +54,6 @@ export function getEdgeKey(d: EdgeData) {
   return d.v + qp.EDGE_KEY_DELIM + d.w;
 }
 
-export function buildGroup(
-  scene,
-  g: qt.Graph<qr.Ndata, Emeta>,
-  gelem: qs.GraphElem
-) {
-  const elem = gelem as any;
-  const es = _.reduce(
-    g.edges(),
-    (ds, e) => {
-      ds.push({v: e.v, w: e.w, label: g.edge(e)});
-      return ds;
-    },
-    [] as EdgeData[]
-  );
-  const container = qs.selectOrCreate(scene, 'g', qt.Class.Edge.CONTAINER);
-  const gs = (container as any)
-    .selectAll(function() {
-      return this.childNodes;
-    })
-    .data(es, getEdgeKey);
-  gs.enter()
-    .append('g')
-    .attr('class', qt.Class.Edge.GROUP)
-    .attr('data-edge', getEdgeKey)
-    .each(function(d) {
-      const g = d3.select(this);
-      d.label.edgeGroup = g;
-      elem._edgeGroupIndex[getEdgeKey(d)] = g;
-      if (elem.handle) {
-        g.on('click', d => {
-          (d3.event as Event).stopPropagation();
-          elem.fire('edge-select', {
-            edgeData: d,
-            edgeGroup: g
-          });
-        });
-      }
-      appendEdge(g, d, elem);
-    })
-    .merge(gs)
-    .each(() => position(elem, this))
-    .each((d: EdgeData) => stylize(d3.select(this), d, elem));
-  gs.exit()
-    .each((d: EdgeData) => delete elem._edgeGroupIndex[getEdgeKey(d)])
-    .remove();
-  return gs;
-}
-
 function getPathSegmentIndexAtLength(
   ps: qr.Point[],
   length: number,
