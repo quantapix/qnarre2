@@ -27,14 +27,14 @@ export const PARAMS = {
   },
   graph: {
     meta: {
-      nodeSep: 5,
-      rankSep: 25,
-      edgeSep: 5
+      nodesep: 5,
+      ranksep: 25,
+      edgesep: 5
     },
-    series: {
-      nodeSep: 5,
-      rankSep: 25,
-      edgeSep: 5
+    list: {
+      nodesep: 5,
+      ranksep: 25,
+      edgesep: 5
     },
     pad: {top: 40, left: 20}
   },
@@ -107,7 +107,7 @@ export const PARAMS = {
     maxLabelWidth: 120
   },
   constant: {size: {width: 4, height: 4}},
-  series: {
+  list: {
     maxStackCount: 3,
     parallelStackOffsetRatio: 0.2,
     towerStackOffsetRatio: 0.5

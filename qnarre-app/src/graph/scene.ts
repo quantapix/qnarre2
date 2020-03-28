@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qn from './ndata';
+import * as qg from './graph';
 import * as qt from './types';
 
 import {PARAMS as PS} from './params';
@@ -80,8 +81,8 @@ export function positionEllipse(s: qt.Selection, r: qt.Rect) {
     .attr('ry', r.h / 2);
 }
 
-export function positionButton(s: qt.Selection, nd: qn.Ndata) {
-  const cx = nd.computeCXPositionOfNodeShape();
+export function positionButton(s: qt.Selection, nd: qg.Ndata) {
+  const cx = qn.centerX(nd);
   const w = nd.expanded ? nd.w : nd.box.w;
   const h = nd.expanded ? nd.h : nd.box.h;
   let x = cx + w / 2 - 6;
@@ -195,13 +196,14 @@ export abstract class GraphElem extends HTMLElement {
   templateIndex?: () => {};
   colorBy = '';
   abstract fire(eventName: string, daat: any): void;
-  abstract addNodeGroup(name: string, selection: qt.Selection): void;
-  abstract removeNodeGroup(name: string): void;
-  abstract removeAnnotationGroup(n: string, nd: any): void;
-  abstract isNodeExpanded(node: qn.Ndata): boolean;
-  abstract isNodeHighlighted(nodeName: string): boolean;
-  abstract isNodeSelected(nodeName: string): boolean;
-  abstract getAnnotationGroupsIndex(name: string): qt.Selection;
+  abstract addNodeGroup(n: string, s: qt.Selection): void;
+  abstract addAnnoGroup(n: string, s: qt.Selection): void;
+  abstract removeNodeGroup(n: string): void;
+  abstract removeAnnoGroup(a: qg.Anno, n: qg.Ndata, s: qt.Selection): void;
+  abstract isNodeExpanded(nd: qg.Ndata): boolean;
+  abstract isNodeHighlighted(n: string): boolean;
+  abstract isNodeSelected(n: string): boolean;
+  abstract getAnnotationGroupsIndex(n: string): qt.Selection;
   abstract getGraphSvgRoot(): SVGElement;
-  abstract getContextMenu(): HTMLElement;
+  abstract contextMenu(): HTMLElement;
 }

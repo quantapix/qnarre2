@@ -3,6 +3,8 @@ import * as _ from 'lodash';
 import * as qp from './params';
 import * as qt from './types';
 
+export * from './core/utils';
+
 export function escapeQuerySelector(sel: string): string {
   return sel.replace(/([:.[\],/\\()])/g, '\\$1');
 }

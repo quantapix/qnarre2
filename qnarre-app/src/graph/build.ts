@@ -44,13 +44,13 @@ class Gdata {
         _.each((cn as qg.Noper).inEmbeds, e => {
           const ed = new qn.Ndata(e);
           const md = new MetaEdata();
-          addInAnno(cd, e, ed, md, qt.AnnotationType.CONSTANT);
+          addInAnno(qt.AnnoT.CONSTANT, cd, e, ed, md);
           this.nds[e.name] = ed;
         });
         _.each((cn as qg.Noper).outEmbeds, e => {
           const ed = new qn.Ndata(e);
           const md = new MetaEdata();
-          addOutAnno(cd, e, ed, md, qt.AnnotationType.SUMMARY);
+          addOutAnno(qt.AnnoT.SUMMARY, cd, e, ed, md);
           this.nds[e.name] = ed;
         });
       }
@@ -146,13 +146,7 @@ class Gdata {
       if (!canDraw) {
         const n = rd1 ? rd1.node : hmap[n1];
         annos.push(
-          new Annotation(
-            n,
-            rd1,
-            new MetaEdata(ed),
-            qt.AnnotationType.SHORTCUT,
-            inbound
-          )
+          new Annotation(n, rd1, new MetaEdata(ed), qt.AnnoT.SHORTCUT, inbound)
         );
         return;
       }
@@ -293,7 +287,7 @@ export function buildGroup(s: qt.Selection, ds: qn.Ndata[], e: qs.GraphElem) {
       e.addNodeGroup(nd.name, g);
     })
     .merge(gs)
-    .attr('class', nd => qt.Class.Node.GROUP + ' ' + nd.nodeClass())
+    .attr('class', nd => qt.Class.Node.GROUP + ' ' + qn.nodeClass(nd))
     .each(function(nd) {
       const g = d3.select(this);
       const inb = qs.selectOrCreate(g, 'g', qt.Class.Anno.INBOX);

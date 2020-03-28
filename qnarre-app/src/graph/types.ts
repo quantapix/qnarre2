@@ -119,7 +119,7 @@ export const Class = {
     GROUP: 'annotation',
     NODE: 'annotation-node',
     EDGE: 'annotation-edge',
-    CTRL_EDGE: 'annotation-control-edge',
+    CONTROL: 'annotation-control-edge',
     LABEL: 'annotation-label',
     DOTS: 'annotation-ellipsis'
   },

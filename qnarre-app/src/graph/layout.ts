@@ -2,18 +2,95 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qt from './types';
-//import * as qr from './gdata';
 import * as qp from './params';
 import * as qg from './graph';
 import * as qn from './ndata';
+import * as qu from './utils';
 
-export function layoutScene(c: qg.Nclus) {
-  if (qg.isClus(c)) layoutChildren(c);
-  if (qg.isMeta(c)) layoutMeta(c);
-  else if (qg.isList(c)) layoutList(c);
+export function runLayout<
+  G extends qg.Gdata,
+  N extends qg.Ndata,
+  E extends qg.Edata
+>(g: qg.Graph<G, N, E>, opts?: qg.Opts) {
+  _.extend(g.data, {
+    nodesep: opts?.nodesep,
+    ranksep: opts?.ranksep,
+    edgesep: opts?.edgesep
+  });
+  const bs = [];
+  const nonbs = [] as string[];
+  g.nodes().forEach(n => {
+    const nd = g.node(n)!;
+    if (nd.type === qt.NdataT.BRIDGE) bs.push(n);
+    else nonbs.push(n);
+  });
+  if (!nonbs.length) return {w: 0, h: 0};
+  g.runLayout(opts);
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  nonbs.forEach(n => {
+    const nd = g.node(n)!;
+    const w = 0.5 * nd.w;
+    const x1 = nd.x - w;
+    const x2 = nd.x + w;
+    minX = x1 < minX ? x1 : minX;
+    maxX = x2 > maxX ? x2 : maxX;
+    const h = 0.5 * nd.h;
+    const y1 = nd.y - h;
+    const y2 = nd.y + h;
+    minY = y1 < minY ? y1 : minY;
+    maxY = y2 > maxY ? y2 : maxY;
+  });
+  g.edges().forEach(e => {
+    const ed = g.edge(e)!;
+    if (ed.structural) return;
+    const n0 = g.node(ed.metaedge!.v);
+    const n1 = g.node(ed.metaedge!.w);
+    if (ed.points.length === 3 && qu.Point.colinear(ed.points)) {
+      if (n0) {
+        const x = n0.expanded ? n0.x : qn.centerX(n0);
+        ed.points[0].x = x;
+      }
+      if (n1) {
+        const x = n1.expanded ? n1.x : qn.centerX(n1);
+        ed.points[2].x = x;
+      }
+      ed.points = [ed.points[0], ed.points[1]];
+    }
+    const nl = ed.points[ed.points.length - 2];
+    if (n1) ed.points[ed.points.length - 1] = qn.intersect(n1, nl);
+    const sp = ed.points[1];
+    if (n0) ed.points[0] = qn.intersect(n0, sp);
+    ed.points.forEach(p => {
+      minX = p.x < minX ? p.x : minX;
+      maxX = p.x > maxX ? p.x : maxX;
+      minY = p.y < minY ? p.y : minY;
+      maxY = p.y > maxY ? p.y : maxY;
+    });
+  });
+  g.nodes().forEach(n => {
+    const nd = g.node(n)!;
+    nd.x -= minX;
+    nd.y -= minY;
+  });
+  g.edges().forEach(e => {
+    g.edge(e)!.points.forEach(p => {
+      p.x -= minX;
+      p.y -= minY;
+    });
+  });
+  return {w: maxX - minX, h: maxY - minY};
 }
 
-function layoutChildren(c: qg.Nclus) {
+export function layout(d: qg.Ndata) {
+  if (qg.isClus(d)) layoutClus(d);
+  if (qg.isMeta(d)) layoutMeta(d);
+  else if (qg.isList(d)) layoutList(d);
+}
+
+function layoutClus(c: qg.Nclus) {
   const nds = c.core
     .nodes()
     .map(n => c.core.node(n)!)
@@ -27,8 +104,7 @@ function layoutChildren(c: qg.Nclus) {
         _.extend(nd, qp.PARAMS.nodeSize.bridge);
         break;
       case qt.NdataT.META:
-        if (nd.expanded) layoutScene(nd as qg.Nclus);
-        else {
+        if (!nd.expanded) {
           _.extend(nd, qp.PARAMS.nodeSize.meta);
           nd.h = qp.PARAMS.nodeSize.meta.height(nd.cardin);
         }
@@ -36,7 +112,6 @@ function layoutChildren(c: qg.Nclus) {
       case qt.NdataT.LIST:
         if (nd.expanded) {
           _.extend(nd, qp.PARAMS.nodeSize.list.expanded);
-          layoutScene(nd as qg.Nclus);
         } else if (qg.isClus(nd)) {
           const s = nd.noControls
             ? qp.PARAMS.nodeSize.list.vertical
@@ -47,21 +122,23 @@ function layoutChildren(c: qg.Nclus) {
       default:
         throw Error('Unrecognized type: ' + nd.type);
     }
-    if (!nd.expanded) nd.updateTotalWidthOfNode();
-    layoutAnnotation(nd);
+    if (nd.expanded) {
+      if (qg.isClus(nd)) layout(nd);
+    } else nd.updateTotalWidthOfNode();
+    layoutAnno(nd);
   });
 }
 
 function layoutMeta(m: qg.Nmeta) {
+  const ps = qp.PARAMS.subscene.meta;
   _.extend(m, ps);
-  _.extend(m.box, m.core.layout(qp.PARAMS.graph.meta));
+  _.extend(m.box, runLayout(m.core, qp.PARAMS.graph.meta));
   let parts = 0;
   if (m.core.nodeCount > 0) parts++;
   let nds = m.isolated.in;
   if (nds.length > 0) parts++;
   const iw = nds.length ? _.max(nds.map(d => d.w)) : undefined;
   m.areas.in.w = iw ?? 0;
-  const ps = qp.PARAMS.subscene.meta;
   m.areas.in.h = _.reduce(
     nds,
     (h, nd, i) => {
@@ -115,199 +192,80 @@ function layoutList(l: qg.Nlist) {
   const g = l.core;
   const ps = qp.PARAMS.subscene.list;
   _.extend(l, ps);
-  _.extend(l.box, layout(l.core, qp.PARAMS.graph.series));
+  _.extend(l.box, runLayout(l.core, qp.PARAMS.graph.list));
   g.nodes().forEach(n => (g.node(n)!.excluded = false));
   l.w = l.box.w + ps.pad.left + ps.pad.right;
   l.h = l.box.h + ps.pad.top + ps.pad.bottom;
 }
 
-export class Graph<
-  G extends qg.Gdata,
-  N extends qg.Ndata,
-  E extends qg.Edata
-> extends qg.Graph<G, N, E> {
-  layout(ps: qg.Opts) {
-    _.extend(this.data, {
-      nodesep: ps.nodesep,
-      ranksep: ps.ranksep,
-      edgesep: ps.edgesep
-    });
-    const bs = [];
-    const nonbs = [] as string[];
-    this.nodes().forEach(n => {
-      const nd = this.node(n)!;
-      if (nd.type === qt.NdataT.BRIDGE) bs.push(n);
-      else nonbs.push(n);
-    });
-    if (!nonbs.length) return {w: 0, h: 0};
-    this.runLayout();
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    nonbs.forEach(n => {
-      const nd = this.node(n)!;
-      const w = 0.5 * nd.w;
-      const x1 = nd.x - w;
-      const x2 = nd.x + w;
-      minX = x1 < minX ? x1 : minX;
-      maxX = x2 > maxX ? x2 : maxX;
-      const h = 0.5 * nd.h;
-      const y1 = nd.y - h;
-      const y2 = nd.y + h;
-      minY = y1 < minY ? y1 : minY;
-      maxY = y2 > maxY ? y2 : maxY;
-    });
-    this.edges().forEach(e => {
-      const ed = this.edge(e)!;
-      if (ed.structural) return;
-      const n0 = this.node(ed.metaedge!.v) as qn.Ndata;
-      const n1 = this.node(ed.metaedge!.w) as qn.Ndata;
-      if (ed.points.length === 3 && isStraightLine(ed.points)) {
-        if (n0) {
-          const x = n0.expanded ? n0.x : n0.computeCXPositionOfNodeShape();
-          ed.points[0].x = x;
-        }
-        if (n1) {
-          const x = n1.expanded ? n1.x : n1.computeCXPositionOfNodeShape();
-          ed.points[2].x = x;
-        }
-        ed.points = [ed.points[0], ed.points[1]];
-      }
-      const nl = ed.points[ed.points.length - 2];
-      if (n1) ed.points[ed.points.length - 1] = n1.intersectPointAndNode(nl);
-      const sp = ed.points[1];
-      if (n0) ed.points[0] = n0.intersectPointAndNode(sp);
-      ed.points.forEach(p => {
-        minX = p.x < minX ? p.x : minX;
-        maxX = p.x > maxX ? p.x : maxX;
-        minY = p.y < minY ? p.y : minY;
-        maxY = p.y > maxY ? p.y : maxY;
-      });
-    });
-    this.nodes().forEach(n => {
-      const nd = this.node(n)!;
-      nd.x -= minX;
-      nd.y -= minY;
-    });
-    this.edges().forEach(e => {
-      this.edge(e)!.points.forEach(p => {
-        p.x -= minX;
-        p.y -= minY;
-      });
-    });
-    return {w: maxX - minX, h: maxY - minY};
-  }
-}
-
-function layoutAnnotation(d: qr.Ndata) {
+function layoutAnno(d: qg.Ndata) {
   if (d.expanded) return;
-  const inAnnotations = d.inAnnotations.list;
-  const outAnnotations = d.outAnnotations.list;
-  _.each(inAnnotations, a => sizeAnnotation(a));
-  _.each(outAnnotations, a => sizeAnnotation(a));
+  const ins = d.annos.in.list;
+  const outs = d.annos.out.list;
+  ins.forEach(a => initAnno(a));
+  outs.forEach(a => initAnno(a));
   const ps = qp.PARAMS.annotations;
-  const inboxHeight = _.reduce(
-    inAnnotations,
-    (height, a, i) => {
-      const yOffset = i > 0 ? ps.yOffset : 0;
-      a.dx = -(d.box.w + a.width) / 2 - ps.xOffset;
-      a.dy = height + yOffset + a.height / 2;
-      return height + yOffset + a.height;
-    },
-    0
-  );
-  _.each(inAnnotations, a => {
-    a.dy -= inboxHeight / 2;
-    a.labelOffset = ps.labelOffset;
+  const calc = (h: number, a: qg.Anno, i: number) => {
+    const o = i > 0 ? ps.yOffset : 0;
+    a.x = -(d.box.w + a.w) / 2 - ps.xOffset;
+    a.y = h + o + a.h / 2;
+    return h + o + a.h;
+  };
+  const ih = _.reduce(ins, calc, 0);
+  ins.forEach(a => {
+    a.y -= ih / 2;
+    a.offset = ps.labelOffset;
   });
-  const outboxHeight = _.reduce(
-    outAnnotations,
-    (height, a, i) => {
-      const yOffset = i > 0 ? ps.yOffset : 0;
-      a.dx = (d.box.w + a.width) / 2 + ps.xOffset;
-      a.dy = height + yOffset + a.height / 2;
-      return height + yOffset + a.height;
-    },
-    0
-  );
-  _.each(outAnnotations, a => {
-    a.dy -= outboxHeight / 2;
-    a.labelOffset = ps.labelOffset;
+  const oh = _.reduce(outs, calc, 0);
+  outs.forEach(a => {
+    a.y -= oh / 2;
+    a.offset = ps.labelOffset;
   });
-  let inTouchHeight = Math.min(d.height / 2 - d.radius, inboxHeight / 2);
-  inTouchHeight = inTouchHeight < 0 ? 0 : inTouchHeight;
-  const inY = d3
+  let touch = Math.min(d.h / 2 - d.r, ih / 2);
+  touch = touch < 0 ? 0 : touch;
+  const iy = d3
     .scaleLinear()
-    .domain([0, inAnnotations.length - 1])
-    .range([-inTouchHeight, inTouchHeight]);
-  _.each(inAnnotations, (a, i) => {
+    .domain([0, ins.length - 1])
+    .range([-touch, touch]);
+  ins.forEach((a, i) => {
     a.points = [
-      {
-        dx: a.dx + a.width / 2,
-        dy: a.dy
-      },
-      {
-        dx: -d.box.w / 2,
-        dy: inAnnotations.length > 1 ? inY(i) : 0
-      }
+      new qt.Point(a.x + a.w / 2, a.y),
+      new qt.Point(-d.box.w / 2, ins.length > 1 ? iy(i) : 0)
     ];
   });
-  let outTouchHeight = Math.min(d.height / 2 - d.radius, outboxHeight / 2);
-  outTouchHeight = outTouchHeight < 0 ? 0 : outTouchHeight;
-  const outY = d3
+  touch = Math.min(d.h / 2 - d.r, oh / 2);
+  touch = touch < 0 ? 0 : touch;
+  const oy = d3
     .scaleLinear()
-    .domain([0, outAnnotations.length - 1])
-    .range([-outTouchHeight, outTouchHeight]);
-  _.each(outAnnotations, (a, i) => {
+    .domain([0, outs.length - 1])
+    .range([-touch, touch]);
+  outs.forEach((a, i) => {
     a.points = [
-      {
-        dx: d.box.w / 2,
-        dy: outAnnotations.length > 1 ? outY(i) : 0
-      },
-      {
-        dx: a.dx - a.width / 2,
-        dy: a.dy
-      }
+      new qt.Point(d.box.w / 2, outs.length > 1 ? oy(i) : 0),
+      new qt.Point(a.x - a.w / 2, a.y)
     ];
   });
-  d.height = Math.max(d.height, inboxHeight, outboxHeight);
+  d.h = Math.max(d.h, ih, oh);
 }
 
-function sizeAnnotation(a: qg.Anno) {
+function initAnno(a: qg.Anno) {
   switch (a.type) {
     case qt.AnnoT.CONSTANT:
       _.extend(a, qp.PARAMS.constant.size);
       break;
     case qt.AnnoT.SHORTCUT:
-      if (a.node.type === qt.NdataT.OPER) {
+      if (qg.isOper(a.nd)) {
         _.extend(a, qp.PARAMS.shortcutSize.oper);
-      } else if (a.node.type === qt.NdataT.META) {
+      } else if (qg.isMeta(a.nd)) {
         _.extend(a, qp.PARAMS.shortcutSize.meta);
-      } else if (a.node.type === qt.NdataT.LIST) {
+      } else if (qg.isList(a.nd)) {
         _.extend(a, qp.PARAMS.shortcutSize.list);
       } else {
-        throw Error('Invalid type: ' + a.node.type);
+        throw Error('Invalid type: ' + a.nd.type);
       }
       break;
     case qt.AnnoT.SUMMARY:
       _.extend(a, qp.PARAMS.constant.size);
       break;
   }
-}
-
-function angleBetweenTwoPoints(a: qt.Point, b: qt.Point) {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  return (180 * Math.atan(dy / dx)) / Math.PI;
-}
-
-function isStraightLine(ps: qt.Point[]) {
-  let a = angleBetweenTwoPoints(ps[0], ps[1]);
-  for (let i = 1; i < ps.length - 1; i++) {
-    const b = angleBetweenTwoPoints(ps[i], ps[i + 1]);
-    if (Math.abs(b - a) > 1) return false;
-    a = b;
-  }
-  return true;
 }

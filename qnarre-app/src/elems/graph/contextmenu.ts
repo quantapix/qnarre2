@@ -33,8 +33,8 @@ function getOffset(sceneElement) {
 }
 
 export function getMenu(sceneElement: TfGraphScene, menu: ContextMenuItem[]) {
-  const menuNode = sceneElement.getContextMenu();
-  const menuSelection = d3.select(sceneElement.getContextMenu());
+  const menuNode = sceneElement.contextMenu();
+  const menuSelection = d3.select(sceneElement.contextMenu());
   return function(data, index: number) {
     const event = <MouseEvent>d3.event;
     const sceneOffset = getOffset(sceneElement);

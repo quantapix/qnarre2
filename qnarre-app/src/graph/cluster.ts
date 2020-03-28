@@ -52,7 +52,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       },
       [] as qn.Ndata[]
     );
-    if (this.type === qt.NdataT.LIST) ds.reverse();
+    if (qg.isList(this)) ds.reverse();
     this.core.buildGroup(sg, e);
     qb.buildGroup(sg, ds, e);
     if (this.isolated.in.length > 0) {
@@ -84,7 +84,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
   }
 
   position(s: qt.Selection) {
-    const y = this.type === qt.NdataT.LIST ? 0 : PS.subscene.meta.labelHeight;
+    const y = qg.isList(this) ? 0 : PS.subscene.meta.labelHeight;
     qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
     const ins = this.isolated.in.length > 0;
     const outs = this.isolated.out.length > 0;
@@ -285,8 +285,8 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       const d = g.neighbors(n)?.length;
       if (nd.include) return;
       if (d === 0) {
-        const hasOut = nd.annos.out.list.length > 0;
-        const hasIn = nd.annos.in.list.length > 0;
+        const hasOut = nd.annos.out.length > 0;
+        const hasIn = nd.annos.in.length > 0;
         if (nd.extract.in) {
           this.isolated.in.push(nd as qn.Ndata);
           nd.include = false;

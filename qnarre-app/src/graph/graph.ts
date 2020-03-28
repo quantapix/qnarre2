@@ -7,7 +7,7 @@ import * as qu from './utils';
 export {Link, Nodes} from './core/graph';
 
 export interface Opts extends qg.Opts {
-  rankdir: qt.Dir;
+  rankdir?: qt.Dir;
   edgesep: number;
   nodesep: number;
   ranksep: number;
@@ -19,6 +19,7 @@ export interface Gdata extends Opts {
 }
 
 export interface Ndata extends qt.Rect {
+  r: number;
   type: qt.NdataT;
   name: string;
   cardin: number;
@@ -30,20 +31,23 @@ export interface Ndata extends qt.Rect {
   pad: qt.Pad;
   box: qt.Area;
   attrs: qt.Dict<any>;
-  annos: {in: AnnoList; out: AnnoList};
+  label: {h: number; off: number};
+  width: {in: number; out: number};
+  annos: {in: Annos; out: Annos};
   extract: {in: boolean; out: boolean; lib: boolean};
   hasTypeIn(ts: string[]): boolean;
-  addInAnno(n: Ndata, e: Edata, t: qt.AnnoT): this;
-  addOutAnno(n: Ndata, e: Edata, t: qt.AnnoT): this;
+  addInAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
+  addOutAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   updateTotalWidthOfNode(): void;
+  listName(): string | undefined;
 }
 
 export interface Edata {
   name: string;
-  structural?: boolean;
-  control?: boolean;
-  ref?: boolean;
   out: string;
+  ref?: boolean;
+  control?: boolean;
+  structural?: boolean;
   points: qt.Point[];
 }
 
@@ -121,9 +125,11 @@ export function isList(x?: any): x is Nlist {
 
 export class Emeta implements Edata {
   name = '';
-  control?: boolean;
-  ref?: boolean;
   out = '';
+  ref?: boolean;
+  control?: boolean;
+  structural?: boolean;
+  points = [] as qt.Point[];
   links = [] as qg.Link<Edata>[];
   num = {regular: 0, control: 0, ref: 0};
   size = 0;
@@ -160,16 +166,15 @@ export interface Library {
 
 export interface Anno extends qt.Rect {
   type: qt.AnnoT;
-  ndata: Ndata;
-  edata: Edata;
-  isIn?: boolean;
+  nd: Ndata;
+  ed: Edata;
+  offset: number;
   nodes?: string[];
   points: qt.Point[];
-  offset: number;
+  isbound?: boolean;
 }
 
-export interface AnnoList {
-  list: Anno[];
+export interface Annos extends Array<Anno> {
   names: qt.Dict<boolean>;
 }
 
@@ -178,6 +183,9 @@ export class Graph<
   N extends Ndata,
   E extends Edata
 > extends qg.Graph<G, N, E> {
+  runLayout(_opts?: Opts): this {
+    return this;
+  }
   setDepth(d: number) {
     this.nodes().forEach(n => {
       const nd = this.node(n)!;
@@ -199,8 +207,8 @@ export class Graph<
     const d = this.node(ns[1])!;
     const e = this.edge(ns)!;
     if (s.include && d.include) return;
-    s.addOutAnno(d, e, qt.AnnoT.SHORTCUT);
-    d.addInAnno(s, e, qt.AnnoT.SHORTCUT);
+    s.addOutAnno(qt.AnnoT.SHORTCUT, d, e);
+    d.addInAnno(qt.AnnoT.SHORTCUT, s, e);
     this.delEdge(ns);
   }
 }

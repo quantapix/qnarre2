@@ -57,14 +57,32 @@ export function partition<T>(es: T[], fn: (_: T) => boolean) {
   return r;
 }
 
-export function addPoint(t: qt.Point, p: qt.Point) {
-  t.x += p.x;
-  t.y += p.y;
-}
+export namespace Point {
+  export function add(t: qt.Point, p: qt.Point) {
+    t.x += p.x;
+    t.y += p.y;
+  }
 
-export function subtractPoint(t: qt.Point, p: qt.Point) {
-  t.x -= p.x;
-  t.y -= p.y;
+  export function subtract(t: qt.Point, p: qt.Point) {
+    t.x -= p.x;
+    t.y -= p.y;
+  }
+
+  export function colinear(ps: qt.Point[]) {
+    let a = angle(ps[0], ps[1]);
+    for (let i = 1; i < ps.length - 1; i++) {
+      const b = angle(ps[i], ps[i + 1]);
+      if (Math.abs(b - a) > 1) return false;
+      a = b;
+    }
+    return true;
+  }
+
+  function angle(a: qt.Point, b: qt.Point) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    return (180 * Math.atan(dy / dx)) / Math.PI;
+  }
 }
 
 export function intersectRect(t: qt.Rect, p: qt.Point, raise = true) {

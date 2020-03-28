@@ -59,11 +59,11 @@ export class Center<N extends Ndata> extends Force<N, undefined> {
   apply(_: number) {
     const ns = this.ns;
     const p = {x: 0, y: 0};
-    ns.forEach(n => qu.addPoint(p, n));
+    ns.forEach(n => qu.Point.add(p, n));
     const c = ns.length;
     p.x = p.x / c - this.orig.x;
     p.y = p.y / c - this.orig.y;
-    ns.forEach(n => qu.subtractPoint(n, p));
+    ns.forEach(n => qu.Point.subtract(n, p));
     return this;
   }
 }

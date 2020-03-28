@@ -19,8 +19,6 @@ export class Ndata implements qg.Ndata {
   w = 0;
   h = 0;
   r = 0;
-  label = {h: 0, off: 0};
-  width = {in: 0, out: 0};
   display: string;
   parent?: qg.Ndata;
   stats?: qu.Stats;
@@ -31,9 +29,11 @@ export class Ndata implements qg.Ndata {
   structural?: boolean;
   pad = new qt.Pad();
   box = new qt.Area();
+  label = {h: 0, off: 0};
+  width = {in: 0, out: 0};
   attrs = {} as qt.Dict<any>;
   color = {} as qt.Dict<string>;
-  annos = {in: new qa.AnnoList(), out: new qa.AnnoList()};
+  annos = {in: new qa.Annos(), out: new qa.Annos()};
   extract = {} as {in: boolean; out: boolean; lib: boolean};
   shade = {
     dev: [] as qt.Shade[],
@@ -80,10 +80,6 @@ export class Ndata implements qg.Ndata {
     qs.translate(sub, x, y);
   }
 
-  canBeInList() {
-    return !!this.listName();
-  }
-
   listName() {
     if (qg.isList(this)) return this.name;
     if (qg.isOper(this)) return this.list;
@@ -99,50 +95,6 @@ export class Ndata implements qg.Ndata {
 
   groupSettingLabel() {
     return qu.groupButtonString(!!this.containingList());
-  }
-
-  contextMenu(e: qs.GraphElem) {
-    let m = [
-      {
-        title: function(this: Ndata) {
-          return qu.includeButtonString(this.include);
-        },
-        action: function(this: Ndata) {
-          e.fire('node-toggle-extract', {name: this.name});
-        }
-      }
-    ];
-    // if (e.nodeContextMenuItems) m = m.concat(e.nodeContextMenuItems);
-    if (this.canBeInList()) {
-      m.push({
-        title: function(this: Ndata) {
-          return qu.groupButtonString(!!this.containingList());
-        },
-        action: function(this: Ndata) {
-          e.fire('node-toggle-seriesgroup', {
-            name: this.listName()
-          });
-        }
-      });
-    }
-    return m;
-  }
-
-  nodeClass() {
-    switch (this.type) {
-      case qt.NdataT.OPER:
-        return qt.Class.OPER;
-      case qt.NdataT.META:
-        return qt.Class.META;
-      case qt.NdataT.LIST:
-        return qt.Class.LIST;
-      case qt.NdataT.BRIDGE:
-        return qt.Class.BRIDGE;
-      case qt.NdataT.DOTS:
-        return qt.Class.DOTS;
-      default:
-        throw Error('Unrecognized type: ' + this.type);
-    }
   }
 
   addButton(s: qt.Selection, e: qs.GraphElem) {
@@ -168,7 +120,7 @@ export class Ndata implements qg.Ndata {
       s.attr('pointer-events', 'none');
       return;
     }
-    const f = menu.getMenu(e, this.contextMenu(e));
+    const f = menu.getMenu(e, contextMenu(this, e));
     s.on('dblclick', (d: this) => {
       e.fire('node-toggle-expand', {name: d.name});
     })
@@ -190,14 +142,14 @@ export class Ndata implements qg.Ndata {
       });
   }
 
-  addInAnno(nd: qg.Ndata, em: qg.Edata, t: qt.AnnoT) {
-    const a = new qa.Anno(nd, em, t, true);
+  addInAnno(t: qt.AnnoT, nd: qg.Ndata, ed: qg.Edata) {
+    const a = new qa.Anno(t, nd, ed, true);
     this.annos.in.push(a);
     return this;
   }
 
-  addOutAnno(nd: qg.Ndata, em: qg.Edata, t: qt.AnnoT) {
-    const a = new qa.Anno(nd, em, t, false);
+  addOutAnno(t: qt.AnnoT, nd: qg.Ndata, ed: qg.Edata) {
+    const a = new qa.Anno(t, nd, ed, false);
     this.annos.out.push(a);
     return this;
   }
@@ -215,70 +167,13 @@ export class Ndata implements qg.Ndata {
       const fs = labelFontScale(e);
       l.attr('font-size', fs!(t.length) + 'px');
     }
-    this.enforceLabelWidth(l.text(t));
+    enforceLabelWidth(l.text(t), this);
     return l;
-  }
-
-  enforceLabelWidth(s: qt.Selection) {
-    const e = s.node() as SVGTextElement;
-    let l = e.getComputedTextLength();
-    let max: number | undefined;
-    switch (this.type) {
-      case qt.NdataT.META:
-        if (!this.expanded) max = PS.nodeSize.meta.maxLabelWidth;
-        break;
-      case qt.NdataT.OPER:
-        max = PS.nodeSize.oper.maxLabelWidth;
-        break;
-      case -1:
-        max = PS.annotations.maxLabelWidth;
-        break;
-      default:
-        break;
-    }
-    if (!max || l <= max) return;
-    let i = 1;
-    while (e.getSubStringLength(0, i) < max) {
-      i++;
-    }
-    let t = e.textContent?.substr(0, i);
-    do {
-      t = t?.substr(0, t.length - 1);
-      e.textContent = t + '...';
-      l = e.getComputedTextLength();
-    } while (l > max && t && t.length > 0);
-    return s.append('title').text(e.textContent);
-  }
-
-  computeCXPositionOfNodeShape() {
-    if (this.expanded) return this.x;
-    const dx = this.annos.in.list.length ? this.width.in : 0;
-    return this.x - this.w / 2 + dx + this.box.w / 2;
-  }
-
-  intersectPointAndNode(p: qt.Point) {
-    const x = this.expanded ? this.x : this.computeCXPositionOfNodeShape();
-    const y = this.y;
-    const dx = p.x - x;
-    const dy = p.y - y;
-    let w = this.expanded ? this.w : this.box.w;
-    let h = this.expanded ? this.h : this.box.h;
-    let deltaX: number, deltaY: number;
-    if ((Math.abs(dy) * w) / 2 > (Math.abs(dx) * h) / 2) {
-      if (dy < 0) h = -h;
-      deltaX = dy === 0 ? 0 : ((h / 2) * dx) / dy;
-      deltaY = h / 2;
-    } else {
-      if (dx < 0) w = -w;
-      deltaX = w / 2;
-      deltaY = dx === 0 ? 0 : ((w / 2) * dy) / dx;
-    }
-    return {x: x + deltaX, y: y + deltaY} as qt.Point;
   }
 
   position(s: qt.Selection) {
     const g = qs.selectChild(s, 'g', qt.Class.Node.SHAPE);
-    const cx = this.computeCXPositionOfNodeShape();
+    const cx = centerX(this);
     switch (this.type) {
       case qt.NdataT.OPER: {
         const od = (this as any) as qg.Noper;
@@ -333,9 +228,9 @@ export class Ndata implements qg.Ndata {
 
   updateTotalWidthOfNode() {
     this.width.in =
-      this.annos.in.list.length > 0 ? qp.PARAMS.annotations.inboxWidth : 0;
+      this.annos.in.length > 0 ? qp.PARAMS.annotations.inboxWidth : 0;
     this.width.out =
-      this.annos.out.list.length > 0 ? qp.PARAMS.annotations.outboxWidth : 0;
+      this.annos.out.length > 0 ? qp.PARAMS.annotations.outboxWidth : 0;
     this.box.w = this.w;
     this.box.h = this.h;
     const l = this.display.length;
@@ -458,6 +353,107 @@ export class Ndata implements qg.Ndata {
         throw new Error('Unknown color');
     }
   }
+}
+
+export function nodeClass(nd: qg.Ndata) {
+  switch (nd.type) {
+    case qt.NdataT.OPER:
+      return qt.Class.OPER;
+    case qt.NdataT.META:
+      return qt.Class.META;
+    case qt.NdataT.LIST:
+      return qt.Class.LIST;
+    case qt.NdataT.BRIDGE:
+      return qt.Class.BRIDGE;
+    case qt.NdataT.DOTS:
+      return qt.Class.DOTS;
+    default:
+      throw Error('Unrecognized type: ' + nd.type);
+  }
+}
+
+export function contextMenu(nd: qg.Ndata, e: qs.GraphElem) {
+  let m = [
+    {
+      title: function(this: Ndata) {
+        return qu.includeButtonString(this.include);
+      },
+      action: function(this: Ndata) {
+        e.fire('node-toggle-extract', {name: this.name});
+      }
+    }
+  ];
+  // if (e.nodeContextMenuItems) m = m.concat(e.nodeContextMenuItems);
+  if (!!nd.listName()) {
+    m.push({
+      title: function(this: Ndata) {
+        return qu.groupButtonString(!!this.containingList());
+      },
+      action: function(this: Ndata) {
+        e.fire('node-toggle-seriesgroup', {
+          name: this.listName()
+        });
+      }
+    });
+  }
+  return m;
+}
+
+export function centerX(nd: qg.Ndata) {
+  if (nd.expanded) return nd.x;
+  const dx = nd.annos.in.length ? nd.width.in : 0;
+  return nd.x - nd.w / 2 + dx + nd.box.w / 2;
+}
+
+export function intersect(nd: qg.Ndata, p: qt.Point) {
+  const x = nd.expanded ? nd.x : centerX(nd);
+  const y = nd.y;
+  const dx = p.x - x;
+  const dy = p.y - y;
+  let w = nd.expanded ? nd.w : nd.box.w;
+  let h = nd.expanded ? nd.h : nd.box.h;
+  let deltaX: number, deltaY: number;
+  if ((Math.abs(dy) * w) / 2 > (Math.abs(dx) * h) / 2) {
+    if (dy < 0) h = -h;
+    deltaX = dy === 0 ? 0 : ((h / 2) * dx) / dy;
+    deltaY = h / 2;
+  } else {
+    if (dx < 0) w = -w;
+    deltaX = w / 2;
+    deltaY = dx === 0 ? 0 : ((w / 2) * dy) / dx;
+  }
+  return {x: x + deltaX, y: y + deltaY} as qt.Point;
+}
+
+export function enforceLabelWidth(s: qt.Selection, nd?: qg.Ndata) {
+  const e = s.node() as SVGTextElement;
+  let l = e.getComputedTextLength();
+  let max: number | undefined;
+  switch (nd?.type) {
+    case qt.NdataT.META:
+      if (!nd.expanded) max = PS.nodeSize.meta.maxLabelWidth;
+      break;
+    case qt.NdataT.OPER:
+      max = PS.nodeSize.oper.maxLabelWidth;
+      break;
+    case undefined:
+      max = PS.annotations.maxLabelWidth;
+      break;
+    default:
+      break;
+  }
+  if (!max || l <= max) return;
+  let i = 1;
+  while (e.getSubStringLength(0, i) < max) {
+    i++;
+  }
+  let t = e.textContent?.substr(0, i);
+  do {
+    t = t?.substr(0, t.length - 1);
+    e.textContent = t + '...';
+    l = e.getComputedTextLength();
+  } while (l > max && t && t.length > 0);
+  return s.append('title').text(e.textContent);
 }
 
 export class Nbridge extends Ndata implements qg.Nbridge {

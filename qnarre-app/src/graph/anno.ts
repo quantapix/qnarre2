@@ -2,28 +2,27 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qe from './edata';
-import * as ql from './layout';
 import * as qm from '../elems/graph/contextmenu';
 import * as qn from './ndata';
-import * as qr from './gdata';
 import * as qs from './scene';
 import * as qt from './types';
 import * as qg from './graph';
+import * as qp from './params';
 
 export class Anno implements qg.Anno {
   x = 0;
   y = 0;
   w = 0;
   h = 0;
+  offset = 0;
   nodes?: string[];
   points = [] as qt.Point[];
-  offset = 0;
 
   constructor(
-    public ndata: qg.Ndata,
-    public edata: qg.Edata,
     public type: qt.AnnoT,
-    public isIn: boolean
+    public nd: qg.Ndata,
+    public ed: qg.Edata,
+    public inbound?: boolean
   ) {
     if (emeta && emeta.metaedge) {
       this.v = edata.metaedge.v;
@@ -32,184 +31,166 @@ export class Anno implements qg.Anno {
   }
 }
 
-export class AnnoList implements qg.AnnoList {
-  list: qg.Anno[];
-  names: qt.Dict<boolean>;
+export class Annos extends Array<Anno> implements qg.Annos {
+  names = {} as qt.Dict<boolean>;
 
-  constructor() {
-    this.list = [];
-    this.names = {};
-  }
-  push(a: Anno) {
-    if (a.node.name in this.names) return;
-    this.names[a.node.name] = true;
-    if (this.list.length < PARAMS.maxAnnotations) {
-      this.list.push(a);
+  pushAnno(a: Anno) {
+    if (a.nd.name in this.names) return;
+    this.names[a.nd.name] = true;
+    if (this.length < qp.GdataPs.maxAnnotations) {
+      this.push(a);
       return;
     }
-    const type = qt.AnnoT.DOTS;
-    const last = this.list[this.list.length - 1];
-    if (last.type === type) {
-      const e = last.node as qg.Ndots;
-      e.setCountMore(++e.countMore);
+    const t = qt.AnnoT.DOTS;
+    const last = this[this.length - 1];
+    if (last.type === t) {
+      const nd = last.nd as qg.Ndots;
+      nd.setMore(++nd.more);
       return;
     }
-    const e = new qg.Ndots(1);
-    this.list.push(new Anno(e, new Ndata(e), undefined, type, a.isIn));
+    const nd = new qn.Ndots(1);
+    this.push(new Anno(t, nd, new Edata(nd), a.inbound));
   }
 }
 
-export function buildGroup(cont, annos: AnnoList, d: qr.Ndata, elem) {
-  const gs = cont
-    .selectAll(() => this.childNodes)
-    .data(annos.list, d => d.node.name);
+export function buildGroup(
+  s: qt.Selection,
+  annos: Annos,
+  d: qg.Ndata,
+  e: qs.GraphElem
+) {
+  const gs = s
+    .selectAll<any, qg.Anno>(function() {
+      return this.childNodes;
+    })
+    .data(annos, a => a.nd.name);
   gs.enter()
     .append('g')
-    .attr('data-name', (a: Anno) => a.node.name)
-    .each((a: Anno) => {
+    .attr('data-name', a => a.nd.name)
+    .each(function(a) {
       const g = d3.select(this);
-      elem.addAnnoGroup(a, d, g);
+      e.addAnnoGroup(a, d, g);
       let t = qt.Class.Anno.EDGE;
       const me = a.edata && a.edata.metaedge;
-      if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL_EDGE;
+      if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL;
       if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
       qe.appendEdge(g, a, elem, t);
       if (a.type !== qt.AnnoT.DOTS) {
-        addAnnoLabelFromNode(g, a);
-        buildShape(g, a);
-      } else {
-        addAnnoLabel(g, a.node.name, a, qt.Class.Anno.DOTS);
-      }
+        addNameLabel(a, g);
+        buildShape(a, g);
+      } else addLabel(a, g, a.nd.name, qt.Class.Anno.DOTS);
     })
     .merge(gs)
-    .attr('class', (a: Anno) => {
-      return (
-        qt.Class.Anno.GROUP +
-        ' ' +
-        AnnoToClassName(a.type) +
-        ' ' +
-        qn.nodeClass(a)
-      );
-    })
-    .each((a: Anno) => {
+    .attr(
+      'class',
+      a => qt.Class.Anno.GROUP + toClass(a.type) + qn.nodeClass(a.nd)
+    )
+    .each(function(a) {
       const g = d3.select(this);
-      update(g, d, a, elem);
-      if (a.type !== qt.AnnoT.DOTS) addInteraction(g, d, a, elem);
+      update(a, g, d, e);
+      if (a.type !== qt.AnnoT.DOTS) addInteraction(a, g, d, e);
     });
-  gs.exit()
-    .each((a: Anno) => {
+  gs.exit<qg.Anno>()
+    .each(function(a) {
       const g = d3.select(this);
-      elem.removeAnnoGroup(a, d, g);
+      e.removeAnnoGroup(a, d, g);
     })
     .remove();
   return gs;
 }
 
-function annotationToClassName(t: qt.AnnoType) {
-  return (qt.AnnoType[t] || '').toLowerCase() || null;
+function toClass(t: qt.AnnoT) {
+  return ' ' + ((qt.AnnoT[t] || '').toLowerCase() || null) + ' ';
 }
 
-function buildShape(group, a: Anno) {
+function addNameLabel(a: Anno, s: qt.Selection) {
+  const path = a.nd.name.split('/');
+  const t = path[path.length - 1];
+  return addLabel(a, s, t);
+}
+
+function buildShape(a: Anno, s: qt.Selection) {
   if (a.type === qt.AnnoT.SUMMARY) {
-    const s = qs.selectOrCreate(group, 'use');
-    s.attr('class', 'summary')
+    const s2 = qs.selectOrCreate(s, 'use');
+    s2.attr('class', 'summary')
       .attr('xlink:href', '#summary-icon')
       .attr('cursor', 'pointer');
   } else {
-    const s = qn.buildShape(group, a, qt.Class.Anno.NODE);
-    qs.selectOrCreate(s, 'title').text(a.node.name);
+    const s2 = qn.buildShape(s, a, qt.Class.Anno.NODE);
+    qs.selectOrCreate(s2, 'title').text(a.nd.name);
   }
 }
 
-function addAnnotationLabelFromNode(group, a: Anno) {
-  const path = a.node.name.split('/');
-  const t = path[path.length - 1];
-  return addAnnoLabel(group, t, a, null);
-}
-
-function addAnnoLabel(group, label: string, a: Anno, more) {
+function addLabel(a: Anno, s: qt.Selection, l: string, dots?: string) {
   let ns = qt.Class.Anno.LABEL;
-  if (more) ns += ' ' + more;
-  const t = group
+  if (dots) ns += ' ' + dots;
+  const t = s
     .append('text')
     .attr('class', ns)
     .attr('dy', '.35em')
-    .attr('text-anchor', a.isIn ? 'end' : 'start')
-    .text(label);
-  return qn.enforceLabelWidth(t, -1);
+    .attr('text-anchor', a.inbound ? 'end' : 'start')
+    .text(l);
+  return qn.enforceLabelWidth(t);
 }
 
-function addInteraction(sel, d: qr.Ndata, anno: Anno, elem) {
-  sel
-    .on('mouseover', (a: Anno) => {
-      elem.fire('annotation-highlight', {
-        name: a.node.name,
-        hostName: d.node.name
-      });
-    })
+function addInteraction(
+  a: Anno,
+  s: qt.Selection,
+  d: qg.Ndata,
+  e: qs.GraphElem
+) {
+  s.on('mouseover', (a: Anno) => {
+    e.fire('anno-highlight', {
+      name: a.nd.name,
+      hostName: d.name
+    });
+  })
     .on('mouseout', (a: Anno) => {
-      elem.fire('annotation-unhighlight', {
-        name: a.node.name,
-        hostName: d.node.name
+      e.fire('anno-unhighlight', {
+        name: a.nd.name,
+        hostName: d.name
       });
     })
     .on('click', (a: Anno) => {
       (d3.event as Event).stopPropagation();
-      elem.fire('annotation-select', {
-        name: a.node.name,
-        hostName: d.node.name
+      e.fire('anno-select', {
+        name: a.nd.name,
+        hostName: d.name
       });
     });
-  if (anno.type !== qt.AnnoT.SUMMARY && anno.type !== qt.AnnoT.CONSTANT) {
-    sel.on('contextmenu', qm.getMenu(elem, qn.getContextMenu(anno.node, elem)));
+  if (a.type !== qt.AnnoT.SUMMARY && a.type !== qt.AnnoT.CONSTANT) {
+    s.on('contextmenu', qm.getMenu(e, qn.contextMenu(a.nd, e)));
   }
 }
 
-function update(group, d: qr.Ndata, a: Anno, elem) {
-  const cx = ql.computeCXPositionOfNodeShape(d);
-  if (a.ndata && a.type !== qt.AnnoT.DOTS) {
-    qn.stylize(group, a.ndata, elem, qt.Class.Anno.NODE);
-  }
-  if (a.type === qt.AnnoT.SUMMARY) a.width += 10;
-  group
-    .select('text.' + qt.Class.Anno.LABEL)
+function update(a: Anno, s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
+  const cx = qn.centerX(d);
+  if (a.nd && a.type !== qt.AnnoT.DOTS) a.nd.stylize(s, e, qt.Class.Anno.NODE);
+  if (a.type === qt.AnnoT.SUMMARY) a.w += 10;
+  s.select('text.' + qt.Class.Anno.LABEL)
     .transition()
-    .attr('x', cx + a.dx + (a.isIn ? -1 : 1) * (a.width / 2 + a.labelOffset))
-    .attr('y', d.y + a.dy);
-  group
-    .select('use.summary')
+    .attr('x', cx + a.x + (a.inbound ? -1 : 1) * (a.w / 2 + a.offset))
+    .attr('y', d.y + a.y);
+  s.select('use.summary')
     .transition()
-    .attr('x', cx + a.dx - 3)
-    .attr('y', d.y + a.dy - 6);
+    .attr('x', cx + a.x - 3)
+    .attr('y', d.y + a.y - 6);
   qs.positionEllipse(
-    group.select('.' + qt.Class.Anno.NODE + ' ellipse'),
-    cx + a.dx,
-    d.y + a.dy,
-    a.w,
-    a.h
+    s.select('.' + qt.Class.Anno.NODE + ' ellipse'),
+    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
   );
   qs.positionRect(
-    group.select('.' + qt.Class.Anno.NODE + ' rect'),
-    cx + a.dx,
-    d.y + a.dy,
-    a.w,
-    a.h
+    s.select('.' + qt.Class.Anno.NODE + ' rect'),
+    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
   );
   qs.positionRect(
-    group.select('.' + qt.Class.Anno.NODE + ' use'),
-    cx + a.dx,
-    d.y + a.dy,
-    a.w,
-    a.h
+    s.select('.' + qt.Class.Anno.NODE + ' use'),
+    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
   );
-  group
-    .select('path.' + qt.Class.Anno.EDGE)
+  s.select('path.' + qt.Class.Anno.EDGE)
     .transition()
     .attr('d', (a: Anno) => {
-      const ps = a.points.map(p => ({
-        x: p.dx + this.cx,
-        y: p.dy + d.y
-      }));
+      const ps = a.points.map(p => new qt.Point(p.x + cx, p.y + d.y));
       return qe.interpolate(ps);
     });
 }

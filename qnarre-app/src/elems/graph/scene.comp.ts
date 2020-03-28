@@ -70,7 +70,7 @@ export class SceneComponent implements OnInit {
     return this.$.svg;
   }
 
-  getContextMenu() {
+  contextMenu() {
     return this.$.contextMenu;
   }
 
