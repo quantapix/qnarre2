@@ -9,28 +9,6 @@ import * as qt from './types';
 import * as qg from './graph';
 import * as qp from './params';
 
-export class Anno implements qg.Anno {
-  x = 0;
-  y = 0;
-  w = 0;
-  h = 0;
-  offset = 0;
-  nodes?: string[];
-  points = [] as qt.Point[];
-
-  constructor(
-    public type: qt.AnnoT,
-    public nd: qg.Ndata,
-    public ed: qg.Edata,
-    public inbound?: boolean
-  ) {
-    if (emeta && emeta.metaedge) {
-      this.v = edata.metaedge.v;
-      this.w = edata.metaedge.w;
-    }
-  }
-}
-
 export class Annos extends Array<Anno> implements qg.Annos {
   names = {} as qt.Dict<boolean>;
 
@@ -51,52 +29,69 @@ export class Annos extends Array<Anno> implements qg.Annos {
     const nd = new qn.Ndots(1);
     this.push(new Anno(t, nd, new Edata(nd), a.inbound));
   }
+
+  buildGroup(s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
+    const gs = s
+      .selectAll<any, qg.Anno>(function() {
+        return this.childNodes;
+      })
+      .data(this, a => a.nd.name);
+    gs.enter()
+      .append('g')
+      .attr('data-name', a => a.nd.name)
+      .each(function(a) {
+        const g = d3.select(this);
+        e.addAnnoGroup(a, d, g);
+        let t = qt.Class.Anno.EDGE;
+        const me = a.edata && a.edata.metaedge;
+        if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL;
+        if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
+        qe.appendEdge(g, a, elem, t);
+        if (a.type !== qt.AnnoT.DOTS) {
+          addNameLabel(a, g);
+          buildShape(a, g);
+        } else addLabel(a, g, a.nd.name, qt.Class.Anno.DOTS);
+      })
+      .merge(gs)
+      .attr(
+        'class',
+        a => qt.Class.Anno.GROUP + toClass(a.type) + qn.nodeClass(a.nd)
+      )
+      .each(function(a) {
+        const g = d3.select(this);
+        update(a, g, d, e);
+        if (a.type !== qt.AnnoT.DOTS) addInteraction(a, g, d, e);
+      });
+    gs.exit<qg.Anno>()
+      .each(function(a) {
+        const g = d3.select(this);
+        e.removeAnnoGroup(a, d, g);
+      })
+      .remove();
+    return gs;
+  }
 }
 
-export function buildGroup(
-  s: qt.Selection,
-  annos: Annos,
-  d: qg.Ndata,
-  e: qs.GraphElem
-) {
-  const gs = s
-    .selectAll<any, qg.Anno>(function() {
-      return this.childNodes;
-    })
-    .data(annos, a => a.nd.name);
-  gs.enter()
-    .append('g')
-    .attr('data-name', a => a.nd.name)
-    .each(function(a) {
-      const g = d3.select(this);
-      e.addAnnoGroup(a, d, g);
-      let t = qt.Class.Anno.EDGE;
-      const me = a.edata && a.edata.metaedge;
-      if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL;
-      if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
-      qe.appendEdge(g, a, elem, t);
-      if (a.type !== qt.AnnoT.DOTS) {
-        addNameLabel(a, g);
-        buildShape(a, g);
-      } else addLabel(a, g, a.nd.name, qt.Class.Anno.DOTS);
-    })
-    .merge(gs)
-    .attr(
-      'class',
-      a => qt.Class.Anno.GROUP + toClass(a.type) + qn.nodeClass(a.nd)
-    )
-    .each(function(a) {
-      const g = d3.select(this);
-      update(a, g, d, e);
-      if (a.type !== qt.AnnoT.DOTS) addInteraction(a, g, d, e);
-    });
-  gs.exit<qg.Anno>()
-    .each(function(a) {
-      const g = d3.select(this);
-      e.removeAnnoGroup(a, d, g);
-    })
-    .remove();
-  return gs;
+export class Anno implements qg.Anno {
+  x = 0;
+  y = 0;
+  w = 0;
+  h = 0;
+  offset = 0;
+  nodes?: string[];
+  points = [] as qt.Point[];
+
+  constructor(
+    public type: qt.AnnoT,
+    public nd: qg.Ndata,
+    public ed: qg.Edata,
+    public inbound?: boolean
+  ) {
+    if (emeta && emeta.metaedge) {
+      this.v = edata.metaedge.v;
+      this.w = edata.metaedge.w;
+    }
+  }
 }
 
 function toClass(t: qt.AnnoT) {

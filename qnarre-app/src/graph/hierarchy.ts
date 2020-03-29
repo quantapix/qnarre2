@@ -13,16 +13,16 @@ import * as meta from './meta';
 import * as proto from './proto';
 import * as template from './template';
 
-type Nclus = qc.Nclus | qn.Noper;
+type Nclus = qg.Nclus | qg.Noper;
 type Emeta = qg.Emeta;
 
 export class Hierarchy implements qg.Hierarchy {
   root: qc.Nmeta;
   hasShape = false;
   maxEdgeSize = 1;
-  devices = [] as string[];
-  clusters = [] as string[];
-  libfns = {} as qt.Dict<qg.Library>;
+  devs = [] as string[];
+  clus = [] as string[];
+  libs = {} as qt.Dict<qg.Library>;
   orders = {} as qt.Dict<qt.Dict<number>>;
   templates = {} as qt.Dict<qg.Template>;
   private _nodes = new qg.Nodes<Nclus>();
@@ -52,7 +52,7 @@ export class Hierarchy implements qg.Hierarchy {
     const nd = this.node(n);
     if (!qg.isClus(nd)) return undefined;
     if (nd.bridge) return nd.bridge;
-    const b = qg.createGraph<qg.Gdata, Nclus, Emeta>(
+    const b = qg.createGraph<qg.Gdata, Nclus, qg.Edata>(
       qt.GdataT.BRIDGE,
       'BRIDGEGRAPH',
       this.opts
@@ -104,7 +104,7 @@ export class Hierarchy implements qg.Hierarchy {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
     const ps = this.oneWays(nd, true);
-    if (!qg.isClus(nd)) {
+    if (qg.isOper(nd)) {
       nd.embeds.in.forEach(b => {
         nd.ins.forEach(i => {
           if (i.name === b.name) {
@@ -127,7 +127,7 @@ export class Hierarchy implements qg.Hierarchy {
     const nd = this.node(n);
     if (!nd) throw Error('Could not find node: ' + n);
     const ss = this.oneWays(nd, false);
-    if (!qg.isClus(nd)) {
+    if (qg.isOper(nd)) {
       nd.embeds.out.forEach(b => {
         b.ins.forEach(i => {
           if (i.name === n) {
@@ -226,7 +226,7 @@ export class Hierarchy implements qg.Hierarchy {
           if (n.startsWith(qp.LIB_PRE) && p.name === qp.ROOT) {
             const f = n.substring(qp.LIB_PRE.length);
             if (!os[f]) os[f] = [];
-            this.libfns[f] = {meta, usages: os[f]};
+            this.libs[f] = {meta, usages: os[f]};
             meta.assoc = f;
           }
         }
@@ -287,8 +287,8 @@ export class Hierarchy implements qg.Hierarchy {
       if (d.dev) ds[d.dev] = true;
       if (d.clus) cs[d.clus] = true;
     });
-    this.devices = _.keys(ds);
-    this.clusters = _.keys(cs);
+    this.devs = _.keys(ds);
+    this.clus = _.keys(cs);
     this.nodes().forEach(n => {
       const nd = this.node(n);
       if (qg.isClus(nd)) {
@@ -365,7 +365,7 @@ export class Hierarchy implements qg.Hierarchy {
   }
 }
 
-class Edges {
+class Edges implements qg.Edges {
   control = [] as qg.Emeta[];
   regular = [] as qg.Emeta[];
 
@@ -391,8 +391,8 @@ export async function build(
       if (o.dev) ds[o.dev] = true;
       if (o.clus) cs[o.clus] = true;
     });
-    h.devices = _.keys(ds);
-    h.clusters = _.keys(cs);
+    h.devs = _.keys(ds);
+    h.clus = _.keys(cs);
     h.addNodes(g);
   });
   const ns = {} as qt.Dict<string>;

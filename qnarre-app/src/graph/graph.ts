@@ -16,6 +16,9 @@ export interface Opts extends qg.Opts {
 export interface Gdata extends Opts {
   type: qt.GdataT;
   name: string;
+  hier: Hierarchy;
+  hasSubhier: qt.Dict<boolean>;
+  nds: qt.Dict<Ndata>;
 }
 
 export interface Ndata extends qt.Rect {
@@ -28,6 +31,7 @@ export interface Ndata extends qt.Rect {
   include?: boolean;
   excluded?: boolean;
   expanded?: boolean;
+  faded?: boolean;
   pad: qt.Pad;
   box: qt.Area;
   attrs: qt.Dict<any>;
@@ -154,7 +158,14 @@ export type Template = {names: string[]; level: number};
 export type Group = {nodes: Nmeta[]; level: number};
 export type Cluster = {node: Nmeta; names: string[]};
 
+export interface Edges {
+  control: Emeta[];
+  regular: Emeta[];
+}
+
 export interface Hierarchy {
+  bridge(x: any): Bgraph | undefined;
+  libs: qt.Dict<Library>;
   maxEdgeSize: number;
   sizeOf(l: qg.Link<Edata>): number;
 }
@@ -213,9 +224,9 @@ export class Graph<
   }
 }
 
-export type Bgraph = Graph<Gdata, Ndata, Edata>;
+export type Bgraph = Graph<Gdata, Nclus | Noper, Edata>;
 export type Cgraph = Graph<Gdata, Ndata, Edata>;
-export type Mgraph = Graph<Gdata, Ndata, Edata>;
+export type Mgraph = Graph<Gdata, Nclus | Noper, Edata>;
 
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   t: qt.GdataT,

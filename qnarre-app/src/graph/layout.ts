@@ -200,8 +200,8 @@ function layoutList(l: qg.Nlist) {
 
 function layoutAnno(d: qg.Ndata) {
   if (d.expanded) return;
-  const ins = d.annos.in.list;
-  const outs = d.annos.out.list;
+  const ins = d.annos.in;
+  const outs = d.annos.out;
   ins.forEach(a => initAnno(a));
   outs.forEach(a => initAnno(a));
   const ps = qp.PARAMS.annotations;
