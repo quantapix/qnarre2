@@ -103,12 +103,12 @@ function nodeSimilar(
 ) {
   const t = n1.type;
   if (t === n2.type) {
-    if (n1.type === qt.NodeType.META) {
+    if (n1.type === qt.NdataT.META) {
       const m = n1 as qg.Nmeta;
       return m.template && m.template === (n2 as qg.Nmeta).template;
-    } else if (t === qt.NodeType.OPER) {
+    } else if (t === qt.NdataT.OPER) {
       return (n1 as qg.Noper).op === (n2 as qg.Noper).op;
-    } else if (t === qt.NodeType.LIST) {
+    } else if (t === qt.NdataT.LIST) {
       const s1 = n1 as qg.Nlist;
       const s2 = n2 as qg.Nlist;
       const c = s1.meta.nodeCount;
