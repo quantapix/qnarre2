@@ -40,6 +40,7 @@ export interface Ndata extends qt.Rect {
   annos: {in: Annos; out: Annos};
   extract: {in: boolean; out: boolean; lib: boolean};
   centerX(): number;
+  contextMenu(e: any): any;
   hasTypeIn(ts: string[]): boolean;
   addInAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   addOutAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;

@@ -11,7 +11,6 @@ import * as qu from './utils';
 
 import {NodeDef} from './proto';
 import {PARAMS as PS} from './params';
-import * as menu from '../elems/graph/contextmenu';
 
 export class Ndata implements qg.Ndata {
   x = 0;
@@ -96,33 +95,6 @@ export class Ndata implements qg.Ndata {
     return qu.groupButtonString(!!this.containingList());
   }
 
-  addInteraction(s: qt.Selection, e: qs.GraphElem, disable?: boolean) {
-    if (disable) {
-      s.attr('pointer-events', 'none');
-      return;
-    }
-    const f = menu.getMenu(e, contextMenu(this, e));
-    s.on('dblclick', (d: this) => {
-      e.fire('node-toggle-expand', {name: d.name});
-    })
-      .on('mouseover', (d: this) => {
-        if (e.isNodeExpanded(d)) return;
-        e.fire('node-highlight', {name: d.name});
-      })
-      .on('mouseout', (d: this) => {
-        if (e.isNodeExpanded(d)) return;
-        e.fire('node-unhighlight', {name: d.name});
-      })
-      .on('click', (d: this) => {
-        d3.event.stopPropagation();
-        e.fire('node-select', {name: d.name});
-      })
-      .on('menu', (d: this, i) => {
-        e.fire('node-select', {name: d.name});
-        f(d, i);
-      });
-  }
-
   addInAnno(t: qt.AnnoT, nd: qg.Ndata, ed: qg.Edata) {
     const a = new qa.Anno(t, nd, ed, true);
     this.annos.in.push(a);
@@ -205,6 +177,33 @@ export class Ndata implements qg.Ndata {
         throw Error('Unrecognized type: ' + this.type);
     }
     return g;
+  }
+
+  contextMenu(e: qs.GraphElem) {
+    let m = [
+      {
+        title: function(this: Ndata) {
+          return qu.includeButtonString(this.include);
+        },
+        action: function(this: Ndata) {
+          e.fire('node-toggle-extract', {name: this.name});
+        }
+      }
+    ];
+    // if (e.nodeContextMenuItems) m = m.concat(e.nodeContextMenuItems);
+    if (!!this.listName()) {
+      m.push({
+        title: function(this: Ndata) {
+          return qu.groupButtonString(!!this.containingList());
+        },
+        action: function(this: Ndata) {
+          e.fire('node-toggle-seriesgroup', {
+            name: this.listName()
+          });
+        }
+      });
+    }
+    return m;
   }
 
   stylize(s: qt.Selection, e: qs.GraphElem, c?: string) {
@@ -296,33 +295,6 @@ export function nodeClass(nd: qg.Ndata) {
     default:
       throw Error('Unrecognized type: ' + nd.type);
   }
-}
-
-export function contextMenu(nd: qg.Ndata, e: qs.GraphElem) {
-  let m = [
-    {
-      title: function(this: Ndata) {
-        return qu.includeButtonString(this.include);
-      },
-      action: function(this: Ndata) {
-        e.fire('node-toggle-extract', {name: this.name});
-      }
-    }
-  ];
-  // if (e.nodeContextMenuItems) m = m.concat(e.nodeContextMenuItems);
-  if (!!nd.listName()) {
-    m.push({
-      title: function(this: Ndata) {
-        return qu.groupButtonString(!!this.containingList());
-      },
-      action: function(this: Ndata) {
-        e.fire('node-toggle-seriesgroup', {
-          name: this.listName()
-        });
-      }
-    });
-  }
-  return m;
 }
 
 export function intersect(nd: qg.Ndata, p: qt.Point) {

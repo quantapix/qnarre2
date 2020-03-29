@@ -300,10 +300,10 @@ export function buildGroup(s: qt.Selection, ds: qn.Ndata[], e: qs.GraphElem) {
       nd.annos.out.buildGroup(outb, nd, e);
       const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
       if (qg.isClus(nd)) qs.addButton(s2, nd, e);
-      nd.addInteraction(s2, e);
+      qs.addInteraction(s2, nd, e);
       if (qg.isClus(nd)) nd.subBuild(g, e);
       const label = nd.labelBuild(g, e);
-      nd.addInteraction(label, e, nd.type === qt.NdataT.META);
+      qs.addInteraction(label, nd, e, nd.type === qt.NdataT.META);
       nd.stylize(g, e);
       qs.position(g, nd);
     });

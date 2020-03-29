@@ -7,6 +7,7 @@ import * as qt from './types';
 import * as qp from './params';
 
 import {PARAMS as PS} from './params';
+import * as menu from '../elems/graph/contextmenu';
 
 type S = qt.Selection;
 
@@ -119,6 +120,11 @@ function subPosition(s: qt.Selection, nd: qg.Ndata) {
   const y = nd.y - nd.h / 2.0 + nd.pad.top;
   const sub = selectChild(s, 'g', qt.Class.Subscene.GROUP);
   translate(sub, x, y);
+}
+
+function translate(s: S, x: number, y: number) {
+  if (s.attr('transform')) s = s.transition('position') as any;
+  s.attr('transform', 'translate(' + x + ',' + y + ')');
 }
 
 export function positionClus(s: S, nc: qg.Nclus) {
@@ -259,9 +265,36 @@ function positionButton(s: S, nd: qg.Ndata) {
     .attr('r', PS.nodeSize.meta.expandButtonRadius);
 }
 
-function translate(s: S, x: number, y: number) {
-  if (s.attr('transform')) s = s.transition('position') as any;
-  s.attr('transform', 'translate(' + x + ',' + y + ')');
+export function addInteraction(
+  s: S,
+  nd: qg.Ndata,
+  e: GraphElem,
+  disable?: boolean
+) {
+  if (disable) {
+    s.attr('pointer-events', 'none');
+    return;
+  }
+  const f = menu.getMenu(e, nd.contextMenu(e));
+  s.on('dblclick', function() {
+    e.fire('node-toggle-expand', {name: this.name});
+  })
+    .on('mouseover', function() {
+      if (e.isNodeExpanded(this)) return;
+      e.fire('node-highlight', {name: this.name});
+    })
+    .on('mouseout', function() {
+      if (e.isNodeExpanded(this)) return;
+      e.fire('node-unhighlight', {name: this.name});
+    })
+    .on('click', function() {
+      d3.event.stopPropagation();
+      e.fire('node-select', {name: this.name});
+    })
+    .on('menu', function(i: number) {
+      e.fire('node-select', {name: this.name});
+      f(this, i);
+    });
 }
 
 export function addClickListener(s: SVGElement, elem: any) {
