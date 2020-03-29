@@ -4,16 +4,17 @@ import * as d3 from 'd3';
 import * as qn from './ndata';
 import * as qg from './graph';
 import * as qt from './types';
+import * as qp from './params';
 
 import {PARAMS as PS} from './params';
 
 type S = qt.Selection;
 
-export function selectOrCreate(
+export function selectCreate(
   s: S,
   t: string,
   n?: string | string[],
-  before = false
+  prior = false
 ): S {
   const c = selectChild(s, t, n);
   if (!c.empty()) return c;
@@ -25,8 +26,8 @@ export function selectOrCreate(
   } else if (n) {
     e.classList.add(n);
   }
-  if (before) {
-    s.node().insertBefore(e, before);
+  if (prior) {
+    s.node().insertBefore(e, prior);
   } else {
     s.node().appendChild(e);
   }
@@ -52,7 +53,143 @@ export function selectChild(s: S, t: string, n?: string | string[]): S {
   return d3.select(null);
 }
 
-export function positionRect(s: S, r: qt.Rect) {
+export const interpolate = d3
+  .line<{x: number; y: number}>()
+  .curve(d3.curveBasis)
+  .x(d => d.x)
+  .y(d => d.y);
+
+export function position(s: S, nd: qg.Ndata) {
+  const g = selectChild(s, 'g', qt.Class.Node.SHAPE);
+  const cx = nd.centerX();
+  switch (nd.type) {
+    case qt.NdataT.OPER: {
+      const od = (nd as any) as qg.Noper;
+      if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
+        const sc = selectChild(g, 'polygon');
+        const r = new qt.Rect(nd.x, nd.y, nd.box.w, nd.box.h);
+        positionTriangle(sc, r);
+      } else {
+        const sc = selectChild(g, 'ellipse');
+        const r = new qt.Rect(cx, nd.y, nd.box.w, nd.box.h);
+        positionEllipse(sc, r);
+      }
+      positionLabel(s, cx, nd.y, nd.label.off);
+      break;
+    }
+    case qt.NdataT.META: {
+      const sa = g.selectAll('rect');
+      if (nd.expanded) {
+        positionRect(sa, nd);
+        subPosition(s, nd);
+        positionLabel(s, cx, nd.y, -nd.h / 2 + nd.label.h / 2);
+      } else {
+        const r = new qt.Rect(cx, nd.y, nd.box.w, nd.box.h);
+        positionRect(sa, r);
+        positionLabel(s, cx, nd.y, 0);
+      }
+      break;
+    }
+    case qt.NdataT.LIST: {
+      const sc = selectChild(g, 'use');
+      if (nd.expanded) {
+        positionRect(sc, nd);
+        subPosition(s, nd);
+        positionLabel(s, cx, nd.y, -nd.h / 2 + nd.label.h / 2);
+      } else {
+        const r = new qt.Rect(cx, nd.y, nd.box.w, nd.box.h);
+        positionRect(sc, r);
+        positionLabel(s, cx, nd.y, nd.label.off);
+      }
+      break;
+    }
+    case qt.NdataT.BRIDGE: {
+      const sc = selectChild(g, 'rect');
+      positionRect(sc, nd);
+      break;
+    }
+    default: {
+      throw Error('Invalid type: ' + nd.type);
+    }
+  }
+}
+
+function subPosition(s: qt.Selection, nd: qg.Ndata) {
+  const x = nd.x - nd.w / 2.0 + nd.pad.left;
+  const y = nd.y - nd.h / 2.0 + nd.pad.top;
+  const sub = selectChild(s, 'g', qt.Class.Subscene.GROUP);
+  translate(sub, x, y);
+}
+
+export function positionClus(s: S, nc: qg.Nclus) {
+  const y = qg.isList(nc) ? 0 : PS.subscene.meta.labelHeight;
+  translate(selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
+  const ins = nc.isolated.in.length > 0;
+  const outs = nc.isolated.out.length > 0;
+  const libs = nc.isolated.lib.length > 0;
+  const off = PS.subscene.meta.extractXOffset;
+  let w = 0;
+  if (ins) w += nc.areas.out.w;
+  if (outs) w += nc.areas.out.w;
+  if (ins) {
+    let x = nc.box.w;
+    if (w < qp.MIN_AUX_WIDTH) {
+      x -= qp.MIN_AUX_WIDTH + nc.areas.in.w / 2;
+    } else {
+      x -= nc.areas.in.w / 2 - nc.areas.out.w - (outs ? off : 0);
+    }
+    x -= nc.areas.lib.w - (libs ? off : 0);
+    translate(selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
+  }
+  if (outs) {
+    let x = nc.box.w;
+    if (w < qp.MIN_AUX_WIDTH) {
+      x -= qp.MIN_AUX_WIDTH + nc.areas.out.w / 2;
+    } else {
+      x -= nc.areas.out.w / 2;
+    }
+    x -= nc.areas.lib.w - (libs ? off : 0);
+    translate(selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
+  }
+  if (libs) {
+    const x = nc.box.w - nc.areas.lib.w / 2;
+    translate(selectChild(s, 'g', qt.Class.Scene.LIBRARY), x, y);
+  }
+}
+
+export function positionAnno(s: S, a: qg.Anno, d: qg.Ndata, e: GraphElem) {
+  const cx = d.centerX();
+  if (a.nd && a.type !== qt.AnnoT.DOTS) a.nd.stylize(s, e, qt.Class.Anno.NODE);
+  if (a.type === qt.AnnoT.SUMMARY) a.w += 10;
+  s.select('text.' + qt.Class.Anno.LABEL)
+    .transition()
+    .attr('x', cx + a.x + (a.inbound ? -1 : 1) * (a.w / 2 + a.offset))
+    .attr('y', d.y + a.y);
+  s.select('use.summary')
+    .transition()
+    .attr('x', cx + a.x - 3)
+    .attr('y', d.y + a.y - 6);
+  positionEllipse(
+    s.select('.' + qt.Class.Anno.NODE + ' ellipse'),
+    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
+  );
+  positionRect(
+    s.select('.' + qt.Class.Anno.NODE + ' rect'),
+    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
+  );
+  positionRect(
+    s.select('.' + qt.Class.Anno.NODE + ' use'),
+    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
+  );
+  s.select('path.' + qt.Class.Anno.EDGE)
+    .transition()
+    .attr('d', (a: qg.Anno) => {
+      const ps = a.points.map(p => new qt.Point(p.x + cx, p.y + d.y));
+      return interpolate(ps);
+    });
+}
+
+function positionRect(s: S, r: qt.Rect) {
   s.transition()
     .attr('x', r.x - r.w / 2)
     .attr('y', r.y - r.h / 2)
@@ -60,7 +197,7 @@ export function positionRect(s: S, r: qt.Rect) {
     .attr('height', r.h);
 }
 
-export function positionTriangle(s: S, r: qt.Rect) {
+function positionTriangle(s: S, r: qt.Rect) {
   const h = r.h / 2;
   const w = r.w / 2;
   const ps = [
@@ -71,7 +208,7 @@ export function positionTriangle(s: S, r: qt.Rect) {
   s.transition().attr('points', ps.map(p => p.join(',')).join(' '));
 }
 
-export function positionEllipse(s: S, r: qt.Rect) {
+function positionEllipse(s: S, r: qt.Rect) {
   s.transition()
     .attr('cx', r.x)
     .attr('cy', r.y)
@@ -79,8 +216,30 @@ export function positionEllipse(s: S, r: qt.Rect) {
     .attr('ry', r.h / 2);
 }
 
-export function positionButton(s: S, nd: qg.Ndata) {
-  const cx = qn.centerX(nd);
+function positionLabel(s: S, x: number, y: number, off: number) {
+  selectChild(s, 'text', qt.Class.Node.LABEL)
+    .transition()
+    .attr('x', x)
+    .attr('y', y + off);
+}
+
+export function addButton(s: S, nd: qg.Ndata, e: GraphElem) {
+  const g = selectCreate(s, 'g', qt.Class.Node.B_CONTAINER);
+  selectCreate(g, 'circle', qt.Class.Node.B_CIRCLE);
+  selectCreate(g, 'path', qt.Class.Node.E_BUTTON).attr(
+    'd',
+    'M0,-2.2 V2.2 M-2.2,0 H2.2'
+  );
+  selectCreate(g, 'path', qt.Class.Node.C_BUTTON).attr('d', 'M-2.2,0 H2.2');
+  g.on('click', function(d) {
+    d3.event.stopPropagation();
+    e.fire('node-toggle-expand', {name: d.name});
+  });
+  positionButton(g, nd);
+}
+
+function positionButton(s: S, nd: qg.Ndata) {
+  const cx = nd.centerX();
   const w = nd.expanded ? nd.w : nd.box.w;
   const h = nd.expanded ? nd.h : nd.box.h;
   let x = cx + w / 2 - 6;
@@ -100,15 +259,15 @@ export function positionButton(s: S, nd: qg.Ndata) {
     .attr('r', PS.nodeSize.meta.expandButtonRadius);
 }
 
-export function addGraphClickListener(group: any, elem: any) {
-  d3.select(group).on('click', () => {
-    elem.fire('graph-select');
-  });
-}
-
-export function translate(s: S, x: number, y: number) {
+function translate(s: S, x: number, y: number) {
   if (s.attr('transform')) s = s.transition('position') as any;
   s.attr('transform', 'translate(' + x + ',' + y + ')');
+}
+
+export function addClickListener(s: SVGElement, elem: any) {
+  d3.select(s).on('click', () => {
+    elem.fire('graph-select');
+  });
 }
 
 export function fit(

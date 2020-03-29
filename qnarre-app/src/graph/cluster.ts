@@ -41,8 +41,8 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
   buildGroup(s: qt.Selection, e: qs.GraphElem, cg: string) {
     cg = cg || qt.Class.Scene.GROUP;
     const empty = qs.selectChild(s, 'g', cg).empty();
-    const scene = qs.selectOrCreate(s, 'g', cg);
-    const sg = qs.selectOrCreate(scene, 'g', qt.Class.Scene.CORE);
+    const scene = qs.selectCreate(s, 'g', cg);
+    const sg = qs.selectCreate(scene, 'g', qt.Class.Scene.CORE);
     const ds = _.reduce(
       this.core.nodes(),
       (ds, n) => {
@@ -56,24 +56,24 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     this.core.buildGroup(sg, e);
     qb.buildGroup(sg, ds, e);
     if (this.isolated.in.length > 0) {
-      const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
+      const g = qs.selectCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
       qb.buildGroup(g, this.isolated.in, e);
     } else {
       qs.selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
     }
     if (this.isolated.out.length > 0) {
-      const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
+      const g = qs.selectCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
       qb.buildGroup(g, this.isolated.out, e);
     } else {
       qs.selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
     }
     if (this.isolated.lib.length > 0) {
-      const g = qs.selectOrCreate(scene, 'g', qt.Class.Scene.LIBRARY);
+      const g = qs.selectCreate(scene, 'g', qt.Class.Scene.LIBRARY);
       qb.buildGroup(g, this.isolated.lib, e);
     } else {
       qs.selectChild(scene, 'g', qt.Class.Scene.LIBRARY).remove();
     }
-    this.position(scene);
+    qs.positionClus(scene, this);
     if (empty) {
       scene
         .attr('opacity', 0)
@@ -81,42 +81,6 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
         .attr('opacity', 1);
     }
     return scene;
-  }
-
-  position(s: qt.Selection) {
-    const y = qg.isList(this) ? 0 : PS.subscene.meta.labelHeight;
-    qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.CORE), 0, y);
-    const ins = this.isolated.in.length > 0;
-    const outs = this.isolated.out.length > 0;
-    const libs = this.isolated.lib.length > 0;
-    const off = PS.subscene.meta.extractXOffset;
-    let w = 0;
-    if (ins) w += this.areas.out.w;
-    if (outs) w += this.areas.out.w;
-    if (ins) {
-      let x = this.box.w;
-      if (w < qp.MIN_AUX_WIDTH) {
-        x -= qp.MIN_AUX_WIDTH + this.areas.in.w / 2;
-      } else {
-        x -= this.areas.in.w / 2 - this.areas.out.w - (outs ? off : 0);
-      }
-      x -= this.areas.lib.w - (libs ? off : 0);
-      qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.INEXTRACT), x, y);
-    }
-    if (outs) {
-      let x = this.box.w;
-      if (w < qp.MIN_AUX_WIDTH) {
-        x -= qp.MIN_AUX_WIDTH + this.areas.out.w / 2;
-      } else {
-        x -= this.areas.out.w / 2;
-      }
-      x -= this.areas.lib.w - (libs ? off : 0);
-      qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
-    }
-    if (libs) {
-      const x = this.box.w - this.areas.lib.w / 2;
-      qs.translate(qs.selectChild(s, 'g', qt.Class.Scene.LIBRARY), x, y);
-    }
   }
 
   setDepth(d: number) {

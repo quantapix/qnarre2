@@ -242,7 +242,7 @@ export function buildGroup2(
     },
     [] as EdgeData[]
   );
-  const container = qs.selectOrCreate(scene, 'g', qt.Class.Edge.CONTAINER);
+  const container = qs.selectCreate(scene, 'g', qt.Class.Edge.CONTAINER);
   const gs = (container as any)
     .selectAll(function() {
       return this.childNodes;
@@ -268,7 +268,7 @@ export function buildGroup2(
       appendEdge(g, d, elem);
     })
     .merge(gs)
-    .each(() => position(elem, this))
+    .each(() => qs.position(elem, this))
     .each((d: EdgeData) => stylize(d3.select(this), d, elem));
   gs.exit()
     .each((d: EdgeData) => delete elem._edgeGroupIndex[getEdgeKey(d)])
@@ -277,7 +277,7 @@ export function buildGroup2(
 }
 
 export function buildGroup(s: qt.Selection, ds: qn.Ndata[], e: qs.GraphElem) {
-  const c = qs.selectOrCreate(s, 'g', qt.Class.Node.CONTAINER);
+  const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
   const gs = c
     .selectAll<any, qg.Ndata>(function() {
       return this.childNodes;
@@ -294,18 +294,18 @@ export function buildGroup(s: qt.Selection, ds: qn.Ndata[], e: qs.GraphElem) {
     .attr('class', nd => qt.Class.Node.GROUP + ' ' + qn.nodeClass(nd))
     .each(function(nd) {
       const g = d3.select(this);
-      const inb = qs.selectOrCreate(g, 'g', qt.Class.Anno.INBOX);
+      const inb = qs.selectCreate(g, 'g', qt.Class.Anno.INBOX);
       nd.annos.in.buildGroup(inb, nd, e);
-      const outb = qs.selectOrCreate(g, 'g', qt.Class.Anno.OUTBOX);
+      const outb = qs.selectCreate(g, 'g', qt.Class.Anno.OUTBOX);
       nd.annos.out.buildGroup(outb, nd, e);
       const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
-      if (qg.isClus(nd)) nd.addButton(s2, e);
+      if (qg.isClus(nd)) qs.addButton(s2, nd, e);
       nd.addInteraction(s2, e);
       if (qg.isClus(nd)) nd.subBuild(g, e);
       const label = nd.labelBuild(g, e);
       nd.addInteraction(label, e, nd.type === qt.NdataT.META);
       nd.stylize(g, e);
-      nd.position(g);
+      qs.position(g, nd);
     });
   gs.exit<qn.Ndata>()
     .each(function(nd) {

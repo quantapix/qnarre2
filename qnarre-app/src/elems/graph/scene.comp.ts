@@ -95,7 +95,7 @@ export class SceneComponent implements OnInit {
       'qnr-graph-scene (build scene):',
       function() {
         qs.buildGroup(d3.select(this.$.root), renderHierarchy.root, this);
-        qs.addGraphClickListener(this.$.svg, this);
+        qs.addClickListener(this.$.svg, this);
         this._updateInputTrace();
       }.bind(this)
     );

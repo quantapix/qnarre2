@@ -59,7 +59,7 @@ export class Annos extends Array<Anno> implements qg.Annos {
       )
       .each(function(a) {
         const g = d3.select(this);
-        update(a, g, d, e);
+        qs.positionAnno(g, a, d, e);
         if (a.type !== qt.AnnoT.DOTS) addInteraction(a, g, d, e);
       });
     gs.exit<qg.Anno>()
@@ -106,13 +106,13 @@ function addNameLabel(a: Anno, s: qt.Selection) {
 
 function buildShape(a: Anno, s: qt.Selection) {
   if (a.type === qt.AnnoT.SUMMARY) {
-    const s2 = qs.selectOrCreate(s, 'use');
+    const s2 = qs.selectCreate(s, 'use');
     s2.attr('class', 'summary')
       .attr('xlink:href', '#summary-icon')
       .attr('cursor', 'pointer');
   } else {
     const s2 = qn.buildShape(s, a, qt.Class.Anno.NODE);
-    qs.selectOrCreate(s2, 'title').text(a.nd.name);
+    qs.selectCreate(s2, 'title').text(a.nd.name);
   }
 }
 
@@ -156,36 +156,4 @@ function addInteraction(
   if (a.type !== qt.AnnoT.SUMMARY && a.type !== qt.AnnoT.CONSTANT) {
     s.on('contextmenu', qm.getMenu(e, qn.contextMenu(a.nd, e)));
   }
-}
-
-function update(a: Anno, s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
-  const cx = qn.centerX(d);
-  if (a.nd && a.type !== qt.AnnoT.DOTS) a.nd.stylize(s, e, qt.Class.Anno.NODE);
-  if (a.type === qt.AnnoT.SUMMARY) a.w += 10;
-  s.select('text.' + qt.Class.Anno.LABEL)
-    .transition()
-    .attr('x', cx + a.x + (a.inbound ? -1 : 1) * (a.w / 2 + a.offset))
-    .attr('y', d.y + a.y);
-  s.select('use.summary')
-    .transition()
-    .attr('x', cx + a.x - 3)
-    .attr('y', d.y + a.y - 6);
-  qs.positionEllipse(
-    s.select('.' + qt.Class.Anno.NODE + ' ellipse'),
-    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
-  );
-  qs.positionRect(
-    s.select('.' + qt.Class.Anno.NODE + ' rect'),
-    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
-  );
-  qs.positionRect(
-    s.select('.' + qt.Class.Anno.NODE + ' use'),
-    new qt.Rect(cx + a.x, d.y + a.y, a.w, a.h)
-  );
-  s.select('path.' + qt.Class.Anno.EDGE)
-    .transition()
-    .attr('d', (a: Anno) => {
-      const ps = a.points.map(p => new qt.Point(p.x + cx, p.y + d.y));
-      return qe.interpolate(ps);
-    });
 }

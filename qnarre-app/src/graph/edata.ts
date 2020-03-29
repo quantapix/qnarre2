@@ -155,12 +155,6 @@ export function appendEdge(
     .text(t);
 }
 
-export const interpolate = d3
-  .line<{x: number; y: number}>()
-  .curve(d3.curveBasis)
-  .x(d => d.x)
-  .y(d => d.y);
-
 function getEdgePathInterpolator(
   comp: HTMLElement,
   renderPath: SVGPathElement,
@@ -186,7 +180,7 @@ function getEdgePathInterpolator(
       false
     );
   }
-  if (!ae) return d3.interpolate(a, interpolate(ps)!);
+  if (!ae) return d3.interpolate(a, qs.interpolate(ps)!);
   const ap = (ae.edgeGroup?.node() as HTMLElement).firstChild as SVGPathElement;
   const inbound = md.metaedge?.inbound;
   return (_: any) => {
@@ -197,7 +191,7 @@ function getEdgePathInterpolator(
     const i = inbound ? 0 : ps.length - 1;
     ps[i].x = p.x;
     ps[i].y = p.y;
-    return interpolate(ps);
+    return qs.interpolate(ps);
   };
 }
 

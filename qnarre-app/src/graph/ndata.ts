@@ -73,11 +73,10 @@ export class Ndata implements qg.Ndata {
     return false;
   }
 
-  subPosition(s: qt.Selection) {
-    const x = this.x - this.w / 2.0 + this.pad.left;
-    const y = this.y - this.h / 2.0 + this.pad.top;
-    const sub = qs.selectChild(s, 'g', qt.Class.Subscene.GROUP);
-    qs.translate(sub, x, y);
+  centerX() {
+    if (this.expanded) return this.x;
+    const dx = this.annos.in.length ? this.width.in : 0;
+    return this.x - this.w / 2 + dx + this.box.w / 2;
   }
 
   listName() {
@@ -95,24 +94,6 @@ export class Ndata implements qg.Ndata {
 
   groupSettingLabel() {
     return qu.groupButtonString(!!this.containingList());
-  }
-
-  addButton(s: qt.Selection, e: qs.GraphElem) {
-    const g = qs.selectOrCreate(s, 'g', qt.Class.Node.B_CONTAINER);
-    qs.selectOrCreate(g, 'circle', qt.Class.Node.B_CIRCLE);
-    qs.selectOrCreate(g, 'path', qt.Class.Node.E_BUTTON).attr(
-      'd',
-      'M0,-2.2 V2.2 M-2.2,0 H2.2'
-    );
-    qs.selectOrCreate(g, 'path', qt.Class.Node.C_BUTTON).attr(
-      'd',
-      'M-2.2,0 H2.2'
-    );
-    g.on('click', (d: this) => {
-      d3.event.stopPropagation();
-      e.fire('node-toggle-expand', {name: d.name});
-    });
-    qs.positionButton(g, this);
   }
 
   addInteraction(s: qt.Selection, e: qs.GraphElem, disable?: boolean) {
@@ -157,7 +138,7 @@ export class Ndata implements qg.Ndata {
   labelBuild(s: qt.Selection, e: qs.GraphElem) {
     let t = this.display;
     const scale = this.type === qt.NdataT.META && !this.expanded;
-    const l = qs.selectOrCreate(s, 'text', qt.Class.Node.LABEL);
+    const l = qs.selectCreate(s, 'text', qt.Class.Node.LABEL);
     const n = l.node();
     n.parent.appendChild(n);
     l.attr('dy', '.35em').attr('text-anchor', 'middle');
@@ -169,61 +150,6 @@ export class Ndata implements qg.Ndata {
     }
     enforceLabelWidth(l.text(t), this);
     return l;
-  }
-
-  position(s: qt.Selection) {
-    const g = qs.selectChild(s, 'g', qt.Class.Node.SHAPE);
-    const cx = centerX(this);
-    switch (this.type) {
-      case qt.NdataT.OPER: {
-        const od = (this as any) as qg.Noper;
-        if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
-          const sc = qs.selectChild(g, 'polygon');
-          const r = new qt.Rect(this.x, this.y, this.box.w, this.box.h);
-          qs.positionTriangle(sc, r);
-        } else {
-          const sc = qs.selectChild(g, 'ellipse');
-          const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
-          qs.positionEllipse(sc, r);
-        }
-        labelPosition(s, cx, this.y, this.label.off);
-        break;
-      }
-      case qt.NdataT.META: {
-        const sa = g.selectAll('rect');
-        if (this.expanded) {
-          qs.positionRect(sa, this);
-          this.subPosition(s);
-          labelPosition(s, cx, this.y, -this.h / 2 + this.label.h / 2);
-        } else {
-          const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
-          qs.positionRect(sa, r);
-          labelPosition(s, cx, this.y, 0);
-        }
-        break;
-      }
-      case qt.NdataT.LIST: {
-        const sc = qs.selectChild(g, 'use');
-        if (this.expanded) {
-          qs.positionRect(sc, this);
-          this.subPosition(s);
-          labelPosition(s, cx, this.y, -this.h / 2 + this.label.h / 2);
-        } else {
-          const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
-          qs.positionRect(sc, r);
-          labelPosition(s, cx, this.y, this.label.off);
-        }
-        break;
-      }
-      case qt.NdataT.BRIDGE: {
-        const sc = qs.selectChild(g, 'rect');
-        qs.positionRect(sc, this);
-        break;
-      }
-      default: {
-        throw Error('Unrecognized type: ' + this.type);
-      }
-    }
   }
 
   updateTotalWidthOfNode() {
@@ -239,15 +165,15 @@ export class Ndata implements qg.Ndata {
   }
 
   buildShape(s: qt.Selection, c: string) {
-    const g = qs.selectOrCreate(s, 'g', c);
+    const g = qs.selectCreate(s, 'g', c);
     switch (this.type) {
       case qt.NdataT.OPER:
         const od = (this as any) as qg.Noper;
         if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
-          qs.selectOrCreate(g, 'polygon', qt.Class.Node.COLOR);
+          qs.selectCreate(g, 'polygon', qt.Class.Node.COLOR);
           break;
         }
-        qs.selectOrCreate(g, 'ellipse', qt.Class.Node.COLOR);
+        qs.selectCreate(g, 'ellipse', qt.Class.Node.COLOR);
         break;
       case qt.NdataT.LIST:
         let t = 'annotation';
@@ -257,21 +183,21 @@ export class Ndata implements qg.Ndata {
         }
         const cs = [qt.Class.Node.COLOR];
         if (this.faded) cs.push('faded-ellipse');
-        qs.selectOrCreate(g, 'use', cs).attr(
+        qs.selectCreate(g, 'use', cs).attr(
           'xlink:href',
           '#op-series-' + t + '-stamp'
         );
-        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
+        qs.selectCreate(g, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
       case qt.NdataT.BRIDGE:
-        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
+        qs.selectCreate(g, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
       case qt.NdataT.META:
-        qs.selectOrCreate(g, 'rect', qt.Class.Node.COLOR)
+        qs.selectCreate(g, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
@@ -399,14 +325,8 @@ export function contextMenu(nd: qg.Ndata, e: qs.GraphElem) {
   return m;
 }
 
-export function centerX(nd: qg.Ndata) {
-  if (nd.expanded) return nd.x;
-  const dx = nd.annos.in.length ? nd.width.in : 0;
-  return nd.x - nd.w / 2 + dx + nd.box.w / 2;
-}
-
 export function intersect(nd: qg.Ndata, p: qt.Point) {
-  const x = nd.expanded ? nd.x : centerX(nd);
+  const x = nd.expanded ? nd.x : nd.centerX();
   const y = nd.y;
   const dx = p.x - x;
   const dy = p.y - y;
@@ -504,13 +424,6 @@ export function strokeForFill(f: string) {
         .rgb(f)
         .darker()
         .toString();
-}
-
-function labelPosition(s: qt.Selection, x: number, y: number, off: number) {
-  qs.selectChild(s, 'text', qt.Class.Node.LABEL)
-    .transition()
-    .attr('x', x)
-    .attr('y', y + off);
 }
 
 function grad(id: string, cs: qt.Shade[], e?: SVGElement) {

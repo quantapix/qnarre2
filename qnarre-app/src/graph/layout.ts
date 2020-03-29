@@ -50,11 +50,11 @@ export function runLayout<
     const n1 = g.node(ed.metaedge!.w);
     if (ed.points.length === 3 && qu.Point.colinear(ed.points)) {
       if (n0) {
-        const x = n0.expanded ? n0.x : qn.centerX(n0);
+        const x = n0.expanded ? n0.x : n0.centerX();
         ed.points[0].x = x;
       }
       if (n1) {
-        const x = n1.expanded ? n1.x : qn.centerX(n1);
+        const x = n1.expanded ? n1.x : n1.centerX();
         ed.points[2].x = x;
       }
       ed.points = [ed.points[0], ed.points[1]];

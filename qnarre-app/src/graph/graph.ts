@@ -39,11 +39,13 @@ export interface Ndata extends qt.Rect {
   width: {in: number; out: number};
   annos: {in: Annos; out: Annos};
   extract: {in: boolean; out: boolean; lib: boolean};
+  centerX(): number;
   hasTypeIn(ts: string[]): boolean;
   addInAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   addOutAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   updateTotalWidthOfNode(): void;
   listName(): string | undefined;
+  stylize(s: qt.Selection, e: any, c?: string): void;
 }
 
 export interface Edata {
@@ -182,7 +184,7 @@ export interface Anno extends qt.Rect {
   offset: number;
   nodes?: string[];
   points: qt.Point[];
-  isbound?: boolean;
+  inbound?: boolean;
 }
 
 export interface Annos extends Array<Anno> {
