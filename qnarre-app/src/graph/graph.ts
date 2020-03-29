@@ -26,6 +26,7 @@ export interface Ndata extends qt.Rect {
   type: qt.NdataT;
   name: string;
   cardin: number;
+  display: string;
   parent?: Ndata;
   stats?: qu.Stats;
   include?: boolean;
@@ -44,7 +45,6 @@ export interface Ndata extends qt.Rect {
   hasTypeIn(ts: string[]): boolean;
   addInAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   addOutAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
-  updateTotalWidthOfNode(): void;
   listName(): string | undefined;
   stylize(s: qt.Selection, e: any, c?: string): void;
 }
@@ -186,6 +186,7 @@ export interface Anno extends qt.Rect {
   nodes?: string[];
   points: qt.Point[];
   inbound?: boolean;
+  initSizes(): void;
 }
 
 export interface Annos extends Array<Anno> {
@@ -243,4 +244,21 @@ export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   d.rankdir = d.rankdir ?? 'bt';
   g.setData(d);
   return g;
+}
+
+export function toClass(t: qt.NdataT) {
+  switch (t) {
+    case qt.NdataT.OPER:
+      return qt.Class.OPER;
+    case qt.NdataT.META:
+      return qt.Class.META;
+    case qt.NdataT.LIST:
+      return qt.Class.LIST;
+    case qt.NdataT.BRIDGE:
+      return qt.Class.BRIDGE;
+    case qt.NdataT.DOTS:
+      return qt.Class.DOTS;
+    default:
+      throw Error('Invalid type: ' + t);
+  }
 }

@@ -7,7 +7,6 @@ import * as qt from './types';
 import * as qp from './params';
 
 import {PARAMS as PS} from './params';
-import * as menu from '../elems/graph/contextmenu';
 
 type S = qt.Selection;
 
@@ -265,36 +264,35 @@ function positionButton(s: S, nd: qg.Ndata) {
     .attr('r', PS.nodeSize.meta.expandButtonRadius);
 }
 
-export function addInteraction(
-  s: S,
-  nd: qg.Ndata,
-  e: GraphElem,
-  disable?: boolean
-) {
-  if (disable) {
-    s.attr('pointer-events', 'none');
-    return;
+export function enforceWidth(s: S, nd?: qg.Ndata) {
+  const e = s.node() as SVGTextElement;
+  let l = e.getComputedTextLength();
+  let max: number | undefined;
+  switch (nd?.type) {
+    case qt.NdataT.META:
+      if (!nd.expanded) max = PS.nodeSize.meta.maxLabelWidth;
+      break;
+    case qt.NdataT.OPER:
+      max = PS.nodeSize.oper.maxLabelWidth;
+      break;
+    case undefined:
+      max = PS.annotations.maxLabelWidth;
+      break;
+    default:
+      break;
   }
-  const f = menu.getMenu(e, nd.contextMenu(e));
-  s.on('dblclick', function() {
-    e.fire('node-toggle-expand', {name: this.name});
-  })
-    .on('mouseover', function() {
-      if (e.isNodeExpanded(this)) return;
-      e.fire('node-highlight', {name: this.name});
-    })
-    .on('mouseout', function() {
-      if (e.isNodeExpanded(this)) return;
-      e.fire('node-unhighlight', {name: this.name});
-    })
-    .on('click', function() {
-      d3.event.stopPropagation();
-      e.fire('node-select', {name: this.name});
-    })
-    .on('menu', function(i: number) {
-      e.fire('node-select', {name: this.name});
-      f(this, i);
-    });
+  if (!max || l <= max) return;
+  let i = 1;
+  while (e.getSubStringLength(0, i) < max) {
+    i++;
+  }
+  let t = e.textContent?.substr(0, i);
+  do {
+    t = t?.substr(0, t.length - 1);
+    e.textContent = t + '...';
+    l = e.getComputedTextLength();
+  } while (l > max && t && t.length > 0);
+  return s.append('title').text(e.textContent);
 }
 
 export function addClickListener(s: SVGElement, elem: any) {
@@ -385,15 +383,19 @@ export abstract class GraphElem extends HTMLElement {
   maxMetaNodeLabelLengthFontSize?: number;
   templateIndex?: () => {};
   colorBy = '';
-  abstract fire(eventName: string, daat: any): void;
-  abstract addNodeGroup(n: string, s: S): void;
-  abstract addAnnoGroup(n: string, s: S): void;
-  abstract removeNodeGroup(n: string): void;
-  abstract removeAnnoGroup(a: qg.Anno, n: qg.Ndata, s: S): void;
-  abstract isNodeExpanded(nd: qg.Ndata): boolean;
-  abstract isNodeHighlighted(n: string): boolean;
-  abstract isNodeSelected(n: string): boolean;
-  abstract getAnnotationGroupsIndex(n: string): S;
-  abstract getGraphSvgRoot(): SVGElement;
+  abstract fire(n: string, d: any): void;
   abstract contextMenu(): HTMLElement;
+  abstract isNodeSelected(n: string): boolean;
+  abstract isNodeHighlighted(n: string): boolean;
+  abstract isNodeExpanded(nd: qg.Ndata): boolean;
+  abstract addEdgeSel(n: string, s: S): void;
+  abstract getEdgeSel(n: string): S | undefined;
+  abstract delEdgeSel(n: string): void;
+  abstract addNodeSel(n: string, s: S): void;
+  abstract getNodeSel(n: string): S | undefined;
+  abstract delNodeSel(n: string): void;
+  abstract addAnnoSel(a: string, n: string, s: S): void;
+  abstract getAnnoSel(a: string): S | undefined;
+  abstract delAnnoSel(a: string, n: string): void;
+  abstract getGraphSvgRoot(): SVGElement;
 }

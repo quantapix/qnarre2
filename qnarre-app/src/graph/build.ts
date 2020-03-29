@@ -184,7 +184,7 @@ export namespace Gdata {
         this.nds[bn] = bd;
         coreG.setNode(bn, bd);
         coreG.setParent(bn, bpn);
-        bpd.node.cardinality++;
+        bpd.cardin++;
       }
       const bed = new MetaEdata(ed);
       bed.adjoiningMetaEdge = adjoining;
@@ -272,56 +272,6 @@ export function buildGroup2(
     .each((d: EdgeData) => stylize(d3.select(this), d, elem));
   gs.exit()
     .each((d: EdgeData) => delete elem._edgeGroupIndex[getEdgeKey(d)])
-    .remove();
-  return gs;
-}
-
-export function buildGroup(s: qt.Selection, ds: qn.Ndata[], e: qs.GraphElem) {
-  const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
-  const gs = c
-    .selectAll<any, qg.Ndata>(function() {
-      return this.childNodes;
-    })
-    .data(ds, nd => nd.name + ':' + nd.type);
-  gs.enter()
-    .append('g')
-    .attr('data-name', nd => nd.name)
-    .each(function(nd) {
-      const g = d3.select(this);
-      e.addNodeGroup(nd.name, g);
-    })
-    .merge(gs)
-    .attr('class', nd => qt.Class.Node.GROUP + ' ' + qn.nodeClass(nd))
-    .each(function(nd) {
-      const g = d3.select(this);
-      const inb = qs.selectCreate(g, 'g', qt.Class.Anno.INBOX);
-      nd.annos.in.buildGroup(inb, nd, e);
-      const outb = qs.selectCreate(g, 'g', qt.Class.Anno.OUTBOX);
-      nd.annos.out.buildGroup(outb, nd, e);
-      const s2 = nd.buildShape(g, qt.Class.Node.SHAPE);
-      if (qg.isClus(nd)) qs.addButton(s2, nd, e);
-      qs.addInteraction(s2, nd, e);
-      if (qg.isClus(nd)) nd.subBuild(g, e);
-      const label = nd.labelBuild(g, e);
-      qs.addInteraction(label, nd, e, nd.type === qt.NdataT.META);
-      nd.stylize(g, e);
-      qs.position(g, nd);
-    });
-  gs.exit<qn.Ndata>()
-    .each(function(nd) {
-      e.removeNodeGroup(nd.name);
-      const g = d3.select(this);
-      if (nd.annos.in.list.length > 0) {
-        g.select('.' + qt.Class.Anno.INBOX)
-          .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
-          .each(a => e.removeAnnotationGroup(a, nd));
-      }
-      if (nd.annos.out.list.length > 0) {
-        g.select('.' + qt.Class.Anno.OUTBOX)
-          .selectAll<any, string>('.' + qt.Class.Anno.GROUP)
-          .each(a => e.removeAnnotationGroup(a, nd));
-      }
-    })
     .remove();
   return gs;
 }

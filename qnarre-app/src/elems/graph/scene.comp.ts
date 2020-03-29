@@ -4,6 +4,7 @@ import {Component, OnInit, Input} from '@angular/core';
 
 import * as ql from '../../graph/layout';
 import * as qn from '../../graph/ndata';
+import * as qg from '../../graph/graph';
 import * as qp from '../../graph/params';
 import * as qs from '../../graph/scene';
 import * as qt from '../../graph/types';
@@ -27,9 +28,11 @@ export class SceneComponent implements OnInit {
   _maxZoomDistanceForClick = 20;
   templateIndex: number;
   minimap: any;
-  _nodeGroupIndex: Function;
-  _annotationGroupIndex: Function;
-  _edgeGroupIndex: Function;
+  sels = {
+    nodes: {} as qt.Dict<qt.Selection>,
+    edges: {} as qt.Dict<qt.Selection>,
+    annos: {} as qt.Dict<qt.Dict<qt.Selection>>
+  };
   maxMetaNodeLabelLengthFontSize = 9;
   minMetaNodeLabelLengthFontSize = 6;
   maxMetaNodeLabelLengthLargeFont = 11;
@@ -75,9 +78,7 @@ export class SceneComponent implements OnInit {
   }
 
   _resetState() {
-    this._nodeGroupIndex = {};
-    this._annotationGroupIndex = {};
-    this._edgeGroupIndex = {};
+    this.sels = {nodes: {}, edges: {}, annos: {}};
     this._updateLabels(false);
     d3.select(this.$.svg)
       .select('#root')
@@ -239,8 +240,8 @@ export class SceneComponent implements OnInit {
 
   _colorByChanged() {
     if (this.renderHierarchy != null) {
-      _.each(this._nodeGroupIndex, (nodeGroup, nodeName) => {
-        this._updateNodeState(nodeName);
+      _.each(this.sels.nodes, (_, n) => {
+        this._updateNodeState(n);
       });
       this.minimap.update();
     }
@@ -259,38 +260,42 @@ export class SceneComponent implements OnInit {
     return n === this.highlightedNode;
   }
 
-  addAnnotationGroup(a, d, selection) {
-    const an = a.node.name;
-    this._annotationGroupIndex[an] = this._annotationGroupIndex[an] || {};
-    this._annotationGroupIndex[an][d.node.name] = selection;
+  addNodeSel(n: string, s: qt.Selection) {
+    this.sels.nodes[n] = s;
   }
 
-  getAnnotationGroupsIndex(a) {
-    return this._annotationGroupIndex[a];
+  getNodeSel(n: string) {
+    return this.sels.nodes[n];
   }
 
-  removeAnnotationGroup(a, d) {
-    delete this._annotationGroupIndex[a.node.name][d.node.name];
+  delNodeSel(n: string) {
+    delete this.sels.nodes[n];
   }
 
-  addNodeGroup(n, selection) {
-    this._nodeGroupIndex[n] = selection;
+  addEdgeSel(n: string, s: qt.Selection) {
+    this.sels.edges[n] = s;
   }
 
-  getNodeGroup(n) {
-    return this._nodeGroupIndex[n];
+  getEdgeSel(n: string) {
+    return this.sels.edges[n];
   }
 
-  removeNodeGroup(n) {
-    delete this._nodeGroupIndex[n];
+  delEdgeSel(n: string) {
+    delete this.sels.edges[n];
   }
 
-  addEdgeGroup(n, selection) {
-    this._edgeGroupIndex[n] = selection;
+  addAnnoSel(a: string, n: string, s: qt.Selection) {
+    const ans = this.sels.annos;
+    ans[a] = ans[a] || {};
+    ans[a][n] = s;
   }
 
-  getEdgeGroup(e) {
-    return this._edgeGroupIndex[e];
+  getAnnoSel(n: string) {
+    return this.sels.annos[n];
+  }
+
+  delAnnoSel(a: string, n: string) {
+    delete this.sels.annos[a][n];
   }
 
   _updateHealths(nodeNamesToHealths, healthPillStepIndex) {
@@ -299,14 +304,14 @@ export class SceneComponent implements OnInit {
 
   _updateNodeState(n) {
     const node = this.getNode(n);
-    const nodeGroup = this.getNodeGroup(n);
-    if (nodeGroup) node.stylize(nodeGroup, node, this);
+    const s = this.getNodeSel(n);
+    if (s) node.stylize(s, node, this);
     if (
-      node.node.type === qt.NodeType.META &&
+      node.node.type === qt.NdataT.META &&
       node.node.assocFn &&
       !node.isLibraryFn
     ) {
-      const libraryFunctionNodeName = qp.LIBRARY_PREFIX + node.node.assocFn;
+      const libraryFunctionNodeName = qp.LIB_PRE + node.node.assocFn;
       const functionGroup = d3.select(
         '.' +
           qt.Class.Scene.GROUP +
@@ -320,7 +325,7 @@ export class SceneComponent implements OnInit {
     }
     const annotationGroupIndex = this.getAnnotationGroupsIndex(n);
     _.each(annotationGroupIndex, (aGroup, hostName) => {
-      node.stylize(aGroup, node, this, qt.Class.Annotation.NODE);
+      node.stylize(aGroup, node, this, qt.Class.Anno.NODE);
     });
   }
 
@@ -331,7 +336,7 @@ export class SceneComponent implements OnInit {
     this.minimap.update();
     let node = this.renderHierarchy.hierarchy.node(selectedNode);
     const nodeParents = [];
-    while (node.parent != null && node.parent.name != qp.ROOT_NAME) {
+    while (node.parent != null && node.parent.name != qp.ROOT) {
       node = node.parent;
       nodeParents.push(node.name);
     }

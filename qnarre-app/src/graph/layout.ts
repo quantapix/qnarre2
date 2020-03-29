@@ -124,7 +124,9 @@ function layoutClus(c: qg.Nclus) {
     }
     if (nd.expanded) {
       if (qg.isClus(nd)) layout(nd);
-    } else nd.updateTotalWidthOfNode();
+    } else {
+      updateWidth(nd);
+    }
     layoutAnno(nd);
   });
 }
@@ -202,8 +204,8 @@ function layoutAnno(d: qg.Ndata) {
   if (d.expanded) return;
   const ins = d.annos.in;
   const outs = d.annos.out;
-  ins.forEach(a => initAnno(a));
-  outs.forEach(a => initAnno(a));
+  ins.forEach(a => a.initSizes());
+  outs.forEach(a => a.initSizes());
   const ps = qp.PARAMS.annotations;
   const calc = (h: number, a: qg.Anno, i: number) => {
     const o = i > 0 ? ps.yOffset : 0;
@@ -248,24 +250,13 @@ function layoutAnno(d: qg.Ndata) {
   d.h = Math.max(d.h, ih, oh);
 }
 
-function initAnno(a: qg.Anno) {
-  switch (a.type) {
-    case qt.AnnoT.CONSTANT:
-      _.extend(a, qp.PARAMS.constant.size);
-      break;
-    case qt.AnnoT.SHORTCUT:
-      if (qg.isOper(a.nd)) {
-        _.extend(a, qp.PARAMS.shortcutSize.oper);
-      } else if (qg.isMeta(a.nd)) {
-        _.extend(a, qp.PARAMS.shortcutSize.meta);
-      } else if (qg.isList(a.nd)) {
-        _.extend(a, qp.PARAMS.shortcutSize.list);
-      } else {
-        throw Error('Invalid type: ' + a.nd.type);
-      }
-      break;
-    case qt.AnnoT.SUMMARY:
-      _.extend(a, qp.PARAMS.constant.size);
-      break;
-  }
+function updateWidth(nd: qg.Ndata) {
+  nd.width.in = nd.annos.in.length > 0 ? qp.PARAMS.annotations.inboxWidth : 0;
+  nd.width.out =
+    nd.annos.out.length > 0 ? qp.PARAMS.annotations.outboxWidth : 0;
+  nd.box.w = nd.w;
+  nd.box.h = nd.h;
+  const l = nd.display.length;
+  const w = 3;
+  nd.w = Math.max(nd.box.w + nd.width.in + nd.width.out, l * w);
 }

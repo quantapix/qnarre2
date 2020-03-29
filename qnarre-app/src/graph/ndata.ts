@@ -11,6 +11,7 @@ import * as qu from './utils';
 
 import {NodeDef} from './proto';
 import {PARAMS as PS} from './params';
+import * as menu from '../elems/graph/contextmenu';
 
 export class Ndata implements qg.Ndata {
   x = 0;
@@ -107,9 +108,9 @@ export class Ndata implements qg.Ndata {
     return this;
   }
 
-  labelBuild(s: qt.Selection, e: qs.GraphElem) {
+  addLabel(s: qt.Selection, e: qs.GraphElem) {
     let t = this.display;
-    const scale = this.type === qt.NdataT.META && !this.expanded;
+    const scale = qg.isMeta(this) && !this.expanded;
     const l = qs.selectCreate(s, 'text', qt.Class.Node.LABEL);
     const n = l.node();
     n.parent.appendChild(n);
@@ -120,20 +121,35 @@ export class Ndata implements qg.Ndata {
       const fs = labelFontScale(e);
       l.attr('font-size', fs!(t.length) + 'px');
     }
-    enforceLabelWidth(l.text(t), this);
+    qs.enforceWidth(l.text(t), this);
     return l;
   }
 
-  updateTotalWidthOfNode() {
-    this.width.in =
-      this.annos.in.length > 0 ? qp.PARAMS.annotations.inboxWidth : 0;
-    this.width.out =
-      this.annos.out.length > 0 ? qp.PARAMS.annotations.outboxWidth : 0;
-    this.box.w = this.w;
-    this.box.h = this.h;
-    const l = this.display.length;
-    const w = 3;
-    this.w = Math.max(this.box.w + this.width.in + this.width.out, l * w);
+  addInteraction(s: qt.Selection, e: qs.GraphElem, disable?: boolean) {
+    if (disable) {
+      s.attr('pointer-events', 'none');
+      return;
+    }
+    const f = menu.getMenu(e, this.contextMenu(e));
+    s.on('dblclick', function() {
+      e.fire('node-toggle-expand', {name: this.name});
+    })
+      .on('mouseover', function() {
+        if (e.isNodeExpanded(this)) return;
+        e.fire('node-highlight', {name: this.name});
+      })
+      .on('mouseout', function() {
+        if (e.isNodeExpanded(this)) return;
+        e.fire('node-unhighlight', {name: this.name});
+      })
+      .on('click', function() {
+        d3.event.stopPropagation();
+        e.fire('node-select', {name: this.name});
+      })
+      .on('menu', function(i: number) {
+        e.fire('node-select', {name: this.name});
+        f(this, i);
+      });
   }
 
   buildShape(s: qt.Selection, c: string) {
@@ -280,23 +296,6 @@ export class Ndata implements qg.Ndata {
   }
 }
 
-export function nodeClass(nd: qg.Ndata) {
-  switch (nd.type) {
-    case qt.NdataT.OPER:
-      return qt.Class.OPER;
-    case qt.NdataT.META:
-      return qt.Class.META;
-    case qt.NdataT.LIST:
-      return qt.Class.LIST;
-    case qt.NdataT.BRIDGE:
-      return qt.Class.BRIDGE;
-    case qt.NdataT.DOTS:
-      return qt.Class.DOTS;
-    default:
-      throw Error('Unrecognized type: ' + nd.type);
-  }
-}
-
 export function intersect(nd: qg.Ndata, p: qt.Point) {
   const x = nd.expanded ? nd.x : nd.centerX();
   const y = nd.y;
@@ -317,35 +316,54 @@ export function intersect(nd: qg.Ndata, p: qt.Point) {
   return {x: x + deltaX, y: y + deltaY} as qt.Point;
 }
 
-export function enforceLabelWidth(s: qt.Selection, nd?: qg.Ndata) {
-  const e = s.node() as SVGTextElement;
-  let l = e.getComputedTextLength();
-  let max: number | undefined;
-  switch (nd?.type) {
-    case qt.NdataT.META:
-      if (!nd.expanded) max = PS.nodeSize.meta.maxLabelWidth;
-      break;
-    case qt.NdataT.OPER:
-      max = PS.nodeSize.oper.maxLabelWidth;
-      break;
-    case undefined:
-      max = PS.annotations.maxLabelWidth;
-      break;
-    default:
-      break;
-  }
-  if (!max || l <= max) return;
-  let i = 1;
-  while (e.getSubStringLength(0, i) < max) {
-    i++;
-  }
-  let t = e.textContent?.substr(0, i);
-  do {
-    t = t?.substr(0, t.length - 1);
-    e.textContent = t + '...';
-    l = e.getComputedTextLength();
-  } while (l > max && t && t.length > 0);
-  return s.append('title').text(e.textContent);
+export function buildSels(s: qt.Selection, ds: qg.Ndata[], e: qs.GraphElem) {
+  const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
+  const ss = c
+    .selectAll<any, Ndata>(function() {
+      return this.childNodes;
+    })
+    .data(ds, d => d.name + ':' + d.type);
+  ss.enter()
+    .append('g')
+    .attr('data-name', nd => nd.name)
+    .each(function(d) {
+      e.addNodeSel(d.name, d3.select(this));
+    })
+    .merge(ss)
+    .attr('class', d => qt.Class.Node.GROUP + ' ' + qg.toClass(d.type))
+    .each(function(dd) {
+      const d = dd as Ndata;
+      const s2 = d3.select(this);
+      const inb = qs.selectCreate(s2, 'g', qt.Class.Anno.IN);
+      d.annos.in.buildSels(inb, d, e);
+      const outb = qs.selectCreate(s2, 'g', qt.Class.Anno.OUT);
+      d.annos.out.buildSels(outb, d, e);
+      const s3 = d.buildShape(s2, qt.Class.Node.SHAPE);
+      if (qg.isClus(d)) qs.addButton(s3, d, e);
+      d.addInteraction(s3, e);
+      if (qg.isClus(d)) d.subBuild(s2, e);
+      const label = d.addLabel(s2, e);
+      d.addInteraction(label, e, d.type === qt.NdataT.META);
+      d.stylize(s2, e);
+      qs.position(s2, d);
+    });
+  ss.exit<Ndata>()
+    .each(function(d) {
+      e.delNodeSel(d.name);
+      const s2 = d3.select(this);
+      if (d.annos.in.length > 0) {
+        s2.select('.' + qt.Class.Anno.IN)
+          .selectAll<any, qg.Anno>('.' + qt.Class.Anno.GROUP)
+          .each(a => e.delAnnoSel(a.nd.name, d.name));
+      }
+      if (d.annos.out.length > 0) {
+        s2.select('.' + qt.Class.Anno.OUT)
+          .selectAll<any, qg.Anno>('.' + qt.Class.Anno.GROUP)
+          .each(a => e.delAnnoSel(a.nd.name, d.name));
+      }
+    })
+    .remove();
+  return ss;
 }
 
 export class Nbridge extends Ndata implements qg.Nbridge {

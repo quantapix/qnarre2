@@ -114,8 +114,8 @@ export const Class = {
     STRUCTURAL: 'structural'
   },
   Anno: {
-    OUTBOX: 'out-annotations',
-    INBOX: 'in-annotations',
+    OUT: 'out-annotations',
+    IN: 'in-annotations',
     GROUP: 'annotation',
     NODE: 'annotation-node',
     EDGE: 'annotation-edge',

@@ -9,6 +9,105 @@ import * as qt from './types';
 import * as qg from './graph';
 import * as qp from './params';
 
+export class Anno implements qg.Anno {
+  x = 0;
+  y = 0;
+  w = 0;
+  h = 0;
+  offset = 0;
+  nodes?: string[];
+  points = [] as qt.Point[];
+
+  constructor(
+    public type: qt.AnnoT,
+    public nd: qg.Ndata,
+    public ed: qg.Edata,
+    public inbound?: boolean
+  ) {
+    if (emeta && emeta.metaedge) {
+      this.v = edata.metaedge.v;
+      this.w = edata.metaedge.w;
+    }
+  }
+
+  initSizes() {
+    switch (this.type) {
+      case qt.AnnoT.CONSTANT:
+        _.extend(this, qp.PARAMS.constant.size);
+        break;
+      case qt.AnnoT.SHORTCUT:
+        if (qg.isOper(this.nd)) {
+          _.extend(this, qp.PARAMS.shortcutSize.oper);
+        } else if (qg.isMeta(this.nd)) {
+          _.extend(this, qp.PARAMS.shortcutSize.meta);
+        } else if (qg.isList(this.nd)) {
+          _.extend(this, qp.PARAMS.shortcutSize.list);
+        } else {
+          throw Error('Invalid type: ' + this.nd.type);
+        }
+        break;
+      case qt.AnnoT.SUMMARY:
+        _.extend(this, qp.PARAMS.constant.size);
+        break;
+    }
+  }
+
+  addLabel(s: qt.Selection, l: string, dots?: string) {
+    let ns = qt.Class.Anno.LABEL;
+    if (dots) ns += ' ' + dots;
+    const t = s
+      .append('text')
+      .attr('class', ns)
+      .attr('dy', '.35em')
+      .attr('text-anchor', this.inbound ? 'end' : 'start')
+      .text(l);
+    return qs.enforceWidth(t);
+  }
+
+  addNameLabel(s: qt.Selection) {
+    const path = this.nd.name.split('/');
+    const t = path[path.length - 1];
+    return this.addLabel(s, t);
+  }
+
+  addInteraction(s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
+    s.on('mouseover', function() {
+      e.fire('anno-highlight', {
+        name: this.nd.name,
+        hostName: d.name
+      });
+    })
+      .on('mouseout', function() {
+        e.fire('anno-unhighlight', {
+          name: this.nd.name,
+          hostName: d.name
+        });
+      })
+      .on('click', function() {
+        (d3.event as Event).stopPropagation();
+        e.fire('anno-select', {
+          name: this.nd.name,
+          hostName: d.name
+        });
+      });
+    if (this.type !== qt.AnnoT.SUMMARY && this.type !== qt.AnnoT.CONSTANT) {
+      s.on('contextmenu', qm.getMenu(e, this.nd.contextMenu(e)));
+    }
+  }
+
+  buildShape(s: qt.Selection) {
+    if (this.type === qt.AnnoT.SUMMARY) {
+      const s2 = qs.selectCreate(s, 'use');
+      s2.attr('class', 'summary')
+        .attr('xlink:href', '#summary-icon')
+        .attr('cursor', 'pointer');
+    } else {
+      const s2 = qn.buildShape(s, a, qt.Class.Anno.NODE);
+      qs.selectCreate(s2, 'title').text(this.nd.name);
+    }
+  }
+}
+
 export class Annos extends Array<Anno> implements qg.Annos {
   names = {} as qt.Dict<boolean>;
 
@@ -30,130 +129,49 @@ export class Annos extends Array<Anno> implements qg.Annos {
     this.push(new Anno(t, nd, new Edata(nd), a.inbound));
   }
 
-  buildGroup(s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
-    const gs = s
+  buildSels(s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
+    const ss = s
       .selectAll<any, qg.Anno>(function() {
         return this.childNodes;
       })
       .data(this, a => a.nd.name);
-    gs.enter()
+    ss.enter()
       .append('g')
       .attr('data-name', a => a.nd.name)
       .each(function(a) {
-        const g = d3.select(this);
-        e.addAnnoGroup(a, d, g);
+        const s2 = d3.select(this);
+        e.addAnnoSel(a.nd.name, d.name, s2);
         let t = qt.Class.Anno.EDGE;
         const me = a.edata && a.edata.metaedge;
         if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL;
         if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
-        qe.appendEdge(g, a, elem, t);
+        qe.appendEdge(s2, a, elem, t);
         if (a.type !== qt.AnnoT.DOTS) {
-          addNameLabel(a, g);
-          buildShape(a, g);
-        } else addLabel(a, g, a.nd.name, qt.Class.Anno.DOTS);
+          a.addNameLabel(s2);
+          a.buildShape(s2);
+        } else {
+          a.addLabel(s2, a.nd.name, qt.Class.Anno.DOTS);
+        }
       })
-      .merge(gs)
+      .merge(ss)
       .attr(
         'class',
-        a => qt.Class.Anno.GROUP + toClass(a.type) + qn.nodeClass(a.nd)
+        a => qt.Class.Anno.GROUP + toClass(a.type) + qg.toClass(a.nd.type)
       )
       .each(function(a) {
-        const g = d3.select(this);
-        qs.positionAnno(g, a, d, e);
-        if (a.type !== qt.AnnoT.DOTS) addInteraction(a, g, d, e);
+        const s2 = d3.select(this);
+        qs.positionAnno(s2, a, d, e);
+        if (a.type !== qt.AnnoT.DOTS) a.addInteraction(s2, d, e);
       });
-    gs.exit<qg.Anno>()
+    ss.exit<qg.Anno>()
       .each(function(a) {
-        const g = d3.select(this);
-        e.removeAnnoGroup(a, d, g);
+        e.delAnnoSel(a.nd.name, d.name);
       })
       .remove();
-    return gs;
-  }
-}
-
-export class Anno implements qg.Anno {
-  x = 0;
-  y = 0;
-  w = 0;
-  h = 0;
-  offset = 0;
-  nodes?: string[];
-  points = [] as qt.Point[];
-
-  constructor(
-    public type: qt.AnnoT,
-    public nd: qg.Ndata,
-    public ed: qg.Edata,
-    public inbound?: boolean
-  ) {
-    if (emeta && emeta.metaedge) {
-      this.v = edata.metaedge.v;
-      this.w = edata.metaedge.w;
-    }
+    return ss;
   }
 }
 
 function toClass(t: qt.AnnoT) {
   return ' ' + ((qt.AnnoT[t] || '').toLowerCase() || null) + ' ';
-}
-
-function addNameLabel(a: Anno, s: qt.Selection) {
-  const path = a.nd.name.split('/');
-  const t = path[path.length - 1];
-  return addLabel(a, s, t);
-}
-
-function buildShape(a: Anno, s: qt.Selection) {
-  if (a.type === qt.AnnoT.SUMMARY) {
-    const s2 = qs.selectCreate(s, 'use');
-    s2.attr('class', 'summary')
-      .attr('xlink:href', '#summary-icon')
-      .attr('cursor', 'pointer');
-  } else {
-    const s2 = qn.buildShape(s, a, qt.Class.Anno.NODE);
-    qs.selectCreate(s2, 'title').text(a.nd.name);
-  }
-}
-
-function addLabel(a: Anno, s: qt.Selection, l: string, dots?: string) {
-  let ns = qt.Class.Anno.LABEL;
-  if (dots) ns += ' ' + dots;
-  const t = s
-    .append('text')
-    .attr('class', ns)
-    .attr('dy', '.35em')
-    .attr('text-anchor', a.inbound ? 'end' : 'start')
-    .text(l);
-  return qn.enforceLabelWidth(t);
-}
-
-function addInteraction(
-  a: Anno,
-  s: qt.Selection,
-  d: qg.Ndata,
-  e: qs.GraphElem
-) {
-  s.on('mouseover', (a: Anno) => {
-    e.fire('anno-highlight', {
-      name: a.nd.name,
-      hostName: d.name
-    });
-  })
-    .on('mouseout', (a: Anno) => {
-      e.fire('anno-unhighlight', {
-        name: a.nd.name,
-        hostName: d.name
-      });
-    })
-    .on('click', (a: Anno) => {
-      (d3.event as Event).stopPropagation();
-      e.fire('anno-select', {
-        name: a.nd.name,
-        hostName: d.name
-      });
-    });
-  if (a.type !== qt.AnnoT.SUMMARY && a.type !== qt.AnnoT.CONSTANT) {
-    s.on('contextmenu', qm.getMenu(e, qn.contextMenu(a.nd, e)));
-  }
 }
