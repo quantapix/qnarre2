@@ -20,7 +20,7 @@ export interface Graph<G extends Gdata, N extends Ndata, E extends Edata>
     qg.Graph<G, N, E> {}
 
 export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
-  runRender(s: qt.Selection) {
+  runRender(s: qt.Sel) {
     this.preRender();
     const outs = createOrSelect(s, 'output');
     let cs = createOrSelect(outs, 'clusters');
@@ -92,7 +92,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return this;
   }
 
-  posNodes(s: qt.Selection) {
+  posNodes(s: qt.Sel) {
     const es = s.filter((_, i, g) => !d3.select(g[i]).classed('update'));
     const t = (n: any) => {
       const nd = this.node(n)!;
@@ -105,7 +105,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return this;
   }
 
-  posLabels(s: qt.Selection) {
+  posLabels(s: qt.Sel) {
     const es = s.filter((_, i, g) => !d3.select(g[i]).classed('update'));
     const t = (e: any) => {
       const ed = this.edge(e)!;
@@ -118,7 +118,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return this;
   }
 
-  posClusters(s: qt.Selection) {
+  posClusters(s: qt.Sel) {
     const es = s.filter((_, i, g) => !d3.select(g[i]).classed('update'));
     const t = (n: any) => {
       const nd = this.node(n)!;
@@ -137,7 +137,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
   }
 }
 
-function createOrSelect(sel: qt.Selection, n: string) {
+function createOrSelect(sel: qt.Sel, n: string) {
   const s = sel.select('g.' + n);
   if (s.empty()) return sel.append('g').attr('class', n);
   return s;

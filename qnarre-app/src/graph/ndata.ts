@@ -108,7 +108,7 @@ export class Ndata implements qg.Ndata {
     return this;
   }
 
-  addLabel(s: qt.Selection, e: qs.GraphElem) {
+  addLabel(s: qt.Sel, e: qs.GraphElem) {
     let t = this.display;
     const scale = qg.isMeta(this) && !this.expanded;
     const l = qs.selectCreate(s, 'text', qt.Class.Node.LABEL);
@@ -125,7 +125,7 @@ export class Ndata implements qg.Ndata {
     return l;
   }
 
-  addInteraction(s: qt.Selection, e: qs.GraphElem, disable?: boolean) {
+  addInteraction(s: qt.Sel, e: qs.GraphElem, disable?: boolean) {
     if (disable) {
       s.attr('pointer-events', 'none');
       return;
@@ -152,7 +152,7 @@ export class Ndata implements qg.Ndata {
       });
   }
 
-  buildShape(s: qt.Selection, c: string) {
+  buildShape(s: qt.Sel, c: string) {
     const g = qs.selectCreate(s, 'g', c);
     switch (this.type) {
       case qt.NdataT.OPER:
@@ -222,7 +222,7 @@ export class Ndata implements qg.Ndata {
     return m;
   }
 
-  stylize(s: qt.Selection, e: qs.GraphElem, c?: string) {
+  stylize(s: qt.Sel, e: qs.GraphElem, c?: string) {
     c = c ?? qt.Class.Node.SHAPE;
     const high = e.isNodeHighlighted(this.name);
     const sel = e.isNodeSelected(this.name);
@@ -316,7 +316,7 @@ export function intersect(nd: qg.Ndata, p: qt.Point) {
   return {x: x + deltaX, y: y + deltaY} as qt.Point;
 }
 
-export function buildSels(s: qt.Selection, ds: qg.Ndata[], e: qs.GraphElem) {
+export function buildSels(s: qt.Sel, ds: qg.Ndata[], e: qs.GraphElem) {
   const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
   const ss = c
     .selectAll<any, Ndata>(function() {
@@ -420,9 +420,9 @@ function grad(id: string, cs: qt.Shade[], e?: SVGElement) {
   const ei = qu.escapeQuerySelector(id);
   if (!e) return `url(#${ei})`;
   const r = d3.select(e);
-  let s: qt.Selection = r.select('defs#_graph-gradients');
+  let s: qt.Sel = r.select('defs#_graph-gradients');
   if (s.empty()) s = r.append('defs').attr('id', '_graph-gradients');
-  let g: qt.Selection = s.select('linearGradient#' + ei);
+  let g: qt.Sel = s.select('linearGradient#' + ei);
   if (g.empty()) {
     g = s.append('linearGradient').attr('id', id);
     g.selectAll('*').remove();

@@ -46,7 +46,7 @@ export interface Ndata extends qt.Rect {
   addInAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   addOutAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   listName(): string | undefined;
-  stylize(s: qt.Selection, e: any, c?: string): void;
+  stylize(s: qt.Sel, e: any, c?: string): void;
 }
 
 export interface Edata {

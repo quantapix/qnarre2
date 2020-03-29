@@ -9,13 +9,15 @@ import * as qp from '../../graph/params';
 import * as qs from '../../graph/scene';
 import * as qt from '../../graph/types';
 import * as qu from '../../graph/utils';
+import * as qd from '../../graph/gdata';
+import * as ql from '../../graph/layout';
 
 @Component({
   selector: 'qnr-graph-scene',
-  templateUrl: './templates/scene.component.html',
-  styleUrls: ['./styles/scene.component.scss']
+  templateUrl: './scene.comp.html',
+  styleUrls: ['./scene.comp.scss']
 })
-export class SceneComponent implements OnInit {
+export class SceneComponent extends qs.Elem implements OnInit {
   name: string;
   colorBy: string;
   traceInputs: boolean;
@@ -28,11 +30,6 @@ export class SceneComponent implements OnInit {
   _maxZoomDistanceForClick = 20;
   templateIndex: number;
   minimap: any;
-  sels = {
-    nodes: {} as qt.Dict<qt.Selection>,
-    edges: {} as qt.Dict<qt.Selection>,
-    annos: {} as qt.Dict<qt.Dict<qt.Selection>>
-  };
   maxMetaNodeLabelLengthFontSize = 9;
   minMetaNodeLabelLengthFontSize = 6;
   maxMetaNodeLabelLengthLargeFont = 11;
@@ -41,20 +38,28 @@ export class SceneComponent implements OnInit {
   nodeContextMenuItems: Array<any>;
   nodeNamesToHealths: any;
   healthPillStepIndex: number;
-  renderHierarchy: any;
+  renderHierarchy: qd.Gdata;
 
   @Input() selectedNode: string; // observer: '_selectedNodeChanged'
-  highlightedNode: string; //  observer: '_highlightedNodeChanged'
+  highlighted: string; //  observer: '_highlightedChanged'
   _zoomed = false; //  observer: '_onZoomChanged';
 
-  constructor() {}
+  $ = {} as {svg: SVGSVGElement; root: SVGGElement; contextMenu: HTMLElement};
 
-  getNode(nodeName) {
-    return this.renderHierarchy.getNdataByName(nodeName);
+  constructor() {
+    super();
   }
 
-  isNodeExpanded(node) {
-    return node.expanded;
+  getNode(n: string) {
+    return this.renderHierarchy.getNdataByName(n);
+  }
+
+  isNodeSelected(n: string) {
+    return n === this.selectedNode;
+  }
+
+  isNodeHighlighted(n: string) {
+    return n === this.highlighted;
   }
 
   setNodeExpanded(renderNode) {
@@ -62,8 +67,8 @@ export class SceneComponent implements OnInit {
     this._updateLabels(!this._zoomed);
   }
 
-  panToNode(nodeName) {
-    const zoomed = qs.panToNode(nodeName, this.$.svg, this.$.root, this._zoom);
+  panToNode(n: string) {
+    const zoomed = qs.panToNode(n, this.$.svg, this.$.root, this._zoom);
     if (zoomed) {
       this._zoomed = true;
     }
@@ -87,70 +92,55 @@ export class SceneComponent implements OnInit {
     node.removeGradientDefinitions(this.$.svg);
   }
 
-  _build(renderHierarchy) {
-    this.templateIndex = renderHierarchy.hierarchy.getIndexer();
+  _build(gd: qd.Gdata) {
+    this.templateIndex = gd.hier.getIndexer();
     qu.time('qnr-graph-scene (layout):', () => {
-      layoutScene(renderHierarchy.root, this);
+      ql.layout(gd.root);
     });
-    qu.time(
-      'qnr-graph-scene (build scene):',
-      function() {
-        qs.buildGroup(d3.select(this.$.root), renderHierarchy.root, this);
-        qs.addClickListener(this.$.svg, this);
-        this._updateInputTrace();
-      }.bind(this)
-    );
-    setTimeout(
-      function() {
-        this._updateHealths(this.nodeNamesToHealths, this.healthPillStepIndex);
-        this.minimap.update();
-      }.bind(this),
-      qp.PARAMS.animation.duration
-    );
+    qu.time('qnr-graph-scene (build scene):', () => {
+      qs.buildGroup(d3.select(this.$.root), gd.root, this);
+      qs.addClickListener(this.$.svg, this);
+      this._updateInputTrace();
+    });
+    setTimeout(() => {
+      this._updateHealths(this.nodeNamesToHealths, this.healthPillStepIndex);
+      this.minimap.update();
+    }, qp.PARAMS.animation.duration);
   }
 
   ngOnInit() {
     this._zoom = d3
       .zoom()
-      .on(
-        'end',
-        function() {
-          if (this._zoomStart) {
-            const dragDistance = Math.sqrt(
-              Math.pow(this._zoomStart.x - this._zoomTransform.x, 2) +
-                Math.pow(this._zoomStart.y - this._zoomTransform.y, 2)
-            );
-            if (dragDistance < this._maxZoomDistanceForClick) {
-              this._fireEnableClick();
-            } else {
-              setTimeout(this._fireEnableClick.bind(this), 50);
-            }
+      .on('end', function() {
+        if (this._zoomStart) {
+          const dragDistance = Math.sqrt(
+            Math.pow(this._zoomStart.x - this._zoomTransform.x, 2) +
+              Math.pow(this._zoomStart.y - this._zoomTransform.y, 2)
+          );
+          if (dragDistance < this._maxZoomDistanceForClick) {
+            this._fireEnableClick();
+          } else {
+            setTimeout(this._fireEnableClick.bind(this), 50);
           }
-          this._zoomStart = null;
-        }.bind(this)
-      )
-      .on(
-        'zoom',
-        function() {
-          this._zoomTransform = d3.event.transform;
-          if (!this._zoomStart) {
-            this._zoomStart = this._zoomTransform;
-            this.fire('disable-click');
-          }
-          this._zoomed = true;
-          d3.select(this.$.root).attr('transform', d3.event.transform);
-          this.minimap.zoom(d3.event.transform);
-        }.bind(this)
-      );
+        }
+        this._zoomStart = null;
+      })
+      .on('zoom', function() {
+        this._zoomTransform = d3.event.transform;
+        if (!this._zoomStart) {
+          this._zoomStart = this._zoomTransform;
+          this.fire('disable-click');
+        }
+        this._zoomed = true;
+        d3.select(this.$.root).attr('transform', d3.event.transform);
+        this.minimap.zoom(d3.event.transform);
+      });
     d3.select(this.$.svg)
       .call(this._zoom)
       .on('dblclick.zoom', null);
-    d3.select(window).on(
-      'resize',
-      function() {
-        this.minimap.zoom();
-      }.bind(this)
-    );
+    d3.select(window).on('resize', function() {
+      this.minimap.zoom();
+    });
     this.minimap = this.$.minimap.init(
       this.$.svg,
       this.$.root,
@@ -168,10 +158,10 @@ export class SceneComponent implements OnInit {
     this.set('_isAttached', false);
   }
 
-  _renderHierarchyChanged(renderHierarchy) {
+  _renderHierarchyChanged(gd: qd.Gdata) {
     this._hasRenderHierarchyBeenFitOnce = false;
     this._resetState();
-    this._build(renderHierarchy);
+    this._build(gd);
   }
 
   _animateAndFit(isAttached, renderHierarchy) {
@@ -252,65 +242,15 @@ export class SceneComponent implements OnInit {
     qs.fit(this.$.svg, this.$.root, this._zoom, () => (this._zoomed = false));
   }
 
-  isNodeSelected(n) {
-    return n === this.selectedNode;
-  }
-
-  isNodeHighlighted(n) {
-    return n === this.highlightedNode;
-  }
-
-  addNodeSel(n: string, s: qt.Selection) {
-    this.sels.nodes[n] = s;
-  }
-
-  getNodeSel(n: string) {
-    return this.sels.nodes[n];
-  }
-
-  delNodeSel(n: string) {
-    delete this.sels.nodes[n];
-  }
-
-  addEdgeSel(n: string, s: qt.Selection) {
-    this.sels.edges[n] = s;
-  }
-
-  getEdgeSel(n: string) {
-    return this.sels.edges[n];
-  }
-
-  delEdgeSel(n: string) {
-    delete this.sels.edges[n];
-  }
-
-  addAnnoSel(a: string, n: string, s: qt.Selection) {
-    const ans = this.sels.annos;
-    ans[a] = ans[a] || {};
-    ans[a][n] = s;
-  }
-
-  getAnnoSel(n: string) {
-    return this.sels.annos[n];
-  }
-
-  delAnnoSel(a: string, n: string) {
-    delete this.sels.annos[a][n];
-  }
-
   _updateHealths(nodeNamesToHealths, healthPillStepIndex) {
     qs.addAllHealths(this.$.svg, nodeNamesToHealths, healthPillStepIndex);
   }
 
-  _updateNodeState(n) {
-    const node = this.getNode(n);
-    const s = this.getNodeSel(n);
-    if (s) node.stylize(s, node, this);
-    if (
-      node.node.type === qt.NdataT.META &&
-      node.node.assocFn &&
-      !node.isLibraryFn
-    ) {
+  _updateNodeState(n: string) {
+    const nd = this.getNode(n)!;
+    const s = this.nodeSel(n);
+    if (s) nd.stylize(s, node, this);
+    if (nd.type === qt.NdataT.META && nd.assoc && !nd.isLibraryFn) {
       const libraryFunctionNodeName = qp.LIB_PRE + node.node.assocFn;
       const functionGroup = d3.select(
         '.' +
@@ -361,10 +301,10 @@ export class SceneComponent implements OnInit {
     }, qp.PARAMS.animation.duration);
   }
 
-  _highlightedNodeChanged(highlightedNode, oldHighlightedNode) {
-    if (highlightedNode === oldHighlightedNode) return;
-    if (highlightedNode) this._updateNodeState(highlightedNode);
-    if (oldHighlightedNode) this._updateNodeState(oldHighlightedNode);
+  _highlightedChanged(highlighted, old) {
+    if (highlighted === old) return;
+    if (highlighted) this._updateNodeState(highlighted);
+    if (old) this._updateNodeState(old);
   }
 
   _onZoomChanged() {

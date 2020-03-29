@@ -26,7 +26,7 @@ d3.select('body')
   .attr('href', '/base/test/bundle.spec.css');
 
 describe('dagreD3', () => {
-  let svg: qt.Selection;
+  let svg: qt.Sel;
   let g: Graph;
   beforeEach(() => {
     svg = d3.select('body').append('svg');

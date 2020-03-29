@@ -1,8 +1,7 @@
 import * as d3 from 'd3';
 
+export type Sel = d3.Selection<any, any, any, any>;
 export type Scalar = string | number | boolean;
-
-export type Selection = d3.Selection<any, any, any, any>;
 
 export interface Dict<T> {
   [k: string]: T;

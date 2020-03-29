@@ -30,7 +30,7 @@ export interface Graph<G extends Gdata, N extends Ndata, E extends Edata>
   extends qg.Graph<G, N, E> {}
 
 export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
-  createNodes(sel: qt.Selection, shapes = qs.shapes) {
+  createNodes(sel: qt.Sel, shapes = qs.shapes) {
     const ns = this.nodes().filter(n => !this.isSubgraph(n));
     const es = sel
       .selectAll('g.node')
@@ -81,7 +81,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return es;
   }
 
-  createClusters(sel: qt.Selection) {
+  createClusters(sel: qt.Sel) {
     const ns = this.nodes().filter(n => this.isSubgraph(n));
     let es = sel.selectAll('g.cluster').data(ns, (n: any) => n);
     es.selectAll('*').remove();
@@ -110,8 +110,8 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return es;
   }
 
-  createPaths(sel: qt.Selection, arrows = qs.arrows) {
-    const prevs: qt.Selection = sel
+  createPaths(sel: qt.Sel, arrows = qs.arrows) {
+    const prevs: qt.Sel = sel
       .selectAll('g.edgePath')
       .data(this.links(), (l: any) => l.edge)
       .classed('update', true);
@@ -156,7 +156,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return createLine(ed, ps);
   }
 
-  enter(sel: qt.Selection) {
+  enter(sel: qt.Sel) {
     const es = sel
       .enter()
       .append('g')
@@ -174,15 +174,15 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return es;
   }
 
-  exit(sel: qt.Selection) {
+  exit(sel: qt.Sel) {
     const es = sel.exit();
     this.applyTransition(es)
       .style('opacity', 0)
       .remove();
   }
 
-  createLabels(sel: qt.Selection) {
-    let es: qt.Selection = sel
+  createLabels(sel: qt.Sel) {
+    let es: qt.Sel = sel
       .selectAll('g.edgeLabel')
       .data(this.links(), (l: any) => l.edge)
       .classed('update', true);
@@ -211,7 +211,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
     return s;
   }
 
-  applyTransition(s: qt.Selection) {
+  applyTransition(s: qt.Sel) {
     const d = this.data;
     if (d) {
       const t = d.transition;
@@ -221,7 +221,7 @@ export class Graph<G extends Gdata, N extends Ndata, E extends Edata> {
   }
 }
 
-export function applyClass(s: qt.Selection, v: any, more: any) {
+export function applyClass(s: qt.Sel, v: any, more: any) {
   if (v) s.attr('class', v).attr('class', more + ' ' + s.attr('class'));
 }
 
@@ -252,7 +252,7 @@ function getCoords(e: any) {
   return {x: m.e, y: m.f} as qt.Point;
 }
 
-function addLabel(s: qt.Selection, d: Data, pos?: string) {
+function addLabel(s: qt.Sel, d: Data, pos?: string) {
   const es = s.append('g');
   const t = d.label.txt;
   if (d.label.type === 'svg') {
@@ -280,15 +280,15 @@ function addLabel(s: qt.Selection, d: Data, pos?: string) {
   return es;
 }
 
-function addSVGLabel(s: qt.Selection, d: Data) {
+function addSVGLabel(s: qt.Sel, d: Data) {
   s.node().appendChild(d.label.txt);
   qs.applyStyle(s, d.label.style);
   return s;
 }
 
-function addHtmlLabel(s: qt.Selection, d: Data) {
+function addHtmlLabel(s: qt.Sel, d: Data) {
   const es = s.append('foreignObject').attr('width', '100000');
-  const div = es.append('xhtml:div') as qt.Selection;
+  const div = es.append('xhtml:div') as qt.Sel;
   div.attr('xmlns', 'http://www.w3.org/1999/xhtml');
   const t = d.label.txt;
   switch (typeof t) {
@@ -309,7 +309,7 @@ function addHtmlLabel(s: qt.Selection, d: Data) {
   return es;
 }
 
-function addTextLabel(s: qt.Selection, d: Data) {
+function addTextLabel(s: qt.Sel, d: Data) {
   const es = s.append('text');
   const lines = processEscs(d.label.txt).split('\n');
   for (let i = 0; i < lines.length; i++) {

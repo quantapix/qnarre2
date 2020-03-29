@@ -38,7 +38,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     );
   }
 
-  buildGroup(s: qt.Selection, e: qs.GraphElem, cg: string) {
+  buildGroup(s: qt.Sel, e: qs.GraphElem, cg: string) {
     cg = cg || qt.Class.Scene.GROUP;
     const empty = qs.selectChild(s, 'g', cg).empty();
     const scene = qs.selectCreate(s, 'g', cg);
@@ -88,7 +88,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     return this;
   }
 
-  subBuild(s: qt.Selection, e: qs.GraphElem) {
+  subBuild(s: qt.Sel, e: qs.GraphElem) {
     if (qg.isClus(this)) {
       if (this.expanded) {
         return this.buildGroup(s, e, qt.Class.Subscene.GROUP);

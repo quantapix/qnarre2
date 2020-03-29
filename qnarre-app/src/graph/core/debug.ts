@@ -46,7 +46,7 @@ export class Graph<G extends qt.Gdata, N extends qt.Ndata, E extends qt.Edata> {
     qu.time('postLayout', () => this.postLayout(sel, group));
   }
 
-  preLayout(sel: qt.Selection) {
+  preLayout(sel: qt.Sel) {
     this.edges().forEach(e => {
       const ed = this.edge(e);
       if (ed?.label) {
@@ -64,7 +64,7 @@ export class Graph<G extends qt.Gdata, N extends qt.Ndata, E extends qt.Edata> {
     });
   }
 
-  postLayout(root: qt.Selection, sel: qt.Selection) {
+  postLayout(root: qt.Sel, sel: qt.Sel) {
     root
       .insert('rect', ':first-child')
       .attr('width', '100%')
@@ -166,7 +166,7 @@ input.onkeydown = function(e) {
 */
 
 function appendLabel(
-  sel: qt.Selection,
+  sel: qt.Sel,
   label: any,
   graphObj: any,
   marginX: number,

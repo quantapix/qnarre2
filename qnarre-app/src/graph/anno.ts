@@ -52,7 +52,7 @@ export class Anno implements qg.Anno {
     }
   }
 
-  addLabel(s: qt.Selection, l: string, dots?: string) {
+  addLabel(s: qt.Sel, l: string, dots?: string) {
     let ns = qt.Class.Anno.LABEL;
     if (dots) ns += ' ' + dots;
     const t = s
@@ -64,13 +64,13 @@ export class Anno implements qg.Anno {
     return qs.enforceWidth(t);
   }
 
-  addNameLabel(s: qt.Selection) {
+  addNameLabel(s: qt.Sel) {
     const path = this.nd.name.split('/');
     const t = path[path.length - 1];
     return this.addLabel(s, t);
   }
 
-  addInteraction(s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
+  addInteraction(s: qt.Sel, d: qg.Ndata, e: qs.GraphElem) {
     s.on('mouseover', function() {
       e.fire('anno-highlight', {
         name: this.nd.name,
@@ -95,7 +95,7 @@ export class Anno implements qg.Anno {
     }
   }
 
-  buildShape(s: qt.Selection) {
+  buildShape(s: qt.Sel) {
     if (this.type === qt.AnnoT.SUMMARY) {
       const s2 = qs.selectCreate(s, 'use');
       s2.attr('class', 'summary')
@@ -129,7 +129,7 @@ export class Annos extends Array<Anno> implements qg.Annos {
     this.push(new Anno(t, nd, new Edata(nd), a.inbound));
   }
 
-  buildSels(s: qt.Selection, d: qg.Ndata, e: qs.GraphElem) {
+  buildSels(s: qt.Sel, d: qg.Ndata, e: qs.GraphElem) {
     const ss = s
       .selectAll<any, qg.Anno>(function() {
         return this.childNodes;

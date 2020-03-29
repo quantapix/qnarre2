@@ -37,7 +37,7 @@ export class Emeta extends qg.Emeta {
   adjoiningMetaEdge?: Emeta;
   weight = 1;
   points = [] as qt.Point[];
-  edgeGroup?: qt.Selection;
+  edgeGroup?: qt.Sel;
   startMarkerId = '';
   endMarkerId = '';
 

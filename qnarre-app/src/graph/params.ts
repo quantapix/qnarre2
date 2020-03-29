@@ -113,7 +113,9 @@ export const PARAMS = {
     towerStackOffsetRatio: 0.5
   },
   minimap: {
-    size: 150
+    size: 150,
+    boxWidth: 320,
+    boxHeight: 150
   }
 };
 

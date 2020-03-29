@@ -12,7 +12,7 @@ export interface Ndata extends qt.Rect, qt.Radius {
   intersectCB: (p: qt.Point) => qt.Point;
 }
 
-function rect(s: qt.Selection, a: qt.Area, d: Ndata) {
+function rect(s: qt.Sel, a: qt.Area, d: Ndata) {
   const es = s
     .insert('rect', ':first-child')
     .attr('rx', d.rx)
@@ -25,7 +25,7 @@ function rect(s: qt.Selection, a: qt.Area, d: Ndata) {
   return es;
 }
 
-function ellipse(s: qt.Selection, a: qt.Area, d: Ndata) {
+function ellipse(s: qt.Sel, a: qt.Area, d: Ndata) {
   const r = {rx: a.w / 2, ry: a.h / 2} as qt.Radius;
   const es = s
     .insert('ellipse', ':first-child')
@@ -37,7 +37,7 @@ function ellipse(s: qt.Selection, a: qt.Area, d: Ndata) {
   return es;
 }
 
-function circle(s: qt.Selection, a: qt.Area, d: Ndata) {
+function circle(s: qt.Sel, a: qt.Area, d: Ndata) {
   const r = Math.max(a.w, a.h) / 2;
   const es = s
     .insert('circle', ':first-child')
@@ -48,7 +48,7 @@ function circle(s: qt.Selection, a: qt.Area, d: Ndata) {
   return es;
 }
 
-function diamond(s: qt.Selection, a: qt.Area, d: Ndata) {
+function diamond(s: qt.Sel, a: qt.Area, d: Ndata) {
   const w = (a.w * Math.SQRT2) / 2;
   const h = (a.h * Math.SQRT2) / 2;
   const ps = [
@@ -71,7 +71,7 @@ export const arrows: {[k: string]: any} = {
   undirected: undirected
 };
 
-function normal(s: qt.Selection, id: string, ed: any, n: string) {
+function normal(s: qt.Sel, id: string, ed: any, n: string) {
   const m = s
     .append('marker')
     .attr('id', id)
@@ -91,7 +91,7 @@ function normal(s: qt.Selection, id: string, ed: any, n: string) {
   if (ed[n + 'Class']) p.attr('class', ed[n + 'Class']);
 }
 
-function vee(s: qt.Selection, id: string, ed: any, n: string) {
+function vee(s: qt.Sel, id: string, ed: any, n: string) {
   const m = s
     .append('marker')
     .attr('id', id)
@@ -111,7 +111,7 @@ function vee(s: qt.Selection, id: string, ed: any, n: string) {
   if (ed[n + 'Class']) p.attr('class', ed[n + 'Class']);
 }
 
-function undirected(s: qt.Selection, id: string, ed: any, n: string) {
+function undirected(s: qt.Sel, id: string, ed: any, n: string) {
   const m = s
     .append('marker')
     .attr('id', id)
@@ -131,6 +131,6 @@ function undirected(s: qt.Selection, id: string, ed: any, n: string) {
   if (ed[n + 'Class']) p.attr('class', ed[n + 'Class']);
 }
 
-export function applyStyle(s: qt.Selection, v: any) {
+export function applyStyle(s: qt.Sel, v: any) {
   if (v) s.attr('style', v);
 }
