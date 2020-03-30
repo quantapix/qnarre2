@@ -46,8 +46,8 @@ function templsFrom(gs: [string, qg.Group][], verify: boolean) {
 }
 
 function areSimilar(
-  g1: qt.Graph<qg.Gdata, any, any>,
-  g2: qt.Graph<qg.Gdata, any, any>
+  g1: qg.Graph<qg.Gdata, any, any>,
+  g2: qg.Graph<qg.Gdata, any, any>
 ) {
   if (!g1.isSimilar(g2)) return false;
   const pre1 = g1.data?.name!;
@@ -124,7 +124,7 @@ function nodeSimilar(
 }
 
 function sort(
-  g: qt.Graph<qg.Gdata, qg.Nmeta | qg.Noper, qg.Emeta>,
+  g: qg.Graph<qg.Gdata, qg.Nmeta | qg.Noper, qg.Emeta>,
   ns: string[],
   pre: string
 ) {

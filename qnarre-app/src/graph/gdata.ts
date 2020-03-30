@@ -47,12 +47,12 @@ export class Gdata implements qg.Gdata {
   initScales() {
     this.colors.dev = d3
       .scaleOrdinal<string>()
-      .domain(this.hier.devices)
-      .range(d3.range(this.hier.devices.length).map(qp.MetaColors.DEVICE));
+      .domain(this.hier.devs)
+      .range(d3.range(this.hier.devs.length).map(qp.MetaColors.DEVICE));
     this.colors.clus = d3
       .scaleOrdinal<string>()
-      .domain(this.hier.clusters)
-      .range(_.map(d3.range(this.hier.clusters.length), qp.MetaColors.CLUSTER));
+      .domain(this.hier.clus)
+      .range(_.map(d3.range(this.hier.clus.length), qp.MetaColors.CLUSTER));
     const m = this.hier.root.meta;
     const mem = d3.max(m.nodes(), n => m.node(n)?.stats?.bytes)!;
     this.scales.mem = d3

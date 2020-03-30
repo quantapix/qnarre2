@@ -168,6 +168,7 @@ export interface Edges {
 
 export interface Hierarchy {
   bridge(x: any): Bgraph | undefined;
+  clus: string[];
   libs: qt.Dict<Library>;
   maxEdgeSize: number;
   sizeOf(l: qg.Link<Edata>): number;

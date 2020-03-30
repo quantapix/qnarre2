@@ -10,7 +10,6 @@ import * as qt from './types';
 import * as qu from './utils';
 
 import {NodeDef} from './proto';
-import {PARAMS as PS} from './params';
 import * as menu from '../elems/graph/contextmenu';
 
 export class Ndata implements qg.Ndata {
@@ -108,7 +107,7 @@ export class Ndata implements qg.Ndata {
     return this;
   }
 
-  addLabel(s: qt.Sel, e: qs.GraphElem) {
+  addLabel(s: qt.Sel, e: qs.Elem) {
     let t = this.display;
     const scale = qg.isMeta(this) && !this.expanded;
     const l = qs.selectCreate(s, 'text', qt.Class.Node.LABEL);
@@ -125,7 +124,7 @@ export class Ndata implements qg.Ndata {
     return l;
   }
 
-  addInteraction(s: qt.Sel, e: qs.GraphElem, disable?: boolean) {
+  addInteraction(s: qt.Sel, e: qs.Elem, disable?: boolean) {
     if (disable) {
       s.attr('pointer-events', 'none');
       return;
@@ -195,7 +194,7 @@ export class Ndata implements qg.Ndata {
     return g;
   }
 
-  contextMenu(e: qs.GraphElem) {
+  contextMenu(e: qs.Elem) {
     let m = [
       {
         title: function(this: Ndata) {
@@ -222,7 +221,7 @@ export class Ndata implements qg.Ndata {
     return m;
   }
 
-  stylize(s: qt.Sel, e: qs.GraphElem, c?: string) {
+  stylize(s: qt.Sel, e: qs.Elem, c?: string) {
     c = c ?? qt.Class.Node.SHAPE;
     const high = e.isNodeHighlighted(this.name);
     const sel = e.isNodeSelected(this.name);
@@ -235,7 +234,7 @@ export class Ndata implements qg.Ndata {
     s.classed('faded', !!this.faded);
     const n = s.select('.' + c + ' .' + qt.Class.Node.COLOR);
     const fill = this.getFillForNode(
-      e.templateIndex,
+      e.indexer,
       e.colorBy.toUpperCase() as qt.ColorBy,
       exp,
       e.getGraphSvgRoot()
@@ -245,7 +244,7 @@ export class Ndata implements qg.Ndata {
   }
 
   getFillForNode(
-    indexer: any,
+    idx = (_: string) => 0,
     cb: qt.ColorBy,
     expanded?: boolean,
     root?: SVGElement
@@ -254,8 +253,8 @@ export class Ndata implements qg.Ndata {
     switch (cb) {
       case qt.ColorBy.STRUCTURE:
         if (this.type === qt.NdataT.META) {
-          const tid = ((this as any) as qg.Nmeta).template;
-          return tid === null ? cs.UNKNOWN : cs.STRUCT(indexer(tid), expanded);
+          const t = ((this as any) as qg.Nmeta).template;
+          return t ? cs.STRUCT(idx(t), expanded) : cs.UNKNOWN;
         } else if (qg.isList(this)) {
           return expanded ? cs.EXPANDED : 'white';
         } else if (this.type === qt.NdataT.BRIDGE) {
@@ -316,7 +315,7 @@ export function intersect(nd: qg.Ndata, p: qt.Point) {
   return {x: x + deltaX, y: y + deltaY} as qt.Point;
 }
 
-export function buildSels(s: qt.Sel, ds: qg.Ndata[], e: qs.GraphElem) {
+export function buildSel(s: qt.Sel, ds: qg.Ndata[], e: qs.Elem) {
   const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
   const ss = c
     .selectAll<any, Ndata>(function() {
@@ -325,7 +324,7 @@ export function buildSels(s: qt.Sel, ds: qg.Ndata[], e: qs.GraphElem) {
     .data(ds, d => d.name + ':' + d.type);
   ss.enter()
     .append('g')
-    .attr('data-name', nd => nd.name)
+    .attr('data-name', d => d.name)
     .each(function(d) {
       e.addNodeSel(d.name, d3.select(this));
     })
@@ -449,7 +448,7 @@ export function delGradDefs(r: SVGElement) {
 
 let scale: d3.ScaleLinear<number, number> | undefined;
 
-function labelFontScale(e: qs.GraphElem) {
+function labelFontScale(e: qs.Elem) {
   if (!scale) {
     scale = d3
       .scaleLinear()

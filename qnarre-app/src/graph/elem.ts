@@ -1,28 +1,36 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
-import * as qn from './ndata';
+import * as qd from './gdata';
 import * as qg from './graph';
 import * as qt from './types';
 import * as qp from './params';
+import * as qu from './utils';
 
 import {PARAMS as PS} from './params';
 
 export abstract class Elem extends HTMLElement {
+  gdata?: qg.Gdata;
   sels = {
     nodes: {} as qt.Dict<qt.Sel>,
     edges: {} as qt.Dict<qt.Sel>,
     annos: {} as qt.Dict<qt.Dict<qt.Sel>>
   };
 
-  maxMetaNodeLabelLength?: number;
-  maxMetaNodeLabelLengthLargeFont?: number;
-  minMetaNodeLabelLengthFontSize?: number;
-  maxMetaNodeLabelLengthFontSize?: number;
-  templateIndex?: () => {};
+  maxMetaNodeLabelLength = 18;
+  maxMetaNodeLabelLengthFontSize = 9;
+  maxMetaNodeLabelLengthLargeFont = 11;
+  minMetaNodeLabelLengthFontSize = 6;
+
+  indexer?: (_: string) => number;
   colorBy = '';
+  handle: any;
+
   abstract fire(n: string, d: any): void;
   abstract contextMenu(): HTMLElement;
+  abstract getGraphSvgRoot(): SVGElement;
+  abstract isNodeSelected(n: string): boolean;
+  abstract isNodeHighlighted(n: string): boolean;
 
   isNodeExpanded(nd: qg.Ndata) {
     return !!nd.expanded;
@@ -65,6 +73,4 @@ export abstract class Elem extends HTMLElement {
   delAnnoSel(a: string, n: string) {
     delete this.sels.annos[a][n];
   }
-
-  abstract getGraphSvgRoot(): SVGElement;
 }

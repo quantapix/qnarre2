@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {SelectionType} from '../../graph/types';
-import * as render from '../../graph/gdata';
+import * as qg from '../../graph/graph';
 import * as proto from '../../graph/proto';
 import * as util from '../../graph/utils';
 
@@ -122,12 +122,8 @@ export class ControlsComponent implements OnInit {
 
   ngOnInit() {}
 
-  _clustersProvided(renderHierarchy?: render.Gdata) {
-    return (
-      renderHierarchy &&
-      renderHierarchy.hierarchy &&
-      renderHierarchy.hierarchy.clusters.length > 0
-    );
+  _clustersProvided(gd?: qg.Gdata) {
+    return gd && gd.hier.clus.length > 0;
   }
 
   _statsChanged(stats: proto.StepStats): void {

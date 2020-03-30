@@ -9,6 +9,51 @@ import * as qs from './scene';
 import * as qp from './params';
 import * as qd from './gdata';
 import * as qc from './clone';
+import * as qe from './edata';
+
+export function buildSel(sel: qt.Sel, g: qg.Cgraph, e: qs.Elem) {
+  const es = _.reduce(
+    g.links(),
+    (es, l) => {
+      const ed = l.data as qe.Edata;
+      ed.name = l.edge;
+      es.push(ed as qe.Edata);
+      return es;
+    },
+    [] as qe.Edata[]
+  );
+  const c = qs.selectCreate(sel, 'g', qt.Class.Edge.CONTAINER);
+  const ss = c
+    .selectAll<any, qe.Edata>(function() {
+      return this.childNodes;
+    })
+    .data(es, d => d.name);
+  ss.enter()
+    .append('g')
+    .attr('class', qt.Class.Edge.GROUP)
+    .attr('data-edge', d => d.name)
+    .each(function(d) {
+      const s = d3.select(this);
+      d.sel = s;
+      e.addEdgeSel(d.name, s);
+      if (e.handle) {
+        s.on('click', d => {
+          (d3.event as Event).stopPropagation();
+          e.fire('edge-select', {edgeData: d, edgeGroup: s});
+        });
+      }
+      d.appendEdge(g, e);
+    })
+    .merge(ss)
+    .each(() => qe.position(e, this))
+    .each(function(d) {
+      d.stylize(d3.select(this), e);
+    });
+  ss.exit<qe.Edata>()
+    .each(d => e.delEdgeSel(d.name))
+    .remove();
+  return ss;
+}
 
 export namespace Gdata {
   export function buildSubhier(this: qg.Gdata, nodeName: string) {
@@ -226,52 +271,4 @@ export namespace Gdata {
       });
     });
   }
-}
-
-export function buildGroup2(
-  scene,
-  g: qt.Graph<qr.Ndata, Emeta>,
-  gelem: qs.GraphElem
-) {
-  const elem = gelem as any;
-  const es = _.reduce(
-    g.edges(),
-    (ds, e) => {
-      ds.push({v: e.v, w: e.w, label: g.edge(e)});
-      return ds;
-    },
-    [] as EdgeData[]
-  );
-  const container = qs.selectCreate(scene, 'g', qt.Class.Edge.CONTAINER);
-  const gs = (container as any)
-    .selectAll(function() {
-      return this.childNodes;
-    })
-    .data(es, getEdgeKey);
-  gs.enter()
-    .append('g')
-    .attr('class', qt.Class.Edge.GROUP)
-    .attr('data-edge', getEdgeKey)
-    .each(function(d) {
-      const g = d3.select(this);
-      d.label.edgeGroup = g;
-      elem._edgeGroupIndex[getEdgeKey(d)] = g;
-      if (elem.handle) {
-        g.on('click', d => {
-          (d3.event as Event).stopPropagation();
-          elem.fire('edge-select', {
-            edgeData: d,
-            edgeGroup: g
-          });
-        });
-      }
-      appendEdge(g, d, elem);
-    })
-    .merge(gs)
-    .each(() => qs.position(elem, this))
-    .each((d: EdgeData) => stylize(d3.select(this), d, elem));
-  gs.exit()
-    .each((d: EdgeData) => delete elem._edgeGroupIndex[getEdgeKey(d)])
-    .remove();
-  return gs;
 }

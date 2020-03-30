@@ -46,8 +46,8 @@ export function runLayout<
   g.edges().forEach(e => {
     const ed = g.edge(e)!;
     if (ed.structural) return;
-    const n0 = g.node(ed.metaedge!.v);
-    const n1 = g.node(ed.metaedge!.w);
+    const n0 = g.node(ed.meta!.v);
+    const n1 = g.node(ed.meta!.w);
     if (ed.points.length === 3 && qu.Point.colinear(ed.points)) {
       if (n0) {
         const x = n0.expanded ? n0.x : n0.centerX();

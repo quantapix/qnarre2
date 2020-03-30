@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 import {Component, OnInit, Input} from '@angular/core';
 
-import * as ql from '../../graph/layout';
 import * as qn from '../../graph/ndata';
 import * as qg from '../../graph/graph';
 import * as qp from '../../graph/params';
@@ -20,20 +19,16 @@ import * as ql from '../../graph/layout';
 export class SceneComponent extends qs.Elem implements OnInit {
   name: string;
   colorBy: string;
-  traceInputs: boolean;
-  _hasRenderHierarchyBeenFitOnce: boolean;
-  _isAttached: boolean;
+  traceInputs?: boolean;
+  _hasRenderHierarchyBeenFitOnce?: boolean;
+  _isAttached?: boolean;
   _zoom: any;
   handleEdgeSelected: any;
   _zoomStart?: any;
   _zoomTransform?: any;
   _maxZoomDistanceForClick = 20;
-  templateIndex: number;
+  indexer?: (n: string) => number;
   minimap: any;
-  maxMetaNodeLabelLengthFontSize = 9;
-  minMetaNodeLabelLengthFontSize = 6;
-  maxMetaNodeLabelLengthLargeFont = 11;
-  maxMetaNodeLabelLength = 18;
   progress: any;
   nodeContextMenuItems: Array<any>;
   nodeNamesToHealths: any;
@@ -89,11 +84,11 @@ export class SceneComponent extends qs.Elem implements OnInit {
       .select('#root')
       .selectAll('*')
       .remove();
-    node.removeGradientDefinitions(this.$.svg);
+    qn.delGradDefs(this.$.svg);
   }
 
   _build(gd: qd.Gdata) {
-    this.templateIndex = gd.hier.getIndexer();
+    this.indexer = gd.hier.indexer();
     qu.time('qnr-graph-scene (layout):', () => {
       ql.layout(gd.root);
     });
@@ -111,7 +106,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
   ngOnInit() {
     this._zoom = d3
       .zoom()
-      .on('end', function() {
+      .on('end', () => {
         if (this._zoomStart) {
           const dragDistance = Math.sqrt(
             Math.pow(this._zoomStart.x - this._zoomTransform.x, 2) +
@@ -125,7 +120,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
         }
         this._zoomStart = null;
       })
-      .on('zoom', function() {
+      .on('zoom', () => {
         this._zoomTransform = d3.event.transform;
         if (!this._zoomStart) {
           this._zoomStart = this._zoomTransform;
@@ -138,7 +133,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
     d3.select(this.$.svg)
       .call(this._zoom)
       .on('dblclick.zoom', null);
-    d3.select(window).on('resize', function() {
+    d3.select(window).on('resize', () => {
       this.minimap.zoom();
     });
     this.minimap = this.$.minimap.init(
@@ -269,28 +264,28 @@ export class SceneComponent extends qs.Elem implements OnInit {
     });
   }
 
-  _selectedNodeChanged(selectedNode, oldSelectedNode) {
-    if (selectedNode === oldSelectedNode) return;
-    if (oldSelectedNode) this._updateNodeState(oldSelectedNode);
+  _selectedNodeChanged(selectedNode, old) {
+    if (selectedNode === old) return;
+    if (old) this._updateNodeState(old);
     if (!selectedNode) return;
     this.minimap.update();
-    let node = this.renderHierarchy.hierarchy.node(selectedNode);
-    const nodeParents = [];
-    while (node.parent != null && node.parent.name != qp.ROOT) {
-      node = node.parent;
-      nodeParents.push(node.name);
+    let nd = this.renderHierarchy.hier.node(selectedNode);
+    const ps = [];
+    while (nd?.parent && nd.parent.name != qp.ROOT) {
+      nd = nd.parent;
+      ps.push(nd.name);
     }
-    let topparentToBeExpanded;
-    _.forEachRight(nodeParents, parentName => {
-      this.renderHierarchy.buildSubhierarchy(parentName);
-      const renderNode = this.renderHierarchy.getNdataByName(parentName);
-      if (renderNode.node.isGroup && !renderNode.expanded) {
-        renderNode.expanded = true;
-        if (!topparentToBeExpanded) topparentToBeExpanded = renderNode;
+    let top;
+    _.forEachRight(ps, p => {
+      this.renderHierarchy.buildSubhier(p);
+      const d = this.renderHierarchy.getNdataByName(p);
+      if (qg.isList(d) && !d.expanded) {
+        d.expanded = true;
+        if (!top) top = d;
       }
     });
-    if (topparentToBeExpanded) {
-      this.setNodeExpanded(topparentToBeExpanded);
+    if (top) {
+      this.setNodeExpanded(top);
       this._zoomed = true;
     }
     if (selectedNode) {
@@ -301,9 +296,9 @@ export class SceneComponent extends qs.Elem implements OnInit {
     }, qp.PARAMS.animation.duration);
   }
 
-  _highlightedChanged(highlighted, old) {
-    if (highlighted === old) return;
-    if (highlighted) this._updateNodeState(highlighted);
+  _highlightedChanged(h, old) {
+    if (h === old) return;
+    if (h) this._updateNodeState(h);
     if (old) this._updateNodeState(old);
   }
 

@@ -38,11 +38,9 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     );
   }
 
-  buildGroup(s: qt.Sel, e: qs.GraphElem, cg: string) {
-    cg = cg || qt.Class.Scene.GROUP;
-    const empty = qs.selectChild(s, 'g', cg).empty();
-    const scene = qs.selectCreate(s, 'g', cg);
-    const sg = qs.selectCreate(scene, 'g', qt.Class.Scene.CORE);
+  buildSel(sel: qt.Sel, e: qs.Elem, cg = qt.Class.Scene.GROUP) {
+    const empty = qs.selectChild(sel, 'g', cg).empty();
+    const s = qs.selectCreate(sel, 'g', cg);
     const ds = _.reduce(
       this.core.nodes(),
       (ds, n) => {
@@ -53,34 +51,34 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       [] as qn.Ndata[]
     );
     if (qg.isList(this)) ds.reverse();
-    this.core.buildGroup(sg, e);
-    qb.buildGroup(sg, ds, e);
+    const s2 = qs.selectCreate(s, 'g', qt.Class.Scene.CORE);
+    qb.buildSel(s2, this.core, e);
+    qn.buildSel(s2, ds, e);
     if (this.isolated.in.length > 0) {
-      const g = qs.selectCreate(scene, 'g', qt.Class.Scene.INEXTRACT);
-      qb.buildGroup(g, this.isolated.in, e);
+      const g = qs.selectCreate(s, 'g', qt.Class.Scene.INEXTRACT);
+      qn.buildSel(g, this.isolated.in, e);
     } else {
-      qs.selectChild(scene, 'g', qt.Class.Scene.INEXTRACT).remove();
+      qs.selectChild(s, 'g', qt.Class.Scene.INEXTRACT).remove();
     }
     if (this.isolated.out.length > 0) {
-      const g = qs.selectCreate(scene, 'g', qt.Class.Scene.OUTEXTRACT);
-      qb.buildGroup(g, this.isolated.out, e);
+      const g = qs.selectCreate(s, 'g', qt.Class.Scene.OUTEXTRACT);
+      qn.buildSel(g, this.isolated.out, e);
     } else {
-      qs.selectChild(scene, 'g', qt.Class.Scene.OUTEXTRACT).remove();
+      qs.selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT).remove();
     }
     if (this.isolated.lib.length > 0) {
-      const g = qs.selectCreate(scene, 'g', qt.Class.Scene.LIBRARY);
-      qb.buildGroup(g, this.isolated.lib, e);
+      const g = qs.selectCreate(s, 'g', qt.Class.Scene.LIBRARY);
+      qn.buildSel(g, this.isolated.lib, e);
     } else {
-      qs.selectChild(scene, 'g', qt.Class.Scene.LIBRARY).remove();
+      qs.selectChild(s, 'g', qt.Class.Scene.LIBRARY).remove();
     }
-    qs.positionClus(scene, this);
+    qs.positionClus(s, this);
     if (empty) {
-      scene
-        .attr('opacity', 0)
+      s.attr('opacity', 0)
         .transition()
         .attr('opacity', 1);
     }
-    return scene;
+    return s;
   }
 
   setDepth(d: number) {
@@ -88,12 +86,11 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     return this;
   }
 
-  subBuild(s: qt.Sel, e: qs.GraphElem) {
+  subBuild(sel: qt.Sel, e: qs.Elem) {
     if (qg.isClus(this)) {
-      if (this.expanded) {
-        return this.buildGroup(s, e, qt.Class.Subscene.GROUP);
-      }
-      qs.selectChild(s, 'g', qt.Class.Subscene.GROUP).remove();
+      const c = qt.Class.Subscene.GROUP;
+      if (this.expanded) return this.buildSel(sel, e, c);
+      qs.selectChild(sel, 'g', c).remove();
     }
     return null;
   }

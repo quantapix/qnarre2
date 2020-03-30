@@ -101,7 +101,7 @@ export class NodeIconComponent implements OnInit {
   _onFillOverrideChanged(newFill, oldFill) {
     const {node, renderInfo, colorBy, templateIndex} = this;
     if (newFill !== oldFill) {
-      q_node.removeGradientDefinitions(this.$.icon.getSvgDefinableElement());
+      q_node.delGradDefs(this.$.icon.getSvgDefinableElement());
     }
     if (node && renderInfo && colorBy && templateIndex) {
       const nsColorBy = q_node.ColorBy[colorBy.toUpperCase()];
