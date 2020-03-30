@@ -24,10 +24,7 @@ export class Anno implements qg.Anno {
     public ed: qg.Edata,
     public inbound?: boolean
   ) {
-    if (emeta && emeta.metaedge) {
-      this.v = edata.metaedge.v;
-      this.w = edata.metaedge.w;
-    }
+    if (ed.meta) this.nodes = ed.meta.nodes;
   }
 
   initSizes() {
@@ -52,31 +49,32 @@ export class Anno implements qg.Anno {
     }
   }
 
-  addLabel(s: qt.Sel, l: string, dots?: string) {
+  addText(sel: qt.Sel, t: string, dots?: string) {
     let ns = qt.Class.Anno.LABEL;
     if (dots) ns += ' ' + dots;
-    const t = s
+    const s = sel
       .append('text')
       .attr('class', ns)
       .attr('dy', '.35em')
       .attr('text-anchor', this.inbound ? 'end' : 'start')
-      .text(l);
-    return qs.enforceWidth(t);
+      .text(t);
+    return qs.enforceWidth(s);
   }
 
-  addNameLabel(s: qt.Sel) {
+  addName(sel: qt.Sel) {
     const path = this.nd.name.split('/');
     const t = path[path.length - 1];
-    return this.addLabel(s, t);
+    return this.addText(sel, t);
   }
 
-  addInteraction(s: qt.Sel, d: qg.Ndata, e: qs.GraphElem) {
-    s.on('mouseover', function() {
-      e.fire('anno-highlight', {
-        name: this.nd.name,
-        hostName: d.name
-      });
-    })
+  addInteraction(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
+    sel
+      .on('mouseover', function() {
+        e.fire('anno-highlight', {
+          name: this.nd.name,
+          hostName: d.name
+        });
+      })
       .on('mouseout', function() {
         e.fire('anno-unhighlight', {
           name: this.nd.name,
@@ -91,19 +89,20 @@ export class Anno implements qg.Anno {
         });
       });
     if (this.type !== qt.AnnoT.SUMMARY && this.type !== qt.AnnoT.CONSTANT) {
-      s.on('contextmenu', qm.getMenu(e, this.nd.contextMenu(e)));
+      sel.on('contextmenu', qm.getMenu(e, this.nd.contextMenu(e)));
     }
   }
 
-  buildShape(s: qt.Sel) {
+  build(sel: qt.Sel) {
     if (this.type === qt.AnnoT.SUMMARY) {
-      const s2 = qs.selectCreate(s, 'use');
-      s2.attr('class', 'summary')
+      const s = qs.selectCreate(sel, 'use');
+      s.attr('class', 'summary')
         .attr('xlink:href', '#summary-icon')
         .attr('cursor', 'pointer');
     } else {
-      const s2 = qn.buildShape(s, a, qt.Class.Anno.NODE);
-      qs.selectCreate(s2, 'title').text(this.nd.name);
+      const d = this.nd as qn.Ndata;
+      const s = d.build(sel, qt.Class.Anno.NODE);
+      qs.selectCreate(s, 'title').text(this.nd.name);
     }
   }
 }
@@ -111,7 +110,7 @@ export class Anno implements qg.Anno {
 export class Annos extends Array<Anno> implements qg.Annos {
   names = {} as qt.Dict<boolean>;
 
-  pushAnno(a: Anno) {
+  add(a: Anno) {
     if (a.nd.name in this.names) return;
     this.names[a.nd.name] = true;
     if (this.length < qp.GdataPs.maxAnnotations) {
@@ -126,11 +125,11 @@ export class Annos extends Array<Anno> implements qg.Annos {
       return;
     }
     const nd = new qn.Ndots(1);
-    this.push(new Anno(t, nd, new Edata(nd), a.inbound));
+    this.push(new Anno(t, nd, new qe.Edata(), a.inbound));
   }
 
-  buildSels(s: qt.Sel, d: qg.Ndata, e: qs.GraphElem) {
-    const ss = s
+  build(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
+    const ss = sel
       .selectAll<any, qg.Anno>(function() {
         return this.childNodes;
       })
@@ -139,18 +138,18 @@ export class Annos extends Array<Anno> implements qg.Annos {
       .append('g')
       .attr('data-name', a => a.nd.name)
       .each(function(a) {
-        const s2 = d3.select(this);
-        e.addAnnoSel(a.nd.name, d.name, s2);
+        const s = d3.select(this);
+        e.addAnnoSel(a.nd.name, d.name, s);
         let t = qt.Class.Anno.EDGE;
-        const me = a.edata && a.edata.metaedge;
-        if (me && !me.numRegular) t += ' ' + qt.Class.Anno.CONTROL;
-        if (me && me.numRef) t += ' ' + qt.Class.Edge.REF_LINE;
-        qe.appendEdge(s2, a, elem, t);
-        if (a.type !== qt.AnnoT.DOTS) {
-          a.addNameLabel(s2);
-          a.buildShape(s2);
+        const m = a.ed.meta as qe.Emeta;
+        if (m && !m.num.regular) t += ' ' + qt.Class.Anno.CONTROL;
+        if (m && m.num.ref) t += ' ' + qt.Class.Edge.REF_LINE;
+        m.addEdge(s, e, t);
+        if (a.type === qt.AnnoT.DOTS) {
+          a.addText(s, a.nd.name, qt.Class.Anno.DOTS);
         } else {
-          a.addLabel(s2, a.nd.name, qt.Class.Anno.DOTS);
+          a.addName(s);
+          a.build(s);
         }
       })
       .merge(ss)
@@ -159,9 +158,9 @@ export class Annos extends Array<Anno> implements qg.Annos {
         a => qt.Class.Anno.GROUP + toClass(a.type) + qg.toClass(a.nd.type)
       )
       .each(function(a) {
-        const s2 = d3.select(this);
-        qs.positionAnno(s2, a, d, e);
-        if (a.type !== qt.AnnoT.DOTS) a.addInteraction(s2, d, e);
+        const s = d3.select(this);
+        qs.positionAnno(s, a, d, e);
+        if (a.type !== qt.AnnoT.DOTS) a.addInteraction(s, d, e);
       });
     ss.exit<qg.Anno>()
       .each(function(a) {

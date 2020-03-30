@@ -256,11 +256,11 @@ function addLabel(s: qt.Sel, d: Data, pos?: string) {
   const es = s.append('g');
   const t = d.label.txt;
   if (d.label.type === 'svg') {
-    addSVGLabel(es, d);
+    addSVG(es, d);
   } else if (typeof t !== 'string' || d.label.type === 'html') {
-    addHtmlLabel(es, d);
+    addHtml(es, d);
   } else {
-    addTextLabel(es, d);
+    addText(es, d);
   }
   const a = es.node()?.getBBox();
   if (a) {
@@ -280,13 +280,13 @@ function addLabel(s: qt.Sel, d: Data, pos?: string) {
   return es;
 }
 
-function addSVGLabel(s: qt.Sel, d: Data) {
+function addSVG(s: qt.Sel, d: Data) {
   s.node().appendChild(d.label.txt);
   qs.applyStyle(s, d.label.style);
   return s;
 }
 
-function addHtmlLabel(s: qt.Sel, d: Data) {
+function addHtml(s: qt.Sel, d: Data) {
   const es = s.append('foreignObject').attr('width', '100000');
   const div = es.append('xhtml:div') as qt.Sel;
   div.attr('xmlns', 'http://www.w3.org/1999/xhtml');
@@ -309,7 +309,7 @@ function addHtmlLabel(s: qt.Sel, d: Data) {
   return es;
 }
 
-function addTextLabel(s: qt.Sel, d: Data) {
+function addText(s: qt.Sel, d: Data) {
   const es = s.append('text');
   const lines = processEscs(d.label.txt).split('\n');
   for (let i = 0; i < lines.length; i++) {

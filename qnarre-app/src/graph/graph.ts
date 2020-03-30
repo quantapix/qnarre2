@@ -52,10 +52,15 @@ export interface Ndata extends qt.Rect {
 export interface Edata {
   name: string;
   out: string;
+  meta?: Emeta;
+  adjoining?: Emeta;
+  sel?: qt.Sel;
   ref?: boolean;
   control?: boolean;
   structural?: boolean;
+  faded?: boolean;
   points: qt.Point[];
+  marker: {start: string; end: string};
 }
 
 export interface Nbridge extends Ndata {
@@ -130,31 +135,13 @@ export function isList(x?: any): x is Nlist {
   return x?.type === qt.NdataT.LIST;
 }
 
-export class Emeta implements Edata {
-  name = '';
-  out = '';
-  ref?: boolean;
-  control?: boolean;
-  structural?: boolean;
-  points = [] as qt.Point[];
-  links = [] as qg.Link<Edata>[];
-  num = {regular: 0, control: 0, ref: 0};
-  size = 0;
-
-  constructor(public inbound?: boolean) {}
-
-  addLink(l: qg.Link<Edata>, h: Hierarchy) {
-    this.links.push(l);
-    if (l.data?.control) {
-      this.num.control += 1;
-    } else {
-      this.num.regular += 1;
-    }
-    if (l.data?.ref) this.num.ref += 1;
-    this.size += h.sizeOf(l);
-    h.maxEdgeSize = Math.max(h.maxEdgeSize, this.size);
-    return this;
-  }
+export interface Emeta extends Edata {
+  size: number;
+  weight: number;
+  inbound?: boolean;
+  nodes?: string[];
+  links: qg.Link<Edata>[];
+  num: {regular: number; control: number; ref: number};
 }
 
 export type Template = {names: string[]; level: number};

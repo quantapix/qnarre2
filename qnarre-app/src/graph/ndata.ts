@@ -107,32 +107,33 @@ export class Ndata implements qg.Ndata {
     return this;
   }
 
-  addLabel(s: qt.Sel, e: qs.Elem) {
-    let t = this.display;
+  addText(sel: qt.Sel, e: qs.Elem) {
     const scale = qg.isMeta(this) && !this.expanded;
-    const l = qs.selectCreate(s, 'text', qt.Class.Node.LABEL);
-    const n = l.node();
+    const s = qs.selectCreate(sel, 'text', qt.Class.Node.LABEL);
+    const n = s.node();
     n.parent.appendChild(n);
-    l.attr('dy', '.35em').attr('text-anchor', 'middle');
+    s.attr('dy', '.35em').attr('text-anchor', 'middle');
+    let t = this.display;
     if (scale) {
       const max = e.maxMetaNodeLabelLength;
       if (max && t.length > max) t = t.substr(0, max - 2) + '...';
       const fs = labelFontScale(e);
-      l.attr('font-size', fs!(t.length) + 'px');
+      s.attr('font-size', fs!(t.length) + 'px');
     }
-    qs.enforceWidth(l.text(t), this);
-    return l;
+    qs.enforceWidth(s.text(t), this);
+    return s;
   }
 
-  addInteraction(s: qt.Sel, e: qs.Elem, disable?: boolean) {
+  addInteraction(sel: qt.Sel, e: qs.Elem, disable?: boolean) {
     if (disable) {
-      s.attr('pointer-events', 'none');
+      sel.attr('pointer-events', 'none');
       return;
     }
     const f = menu.getMenu(e, this.contextMenu(e));
-    s.on('dblclick', function() {
-      e.fire('node-toggle-expand', {name: this.name});
-    })
+    sel
+      .on('dblclick', function() {
+        e.fire('node-toggle-expand', {name: this.name});
+      })
       .on('mouseover', function() {
         if (e.isNodeExpanded(this)) return;
         e.fire('node-highlight', {name: this.name});
@@ -151,16 +152,16 @@ export class Ndata implements qg.Ndata {
       });
   }
 
-  buildShape(s: qt.Sel, c: string) {
-    const g = qs.selectCreate(s, 'g', c);
+  build(sel: qt.Sel, c: string) {
+    const s = qs.selectCreate(sel, 'g', c);
     switch (this.type) {
       case qt.NdataT.OPER:
         const od = (this as any) as qg.Noper;
         if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
-          qs.selectCreate(g, 'polygon', qt.Class.Node.COLOR);
+          qs.selectCreate(s, 'polygon', qt.Class.Node.COLOR);
           break;
         }
-        qs.selectCreate(g, 'ellipse', qt.Class.Node.COLOR);
+        qs.selectCreate(s, 'ellipse', qt.Class.Node.COLOR);
         break;
       case qt.NdataT.LIST:
         let t = 'annotation';
@@ -170,28 +171,28 @@ export class Ndata implements qg.Ndata {
         }
         const cs = [qt.Class.Node.COLOR];
         if (this.faded) cs.push('faded-ellipse');
-        qs.selectCreate(g, 'use', cs).attr(
+        qs.selectCreate(s, 'use', cs).attr(
           'xlink:href',
           '#op-series-' + t + '-stamp'
         );
-        qs.selectCreate(g, 'rect', qt.Class.Node.COLOR)
+        qs.selectCreate(s, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
       case qt.NdataT.BRIDGE:
-        qs.selectCreate(g, 'rect', qt.Class.Node.COLOR)
+        qs.selectCreate(s, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
       case qt.NdataT.META:
-        qs.selectCreate(g, 'rect', qt.Class.Node.COLOR)
+        qs.selectCreate(s, 'rect', qt.Class.Node.COLOR)
           .attr('rx', this.r)
           .attr('ry', this.r);
         break;
       default:
-        throw Error('Unrecognized type: ' + this.type);
+        throw Error('Invalid type: ' + this.type);
     }
-    return g;
+    return s;
   }
 
   contextMenu(e: qs.Elem) {
@@ -334,15 +335,15 @@ export function buildSel(s: qt.Sel, ds: qg.Ndata[], e: qs.Elem) {
       const d = dd as Ndata;
       const s2 = d3.select(this);
       const inb = qs.selectCreate(s2, 'g', qt.Class.Anno.IN);
-      d.annos.in.buildSels(inb, d, e);
+      d.annos.in.build(inb, d, e);
       const outb = qs.selectCreate(s2, 'g', qt.Class.Anno.OUT);
-      d.annos.out.buildSels(outb, d, e);
-      const s3 = d.buildShape(s2, qt.Class.Node.SHAPE);
+      d.annos.out.build(outb, d, e);
+      const s3 = d.build(s2, qt.Class.Node.SHAPE);
       if (qg.isClus(d)) qs.addButton(s3, d, e);
       d.addInteraction(s3, e);
       if (qg.isClus(d)) d.subBuild(s2, e);
-      const label = d.addLabel(s2, e);
-      d.addInteraction(label, e, d.type === qt.NdataT.META);
+      const t = d.addText(s2, e);
+      d.addInteraction(t, e, d.type === qt.NdataT.META);
       d.stylize(s2, e);
       qs.position(s2, d);
     });

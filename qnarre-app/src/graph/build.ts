@@ -42,7 +42,7 @@ export function buildSel(sel: qt.Sel, g: qg.Cgraph, e: qs.Elem) {
           e.fire('edge-select', {edgeData: d, edgeGroup: s});
         });
       }
-      d.appendEdge(g, e);
+      d.addEdge(s, e);
     })
     .merge(ss)
     .each(() => qe.position(e, this))

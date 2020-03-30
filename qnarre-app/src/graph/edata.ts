@@ -8,18 +8,18 @@ import * as qs from './scene';
 import * as qt from './types';
 
 export class Edata implements qg.Edata {
+  adjoining?: Emeta;
   sel?: qt.Sel;
   ref?: boolean;
   control?: boolean;
   structural?: boolean;
   faded?: boolean;
-  adjoining?: Emeta;
   points = [] as qt.Point[];
   marker = {start: '', end: ''};
 
   constructor(public name = '', public out = '', public meta?: qg.Emeta) {}
 
-  appendEdge(sel: qt.Sel, e: qs.Elem, c = qt.Class.Edge.LINE) {
+  addEdge(sel: qt.Sel, e: qs.Elem, c = qt.Class.Edge.LINE) {
     if (this.structural) c += ' ' + qt.Class.Edge.STRUCTURAL;
     if (this.meta?.num.ref) c += ' ' + qt.Class.Edge.REF_EDGE;
     if (e.handle) c += ' ' + qt.Class.Edge.SELECTABLE;
