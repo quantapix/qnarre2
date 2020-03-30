@@ -1,15 +1,12 @@
 import * as _ from 'lodash';
 
 import * as qb from './build';
-import * as qe from './edata';
 import * as qg from './graph';
 import * as qn from './ndata';
 import * as qp from './params';
 import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './utils';
-
-import {PARAMS as PS} from './params';
 
 export class Nclus extends qn.Ndata implements qg.Nclus {
   core: qg.Cgraph;
@@ -38,49 +35,6 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     );
   }
 
-  buildSel(sel: qt.Sel, e: qs.Elem, cg = qt.Class.Scene.GROUP) {
-    const empty = qs.selectChild(sel, 'g', cg).empty();
-    const s = qs.selectCreate(sel, 'g', cg);
-    const ds = _.reduce(
-      this.core.nodes(),
-      (ds, n) => {
-        const nd = this.core.node(n);
-        if (nd && !nd.excluded) ds.push(nd as qn.Ndata);
-        return ds;
-      },
-      [] as qn.Ndata[]
-    );
-    if (qg.isList(this)) ds.reverse();
-    const s2 = qs.selectCreate(s, 'g', qt.Class.Scene.CORE);
-    qb.buildSel(s2, this.core, e);
-    qn.buildSel(s2, ds, e);
-    if (this.isolated.in.length > 0) {
-      const g = qs.selectCreate(s, 'g', qt.Class.Scene.INEXTRACT);
-      qn.buildSel(g, this.isolated.in, e);
-    } else {
-      qs.selectChild(s, 'g', qt.Class.Scene.INEXTRACT).remove();
-    }
-    if (this.isolated.out.length > 0) {
-      const g = qs.selectCreate(s, 'g', qt.Class.Scene.OUTEXTRACT);
-      qn.buildSel(g, this.isolated.out, e);
-    } else {
-      qs.selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT).remove();
-    }
-    if (this.isolated.lib.length > 0) {
-      const g = qs.selectCreate(s, 'g', qt.Class.Scene.LIBRARY);
-      qn.buildSel(g, this.isolated.lib, e);
-    } else {
-      qs.selectChild(s, 'g', qt.Class.Scene.LIBRARY).remove();
-    }
-    qs.position.clus(s, this);
-    if (empty) {
-      s.attr('opacity', 0)
-        .transition()
-        .attr('opacity', 1);
-    }
-    return s;
-  }
-
   setDepth(d: number) {
     if (this.core) this.core.setDepth(d);
     return this;
@@ -89,7 +43,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
   subBuild(sel: qt.Sel, e: qs.Elem) {
     if (qg.isClus(this)) {
       const c = qt.Class.Subscene.GROUP;
-      if (this.expanded) return this.buildSel(sel, e, c);
+      if (this.expanded) return this.build(sel, e, c);
       qs.selectChild(sel, 'g', c).remove();
     }
     return null;
@@ -172,7 +126,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       let ind = _.reduce(
         g.preds(n),
         (d, p) => {
-          const m = g.edge([p, n])?.metaedge;
+          const m = g.edge([p, n])?.meta;
           return d + (m?.num.regular ? 1 : 0);
         },
         0
@@ -182,7 +136,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       let outd = _.reduce(
         g.succs(n),
         (d, s) => {
-          const me = g.edge([n, s])?.metaedge;
+          const me = g.edge([n, s])?.meta;
           return d + (me?.num.regular ? 1 : 0);
         },
         0
@@ -219,10 +173,10 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
 
   removeControlEdges() {
     const g = this.core;
-    const ls = {} as qt.Dict<qg.Link<qe.Emeta>[]>;
+    const ls = {} as qt.Dict<qg.Link<qg.Edata>[]>;
     g.links().forEach(l => {
       const ed = g.edge(l);
-      if (!ed?.metaedge?.num.regular) {
+      if (!ed?.meta?.num.regular) {
         (ls[l.nodes[0]] = ls[l.nodes[0]] || []).push(l);
         (ls[l.nodes[1]] = ls[l.nodes[1]] || []).push(l);
       }
@@ -272,7 +226,52 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
       }
     });
   }
+
+  build(sel: qt.Sel, e: qs.Elem, c = qt.Class.Scene.GROUP) {
+    const empty = qs.selectChild(sel, 'g', c).empty();
+    const s = qs.selectCreate(sel, 'g', c);
+    const ds = _.reduce(
+      this.core.nodes(),
+      (ds, n) => {
+        const nd = this.core.node(n);
+        if (nd && !nd.excluded) ds.push(nd as qn.Ndata);
+        return ds;
+      },
+      [] as qn.Ndata[]
+    );
+    if (qg.isList(this)) ds.reverse();
+    const s2 = qs.selectCreate(s, 'g', qt.Class.Scene.CORE);
+    qb.Graph.build.call(this.core, s2, e);
+    qn.Ndatas.build.call(ds, s2, e);
+    if (this.isolated.in.length > 0) {
+      const g = qs.selectCreate(s, 'g', qt.Class.Scene.INEXTRACT);
+      qn.Ndatas.build.call(this.isolated.in, g, e);
+    } else {
+      qs.selectChild(s, 'g', qt.Class.Scene.INEXTRACT).remove();
+    }
+    if (this.isolated.out.length > 0) {
+      const g = qs.selectCreate(s, 'g', qt.Class.Scene.OUTEXTRACT);
+      qn.Ndatas.build.call(this.isolated.out, g, e);
+    } else {
+      qs.selectChild(s, 'g', qt.Class.Scene.OUTEXTRACT).remove();
+    }
+    if (this.isolated.lib.length > 0) {
+      const g = qs.selectCreate(s, 'g', qt.Class.Scene.LIBRARY);
+      qn.Ndatas.build.call(this.isolated.lib, g, e);
+    } else {
+      qs.selectChild(s, 'g', qt.Class.Scene.LIBRARY).remove();
+    }
+    qs.position.clus(s, this);
+    if (empty) {
+      s.attr('opacity', 0)
+        .transition()
+        .attr('opacity', 1);
+    }
+    return s;
+  }
 }
+
+type Ncomb = qg.Nclus | qg.Noper;
 
 export class Nmeta extends Nclus implements qg.Nmeta {
   template?: string;
@@ -288,7 +287,7 @@ export class Nmeta extends Nclus implements qg.Nmeta {
   constructor(n: string, o = {} as qg.Opts) {
     super(
       qt.NdataT.META,
-      qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.META, n, o),
+      qg.createGraph<qg.Gdata, Ncomb, qg.Edata>(qt.GdataT.META, n, o),
       o
     );
   }
@@ -347,7 +346,7 @@ export class Nlist extends Nclus implements qg.Nlist {
   ) {
     super(
       qt.NdataT.LIST,
-      qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(qt.GdataT.LIST, n, o),
+      qg.createGraph<qg.Gdata, Ncomb, qg.Edata>(qt.GdataT.LIST, n, o),
       o
     );
   }

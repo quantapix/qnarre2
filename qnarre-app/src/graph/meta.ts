@@ -5,25 +5,26 @@ import * as qd from './gdata';
 import * as qe from './edata';
 import * as qg from './graph';
 import * as qh from './hierarchy';
-import * as qn from './ndata';
+import * as qm from './meta';
 import * as qp from './params';
 import * as qt from './types';
 import * as qu from './utils';
 
 type Cluster = qt.Dict<string[]>;
 
-export class Graph<
-  G extends qd.Gdata,
-  N extends qn.Ndata,
-  E extends qe.Emeta
-> extends qg.Graph<G, N, E> {
-  build(h: qh.Hierarchy, names: qt.Dict<string>, ps: qt.HierarchyPs) {
+export namespace Graph {
+  export function build(
+    this: qg.Mgraph,
+    h: qh.Hierarchy,
+    names: qt.Dict<string>,
+    ps: qt.HierarchyPs
+  ) {
     this.nodes().forEach(n => {
       const nd = this.node(n);
-      if (qg.isMeta(nd)) nd.meta.build(h, names, ps);
+      if (qg.isMeta(nd)) qm.Graph.build.call(nd.meta, h, names, ps);
     });
-    const f = ps.patterns ? this.detect : this.collect;
-    const ls = f(this.cluster(), h.opts);
+    const f = ps.patterns ? detect : collect;
+    const ls = f.call(this, cluster.call(this), h.opts);
     _.each(ls, (l, n) => {
       const ns = l.meta.nodes();
       ns.forEach(n => {
@@ -54,7 +55,7 @@ export class Graph<
     });
   }
 
-  buildSubhierarchiesForNeededFunctions() {
+  export function buildSubhier(this: qg.Mgraph) {
     this.links().forEach(l => {
       const ed = this.edge(l);
       const m = new qe.Emeta(ed);
@@ -64,7 +65,7 @@ export class Graph<
           const front = ps.slice(0, i);
           const nd = this.data?.hier.node(front.join(qp.SLASH));
           if (nd) {
-            if (qg.isOper(nd) && this.data?.hier.libfns[nd.op]) {
+            if (qg.isOper(nd) && this.data?.hier.libs[nd.op]) {
               for (let j = 1; j < front.length; j++) {
                 const n = front.slice(0, j).join(qp.SLASH);
                 if (n) this.data?.buildSubhier(n);
@@ -77,7 +78,7 @@ export class Graph<
     });
   }
 
-  cluster() {
+  export function cluster(this: qg.Mgraph) {
     return _.reduce(
       this.nodes(),
       (c, n: string) => {
@@ -96,7 +97,7 @@ export class Graph<
     );
   }
 
-  detect(c: Cluster, opts: qg.Opts) {
+  export function detect(this: qg.Mgraph, c: Cluster, opts: qg.Opts) {
     const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
@@ -164,16 +165,16 @@ export class Graph<
             l.push(n);
             continue;
           }
-          this.addList(l, lists, +cluster, opts);
+          addList.call(this, l, lists, +cluster, opts);
           l = [n];
         }
-        this.addList(l, lists, +cluster, opts);
+        addList.call(this, l, lists, +cluster, opts);
       });
     });
     return lists;
   }
 
-  collect(c: Cluster, opts: qg.Opts) {
+  export function collect(this: qg.Mgraph, c: Cluster, opts: qg.Opts) {
     const lists = {} as qt.Dict<qc.Nlist>;
     _.each(c, (ns, cluster: string) => {
       if (ns.length <= 1) return;
@@ -209,16 +210,17 @@ export class Graph<
             l.push(n);
             continue;
           }
-          this.addList(l, lists, +cluster, opts);
+          addList.call(this, l, lists, +cluster, opts);
           l = [n];
         }
-        this.addList(l, lists, +cluster, opts);
+        addList.call(this, l, lists, +cluster, opts);
       });
     });
     return lists;
   }
 
-  addList(
+  export function addList(
+    this: qg.Mgraph,
     l: qg.Nlist[],
     ls: qt.Dict<qg.Nlist>,
     cluster: number,

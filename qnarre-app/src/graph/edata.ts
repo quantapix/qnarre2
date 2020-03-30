@@ -51,8 +51,8 @@ export class Edata implements qg.Edata {
     } else return;
     const t = gd?.getLabelForEdge(this.meta);
     if (!t) return;
-    const b =
-      w > CENTER_EDGE_LABEL_MIN_STROKE_WIDTH ? 'central' : 'text-after-edge';
+    // const b =
+    //  w > CENTER_EDGE_LABEL_MIN_STROKE_WIDTH ? 'central' : 'text-after-edge';
     sel
       .append('text')
       .append('textPath')
@@ -72,7 +72,7 @@ export class Edata implements qg.Edata {
       });
   }
 
-  stylize(sel: qt.Sel, e: qs.Elem, _stylize?: boolean) {
+  stylize(sel: qt.Sel, _e: qs.Elem, _stylize?: boolean) {
     sel.classed('faded', !!this.faded);
     const m = this.meta;
     sel
@@ -83,7 +83,7 @@ export class Edata implements qg.Edata {
   interpolator(
     comp: HTMLElement,
     renderPath: SVGPathElement,
-    i: number,
+    _i: number,
     a: SVGPathElement[]
   ) {
     const ae = this.adjoining;
@@ -191,7 +191,6 @@ function idxAtLength(ps: qt.Point[], length: number, line: d3.Line<qt.Point>) {
   return ps.length - 1;
 }
 
-const SHAPE_DELIM = '×';
 const SCALE_EXP = 0.3;
 const WIDTH_SCALE = [1, 5e6];
 
@@ -207,8 +206,8 @@ const arrowheadMap = d3
   .domain([qp.MIN_E_WIDTH, qp.MAX_E_WIDTH])
   .range(['small', 'medium', 'large', 'xlarge']);
 
-const CENTER_EDGE_LABEL_MIN_STROKE_WIDTH = 2.5;
+// const CENTER_EDGE_LABEL_MIN_STROKE_WIDTH = 2.5;
 
 export interface EdgeSelectionCallback {
-  (d: EdgeData): void;
+  (d: qg.Edata): void;
 }

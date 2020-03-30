@@ -11,48 +11,52 @@ import * as qd from './gdata';
 import * as qc from './clone';
 import * as qe from './edata';
 
-export function buildSel(sel: qt.Sel, g: qg.Cgraph, e: qs.Elem) {
-  const es = _.reduce(
-    g.links(),
-    (es, l) => {
-      const ed = l.data as qe.Edata;
-      ed.name = l.edge;
-      es.push(ed as qe.Edata);
-      return es;
-    },
-    [] as qe.Edata[]
-  );
-  const c = qs.selectCreate(sel, 'g', qt.Class.Edge.CONTAINER);
-  const ss = c
-    .selectAll<any, qe.Edata>(function() {
-      return this.childNodes;
-    })
-    .data(es, d => d.name);
-  ss.enter()
-    .append('g')
-    .attr('class', qt.Class.Edge.GROUP)
-    .attr('data-edge', d => d.name)
-    .each(function(d) {
-      const s = d3.select(this);
-      d.sel = s;
-      e.addEdgeSel(d.name, s);
-      if (e.handle) {
-        s.on('click', d => {
-          (d3.event as Event).stopPropagation();
-          e.fire('edge-select', {edgeData: d, edgeGroup: s});
-        });
-      }
-      d.addEdge(s, e);
-    })
-    .merge(ss)
-    .each(d => d.position(e, this))
-    .each(function(d) {
-      d.stylize(d3.select(this), e);
-    });
-  ss.exit<qe.Edata>()
-    .each(d => e.delEdgeSel(d.name))
-    .remove();
-  return ss;
+export namespace Graph {
+  export function build(this: qg.Cgraph, sel: qt.Sel, e: qs.Elem) {
+    const es = _.reduce(
+      this.links(),
+      (es, l) => {
+        const ed = l.data as qe.Edata;
+        ed.name = l.edge;
+        es.push(ed as qe.Edata);
+        return es;
+      },
+      [] as qe.Edata[]
+    );
+    const c = qs.selectCreate(sel, 'g', qt.Class.Edge.CONTAINER);
+    const ss = c
+      .selectAll<any, qe.Edata>(function() {
+        return this.childNodes;
+      })
+      .data(es, d => d.name);
+    ss.enter()
+      .append('g')
+      .attr('class', qt.Class.Edge.GROUP)
+      .attr('data-edge', d => d.name)
+      .each(function(d) {
+        const s = d3.select(this);
+        d.sel = s;
+        e.addEdgeSel(d.name, s);
+        if (e.handle) {
+          s.on('click', d => {
+            (d3.event as Event).stopPropagation();
+            e.fire('edge-select', {edgeData: d, edgeGroup: s});
+          });
+        }
+        d.addEdge(s, e);
+      })
+      .merge(ss)
+      .each(function(d) {
+        d.position(e, this);
+      })
+      .each(function(d) {
+        d.stylize(d3.select(this), e);
+      });
+    ss.exit<qe.Edata>()
+      .each(d => e.delEdgeSel(d.name))
+      .remove();
+    return ss;
+  }
 }
 
 export namespace Gdata {
@@ -110,7 +114,7 @@ export namespace Gdata {
       clus.extractHighDegrees();
     }
     if (!_.isEmpty(this.hier.libs)) {
-      metaG.buildSubhierarchiesForNeededFunctions();
+      metaG.buildSubhier();
     }
     if (nodeName === qp.ROOT) {
       _.forOwn(this.hier.libs, l => {

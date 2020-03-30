@@ -128,11 +128,11 @@ export class Anno implements qg.Anno {
       .transition()
       .attr('d', (a: qg.Anno) => {
         const ps = a.points.map(p => new qt.Point(p.x + cx, p.y + d.y));
-        return interpolate(ps);
+        return qe.interpolate(ps);
       });
   }
 
-  build(sel: qt.Sel) {
+  build(sel: qt.Sel, e: qs.Elem) {
     if (this.type === qt.AnnoT.SUMMARY) {
       const s = qs.selectCreate(sel, 'use');
       s.attr('class', 'summary')
@@ -140,7 +140,7 @@ export class Anno implements qg.Anno {
         .attr('cursor', 'pointer');
     } else {
       const d = this.nd as qn.Ndata;
-      const s = d.build(sel, qt.Class.Anno.NODE);
+      const s = d.build(sel, e, qt.Class.Anno.NODE);
       qs.selectCreate(s, 'title').text(this.nd.name);
     }
   }
@@ -188,7 +188,7 @@ export class Annos extends Array<Anno> implements qg.Annos {
           a.addText(s, a.nd.name, qt.Class.Anno.DOTS);
         } else {
           a.addName(s);
-          a.build(s);
+          a.build(s, e);
         }
       })
       .merge(ss)

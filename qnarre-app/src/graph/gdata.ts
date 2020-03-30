@@ -161,7 +161,7 @@ export class Gdata implements qg.Gdata {
     const shape = n.outShapes[e.outKey];
     if (!shape) return undefined;
     if (shape.length === 0) return 'scalar';
-    return shape.map(s => (s === -1 ? '?' : s)).join(TENSOR_SHAPE_DELIM);
+    return shape.map(s => (s === -1 ? '?' : s)).join('x');
   }
 
   getLabelForEdge(e: qg.Emeta) {

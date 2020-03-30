@@ -11,6 +11,7 @@ import * as qu from './utils';
 
 import {NodeDef} from './proto';
 import * as menu from '../elems/graph/contextmenu';
+import {namespace} from 'src/utils/groups';
 
 export class Ndata implements qg.Ndata {
   x = 0;
@@ -117,7 +118,7 @@ export class Ndata implements qg.Ndata {
     if (scale) {
       const max = e.maxMetaNodeLabelLength;
       if (max && t.length > max) t = t.substr(0, max - 2) + '...';
-      const fs = labelFontScale(e);
+      const fs = fontScale(e);
       s.attr('font-size', fs!(t.length) + 'px');
     }
     qs.enforceWidth(s.text(t), this);
@@ -232,7 +233,7 @@ export class Ndata implements qg.Ndata {
     qs.translate(s, x, y);
   }
 
-  build(sel: qt.Sel, c: string) {
+  build(sel: qt.Sel, _e: qs.Elem, c: string) {
     const s = qs.selectCreate(sel, 'g', c);
     switch (this.type) {
       case qt.NdataT.OPER:
@@ -294,7 +295,7 @@ export class Ndata implements qg.Ndata {
       e.getGraphSvgRoot()
     );
     n.style('fill', fill);
-    n.style('stroke', () => (sel ? null : strokeForFill(fill)));
+    n.style('stroke', () => (sel ? null : strokeFor(fill)));
   }
 
   contextMenu(e: qs.Elem) {
@@ -396,54 +397,56 @@ export class Ndata implements qg.Ndata {
   }
 }
 
-export function buildSel(s: qt.Sel, ds: qg.Ndata[], e: qs.Elem) {
-  const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
-  const ss = c
-    .selectAll<any, Ndata>(function() {
-      return this.childNodes;
-    })
-    .data(ds, d => d.name + ':' + d.type);
-  ss.enter()
-    .append('g')
-    .attr('data-name', d => d.name)
-    .each(function(d) {
-      e.addNodeSel(d.name, d3.select(this));
-    })
-    .merge(ss)
-    .attr('class', d => qt.Class.Node.GROUP + ' ' + qg.toClass(d.type))
-    .each(function(dd) {
-      const d = dd as Ndata;
-      const s2 = d3.select(this);
-      const inb = qs.selectCreate(s2, 'g', qt.Class.Anno.IN);
-      d.annos.in.build(inb, d, e);
-      const outb = qs.selectCreate(s2, 'g', qt.Class.Anno.OUT);
-      d.annos.out.build(outb, d, e);
-      const s3 = d.build(s2, qt.Class.Node.SHAPE);
-      if (qg.isClus(d)) d.addButton(s3, e);
-      d.addCBs(s3, e);
-      if (qg.isClus(d)) d.subBuild(s2, e);
-      const t = d.addText(s2, e);
-      d.addCBs(t, e, d.type === qt.NdataT.META);
-      d.stylize(s2, e);
-      d.position(s2);
-    });
-  ss.exit<Ndata>()
-    .each(function(d) {
-      e.delNodeSel(d.name);
-      const s2 = d3.select(this);
-      if (d.annos.in.length > 0) {
-        s2.select('.' + qt.Class.Anno.IN)
-          .selectAll<any, qg.Anno>('.' + qt.Class.Anno.GROUP)
-          .each(a => e.delAnnoSel(a.nd.name, d.name));
-      }
-      if (d.annos.out.length > 0) {
-        s2.select('.' + qt.Class.Anno.OUT)
-          .selectAll<any, qg.Anno>('.' + qt.Class.Anno.GROUP)
-          .each(a => e.delAnnoSel(a.nd.name, d.name));
-      }
-    })
-    .remove();
-  return ss;
+export namespace Ndatas {
+  export function build(this: qg.Ndata[], s: qt.Sel, e: qs.Elem) {
+    const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
+    const ss = c
+      .selectAll<any, Ndata>(function() {
+        return this.childNodes;
+      })
+      .data(this, d => d.name + ':' + d.type);
+    ss.enter()
+      .append('g')
+      .attr('data-name', d => d.name)
+      .each(function(d) {
+        e.addNodeSel(d.name, d3.select(this));
+      })
+      .merge(ss)
+      .attr('class', d => qt.Class.Node.GROUP + ' ' + qg.toClass(d.type))
+      .each(function(dd) {
+        const d = dd as Ndata;
+        const s2 = d3.select(this);
+        const inb = qs.selectCreate(s2, 'g', qt.Class.Anno.IN);
+        d.annos.in.build(inb, d, e);
+        const outb = qs.selectCreate(s2, 'g', qt.Class.Anno.OUT);
+        d.annos.out.build(outb, d, e);
+        const s3 = d.build(s2, e, qt.Class.Node.SHAPE);
+        if (qg.isClus(d)) d.addButton(s3, e);
+        d.addCBs(s3, e);
+        if (qg.isClus(d)) d.subBuild(s2, e);
+        const t = d.addText(s2, e);
+        d.addCBs(t, e, d.type === qt.NdataT.META);
+        d.stylize(s2, e);
+        d.position(s2);
+      });
+    ss.exit<Ndata>()
+      .each(function(d) {
+        e.delNodeSel(d.name);
+        const s2 = d3.select(this);
+        if (d.annos.in.length > 0) {
+          s2.select('.' + qt.Class.Anno.IN)
+            .selectAll<any, qg.Anno>('.' + qt.Class.Anno.GROUP)
+            .each(a => e.delAnnoSel(a.nd.name, d.name));
+        }
+        if (d.annos.out.length > 0) {
+          s2.select('.' + qt.Class.Anno.OUT)
+            .selectAll<any, qg.Anno>('.' + qt.Class.Anno.GROUP)
+            .each(a => e.delAnnoSel(a.nd.name, d.name));
+        }
+      })
+      .remove();
+    return ss;
+  }
 }
 
 export class Nbridge extends Ndata implements qg.Nbridge {
@@ -487,11 +490,17 @@ export class Noper extends Ndata implements qg.Noper {
   }
 }
 
-export function strokeForFill(f: string) {
-  return f.startsWith('url')
+export function delGradDefs(r: SVGElement) {
+  d3.select(r)
+    .select('defs#_graph-gradients')
+    .remove();
+}
+
+function strokeFor(fill: string) {
+  return fill.startsWith('url')
     ? qp.MetaColors.GRADIENT
     : d3
-        .rgb(f)
+        .rgb(fill)
         .darker()
         .toString();
 }
@@ -521,15 +530,9 @@ function grad(id: string, cs: qt.Shade[], e?: SVGElement) {
   return `url(#${ei})`;
 }
 
-export function delGradDefs(r: SVGElement) {
-  d3.select(r)
-    .select('defs#_graph-gradients')
-    .remove();
-}
-
 let scale: d3.ScaleLinear<number, number> | undefined;
 
-function labelFontScale(e: qs.Elem) {
+function fontScale(e: qs.Elem) {
   if (!scale) {
     scale = d3
       .scaleLinear()
