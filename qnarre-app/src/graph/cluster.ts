@@ -72,7 +72,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     } else {
       qs.selectChild(s, 'g', qt.Class.Scene.LIBRARY).remove();
     }
-    qs.positionClus(s, this);
+    qs.position.clus(s, this);
     if (empty) {
       s.attr('opacity', 0)
         .transition()

@@ -49,6 +49,12 @@ export class Anno implements qg.Anno {
     }
   }
 
+  addName(sel: qt.Sel) {
+    const path = this.nd.name.split('/');
+    const t = path[path.length - 1];
+    return this.addText(sel, t);
+  }
+
   addText(sel: qt.Sel, t: string, dots?: string) {
     let ns = qt.Class.Anno.LABEL;
     if (dots) ns += ' ' + dots;
@@ -61,13 +67,7 @@ export class Anno implements qg.Anno {
     return qs.enforceWidth(s);
   }
 
-  addName(sel: qt.Sel) {
-    const path = this.nd.name.split('/');
-    const t = path[path.length - 1];
-    return this.addText(sel, t);
-  }
-
-  addInteraction(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
+  addCBs(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
     sel
       .on('mouseover', function() {
         e.fire('anno-highlight', {
@@ -91,6 +91,45 @@ export class Anno implements qg.Anno {
     if (this.type !== qt.AnnoT.SUMMARY && this.type !== qt.AnnoT.CONSTANT) {
       sel.on('contextmenu', qm.getMenu(e, this.nd.contextMenu(e)));
     }
+  }
+
+  position(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
+    const cx = d.centerX();
+    if (this.nd && this.type !== qt.AnnoT.DOTS)
+      this.nd.stylize(sel, e, qt.Class.Anno.NODE);
+    if (this.type === qt.AnnoT.SUMMARY) this.w += 10;
+    sel
+      .select('text.' + qt.Class.Anno.LABEL)
+      .transition()
+      .attr(
+        'x',
+        cx + this.x + (this.inbound ? -1 : 1) * (this.w / 2 + this.offset)
+      )
+      .attr('y', d.y + this.y);
+    sel
+      .select('use.summary')
+      .transition()
+      .attr('x', cx + this.x - 3)
+      .attr('y', d.y + this.y - 6);
+    qs.position.ellipse(
+      sel.select('.' + qt.Class.Anno.NODE + ' ellipse'),
+      new qt.Rect(cx + this.x, d.y + this.y, this.w, this.h)
+    );
+    qs.position.rect(
+      sel.select('.' + qt.Class.Anno.NODE + ' rect'),
+      new qt.Rect(cx + this.x, d.y + this.y, this.w, this.h)
+    );
+    qs.position.rect(
+      sel.select('.' + qt.Class.Anno.NODE + ' use'),
+      new qt.Rect(cx + this.x, d.y + this.y, this.w, this.h)
+    );
+    sel
+      .select('path.' + qt.Class.Anno.EDGE)
+      .transition()
+      .attr('d', (a: qg.Anno) => {
+        const ps = a.points.map(p => new qt.Point(p.x + cx, p.y + d.y));
+        return interpolate(ps);
+      });
   }
 
   build(sel: qt.Sel) {
@@ -159,8 +198,8 @@ export class Annos extends Array<Anno> implements qg.Annos {
       )
       .each(function(a) {
         const s = d3.select(this);
-        qs.positionAnno(s, a, d, e);
-        if (a.type !== qt.AnnoT.DOTS) a.addInteraction(s, d, e);
+        a.position(s, d, e);
+        if (a.type !== qt.AnnoT.DOTS) a.addCBs(s, d, e);
       });
     ss.exit<qg.Anno>()
       .each(function(a) {

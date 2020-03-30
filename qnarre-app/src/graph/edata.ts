@@ -63,7 +63,24 @@ export class Edata implements qg.Edata {
       .text(t);
   }
 
-  getEdgePathInterpolator(
+  position(comp: HTMLElement, group: HTMLElement) {
+    d3.select<any, Edata>(group)
+      .select('path.' + qt.Class.Edge.LINE)
+      .transition()
+      .attrTween('d', function(d, i, a: SVGPathElement[]) {
+        return d.interpolator(comp, this as SVGPathElement, i, a);
+      });
+  }
+
+  stylize(sel: qt.Sel, e: qs.Elem, _stylize?: boolean) {
+    sel.classed('faded', !!this.faded);
+    const m = this.meta;
+    sel
+      .select('path.' + qt.Class.Edge.LINE)
+      .classed('control-dep', !!(m && !m.num.regular));
+  }
+
+  interpolator(
     comp: HTMLElement,
     renderPath: SVGPathElement,
     i: number,
@@ -73,20 +90,20 @@ export class Edata implements qg.Edata {
     let ps = this.points;
     const {shadowRoot} = comp;
     if (this.marker.start) {
-      ps = adjustPathPointsForMarker(
+      ps = adjust(
         ps,
         d3.select(shadowRoot!.querySelector('#' + this.marker.start)),
         true
       );
     }
     if (this.marker.end) {
-      ps = adjustPathPointsForMarker(
+      ps = adjust(
         ps,
         d3.select(shadowRoot!.querySelector('#' + this.marker.end)),
         false
       );
     }
-    if (!ae) return d3.interpolate(a, qs.interpolate(ps)!);
+    if (!ae) return d3.interpolate(a, interpolate(ps)!);
     const ap = (ae.sel?.node() as HTMLElement).firstChild as SVGPathElement;
     const inbound = this.meta?.inbound;
     return (_: any) => {
@@ -97,16 +114,8 @@ export class Edata implements qg.Edata {
       const i = inbound ? 0 : ps.length - 1;
       ps[i].x = p.x;
       ps[i].y = p.y;
-      return qs.interpolate(ps);
+      return interpolate(ps);
     };
-  }
-
-  stylize(sel: qt.Sel, e: qs.Elem, _stylize?: boolean) {
-    sel.classed('faded', !!this.faded);
-    const m = this.meta;
-    sel
-      .select('path.' + qt.Class.Edge.LINE)
-      .classed('control-dep', !!(m && !m.num.regular));
   }
 }
 
@@ -134,40 +143,20 @@ export class Emeta extends Edata implements qg.Emeta {
   }
 }
 
-export function position(comp: HTMLElement, group: HTMLElement) {
-  d3.select<any, Edata>(group)
-    .select('path.' + qt.Class.Edge.LINE)
-    .transition()
-    .attrTween('d', function(d, i, a: SVGPathElement[]) {
-      return d.getEdgePathInterpolator(comp, this as SVGPathElement, i, a);
-    });
-}
+export const interpolate = d3
+  .line<{x: number; y: number}>()
+  .curve(d3.curveBasis)
+  .x(d => d.x)
+  .y(d => d.y);
 
-function getPathSegmentIndexAtLength(
-  ps: qt.Point[],
-  length: number,
-  line: (ps: qt.Point[]) => string
-) {
-  const path = document.createElementNS(qp.SVG_NAMESPACE, 'path');
-  for (let i = 1; i < ps.length; i++) {
-    path.setAttribute('d', line(ps.slice(0, i)));
-    if (path.getTotalLength() > length) return i - 1;
-  }
-  return ps.length - 1;
-}
-
-function adjustPathPointsForMarker(
-  ps: qt.Point[],
-  marker: qt.Sel,
-  isStart: boolean
-) {
+function adjust(ps: qt.Point[], marker: qt.Sel, isStart: boolean) {
   const line = d3
     .line<qt.Point>()
     .x(d => d.x)
     .y(d => d.y);
   const path = d3
     .select(document.createElementNS('http://www.w3.org/2000/svg', 'path'))
-    .attr('d', line(ps));
+    .attr('d', line(ps)!);
   const width = +marker.attr('markerWidth');
   const box = marker
     .attr('viewBox')
@@ -180,33 +169,42 @@ function adjustPathPointsForMarker(
     const fraction = 1 - x / w;
     const l = width * fraction;
     const p = n.getPointAtLength(l);
-    const i = getPathSegmentIndexAtLength(ps, l, line);
+    const i = idxAtLength(ps, l, line);
     ps[i - 1] = {x: p.x, y: p.y};
     return ps.slice(i - 1);
   } else {
     const fraction = 1 - x / w;
     const l = n.getTotalLength() - width * fraction;
     const p = n.getPointAtLength(l);
-    const i = getPathSegmentIndexAtLength(ps, l, line);
+    const i = idxAtLength(ps, l, line);
     ps[i] = {x: p.x, y: p.y};
     return ps.slice(0, i + 1);
   }
 }
 
-const TENSOR_SHAPE_DELIM = '×';
-const EDGE_WIDTH_SCALE_EXPONENT = 0.3;
-const DOMAIN_EDGE_WIDTH_SCALE = [1, 5e6];
+function idxAtLength(ps: qt.Point[], length: number, line: d3.Line<qt.Point>) {
+  const p = document.createElementNS(qp.SVG_SPACE, 'path');
+  for (let i = 1; i < ps.length; i++) {
+    p.setAttribute('d', line(ps.slice(0, i))!);
+    if (p.getTotalLength() > length) return i - 1;
+  }
+  return ps.length - 1;
+}
+
+const SHAPE_DELIM = '×';
+const SCALE_EXP = 0.3;
+const WIDTH_SCALE = [1, 5e6];
 
 export const EDGE_WIDTH_SIZE_BASED_SCALE: d3.ScalePower<number, number> = d3
   .scalePow()
-  .exponent(EDGE_WIDTH_SCALE_EXPONENT)
-  .domain(DOMAIN_EDGE_WIDTH_SCALE)
-  .range([qp.MIN_EDGE_WIDTH, qp.MAX_EDGE_WIDTH])
+  .exponent(SCALE_EXP)
+  .domain(WIDTH_SCALE)
+  .range([qp.MIN_E_WIDTH, qp.MAX_E_WIDTH])
   .clamp(true);
 
 const arrowheadMap = d3
   .scaleQuantize<string>()
-  .domain([qp.MIN_EDGE_WIDTH, qp.MAX_EDGE_WIDTH])
+  .domain([qp.MIN_E_WIDTH, qp.MAX_E_WIDTH])
   .range(['small', 'medium', 'large', 'xlarge']);
 
 const CENTER_EDGE_LABEL_MIN_STROKE_WIDTH = 2.5;

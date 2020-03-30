@@ -45,7 +45,7 @@ export function buildSel(sel: qt.Sel, g: qg.Cgraph, e: qs.Elem) {
       d.addEdge(s, e);
     })
     .merge(ss)
-    .each(() => qe.position(e, this))
+    .each(d => d.position(e, this))
     .each(function(d) {
       d.stylize(d3.select(this), e);
     });

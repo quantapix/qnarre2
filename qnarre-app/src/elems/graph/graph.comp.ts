@@ -228,8 +228,8 @@ export class GraphComp implements OnInit {
   fit() {
     this.$.scene.fit();
   }
-  panToNode(name) {
-    this.$$('qnr-graph-scene').panToNode(name);
+  panTo(n: string) {
+    this.$$('qnr-graph-scene').panTo(n);
   }
   getVisible(name) {
     if (!name) return name;

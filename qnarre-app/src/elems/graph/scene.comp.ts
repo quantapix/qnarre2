@@ -62,8 +62,8 @@ export class SceneComponent extends qs.Elem implements OnInit {
     this._updateLabels(!this._zoomed);
   }
 
-  panToNode(n: string) {
-    const zoomed = qs.panToNode(n, this.$.svg, this.$.root, this._zoom);
+  panTo(n: string) {
+    const zoomed = qs.panTo(n, this.$.svg, this.$.root, this._zoom);
     if (zoomed) {
       this._zoomed = true;
     }
@@ -292,7 +292,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
       this._updateNodeState(selectedNode);
     }
     setTimeout(() => {
-      this.panToNode(selectedNode);
+      this.panTo(selectedNode);
     }, qp.PARAMS.animation.duration);
   }
 

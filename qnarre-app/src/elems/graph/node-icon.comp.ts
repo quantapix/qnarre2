@@ -51,7 +51,7 @@ export class NodeIconComponent implements OnInit {
   ) {
     if (inputNode && inputRenderInfo && inputColorBy && inputTemplateIndex) {
       const colorBy = q_node.ColorBy[inputColorBy.toUpperCase()];
-      return q_node.getFillForNode(
+      return q_node.fillFor(
         inputTemplateIndex,
         colorBy,
         inputRenderInfo,
@@ -105,7 +105,7 @@ export class NodeIconComponent implements OnInit {
     }
     if (node && renderInfo && colorBy && templateIndex) {
       const nsColorBy = q_node.ColorBy[colorBy.toUpperCase()];
-      q_node.getFillForNode(
+      q_node.fillFor(
         templateIndex,
         nsColorBy,
         renderInfo,

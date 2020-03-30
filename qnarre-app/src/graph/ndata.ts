@@ -124,7 +124,25 @@ export class Ndata implements qg.Ndata {
     return s;
   }
 
-  addInteraction(sel: qt.Sel, e: qs.Elem, disable?: boolean) {
+  addButton(sel: qt.Sel, e: qs.Elem) {
+    const s = qs.selectCreate(sel, 'g', qt.Class.Node.B_CONTAINER);
+    qs.selectCreate(s, 'circle', qt.Class.Node.B_CIRCLE);
+    qs.selectCreate(s, 'path', qt.Class.Node.E_BUTTON).attr(
+      'd',
+      'M0,-2.2 V2.2 M-2.2,0 H2.2'
+    );
+    qs.selectCreate(s, 'path', qt.Class.Node.C_BUTTON).attr(
+      'd',
+      'M-2.2,0 H2.2'
+    );
+    s.on('click', function(d) {
+      d3.event.stopPropagation();
+      e.fire('node-toggle-expand', {name: d.name});
+    });
+    qs.position.button(s, this);
+  }
+
+  addCBs(sel: qt.Sel, e: qs.Elem, disable?: boolean) {
     if (disable) {
       sel.attr('pointer-events', 'none');
       return;
@@ -150,6 +168,68 @@ export class Ndata implements qg.Ndata {
         e.fire('node-select', {name: this.name});
         f(this, i);
       });
+  }
+
+  position(sel: qt.Sel) {
+    const s = qs.selectChild(sel, 'g', qt.Class.Node.SHAPE);
+    const cx = this.centerX();
+    switch (this.type) {
+      case qt.NdataT.OPER: {
+        const od = (this as any) as qg.Noper;
+        if (_.isNumber(od.index.in) || _.isNumber(od.index.out)) {
+          const sc = qs.selectChild(s, 'polygon');
+          const r = new qt.Rect(this.x, this.y, this.box.w, this.box.h);
+          qs.position.triangle(sc, r);
+        } else {
+          const sc = qs.selectChild(s, 'ellipse');
+          const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
+          qs.position.ellipse(sc, r);
+        }
+        qs.position.label(sel, cx, this.y, this.label.off);
+        break;
+      }
+      case qt.NdataT.META: {
+        const sa = s.selectAll('rect');
+        if (this.expanded) {
+          qs.position.rect(sa, this);
+          this.positionSub(sel);
+          qs.position.label(sel, cx, this.y, -this.h / 2 + this.label.h / 2);
+        } else {
+          const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
+          qs.position.rect(sa, r);
+          qs.position.label(sel, cx, this.y, 0);
+        }
+        break;
+      }
+      case qt.NdataT.LIST: {
+        const sc = qs.selectChild(s, 'use');
+        if (this.expanded) {
+          qs.position.rect(sc, this);
+          this.positionSub(sel);
+          qs.position.label(sel, cx, this.y, -this.h / 2 + this.label.h / 2);
+        } else {
+          const r = new qt.Rect(cx, this.y, this.box.w, this.box.h);
+          qs.position.rect(sc, r);
+          qs.position.label(sel, cx, this.y, this.label.off);
+        }
+        break;
+      }
+      case qt.NdataT.BRIDGE: {
+        const sc = qs.selectChild(s, 'rect');
+        qs.position.rect(sc, this);
+        break;
+      }
+      default: {
+        throw Error('Invalid type: ' + this.type);
+      }
+    }
+  }
+
+  positionSub(sel: qt.Sel) {
+    const x = this.x - this.w / 2.0 + this.pad.left;
+    const y = this.y - this.h / 2.0 + this.pad.top;
+    const s = qs.selectChild(sel, 'g', qt.Class.Subscene.GROUP);
+    qs.translate(s, x, y);
   }
 
   build(sel: qt.Sel, c: string) {
@@ -195,6 +275,28 @@ export class Ndata implements qg.Ndata {
     return s;
   }
 
+  stylize(s: qt.Sel, e: qs.Elem, c?: string) {
+    c = c ?? qt.Class.Node.SHAPE;
+    const high = e.isNodeHighlighted(this.name);
+    const sel = e.isNodeSelected(this.name);
+    const ext = this.extract.in || this.extract.out || this.extract.lib;
+    const exp = this.expanded && c !== qt.Class.Anno.NODE;
+    s.classed('highlighted', high);
+    s.classed('selected', sel);
+    s.classed('extract', !!ext);
+    s.classed('expanded', !!exp);
+    s.classed('faded', !!this.faded);
+    const n = s.select('.' + c + ' .' + qt.Class.Node.COLOR);
+    const fill = this.fillFor(
+      e.indexer,
+      e.colorBy.toUpperCase() as qt.ColorBy,
+      exp,
+      e.getGraphSvgRoot()
+    );
+    n.style('fill', fill);
+    n.style('stroke', () => (sel ? null : strokeForFill(fill)));
+  }
+
   contextMenu(e: qs.Elem) {
     let m = [
       {
@@ -222,29 +324,27 @@ export class Ndata implements qg.Ndata {
     return m;
   }
 
-  stylize(s: qt.Sel, e: qs.Elem, c?: string) {
-    c = c ?? qt.Class.Node.SHAPE;
-    const high = e.isNodeHighlighted(this.name);
-    const sel = e.isNodeSelected(this.name);
-    const ext = this.extract.in || this.extract.out || this.extract.lib;
-    const exp = this.expanded && c !== qt.Class.Anno.NODE;
-    s.classed('highlighted', high);
-    s.classed('selected', sel);
-    s.classed('extract', !!ext);
-    s.classed('expanded', !!exp);
-    s.classed('faded', !!this.faded);
-    const n = s.select('.' + c + ' .' + qt.Class.Node.COLOR);
-    const fill = this.getFillForNode(
-      e.indexer,
-      e.colorBy.toUpperCase() as qt.ColorBy,
-      exp,
-      e.getGraphSvgRoot()
-    );
-    n.style('fill', fill);
-    n.style('stroke', () => (sel ? null : strokeForFill(fill)));
+  intersect(p: qt.Point) {
+    const x = this.expanded ? this.x : this.centerX();
+    const y = this.y;
+    const dx = p.x - x;
+    const dy = p.y - y;
+    let w = this.expanded ? this.w : this.box.w;
+    let h = this.expanded ? this.h : this.box.h;
+    let deltaX: number, deltaY: number;
+    if ((Math.abs(dy) * w) / 2 > (Math.abs(dx) * h) / 2) {
+      if (dy < 0) h = -h;
+      deltaX = dy === 0 ? 0 : ((h / 2) * dx) / dy;
+      deltaY = h / 2;
+    } else {
+      if (dx < 0) w = -w;
+      deltaX = w / 2;
+      deltaY = dx === 0 ? 0 : ((w / 2) * dy) / dx;
+    }
+    return {x: x + deltaX, y: y + deltaY} as qt.Point;
   }
 
-  getFillForNode(
+  fillFor(
     idx = (_: string) => 0,
     cb: qt.ColorBy,
     expanded?: boolean,
@@ -296,26 +396,6 @@ export class Ndata implements qg.Ndata {
   }
 }
 
-export function intersect(nd: qg.Ndata, p: qt.Point) {
-  const x = nd.expanded ? nd.x : nd.centerX();
-  const y = nd.y;
-  const dx = p.x - x;
-  const dy = p.y - y;
-  let w = nd.expanded ? nd.w : nd.box.w;
-  let h = nd.expanded ? nd.h : nd.box.h;
-  let deltaX: number, deltaY: number;
-  if ((Math.abs(dy) * w) / 2 > (Math.abs(dx) * h) / 2) {
-    if (dy < 0) h = -h;
-    deltaX = dy === 0 ? 0 : ((h / 2) * dx) / dy;
-    deltaY = h / 2;
-  } else {
-    if (dx < 0) w = -w;
-    deltaX = w / 2;
-    deltaY = dx === 0 ? 0 : ((w / 2) * dy) / dx;
-  }
-  return {x: x + deltaX, y: y + deltaY} as qt.Point;
-}
-
 export function buildSel(s: qt.Sel, ds: qg.Ndata[], e: qs.Elem) {
   const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
   const ss = c
@@ -339,13 +419,13 @@ export function buildSel(s: qt.Sel, ds: qg.Ndata[], e: qs.Elem) {
       const outb = qs.selectCreate(s2, 'g', qt.Class.Anno.OUT);
       d.annos.out.build(outb, d, e);
       const s3 = d.build(s2, qt.Class.Node.SHAPE);
-      if (qg.isClus(d)) qs.addButton(s3, d, e);
-      d.addInteraction(s3, e);
+      if (qg.isClus(d)) d.addButton(s3, e);
+      d.addCBs(s3, e);
       if (qg.isClus(d)) d.subBuild(s2, e);
       const t = d.addText(s2, e);
-      d.addInteraction(t, e, d.type === qt.NdataT.META);
+      d.addCBs(t, e, d.type === qt.NdataT.META);
       d.stylize(s2, e);
-      qs.position(s2, d);
+      d.position(s2);
     });
   ss.exit<Ndata>()
     .each(function(d) {
