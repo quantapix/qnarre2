@@ -44,6 +44,8 @@ export class Gdata implements qg.Gdata {
     this.buildSubhier(hier.root.name);
   }
 
+  buildSubhier(n: string) {}
+
   initScales() {
     this.colors.dev = d3
       .scaleOrdinal<string>()

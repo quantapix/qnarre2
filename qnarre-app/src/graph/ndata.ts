@@ -422,7 +422,7 @@ export namespace Ndatas {
         const s3 = d.build(s2, e, qt.Class.Node.SHAPE);
         if (qg.isClus(d)) d.addButton(s3, e);
         d.addCBs(s3, e);
-        if (qg.isClus(d)) d.subBuild(s2, e);
+        if (qg.isClus(d)) d.buildSub(s2, e);
         const t = d.addText(s2, e);
         d.addCBs(t, e, d.type === qt.NdataT.META);
         d.stylize(s2, e);

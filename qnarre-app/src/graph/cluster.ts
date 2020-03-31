@@ -10,7 +10,7 @@ import * as qu from './utils';
 
 export class Nclus extends qn.Ndata implements qg.Nclus {
   core: qg.Cgraph;
-  parent?: Nclus;
+  parent?: qg.Nclus;
   bridge?: qg.Bgraph;
   noControls?: boolean;
   areas = {in: new qt.Area(), out: new qt.Area(), lib: new qt.Area()};
@@ -40,13 +40,12 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     return this;
   }
 
-  subBuild(sel: qt.Sel, e: qs.Elem) {
+  buildSub(sel: qt.Sel, e: qs.Elem) {
     if (qg.isClus(this)) {
       const c = qt.Class.Subscene.GROUP;
-      if (this.expanded) return this.build(sel, e, c);
-      qs.selectChild(sel, 'g', c).remove();
+      if (this.expanded) this.build(sel, e, c);
+      else qs.selectChild(sel, 'g', c).remove();
     }
-    return null;
   }
 
   makeInExtract(n: string, detach?: boolean) {

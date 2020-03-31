@@ -1,11 +1,9 @@
 import * as _ from 'lodash';
 
 import * as qc from './cluster';
-import * as qd from './gdata';
 import * as qe from './edata';
 import * as qg from './graph';
 import * as qh from './hierarchy';
-import * as qm from './meta';
 import * as qp from './params';
 import * as qt from './types';
 import * as qu from './utils';
@@ -21,7 +19,7 @@ export namespace Mgraph {
   ) {
     this.nodes().forEach(n => {
       const nd = this.node(n);
-      if (qg.isMeta(nd)) qm.Graph.build.call(nd.meta, h, names, ps);
+      if (qg.isMeta(nd)) build.call(nd.meta, h, names, ps);
     });
     const f = ps.patterns ? detect : collect;
     const ls = f.call(this, cluster.call(this), h.opts);
@@ -57,18 +55,19 @@ export namespace Mgraph {
 
   export function buildSubhier(this: qg.Mgraph) {
     this.links().forEach(l => {
-      const ed = this.edge(l);
-      const m = new qe.Emeta(ed);
-      _.forEach(m.metaedge?.bases, e => {
-        const ps = e.v.split(qp.SLASH);
+      const ed = this.edge(l) as qg.Emeta;
+      const m = new qe.Emeta(false, ed);
+      _.forEach(m.meta?.links, l => {
+        const ps = l.nodes[0].split(qp.SLASH);
         for (let i = ps.length; i >= 0; i--) {
-          const front = ps.slice(0, i);
-          const nd = this.data?.hier.node(front.join(qp.SLASH));
+          const d = this.data;
+          const h = ps.slice(0, i);
+          const nd = d?.hier.node(h.join(qp.SLASH));
           if (nd) {
-            if (qg.isOper(nd) && this.data?.hier.libs[nd.op]) {
-              for (let j = 1; j < front.length; j++) {
-                const n = front.slice(0, j).join(qp.SLASH);
-                if (n) this.data?.buildSubhier(n);
+            if (qg.isOper(nd) && d?.hier.libs[nd.op]) {
+              for (let j = 1; j < h.length; j++) {
+                const n = h.slice(0, j).join(qp.SLASH);
+                if (n) d?.buildSubhier(n);
               }
             }
             break;

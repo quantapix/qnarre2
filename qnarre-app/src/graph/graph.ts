@@ -21,6 +21,7 @@ export interface Gdata extends Opts {
   hier: Hierarchy;
   hasSubhier: qt.Dict<boolean>;
   nds: qt.Dict<Ndata>;
+  buildSubhier(n: string): void;
 }
 
 export interface Ndata extends qt.Rect {
@@ -53,7 +54,7 @@ export interface Ndata extends qt.Rect {
 
 export interface Edata {
   name: string;
-  out: string;
+  out?: string;
   meta?: Emeta;
   adjoining?: Emeta;
   sel?: qt.Sel;
@@ -106,7 +107,7 @@ export interface Nclus extends Ndata {
     comp: {compats: number; incompats: number};
   };
   setDepth(d: number): this;
-  subBuild(s: any, e: any): any;
+  buildSub(s: any, e: any): void;
 }
 
 export function isClus(x?: any): x is Nclus {
@@ -117,7 +118,7 @@ export interface Nmeta extends Nclus {
   template?: string;
   assoc?: string;
   depth: number;
-  rootOp(): Noper | undefined; //+
+  rootOp(): Noper | undefined;
 }
 
 export function isMeta(x?: any): x is Nmeta {
@@ -156,11 +157,12 @@ export interface Edges {
 }
 
 export interface Hierarchy {
-  bridge(x: any): Bgraph | undefined;
   clus: string[];
   libs: qt.Dict<Library>;
   maxEdgeSize: number;
-  size(l: qg.Link<Edata>): number;
+  size(l: Link): number;
+  node(x: any): Ncomb | undefined;
+  bridge(x: any): Bgraph | undefined;
 }
 
 export interface Library {

@@ -17,7 +17,7 @@ export class Edata implements qg.Edata {
   points = [] as qt.Point[];
   marker = {start: '', end: ''};
 
-  constructor(public name = '', public out = '', public meta?: qg.Emeta) {}
+  constructor(public name = '', public out?: string, public meta?: qg.Emeta) {}
 
   addEdge(sel: qt.Sel, e: qs.Elem, c = qt.Class.Edge.LINE) {
     if (this.structural) c += ' ' + qt.Class.Edge.STRUCTURAL;
@@ -125,7 +125,7 @@ export class Emeta extends Edata implements qg.Emeta {
   links = [] as qg.Link[];
   num = {regular: 0, control: 0, ref: 0};
 
-  constructor(public inbound?: boolean, n = '', o = '', m?: qg.Emeta) {
+  constructor(public inbound?: boolean, m?: qg.Emeta, n = '', o?: string) {
     super(n, o, m);
   }
 
