@@ -8,16 +8,16 @@ import * as qu from './utils';
 
 import * as proto from './proto';
 
-export class SlimGraph {
-  opers = {} as qt.Dict<qn.Noper>;
-  links = [] as qg.Link<qg.Edata>[];
+export class Slim {
+  opers = {} as qt.Dict<qg.Noper>;
+  links = [] as qg.Link[];
 
   constructor(public opts = {} as qg.Opts) {}
 
-  addLink(s: string, d: qn.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
+  addLink(s: string, d: qg.Noper, inp: qt.Input, ps: qt.BuildPs, i: number) {
     if (s !== d.name) {
       const ref = ps.refs[d.op + ' ' + i] === true;
-      const l = new qg.Link<qg.Edata>([s, d.name], this.opts);
+      const l = new qg.Link([s, d.name], this.opts);
       l.data = {
         control: inp.control,
         ref,
@@ -79,17 +79,17 @@ export async function build(
   def: proto.GraphDef,
   ps: qt.BuildPs,
   t: qu.Tracker
-): Promise<SlimGraph> {
-  const inEmbed = {} as qt.Dict<qn.Noper>;
-  const outEmbed = {} as qt.Dict<qn.Noper>;
-  const outs = {} as qt.Dict<qn.Noper[]>;
-  const isIn = embedPred(ps.inbedTs);
-  const isOut = embedPred(ps.outbedTs);
+): Promise<Slim> {
+  const inEmbed = {} as qt.Dict<qg.Noper>;
+  const outEmbed = {} as qt.Dict<qg.Noper>;
+  const outs = {} as qt.Dict<qg.Noper[]>;
+  const isIn = check(ps.inbedTs);
+  const isOut = check(ps.outbedTs);
   const es = [] as string[];
   const raws = def.node;
   const ns = new Array<string>(raws.length);
   const opers = await t.runAsyncTask('Normalizing names', 30, () => {
-    const ops = new Array<qn.Noper>(raws.length);
+    const ops = new Array<qg.Noper>(raws.length);
     let i = 0;
     function raw(p: proto.NodeDef) {
       const o = new qn.Noper(p);
@@ -161,8 +161,8 @@ export async function build(
     return ops;
   });
   return t.runAsyncTask('Building data structure', 70, () => {
-    const norms = mapHier(ns, es);
-    const g = new SlimGraph();
+    const norms = qu.mapHier(ns, es);
+    const g = new Slim();
     opers.forEach(o => {
       const nn = norms[o.name] || o.name;
       g.opers[nn] = o;
@@ -196,54 +196,12 @@ export async function build(
   });
 }
 
-function embedPred(types: string[]) {
-  return (n: qn.Noper) => {
+function check(types: string[]) {
+  return (n: qg.Noper) => {
     for (let i = 0; i < types.length; i++) {
       const re = new RegExp(types[i]);
       if (typeof n.op === 'string' && n.op.match(re)) return true;
     }
     return false;
   };
-}
-
-function mapHier(names: string[], enames: string[]) {
-  const m = {} as qt.Dict<string>;
-  const es = {} as qt.Dict<boolean>;
-  names.sort();
-  for (let i = 0; i < names.length - 1; ++i) {
-    const n0 = names[i];
-    hierPath(n0)
-      .slice(0, -1)
-      .forEach(p => (es[p] = true));
-    for (let j = i + 1; j < names.length; ++j) {
-      const n1 = names[j];
-      if (_.startsWith(n1, n0)) {
-        if (n1.length > n0.length && n1.charAt(n0.length) === qp.SLASH) {
-          m[n0] = qu.strictName(n0);
-          break;
-        }
-      } else {
-        break;
-      }
-    }
-  }
-  enames.forEach(e => {
-    if (e in es) m[e] = qu.strictName(e);
-  });
-  return m;
-}
-
-export function hierPath(name: string, series?: qt.Dict<string>) {
-  const p = [] as string[];
-  let i = name.indexOf(qp.SLASH);
-  while (i >= 0) {
-    p.push(name.substring(0, i));
-    i = name.indexOf(qp.SLASH, i + 1);
-  }
-  if (series) {
-    const n = series[name];
-    if (n) p.push(n);
-  }
-  p.push(name);
-  return p;
 }

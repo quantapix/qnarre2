@@ -60,9 +60,9 @@ export function runLayout<
       ed.points = [ed.points[0], ed.points[1]];
     }
     const nl = ed.points[ed.points.length - 2];
-    if (n1) ed.points[ed.points.length - 1] = qn.intersect(n1, nl);
+    if (n1) ed.points[ed.points.length - 1] = n1.intersect(nl);
     const sp = ed.points[1];
-    if (n0) ed.points[0] = qn.intersect(n0, sp);
+    if (n0) ed.points[0] = n0.intersect(sp);
     ed.points.forEach(p => {
       minX = p.x < minX ? p.x : minX;
       maxX = p.x > maxX ? p.x : maxX;

@@ -1,13 +1,7 @@
 import * as _ from 'lodash';
-import * as d3 from 'd3';
 
-import * as qd from './gdata';
 import * as qg from './graph';
 import * as qt from './types';
-import * as qp from './params';
-import * as qu from './utils';
-
-import {PARAMS as PS} from './params';
 
 export abstract class Elem extends HTMLElement {
   gdata?: qg.Gdata;

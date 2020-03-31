@@ -173,7 +173,7 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
 
   removeControlEdges() {
     const g = this.core;
-    const ls = {} as qt.Dict<qg.Link<qg.Edata>[]>;
+    const ls = {} as qt.Dict<qg.Link[]>;
     g.links().forEach(l => {
       const ed = g.edge(l);
       if (!ed?.meta?.num.regular) {

@@ -393,16 +393,13 @@ export class TpuCompatibility implements CompatibilityProvider {
   valid(n: qg.Noper) {
     if (n.name?.search(qp.LIB_PRE) == 0) return true;
     if (!n.op) return true;
-    if (n.device && this.notTpuOp(n.device)) return true;
-    if (n.device && n.device.search('TPU_SYSTEM') != -1) return true;
+    if (n.dev && this.notTpuOp(n.dev)) return true;
+    if (n.dev && n.dev.search('TPU_SYSTEM') != -1) return true;
     return _.includes(TpuCompatibility.WHITELIST, n.op);
   }
 }
 
-export function checkOpsForCompatibility(
-  g: qs.SlimGraph,
-  p: CompatibilityProvider
-) {
+export function checkOpsForCompatibility(g: qs.Slim, p: CompatibilityProvider) {
   if (p === null) throw new Error('Compatibility provider required, : ' + p);
   _.each(g.opers, n => {
     n.compatible = p.valid(n);

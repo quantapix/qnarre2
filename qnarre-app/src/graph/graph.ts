@@ -4,7 +4,9 @@ import * as qg from './core/graph';
 import * as qt from './types';
 import * as qu from './utils';
 
-export {Link, Nodes} from './core/graph';
+export {Nodes} from './core/graph';
+
+export class Link extends qg.Link<Edata> {}
 
 export interface Opts extends qg.Opts {
   rankdir?: qt.Dir;
@@ -73,7 +75,7 @@ export interface Ndots extends Ndata {
 }
 
 export interface Noper extends Ndata {
-  parent?: Noper | Nclus;
+  parent?: Ncomb;
   op: string;
   dev?: string;
   clus?: string;
@@ -115,7 +117,7 @@ export interface Nmeta extends Nclus {
   template?: string;
   assoc?: string;
   depth: number;
-  rootOp(): Noper | undefined;
+  rootOp(): Noper | undefined; //+
 }
 
 export function isMeta(x?: any): x is Nmeta {
@@ -140,7 +142,7 @@ export interface Emeta extends Edata {
   weight: number;
   inbound?: boolean;
   nodes?: string[];
-  links: qg.Link<Edata>[];
+  links: Link[];
   num: {regular: number; control: number; ref: number};
 }
 
@@ -158,7 +160,7 @@ export interface Hierarchy {
   clus: string[];
   libs: qt.Dict<Library>;
   maxEdgeSize: number;
-  sizeOf(l: qg.Link<Edata>): number;
+  size(l: qg.Link<Edata>): number;
 }
 
 export interface Library {
@@ -216,9 +218,11 @@ export class Graph<
   }
 }
 
-export type Bgraph = Graph<Gdata, Nclus | Noper, Edata>;
+export type Ncomb = Nclus | Noper;
+
+export type Bgraph = Graph<Gdata, Ncomb, Edata>;
 export type Cgraph = Graph<Gdata, Ndata, Edata>;
-export type Mgraph = Graph<Gdata, Nclus | Noper, Edata>;
+export type Mgraph = Graph<Gdata, Ncomb, Edata>;
 
 export function createGraph<G extends Gdata, N extends Ndata, E extends Edata>(
   t: qt.GdataT,

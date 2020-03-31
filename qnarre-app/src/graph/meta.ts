@@ -12,7 +12,7 @@ import * as qu from './utils';
 
 type Cluster = qt.Dict<string[]>;
 
-export namespace Graph {
+export namespace Mgraph {
   export function build(
     this: qg.Mgraph,
     h: qh.Hierarchy,

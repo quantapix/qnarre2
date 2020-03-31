@@ -122,7 +122,7 @@ export class Gdata implements qg.Gdata {
   }
 
   getNearestVisibleAncestor(name: string) {
-    const path = qg.hierPath(name);
+    const path = qu.hierPath(name);
     let i = 0;
     let node: qn.Ndata | undefined;
     let n = name;

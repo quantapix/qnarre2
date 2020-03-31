@@ -65,10 +65,10 @@ export class Edata implements qg.Edata {
 
   position(comp: HTMLElement, group: HTMLElement) {
     d3.select<any, Edata>(group)
-      .select('path.' + qt.Class.Edge.LINE)
+      .select<SVGPathElement>('path.' + qt.Class.Edge.LINE)
       .transition()
-      .attrTween('d', function(d, i, a: SVGPathElement[]) {
-        return d.interpolator(comp, this as SVGPathElement, i, a);
+      .attrTween('d', function(d, i, a) {
+        return d.interpolator(comp, this, i, a);
       });
   }
 
@@ -84,7 +84,7 @@ export class Edata implements qg.Edata {
     comp: HTMLElement,
     renderPath: SVGPathElement,
     _i: number,
-    a: SVGPathElement[]
+    a: SVGPathElement[] | ArrayLike<SVGPathElement>
   ) {
     const ae = this.adjoining;
     let ps = this.points;
@@ -106,7 +106,7 @@ export class Edata implements qg.Edata {
     if (!ae) return d3.interpolate(a, interpolate(ps)!);
     const ap = (ae.sel?.node() as HTMLElement).firstChild as SVGPathElement;
     const inbound = this.meta?.inbound;
-    return (_: any) => {
+    return (_: number) => {
       const p = ap
         .getPointAtLength(inbound ? ap.getTotalLength() : 0)
         .matrixTransform(ap.getCTM()!)
@@ -114,7 +114,7 @@ export class Edata implements qg.Edata {
       const i = inbound ? 0 : ps.length - 1;
       ps[i].x = p.x;
       ps[i].y = p.y;
-      return interpolate(ps);
+      return interpolate(ps)!;
     };
   }
 }
@@ -122,14 +122,14 @@ export class Edata implements qg.Edata {
 export class Emeta extends Edata implements qg.Emeta {
   size = 0;
   weight = 1;
-  links = [] as qg.Link<Edata>[];
+  links = [] as qg.Link[];
   num = {regular: 0, control: 0, ref: 0};
 
-  constructor(n = '', o = '', m?: qg.Emeta, public inbound?: boolean) {
+  constructor(public inbound?: boolean, n = '', o = '', m?: qg.Emeta) {
     super(n, o, m);
   }
 
-  addLink(l: qg.Link<Edata>, h: qg.Hierarchy) {
+  addLink(l: qg.Link, h: qg.Hierarchy) {
     this.links.push(l);
     if (l.data?.control) {
       this.num.control += 1;
@@ -137,7 +137,7 @@ export class Emeta extends Edata implements qg.Emeta {
       this.num.regular += 1;
     }
     if (l.data?.ref) this.num.ref += 1;
-    this.size += h.sizeOf(l);
+    this.size += h.size(l);
     h.maxEdgeSize = Math.max(h.maxEdgeSize, this.size);
     return this;
   }

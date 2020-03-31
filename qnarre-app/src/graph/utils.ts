@@ -86,6 +86,48 @@ export function listName(
   return (p ? p + '/' : '') + n;
 }
 
+export function mapHier(ns: string[], ens: string[]) {
+  const m = {} as qt.Dict<string>;
+  const es = {} as qt.Dict<boolean>;
+  ns.sort();
+  for (let i = 0; i < ns.length - 1; ++i) {
+    const n0 = ns[i];
+    hierPath(n0)
+      .slice(0, -1)
+      .forEach(p => (es[p] = true));
+    for (let j = i + 1; j < ns.length; ++j) {
+      const n1 = ns[j];
+      if (_.startsWith(n1, n0)) {
+        if (n1.length > n0.length && n1.charAt(n0.length) === qp.SLASH) {
+          m[n0] = strictName(n0);
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+  }
+  ens.forEach(e => {
+    if (e in es) m[e] = strictName(e);
+  });
+  return m;
+}
+
+export function hierPath(n: string, ss?: qt.Dict<string>) {
+  const ps = [] as string[];
+  let i = n.indexOf(qp.SLASH);
+  while (i >= 0) {
+    ps.push(n.substring(0, i));
+    i = n.indexOf(qp.SLASH, i + 1);
+  }
+  if (ss) {
+    const p = ss[n];
+    if (p) ps.push(p);
+  }
+  ps.push(name);
+  return ps;
+}
+
 export function updateHistos(hs: {[k: string]: qt.Histo}, src: any) {
   _.keys(hs).forEach(k => {
     const n = src[k];

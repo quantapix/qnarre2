@@ -11,7 +11,6 @@ import * as qu from './utils';
 
 import {NodeDef} from './proto';
 import * as menu from '../elems/graph/contextmenu';
-import {namespace} from 'src/utils/groups';
 
 export class Ndata implements qg.Ndata {
   x = 0;
