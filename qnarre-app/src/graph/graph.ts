@@ -35,6 +35,7 @@ export interface Ndata extends qt.Rect {
   include?: boolean;
   excluded?: boolean;
   expanded?: boolean;
+  structural?: boolean;
   faded?: boolean;
   pad: qt.Pad;
   box: qt.Area;
@@ -162,6 +163,7 @@ export interface Hierarchy {
   maxEdgeSize: number;
   size(l: Link): number;
   node(x: any): Ncomb | undefined;
+  setNode(x: any, d?: Ncomb): this;
   bridge(x: any): Bgraph | undefined;
 }
 

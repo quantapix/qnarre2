@@ -53,7 +53,7 @@ export class Hierarchy implements qg.Hierarchy {
       qt.GdataT.BRIDGE,
       'BRIDGEGRAPH',
       this.opts
-    );
+    ) as qg.Bgraph;
     nd.bridge = b;
     const p = nd.parent;
     if (p) {

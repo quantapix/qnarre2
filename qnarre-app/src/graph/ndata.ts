@@ -449,7 +449,9 @@ export namespace Ndatas {
 }
 
 export class Nbridge extends Ndata implements qg.Nbridge {
-  inbound?: boolean;
+  constructor(n: string, c: number, public inbound?: boolean) {
+    super(qt.NdataT.BRIDGE, n, c);
+  }
 }
 
 export class Ndots extends Ndata implements qg.Ndots {

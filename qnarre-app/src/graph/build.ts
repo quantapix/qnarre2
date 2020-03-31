@@ -2,14 +2,17 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
 
+import * as qa from './anno';
+import * as qc from './cluster';
+import * as qd from './gdata';
+import * as qe from './edata';
 import * as qg from './graph';
 import * as qn from './ndata';
-import * as qt from './types';
-import * as qs from './scene';
 import * as qp from './params';
-import * as qd from './gdata';
-import * as qc from './clone';
-import * as qe from './edata';
+import * as qs from './scene';
+import * as qt from './types';
+
+import {clone} from './clone';
 
 export namespace Graph {
   export function build(this: qg.Cgraph, sel: qt.Sel, e: qs.Elem) {
@@ -60,190 +63,183 @@ export namespace Graph {
 }
 
 export namespace Gdata {
-  export function buildSubhier(this: qg.Gdata, nodeName: string) {
-    if (nodeName in this.hasSubhier) return;
-    this.hasSubhier[nodeName] = true;
-    const nd = this.nds[nodeName];
-    if (!qg.isMeta(nd) && !qg.isList(nd)) return;
-    const clus = nd as qg.Nclus;
-    const metaG = clus.meta;
-    const coreG = clus.core;
+  function buildMeta(
+    gd: qd.Gdata,
+    c: qc.Nclus,
+    meta: qg.Mgraph,
+    core: qg.Cgraph
+  ) {
     const os = [] as qg.Noper[];
     const ms = [] as qg.Nmeta[];
-    if (!_.isEmpty(this.hier.libs)) {
-      metaG.nodes().forEach(n => {
-        const o = metaG.node(n) as qg.Noper;
-        const l = this.hier.libs[o.op];
+    if (!_.isEmpty(gd.hier.libs)) {
+      meta.nodes().forEach(n => {
+        const o = meta.node(n)! as qg.Noper;
+        const l = gd.hier.libs[o.op];
         if (!l || n.startsWith(qp.LIB_PRE)) return;
-        const m = qc.cloneLib.call(this, metaG, o, l.meta, l.meta.name, o.name);
+        const m = clone.lib.call(gd, meta, o, l.meta, l.meta.name, o.name);
         os.push(o);
         ms.push(m);
       });
       ms.forEach((m, i) => {
         const o = os[i];
-        m.parent = o.parent;
-        metaG.setNode(o.name, m);
-        this.hier.setNode(o.name, m);
+        m.parent = o.parent as qg.Nclus;
+        meta.setNode(o.name, m);
+        gd.hier.setNode(o.name, m);
       });
     }
-    metaG.nodes().forEach(n => {
-      const nd = this.getOrCreateRenderNodeByName(n)! as qg.Ndata;
-      coreG.setNode(n, nd);
-      if (!qg.isClus(nd)) {
-        (nd as qg.Noper).embeds.in.forEach(o => {
+    meta.nodes().forEach(n => {
+      const d = gd.getOrCreateRenderNodeByName(n)! as qg.Ndata;
+      core.setNode(n, d);
+      if (qg.isOper(d)) {
+        d.embeds.in.forEach(o => {
           const n = new qn.Ndata(o);
-          const e = new MetaEdata();
-          nd.addInAnno(qt.AnnoT.CONSTANT, n, e);
-          this.nds[o.name] = n;
+          const e = new qe.Emeta();
+          c.addInAnno(qt.AnnoT.CONSTANT, n, e);
+          gd.nds[o.name] = n;
         });
-        (nd as qg.Noper).embeds.out.forEach(o => {
+        d.embeds.out.forEach(o => {
           const n = new qn.Ndata(o);
-          const e = new MetaEdata();
-          nd.addOutAnno(qt.AnnoT.SUMMARY, n, e);
-          this.nds[o.name] = n;
+          const e = new qe.Emeta();
+          c.addOutAnno(qt.AnnoT.SUMMARY, n, e);
+          gd.nds[o.name] = n;
         });
       }
     });
-    metaG.links().forEach(l => {
-      const ed = metaG.edge(l);
-      const m = new MetaEdata(ed);
-      m.faded = this.nds[l.nodes[0]].faded || this.nds[l.nodes[1]].faded;
-      coreG.setEdge(l.nodes, m);
+    meta.links().forEach(l => {
+      const ed = meta.edge(l);
+      const m = new qe.Emeta(ed);
+      m.faded = gd.nds[l.nodes[0]].faded || gd.nds[l.nodes[1]].faded;
+      core.setEdge(l.nodes, m);
     });
-    if (qp.GdataPs.enableExtraction && qg.isMeta(clus)) {
-      clus.extractHighDegrees();
+    if (qp.GdataPs.enableExtraction && qg.isMeta(c)) c.extractHighDegrees();
+    if (!_.isEmpty(gd.hier.libs)) buildSubhier.call(meta);
+  }
+
+  function counts(meta: qg.Mgraph, bridge: qg.Bgraph) {
+    const cs = {
+      in: {} as qt.Dict<number>,
+      out: {} as qt.Dict<number>,
+      control: {} as qt.Dict<number>
+    };
+    bridge.links().forEach(l => {
+      const inbound = !!meta.node(l.nodes[1]);
+      const n = inbound ? l.nodes[0] : l.nodes[1];
+      const ed = bridge.edge(l)! as qg.Emeta;
+      if (!ed.num.regular) {
+        cs.control[n] = (cs.control[n] || 0) + 1;
+      } else if (inbound) {
+        cs.out[n] = (cs.out[n] || 0) + 1;
+      } else {
+        cs.in[n] = (cs.in[n] || 0) + 1;
+      }
+    });
+    return cs;
+  }
+
+  function bridgeName(inbound: boolean, ...ns: string[]) {
+    return ns.concat([inbound ? 'IN' : 'OUT']).join('~~');
+  }
+
+  function addData(this: qd.Gdata, core: qg.Cgraph, inbound: boolean) {
+    const bpn = bridgeName(inbound, nodeName);
+    const bn = bridgeName(inbound, n1, nodeName);
+    let bd = core.node(bn);
+    if (!bd) {
+      let bpd = core.node(bpn);
+      if (!bpd) {
+        const p = new qn.Nbridge(bpn, 0, inbound);
+        bpd = new qn.Ndata(p);
+        this.nds[bpn] = bpd!;
+        core.setNode(bpn, bpd);
+      }
+      const n = new qn.Nbridge(bn, 1, inbound);
+      bd = new qn.Ndata(n);
+      this.nds[bn] = bd!;
+      core.setNode(bn, bd);
+      core.setParent(bn, bpn);
+      bpd!.cardin++;
     }
-    if (!_.isEmpty(this.hier.libs)) {
-      metaG.buildSubhier();
-    }
+    return bn;
+  }
+
+  export function buildSubhier(this: qd.Gdata, nodeName: string) {
+    if (nodeName in this.hasSubhier) return;
+    this.hasSubhier[nodeName] = true;
+    const nd = this.nds[nodeName];
+    if (!qg.isMeta(nd) && !qg.isList(nd)) return;
+    const clus = nd as qg.Nclus;
+    const metaG = clus.meta!;
+    const coreG = clus.core;
+    buildMeta(this, clus, metaG, coreG);
     if (nodeName === qp.ROOT) {
       _.forOwn(this.hier.libs, l => {
         const m = l.meta;
-        const nd = this.getOrCreateRenderNodeByName(m.name)! as qg.Ndata;
-        clus.isolated.lib.push(nd);
-        nd.include = false;
+        const d = this.getOrCreateRenderNodeByName(m.name)! as qg.Ndata;
+        clus.isolated.lib.push(d);
+        d.include = false;
         coreG.delNode(m.name);
       });
     }
     const parent = clus.parent;
     if (!parent) return;
     const pd = this.nds[parent.name] as qg.Nclus;
-    function bridgeName(inbound: boolean, ...rest: string[]) {
-      return rest.concat([inbound ? 'IN' : 'OUT']).join('~~');
-    }
     const bridgeG = this.hier.bridge(nodeName)!;
-    const counts = {
-      in: {} as qt.Dict<number>,
-      out: {} as qt.Dict<number>,
-      control: {} as qt.Dict<number>
-    };
+    const cs = counts(metaG, bridgeG);
     bridgeG.links().forEach(l => {
-      const inbound = !!metaG.node(l.nodes[1]);
-      const n = inbound ? l.nodes[0] : l.nodes[1];
-      const ed = bridgeG.edge(l);
-      if (!ed?.num.regular) {
-        counts.control[n] = (counts.control[n] || 0) + 1;
-      } else if (inbound) {
-        counts.out[n] = (counts.out[n] || 0) + 1;
-      } else {
-        counts.in[n] = (counts.in[n] || 0) + 1;
-      }
-    });
-    const hmap = this.hier.getNodeMap();
-    bridgeG.links().forEach(l => {
-      const ed = bridgeG.edge(l);
       const inbound = !!metaG.node(l.nodes[1]);
       let [n0, n1] = l.nodes;
       if (inbound) [n1, n0] = l.nodes;
-      const rd0 = this.nds[n0];
-      const rd1 = this.nds[n1];
-      const isControl =
-        !ed.num.regular && counts.control[n1] > qp.GdataPs.maxControlDegree;
+      const d0 = this.nds[n0];
+      const d1 = this.nds[n1];
+      const ed = bridgeG.edge(l)! as qg.Emeta;
+      const control =
+        !ed.num.regular && cs.control[n1] > qp.GdataPs.maxControlDegree;
       const [, annos] = inbound
-        ? [clus.annos.in, rd0.annos.in]
-        : [clus.annos.out, rd0.annos.out];
-      const c = (inbound ? counts.out : counts.in)[n1];
-      const isOther = c > qp.GdataPs.maxBridgePathDegree;
-      let adjoining: MetaEdata | undefined;
-      let canDraw = false;
-      if (
-        qp.GdataPs.enableBridgegraph &&
-        !isOther &&
-        !isControl &&
-        rd0.isInCore()
-      ) {
+        ? [clus.annos.in, d0.annos.in]
+        : [clus.annos.out, d0.annos.out];
+      const c = (inbound ? cs.out : cs.in)[n1];
+      const other = c > qp.GdataPs.maxBridgePathDegree;
+      let adjoining: qg.Emeta | undefined;
+      let draw = false;
+      if (qp.GdataPs.enableBridgegraph && !other && !control && d0.isInCore()) {
         const find = (t: string) => {
-          console.log(d);
-          const l: qt.EdgeObject = inbound
-            ? {v: t, w: nodeName}
-            : {v: nodeName, w: t};
-          return pd.core.edge(l);
+          const ns = inbound ? [t, nodeName] : [nodeName, t];
+          return pd.core.edge(ns) as qg.Emeta;
         };
         adjoining = find(n1);
         if (!adjoining) adjoining = find(bridgeName(inbound, n1, parent.name));
-        canDraw = !!adjoining;
+        draw = !!adjoining;
       }
-      let backwards = false;
+      let back = false;
       if (adjoining && !ed.num.regular) {
         let tope = adjoining;
         let topn = pd;
-        while (tope.adjoiningMetaEdge) {
-          tope = tope.adjoiningMetaEdge;
+        while (tope.adjoining) {
+          tope = tope.adjoining;
           topn = topn.parent as qg.Nclus;
         }
         const o = this.hier.order(topn.name);
-        const e = tope.metaedge!;
-        backwards = o[e.v] > o[e.w];
+        const m = tope.meta!;
+        back = o[m.nodes![0]] > o[m.nodes![1]];
       }
-      canDraw = canDraw && !backwards;
-      if (!canDraw) {
-        const n = rd1 ? rd1 : hmap[n1];
+      draw = draw && !back;
+      if (!draw) {
+        const n = d1 ? d1 : this.hier.node(n1)!;
         annos.push(
-          new qa.Anno(n, rd1, new MetaEdata(ed), qt.AnnoT.SHORTCUT, inbound)
+          new qa.Anno(qt.AnnoT.SHORTCUT, n, new qe.Emeta(ed), inbound)
         );
         return;
       }
-      const bpn = bridgeName(inbound, nodeName);
-      const bn = bridgeName(inbound, n1, nodeName);
-      let bd = coreG.node(bn);
-      if (!bd) {
-        let bpd = coreG.node(bpn);
-        if (!bpd) {
-          const p: qt.Nbridge = {
-            name: bpn,
-            type: qt.NdataT.BRIDGE,
-            isClus: false,
-            cardinality: 0,
-            inbound: inbound,
-            attributes: {}
-          };
-          bpd = new qn.Ndata(p);
-          this.nds[bpn] = bpd;
-          coreG.setNode(bpn, bpd);
-        }
-        const n: qt.Nbridge = {
-          name: bn,
-          type: qt.NdataT.BRIDGE,
-          isClus: false,
-          cardinality: 1,
-          inbound: inbound,
-          attributes: {}
-        };
-        bd = new qn.Ndata(n);
-        this.nds[bn] = bd;
-        coreG.setNode(bn, bd);
-        coreG.setParent(bn, bpn);
-        bpd.cardin++;
-      }
-      const bed = new MetaEdata(ed);
-      bed.adjoiningMetaEdge = adjoining;
-      inbound ? coreG.setEdge(bn, n0, bed) : coreG.setEdge(n0, bn, bed);
+      const bn = addData(this, coreG, inbound);
+      const bed = new qe.Emeta(ed);
+      bed.adjoining = adjoining;
+      inbound ? coreG.setEdge([bn, n0], bed) : coreG.setEdge([n0, bn], bed);
     });
     [true, false].forEach(inbound => {
       const bpn = bridgeName(inbound, nodeName);
       const bpd = coreG.node(bpn);
       if (!bpd) return;
-      _.each(coreG.nodes(), n => {
+      coreG.nodes().forEach(n => {
         const nd = coreG.node(n);
         if (nd?.type === qt.NdataT.BRIDGE) return;
         const isTerminal = inbound
@@ -253,25 +249,18 @@ export namespace Gdata {
         const sn = bridgeName(inbound, nodeName, 'STRUCTURAL_TARGET');
         let sd = coreG.node(sn);
         if (!sd) {
-          const bn: qt.Nbridge = {
-            name: sn,
-            type: qt.NdataT.BRIDGE,
-            isClus: false,
-            cardinality: 1,
-            inbound: inbound,
-            attributes: {}
-          };
+          const bn = new qn.Nbridge(sn, 1, inbound);
           sd = new qn.Ndata(bn);
-          sd.structural = true;
-          this.nds[sn] = sd;
+          sd!.structural = true;
+          this.nds[sn] = sd!;
           coreG.setNode(sn, sd);
           bpd.cardin++;
           coreG.setParent(sn, bpn);
         }
-        const sed = new MetaEdata();
+        const sed = new qe.Emeta();
         sed.structural = true;
         sed.weight--;
-        inbound ? coreG.setEdge(sn, n, sed) : coreG.setEdge(n, sn, sed);
+        inbound ? coreG.setEdge([sn, n], sed) : coreG.setEdge([n, sn], sed);
       });
     });
   }
