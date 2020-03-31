@@ -4,7 +4,6 @@ import * as d3 from 'd3';
 import * as qt from './types';
 import * as qp from './params';
 import * as qg from './graph';
-import * as qn from './ndata';
 import * as qu from './utils';
 
 export function runLayout<
@@ -46,8 +45,8 @@ export function runLayout<
   g.edges().forEach(e => {
     const ed = g.edge(e)!;
     if (ed.structural) return;
-    const n0 = g.node(ed.meta!.v);
-    const n1 = g.node(ed.meta!.w);
+    const n0 = g.node(ed.meta!.nodes![0]);
+    const n1 = g.node(ed.meta!.nodes![1]);
     if (ed.points.length === 3 && qu.Point.colinear(ed.points)) {
       if (n0) {
         const x = n0.expanded ? n0.x : n0.centerX();

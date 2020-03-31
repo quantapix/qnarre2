@@ -48,7 +48,7 @@ export interface Ndata extends qt.Rect {
   hasTypeIn(ts: string[]): boolean;
   addInAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
   addOutAnno(t: qt.AnnoT, n: Ndata, e: Edata): this;
-  listName(): string | undefined;
+  intersect(p: qt.Point): qt.Point;
   stylize(s: qt.Sel, e: any, c?: string): void;
 }
 
