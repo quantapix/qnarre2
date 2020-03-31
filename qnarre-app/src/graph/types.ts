@@ -1,4 +1,3 @@
-import * as qg from './core/graph';
 import * as qt from './core/types';
 
 export {Area, Dict, Dir, Pad, Point, Rect, Sel} from './core/types';
@@ -56,11 +55,11 @@ export type Shade = {color: string; perc: number};
 
 export interface Tracker {
   setMessage(m: string): void;
-  reportError(m: string, e: Error): void;
-  updateProgress(i: number): void;
+  report(m: string, e: Error): void;
+  update(i: number): void;
 }
 
-export interface HierarchyPs {
+export interface HierPs {
   thresh: number;
   rankdir: qt.Dir;
   verify?: boolean;

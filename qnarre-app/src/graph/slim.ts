@@ -78,7 +78,7 @@ export class Slim {
 export async function build(
   def: proto.GraphDef,
   ps: qt.BuildPs,
-  t: qu.Tracker
+  t: qt.Tracker
 ): Promise<Slim> {
   const inEmbed = {} as qt.Dict<qg.Noper>;
   const outEmbed = {} as qt.Dict<qg.Noper>;
@@ -88,7 +88,8 @@ export async function build(
   const es = [] as string[];
   const raws = def.node;
   const ns = new Array<string>(raws.length);
-  const opers = await t.runAsyncTask('Normalizing names', 30, () => {
+  const run = qu.Task.runAsync;
+  const opers = await run(t, 'Normalizing', 30, () => {
     const ops = new Array<qg.Noper>(raws.length);
     let i = 0;
     function raw(p: proto.NodeDef) {
@@ -121,7 +122,7 @@ export async function build(
       if (args.length) {
         let idx = 0;
         // eslint-disable-next-line no-inner-declarations
-        function input(arg: proto.ArgDef) {
+        function inp(arg: proto.ArgDef) {
           const o = raw({
             name: f + qp.SLASH + arg.name,
             input: [],
@@ -132,18 +133,18 @@ export async function build(
           o.index.in = idx;
           idx++;
         }
-        args.forEach(input);
+        args.forEach(inp);
       }
       const onames = {} as qt.Dict<any>;
       args = fn.signature.output_arg;
       if (args.length) {
         let idx = 0;
         // eslint-disable-next-line no-inner-declarations
-        function output(arg: proto.ArgDef) {
+        function outp(arg: proto.ArgDef) {
           onames[f + qp.SLASH + arg.name] = idx;
           idx++;
         }
-        args.forEach(output);
+        args.forEach(outp);
       }
       fn.node_def.forEach(r => {
         r.name = f + '/' + r.name;
@@ -160,7 +161,7 @@ export async function build(
     ns.splice(i);
     return ops;
   });
-  return t.runAsyncTask('Building data structure', 70, () => {
+  return run(t, 'Building', 70, () => {
     const norms = qu.mapHier(ns, es);
     const g = new Slim();
     opers.forEach(o => {

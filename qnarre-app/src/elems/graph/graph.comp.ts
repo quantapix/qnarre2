@@ -154,7 +154,7 @@ export class GraphComp implements OnInit {
     const n = event.detail.name;
     qg.toggleNodeSeriesGroup(this.hParams.seriesMap, n);
     this.set('progress', {value: 0, msg: ''});
-    const t = qu.getTracker(this).getSubtaskTracker('Namespace hierarchy', 100);
+    const t = qu.getTracker(this).subTracker('Namespace hierarchy', 100);
     qh.build(this.graph, this.hParams, t).then(h => {
       this.set('graphHierarchy', h);
       this.buildHierarchy(this.hierarchy);

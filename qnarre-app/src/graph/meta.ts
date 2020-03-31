@@ -15,7 +15,7 @@ export namespace Mgraph {
     this: qg.Mgraph,
     h: qh.Hierarchy,
     names: qt.Dict<string>,
-    ps: qt.HierarchyPs
+    ps: qt.HierPs
   ) {
     this.nodes().forEach(n => {
       const nd = this.node(n);

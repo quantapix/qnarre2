@@ -3,6 +3,7 @@ import * as storage from './storage';
 
 import {Component, OnInit} from '@angular/core';
 import * as backend from '../../graph/backend';
+import * as qc from '../../graph/compat';
 
 const RUN_STORAGE_KEY = 'run';
 
@@ -50,7 +51,7 @@ export class DashboardComponent implements OnInit {
     useLocalStorage: false
   }); // notify, observer: '_runObserver';
   _selection: any;
-  _compatibilityProvider: any;
+  _compat: qc.TpuCompat;
   _traceInputs: boolean;
 
   listeners: {
@@ -166,7 +167,7 @@ export class DashboardComponent implements OnInit {
       // Either this dashboard is already initialized ... or we are not yet ready to initialize.
       return;
     }
-    this.set('_compatibilityProvider', new tf.graph.op.TpuCompatibility());
+    this.set('_compat', new qc.TpuCompat());
     // Set this to true so we only initialize once.
     this._initialized = true;
     this._fetchDataset().then(dataset => {

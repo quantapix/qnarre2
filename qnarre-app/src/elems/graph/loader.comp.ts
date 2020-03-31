@@ -48,7 +48,7 @@ export class LoaderComponent implements OnInit {
       overridingHierarchyParams
     );
     loader
-      .loadHierarchicalGraph(
+      .loadHierGraph(
         tracker,
         path,
         pbTxtFile,

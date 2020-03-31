@@ -198,21 +198,12 @@ export function mapIndexToHue(id: number): number {
   return MIN_HUE + ((COLOR_RANGE * GOLDEN_RATIO * id) % COLOR_RANGE);
 }
 
-export function time<T>(m: string, task: () => T) {
-  const start = Date.now();
-  const r = task();
-  console.log(m, ':', Date.now() - start, 'ms');
-  return r;
-}
-
-const ASYNC_TASK_DELAY = 20;
-
 export function tracker(c: any) {
   return new Tracker({
     setMessage: msg => {
       c.set('progress', {value: c.progress.value, msg});
     },
-    reportError: (msg, err) => {
+    report: (msg, err) => {
       console.error(err.stack);
       c.set('progress', {
         value: c.progress.value,
@@ -220,9 +211,9 @@ export function tracker(c: any) {
         msg
       });
     },
-    updateProgress: inc => {
+    update: i => {
       c.set('progress', {
-        value: c.progress.value + inc,
+        value: c.progress.value + i,
         msg: c.progress.msg
       });
     }
@@ -230,75 +221,92 @@ export function tracker(c: any) {
 }
 
 export class Tracker implements qt.Tracker {
-  constructor(private delegate: qt.Tracker) {}
+  constructor(private proxy: qt.Tracker) {}
   setMessage(m: string) {
-    this.delegate.setMessage(m);
+    this.proxy.setMessage(m);
   }
-  reportError(m: string, err: Error) {
-    this.delegate.reportError(m, err);
+  report(m: string, err: Error) {
+    this.proxy.report(m, err);
   }
-  updateProgress(inc: number) {
-    this.delegate.updateProgress(inc);
+  update(i: number) {
+    this.proxy.update(i);
   }
-  getSubtaskTracker(msg: string, factor: number): qt.Tracker {
+  subTracker(msg: string, factor: number) {
     return {
       setMessage(m: string) {
         this.setMessage(msg + ': ' + m);
       },
-      reportError(m: string, err: Error) {
-        this.reportError(msg + ': ' + m, err);
+      report(m: string, err: Error) {
+        this.report(msg + ': ' + m, err);
       },
-      updateProgress(inc: number) {
-        this.updateProgress((inc * factor) / 100);
+      update(i: number) {
+        this.update((i * factor) / 100);
       }
-    };
+    } as qt.Tracker;
   }
-  runTask<T>(msg: string, inc: number, t: () => T) {
-    this.setMessage(msg);
+}
+
+export function time<T>(m: string, f: () => T) {
+  const start = Date.now();
+  const r = f();
+  console.log(m, ':', Date.now() - start, 'ms');
+  return r;
+}
+
+export namespace Task {
+  export function run<T>(t: qt.Tracker, m: string, i: number, f: () => T) {
+    t.setMessage(m);
     try {
-      const r = time(msg, t);
-      this.updateProgress(inc);
+      const r = time(m, f);
+      t.update(i);
       return r;
     } catch (e) {
-      this.reportError('Failed ' + msg, e);
+      t.report('Failed ' + m, e);
+      throw e;
     }
-    return undefined;
   }
-  runAsyncTask<T>(msg: string, inc: number, t: () => T): Promise<T> {
-    return new Promise((res, _rej) => {
-      this.setMessage(msg);
+
+  export function runAsync<T>(t: qt.Tracker, m: string, i: number, f: () => T) {
+    return new Promise<T>((res, _rej) => {
+      t.setMessage(m);
       setTimeout(() => {
         try {
-          const r = time(msg, t);
-          this.updateProgress(inc);
+          const r = time(m, f);
+          t.update(i);
           res(r);
         } catch (e) {
-          this.reportError('Failed ' + msg, e);
+          t.report('Failed ' + m, e);
         }
-      }, ASYNC_TASK_DELAY);
+      }, qp.ASYNC_DELAY);
     });
   }
-  runPromiseTask<T>(msg: string, inc: number, t: () => Promise<T>): Promise<T> {
-    return new Promise((res, rej) => {
+
+  export function runPromise<T>(
+    t: qt.Tracker,
+    m: string,
+    i: number,
+    f: () => Promise<T>
+  ) {
+    return new Promise<T>((res, rej) => {
       const err = (e: any) => {
-        this.reportError('Failed ' + msg, e);
+        t.report('Failed ' + m, e);
         rej(e);
       };
-      this.setMessage(msg);
+      t.setMessage(m);
       setTimeout(() => {
         try {
           const start = Date.now();
-          t()
+          f()
             .then(r => {
-              console.log(msg, ':', Date.now() - start, 'ms');
-              this.updateProgress(inc);
+              console.log(m, ':', Date.now() - start, 'ms');
+              t.update(i);
               res(r);
             })
             .catch(err);
         } catch (e) {
           err(e);
         }
-      }, ASYNC_TASK_DELAY);
+      }, qp.ASYNC_DELAY);
     });
   }
 }

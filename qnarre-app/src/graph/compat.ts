@@ -2,11 +2,11 @@ import * as qg from './graph';
 import * as qs from './slim';
 import * as qp from './params';
 
-export interface CompatibilityProvider {
+export interface Compat {
   valid: (n: qg.Noper) => boolean;
 }
 
-export class TpuCompatibility implements CompatibilityProvider {
+export class TpuCompat implements Compat {
   static readonly WHITELIST = [
     'Abs',
     'Acos',
@@ -384,7 +384,7 @@ export class TpuCompatibility implements CompatibilityProvider {
     'StatsAggregatorSummary'
   ];
 
-  private notTpuOp(d: string) {
+  private notTpu(d: string) {
     if (d.toLowerCase().search('cpu:') != -1) return true;
     if (d.toLowerCase().search('gpu:') != -1) return true;
     return d.toLowerCase().search('tpu') == -1;
@@ -393,21 +393,20 @@ export class TpuCompatibility implements CompatibilityProvider {
   valid(n: qg.Noper) {
     if (n.name?.search(qp.LIB_PRE) == 0) return true;
     if (!n.op) return true;
-    if (n.dev && this.notTpuOp(n.dev)) return true;
+    if (n.dev && this.notTpu(n.dev)) return true;
     if (n.dev && n.dev.search('TPU_SYSTEM') != -1) return true;
-    return _.includes(TpuCompatibility.WHITELIST, n.op);
+    return _.includes(TpuCompat.WHITELIST, n.op);
   }
 }
 
-export function checkOpsForCompatibility(g: qs.Slim, p: CompatibilityProvider) {
-  if (p === null) throw new Error('Compatibility provider required, : ' + p);
+export function check(g: qs.Slim, c: Compat) {
   _.each(g.opers, n => {
-    n.compatible = p.valid(n);
+    n.compatible = c.valid(n);
     n.embeds.in.forEach(n2 => {
-      n2.compatible = p.valid(n2);
+      n2.compatible = c.valid(n2);
     });
     n.embeds.out.forEach(n2 => {
-      n2.compatible = p.valid(n2);
+      n2.compatible = c.valid(n2);
     });
   });
 }

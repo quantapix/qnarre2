@@ -21,6 +21,8 @@ export const ATTR_SIZE = 1024;
 
 export const SVG_SPACE = 'http://www.w3.org/2000/svg';
 
+export const ASYNC_DELAY = 20;
+
 export const PARAMS = {
   animation: {
     duration: 250
@@ -119,7 +121,7 @@ export const PARAMS = {
   }
 };
 
-export const HierarchyPs: qt.HierarchyPs = {
+export const HierPs: qt.HierPs = {
   thresh: NaN,
   rankdir: 'bt' as qt.Dir,
   verify: true,

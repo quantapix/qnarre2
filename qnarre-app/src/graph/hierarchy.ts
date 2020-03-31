@@ -304,7 +304,7 @@ export class Hierarchy implements qg.Hierarchy {
     });
   }
 
-  incompats(ps: qt.HierarchyPs) {
+  incompats(ps: qt.HierPs) {
     const ns = [] as qg.Ncomb[];
     const added = {} as qt.Dict<qg.Nlist>;
     this.root.leaves().forEach(n => {
@@ -376,31 +376,28 @@ class Edges implements qg.Edges {
 }
 
 export async function build(
-  this: qs.Slim,
-  ps: qt.HierarchyPs,
-  t: qu.Tracker
+  s: qs.Slim,
+  ps: qt.HierPs,
+  t: qt.Tracker
 ): Promise<Hierarchy> {
   const h = new Hierarchy({rankdir: ps.rankdir} as qg.Opts);
-  await t.runAsyncTask('Add nodes', 20, () => {
+  const run = qu.Task.runAsync;
+  await run(t, 'Add nodes', 20, () => {
     const ds = {} as qt.Dict<boolean>;
     const cs = {} as qt.Dict<boolean>;
-    _.each(this.opers, o => {
+    _.each(s.opers, o => {
       if (o.dev) ds[o.dev] = true;
       if (o.clus) cs[o.clus] = true;
     });
     h.devs = _.keys(ds);
     h.clus = _.keys(cs);
-    h.addNodes(this);
+    h.addNodes(s);
   });
   const ns = {} as qt.Dict<string>;
-  await t.runAsyncTask('Find series', 20, () => {
+  await run(t, 'Find lists', 20, () => {
     if (ps.thresh > 0) qm.Mgraph.build.call(h.root.meta, h, ns, ps);
   });
-  await t.runAsyncTask('Add edges', 30, () => h.addEdges(this, ns));
-  await t.runAsyncTask(
-    'Find similars',
-    30,
-    () => (h.templs = templ.detect(h, !!ps.verify))
-  );
+  await run(t, 'Add edges', 30, () => h.addEdges(s, ns));
+  await run(t, 'Patterns', 30, () => (h.templs = templ.detect(h, !!ps.verify)));
   return h;
 }

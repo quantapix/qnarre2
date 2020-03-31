@@ -56,7 +56,7 @@ Polymer({
   observers: ['_graphUpdated(_graph)'],
   _graphUpdated: function(slimGraph) {
     const tracker = tf.graph.util.getTracker(this.$.loader);
-    const hierarchyTracker = tf.graph.util.getSubtaskTracker(
+    const hierarchyTracker = tf.graph.util.subTracker(
       tracker,
       100,
       'Namespace hierarchy'
