@@ -41,15 +41,15 @@ export function addHealth(
     mean: d[10],
     stddev: Math.sqrt(d[11])
   };
-  if (ndata && ndata.node.type === qt.NodeType.OPER) {
+  if (ndata && ndata.node.type === qt.NdataT.OPER) {
     width /= 2;
     height /= 2;
   }
-  const group = document.createElementNS(qp.SVG_NAMESPACE, 'g');
+  const group = document.createElementNS(qp.SVG_SPACE, 'g');
   group.classList.add('health-pill');
-  const defs = document.createElementNS(qp.SVG_NAMESPACE, 'defs');
+  const defs = document.createElementNS(qp.SVG_SPACE, 'defs');
   group.appendChild(defs);
-  const grad = document.createElementNS(qp.SVG_NAMESPACE, 'linearGradient');
+  const grad = document.createElementNS(qp.SVG_SPACE, 'linearGradient');
   const gradId = 'health-pill-gradient-' + id;
   grad.setAttribute('id', gradId);
   let count = 0;
@@ -57,11 +57,11 @@ export function addHealth(
   for (let i = 0; i < es.length; i++) {
     if (!es[i]) continue;
     count += es[i];
-    const s0 = document.createElementNS(qp.SVG_NAMESPACE, 'stop');
+    const s0 = document.createElementNS(qp.SVG_SPACE, 'stop');
     s0.setAttribute('offset', offset);
     s0.setAttribute('stop-color', qp.healthEntries[i].background_color);
     grad.appendChild(s0);
-    const s1 = document.createElementNS(qp.SVG_NAMESPACE, 'stop');
+    const s1 = document.createElementNS(qp.SVG_SPACE, 'stop');
     const percent = (count * 100) / total + '%';
     s1.setAttribute('offset', percent);
     s1.setAttribute('stop-color', qp.healthEntries[i].background_color);
@@ -69,13 +69,13 @@ export function addHealth(
     offset = percent;
   }
   defs.appendChild(grad);
-  const rect = document.createElementNS(qp.SVG_NAMESPACE, 'rect');
+  const rect = document.createElementNS(qp.SVG_SPACE, 'rect');
   rect.setAttribute('fill', 'url(#' + gradId + ')');
   rect.setAttribute('width', String(width));
   rect.setAttribute('height', String(height));
   rect.setAttribute('y', String(y));
   group.appendChild(rect);
-  const title = document.createElementNS(qp.SVG_NAMESPACE, 'title');
+  const title = document.createElementNS(qp.SVG_SPACE, 'title');
   title.textContent = getHealthText(health, total, es, stats);
   group.appendChild(title);
   let round = false;
@@ -98,7 +98,7 @@ export function addHealth(
       }
     }
   }
-  const svg = document.createElementNS(qp.SVG_NAMESPACE, 'text');
+  const svg = document.createElementNS(qp.SVG_SPACE, 'text');
   if (Number.isFinite(stats.min) && Number.isFinite(stats.max)) {
     const min = renderHealthStat(stats.min, round);
     const max = renderHealthStat(stats.max, round);

@@ -157,7 +157,7 @@ export class Gdata implements qg.Gdata {
     return !!found;
   }
 
-  getLabelForBaseEdge(e: qt.BaseEdge) {
+  getLabelForBaseEdge(e: qg.Edata) {
     const n = this.getNodeByName(e.v) as qg.Noper;
     if (!n.outShapes || _.isEmpty(n.outShapes)) return undefined;
     const shape = n.outShapes[e.outKey];
@@ -168,10 +168,10 @@ export class Gdata implements qg.Gdata {
 
   getLabelForEdge(e: qg.Emeta) {
     if (this.edgeLabelFunction) return this.edgeLabelFunction(e);
-    const isMulti = e.bases.length > 1;
+    const isMulti = e.links.length > 1;
     return isMulti
-      ? e.bases.length + ' tensors'
-      : this.getLabelForBaseEdge(e.bases[0]);
+      ? e.links.length + ' tensors'
+      : this.getLabelForBaseEdge(e.links[0]);
   }
 
   getNamesOfRenderedOps(): string[] {
