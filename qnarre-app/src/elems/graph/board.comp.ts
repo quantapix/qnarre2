@@ -22,11 +22,11 @@ export class BoardComponent implements OnInit {
   specificHealthStep = 0; // notify
   healthPillStepIndex: number;
   compatNodeTitle = 'TPU Compatibility';
-  edgeWidthFunction: any;
+  widthFn: any;
   _selectedNodeInclude: number;
   _highlightedNode: string;
   handleNodeSelected?: Function;
-  edgeLabelFunction?: Function;
+  labelFn?: Function;
   handleEdgeSelected?: Function;
 
   observers: ['_updateNodeInclude(selectedNode, renderHierarchy)'];

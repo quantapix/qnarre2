@@ -24,9 +24,9 @@ export class GraphComp implements OnInit {
   nodeContextMenuItems: Array<any>;
   nodeNamesToHealths: any;
   healthPillStepIndex: number;
-  edgeWidthFunction?: Function;
+  widthFn?: Function;
   handleNodeSelected?: Function;
-  edgeLabelFunction?: Function;
+  labelFn?: Function;
   handleEdgeSelected?: Function;
   _allowSelect = true;
   _lastSelectedEdgeGroup: any;
@@ -129,7 +129,7 @@ export class GraphComp implements OnInit {
     this.nodeSelected(event);
     const n = event.detail.name;
     const d = this.gdata.getNdataByName(n);
-    if (d.node.type === qt.NodeType.OP) return;
+    if (d.node.type === qt.NdataT.OP) return;
     this.gdata.buildSubhierarchy(n);
     d.expanded = !d.expanded;
     this.async(() => {
@@ -241,10 +241,10 @@ export class GraphComp implements OnInit {
   }
   buildHierarchy(h: qt.Hierarchy) {
     qu.time('new hierarchy', () => {
-      if (h.root.type !== qt.NodeType.META) return;
+      if (h.root.type !== qt.NdataT.META) return;
       const d = new qr.Gdata(h, !!this.stats);
-      d.edgeLabelFunction = this.edgeLabelFunction;
-      d.edgeWidthFunction = this.edgeWidthFunction;
+      d.labelFn = this.labelFn;
+      d.widthFn = this.widthFn;
       function colorParams(s: d3.ScaleLinear<string, string>) {
         return {
           minValue: s.domain()[0],

@@ -95,7 +95,7 @@ export function isOper(x?: any): x is Noper {
 
 export interface Nclus extends Ndata {
   core: Cgraph;
-  meta: Mgraph;
+  meta?: Mgraph;
   parent?: Nclus;
   bridge?: Bgraph;
   noControls?: boolean;

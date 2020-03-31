@@ -25,12 +25,12 @@ export class Edata implements qg.Edata {
     if (e.handle) c += ' ' + qt.Class.Edge.SELECTABLE;
     let w;
     const gd = e.gdata as qd.Gdata;
-    if (gd?.edgeWidthFunction) {
-      w = gd.edgeWidthFunction(this, c);
+    if (gd?.widthFn) {
+      w = gd.widthFn(this, c);
     } else {
       let s = 1;
       if (this.meta) s = this.meta.size;
-      w = gd?.edgeWidthSizedBasedScale(s);
+      w = gd?.scales.width(s);
     }
     const id = 'path_' + this.name;
     const s = sel
@@ -40,26 +40,24 @@ export class Edata implements qg.Edata {
       .style('stroke-width', w + 'px');
     if (this.meta) {
       if (this.meta.num.ref) {
-        const m = `reference-arrowhead-${arrowheadMap(w)}`;
+        const m = `reference-arrowhead-${arrowhead(w)}`;
         s.style('marker-start', `url(#${m})`);
         this.marker.start = m;
       } else {
-        const m = `dataflow-arrowhead-${arrowheadMap(w)}`;
+        const m = `dataflow-arrowhead-${arrowhead(w)}`;
         s.style('marker-end', `url(#${m})`);
         this.marker.end = m;
       }
     } else return;
     const t = gd?.getLabelForEdge(this.meta);
     if (!t) return;
-    // const b =
-    //  w > CENTER_EDGE_LABEL_MIN_STROKE_WIDTH ? 'central' : 'text-after-edge';
     sel
       .append('text')
       .append('textPath')
       .attr('xlink:href', '#' + id)
       .attr('startOffset', '50%')
       .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
+      .attr('dominant-baseline', 'central') // 'text-after-edge'
       .text(t);
   }
 
@@ -191,23 +189,7 @@ function idxAtLength(ps: qt.Point[], length: number, line: d3.Line<qt.Point>) {
   return ps.length - 1;
 }
 
-const SCALE_EXP = 0.3;
-const WIDTH_SCALE = [1, 5e6];
-
-export const EDGE_WIDTH_SIZE_BASED_SCALE: d3.ScalePower<number, number> = d3
-  .scalePow()
-  .exponent(SCALE_EXP)
-  .domain(WIDTH_SCALE)
-  .range([qp.MIN_E_WIDTH, qp.MAX_E_WIDTH])
-  .clamp(true);
-
-const arrowheadMap = d3
+const arrowhead = d3
   .scaleQuantize<string>()
   .domain([qp.MIN_E_WIDTH, qp.MAX_E_WIDTH])
   .range(['small', 'medium', 'large', 'xlarge']);
-
-// const CENTER_EDGE_LABEL_MIN_STROKE_WIDTH = 2.5;
-
-export interface EdgeSelectionCallback {
-  (d: qg.Edata): void;
-}

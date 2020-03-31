@@ -2,11 +2,11 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qc from './cluster';
-import * as qe from './edata';
 import * as qg from './graph';
 import * as qh from './hierarchy';
 import * as qn from './ndata';
 import * as qp from './params';
+import * as qs from './scene';
 import * as qt from './types';
 import * as qu from './utils';
 
@@ -14,6 +14,8 @@ import {GdataPs as PS} from './params';
 
 type Linear = d3.ScaleLinear<string, string>;
 type Ordinal = d3.ScaleOrdinal<string, string>;
+type Power = d3.ScalePower<number, number>;
+type NLinear = d3.ScaleLinear<number, number>;
 
 export class Gdata implements qg.Gdata {
   name = '';
@@ -23,28 +25,26 @@ export class Gdata implements qg.Gdata {
   nodesep = NaN;
   ranksep = NaN;
   root: qc.Nclus;
-  nds = {} as qt.Dict<qn.Ndata>;
+  nds = {} as qt.Dict<qg.Ndata>;
   hasSubhier = {} as qt.Dict<boolean>;
   colors = {} as {dev: Ordinal; clus: Ordinal};
-  scales = {} as {mem: Linear; time: Linear};
+  scales = {} as {mem: Linear; time: Linear; width: NLinear | Power};
   renderedOpNames = [] as string[];
-  edgeWidthSizedBasedScale = {} as
-    | d3.ScaleLinear<number, number>
-    | d3.ScalePower<number, number>;
   traceInputs = false;
-  edgeLabelFunction?: EdgeLabelFunction;
-  edgeWidthFunction?: EdgeThicknessFunction;
+  labelFn?: (e: qg.Emeta, d: Gdata) => string;
+  widthFn?: (e: qg.Edata, c: string) => number;
 
   constructor(public hier: qh.Hierarchy, public displaying: boolean) {
     this.initScales();
-    this.root = new qc.Nclus(hier.root, hier.opts);
+    const n = hier.root.name;
+    this.root = new qc.Nclus(n, hier.root, hier.opts);
     this.root.expanded = true;
-    this.nds[hier.root.name] = this.root;
-    this.renderedOpNames.push(hier.root.name);
-    this.buildSubhier(hier.root.name);
+    this.nds[n] = this.root;
+    this.renderedOpNames.push(n);
+    this.buildSubhier(n);
   }
 
-  buildSubhier(n: string) {}
+  buildSubhier(_n: string) {}
 
   initScales() {
     this.colors.dev = d3
@@ -55,7 +55,7 @@ export class Gdata implements qg.Gdata {
       .scaleOrdinal<string>()
       .domain(this.hier.clus)
       .range(_.map(d3.range(this.hier.clus.length), qp.MetaColors.CLUSTER));
-    const m = this.hier.root.meta;
+    const m = this.hier.root.meta!;
     const mem = d3.max(m.nodes(), n => m.node(n)?.stats?.bytes)!;
     this.scales.mem = d3
       .scaleLinear<string, string>()
@@ -66,8 +66,13 @@ export class Gdata implements qg.Gdata {
       .scaleLinear<string, string>()
       .domain([0, time])
       .range(PS.minMaxColors);
-    this.edgeWidthSizedBasedScale = this.hier.hasShape
-      ? qe.EDGE_WIDTH_SIZE_BASED_SCALE
+    this.scales.width = this.hier.hasShape
+      ? d3
+          .scalePow()
+          .exponent(qp.SCALE_EXP)
+          .domain(qp.WIDTH_SCALE)
+          .range([qp.MIN_E_WIDTH, qp.MAX_E_WIDTH])
+          .clamp(true)
       : d3
           .scaleLinear()
           .domain([1, this.hier.maxEdgeSize])
@@ -82,13 +87,11 @@ export class Gdata implements qg.Gdata {
     return this.hier.node(n);
   }
 
-  getOrCreateRenderNodeByName(name: string): qn.Ndata | undefined {
+  getOrCreateRenderNodeByName(name: string): qg.Ndata | undefined {
     if (name in this.nds) return this.nds[name];
     const n = this.hier.node(name);
     if (!n) return undefined;
-    const nd = qg.isClus(n)
-      ? new qc.Nclus(n, this.hier.options)
-      : new qn.Ndata(n);
+    const nd = qg.isClus(n) ? new qc.Nclus(n, this.hier.opts) : new qn.Ndata(n);
     this.nds[name] = nd;
     this.renderedOpNames.push(name);
     if (n.stats) {
@@ -126,7 +129,7 @@ export class Gdata implements qg.Gdata {
   getNearestVisibleAncestor(name: string) {
     const path = qu.hierPath(name);
     let i = 0;
-    let node: qn.Ndata | undefined;
+    let node: qg.Ndata | undefined;
     let n = name;
     for (; i < path.length; i++) {
       n = path[i];
@@ -145,7 +148,7 @@ export class Gdata implements qg.Gdata {
     this.root.setDepth(d);
   }
 
-  isNodeAuxiliary(nd: qn.Ndata) {
+  isNodeAuxiliary(nd: qg.Ndata) {
     const p = this.getNdataByName(nd.parent?.name) as qc.Nclus;
     let found = _.find(p.isolated.in, n => {
       return n.name === nd.name;
@@ -157,49 +160,49 @@ export class Gdata implements qg.Gdata {
     return !!found;
   }
 
-  getLabelForBaseEdge(e: qg.Edata) {
-    const n = this.getNodeByName(e.v) as qg.Noper;
-    if (!n.outShapes || _.isEmpty(n.outShapes)) return undefined;
-    const shape = n.outShapes[e.outKey];
+  labelForLink(l: qg.Link) {
+    const n = this.getNodeByName(l.nodes[0]) as qg.Noper;
+    if (!n.shapes || _.isEmpty(n.shapes)) return undefined;
+    const shape = n.shapes[+l.data!.out!];
     if (!shape) return undefined;
     if (shape.length === 0) return 'scalar';
     return shape.map(s => (s === -1 ? '?' : s)).join('x');
   }
 
   getLabelForEdge(e: qg.Emeta) {
-    if (this.edgeLabelFunction) return this.edgeLabelFunction(e);
+    if (this.labelFn) return this.labelFn(e, this);
     const isMulti = e.links.length > 1;
     return isMulti
       ? e.links.length + ' tensors'
-      : this.getLabelForBaseEdge(e.links[0]);
+      : this.labelForLink(e.links[0]);
   }
 
   getNamesOfRenderedOps(): string[] {
     return this.renderedOpNames;
   }
 
-  expandUntilNodeIsShown(scene, name: string) {
+  expandUntilNodeIsShown(e: qs.Elem, name: string) {
     const ns = name.split('/');
     const m = ns[ns.length - 1].match(/(.*):\w+/);
     if (m?.length === 2) ns[ns.length - 1] = m[1];
     let n = ns[0];
-    let nd = this.getNdataByName(n);
+    let nd = this.getNdataByName(n)!;
     for (let i = 1; i < ns.length; i++) {
-      if (nd?.type === qt.NdataT.OPER) break;
+      if (nd.type === qt.NdataT.OPER) break;
       this.buildSubhier(n);
-      nd!.expanded = true;
-      scene.setNodeExpanded(nd);
+      nd.expanded = true;
+      e.setNodeExpanded(nd);
       n += '/' + ns[i];
-      nd = this.getNdataByName(n);
+      nd = this.getNdataByName(n)!;
     }
-    return nd?.name;
+    return nd.name;
   }
 
   _getAllContainedOpNodes(name: string) {
-    let os = [] as qn.Noper[];
+    let os = [] as qg.Noper[];
     const n = this.getNodeByName(name);
-    if (qg.isOper(n)) return [n].concat(n.embeds.in as qn.Noper[]);
-    const ns = n?.meta.nodes();
+    if (qg.isOper(n)) return [n].concat(n.embeds.in as qg.Noper[]);
+    const ns = n?.meta!.nodes();
     ns?.forEach(n => {
       os = os.concat(this._getAllContainedOpNodes(n));
     });
@@ -245,37 +248,27 @@ export class Gdata implements qg.Gdata {
       let nd = this.getNodeByName(i.name);
       if (!nd) return;
       if (qg.isMeta(nd)) nd = this.getNodeByName(qu.strictName(nd.name));
-      const vp = this.getVisibleParent(nd)!;
-      const v = vins[vp.name];
-      if (v) {
-        v.opNodes.push(nd);
-      } else {
-        vins[vp.name] = {
-          visibleParent: vp,
-          opNodes: [nd]
-        } as VisibleParent;
+      if (qg.isOper(nd)) {
+        const vp = this.getVisibleParent(nd)!;
+        const v = vins[vp.name];
+        if (v) v.ops.push(nd);
+        else vins[vp.name] = {parent: vp, ops: [nd]};
       }
     });
     const starts = {} as qt.Dict<any>;
     const nds = [p];
-    starts[p.name] = {
-      idx: 0,
-      ends: [],
-      traced: false
-    };
-    let nd = p;
-    for (let idx = 1; nd?.name !== qp.ROOT; idx++) {
-      nd = nd?.parent;
-      starts[nd.name] = {
-        idx,
-        ends: [],
-        traced: false
-      };
-      nds[idx] = nd;
+    starts[p.name] = {idx: 0, ends: [], traced: false};
+    let nd: qg.Ndata | undefined = p;
+    for (let idx = 1; nd && nd.name !== qp.ROOT; idx++) {
+      nd = nd.parent;
+      if (nd) {
+        starts[nd.name] = {idx, ends: [], traced: false};
+        nds[idx] = nd;
+      }
     }
     _.forOwn(vins, vi => {
-      const nd = vi.visibleParent;
-      vi.opNodes.forEach(o => {
+      const nd = vi.parent;
+      vi.ops.forEach(o => {
         ns = this.traceAllInputsOfOpNode(root, o, ns);
       });
       if (nd.name !== p?.name) createTrace(root, nd, starts, nds);
@@ -322,17 +315,9 @@ export class Gdata implements qg.Gdata {
   }
 }
 
-export interface EdgeThicknessFunction {
-  (ed: qg.Edata, c: string): number;
-}
-
-export interface EdgeLabelFunction {
-  (e: qg.Emeta, gd: Gdata): string;
-}
-
 interface VisibleParent {
-  visibleParent: qg.Ndata;
-  opNodes: qg.Noper[];
+  parent: qg.Ndata;
+  ops: qg.Noper[];
 }
 
 function markParents(root: SVGElement, nds: qt.Dict<qg.Ndata>) {

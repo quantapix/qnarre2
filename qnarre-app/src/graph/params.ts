@@ -13,6 +13,9 @@ export const displayRegex = new RegExp(
 export const MIN_AUX_WIDTH = 140;
 
 export const KEY_DELIM = '--';
+
+export const SCALE_EXP = 0.3;
+export const WIDTH_SCALE = [1, 5e6];
 export const MIN_E_WIDTH = 0.75;
 export const MAX_E_WIDTH = 12;
 

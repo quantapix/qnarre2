@@ -1,6 +1,5 @@
 /* eslint-disable no-case-declarations */
 import * as qc from './compat';
-import * as qg from './graph';
 import * as qh from './hierarchy';
 import * as qp from './params';
 import * as qs from './slim';

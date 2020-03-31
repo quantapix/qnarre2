@@ -30,6 +30,8 @@ export abstract class Elem extends HTMLElement {
     return !!nd.expanded;
   }
 
+  abstract setNodeExpanded(nd: qg.Ndata): void;
+
   addNodeSel(n: string, s: qt.Sel) {
     this.sels.nodes[n] = s;
   }

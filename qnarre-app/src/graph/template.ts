@@ -23,7 +23,7 @@ function templsFrom(gs: [string, qg.Group][], verify: boolean) {
       const cs = [] as qg.Cluster[];
       ns.forEach(n => {
         for (let i = 0; i < cs.length; i++) {
-          const s = !verify || areSimilar(cs[i].node.meta, n.meta);
+          const s = !verify || areSimilar(cs[i].node.meta!, n.meta!);
           if (s) {
             n.template = cs[i].node.template;
             cs[i].names.push(n.name);
@@ -111,12 +111,12 @@ function nodeSimilar(
     } else if (t === qt.NdataT.LIST) {
       const s1 = n1 as qg.Nlist;
       const s2 = n2 as qg.Nlist;
-      const c = s1.meta.nodeCount;
+      const c = s1.meta!.nodeCount;
       return (
-        c === s2.meta.nodeCount &&
+        c === s2.meta!.nodeCount &&
         (c === 0 ||
-          (s1.meta.node(s1.meta.nodes()[0]) as qg.Noper).op ===
-            (s2.meta.node(s2.meta.nodes()[0]) as qg.Noper).op)
+          (s1.meta!.node(s1.meta!.nodes()[0]) as qg.Noper).op ===
+            (s2.meta!.node(s2.meta!.nodes()[0]) as qg.Noper).op)
       );
     }
   }

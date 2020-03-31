@@ -19,12 +19,12 @@ export namespace Mgraph {
   ) {
     this.nodes().forEach(n => {
       const nd = this.node(n);
-      if (qg.isMeta(nd)) build.call(nd.meta, h, names, ps);
+      if (qg.isMeta(nd)) build.call(nd.meta!, h, names, ps);
     });
     const f = ps.patterns ? detect : collect;
     const ls = f.call(this, cluster.call(this), h.opts);
     _.each(ls, (l, n) => {
-      const ns = l.meta.nodes();
+      const ns = l.meta!.nodes();
       ns.forEach(n => {
         const nd = this.node(n);
         if (qg.isOper(nd) && !nd.list) nd.list = n;
@@ -37,7 +37,7 @@ export namespace Mgraph {
       this.setNode(n, l);
       ns.forEach(n => {
         const nd = this.node(n)!;
-        l.meta.setNode(n, nd);
+        l.meta!.setNode(n, nd);
         l.parent = nd.parent as any;
         l.cardin++;
         qu.updateHistos(l.histo, nd);
@@ -243,7 +243,7 @@ export namespace Mgraph {
       );
       l.forEach(n => {
         nd.ids.push(n.cluster);
-        nd.meta.setNode(n.name, this.node(n.name));
+        nd.meta!.setNode(n.name, this.node(n.name));
       });
       ls[name] = nd;
     }

@@ -252,16 +252,13 @@ export class NodeInfoComponent implements OnInit {
      * Unpacks the metaedge into a list of base edge information
      * that can be rendered.
      */
-    const unpackMetaEdge = metaedge => {
-      return _.map(metaedge.bases, baseEdge => {
-        const name = isPredecessor ? baseEdge.v : baseEdge.w;
+    const unpackMetaEdge = meta => {
+      return meta.links.map(l => {
+        const name = isPredecessor ? l.nodes[0] : l.nodes[1];
         return {
           name: name,
           node: this._getNode(name, this.graphHierarchy),
-          edgeLabel: tf.graph.scene.edge.getLabelForBaseEdge(
-            baseEdge,
-            this.renderHierarchy
-          ),
+          edgeLabel: this.renderHierarchy.labelForLink(l),
           renderInfo: this._getRenderInfo(name, this.renderHierarchy)
         };
       });

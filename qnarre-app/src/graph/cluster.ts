@@ -25,12 +25,17 @@ export class Nclus extends qn.Ndata implements qg.Nclus {
     comp: {compats: 0, incompats: 0}
   };
 
-  constructor(t: qt.NdataT, public meta: qg.Mgraph, opts: qg.Opts) {
-    super(t, meta.data!.name!);
-    opts.isCompound = true;
+  constructor(
+    t: qt.NdataT,
+    n: string,
+    public meta?: qg.Mgraph,
+    opts?: qg.Opts
+  ) {
+    super(t, n);
+    opts = opts ?? ({isCompound: true} as qg.Opts);
     this.core = qg.createGraph<qg.Gdata, qg.Ndata, qg.Edata>(
       qt.GdataT.CORE,
-      meta.data!.name,
+      n,
       opts
     );
   }
@@ -286,19 +291,20 @@ export class Nmeta extends Nclus implements qg.Nmeta {
   constructor(n: string, o = {} as qg.Opts) {
     super(
       qt.NdataT.META,
+      n,
       qg.createGraph<qg.Gdata, Ncomb, qg.Edata>(qt.GdataT.META, n, o),
       o
     );
   }
 
   firstChild() {
-    return this.meta.node(this.meta.nodes()[0]);
+    return this.meta!.node(this.meta!.nodes()[0]);
   }
 
   rootOp() {
     const s = this.name.split('/');
     const r = this.name + '/(' + s[s.length - 1] + ')';
-    const n = this.meta.node(r);
+    const n = this.meta!.node(r);
     return qg.isOper(n) ? (n as qg.Noper) : undefined;
   }
 
@@ -308,7 +314,7 @@ export class Nmeta extends Nclus implements qg.Nmeta {
     while (q.length) {
       const nd = q.shift()!;
       if (qg.isClus(nd)) {
-        const m = nd.meta;
+        const m = nd.meta!;
         m.nodes().forEach(n => q.push(m.node(n)!));
       } else {
         ls.push(nd.name);
@@ -321,8 +327,8 @@ export class Nmeta extends Nclus implements qg.Nmeta {
     const ps = _.map(
       {
         depth: this.depth,
-        '|N|': this.meta.nodeCount,
-        '|E|': this.meta.edgeCount
+        '|N|': this.meta!.nodeCount,
+        '|E|': this.meta!.edgeCount
       },
       (v, k) => k + '=' + v
     ).join(' ');
@@ -345,6 +351,7 @@ export class Nlist extends Nclus implements qg.Nlist {
   ) {
     super(
       qt.NdataT.LIST,
+      n,
       qg.createGraph<qg.Gdata, Ncomb, qg.Edata>(qt.GdataT.LIST, n, o),
       o
     );

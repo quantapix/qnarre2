@@ -146,7 +146,7 @@ export class Hierarchy implements qg.Hierarchy {
     const es = new Edges();
     const p = n.parent;
     if (qg.isClus(p)) {
-      const m = p.meta;
+      const m = p.meta!;
       let ls = inbound ? m.inLinks(p.name) : m.outLinks(p.name);
       es.update(ls);
       const b = this.bridge(p.name);
@@ -166,7 +166,7 @@ export class Hierarchy implements qg.Hierarchy {
       if (n in this.orders) return this.orders[n];
       const succs = {} as qt.Dict<string[]>;
       const dests = {} as qt.Dict<boolean>;
-      const m = nd.meta;
+      const m = nd.meta!;
       m.links().forEach(l => {
         const ed = m.edge(l)! as qg.Emeta;
         if (!ed.num.regular) return;
@@ -219,7 +219,7 @@ export class Hierarchy implements qg.Hierarchy {
           m = new qc.Nmeta(n, this.opts);
           m.parent = p;
           this.setNode(n, m);
-          p.meta.setNode(n, m);
+          p.meta!.setNode(n, m);
           if (n.startsWith(qp.LIB_PRE) && p.name === qp.ROOT) {
             const f = n.substring(qp.LIB_PRE.length);
             if (!os[f]) os[f] = [];
@@ -231,7 +231,7 @@ export class Hierarchy implements qg.Hierarchy {
       }
       this.setNode(o.name, o);
       o.parent = p;
-      p.meta.setNode(o.name, o);
+      p.meta!.setNode(o.name, o);
       o.embeds.in.forEach(b => {
         this.setNode(b.name, b);
         b.parent = o;
@@ -266,13 +266,13 @@ export class Hierarchy implements qg.Hierarchy {
       }
       const n = this.node(src[si + 1]) as qg.Nclus;
       const sd = [src[si], dst[di]];
-      let m = n.meta.edge(sd) as qe.Emeta;
+      let m = n.meta!.edge(sd) as qe.Emeta;
       if (!m) {
         m = new qe.Emeta();
-        n.meta.setEdge(sd, m);
+        n.meta!.setEdge(sd, m);
       }
       if (!n.noControls && !m.control) n.noControls = true;
-      m.addLink(n.meta.link(sd)!, this);
+      m.addLink(n.meta!.link(sd)!, this);
     });
   }
 
@@ -395,7 +395,7 @@ export async function build(
   });
   const ns = {} as qt.Dict<string>;
   await run(t, 'Find lists', 20, () => {
-    if (ps.thresh > 0) qm.Mgraph.build.call(h.root.meta, h, ns, ps);
+    if (ps.thresh > 0) qm.Mgraph.build.call(h.root.meta!, h, ns, ps);
   });
   await run(t, 'Add edges', 30, () => h.addEdges(s, ns));
   await run(t, 'Patterns', 30, () => (h.templs = templ.detect(h, !!ps.verify)));
