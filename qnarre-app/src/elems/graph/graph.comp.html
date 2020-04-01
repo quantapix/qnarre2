@@ -1,20 +1,17 @@
 <div class="container">
   <div class="vertical">
-    <template is="dom-if" if="[[title]]">
-      <h2>[[title]]</h2>
-    </template>
+    <h2 *ngIf="title" {{title}}></h2>
     <qnr-graph-scene
       id="scene"
       class="auto"
-      [selectedNode]="selectedNode"
-      highlighted-node="[[_getVisible(highlightedNode)]]"
-      selected-edge="{{ selectedEdge }}"
+      [(selNode)]="selNode"
+      [selectedE]="selectedE"
+      [lightedN]="[[_getVisible(highlightedNode)]]"
       color-by="[[colorBy]]"
       progress="[[progress]]"
       node-context-menu-items="[[nodeContextMenuItems]]"
       node-names-to-health-pills="[[nodeNamesToHealths]]"
       health-pill-step-index="{{ healthPillStepIndex }}"
-      handle-edge-selected="[[handleEdgeSelected]]"
       trace-ins="[[traceInputs]]"
     ></qnr-graph-scene>
   </div>

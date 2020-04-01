@@ -1,18 +1,19 @@
 import {Component, OnInit} from '@angular/core';
-import {SelectionType} from '../../graph/types';
 
 import * as qg from '../../graph/graph';
+import * as qt from '../../graph/types';
+import * as qu from '../../graph/utils';
+
 import * as proto from '../../graph/proto';
-import * as util from '../../graph/utils';
 
 interface DeviceNameExclude {
   regex: RegExp;
 }
 
-const DEVICE_NAME_REGEX = /device:([^:]+:[0-9]+)$/;
-const DEVICE_NAMES_INCLUDE: DeviceNameExclude[] = [
+const DEV_REGEX = /device:([^:]+:[0-9]+)$/;
+const DEVS_INCL: DeviceNameExclude[] = [
   {
-    regex: DEVICE_NAME_REGEX
+    regex: DEV_REGEX
   }
 ];
 
@@ -21,16 +22,12 @@ interface StatsDefaultOff {
   msg: string;
 }
 
-const DEVICE_STATS_DEFAULT_OFF: StatsDefaultOff[] = [];
+const STATS_DEFAULT_OFF: StatsDefaultOff[] = [];
 
 export interface Selection {
   run: string;
   tag: string | null;
   type: SelectionType;
-}
-
-export interface DeviceForStats {
-  [key: string]: boolean;
 }
 
 export interface TagItem {
@@ -55,21 +52,6 @@ interface CurrentDevice {
   ignoredMsg: string | null;
 }
 
-export enum ColorBy {
-  TIME = 'compute_time',
-  MEMORY = 'memory',
-  STRUCTURE = 'structure',
-  CLUSTER = 'xla_cluster',
-  COMPAT = 'op_compatibility'
-}
-
-interface ColorParams {
-  minValue: number;
-  maxValue: number;
-  startColor: string;
-  endColor: string;
-}
-
 interface DeviceColor {
   device: string;
   color: string;
@@ -81,15 +63,15 @@ interface ClusterColor {
 }
 
 interface ColorByParams {
-  compute_time: ColorParams;
-  memory: ColorParams;
+  compute_time: qt.ColorPs;
+  memory: qt.ColorPs;
   device: DeviceColor[];
   xla_cluster: ClusterColor[];
 }
 
-const GRADIENT_COMPATIBLE_COLOR_BY: Set<ColorBy> = new Set([
-  ColorBy.TIME,
-  ColorBy.MEMORY
+const GRADIENT_COMPATIBLE_COLOR_BY: Set<qt.ColorBy> = new Set([
+  qt.ColorBy.TIME,
+  qt.ColorBy.MEM
 ]);
 
 @Component({
@@ -98,21 +80,110 @@ const GRADIENT_COMPATIBLE_COLOR_BY: Set<ColorBy> = new Set([
   styleUrls: ['./controls.comp.scss']
 })
 export class ControlsComponent implements OnInit {
-  stats?: any; // observer: '_statsChanged'
-  devicesForStats?: any; // notify, readonly
-  colorBy = ColorBy.STRUCTURE; // notify
+  $ = {} as {loader: any};
+  $$ = {} as (_s: string) => any;
+
+  set stats(s: proto.StepStats | undefined) {
+    const sds = {} as qt.Dict<boolean>;
+    s?.dev_stats.forEach(s => {
+      const inc = DEVS_INCL.some(r => r.regex.test(s.device));
+      const exclude = STATS_DEFAULT_OFF.some(r => r.regex.test(s.device));
+      if (inc && !exclude) sds[s.device] = true;
+    });
+    this._statDevs = sds;
+  }
+  get stats() {
+    return this._stats;
+  }
+  private _stats?: proto.StepStats;
+
+  get statDevs() {
+    return this._statDevs;
+  }
+  private _statDevs = {} as qt.Dict<boolean>;
+
+  colorBy = qt.ColorBy.STRUCT; // notify
   colorByParams: any; // notify, readonly
+
   datasets: () => []; // observer: '_datasetsChanged';
   selection: any; // notify, readOnly, computed: '_computeSelection(datasets, _selectedRunIndex, _selectedTagIndex, _selectedGraphType)';
   selectedFile: any; // notify
   _selectedRunIndex = 0; // observer: '_selectedRunIndexChanged';
   traceInputs = false; // notify
   _selectedTagIndex = 0; // observer: '_selectedTagIndexChanged';
-  _selectedGraphType = SelectionType.OP_GRAPH;
-  _currentDevices: Array<any>; // computed: '_getCurrentDevices(devicesForStats)';
-  _currentDeviceParams: Array<any>; // computed: '_getCurrentDeviceParams(colorByParams)';
-  _currentclusterParams: Array<any>; // computed: '_getCurrentclusterParams(colorByParams)';
-  _currentGradientParams: any; // computed: '_getCurrentGradientParams(colorByParams, colorBy)';
+  _selectedGraphType = qt.SelectT.OPER;
+
+  curDevs(): CurrentDevice[] {
+    const devStats = this.stats?.dev_stats ?? [];
+    const ds = devStats
+      .map(d => d.device)
+      .filter(n => DEVS_INCL.some(r => r.regex.test(n)));
+    const ss = qu.removePrefix(ds);
+    if (ss.length == 1) {
+      const m = ss[0].match(DEV_REGEX);
+      if (m) ss[0] = m[1];
+    }
+    return ds.map((d, i) => {
+      let m = null;
+      STATS_DEFAULT_OFF.forEach(r => {
+        if (r.regex.test(d)) m = r.msg;
+      });
+      return {
+        device: d,
+        suffix: ss[i],
+        used: this.statDevs[d],
+        ignoredMsg: m
+      };
+    });
+  }
+
+  curDevPs(colorByParams: qt.ColorByParams): DeviceColor[] {
+    const deviceParams = colorByParams.device.filter(param => {
+      return DEVS_INCL.some(rule => {
+        return rule.regex.test(param.device);
+      });
+    });
+    const suffixes = qu.removePrefix(deviceParams.map(d => d.device));
+    if (suffixes.length == 1) {
+      const found = suffixes[0].match(DEV_REGEX);
+      if (found) {
+        suffixes[0] = found[1];
+      }
+    }
+    return deviceParams.map((d, i) => {
+      return {device: suffixes[i], color: d.color};
+    });
+  }
+
+  curClusPs(colorByParams: qt.ColorByParams): ClusterColor[] {
+    return colorByParams.xla_cluster;
+  }
+
+  curGradPs(
+    colorByParams: qt.ColorByParams,
+    colorBy: qt.ColorBy
+  ): qt.ColorPs | void {
+    if (!this._isGradientColoring(this.stats, colorBy)) {
+      return;
+    }
+    const params: qt.ColorPs = colorByParams[colorBy];
+    let minValue = params.minValue;
+    let maxValue = params.maxValue;
+    if (colorBy === qt.ColorBy.MEMORY) {
+      minValue = qu.convertUnits(minValue, qu.MEMORY_UNITS);
+      maxValue = qu.convertUnits(maxValue, qu.MEMORY_UNITS);
+    } else if (colorBy === qt.ColorBy.TIME) {
+      minValue = qu.convertUnits(minValue, qu.TIME_UNITS);
+      maxValue = qu.convertUnits(maxValue, qu.TIME_UNITS);
+    }
+    return {
+      minValue,
+      maxValue,
+      startColor: params.startColor,
+      endColor: params.endColor
+    };
+  }
+
   showSessionRunsDropdown = true;
   showUploadButton = true;
   healthPillsFeatureEnabled: boolean;
@@ -127,77 +198,16 @@ export class ControlsComponent implements OnInit {
     return gd && gd.hier.clus.length > 0;
   }
 
-  _statsChanged(stats: proto.StepStats): void {
-    if (stats == null) {
-      return;
-    }
-    const devicesForStats = {};
-    const devices = _.each(stats.dev_stats, function(d) {
-      // Only considered included devices.
-      const include = _.some(DEVICE_NAMES_INCLUDE, function(rule) {
-        return rule.regex.test(d.device);
-      });
-      // Exclude device names that are ignored by default.
-      const exclude = _.some(DEVICE_STATS_DEFAULT_OFF, function(rule) {
-        return rule.regex.test(d.device);
-      });
-      if (include && !exclude) {
-        devicesForStats[d.device] = true;
-      }
-    });
-    this.set('devicesForStats', devicesForStats);
-  }
-
-  _getCurrentDevices(devicesForStats: DeviceForStats): CurrentDevice[] {
-    const stats: proto.StepStats | null = this.stats;
-    const devStats: proto.DevStat[] = stats ? stats.dev_stats : [];
-    const allDevices = devStats.map(d => d.device);
-    const devices = allDevices.filter(deviceName => {
-      return DEVICE_NAMES_INCLUDE.some(rule => {
-        return rule.regex.test(deviceName);
-      });
-    });
-    // Devices names can be long so we remove the longest common prefix
-    // before showing the devices in a list.
-    const suffixes = util.removePrefix(devices);
-    if (suffixes.length == 1) {
-      const found = suffixes[0].match(DEVICE_NAME_REGEX);
-      if (found) {
-        suffixes[0] = found[1];
-      }
-    }
-    return devices.map((device, i) => {
-      let ignoredMsg = null;
-      // TODO(stephanwlee): this should probably bail on the first match or
-      // do something useful with multiple rule.msgs.
-      DEVICE_STATS_DEFAULT_OFF.forEach(rule => {
-        if (rule.regex.test(device)) {
-          ignoredMsg = rule.msg;
-        }
-      });
-      return {
-        device: device,
-        suffix: suffixes[i],
-        used: devicesForStats[device],
-        ignoredMsg: ignoredMsg
-      };
-    });
-  }
-
   _deviceCheckboxClicked(event: Event): void {
-    // Update the device map.
     const input = event.target as HTMLInputElement;
-    const devicesForStats: DeviceForStats = Object.assign(
-      {},
-      this.devicesForStats
-    );
+    const statDevs: DeviceForStats = Object.assign({}, this.statDevs);
     const device = input.value;
     if (input.checked) {
-      devicesForStats[device] = true;
+      statDevs[device] = true;
     } else {
-      delete devicesForStats[device];
+      delete statDevs[device];
     }
-    this.set('devicesForStats', devicesForStats);
+    this.set('statDevs', statDevs);
   }
 
   _numTags(datasets: Dataset, _selectedRunIndex: number): number {
@@ -215,61 +225,12 @@ export class ControlsComponent implements OnInit {
     this.fire('fit-tap');
   }
 
-  _isGradientColoring(stats: proto.StepStats, colorBy: ColorBy): boolean {
+  _isGradientColoring(stats: proto.StepStats, colorBy: qt.ColorBy): boolean {
     return GRADIENT_COMPATIBLE_COLOR_BY.has(colorBy) && stats != null;
   }
 
   _equals(a: any, b: any): boolean {
     return a === b;
-  }
-
-  _getCurrentDeviceParams(colorByParams: ColorByParams): DeviceColor[] {
-    const deviceParams = colorByParams.device.filter(param => {
-      return DEVICE_NAMES_INCLUDE.some(rule => {
-        return rule.regex.test(param.device);
-      });
-    });
-    // Remove common prefix and merge back corresponding color. If
-    // there is only one device then remove everything up to "/device:".
-    const suffixes = util.removePrefix(deviceParams.map(d => d.device));
-    if (suffixes.length == 1) {
-      const found = suffixes[0].match(DEVICE_NAME_REGEX);
-      if (found) {
-        suffixes[0] = found[1];
-      }
-    }
-    return deviceParams.map((d, i) => {
-      return {device: suffixes[i], color: d.color};
-    });
-  }
-
-  _getCurrentclusterParams(colorByParams: ColorByParams): ClusterColor[] {
-    return colorByParams.xla_cluster;
-  }
-
-  _getCurrentGradientParams(
-    colorByParams: ColorByParams,
-    colorBy: ColorBy
-  ): ColorParams | void {
-    if (!this._isGradientColoring(this.stats, colorBy)) {
-      return;
-    }
-    const params: ColorParams = colorByParams[colorBy];
-    let minValue = params.minValue;
-    let maxValue = params.maxValue;
-    if (colorBy === ColorBy.MEMORY) {
-      minValue = util.convertUnits(minValue, util.MEMORY_UNITS);
-      maxValue = util.convertUnits(maxValue, util.MEMORY_UNITS);
-    } else if (colorBy === ColorBy.TIME) {
-      minValue = util.convertUnits(minValue, util.TIME_UNITS);
-      maxValue = util.convertUnits(maxValue, util.TIME_UNITS);
-    }
-    return {
-      minValue,
-      maxValue,
-      startColor: params.startColor,
-      endColor: params.endColor
-    };
   }
 
   download(): void {
@@ -322,7 +283,7 @@ export class ControlsComponent implements OnInit {
   _selectedRunIndexChanged(runIndex: number): void {
     if (!this.datasets) return;
     // Reset the states when user pick a different run.
-    this.colorBy = ColorBy.STRUCTURE;
+    this.colorBy = qt.ColorBy.STRUCTURE;
     this._selectedTagIndex = 0;
     this._selectedGraphType = this._getDefaultSelectionType();
     this.traceInputs = false; // Set trace input to off-state.

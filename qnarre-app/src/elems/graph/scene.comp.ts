@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as d3 from 'd3';
-import {Component, OnInit, Input} from '@angular/core';
+import {Component, OnInit, Input, Output, EventEmitter} from '@angular/core';
 
 import * as qn from '../../graph/ndata';
 import * as qg from '../../graph/graph';
@@ -19,11 +19,11 @@ import * as ql from '../../graph/layout';
 export class SceneComponent extends qs.Elem implements OnInit {
   name: string;
   colorBy: string;
+
   traceInputs?: boolean;
   _hasRenderHierarchyBeenFitOnce?: boolean;
   _isAttached?: boolean;
   _zoom: any;
-  handleEdgeSelected: any;
   _zoomStart?: any;
   _zoomTransform?: any;
   _maxZoomDistanceForClick = 20;
@@ -33,74 +33,51 @@ export class SceneComponent extends qs.Elem implements OnInit {
   nodeContextMenuItems: Array<any>;
   nodeNamesToHealths: any;
   healthPillStepIndex: number;
-  renderHierarchy: qd.Gdata;
+  gdata: qd.Gdata;
 
-  @Input() selectedNode: string; // observer: '_selectedNodeChanged'
-  highlighted: string; //  observer: '_highlightedChanged'
+  lightedN: string; //  observer: '_lightedNChanged'
   _zoomed = false; //  observer: '_onZoomChanged';
 
   $ = {} as {svg: SVGSVGElement; root: SVGGElement; contextMenu: HTMLElement};
 
+  @Input() set selNode(n: string) {
+    if (this._selNode) this._updateNodeState(this._selNode);
+    if (n) {
+      this.minimap.update();
+      const gd = this.gdata;
+      let nd = gd.hier.node(n);
+      const ps = [];
+      while (nd?.parent && nd.parent.name != qp.ROOT) {
+        nd = nd.parent;
+        ps.push(nd.name);
+      }
+      let top: qg.Ndata | undefined;
+      _.forEachRight(ps, p => {
+        gd.buildSubhier(p);
+        const d = gd.getNdataByName(p);
+        if (qg.isList(d) && !d.expanded) {
+          d.expanded = true;
+          if (!top) top = d;
+        }
+      });
+      if (top) {
+        this.setNodeExpanded(top);
+        this._zoomed = true;
+      }
+      this._updateNodeState(n);
+      setTimeout(() => this.panTo(n), qp.PARAMS.animation.duration);
+    }
+    this._selNode = n;
+  }
+  get selNode() {
+    return this._selNode;
+  }
+  private _selNode = '';
+
+  @Output() selNodeChange = new EventEmitter<string>();
+
   constructor() {
     super();
-  }
-
-  getNode(n: string) {
-    return this.renderHierarchy.getNdataByName(n);
-  }
-
-  isNodeSelected(n: string) {
-    return n === this.selectedNode;
-  }
-
-  isNodeHighlighted(n: string) {
-    return n === this.highlighted;
-  }
-
-  setNodeExpanded(renderNode) {
-    this._build(this.renderHierarchy);
-    this._updateLabels(!this._zoomed);
-  }
-
-  panTo(n: string) {
-    const zoomed = qs.panTo(n, this.$.svg, this.$.root, this._zoom);
-    if (zoomed) {
-      this._zoomed = true;
-    }
-  }
-
-  getGraphSvgRoot() {
-    return this.$.svg;
-  }
-
-  contextMenu() {
-    return this.$.contextMenu;
-  }
-
-  _resetState() {
-    this.sels = {nodes: {}, edges: {}, annos: {}};
-    this._updateLabels(false);
-    d3.select(this.$.svg)
-      .select('#root')
-      .selectAll('*')
-      .remove();
-    qn.delGradDefs(this.$.svg);
-  }
-
-  _build(gd: qd.Gdata) {
-    this.indexer = gd.hier.indexer();
-    qu.time('qnr-graph-scene (layout):', () => {
-      ql.layout(gd.root);
-    });
-    qu.time('qnr-graph-scene (build scene):', () => {
-      qs.buildGroup(d3.select(this.$.root), gd.root, this);
-      qs.addClickListener(this.$.svg, this);
-      this._updateInputTrace();
-    });
-    setTimeout(() => {
-      this._updateHealths(this.nodeNamesToHealths, this.healthPillStepIndex);
-      this.minimap.update();
-    }, qp.PARAMS.animation.duration);
   }
 
   ngOnInit() {
@@ -145,6 +122,87 @@ export class SceneComponent extends qs.Elem implements OnInit {
     );
   }
 
+  getNode(n: string) {
+    return this.gdata.getNdataByName(n);
+  }
+
+  isNodeSelected(n: string) {
+    return n === this.selNode;
+  }
+
+  isNodeHighlighted(n: string) {
+    return n === this.lightedN;
+  }
+
+  _updateNodeState(n: string) {
+    const nd = this.getNode(n)!;
+    const s = this.nodeSel(n);
+    if (s) nd.stylize(s, this);
+    if (qg.isMeta(nd) && nd.assoc && !nd.isLibraryFn) {
+      const f = qp.LIB_PRE + nd.assoc;
+      const g = d3.select(
+        '.' +
+          qt.Class.Scene.GROUP +
+          '>.' +
+          qt.Class.Scene.LIB +
+          ' g[data-name="' +
+          f +
+          '"]'
+      );
+      nd.stylize(g, this);
+    }
+    const gs = this.getAnnotationGroupsIndex(n);
+    _.each(gs, (a, _hostName) => {
+      nd.stylize(a, this, qt.Class.Anno.NODE);
+    });
+  }
+
+  setNodeExpanded(renderNode) {
+    this._build(this.gdata);
+    this._updateLabels(!this._zoomed);
+  }
+
+  panTo(n: string) {
+    const zoomed = qs.panTo(n, this.$.svg, this.$.root, this._zoom);
+    if (zoomed) {
+      this._zoomed = true;
+    }
+  }
+
+  getGraphSvgRoot() {
+    return this.$.svg;
+  }
+
+  contextMenu() {
+    return this.$.contextMenu;
+  }
+
+  _resetState() {
+    this.sels = {nodes: {}, edges: {}, annos: {}};
+    this._updateLabels(false);
+    d3.select(this.$.svg)
+      .select('#root')
+      .selectAll('*')
+      .remove();
+    qn.delGradDefs(this.$.svg);
+  }
+
+  _build(gd: qd.Gdata) {
+    this.indexer = gd.hier.indexer();
+    qu.time('qnr-graph-scene (layout):', () => {
+      ql.layout(gd.root);
+    });
+    qu.time('qnr-graph-scene (build scene):', () => {
+      qs.buildGroup(d3.select(this.$.root), gd.root, this);
+      qs.addClickListener(this.$.svg, this);
+      this._updateInputTrace();
+    });
+    setTimeout(() => {
+      this._updateHealths(this.nodeNamesToHealths, this.healthPillStepIndex);
+      this.minimap.update();
+    }, qp.PARAMS.animation.duration);
+  }
+
   attached() {
     this.set('_isAttached', true);
   }
@@ -153,13 +211,13 @@ export class SceneComponent extends qs.Elem implements OnInit {
     this.set('_isAttached', false);
   }
 
-  _renderHierarchyChanged(gd: qd.Gdata) {
+  _gdataChanged(gd: qd.Gdata) {
     this._hasRenderHierarchyBeenFitOnce = false;
     this._resetState();
     this._build(gd);
   }
 
-  _animateAndFit(isAttached, renderHierarchy) {
+  _animateAndFit(isAttached, gdata) {
     if (this._hasRenderHierarchyBeenFitOnce || !isAttached) {
       return;
     }
@@ -224,7 +282,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
   }
 
   _colorByChanged() {
-    if (this.renderHierarchy != null) {
+    if (this.gdata != null) {
       _.each(this.sels.nodes, (_, n) => {
         this._updateNodeState(n);
       });
@@ -241,62 +299,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
     qs.addAllHealths(this.$.svg, nodeNamesToHealths, healthPillStepIndex);
   }
 
-  _updateNodeState(n: string) {
-    const nd = this.getNode(n)!;
-    const s = this.nodeSel(n);
-    if (s) nd.stylize(s, node, this);
-    if (nd.type === qt.NdataT.META && nd.assoc && !nd.isLibraryFn) {
-      const libraryFunctionNodeName = qp.LIB_PRE + node.node.assocFn;
-      const functionGroup = d3.select(
-        '.' +
-          qt.Class.Scene.GROUP +
-          '>.' +
-          qt.Class.Scene.FUNCTION_LIBRARY +
-          ' g[data-name="' +
-          libraryFunctionNodeName +
-          '"]'
-      );
-      node.stylize(functionGroup, node, this);
-    }
-    const annotationGroupIndex = this.getAnnotationGroupsIndex(n);
-    _.each(annotationGroupIndex, (aGroup, hostName) => {
-      node.stylize(aGroup, node, this, qt.Class.Anno.NODE);
-    });
-  }
-
-  _selectedNodeChanged(selectedNode, old) {
-    if (selectedNode === old) return;
-    if (old) this._updateNodeState(old);
-    if (!selectedNode) return;
-    this.minimap.update();
-    let nd = this.renderHierarchy.hier.node(selectedNode);
-    const ps = [];
-    while (nd?.parent && nd.parent.name != qp.ROOT) {
-      nd = nd.parent;
-      ps.push(nd.name);
-    }
-    let top;
-    _.forEachRight(ps, p => {
-      this.renderHierarchy.buildSubhier(p);
-      const d = this.renderHierarchy.getNdataByName(p);
-      if (qg.isList(d) && !d.expanded) {
-        d.expanded = true;
-        if (!top) top = d;
-      }
-    });
-    if (top) {
-      this.setNodeExpanded(top);
-      this._zoomed = true;
-    }
-    if (selectedNode) {
-      this._updateNodeState(selectedNode);
-    }
-    setTimeout(() => {
-      this.panTo(selectedNode);
-    }, qp.PARAMS.animation.duration);
-  }
-
-  _highlightedChanged(h, old) {
+  _lightedNChanged(h, old) {
     if (h === old) return;
     if (h) this._updateNodeState(h);
     if (old) this._updateNodeState(old);
@@ -313,17 +316,17 @@ export class SceneComponent extends qs.Elem implements OnInit {
   _updateInputTrace() {
     node.updateInputTrace(
       this.getGraphSvgRoot(),
-      this.renderHierarchy,
-      this.selectedNode,
+      this.gdata,
+      this.selNode,
       this.traceInputs
     );
   }
 
   observers: [
     '_colorByChanged(colorBy)',
-    '_renderHierarchyChanged(renderHierarchy)',
-    '_animateAndFit(_isAttached, renderHierarchy)',
+    '_gdataChanged(gdata)',
+    '_animateAndFit(_isAttached, gdata)',
     '_updateHealths(nodeNamesToHealths, healthPillStepIndex)',
-    '_updateInputTrace(traceInputs, selectedNode)'
+    '_updateInputTrace(traceInputs, selNode)'
   ];
 }

@@ -25,9 +25,7 @@ export class BoardComponent implements OnInit {
   widthFn: any;
   _selectedNodeInclude: number;
   _highlightedNode: string;
-  handleNodeSelected?: Function;
   labelFn?: Function;
-  handleEdgeSelected?: Function;
 
   observers: ['_updateNodeInclude(selectedNode, renderHierarchy)'];
 

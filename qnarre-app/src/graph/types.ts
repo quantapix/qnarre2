@@ -29,18 +29,18 @@ export enum AnnoT {
 }
 
 export enum SelectT {
-  OPER = 'op_graph',
-  CONCEPT = 'concept_graph',
-  PROFILE = 'profile'
+  OPER = 'OPER',
+  CONCEPT = 'CONCEPT',
+  PROFILE = 'PROFILE'
 }
 
 export enum ColorBy {
-  STRUCTURE = 'STRUCTURE',
-  DEVICE = 'DEVICE',
   CLUSTER = 'CLUSTER',
-  TIME = 'TIME',
-  MEMORY = 'MEMORY',
-  COMPAT = 'COMPAT'
+  COMPAT = 'COMPAT',
+  DEVICE = 'DEVICE',
+  MEM = 'MEM',
+  STRUCT = 'STRUCT',
+  TIME = 'TIME'
 }
 
 export interface Input {
@@ -72,6 +72,13 @@ export interface BuildPs {
   inbedTs: string[];
   outbedTs: string[];
   refs: qt.Dict<boolean>;
+}
+
+export interface ColorPs {
+  min: number;
+  max: number;
+  start: string;
+  end: string;
 }
 
 export interface Health {
@@ -125,9 +132,9 @@ export const Class = {
   Scene: {
     GROUP: 'scene',
     CORE: 'core',
-    LIBRARY: 'function-library',
-    INEXTRACT: 'in-extract',
-    OUTEXTRACT: 'out-extract'
+    LIB: 'function-library',
+    IN: 'in-extract',
+    OUT: 'out-extract'
   },
   Subscene: {GROUP: 'subscene'},
   OPER: 'op',

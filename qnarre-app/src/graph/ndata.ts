@@ -352,7 +352,7 @@ export class Ndata implements qg.Ndata {
   ) {
     const cs = qp.MetaColors;
     switch (cb) {
-      case qt.ColorBy.STRUCTURE:
+      case qt.ColorBy.STRUCT:
         if (this.type === qt.NdataT.META) {
           const t = ((this as any) as qg.Nmeta).template;
           return t ? cs.STRUCT(idx(t), expanded) : cs.UNKNOWN;
@@ -383,7 +383,7 @@ export class Ndata implements qg.Ndata {
           : grad('xla-' + this.name, this.shade.clus, root);
       case qt.ColorBy.TIME:
         return expanded ? cs.EXPANDED : this.color.time || cs.UNKNOWN;
-      case qt.ColorBy.MEMORY:
+      case qt.ColorBy.MEM:
         return expanded ? cs.EXPANDED : this.color.mem || cs.UNKNOWN;
       case qt.ColorBy.COMPAT:
         if (!this.shade.comp) return cs.UNKNOWN;

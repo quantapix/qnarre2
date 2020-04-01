@@ -204,12 +204,12 @@
             <stop
               class="start"
               offset="0%"
-              stop-color\$="[[_currentGradientParams.startColor]]"
+              stop-color\$="[[curGradPs.startColor]]"
             ></stop>
             <stop
               class="end"
               offset="100%"
-              stop-color\$="[[_currentGradientParams.endColor]]"
+              stop-color\$="[[curGradPs.endColor]]"
             ></stop>
           </linearGradient>
         </defs>
@@ -223,13 +223,13 @@
         ></rect>
       </svg>
       <div class="domainValues color-text">
-        <div class="domainStart">[[_currentGradientParams.minValue]]</div>
-        <div class="domainEnd">[[_currentGradientParams.maxValue]]</div>
+        <div class="domainStart">[[curGradPs.minValue]]</div>
+        <div class="domainEnd">[[curGradPs.maxValue]]</div>
       </div>
       <br style="clear: both" />
       <div>Devices included in stats:</div>
       <div class="deviceList">
-        <template is="dom-repeat" items="[[_currentDevices]]">
+        <template is="dom-repeat" items="[[curDevs]]">
           <div class="color-legend-row devices-checkbox">
             <span
               ><input
@@ -273,7 +273,7 @@
     </template>
     <template is="dom-if" if="[[_equals(colorBy, 'device')]]">
       <div>
-        <template is="dom-repeat" items="[[_currentDeviceParams]]">
+        <template is="dom-repeat" items="[[curDevPs]]">
           <div class="color-legend-row">
             <qnr-graph-icon
               type="META"
@@ -297,7 +297,7 @@
     </template>
     <template is="dom-if" if="[[_equals(colorBy, 'xla_cluster')]]">
       <div>
-        <template is="dom-repeat" items="[[_currentclusterParams]]">
+        <template is="dom-repeat" items="[[curClusPs]]">
           <div class="color-legend-row">
             <svg>
               <use
