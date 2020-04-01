@@ -3,8 +3,8 @@ import * as color_scale from './color-scale';
 
 @Component({
   selector: 'qnr-chart-loader',
-  templateUrl: './templates/chart-loader.component.html',
-  styleUrls: ['./styles/chart-loader.component.scss']
+  templateUrl: './chart-loader.comp.html',
+  styleUrls: ['./chart-loader.comp.scss']
 })
 export class ChartLoaderComponent implements OnInit {
   active: boolean; //  observer: _fixBadStateWhenActive

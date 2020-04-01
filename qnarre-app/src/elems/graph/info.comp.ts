@@ -2,8 +2,8 @@ import {Component, OnInit, Input} from '@angular/core';
 
 @Component({
   selector: 'qnr-graph-info',
-  templateUrl: './templates/info.component.html',
-  styleUrls: ['./styles/info.component.scss']
+  templateUrl: './info.comp.html',
+  styleUrls: ['./info.comp.scss']
 })
 export class InfoComponent implements OnInit {
   @Input() title: string;

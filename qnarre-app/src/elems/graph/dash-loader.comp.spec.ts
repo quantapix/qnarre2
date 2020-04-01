@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {DashboardLoaderComponent} from './dashboard-loader.component';
+import {DashboardLoaderComponent} from './dash-loader.comp';
 
 describe('DashboardLoaderComponent', () => {
   let component: DashboardLoaderComponent;

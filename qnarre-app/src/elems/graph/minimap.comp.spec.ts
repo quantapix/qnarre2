@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {MinimapComponent} from './minimap.component';
+import {MinimapComponent} from './minimap.comp';
 
 describe('GraphMinimapComponent', () => {
   let c: MinimapComponent;

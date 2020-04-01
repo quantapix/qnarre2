@@ -4,8 +4,8 @@ import {Minimap} from '../../graph/minimap';
 
 @Component({
   selector: 'qnr-graph-minimap',
-  templateUrl: './templates/minimap.component.html',
-  styleUrls: ['./styles/minimap.component.scss']
+  templateUrl: './minimap.comp.html',
+  styleUrls: ['./minimap.comp.scss']
 })
 export class MinimapComponent implements OnInit {
   minimap: Minimap;

@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {NodeListItemComponent} from './node-list-item.component';
+import {NodeListItemComponent} from './node-item.comp';
 
 describe('NodeListItemComponent', () => {
   let component: NodeListItemComponent;

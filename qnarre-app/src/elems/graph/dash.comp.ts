@@ -89,13 +89,13 @@ export class ScrollbarStyle {}
 
 @Component({
   selector: 'qnr-run-color-style',
-  styleUrls: ['./styles/run-color-style.scss']
+  styleUrls: ['./run-color-style.scss']
 })
 export class RunColorStyle {}
 
 @Component({
   selector: 'qnr-no-data-warning',
-  templateUrl: './templates/no-data-warning.html',
+  templateUrl: './no-data-warning.html',
   styles: [
     `
       .warning {
@@ -112,7 +112,7 @@ export class NoDataWarning {
 
 @Component({
   selector: 'qnr-downloader',
-  templateUrl: './templates/downloader.html',
+  templateUrl: './downloader.html',
   styles: [
     `
       :host {
@@ -173,7 +173,7 @@ export class Downloader {
       <slot name="center" class="scollbar"></slot>
     </div>
   `,
-  styleUrls: ['./styles/dashboard-layout.scss']
+  styleUrls: ['./dash-layout.scss']
 })
 export class DashboardLayout {}
 
@@ -274,7 +274,7 @@ export class DropdownTrigger implements OnInit {
       </div>
     </template>
   `,
-  styleUrls: ['./styles/filterable-checkbox-list.scss']
+  styleUrls: ['./filterable-checkbox-list.scss']
 })
 export class FilterableCheckboxList {}
 
@@ -819,7 +819,7 @@ export const filterableCheckboxList = {
       </template>
     </div>
   `,
-  styleUrls: ['./styles/multi-checkbox.scss']
+  styleUrls: ['./multi-checkbox.scss']
 })
 export class MultiCheckbox {
   names = () => [];

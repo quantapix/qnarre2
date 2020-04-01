@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {TraceViewerComponent} from './trace-viewer.component';
+import {TraceViewerComponent} from './trace-viewer.comp';
 
 describe('TraceViewerComponent', () => {
   let component: TraceViewerComponent;

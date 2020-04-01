@@ -2,8 +2,8 @@ import {Component, OnInit} from '@angular/core';
 
 @Component({
   selector: 'qnr-graph-app',
-  templateUrl: './templates/app.component.html',
-  styleUrls: ['./styles/app.component.scss']
+  templateUrl: './app.comp.html',
+  styleUrls: ['./app.comp.scss']
 })
 export class AppComponent implements OnInit {
   width: number; // observer: _updateWidth

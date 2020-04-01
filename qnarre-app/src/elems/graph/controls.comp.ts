@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {SelectionType} from '../../graph/types';
+
 import * as qg from '../../graph/graph';
 import * as proto from '../../graph/proto';
 import * as util from '../../graph/utils';
@@ -93,8 +94,8 @@ const GRADIENT_COMPATIBLE_COLOR_BY: Set<ColorBy> = new Set([
 
 @Component({
   selector: 'qnr-graph-controls',
-  templateUrl: './templates/controls.component.html',
-  styleUrls: ['./styles/controls.component.scss']
+  templateUrl: './controls.comp.html',
+  styleUrls: ['./controls.comp.scss']
 })
 export class ControlsComponent implements OnInit {
   stats?: any; // observer: '_statsChanged'

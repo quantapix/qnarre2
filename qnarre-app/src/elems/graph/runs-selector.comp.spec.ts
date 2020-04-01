@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {RunsSelectorComponent} from './runs-selector.component';
+import {RunsSelectorComponent} from './runs-selector.comp';
 
 describe('RunsSelectorComponent', () => {
   let component: RunsSelectorComponent;

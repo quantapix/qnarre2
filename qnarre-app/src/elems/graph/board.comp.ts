@@ -3,8 +3,8 @@ import * as q_graph from '../../graph/graph';
 
 @Component({
   selector: 'qnr-graph-board',
-  templateUrl: './templates/board.component.html',
-  styleUrls: ['./styles/board.component.scss']
+  templateUrl: './board.comp.html',
+  styleUrls: ['./board.comp.scss']
 })
 export class BoardComponent implements OnInit {
   graphHierarchy: any;

@@ -2,8 +2,8 @@ import {Component, OnInit, Input} from '@angular/core';
 
 @Component({
   selector: 'qnr-graph-node-search',
-  templateUrl: './templates/node-search.component.html',
-  styleUrls: ['./styles/node-search.component.scss']
+  templateUrl: './node-search.comp.html',
+  styleUrls: ['./node-search.comp.scss']
 })
 export class NodeSearchComponent implements OnInit {
   @Input() selectedNode: string; // notify

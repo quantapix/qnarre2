@@ -35,8 +35,8 @@ function intersect(range: Range, bounds: Range): Range {
 
 @Component({
   selector: 'qnr-trace-viewer',
-  templateUrl: './templates/trace-viewer.component.html',
-  styleUrls: ['./styles/trace-viewer.component.scss']
+  templateUrl: './trace-viewer.comp.html',
+  styleUrls: ['./trace-viewer.comp.scss']
 })
 export class TraceViewerComponent implements OnInit {
   traceDataUrl?: string;

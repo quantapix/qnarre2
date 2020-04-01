@@ -10,8 +10,8 @@ import * as qu from '../../graph/utils';
 
 @Component({
   selector: 'qnr-graph',
-  templateUrl: './templates/graph.component.html',
-  styleUrls: ['./styles/graph.component.scss']
+  templateUrl: './graph.comp.html',
+  styleUrls: ['./graph.comp.scss']
 })
 export class GraphComp implements OnInit {
   title: string;

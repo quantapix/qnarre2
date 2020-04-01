@@ -54,8 +54,8 @@ function forceDisableAutoReload(): boolean {
 
 @Component({
   selector: 'qnr-autoreload',
-  templateUrl: './templates/qnarre.component.html',
-  styleUrls: ['./styles/qnarre.component.scss']
+  templateUrl: './qnarre.comp.html',
+  styleUrls: ['./qnarre.comp.scss']
 })
 export class AutoReload implements OnInit {
   autoReloadEnabled = getAutoReloadFromLocalStorage; // observer: '_autoReloadObserver';

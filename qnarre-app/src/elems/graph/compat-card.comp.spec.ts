@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {DashboardCommonComponent} from './dashboard-common.component';
+import {OpCompatCardComponent} from './compat-card.comp';
 
-describe('DashboardCommonComponent', () => {
-  let component: DashboardCommonComponent;
-  let fixture: ComponentFixture<DashboardCommonComponent>;
+describe('OpCompatCardComponent', () => {
+  let component: OpCompatCardComponent;
+  let fixture: ComponentFixture<OpCompatCardComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [DashboardCommonComponent]
+      declarations: [OpCompatCardComponent]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(DashboardCommonComponent);
+    fixture = TestBed.createComponent(OpCompatCardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

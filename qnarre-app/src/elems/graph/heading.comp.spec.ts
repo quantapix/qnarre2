@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {CardHeadingComponent} from './card-heading.component';
+import {CardHeadingComponent} from './heading.comp';
 
 describe('CardHeadingComponent', () => {
   let component: CardHeadingComponent;

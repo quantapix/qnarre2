@@ -2,8 +2,8 @@ import {Component, OnInit} from '@angular/core';
 
 @Component({
   selector: 'qnr-plugin-dialog',
-  templateUrl: './templates/plugin-dialog.component.html',
-  styleUrls: ['./styles/plugin-dialog.component.scss']
+  templateUrl: './plugin-dialog.comp.html',
+  styleUrls: ['./plugin-dialog.comp.scss']
 })
 export class PluginDialogComponent implements OnInit {
   _title?: string;

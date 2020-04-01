@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {SceneComponent} from './scene.component';
+import {SceneComponent} from './scene.comp';
 
 describe('SceneComponent', () => {
   let component: SceneComponent;

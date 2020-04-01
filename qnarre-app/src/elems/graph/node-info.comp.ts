@@ -2,8 +2,8 @@ import {Component, OnInit} from '@angular/core';
 
 @Component({
   selector: 'qnr-node-info',
-  templateUrl: './templates/node-info.component.html',
-  styleUrls: ['./styles/node-info.component.scss']
+  templateUrl: './node-info.comp.html',
+  styleUrls: ['./node-info.comp.scss']
 })
 export class NodeInfoComponent implements OnInit {
   nodeName: string;

@@ -3,8 +3,8 @@ import * as util from '../../graph/utils';
 
 @Component({
   selector: 'qnr-card-heading',
-  templateUrl: './templates/card-heading.component.html',
-  styleUrls: ['./styles/card-heading.component.scss']
+  templateUrl: './heading.comp.html',
+  styleUrls: ['./heading.comp.scss']
 })
 export class CardHeadingComponent implements OnInit {
   color?: string;

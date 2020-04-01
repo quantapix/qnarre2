@@ -16,15 +16,15 @@ import {DashboardLoaderComponent} from './dash-loader.comp';
 import {DashboardComponent} from './dashboard.comp';
 import {NodeSearchComponent} from './node-search.comp';
 import {MarkdownViewComponent} from './md-view.comp';
-import {DashboardCommonComponent} from './dash-common.comp';
-import {CardHeadingComponent} from './card-heading.comp';
+import {DashboardCommonComponent} from './dash.comp';
+import {CardHeadingComponent} from './heading.comp';
 import {TraceViewerComponent} from './trace-viewer.comp';
 import {RunsSelectorComponent} from './runs-selector.comp';
 import {TagFiltererComponent} from './tag-filterer.comp';
 import {CategoryViewComponent} from './cat-view.comp';
 import {ChartLoaderComponent} from './chart-loader.comp';
 import {DebuggerCardComponent} from './debugger-card.comp';
-import {OpCompatCardComponent} from './op-compat-card.comp';
+import {OpCompatCardComponent} from './compat-card.comp';
 import {PluginDialogComponent} from './plugin-dialog.comp';
 import {QnarreComponent} from './qnarre.comp';
 

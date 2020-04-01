@@ -4,8 +4,8 @@ import * as scene from '../../graph/scene';
 
 @Component({
   selector: 'qnr-graph-debugger-card',
-  templateUrl: './templates/debugger-card.component.html',
-  styleUrls: ['./styles/debugger-card.component.scss']
+  templateUrl: './debugger-card.comp.html',
+  styleUrls: ['./debugger-card.comp.scss']
 })
 export class DebuggerCardComponent implements OnInit {
   debuggerNumericAlerts: any; // notify

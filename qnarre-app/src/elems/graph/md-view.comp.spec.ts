@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {MarkdownViewComponent} from './markdown-view.component';
+import {MarkdownViewComponent} from './md-view.comp';
 
 describe('MarkdownViewComponent', () => {
   let component: MarkdownViewComponent;

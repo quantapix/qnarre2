@@ -51,8 +51,8 @@ export function setLimit(limit: number) {
 
 @Component({
   selector: 'qnr-category-view',
-  templateUrl: './templates/category-view.component.html',
-  styleUrls: ['./styles/category-view.component.scss']
+  templateUrl: './cat-view.comp.html',
+  styleUrls: ['./cat-view.comp.scss']
 })
 export class CategoryViewComponent implements OnInit {
   category: categ_utils.Category<any>;

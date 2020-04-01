@@ -2,8 +2,8 @@ import {Component, OnInit} from '@angular/core';
 
 @Component({
   selector: 'qnr-node-list-item',
-  templateUrl: './templates/node-list-item.component.html',
-  styleUrls: ['./styles/node-list-item.component.scss']
+  templateUrl: './node-item.comp.html',
+  styleUrls: ['./node-item.comp.scss']
 })
 export class NodeListItemComponent implements OnInit {
   cardNode: any;

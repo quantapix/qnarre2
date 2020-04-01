@@ -38,8 +38,8 @@ export class WbrString {
 
 @Component({
   selector: 'qnr-runs-selector',
-  templateUrl: './templates/runs-selector.component.html',
-  styleUrls: ['./styles/runs-selector.component.scss']
+  templateUrl: './runs-selector.comp.html',
+  styleUrls: ['./runs-selector.comp.scss']
 })
 export class RunsSelectorComponent implements OnInit {
   runSelectionState = storage.getObjectInitializer('runSelectionState', {

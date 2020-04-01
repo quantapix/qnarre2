@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {NodeInfoComponent} from './node-info.component';
+import {NodeInfoComponent} from './node-info.comp';
 
 describe('NodeInfoComponent', () => {
   let component: NodeInfoComponent;

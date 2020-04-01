@@ -22,8 +22,8 @@ interface RunItem {
 
 @Component({
   selector: 'qnr-graph-dashboard',
-  templateUrl: './templates/dashboard.component.html',
-  styleUrls: ['./styles/dashboard.component.scss']
+  templateUrl: './dashboard.comp.html',
+  styleUrls: ['./dashboard.comp.scss']
 })
 export class DashboardComponent implements OnInit {
   _datasets = () => [];
