@@ -1,28 +1,46 @@
-import {Component} from '@angular/core';
-import * as params from '../../graph/params';
+import {Component, Input} from '@angular/core';
 
-export enum GraphIconType {
-  CONST = 'CONST',
-  META = 'META',
-  OP = 'OP',
-  SERIES = 'SERIES',
-  SUMMARY = 'SUMMARY'
-}
+import * as qp from './params';
+import * as qt from './types';
 
 @Component({
   selector: 'qnr-graph-icon',
   template: '',
   styleUrls: []
 })
-export class IconComponent {
-  type: GraphIconType;
-  fillOverride?: string;
-  strokeOverride?: string;
-  vertical = false;
-  height = 20;
-  faded = false;
-  _fill: string; // computeFill(type, fillOverride)
-  _stroke: string; // computeStroke(type, strokeOverride);
+export class IconComp {
+  $ = {svgDefs: {} as any};
+
+  @Input() type?: qt.GraphIconT;
+  @Input() height = 20;
+  @Input() faded = false;
+  @Input() vertical = false;
+  @Input() fillOverride?: string;
+  @Input() strokeOverride?: string;
+
+  get fill() {
+    if (this.fillOverride) return this.fillOverride;
+    switch (this.type) {
+      case qt.GraphIconT.META:
+        return qp.MetaColors.FILL;
+      case qt.GraphIconT.LIST:
+        return qp.ListColors.FILL;
+      default:
+        return qp.OperColors.FILL;
+    }
+  }
+
+  get stroke() {
+    if (this.strokeOverride) return this.strokeOverride;
+    switch (this.type) {
+      case qt.GraphIconT.META:
+        return qp.MetaColors.STROKE;
+      case qt.GraphIconT.LIST:
+        return qp.ListColors.STROKE;
+      default:
+        return qp.OperColors.STROKE;
+    }
+  }
 
   constructor() {}
 
@@ -31,34 +49,12 @@ export class IconComponent {
   }
 }
 
-function computeFill(type: GraphIconType, fillOverride?: string) {
-  if (fillOverride) return fillOverride;
-  switch (type) {
-    case GraphIconType.META:
-      return params.NmetaColors.DEFAULT_FILL;
-    case GraphIconType.SERIES:
-      return params.NseriesColors.DEFAULT_FILL;
-    default:
-      return params.NoperColors.DEFAULT_FILL;
-  }
+/*
+function isType(type: qt.GraphIconT, targetType: qt.GraphIconT) {
+  return type === targetType;
 }
 
-function computeStroke(type: GraphIconType, strokeOverride?: string) {
-  if (strokeOverride) return strokeOverride;
-  switch (type) {
-    case GraphIconType.META:
-      return params.NmetaColors.DEFAULT_STROKE;
-    case GraphIconType.SERIES:
-      return params.NseriesColors.DEFAULT_STROKE;
-    default:
-      return params.NoperColors.DEFAULT_STROKE;
-  }
-
-  function isType(type: GraphIconType, targetType: GraphIconType) {
-    return type === targetType;
-  }
-
-  function fadedClass(faded: boolean, shape: string) {
-    return faded ? 'faded-' + shape : '';
-  }
+function fadedClass(faded: boolean, shape: string) {
+  return faded ? 'faded-' + shape : '';
 }
+*/

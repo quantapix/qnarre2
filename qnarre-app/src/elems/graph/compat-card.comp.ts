@@ -1,9 +1,11 @@
 import {Component, OnInit} from '@angular/core';
-import * as params from '../../graph/params';
+
+import * as qp from './params';
+import * as qt from './types';
 import * as hierarchy from '../../graph/hierarchy';
 
 @Component({
-  selector: 'qnr-op-compat-list-item',
+  selector: 'qnr-graph-compat-item',
   template: `
     <div
       id="list-item"
@@ -11,18 +13,18 @@ import * as hierarchy from '../../graph/hierarchy';
       on-mouseout="(_nodeListener)"
       on-click="(_nodeListener)"
     >
-      <div class$="{{ _fadedClass(itemRenderInfo) }}">
-        <qnr-node-icon
+      <div class$="{{" _fadedClass(itemRenderInfo) }}>
+        <qnr-graph-node-icon
           class="node-icon"
-          height="12"
-          color-by="[[colorBy]]"
+          [height]="12"
+          [colorBy]="colorBy"
           color-by-params="[[colorByParams]]"
-          node="[[itemNode]]"
-          render-info="[[itemRenderInfo]]"
-          template-index="[[templateIndex]]"
+          [node]="itemNode"
+          [ndata]="itemRenderInfo"
+          [tidx]="templateIndex"
         >
-        </qnr-node-icon>
-        <span title$="[[name]]">[[name]]</span>
+        </qnr-graph-node-icon>
+        <span title="{{ name }}">{{ name }}</span>
       </div>
     </div>
   `,
@@ -65,14 +67,14 @@ import * as hierarchy from '../../graph/hierarchy';
     `
   ]
 })
-export class OpCompatListItem {
+export class CompatItemComp {
   cardNode: any;
   itemNode: any;
   edgeLabel: string;
   itemRenderInfo: any;
   name: string;
   itemType: string; // observer: '_itemTypeChanged';
-  colorBy: string;
+  colorBy: qt.ColorBy;
   colorByParams: any;
   templateIndex: Function;
 
@@ -97,11 +99,11 @@ export class OpCompatListItem {
 }
 
 @Component({
-  selector: 'qnr-graph-op-compat-card',
-  templateUrl: './templates/op-compat-card.component.html',
-  styleUrls: ['./styles/op-compat-card.component.scss']
+  selector: 'qnr-graph-compat-card',
+  templateUrl: './compat-card.comp.html',
+  styleUrls: ['./compat-card.comp.scss']
 })
-export class OpCompatCardComponent implements OnInit {
+export class CompatCardComp implements OnInit {
   graphHierarchy: any;
   hierarchyParams: any;
   nodeTitle: string;
@@ -125,8 +127,8 @@ export class OpCompatCardComponent implements OnInit {
     type: string;
     computed: '_getOpCompatScoreLabel(_opCompatScore)';
   };
-  _opCompatColor = params.NoperColors.COMPATIBLE;
-  _opIncompatColor = params.NoperColors.INCOMPATIBLE;
+  _opCompatColor = qp.OperColors.COMPAT;
+  _opIncompatColor = qp.OperColors.INCOMPAT;
   _totalIncompatOps: number; //  computed: '_getTotalIncompatibleOps(graphHierarchy)';
 
   constructor() {}

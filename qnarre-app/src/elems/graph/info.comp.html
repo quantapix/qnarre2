@@ -12,13 +12,13 @@
   </paper-material>
 </template>
 <template is="dom-if" if="[[_equals(colorBy, 'op_compatibility')]]">
-  <qnr-graph-op-compat-card
+  <qnr-graph-compat-card
     graph-hierarchy="[[graphHierarchy]]"
     hierarchy-params="[[hierarchyParams]]"
     color-by="[[colorBy]]"
     node-title="[[compatNodeTitle]]"
   >
-  </qnr-graph-op-compat-card>
+  </qnr-graph-compat-card>
 </template>
 <template
   is="dom-if"

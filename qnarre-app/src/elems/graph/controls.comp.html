@@ -262,10 +262,10 @@
         </div>
         <div class="color-legend-row">
           <qnr-graph-icon
-            type="META"
-            height="16"
-            fill-override="#eee"
-            stroke-override="#a6a6a6"
+            [type]="'META'"
+            [height]="16"
+            [fillOverride]="'#eee'"
+            [strokeOverride]="'#a6a6a6'"
           ></qnr-graph-icon>
           <span class="color-legend-value">unique substructure</span>
         </div>
@@ -276,20 +276,20 @@
         <template is="dom-repeat" items="[[curDevPs]]">
           <div class="color-legend-row">
             <qnr-graph-icon
-              type="META"
-              height="16"
-              fill-override="[[item.color]]"
-              stroke-override="#a6a6a6"
+              [type]="'META'"
+              [height]="16"
+              [fillOverride]="item.color"
+              [strokeOverride]="'#a6a6a6'"
             ></qnr-graph-icon>
-            <span class="color-legend-value">[[item.device]]</span>
+            <span class="color-legend-value">{{item.device}}</span>
           </div>
         </template>
         <div class="color-legend-row">
           <qnr-graph-icon
-            type="META"
-            height="16"
-            fill-override="#eee"
-            stroke-override="#a6a6a6"
+            [type]="'META'"
+            [height]="16"
+            [fillOverride]="'#eee'"
+            [strokeOverride]="'#a6a6a6'"
           ></qnr-graph-icon>
           <span class="color-legend-value">unknown device</span>
         </div>
@@ -328,19 +328,19 @@
       <div class="color-text">
         <div class="color-legend-row">
           <qnr-graph-icon
-            type="OP"
-            height="16"
-            fill-override="#0f9d58"
-            stroke-override="#ccc"
+            [type]="'OPER'"
+            [height]="16"
+            [fillOverride]="'#0f9d58'"
+            [strokeOverride]="'#ccc'"
           ></qnr-graph-icon>
           <span class="color-legend-value">Valid Op</span>
         </div>
         <div class="color-legend-row">
           <qnr-graph-icon
-            type="OP"
-            height="16"
-            fill-override="#db4437"
-            stroke-override="#ccc"
+            [type]="'OPER'"
+            [height]="16"
+            [fillOverride]="'#db4437'"
+            [strokeOverride]="'#ccc'"
           ></qnr-graph-icon>
           <span class="color-legend-value">Invalid Op</span>
         </div>
@@ -348,7 +348,11 @@
     </template>
     <template is="dom-if" if="[[_statsNotNull(stats)]]">
       <div class="color-legend-row">
-        <qnr-graph-icon type="META" height="16" faded=""></qnr-graph-icon>
+        <qnr-graph-icon
+          [type]="'META'"
+          [height]="16"
+          [faded]=""
+        ></qnr-graph-icon>
         <span class="color-legend-value">unused substructure</span>
       </div>
     </template>
@@ -375,10 +379,10 @@
           <tr>
             <td>
               <qnr-graph-icon
-                type="META"
-                height="16"
-                fill-override="#d9d9d9"
-                stroke-override="#ccc"
+                [type]="'META'"
+                [height]="16"
+                [fillOverride]="'#d9d9d9'"
+                [strokeOverride]="'#ccc'"
               ></qnr-graph-icon>
             </td>
             <td>
@@ -394,7 +398,7 @@
           </tr>
           <tr>
             <td>
-              <qnr-graph-icon type="OP" height="16"></qnr-graph-icon>
+              <qnr-graph-icon [type]="'OPER'" [height]="16"></qnr-graph-icon>
             </td>
             <td>
               OpNode
@@ -408,7 +412,7 @@
           </tr>
           <tr>
             <td>
-              <qnr-graph-icon type="SERIES" height="16"></qnr-graph-icon>
+              <qnr-graph-icon [type]="'LIST'" [height]="16"></qnr-graph-icon>
             </td>
             <td>
               Unconnected series<span class="gray">*</span>
@@ -424,9 +428,9 @@
           <tr>
             <td>
               <qnr-graph-icon
-                type="SERIES"
-                height="16"
-                vertical=""
+                [type]="'LIST'"
+                [height]="16"
+                [vertical]=""
               ></qnr-graph-icon>
             </td>
             <td>
@@ -463,7 +467,7 @@
           </tr>
           <tr>
             <td>
-              <qnr-graph-icon type="SUMMARY" height="20"></qnr-graph-icon>
+              <qnr-graph-icon [type]="'SUMY'" [height]="20"></qnr-graph-icon>
             </td>
             <td>
               Summary

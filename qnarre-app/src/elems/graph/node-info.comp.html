@@ -10,13 +10,13 @@
       <div class="node-name" id="nodetitle"></div>
     </div>
     <div secondary="">
-      <qnr-node-icon
+      <qnr-graph-node-icon
         class="node-icon"
-        node="[[_node]]"
-        render-info="[[_getRenderInfo(nodeName, renderHierarchy)]]"
-        color-by="[[colorBy]]"
-        template-index="[[_templateIndex]]"
-      ></qnr-node-icon>
+        [node]="_node"
+        [ndata]="_getRenderInfo(nodeName, renderHierarchy)"
+        [colorBy]="colorBy"
+        [tidx]="_templateIndex"
+      ></qnr-graph-node-icon>
       <template is="dom-if" if="{{ _node.op }}">
         <div class="subtitle">
           Operation:

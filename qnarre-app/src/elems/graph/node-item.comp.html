@@ -5,15 +5,15 @@
   on-click="(_nodeListener)"
 >
   <div class\$="{{ _fadedClass(itemRenderInfo) }}">
-    <qnr-node-icon
+    <qnr-graph-node-icon
       class="node-icon"
-      height="12"
-      color-by="[[colorBy]]"
+      [height]="12"
+      [colorBy]="colorBy"
       color-by-params="[[colorByParams]]"
-      node="[[itemNode]]"
-      render-info="[[itemRenderInfo]]"
-      template-index="[[templateIndex]]"
-    ></qnr-node-icon>
+      [node]="itemNode"
+      [ndata]="itemRenderInfo"
+      [tidx]="templateIndex"
+    ></qnr-graph-node-icon>
     <span title\$="[[name]]">[[name]]</span>
     <span class="edge-label">[[edgeLabel]]</span>
   </div>

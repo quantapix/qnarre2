@@ -134,7 +134,7 @@ export namespace position {
         x -= nc.areas.in.w / 2 - nc.areas.out.w - (outs ? off : 0);
       }
       x -= nc.areas.lib.w - (libs ? off : 0);
-      translate(selectChild(sel, 'g', qt.Class.Scene.INEXTRACT), x, y);
+      translate(selectChild(sel, 'g', qt.Class.Scene.IN), x, y);
     }
     if (outs) {
       let x = nc.box.w;
@@ -144,11 +144,11 @@ export namespace position {
         x -= nc.areas.out.w / 2;
       }
       x -= nc.areas.lib.w - (libs ? off : 0);
-      translate(selectChild(sel, 'g', qt.Class.Scene.OUTEXTRACT), x, y);
+      translate(selectChild(sel, 'g', qt.Class.Scene.OUT), x, y);
     }
     if (libs) {
       const x = nc.box.w - nc.areas.lib.w / 2;
-      translate(selectChild(sel, 'g', qt.Class.Scene.LIBRARY), x, y);
+      translate(selectChild(sel, 'g', qt.Class.Scene.LIB), x, y);
     }
   }
 }

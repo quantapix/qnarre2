@@ -56,7 +56,7 @@
         items="[[_incompatibleOpNodes]]"
       >
         <template>
-          <qnr-graph-op-compat-list-item
+          <qnr-graph-compat-item
             class="non-control-list-item"
             item-node="[[item]]"
             item-render-info="[[_getRenderInfo(item.name, renderHierarchy)]]"
@@ -65,7 +65,7 @@
             color-by="[[colorBy]]"
             item-type="incompatible-ops"
           >
-          </qnr-graph-op-compat-list-item>
+          </qnr-graph-compat-item>
         </template>
       </iron-list>
     </div>

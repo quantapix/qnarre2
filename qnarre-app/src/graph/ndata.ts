@@ -345,7 +345,7 @@ export class Ndata implements qg.Ndata {
   }
 
   fillFor(
-    idx = (_: string) => 0,
+    tidx = (_: string) => 0,
     cb: qt.ColorBy,
     expanded?: boolean,
     root?: SVGElement
@@ -355,7 +355,7 @@ export class Ndata implements qg.Ndata {
       case qt.ColorBy.STRUCT:
         if (this.type === qt.NdataT.META) {
           const t = ((this as any) as qg.Nmeta).template;
-          return t ? cs.STRUCT(idx(t), expanded) : cs.UNKNOWN;
+          return t ? cs.STRUCT(tidx(t), expanded) : cs.UNKNOWN;
         } else if (qg.isList(this)) {
           return expanded ? cs.EXPANDED : 'white';
         } else if (this.type === qt.NdataT.BRIDGE) {
@@ -497,7 +497,7 @@ export function delGradDefs(r: SVGElement) {
     .remove();
 }
 
-function strokeFor(fill: string) {
+export function strokeFor(fill: string) {
   return fill.startsWith('url')
     ? qp.MetaColors.GRADIENT
     : d3
