@@ -2,10 +2,10 @@ import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 
 import {ComposeMessageComponent} from './compose-message/compose-message.component';
-import {PageNotFoundComponent} from './page-not-found/page-not-found.component';
+import {PageNotFoundComp} from './app.comp';
 
 import {AuthGuard} from './auth/auth.guard';
-import {PreloadService} from './preloading-strategy.service';
+import {PreloadService} from './preload.service';
 
 const routes: Routes = [
   {
@@ -27,7 +27,7 @@ const routes: Routes = [
     data: {preload: true}
   },
   {path: '', redirectTo: '/superheroes', pathMatch: 'full'},
-  {path: '**', component: PageNotFoundComponent}
+  {path: '**', component: PageNotFoundComp}
 ];
 
 @NgModule({

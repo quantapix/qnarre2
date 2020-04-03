@@ -10,7 +10,7 @@ import * as qt from './types';
 import * as qu from './utils';
 
 import {NodeDef} from './proto';
-import * as menu from '../elems/graph/contextmenu';
+import * as menu from '../docs.elems/graph.comps/contextmenu';
 
 export class Ndata implements qg.Ndata {
   x = 0;
@@ -135,7 +135,7 @@ export class Ndata implements qg.Ndata {
       'd',
       'M-2.2,0 H2.2'
     );
-    s.on('click', function(d) {
+    s.on('click', function (d) {
       d3.event.stopPropagation();
       e.fire('node-toggle-expand', {name: d.name});
     });
@@ -149,22 +149,22 @@ export class Ndata implements qg.Ndata {
     }
     const f = menu.getMenu(e, this.contextMenu(e));
     sel
-      .on('dblclick', function() {
+      .on('dblclick', function () {
         e.fire('node-toggle-expand', {name: this.name});
       })
-      .on('mouseover', function() {
+      .on('mouseover', function () {
         if (e.isNodeExpanded(this)) return;
         e.fire('node-highlight', {name: this.name});
       })
-      .on('mouseout', function() {
+      .on('mouseout', function () {
         if (e.isNodeExpanded(this)) return;
         e.fire('node-unhighlight', {name: this.name});
       })
-      .on('click', function() {
+      .on('click', function () {
         d3.event.stopPropagation();
         e.fire('node-select', {name: this.name});
       })
-      .on('menu', function(i: number) {
+      .on('menu', function (i: number) {
         e.fire('node-select', {name: this.name});
         f(this, i);
       });
@@ -300,10 +300,10 @@ export class Ndata implements qg.Ndata {
   contextMenu(e: qs.Elem) {
     let m = [
       {
-        title: function(this: Ndata) {
+        title: function (this: Ndata) {
           return qu.includeButtonString(this.include);
         },
-        action: function(this: Ndata) {
+        action: function (this: Ndata) {
           e.fire('node-toggle-extract', {name: this.name});
         }
       }
@@ -311,10 +311,10 @@ export class Ndata implements qg.Ndata {
     // if (e.nodeContextMenuItems) m = m.concat(e.nodeContextMenuItems);
     if (!!this.listName()) {
       m.push({
-        title: function(this: Ndata) {
+        title: function (this: Ndata) {
           return qu.groupButtonString(!!this.containingList());
         },
-        action: function(this: Ndata) {
+        action: function (this: Ndata) {
           e.fire('node-toggle-seriesgroup', {
             name: this.listName()
           });
@@ -400,19 +400,19 @@ export namespace Ndatas {
   export function build(this: qg.Ndata[], s: qt.Sel, e: qs.Elem) {
     const c = qs.selectCreate(s, 'g', qt.Class.Node.CONTAINER);
     const ss = c
-      .selectAll<any, Ndata>(function() {
+      .selectAll<any, Ndata>(function () {
         return this.childNodes;
       })
       .data(this, d => d.name + ':' + d.type);
     ss.enter()
       .append('g')
       .attr('data-name', d => d.name)
-      .each(function(d) {
+      .each(function (d) {
         e.addNodeSel(d.name, d3.select(this));
       })
       .merge(ss)
       .attr('class', d => qt.Class.Node.GROUP + ' ' + qg.toClass(d.type))
-      .each(function(dd) {
+      .each(function (dd) {
         const d = dd as Ndata;
         const s2 = d3.select(this);
         const inb = qs.selectCreate(s2, 'g', qt.Class.Anno.IN);
@@ -429,7 +429,7 @@ export namespace Ndatas {
         d.position(s2);
       });
     ss.exit<Ndata>()
-      .each(function(d) {
+      .each(function (d) {
         e.delNodeSel(d.name);
         const s2 = d3.select(this);
         if (d.annos.in.length > 0) {
@@ -492,18 +492,13 @@ export class Noper extends Ndata implements qg.Noper {
 }
 
 export function delGradDefs(r: SVGElement) {
-  d3.select(r)
-    .select('defs#_graph-gradients')
-    .remove();
+  d3.select(r).select('defs#_graph-gradients').remove();
 }
 
 export function strokeFor(fill: string) {
   return fill.startsWith('url')
     ? qp.MetaColors.GRADIENT
-    : d3
-        .rgb(fill)
-        .darker()
-        .toString();
+    : d3.rgb(fill).darker().toString();
 }
 
 function grad(id: string, cs: qt.Shade[], e?: SVGElement) {
@@ -519,9 +514,7 @@ function grad(id: string, cs: qt.Shade[], e?: SVGElement) {
     let p = 0;
     cs.forEach(c => {
       const color = c.color;
-      g.append('stop')
-        .attr('offset', p)
-        .attr('stop-color', color);
+      g.append('stop').attr('offset', p).attr('stop-color', color);
       g.append('stop')
         .attr('offset', p + c.perc)
         .attr('stop-color', color);

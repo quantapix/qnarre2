@@ -6,7 +6,7 @@ export class AppPage {
   }
 
   getTitleText() {
-    return element(by.css('qnr-root .content span')).getText() as Promise<
+    return element(by.css('qnr-app .content span')).getText() as Promise<
       string
     >;
   }

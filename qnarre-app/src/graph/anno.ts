@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import * as qe from './edata';
-import * as qm from '../elems/graph/contextmenu';
+import * as qm from '../docs.elems/graph.comps/contextmenu';
 import * as qn from './ndata';
 import * as qs from './scene';
 import * as qt from './types';
@@ -69,19 +69,19 @@ export class Anno implements qg.Anno {
 
   addCBs(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
     sel
-      .on('mouseover', function() {
+      .on('mouseover', function () {
         e.fire('anno-highlight', {
           name: this.nd.name,
           hostName: d.name
         });
       })
-      .on('mouseout', function() {
+      .on('mouseout', function () {
         e.fire('anno-unhighlight', {
           name: this.nd.name,
           hostName: d.name
         });
       })
-      .on('click', function() {
+      .on('click', function () {
         (d3.event as Event).stopPropagation();
         e.fire('anno-select', {
           name: this.nd.name,
@@ -169,14 +169,14 @@ export class Annos extends Array<Anno> implements qg.Annos {
 
   build(sel: qt.Sel, d: qg.Ndata, e: qs.Elem) {
     const ss = sel
-      .selectAll<any, qg.Anno>(function() {
+      .selectAll<any, qg.Anno>(function () {
         return this.childNodes;
       })
       .data(this, a => a.nd.name);
     ss.enter()
       .append('g')
       .attr('data-name', a => a.nd.name)
-      .each(function(a) {
+      .each(function (a) {
         const s = d3.select(this);
         e.addAnnoSel(a.nd.name, d.name, s);
         let t = qt.Class.Anno.EDGE;
@@ -196,13 +196,13 @@ export class Annos extends Array<Anno> implements qg.Annos {
         'class',
         a => qt.Class.Anno.GROUP + toClass(a.type) + qg.toClass(a.nd.type)
       )
-      .each(function(a) {
+      .each(function (a) {
         const s = d3.select(this);
         a.position(s, d, e);
         if (a.type !== qt.AnnoT.DOTS) a.addCBs(s, d, e);
       });
     ss.exit<qg.Anno>()
-      .each(function(a) {
+      .each(function (a) {
         e.delAnnoSel(a.nd.name, d.name);
       })
       .remove();

@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {from} from 'rxjs';
 
-import {Plugins} from '../plugins/types';
+import {Plugins} from '../app/types';
 
 @Injectable()
 export class SourceService {

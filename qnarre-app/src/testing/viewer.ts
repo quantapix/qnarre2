@@ -4,11 +4,11 @@ import {Title, Meta} from '@angular/platform-browser';
 import {Observable} from 'rxjs';
 
 import {Contents} from '../services/docs.service';
-import {ViewerComponent} from '../comps/viewer.component';
+import {ViewerComponent} from '../docs.comps/viewer.component';
 import {LoggerService} from '../services/logger.service';
 import {TocService} from '../services/toc.service';
 import {MockLogger} from './logger.service';
-import {ElemsLoader} from '../elems/loader';
+import {ElemsLoader} from '../app/loader';
 
 export class TestViewerComponent extends ViewerComponent {
   curr: HTMLElement;

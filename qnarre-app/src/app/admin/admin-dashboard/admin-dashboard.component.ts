@@ -4,7 +4,7 @@ import {ActivatedRoute} from '@angular/router';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 
-import {PreloadService} from '../../preloading-strategy.service';
+import {PreloadService} from '../../preload.service';
 
 @Component({
   selector: 'qnr-admin-dashboard',

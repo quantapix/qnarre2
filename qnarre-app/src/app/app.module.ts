@@ -1,52 +1,57 @@
-import {NgModule} from '@angular/core';
-import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule} from '@angular/forms';
 import {HttpClientModule} from '@angular/common/http';
-
+import {NgModule} from '@angular/core';
 import {Router} from '@angular/router';
 
-import {AppComponent} from './app.component';
-import {PageNotFoundComponent} from './page-not-found/page-not-found.component';
-import {ComposeMessageComponent} from './compose-message/compose-message.component';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
+import {MatListModule} from '@angular/material/list';
+
+import {AppComp, PageNotFoundComp} from './app.comp';
+//import {ComposeMessageComp} from './compose-message/compose-message.comp';
 
 import {AppRoutingModule} from './app-routing.module';
 
-import {AuthModule} from './auth/auth.module';
-import {HeroesModule} from './heroes/heroes.module';
+//import {AuthModule} from './auth/auth.module';
+//import {HeroesModule} from './heroes/heroes.module';
 
-import {GraphComp} from '../graph/graph.comp';
-import {LinkComp} from '../graph/link.comp';
-import {NodeComp} from '../graph/node.comp';
+//import {GraphComp} from '../graph/graph.comp';
+//import {LinkComp} from '../graph/link.comp';
+//import {NodeComp} from '../graph/node.comp';
 
-import {DraggableDirective} from '../graph/draggable.comp';
-import {ZoomableDirective} from '../graph/zoomable.comp';
+//import {DraggableDirective} from '../graph/draggable.comp';
+//import {ZoomableDirective} from '../graph/zoomable.comp';
 
 import {DataService} from '../graph/data.service';
 import {SceneServ} from '../graph/scene.serv';
 
 @NgModule({
   imports: [
-    BrowserModule,
+    AppRoutingModule,
+    //AuthModule,
     BrowserAnimationsModule,
+    BrowserModule,
     FormsModule,
-    HeroesModule,
+    //HeroesModule,
     HttpClientModule,
-    AuthModule,
-    AppRoutingModule
+    MatButtonModule,
+    MatIconModule,
+    MatListModule
   ],
   declarations: [
-    AppComponent,
-    ComposeMessageComponent,
-    GraphComp,
-    LinkComp,
-    NodeComp,
-    DraggableDirective,
-    ZoomableDirective,
-    PageNotFoundComponent
+    AppComp,
+    //ComposeMessageComp,
+    //GraphComp,
+    //LinkComp,
+    //NodeComp,
+    //DraggableDir,
+    //ZoomableDir,
+    PageNotFoundComp
   ],
   providers: [DataService, SceneServ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComp]
 })
 export class AppModule {
   constructor(_: Router) {
