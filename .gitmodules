@@ -1,0 +1,18 @@
+[submodule "dev-libs/nx-console"]
+	path = dev-libs/nx-console
+	url = https://github.com/nrwl/nx-console.git
+[submodule "dev-libs/vscode-bazel"]
+	path = dev-libs/vscode-bazel
+	url = https://github.com/bazelbuild/vscode-bazel.git
+[submodule "dev-libs/vscode-python"]
+	path = dev-libs/vscode-python
+	url = https://github.com/microsoft/vscode-python.git
+[submodule "dev-libs/vscode-git-graph"]
+	path = dev-libs/vscode-git-graph
+	url = https://github.com/mhutchie/vscode-git-graph.git
+[submodule "dev-libs/vscode-chartjs"]
+	path = dev-libs/vscode-chartjs
+	url = https://github.com/RandomFractals/vscode-chartjs.git
+[submodule "dev-libs/vscode-vega-viewer"]
+	path = dev-libs/vscode-vega-viewer
+	url = https://github.com/RandomFractals/vscode-vega-viewer.git
