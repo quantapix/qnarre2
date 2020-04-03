@@ -1,5 +1,6 @@
 import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import * as mat from '@angular/material';
 
 import {AppComponent} from './app.comp';
 import {BoardComponent} from './board.comp';
@@ -31,7 +32,21 @@ import {TraceViewerComponent} from './trace-viewer.comp';
 import {WithElem} from '../registry';
 
 @NgModule({
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    mat.MatAutocompleteModule,
+    mat.MatButtonModule,
+    mat.MatIconModule,
+    mat.MatListModule,
+    mat.MatCheckboxModule,
+    mat.MatDatepickerModule,
+    mat.MatFormFieldModule,
+    mat.MatInputModule,
+    mat.MatRadioModule,
+    mat.MatSelectModule,
+    mat.MatSliderModule,
+    mat.MatSlideToggleModule
+  ],
   declarations: [
     AppComponent,
     BoardComponent,
@@ -56,11 +71,11 @@ import {WithElem} from '../registry';
     CompatCardComp,
     CompatItemComp,
     PluginDialogComponent,
-    QnarreComponent
-    RunsSelectorComponent,
+    QnarreComponent,
+    //RunsSelectorComponent,
     SceneComponent,
     TagFiltererComponent,
-    TraceViewerComponent,
+    TraceViewerComponent
   ],
   entryComponents: [MinimapComponent],
   exports: [MinimapComponent]

@@ -3,16 +3,16 @@
     <qnr-graph-node-search></qnr-graph-node-search>
   </div>
   <div class="control-holder">
-    <paper-button class="icon-button" on-tap="(_fit)" alt="Fit to screen">
-      <iron-icon icon="aspect-ratio" class="button-icon"></iron-icon>
+    <button mat-button class="icon-button" on-tap="(_fit)" alt="Fit to screen">
+      <mat-icon icon="aspect-ratio" class="button-icon"></mat-icon>
       <span class="button-text">Fit to Screen</span>
-    </paper-button>
+    </button>
   </div>
   <div class="control-holder">
-    <paper-button class="icon-button" on-click="(download)" alt="Download PNG">
-      <iron-icon icon="file-download" class="button-icon"></iron-icon>
+    <button mat-button class="icon-button" on-click="(download)" alt="Download PNG">
+      <mat-icon icon="file-download" class="button-icon"></mat-icon>
       <span class="button-text">Download PNG</span>
-    </paper-button>
+    </button>
     <a href="#" id="graphdownload" class="title" download="graph.png"></a>
   </div>
   <div class="control-holder runs">
@@ -26,15 +26,15 @@
       horizontal-align="left"
       class="run-dropdown"
     >
-      <paper-listbox
+      <mat-list
         class="dropdown-content"
         selected="{{ _selectedRunIndex }}"
         slot="dropdown-content"
       >
         <template is="dom-repeat" items="[[datasets]]">
-          <paper-item>[[item.name]]</paper-item>
+          <mat-list-item>[[item.name]]</mat-list-item>
         </template>
-      </paper-listbox>
+      </mat-list>
     </paper-dropdown-menu>
   </div>
   <template is="dom-if" if="[[showSessionRunsDropdown]]">
@@ -50,7 +50,7 @@
         noink=""
         class="run-dropdown"
       >
-        <paper-listbox
+        <mat-list
           class="dropdown-content"
           selected="{{ _selectedTagIndex }}"
           slot="dropdown-content"
@@ -59,23 +59,23 @@
             is="dom-repeat"
             items="[[_getTags(datasets, _selectedRunIndex)]]"
           >
-            <paper-item>[[item.displayName]]</paper-item>
+            <mat-list-item>[[item.displayName]]</mat-list-item>
           </template>
-        </paper-listbox>
+        </mat-list>
       </paper-dropdown-menu>
     </div>
   </template>
   <template is="dom-if" if="[[showUploadButton]]">
     <div class="control-holder">
       <div class="title">Upload</div>
-      <paper-button
+      <button mat-button
         raised=""
         class="upload-button"
         on-click="(_getFile)"
         title="Upload a graph pbtxt file to view the graph"
       >
         Choose File
-      </paper-button>
+      </button>
       <div class="hidden-input">
         <input
           type="file"
