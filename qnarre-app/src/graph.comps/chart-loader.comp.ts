@@ -1,12 +1,12 @@
 import {Component, OnInit} from '@angular/core';
-import * as color_scale from './color-scale';
+import * as color_scale from '../graph.app/color-scale';
 
 @Component({
   selector: 'qnr-chart-loader',
   templateUrl: './chart-loader.comp.html',
   styleUrls: ['./chart-loader.comp.scss']
 })
-export class ChartLoaderComponent implements OnInit {
+export class ChartLoaderComp implements OnInit {
   active: boolean; //  observer: _fixBadStateWhenActive
   dataSeries: Array<any>;
   requestManager: any;

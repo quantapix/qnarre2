@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {RunsSelectorComponent} from './runs-selector.comp';
+import {RunsSelectorComp} from './runs-selector.comp';
 
-describe('RunsSelectorComponent', () => {
-  let component: RunsSelectorComponent;
-  let fixture: ComponentFixture<RunsSelectorComponent>;
+describe('RunsSelectorComp', () => {
+  let component: RunsSelectorComp;
+  let fixture: ComponentFixture<RunsSelectorComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [RunsSelectorComponent]
+      declarations: [RunsSelectorComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(RunsSelectorComponent);
+    fixture = TestBed.createComponent(RunsSelectorComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

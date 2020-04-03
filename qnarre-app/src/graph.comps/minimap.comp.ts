@@ -1,13 +1,13 @@
 import * as d3 from 'd3';
 import {Component, OnInit} from '@angular/core';
-import {Minimap} from '../../graph/minimap';
+import {Minimap} from '../graph/minimap';
 
 @Component({
   selector: 'qnr-graph-minimap',
   templateUrl: './minimap.comp.html',
   styleUrls: ['./minimap.comp.scss']
 })
-export class MinimapComponent implements OnInit {
+export class MinimapComp implements OnInit {
   minimap: Minimap;
   constructor(
     svg: SVGSVGElement,

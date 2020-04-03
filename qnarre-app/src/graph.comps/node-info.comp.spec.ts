@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {NodeInfoComponent} from './node-info.comp';
+import {NodeInfoComp} from './node-info.comp';
 
-describe('NodeInfoComponent', () => {
-  let component: NodeInfoComponent;
-  let fixture: ComponentFixture<NodeInfoComponent>;
+describe('NodeInfoComp', () => {
+  let component: NodeInfoComp;
+  let fixture: ComponentFixture<NodeInfoComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [NodeInfoComponent]
+      declarations: [NodeInfoComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(NodeInfoComponent);
+    fixture = TestBed.createComponent(NodeInfoComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

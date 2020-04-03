@@ -1,12 +1,12 @@
 import {Component, OnInit} from '@angular/core';
-import * as util from '../../graph/utils';
+import * as util from '../graph/utils';
 
 @Component({
   selector: 'qnr-card-heading',
   templateUrl: './heading.comp.html',
   styleUrls: ['./heading.comp.scss']
 })
-export class CardHeadingComponent implements OnInit {
+export class CardHeadingComp implements OnInit {
   color?: string;
   displayName?: string;
   tag?: string;

@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {MarkdownViewComponent} from './md-view.comp';
+import {MarkdownViewComp} from './md-view.comp';
 
-describe('MarkdownViewComponent', () => {
-  let component: MarkdownViewComponent;
-  let fixture: ComponentFixture<MarkdownViewComponent>;
+describe('MarkdownViewComp', () => {
+  let component: MarkdownViewComp;
+  let fixture: ComponentFixture<MarkdownViewComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [MarkdownViewComponent]
+      declarations: [MarkdownViewComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(MarkdownViewComponent);
+    fixture = TestBed.createComponent(MarkdownViewComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

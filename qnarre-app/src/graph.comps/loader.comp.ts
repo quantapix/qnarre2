@@ -1,15 +1,15 @@
 import {Component, OnInit} from '@angular/core';
 
-import * as loader from '../../graph/loader';
-import * as util from '../../graph/utils';
-import * as op from '../../graph/compat';
+import * as loader from '../graph/loader';
+import * as util from '../graph/utils';
+import * as op from '../graph/compat';
 
 @Component({
   selector: 'qnr-graph-loader',
   template: '',
   styleUrls: []
 })
-export class LoaderComponent implements OnInit {
+export class LoaderComp implements OnInit {
   datasets: Array<{name: string; path: string}>;
   selectedData = 0;
   selectedFile: any;

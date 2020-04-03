@@ -1,10 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 
-import * as qg from '../../graph/graph';
-import * as qt from '../../graph/types';
-import * as qu from '../../graph/utils';
+import * as qg from '../graph/graph';
+import * as qt from '../graph/types';
+import * as qu from '../graph/utils';
 
-import * as proto from '../../graph/proto';
+import * as proto from '../graph/proto';
 
 interface DeviceNameExclude {
   regex: RegExp;
@@ -79,7 +79,7 @@ const GRADIENT_COMPATIBLE_COLOR_BY: Set<qt.ColorBy> = new Set([
   templateUrl: './controls.comp.html',
   styleUrls: ['./controls.comp.scss']
 })
-export class ControlsComponent implements OnInit {
+export class ControlsComp implements OnInit {
   $ = {} as {loader: any};
   $$ = {} as (_s: string) => any;
 

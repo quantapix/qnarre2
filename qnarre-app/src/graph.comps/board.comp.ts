@@ -6,7 +6,7 @@ import * as q_graph from '../../graph/graph';
   templateUrl: './board.comp.html',
   styleUrls: ['./board.comp.scss']
 })
-export class BoardComponent implements OnInit {
+export class BoardComp implements OnInit {
   graphHierarchy: any;
   graph: any;
   stats: any;

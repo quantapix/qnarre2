@@ -5,7 +5,7 @@ import {Component} from '@angular/core';
   template: '<div id="markdown" inner-h-t-m-l="[[html]]"></div>',
   styleUrls: ['./md-view.comp.scss']
 })
-export class MarkdownViewComponent {
+export class MarkdownViewComp {
   html = '';
 
   attached() {

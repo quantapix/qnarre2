@@ -2,21 +2,21 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 import {Component, OnInit, Input, Output, EventEmitter} from '@angular/core';
 
-import * as qn from '../../graph/ndata';
-import * as qg from '../../graph/graph';
-import * as qp from '../../graph/params';
-import * as qs from '../../graph/scene';
-import * as qt from '../../graph/types';
-import * as qu from '../../graph/utils';
-import * as qd from '../../graph/gdata';
-import * as ql from '../../graph/layout';
+import * as qn from '../graph/ndata';
+import * as qg from '../graph/graph';
+import * as qp from '../graph/params';
+import * as qs from '../graph/scene';
+import * as qt from '../graph/types';
+import * as qu from '../graph/utils';
+import * as qd from '../graph/gdata';
+import * as ql from '../graph/layout';
 
 @Component({
   selector: 'qnr-graph-scene',
   templateUrl: './scene.comp.html',
   styleUrls: ['./scene.comp.scss']
 })
-export class SceneComponent extends qs.Elem implements OnInit {
+export class SceneComp extends qs.Elem implements OnInit {
   name: string;
   colorBy: string;
 
@@ -107,9 +107,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
         d3.select(this.$.root).attr('transform', d3.event.transform);
         this.minimap.zoom(d3.event.transform);
       });
-    d3.select(this.$.svg)
-      .call(this._zoom)
-      .on('dblclick.zoom', null);
+    d3.select(this.$.svg).call(this._zoom).on('dblclick.zoom', null);
     d3.select(window).on('resize', () => {
       this.minimap.zoom();
     });
@@ -180,10 +178,7 @@ export class SceneComponent extends qs.Elem implements OnInit {
   _resetState() {
     this.sels = {nodes: {}, edges: {}, annos: {}};
     this._updateLabels(false);
-    d3.select(this.$.svg)
-      .select('#root')
-      .selectAll('*')
-      .remove();
+    d3.select(this.$.svg).select('#root').selectAll('*').remove();
     qn.delGradDefs(this.$.svg);
   }
 

@@ -1,9 +1,9 @@
 import {Component, Input, OnInit} from '@angular/core';
 
-import * as qg from './graph';
-import * as qt from './types';
+import * as qg from '../graph.app/graph';
+import * as qt from '../graph.elems/types';
 
-import * as qn from '../../graph/ndata';
+import * as qn from '../graph/ndata';
 
 @Component({
   selector: 'qnr-graph-node-icon',

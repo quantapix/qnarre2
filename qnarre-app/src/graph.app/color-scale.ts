@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 import * as qb from '../../graph/backend';
-import {standard} from './palettes';
+import {standard} from '../graph.elems/palettes';
 
 // Example usage:
 // runs = ["train", "test", "test1", "test2"]

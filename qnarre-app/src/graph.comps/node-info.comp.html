@@ -234,25 +234,25 @@
 
       <template is="dom-if" if="[[!_isLibraryFn(_node)]]">
         <div class="toggle-include-group">
-          <paper-button
+          <button mat-button
             raised=""
             class="toggle-include"
             on-click="(_toggleInclude)"
           >
             <span>[[_auxButtonText]]</span>
-          </paper-button>
+          </button>
         </div>
       </template>
 
       <template is="dom-if" if="{{ _isInSeries(_node) }}">
         <div class="toggle-include-group">
-          <paper-button
+          <button mat-button
             raised=""
             class="toggle-include"
             on-click="(_toggleGroup)"
           >
             <span>[[_groupButtonText]]</span>
-          </paper-button>
+          </button>
         </div>
       </template>
     </div>

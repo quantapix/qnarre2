@@ -68,7 +68,7 @@ table td {
   vertical-align: middle;
 }
 
-paper-radio-button {
+mat-radio-button {
   display: block;
   padding: 5px;
 }
@@ -180,7 +180,7 @@ qnr-graph-icon {
   justify-content: space-between;
 }
 
-.allcontrols .control-holder paper-radio-group {
+.allcontrols .control-holder mat-radio-group {
   margin-top: 5px;
 }
 
@@ -212,9 +212,7 @@ table.qnr-graph-controls td.input-element-table-data {
   overflow: hidden;
 }
 
-/** Override inline styles that suppress pointer events for disabled buttons. Otherwise, the */
-/*  tooltips do not appear. */
-paper-radio-group paper-radio-button {
+mat-radio-group mat-radio-button {
   pointer-events: auto !important;
 }
 
@@ -225,11 +223,6 @@ paper-radio-group paper-radio-button {
   text-decoration: underline;
 }
 
-.legend-clarifier paper-tooltip {
-  width: 150px;
-}
-
-/** Otherwise, polymer UI controls appear atop node search. */
 qnr-graph-node-search {
   z-index: 1;
   width: 100%;

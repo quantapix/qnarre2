@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import * as backend from '../../graph/backend';
+import * as backend from '../graph/backend';
 
 @Component({
   selector: 'qnr-option-selector',
@@ -42,7 +42,7 @@ export class OptionSelector {
   name: string;
   selectedId: string; // notify, observer: '_selectedIdChanged';
   attached() {
-    this.async(function() {
+    this.async(function () {
       this.getEffectiveChildren().forEach(node => {
         this.listen(node, 'tap', '_selectTarget');
       }, this);
@@ -56,7 +56,7 @@ export class OptionSelector {
     if (!selected) {
       return;
     }
-    this.getEffectiveChildren().forEach(function(node) {
+    this.getEffectiveChildren().forEach(function (node) {
       node.classList.remove('selected');
     });
     selected.classList.add('selected');
@@ -268,9 +268,9 @@ export class DropdownTrigger implements OnInit {
     </div>
     <template is="dom-if" if="[[!allToggleDisabled]]">
       <div class="item">
-        <paper-button class="x-button" on-tap="(_toggleAll)">
+        <button mat-button class="x-button" on-tap="(_toggleAll)">
           Toggle All [[label]]s
-        </paper-button>
+        </button>
       </div>
     </template>
   `,
@@ -848,7 +848,7 @@ export class MultiCheckbox {
       this.root.querySelectorAll('.isolator')
     );
 
-    buttons.forEach(function(b) {
+    buttons.forEach(function (b) {
       if (numChecked === 1 && selectionMap[b.name]) {
         b.icon = 'radio-button-checked';
       } else {
@@ -898,7 +898,7 @@ export class MultiCheckbox {
     // names.
     const name = Polymer.dom(e).localTarget.name;
     const selectionState = {};
-    this.names.forEach(function(n) {
+    this.names.forEach(function (n) {
       selectionState[n] = n == name;
     });
     this.selectionState = selectionState;

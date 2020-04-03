@@ -1,21 +1,21 @@
 import {Component, OnInit} from '@angular/core';
 
-import * as backend from '../../graph/backend';
-import * as qc from '../../graph/compat';
-import * as qg from '../../graph/graph';
-import * as qh from '../../graph/hierarchy';
-import * as ql from '../../graph/loader';
-import * as qp from '../../graph/params';
-import * as qs from '../../graph/slim';
-import * as qt from '../../graph/types';
-import * as qu from '../../graph/utils';
+import * as backend from '../graph/backend';
+import * as qc from '../graph/compat';
+import * as qg from '../graph/graph';
+import * as qh from '../graph/hierarchy';
+import * as ql from '../graph/loader';
+import * as qp from '../graph/params';
+import * as qs from '../graph/slim';
+import * as qt from '../graph/types';
+import * as qu from '../graph/utils';
 
 @Component({
   selector: 'qnr-graph-dashboard-loader',
   template: '',
   styleUrls: []
 })
-export class DashboardLoaderComponent implements OnInit {
+export class DashLoaderComp implements OnInit {
   hierPs = () => qp.HierPs;
   compat = () => new qc.TpuCompat();
 

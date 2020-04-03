@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {DashboardLoaderComponent} from './dash-loader.comp';
+import {DashLoaderComp} from './dash-loader.comp';
 
-describe('DashboardLoaderComponent', () => {
-  let component: DashboardLoaderComponent;
-  let fixture: ComponentFixture<DashboardLoaderComponent>;
+describe('DashLoaderComp', () => {
+  let component: DashLoaderComp;
+  let fixture: ComponentFixture<DashLoaderComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [DashboardLoaderComponent]
+      declarations: [DashLoaderComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(DashboardLoaderComponent);
+    fixture = TestBed.createComponent(DashLoaderComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

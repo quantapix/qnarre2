@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {TagFiltererComponent} from './tag-filterer.comp';
+import {TagFiltererComp} from './tag-filterer.comp';
 
-describe('TagFiltererComponent', () => {
-  let component: TagFiltererComponent;
-  let fixture: ComponentFixture<TagFiltererComponent>;
+describe('TagFiltererComp', () => {
+  let component: TagFiltererComp;
+  let fixture: ComponentFixture<TagFiltererComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [TagFiltererComponent]
+      declarations: [TagFiltererComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(TagFiltererComponent);
+    fixture = TestBed.createComponent(TagFiltererComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

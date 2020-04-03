@@ -1,18 +1,18 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {MinimapComponent} from './minimap.comp';
+import {MinimapComp} from './minimap.comp';
 
-describe('GraphMinimapComponent', () => {
-  let c: MinimapComponent;
-  let f: ComponentFixture<MinimapComponent>;
+describe('GraphMinimapComp', () => {
+  let c: MinimapComp;
+  let f: ComponentFixture<MinimapComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [MinimapComponent]
+      declarations: [MinimapComp]
     }).compileComponents();
   }));
   beforeEach(() => {
-    f = TestBed.createComponent(MinimapComponent);
+    f = TestBed.createComponent(MinimapComp);
     c = f.componentInstance;
     f.detectChanges();
   });

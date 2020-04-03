@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {OpCompatCardComponent} from './compat-card.comp';
+import {CompatItemComp} from './compat-item.comp';
 
-describe('OpCompatCardComponent', () => {
-  let component: OpCompatCardComponent;
-  let fixture: ComponentFixture<OpCompatCardComponent>;
+describe('CompatItemComp', () => {
+  let component: CompatItemComp;
+  let fixture: ComponentFixture<CompatItemComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [OpCompatCardComponent]
+      declarations: [CompatItemComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(OpCompatCardComponent);
+    fixture = TestBed.createComponent(CompatItemComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -1,5 +1,5 @@
 import * as vz_sorting from 'vz_sorting';
-import * as storage from './storage';
+import * as storage from '../graph.elems/storage';
 
 import {Component, OnInit} from '@angular/core';
 import * as backend from '../../graph/backend';
@@ -25,7 +25,7 @@ interface RunItem {
   templateUrl: './dashboard.comp.html',
   styleUrls: ['./dashboard.comp.scss']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComp implements OnInit {
   _datasets = () => [];
   _datasetsFetched = false;
   _selectedDataset = 0;
@@ -254,7 +254,7 @@ export class DashboardComponent implements OnInit {
       // This path may be slow. Schedule network requests to start some time later. If another
       // request is scheduled in the mean time, drop this current request.
       this._healthPillStepRequestTimerId = setTimeout(
-        function() {
+        function () {
           this._healthPillStepRequestTimerId = null;
           this._initiateNetworkRequestForHealths(requestId);
         }.bind(this),
@@ -284,7 +284,7 @@ export class DashboardComponent implements OnInit {
     );
     const alertsPromise = this._fetchDebuggerNumericsAlerts();
     Promise.all([healthPillsPromise, alertsPromise]).then(
-      function(result) {
+      function (result) {
         const healthPillsResult = result[0];
         const alertsResult = result[1];
         if (!this.healthPillsToggledOn) {

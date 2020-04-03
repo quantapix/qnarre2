@@ -1,8 +1,8 @@
 /* eslint-disable no-constant-condition */
 import {Component, OnInit} from '@angular/core';
-import * as backend from '../../graph/backend';
-import * as color_scale from './color-scale';
-import * as storage from './storage';
+import * as backend from '../graph/backend';
+import * as color_scale from '../graph.app/color-scale';
+import * as storage from '../graph.elems/storage';
 
 @Component({
   selector: 'qnr-wbr-string',
@@ -41,7 +41,7 @@ export class WbrString {
   templateUrl: './runs-selector.comp.html',
   styleUrls: ['./runs-selector.comp.scss']
 })
-export class RunsSelectorComponent implements OnInit {
+export class RunsSelectorComp implements OnInit {
   runSelectionState = storage.getObjectInitializer('runSelectionState', {
     defaultValue: {}
   }); // observer: '_storeRunSelectionState';

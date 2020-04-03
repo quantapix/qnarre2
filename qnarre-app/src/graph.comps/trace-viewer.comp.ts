@@ -38,7 +38,7 @@ function intersect(range: Range, bounds: Range): Range {
   templateUrl: './trace-viewer.comp.html',
   styleUrls: ['./trace-viewer.comp.scss']
 })
-export class TraceViewerComponent implements OnInit {
+export class TraceViewerComp implements OnInit {
   traceDataUrl?: string;
   _traceData: any; // observer: '_traceDataChanged';
   _traceViewer: any;
@@ -158,10 +158,10 @@ export class TraceViewerComponent implements OnInit {
       requestURL.searchParams.set('start_time_ms', requestedRange.min);
       requestURL.searchParams.set('end_time_ms', requestedRange.max);
     }
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       const xhr = new XMLHttpRequest();
       xhr.open('GET', requestURL);
-      xhr.onload = function() {
+      xhr.onload = function () {
         const contentType = this.getResponseHeader('Content-Type');
         if (
           this.status !== 200 ||
@@ -175,7 +175,7 @@ export class TraceViewerComponent implements OnInit {
         }
         resolve(xhr.response);
       };
-      xhr.onerror = function() {
+      xhr.onerror = function () {
         reject(requestURL + 'could not be loaded: ' + xhr.statusText);
       };
       xhr.send();
@@ -230,7 +230,7 @@ export class TraceViewerComponent implements OnInit {
     }
     this._dirty = false;
     window.requestAnimationFrame(
-      function() {
+      function () {
         this._traceViewer.model = this._model;
         if (this._traceViewer.trackView != null) {
           this._traceViewer.trackView.viewport.addEventListener('change', () =>

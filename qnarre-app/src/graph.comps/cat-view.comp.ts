@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import * as categ_utils from '../../graph/category';
-import * as storage from './storage';
+import * as categ_utils from '../graph/category';
+import * as storage from '../graph.elems/storage';
 
 const LIMIT_LOCAL_STORAGE_KEY = 'TF.TensorBoard.PaginatedView.limit';
 const DEFAULT_LIMIT = 12;
@@ -54,7 +54,7 @@ export function setLimit(limit: number) {
   templateUrl: './cat-view.comp.html',
   styleUrls: ['./cat-view.comp.scss']
 })
-export class CategoryViewComponent implements OnInit {
+export class CatViewComp implements OnInit {
   category: categ_utils.Category<any>;
   initialOpened: boolean;
   opened: boolean; // notify, readOnly

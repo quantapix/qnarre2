@@ -9,7 +9,12 @@
     </button>
   </div>
   <div class="control-holder">
-    <button mat-button class="icon-button" on-click="(download)" alt="Download PNG">
+    <button
+      mat-button
+      class="icon-button"
+      on-click="(download)"
+      alt="Download PNG"
+    >
       <mat-icon icon="file-download" class="button-icon"></mat-icon>
       <span class="button-text">Download PNG</span>
     </button>
@@ -68,7 +73,8 @@
   <template is="dom-if" if="[[showUploadButton]]">
     <div class="control-holder">
       <div class="title">Upload</div>
-      <button mat-button
+      <button
+        mat-button
         raised=""
         class="upload-button"
         on-click="(_getFile)"
@@ -88,24 +94,24 @@
     </div>
   </template>
   <div class="control-holder">
-    <paper-radio-group selected="{{ _selectedGraphType }}">
+    <mat-radio-group selected="{{ _selectedGraphType }}">
       <!-- Note that the name has to match that of tf.graph.SelectionType. -->
-      <paper-radio-button
+      <mat-radio-button
         name="op_graph"
         disabled="[[_getSelectionOpGraphDisabled(datasets, _selectedRunIndex, _selectedTagIndex)]]"
-        >Graph</paper-radio-button
+        >Graph</mat-radio-button
       >
-      <paper-radio-button
+      <mat-radio-button
         name="conceptual_graph"
         disabled="[[_getSelectionConceptualGraphDisabled(datasets, _selectedRunIndex, _selectedTagIndex)]]"
-        >Conceptual Graph</paper-radio-button
+        >Conceptual Graph</mat-radio-button
       >
-      <paper-radio-button
+      <mat-radio-button
         name="profile"
         disabled="[[_getSelectionProfileDisabled(datasets, _selectedRunIndex, _selectedTagIndex)]]"
-        >Profile</paper-radio-button
+        >Profile</mat-radio-button
       >
-    </paper-radio-group>
+    </mat-radio-group>
   </div>
   <div class="control-holder">
     <div>
@@ -123,82 +129,44 @@
   </template>
   <div class="control-holder">
     <div class="title">Color</div>
-    <paper-radio-group selected="{{ colorBy }}">
-      <paper-radio-button name="structure">Structure</paper-radio-button>
+    <mat-radio-group selected="{{ colorBy }}">
+      <mat-radio-button name="structure">Structure</mat-radio-button>
 
-      <paper-radio-button name="device">Device</paper-radio-button>
+      <mat-radio-button name="device">Device</mat-radio-button>
 
-      <paper-radio-button
+      <mat-radio-button
         id="xla-cluster-radio-button"
         name="xla_cluster"
         disabled="[[!_clustersProvided(renderHierarchy)]]"
       >
         XLA Cluster
-      </paper-radio-button>
-      <paper-tooltip
-        animation-delay="0"
-        for="xla-cluster-radio-button"
-        position="right"
-        offset="0"
-      >
-        Coloring by XLA cluster is only enabled if at least 1 op specifies an
-        XLA cluster.
-      </paper-tooltip>
-
-      <paper-radio-button
+      </mat-radio-button>
+      <mat-radio-button
         id="compute-time-radio-button"
         name="compute_time"
         disabled="[[!stats]]"
       >
         Compute time
-      </paper-radio-button>
-      <paper-tooltip
-        animation-delay="0"
-        for="compute-time-radio-button"
-        position="right"
-        offset="0"
-      >
-        Coloring by compute time is only enabled if the RunMetadata proto is
-        passed to the FileWriter when a specific session is run.
-      </paper-tooltip>
-
-      <paper-radio-button
+      </mat-radio-button>
+      <mat-radio-button
         id="memory-radio-button"
         name="memory"
         disabled="[[!stats]]"
       >
         Memory
-      </paper-radio-button>
-      <paper-tooltip
-        animation-delay="0"
-        for="memory-radio-button"
-        position="right"
-        offset="0"
-      >
-        Coloring by memory is only enabled if the RunMetadata proto is passed to
-        the FileWriter when a specific session is run.
-      </paper-tooltip>
-
-      <paper-radio-button
+      </mat-radio-button>
+      <mat-radio-button
         id="tpu-compatibility-radio-button"
         name="op_compatibility"
       >
         TPU Compatibility
-      </paper-radio-button>
-      <paper-tooltip
-        animation-delay="0"
-        for="tpu-compatibility-radio-button"
-        position="right"
-        offset="0"
-      >
-        Coloring by whether an operation is compatible for the TPU device.
-      </paper-tooltip>
-    </paper-radio-group>
+      </mat-radio-button>
+    </mat-radio-group>
     <span class="spacer"></span>
   </div>
   <div>
     <template is="dom-if" if="[[_isGradientColoring(stats, colorBy)]]">
-      <svg width="140" height="20" style="margin: 0 5px" class="color-text">
+      <svg width="140" height="20" style="margin: 0 5px;" class="color-text">
         <defs>
           <linearGradient id="linearGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop
@@ -226,7 +194,7 @@
         <div class="domainStart">[[curGradPs.minValue]]</div>
         <div class="domainEnd">[[curGradPs.maxValue]]</div>
       </div>
-      <br style="clear: both" />
+      <br style="clear: both;" />
       <div>Devices included in stats:</div>
       <div class="deviceList">
         <template is="dom-repeat" items="[[curDevs]]">
@@ -244,9 +212,6 @@
                 icon="help"
                 class="help-icon"
               ></paper-icon-button>
-              <paper-tooltip position="right" offset="0" animation-delay="0"
-                >[[item.ignoredMsg]]</paper-tooltip
-              >
             </template>
           </div>
         </template>
@@ -305,7 +270,7 @@
                 xlink:href="#unfilled-rect"
                 x="0"
                 y="0"
-                style="fill:[[item.color]]"
+                style="fill: [[item.color]];"
               ></use>
             </svg>
             <span class="color-legend-value">[[item.xla_cluster]]</span>
@@ -389,10 +354,6 @@
               Namespace<span class="gray">*</span>
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Encapsulates a set of nodes. Namespace is hierarchical and
-                  based on scope.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -404,9 +365,6 @@
               OpNode
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Node that performs an operation. These nodes cannot expand.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -418,10 +376,6 @@
               Unconnected series<span class="gray">*</span>
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Sequence of numbered nodes that are not connected to each
-                  other.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -437,9 +391,6 @@
               Connected series<span class="gray">*</span>
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Sequence of numbered nodes that are connected to each other.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -459,9 +410,6 @@
               Constant
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Node that outputs a constant value.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -473,9 +421,6 @@
               Summary
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Node that collects data for visualization within TensorBoard.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -512,10 +457,6 @@
               Dataflow edge
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Edge showing the data flow between operations. Edges flow
-                  upwards unless arrowheads specify otherwise.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -539,9 +480,6 @@
               Control dependency edge
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Edge showing the control dependency between operations.
-                </paper-tooltip>
               </div>
             </td>
           </tr>
@@ -578,10 +516,6 @@
               Reference edge
               <div class="legend-clarifier">
                 <span>?</span>
-                <paper-tooltip animation-delay="0" position="right" offset="0">
-                  Edge showing that the outgoing operation node can mutate the
-                  incoming tensor.
-                </paper-tooltip>
               </div>
             </td>
           </tr>

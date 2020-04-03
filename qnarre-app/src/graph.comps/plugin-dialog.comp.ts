@@ -5,7 +5,7 @@ import {Component, OnInit} from '@angular/core';
   templateUrl: './plugin-dialog.comp.html',
   styleUrls: ['./plugin-dialog.comp.scss']
 })
-export class PluginDialogComponent implements OnInit {
+export class PluginDialogComp implements OnInit {
   _title?: string;
   _customMessage?: string;
   _open: boolean;

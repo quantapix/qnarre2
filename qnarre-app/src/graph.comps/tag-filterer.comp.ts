@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import * as storage from './storage';
+import * as storage from '../graph.elems/storage';
 
 @Component({
   selector: 'qnr-tag-filterer',
@@ -22,7 +22,7 @@ import * as storage from './storage';
     `
   ]
 })
-export class TagFiltererComponent implements OnInit {
+export class TagFiltererComp implements OnInit {
   tagFilter: string; // notify,  computed: '_computeTagFilter(_tagFilter)';
   _tagFilter = storage.getStringInitializer('tagFilter', {
     defaultValue: '',

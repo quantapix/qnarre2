@@ -5,7 +5,7 @@ import {Component, OnInit, Input} from '@angular/core';
   templateUrl: './node-search.comp.html',
   styleUrls: ['./node-search.comp.scss']
 })
-export class NodeSearchComponent implements OnInit {
+export class NodeSearchComp implements OnInit {
   @Input() selectedNode: string; // notify
   _rawRegexInput = '';
   _regexInput: string; // computed: '_computeRegexInput(renderHierarchy, _rawRegexInput)';

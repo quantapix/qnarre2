@@ -5,7 +5,7 @@ import {Component, OnInit} from '@angular/core';
   templateUrl: './node-item.comp.html',
   styleUrls: ['./node-item.comp.scss']
 })
-export class NodeListItemComponent implements OnInit {
+export class NodeListItemComp implements OnInit {
   cardNode: any;
   itemNode: any;
   edgeLabel: string;

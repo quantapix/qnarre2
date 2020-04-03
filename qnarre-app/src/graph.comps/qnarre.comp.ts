@@ -100,7 +100,7 @@ export class AutoReload implements OnInit {
   templateUrl: './templates/qnarre.component.html',
   styleUrls: ['./styles/qnarre.component.scss']
 })
-export class QnarreComponent implements OnInit {
+export class QnarreComp implements OnInit {
   //behaviors: [tf_tensorboard.AutoReloadBehavior];
   brand = 'TensorBoard-X';
   useHash = true;

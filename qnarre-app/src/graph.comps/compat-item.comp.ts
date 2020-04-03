@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 
-import * as qp from './params';
-import * as qt from './types';
+import * as qp from '../graph.elems/params';
+import * as qt from '../graph.elems/types';
 import * as hierarchy from '../../graph/hierarchy';
 
 @Component({

@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {CardHeadingComponent} from './heading.comp';
+import {CardHeadingComp} from './heading.comp';
 
-describe('CardHeadingComponent', () => {
-  let component: CardHeadingComponent;
-  let fixture: ComponentFixture<CardHeadingComponent>;
+describe('CardHeadingComp', () => {
+  let component: CardHeadingComp;
+  let fixture: ComponentFixture<CardHeadingComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [CardHeadingComponent]
+      declarations: [CardHeadingComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(CardHeadingComponent);
+    fixture = TestBed.createComponent(CardHeadingComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

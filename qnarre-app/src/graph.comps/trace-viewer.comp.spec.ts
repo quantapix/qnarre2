@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {TraceViewerComponent} from './trace-viewer.comp';
+import {TraceViewerComp} from './trace-viewer.comp';
 
-describe('TraceViewerComponent', () => {
-  let component: TraceViewerComponent;
-  let fixture: ComponentFixture<TraceViewerComponent>;
+describe('TraceViewerComp', () => {
+  let component: TraceViewerComp;
+  let fixture: ComponentFixture<TraceViewerComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [TraceViewerComponent]
+      declarations: [TraceViewerComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(TraceViewerComponent);
+    fixture = TestBed.createComponent(TraceViewerComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

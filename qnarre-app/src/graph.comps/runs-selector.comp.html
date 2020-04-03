@@ -13,9 +13,9 @@
   regex="{{regexInput}}"
   coloring="[[coloring]]"
 ></tf-multi-checkbox>
-<paper-button class="x-button" id="toggle-all" on-tap="_toggleAll">
+<button mat-button class="x-button" id="toggle-all" on-tap="_toggleAll">
   Toggle All Runs
-</paper-button>
+</button>
 <template is="dom-if" if="[[dataLocation]]">
   <div id="data-location">
     <tf-wbr-string value="[[_clippedDataLocation]]" /><!--

@@ -44,16 +44,20 @@
       <span id="top-of-container"></span>
       <template is="dom-if" if="[[_multiplePagesExist]]">
         <div class="big-page-buttons" style="margin-bottom: 10px;">
-          <paper-button
+          <button
+            mat-button
             on-tap="(_performPreviousPage)"
             disabled\$="[[!_hasPreviousPage]]"
-            >Previous page</paper-button
           >
-          <paper-button
+            Previous page
+          </button>
+          <button
+            mat-button
             on-tap="(_performNextPage)"
             disabled\$="[[!_hasNextPage]]"
-            >Next page</paper-button
           >
+            Next page
+          </button>
         </div>
       </template>
 
@@ -62,7 +66,7 @@
       </div>
       <template is="dom-if" if="[[_multiplePagesExist]]">
         <div id="controls-container">
-          <div style="display: inline-block; padding: 0 5px">
+          <div style="display: inline-block; padding: 0 5px;">
             Page
             <paper-input
               id="page-input"
@@ -81,16 +85,20 @@
         </div>
 
         <div class="big-page-buttons" style="margin-top: 10px;">
-          <paper-button
+          <button
+            mat-button
             on-tap="(_performPreviousPage)"
             disabled\$="[[!_hasPreviousPage]]"
-            >Previous page</paper-button
           >
-          <paper-button
+            Previous page
+          </button>
+          <button
+            mat-button
             on-tap="(_performNextPage)"
             disabled\$="[[!_hasNextPage]]"
-            >Next page</paper-button
           >
+            Next page
+          </button>
         </div>
       </template>
     </div>

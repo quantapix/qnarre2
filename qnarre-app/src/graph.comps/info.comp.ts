@@ -5,7 +5,7 @@ import {Component, OnInit, Input} from '@angular/core';
   templateUrl: './info.comp.html',
   styleUrls: ['./info.comp.scss']
 })
-export class InfoComponent implements OnInit {
+export class InfoComp implements OnInit {
   @Input() title: string;
   @Input() graphHierarchy: any;
   @Input() graph: any;

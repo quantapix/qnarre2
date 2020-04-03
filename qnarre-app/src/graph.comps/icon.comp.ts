@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 
-import * as qp from './params';
-import * as qt from './types';
+import * as qp from '../graph.elems/params';
+import * as qt from '../graph.elems/types';
 
 @Component({
   selector: 'qnr-graph-icon',

@@ -5,7 +5,7 @@ import {Component, OnInit} from '@angular/core';
   templateUrl: './node-info.comp.html',
   styleUrls: ['./node-info.comp.scss']
 })
-export class NodeInfoComponent implements OnInit {
+export class NodeInfoComp implements OnInit {
   nodeName: string;
   graphHierarchy: Object;
   /** What to color the nodes by (compute time, memory, device etc.) */
@@ -153,7 +153,7 @@ export class NodeInfoComponent implements OnInit {
       return;
     }
 
-    return _.map(stats.outputSize, function(shape) {
+    return _.map(stats.outputSize, function (shape) {
       if (shape.length === 0) {
         return 'scalar';
       }
@@ -177,12 +177,12 @@ export class NodeInfoComponent implements OnInit {
       return [];
     }
     const attrs = [];
-    _.each(node.attr, function(entry) {
+    _.each(node.attr, function (entry) {
       // Unpack the "too large" attributes into separate attributes
       // in the info card, with values "too large to show".
       if (entry.key === tf.graph.LARGE_ATTRS_KEY) {
         attrs = attrs.concat(
-          entry.value.list.s.map(function(key) {
+          entry.value.list.s.map(function (key) {
             return {key: key, value: 'Too large to show...'};
           })
         );
@@ -268,7 +268,7 @@ export class NodeInfoComponent implements OnInit {
      * Converts a list of metaedges to a list of edge information
      * that can be rendered.
      */
-    const toEdgeInfoList = function(edges) {
+    const toEdgeInfoList = function (edges) {
       const edgeInfoList = [];
       _.each(edges, metaedge => {
         const name = isPredecessor ? metaedge.v : metaedge.w;

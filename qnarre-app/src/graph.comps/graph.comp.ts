@@ -2,11 +2,11 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 import {Component, OnInit} from '@angular/core';
 
-import * as qg from '../../graph/graph';
-import * as qh from '../../graph/hierarchy';
-import * as qr from '../../graph/gdata';
-import * as qt from '../../graph/types';
-import * as qu from '../../graph/utils';
+import * as qg from '../graph/graph';
+import * as qh from '../graph/hierarchy';
+import * as qr from '../graph/gdata';
+import * as qt from '../graph/types';
+import * as qu from '../graph/utils';
 
 @Component({
   selector: 'qnr-graph',
