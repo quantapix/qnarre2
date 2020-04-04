@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {QnarreComp} from './qnarre';
+import {NodeInfoComp} from './node-info';
 
-describe('QnarreComp', () => {
-  let component: QnarreComp;
-  let fixture: ComponentFixture<QnarreComp>;
+describe('NodeInfoComp', () => {
+  let component: NodeInfoComp;
+  let fixture: ComponentFixture<NodeInfoComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [QnarreComp]
+      declarations: [NodeInfoComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(QnarreComp);
+    fixture = TestBed.createComponent(NodeInfoComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

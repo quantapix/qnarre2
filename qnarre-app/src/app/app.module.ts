@@ -14,7 +14,7 @@ import {AppComp, PageNotFoundComp} from './app.comp';
 
 import {AppRoutingModule} from './app-routing.module';
 
-import {AppComp as GraphAppComp} from '../graph.app/app.comp';
+import {AppComp as GraphAppComp} from '../graph.app/comp';
 
 //import {AuthModule} from './auth/auth.module';
 //import {HeroesModule} from './heroes/heroes.module';

@@ -12,7 +12,7 @@ import {provideMockStore, MockStore} from '@ngrx/store/testing';
 import {State} from '../app/types';
 import {SettingsComponent} from './settings.component';
 import {toggleEnabled, changePeriod} from '../app/actions';
-import {createPluginsState, createState} from '../app/plugins.spec';
+import {createPluginsState, createState} from '../plugins/plugins.spec';
 
 describe('settings dialog test', () => {
   let store: MockStore<State>;

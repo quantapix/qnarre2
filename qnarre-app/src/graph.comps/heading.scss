@@ -1,0 +1,52 @@
+figcaption {
+  width: 100%;
+}
+
+/** Horizontal line of labels. */
+.heading-row {
+  margin-top: -4px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/** Piece of text in the figure caption. */
+.heading-label {
+  flex-grow: 1;
+  margin-top: 4px;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+/** Makes label show on the right. */
+.heading-right {
+  flex-grow: 0;
+}
+
+.container {
+  display: flex;
+}
+.content {
+  font-size: 12px;
+  flex-grow: 1;
+}
+.name {
+  font-size: 14px;
+}
+.run {
+  font-size: 11px;
+  width: auto;
+  border-radius: 3px;
+  font-weight: bold;
+  padding: 1px 4px 2px;
+}
+mat-icon-button {
+  flex-grow: 0;
+}
+paper-dialog-scrollable {
+  max-width: 640px;
+}
+#heading-run {
+  background: var(--tf-card-heading-background-color);
+  color: var(--tf-card-heading-color);
+}

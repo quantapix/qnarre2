@@ -1,0 +1,30 @@
+<qnr-graph-node-info
+  *ngIf="selectedNode"
+  graph-hierarchy="[[graphHierarchy]]"
+  flat-graph="[[graph]]"
+  node-name="[[selectedNode]]"
+  node-include="[[selectedNodeInclude]]"
+  highlighted-node="{{ highlightedNode }}"
+  color-by="[[colorBy]]"
+>
+</qnr-graph-node-info>
+<qnr-graph-compat-card
+  *ngIf="_equals(colorBy, 'op_compatibility')"
+  graph-hierarchy="[[graphHierarchy]]"
+  hierarchy-params="[[hierarchyParams]]"
+  color-by="[[colorBy]]"
+  node-title="[[compatNodeTitle]]"
+>
+</qnr-graph-compat-card>
+<qnr-graph-debug-card
+  *ngIf="_healthPillsAvailable(debuggerDataEnabled, nodeNamesToHealths)"
+  debugger-numeric-alerts="[[debuggerNumericAlerts]]"
+  node-names-to-health-pills="[[nodeNamesToHealths]]"
+  selected-node="{{ selectedNode }}"
+  highlighted-node="{{ highlightedNode }}"
+  are-health-pills-loading="[[areHealthsLoading]]"
+  all-steps-mode-enabled="{{ allStepsModeEnabled }}"
+  specific-health-pill-step="{{ specificHealthStep }}"
+  health-pill-step-index="{{ healthPillStepIndex }}"
+>
+</qnr-graph-debug-card>

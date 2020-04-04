@@ -4,8 +4,8 @@ import {Subject} from 'rxjs';
 import {LocationService} from '../../services/location.service';
 import {MockLocation} from '../../testing/location.service';
 import {Results} from '../../search/types';
-import {ResultsComponent} from '../../search/results.component';
-import {SearchService} from '../../search/search.service';
+import {ResultsComponent} from '../../search/results';
+import {SearchService} from '../../search/service';
 import {NotFoundComp} from './not-found.comp';
 
 describe('NotFoundComp', () => {

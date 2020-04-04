@@ -3,7 +3,7 @@ import {Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
 
 import {Results} from '../../search/types';
-import {SearchService} from '../../search/search.service';
+import {SearchService} from '../../search/service';
 import {LocationService} from '../../services/location.service';
 
 @Component({

@@ -16,7 +16,7 @@ import {
   createPluginInfo,
   createState,
   createPluginsState
-} from './plugins.spec';
+} from '../plugins/plugins.spec';
 
 describe('core.effects', () => {
   let http: HttpTestingController;
@@ -43,12 +43,8 @@ describe('core.effects', () => {
     store = TestBed.get(Store);
     dispatch = spyOn(store, 'dispatch');
     const source = TestBed.get(SourceService);
-    runs = spyOn(source, 'runs')
-      .withArgs()
-      .and.returnValue(of(null));
-    envs = spyOn(source, 'envs')
-      .withArgs()
-      .and.returnValue(of(null));
+    runs = spyOn(source, 'runs').withArgs().and.returnValue(of(null));
+    envs = spyOn(source, 'envs').withArgs().and.returnValue(of(null));
   });
   afterEach(() => {
     http.verify();

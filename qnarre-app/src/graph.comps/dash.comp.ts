@@ -164,7 +164,7 @@ export class Downloader {
 }
 
 @Component({
-  selector: 'qnr-dashboard-layout',
+  selector: 'qnr-graph-dash-layout',
   template: `
     <div id="sidebar">
       <slot name="sidebar"></slot>
@@ -805,12 +805,12 @@ export const filterableCheckboxList = {
           <div
             class="icon-container isolator-container vertical-align-container"
           >
-            <paper-icon-button
+            <mat-icon-button
               icon="radio-button-unchecked"
               class="isolator vertical-align-center"
               on-tap="(_isolateName)"
               name="[[item]]"
-            ></paper-icon-button>
+            ></mat-icon-button>
           </div>
           <div class="item-label-container">
             <span>[[item]]</span>

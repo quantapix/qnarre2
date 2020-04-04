@@ -1,0 +1,526 @@
+<div class="allcontrols">
+  <div class="control-holder">
+    <qnr-graph-node-search></qnr-graph-node-search>
+  </div>
+  <div class="control-holder">
+    <button mat-button class="icon-button" on-tap="(_fit)" alt="Fit to screen">
+      <mat-icon icon="aspect-ratio" class="button-icon"></mat-icon>
+      <span class="button-text">Fit to Screen</span>
+    </button>
+  </div>
+  <div class="control-holder">
+    <button
+      mat-button
+      class="icon-button"
+      on-click="(download)"
+      alt="Download PNG"
+    >
+      <mat-icon icon="file-download" class="button-icon"></mat-icon>
+      <span class="button-text">Download PNG</span>
+    </button>
+    <a href="#" id="graphdownload" class="title" download="graph.png"></a>
+  </div>
+  <div class="control-holder runs">
+    <div class="title">
+      Run <span class="counter">([[datasets.length]])</span>
+    </div>
+    <paper-dropdown-menu
+      no-label-float=""
+      no-animations=""
+      noink=""
+      horizontal-align="left"
+      class="run-dropdown"
+    >
+      <mat-list
+        class="dropdown-content"
+        selected="{{ _selectedRunIndex }}"
+        slot="dropdown-content"
+      >
+        <template is="dom-repeat" items="[[datasets]]">
+          <mat-list-item>[[item.name]]</mat-list-item>
+        </template>
+      </mat-list>
+    </paper-dropdown-menu>
+  </div>
+  <template is="dom-if" if="[[showSessionRunsDropdown]]">
+    <div class="control-holder">
+      <div class="title">
+        Tag
+        <span class="counter">([[_numTags(datasets, _selectedRunIndex)]])</span>
+      </div>
+      <paper-dropdown-menu
+        no-label-float=""
+        no-animations=""
+        horizontal-align="left"
+        noink=""
+        class="run-dropdown"
+      >
+        <mat-list
+          class="dropdown-content"
+          selected="{{ _selectedTagIndex }}"
+          slot="dropdown-content"
+        >
+          <template
+            is="dom-repeat"
+            items="[[_getTags(datasets, _selectedRunIndex)]]"
+          >
+            <mat-list-item>[[item.displayName]]</mat-list-item>
+          </template>
+        </mat-list>
+      </paper-dropdown-menu>
+    </div>
+  </template>
+  <template is="dom-if" if="[[showUploadButton]]">
+    <div class="control-holder">
+      <div class="title">Upload</div>
+      <button
+        mat-button
+        raised=""
+        class="upload-button"
+        on-click="(_getFile)"
+        title="Upload a graph pbtxt file to view the graph"
+      >
+        Choose File
+      </button>
+      <div class="hidden-input">
+        <input
+          type="file"
+          id="file"
+          name="file"
+          on-change="(_updateFileInput)"
+          accept=".pbtxt"
+        />
+      </div>
+    </div>
+  </template>
+  <div class="control-holder">
+    <mat-radio-group selected="{{ _selectedGraphType }}">
+      <!-- Note that the name has to match that of tf.graph.SelectionType. -->
+      <mat-radio-button
+        name="op_graph"
+        disabled="[[_getSelectionOpGraphDisabled(datasets, _selectedRunIndex, _selectedTagIndex)]]"
+        >Graph</mat-radio-button
+      >
+      <mat-radio-button
+        name="conceptual_graph"
+        disabled="[[_getSelectionConceptualGraphDisabled(datasets, _selectedRunIndex, _selectedTagIndex)]]"
+        >Conceptual Graph</mat-radio-button
+      >
+      <mat-radio-button
+        name="profile"
+        disabled="[[_getSelectionProfileDisabled(datasets, _selectedRunIndex, _selectedTagIndex)]]"
+        >Profile</mat-radio-button
+      >
+    </mat-radio-group>
+  </div>
+  <div class="control-holder">
+    <div>
+      <paper-toggle-button checked="{{ traceInputs }}" class="title">
+        Trace ins
+      </paper-toggle-button>
+    </div>
+  </div>
+  <template is="dom-if" if="[[healthPillsFeatureEnabled]]">
+    <div class="control-holder">
+      <paper-toggle-button checked="{{ healthPillsToggledOn }}" class="title"
+        >Show health pills</paper-toggle-button
+      >
+    </div>
+  </template>
+  <div class="control-holder">
+    <div class="title">Color</div>
+    <mat-radio-group selected="{{ colorBy }}">
+      <mat-radio-button name="structure">Structure</mat-radio-button>
+
+      <mat-radio-button name="device">Device</mat-radio-button>
+
+      <mat-radio-button
+        id="xla-cluster-radio-button"
+        name="xla_cluster"
+        disabled="[[!_clustersProvided(renderHierarchy)]]"
+      >
+        XLA Cluster
+      </mat-radio-button>
+      <mat-radio-button
+        id="compute-time-radio-button"
+        name="compute_time"
+        disabled="[[!stats]]"
+      >
+        Compute time
+      </mat-radio-button>
+      <mat-radio-button
+        id="memory-radio-button"
+        name="memory"
+        disabled="[[!stats]]"
+      >
+        Memory
+      </mat-radio-button>
+      <mat-radio-button
+        id="tpu-compatibility-radio-button"
+        name="op_compatibility"
+      >
+        TPU Compatibility
+      </mat-radio-button>
+    </mat-radio-group>
+    <span class="spacer"></span>
+  </div>
+  <div>
+    <template is="dom-if" if="[[_isGradientColoring(stats, colorBy)]]">
+      <svg width="140" height="20" style="margin: 0 5px;" class="color-text">
+        <defs>
+          <linearGradient id="linearGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop
+              class="start"
+              offset="0%"
+              stop-color\$="[[curGradPs.startColor]]"
+            ></stop>
+            <stop
+              class="end"
+              offset="100%"
+              stop-color\$="[[curGradPs.endColor]]"
+            ></stop>
+          </linearGradient>
+        </defs>
+        <rect
+          x="0"
+          y="0"
+          width="135"
+          height="20"
+          fill="url(#linearGradient)"
+          stroke="black"
+        ></rect>
+      </svg>
+      <div class="domainValues color-text">
+        <div class="domainStart">[[curGradPs.minValue]]</div>
+        <div class="domainEnd">[[curGradPs.maxValue]]</div>
+      </div>
+      <br style="clear: both;" />
+      <div>Devices included in stats:</div>
+      <div class="deviceList">
+        <template is="dom-repeat" items="[[curDevs]]">
+          <div class="color-legend-row devices-checkbox">
+            <span
+              ><input
+                type="checkbox"
+                value\$="[[item.device]]"
+                checked\$="[[item.used]]"
+                on-click="(_deviceCheckboxClicked)"
+            /></span>
+            <span>[[item.suffix]]</span>
+            <template is="dom-if" if="[[item.ignoredMsg]]">
+              <mat-icon-button
+                icon="help"
+                class="help-icon"
+              ></mat-icon-button>
+            </template>
+          </div>
+        </template>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_equals(colorBy, 'structure')]]">
+      <div class="color-text">
+        <div class="color-legend-row">
+          <span class="label">
+            colors
+          </span>
+          <span class="color-legend-value">same substructure</span>
+        </div>
+        <div class="color-legend-row">
+          <qnr-graph-icon
+            [type]="'META'"
+            [height]="16"
+            [fillOverride]="'#eee'"
+            [strokeOverride]="'#a6a6a6'"
+          ></qnr-graph-icon>
+          <span class="color-legend-value">unique substructure</span>
+        </div>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_equals(colorBy, 'device')]]">
+      <div>
+        <template is="dom-repeat" items="[[curDevPs]]">
+          <div class="color-legend-row">
+            <qnr-graph-icon
+              [type]="'META'"
+              [height]="16"
+              [fillOverride]="item.color"
+              [strokeOverride]="'#a6a6a6'"
+            ></qnr-graph-icon>
+            <span class="color-legend-value">{{item.device}}</span>
+          </div>
+        </template>
+        <div class="color-legend-row">
+          <qnr-graph-icon
+            [type]="'META'"
+            [height]="16"
+            [fillOverride]="'#eee'"
+            [strokeOverride]="'#a6a6a6'"
+          ></qnr-graph-icon>
+          <span class="color-legend-value">unknown device</span>
+        </div>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_equals(colorBy, 'xla_cluster')]]">
+      <div>
+        <template is="dom-repeat" items="[[curClusPs]]">
+          <div class="color-legend-row">
+            <svg>
+              <use
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="#unfilled-rect"
+                x="0"
+                y="0"
+                style="fill: [[item.color]];"
+              ></use>
+            </svg>
+            <span class="color-legend-value">[[item.xla_cluster]]</span>
+          </div>
+        </template>
+        <div class="color-legend-row">
+          <svg>
+            <use
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              xlink:href="#grey-rect"
+              x="0"
+              y="0"
+            ></use>
+          </svg>
+          <span class="color-legend-value">unknown XLA cluster</span>
+        </div>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_equals(colorBy, 'op_compatibility')]]">
+      <div class="color-text">
+        <div class="color-legend-row">
+          <qnr-graph-icon
+            [type]="'OPER'"
+            [height]="16"
+            [fillOverride]="'#0f9d58'"
+            [strokeOverride]="'#ccc'"
+          ></qnr-graph-icon>
+          <span class="color-legend-value">Valid Op</span>
+        </div>
+        <div class="color-legend-row">
+          <qnr-graph-icon
+            [type]="'OPER'"
+            [height]="16"
+            [fillOverride]="'#db4437'"
+            [strokeOverride]="'#ccc'"
+          ></qnr-graph-icon>
+          <span class="color-legend-value">Invalid Op</span>
+        </div>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_statsNotNull(stats)]]">
+      <div class="color-legend-row">
+        <qnr-graph-icon
+          [type]="'META'"
+          [height]="16"
+          [faded]=""
+        ></qnr-graph-icon>
+        <span class="color-legend-value">unused substructure</span>
+      </div>
+    </template>
+  </div>
+</div>
+<div class="legend-holder">
+  <mat-icon-button
+    icon="[[_getToggleLegendIcon(_legendOpened)]]"
+    on-click="(_toggleLegendOpen)"
+    class="toggle-legend-button"
+  >
+  </mat-icon-button>
+  <span class="toggle-legend-text">
+    [[_getToggleText(_legendOpened)]]
+  </span>
+  <iron-collapse opened="[[_legendOpened]]">
+    <div>
+      <table>
+        <tbody>
+          <tr>
+            <td><div class="title">Graph</div></td>
+            <td>(* = expandable)</td>
+          </tr>
+          <tr>
+            <td>
+              <qnr-graph-icon
+                [type]="'META'"
+                [height]="16"
+                [fillOverride]="'#d9d9d9'"
+                [strokeOverride]="'#ccc'"
+              ></qnr-graph-icon>
+            </td>
+            <td>
+              Namespace<span class="gray">*</span>
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <qnr-graph-icon [type]="'OPER'" [height]="16"></qnr-graph-icon>
+            </td>
+            <td>
+              OpNode
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <qnr-graph-icon [type]="'LIST'" [height]="16"></qnr-graph-icon>
+            </td>
+            <td>
+              Unconnected series<span class="gray">*</span>
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <qnr-graph-icon
+                [type]="'LIST'"
+                [height]="16"
+                [vertical]=""
+              ></qnr-graph-icon>
+            </td>
+            <td>
+              Connected series<span class="gray">*</span>
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <svg class="icon">
+                <circle
+                  fill="white"
+                  stroke="#848484"
+                  cx="10"
+                  cy="10"
+                  r="5"
+                ></circle>
+              </svg>
+            </td>
+            <td>
+              Constant
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <qnr-graph-icon [type]="'SUMY'" [height]="20"></qnr-graph-icon>
+            </td>
+            <td>
+              Summary
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <svg
+                class="icon"
+                height="15px"
+                preserveAspectRatio="xMinYMid meet"
+                viewBox="0 0 15 15"
+              >
+                <defs>
+                  <marker
+                    id="dataflow-arrowhead-legend"
+                    fill="#bbb"
+                    markerWidth="10"
+                    markerHeight="10"
+                    refX="9"
+                    refY="5"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0,0 L 10,5 L 0,10 C 3,7 3,3 0,0"></path>
+                  </marker>
+                </defs>
+                <path
+                  marker-end="url(#dataflow-arrowhead-legend)"
+                  stroke="#bbb"
+                  d="M2 9 l 29 0"
+                  stroke-linecap="round"
+                ></path>
+              </svg>
+            </td>
+            <td>
+              Dataflow edge
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <svg
+                class="icon"
+                height="15px"
+                preserveAspectRatio="xMinYMid meet"
+                viewBox="0 0 15 15"
+              >
+                <path
+                  stroke="#bbb"
+                  d="M2 9 l 29 0"
+                  stroke-linecap="round"
+                  stroke-dasharray="2, 2"
+                ></path>
+              </svg>
+            </td>
+            <td>
+              Control dependency edge
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <svg
+                class="icon"
+                height="15px"
+                preserveAspectRatio="xMinYMid meet"
+                viewBox="0 0 15 15"
+              >
+                <defs>
+                  <marker
+                    id="reference-arrowhead-legend"
+                    fill="#FFB74D"
+                    markerWidth="10"
+                    markerHeight="10"
+                    refX="9"
+                    refY="5"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0,0 L 10,5 L 0,10 C 3,7 3,3 0,0"></path>
+                  </marker>
+                </defs>
+                <path
+                  marker-end="url(#reference-arrowhead-legend)"
+                  stroke="#FFB74D"
+                  d="M2 9 l 29 0"
+                  stroke-linecap="round"
+                ></path>
+              </svg>
+            </td>
+            <td>
+              Reference edge
+              <div class="legend-clarifier">
+                <span>?</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </iron-collapse>
+</div>

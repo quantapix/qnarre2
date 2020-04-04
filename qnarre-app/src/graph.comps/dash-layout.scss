@@ -6,10 +6,10 @@
 }
 
 #sidebar {
-  flex: 0 0 var(--qnr-dashboard-layout-sidebar-basis, 25%);
+  flex: 0 0 var(--qnr-graph-dash-layout-sidebar-basis, 25%);
   height: 100%;
-  max-width: var(--qnr-dashboard-layout-sidebar-max-width, 350px);
-  min-width: var(--qnr-dashboard-layout-sidebar-min-width, 270px);
+  max-width: var(--qnr-graph-dash-layout-sidebar-max-width, 350px);
+  min-width: var(--qnr-graph-dash-layout-sidebar-min-width, 270px);
   overflow-y: auto;
   text-overflow: ellipsis;
 }

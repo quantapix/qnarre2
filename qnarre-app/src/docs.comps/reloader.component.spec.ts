@@ -6,7 +6,7 @@ import {ReloaderComponent} from './reloader.component';
 
 import {reload} from '../app/actions';
 import {State} from '../app/types';
-import {createState, createPluginsState} from '../app/plugins.spec';
+import {createState, createPluginsState} from '../plugins/plugins.spec';
 
 describe('reloader.component', () => {
   let store: MockStore<State>;

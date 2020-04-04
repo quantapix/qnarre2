@@ -16,7 +16,7 @@ import {
   createPluginInfo,
   createState,
   createPluginsState
-} from '../app/plugins.spec';
+} from '../plugins/plugins.spec';
 
 describe('header test', () => {
   let store: MockStore<State>;

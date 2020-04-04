@@ -1,19 +1,19 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {QnarreComp} from './qnarre';
+import {MarkdownViewComp} from './md-view';
 
-describe('QnarreComp', () => {
-  let component: QnarreComp;
-  let fixture: ComponentFixture<QnarreComp>;
+describe('MarkdownViewComp', () => {
+  let component: MarkdownViewComp;
+  let fixture: ComponentFixture<MarkdownViewComp>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [QnarreComp]
+      declarations: [MarkdownViewComp]
     }).compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(QnarreComp);
+    fixture = TestBed.createComponent(MarkdownViewComp);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
