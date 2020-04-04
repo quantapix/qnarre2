@@ -2,8 +2,8 @@ import {Component, OnInit} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
 
-import {LoggerService} from '../../services/logger.service';
-import {CONTENT_URL_PREFIX} from '../../services/docs.service';
+import {LoggerService} from '../../services/logger';
+import {CONTENT_URL_PREFIX} from '../../services/docs';
 const announcementsPath = CONTENT_URL_PREFIX + 'announcements.json';
 
 export interface Announcement {

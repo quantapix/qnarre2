@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {NavNode} from '../services/nav.service';
+import {NavNode} from '../services/nav';
 
 @Component({
   selector: 'qnr-top-menu',

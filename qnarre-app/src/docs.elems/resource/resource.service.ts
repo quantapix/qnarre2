@@ -5,7 +5,7 @@ import {ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast} from 'rxjs/operators';
 
 import {Category, Resource, SubCategory} from './resource.model';
-import {CONTENT_URL_PREFIX} from '../../services/docs.service';
+import {CONTENT_URL_PREFIX} from '../../services/docs';
 
 const resourcesPath = CONTENT_URL_PREFIX + 'resources.json';
 

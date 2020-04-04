@@ -10,7 +10,7 @@ import {CodeComponent} from './code.component';
 import {CopierService} from './copier.service';
 import {PrettifyService} from './prettify.service';
 import {MockPrettify} from '../../testing/prettify.service';
-import {LoggerService} from '../../services/logger.service';
+import {LoggerService} from '../../services/logger';
 
 const oneLine = 'const foo = "bar";';
 const multiLine = `&lt;hero-details&gt;

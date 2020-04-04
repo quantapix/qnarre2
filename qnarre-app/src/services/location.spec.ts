@@ -4,16 +4,16 @@ import {Location, LocationStrategy, PlatformLocation} from '@angular/common';
 import {MockLocationStrategy} from '@angular/common/testing';
 import {Subject} from 'rxjs';
 
-import {GaService} from './ga.service';
-import {SwUpdatesService} from './updates.service';
-import {LocationService} from './location.service';
-import {ScrollService} from './scroll.service';
+import {GaService} from './ga';
+import {UpdatesService} from './updates';
+import {LocationService} from './location';
+import {ScrollService} from './scroll';
 
 describe('LocationService', () => {
   let injector: ReflectiveInjector;
   let loc: MockLocationStrategy;
   let s: LocationService;
-  let updates: MockSwUpdatesService;
+  let updates: MockUpdatesService;
   let scroll: MockScrollService;
 
   beforeEach(() => {
@@ -23,13 +23,13 @@ describe('LocationService', () => {
       {provide: GaService, useClass: TestGaService},
       {provide: LocationStrategy, useClass: MockLocationStrategy},
       {provide: PlatformLocation, useClass: MockPlatformLocation},
-      {provide: SwUpdatesService, useClass: MockSwUpdatesService},
+      {provide: UpdatesService, useClass: MockUpdatesService},
       {provide: ScrollService, useClass: MockScrollService}
     ]);
 
     loc = injector.get(LocationStrategy);
     s = injector.get(LocationService);
-    updates = injector.get(SwUpdatesService);
+    updates = injector.get(UpdatesService);
     scroll = injector.get(ScrollService);
   });
 
@@ -612,7 +612,7 @@ class MockPlatformLocation {
   replaceState = jasmine.createSpy('PlatformLocation.replaceState');
 }
 
-class MockSwUpdatesService {
+class MockUpdatesService {
   updateActivated = new Subject<string>();
 }
 

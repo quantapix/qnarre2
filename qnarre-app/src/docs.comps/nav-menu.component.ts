@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {CurrentNode, NavNode} from '../services/nav.service';
+import {CurrentNode, NavNode} from '../services/nav';
 
 @Component({
   selector: 'qnr-nav-menu',

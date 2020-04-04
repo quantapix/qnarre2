@@ -9,7 +9,7 @@ import {
 import {By} from '@angular/platform-browser';
 
 import {BoxComp} from './box';
-import {LocationService} from '../services/location.service';
+import {LocationService} from '../services/location';
 import {MockLocationService} from '../testing/location.service';
 
 @Component({

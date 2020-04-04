@@ -3,7 +3,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ElemsComp} from './elems.comp';
 import {ElemsLoader} from './loader';
 
-import {LoggerService} from '../services/logger.service';
+import {LoggerService} from '../services/logger';
 import {MockLogger} from '../testing/logger.service';
 
 describe('ElemsComp', () => {

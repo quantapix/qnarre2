@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 
 import {Contributor} from './contributors.model';
-import {CONTENT_URL_PREFIX} from '../../services/docs.service';
+import {CONTENT_URL_PREFIX} from '../../services/docs';
 
 @Component({
   selector: 'qnr-contributor',

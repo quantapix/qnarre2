@@ -6,7 +6,7 @@ import {map, publishLast} from 'rxjs/operators';
 
 import {Contributor, ContributorGroup} from './contributors.model';
 
-import {CONTENT_URL_PREFIX} from '../../services/docs.service';
+import {CONTENT_URL_PREFIX} from '../../services/docs';
 
 const contributorsPath = CONTENT_URL_PREFIX + 'contributors.json';
 const knownGroups = ['Angular', 'Collaborators', 'GDE'];

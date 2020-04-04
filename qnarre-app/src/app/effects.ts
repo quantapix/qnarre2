@@ -19,7 +19,7 @@ import {
   listingFetched,
   fetchFailed
 } from './actions';
-import {SourceService} from '../services/source.service';
+import {SourceService} from '../services/source';
 
 @Injectable()
 export class Effects {

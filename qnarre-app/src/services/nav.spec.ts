@@ -12,8 +12,8 @@ import {
   NavService,
   NavViews,
   VersionInfo
-} from './nav.service';
-import {LocationService} from './location.service';
+} from './nav';
+import {LocationService} from './location';
 import {MockLocationService} from '../testing/location.service';
 
 describe('NavService', () => {

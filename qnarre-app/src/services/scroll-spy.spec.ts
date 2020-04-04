@@ -2,13 +2,13 @@ import {Injector, ReflectiveInjector} from '@angular/core';
 import {fakeAsync, tick} from '@angular/core/testing';
 import {DOCUMENT} from '@angular/common';
 
-import {ScrollService} from './scroll.service';
+import {ScrollService} from './scroll';
 import {
   ScrollItem,
   ScrollSpiedElement,
   ScrollSpiedElementGroup,
   ScrollSpyService
-} from './scroll-spy.service';
+} from './scroll-spy';
 
 describe('ScrollSpiedElement', () => {
   it('should expose the spied element and index', () => {
@@ -70,11 +70,11 @@ describe('ScrollSpiedElementGroup', () => {
     beforeEach(() => {
       const tops = [50, 150, 100];
 
-      spyOn(ScrollSpiedElement.prototype, 'calculateTop').and.callFake(function(
-        this: ScrollSpiedElement
-      ) {
-        this.top = tops[this.index];
-      });
+      spyOn(ScrollSpiedElement.prototype, 'calculateTop').and.callFake(
+        function (this: ScrollSpiedElement) {
+          this.top = tops[this.index];
+        }
+      );
 
       activeItems = [];
       group = new ScrollSpiedElementGroup([{}, {}, {}] as Element[]);

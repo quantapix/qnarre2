@@ -8,7 +8,7 @@ import {
   ViewChild
 } from '@angular/core';
 import {Location} from '@angular/common';
-import {CONTENT_URL_PREFIX} from '../../services/docs.service';
+import {CONTENT_URL_PREFIX} from '../../services/docs';
 import {
   AttrMap,
   boolFromValue,

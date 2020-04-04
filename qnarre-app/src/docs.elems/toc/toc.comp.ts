@@ -10,8 +10,8 @@ import {
 import {asapScheduler, combineLatest, Subject} from 'rxjs';
 import {startWith, subscribeOn, takeUntil} from 'rxjs/operators';
 
-import {ScrollService} from '../../services/scroll.service';
-import {TocItem, TocService} from '../../services/toc.service';
+import {ScrollService} from '../../services/scroll';
+import {TocItem, TocService} from '../../services/toc';
 
 type TocType = 'None' | 'Floating' | 'Embedded' | 'Expandable';
 

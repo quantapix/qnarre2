@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {LocationService} from './location.service';
+import {LocationService} from './location';
 import {environment} from '../environments/environment.prod';
 
 @Injectable()

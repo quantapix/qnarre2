@@ -4,8 +4,8 @@ import {HttpClient} from '@angular/common/http';
 import {combineLatest, ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast, publishReplay} from 'rxjs/operators';
 
-import {LocationService} from './location.service';
-import {CONTENT_URL_PREFIX} from './docs.service';
+import {LocationService} from './location';
+import {CONTENT_URL_PREFIX} from './docs';
 
 import {
   CurrentNodes,

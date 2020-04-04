@@ -1,6 +1,6 @@
 import {NavMenuComponent} from './nav-menu.component';
 
-import {NavNode} from '../services/nav.service';
+import {NavNode} from '../services/nav';
 
 describe('NavMenuComponent (class-only)', () => {
   it('should filter out hidden nodes', () => {

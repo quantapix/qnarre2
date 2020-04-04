@@ -3,7 +3,7 @@ import {DOCUMENT} from '@angular/common';
 import {fromEvent, Observable, ReplaySubject, Subject} from 'rxjs';
 import {auditTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 
-import {ScrollService} from './scroll.service';
+import {ScrollService} from './scroll';
 
 export interface ScrollItem {
   element: Element;

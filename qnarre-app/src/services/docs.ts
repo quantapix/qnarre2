@@ -3,8 +3,8 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {AsyncSubject, Observable, of} from 'rxjs';
 import {catchError, switchMap, tap} from 'rxjs/operators';
 
-import {LocationService} from './location.service';
-import {LoggerService} from './logger.service';
+import {LocationService} from './location';
+import {LoggerService} from './logger';
 
 export const FILE_NOT_FOUND = 'file-not-found';
 export const FETCHING_ERROR = 'fetching-error';

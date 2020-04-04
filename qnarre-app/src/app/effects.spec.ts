@@ -11,7 +11,7 @@ import {MockStore, provideMockStore} from '@ngrx/store/testing';
 import {Effects} from './effects';
 import * as actions from './actions';
 import {Plugins, LoadedCode, State} from './types';
-import {SourceService} from '../services/source.service';
+import {SourceService} from '../services/source';
 import {
   createPluginInfo,
   createState,

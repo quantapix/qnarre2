@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {VersionInfo} from '../services/nav.service';
+import {VersionInfo} from '../services/nav';
 
 @Component({
   selector: 'qnr-mode-banner',

@@ -11,13 +11,9 @@ import {Title, Meta} from '@angular/platform-browser';
 import {asapScheduler, Observable, of, timer} from 'rxjs';
 import {catchError, observeOn, switchMap, takeUntil, tap} from 'rxjs/operators';
 
-import {
-  Contents,
-  FILE_NOT_FOUND,
-  FETCHING_ERROR
-} from '../services/docs.service';
-import {LoggerService} from '../services/logger.service';
-import {TocService} from '../services/toc.service';
+import {Contents, FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
+import {LoggerService} from '../services/logger';
+import {TocService} from '../services/toc';
 import {ElemsLoader} from '../app/loader';
 
 export const NO_ANIMATIONS = 'no-animations';

@@ -12,7 +12,7 @@ import {tap} from 'rxjs/operators';
 
 import {CopierService} from './copier.service';
 import {PrettifyService} from './prettify.service';
-import {LoggerService} from '../../services/logger.service';
+import {LoggerService} from '../../services/logger';
 
 @Component({
   selector: 'qnr-code',

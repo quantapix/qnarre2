@@ -2,7 +2,7 @@ import {DOCUMENT} from '@angular/common';
 import {Inject, Injectable} from '@angular/core';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {ReplaySubject} from 'rxjs';
-import {ScrollSpyInfo, ScrollSpyService} from './scroll-spy.service';
+import {ScrollSpyInfo, ScrollSpyService} from './scroll-spy';
 
 export interface TocItem {
   content: SafeHtml;
@@ -117,10 +117,7 @@ export class TocService {
     if (id) {
       addToMap(id);
     } else {
-      id = (h.textContent || '')
-        .trim()
-        .toLowerCase()
-        .replace(/\W+/g, '-');
+      id = (h.textContent || '').trim().toLowerCase().replace(/\W+/g, '-');
       id = addToMap(id);
       h.id = id;
     }

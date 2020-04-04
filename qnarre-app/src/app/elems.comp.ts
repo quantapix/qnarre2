@@ -1,6 +1,6 @@
 import {Component, ElementRef, Input, OnInit} from '@angular/core';
 
-import {LoggerService} from '../services/logger.service';
+import {LoggerService} from '../services/logger';
 import {ElemsLoader} from './loader';
 
 @Component({

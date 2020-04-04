@@ -4,9 +4,9 @@ import {Location, PlatformLocation} from '@angular/common';
 import {ReplaySubject} from 'rxjs';
 import {map, tap} from 'rxjs/operators';
 
-import {GaService} from './ga.service';
-import {SwUpdatesService} from './updates.service';
-import {ScrollService} from './scroll.service';
+import {GaService} from './ga';
+import {UpdatesService} from './updates';
+import {ScrollService} from './scroll';
 
 @Injectable()
 export class LocationService {
@@ -25,7 +25,7 @@ export class LocationService {
     private location: Location,
     private scroll: ScrollService,
     private platformLocation: PlatformLocation,
-    swUpdates: SwUpdatesService
+    swUpdates: UpdatesService
   ) {
     this.urlSubject.next(location.path(true));
     this.location.subscribe(s => {
