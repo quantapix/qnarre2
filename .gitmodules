@@ -16,3 +16,9 @@
 [submodule "dev-libs/vscode-vega-viewer"]
 	path = dev-libs/vscode-vega-viewer
 	url = https://github.com/RandomFractals/vscode-vega-viewer.git
+[submodule "dev-libs/OneDark-Pro"]
+	path = dev-libs/OneDark-Pro
+	url = https://github.com/Binaryify/OneDark-Pro.git
+[submodule "dev-libs/julia-color-themes"]
+	path = dev-libs/julia-color-themes
+	url = https://github.com/CameronBieganek/julia-color-themes.git
