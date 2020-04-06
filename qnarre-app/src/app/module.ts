@@ -10,6 +10,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatListModule} from '@angular/material/list';
 
 import {AppComp, PageNotFoundComp} from './component';
+import {NavItemComp, NavMenuComp} from './nav';
 //import {ComposeMessageComp} from './compose-message/compose-message.comp';
 
 import {AppRoutingModule} from './routing.module';
@@ -30,6 +31,19 @@ import {DataService} from '../graph/data.service';
 import {SceneServ} from '../graph/scene.serv';
 
 @NgModule({
+  declarations: [
+    AppComp,
+    GraphAppComp,
+    NavItemComp,
+    NavMenuComp,
+    //ComposeMessageComp,
+    //GraphComp,
+    //LinkComp,
+    //NodeComp,
+    //DraggableDir,
+    //ZoomableDir,
+    PageNotFoundComp
+  ],
   imports: [
     AppRoutingModule,
     //AuthModule,
@@ -42,17 +56,7 @@ import {SceneServ} from '../graph/scene.serv';
     MatIconModule,
     MatListModule
   ],
-  declarations: [
-    AppComp,
-    GraphAppComp,
-    //ComposeMessageComp,
-    //GraphComp,
-    //LinkComp,
-    //NodeComp,
-    //DraggableDir,
-    //ZoomableDir,
-    PageNotFoundComp
-  ],
+  exports: [NavItemComp, NavMenuComp],
   providers: [DataService, SceneServ],
   bootstrap: [AppComp]
 })

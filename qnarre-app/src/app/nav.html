@@ -1,48 +1,45 @@
-<div *ngIf="!node.children">
+<div *ngIf="!item.children">
   <a
-    href="{{ node.url }}"
+    href="{{ item.url}}"
     [ngClass]="classes"
-    title="{{ node.tooltip }}"
+    title="{{ item.tooltip }}"
     class="vertical-menu-item"
   >
-    <span>{{ node.title }}</span>
+    <span>{{ item.title }}</span>
   </a>
 </div>
-
-<div *ngIf="node.children">
+<div *ngIf="item.children">
   <a
-    *ngIf="node.url != null"
-    href="{{ node.url }}"
+    *ngIf="item.url"
+    href="{{ item.url }}"
     [ngClass]="classes"
-    title="{{ node.tooltip }}"
+    title="{{ item.tooltip }}"
     (click)="headerClicked()"
     class="vertical-menu-item heading"
   >
-    <span>{{ node.title }}</span>
+    <span>{{ item.title }}</span>
     <mat-icon class="rotating-icon" svgIcon="keyboard_arrow_right"></mat-icon>
   </a>
-
   <button
-    *ngIf="node.url == null"
+    *ngIf="!item.url"
     type="button"
     [ngClass]="classes"
-    title="{{ node.tooltip }}"
+    title="{{ item.tooltip }}"
     (click)="headerClicked()"
     class="vertical-menu-item heading"
-    [attr.aria-pressed]="isExpanded"
+    [attr.aria-pressed]="expanded"
   >
-    <span>{{ node.title }}</span>
+    <span>{{ item.title }}</span>
     <mat-icon class="rotating-icon" svgIcon="keyboard_arrow_right"></mat-icon>
   </button>
-
   <div class="heading-children" [ngClass]="classes">
     <qnr-nav-item
-      *ngFor="let node of nodeChildren"
+      *ngFor="let item of children"
       [level]="level + 1"
-      [isWide]="isWide"
-      [isParentExpanded]="isExpanded"
-      [node]="node"
-      [selectedNodes]="selectedNodes"
+      [wide]="wide"
+      [pExpanded]="expanded"
+      [item]="item"
+      [selItems]="selItems"
     ></qnr-nav-item>
   </div>
 </div>

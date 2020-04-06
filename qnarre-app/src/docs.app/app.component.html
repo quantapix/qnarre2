@@ -1,0 +1,167 @@
+<div id="top-of-page"></div>
+
+<div *ngIf="isFetching" class="progress-bar-container">
+  <mat-progress-bar mode="indeterminate" color="warn"></mat-progress-bar>
+</div>
+
+<mat-toolbar
+  color="primary"
+  class="app-toolbar no-print"
+  [class.transitioning]="isTransitioning"
+>
+  <mat-toolbar-row class="notification-container">
+    <qnr-notification
+      notificationId="survey-february-2019"
+      expirationDate="2019-03-01"
+      [dismissOnContentClick]="true"
+      (dismissed)="notificationDismissed()"
+    >
+      <a href="http://bit.ly/angular-survey-2019">
+        <mat-icon
+          class="icon"
+          svgIcon="insert_comment"
+          aria-label="Announcement"
+        ></mat-icon>
+        <span class="message"
+          >Help Angular by taking a <b>1 minute survey</b>!</span
+        >
+        <span class="action-button">Go to survey</span>
+      </a>
+    </qnr-notification>
+  </mat-toolbar-row>
+  <mat-toolbar-row>
+    <button
+      mat-button
+      class="hamburger"
+      [class.starting]="isStarting"
+      (click)="sidenav.toggle()"
+      title="Docs menu"
+    >
+      <mat-icon svgIcon="menu"></mat-icon>
+    </button>
+    <a class="nav-link home" href="/" [ngSwitch]="isSideBySide">
+      <img
+        *ngSwitchCase="true"
+        src="assets/images/logos/qnarre/logo-nav@2x.png"
+        width="150"
+        height="40"
+        title="Home"
+        alt="Home"
+      />
+      <img
+        *ngSwitchDefault
+        src="assets/images/logos/qnarre/shield-large.svg"
+        width="37"
+        height="40"
+        title="Home"
+        alt="Home"
+      />
+    </a>
+    <qnr-top-menu *ngIf="isSideBySide" [nodes]="topMenuNodes"></qnr-top-menu>
+    <qnr-search-box
+      class="search-container"
+      #searchBox
+      (onSearch)="doSearch($event)"
+      (onFocus)="doSearch($event)"
+    ></qnr-search-box>
+    <div class="toolbar-external-icons-container">
+      <a
+        href="https://twitter.com/qnarre"
+        title="Twitter"
+        aria-label="Qnarre on twitter"
+      >
+        <mat-icon svgIcon="logos:twitter"></mat-icon>
+      </a>
+      <a
+        href="https://github.com/quantapix/qnarre"
+        title="GitHub"
+        aria-label="Qnarre on github"
+      >
+        <mat-icon svgIcon="logos:github"></mat-icon>
+      </a>
+    </div>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<qnr-search-results
+  #searchResultsView
+  *ngIf="showSearchResults"
+  [searchResults]="searchResults | async"
+  (resultSelected)="hideSearchResults()"
+></qnr-search-results>
+
+<mat-sidenav-container
+  class="sidenav-container"
+  [class.starting]="isStarting"
+  [class.has-floating-toc]="hasFloatingToc"
+  role="main"
+>
+  <mat-sidenav
+    [ngClass]="{collapsed: !isSideBySide}"
+    #sidenav
+    class="sidenav"
+    [mode]="mode"
+    [opened]="isOpened"
+    (openedChange)="updateHostClasses()"
+  >
+    <qnr-nav-menu
+      *ngIf="!isSideBySide"
+      [wide]="false"
+      [items]="topMenuNarrowNodes"
+      [node]="currentNodes?.TopBarNarrow"
+    ></qnr-nav-menu>
+    <qnr-nav-menu
+      [wide]="isSideBySide"
+      [items]="sideNavNodes"
+      [node]="currentNodes?.SideNav"
+    ></qnr-nav-menu>
+
+    <div class="doc-version">
+      <qnr-select
+        (change)="onDocVersionChange($event.index)"
+        [options]="docVersions"
+        [selected]="currentDocVersion"
+      ></qnr-select>
+    </div>
+  </mat-sidenav>
+
+  <main class="sidenav-content" [id]="pageId" role="main">
+    <qnr-mode-banner
+      [mode]="deployment.mode"
+      [version]="versionInfo"
+    ></qnr-mode-banner>
+    <qnr-doc-viewer
+      [class.no-animations]="isStarting"
+      [doc]="currentDocument"
+      (docReady)="onDocReady()"
+      (docRemoved)="onDocRemoved()"
+      (docInserted)="onDocInserted()"
+      (docRendered)="onDocRendered()"
+    >
+    </qnr-doc-viewer>
+    <qnr-dt *ngIf="dtOn" [(doc)]="currentDocument"></qnr-dt>
+  </main>
+</mat-sidenav-container>
+
+<div
+  *ngIf="hasFloatingToc"
+  class="toc-container no-print"
+  [style.max-height.px]="tocMaxHeight"
+  (wheel)="restrainScrolling($event)"
+>
+  <qnr-lazy-ce selector="qnr-toc"></qnr-lazy-ce>
+</div>
+
+<footer class="no-print">
+  <qnr-footer [nodes]="footerNodes" [versionInfo]="versionInfo"></qnr-footer>
+</footer>
+
+<!--
+  Work-around to ensure that the `.woff2` file for the 'Material Icons' font will always be fetched.
+  This allows the SW to cache the file (even if there are no icons in the current page) and ensure
+  material icons on other pages are displayed correctly in offline mode.
+  (Note: Instantiate lazily to avoid affecting the initial rendering.)
+-->
+<div class="cdk-visually-hidden" *ngIf="!isStarting">
+  <mat-icon>&nbsp;</mat-icon>
+</div>

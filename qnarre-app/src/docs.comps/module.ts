@@ -18,8 +18,6 @@ import {SettingsComponent} from './settings.component';
 import {DtComponent} from './dt.component';
 import {FooterComponent} from './footer.component';
 import {ModeBannerComponent} from './mode-banner.component';
-import {NavItemComponent} from './nav-item.component';
-import {NavMenuComponent} from './nav-menu.component';
 import {NotificationComponent} from './notification.component';
 import {TopMenuComponent} from './top-menu.component';
 import {ViewerComponent} from './viewer.component';
@@ -32,8 +30,6 @@ import {ViewerComponent} from './viewer.component';
     HeaderComponent,
     HeaderContainer,
     ModeBannerComponent,
-    NavItemComponent,
-    NavMenuComponent,
     NotificationComponent,
     ReloaderComponent,
     SettingsComponent,
