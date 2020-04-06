@@ -5,9 +5,9 @@ import {
 import {TestBed} from '@angular/core/testing';
 import {Subscription} from 'rxjs';
 
-import {LocationService} from './location';
+import {LocationService} from './loc';
 import {MockLocationService} from '../testing/location.service';
-import {LoggerService} from './logger';
+import {LoggerService} from './log';
 import {MockLogger} from '../testing/logger.service';
 import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './docs';
 

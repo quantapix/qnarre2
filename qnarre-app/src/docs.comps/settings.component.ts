@@ -4,8 +4,8 @@ import {Store, select, createSelector} from '@ngrx/store';
 import {Subject} from 'rxjs';
 import {takeUntil, debounceTime, filter} from 'rxjs/operators';
 
-import {getReloadEnabled, getReloadPeriods} from '../app/selectors';
-import {toggleEnabled, changePeriod} from '../app/actions';
+import {getReloadEnabled, getReloadPeriods} from '../plugins/selectors';
+import {toggleEnabled, changePeriod} from '../plugins/actions';
 import {State} from '../app/types';
 
 const getPeriod = createSelector(getReloadPeriods, period =>

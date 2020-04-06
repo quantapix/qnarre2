@@ -3,11 +3,11 @@ import {CommonModule} from '@angular/common';
 import {StoreModule} from '@ngrx/store';
 import {EffectsModule} from '@ngrx/effects';
 
-import {Effects} from '../app/effects';
-import {reducers} from '../app/reducers';
+import {Effects} from './effects';
+import {reducers} from './reducers';
 import {PLUGINS_KEY} from '../app/types';
 import {PluginsCont} from './plugins';
-import {PluginsComp} from './comp';
+import {PluginsComp} from './component';
 
 @NgModule({
   imports: [

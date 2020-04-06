@@ -4,7 +4,7 @@ import {switchMap} from 'rxjs/operators';
 
 import {Results} from '../../search/types';
 import {SearchService} from '../../search/service';
-import {LocationService} from '../../services/location';
+import {LocationService} from '../../services/loc';
 
 @Component({
   selector: 'qnr-not-found',

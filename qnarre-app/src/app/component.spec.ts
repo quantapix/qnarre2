@@ -1,7 +1,7 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 
-import {AppComp, PageNotFoundComp} from './app.comp';
+import {AppComp, PageNotFoundComp} from './component';
 
 describe('AppComp', () => {
   beforeEach(async(() => {

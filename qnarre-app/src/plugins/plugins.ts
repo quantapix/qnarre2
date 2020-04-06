@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {Store, select, createSelector} from '@ngrx/store';
 
-import {getPlugins, getActive, getLoadeds} from '../app/selectors';
+import {getPlugins, getActive, getLoadeds} from './selectors';
 import {PluginInfo} from '../app/types';
 import {LoadedState, State} from '../app/types';
 

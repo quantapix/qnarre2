@@ -3,7 +3,7 @@ import {discardPeriodicTasks, fakeAsync, tick} from '@angular/core/testing';
 import {SwUpdate} from '@angular/service-worker';
 import {Subject} from 'rxjs';
 
-import {LoggerService} from './logger';
+import {LoggerService} from './log';
 import {UpdatesService} from './updates';
 
 describe('SwUpdatesService', () => {

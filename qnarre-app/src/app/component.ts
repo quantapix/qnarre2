@@ -1,5 +1,6 @@
 import {Component} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
+
 import {slideInAnimation} from './animations';
 
 import {Ndata, Ldata} from '../graph/model';
@@ -7,8 +8,8 @@ import {DataService} from '../graph/data.service';
 
 @Component({
   selector: 'qnr-app',
-  templateUrl: './app.comp.html',
-  styleUrls: ['./app.comp.scss'],
+  templateUrl: './component.html',
+  styleUrls: ['./component.scss'],
   animations: [slideInAnimation]
 })
 export class AppComp {
@@ -44,7 +45,6 @@ export class AppComp {
 
 @Component({
   selector: 'qnr-page-not-found',
-  template: `<h2>Page not found</h2>`,
-  styles: []
+  template: `<h2>Page not found</h2>`
 })
 export class PageNotFoundComp {}

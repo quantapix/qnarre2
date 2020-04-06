@@ -5,7 +5,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {TabsModule} from './tabs.module';
 import {TabsComponent} from './tabs.component';
 import {PrettifyService} from './prettify.service';
-import {LoggerService} from '../../services/logger';
+import {LoggerService} from '../../services/log';
 import {MockPrettify} from '../../testing/prettify.service';
 import {MockLogger} from '../../testing/logger.service';
 

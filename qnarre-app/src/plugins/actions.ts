@@ -1,6 +1,6 @@
 import {createAction, props} from '@ngrx/store';
 
-import {PluginId, Plugins} from './types';
+import {PluginId, Plugins} from '../app/types';
 
 export const changed = createAction(
   '[Plugins] Changed',

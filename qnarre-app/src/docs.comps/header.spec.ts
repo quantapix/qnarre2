@@ -8,7 +8,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Store} from '@ngrx/store';
 import {provideMockStore, MockStore} from '@ngrx/store/testing';
 
-import {changed} from '../app/actions';
+import {changed} from '../plugins/actions';
 import {PluginId, State} from '../app/types';
 import {HeaderComponent} from './header.component';
 import {HeaderContainer} from './header.container';

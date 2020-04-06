@@ -3,7 +3,7 @@ import {SwUpdate} from '@angular/service-worker';
 import {concat, interval, NEVER, Observable, Subject} from 'rxjs';
 import {first, map, takeUntil, tap} from 'rxjs/operators';
 
-import {LoggerService} from './logger';
+import {LogService} from './log';
 
 @Injectable()
 export class UpdatesService implements OnDestroy {
@@ -13,7 +13,7 @@ export class UpdatesService implements OnDestroy {
 
   constructor(
     ref: ApplicationRef,
-    private logger: LoggerService,
+    private logger: LogService,
     private swu: SwUpdate
   ) {
     if (!swu.isEnabled) {

@@ -1,6 +1,6 @@
 import {ReflectiveInjector} from '@angular/core';
 import {environment} from '../environments/environment';
-import {LocationService} from './location';
+import {LocationService} from './loc';
 import {MockLocationService} from '../testing/location.service';
 import {Deployment} from './deployment';
 

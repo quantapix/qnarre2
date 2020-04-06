@@ -1,5 +1,5 @@
 import {Action, createReducer, on} from '@ngrx/store';
-import {LoadedCode, PluginsState} from './types';
+import {LoadedCode, PluginsState} from '../app/types';
 import * as actions from './actions';
 
 const init = {

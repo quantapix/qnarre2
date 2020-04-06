@@ -10,7 +10,7 @@ import {
   filter,
   tap
 } from 'rxjs/operators';
-import {Plugins, LoadedCode, State} from './types';
+import {Plugins, LoadedCode, State} from '../app/types';
 import {getLoadeds} from './selectors';
 import {
   loaded,

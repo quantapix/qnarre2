@@ -13,7 +13,7 @@ import {
   NavViews,
   VersionInfo
 } from './nav';
-import {LocationService} from './location';
+import {LocationService} from './loc';
 import {MockLocationService} from '../testing/location.service';
 
 describe('NavService', () => {

@@ -3,8 +3,8 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {AsyncSubject, Observable, of} from 'rxjs';
 import {catchError, switchMap, tap} from 'rxjs/operators';
 
-import {LocationService} from './location';
-import {LoggerService} from './logger';
+import {LocationService} from './loc';
+import {LoggerService} from './log';
 
 export const FILE_NOT_FOUND = 'file-not-found';
 export const FETCHING_ERROR = 'fetching-error';
@@ -18,7 +18,7 @@ export interface Contents {
 }
 
 @Injectable()
-export class DocsService {
+export class GraphService {
   private cache = new Map<string, Observable<Contents>>();
   doc: Observable<Contents>;
 

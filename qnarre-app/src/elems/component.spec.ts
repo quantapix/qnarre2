@@ -1,9 +1,9 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {ElemsComp} from './elems.comp';
+import {ElemsComp} from './component';
 import {ElemsLoader} from './loader';
 
-import {LoggerService} from '../services/logger';
+import {LogService} from '../services/log';
 import {MockLogger} from '../testing/logger.service';
 
 describe('ElemsComp', () => {
@@ -16,7 +16,7 @@ describe('ElemsComp', () => {
       declarations: [ElemsComp],
       providers: [
         {provide: ElemsLoader, useValue: loader},
-        {provide: LoggerService, useClass: MockLogger}
+        {provide: LogService, useClass: MockLogger}
       ]
     });
     logger = inj.inject(MockLogger);

@@ -4,7 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {combineLatest, ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast, publishReplay} from 'rxjs/operators';
 
-import {LocationService} from './location';
+import {LocService} from './loc';
 import {CONTENT_URL_PREFIX} from './docs';
 
 import {
@@ -31,7 +31,7 @@ export class NavService {
   version: Observable<VersionInfo>;
   nodes: Observable<CurrentNodes>;
 
-  constructor(private http: HttpClient, private location: LocationService) {
+  constructor(private http: HttpClient, private loc: LocService) {
     const info = this.fetchInfo();
     this.views = this.getViews(info);
     this.nodes = this.getNodes(this.views);
@@ -75,7 +75,7 @@ export class NavService {
   private getNodes(views: Observable<NavViews>) {
     const nodes: Observable<CurrentNodes> = combineLatest([
       views.pipe(map(vs => this.urlToNodesMap(vs))),
-      this.location.path
+      this.loc.path$
     ]).pipe(
       map(r => ({navMap: r[0], url: r[1]})),
       map(r => {

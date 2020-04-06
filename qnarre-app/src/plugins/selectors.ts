@@ -1,6 +1,6 @@
 import {createSelector as create, createFeatureSelector} from '@ngrx/store';
 
-import {State, PLUGINS_KEY, PluginsState as PS} from './types';
+import {State, PLUGINS_KEY, PluginsState as PS} from '../app/types';
 
 const s = createFeatureSelector<State, PS>(PLUGINS_KEY);
 

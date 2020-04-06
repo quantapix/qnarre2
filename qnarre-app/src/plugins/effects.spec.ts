@@ -10,13 +10,13 @@ import {MockStore, provideMockStore} from '@ngrx/store/testing';
 
 import {Effects} from './effects';
 import * as actions from './actions';
-import {Plugins, LoadedCode, State} from './types';
+import {Plugins, LoadedCode, State} from '../app/types';
 import {SourceService} from '../services/source';
 import {
   createPluginInfo,
   createState,
   createPluginsState
-} from '../plugins/plugins.spec';
+} from './plugins.spec';
 
 describe('core.effects', () => {
   let http: HttpTestingController;

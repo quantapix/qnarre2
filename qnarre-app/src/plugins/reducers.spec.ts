@@ -1,7 +1,7 @@
 import * as actions from './actions';
 import {reducers} from './reducers';
-import {createPluginInfo, createPluginsState} from '../plugins/plugins.spec';
-import {LoadedCode} from './types';
+import {createPluginInfo, createPluginsState} from './plugins.spec';
+import {LoadedCode} from '../app/types';
 
 function createPluginsListing() {
   return {

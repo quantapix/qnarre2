@@ -2,7 +2,7 @@ import {NgModule} from '@angular/core';
 import {ROUTES} from '@angular/router';
 
 import {ElemsLoader} from './loader';
-import {ElemsComp} from './elems.comp';
+import {ElemsComp} from './component';
 import {LOAD_CBS, LOAD_CBS_TOKEN, LOAD_CBS_AS_ROUTES} from './registry';
 import {MinimapComponent} from '../docs.elems/graph.comps/minimap.comp';
 

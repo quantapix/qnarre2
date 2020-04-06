@@ -6,10 +6,11 @@ import {Observable, of} from 'rxjs';
   providedIn: 'root'
 })
 export class PreloadService implements PreloadingStrategy {
-  modules: string[] = [];
+  modules = [] as string[];
+
   preload(r: Route, load: () => Observable<any>): Observable<any> {
     if (r.data && r.data['preload']) {
-      this.modules.push(r.path);
+      this.modules.push(r.path!);
       console.log('Preloaded: ' + r.path);
       return load();
     } else {

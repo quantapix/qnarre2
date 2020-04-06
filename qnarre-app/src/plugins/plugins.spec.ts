@@ -4,7 +4,7 @@ import {Store} from '@ngrx/store';
 import {provideMockStore, MockStore} from '@ngrx/store/testing';
 
 import {Plugins} from './plugins';
-import {PluginsComp} from './comp';
+import {PluginsComp} from './component';
 
 import {
   PluginId,

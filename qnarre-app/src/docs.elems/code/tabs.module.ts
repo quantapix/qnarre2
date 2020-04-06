@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {MatCardModule} from '@angular/material/card';
 import {MatTabsModule} from '@angular/material/tabs';
 
-import {WithElem} from '../../app/registry';
+import {WithElem} from '../../elems/registry';
 import {CodeModule} from './code.module';
 import {TabsComponent} from './tabs.component';
 

@@ -9,10 +9,10 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatListModule} from '@angular/material/list';
 
-import {AppComp, PageNotFoundComp} from './app.comp';
+import {AppComp, PageNotFoundComp} from './component';
 //import {ComposeMessageComp} from './compose-message/compose-message.comp';
 
-import {AppRoutingModule} from './app-routing.module';
+import {AppRoutingModule} from './routing.module';
 
 import {AppComp as GraphAppComp} from '../graph.app/comp';
 

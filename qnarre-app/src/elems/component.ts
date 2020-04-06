@@ -1,6 +1,6 @@
 import {Component, ElementRef, Input, OnInit} from '@angular/core';
 
-import {LoggerService} from '../services/logger';
+import {LogService} from '../services/log';
 import {ElemsLoader} from './loader';
 
 @Component({
@@ -13,7 +13,7 @@ export class ElemsComp implements OnInit {
   constructor(
     private ref: ElementRef,
     private loader: ElemsLoader,
-    private logger: LoggerService
+    private logger: LogService
   ) {}
 
   ngOnInit() {

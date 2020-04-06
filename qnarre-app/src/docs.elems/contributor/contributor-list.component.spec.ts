@@ -5,7 +5,7 @@ import {of} from 'rxjs';
 import {ContributorGroup} from './contributors.model';
 import {ContributorListComponent} from './contributor-list.component';
 import {ContributorService} from './contributor.service';
-import {LocationService} from '../../services/location';
+import {LocationService} from '../../services/loc';
 
 describe('ContributorListComponent', () => {
   let component: ContributorListComponent;

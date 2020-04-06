@@ -21,7 +21,7 @@ import {CompatCardComp} from '../graph.comps/compat-card';
 import {CompatItemComp} from '../graph.comps/compat-item';
 import {QnarreComp} from '../graph.comps/qnarre';
 import {SceneComp} from '../graph.comps/scene';
-import {WithElem} from '../app/registry';
+import {WithElem} from '../elems/registry';
 
 @NgModule({
   imports: [CommonModule],

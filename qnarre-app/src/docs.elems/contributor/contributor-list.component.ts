@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {ContributorGroup} from './contributors.model';
 import {ContributorService} from './contributor.service';
 
-import {LocationService} from '../../services/location';
+import {LocationService} from '../../services/loc';
 
 @Component({
   selector: `qnr-contributor-list`,

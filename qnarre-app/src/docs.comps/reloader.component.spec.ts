@@ -4,7 +4,7 @@ import {provideMockStore, MockStore} from '@ngrx/store/testing';
 
 import {ReloaderComponent} from './reloader.component';
 
-import {reload} from '../app/actions';
+import {reload} from '../plugins/actions';
 import {State} from '../app/types';
 import {createState, createPluginsState} from '../plugins/plugins.spec';
 

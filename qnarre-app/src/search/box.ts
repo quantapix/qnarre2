@@ -9,7 +9,7 @@ import {
 import {Subject} from 'rxjs';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 
-import {LocationService} from '../services/location';
+import {LocationService} from '../services/loc';
 
 @Component({
   selector: 'qnr-search-box',

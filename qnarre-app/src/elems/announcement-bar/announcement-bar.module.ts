@@ -4,7 +4,7 @@ import {HttpClientModule} from '@angular/common/http';
 
 import {ServicesModule} from '../../services/module';
 import {AnnouncementBarComponent} from './announcement-bar.component';
-import {WithElem} from '../../app/registry';
+import {WithElem} from '../registry';
 
 @NgModule({
   imports: [CommonModule, ServicesModule, HttpClientModule],

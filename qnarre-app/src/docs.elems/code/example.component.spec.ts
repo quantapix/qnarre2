@@ -4,7 +4,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ExampleModule} from './example.module';
 import {ExampleComponent} from './example.component';
 import {PrettifyService} from './prettify.service';
-import {LoggerService} from '../../services/logger';
+import {LoggerService} from '../../services/log';
 import {MockPrettify} from '../../testing/prettify.service';
 import {MockLogger} from '../../testing/logger.service';
 

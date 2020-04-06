@@ -6,7 +6,7 @@ import {CrisisListComponent} from './crisis-list/crisis-list.component';
 import {CrisisCenterComponent} from './crisis-center/crisis-center.component';
 import {CrisisDetailComponent} from './crisis-detail/crisis-detail.component';
 
-import {CanDeactivateGuard} from '../deactivate.guard';
+import {CanDeactivateGuard} from '../../services/deactivate.guard';
 import {CrisisDetailResolverService} from './crisis-detail-resolver.service';
 
 const routes: Routes = [

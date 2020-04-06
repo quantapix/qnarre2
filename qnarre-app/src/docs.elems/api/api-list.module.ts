@@ -4,7 +4,7 @@ import {HttpClientModule} from '@angular/common/http';
 import {SharedModule} from '../../shared/shared.module';
 import {ApiListComponent} from './api-list.component';
 import {ApiService} from './api.service';
-import {WithElem} from '../../app/registry';
+import {WithElem} from '../../elems/registry';
 
 @NgModule({
   imports: [CommonModule, SharedModule, HttpClientModule],

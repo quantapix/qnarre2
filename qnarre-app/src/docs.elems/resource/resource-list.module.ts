@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 
 import {ResourceListComponent} from './resource-list.component';
 import {ResourceService} from './resource.service';
-import {WithElem} from '../../app/registry';
+import {WithElem} from '../../elems/registry';
 
 @NgModule({
   imports: [CommonModule],

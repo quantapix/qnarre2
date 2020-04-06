@@ -5,10 +5,10 @@ import {Meta, Title} from '@angular/platform-browser';
 import {Observable, asapScheduler, of} from 'rxjs';
 
 import {FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
-import {LoggerService} from '../services/logger';
-import {ElemsModule} from '../app/elems.module';
+import {LoggerService} from '../services/log';
+import {ElemsModule} from '../elems/module';
 import {TocService} from '../services/toc';
-import {ElemsLoader} from '../app/loader';
+import {ElemsLoader} from '../elems/loader';
 import {
   MockTitle,
   MockTocService,

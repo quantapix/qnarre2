@@ -3,8 +3,8 @@ import {distinctUntilChanged} from 'rxjs/operators';
 import {combineLatest} from 'rxjs';
 import {Store, select} from '@ngrx/store';
 
-import {getReloadEnabled, getReloadPeriods} from '../app/selectors';
-import {reload} from '../app/actions';
+import {getReloadEnabled, getReloadPeriods} from '../plugins/selectors';
+import {reload} from '../plugins/actions';
 import {State} from '../app/types';
 
 @Component({

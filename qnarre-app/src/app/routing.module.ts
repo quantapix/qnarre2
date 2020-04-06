@@ -2,7 +2,7 @@ import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 
 import {ComposeMessageComponent} from './compose-message/compose-message.component';
-import {PageNotFoundComp} from './app.comp';
+import {PageNotFoundComp} from './component';
 
 import {AuthGuard} from './auth/auth.guard';
 import {PreloadService} from './preload.service';

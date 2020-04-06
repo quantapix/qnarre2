@@ -1,8 +1,8 @@
 import {Component} from '@angular/core';
 import {Store, select, createSelector} from '@ngrx/store';
 
-import {getActive, getPlugins} from '../app/selectors';
-import {changed} from '../app/actions';
+import {getActive, getPlugins} from '../plugins/selectors';
+import {changed} from '../plugins/actions';
 
 import {PluginId, Plugin, State} from '../app/types';
 

@@ -1,7 +1,7 @@
 import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
-import {WithElem} from '../../app/registry';
+import {WithElem} from '../../elems/registry';
 import {CodeModule} from './code.module';
 import {ExampleComponent} from './example.component';
 
