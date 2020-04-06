@@ -7,7 +7,7 @@ import {Contents} from '../services/docs';
 import {ViewerComponent} from '../docs.comps/viewer.component';
 import {LoggerService} from '../services/log';
 import {TocService} from '../services/toc';
-import {MockLogger} from './logger.service';
+import {MockLogger} from './log';
 import {ElemsLoader} from '../elems/loader';
 
 export class TestViewerComponent extends ViewerComponent {

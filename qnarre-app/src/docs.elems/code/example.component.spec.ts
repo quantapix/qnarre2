@@ -6,7 +6,7 @@ import {ExampleComponent} from './example.component';
 import {PrettifyService} from './prettify.service';
 import {LoggerService} from '../../services/log';
 import {MockPrettify} from '../../testing/prettify.service';
-import {MockLogger} from '../../testing/logger.service';
+import {MockLogger} from '../../testing/log';
 
 describe('ExampleComponent', () => {
   let host: HostComponent;

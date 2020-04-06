@@ -7,7 +7,7 @@ import {TabsComponent} from './tabs.component';
 import {PrettifyService} from './prettify.service';
 import {LoggerService} from '../../services/log';
 import {MockPrettify} from '../../testing/prettify.service';
-import {MockLogger} from '../../testing/logger.service';
+import {MockLogger} from '../../testing/log';
 
 describe('CodeTabsComponent', () => {
   let f: ComponentFixture<HostComponent>;

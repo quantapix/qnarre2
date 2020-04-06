@@ -6,9 +6,9 @@ import {TestBed} from '@angular/core/testing';
 import {Subscription} from 'rxjs';
 
 import {LocationService} from './loc';
-import {MockLocationService} from '../testing/location.service';
+import {MockLocationService} from '../testing/loc';
 import {LoggerService} from './log';
-import {MockLogger} from '../testing/logger.service';
+import {MockLogger} from '../testing/log';
 import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './docs';
 
 const CONTENT_URL_PREFIX = 'generated/docs/';

@@ -1,7 +1,7 @@
 import {ReflectiveInjector} from '@angular/core';
 import {environment} from '../environments/environment';
 import {LocationService} from './loc';
-import {MockLocationService} from '../testing/location.service';
+import {MockLocationService} from '../testing/loc';
 import {Deployment} from './deployment';
 
 describe('Deployment service', () => {

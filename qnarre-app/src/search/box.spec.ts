@@ -10,7 +10,7 @@ import {By} from '@angular/platform-browser';
 
 import {BoxComp} from './box';
 import {LocationService} from '../services/loc';
-import {MockLocationService} from '../testing/location.service';
+import {MockLocationService} from '../testing/loc';
 
 @Component({
   template:

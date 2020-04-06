@@ -1,7 +1,7 @@
 import {BehaviorSubject} from 'rxjs';
 import {map} from 'rxjs/operators';
 
-export class MockLocation {
+export class MockLocService {
   urlSubject = new BehaviorSubject<string>(this.initialUrl);
   currentUrl = this.urlSubject
     .asObservable()

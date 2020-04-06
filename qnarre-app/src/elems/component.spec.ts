@@ -4,7 +4,7 @@ import {ElemsComp} from './component';
 import {ElemsLoader} from './loader';
 
 import {LogService} from '../services/log';
-import {MockLogger} from '../testing/logger.service';
+import {MockLogger} from '../testing/log';
 
 describe('ElemsComp', () => {
   let loader: any;

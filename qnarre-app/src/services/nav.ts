@@ -4,126 +4,104 @@ import {HttpClient} from '@angular/common/http';
 import {combineLatest, ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast, publishReplay} from 'rxjs/operators';
 
+import * as qt from '../types';
 import {LocService} from './loc';
 import {CONTENT_URL_PREFIX} from './docs';
 
-import {
-  CurrentNodes,
-  NavNode,
-  NavResponse,
-  NavViews,
-  VersionInfo
-} from './nav.model';
-export {
-  CurrentNodes,
-  CurrentNode,
-  NavNode,
-  NavResponse,
-  NavViews,
-  VersionInfo
-} from './nav.model';
-
 export const navPath = CONTENT_URL_PREFIX + 'navigation.json';
+
+export interface Item {
+  title: string;
+  url?: string;
+  tooltip?: string;
+  hidden?: boolean;
+  children?: Item[];
+}
+
+export type Views = qt.Dict<Item[]>;
+
+export interface Node {
+  url: string;
+  view: string;
+  items: Item[];
+}
+
+export type Nodes = qt.Dict<Node>;
 
 @Injectable()
 export class NavService {
-  views: Observable<NavViews>;
-  version: Observable<VersionInfo>;
-  nodes: Observable<CurrentNodes>;
+  views$: Observable<Views>;
+  nodes$: Observable<Nodes>;
 
   constructor(private http: HttpClient, private loc: LocService) {
-    const info = this.fetchInfo();
-    this.views = this.getViews(info);
-    this.nodes = this.getNodes(this.views);
-    this.version = this.getVersion(info);
+    this.views$ = this.fetch();
+    this.nodes$ = this.merge();
   }
 
-  private fetchInfo() {
-    const info: Observable<NavResponse> = this.http
-      .get<NavResponse>(navPath)
-      .pipe(publishLast());
-    (info as ConnectableObservable<NavResponse>).connect();
-    return info;
-  }
-
-  private getVersion(nav: Observable<NavResponse>) {
-    const info: Observable<VersionInfo> = nav.pipe(
-      map(response => response.__versionInfo),
-      publishLast()
-    );
-    (info as ConnectableObservable<VersionInfo>).connect();
-    return info;
-  }
-
-  private getViews(nav: Observable<NavResponse>) {
-    const views: Observable<NavViews> = nav.pipe(
-      map(response => {
-        const vs = Object.assign({}, response);
-        Object.keys(vs).forEach(k => {
-          if (k.startsWith('_')) {
-            delete vs[k];
-          }
+  private fetch() {
+    let o = this.http
+      .get<Views>(navPath)
+      .pipe(publishLast()) as ConnectableObservable<Views>;
+    o.connect();
+    o = o.pipe(
+      map(vs => {
+        const vs2 = Object.assign({}, vs) as Views;
+        Object.keys(vs2).forEach(n => {
+          if (n.startsWith('_')) delete vs2[n];
         });
-        return vs as NavViews;
+        return vs2;
       }),
       publishLast()
-    );
-    (views as ConnectableObservable<NavViews>).connect();
-    return views;
+    ) as ConnectableObservable<Views>;
+    o.connect();
+    return o;
   }
 
-  private getNodes(views: Observable<NavViews>) {
-    const nodes: Observable<CurrentNodes> = combineLatest([
-      views.pipe(map(vs => this.urlToNodesMap(vs))),
+  private merge() {
+    const o = combineLatest([
+      this.views$.pipe(map(vs => this.nodes(vs))),
       this.loc.path$
     ]).pipe(
-      map(r => ({navMap: r[0], url: r[1]})),
-      map(r => {
-        const match = /^api/.exec(r.url);
-        if (match) {
-          r.url = match[0];
-        }
-        return r.navMap.get(r.url) || {'': {view: '', url: r.url, nodes: []}};
+      map(p => ({ns: p[0], url: p[1]})),
+      map(e => {
+        const m = /^api/.exec(e.url);
+        if (m) e.url = m[0];
+        return e.ns.get(e.url) ?? {'': {view: '', url: e.url, items: []}};
       }),
       publishReplay(1)
     );
-    (nodes as ConnectableObservable<CurrentNodes>).connect();
-    return nodes;
+    (o as ConnectableObservable<Nodes>).connect();
+    return o;
   }
 
-  private urlToNodesMap(vs: NavViews) {
-    const m = new Map<string, CurrentNodes>();
-    Object.keys(vs).forEach(v => vs[v].forEach(n => this.walk(v, m, n)));
-    return m;
-  }
-
-  private ensureTooltip(node: NavNode) {
-    const title = node.title;
-    const tooltip = node.tooltip;
-    if (tooltip == null && title) {
-      node.tooltip = title + (/[a-zA-Z0-9]$/.test(title) ? '.' : '');
-    }
+  private nodes(vs: Views) {
+    const ns = new Map<string, Nodes>();
+    Object.keys(vs).forEach(n => vs[n].forEach(i => this.walk(ns, n, i)));
+    return ns;
   }
 
   private walk(
+    ns: Map<string, Nodes>,
     view: string,
-    map: Map<string, CurrentNodes>,
-    n: NavNode,
-    ps: NavNode[] = []
+    i: Item,
+    more: Item[] = []
   ) {
-    const nodes = [n, ...ps];
-    const url = n.url;
-    this.ensureTooltip(n);
+    this.fix(i);
+    const url = i.url;
+    const items = [i, ...more];
     if (url) {
-      const cleaned = url.replace(/\/$/, '');
-      if (!map.has(cleaned)) {
-        map.set(cleaned, {});
-      }
-      const item = map.get(cleaned);
-      item[view] = {url, view, nodes};
+      const u2 = url.replace(/\/$/, '');
+      if (!ns.has(u2)) ns.set(u2, {});
+      const n = ns.get(u2)!;
+      n[view] = {url, view, items};
     }
-    if (n.children) {
-      n.children.forEach(c => this.walk(view, map, c, nodes));
+    if (i.children) i.children.forEach(c => this.walk(ns, view, c, items));
+  }
+
+  private fix(i: Item) {
+    const t = i.title;
+    if (t && i.tooltip === undefined) {
+      i.tooltip = t + (/[a-zA-Z0-9]$/.test(t) ? '.' : '');
     }
   }
 }

@@ -5,16 +5,9 @@ import {
 import {Injector} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 
-import {
-  CurrentNodes,
-  NavNode,
-  navPath,
-  NavService,
-  NavViews,
-  VersionInfo
-} from './nav';
-import {LocationService} from './loc';
-import {MockLocationService} from '../testing/location.service';
+import {Nodes, Item, navPath, NavService, Views} from './nav';
+import {LocService} from './loc';
+import {MockLocService} from '../testing/loc';
 
 describe('NavService', () => {
   let inj: Injector;
@@ -27,12 +20,11 @@ describe('NavService', () => {
       providers: [
         NavService,
         {
-          provide: LocationService,
-          useFactory: () => new MockLocationService('a')
+          provide: LocService,
+          useFactory: () => new MockLocService('a')
         }
       ]
     });
-
     nav = inj.get(NavService);
     http = inj.get(HttpTestingController);
   });
@@ -45,28 +37,28 @@ describe('NavService', () => {
       expect(req.request.url).toBe('generated/navigation.json');
     });
     it('should expose the server response', () => {
-      const viewsEvents: NavViews[] = [];
-      nav.views.subscribe(views => viewsEvents.push(views));
+      const viewsEvents: Views[] = [];
+      nav.views$.subscribe(views => viewsEvents.push(views));
       expect(viewsEvents).toEqual([]);
       http.expectOne({}).flush({TopBar: [{title: '', url: 'a'}]});
       expect(viewsEvents).toEqual([{TopBar: [{title: '', url: 'a'}]}]);
     });
     it('navViews observable should complete', () => {
       let completed = false;
-      nav.views.subscribe({
+      nav.views$.subscribe({
         complete: () => (completed = true)
       });
       http.expectOne({method: 'get', url: navPath}).flush({});
       expect(completed).toBe(true, 'observable completed');
     });
     it('should return the same object to all subscribers', () => {
-      let views1: NavViews | undefined;
-      nav.views.subscribe(views => (views1 = views));
-      let views2: NavViews | undefined;
-      nav.views.subscribe(views => (views2 = views));
+      let views1: Views | undefined;
+      nav.views$.subscribe(views => (views1 = views));
+      let views2: Views | undefined;
+      nav.views$.subscribe(views => (views2 = views));
       http.expectOne({}).flush({TopBar: [{url: 'a'}]});
-      let views3: NavViews | undefined;
-      nav.views.subscribe(views => (views3 = views));
+      let views3: Views | undefined;
+      nav.views$.subscribe(views => (views3 = views));
       expect(views2).toBe(views1);
       expect(views3).toBe(views1);
       http.expectNone({});
@@ -75,15 +67,15 @@ describe('NavService', () => {
   });
 
   describe('node.tooltip', () => {
-    let view: NavNode[];
-    const sideNav: NavNode[] = [
+    let view: Item[];
+    const sideNav: Item[] = [
       {title: 'a', tooltip: 'a tip'},
       {title: 'b'},
       {title: 'c!'},
       {title: '', url: 'foo'}
     ];
     beforeEach(() => {
-      nav.views.subscribe(vs => (view = vs['sideNav']));
+      nav.views$.subscribe(vs => (view = vs['sideNav']));
       http.expectOne({}).flush({sideNav});
     });
     it('should have the supplied tooltip', () => {
@@ -101,12 +93,10 @@ describe('NavService', () => {
   });
 
   describe('currentNode', () => {
-    let ns: CurrentNodes;
-    let location: MockLocationService;
-    const tops: NavNode[] = [
-      {url: 'features', title: 'Features', tooltip: 'tip'}
-    ];
-    const sides: NavNode[] = [
+    let ns: Nodes;
+    let location: MockLocService;
+    const tops: Item[] = [{url: 'features', title: 'Features', tooltip: 'tip'}];
+    const sides: Item[] = [
       {
         title: 'a',
         tooltip: 'tip',
@@ -127,12 +117,11 @@ describe('NavService', () => {
     ];
     const navJson = {
       TopBar: tops,
-      SideNav: sides,
-      __versionInfo: {}
+      SideNav: sides
     };
     beforeEach(() => {
-      location = (inj.get(LocationService) as any) as MockLocationService;
-      nav.nodes.subscribe(s => (ns = s));
+      location = (inj.get(LocService) as any) as MockLocService;
+      nav.nodes$.subscribe(s => (ns = s));
       http.expectOne({}).flush(navJson);
     });
     it('should list the side navigation node that matches the current location, and all its ancestors', () => {
@@ -141,7 +130,7 @@ describe('NavService', () => {
         SideNav: {
           url: 'b',
           view: 'SideNav',
-          nodes: [sides[0].children[0], sides[0]]
+          items: [sides[0].children![0], sides[0]]
         }
       });
       location.go('d');
@@ -149,9 +138,9 @@ describe('NavService', () => {
         SideNav: {
           url: 'd',
           view: 'SideNav',
-          nodes: [
-            sides[0].children[0].children[1],
-            sides[0].children[0],
+          items: [
+            sides[0].children![0].children![1],
+            sides[0].children![0],
             sides[0]
           ]
         }
@@ -161,7 +150,7 @@ describe('NavService', () => {
         SideNav: {
           url: 'f',
           view: 'SideNav',
-          nodes: [sides[1]]
+          items: [sides[1]]
         }
       });
     });
@@ -171,7 +160,7 @@ describe('NavService', () => {
         TopBar: {
           url: 'features',
           view: 'TopBar',
-          nodes: [tops[0]]
+          items: [tops[0]]
         }
       });
     });
@@ -181,18 +170,18 @@ describe('NavService', () => {
         '': {
           url: 'g',
           view: '',
-          nodes: []
+          items: []
         }
       });
     });
     it('should ignore trailing slashes, hashes, and search params on URLs in the navmap', () => {
-      const cnode: CurrentNodes = {
+      const cnode: Nodes = {
         SideNav: {
           url: 'c',
           view: 'SideNav',
-          nodes: [
-            sides[0].children[0].children[0],
-            sides[0].children[0],
+          items: [
+            sides[0].children![0].children![0],
+            sides[0].children![0],
             sides[0]
           ]
         }
@@ -208,22 +197,10 @@ describe('NavService', () => {
     });
   });
 
-  describe('versionInfo', () => {
-    const expected = {raw: '4.0.0'} as VersionInfo;
-    let version: VersionInfo;
-    beforeEach(() => {
-      nav.version.subscribe(v => (version = v));
-      http.expectOne({}).flush({__versionInfo: expected});
-    });
-    it('should extract the version info', () => {
-      expect(version).toEqual(expected);
-    });
-  });
-
   describe('docVersions', () => {
-    let actual: NavNode[];
-    let versions: NavNode[];
-    let expected: NavNode[];
+    let actual: Item[];
+    let versions: Item[];
+    let expected: Item[];
     beforeEach(() => {
       actual = [];
       versions = [
@@ -234,7 +211,7 @@ describe('NavService', () => {
         ...v,
         ...{tooltip: v.title + '.'}
       }));
-      nav.views.subscribe(vs => (actual = vs['docVersions']));
+      nav.views$.subscribe(vs => (actual = vs['docVersions']));
     });
     it('should extract the docVersions', () => {
       http.expectOne({}).flush({versions});

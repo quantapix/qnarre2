@@ -18,7 +18,7 @@ import {
   TestParentComponent,
   MockElemsLoader
 } from '../testing/viewer';
-import {MockLogger} from '../testing/logger.service';
+import {MockLogger} from '../testing/log';
 import {ViewerComponent, NO_ANIMATIONS} from './viewer.component';
 
 describe('ViewerComponent', () => {
