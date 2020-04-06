@@ -11,6 +11,8 @@ import {MatListModule} from '@angular/material/list';
 
 import {AppComp, PageNotFoundComp} from './component';
 import {NavItemComp, NavMenuComp} from './nav';
+import {TopMenuComp} from './top';
+import {FooterComp} from './footer';
 //import {ComposeMessageComp} from './compose-message/compose-message.comp';
 
 import {AppRoutingModule} from './routing.module';
@@ -36,6 +38,8 @@ import {SceneServ} from '../graph/scene.serv';
     GraphAppComp,
     NavItemComp,
     NavMenuComp,
+    TopMenuComp,
+    FooterComp,
     //ComposeMessageComp,
     //GraphComp,
     //LinkComp,
@@ -56,7 +60,7 @@ import {SceneServ} from '../graph/scene.serv';
     MatIconModule,
     MatListModule
   ],
-  exports: [NavItemComp, NavMenuComp],
+  exports: [NavItemComp, NavMenuComp, TopMenuComp, FooterComp],
   providers: [DataService, SceneServ],
   bootstrap: [AppComp]
 })

@@ -1,4 +1,4 @@
-import { NO_ERRORS_SCHEMA, DebugElement } from '@angular/core';
+import {NO_ERRORS_SCHEMA, DebugElement} from '@angular/core';
 import {
   inject,
   ComponentFixture,
@@ -7,39 +7,39 @@ import {
   flushMicrotasks,
   tick
 } from '@angular/core/testing';
-import { Title } from '@angular/platform-browser';
-import { APP_BASE_HREF } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatSidenav } from '@angular/material/sidenav';
-import { By } from '@angular/platform-browser';
+import {Title} from '@angular/platform-browser';
+import {APP_BASE_HREF} from '@angular/common';
+import {HttpClient} from '@angular/common/http';
+import {MatProgressBar} from '@angular/material/progress-bar';
+import {MatSidenav} from '@angular/material/sidenav';
+import {By} from '@angular/platform-browser';
 
-import { Subject, of, timer } from 'rxjs';
-import { first, mapTo } from 'rxjs/operators';
+import {Subject, of, timer} from 'rxjs';
+import {first, mapTo} from 'rxjs/operators';
 
-import { AppComponent } from './app.component';
-import { AppModule } from './app.module';
-import { CurrentNodes } from 'app/navigation/navigation.model';
-import { DocumentService } from 'app/documents/document.service';
-import { DocViewerComponent } from 'app/layout/doc-viewer/doc-viewer.component';
-import { Deployment } from 'app/shared/deployment.service';
-import { ElementsLoader } from 'app/custom-elements/elements-loader';
-import { GaService } from 'app/shared/ga.service';
-import { LocationService } from 'app/shared/location.service';
-import { Logger } from 'app/shared/logger.service';
-import { MockLocationService } from 'testing/location.service';
-import { MockLogger } from 'testing/logger.service';
-import { MockSearchService } from 'testing/search.service';
+import {AppComponent} from './component';
+import {AppModule} from './module';
+import {CurrentNodes} from 'app/navigation/navigation.model';
+import {DocumentService} from 'app/documents/document.service';
+import {DocViewerComponent} from 'app/layout/doc-viewer/doc-viewer.component';
+import {Deployment} from 'app/shared/deployment.service';
+import {ElementsLoader} from 'app/custom-elements/elements-loader';
+import {GaService} from 'app/shared/ga.service';
+import {LocationService} from 'app/shared/location.service';
+import {Logger} from 'app/shared/logger.service';
+import {MockLocationService} from 'testing/location.service';
+import {MockLogger} from 'testing/logger.service';
+import {MockSearchService} from 'testing/search.service';
 import {
   NavigationNode,
   NavigationService
 } from 'app/navigation/navigation.service';
-import { ScrollService } from 'app/shared/scroll.service';
-import { SearchBoxComponent } from 'app/search/search-box/search-box.component';
-import { SearchResultsComponent } from 'app/shared/search-results/search-results.component';
-import { SearchService } from 'app/search/search.service';
-import { SelectComponent } from 'app/shared/select/select.component';
-import { TocItem, TocService } from 'app/shared/toc.service';
+import {ScrollService} from 'app/shared/scroll.service';
+import {SearchBoxComponent} from 'app/search/search-box/search-box.component';
+import {SearchResultsComponent} from 'app/shared/search-results/search-results.component';
+import {SearchService} from 'app/search/search.service';
+import {SelectComponent} from 'app/shared/select/select.component';
+import {TocItem, TocService} from 'app/shared/toc.service';
 
 const sideBySideBreakPoint = 992;
 const hideToCBreakPoint = 800;
@@ -440,7 +440,7 @@ describe('AppComponent', () => {
         const versionWithoutUrlIndex = component.docVersions.length;
         const versionWithoutUrl = (component.docVersions[
           versionWithoutUrlIndex
-        ] = { title: 'foo' });
+        ] = {title: 'foo'});
         selectElement.triggerEventHandler('change', {
           option: versionWithoutUrl,
           index: versionWithoutUrlIndex
@@ -635,7 +635,7 @@ describe('AppComponent', () => {
       };
 
       it('should prevent scrolling up if already at the top', () => {
-        const elem = { scrollTop: 0 };
+        const elem = {scrollTop: 0};
 
         expect(preventedScrolling(elem, -100)).toBe(true);
         expect(preventedScrolling(elem, +100)).toBe(false);
@@ -643,7 +643,7 @@ describe('AppComponent', () => {
       });
 
       it('should prevent scrolling down if already at the bottom', () => {
-        const elem = { scrollTop: 100, scrollHeight: 150, clientHeight: 50 };
+        const elem = {scrollTop: 100, scrollHeight: 150, clientHeight: 50};
 
         expect(preventedScrolling(elem, +10)).toBe(true);
         expect(preventedScrolling(elem, -10)).toBe(false);
@@ -660,7 +660,7 @@ describe('AppComponent', () => {
       });
 
       it('should not prevent scrolling if neither at the top nor at the bottom', () => {
-        const elem = { scrollTop: 50, scrollHeight: 150, clientHeight: 50 };
+        const elem = {scrollTop: 50, scrollHeight: 150, clientHeight: 50};
 
         expect(preventedScrolling(elem, +100)).toBe(false);
         expect(preventedScrolling(elem, -100)).toBe(false);
@@ -845,9 +845,7 @@ describe('AppComponent', () => {
             By.directive(SearchBoxComponent)
           ).componentInstance;
           spyOn(searchBox, 'focus');
-          window.document.dispatchEvent(
-            new KeyboardEvent('keyup', { key: '/' })
-          );
+          window.document.dispatchEvent(new KeyboardEvent('keyup', {key: '/'}));
           fixture.detectChanges();
           expect(searchBox.focus).toHaveBeenCalled();
         });
@@ -859,7 +857,7 @@ describe('AppComponent', () => {
           spyOn(searchBox, 'focus');
           component.showSearchResults = true;
           window.document.dispatchEvent(
-            new KeyboardEvent('keyup', { key: 'Escape' })
+            new KeyboardEvent('keyup', {key: 'Escape'})
           );
           fixture.detectChanges();
           expect(searchBox.focus).toHaveBeenCalled();
@@ -871,7 +869,7 @@ describe('AppComponent', () => {
           const searchService = (TestBed.inject(SearchService) as Partial<
             SearchService
           >) as MockSearchService;
-          searchService.searchResults.next({ query: '', results: [] });
+          searchService.searchResults.next({query: '', results: []});
           fixture.detectChanges();
           expect(component.showSearchResults).toBe(false);
         });
@@ -892,7 +890,7 @@ describe('AppComponent', () => {
             }
           ];
 
-          searchService.searchResults.next({ query: 'something', results });
+          searchService.searchResults.next({query: 'something', results});
           component.showSearchResults = true;
           fixture.detectChanges();
 
@@ -916,7 +914,7 @@ describe('AppComponent', () => {
     });
 
     describe('archive redirection', () => {
-      const redirectionPerMode: { [mode: string]: boolean } = {
+      const redirectionPerMode: {[mode: string]: boolean} = {
         archive: true,
         next: false,
         stable: false
@@ -952,12 +950,12 @@ describe('AppComponent', () => {
           initializeTest(false);
 
           testCurrentNodes.next({
-            SideNav: { url: 'foo', view: 'SideNav', nodes: [] }
+            SideNav: {url: 'foo', view: 'SideNav', nodes: []}
           });
           verifyNoRedirection();
 
           testCurrentNodes.next({
-            NoSideNav: { url: 'bar', view: 'SideNav', nodes: [] }
+            NoSideNav: {url: 'bar', view: 'SideNav', nodes: []}
           });
           verifyPossibleRedirection();
 
@@ -967,7 +965,7 @@ describe('AppComponent', () => {
 
           locationService.replace.calls.reset();
           testCurrentNodes.next({
-            SideNav: { url: 'baz', view: 'SideNav', nodes: [] }
+            SideNav: {url: 'baz', view: 'SideNav', nodes: []}
           });
           verifyNoRedirection();
         });
@@ -986,8 +984,8 @@ describe('AppComponent', () => {
       createTestingModule('a/b');
       // Remove the DocViewer for this test and hide the missing component message
       TestBed.overrideModule(AppModule, {
-        remove: { declarations: [DocViewerComponent] },
-        add: { schemas: [NO_ERRORS_SCHEMA] }
+        remove: {declarations: [DocViewerComponent]},
+        add: {schemas: [NO_ERRORS_SCHEMA]}
       });
     });
 
@@ -1378,13 +1376,13 @@ function createTestingModule(initialUrl: string, mode: string = 'stable') {
   TestBed.configureTestingModule({
     imports: [AppModule],
     providers: [
-      { provide: APP_BASE_HREF, useValue: '/' },
-      { provide: ElementsLoader, useClass: TestElementsLoader },
-      { provide: GaService, useClass: TestGaService },
-      { provide: HttpClient, useClass: TestHttpClient },
-      { provide: LocationService, useFactory: () => mockLocationService },
-      { provide: Logger, useClass: MockLogger },
-      { provide: SearchService, useClass: MockSearchService },
+      {provide: APP_BASE_HREF, useValue: '/'},
+      {provide: ElementsLoader, useClass: TestElementsLoader},
+      {provide: GaService, useClass: TestGaService},
+      {provide: HttpClient, useClass: TestHttpClient},
+      {provide: LocationService, useFactory: () => mockLocationService},
+      {provide: Logger, useClass: MockLogger},
+      {provide: SearchService, useClass: MockSearchService},
       {
         provide: Deployment,
         useFactory: () => {
@@ -1428,7 +1426,7 @@ class TestHttpClient {
   };
 
   static docVersions: NavigationNode[] = [
-    { title: 'v2', url: 'https://v2.angular.io' }
+    {title: 'v2', url: 'https://v2.angular.io'}
   ];
 
   // tslint:disable:quotemark
@@ -1485,7 +1483,7 @@ class TestHttpClient {
         .replace(/^([a-z])/, (_, letter) => letter.toUpperCase());
       const h1 = id === 'no-title' ? '' : `<h1 class="no-toc">${title}</h1>`;
       const contents = `${h1}<h2 id="#somewhere">Some heading</h2>`;
-      data = { id, contents };
+      data = {id, contents};
     }
 
     // Preserve async nature of `HttpClient`.

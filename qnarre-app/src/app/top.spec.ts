@@ -2,20 +2,20 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {BehaviorSubject} from 'rxjs';
 
-import {TopMenuComponent} from './top-menu.component';
-import {NavService, NavViews} from '../services/nav';
+import {TopMenuComp} from './top';
+import {NavService, Views} from '../services/nav';
 
-describe('TopMenuComponent', () => {
-  let c: TopMenuComponent;
-  let f: ComponentFixture<TopMenuComponent>;
+describe('TopMenuComp', () => {
+  let c: TopMenuComp;
+  let f: ComponentFixture<TopMenuComp>;
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [TopMenuComponent],
+      declarations: [TopMenuComp],
       providers: [{provide: NavService, useClass: TestNavigationService}]
     });
   });
   beforeEach(() => {
-    f = TestBed.createComponent(TopMenuComponent);
+    f = TestBed.createComponent(TopMenuComp);
     c = f.componentInstance;
     f.detectChanges();
   });
@@ -32,5 +32,5 @@ class TestNavigationService {
     ]
   };
 
-  navViews = new BehaviorSubject<NavViews>(this.navJson);
+  navViews = new BehaviorSubject<Views>(this.navJson);
 }

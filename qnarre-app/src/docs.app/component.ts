@@ -8,7 +8,7 @@ import {
   ViewChild,
   ViewChildren
 } from '@angular/core';
-import { MatSidenav } from '@angular/material/sidenav';
+import {MatSidenav} from '@angular/material/sidenav';
 
 import {
   CurrentNodes,
@@ -20,25 +20,25 @@ import {
   DocumentService,
   DocumentContents
 } from 'app/documents/document.service';
-import { Deployment } from 'app/shared/deployment.service';
-import { LocationService } from 'app/shared/location.service';
-import { NotificationComponent } from 'app/layout/notification/notification.component';
-import { ScrollService } from 'app/shared/scroll.service';
-import { SearchBoxComponent } from 'app/search/search-box/search-box.component';
-import { SearchResults } from 'app/search/interfaces';
-import { SearchService } from 'app/search/search.service';
-import { TocService } from 'app/shared/toc.service';
+import {Deployment} from 'app/shared/deployment.service';
+import {LocationService} from 'app/shared/location.service';
+import {NotificationComponent} from 'app/layout/notification/notification.component';
+import {ScrollService} from 'app/shared/scroll.service';
+import {SearchBoxComponent} from 'app/search/search-box/search-box.component';
+import {SearchResults} from 'app/search/interfaces';
+import {SearchService} from 'app/search/search.service';
+import {TocService} from 'app/shared/toc.service';
 
-import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
-import { first, map } from 'rxjs/operators';
+import {BehaviorSubject, combineLatest, Observable} from 'rxjs';
+import {first, map} from 'rxjs/operators';
 
 const sideNavView = 'SideNav';
 
 @Component({
-  selector: 'qnr-shell',
-  templateUrl: './app.component.html'
+  selector: 'qnr-docs-app',
+  templateUrl: './component.html'
 })
-export class AppComponent implements OnInit {
+export class DocsAppComp implements OnInit {
   currentDocument: DocumentContents;
   currentDocVersion: NavigationNode;
   currentNodes: CurrentNodes = {};
@@ -102,15 +102,15 @@ export class AppComponent implements OnInit {
   // Search related properties
   showSearchResults = false;
   searchResults: Observable<SearchResults>;
-  @ViewChildren('searchBox, searchResultsView', { read: ElementRef })
+  @ViewChildren('searchBox, searchResultsView', {read: ElementRef})
   searchElements: QueryList<ElementRef>;
-  @ViewChild(SearchBoxComponent, { static: true })
+  @ViewChild(SearchBoxComponent, {static: true})
   searchBox: SearchBoxComponent;
 
-  @ViewChild(MatSidenav, { static: true })
+  @ViewChild(MatSidenav, {static: true})
   sidenav: MatSidenav;
 
-  @ViewChild(NotificationComponent, { static: true })
+  @ViewChild(NotificationComponent, {static: true})
   notification: NotificationComponent;
   notificationAnimating = false;
 
@@ -176,11 +176,11 @@ export class AppComponent implements OnInit {
     ]).subscribe(([versionInfo, versions]) => {
       // TODO(pbd): consider whether we can lookup the stable and next versions from the internet
       const computedVersions: NavigationNode[] = [
-        { title: 'next', url: 'https://quantapix.github.io/qnarre-dev' },
-        { title: 'stable', url: 'https://quantapix.github.io/qnarre-dev' }
+        {title: 'next', url: 'https://quantapix.github.io/qnarre-dev'},
+        {title: 'stable', url: 'https://quantapix.github.io/qnarre-dev'}
       ];
       if (this.deployment.mode === 'archive') {
-        computedVersions.push({ title: `v${versionInfo.major}` });
+        computedVersions.push({title: `v${versionInfo.major}`});
       }
       this.docVersions = [...computedVersions, ...versions];
 
@@ -439,7 +439,7 @@ export class AppComponent implements OnInit {
     this.showSearchResults = false;
     const oldSearch = this.locationService.search();
     if (oldSearch.search !== undefined) {
-      this.locationService.setSearch('', { ...oldSearch, search: undefined });
+      this.locationService.setSearch('', {...oldSearch, search: undefined});
     }
   }
 

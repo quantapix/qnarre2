@@ -28,6 +28,13 @@ export interface Node {
 
 export type Nodes = qt.Dict<Node>;
 
+export interface Version {
+  full: string;
+  major: number;
+  minor: number;
+  patch: number;
+}
+
 @Injectable()
 export class NavService {
   views$: Observable<Views>;

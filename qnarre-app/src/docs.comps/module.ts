@@ -16,10 +16,10 @@ import {ReloaderComponent} from './reloader.component';
 import {ButtonComponent} from './button.component';
 import {SettingsComponent} from './settings.component';
 import {DtComponent} from './dt.component';
-import {FooterComponent} from './footer.component';
+import {FooterComponent} from '../app/footer';
 import {ModeBannerComponent} from './mode-banner.component';
 import {NotificationComponent} from './notification.component';
-import {TopMenuComponent} from './top-menu.component';
+import {TopMenuComponent} from '../app/top';
 import {ViewerComponent} from './viewer.component';
 
 @NgModule({
