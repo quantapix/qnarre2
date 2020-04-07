@@ -11,10 +11,9 @@ import {
 } from '@angular/core';
 import {TestBed, fakeAsync, flushMicrotasks} from '@angular/core/testing';
 
-import {ElemService} from './elem';
-import {LOAD_CBS_TOKEN, WithElem} from '../elems/registry';
+import {WithElem, ElemService, CBS_TOKEN} from './elem';
 
-describe('elems loader', () => {
+describe('ElemService', () => {
   let loader: ElemService;
   let compiler: Compiler;
   beforeEach(() => {
@@ -22,7 +21,7 @@ describe('elems loader', () => {
       providers: [
         ElemService,
         {
-          provide: LOAD_CBS_TOKEN,
+          provide: CBS_TOKEN,
           useValue: new Map<
             string,
             () => Promise<NgModuleFactory<WithElem> | Type<WithElem>>
