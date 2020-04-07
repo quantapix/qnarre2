@@ -1,26 +1,26 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {ElemsComp} from './component';
-import {ElemsLoader} from './loader';
+import {ElemComp} from './elem';
+import {ElemService} from '../services/elem';
 
 import {LogService} from '../services/log';
-import {MockLogger} from '../testing/log';
+import {MockLog} from '../services/log';
 
-describe('ElemsComp', () => {
+describe('ElemComp', () => {
   let loader: any;
-  let logger: MockLogger;
-  let c: ComponentFixture<ElemsComp>;
+  let logger: MockLog;
+  let c: ComponentFixture<ElemComp>;
   beforeEach(() => {
-    loader = jasmine.createSpyObj('ElemsLoader', ['loadContained', 'load']);
+    loader = jasmine.createSpyObj('ElemService', ['loadContained', 'load']);
     const inj = TestBed.configureTestingModule({
-      declarations: [ElemsComp],
+      declarations: [ElemComp],
       providers: [
-        {provide: ElemsLoader, useValue: loader},
-        {provide: LogService, useClass: MockLogger}
+        {provide: ElemService, useValue: loader},
+        {provide: LogService, useClass: MockLog}
       ]
     });
-    logger = inj.inject(MockLogger);
-    c = TestBed.createComponent(ElemsComp);
+    logger = inj.inject(MockLog);
+    c = TestBed.createComponent(ElemComp);
   });
   it('should set HTML content based on selector', () => {
     const e = c.nativeElement;

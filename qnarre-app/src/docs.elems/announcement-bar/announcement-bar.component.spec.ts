@@ -1,8 +1,11 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Logger } from 'app/shared/logger.service';
-import { MockLogger } from 'testing/logger.service';
-import { AnnouncementBarComponent } from './announcement-bar.component';
+import {
+  HttpClientTestingModule,
+  HttpTestingController
+} from '@angular/common/http/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {Logger} from 'app/shared/logger.service';
+import {MockLog} from 'testing/logger.service';
+import {AnnouncementBarComponent} from './announcement-bar.component';
 
 const today = new Date();
 const lastWeek = changeDays(today, -7);
@@ -11,18 +14,17 @@ const tomorrow = changeDays(today, 1);
 const nextWeek = changeDays(today, 7);
 
 describe('AnnouncementBarComponent', () => {
-
   let element: HTMLElement;
   let fixture: ComponentFixture<AnnouncementBarComponent>;
   let component: AnnouncementBarComponent;
   let httpMock: HttpTestingController;
-  let mockLogger: MockLogger;
+  let mockLogger: MockLog;
 
   beforeEach(() => {
     const injector = TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       declarations: [AnnouncementBarComponent],
-      providers: [{ provide: Logger, useClass: MockLogger }]
+      providers: [{provide: Logger, useClass: MockLog}]
     });
 
     httpMock = injector.inject(HttpTestingController);
@@ -40,17 +42,33 @@ describe('AnnouncementBarComponent', () => {
     it('should make a single request to the server', () => {
       component.ngOnInit();
       httpMock.expectOne('generated/announcements.json');
-      expect().nothing();  // Prevent jasmine from complaining about no expectations.
+      expect().nothing(); // Prevent jasmine from complaining about no expectations.
     });
 
     it('should set the announcement to the first "live" one in the list loaded from `announcements.json`', () => {
       component.ngOnInit();
       const request = httpMock.expectOne('generated/announcements.json');
       request.flush([
-        { startDate: lastWeek, endDate: yesterday, message: 'Test Announcement 0' },
-        { startDate: tomorrow, endDate: nextWeek, message: 'Test Announcement 1' },
-        { startDate: yesterday, endDate: tomorrow, message: 'Test Announcement 2' },
-        { startDate: yesterday, endDate: tomorrow, message: 'Test Announcement 3' }
+        {
+          startDate: lastWeek,
+          endDate: yesterday,
+          message: 'Test Announcement 0'
+        },
+        {
+          startDate: tomorrow,
+          endDate: nextWeek,
+          message: 'Test Announcement 1'
+        },
+        {
+          startDate: yesterday,
+          endDate: tomorrow,
+          message: 'Test Announcement 2'
+        },
+        {
+          startDate: yesterday,
+          endDate: tomorrow,
+          message: 'Test Announcement 3'
+        }
       ]);
       expect(component.announcement.message).toEqual('Test Announcement 2');
     });
@@ -67,10 +85,10 @@ describe('AnnouncementBarComponent', () => {
       const request = httpMock.expectOne('generated/announcements.json');
       request.flush('some random response');
       expect(component.announcement).toBeUndefined();
-      expect(mockLogger.output.error).toEqual([
-        [jasmine.any(Error)]
-      ]);
-      expect(mockLogger.output.error[0][0].message).toMatch(/^generated\/announcements\.json contains invalid data:/);
+      expect(mockLogger.output.error).toEqual([[jasmine.any(Error)]]);
+      expect(mockLogger.output.error[0][0].message).toMatch(
+        /^generated\/announcements\.json contains invalid data:/
+      );
     });
 
     it('should handle a failed request for `announcements.json`', () => {
@@ -78,10 +96,10 @@ describe('AnnouncementBarComponent', () => {
       const request = httpMock.expectOne('generated/announcements.json');
       request.error(new ErrorEvent('404'));
       expect(component.announcement).toBeUndefined();
-      expect(mockLogger.output.error).toEqual([
-        [jasmine.any(Error)]
-      ]);
-      expect(mockLogger.output.error[0][0].message).toMatch(/^generated\/announcements\.json request failed:/);
+      expect(mockLogger.output.error).toEqual([[jasmine.any(Error)]]);
+      expect(mockLogger.output.error[0][0].message).toMatch(
+        /^generated\/announcements\.json request failed:/
+      );
     });
   });
 
@@ -98,7 +116,9 @@ describe('AnnouncementBarComponent', () => {
     });
 
     it('should display the message as HTML', () => {
-      expect(element.innerHTML).toContain('this is an <b>important</b> message');
+      expect(element.innerHTML).toContain(
+        'this is an <b>important</b> message'
+      );
     });
 
     it('should display an image', () => {
@@ -112,5 +132,5 @@ describe('AnnouncementBarComponent', () => {
 });
 
 function changeDays(initial: Date, days: number) {
-  return (new Date(initial.valueOf()).setDate(initial.getDate() + days));
+  return new Date(initial.valueOf()).setDate(initial.getDate() + days);
 }

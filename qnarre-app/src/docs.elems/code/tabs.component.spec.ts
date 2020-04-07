@@ -4,10 +4,10 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {TabsModule} from './tabs.module';
 import {TabsComponent} from './tabs.component';
-import {PrettifyService} from './prettify.service';
+import {PrettifyService} from '../../services/prettify';
 import {LoggerService} from '../../services/log';
-import {MockPrettify} from '../../testing/prettify.service';
-import {MockLogger} from '../../testing/log';
+import {MockPrettify} from '../../services/prettify.service';
+import {MockLog} from '../../services/log';
 
 describe('CodeTabsComponent', () => {
   let f: ComponentFixture<HostComponent>;
@@ -19,7 +19,7 @@ describe('CodeTabsComponent', () => {
       imports: [TabsModule, NoopAnimationsModule],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
-        {provide: LoggerService, useClass: MockLogger},
+        {provide: LoggerService, useClass: MockLog},
         {provide: PrettifyService, useClass: MockPrettify}
       ]
     });

@@ -11,16 +11,16 @@ import {
 } from '@angular/core';
 import {TestBed, fakeAsync, flushMicrotasks} from '@angular/core/testing';
 
-import {ElemsLoader} from './loader';
-import {LOAD_CBS_TOKEN, WithElem} from './registry';
+import {ElemService} from './elem';
+import {LOAD_CBS_TOKEN, WithElem} from '../elems/registry';
 
 describe('elems loader', () => {
-  let loader: ElemsLoader;
+  let loader: ElemService;
   let compiler: Compiler;
   beforeEach(() => {
     const inj = TestBed.configureTestingModule({
       providers: [
-        ElemsLoader,
+        ElemService,
         {
           provide: LOAD_CBS_TOKEN,
           useValue: new Map<
@@ -34,7 +34,7 @@ describe('elems loader', () => {
         }
       ]
     });
-    loader = inj.inject(ElemsLoader);
+    loader = inj.inject(ElemService);
     compiler = inj.inject(Compiler);
   });
 

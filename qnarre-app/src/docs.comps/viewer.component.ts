@@ -12,9 +12,9 @@ import {asapScheduler, Observable, of, timer} from 'rxjs';
 import {catchError, observeOn, switchMap, takeUntil, tap} from 'rxjs/operators';
 
 import {Contents, FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
-import {LoggerService} from '../services/log';
+import {LogService} from '../services/log';
 import {TocService} from '../services/toc';
-import {ElemsLoader} from '../elems/loader';
+import {ElemService} from '../services/elem';
 
 export const NO_ANIMATIONS = 'no-animations';
 
@@ -25,7 +25,7 @@ const initContent = initElem ? initElem.innerHTML : '';
   selector: 'qnr-viewer',
   template: ''
 })
-export class ViewerComponent implements OnDestroy {
+export class ViewerComp implements OnDestroy {
   static animationsEnabled = true;
 
   private host: HTMLElement;
@@ -38,9 +38,7 @@ export class ViewerComponent implements OnDestroy {
 
   @Input()
   set doc(doc: Contents) {
-    if (doc) {
-      this.contents$.emit(doc);
-    }
+    if (doc) this.contents$.emit(doc);
   }
 
   @Output() ready = new EventEmitter<void>();
@@ -54,7 +52,7 @@ export class ViewerComponent implements OnDestroy {
     private title: Title,
     private meta: Meta,
     private toc: TocService,
-    private loader: ElemsLoader
+    private loader: ElemService
   ) {
     this.host = ref.nativeElement;
     this.host.innerHTML = initContent;

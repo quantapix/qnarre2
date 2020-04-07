@@ -7,8 +7,8 @@ import {Contents} from '../services/docs';
 import {ViewerComponent} from '../docs.comps/viewer.component';
 import {LoggerService} from '../services/log';
 import {TocService} from '../services/toc';
-import {MockLogger} from './log';
-import {ElemsLoader} from '../elems/loader';
+import {MockLog} from './log';
+import {ElemService} from '../services/elem';
 
 export class TestViewerComponent extends ViewerComponent {
   curr: HTMLElement;
@@ -50,20 +50,20 @@ export class MockTocService {
   reset = jasmine.createSpy('TocService#reset');
 }
 
-export class MockElemsLoader {
+export class MockElemService {
   loadContainedCustomElements = jasmine.createSpy(
-    'MockElemsLoader#loadContainedCustomElements'
+    'MockElemService#loadContainedCustomElements'
   );
 }
 
 @NgModule({
   declarations: [TestViewerComponent, TestParentComponent],
   providers: [
-    {provide: Logger, useClass: MockLogger},
+    {provide: Logger, useClass: MockLog},
     {provide: Title, useClass: MockTitle},
     {provide: Meta, useClass: MockMeta},
     {provide: TocService, useClass: MockTocService},
-    {provide: ElemsLoader, useClass: MockElemsLoader}
+    {provide: ElemService, useClass: MockElemService}
   ]
 })
 export class TestModule {}

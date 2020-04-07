@@ -13,6 +13,9 @@ import {AppComp, PageNotFoundComp} from './component';
 import {NavItemComp, NavMenuComp} from './nav';
 import {TopMenuComp} from './top';
 import {FooterComp} from './footer';
+import {ElemComp} from './elem';
+//import {MinimapComp} from './minimap';
+
 //import {ComposeMessageComp} from './compose-message/compose-message.comp';
 
 import {AppRoutingModule} from './routing.module';
@@ -40,6 +43,7 @@ import {SceneServ} from '../graph/scene.serv';
     NavMenuComp,
     TopMenuComp,
     FooterComp,
+    ElemComp,
     //ComposeMessageComp,
     //GraphComp,
     //LinkComp,
@@ -60,7 +64,7 @@ import {SceneServ} from '../graph/scene.serv';
     MatIconModule,
     MatListModule
   ],
-  exports: [NavItemComp, NavMenuComp, TopMenuComp, FooterComp],
+  exports: [NavItemComp, NavMenuComp, TopMenuComp, FooterComp, ElemComp],
   providers: [DataService, SceneServ],
   bootstrap: [AppComp]
 })

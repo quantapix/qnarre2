@@ -16,8 +16,9 @@ import {By} from '@angular/platform-browser';
 
 import {Subject, of, timer} from 'rxjs';
 import {first, mapTo} from 'rxjs/operators';
+import {Results} from '../search/types';
 
-import {AppComponent} from './component';
+import {AppComp} from './component';
 import {AppModule} from './module';
 import {CurrentNodes} from 'app/navigation/navigation.model';
 import {DocumentService} from 'app/documents/document.service';
@@ -28,8 +29,8 @@ import {GaService} from 'app/shared/ga.service';
 import {LocationService} from 'app/shared/location.service';
 import {Logger} from 'app/shared/logger.service';
 import {MockLocationService} from 'testing/location.service';
-import {MockLogger} from 'testing/logger.service';
-import {MockSearchService} from 'testing/search.service';
+import {MockLog} from 'testing/logger.service';
+import {MockSearch} from 'testing/search.service';
 import {
   NavigationNode,
   NavigationService
@@ -45,9 +46,9 @@ const sideBySideBreakPoint = 992;
 const hideToCBreakPoint = 800;
 const startedDelay = 100;
 
-describe('AppComponent', () => {
-  let component: AppComponent;
-  let fixture: ComponentFixture<AppComponent>;
+describe('AppComp', () => {
+  let component: AppComp;
+  let fixture: ComponentFixture<AppComp>;
 
   let documentService: DocumentService;
   let docViewer: HTMLElement;
@@ -71,7 +72,7 @@ describe('AppComponent', () => {
   }
 
   function initializeTest(waitForDoc = true) {
-    fixture = TestBed.createComponent(AppComponent);
+    fixture = TestBed.createComponent(AppComp);
     component = fixture.componentInstance;
 
     fixture.detectChanges();
@@ -107,7 +108,7 @@ describe('AppComponent', () => {
 
     describe('hasFloatingToc', () => {
       it('should initially be false', () => {
-        const fixture2 = TestBed.createComponent(AppComponent);
+        const fixture2 = TestBed.createComponent(AppComp);
         const component2 = fixture2.componentInstance;
 
         expect(component2.hasFloatingToc).toBe(false);
@@ -568,7 +569,7 @@ describe('AppComponent', () => {
 
         expect(scrollAfterRenderSpy).toHaveBeenCalledWith(scrollDelay);
 
-        tick(500); // there are other outstanding timers in the AppComponent that are not relevant
+        tick(500); // there are other outstanding timers in the AppComp that are not relevant
       }));
     });
 
@@ -868,7 +869,7 @@ describe('AppComponent', () => {
         it('should not display search results when query is empty', () => {
           const searchService = (TestBed.inject(SearchService) as Partial<
             SearchService
-          >) as MockSearchService;
+          >) as MockSearch;
           searchService.searchResults.next({query: '', results: []});
           fixture.detectChanges();
           expect(component.showSearchResults).toBe(false);
@@ -877,7 +878,7 @@ describe('AppComponent', () => {
         it('should hide the results when a search result is selected', () => {
           const searchService = (TestBed.inject(SearchService) as Partial<
             SearchService
-          >) as MockSearchService;
+          >) as MockSearch;
 
           const results = [
             {
@@ -1381,8 +1382,8 @@ function createTestingModule(initialUrl: string, mode: string = 'stable') {
       {provide: GaService, useClass: TestGaService},
       {provide: HttpClient, useClass: TestHttpClient},
       {provide: LocationService, useFactory: () => mockLocationService},
-      {provide: Logger, useClass: MockLogger},
-      {provide: SearchService, useClass: MockSearchService},
+      {provide: Logger, useClass: MockLog},
+      {provide: SearchService, useClass: MockSearch},
       {
         provide: Deployment,
         useFactory: () => {
@@ -1489,4 +1490,11 @@ class TestHttpClient {
     // Preserve async nature of `HttpClient`.
     return timer(1).pipe(mapTo(data));
   }
+}
+
+class MockSearch {
+  results = new Subject<Results>();
+  initWorker = jasmine.createSpy('initWorker');
+  loadIndex = jasmine.createSpy('loadIndex');
+  search = jasmine.createSpy('search');
 }

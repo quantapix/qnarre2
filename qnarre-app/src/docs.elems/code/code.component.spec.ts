@@ -8,7 +8,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {CodeModule} from './code.module';
 import {CodeComponent} from './code.component';
 import {CopierService} from './copier.service';
-import {PrettifyService} from './prettify.service';
+import {PrettifyService} from '../../services/prettify';
 import {MockPrettify} from '../../testing/prettify.service';
 import {LoggerService} from '../../services/log';
 

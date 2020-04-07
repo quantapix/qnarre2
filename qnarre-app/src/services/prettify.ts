@@ -1,8 +1,8 @@
 import {Injectable} from '@angular/core';
-import {from, Observable} from 'rxjs';
+import {from, Observable, of} from 'rxjs';
 import {first, map, share} from 'rxjs/operators';
 
-import {LoggerService} from '../../services/log';
+import {LogService} from './log';
 
 type Prettify = (
   code: string,
@@ -14,7 +14,7 @@ type Prettify = (
 export class PrettifyService {
   private prettify: Observable<Prettify>;
 
-  constructor(private logger: LoggerService) {
+  constructor(private logger: LogService) {
     this.prettify = from(this.getPrettify()).pipe(share());
   }
 
@@ -47,5 +47,12 @@ export class PrettifyService {
       }),
       first()
     );
+  }
+}
+
+export class MockPrettify {
+  formatCode(code: string, language?: string, linenums?: number | boolean) {
+    const t = linenums === undefined ? '' : `, linenums: ${linenums}`;
+    return of(`Formatted code (language: ${language || 'auto'}${t}): ${code}`);
   }
 }

@@ -3,10 +3,10 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {ExampleModule} from './example.module';
 import {ExampleComponent} from './example.component';
-import {PrettifyService} from './prettify.service';
+import {PrettifyService} from '../../services/prettify';
 import {LoggerService} from '../../services/log';
 import {MockPrettify} from '../../testing/prettify.service';
-import {MockLogger} from '../../testing/log';
+import {MockLog} from '../../testing/log';
 
 describe('ExampleComponent', () => {
   let host: HostComponent;
@@ -17,7 +17,7 @@ describe('ExampleComponent', () => {
       imports: [ExampleModule],
       declarations: [HostComponent],
       providers: [
-        {provide: LoggerService, useClass: MockLogger},
+        {provide: LoggerService, useClass: MockLog},
         {provide: PrettifyService, useClass: MockPrettify}
       ]
     });

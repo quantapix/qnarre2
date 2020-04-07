@@ -1,13 +1,46 @@
-import {Compiler, Inject, Injectable, Type} from '@angular/core';
+import {Compiler, Type} from '@angular/core';
 import {NgModuleFactory, NgModuleRef} from '@angular/core';
+import {Inject, Injectable, InjectionToken} from '@angular/core';
 import {createCustomElement} from '@angular/elements';
 import {LoadChildrenCallback} from '@angular/router';
 import {from, of} from 'rxjs';
 
-import {LOAD_CBS_TOKEN, WithElem} from './registry';
+export interface WithElem {
+  elemComp: Type<any>;
+}
 
-@Injectable()
-export class ElemsLoader {
+export const LOAD_CBS = new Map<string, LoadChildrenCallback>();
+
+export const LOAD_CBS_TOKEN = new InjectionToken<
+  Map<string, LoadChildrenCallback>
+>('qnr/elements-map');
+
+export const LOAD_CBS_AS_ROUTES = [
+  {
+    selector: 'qnr-resource-list',
+    loadChildren: () =>
+      import('../docs.elems/resource/resource-list.module').then(
+        m => m.ResourceListModule
+      )
+  },
+  {
+    selector: 'qnr-code-example',
+    loadChildren: () =>
+      import('../docs.elems/code/example.module').then(m => m.ExampleModule)
+  },
+  {
+    selector: 'qnr-code-tabs',
+    loadChildren: () =>
+      import('../docs.elems/code/tabs.module').then(m => m.TabsModule)
+  }
+];
+
+LOAD_CBS_AS_ROUTES.forEach(r => LOAD_CBS.set(r.selector, r.loadChildren));
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ElemService {
   private cbs: Map<string, LoadChildrenCallback>;
   private ps = new Map<string, Promise<void>>();
 

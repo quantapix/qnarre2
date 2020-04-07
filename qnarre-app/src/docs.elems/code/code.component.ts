@@ -11,7 +11,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {tap} from 'rxjs/operators';
 
 import {CopierService} from './copier.service';
-import {PrettifyService} from './prettify.service';
+import {PrettifyService} from '../../services/prettify';
 import {LoggerService} from '../../services/log';
 
 @Component({

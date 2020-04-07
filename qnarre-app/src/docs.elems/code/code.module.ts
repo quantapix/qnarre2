@@ -4,7 +4,7 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 
 import {CodeComponent} from './code.component';
 import {CopierService} from './copier.service';
-import {PrettifyService} from './prettify.service';
+import {PrettifyService} from '../../services/prettify';
 
 @NgModule({
   imports: [CommonModule, MatSnackBarModule],

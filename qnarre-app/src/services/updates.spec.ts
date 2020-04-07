@@ -22,7 +22,7 @@ describe('SwUpdatesService', () => {
   const setup = (isSwUpdateEnabled: boolean) => {
     injector = ReflectiveInjector.resolveAndCreate([
       {provide: ApplicationRef, useClass: MockApplicationRef},
-      {provide: LoggerService, useClass: MockLogger},
+      {provide: LoggerService, useClass: MockLog},
       {
         provide: SwUpdate,
         useFactory: () => new MockSwUpdate(isSwUpdateEnabled)
@@ -236,8 +236,8 @@ class MockApplicationRef {
   isStable = new Subject<boolean>();
 }
 
-class MockLogger {
-  log = jasmine.createSpy('MockLogger.log');
+class MockLog {
+  log = jasmine.createSpy('MockLog.log');
 }
 
 class MockSwUpdate {

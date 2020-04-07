@@ -8,7 +8,7 @@ import {FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
 import {LoggerService} from '../services/log';
 import {ElemsModule} from '../elems/module';
 import {TocService} from '../services/toc';
-import {ElemsLoader} from '../elems/loader';
+import {ElemService} from '../services/elem';
 import {
   MockTitle,
   MockTocService,
@@ -16,9 +16,9 @@ import {
   TestViewerComponent,
   TestModule,
   TestParentComponent,
-  MockElemsLoader
+  MockElemService
 } from '../testing/viewer';
-import {MockLogger} from '../testing/log';
+import {MockLog} from '../services/log';
 import {ViewerComponent, NO_ANIMATIONS} from './viewer.component';
 
 describe('ViewerComponent', () => {
@@ -270,10 +270,10 @@ describe('ViewerComponent', () => {
     const doRender = (contents: string | null, id = 'foo') =>
       viewer.render({contents, id}).toPromise();
     beforeEach(() => {
-      const ElemsLoader = (TestBed.inject(ElemsLoader) as Partial<
-        ElemsLoader
-      >) as MockElemsLoader;
-      loadElementsSpy = ElemsLoader.loadContainedCustomElements.and.callFake(
+      const ElemService = (TestBed.inject(ElemService) as Partial<
+        ElemService
+      >) as MockElemService;
+      loadElementsSpy = ElemService.loadContainedCustomElements.and.callFake(
         () => of(undefined)
       );
       prep = spyOn(viewer, 'prepare');
@@ -418,9 +418,9 @@ describe('ViewerComponent', () => {
     });
 
     describe('(on error) should clean up, log the error and recover', () => {
-      let logger: MockLogger;
+      let logger: MockLog;
       beforeEach(() => {
-        logger = (TestBed.inject(Logger) as unknown) as MockLogger;
+        logger = (TestBed.inject(Logger) as unknown) as MockLog;
       });
       it('when `prep()` fails', async () => {
         const error = Error('Typical `prepareTitleAndToc()` error');

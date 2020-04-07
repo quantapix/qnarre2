@@ -16,24 +16,20 @@ import {ReloaderComponent} from './reloader.component';
 import {ButtonComponent} from './button.component';
 import {SettingsComponent} from './settings.component';
 import {DtComponent} from './dt.component';
-import {FooterComponent} from '../app/footer';
 import {ModeBannerComponent} from './mode-banner.component';
 import {NotificationComponent} from './notification.component';
-import {TopMenuComponent} from '../app/top';
 import {ViewerComponent} from './viewer.component';
 
 @NgModule({
   declarations: [
     ButtonComponent,
     DtComponent,
-    FooterComponent,
     HeaderComponent,
     HeaderContainer,
     ModeBannerComponent,
     NotificationComponent,
     ReloaderComponent,
     SettingsComponent,
-    TopMenuComponent,
     ViewerComponent
   ],
   imports: [
@@ -52,16 +48,12 @@ import {ViewerComponent} from './viewer.component';
   exports: [
     ButtonComponent,
     DtComponent,
-    FooterComponent,
     HeaderComponent,
     HeaderContainer,
     ModeBannerComponent,
-    NavItemComponent,
-    NavMenuComponent,
     NotificationComponent,
     ReloaderComponent,
     SettingsComponent,
-    TopMenuComponent,
     ViewerComponent
   ],
   entryComponents: [SettingsComponent],

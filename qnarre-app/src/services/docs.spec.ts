@@ -8,7 +8,7 @@ import {Subscription} from 'rxjs';
 import {LocationService} from './loc';
 import {MockLocationService} from '../testing/loc';
 import {LoggerService} from './log';
-import {MockLogger} from '../testing/log';
+import {MockLog} from '../services/log';
 import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './docs';
 
 const CONTENT_URL_PREFIX = 'generated/docs/';
@@ -25,7 +25,7 @@ describe('DocsService', () => {
           provide: LocationService,
           useFactory: () => new MockLocationService(url)
         },
-        {provide: LoggerService, useClass: MockLogger}
+        {provide: LoggerService, useClass: MockLog}
       ]
     });
   }
@@ -38,7 +38,7 @@ describe('DocsService', () => {
         LocationService
       ) as any) as MockLocationService,
       docService: (injector.inject(DocsService) as any) as DocsService,
-      logger: (injector.inject(LoggerService) as any) as MockLogger
+      logger: (injector.inject(LoggerService) as any) as MockLog
     };
   }
 

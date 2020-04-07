@@ -1,12 +1,12 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BehaviorSubject } from 'rxjs';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {BehaviorSubject} from 'rxjs';
 
-import { ApiListComponent } from './api-list.component';
-import { ApiItem, ApiSection, ApiService } from './api.service';
-import { LocationService } from 'app/shared/location.service';
-import { Logger } from 'app/shared/logger.service';
-import { MockLogger } from 'testing/logger.service';
-import { ApiListModule } from './api-list.module';
+import {ApiListComponent} from './api-list.component';
+import {ApiItem, ApiSection, ApiService} from './api.service';
+import {LocationService} from 'app/shared/location.service';
+import {Logger} from 'app/shared/logger.service';
+import {MockLog} from 'testing/logger.service';
+import {ApiListModule} from './api-list.module';
 
 describe('ApiListComponent', () => {
   let component: ApiListComponent;
@@ -15,11 +15,11 @@ describe('ApiListComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [ ApiListModule ],
+      imports: [ApiListModule],
       providers: [
-        { provide: ApiService, useClass: TestApiService },
-        { provide: Logger, useClass: MockLogger },
-        { provide: LocationService, useClass: TestLocationService }
+        {provide: ApiService, useClass: TestApiService},
+        {provide: Logger, useClass: MockLog},
+        {provide: LocationService, useClass: TestLocationService}
       ]
     });
 
@@ -34,24 +34,28 @@ describe('ApiListComponent', () => {
    *
    * Subscibes to `filteredSections` and performs expectation within subscription callback.
    */
-  function expectFilteredResult(label: string, itemTest: (item: ApiItem) => boolean) {
+  function expectFilteredResult(
+    label: string,
+    itemTest: (item: ApiItem) => boolean
+  ) {
     component.filteredSections.subscribe(filtered => {
       filtered = filtered.filter(section => section.items);
       expect(filtered.length).toBeGreaterThan(0, 'expected something');
-      expect(filtered.every(section => section.items!.every(itemTest))).toBe(true, label);
+      expect(filtered.every(section => section.items!.every(itemTest))).toBe(
+        true,
+        label
+      );
     });
   }
 
-
   describe('#filteredSections', () => {
-
     beforeEach(() => {
       fixture.detectChanges();
     });
 
     it('should return all complete sections when no criteria', () => {
-      let filtered: ApiSection[]|undefined;
-      component.filteredSections.subscribe(f => filtered = f);
+      let filtered: ApiSection[] | undefined;
+      component.filteredSections.subscribe(f => (filtered = f));
       expect(filtered).toEqual(sections);
     });
 
@@ -66,7 +70,9 @@ describe('ApiListComponent', () => {
         filtered = filtered.filter(section => Array.isArray(section.items));
         expect(filtered.length).toBe(1, 'only one section');
         expect(filtered[0].name).toBe('core');
-        expect(filtered[0].items).toEqual(sections.find(section => section.name === 'core')!.items);
+        expect(filtered[0].items).toEqual(
+          sections.find(section => section.name === 'core')!.items
+        );
       });
     });
 
@@ -74,19 +80,27 @@ describe('ApiListComponent', () => {
       it('should null if there are no matching items and the section itself does not match', () => {
         component.setQuery('core');
         component.filteredSections.subscribe(filtered => {
-          const commonSection = filtered.find(section => section.name === 'common')!;
+          const commonSection = filtered.find(
+            section => section.name === 'common'
+          )!;
           expect(commonSection.items).toBe(null);
         });
       });
 
       it('should be visible if they have the selected stability status', () => {
         component.setStatus({value: 'stable', title: 'Stable'});
-        expectFilteredResult('status: stable', item => item.stability === 'stable');
+        expectFilteredResult(
+          'status: stable',
+          item => item.stability === 'stable'
+        );
       });
 
       it('should be visible if they have the selected security status', () => {
         component.setStatus({value: 'security-risk', title: 'Security Risk'});
-        expectFilteredResult('status: security-risk', item => item.securityRisk);
+        expectFilteredResult(
+          'status: security-risk',
+          item => item.securityRisk
+        );
       });
 
       it('should be visible if they match the selected API type', () => {
@@ -110,7 +124,12 @@ describe('ApiListComponent', () => {
       locationService = fixture.componentRef.injector.get<any>(LocationService);
     });
 
-    function expectOneItem(name: string, section: string, type: string, stability: string) {
+    function expectOneItem(
+      name: string,
+      section: string,
+      type: string,
+      stability: string
+    ) {
       fixture.detectChanges();
 
       component.filteredSections.subscribe(filtered => {
@@ -210,9 +229,11 @@ describe('ApiListComponent', () => {
 ////// Helpers ////////
 
 class TestLocationService {
-  query: {[index: string]: string } = {};
+  query: {[index: string]: string} = {};
   setSearch = jasmine.createSpy('setSearch');
-  search() { return this.query; }
+  search() {
+    return this.query;
+  }
 }
 
 class TestApiService {
@@ -223,77 +244,79 @@ class TestApiService {
 // tslint:disable:quotemark
 const apiSections: ApiSection[] = [
   {
-    "name": "common",
-    "title": "common",
-    "path": "api/common",
-    "deprecated": false,
-    "items": [
+    name: 'common',
+    title: 'common',
+    path: 'api/common',
+    deprecated: false,
+    items: [
       {
-        "name": "class_1",
-        "title": "Class 1",
-        "path": "api/common/class_1",
-        "docType": "class",
-        "stability": "experimental",
-        "securityRisk": false,
+        name: 'class_1',
+        title: 'Class 1',
+        path: 'api/common/class_1',
+        docType: 'class',
+        stability: 'experimental',
+        securityRisk: false
       },
       {
-        "name": "class_2",
-        "title": "Class 2",
-        "path": "api/common/class_2",
-        "docType": "class",
-        "stability": "stable",
-        "securityRisk": false,
+        name: 'class_2',
+        title: 'Class 2',
+        path: 'api/common/class_2',
+        docType: 'class',
+        stability: 'stable',
+        securityRisk: false
       },
       {
-        "name": "directive_1",
-        "title": "Directive 1",
-        "path": "api/common/directive_1",
-        "docType": "directive",
-        "stability": "stable",
-        "securityRisk": true,
+        name: 'directive_1',
+        title: 'Directive 1',
+        path: 'api/common/directive_1',
+        docType: 'directive',
+        stability: 'stable',
+        securityRisk: true
       },
       {
-        "name": "pipe_1",
-        "title": "Pipe 1",
-        "path": "api/common/pipe_1",
-        "docType": "pipe",
-        "stability": "stable",
-        "securityRisk": true,
-      },
+        name: 'pipe_1',
+        title: 'Pipe 1',
+        path: 'api/common/pipe_1',
+        docType: 'pipe',
+        stability: 'stable',
+        securityRisk: true
+      }
     ]
   },
   {
-    "name": "core",
-    "title": "core",
-    "path": "api/core",
-    "deprecated": false,
-    "items": [
+    name: 'core',
+    title: 'core',
+    path: 'api/core',
+    deprecated: false,
+    items: [
       {
-        "name": "class_3",
-        "title": "Class 3",
-        "path": "api/core/class_3",
-        "docType": "class",
-        "stability": "experimental",
-        "securityRisk": false,
+        name: 'class_3',
+        title: 'Class 3',
+        path: 'api/core/class_3',
+        docType: 'class',
+        stability: 'experimental',
+        securityRisk: false
       },
       {
-        "name": "function_1",
-        "title": "Function 1",
-        "path": "api/core/function 1",
-        "docType": "function",
-        "stability": "deprecated",
-        "securityRisk": true,
+        name: 'function_1',
+        title: 'Function 1',
+        path: 'api/core/function 1',
+        docType: 'function',
+        stability: 'deprecated',
+        securityRisk: true
       },
       {
-        "name": "const_1",
-        "title": "Const 1",
-        "path": "api/core/const_1",
-        "docType": "const",
-        "stability": "stable",
-        "securityRisk": false,
+        name: 'const_1',
+        title: 'Const 1',
+        path: 'api/core/const_1',
+        docType: 'const',
+        stability: 'stable',
+        securityRisk: false
       }
     ]
   }
 ];
 
-function getApiSections() { return apiSections; }
+function getApiSections() {
+  return apiSections;
+}

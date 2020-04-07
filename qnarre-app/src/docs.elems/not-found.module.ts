@@ -2,7 +2,7 @@ import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
 import {WithElem} from '../registry';
-import {ServicesModule} from '../../services/module';
+import {ServicesModule} from '../services/module';
 import {NotFoundComp} from './not-found.comp';
 
 @NgModule({

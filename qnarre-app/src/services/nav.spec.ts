@@ -5,9 +5,11 @@ import {
 import {Injector} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 
+import {BehaviorSubject} from 'rxjs';
+import {map} from 'rxjs/operators';
+
 import {Nodes, Item, navPath, NavService, Views} from './nav';
 import {LocService} from './loc';
-import {MockLocService} from '../testing/loc';
 
 describe('NavService', () => {
   let inj: Injector;
@@ -21,7 +23,7 @@ describe('NavService', () => {
         NavService,
         {
           provide: LocService,
-          useFactory: () => new MockLocService('a')
+          useFactory: () => new MockLoc('a')
         }
       ]
     });
@@ -94,7 +96,7 @@ describe('NavService', () => {
 
   describe('currentNode', () => {
     let ns: Nodes;
-    let location: MockLocService;
+    let location: MockLoc;
     const tops: Item[] = [{url: 'features', title: 'Features', tooltip: 'tip'}];
     const sides: Item[] = [
       {
@@ -120,7 +122,7 @@ describe('NavService', () => {
       SideNav: sides
     };
     beforeEach(() => {
-      location = (inj.get(LocService) as any) as MockLocService;
+      location = (inj.get(LocService) as any) as MockLoc;
       nav.nodes$.subscribe(s => (ns = s));
       http.expectOne({}).flush(navJson);
     });
@@ -219,3 +221,27 @@ describe('NavService', () => {
     });
   });
 });
+
+class MockLoc {
+  urlSubject = new BehaviorSubject<string>(this.initialUrl);
+  currentUrl = this.urlSubject
+    .asObservable()
+    .pipe(map(url => this.stripSlashes(url)));
+  currentPath = this.currentUrl.pipe(map(url => url.match(/[^?#]*/)?.[0]));
+  search = jasmine.createSpy('search').and.returnValue({});
+  setSearch = jasmine.createSpy('setSearch');
+  go = jasmine
+    .createSpy('Location.go')
+    .and.callFake((url: string) => this.urlSubject.next(url));
+  goExternal = jasmine.createSpy('Location.goExternal');
+  replace = jasmine.createSpy('Location.replace');
+  handleAnchorClick = jasmine
+    .createSpy('Location.handleAnchorClick')
+    .and.returnValue(false);
+
+  constructor(private initialUrl: string) {}
+
+  private stripSlashes(url: string) {
+    return url.replace(/^\/+/, '').replace(/\/+(\?|#|$)/, '$1');
+  }
+}
