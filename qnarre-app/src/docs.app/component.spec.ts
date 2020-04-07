@@ -26,9 +26,9 @@ import {DocViewerComponent} from 'app/layout/doc-viewer/doc-viewer.component';
 import {Deployment} from 'app/shared/deployment.service';
 import {ElementsLoader} from 'app/custom-elements/elements-loader';
 import {GaService} from 'app/shared/ga.service';
-import {LocationService} from 'app/shared/location.service';
+import {LocService} from 'app/shared/location.service';
 import {Logger} from 'app/shared/logger.service';
-import {MockLocationService} from 'testing/location.service';
+import {MockLocService} from 'testing/location.service';
 import {MockLog} from 'testing/logger.service';
 import {MockSearch} from 'testing/search.service';
 import {
@@ -54,7 +54,7 @@ describe('AppComp', () => {
   let docViewer: HTMLElement;
   let docViewerComponent: DocViewerComponent;
   let hamburger: HTMLButtonElement;
-  let locationService: MockLocationService;
+  let locationService: MockLocService;
   let sidenav: MatSidenav;
   let tocService: TocService;
 
@@ -85,7 +85,7 @@ describe('AppComp', () => {
     docViewer = docViewerDe.nativeElement;
     docViewerComponent = docViewerDe.componentInstance;
     hamburger = de.query(By.css('.hamburger')).nativeElement;
-    locationService = de.injector.get<any>(LocationService);
+    locationService = de.injector.get<any>(LocService);
     sidenav = de.query(By.directive(MatSidenav)).componentInstance;
     tocService = de.injector.get<TocService>(TocService);
 
@@ -575,8 +575,8 @@ describe('AppComp', () => {
 
     describe('click intercepting', () => {
       it('should intercept clicks on anchors and call `location.handleAnchorClick()`', inject(
-        [LocationService],
-        (location: LocationService) => {
+        [LocService],
+        (location: LocService) => {
           const el = fixture.nativeElement as Element;
           el.innerHTML = '<a href="some/local/url">click me</a>';
           const anchorElement = el.getElementsByTagName('a')[0];
@@ -591,8 +591,8 @@ describe('AppComp', () => {
       ));
 
       it('should intercept clicks on elements deep within an anchor tag', inject(
-        [LocationService],
-        (location: LocationService) => {
+        [LocService],
+        (location: LocService) => {
           const el = fixture.nativeElement as Element;
           el.innerHTML = '<a href="some/local/url"><div><img></div></a>';
           const imageElement = el.getElementsByTagName('img')[0];
@@ -608,8 +608,8 @@ describe('AppComp', () => {
       ));
 
       it('should ignore clicks on elements without an anchor ancestor', inject(
-        [LocationService],
-        (location: LocationService) => {
+        [LocService],
+        (location: LocService) => {
           const el = fixture.nativeElement as Element;
           el.innerHTML = '<div><p><div><img></div></p></div>';
           const imageElement = el.getElementsByTagName('img')[0];
@@ -929,11 +929,9 @@ describe('AppComp', () => {
           }redirect to 'docs' if deployment mode is '${mode}' ` +
           'and at a marketing page';
         const verifyNoRedirection = () =>
-          expect(
-            TestBed.inject(LocationService).replace
-          ).not.toHaveBeenCalled();
+          expect(TestBed.inject(LocService).replace).not.toHaveBeenCalled();
         const verifyRedirection = () =>
-          expect(TestBed.inject(LocationService).replace).toHaveBeenCalledWith(
+          expect(TestBed.inject(LocService).replace).toHaveBeenCalledWith(
             'docs'
           );
         const verifyPossibleRedirection = doRedirect
@@ -1372,7 +1370,7 @@ describe('AppComp', () => {
 //// test helpers ////
 
 function createTestingModule(initialUrl: string, mode: string = 'stable') {
-  const mockLocationService = new MockLocationService(initialUrl);
+  const mockLocService = new MockLocService(initialUrl);
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [AppModule],
@@ -1381,13 +1379,13 @@ function createTestingModule(initialUrl: string, mode: string = 'stable') {
       {provide: ElementsLoader, useClass: TestElementsLoader},
       {provide: GaService, useClass: TestGaService},
       {provide: HttpClient, useClass: TestHttpClient},
-      {provide: LocationService, useFactory: () => mockLocationService},
+      {provide: LocService, useFactory: () => mockLocService},
       {provide: Logger, useClass: MockLog},
       {provide: SearchService, useClass: MockSearch},
       {
         provide: Deployment,
         useFactory: () => {
-          const deployment = new Deployment(mockLocationService as any);
+          const deployment = new Deployment(mockLocService as any);
           deployment.mode = mode;
           return deployment;
         }

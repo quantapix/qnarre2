@@ -10,7 +10,7 @@ import {CodeComponent} from './code';
 import {CopierService} from '../../services/copier';
 import {PrettifyService} from '../../services/prettify';
 import {MockPrettify} from '../../testing/prettify.service';
-import {LoggerService} from '../../services/log';
+import {LogService} from '../../services/log';
 
 const oneLine = 'const foo = "bar";';
 const multiLine = `&lt;hero-details&gt;
@@ -30,7 +30,7 @@ describe('CodeComponent', () => {
       declarations: [HostComponent],
       providers: [
         CopierService,
-        {provide: LoggerService, useClass: TestLogger},
+        {provide: LogService, useClass: TestLogger},
         {provide: PrettifyService, useClass: MockPrettify}
       ]
     });
@@ -241,7 +241,7 @@ describe('CodeComponent', () => {
     it('should display an error when copy fails', () => {
       const snackBar: MatSnackBar = TestBed.inject(MatSnackBar);
       const copier: CopierService = TestBed.inject(CopierService);
-      const logger = TestBed.inject(LoggerService) as TestLogger;
+      const logger = TestBed.inject(LogService) as TestLogger;
       spyOn(snackBar, 'open');
       spyOn(copier, 'copyText').and.returnValue(false);
       getButton().click();

@@ -5,27 +5,27 @@ import {Meta, Title} from '@angular/platform-browser';
 import {Observable, asapScheduler, of} from 'rxjs';
 
 import {FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
-import {LoggerService} from '../services/log';
-import {ElemsModule} from '../elems/module';
+import {LogService} from '../services/log';
+import {ElemsModule} from './elem';
 import {TocService} from '../services/toc';
 import {ElemService} from '../services/elem';
 import {
   MockTitle,
   MockTocService,
   ObservableWithSubscriptionSpies,
-  TestViewerComponent,
+  TestViewerComp,
   TestModule,
   TestParentComponent,
   MockElemService
 } from '../testing/viewer';
 import {MockLog} from '../services/log';
-import {ViewerComponent, NO_ANIMATIONS} from './viewer.component';
+import {ViewerComp, NO_ANIMATIONS} from './viewer';
 
-describe('ViewerComponent', () => {
+describe('ViewerComp', () => {
   let parentFixture: ComponentFixture<TestParentComponent>;
   let parent: TestParentComponent;
   let elem: HTMLElement;
-  let viewer: TestViewerComponent;
+  let viewer: TestViewerComp;
 
   const safeFlushAsapScheduler = () =>
     asapScheduler.actions.length && asapScheduler.flush();
@@ -41,7 +41,7 @@ describe('ViewerComponent', () => {
     viewer = parent.viewer as any;
   });
   it('should create a `DocViewer`', () => {
-    expect(viewer).toEqual(jasmine.any(ViewerComponent));
+    expect(viewer).toEqual(jasmine.any(ViewerComp));
   });
   describe('#doc', () => {
     let spy: jasmine.Spy;
@@ -537,10 +537,8 @@ describe('ViewerComponent', () => {
     });
     [true, false].forEach(animationsEnabled => {
       describe(`(animationsEnabled: ${animationsEnabled})`, () => {
-        beforeEach(
-          () => (ViewerComponent.animationsEnabled = animationsEnabled)
-        );
-        afterEach(() => (ViewerComponent.animationsEnabled = true));
+        beforeEach(() => (ViewerComp.animationsEnabled = animationsEnabled));
+        afterEach(() => (ViewerComp.animationsEnabled = true));
         [true, false].forEach(noAnimations => {
           describe(`(.${NO_ANIMATIONS}: ${noAnimations})`, () => {
             beforeEach(() =>

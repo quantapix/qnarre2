@@ -5,9 +5,9 @@ import {
 import {TestBed} from '@angular/core/testing';
 import {Subscription} from 'rxjs';
 
-import {LocationService} from './loc';
-import {MockLocationService} from '../testing/loc';
-import {LoggerService} from './log';
+import {LocService} from './loc';
+import {MockLocService} from '../testing/loc';
+import {LogService} from './log';
 import {MockLog} from '../services/log';
 import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './docs';
 
@@ -22,10 +22,10 @@ describe('DocsService', () => {
       providers: [
         DocsService,
         {
-          provide: LocationService,
-          useFactory: () => new MockLocationService(url)
+          provide: LocService,
+          useFactory: () => new MockLocService(url)
         },
-        {provide: LoggerService, useClass: MockLog}
+        {provide: LogService, useClass: MockLog}
       ]
     });
   }
@@ -34,11 +34,9 @@ describe('DocsService', () => {
     const injector = createInjector(url);
     httpMock = injector.inject(HttpTestingController);
     return {
-      locService: (injector.inject(
-        LocationService
-      ) as any) as MockLocationService,
+      locService: (injector.inject(LocService) as any) as MockLocService,
       docService: (injector.inject(DocsService) as any) as DocsService,
-      logger: (injector.inject(LoggerService) as any) as MockLog
+      logger: (injector.inject(LogService) as any) as MockLog
     };
   }
 

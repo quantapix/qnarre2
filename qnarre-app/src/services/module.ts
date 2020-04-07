@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
 import {ROUTES} from '@angular/router';
 
-import {Deployment} from './deployment';
+import {Deployment} from './deploy';
 import {ElemService} from './elem';
 import {GaService} from './ga';
 import {LocService} from './loc';

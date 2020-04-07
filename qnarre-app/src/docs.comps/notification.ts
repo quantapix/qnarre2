@@ -14,7 +14,21 @@ const LOCAL_STORAGE_NAMESPACE = 'qnr-notification/';
 
 @Component({
   selector: 'qnr-notification',
-  templateUrl: 'notification.component.html',
+  template: `<span
+      class="content"
+      (click)="contentClick()"
+      (keyup.enter)="contentClick()"
+    >
+      <ng-content></ng-content>
+    </span>
+    <button
+      mat-icon-button
+      class="close-button"
+      aria-label="Close"
+      (click)="dismiss()"
+    >
+      <mat-icon svgIcon="close" aria-label="Dismiss notification"></mat-icon>
+    </button> `,
   animations: [
     trigger('hideAnimation', [
       state('show', style({height: '*'})),
@@ -23,7 +37,7 @@ const LOCAL_STORAGE_NAMESPACE = 'qnr-notification/';
     ])
   ]
 })
-export class NotificationComponent implements OnInit {
+export class NotificationComp implements OnInit {
   private get localStorage() {
     return this.window.localStorage;
   }

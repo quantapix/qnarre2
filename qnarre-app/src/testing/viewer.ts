@@ -4,13 +4,13 @@ import {Title, Meta} from '@angular/platform-browser';
 import {Observable} from 'rxjs';
 
 import {Contents} from '../services/docs';
-import {ViewerComponent} from '../docs.comps/viewer.component';
-import {LoggerService} from '../services/log';
+import {ViewerComp} from '../docs.comps/viewer';
+import {LogService} from '../services/log';
 import {TocService} from '../services/toc';
 import {MockLog} from './log';
 import {ElemService} from '../services/elem';
 
-export class TestViewerComponent extends ViewerComponent {
+export class TestViewerComp extends ViewerComp {
   curr: HTMLElement;
   next: HTMLElement;
 
@@ -33,7 +33,7 @@ export class TestViewerComponent extends ViewerComponent {
 })
 export class TestParentComponent {
   doc?: Contents;
-  @ViewChild(ViewerComponent, {static: true}) viewer: ViewerComponent;
+  @ViewChild(ViewerComp, {static: true}) viewer: ViewerComp;
 }
 
 export class MockTitle {
@@ -57,9 +57,9 @@ export class MockElemService {
 }
 
 @NgModule({
-  declarations: [TestViewerComponent, TestParentComponent],
+  declarations: [TestViewerComp, TestParentComponent],
   providers: [
-    {provide: Logger, useClass: MockLog},
+    {provide: LogService, useClass: MockLog},
     {provide: Title, useClass: MockTitle},
     {provide: Meta, useClass: MockMeta},
     {provide: TocService, useClass: MockTocService},

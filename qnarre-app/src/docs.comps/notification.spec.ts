@@ -4,15 +4,15 @@ import {Component, NO_ERRORS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {DateToken, WindowToken} from '../app/tokens';
-import {NotificationComponent} from './notification.component';
+import {NotificationComp} from './notification';
 
-describe('NotificationComponent', () => {
-  let c: NotificationComponent;
+describe('NotificationComp', () => {
+  let c: NotificationComp;
   let f: ComponentFixture<TestComponent>;
 
   function configTestingModule(now = new Date('2018-01-20')) {
     TestBed.configureTestingModule({
-      declarations: [TestComponent, NotificationComponent],
+      declarations: [TestComponent, NotificationComp],
       providers: [
         {provide: WindowToken, useClass: MockWindow},
         {provide: DateToken, useValue: now}
@@ -24,9 +24,7 @@ describe('NotificationComponent', () => {
 
   function createComponent() {
     f = TestBed.createComponent(TestComponent);
-    const debugElement = f.debugElement.query(
-      By.directive(NotificationComponent)
-    );
+    const debugElement = f.debugElement.query(By.directive(NotificationComp));
     c = debugElement.componentInstance;
     c.ngOnInit();
     f.detectChanges();

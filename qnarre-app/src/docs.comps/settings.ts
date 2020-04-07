@@ -42,7 +42,13 @@ const getPeriod = createSelector(getReloadPeriods, period =>
       </mat-error>
     </div>
   `,
-  styleUrls: ['./settings.component.css']
+  styles: [
+    `
+      .label {
+        margin: 10px 0;
+      }
+    `
+  ]
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   readonly reloadEnabled$ = this.store.pipe(select(getReloadEnabled));

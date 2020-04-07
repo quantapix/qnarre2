@@ -21,7 +21,7 @@ import {
   DocumentContents
 } from 'app/documents/document.service';
 import {Deployment} from 'app/shared/deployment.service';
-import {LocationService} from 'app/shared/location.service';
+import {LocService} from 'app/shared/location.service';
 import {NotificationComponent} from 'app/layout/notification/notification.component';
 import {ScrollService} from 'app/shared/scroll.service';
 import {SearchBoxComponent} from 'app/search/search-box/search-box.component';
@@ -118,7 +118,7 @@ export class DocsAppComp implements OnInit {
     public deployment: Deployment,
     private documentService: DocumentService,
     private hostElement: ElementRef,
-    private locationService: LocationService,
+    private locationService: LocService,
     private navigationService: NavigationService,
     private scrollService: ScrollService,
     private searchService: SearchService,

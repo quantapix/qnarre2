@@ -1,8 +1,8 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
-import {LocationService} from '../services/loc';
-import {MockLocation} from '../../testing/loc';
+import {LocService, MockLoc} from '../services/loc';
+import {} from '../../testing/loc';
 import {Results} from '../search/types';
 import {ResultsComponent} from '../search/results';
 import {SearchService} from '../search/service';
@@ -18,7 +18,7 @@ describe('NotFoundComp', () => {
       declarations: [NotFoundComp, ResultsComponent],
       providers: [
         {
-          provide: LocationService,
+          provide: LocService,
           useValue: new MockLocation('base/initial-url?some-query')
         },
         SearchService

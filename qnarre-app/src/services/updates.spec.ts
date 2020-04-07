@@ -3,7 +3,7 @@ import {discardPeriodicTasks, fakeAsync, tick} from '@angular/core/testing';
 import {SwUpdate} from '@angular/service-worker';
 import {Subject} from 'rxjs';
 
-import {LoggerService} from './log';
+import {LogService} from './log';
 import {UpdatesService} from './updates';
 
 describe('SwUpdatesService', () => {
@@ -22,7 +22,7 @@ describe('SwUpdatesService', () => {
   const setup = (isSwUpdateEnabled: boolean) => {
     injector = ReflectiveInjector.resolveAndCreate([
       {provide: ApplicationRef, useClass: MockApplicationRef},
-      {provide: LoggerService, useClass: MockLog},
+      {provide: LogService, useClass: MockLog},
       {
         provide: SwUpdate,
         useFactory: () => new MockSwUpdate(isSwUpdateEnabled)

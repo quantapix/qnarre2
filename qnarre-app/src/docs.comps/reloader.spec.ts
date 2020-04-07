@@ -2,7 +2,7 @@ import {TestBed, fakeAsync, tick} from '@angular/core/testing';
 import {Store} from '@ngrx/store';
 import {provideMockStore, MockStore} from '@ngrx/store/testing';
 
-import {ReloaderComponent} from './reloader.component';
+import {ReloaderComponent} from './reloader';
 
 import {reload} from '../plugins/actions';
 import {State} from '../app/types';

@@ -72,19 +72,17 @@ export const CBS_ROUTES = [
   {
     selector: 'qnr-resource-list',
     loadChildren: () =>
-      import('../docs.elems/resource/resource-list.module').then(
-        m => m.ResourceListModule
-      )
+      import('../docs.comps/resource').then(m => m.ResourceListModule)
   },
   {
     selector: 'qnr-code-example',
     loadChildren: () =>
-      import('../docs.comps/code/example.module').then(m => m.ExampleModule)
+      import('../docs.comps/code/example').then(m => m.ExampleModule)
   },
   {
     selector: 'qnr-code-tabs',
     loadChildren: () =>
-      import('../docs.comps/code/tabs.module').then(m => m.TabsModule)
+      import('../docs.comps/code/tabs').then(m => m.TabsModule)
   }
 ];
 

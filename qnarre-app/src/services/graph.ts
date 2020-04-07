@@ -3,8 +3,8 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {AsyncSubject, Observable, of} from 'rxjs';
 import {catchError, switchMap, tap} from 'rxjs/operators';
 
-import {LocationService} from './loc';
-import {LoggerService} from './log';
+import {LocService} from './loc';
+import {LogService} from './log';
 
 export const FILE_NOT_FOUND = 'file-not-found';
 export const FETCHING_ERROR = 'fetching-error';
@@ -23,9 +23,9 @@ export class GraphService {
   doc: Observable<Contents>;
 
   constructor(
-    private logger: LoggerService,
+    private logger: LogService,
     private http: HttpClient,
-    loc: LocationService
+    loc: LocService
   ) {
     this.doc = loc.path.pipe(switchMap(p => this.getDoc(p)));
   }

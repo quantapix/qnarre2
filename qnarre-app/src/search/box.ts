@@ -9,7 +9,7 @@ import {
 import {Subject} from 'rxjs';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 
-import {LocationService} from '../services/loc';
+import {LocService} from '../services/loc';
 
 @Component({
   selector: 'qnr-search-box',
@@ -37,7 +37,7 @@ export class BoxComp implements AfterViewInit {
   );
   @Output() onFocus = new EventEmitter<string>();
 
-  constructor(private location: LocationService) {}
+  constructor(private location: LocService) {}
 
   ngAfterViewInit() {
     const query = this.location.search()['search'];

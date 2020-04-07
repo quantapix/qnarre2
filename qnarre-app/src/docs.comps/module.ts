@@ -12,13 +12,13 @@ import {MatInputModule} from '@angular/material/input';
 
 import {HeaderContainer} from './header.container';
 import {HeaderComponent} from './header.component';
-import {ReloaderComponent} from './reloader.component';
-import {ButtonComponent} from './button.component';
-import {SettingsComponent} from './settings.component';
+import {ReloaderComponent} from './reloader';
+import {ButtonComponent} from './button';
+import {SettingsComponent} from './settings';
 import {DtComponent} from './dt.component';
-import {ModeBannerComponent} from './mode-banner.component';
-import {NotificationComponent} from './notification.component';
-import {ViewerComponent} from './viewer.component';
+import {ModeBannerComponent} from './banner';
+import {NotificationComp} from './notification';
+import {ViewerComp} from './viewer';
 
 @NgModule({
   declarations: [
@@ -27,10 +27,10 @@ import {ViewerComponent} from './viewer.component';
     HeaderComponent,
     HeaderContainer,
     ModeBannerComponent,
-    NotificationComponent,
+    NotificationComp,
     ReloaderComponent,
     SettingsComponent,
-    ViewerComponent
+    ViewerComp
   ],
   imports: [
     CommonModule,
@@ -51,10 +51,10 @@ import {ViewerComponent} from './viewer.component';
     HeaderComponent,
     HeaderContainer,
     ModeBannerComponent,
-    NotificationComponent,
+    NotificationComp,
     ReloaderComponent,
     SettingsComponent,
-    ViewerComponent
+    ViewerComp
   ],
   entryComponents: [SettingsComponent],
   providers: []

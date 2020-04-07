@@ -10,7 +10,7 @@ import {Store} from '@ngrx/store';
 import {provideMockStore, MockStore} from '@ngrx/store/testing';
 
 import {State} from '../app/types';
-import {SettingsComponent} from './settings.component';
+import {SettingsComponent} from './settings';
 import {toggleEnabled, changePeriod} from '../plugins/actions';
 import {createPluginsState, createState} from '../plugins/plugins.spec';
 

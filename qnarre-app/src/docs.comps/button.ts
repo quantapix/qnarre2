@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 
-import {SettingsComponent} from './settings.component';
+import {SettingsComponent} from './settings';
 
 @Component({
   selector: 'qnr-settings-button',
