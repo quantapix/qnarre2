@@ -14,7 +14,7 @@ import {MatCardModule} from '@angular/material/card';
 import {MatTabsModule} from '@angular/material/tabs';
 
 import {CodeComponent} from './code';
-import {WithElem} from '../../services/elem';
+import {WithElem} from '../../app/elem.serv';
 import {CodeModule} from './code.module';
 
 export interface TabInfo {

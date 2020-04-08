@@ -1,7 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
-import {LocService, MockLoc} from '../services/loc';
+import {LocService, MockLoc} from '../app/loc.serv';
 import {} from '../../testing/loc';
 import {Results} from '../search/types';
 import {ResultsComponent} from '../search/results';

@@ -4,9 +4,9 @@ import {Location, PlatformLocation} from '@angular/common';
 import {ReplaySubject} from 'rxjs';
 import {map, tap} from 'rxjs/operators';
 
-import {GaService} from './ga';
-import {UpdatesService} from './updates';
-import {ScrollService} from './scroll';
+import {GaService} from './ga.serv';
+import {UpdatesService} from './updates.serv';
+import {ScrollService} from '../services/scroll';
 
 const dec = decodeURIComponent;
 const enc = encodeURIComponent;

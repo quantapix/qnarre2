@@ -5,10 +5,10 @@ import {Meta, Title} from '@angular/platform-browser';
 import {Observable, asapScheduler, of} from 'rxjs';
 
 import {FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
-import {LogService} from '../services/log';
+import {LogService} from '../app/log.serv';
 import {ElemsModule} from './elem';
 import {TocService} from '../services/toc';
-import {ElemService} from '../services/elem';
+import {ElemService} from '../app/elem.serv';
 import {
   MockTitle,
   MockTocService,
@@ -18,7 +18,7 @@ import {
   TestParentComponent,
   MockElemService
 } from '../testing/viewer';
-import {MockLog} from '../services/log';
+import {MockLog} from '../app/log.serv';
 import {ViewerComp, NO_ANIMATIONS} from './viewer';
 
 describe('ViewerComp', () => {

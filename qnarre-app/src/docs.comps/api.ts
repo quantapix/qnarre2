@@ -4,9 +4,9 @@ import {CommonModule} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
 
 import {combineLatest, Observable, ReplaySubject} from 'rxjs';
-import {WithElem} from '../services/elem';
+import {WithElem} from '../app/elem.serv';
 
-import {LocService} from '../services/loc';
+import {LocService} from '../app/loc.serv';
 import {ApiItem, ApiSection, ApiService} from '../services/api';
 
 import {Option} from 'app/shared/select/select.component';

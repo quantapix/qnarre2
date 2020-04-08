@@ -8,8 +8,8 @@ import {TestBed} from '@angular/core/testing';
 import {BehaviorSubject} from 'rxjs';
 import {map} from 'rxjs/operators';
 
-import {Nodes, Item, navPath, NavService, Views} from './nav';
-import {LocService} from './loc';
+import {Nodes, Item, navPath, NavService, Views} from './nav.serv';
+import {LocService} from './loc.serv';
 
 describe('NavService', () => {
   let inj: Injector;

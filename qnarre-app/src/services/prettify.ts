@@ -2,7 +2,7 @@ import {Injectable, Optional} from '@angular/core';
 import {from, Observable, of} from 'rxjs';
 import {first, map, share} from 'rxjs/operators';
 
-import {LogService} from './log';
+import {LogService} from '../app/log.serv';
 
 type Prettify = (
   code: string,

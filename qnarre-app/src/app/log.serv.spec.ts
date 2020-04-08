@@ -1,6 +1,6 @@
 import {ErrorHandler, ReflectiveInjector} from '@angular/core';
 
-import {LogService} from './log';
+import {LogService} from './log.serv';
 
 describe('log service', () => {
   let s: any;
@@ -32,7 +32,7 @@ describe('log service', () => {
   describe('error', () => {
     it('should delegate to ErrorHandler', () => {
       const e = new Error('some error message');
-      log.error(e);
+      log.fail(e);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(h.handleError).toHaveBeenCalledWith(e);
     });

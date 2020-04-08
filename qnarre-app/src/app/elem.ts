@@ -1,7 +1,7 @@
 import {Component, ElementRef, Input, OnInit, Optional} from '@angular/core';
 
-import {ElemService} from '../services/elem';
-import {LogService} from '../services/log';
+import {ElemService} from './elem.serv';
+import {LogService} from './log.serv';
 
 @Component({
   selector: 'qnr-elem',
@@ -18,7 +18,7 @@ export class ElemComp implements OnInit {
 
   ngOnInit() {
     if (!this.selector || /[^\w-]/.test(this.selector)) {
-      this.log?.error(new Error(`Invalid selector ${this.selector}`));
+      this.log?.fail(new Error(`Invalid selector ${this.selector}`));
       return;
     }
     this.ref.nativeElement.innerHTML = `<${this.selector}></${this.selector}>`;

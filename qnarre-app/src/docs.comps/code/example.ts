@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 
 import {CodeComponent} from './code';
-import {WithElem} from '../../services/elem';
+import {WithElem} from '../../app/elem.serv';
 import {CodeModule} from './code.module';
 
 @Component({

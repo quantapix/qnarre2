@@ -12,9 +12,9 @@ import {asapScheduler, Observable, of, timer} from 'rxjs';
 import {catchError, observeOn, switchMap, takeUntil, tap} from 'rxjs/operators';
 
 import {Contents, FILE_NOT_FOUND, FETCHING_ERROR} from '../services/docs';
-import {LogService} from '../services/log';
+import {LogService} from '../app/log.serv';
 import {TocService} from '../services/toc';
-import {ElemService} from '../services/elem';
+import {ElemService} from '../app/elem.serv';
 
 export const NO_ANIMATIONS = 'no-animations';
 

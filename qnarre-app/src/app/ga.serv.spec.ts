@@ -1,7 +1,7 @@
 import {ReflectiveInjector} from '@angular/core';
 
-import {GaService} from './ga';
-import {WindowToken} from '../app/tokens';
+import {GaService} from './ga.serv';
+import {WindowToken} from './types';
 
 describe('GaService', () => {
   let ga: GaService;

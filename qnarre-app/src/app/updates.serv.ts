@@ -3,11 +3,11 @@ import {SwUpdate} from '@angular/service-worker';
 import {concat, interval, NEVER, Observable, Subject} from 'rxjs';
 import {first, map, takeUntil, tap} from 'rxjs/operators';
 
-import {LogService} from './log';
+import {LogService} from './log.serv';
 
 @Injectable()
 export class UpdatesService implements OnDestroy {
-  private interval = 1000 * 60 * 60 * 6; // 6 hours
+  private interval = 1000 * 60 * 60 * 6;
   private onDestroy = new Subject<void>();
   active: Observable<string>;
 

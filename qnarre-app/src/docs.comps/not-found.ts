@@ -5,9 +5,9 @@ import {switchMap} from 'rxjs/operators';
 
 import {Results} from '../search/types';
 import {SearchService} from '../search/service';
-import {LocService} from '../services/loc';
+import {LocService} from '../app/loc.serv';
 
-import {WithElem} from '../services/elem';
+import {WithElem} from '../app/elem.serv';
 import {ServicesModule} from '../services/module';
 
 @Component({

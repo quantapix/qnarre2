@@ -5,10 +5,10 @@ import {Observable} from 'rxjs';
 
 import {Contents} from '../services/docs';
 import {ViewerComp} from '../docs.comps/viewer';
-import {LogService} from '../services/log';
+import {LogService} from '../app/log.serv';
 import {TocService} from '../services/toc';
 import {MockLog} from './log';
-import {ElemService} from '../services/elem';
+import {ElemService} from '../app/elem.serv';
 
 export class TestViewerComp extends ViewerComp {
   curr: HTMLElement;

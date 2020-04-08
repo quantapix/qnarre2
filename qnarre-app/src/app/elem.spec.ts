@@ -1,10 +1,10 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {ElemComp} from './elem';
-import {ElemService} from '../services/elem';
+import {ElemService} from './elem.serv';
 
-import {LogService} from '../services/log';
-import {MockLog} from '../services/log';
+import {LogService} from './log.serv';
+import {MockLog} from './log.serv';
 
 describe('ElemComp', () => {
   let loader: any;
@@ -38,8 +38,8 @@ describe('ElemComp', () => {
   it('should log error if selector empty', () => {
     c.detectChanges();
     expect(loader.load).not.toHaveBeenCalled();
-    expect(logger.output.error).toEqual([[jasmine.any(Error)]]);
-    expect(logger.output.error[0][0].message).toBe(
+    expect(logger.out.fail).toEqual([[jasmine.any(Error)]]);
+    expect(logger.out.fail[0][0].message).toBe(
       "Invalid selector for 'qnr-elem': "
     );
   });
@@ -47,8 +47,8 @@ describe('ElemComp', () => {
     c.componentInstance.selector = 'foo-bar><script></script><foo-bar';
     c.detectChanges();
     expect(loader.load).not.toHaveBeenCalled();
-    expect(logger.output.error).toEqual([[jasmine.any(Error)]]);
-    expect(logger.output.error[0][0].message).toBe(
+    expect(logger.out.fail).toEqual([[jasmine.any(Error)]]);
+    expect(logger.out.fail[0][0].message).toBe(
       "Invalid selector for 'qnr-elem': foo-bar><script></script><foo-bar"
     );
   });

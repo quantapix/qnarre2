@@ -1,7 +1,7 @@
 import {Inject, Injectable} from '@angular/core';
 
+import {WindowToken} from './types';
 import {environment} from '../environments/environment';
-import {WindowToken} from '../app/tokens';
 
 @Injectable()
 export class GaService {
@@ -23,8 +23,8 @@ export class GaService {
     }
   }
 
-  sendEvent(source: string, action: string, label?: string, value?: number) {
-    this.ga('send', 'event', source, action, label, value);
+  sendEvent(src: string, act: string, label?: string, v?: number) {
+    this.ga('send', 'event', src, act, label, v);
   }
 
   ga(...args: any[]) {

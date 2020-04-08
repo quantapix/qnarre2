@@ -4,7 +4,7 @@ import {of} from 'rxjs';
 
 import {ContribListComp} from './contrib';
 import {ContribGroup, ContribService} from '../services/contrib';
-import {LocService} from '../services/loc';
+import {LocService} from '../app/loc.serv';
 
 describe('ContribListComp', () => {
   let component: ContribListComp;

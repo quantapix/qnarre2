@@ -5,10 +5,10 @@ import {
 import {TestBed} from '@angular/core/testing';
 import {Subscription} from 'rxjs';
 
-import {LocService} from './loc';
+import {LocService} from '../app/loc.serv';
 import {MockLocService} from '../testing/loc';
-import {LogService} from './log';
-import {MockLog} from '../services/log';
+import {LogService} from '../app/log.serv';
+import {MockLog} from '../app/log.serv';
 import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './docs';
 
 const CONTENT_URL_PREFIX = 'generated/docs/';

@@ -3,7 +3,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {BehaviorSubject} from 'rxjs';
 
 import {TopMenuComp} from './top';
-import {NavService, Views} from '../services/nav';
+import {NavService, Views} from './nav.serv';
 
 describe('TopMenuComp', () => {
   let c: TopMenuComp;

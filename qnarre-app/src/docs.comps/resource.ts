@@ -2,7 +2,7 @@ import {Component, NgModule, Type} from '@angular/core';
 import {HostListener, OnInit} from '@angular/core';
 import {CommonModule, PlatformLocation} from '@angular/common';
 
-import {WithElem} from '../services/elem';
+import {WithElem} from '../app/elem.serv';
 import {Category, ResourceService} from '../services/resource';
 
 @Component({

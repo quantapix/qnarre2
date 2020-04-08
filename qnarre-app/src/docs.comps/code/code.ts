@@ -13,7 +13,7 @@ import {
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {tap} from 'rxjs/operators';
 
-import {LogService} from '../../services/log';
+import {LogService} from '../../app/log.serv';
 import {CopierService} from '../../services/copier';
 import {PrettifyService} from '../../services/prettify';
 

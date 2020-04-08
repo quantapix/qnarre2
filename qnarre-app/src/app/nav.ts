@@ -1,7 +1,7 @@
 import {Component, Input, OnChanges} from '@angular/core';
 
 import * as qt from '../types';
-import {Item, Node} from '../services/nav';
+import {Item, Node} from './nav.serv';
 
 @Component({
   selector: 'qnr-nav-item',

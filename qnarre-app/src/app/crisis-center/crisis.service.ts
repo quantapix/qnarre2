@@ -2,7 +2,7 @@ import {BehaviorSubject} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 import {Injectable} from '@angular/core';
-import {MessageService} from '../../services/message';
+import {MessageService} from '../message.serv';
 import {Crisis} from './crisis';
 import {CRISES} from './mock-crises';
 

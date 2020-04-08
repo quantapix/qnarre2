@@ -4,7 +4,7 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {ReplaySubject, Subject} from 'rxjs';
 import {takeUntil, tap} from 'rxjs/operators';
 
-import {LogService} from './log';
+import {LogService} from '../app/log.serv';
 import {DOC_CONTENT_URL_PREFIX} from './docs';
 
 export interface ApiItem {

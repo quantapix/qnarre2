@@ -3,7 +3,7 @@ import {
   HttpTestingController
 } from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {LogService, MockLog} from '../services/log';
+import {LogService, MockLog} from '../app/log.serv';
 import {AnnounceComp} from './announce';
 
 const today = new Date();

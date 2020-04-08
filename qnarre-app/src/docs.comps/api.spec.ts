@@ -3,9 +3,9 @@ import {BehaviorSubject} from 'rxjs';
 
 import {ApiListComp} from './api';
 import {ApiItem, ApiSection, ApiService} from '../services/api';
-import {LocService} from '../services/loc';
-import {LogService} from '../services/log';
-import {MockLog} from '../services/log';
+import {LocService} from '../app/loc.serv';
+import {LogService} from '../app/log.serv';
+import {MockLog} from '../app/log.serv';
 import {ApiListModule} from './api';
 
 describe('ApiListComp', () => {

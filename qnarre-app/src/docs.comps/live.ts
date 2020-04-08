@@ -12,7 +12,7 @@ import {AttrMap, boolFromValue, getAttrs, getAttrValue} from '../utils/attr';
 
 import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {WithElem} from '../services/elem';
+import {WithElem} from '../app/elem.serv';
 
 const LIVE_EXAMPLE_BASE = CONTENT_URL_PREFIX + 'live-examples/';
 const ZIP_BASE = CONTENT_URL_PREFIX + 'zips/';

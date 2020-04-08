@@ -67,24 +67,3 @@ export class ElemService {
     return of(undefined);
   }
 }
-
-export const CBS_ROUTES = [
-  {
-    selector: 'qnr-resource-list',
-    loadChildren: () =>
-      import('../docs.comps/resource').then(m => m.ResourceListModule)
-  },
-  {
-    selector: 'qnr-code-example',
-    loadChildren: () =>
-      import('../docs.comps/code/example').then(m => m.ExampleModule)
-  },
-  {
-    selector: 'qnr-code-tabs',
-    loadChildren: () =>
-      import('../docs.comps/code/tabs').then(m => m.TabsModule)
-  }
-];
-
-export const LOAD_CBS = new Map<string, LoadChildrenCallback>();
-CBS_ROUTES.forEach(r => LOAD_CBS.set(r.selector, r.loadChildren));

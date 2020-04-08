@@ -3,7 +3,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {Observable} from 'rxjs';
 
 import {Crisis} from '../crisis';
-import {DialogService} from '../../../services/dialog';
+import {DialogService} from '../../dialog.serv';
 
 @Component({
   selector: 'qnr-crisis-detail',

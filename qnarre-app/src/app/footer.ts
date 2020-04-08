@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 
-import {Item, Version} from '../services/nav';
+import {Item, Version} from './nav.serv';
 
 @Component({
   selector: 'qnr-footer',

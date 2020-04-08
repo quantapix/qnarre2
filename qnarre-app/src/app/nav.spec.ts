@@ -3,7 +3,7 @@ import {By} from '@angular/platform-browser';
 import {NO_ERRORS_SCHEMA} from '@angular/core';
 
 import {NavMenuComp, NavItemComp} from './nav';
-import {Item} from '../services/nav';
+import {Item} from './nav.serv';
 
 describe('NavMenuComp (class-only)', () => {
   it('should filter out hidden nodes', () => {

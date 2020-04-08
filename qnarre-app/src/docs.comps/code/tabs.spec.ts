@@ -4,7 +4,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {TabsComp, TabsModule} from './tabs';
 import {PrettifyService} from '../../services/prettify';
-import {LogService, MockLog} from '../../services/log';
+import {LogService, MockLog} from '../../app/log.serv';
 import {MockPrettify} from '../../services/prettify';
 
 describe('CodeTabsComponent', () => {

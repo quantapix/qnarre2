@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import {TestBed, fakeAsync, flushMicrotasks} from '@angular/core/testing';
 
-import {WithElem, ElemService, CBS_TOKEN} from './elem';
+import {WithElem, ElemService, CBS_TOKEN} from './elem.serv';
 
 describe('ElemService', () => {
   let loader: ElemService;

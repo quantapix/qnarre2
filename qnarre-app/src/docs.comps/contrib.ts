@@ -3,8 +3,8 @@ import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 
 import {Contrib, ContribGroup, ContribService} from '../services/contrib';
-import {WithElem} from '../services/elem';
-import {LocService} from '../services/loc';
+import {WithElem} from '../app/elem.serv';
+import {LocService} from '../app/loc.serv';
 
 import {CONTENT_URL_PREFIX} from '../services/docs';
 

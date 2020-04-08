@@ -4,10 +4,10 @@ import {Location, LocationStrategy, PlatformLocation} from '@angular/common';
 import {MockLocationStrategy} from '@angular/common/testing';
 import {Subject} from 'rxjs';
 
-import {GaService} from './ga';
-import {LocService} from './loc';
-import {ScrollService} from './scroll';
-import {UpdatesService} from './updates';
+import {GaService} from './ga.serv';
+import {LocService} from './loc.serv';
+import {ScrollService} from '../services/scroll';
+import {UpdatesService} from './updates.serv';
 
 describe('LocService', () => {
   let s: LocService;

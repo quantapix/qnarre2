@@ -4,9 +4,9 @@ import {HttpClient, HttpClientModule} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
 
 import {ServicesModule} from '../services/module';
-import {WithElem} from '../services/elem';
+import {WithElem} from '../app/elem.serv';
 
-import {LogService} from '../services/log';
+import {LogService} from '../app/log.serv';
 import {CONTENT_URL_PREFIX} from '../services/docs';
 const announcementsPath = CONTENT_URL_PREFIX + 'announcements.json';
 

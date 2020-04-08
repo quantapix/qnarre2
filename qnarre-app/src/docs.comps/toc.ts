@@ -7,7 +7,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {asapScheduler, combineLatest, Subject} from 'rxjs';
 import {startWith, subscribeOn, takeUntil} from 'rxjs/operators';
 
-import {WithElem} from '../services/elem';
+import {WithElem} from '../app/elem.serv';
 import {ScrollService} from '../services/scroll';
 import {Item, TocService} from '../services/toc';
 

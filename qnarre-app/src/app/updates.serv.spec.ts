@@ -3,8 +3,8 @@ import {discardPeriodicTasks, fakeAsync, tick} from '@angular/core/testing';
 import {SwUpdate} from '@angular/service-worker';
 import {Subject} from 'rxjs';
 
-import {LogService} from './log';
-import {UpdatesService} from './updates';
+import {LogService} from './log.serv';
+import {UpdatesService} from './updates.serv';
 
 describe('SwUpdatesService', () => {
   let injector: ReflectiveInjector;

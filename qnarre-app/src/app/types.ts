@@ -1,3 +1,8 @@
+import {InjectionToken} from '@angular/core';
+
+export const DateToken = new InjectionToken('CurrentDate');
+export const WindowToken = new InjectionToken<Window>('Window');
+
 export enum LoadingCode {
   COMPONENT = 'COMPONENT',
   ELEMENT = 'ELEMENT',
