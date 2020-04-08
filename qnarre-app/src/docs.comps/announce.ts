@@ -1,4 +1,4 @@
-import {Component, NgModule, OnInit, Type} from '@angular/core';
+import {Component, NgModule, OnInit, Optional, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {HttpClient, HttpClientModule} from '@angular/common/http';
 import {catchError, map} from 'rxjs/operators';
@@ -8,7 +8,8 @@ import {WithElem} from '../app/elem.serv';
 
 import {LogService} from '../app/log.serv';
 import {CONTENT_URL_PREFIX} from './service';
-const announcementsPath = CONTENT_URL_PREFIX + 'announcements.json';
+
+const path = CONTENT_URL_PREFIX + 'announcements.json';
 
 export interface Announce {
   imageUrl: string;
@@ -31,41 +32,31 @@ export interface Announce {
   `
 })
 export class AnnounceComp implements OnInit {
-  announcement: Announce;
+  announcement?: Announce;
 
-  constructor(private http: HttpClient, private logger: LogService) {}
+  constructor(private http: HttpClient, @Optional() private log?: LogService) {}
 
   ngOnInit() {
     this.http
-      .get<Announce[]>(announcementsPath)
+      .get<Announce[]>(path)
       .pipe(
-        catchError(error => {
-          this.logger.error(
-            new Error(`${announcementsPath} request failed: ${error.message}`)
-          );
+        catchError(e => {
+          this.log?.fail(new Error(`${path} request failed: ${e.message}`));
           return [];
         }),
-        map(announcements => this.findCurrentAnnounce(announcements)),
-        catchError(error => {
-          this.logger.error(
-            new Error(
-              `${announcementsPath} contains invalid data: ${error.message}`
-            )
-          );
+        map(ans => this.findCurrentAnnounce(ans)),
+        catchError(e => {
+          this.log?.fail(new Error(`${path} has invalid: ${e.message}`));
           return [];
         })
       )
-      .subscribe(announcement => (this.announcement = announcement));
+      .subscribe(a => (this.announcement = a));
   }
 
-  private findCurrentAnnounce(announcements: Announce[]) {
-    return announcements
-      .filter(
-        announcement => new Date(announcement.startDate).valueOf() < Date.now()
-      )
-      .filter(
-        announcement => new Date(announcement.endDate).valueOf() > Date.now()
-      )[0];
+  private findCurrentAnnounce(ans: Announce[]) {
+    return ans
+      .filter(a => new Date(a.startDate).valueOf() < Date.now())
+      .filter(a => new Date(a.endDate).valueOf() > Date.now())[0];
   }
 }
 

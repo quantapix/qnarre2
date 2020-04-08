@@ -17,7 +17,7 @@ describe('AnnounceComp', () => {
   let fixture: ComponentFixture<AnnounceComp>;
   let component: AnnounceComp;
   let httpMock: HttpTestingController;
-  let mockLogService: MockLog;
+  let log: MockLog;
 
   beforeEach(() => {
     const injector = TestBed.configureTestingModule({
@@ -27,7 +27,7 @@ describe('AnnounceComp', () => {
     });
 
     httpMock = injector.inject(HttpTestingController);
-    mockLogService = injector.inject(LogService) as any;
+    log = injector.inject(LogService) as any;
     fixture = TestBed.createComponent(AnnounceComp);
     component = fixture.componentInstance;
     element = fixture.nativeElement;
@@ -69,7 +69,7 @@ describe('AnnounceComp', () => {
           message: 'Test Announcement 3'
         }
       ]);
-      expect(component.announcement.message).toEqual('Test Announcement 2');
+      expect(component.announcement?.message).toEqual('Test Announcement 2');
     });
 
     it('should set the announcement to `undefined` if there are no announcements in `announcements.json`', () => {
@@ -84,8 +84,8 @@ describe('AnnounceComp', () => {
       const request = httpMock.expectOne('generated/announcements.json');
       request.flush('some random response');
       expect(component.announcement).toBeUndefined();
-      expect(mockLogService.output.error).toEqual([[jasmine.any(Error)]]);
-      expect(mockLogService.output.error[0][0].message).toMatch(
+      expect(log.out.fail).toEqual([[jasmine.any(Error)]]);
+      expect(log.out.fail[0][0].message).toMatch(
         /^generated\/announcements\.json contains invalid data:/
       );
     });
@@ -95,8 +95,8 @@ describe('AnnounceComp', () => {
       const request = httpMock.expectOne('generated/announcements.json');
       request.error(new ErrorEvent('404'));
       expect(component.announcement).toBeUndefined();
-      expect(mockLogService.output.error).toEqual([[jasmine.any(Error)]]);
-      expect(mockLogService.output.error[0][0].message).toMatch(
+      expect(log.out.fail).toEqual([[jasmine.any(Error)]]);
+      expect(log.out.fail[0][0].message).toMatch(
         /^generated\/announcements\.json request failed:/
       );
     });

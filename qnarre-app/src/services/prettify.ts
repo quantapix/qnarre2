@@ -26,7 +26,7 @@ export class PrettifyService {
           () => (window as any)['prettyfy'],
           err => {
             const msg = `Cannot get prettify.js: ${err.message}`;
-            this.log?.error(new Error(msg));
+            this.log?.fail(new Error(msg));
             return () => {
               throw new Error(msg);
             };
