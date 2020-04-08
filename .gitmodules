@@ -22,3 +22,6 @@
 [submodule "dev-libs/julia-color-themes"]
 	path = dev-libs/julia-color-themes
 	url = https://github.com/CameronBieganek/julia-color-themes.git
+[submodule "dev-libs/rxjs"]
+	path = dev-libs/rxjs
+	url = https://github.com/ReactiveX/rxjs.git
