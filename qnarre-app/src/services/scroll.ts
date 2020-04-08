@@ -18,14 +18,12 @@ export const topMargin = 16;
 
 @Injectable()
 export class ScrollService implements OnDestroy {
-  private _topOffset: number | null;
-  private _topOfPageElement: Element;
+  private _topOffset = null as number | null;
+  private _topElem?: Element;
   private onDestroy = new Subject<void>();
   private storage: Storage;
 
-  // The scroll position which has to be restored, after a `popstate` event.
-  poppedStateScrollPosition: ScrollPosition | null = null;
-  // Whether the browser supports the necessary features for manual scroll restoration.
+  poppedPos?: ScrollPosition;
   supportManualScrollRestoration: boolean =
     !!window &&
     'scrollTo' in window &&
@@ -34,35 +32,30 @@ export class ScrollService implements OnDestroy {
     !!history &&
     'scrollRestoration' in history;
 
-  // Offset from the top of the document to bottom of any static elements
-  // at the top (e.g. toolbar) + some margin
   get topOffset() {
     if (!this._topOffset) {
-      const toolbar = this.document.querySelector('.app-toolbar');
-      this._topOffset = ((toolbar && toolbar.clientHeight) || 0) + topMargin;
+      const t = this.doc.querySelector('.app-toolbar');
+      this._topOffset = ((t && t.clientHeight) || 0) + topMargin;
     }
     return this._topOffset;
   }
 
-  get topOfPageElement() {
-    if (!this._topOfPageElement) {
-      this._topOfPageElement =
-        this.document.getElementById('top-of-page') || this.document.body;
+  get topElem() {
+    if (!this._topElem) {
+      this._topElem = this.doc.getElementById('top-of-page') || this.doc.body;
     }
-    return this._topOfPageElement;
+    return this._topElem;
   }
 
   constructor(
-    @Inject(DOCUMENT) private document: any,
-    private platformLocation: PlatformLocation,
-    private viewportScroller: ViewportScroller,
-    private location: Location
+    @Inject(DOCUMENT) private doc: any,
+    private pLoc: PlatformLocation,
+    private scroller: ViewportScroller,
+    private loc: Location
   ) {
     try {
       this.storage = window.sessionStorage;
     } catch {
-      // When cookies are disabled in the browser, even trying to access
-      // `window.sessionStorage` throws an error. Use a no-op storage.
       this.storage = {
         length: 0,
         clear: () => undefined,
@@ -72,48 +65,29 @@ export class ScrollService implements OnDestroy {
         setItem: () => undefined
       };
     }
-
-    // On resize, the toolbar might change height, so "invalidate" the top offset.
     fromEvent(window, 'resize')
       .pipe(takeUntil(this.onDestroy))
       .subscribe(() => (this._topOffset = null));
-
     fromEvent(window, 'scroll')
       .pipe(debounceTime(250), takeUntil(this.onDestroy))
       .subscribe(() => this.updateScrollPositionInHistory());
-
     fromEvent(window, 'beforeunload')
       .pipe(takeUntil(this.onDestroy))
       .subscribe(() => this.updateScrollLocationHref());
-
-    // Change scroll restoration strategy to `manual` if it's supported.
     if (this.supportManualScrollRestoration) {
       history.scrollRestoration = 'manual';
-
-      // We have to detect forward and back navigation thanks to popState event.
-      const locationSubscription = this.location.subscribe(
-        (event: ScrollPositionPopStateEvent) => {
-          // The type is `hashchange` when the fragment identifier of the URL has changed. It allows
-          // us to go to position just before a click on an anchor.
-          if (event.type === 'hashchange') {
-            this.scrollToPosition();
+      const locationSubscription = this.loc.subscribe(
+        (e: ScrollPositionPopStateEvent) => {
+          if (e.type === 'hashchange') {
+            this.scrollToPos();
           } else {
-            // Navigating with the forward/back button, we have to remove the position from the
-            // session storage in order to avoid a race-condition.
             this.removeStoredScrollInfo();
-            // The `popstate` event is always triggered by a browser action such as clicking the
-            // forward/back button. It can be followed by a `hashchange` event.
-            this.poppedStateScrollPosition = event.state
-              ? event.state.scrollPosition
-              : null;
+            this.poppedPos = e.state ? e.state.scrollPosition : undefined;
           }
         }
       );
-
       this.onDestroy.subscribe(() => locationSubscription.unsubscribe());
     }
-
-    // If this was not a reload, discard the stored scroll info.
     if (window.location.href !== this.getStoredScrollLocationHref()) {
       this.removeStoredScrollInfo();
     }
@@ -123,93 +97,49 @@ export class ScrollService implements OnDestroy {
     this.onDestroy.next();
   }
 
-  /**
-   * Scroll to the element with id extracted from the current location hash fragment.
-   * Scroll to top if no hash.
-   * Don't scroll if hash not found.
-   */
   scroll() {
-    const hash = this.getCurrentHash();
-    const element: HTMLElement = hash
-      ? this.document.getElementById(hash)
-      : this.topOfPageElement;
-    this.scrollToElement(element);
+    const h = this.curHash();
+    const e: HTMLElement = h ? this.doc.getElementById(h) : this.topElem;
+    this.scrollTo(e);
   }
 
-  /**
-   * test if the current location has a hash
-   */
-  isLocationWithHash(): boolean {
-    return !!this.getCurrentHash();
+  withHash() {
+    return !!this.curHash();
   }
 
-  /**
-   * When we load a document, we have to scroll to the correct position depending on whether this is a new location,
-   * a back/forward in the history, or a refresh
-   * @param delay before we scroll to the good position
-   */
-  scrollAfterRender(delay: number) {
-    // If we do rendering following a refresh, we use the scroll position from the storage.
-    const storedScrollPosition = this.getStoredScrollPosition();
-    if (storedScrollPosition) {
-      this.viewportScroller.scrollToPosition(storedScrollPosition);
+  scrollAfter(delay: number) {
+    const p = this.getStoredScrollPosition();
+    if (p) {
+      this.scroller.scrollToPosition(p);
     } else {
       if (this.needToFixScrollPosition()) {
-        // The document was reloaded following a `popstate` event (triggered by clicking the
-        // forward/back button), so we manage the scroll position.
-        this.scrollToPosition();
+        this.scrollToPos();
       } else {
-        // The document was loaded as a result of one of the following cases:
-        // - Typing the URL in the address bar (direct navigation).
-        // - Clicking on a link.
-        // (If the location contains a hash, we have to wait for async layout.)
-        if (this.isLocationWithHash()) {
-          // Delay scrolling by the specified amount to allow time for async layout to complete.
-          setTimeout(() => this.scroll(), delay);
-        } else {
-          // If the location doesn't contain a hash, we scroll to the top of the page.
-          this.scrollToTop();
-        }
+        if (this.withHash()) setTimeout(() => this.scroll(), delay);
+        else this.scrollToTop();
       }
     }
   }
 
-  /**
-   * Scroll to the element.
-   * Don't scroll if no element.
-   */
-  scrollToElement(element: Element | null) {
-    if (element) {
-      element.scrollIntoView();
-
+  scrollTo(e?: Element) {
+    if (e) {
+      e.scrollIntoView();
       if (window && window.scrollBy) {
-        // Scroll as much as necessary to align the top of `element` at `topOffset`.
-        // (Usually, `.top` will be 0, except for cases where the element cannot be scrolled all the
-        //  way to the top, because the viewport is larger than the height of the content after the
-        //  element.)
-        window.scrollBy(
-          0,
-          element.getBoundingClientRect().top - this.topOffset
-        );
-
-        // If we are very close to the top (<20px), then scroll all the way up.
-        // (This can happen if `element` is at the top of the page, but has a small top-margin.)
-        if (window.pageYOffset < 20) {
-          window.scrollBy(0, -window.pageYOffset);
-        }
+        const o = this.topOffset ?? 0;
+        window.scrollBy(0, e.getBoundingClientRect().top - o);
+        if (window.pageYOffset < 20) window.scrollBy(0, -window.pageYOffset);
       }
     }
   }
 
-  /** Scroll to the top of the document. */
   scrollToTop() {
-    this.scrollToElement(this.topOfPageElement);
+    this.scrollTo(this.topElem);
   }
 
-  scrollToPosition() {
-    if (this.poppedStateScrollPosition) {
-      this.viewportScroller.scrollToPosition(this.poppedStateScrollPosition);
-      this.poppedStateScrollPosition = null;
+  scrollToPos() {
+    if (this.poppedPos) {
+      this.scroller.scrollToPosition(this.poppedPos);
+      this.poppedPos = undefined;
     }
   }
 
@@ -217,13 +147,10 @@ export class ScrollService implements OnDestroy {
     this.storage.setItem('scrollLocationHref', window.location.href);
   }
 
-  /**
-   * Update the state with scroll position into history.
-   */
   updateScrollPositionInHistory() {
     if (this.supportManualScrollRestoration) {
-      const currentScrollPosition = this.viewportScroller.getScrollPosition();
-      this.location.replaceState(this.location.path(true), undefined, {
+      const currentScrollPosition = this.scroller.getScrollPosition();
+      this.loc.replaceState(this.loc.path(true), undefined, {
         scrollPosition: currentScrollPosition
       });
       this.storage.setItem('scrollPosition', currentScrollPosition.join(','));
@@ -240,7 +167,6 @@ export class ScrollService implements OnDestroy {
     if (!position) {
       return null;
     }
-
     const [x, y] = position.split(',');
     return [+x, +y];
   }
@@ -250,19 +176,11 @@ export class ScrollService implements OnDestroy {
     this.storage.removeItem('scrollPosition');
   }
 
-  /**
-   * Check if the scroll position need to be manually fixed after popState event
-   */
-  needToFixScrollPosition(): boolean {
-    return (
-      this.supportManualScrollRestoration && !!this.poppedStateScrollPosition
-    );
+  needToFixScrollPosition() {
+    return this.supportManualScrollRestoration && !!this.poppedPos;
   }
 
-  /**
-   * Return the hash fragment from the `PlatformLocation`, minus the leading `#`.
-   */
-  private getCurrentHash() {
-    return decodeURIComponent(this.platformLocation.hash.replace(/^#/, ''));
+  private curHash() {
+    return decodeURIComponent(this.pLoc.hash.replace(/^#/, ''));
   }
 }

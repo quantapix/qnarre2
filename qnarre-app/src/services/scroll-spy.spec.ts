@@ -23,16 +23,12 @@ describe('ScrollSpiedElement', () => {
     it('should calculate the `top` value', () => {
       const elem = {getBoundingClientRect: () => ({top: 100})} as Element;
       const spiedElem = new ScrollSpiedElement(elem, 42);
-
       spiedElem.calculateTop(0, 0);
       expect(spiedElem.top).toBe(100);
-
       spiedElem.calculateTop(20, 0);
       expect(spiedElem.top).toBe(120);
-
       spiedElem.calculateTop(0, 10);
       expect(spiedElem.top).toBe(90);
-
       spiedElem.calculateTop(20, 10);
       expect(spiedElem.top).toBe(110);
     });
@@ -242,36 +238,28 @@ describe('ScrollSpyService', () => {
 
     it('should remember and emit the last active item to new subscribers', () => {
       const items = [{index: 1}, {index: 2}, {index: 3}] as ScrollItem[];
-      let lastActiveItem: ScrollItem | null;
-
+      let lastActiveItem = null as ScrollItem | null;
       const info = scrollSpyService.spyOn([]);
       const spiedElemGroup = getSpiedElemGroups()[0];
-
       spiedElemGroup.activeScrollItem.next(items[0]);
       spiedElemGroup.activeScrollItem.next(items[1]);
       spiedElemGroup.activeScrollItem.next(items[2]);
       spiedElemGroup.activeScrollItem.next(null);
       spiedElemGroup.activeScrollItem.next(items[1]);
       info.active.subscribe(item => (lastActiveItem = item));
-
       expect(lastActiveItem).toBe(items[1]);
-
       spiedElemGroup.activeScrollItem.next(null);
       info.active.subscribe(item => (lastActiveItem = item));
-
       expect(lastActiveItem).toBeNull();
     });
 
     it('should only emit distinct values on `active`', () => {
       const items = [{index: 1}, {index: 2}] as ScrollItem[];
       const activeIndices: (number | null)[] = [];
-
       const info = scrollSpyService.spyOn([]);
       const spiedElemGroup = getSpiedElemGroups()[0];
-
       info.active.subscribe(item => activeIndices.push(item && item.index));
       activeIndices.length = 0;
-
       spiedElemGroup.activeScrollItem.next(items[0]);
       spiedElemGroup.activeScrollItem.next(items[0]);
       spiedElemGroup.activeScrollItem.next(items[1]);
@@ -281,24 +269,18 @@ describe('ScrollSpyService', () => {
       spiedElemGroup.activeScrollItem.next(items[0]);
       spiedElemGroup.activeScrollItem.next(items[1]);
       spiedElemGroup.activeScrollItem.next(null);
-
       expect(activeIndices).toEqual([1, 2, null, 1, 2, null]);
     });
-
     it('should remove the corresponding `ScrollSpiedElementGroup` when calling `unspy()`', () => {
       const info1 = scrollSpyService.spyOn([]);
       const info2 = scrollSpyService.spyOn([]);
       const info3 = scrollSpyService.spyOn([]);
       const groups = getSpiedElemGroups().slice();
-
       expect(getSpiedElemGroups()).toEqual(groups);
-
       info2.unspy();
       expect(getSpiedElemGroups()).toEqual([groups[0], groups[2]]);
-
       info1.unspy();
       expect(getSpiedElemGroups()).toEqual([groups[2]]);
-
       info3.unspy();
       expect(getSpiedElemGroups()).toEqual([]);
     });
@@ -306,7 +288,7 @@ describe('ScrollSpyService', () => {
 
   describe('window resize events', () => {
     const RESIZE_EVENT_DELAY = 300;
-    let onResizeSpy: jasmine.Spy;
+    let onResizeSpy: any;
 
     beforeEach(() => {
       onResizeSpy = spyOn(ScrollSpyService.prototype as any, 'onResize');
@@ -385,7 +367,7 @@ describe('ScrollSpyService', () => {
 
   describe('window scroll events', () => {
     const SCROLL_EVENT_DELAY = 10;
-    let onScrollSpy: jasmine.Spy;
+    let onScrollSpy: any;
 
     beforeEach(() => {
       onScrollSpy = spyOn(ScrollSpyService.prototype as any, 'onScroll');
