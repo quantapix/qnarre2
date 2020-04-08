@@ -1,14 +1,8 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {ErrorHandler, NgModule} from '@angular/core';
+import {NgModule} from '@angular/core';
 import {HttpClientModule} from '@angular/common/http';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {ServiceWorkerModule} from '@angular/service-worker';
-
-import {
-  Location,
-  LocationStrategy,
-  PathLocationStrategy
-} from '@angular/common';
 
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule, MatIconRegistry} from '@angular/material/icon';
@@ -18,36 +12,25 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 
 import {AppComponent} from 'app/app.component';
 import {CustomIconRegistry, SVG_ICONS} from 'app/shared/custom-icon-registry';
-import {Deployment} from 'app/shared/deployment.service';
 import {DocViewerComponent} from 'app/layout/doc-viewer/doc-viewer.component';
 import {DtComponent} from 'app/layout/doc-viewer/dt.component';
 import {ModeBannerComponent} from 'app/layout/mode-banner/mode-banner.component';
-import {GaService} from 'app/shared/ga.service';
-import {Logger} from 'app/shared/logger.service';
-import {LocService} from 'app/shared/location.service';
-import {NavigationService} from 'app/navigation/navigation.service';
 import {DocumentService} from 'app/documents/document.service';
 import {SearchService} from 'app/search/search.service';
 import {TopMenuComponent} from 'app/layout/top-menu/top-menu.component';
 import {FooterComponent} from 'app/layout/footer/footer.component';
 import {NavMenuComponent} from 'app/layout/nav-menu/nav-menu.component';
 import {NavItemComponent} from 'app/layout/nav-item/nav-item.component';
-import {ReportingErrorHandler} from 'app/shared/reporting-error-handler';
 import {ScrollService} from 'app/shared/scroll.service';
 import {ScrollSpyService} from 'app/shared/scroll-spy.service';
 import {SearchBoxComponent} from 'app/search/search-box/search-box.component';
 import {NotificationComponent} from 'app/layout/notification/notification.component';
 import {TocService} from 'app/shared/toc.service';
-import {CurrentDateToken, currentDateProvider} from 'app/shared/current-date';
-import {WindowToken, windowProvider} from 'app/shared/window';
 
-import {CustomElementsModule} from 'app/custom-elements/custom-elements.module';
 import {SharedModule} from 'app/shared/shared.module';
-import {SwUpdatesModule} from 'app/sw-updates/sw-updates.module';
 
 import {environment} from '../environments/environment';
 
-// These are the hardcoded inline svg sources to be used by the `<mat-icon>` component.
 export const svgIconProviders = [
   {
     provide: SVG_ICONS,
@@ -95,8 +78,6 @@ export const svgIconProviders = [
     },
     multi: true
   },
-
-  // Namespace: logos
   {
     provide: SVG_ICONS,
     useValue: {
@@ -162,23 +143,13 @@ export const svgIconProviders = [
     TopMenuComponent
   ],
   providers: [
-    Deployment,
     DocumentService,
-    {provide: ErrorHandler, useClass: ReportingErrorHandler},
-    GaService,
-    Logger,
-    Location,
-    {provide: LocationStrategy, useClass: PathLocationStrategy},
-    LocService,
     {provide: MatIconRegistry, useClass: CustomIconRegistry},
-    NavigationService,
     ScrollService,
     ScrollSpyService,
     SearchService,
     svgIconProviders,
-    TocService,
-    {provide: CurrentDateToken, useFactory: currentDateProvider},
-    {provide: WindowToken, useFactory: windowProvider}
+    TocService
   ],
   bootstrap: [AppComponent]
 })

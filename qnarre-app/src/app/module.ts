@@ -25,7 +25,7 @@ import {ElemComp} from './elem';
 
 import {AppRoutingModule} from './routing.module';
 
-import {AppComp as GraphAppComp} from '../graph.app/comp';
+import {AppComp as GraphAppComp} from '../graph.app/component';
 
 //import {AuthModule} from './auth/auth.module';
 //import {HeroesModule} from './heroes/heroes.module';
@@ -46,6 +46,7 @@ import {MessageService} from './message.serv';
 import {NavService} from './nav.serv';
 import {PreloadService} from './preload.serv';
 import {UpdatesService} from './updates.serv';
+import {TocService} from './toc.serv';
 
 import {DataService} from '../graph/data.service';
 import {SceneServ} from '../graph/scene.serv';
@@ -111,6 +112,7 @@ CBS_ROUTES.forEach(r => CBS.set(r.selector, r.loadChildren));
   ],
   exports: [NavItemComp, NavMenuComp, TopMenuComp, FooterComp, ElemComp],
   providers: [
+    TocService,
     DataService,
     DeployService,
     ElemService,
@@ -128,7 +130,6 @@ CBS_ROUTES.forEach(r => CBS.set(r.selector, r.loadChildren));
     ScrollSpyService,
     SearchService,
     svgIconProviders,
-    TocService,
     {provide: LocationStrategy, useClass: PathLocationStrategy},
     {provide: MatIconRegistry, useClass: CustomIconRegistry},
     {provide: DateToken, useFactory: dateProvider},

@@ -8,7 +8,7 @@ import {
   OnInit,
   Output
 } from '@angular/core';
-import {DateToken, WindowToken} from '../app/tokens';
+import {DateToken, WindowToken} from '../app/types';
 
 const LOCAL_STORAGE_NAMESPACE = 'qnr-notification/';
 

@@ -1,7 +1,7 @@
 import {NgModule, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
-import {AppComp} from './comp';
+import {AppComp} from './component';
 import {BoardComp} from '../graph.comps/board';
 import {CardHeadingComp} from '../graph.comps/heading';
 import {ControlsComp} from '../graph.comps/controls';

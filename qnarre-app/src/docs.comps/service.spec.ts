@@ -9,7 +9,7 @@ import {LocService} from '../app/loc.serv';
 import {MockLocService} from '../testing/loc';
 import {LogService} from '../app/log.serv';
 import {MockLog} from '../app/log.serv';
-import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './docs';
+import {DocsService, Contents, FETCHING_ERROR, FILE_NOT_FOUND} from './service';
 
 const CONTENT_URL_PREFIX = 'generated/docs/';
 

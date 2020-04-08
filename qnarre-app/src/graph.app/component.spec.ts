@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {AppComp} from './comp';
+import {AppComp} from './component';
 
 describe('AppComp', () => {
   let c: AppComp;

@@ -5,7 +5,7 @@ import {combineLatest, ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast, publishReplay} from 'rxjs/operators';
 
 import * as qt from '../types';
-import {CONTENT_URL_PREFIX} from '../services/docs';
+import {CONTENT_URL_PREFIX} from '../docs.comps/service';
 import {LocService} from './loc.serv';
 
 export const navPath = CONTENT_URL_PREFIX + 'navigation.json';

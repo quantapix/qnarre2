@@ -2,7 +2,7 @@ import {DOCUMENT} from '@angular/common';
 import {Inject, Injectable} from '@angular/core';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {ReplaySubject} from 'rxjs';
-import {ScrollSpyInfo, ScrollSpyService} from './scroll-spy';
+import {ScrollSpyInfo, ScrollSpyService} from '../services/scroll-spy';
 
 export interface Item {
   content: SafeHtml;
@@ -19,9 +19,9 @@ export class TocService {
   private spy: ScrollSpyInfo | null = null;
 
   constructor(
-    @Inject(DOCUMENT) private document: any,
-    private domSanitizer: DomSanitizer,
-    private scrollSpyService: ScrollSpyService
+    @Inject(DOCUMENT) private doc: any,
+    private san: DomSanitizer,
+    private scroll: ScrollSpyService
   ) {}
 
   toc(e?: Element, doc = '') {
@@ -42,7 +42,7 @@ export class TocService {
       };
     });
     this.items.next(ts);
-    this.spy = this.scrollSpyService.spyOn(hs);
+    this.spy = this.scroll.spyOn(hs);
     this.spy.active.subscribe(i => this.active.next(i && i.index));
   }
 
@@ -52,7 +52,7 @@ export class TocService {
   }
 
   private extractHtml(h: HTMLHeadingElement) {
-    const d = this.document.createElement('div') as HTMLDivElement;
+    const d = this.doc.createElement('div') as HTMLDivElement;
     d.innerHTML = h.innerHTML;
     queryAll(d, '.github-links, .header-link').forEach(remove);
     queryAll(d, 'a').forEach(a => {
@@ -64,7 +64,7 @@ export class TocService {
     });
     return {
       title: (d.textContent || '').trim(),
-      content: this.domSanitizer.bypassSecurityTrustHtml(d.innerHTML.trim())
+      content: this.san.bypassSecurityTrustHtml(d.innerHTML.trim())
     };
   }
 

@@ -4,7 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast} from 'rxjs/operators';
 
-import {CONTENT_URL_PREFIX} from './docs';
+import {CONTENT_URL_PREFIX} from '../docs.comps/service';
 
 const resourcesPath = CONTENT_URL_PREFIX + 'resources.json';
 

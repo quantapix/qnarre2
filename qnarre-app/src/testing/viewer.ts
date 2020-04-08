@@ -3,10 +3,10 @@ import {Title, Meta} from '@angular/platform-browser';
 
 import {Observable} from 'rxjs';
 
-import {Contents} from '../services/docs';
+import {Contents} from '../docs.comps/service';
 import {ViewerComp} from '../docs.comps/viewer';
 import {LogService} from '../app/log.serv';
-import {TocService} from '../services/toc';
+import {TocService} from '../app/toc.serv';
 import {MockLog} from './log';
 import {ElemService} from '../app/elem.serv';
 

@@ -9,7 +9,7 @@ import {startWith, subscribeOn, takeUntil} from 'rxjs/operators';
 
 import {WithElem} from '../app/elem.serv';
 import {ScrollService} from '../services/scroll';
-import {Item, TocService} from '../services/toc';
+import {Item, TocService} from '../app/toc.serv';
 
 type TocType = 'None' | 'Floating' | 'Embedded' | 'Expandable';
 

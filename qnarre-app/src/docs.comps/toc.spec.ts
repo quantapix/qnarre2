@@ -5,7 +5,7 @@ import {asapScheduler, BehaviorSubject} from 'rxjs';
 
 import {TocComp} from './toc';
 import {ScrollService} from '../services/scroll';
-import {Item, TocService} from '../services/toc';
+import {Item, TocService} from '../app/toc.serv';
 
 describe('TocComp', () => {
   let de: DebugElement;

@@ -3,8 +3,12 @@ import {ReflectiveInjector} from '@angular/core';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
-import {ScrollItem, ScrollSpyInfo, ScrollSpyService} from './scroll-spy';
-import {Item, TocService} from './toc';
+import {
+  ScrollItem,
+  ScrollSpyInfo,
+  ScrollSpyService
+} from '../services/scroll-spy';
+import {Item, TocService} from './toc.serv';
 
 describe('TocService', () => {
   let inj: ReflectiveInjector;
