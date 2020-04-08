@@ -203,8 +203,8 @@ export class DocsAppComp implements OnInit {
 
     this.navigationService.versionInfo.subscribe(vi => (this.versionInfo = vi));
 
-    const hasNonEmptyToc = this.tocService.tocList.pipe(
-      map(tocList => tocList.length > 0)
+    const hasNonEmptyToc = this.tocService.items.pipe(
+      map(items => items.length > 0)
     );
     combineLatest([hasNonEmptyToc, this.showFloatingToc]).subscribe(
       ([hasToc, showFloatingToc]) =>

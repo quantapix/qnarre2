@@ -1,7 +1,7 @@
 import {Component, ElementRef, Input, OnInit, Optional} from '@angular/core';
 
-import {LogService} from '../services/log';
 import {ElemService} from '../services/elem';
+import {LogService} from '../services/log';
 
 @Component({
   selector: 'qnr-elem',

@@ -2,13 +2,11 @@ import {ErrorHandler, Injectable} from '@angular/core';
 
 import {environment} from '../environments/environment';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class LogService {
   constructor(private handler: ErrorHandler) {}
 
-  log(v: any, ...rest: any[]) {
+  info(v: any, ...rest: any[]) {
     if (!environment.production) {
       console.log(v, ...rest);
     }
@@ -23,25 +21,23 @@ export class LogService {
   }
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class MockLog {
-  output: {log: any[]; error: any[]; warn: any[]} = {
-    log: [],
-    error: [],
-    warn: []
+  output = {
+    info: [] as any[],
+    error: [] as any[],
+    warn: [] as any[]
   };
 
-  log(value: any, ...rest: any[]) {
-    this.output.log.push([value, ...rest]);
+  info(v: any, ...rest: any[]) {
+    this.output.info.push([v, ...rest]);
   }
 
-  error(value: any, ...rest: any[]) {
-    this.output.error.push([value, ...rest]);
+  error(v: any, ...rest: any[]) {
+    this.output.error.push([v, ...rest]);
   }
 
-  warn(value: any, ...rest: any[]) {
-    this.output.warn.push([value, ...rest]);
+  warn(v: any, ...rest: any[]) {
+    this.output.warn.push([v, ...rest]);
   }
 }

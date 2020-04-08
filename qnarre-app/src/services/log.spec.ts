@@ -19,7 +19,7 @@ describe('log service', () => {
   });
   describe('log', () => {
     it('should delegate to console.log', () => {
-      log.log('param1', 'param2', 'param3');
+      log.info('param1', 'param2', 'param3');
       expect(s).toHaveBeenCalledWith('param1', 'param2', 'param3');
     });
   });
@@ -31,10 +31,10 @@ describe('log service', () => {
   });
   describe('error', () => {
     it('should delegate to ErrorHandler', () => {
-      const err = new Error('some error message');
-      log.error(err);
+      const e = new Error('some error message');
+      log.error(e);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(h.handleError).toHaveBeenCalledWith(err);
+      expect(h.handleError).toHaveBeenCalledWith(e);
     });
   });
 });

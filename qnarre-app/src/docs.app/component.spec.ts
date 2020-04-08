@@ -117,31 +117,31 @@ describe('AppComp', () => {
       it('should be false on narrow screens', () => {
         component.onResize(hideToCBreakPoint - 1);
 
-        tocService.tocList.next([{}, {}, {}] as TocItem[]);
+        tocService.items.next([{}, {}, {}] as TocItem[]);
         expect(component.hasFloatingToc).toBe(false);
 
-        tocService.tocList.next([]);
+        tocService.items.next([]);
         expect(component.hasFloatingToc).toBe(false);
 
-        tocService.tocList.next([{}, {}, {}] as TocItem[]);
+        tocService.items.next([{}, {}, {}] as TocItem[]);
         expect(component.hasFloatingToc).toBe(false);
       });
 
       it('should be true on wide screens unless the toc is empty', () => {
         component.onResize(hideToCBreakPoint + 1);
 
-        tocService.tocList.next([{}, {}, {}] as TocItem[]);
+        tocService.items.next([{}, {}, {}] as TocItem[]);
         expect(component.hasFloatingToc).toBe(true);
 
-        tocService.tocList.next([]);
+        tocService.items.next([]);
         expect(component.hasFloatingToc).toBe(false);
 
-        tocService.tocList.next([{}, {}, {}] as TocItem[]);
+        tocService.items.next([{}, {}, {}] as TocItem[]);
         expect(component.hasFloatingToc).toBe(true);
       });
 
       it('should be false when toc is empty', () => {
-        tocService.tocList.next([]);
+        tocService.items.next([]);
 
         component.onResize(hideToCBreakPoint + 1);
         expect(component.hasFloatingToc).toBe(false);
@@ -154,7 +154,7 @@ describe('AppComp', () => {
       });
 
       it('should be true when toc is not empty unless the screen is narrow', () => {
-        tocService.tocList.next([{}, {}, {}] as TocItem[]);
+        tocService.items.next([{}, {}, {}] as TocItem[]);
 
         component.onResize(hideToCBreakPoint + 1);
         expect(component.hasFloatingToc).toBe(true);

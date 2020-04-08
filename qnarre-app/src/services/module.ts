@@ -20,10 +20,11 @@ import {LOAD_CBS, CBS_TOKEN, CBS_ROUTES} from './elem';
 @NgModule({
   imports: [CommonModule, HttpClientModule],
   providers: [
+    LogService,
+    LocService,
+
     Deployment,
     GaService,
-    LocService,
-    LogService,
     NavService,
     ScrollService,
     ScrollSpyService,

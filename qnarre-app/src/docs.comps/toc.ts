@@ -9,41 +9,41 @@ import {startWith, subscribeOn, takeUntil} from 'rxjs/operators';
 
 import {WithElem} from '../services/elem';
 import {ScrollService} from '../services/scroll';
-import {TocItem, TocService} from '../services/toc';
+import {Item, TocService} from '../services/toc';
 
 type TocType = 'None' | 'Floating' | 'Embedded' | 'Expandable';
 
 @Component({
   selector: 'qnr-toc',
-  templateUrl: 'toc.comp.html',
+  templateUrl: 'toc.html',
   styles: []
 })
 export class TocComp implements OnInit, AfterViewInit, OnDestroy {
-  index: number | null = null;
-  type: TocType = 'None';
-  isCollapsed = true;
-  isEmbedded = false;
-  @ViewChildren('tocItem') private items = {} as QueryList<ElementRef>;
+  type = 'None' as TocType;
+  collapsed = true;
+  embedded = false;
+  max = 4;
+  items = [] as Item[];
+  idx?: number;
+  @ViewChildren('tocItem') private tis = {} as QueryList<ElementRef>;
   private onDestroy = new Subject();
-  primaryMax = 4;
-  tocList = [] as TocItem[];
 
   constructor(
     private scroll: ScrollService,
     ref: ElementRef,
     private toc: TocService
   ) {
-    this.isEmbedded = ref.nativeElement.className.indexOf('embedded') !== -1;
+    this.embedded = ref.nativeElement.className.indexOf('embedded') !== -1;
   }
 
   ngOnInit() {
-    this.toc.tocList.pipe(takeUntil(this.onDestroy)).subscribe(tl => {
-      this.tocList = tl;
-      const c = count(this.tocList, item => item.level !== 'h1');
+    this.toc.items.pipe(takeUntil(this.onDestroy)).subscribe(ts => {
+      this.items = ts;
+      const c = count(this.items, i => i.level !== 'h1');
       this.type =
         c > 0
-          ? this.isEmbedded
-            ? c > this.primaryMax
+          ? this.embedded
+            ? c > this.max
               ? 'Expandable'
               : 'Embedded'
             : 'Floating'
@@ -52,25 +52,21 @@ export class TocComp implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    if (!this.isEmbedded) {
+    if (!this.embedded) {
       combineLatest([
-        this.toc.activeItemIndex.pipe(subscribeOn(asapScheduler)),
-        this.items.changes.pipe(startWith(this.items))
+        this.toc.active.pipe(subscribeOn(asapScheduler)),
+        this.tis.changes.pipe(startWith(this.items))
       ])
         .pipe(takeUntil(this.onDestroy))
         .subscribe(([i, items]) => {
-          this.index = i;
-          if (i === null || i >= items.length) {
-            return;
-          }
+          this.idx = i ?? undefined;
+          if (i === null || i >= items.length) return;
           const e = items.toArray()[i].nativeElement;
           const p = e.offsetParent;
           const er = e.getBoundingClientRect();
           const pr = p.getBoundingClientRect();
-          const isInViewport = er.top >= pr.top && er.bottom <= pr.bottom;
-          if (!isInViewport) {
-            p.scrollTop += er.top - pr.top - p.clientHeight / 2;
-          }
+          const isIn = er.top >= pr.top && er.bottom <= pr.bottom;
+          if (!isIn) p.scrollTop += er.top - pr.top - p.clientHeight / 2;
         });
     }
   }
@@ -80,8 +76,8 @@ export class TocComp implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggle(scroll = true) {
-    this.isCollapsed = !this.isCollapsed;
-    if (scroll && this.isCollapsed) this.toTop();
+    this.collapsed = !this.collapsed;
+    if (scroll && this.collapsed) this.toTop();
   }
 
   toTop() {
@@ -89,8 +85,8 @@ export class TocComp implements OnInit, AfterViewInit, OnDestroy {
   }
 }
 
-function count<T>(a: T[], fn: (i: T) => boolean) {
-  return a.reduce((r, i) => (fn(i) ? r + 1 : r), 0);
+function count<T>(a: T[], f: (i: T) => boolean) {
+  return a.reduce((r, i) => (f(i) ? r + 1 : r), 0);
 }
 
 @NgModule({
