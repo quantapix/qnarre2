@@ -1,25 +1,18 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+import {Component, NgModule, ViewChild} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Meta, Title} from '@angular/platform-browser';
 
 import {Observable, asapScheduler, of} from 'rxjs';
 
-import {FILE_NOT_FOUND, FETCHING_ERROR} from './service';
-import {LogService} from '../app/log.serv';
-import {ElemsModule} from './elem';
+import {NOT_FOUND, FETCH_ERR} from './service';
+import {LogService, MockLog} from '../app/log.serv';
+import {ElemsModule} from '../app/elem';
 import {TocService} from '../app/toc.serv';
 import {ElemService} from '../app/elem.serv';
-import {
-  MockTitle,
-  MockTocService,
-  ObservableWithSubscriptionSpies,
-  TestViewerComp,
-  TestModule,
-  TestParentComponent,
-  MockElemService
-} from '../testing/viewer';
-import {MockLog} from '../app/log.serv';
 import {ViewerComp, NO_ANIMATIONS} from './viewer';
+
+import {Data} from './service';
 
 describe('ViewerComp', () => {
   let parentFixture: ComponentFixture<TestParentComponent>;
@@ -44,9 +37,9 @@ describe('ViewerComp', () => {
     expect(viewer).toEqual(jasmine.any(ViewerComp));
   });
   describe('#doc', () => {
-    let spy: jasmine.Spy;
-    const setCurr = (d: TestParentComponent['doc']) => {
-      parent.doc = d && {id: 'fizz/buzz', ...d};
+    let spy: any;
+    const setCurr = (d: TestParentComponent['data']) => {
+      parent.data = d && {k: 'fizz/buzz', ...d};
       parentFixture.detectChanges();
       safeFlushAsapScheduler();
     };
@@ -54,31 +47,27 @@ describe('ViewerComp', () => {
       () => (spy = spyOn(viewer, 'render').and.callFake(() => of(undefined)))
     );
     it('should render the new document', () => {
-      setCurr({contents: 'foo', id: 'bar'});
+      setCurr({v: 'foo', k: 'bar'});
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.mostRecent().args).toEqual([
-        {id: 'bar', contents: 'foo'}
-      ]);
-      setCurr({contents: null, id: 'baz'});
+      expect(spy.calls.mostRecent().args).toEqual([{k: 'bar', v: 'foo'}]);
+      setCurr({v: undefined, k: 'baz'});
       expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.mostRecent().args).toEqual([
-        {id: 'baz', contents: null}
-      ]);
+      expect(spy.calls.mostRecent().args).toEqual([{k: 'baz', contents: null}]);
     });
     it('should unsubscribe from the previous "render" observable upon new document', () => {
       const obs = new ObservableWithSubscriptionSpies();
       spy.and.returnValue(obs);
 
-      setCurr({contents: 'foo', id: 'bar'});
+      setCurr({v: 'foo', k: 'bar'});
       expect(obs.subscribeSpy).toHaveBeenCalledTimes(1);
       expect(obs.unsubscribeSpies[0]).not.toHaveBeenCalled();
 
-      setCurr({contents: 'baz', id: 'qux'});
+      setCurr({v: 'baz', k: 'qux'});
       expect(obs.subscribeSpy).toHaveBeenCalledTimes(2);
       expect(obs.unsubscribeSpies[0]).toHaveBeenCalledTimes(1);
     });
     it('should ignore falsy document values', () => {
-      setCurr(null);
+      setCurr(undefined);
       expect(spy).not.toHaveBeenCalled();
       setCurr(undefined);
       expect(spy).not.toHaveBeenCalled();
@@ -89,14 +78,14 @@ describe('ViewerComp', () => {
     it('should stop responding to document changes', () => {
       const spy = spyOn(viewer, 'render').and.callFake(() => of(undefined));
       expect(spy).not.toHaveBeenCalled();
-      viewer.doc = {contents: 'Some content', id: 'some-id'};
+      viewer.data = {v: 'Some content', k: 'some-id'};
       safeFlushAsapScheduler();
       expect(spy).toHaveBeenCalledTimes(1);
       viewer.ngOnDestroy();
-      viewer.doc = {contents: 'Other content', id: 'other-id'};
+      viewer.data = {v: 'Other content', k: 'other-id'};
       safeFlushAsapScheduler();
       expect(spy).toHaveBeenCalledTimes(1);
-      viewer.doc = {contents: 'More content', id: 'more-id'};
+      viewer.data = {v: 'More content', k: 'more-id'};
       safeFlushAsapScheduler();
       expect(spy).toHaveBeenCalledTimes(1);
     });
@@ -264,11 +253,11 @@ describe('ViewerComp', () => {
   });
 
   describe('#render()', () => {
-    let prep: jasmine.Spy;
-    let swapViewsSpy: jasmine.Spy;
-    let loadElementsSpy: jasmine.Spy;
-    const doRender = (contents: string | null, id = 'foo') =>
-      viewer.render({contents, id}).toPromise();
+    let prep: any;
+    let swapViewsSpy: any;
+    let loadElementsSpy: any;
+    const doRender = (v: string | undefined, k = 'foo') =>
+      viewer.render({v, k}).toPromise();
     beforeEach(() => {
       const ElemService = (TestBed.inject(ElemService) as Partial<
         ElemService
@@ -282,9 +271,7 @@ describe('ViewerComp', () => {
       );
     });
     it('should return an `Observable`', () => {
-      expect(viewer.render({contents: '', id: ''})).toEqual(
-        jasmine.any(Observable)
-      );
+      expect(viewer.render({v: '', k: ''})).toEqual(jasmine.any(Observable));
     });
     describe('(contents, title, ToC)', () => {
       beforeEach(() => swapViewsSpy.and.callThrough());
@@ -302,7 +289,7 @@ describe('ViewerComp', () => {
         expect(elem.textContent).toBe('');
         viewer.curr.innerHTML = 'Test';
         expect(elem.textContent).toBe('Test');
-        await doRender(null);
+        await doRender(undefined);
         expect(elem.textContent).toBe('');
       });
 
@@ -344,14 +331,14 @@ describe('ViewerComp', () => {
         );
       });
       it('should add the "noindex" meta tag if the document is 404', async () => {
-        await doRender('missing', FILE_NOT_FOUND);
+        await doRender('missing', NOT_FOUND);
         expect(TestBed.inject(Meta).addTag).toHaveBeenCalledWith({
           name: 'robots',
           content: 'noindex'
         });
       });
       it('should add a "noindex" meta tag if the document fetching fails', async () => {
-        await doRender('error', FETCHING_ERROR);
+        await doRender('error', FETCH_ERR);
         expect(TestBed.inject(Meta).addTag).toHaveBeenCalledWith({
           name: 'robots',
           content: 'noindex'
@@ -367,7 +354,7 @@ describe('ViewerComp', () => {
       });
       it('should attempt to embed components even if the document is empty', async () => {
         await doRender('');
-        await doRender(null);
+        await doRender(undefined);
         expect(loadElementsSpy).toHaveBeenCalledTimes(2);
         expect(loadElementsSpy.calls.argsFor(0)).toEqual([viewer.next]);
         expect(loadElementsSpy.calls.argsFor(1)).toEqual([viewer.next]);
@@ -376,8 +363,8 @@ describe('ViewerComp', () => {
         const obs = new ObservableWithSubscriptionSpies();
         loadElementsSpy.and.returnValue(obs);
         const renderObservable = viewer.render({
-          contents: 'Some content',
-          id: 'foo'
+          v: 'Some content',
+          k: 'foo'
         });
         const subscription = renderObservable.subscribe();
         expect(obs.subscribeSpy).toHaveBeenCalledTimes(1);
@@ -392,7 +379,7 @@ describe('ViewerComp', () => {
       it('should still swap the views if the document is empty', async () => {
         await doRender('');
         expect(swapViewsSpy).toHaveBeenCalledTimes(1);
-        await doRender(null);
+        await doRender(undefined);
         expect(swapViewsSpy).toHaveBeenCalledTimes(2);
       });
       it('should pass the `addTitleAndToc` callback', async () => {
@@ -405,8 +392,8 @@ describe('ViewerComp', () => {
         const obs = new ObservableWithSubscriptionSpies();
         swapViewsSpy.and.returnValue(obs);
         const renderObservable = viewer.render({
-          contents: 'Hello, world!',
-          id: 'foo'
+          v: 'Hello, world!',
+          k: 'foo'
         });
         const subscription = renderObservable.subscribe();
         expect(obs.subscribeSpy).toHaveBeenCalledTimes(1);
@@ -418,9 +405,9 @@ describe('ViewerComp', () => {
     });
 
     describe('(on error) should clean up, log the error and recover', () => {
-      let logger: MockLog;
+      let log: MockLog;
       beforeEach(() => {
-        logger = (TestBed.inject(Logger) as unknown) as MockLog;
+        log = (TestBed.inject(LogService) as unknown) as MockLog;
       });
       it('when `prep()` fails', async () => {
         const error = Error('Typical `prepareTitleAndToc()` error');
@@ -432,8 +419,8 @@ describe('ViewerComp', () => {
         expect(prep).toHaveBeenCalledTimes(1);
         expect(swapViewsSpy).not.toHaveBeenCalled();
         expect(viewer.next.innerHTML).toBe('');
-        expect(logger.output.error).toEqual([[jasmine.any(Error)]]);
-        expect(logger.output.error[0][0].message).toEqual(
+        expect(log.out.fail).toEqual([[jasmine.any(Error)]]);
+        expect(log.out.fail[0][0].message).toEqual(
           `[DocViewer] Error preparing document 'foo': ${error.stack}`
         );
         expect(TestBed.inject(Meta).addTag).toHaveBeenCalledWith({
@@ -452,7 +439,7 @@ describe('ViewerComp', () => {
         expect(loadElementsSpy).toHaveBeenCalledTimes(1);
         expect(swapViewsSpy).not.toHaveBeenCalled();
         expect(viewer.next.innerHTML).toBe('');
-        expect(logger.output.error).toEqual([[jasmine.any(Error)]]);
+        expect(log.out.fail).toEqual([[jasmine.any(Error)]]);
         expect(TestBed.inject(Meta).addTag).toHaveBeenCalledWith({
           name: 'robots',
           content: 'noindex'
@@ -468,8 +455,8 @@ describe('ViewerComp', () => {
         expect(prep).toHaveBeenCalledTimes(1);
         expect(swapViewsSpy).toHaveBeenCalledTimes(1);
         expect(viewer.next.innerHTML).toBe('');
-        expect(logger.output.error).toEqual([[jasmine.any(Error)]]);
-        expect(logger.output.error[0][0].message).toEqual(
+        expect(log.out.fail).toEqual([[jasmine.any(Error)]]);
+        expect(log.out.fail[0][0].message).toEqual(
           `[DocViewer] Error preparing document 'qux': ${error.stack}`
         );
         expect(TestBed.inject(Meta).addTag).toHaveBeenCalledWith({
@@ -486,8 +473,8 @@ describe('ViewerComp', () => {
         await doRender('Some content', 'qux');
         expect(swapViewsSpy).toHaveBeenCalledTimes(1);
         expect(viewer.next.innerHTML).toBe('');
-        expect(logger.output.error).toEqual([[jasmine.any(Error)]]);
-        expect(logger.output.error[0][0].message).toEqual(
+        expect(log.out.fail).toEqual([[jasmine.any(Error)]]);
+        expect(log.out.fail[0][0].message).toEqual(
           `[DocViewer] Error preparing document 'qux': ${error}`
         );
         expect(TestBed.inject(Meta).addTag).toHaveBeenCalledWith({
@@ -535,10 +522,10 @@ describe('ViewerComp', () => {
       expect(elem.contains(oldCurr)).toBe(true);
       expect(elem.contains(oldnext)).toBe(false);
     });
-    [true, false].forEach(animationsEnabled => {
-      describe(`(animationsEnabled: ${animationsEnabled})`, () => {
-        beforeEach(() => (ViewerComp.animationsEnabled = animationsEnabled));
-        afterEach(() => (ViewerComp.animationsEnabled = true));
+    [true, false].forEach(animations => {
+      describe(`(animations: ${animations})`, () => {
+        beforeEach(() => (ViewerComp.animations = animations));
+        afterEach(() => (ViewerComp.animations = true));
         [true, false].forEach(noAnimations => {
           describe(`(.${NO_ANIMATIONS}: ${noAnimations})`, () => {
             beforeEach(() =>
@@ -623,7 +610,7 @@ describe('ViewerComp', () => {
               expect(viewer.curr.innerHTML).toBe('Next view 2');
               expect(viewer.next.innerHTML).toBe('');
             });
-            if (animationsEnabled && !noAnimations) {
+            if (animations && !noAnimations) {
               it('should abort swapping if the returned observable is unsubscribed from', async () => {
                 viewer.swapViews().subscribe().unsubscribe();
                 await doSwapViews();
@@ -653,3 +640,80 @@ describe('ViewerComp', () => {
     });
   });
 });
+
+export class TestViewerComp extends ViewerComp {
+  curr: HTMLElement;
+  next: HTMLElement;
+
+  prepare(_target: HTMLElement, _id: string): () => void {
+    return null as any;
+  }
+
+  render(_doc: Data): Observable<void> {
+    return null as any;
+  }
+
+  swapViews(_onInsertedCb?: () => void): Observable<void> {
+    return null as any;
+  }
+}
+
+@Component({
+  selector: 'qnr-test',
+  template: '<qnr-docs-viewer [data]="data">Test Component</qnr-docs-viewer>'
+})
+export class TestParentComponent {
+  data?: Data;
+  @ViewChild(ViewerComp, {static: true}) viewer?: ViewerComp;
+}
+
+export class MockTitle {
+  setTitle = jasmine.createSpy('Title#reset');
+}
+
+export class MockMeta {
+  addTag = jasmine.createSpy('Meta#addTag');
+  removeTag = jasmine.createSpy('Meta#removeTag');
+}
+
+export class MockTocService {
+  genToc = jasmine.createSpy('TocService#genToc');
+  reset = jasmine.createSpy('TocService#reset');
+}
+
+export class MockElemService {
+  loadContainedCustomElements = jasmine.createSpy(
+    'MockElemService#loadContainedCustomElements'
+  );
+}
+
+@NgModule({
+  declarations: [TestViewerComp, TestParentComponent],
+  providers: [
+    {provide: LogService, useClass: MockLog},
+    {provide: Title, useClass: MockTitle},
+    {provide: Meta, useClass: MockMeta},
+    {provide: TocService, useClass: MockTocService},
+    {provide: ElemService, useClass: MockElemService}
+  ]
+})
+export class TestModule {}
+
+export class ObservableWithSubscriptionSpies<T = void> extends Observable<T> {
+  unsubscribeSpies = [] as any[];
+  subscribeSpy = spyOn(this as Observable<T>, 'subscribe').and.callFake(
+    (...args: any[]) => {
+      const subscription = super.subscribe(...args);
+      const unsubscribeSpy = spyOn(
+        subscription,
+        'unsubscribe'
+      ).and.callThrough();
+      this.unsubscribeSpies.push(unsubscribeSpy);
+      return subscription;
+    }
+  );
+
+  constructor(subscriber = () => undefined) {
+    super(subscriber);
+  }
+}

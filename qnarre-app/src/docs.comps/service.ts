@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Injectable, Optional} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {AsyncSubject, Observable, of} from 'rxjs';
 import {catchError, switchMap, tap} from 'rxjs/operators';
@@ -6,95 +6,80 @@ import {catchError, switchMap, tap} from 'rxjs/operators';
 import {LocService} from '../app/loc.serv';
 import {LogService} from '../app/log.serv';
 
-export const FILE_NOT_FOUND = 'file-not-found';
-export const FETCHING_ERROR = 'fetching-error';
+export const NOT_FOUND = 'file-not-found';
+export const FETCH_ERR = 'fetching-error';
 
 export const CONTENT_URL_PREFIX = 'generated/';
 export const DOC_CONTENT_URL_PREFIX = CONTENT_URL_PREFIX + 'docs/';
 
-export interface Contents {
-  id: string;
-  contents?: string;
+export interface Data {
+  k: string;
+  v?: string;
 }
 
 @Injectable()
 export class DocsService {
-  private cache = new Map<string, Observable<Contents>>();
-  doc: Observable<Contents>;
+  private cache = new Map<string, Observable<Data>>();
+  data$: Observable<Data>;
 
   constructor(
-    private logger: LogService,
+    loc: LocService,
     private http: HttpClient,
-    loc: LocService
+    @Optional() private log?: LogService
   ) {
-    this.doc = loc.path$.pipe(switchMap(p => this.getDoc(p)));
+    this.data$ = loc.path$.pipe(switchMap(p => this.data(p)!));
   }
 
-  private getDoc(url: string) {
-    const id = url || 'index';
-    this.logger.log('getting doc', id);
-    if (!this.cache.has(id)) {
-      this.cache.set(id, this.fetchDoc(id));
-    }
-    return this.cache.get(id);
+  private data(url: string) {
+    const k = url || 'index';
+    this.log?.info('getting data', k);
+    if (!this.cache.has(k)) this.cache.set(k, this.fetch(k));
+    return this.cache.get(k)!;
   }
 
-  private fetchDoc(id: string) {
-    const requestPath = `${DOC_CONTENT_URL_PREFIX}${id}.json`;
-    const subject = new AsyncSubject<Contents>();
-
-    this.logger.log('fetching document from', requestPath);
+  private fetch(k: string) {
+    const s = new AsyncSubject<Data>();
+    const p = `${DOC_CONTENT_URL_PREFIX}${k}.json`;
+    this.log?.info('fetching from', p);
     this.http
-      .get<Contents>(requestPath, {responseType: 'json'})
+      .get<Data>(p, {responseType: 'json'})
       .pipe(
-        tap(data => {
-          if (!data || typeof data !== 'object') {
-            this.logger.log('received invalid data:', data);
+        tap(d => {
+          if (typeof d !== 'object') {
+            this.log?.info('received invalid', d);
             throw Error('Invalid data');
           }
         }),
-        catchError((error: HttpErrorResponse) => {
-          return error.status === 404
-            ? this.getNotFound(id)
-            : this.getError(id, error);
+        catchError(e => {
+          return e.status === 404 ? this.notFound(k) : this.error(k, e);
         })
       )
-      .subscribe(subject);
-    return subject.asObservable();
+      .subscribe(s);
+    return s.asObservable();
   }
 
-  private getNotFound(id: string) {
-    if (id !== FILE_NOT_FOUND) {
-      this.logger.error(new Error(`Doc file not found at '${id}'`));
-      return this.getDoc(FILE_NOT_FOUND);
-    } else {
-      return of({
-        id: FILE_NOT_FOUND,
-        contents: 'Doc not found'
-      });
+  private notFound(k: string) {
+    if (k !== NOT_FOUND) {
+      this.log?.fail(new Error(`Data not found at '${k}'`));
+      return this.data(NOT_FOUND);
     }
+    return of({k: NOT_FOUND, v: 'Data not found'} as Data);
   }
 
-  private getError(id: string, error: HttpErrorResponse) {
-    this.logger.error(
-      new Error(`Error fetching doc '${id}': (${error.message})`)
-    );
-    this.cache.delete(id);
-    return of({
-      id: FETCHING_ERROR,
-      contents: FETCHING_ERROR_CONTENTS(id)
-    });
+  private error(k: string, e: HttpErrorResponse) {
+    this.log?.fail(new Error(`Error fetching '${k}': (${e.message})`));
+    this.cache.delete(k);
+    return of({k: FETCH_ERR, v: ERR_CONTENTS(k)} as Data);
   }
 }
 
-const FETCHING_ERROR_CONTENTS = (path: string) => `
+const ERR_CONTENTS = (k: string) => `
   <div class="nf-container l-flex-wrap flex-center">
     <div class="nf-icon material-icons">error_outline</div>
     <div class="nf-response l-flex-wrap">
       <h1 class="no-toc">Request for document failed.</h1>
       <p>
-        We are unable to retrieve the "${path}" page at this time.
-        Please check your connection and try again later.
+        Unable to retrieve "${k}" page. Please try later.
       </p>
     </div>
   </div>

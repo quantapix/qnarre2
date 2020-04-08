@@ -9,7 +9,7 @@ import {DashboardCommonComponent} from '../graph.comps/dash.comp';
 import {DashboardComp} from '../graph.comps/dashboard';
 import {DashLoaderComp} from '../graph.comps/dash-loader';
 import {DebugCardComp} from '../graph.comps/debug-card';
-import {GraphComp} from '../graph.comps/graph';
+import {GraphComp} from '../graph.comps/viewer';
 import {IconComp} from '../graph.comps/icon';
 import {InfoComp} from '../graph.comps/info';
 import {MinimapComp} from '../graph.comps/minimap';

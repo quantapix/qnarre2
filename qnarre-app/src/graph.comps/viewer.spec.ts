@@ -1,6 +1,6 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {GraphComp} from './graph';
+import {GraphComp} from './viewer';
 
 describe('GraphComp', () => {
   let component: GraphComp;

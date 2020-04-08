@@ -114,4 +114,10 @@ export class LocService {
 @Injectable()
 export class MockLoc {
   constructor(private loc = '') {}
+
+  go(_?: string) {}
+
+  search() {
+    return {} as Dict<string | undefined>;
+  }
 }

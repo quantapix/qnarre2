@@ -4,6 +4,7 @@ import {
   EventEmitter,
   Input,
   OnDestroy,
+  Optional,
   Output
 } from '@angular/core';
 import {Title, Meta} from '@angular/platform-browser';
@@ -11,34 +12,34 @@ import {Title, Meta} from '@angular/platform-browser';
 import {asapScheduler, Observable, of, timer} from 'rxjs';
 import {catchError, observeOn, switchMap, takeUntil, tap} from 'rxjs/operators';
 
-import {Contents, FILE_NOT_FOUND, FETCHING_ERROR} from './service';
+import {Data, NOT_FOUND, FETCH_ERR} from './service';
 import {LogService} from '../app/log.serv';
 import {TocService} from '../app/toc.serv';
 import {ElemService} from '../app/elem.serv';
 
 export const NO_ANIMATIONS = 'no-animations';
 
-const initElem = document.querySelector('qnr-doc-viewer');
-const initContent = initElem ? initElem.innerHTML : '';
+const initElem = document.querySelector('qnr-docs-viewer');
+const initData = initElem ? initElem.innerHTML : '';
 
 @Component({
-  selector: 'qnr-viewer',
+  selector: 'qnr-docs-viewer',
   template: ''
 })
 export class ViewerComp implements OnDestroy {
-  static animationsEnabled = true;
+  static animations = true;
 
   private host: HTMLElement;
   private void$ = of<void>(undefined);
   private onDestroy$ = new EventEmitter<void>();
-  private contents$ = new EventEmitter<Contents>();
+  private data$ = new EventEmitter<Data>();
 
   protected curr: HTMLElement = document.createElement('div');
   protected next: HTMLElement = document.createElement('div');
 
   @Input()
-  set doc(doc: Contents) {
-    if (doc) this.contents$.emit(doc);
+  set data(d: Data | undefined) {
+    if (d) this.data$.emit(d);
   }
 
   @Output() ready = new EventEmitter<void>();
@@ -48,21 +49,21 @@ export class ViewerComp implements OnDestroy {
 
   constructor(
     ref: ElementRef,
-    private logger: Logger,
     private title: Title,
     private meta: Meta,
     private toc: TocService,
-    private loader: ElemService
+    private elems: ElemService,
+    @Optional() private log?: LogService
   ) {
     this.host = ref.nativeElement;
-    this.host.innerHTML = initContent;
+    this.host.innerHTML = initData;
     if (this.host.firstElementChild) {
       this.curr = this.host.firstElementChild as HTMLElement;
     }
-    this.contents$
+    this.data$
       .pipe(
         observeOn(asapScheduler),
-        switchMap(newDoc => this.render(newDoc)),
+        switchMap(d => this.render(d)),
         takeUntil(this.onDestroy$)
       )
       .subscribe();
@@ -72,125 +73,108 @@ export class ViewerComp implements OnDestroy {
     this.onDestroy$.emit();
   }
 
-  protected prepare(target: HTMLElement, id: string): () => void {
-    const te = target.querySelector('h1');
-    const needs = !!te && !`/no-?toc/i`.test(te.className);
-    const emb = target.querySelector('qnr-toc.embedded');
+  protected prepare(tgt: HTMLElement, k: string): () => void {
+    const e = tgt.querySelector('h1');
+    const needs = !!e && !/no-?toc/i.test(e?.className);
+    const emb = tgt.querySelector('qnr-toc.embedded');
     if (needs && !emb) {
-      te.insertAdjacentHTML('afterend', '<qnr-toc class="embedded"></qnr-toc>');
-    } else if (!needs && emb && emb.parentNode !== null) {
-      emb.parentNode.removeChild(emb);
-    }
+      e?.insertAdjacentHTML('afterend', '<qnr-toc class="embedded"></qnr-toc>');
+    } else if (!needs && emb?.parentNode) emb.parentNode.removeChild(emb);
     return () => {
       this.toc.reset();
-      let title: string | undefined = '';
-      if (te) {
-        title =
-          typeof te.innerText === 'string' ? te.innerText : te.textContent;
-
-        if (needs) {
-          this.toc.genToc(target, id);
-        }
+      let t = '' as string | undefined;
+      if (e) {
+        t =
+          typeof e.innerText === 'string'
+            ? e.innerText
+            : e.textContent ?? undefined;
+        if (needs) this.toc.toc(tgt, k);
       }
-      this.title.setTitle(title ? `Angular - ${title}` : 'Angular');
+      this.title.setTitle(t ? `Qnarre - ${t}` : 'Qnarre');
     };
   }
 
-  protected render(doc: Contents) {
-    let addTitleAndToc: () => void;
-    this.setNoIndex(doc.id === FILE_NOT_FOUND || doc.id === FETCHING_ERROR);
+  protected render(d: Data) {
+    let addToc: () => void;
+    this.noIndex(d.k === NOT_FOUND || d.k === FETCH_ERR);
     return this.void$.pipe(
-      tap(() => (this.next.innerHTML = doc.contents || '')),
-      tap(() => (addTitleAndToc = this.prepare(this.next, doc.id))),
-      switchMap(() => this.loader.loadContained(this.next)),
+      tap(() => (this.next.innerHTML = d.v || '')),
+      tap(() => (addToc = this.prepare(this.next, d.k))),
+      switchMap(() => this.elems.loadContained(this.next)),
       tap(() => this.ready.emit()),
-      switchMap(() => this.swapViews(addTitleAndToc)),
+      switchMap(() => this.swap(addToc)),
       tap(() => this.rendered.emit()),
-      catchError(err => {
-        const msg = err instanceof Error ? err.stack : err;
-        this.logger.error(
-          new Error(`[DocViewer] Error preparing document '${doc.id}': ${msg}`)
-        );
+      catchError(e => {
+        const m = e instanceof Error ? e.stack : e;
+        this.log?.fail(new Error(`[Viewer] Error rendering '${d.k}': ${m}`));
         this.next.innerHTML = '';
-        this.setNoIndex(true);
+        this.noIndex(true);
         return this.void$;
       })
     );
   }
 
-  private setNoIndex(val: boolean) {
-    if (val) {
-      this.meta.addTag({name: 'robots', content: 'noindex'});
-    } else {
-      this.meta.removeTag('name="robots"');
-    }
+  private noIndex(f: boolean) {
+    if (f) this.meta.addTag({name: 'robots', content: 'noindex'});
+    else this.meta.removeTag('name="robots"');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  protected swapViews(onInsertedCb = () => {}) {
-    const raf$ = new Observable<void>(sub => {
-      const rafId = requestAnimationFrame(() => {
-        sub.next();
-        sub.complete();
+  protected swap(cb = () => {}) {
+    const raf$ = new Observable<void>(s => {
+      const f = requestAnimationFrame(() => {
+        s.next();
+        s.complete();
       });
-      return () => cancelAnimationFrame(rafId);
+      return () => cancelAnimationFrame(f);
     });
-    const getActualDuration = (elem: HTMLElement) => {
-      const cssValue = getComputedStyle(elem).transitionDuration || '';
-      const seconds = Number(cssValue.replace(/s$/, ''));
-      return 1000 * seconds;
+    const actual = (e: HTMLElement) => {
+      const v = getComputedStyle(e).transitionDuration || '';
+      return 1000 * Number(v.replace(/s$/, ''));
     };
-    const animateProp = (
-      elem: HTMLElement,
-      prop: keyof CSSStyleDeclaration,
+    const animate = (
+      e: HTMLElement,
+      p: keyof CSSStyleDeclaration,
       from: string,
       to: string,
-      duration = 200
+      dur = 200
     ) => {
-      const animationsDisabled =
-        !ViewerComponent.animationsEnabled ||
-        this.host.classList.contains(NO_ANIMATIONS);
-      if (prop === 'length' || prop === 'parentRule') {
-        // We cannot animate length or parentRule properties because they are readonly
-        return this.void$;
-      }
-      elem.style.transition = '';
-      return animationsDisabled
-        ? this.void$.pipe(tap(() => (elem.style[prop] = to)))
+      const disabled =
+        !ViewerComp.animations || this.host.classList.contains(NO_ANIMATIONS);
+      if (p === 'length' || p === 'parentRule') return this.void$;
+      e.style.transition = '';
+      return disabled
+        ? this.void$.pipe(tap(() => (e.style[p] = to)))
         : this.void$.pipe(
             switchMap(() => raf$),
-            tap(() => (elem.style[prop] = from)),
+            tap(() => (e.style[p] = from)),
             switchMap(() => raf$),
-            tap(
-              () => (elem.style.transition = `all ${duration}ms ease-in-out`)
-            ),
+            tap(() => (e.style.transition = `all ${dur}ms ease-in-out`)),
             switchMap(() => raf$),
-            tap(() => (elem.style[prop] = to)),
-            switchMap(() => timer(getActualDuration(elem))),
+            tap(() => (e.style[p] = to)),
+            switchMap(() => timer(actual(e))),
             switchMap(() => this.void$)
           );
     };
-    const leave = (elem: HTMLElement) =>
-      animateProp(elem, 'opacity', '1', '0.1');
-    const enter = (elem: HTMLElement) =>
-      animateProp(elem, 'opacity', '0.1', '1');
+    const leave = (e: HTMLElement) => animate(e, 'opacity', '1', '0.1');
+    const enter = (e: HTMLElement) => animate(e, 'opacity', '0.1', '1');
     let done$ = this.void$;
     if (this.curr.parentElement) {
       done$ = done$.pipe(
         switchMap(() => leave(this.curr)),
-        tap(() => this.curr.parentElement.removeChild(this.curr)),
+        tap(() => this.curr.parentElement?.removeChild(this.curr)),
         tap(() => this.removed.emit())
       );
     }
     return done$.pipe(
       tap(() => this.host.appendChild(this.next)),
-      tap(() => onInsertedCb()),
+      tap(() => cb()),
       tap(() => this.inserted.emit()),
       switchMap(() => enter(this.next)),
       tap(() => {
-        const prevViewContainer = this.curr;
+        const prev = this.curr;
         this.curr = this.next;
-        this.next = prevViewContainer;
+        this.next = prev;
         this.next.innerHTML = '';
       })
     );

@@ -20,7 +20,7 @@ class SearchCriteria {
 
 @Component({
   selector: 'qnr-api-list',
-  templateUrl: './api-list.component.html'
+  templateUrl: './api.html'
 })
 export class ApiListComp implements OnInit {
   filteredSections: Observable<ApiSection[]>;

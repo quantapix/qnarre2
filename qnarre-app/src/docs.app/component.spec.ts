@@ -94,13 +94,13 @@ describe('AppComp', () => {
 
   describe('with proper DocViewer', () => {
     beforeEach(async () => {
-      DocViewerComponent.animationsEnabled = false;
+      DocViewerComponent.animations = false;
 
       createTestingModule('a/b');
       await initializeTest();
     });
 
-    afterEach(() => (DocViewerComponent.animationsEnabled = true));
+    afterEach(() => (DocViewerComponent.animations = true));
 
     it('should create', () => {
       expect(component).toBeDefined();
