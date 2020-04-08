@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Injectable, Optional} from '@angular/core';
 import {from, Observable, of} from 'rxjs';
 import {first, map, share} from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ type Prettify = (
 export class PrettifyService {
   private prettify: Observable<Prettify>;
 
-  constructor(private logger: LogService) {
+  constructor(@Optional() private log?: LogService) {
     this.prettify = from(this.getPrettify()).pipe(share());
   }
 
@@ -26,7 +26,7 @@ export class PrettifyService {
           () => (window as any)['prettyfy'],
           err => {
             const msg = `Cannot get prettify.js: ${err.message}`;
-            this.logger.error(new Error(msg));
+            this.log?.error(new Error(msg));
             return () => {
               throw new Error(msg);
             };

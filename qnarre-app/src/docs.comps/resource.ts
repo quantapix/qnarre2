@@ -7,7 +7,7 @@ import {Category, ResourceService} from '../services/resource';
 
 @Component({
   selector: 'qnr-resource-list',
-  templateUrl: 'resource-list.component.html'
+  templateUrl: 'resource.html'
 })
 export class ResourceListComp implements OnInit {
   categories = [] as Category[];
@@ -26,8 +26,6 @@ export class ResourceListComp implements OnInit {
   }
 
   ngOnInit() {
-    // Not using async pipe because cats appear twice in template
-    // No need to unsubscribe because categories observable completes.
     this.resourceService.categories.subscribe(cats => (this.categories = cats));
   }
 

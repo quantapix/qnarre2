@@ -37,7 +37,6 @@ export class ContribService {
     const contributors = this.http
       .get<{[key: string]: Contrib}>(contributorsPath)
       .pipe(
-        // Create group map
         map(contribs => {
           const contribMap: {[name: string]: Contrib[]} = {};
           Object.keys(contribs).forEach(key => {
@@ -51,8 +50,6 @@ export class ContribService {
 
           return contribMap;
         }),
-
-        // Flatten group map into sorted group array of sorted contributors
         map(cmap => {
           return Object.keys(cmap)
             .map(key => {
@@ -65,7 +62,6 @@ export class ContribService {
             })
             .sort(compareGroups);
         }),
-
         publishLast()
       );
 

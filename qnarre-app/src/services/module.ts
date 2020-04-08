@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
 import {ROUTES} from '@angular/router';
 
-import {Deployment} from './deploy';
+import {Deploy} from './deploy';
 import {ElemService} from './elem';
 import {GaService} from './ga';
 import {LocService} from './loc';
@@ -16,21 +16,22 @@ import {TocService} from './toc';
 import {UpdatesService} from './updates';
 
 import {LOAD_CBS, CBS_TOKEN, CBS_ROUTES} from './elem';
+import {MessageService} from './message';
 
 @NgModule({
   imports: [CommonModule, HttpClientModule],
   providers: [
     LogService,
     LocService,
-
-    Deployment,
-    GaService,
-    NavService,
-    ScrollService,
-    ScrollSpyService,
-    SourceService,
-    TocService,
     UpdatesService,
+    TocService,
+    ScrollSpyService,
+    ScrollService,
+    NavService,
+    MessageService,
+    Deploy,
+    GaService,
+    SourceService,
     ElemService,
     {
       provide: CBS_TOKEN,

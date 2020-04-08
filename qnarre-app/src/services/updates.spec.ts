@@ -13,12 +13,6 @@ describe('SwUpdatesService', () => {
   let swu: MockSwUpdate;
   let checkInterval: number;
 
-  // Helpers
-  // NOTE:
-  //   Because `SwUpdatesService` uses the `interval` operator, it needs to be instantiated and
-  //   destroyed inside the `fakeAsync` zone (when `fakeAsync` is used for the test). Thus, we can't
-  //   run `setup()`/`tearDown()` in `beforeEach()`/`afterEach()` blocks. We use the `run()` helper
-  //   to call them inside each test's zone.
   const setup = (isSwUpdateEnabled: boolean) => {
     injector = ReflectiveInjector.resolveAndCreate([
       {provide: ApplicationRef, useClass: MockApplicationRef},
@@ -53,10 +47,8 @@ describe('SwUpdatesService', () => {
     'should start checking for updates when instantiated (once the app stabilizes)',
     run(() => {
       expect(swu.checkForUpdate).not.toHaveBeenCalled();
-
       appRef.isStable.next(false);
       expect(swu.checkForUpdate).not.toHaveBeenCalled();
-
       appRef.isStable.next(true);
       expect(swu.checkForUpdate).toHaveBeenCalled();
     })
@@ -66,18 +58,13 @@ describe('SwUpdatesService', () => {
     run(() => {
       appRef.isStable.next(true);
       swu.checkForUpdate.calls.reset();
-
       tick(checkInterval);
       expect(swu.checkForUpdate).toHaveBeenCalledTimes(1);
-
       tick(checkInterval);
       expect(swu.checkForUpdate).toHaveBeenCalledTimes(2);
-
       appRef.isStable.next(false);
-
       tick(checkInterval);
       expect(swu.checkForUpdate).toHaveBeenCalledTimes(3);
-
       discardPeriodicTasks();
     })
   ));
@@ -86,7 +73,6 @@ describe('SwUpdatesService', () => {
     run(() => {
       appRef.isStable.next(true);
       expect(swu.activateUpdate).not.toHaveBeenCalled();
-
       swu.$$availableSubj.next({available: {hash: 'foo'}});
       expect(swu.activateUpdate).toHaveBeenCalled();
     })
@@ -96,18 +82,13 @@ describe('SwUpdatesService', () => {
     run(() => {
       appRef.isStable.next(true);
       swu.checkForUpdate.calls.reset();
-
       tick(checkInterval);
       expect(swu.checkForUpdate).toHaveBeenCalledTimes(1);
-
       swu.$$availableSubj.next({available: {hash: 'foo'}});
-
       tick(checkInterval);
       expect(swu.checkForUpdate).toHaveBeenCalledTimes(2);
-
       tick(checkInterval);
       expect(swu.checkForUpdate).toHaveBeenCalledTimes(3);
-
       discardPeriodicTasks();
     })
   ));
@@ -116,33 +97,26 @@ describe('SwUpdatesService', () => {
     'should emit on `updateActivated` when an update has been activated',
     run(() => {
       const activatedVersions: (string | undefined)[] = [];
-      service.activated.subscribe(v => activatedVersions.push(v));
-
+      service.active.subscribe(v => activatedVersions.push(v));
       swu.$$availableSubj.next({available: {hash: 'foo'}});
       swu.$$activatedSubj.next({current: {hash: 'bar'}});
       swu.$$availableSubj.next({available: {hash: 'baz'}});
       swu.$$activatedSubj.next({current: {hash: 'qux'}});
-
       expect(activatedVersions).toEqual(['bar', 'qux']);
     })
   );
 
   describe('when `SwUpdate` is not enabled', () => {
     const runDeactivated = (specFn: VoidFunction) => run(specFn, false);
-
     it('should not check for updates', fakeAsync(
       runDeactivated(() => {
         appRef.isStable.next(true);
-
         tick(checkInterval);
         tick(checkInterval);
-
         swu.$$availableSubj.next({available: {hash: 'foo'}});
         swu.$$activatedSubj.next({current: {hash: 'bar'}});
-
         tick(checkInterval);
         tick(checkInterval);
-
         expect(swu.checkForUpdate).not.toHaveBeenCalled();
       })
     ));
@@ -158,13 +132,11 @@ describe('SwUpdatesService', () => {
       'should never emit on `updateActivated`',
       runDeactivated(() => {
         const activatedVersions: (string | undefined)[] = [];
-        service.activated.subscribe(v => activatedVersions.push(v));
-
+        service.active.subscribe(v => activatedVersions.push(v));
         swu.$$availableSubj.next({available: {hash: 'foo'}});
         swu.$$activatedSubj.next({current: {hash: 'bar'}});
         swu.$$availableSubj.next({available: {hash: 'baz'}});
         swu.$$activatedSubj.next({current: {hash: 'qux'}});
-
         expect(activatedVersions).toEqual([]);
       })
     );
@@ -175,13 +147,10 @@ describe('SwUpdatesService', () => {
       run(() => {
         appRef.isStable.next(true);
         expect(swu.checkForUpdate).toHaveBeenCalled();
-
         service.ngOnDestroy();
         swu.checkForUpdate.calls.reset();
-
         tick(checkInterval);
         tick(checkInterval);
-
         expect(swu.checkForUpdate).not.toHaveBeenCalled();
       })
     ));
@@ -190,16 +159,12 @@ describe('SwUpdatesService', () => {
       run(() => {
         appRef.isStable.next(true);
         expect(swu.checkForUpdate).toHaveBeenCalled();
-
         service.ngOnDestroy();
         swu.checkForUpdate.calls.reset();
-
         swu.$$availableSubj.next({available: {hash: 'foo'}});
         swu.$$activatedSubj.next({current: {hash: 'baz'}});
-
         tick(checkInterval);
         tick(checkInterval);
-
         expect(swu.checkForUpdate).not.toHaveBeenCalled();
       })
     ));
@@ -208,7 +173,6 @@ describe('SwUpdatesService', () => {
       run(() => {
         service.ngOnDestroy();
         swu.$$availableSubj.next({available: {hash: 'foo'}});
-
         expect(swu.activateUpdate).not.toHaveBeenCalled();
       })
     ));
@@ -217,7 +181,7 @@ describe('SwUpdatesService', () => {
       'should stop emitting on `updateActivated`',
       run(() => {
         const activatedVersions: (string | undefined)[] = [];
-        service.activated.subscribe(v => activatedVersions.push(v));
+        service.active.subscribe(v => activatedVersions.push(v));
 
         swu.$$availableSubj.next({available: {hash: 'foo'}});
         swu.$$activatedSubj.next({current: {hash: 'bar'}});

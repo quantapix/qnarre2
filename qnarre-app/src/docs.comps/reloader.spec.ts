@@ -10,7 +10,7 @@ import {createState, createPluginsState} from '../plugins/plugins.spec';
 
 describe('reloader.component', () => {
   let store: MockStore<State>;
-  let dispatch: jasmine.Spy;
+  let dispatch: any;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       providers: [

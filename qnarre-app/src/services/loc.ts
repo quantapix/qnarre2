@@ -34,7 +34,7 @@ export class LocService {
   ) {
     this.urlSub.next(loc.path(true));
     this.loc.subscribe(e => this.urlSub.next(e.url || ''));
-    ups.activated.subscribe(() => (this.update = true));
+    ups.active.subscribe(() => (this.update = true));
   }
 
   go(url?: string) {
@@ -109,4 +109,9 @@ export class LocService {
   private strip(url: string) {
     return url.replace(/^\/+/, '').replace(/\/+(\?|#|$)/, '$1');
   }
+}
+
+@Injectable()
+export class MockLoc {
+  constructor(private loc = '') {}
 }

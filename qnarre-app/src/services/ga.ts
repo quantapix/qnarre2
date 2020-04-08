@@ -5,7 +5,7 @@ import {WindowToken} from '../app/tokens';
 
 @Injectable()
 export class GaService {
-  private url: string;
+  private url = '';
 
   constructor(@Inject(WindowToken) private window: Window) {
     this.ga('create', environment['gaId'], 'auto');

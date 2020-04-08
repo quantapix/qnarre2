@@ -1,4 +1,4 @@
-import {ApplicationRef, Injectable, OnDestroy} from '@angular/core';
+import {ApplicationRef, Injectable, Optional, OnDestroy} from '@angular/core';
 import {SwUpdate} from '@angular/service-worker';
 import {concat, interval, NEVER, Observable, Subject} from 'rxjs';
 import {first, map, takeUntil, tap} from 'rxjs/operators';
@@ -9,33 +9,33 @@ import {LogService} from './log';
 export class UpdatesService implements OnDestroy {
   private interval = 1000 * 60 * 60 * 6; // 6 hours
   private onDestroy = new Subject<void>();
-  activated: Observable<string>;
+  active: Observable<string>;
 
   constructor(
     ref: ApplicationRef,
-    private logger: LogService,
-    private swu: SwUpdate
+    private swu: SwUpdate,
+    @Optional() private log?: LogService
   ) {
     if (!swu.isEnabled) {
-      this.activated = NEVER.pipe(takeUntil(this.onDestroy));
+      this.active = NEVER.pipe(takeUntil(this.onDestroy));
       return;
     }
-    const appIsStable = ref.isStable.pipe(first(v => v));
-    concat(appIsStable, interval(this.interval))
+    const stable = ref.isStable.pipe(first(v => v));
+    concat(stable, interval(this.interval))
       .pipe(
-        tap(() => this.log('Checking for update...')),
+        tap(() => this.info('Checking for update...')),
         takeUntil(this.onDestroy)
       )
       .subscribe(() => this.swu.checkForUpdate());
     this.swu.available
       .pipe(
-        tap(evt => this.log(`Update available: ${JSON.stringify(evt)}`)),
+        tap(e => this.info(`Update available: ${JSON.stringify(e)}`)),
         takeUntil(this.onDestroy)
       )
       .subscribe(() => this.swu.activateUpdate());
-    this.activated = this.swu.activated.pipe(
-      tap(evt => this.log(`Update activated: ${JSON.stringify(evt)}`)),
-      map(evt => evt.current.hash),
+    this.active = this.swu.activated.pipe(
+      tap(e => this.info(`Update active: ${JSON.stringify(e)}`)),
+      map(e => e.current.hash),
       takeUntil(this.onDestroy)
     );
   }
@@ -44,8 +44,8 @@ export class UpdatesService implements OnDestroy {
     this.onDestroy.next();
   }
 
-  private log(message: string) {
-    const timestamp = new Date().toISOString();
-    this.logger.log(`[SwUpdates - ${timestamp}]: ${message}`);
+  private info(m: string) {
+    const t = new Date().toISOString();
+    this.log?.info(`[SwUpdates - ${t}]: ${m}`);
   }
 }

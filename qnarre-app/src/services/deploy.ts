@@ -3,7 +3,7 @@ import {LocService} from './loc';
 import {environment} from '../environments/environment.prod';
 
 @Injectable()
-export class Deployment {
-  mode: string = this.location.search()['mode'] || environment.mode;
-  constructor(private location: LocService) {}
+export class Deploy {
+  mode: string = this.loc.search()['mode'] || environment.mode;
+  constructor(private loc: LocService) {}
 }

@@ -6,7 +6,7 @@ import {WindowToken} from '../app/tokens';
 describe('GaService', () => {
   let ga: GaService;
   let inj: ReflectiveInjector;
-  let spy: jasmine.Spy;
+  let spy: any;
   let mock: any;
 
   beforeEach(() => {
