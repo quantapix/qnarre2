@@ -4,7 +4,7 @@ import {By} from '@angular/platform-browser';
 import {asapScheduler, BehaviorSubject} from 'rxjs';
 
 import {TocComp} from './toc';
-import {ScrollService} from '../services/scroll';
+import {ScrollService} from '../app/scroll.serv';
 import {Item, TocService} from '../app/toc.serv';
 
 describe('TocComp', () => {

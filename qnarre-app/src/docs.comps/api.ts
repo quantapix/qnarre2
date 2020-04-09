@@ -7,7 +7,7 @@ import {combineLatest, Observable, ReplaySubject} from 'rxjs';
 import {WithElem} from '../app/elem.serv';
 
 import {LocService} from '../app/loc.serv';
-import {ApiItem, ApiSection, ApiService} from '../services/api';
+import {ApiItem, ApiSection, ApiService} from './api.serv';
 
 import {Option} from 'app/shared/select/select.component';
 import {map} from 'rxjs/operators';

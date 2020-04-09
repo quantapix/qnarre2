@@ -3,7 +3,7 @@ import {ReflectiveInjector} from '@angular/core';
 import {of} from 'rxjs';
 
 import {ContribListComp} from './contrib';
-import {ContribGroup, ContribService} from '../services/contrib';
+import {ContribGroup, ContribService} from './contrib.serv';
 import {LocService} from '../app/loc.serv';
 
 describe('ContribListComp', () => {

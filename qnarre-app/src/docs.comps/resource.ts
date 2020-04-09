@@ -3,11 +3,44 @@ import {HostListener, OnInit} from '@angular/core';
 import {CommonModule, PlatformLocation} from '@angular/common';
 
 import {WithElem} from '../app/elem.serv';
-import {Category, ResourceService} from '../services/resource';
+import {Category, ResourceService} from './resource.serv';
 
 @Component({
   selector: 'qnr-resource-list',
-  templateUrl: 'resource.html'
+  template: `
+    <div class="resources-container">
+      <div class="l-flex--column">
+        <div class="showcase" *ngFor="let category of categories">
+          <header class="c-resource-header">
+            <a class="h-anchor-offset" id="{{ category.id }}"></a>
+            <h2>{{ category.title }}</h2>
+          </header>
+          <div class="shadow-1">
+            <div *ngFor="let subCategory of category.subCategories">
+              <a class="h-anchor-offset" id="{{ subCategory.id }}"></a>
+              <h3 class="subcategory-title">{{ subCategory.title }}</h3>
+              <div *ngFor="let resource of subCategory.resources">
+                <div class="c-resource" *ngIf="resource.rev">
+                  <a
+                    class="l-flex--column resource-row-link"
+                    target="_blank"
+                    [href]="resource.url"
+                  >
+                    <div>
+                      <h4>{{ resource.title }}</h4>
+                      <p class="resource-description">
+                        {{ resource.desc || 'No Description' }}
+                      </p>
+                    </div>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
 })
 export class ResourceListComp implements OnInit {
   categories = [] as Category[];

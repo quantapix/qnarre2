@@ -6,7 +6,7 @@ import {Injector} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 
 import {LogService} from '../app/log.serv';
-import {ApiService} from './api';
+import {ApiService} from './api.serv';
 
 describe('ApiService', () => {
   let injector: Injector;

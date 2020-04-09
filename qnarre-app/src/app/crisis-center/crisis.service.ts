@@ -2,7 +2,7 @@ import {BehaviorSubject} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 import {Injectable} from '@angular/core';
-import {MessageService} from '../message.serv';
+import {MsgService} from '../msg.serv';
 import {Crisis} from './crisis';
 import {CRISES} from './mock-crises';
 
@@ -15,7 +15,7 @@ export class CrisisService {
     CRISES
   );
 
-  constructor(public service: MessageService) {}
+  constructor(public service: MsgService) {}
 
   getCrises() {
     return this.crises$;

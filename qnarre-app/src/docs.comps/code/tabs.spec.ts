@@ -3,9 +3,9 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {TabsComp, TabsModule} from './tabs';
-import {PrettifyService} from '../../services/prettify';
+import {PrettifyService} from '../../app/prettify.serv';
 import {LogService, MockLog} from '../../app/log.serv';
-import {MockPrettify} from '../../services/prettify';
+import {MockPrettify} from '../../app/prettify.serv';
 
 describe('CodeTabsComponent', () => {
   let f: ComponentFixture<HostComponent>;

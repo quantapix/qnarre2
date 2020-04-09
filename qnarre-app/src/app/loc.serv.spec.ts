@@ -6,7 +6,7 @@ import {Subject} from 'rxjs';
 
 import {GaService} from './ga.serv';
 import {LocService} from './loc.serv';
-import {ScrollService} from '../services/scroll';
+import {ScrollService} from './scroll.serv';
 import {UpdatesService} from './updates.serv';
 
 describe('LocService', () => {

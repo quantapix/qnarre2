@@ -2,7 +2,7 @@ import {Component, NgModule, Input, OnInit, Type} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 
-import {Contrib, ContribGroup, ContribService} from '../services/contrib';
+import {Contrib, ContribGroup, ContribService} from './contrib.serv';
 import {WithElem} from '../app/elem.serv';
 import {LocService} from '../app/loc.serv';
 

@@ -2,7 +2,7 @@ import {DOCUMENT} from '@angular/common';
 import {Inject, Injectable} from '@angular/core';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {ReplaySubject} from 'rxjs';
-import {ScrollSpyInfo, ScrollSpyService} from '../services/scroll-spy';
+import {ScrollSpyInfo, ScrollSpyService} from './scroll-spy.serv';
 
 export interface Item {
   content: SafeHtml;

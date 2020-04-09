@@ -13,7 +13,18 @@ import {LoadingCode, ElementLoading} from '../app/types';
 
 @Component({
   selector: 'qnr-plugins-comp',
-  templateUrl: './comp.html',
+  template: `
+    <div
+      #pluginContainer
+      class="plugins"
+      [ngSwitch]="activePlugin?.loading.type"
+    >
+      <ng-container
+        *ngSwitchCase="LoadingCode.COMPONENT"
+        [ngSwitch]="activePlugin?.id"
+      ></ng-container>
+    </div>
+  `,
   styles: [
     '.plugins { height: 100%; }',
     'iframe { border: 0; height: 100%; width: 100%; }'

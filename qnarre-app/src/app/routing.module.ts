@@ -5,7 +5,7 @@ import {ComposeMessageComponent} from './compose-message/compose-message.compone
 import {PageNotFoundComp} from './component';
 
 import {AuthGuard} from './auth/auth.guard';
-import {PreloadService} from './preload.service';
+import {PreloadService} from './preload.serv';
 
 const routes: Routes = [
   {

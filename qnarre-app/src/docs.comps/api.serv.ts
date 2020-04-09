@@ -5,7 +5,7 @@ import {ReplaySubject, Subject} from 'rxjs';
 import {takeUntil, tap} from 'rxjs/operators';
 
 import {LogService} from '../app/log.serv';
-import {DOC_CONTENT_URL_PREFIX} from '../docs.comps/service';
+import {DOC_CONTENT_URL_PREFIX} from './service';
 
 export interface ApiItem {
   name: string;

@@ -42,11 +42,13 @@ import {ElemService, CBS_TOKEN} from './elem.serv';
 import {GaService} from './ga.serv';
 import {LocService} from './loc.serv';
 import {LogService} from './log.serv';
-import {MessageService} from './message.serv';
+import {MsgService} from './msg.serv';
 import {NavService} from './nav.serv';
 import {PreloadService} from './preload.serv';
-import {UpdatesService} from './updates.serv';
+import {ScrollService} from './scroll.serv';
+import {ScrollSpyService} from './scroll-spy.serv';
 import {TocService} from './toc.serv';
+import {UpdatesService} from './updates.serv';
 
 import {DataService} from '../graph/data.service';
 import {SceneServ} from '../graph/scene.serv';
@@ -112,7 +114,6 @@ CBS_ROUTES.forEach(r => CBS.set(r.selector, r.loadChildren));
   ],
   exports: [NavItemComp, NavMenuComp, TopMenuComp, FooterComp, ElemComp],
   providers: [
-    TocService,
     DataService,
     DeployService,
     ElemService,
@@ -121,13 +122,14 @@ CBS_ROUTES.forEach(r => CBS.set(r.selector, r.loadChildren));
     Location,
     LocService,
     LogService,
-    MessageService,
+    MsgService,
     NavService,
     PreloadService,
     SceneServ,
-    UpdatesService,
     ScrollService,
     ScrollSpyService,
+    TocService,
+    UpdatesService,
     SearchService,
     svgIconProviders,
     {provide: LocationStrategy, useClass: PathLocationStrategy},

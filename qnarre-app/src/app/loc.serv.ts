@@ -6,7 +6,7 @@ import {map, tap} from 'rxjs/operators';
 
 import {GaService} from './ga.serv';
 import {UpdatesService} from './updates.serv';
-import {ScrollService} from '../services/scroll';
+import {ScrollService} from './scroll.serv';
 
 const dec = decodeURIComponent;
 const enc = encodeURIComponent;

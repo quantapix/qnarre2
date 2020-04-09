@@ -5,7 +5,7 @@ import {
 import {Injector} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 
-import {ContribGroup, ContribService} from './contrib';
+import {ContribGroup, ContribService} from './contrib.serv';
 
 describe('ContribService', () => {
   let injector: Injector;

@@ -2,8 +2,34 @@ import {Component, OnInit} from '@angular/core';
 
 @Component({
   selector: 'qnr-plugin-dialog',
-  templateUrl: './plugin-dialog.html',
-  styleUrls: ['./plugin-dialog.scss']
+  template: `<template is="dom-if" if="[[_open]]">
+      <div id="dashboard-backdrop"></div>
+    </template>
+    <paper-dialog
+      id="dialog"
+      modal
+      opened="{{ _open }}"
+      with-backdrop="[[_useNativeBackdrop]]"
+    >
+      <h2 id="dialog-title">[[_title]]</h2>
+      <div class="custom-message">[[_customMessage]]</div>
+    </paper-dialog> `,
+  styles: [
+    `
+      #dashboard-backdrop {
+        background: rgba(0, 0, 0, 0.6);
+        width: 100%;
+        height: 100%;
+      }
+      #dialog-title {
+        padding-bottom: 15px;
+      }
+      .custom-message {
+        margin-top: 0;
+        margin-bottom: 15px;
+      }
+    `
+  ]
 })
 export class PluginDialogComp implements OnInit {
   _title?: string;

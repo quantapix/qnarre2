@@ -10,7 +10,7 @@ import {DOCUMENT} from '@angular/common';
 import {MockLocationStrategy, SpyLocation} from '@angular/common/testing';
 import {fakeAsync, tick} from '@angular/core/testing';
 
-import {ScrollService, topMargin} from './scroll';
+import {ScrollService, topMargin} from './scroll.serv';
 
 describe('ScrollService', () => {
   const ssInstances: ScrollService[] = [];

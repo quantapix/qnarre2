@@ -5,7 +5,7 @@ import {
 import {Injector} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 
-import {ResourceService} from './resource';
+import {ResourceService} from './resource.serv';
 import {Category} from '../docs.elems/resource/resource.model';
 
 describe('ResourceService', () => {

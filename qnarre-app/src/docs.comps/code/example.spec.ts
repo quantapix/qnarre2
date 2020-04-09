@@ -2,9 +2,9 @@ import {Component, ViewChild} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {ExampleComp, ExampleModule} from './example';
-import {PrettifyService} from '../../services/prettify';
+import {PrettifyService} from '../../app/prettify.serv';
 import {LogService, MockLog} from '../../app/log.serv';
-import {MockPrettify} from '../../services/prettify';
+import {MockPrettify} from '../../app/prettify.serv';
 
 describe('ExampleComp', () => {
   let host: HostComponent;

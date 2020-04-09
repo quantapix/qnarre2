@@ -4,7 +4,7 @@ import {PlatformLocation} from '@angular/common';
 import {of} from 'rxjs';
 
 import {ResourceListComp} from './resource';
-import {Category, ResourceService} from '../services/resource';
+import {Category, ResourceService} from './resource.serv';
 
 // Testing the component class behaviors, independent of its template
 // Let e2e tests verify how it displays.

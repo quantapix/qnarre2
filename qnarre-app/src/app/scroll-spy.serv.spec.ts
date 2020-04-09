@@ -2,13 +2,13 @@ import {Injector, ReflectiveInjector} from '@angular/core';
 import {fakeAsync, tick} from '@angular/core/testing';
 import {DOCUMENT} from '@angular/common';
 
-import {ScrollService} from './scroll';
+import {ScrollService} from './scroll.serv';
 import {
   ScrollItem,
   ScrollSpiedElement,
   ScrollSpiedElementGroup,
   ScrollSpyService
-} from './scroll-spy';
+} from './scroll-spy.serv';
 
 describe('ScrollSpiedElement', () => {
   it('should expose the spied element and index', () => {

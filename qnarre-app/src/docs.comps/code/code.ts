@@ -14,8 +14,8 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {tap} from 'rxjs/operators';
 
 import {LogService} from '../../app/log.serv';
-import {CopierService} from '../../services/copier';
-import {PrettifyService} from '../../services/prettify';
+import {CopierService} from '../../app/copier.serv';
+import {PrettifyService} from '../../app/prettify.serv';
 
 @Component({
   selector: 'qnr-code',

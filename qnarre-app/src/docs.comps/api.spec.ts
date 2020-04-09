@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {BehaviorSubject} from 'rxjs';
 
 import {ApiListComp} from './api';
-import {ApiItem, ApiSection, ApiService} from '../services/api';
+import {ApiItem, ApiSection, ApiService} from './api.serv';
 import {LocService} from '../app/loc.serv';
 import {LogService} from '../app/log.serv';
 import {MockLog} from '../app/log.serv';
