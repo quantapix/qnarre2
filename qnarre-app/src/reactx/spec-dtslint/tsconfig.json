@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "lib": ["esnext", "dom"],
+    "module": "commonjs",
+    "noEmit": true,
+    "paths": {
+      "rxjs": ["../dist/types"],
+      "rxjs/operators": ["../dist/types/operators"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "esnext"
+  }
+}
