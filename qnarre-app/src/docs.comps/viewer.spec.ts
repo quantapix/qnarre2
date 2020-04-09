@@ -5,14 +5,14 @@ import {Meta, Title} from '@angular/platform-browser';
 
 import {Observable, asapScheduler, of} from 'rxjs';
 
-import {NOT_FOUND, FETCH_ERR} from './service';
+import {NOT_FOUND, FETCH_ERR} from '../app/data.serv';
 import {LogService, MockLog} from '../app/log.serv';
 import {ElemsModule} from '../app/elem';
 import {TocService} from '../app/toc.serv';
 import {ElemService} from '../app/elem.serv';
 import {ViewerComp, NO_ANIMATIONS} from './viewer';
 
-import {Data} from './service';
+import {Data} from '../app/data.serv';
 
 describe('ViewerComp', () => {
   let parentFixture: ComponentFixture<TestParentComponent>;

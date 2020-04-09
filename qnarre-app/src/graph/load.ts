@@ -43,7 +43,7 @@ export async function loadGraph(t: qt.Tracker, path?: string, b?: Blob) {
   return qu.Task.runPromise(t, 'Parsing proto', 60, () => parseGraph(buf));
 }
 
-export async function loadHierGraph(
+export async function loadHier(
   t: qu.Tracker,
   path?: string,
   b?: Blob,

@@ -9,7 +9,7 @@ import * as qt from '../graph/types';
 import * as qu from '../graph/utils';
 
 @Component({
-  selector: 'qnr-graph-graph',
+  selector: 'qnr-graph-viewer',
   templateUrl: './viewer.html',
   styleUrls: ['./viewer.scss']
 })

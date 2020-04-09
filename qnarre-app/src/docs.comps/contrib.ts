@@ -6,7 +6,7 @@ import {Contrib, ContribGroup, ContribService} from './contrib.serv';
 import {WithElem} from '../app/elem.serv';
 import {LocService} from '../app/loc.serv';
 
-import {CONTENT_URL_PREFIX} from './service';
+import {CONTENT_URL_PREFIX} from '../app/data.serv';
 
 @Component({
   selector: `qnr-contributor-list`,

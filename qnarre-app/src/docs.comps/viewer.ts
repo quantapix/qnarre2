@@ -12,7 +12,7 @@ import {Title, Meta} from '@angular/platform-browser';
 import {asapScheduler, Observable, of, timer} from 'rxjs';
 import {catchError, observeOn, switchMap, takeUntil, tap} from 'rxjs/operators';
 
-import {Data, NOT_FOUND, FETCH_ERR} from './service';
+import {Data, NOT_FOUND, FETCH_ERR} from '../app/data.serv';
 import {LogService} from '../app/log.serv';
 import {TocService} from '../app/toc.serv';
 import {ElemService} from '../app/elem.serv';

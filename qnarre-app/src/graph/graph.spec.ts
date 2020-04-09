@@ -3,7 +3,7 @@ import * as qu from './utils';
 import * as qg from './graph';
 import * as qs from './scene';
 import * as qp from './params';
-import * as loader from './loader';
+import * as loader from './load';
 
 describe('graph', () => {
   it('simple graph contruction', async () => {

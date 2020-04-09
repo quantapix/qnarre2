@@ -6,7 +6,7 @@ import {
   Output,
   ViewChild
 } from '@angular/core';
-import {Contents} from './service';
+import {Contents} from '../app/data.serv';
 
 @Component({
   selector: 'qnr-dt',

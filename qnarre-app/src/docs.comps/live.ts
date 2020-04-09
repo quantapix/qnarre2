@@ -6,7 +6,7 @@ import {
   ViewChild
 } from '@angular/core';
 import {Location} from '@angular/common';
-import {CONTENT_URL_PREFIX} from './service';
+import {CONTENT_URL_PREFIX} from '../app/data.serv';
 
 import {AttrMap, boolFromValue, getAttrs, getAttrValue} from '../utils/attr';
 

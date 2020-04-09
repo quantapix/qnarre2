@@ -3,11 +3,11 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {AsyncSubject, Observable, of} from 'rxjs';
 import {catchError, switchMap, tap} from 'rxjs/operators';
 
-import {LocService} from '../app/loc.serv';
-import {LogService} from '../app/log.serv';
+import {LocService} from './loc.serv';
+import {LogService} from './log.serv';
 
-export const NOT_FOUND = 'file-not-found';
-export const FETCH_ERR = 'fetching-error';
+export const NOT_FOUND = 'not-found';
+export const FETCH_ERR = 'fetch-err';
 
 export const CONTENT_URL_PREFIX = 'generated/';
 export const DOC_CONTENT_URL_PREFIX = CONTENT_URL_PREFIX + 'docs/';
@@ -18,7 +18,7 @@ export interface Data {
 }
 
 @Injectable()
-export class DocsService {
+export class DataService {
   private cache = new Map<string, Observable<Data>>();
   data$: Observable<Data>;
 
@@ -27,10 +27,10 @@ export class DocsService {
     private http: HttpClient,
     @Optional() private log?: LogService
   ) {
-    this.data$ = loc.path$.pipe(switchMap(p => this.data(p)!));
+    this.data$ = loc.path$.pipe(switchMap(p => this.data(p)));
   }
 
-  private data(url: string) {
+  private data(url?: string) {
     const k = url || 'index';
     this.log?.info('getting data', k);
     if (!this.cache.has(k)) this.cache.set(k, this.fetch(k));
@@ -77,7 +77,7 @@ const ERR_CONTENTS = (k: string) => `
   <div class="nf-container l-flex-wrap flex-center">
     <div class="nf-icon material-icons">error_outline</div>
     <div class="nf-response l-flex-wrap">
-      <h1 class="no-toc">Request for document failed.</h1>
+      <h1 class="no-toc">Request for data failed.</h1>
       <p>
         Unable to retrieve "${k}" page. Please try later.
       </p>

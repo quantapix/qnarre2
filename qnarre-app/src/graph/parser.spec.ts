@@ -1,5 +1,5 @@
 import * as util from './utils';
-import * as loader from './loader';
+import * as loader from './load';
 
 describe('parser', () => {
   describe('parsing GraphDef pbtxt', () => {

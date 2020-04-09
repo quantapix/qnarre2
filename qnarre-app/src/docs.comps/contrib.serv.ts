@@ -4,7 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {ConnectableObservable, Observable} from 'rxjs';
 import {map, publishLast} from 'rxjs/operators';
 
-import {CONTENT_URL_PREFIX} from './service';
+import {CONTENT_URL_PREFIX} from '../app/data.serv';
 
 const contributorsPath = CONTENT_URL_PREFIX + 'contributors.json';
 const knownGroups = ['Angular', 'Collaborators', 'GDE'];

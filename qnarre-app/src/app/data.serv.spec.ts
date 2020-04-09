@@ -5,21 +5,21 @@ import {
 import {TestBed} from '@angular/core/testing';
 import {Subscription} from 'rxjs';
 
-import {LocService, MockLoc} from '../app/loc.serv';
-import {LogService} from '../app/log.serv';
-import {MockLog} from '../app/log.serv';
-import {DocsService, Data, FETCH_ERR, NOT_FOUND} from './service';
+import {LocService, MockLoc} from './loc.serv';
+import {LogService} from './log.serv';
+import {MockLog} from './log.serv';
+import {DataService, Data, FETCH_ERR, NOT_FOUND} from './data.serv';
 
 const CONTENT_URL_PREFIX = 'generated/docs/';
 
-describe('DocsService', () => {
+describe('DataService', () => {
   let httpMock: HttpTestingController;
 
   function createInjector(url: string) {
     return TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [
-        DocsService,
+        DataService,
         {
           provide: LocService,
           useFactory: () => new MockLoc(url)
@@ -34,7 +34,7 @@ describe('DocsService', () => {
     httpMock = injector.inject(HttpTestingController);
     return {
       loc: (injector.inject(LocService) as any) as MockLoc,
-      doc: (injector.inject(DocsService) as any) as DocsService,
+      doc: (injector.inject(DataService) as any) as DataService,
       log: (injector.inject(LogService) as any) as MockLog
     };
   }
@@ -46,7 +46,7 @@ describe('DocsService', () => {
       const {doc} = getServices('initial/doc');
       doc.data$.subscribe();
       httpMock.expectOne(CONTENT_URL_PREFIX + 'initial/doc.json');
-      expect().nothing(); // Prevent jasmine from complaining about no expectations.
+      expect().nothing();
     });
     it('should emit a document each time the location changes', () => {
       let d: Data | undefined;
@@ -80,7 +80,7 @@ describe('DocsService', () => {
       httpMock
         .expectOne(CONTENT_URL_PREFIX + 'file-not-found.json')
         .flush(notFoundDoc);
-      expect(log.out.fail).toEqual([]); // does not report repeate errors
+      expect(log.out.fail).toEqual([]);
       expect(currentDocument).toEqual(notFoundDoc);
     });
     it('should emit a hard-coded not-found document if the not-found document is not found on the server', () => {

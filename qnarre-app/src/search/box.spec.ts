@@ -9,8 +9,7 @@ import {
 import {By} from '@angular/platform-browser';
 
 import {BoxComp} from './box';
-import {LocService} from '../app/loc.serv';
-import {MockLocService} from '../testing/loc';
+import {LocService, MockLoc} from '../app/loc.serv';
 
 @Component({
   template:
@@ -31,7 +30,7 @@ describe('BoxComp', () => {
       providers: [
         {
           provide: LocService,
-          useFactory: () => new MockLocService('')
+          useFactory: () => new MockLoc('')
         }
       ]
     });
@@ -44,7 +43,7 @@ describe('BoxComp', () => {
   });
   describe('initialisation', () => {
     it('should get the current search query from the location service', fakeAsync(
-      inject([LocService], (location: MockLocService) => {
+      inject([LocService], (location: MockLoc) => {
         location.search.and.returnValue({search: 'initial search'});
         box.ngAfterViewInit();
         expect(location.search).toHaveBeenCalled();
@@ -54,7 +53,7 @@ describe('BoxComp', () => {
       })
     ));
     it('should decode the search query from the location service (chrome search provider format)', fakeAsync(
-      inject([LocService], (location: MockLocService) => {
+      inject([LocService], (location: MockLoc) => {
         location.search.and.returnValue({search: 'initial+search'});
         box.ngAfterViewInit();
         expect(location.search).toHaveBeenCalled();

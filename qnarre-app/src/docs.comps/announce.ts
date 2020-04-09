@@ -7,7 +7,7 @@ import {ServicesModule} from '../services/module';
 import {WithElem} from '../app/elem.serv';
 
 import {LogService} from '../app/log.serv';
-import {CONTENT_URL_PREFIX} from './service';
+import {CONTENT_URL_PREFIX} from '../app/data.serv';
 
 const path = CONTENT_URL_PREFIX + 'announcements.json';
 

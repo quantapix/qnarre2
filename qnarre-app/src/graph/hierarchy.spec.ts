@@ -1,10 +1,10 @@
 import * as util from './utils';
 import * as graph from './graph';
 import * as hierarchy from './hierarchy';
-import * as loader from './loader';
+import * as loader from './load';
 
 describe('hierarchy', () => {
-  beforeEach(function() {
+  beforeEach(function () {
     const pbtxt = util.stringToBuffer(`
       node {
         name: "Q"

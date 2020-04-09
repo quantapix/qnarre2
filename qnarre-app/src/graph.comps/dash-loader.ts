@@ -4,7 +4,7 @@ import * as backend from '../graph/backend';
 import * as qc from '../graph/compat';
 import * as qg from '../graph/graph';
 import * as qh from '../graph/hierarchy';
-import * as ql from '../graph/loader';
+import * as ql from '../graph/load';
 import * as qp from '../graph/params';
 import * as qs from '../graph/slim';
 import * as qt from '../graph/types';
@@ -72,7 +72,7 @@ export class DashLoaderComp implements OnInit {
         const graphPath = backend
           .getRouter()
           .pluginRoute('graphs', '/graph', params);
-        await this._loadHierGraph(graphPath);
+        await this._loadHier(graphPath);
         this._graphRunTag = {run, tag};
       }
       case qt.SelectT.PROFILE: {
@@ -122,7 +122,7 @@ export class DashLoaderComp implements OnInit {
       const f = t.files?.[0];
       if (f) {
         t.value = '';
-        this._loadHierGraph(undefined, f);
+        this._loadHier(undefined, f);
       }
     }
   }
@@ -136,13 +136,13 @@ export class DashLoaderComp implements OnInit {
     await ql.loadMeta(t, path).then(s => (this.stats = s));
   }
 
-  async _loadHierGraph(path?: string, b?: Blob) {
+  async _loadHier(path?: string, b?: Blob) {
     this.set('progress', {
       value: 0,
       msg: ''
     });
     const t = qu.tracker(this);
-    const {slim, hier} = await ql.loadHierGraph(
+    const {slim, hier} = await ql.loadHier(
       t,
       path,
       b,
