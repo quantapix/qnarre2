@@ -211,10 +211,6 @@ export function identity<T>(x: T): T {
   return x;
 }
 
-export const isArray = (() =>
-  Array.isArray ||
-  (<T>(x: any): x is T[] => x && typeof x.length === 'number'))();
-
 export const isArrayLike = <T>(x: any): x is ArrayLike<T> =>
   x && typeof x.length === 'number' && typeof x !== 'function';
 
@@ -235,7 +231,7 @@ export function isIterable(x: any): x is Iterable<any> {
 }
 
 export function isNumeric(x: any): x is number | string {
-  return !isArray(x) && x - parseFloat(x) + 1 >= 0;
+  return !Array.isArray(x) && x - parseFloat(x) + 1 >= 0;
 }
 
 export function isObject(x: any): x is Object {

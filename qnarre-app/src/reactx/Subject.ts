@@ -2,10 +2,9 @@ import {Operator} from './Operator';
 import {Observable} from './Observable';
 import {Subscriber} from './Subscriber';
 import {Subscription} from './Subscription';
-import {Observer, SubscriptionLike, TeardownLogic} from './types';
+import {Observer, SubscriptionLike, Teardown} from './types';
 import {ObjectUnsubscribedError} from './util';
 import {SubjectSubscription} from './SubjectSubscription';
-import {rxSubscriber as rxSubscriberSymbol} from './symbol';
 
 export class SubjectSubscriber<T> extends Subscriber<T> {
   constructor(protected destination: Subject<T>) {
@@ -15,7 +14,7 @@ export class SubjectSubscriber<T> extends Subscriber<T> {
 
 export class Subject<T = void> extends Observable<T>
   implements SubscriptionLike {
-  [rxSubscriberSymbol]() {
+  [Symbol.rxSubscriber]() {
     return new SubjectSubscriber(this);
   }
 
@@ -86,7 +85,7 @@ export class Subject<T = void> extends Observable<T>
     this.observers = null!;
   }
 
-  _trySubscribe(subscriber: Subscriber<T>): TeardownLogic {
+  _trySubscribe(subscriber: Subscriber<T>): Teardown {
     if (this.closed) throw new ObjectUnsubscribedError();
     return super._trySubscribe(subscriber);
   }

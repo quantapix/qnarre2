@@ -3,7 +3,7 @@ import {Operator} from './Operator';
 import {Observable} from './Observable';
 import {Subscriber} from './Subscriber';
 import {Subscription} from './Subscription';
-import {TeardownLogic} from './types';
+import {Teardown} from './types';
 import {refCount as higherOrderRefCount} from './ops';
 import {SchedulerLike, SchedulerAction} from './types';
 import {asap} from './sched';
@@ -140,7 +140,7 @@ class ConnectableSubscriber<T> extends SubjectSubscriber<T> {
 
 class RefCountOperator<T> implements Operator<T, T> {
   constructor(private connectable: ConnectableObservable<T>) {}
-  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+  call(subscriber: Subscriber<T>, source: any): Teardown {
     const {connectable} = this;
     (<any>connectable)._refCount++;
 
@@ -2166,7 +2166,7 @@ export function race<T>(
 }
 
 export class RaceOperator<T> implements Operator<T, T> {
-  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+  call(subscriber: Subscriber<T>, source: any): Teardown {
     return source.subscribe(new RaceSubscriber(subscriber));
   }
 }

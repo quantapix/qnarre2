@@ -1,7 +1,7 @@
 import {root} from '../../util/root';
 import {Observable} from '..';
 import {Subscriber} from '../../Subscriber';
-import {TeardownLogic} from '../../types';
+import {Teardown} from '../../types';
 import {map} from '../../operators/map';
 
 export interface AjaxRequest {
@@ -170,7 +170,7 @@ export class AjaxObservable<T> extends Observable<T> {
   }
 
   /** @deprecated This is an internal implementation detail, do not use. */
-  _subscribe(subscriber: Subscriber<T>): TeardownLogic {
+  _subscribe(subscriber: Subscriber<T>): Teardown {
     return new AjaxSubscriber(subscriber, this.request);
   }
 }

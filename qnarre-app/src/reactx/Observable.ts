@@ -1,7 +1,7 @@
 import {Subscriber} from './Subscriber';
 import {Subscription} from './Subscription';
 import {
-  TeardownLogic,
+  Teardown,
   OperatorFunction,
   PartialObserver,
   Subscribable
@@ -11,7 +11,6 @@ import {toSubscriber} from './util';
 //import {iif} from './observable/iif';
 //import {throwError} from './observable/throwError';
 import {pipeFromArray} from './util';
-import {config} from './config';
 import {asyncIteratorFrom} from './asyncIteratorFrom';
 
 export class Observable<T> implements Subscribable<T> {
@@ -20,10 +19,7 @@ export class Observable<T> implements Subscribable<T> {
   operator: Operator<any, T> | undefined;
 
   constructor(
-    subscribe?: (
-      this: Observable<T>,
-      subscriber: Subscriber<T>
-    ) => TeardownLogic
+    subscribe?: (this: Observable<T>, subscriber: Subscriber<T>) => Teardown
   ) {
     if (subscribe) {
       this._subscribe = subscribe;
@@ -31,7 +27,7 @@ export class Observable<T> implements Subscribable<T> {
   }
 
   static create: Function = <T>(
-    subscribe?: (subscriber: Subscriber<T>) => TeardownLogic
+    subscribe?: (subscriber: Subscriber<T>) => Teardown
   ) => {
     return new Observable<T>(subscribe);
   };
@@ -59,34 +55,15 @@ export class Observable<T> implements Subscribable<T> {
     if (operator) {
       sink.add(operator.call(sink, this.source));
     } else {
-      sink.add(
-        this.source ||
-          (config.useDeprecatedSynchronousErrorHandling &&
-            !sink.syncErrorThrowable)
-          ? this._subscribe(sink)
-          : this._trySubscribe(sink)
-      );
+      sink.add(this.source ? this._subscribe(sink) : this._trySubscribe(sink));
     }
-    if (config.useDeprecatedSynchronousErrorHandling) {
-      if (sink.syncErrorThrowable) {
-        sink.syncErrorThrowable = false;
-        if (sink.syncErrorThrown) {
-          throw sink.syncErrorValue;
-        }
-      }
-    }
-
     return sink;
   }
 
-  _trySubscribe(sink: Subscriber<T>): TeardownLogic {
+  _trySubscribe(sink: Subscriber<T>): Teardown {
     try {
       return this._subscribe(sink);
     } catch (err) {
-      if (config.useDeprecatedSynchronousErrorHandling) {
-        sink.syncErrorThrown = true;
-        sink.syncErrorValue = err;
-      }
       if (canReportError(sink)) {
         sink.error(err);
       } else {
@@ -118,7 +95,7 @@ export class Observable<T> implements Subscribable<T> {
     }) as Promise<void>;
   }
 
-  _subscribe(subscriber: Subscriber<any>): TeardownLogic {
+  _subscribe(subscriber: Subscriber<any>): Teardown {
     const {source} = this;
     return source && source.subscribe(subscriber);
   }
@@ -220,19 +197,19 @@ export class Observable<T> implements Subscribable<T> {
   ): Promise<T | undefined>;
   toPromise(ctor?: PromiseConstructorLike): Promise<T | undefined> {
     ctor = getPromiseCtor(ctor);
-    return new ctor((resolve, reject) => {
+    return new ctor((r, j) => {
       let value: T | undefined;
       this.subscribe(
-        (x: T) => (value = x),
-        (err: any) => reject(err),
-        () => resolve(value)
+        (v: T) => (value = v),
+        (e: any) => j(e),
+        () => r(value)
       );
     }) as Promise<T | undefined>;
   }
 }
 
 function getPromiseCtor(ctor: PromiseConstructorLike | undefined) {
-  if (!ctor) ctor = config.Promise || Promise;
+  if (!ctor) ctor = Promise;
   if (!ctor) throw new Error('no Promise impl found');
   return ctor;
 }

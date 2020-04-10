@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as sinon from 'sinon';
-import {Observer, TeardownLogic} from '../types';
+import {Observer, Teardown} from '../types';
 import {
   cold,
   expectObservable,
@@ -769,7 +769,7 @@ describe('Observable.lift', () => {
     }
   }
 
-  it('should return Observable which calls TeardownLogic of operator on unsubscription', done => {
+  it('should return Observable which calls Teardown of operator on unsubscription', done => {
     const myOperator: Operator<any, any> = {
       call: (subscriber: Subscriber<any>, source: any) => {
         const subscription = source.subscribe((x: any) => subscriber.next(x));
@@ -978,7 +978,7 @@ describe('Observable.lift', () => {
       class LogOperator<T, R> implements Operator<T, R> {
         constructor(private childOperator: Operator<T, R>) {}
 
-        call(subscriber: Subscriber<R>, source: any): TeardownLogic {
+        call(subscriber: Subscriber<R>, source: any): Teardown {
           return this.childOperator.call(
             new LogSubscriber<R>(subscriber),
             source

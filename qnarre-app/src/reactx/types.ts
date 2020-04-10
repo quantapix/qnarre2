@@ -40,13 +40,17 @@ export type PartialObserver<T> =
   | ErrorObserver<T>
   | CompletionObserver<T>;
 
+export interface Unsubscribable {
+  unsubscribe(): void;
+}
+
 export interface Subscribable<T> {
   subscribe(_?: PartialObserver<T>): Unsubscribable;
-  subscribe(
-    next?: (_: T) => void,
-    error?: (_: any) => void,
-    complete?: () => void
-  ): Unsubscribable;
+}
+
+export interface SubscriptionLike extends Unsubscribable {
+  unsubscribe(): void;
+  readonly closed: boolean;
 }
 
 export type InteropObservable<T> = {[Symbol.observable]: () => Subscribable<T>};
@@ -81,16 +85,7 @@ export type Unshift<X extends any[], Y> = ((y: Y, ...x: X) => any) extends (
 
 export type ValueFromArray<A> = A extends Array<infer T> ? T : never;
 
-export interface Unsubscribable {
-  unsubscribe(): void;
-}
-
-export interface SubscriptionLike extends Unsubscribable {
-  unsubscribe(): void;
-  readonly closed: boolean;
-}
-
-export type TeardownLogic = Unsubscribable | Function | void;
+export type Teardown = Unsubscribable | Function | void;
 
 export type FactoryOrValue<T> = T | (() => T);
 
@@ -121,7 +116,7 @@ export interface SchedulerAction<T> extends SubscriptionLike {
 }
 
 export interface Operator<_T, R> {
-  call(s: Subscriber<R>, _: any): TeardownLogic;
+  call(s: Subscriber<R>, _: any): Teardown;
 }
 
 export interface UnaryFunction<T, R> {
