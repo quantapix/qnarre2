@@ -4,7 +4,7 @@ import {Observer, ObservableInput, InteropObservable} from './types';
 import {Observable} from './Observable';
 import {SchedulerLike} from './types';
 import {UnaryFunction} from './types';
-import {Subscription} from './Subscription';
+import {Subscription} from './sub';
 import {PartialObserver} from './types';
 
 import {InnerSubscriber} from './InnerSubscriber';
@@ -178,8 +178,8 @@ export function applyMixins(derivedCtor: any, baseCtors: any[]) {
 
 export function canReportError(s: Subscriber<any> | Subject<any>): boolean {
   while (s) {
-    const {closed, destination, isStopped} = s as any;
-    if (closed || isStopped) {
+    const {closed, destination, stopped} = s as any;
+    if (closed || stopped) {
       return false;
     } else if (destination && destination instanceof Subscriber) {
       s = destination;

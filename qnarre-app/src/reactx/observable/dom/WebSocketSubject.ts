@@ -1,7 +1,7 @@
 import {Subject, AnonymousSubject} from '../../Subject';
 import {Subscriber} from '../../Subscriber';
 import {Observable} from '..';
-import {Subscription} from '../../Subscription';
+import {Subscription} from '../../sub';
 import {Operator} from '../../Operator';
 import {ReplaySubject} from '../../ReplaySubject';
 import {Observer, NextObserver} from '../../types';

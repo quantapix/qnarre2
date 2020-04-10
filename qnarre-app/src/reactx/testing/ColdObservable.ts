@@ -1,18 +1,19 @@
-import { Observable } from '../Observable';
-import { Subscription } from '../Subscription';
-import { Scheduler } from '../Scheduler';
-import { TestMessage } from './TestMessage';
-import { SubscriptionLog } from './SubscriptionLog';
-import { SubscriptionLoggable } from './SubscriptionLoggable';
-import { applyMixins } from '../util/applyMixins';
-import { Subscriber } from '../Subscriber';
+import {Observable} from '../Observable';
+import {Subscription} from '../sub';
+import {Scheduler} from '../Scheduler';
+import {TestMessage} from './TestMessage';
+import {SubscriptionLog} from './SubscriptionLog';
+import {SubscriptionLoggable} from './SubscriptionLoggable';
+import {applyMixins} from '../util/applyMixins';
+import {Subscriber} from '../Subscriber';
 
 /**
  * We need this JSDoc comment for affecting ESDoc.
  * @ignore
  * @extends {Ignored}
  */
-export class ColdObservable<T> extends Observable<T> implements SubscriptionLoggable {
+export class ColdObservable<T> extends Observable<T>
+  implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
   // @ts-ignore: Property has no initializer and is not definitely assigned
@@ -20,15 +21,16 @@ export class ColdObservable<T> extends Observable<T> implements SubscriptionLogg
   // @ts-ignore: Property has no initializer and is not definitely assigned
   logUnsubscribedFrame: (index: number) => void;
 
-  constructor(public messages: TestMessage[],
-              scheduler: Scheduler) {
+  constructor(public messages: TestMessage[], scheduler: Scheduler) {
     super(function (this: Observable<T>, subscriber: Subscriber<any>) {
       const observable: ColdObservable<T> = this as any;
       const index = observable.logSubscribedFrame();
       const subscription = new Subscription();
-      subscription.add(new Subscription(() => {
-        observable.logUnsubscribedFrame(index);
-      }));
+      subscription.add(
+        new Subscription(() => {
+          observable.logUnsubscribedFrame(index);
+        })
+      );
       observable.scheduleMessages(subscriber);
       return subscription;
     });
@@ -42,11 +44,11 @@ export class ColdObservable<T> extends Observable<T> implements SubscriptionLogg
       subscriber.add(
         this.scheduler.schedule(
           state => {
-            const { message, subscriber } = state!;
+            const {message, subscriber} = state!;
             message.notification.observe(subscriber);
           },
           message.frame,
-          { message, subscriber }
+          {message, subscriber}
         )
       );
     }

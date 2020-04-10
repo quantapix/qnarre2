@@ -2,7 +2,7 @@ import {Subject, SubjectSubscriber} from './Subject';
 import {Operator} from './Operator';
 import {Observable} from './Observable';
 import {Subscriber} from './Subscriber';
-import {Subscription} from './Subscription';
+import {Subscription} from './sub';
 import {Teardown} from './types';
 import {refCount as higherOrderRefCount} from './ops';
 import {SchedulerLike, SchedulerAction} from './types';
@@ -63,7 +63,7 @@ export class ConnectableObservable<T> extends Observable<T> {
 
   protected getSubject(): Subject<T> {
     const subject = this._subject;
-    if (!subject || subject.isStopped) {
+    if (!subject || subject.stopped) {
       this._subject = this.subjectFactory();
     }
     return this._subject!;

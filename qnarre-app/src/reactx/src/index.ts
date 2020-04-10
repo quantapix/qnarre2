@@ -21,7 +21,7 @@ export { VirtualTimeScheduler, VirtualAction } from '../scheduler/VirtualTimeSch
 export { Scheduler } from '../scheduler
 
 /* Subscription */
-export { Subscription } from '../Subscription';
+export { Subscription } from '../sub';
 export { Subscriber } from '../Subscriber';
 
 /* Notification */

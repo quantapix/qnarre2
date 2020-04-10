@@ -1,7 +1,7 @@
 import {Operator} from './Operator';
 import {Subscriber} from './Subscriber';
 import {Observable} from './Observable';
-import {Subscription} from './Subscription';
+import {Subscription} from './sub';
 import {
   MonoTypeOperatorFunction,
   SubscribableOrPromise,
@@ -88,7 +88,7 @@ class AuditSubscriber<T, R> extends OuterSubscriber<T, R> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.value = value;
     this.hasValue = true;
     if (!this.throttled) {
@@ -97,7 +97,7 @@ class AuditSubscriber<T, R> extends OuterSubscriber<T, R> {
         const {durationSelector} = this;
         duration = durationSelector(value);
       } catch (err) {
-        return this.destination.error(err);
+        return this.dst.error(err);
       }
       const innerSubscription = subscribeToResult(this, duration);
       if (!innerSubscription || innerSubscription.closed) {
@@ -118,7 +118,7 @@ class AuditSubscriber<T, R> extends OuterSubscriber<T, R> {
     if (hasValue) {
       this.value = null;
       this.hasValue = false;
-      this.destination.next(value);
+      this.dst.next(value);
     }
   }
 
@@ -182,7 +182,7 @@ class BufferSubscriber<T> extends OuterSubscriber<T, any> {
   ): void {
     const buffer = this.buffer;
     this.buffer = [];
-    this.destination.next(buffer);
+    this.dst.next(buffer);
   }
 }
 
@@ -229,21 +229,21 @@ class BufferCountSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const buffer = this.buffer;
 
     buffer.push(value);
 
     if (buffer.length == this.bufferSize) {
-      this.destination.next(buffer);
+      this.dst.next(buffer);
       this.buffer = [];
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const buffer = this.buffer;
     if (buffer.length > 0) {
-      this.destination.next(buffer);
+      this.dst.next(buffer);
     }
     super._complete();
   }
@@ -261,7 +261,7 @@ class BufferSkipCountSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const {bufferSize, startBufferEvery, buffers, count} = this;
 
     this.count++;
@@ -274,12 +274,12 @@ class BufferSkipCountSubscriber<T> extends Subscriber<T> {
       buffer.push(value);
       if (buffer.length === bufferSize) {
         buffers.splice(i, 1);
-        this.destination.next(buffer);
+        this.dst.next(buffer);
       }
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const {buffers, destination} = this;
 
     while (buffers.length > 0) {
@@ -490,7 +490,7 @@ class BufferTimeSubscriber<T> extends Subscriber<T> {
   }
 
   closeContext(context: Context<T>) {
-    this.destination.next(context.buffer);
+    this.dst.next(context.buffer);
     const contexts = this.contexts;
 
     const spliceIndex = contexts ? contexts.indexOf(context) : -1;
@@ -583,7 +583,7 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
     this.add(subscribeToResult(this, openings));
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const contexts = this.contexts;
     const len = contexts.length;
     for (let i = 0; i < len; i++) {
@@ -591,7 +591,7 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
     }
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     const contexts = this.contexts;
     while (contexts.length > 0) {
       const context = contexts.shift()!;
@@ -603,11 +603,11 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
     super._error(err);
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const contexts = this.contexts;
     while (contexts.length > 0) {
       const context = contexts.shift()!;
-      this.destination.next(context.buffer);
+      this.dst.next(context.buffer);
       context.subscription.unsubscribe();
       context.buffer = null!;
       context.subscription = null!;
@@ -647,7 +647,7 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
 
     if (contexts && context) {
       const {buffer, subscription} = context;
-      this.destination.next(buffer);
+      this.dst.next(buffer);
       contexts.splice(contexts.indexOf(context), 1);
       this.remove(subscription);
       subscription.unsubscribe();
@@ -717,7 +717,7 @@ class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
   protected _complete() {
     const buffer = this.buffer;
     if (buffer) {
-      this.destination.next(buffer);
+      this.dst.next(buffer);
     }
     super._complete();
   }
@@ -755,7 +755,7 @@ class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
 
     const buffer = this.buffer;
     if (this.buffer) {
-      this.destination.next(buffer);
+      this.dst.next(buffer);
     }
 
     this.buffer = [];
@@ -821,7 +821,7 @@ class CatchSubscriber<T, R> extends OuterSubscriber<T, T | R> {
   }
 
   error(err: any) {
-    if (!this.isStopped) {
+    if (!this.stopped) {
       let result: any;
       try {
         result = this.selector(err, this.caught);
@@ -829,7 +829,7 @@ class CatchSubscriber<T, R> extends OuterSubscriber<T, T | R> {
         super.error(err2);
         return;
       }
-      this._unsubscribeAndRecycle();
+      this._recycle();
       const innerSubscriber = new InnerSubscriber(this, undefined, undefined!);
       this.add(innerSubscriber);
       const innerSubscription = subscribeToResult(
@@ -981,9 +981,9 @@ class CountSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (this.predicate) {
-      this._tryPredicate(value);
+      this._tryPredicate(v);
     } else {
       this.count++;
     }
@@ -995,7 +995,7 @@ class CountSubscriber<T> extends Subscriber<T> {
     try {
       result = this.predicate!(value, this.index++, this.source);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
 
@@ -1004,9 +1004,9 @@ class CountSubscriber<T> extends Subscriber<T> {
     }
   }
 
-  protected _complete(): void {
-    this.destination.next(this.count);
-    this.destination.complete();
+  protected _complete() {
+    this.dst.next(this.count);
+    this.dst.complete();
   }
 }
 
@@ -1041,7 +1041,7 @@ class DebounceSubscriber<T, R> extends OuterSubscriber<T, R> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     try {
       const result = this.durationSelector.call(this, value);
 
@@ -1049,13 +1049,13 @@ class DebounceSubscriber<T, R> extends OuterSubscriber<T, R> {
         this._tryNext(value, result);
       }
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.emitValue();
-    this.destination.complete();
+    this.dst.complete();
   }
 
   private _tryNext(value: T, duration: SubscribableOrPromise<any>): void {
@@ -1149,7 +1149,7 @@ class DebounceTimeSubscriber<T> extends Subscriber<T> {
 
   protected _complete() {
     this.debouncedNext();
-    this.destination.complete();
+    this.dst.complete();
   }
 
   debouncedNext(): void {
@@ -1159,7 +1159,7 @@ class DebounceTimeSubscriber<T> extends Subscriber<T> {
       const {lastValue} = this;
       this.lastValue = null;
       this.hasValue = false;
-      this.destination.next(lastValue);
+      this.dst.next(lastValue);
     }
   }
 
@@ -1205,16 +1205,16 @@ class DefaultIfEmptySubscriber<T, R> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.isEmpty = false;
-    this.destination.next(value);
+    this.dst.next(value);
   }
 
-  protected _complete(): void {
+  protected _complete() {
     if (this.isEmpty) {
-      this.destination.next(this.defaultValue);
+      this.dst.next(this.defaultValue);
     }
-    this.destination.complete();
+    this.dst.complete();
   }
 }
 
@@ -1267,7 +1267,7 @@ class DelaySubscriber<T> extends Subscriber<T> {
     if (queue.length > 0) {
       const delay = Math.max(0, queue[0].time - scheduler.now());
       this.schedule(state, delay);
-    } else if (source.isStopped) {
+    } else if (source.stopped) {
       source.destination.complete();
       source.active = false;
     } else {
@@ -1324,13 +1324,13 @@ class DelaySubscriber<T> extends Subscriber<T> {
   protected _error(err: any) {
     this.errored = true;
     this.queue = [];
-    this.destination.error(err);
+    this.dst.error(err);
     this.unsubscribe();
   }
 
   protected _complete() {
     if (this.queue.length === 0) {
-      this.destination.complete();
+      this.dst.complete();
     }
     this.unsubscribe();
   }
@@ -1392,7 +1392,7 @@ class DelayWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.destination.next(outerValue);
+    this.dst.next(outerValue);
     this.removeSubscription(innerSub);
     this.tryComplete();
   }
@@ -1404,12 +1404,12 @@ class DelayWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
   notifyComplete(innerSub: InnerSubscriber<T, R>): void {
     const value = this.removeSubscription(innerSub);
     if (value) {
-      this.destination.next(value);
+      this.dst.next(value);
     }
     this.tryComplete();
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const index = this.index++;
     try {
       const delayNotifier = this.delayDurationSelector(value, index);
@@ -1417,11 +1417,11 @@ class DelayWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
         this.tryDelay(delayNotifier, value);
       }
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.completed = true;
     this.tryComplete();
     this.unsubscribe();
@@ -1452,7 +1452,7 @@ class DelayWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
 
   private tryComplete(): void {
     if (this.completed && this.delayNotifierSubscriptions.length === 0) {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -1579,7 +1579,7 @@ export class DistinctSubscriber<T, K> extends OuterSubscriber<T, T> {
     this._error(error);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (this.keySelector) {
       this._useKeySelector(value);
     } else {
@@ -1603,7 +1603,7 @@ export class DistinctSubscriber<T, K> extends OuterSubscriber<T, T> {
     const {values} = this;
     if (!values.has(<K>key)) {
       values.add(<K>key);
-      this.destination.next(value);
+      this.dst.next(value);
     }
   }
 }
@@ -1655,13 +1655,13 @@ class DistinctUntilChangedSubscriber<T, K> extends Subscriber<T> {
     return x === y;
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     let key: any;
     try {
       const {keySelector} = this;
       key = keySelector ? keySelector(value) : value;
     } catch (err) {
-      return this.destination.error(err);
+      return this.dst.error(err);
     }
     let result = false;
     if (this.hasKey) {
@@ -1669,14 +1669,14 @@ class DistinctUntilChangedSubscriber<T, K> extends Subscriber<T> {
         const {compare} = this;
         result = compare(this.key, key);
       } catch (err) {
-        return this.destination.error(err);
+        return this.dst.error(err);
       }
     } else {
       this.hasKey = true;
     }
     if (!result) {
       this.key = key;
-      this.destination.next(value);
+      this.dst.next(value);
     }
   }
 }
@@ -1769,11 +1769,11 @@ class EverySubscriber<T> extends Subscriber<T> {
   }
 
   private notifyComplete(everyValueMatch: boolean): void {
-    this.destination.next(everyValueMatch);
-    this.destination.complete();
+    this.dst.next(everyValueMatch);
+    this.dst.complete();
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     let result = false;
     try {
       result = this.predicate.call(
@@ -1783,7 +1783,7 @@ class EverySubscriber<T> extends Subscriber<T> {
         this.source
       );
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
 
@@ -1792,7 +1792,7 @@ class EverySubscriber<T> extends Subscriber<T> {
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.notifyComplete(true);
   }
 }
@@ -1817,17 +1817,17 @@ class SwitchFirstSubscriber<T> extends OuterSubscriber<T, T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (!this.hasSubscription) {
       this.hasSubscription = true;
       this.add(subscribeToResult(this, value));
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.hasCompleted = true;
     if (!this.hasSubscription) {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 
@@ -1835,7 +1835,7 @@ class SwitchFirstSubscriber<T> extends OuterSubscriber<T, T> {
     this.remove(innerSub);
     this.hasSubscription = false;
     if (this.hasCompleted) {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -1889,7 +1889,7 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (!this.hasSubscription) {
       this.tryNext(value);
     }
@@ -1901,7 +1901,7 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     try {
       result = this.project(value, index);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
     this.hasSubscription = true;
@@ -1924,10 +1924,10 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.hasCompleted = true;
     if (!this.hasSubscription) {
-      this.destination.complete();
+      this.dst.complete();
     }
     this.unsubscribe();
   }
@@ -1939,11 +1939,11 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.destination.next(innerValue);
+    this.dst.next(innerValue);
   }
 
   notifyError(err: any): void {
-    this.destination.error(err);
+    this.dst.error(err);
   }
 
   notifyComplete(innerSub: Subscription): void {
@@ -1952,7 +1952,7 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
 
     this.hasSubscription = false;
     if (this.hasCompleted) {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -2073,10 +2073,10 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
     destination.add(subscribeToResult<T, R>(this, result, value, index));
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.hasCompleted = true;
     if (this.hasCompleted && this.active === 0) {
-      this.destination.complete();
+      this.dst.complete();
     }
     this.unsubscribe();
   }
@@ -2100,7 +2100,7 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
       this._next(buffer.shift());
     }
     if (this.hasCompleted && this.active === 0) {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -2154,11 +2154,11 @@ class FilterSubscriber<T> extends Subscriber<T> {
     try {
       result = this.predicate.call(this.thisArg, value, this.count++);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
     if (result) {
-      this.destination.next(value);
+      this.dst.next(value);
     }
   }
 }
@@ -2254,7 +2254,7 @@ export class FindValueSubscriber<T> extends Subscriber<T> {
     this.unsubscribe();
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const {predicate, thisArg} = this;
     const index = this.index++;
     try {
@@ -2263,11 +2263,11 @@ export class FindValueSubscriber<T> extends Subscriber<T> {
         this.notifyComplete(this.yieldIndex ? index : value);
       }
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.notifyComplete(this.yieldIndex ? -1 : undefined);
   }
 }
@@ -2395,7 +2395,7 @@ class GroupBySubscriber<T, K, R> extends Subscriber<T>
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     let key: K;
     try {
       key = this.keySelector(value);
@@ -2433,7 +2433,7 @@ class GroupBySubscriber<T, K, R> extends Subscriber<T>
         : new Subject<R>()) as Subject<T | R>;
       groups.set(key, group);
       const groupedObservable = new GroupedObservable(key, group, this);
-      this.destination.next(groupedObservable);
+      this.dst.next(groupedObservable);
       if (this.durationSelector) {
         let duration: any;
         try {
@@ -2455,7 +2455,7 @@ class GroupBySubscriber<T, K, R> extends Subscriber<T>
     }
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     const groups = this.groups;
     if (groups) {
       groups.forEach((group, key) => {
@@ -2464,10 +2464,10 @@ class GroupBySubscriber<T, K, R> extends Subscriber<T>
 
       groups.clear();
     }
-    this.destination.error(err);
+    this.dst.error(err);
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const groups = this.groups;
     if (groups) {
       groups.forEach((group, key) => {
@@ -2476,7 +2476,7 @@ class GroupBySubscriber<T, K, R> extends Subscriber<T>
 
       groups.clear();
     }
-    this.destination.complete();
+    this.dst.complete();
   }
 
   removeGroup(key: K): void {
@@ -2502,7 +2502,7 @@ class GroupDurationSubscriber<K, T> extends Subscriber<T> {
     super(group);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.complete();
   }
 
@@ -2676,10 +2676,10 @@ class MapSubscriber<T, R> extends Subscriber<T> {
     try {
       result = this.project.call(this.thisArg, value, this.count++);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
-    this.destination.next(result);
+    this.dst.next(result);
   }
 }
 
@@ -2709,7 +2709,7 @@ class MapToSubscriber<T, R> extends Subscriber<T> {
   }
 
   protected _next(x: T) {
-    this.destination.next(this.value);
+    this.dst.next(this.value);
   }
 }
 
@@ -2731,7 +2731,7 @@ class MaterializeSubscriber<T> extends Subscriber<T> {
   }
 
   protected _next(value: T) {
-    this.destination.next(Notification.createNext(value));
+    this.dst.next(Notification.createNext(value));
   }
 
   protected _error(err: any) {
@@ -2825,7 +2825,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (this.active < this.concurrent) {
       this._tryNext(value);
     } else {
@@ -2839,7 +2839,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     try {
       result = this.project(value, index);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
     this.active++;
@@ -2862,10 +2862,10 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.hasCompleted = true;
     if (this.active === 0 && this.buffer.length === 0) {
-      this.destination.complete();
+      this.dst.complete();
     }
     this.unsubscribe();
   }
@@ -2877,7 +2877,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.destination.next(innerValue);
+    this.dst.next(innerValue);
   }
 
   notifyComplete(innerSub: Subscription): void {
@@ -2887,7 +2887,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     if (buffer.length > 0) {
       this._next(buffer.shift()!);
     } else if (this.active === 0 && this.hasCompleted) {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -3003,13 +3003,13 @@ export class MergeScanSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.hasCompleted = true;
     if (this.active === 0 && this.buffer.length === 0) {
       if (this.hasValue === false) {
-        this.destination.next(this.acc);
+        this.dst.next(this.acc);
       }
-      this.destination.complete();
+      this.dst.complete();
     }
     this.unsubscribe();
   }
@@ -3036,9 +3036,9 @@ export class MergeScanSubscriber<T, R> extends OuterSubscriber<T, R> {
       this._next(buffer.shift());
     } else if (this.active === 0 && this.hasCompleted) {
       if (this.hasValue === false) {
-        this.destination.next(this.acc);
+        this.dst.next(this.acc);
       }
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -3173,16 +3173,16 @@ export class ObserveOnSubscriber<T> extends Subscriber<T> {
     );
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.scheduleMessage(Notification.createNext(value));
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     this.scheduleMessage(Notification.createError(err));
     this.unsubscribe();
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.scheduleMessage(Notification.createComplete());
     this.unsubscribe();
   }
@@ -3322,12 +3322,12 @@ class OnErrorResumeNextSubscriber<T, R> extends OuterSubscriber<T, R> {
     this.subscribeToNextSource();
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     this.subscribeToNextSource();
     this.unsubscribe();
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.subscribeToNextSource();
     this.unsubscribe();
   }
@@ -3349,7 +3349,7 @@ class OnErrorResumeNextSubscriber<T, R> extends OuterSubscriber<T, R> {
         destination.add(innerSubscription);
       }
     } else {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 }
@@ -3384,7 +3384,7 @@ class PairwiseSubscriber<T> extends Subscriber<T> {
     this.prev = value;
 
     if (pair) {
-      this.destination.next(pair);
+      this.dst.next(pair);
     }
   }
 }
@@ -3697,14 +3697,14 @@ class RepeatSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
   complete() {
-    if (!this.isStopped) {
+    if (!this.stopped) {
       const {source, count} = this;
       if (count === 0) {
         return super.complete();
       } else if (count > -1) {
         this.count = count - 1;
       }
-      source.subscribe(this._unsubscribeAndRecycle());
+      source.subscribe(this._recycle());
     }
   }
 }
@@ -3762,7 +3762,7 @@ class RepeatWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
   complete() {
     this.sourceIsBeingSubscribedTo = false;
 
-    if (!this.isStopped) {
+    if (!this.stopped) {
       if (!this.retries) {
         this.subscribeToRetries();
       }
@@ -3770,7 +3770,7 @@ class RepeatWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
         return super.complete();
       }
 
-      this._unsubscribeAndRecycle();
+      this._recycle();
       this.notifications!.next();
     }
   }
@@ -3788,11 +3788,11 @@ class RepeatWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
     this.retries = null;
   }
 
-  _unsubscribeAndRecycle(): Subscriber<T> {
+  _recycle(): Subscriber<T> {
     const {_unsubscribe} = this;
 
     this._unsubscribe = null!;
-    super._unsubscribeAndRecycle();
+    super._recycle();
     this._unsubscribe = _unsubscribe;
 
     return this;
@@ -3876,14 +3876,14 @@ class RetrySubscriber<T> extends Subscriber<T> {
   }
 
   error(err: any) {
-    if (!this.isStopped) {
+    if (!this.stopped) {
       const {source, count} = this;
       if (count === 0) {
         return super.error(err);
       } else if (count > -1) {
         this.count = count - 1;
       }
-      source.subscribe(this._unsubscribeAndRecycle());
+      source.subscribe(this._recycle());
     }
   }
 }
@@ -3922,7 +3922,7 @@ class RetryWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   error(err: any) {
-    if (!this.isStopped) {
+    if (!this.stopped) {
       let errors = this.errors;
       let retries = this.retries;
       let retriesSubscription = this.retriesSubscription;
@@ -3941,7 +3941,7 @@ class RetryWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
         this.retriesSubscription = null;
       }
 
-      this._unsubscribeAndRecycle();
+      this._recycle();
 
       this.errors = errors;
       this.retries = retries;
@@ -3974,7 +3974,7 @@ class RetryWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
     const {_unsubscribe} = this;
 
     this._unsubscribe = null!;
-    this._unsubscribeAndRecycle();
+    this._recycle();
     this._unsubscribe = _unsubscribe;
 
     this.source.subscribe(this);
@@ -4024,7 +4024,7 @@ class SampleSubscriber<T, R> extends OuterSubscriber<T, R> {
   emitValue() {
     if (this.hasValue) {
       this.hasValue = false;
-      this.destination.next(this.value);
+      this.dst.next(this.value);
     }
   }
 }
@@ -4073,7 +4073,7 @@ class SampleTimeSubscriber<T> extends Subscriber<T> {
   notifyNext() {
     if (this.hasValue) {
       this.hasValue = false;
-      this.destination.next(this.lastValue);
+      this.dst.next(this.lastValue);
     }
   }
 }
@@ -4195,7 +4195,7 @@ export class SequenceEqualSubscriber<T, R> extends Subscriber<T> {
     );
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (this._oneComplete && this._b.length === 0) {
       this.emit(false);
     } else {
@@ -4222,7 +4222,7 @@ export class SequenceEqualSubscriber<T, R> extends Subscriber<T> {
       try {
         areEqual = comparator ? comparator(a, b) : a === b;
       } catch (e) {
-        this.destination.error(e);
+        this.dst.error(e);
       }
       if (!areEqual) {
         this.emit(false);
@@ -4262,16 +4262,16 @@ class SequenceEqualCompareToSubscriber<T, R> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.parent.nextB(value);
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     this.parent.error(err);
     this.unsubscribe();
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.parent.completeB();
     this.unsubscribe();
   }
@@ -4408,14 +4408,14 @@ class SingleSubscriber<T> extends Subscriber<T> {
 
   private applySingleValue(value: T): void {
     if (this.seenValue) {
-      this.destination.error('Sequence contains more than one element');
+      this.dst.error('Sequence contains more than one element');
     } else {
       this.seenValue = true;
       this.singleValue = value;
     }
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const index = this.index++;
 
     if (this.predicate) {
@@ -4431,11 +4431,11 @@ class SingleSubscriber<T> extends Subscriber<T> {
         this.applySingleValue(value);
       }
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const destination = this.destination;
 
     if (this.index > 0) {
@@ -4467,7 +4467,7 @@ class SkipSubscriber<T> extends Subscriber<T> {
   }
   protected _next(x: T) {
     if (++this.count > this.total) {
-      this.destination.next(x);
+      this.dst.next(x);
     }
   }
 }
@@ -4503,7 +4503,7 @@ class SkipLastSubscriber<T> extends Subscriber<T> {
     this._ring = new Array<T>(_skipCount);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const skipCount = this._skipCount;
     const count = this._count++;
 
@@ -4515,7 +4515,7 @@ class SkipLastSubscriber<T> extends Subscriber<T> {
       const oldValue = ring[currentIndex];
 
       ring[currentIndex] = value;
-      this.destination.next(oldValue);
+      this.dst.next(oldValue);
     }
   }
 }
@@ -4610,7 +4610,7 @@ class SkipWhileSubscriber<T> extends Subscriber<T> {
   ) {
     super(destination);
   }
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const destination = this.destination;
     if (this.skipping) {
       this.tryCallPredicate(value);
@@ -4626,7 +4626,7 @@ class SkipWhileSubscriber<T> extends Subscriber<T> {
       const result = this.predicate(value, this.index++);
       this.skipping = Boolean(result);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
     }
   }
 }
@@ -4722,7 +4722,7 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     try {
       result = this.project(value, index);
     } catch (error) {
-      this.destination.error(error);
+      this.dst.error(error);
       return;
     }
     this._innerSub(result, value, index);
@@ -4748,7 +4748,7 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const {innerSubscription} = this;
     if (!innerSubscription || innerSubscription.closed) {
       super._complete();
@@ -4764,7 +4764,7 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     const destination = this.destination as Subscription;
     destination.remove(innerSub);
     this.innerSubscription = null!;
-    if (this.isStopped) {
+    if (this.stopped) {
       super._complete();
     }
   }
@@ -4776,7 +4776,7 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.destination.next(innerValue);
+    this.dst.next(innerValue);
   }
 }
 
@@ -4826,13 +4826,13 @@ class TakeSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const total = this.total;
     const count = ++this.count;
     if (count <= total) {
-      this.destination.next(value);
+      this.dst.next(value);
       if (count === total) {
-        this.destination.complete();
+        this.dst.complete();
         this.unsubscribe();
       }
     }
@@ -4871,20 +4871,20 @@ class TakeLastSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const ring = this.ring;
     const total = this.total;
     const count = this.count++;
 
     if (ring.length < total) {
-      ring.push(value);
+      ring.push(v);
     } else {
       const index = count % total;
-      ring[index] = value;
+      ring[index] = v;
     }
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const destination = this.destination;
     let count = this.count;
 
@@ -4992,7 +4992,7 @@ class TakeWhileSubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const destination = this.destination;
     let result: boolean;
     try {
@@ -5086,30 +5086,30 @@ class TapSubscriber<T> extends Subscriber<T> {
     try {
       this._tapNext.call(this._context, value);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
-    this.destination.next(value);
+    this.dst.next(value);
   }
 
   _error(err: any) {
     try {
       this._tapError.call(this._context, err);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
-    this.destination.error(err);
+    this.dst.error(err);
   }
 
   _complete() {
     try {
       this._tapComplete.call(this._context);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
-    return this.destination.complete();
+    return this.dst.complete();
   }
 }
 
@@ -5170,7 +5170,7 @@ class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this._hasValue = true;
     this._sendValue = value;
 
@@ -5186,7 +5186,7 @@ class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
   private send() {
     const {_hasValue, _sendValue} = this;
     if (_hasValue) {
-      this.destination.next(_sendValue!);
+      this.dst.next(_sendValue!);
       this.throttle(_sendValue!);
     }
     this._hasValue = false;
@@ -5204,7 +5204,7 @@ class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
     try {
       return this.durationSelector(value);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return null;
     }
   }
@@ -5303,7 +5303,7 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
         ))
       );
       if (this.leading) {
-        this.destination.next(value);
+        this.dst.next(value);
       } else if (this.trailing) {
         this._trailingValue = value;
         this._hasTrailingValue = true;
@@ -5313,10 +5313,10 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
 
   protected _complete() {
     if (this._hasTrailingValue) {
-      this.destination.next(this._trailingValue);
-      this.destination.complete();
+      this.dst.next(this._trailingValue);
+      this.dst.complete();
     } else {
-      this.destination.complete();
+      this.dst.complete();
     }
   }
 
@@ -5324,7 +5324,7 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
     const throttled = this.throttled;
     if (throttled) {
       if (this.trailing && this._hasTrailingValue) {
-        this.destination.next(this._trailingValue);
+        this.dst.next(this._trailingValue);
         this._trailingValue = null;
         this._hasTrailingValue = false;
       }
@@ -5369,9 +5369,9 @@ class ThrowIfEmptySubscriber<T> extends Subscriber<T> {
     super(destination);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.hasValue = true;
-    this.destination.next(value);
+    this.dst.next(value);
   }
 
   protected _complete() {
@@ -5382,9 +5382,9 @@ class ThrowIfEmptySubscriber<T> extends Subscriber<T> {
       } catch (e) {
         err = e;
       }
-      this.destination.error(err);
+      this.dst.error(err);
     } else {
-      return this.destination.complete();
+      return this.dst.complete();
     }
   }
 }
@@ -5491,7 +5491,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
     subscriber: TimeoutWithSubscriber<T, R>
   ): void {
     const {withObservable} = subscriber;
-    (<any>subscriber)._unsubscribeAndRecycle();
+    (<any>subscriber)._recycle();
     subscriber.add(subscribeToResult(subscriber, withObservable));
   }
 
@@ -5514,7 +5514,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     if (!this.absoluteTimeout) {
       this.scheduleTimeout();
     }
@@ -5595,18 +5595,18 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
     this._complete();
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.window.next(value);
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     this.window.error(err);
-    this.destination.error(err);
+    this.dst.error(err);
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.window.complete();
-    this.destination.complete();
+    this.dst.complete();
   }
 
   _unsubscribe() {
@@ -5691,7 +5691,7 @@ class WindowCountSubscriber<T> extends Subscriber<T> {
         windows.shift()!.error(err);
       }
     }
-    this.destination.error(err);
+    this.dst.error(err);
   }
 
   protected _complete() {
@@ -5701,7 +5701,7 @@ class WindowCountSubscriber<T> extends Subscriber<T> {
         windows.shift()!.complete();
       }
     }
-    this.destination.complete();
+    this.dst.complete();
   }
 
   protected _unsubscribe() {
@@ -5874,7 +5874,7 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     }
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     const windows =
       this.maxWindowSize < Number.POSITIVE_INFINITY
         ? this.windows.slice()
@@ -5891,20 +5891,20 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     }
   }
 
-  protected _error(err: any): void {
+  protected _error(e: any) {
     const windows = this.windows;
     while (windows.length > 0) {
       windows.shift()!.error(err);
     }
-    this.destination.error(err);
+    this.dst.error(err);
   }
 
-  protected _complete(): void {
+  protected _complete() {
     const windows = this.windows;
     while (windows.length > 0) {
       windows.shift()!.complete();
     }
-    this.destination.complete();
+    this.dst.complete();
   }
 
   public openWindow(): CountedSubject<T> {
@@ -6104,7 +6104,7 @@ class WindowToggleSubscriber<T, O> extends OuterSubscriber<T, any> {
         subscription.add(innerSubscription);
       }
 
-      this.destination.next(window);
+      this.dst.next(window);
     } else {
       this.closeWindow(this.contexts.indexOf(outerValue));
     }
@@ -6179,19 +6179,19 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
     this.openWindow(innerSub);
   }
 
-  protected _next(value: T): void {
+  protected _next(v: T) {
     this.window!.next(value);
   }
 
-  protected _error(err: any): void {
-    this.window!.error(err);
-    this.destination.error(err);
+  protected _error(e: any) {
+    this.window!.error(e);
+    this.dst.error(e);
     this.unsubscribeClosingNotification();
   }
 
-  protected _complete(): void {
+  protected _complete() {
     this.window!.complete();
-    this.destination.complete();
+    this.dst.complete();
     this.unsubscribeClosingNotification();
   }
 
@@ -6213,14 +6213,14 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
     }
 
     const window = (this.window = new Subject<T>());
-    this.destination.next(window);
+    this.dst.next(window);
 
     let closingNotifier;
     try {
       const {closingSelector} = this;
       closingNotifier = closingSelector();
     } catch (e) {
-      this.destination.error(e);
+      this.dst.error(e);
       this.window.error(e);
       return;
     }
@@ -6462,7 +6462,7 @@ class WithLatestFromSubscriber<T, R> extends OuterSubscriber<T, R> {
       if (this.project) {
         this._tryProject(args);
       } else {
-        this.destination.next(args);
+        this.dst.next(args);
       }
     }
   }
@@ -6472,10 +6472,10 @@ class WithLatestFromSubscriber<T, R> extends OuterSubscriber<T, R> {
     try {
       result = this.project!.apply(this, args);
     } catch (err) {
-      this.destination.error(err);
+      this.dst.error(err);
       return;
     }
-    this.destination.next(result);
+    this.dst.next(result);
   }
 }
 

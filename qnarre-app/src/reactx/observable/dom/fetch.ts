@@ -1,5 +1,5 @@
 import {Observable} from '..';
-import {Subscription} from '../../Subscription';
+import {Subscription} from '../../sub';
 
 /**
  * Uses [the Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to
