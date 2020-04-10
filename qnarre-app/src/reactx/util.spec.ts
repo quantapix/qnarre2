@@ -1,18 +1,18 @@
-import { expect } from 'chai';
-import { ArgumentOutOfRangeError } from 'rxjs';
+import {expect} from 'chai';
+import {OutOfRangeError} from 'rxjs';
 
-/** @test {ArgumentOutOfRangeError} */
-describe('ArgumentOutOfRangeError', () => {
-  const error = new ArgumentOutOfRangeError();
+/** @test {OutOfRangeError} */
+describe('OutOfRangeError', () => {
+  const error = new OutOfRangeError();
   it('Should have a name', () => {
-    expect(error.name).to.be.equal('ArgumentOutOfRangeError');
+    expect(error.name).to.be.equal('OutOfRangeError');
   });
   it('Should have a message', () => {
     expect(error.message).to.be.equal('argument out of range');
   });
 });
-import { expect } from 'chai';
-import { EmptyError } from 'rxjs';
+import {expect} from 'chai';
+import {EmptyError} from 'rxjs';
 
 /** @test {EmptyError} */
 describe('EmptyError', () => {
@@ -71,25 +71,25 @@ describe('Immediate', () => {
   });
 });
 import {expect} from 'chai';
-import { isNumeric } from 'rxjs/internal/util/isNumeric';
+import {isNumeric} from 'rxjs/internal/util/isNumeric';
 
 /** @test {isNumeric} */
 describe('isNumeric', () => {
-   it('should cover the following numeric scenario', () => {
-     expect(isNumeric(' ')).to.be.false;
-     expect(isNumeric('\n')).to.be.false;
-     expect(isNumeric('\t')).to.be.false;
+  it('should cover the following numeric scenario', () => {
+    expect(isNumeric(' ')).to.be.false;
+    expect(isNumeric('\n')).to.be.false;
+    expect(isNumeric('\t')).to.be.false;
 
-     expect(isNumeric('0')).to.be.true;
-     expect(isNumeric(0)).to.be.true;
-     expect(isNumeric(-1)).to.be.true;
-     expect(isNumeric(-1.5)).to.be.true;
-     expect(isNumeric(6e6)).to.be.true;
-     expect(isNumeric('6e6')).to.be.true;
+    expect(isNumeric('0')).to.be.true;
+    expect(isNumeric(0)).to.be.true;
+    expect(isNumeric(-1)).to.be.true;
+    expect(isNumeric(-1.5)).to.be.true;
+    expect(isNumeric(6e6)).to.be.true;
+    expect(isNumeric('6e6')).to.be.true;
   });
 });
-import { expect } from 'chai';
-import { ObjectUnsubscribedError } from 'rxjs';
+import {expect} from 'chai';
+import {ObjectUnsubscribedError} from 'rxjs';
 
 /** @test {ObjectUnsubscribedError} */
 describe('ObjectUnsubscribedError', () => {
@@ -101,8 +101,8 @@ describe('ObjectUnsubscribedError', () => {
     expect(error.message).to.be.equal('object unsubscribed');
   });
 });
-import { expect } from 'chai';
-import { TimeoutError } from 'rxjs';
+import {expect} from 'chai';
+import {TimeoutError} from 'rxjs';
 
 /** @test {TimeoutError} */
 describe('TimeoutError', () => {
@@ -114,17 +114,21 @@ describe('TimeoutError', () => {
     expect(error.message).to.be.equal('Timeout has occurred');
   });
 });
-import { expect } from 'chai';
-import { UnsubscriptionError, Observable, timer, merge } from 'rxjs';
+import {expect} from 'chai';
+import {UnsubscriptionError, Observable, timer, merge} from 'rxjs';
 
 /** @test {UnsubscriptionError} */
 describe('UnsubscriptionError', () => {
   it('should create a message that is a clear indication of its internal errors', () => {
     const err1 = new Error('Swiss cheese tastes amazing but smells like socks');
     const err2 = new Error('User too big to fit in tiny European elevator');
-    const source1 = new Observable(() => () => { throw err1; });
+    const source1 = new Observable(() => () => {
+      throw err1;
+    });
     const source2 = timer(1000);
-    const source3 = new Observable(() => () => { throw err2; });
+    const source3 = new Observable(() => () => {
+      throw err2;
+    });
     const source = merge(source1, source2, source3);
 
     const subscription = source.subscribe();
@@ -138,9 +142,9 @@ describe('UnsubscriptionError', () => {
     }
   });
 });
-import { expect } from 'chai';
-import { noop, Subject, Subscriber } from 'rxjs';
-import { canReportError } from 'rxjs/internal/util/canReportError';
+import {expect} from 'chai';
+import {noop, Subject, Subscriber} from 'rxjs';
+import {canReportError} from 'rxjs/internal/util/canReportError';
 
 describe('canReportError', () => {
   it('should report errors to an observer if possible', () => {
@@ -167,8 +171,8 @@ describe('canReportError', () => {
     expect(canReportError(subscriber)).to.be.false;
   });
 });
-import { Observable, isObservable } from 'rxjs';
-import { expect } from 'chai';
+import {Observable, isObservable} from 'rxjs';
+import {expect} from 'chai';
 
 describe('isObservable', () => {
   it('should return true for RxJS Observable', () => {
@@ -178,8 +182,12 @@ describe('isObservable', () => {
 
   it('should return true for an observable that comes from another RxJS 5+ library', () => {
     const o: any = {
-      lift() { /* noop */ },
-      subscribe() { /* noop */ },
+      lift() {
+        /* noop */
+      },
+      subscribe() {
+        /* noop */
+      }
     };
 
     expect(isObservable(o)).to.be.true;
@@ -187,7 +195,9 @@ describe('isObservable', () => {
 
   it('should NOT return true for any old subscribable', () => {
     const o: any = {
-      subscribe() { /* noop */ },
+      subscribe() {
+        /* noop */
+      }
     };
 
     expect(isObservable(o)).to.be.false;
@@ -200,11 +210,10 @@ describe('isObservable', () => {
   it('should return false for a number', () => {
     expect(isObservable(1)).to.be.false;
   });
-
 });
-import { of } from 'rxjs';
-import { expect } from 'chai';
-import { isPromise } from 'rxjs/internal/util/isPromise';
+import {of} from 'rxjs';
+import {expect} from 'chai';
+import {isPromise} from 'rxjs/internal/util/isPromise';
 
 describe('isPromise', () => {
   it('should return true for new Promise', () => {
@@ -238,10 +247,9 @@ describe('isPromise', () => {
   it('should return false for a string', () => {
     expect(isPromise('1')).to.be.false;
   });
-
 });
-import { expect } from 'chai';
-import { pipe } from 'rxjs';
+import {expect} from 'chai';
+import {pipe} from 'rxjs';
 
 describe('pipe', () => {
   it('should exist', () => {
@@ -273,18 +281,18 @@ describe('pipe', () => {
     expect(c(someObj)).to.equal(someObj);
   });
 });
-import { expect } from 'chai';
-import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber';
-import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult';
-import { iterator } from 'rxjs/internal/symbol/iterator';
-import { observable as $$symbolObservable } from 'rxjs/internal/symbol/observable';
-import { of, range, throwError } from 'rxjs';
+import {expect} from 'chai';
+import {OuterSubscriber} from 'rxjs/internal/OuterSubscriber';
+import {subscribeToResult} from 'rxjs/internal/util/subscribeToResult';
+import {iterator} from 'rxjs/internal/symbol/iterator';
+import {observable as $$symbolObservable} from 'rxjs/internal/symbol/observable';
+import {of, range, throwError} from 'rxjs';
 
 describe('subscribeToResult', () => {
   it('should synchronously complete when subscribed to scalarObservable', () => {
     const result = of(42);
     let expected: number;
-    const subscriber = new OuterSubscriber<number, number>((x) => expected = x);
+    const subscriber = new OuterSubscriber<number, number>(x => (expected = x));
 
     const subscription = subscribeToResult(subscriber, result);
 
@@ -292,32 +300,40 @@ describe('subscribeToResult', () => {
     expect(subscription!.closed).to.be.true;
   });
 
-  it('should subscribe to observables that are an instanceof Observable', (done) => {
+  it('should subscribe to observables that are an instanceof Observable', done => {
     const expected = [1, 2, 3];
     const result = range(1, 3);
 
-    const subscriber = new OuterSubscriber<number, number>(x => {
-      expect(expected.shift()).to.be.equal(x);
-    }, () => {
-      done(new Error('should not be called'));
-    }, () => {
-      expect(expected).to.be.empty;
-      done();
-    });
+    const subscriber = new OuterSubscriber<number, number>(
+      x => {
+        expect(expected.shift()).to.be.equal(x);
+      },
+      () => {
+        done(new Error('should not be called'));
+      },
+      () => {
+        expect(expected).to.be.empty;
+        done();
+      }
+    );
 
     subscribeToResult(subscriber, result);
   });
 
-  it('should emit error when observable emits error', (done) => {
+  it('should emit error when observable emits error', done => {
     const result = throwError(new Error('error'));
-    const subscriber = new OuterSubscriber(x => {
-      done(new Error('should not be called'));
-    }, (err) => {
-      expect(err).to.be.an('error', 'error');
-      done();
-    }, () => {
-      done(new Error('should not be called'));
-    });
+    const subscriber = new OuterSubscriber(
+      x => {
+        done(new Error('should not be called'));
+      },
+      err => {
+        expect(err).to.be.an('error', 'error');
+        done();
+      },
+      () => {
+        done(new Error('should not be called'));
+      }
+    );
 
     subscribeToResult(subscriber, result);
   });
@@ -326,7 +342,9 @@ describe('subscribeToResult', () => {
     const result = [1, 2, 3];
     const expected: number[] = [];
 
-    const subscriber = new OuterSubscriber<number, number>(x => expected.push(x));
+    const subscriber = new OuterSubscriber<number, number>(x =>
+      expected.push(x)
+    );
 
     subscribeToResult(subscriber, result);
 
@@ -334,49 +352,56 @@ describe('subscribeToResult', () => {
   });
 
   it('should subscribe to an array-like and emit synchronously', () => {
-    const result = { 0: 0, 1: 1, 2: 2, length: 3 };
+    const result = {0: 0, 1: 1, 2: 2, length: 3};
     const expected: number[] = [];
 
-    const subscriber = new OuterSubscriber<number, number>(x => expected.push(x));
+    const subscriber = new OuterSubscriber<number, number>(x =>
+      expected.push(x)
+    );
 
     subscribeToResult(subscriber, result);
 
     expect(expected).to.be.deep.equal([0, 1, 2]);
   });
 
-  it('should subscribe to a promise', (done) => {
+  it('should subscribe to a promise', done => {
     const result = Promise.resolve(42);
 
-    const subscriber = new OuterSubscriber<number, number>(x => {
-      expect(x).to.be.equal(42);
-    }, () => {
-      done(new Error('should not be called'));
-    }, done);
+    const subscriber = new OuterSubscriber<number, number>(
+      x => {
+        expect(x).to.be.equal(42);
+      },
+      () => {
+        done(new Error('should not be called'));
+      },
+      done
+    );
 
     subscribeToResult(subscriber, result);
   });
 
-  it('should emits error when the promise rejects', (done) => {
+  it('should emits error when the promise rejects', done => {
     const result = Promise.reject(42);
 
-    const subscriber = new OuterSubscriber<number, number>(x => {
-      done(new Error('should not be called'));
-    }, (x) => {
-      expect(x).to.be.equal(42);
-      done();
-    }, () => {
-      done(new Error('should not be called'));
-    });
+    const subscriber = new OuterSubscriber<number, number>(
+      x => {
+        done(new Error('should not be called'));
+      },
+      x => {
+        expect(x).to.be.equal(42);
+        done();
+      },
+      () => {
+        done(new Error('should not be called'));
+      }
+    );
 
     subscribeToResult(subscriber, result);
   });
 
   it('should subscribe an iterable and emit results synchronously', () => {
     let expected: number;
-    const iteratorResults = [
-      { value: 42, done: false },
-      { done: true }
-    ];
+    const iteratorResults = [{value: 42, done: false}, {done: true}];
 
     const iterable = {
       [iterator]: () => {
@@ -388,68 +413,95 @@ describe('subscribeToResult', () => {
       }
     };
 
-    const subscriber = new OuterSubscriber((x: number) => expected = x);
+    const subscriber = new OuterSubscriber((x: number) => (expected = x));
 
     subscribeToResult(subscriber, iterable);
     expect(expected!).to.be.equal(42);
   });
 
-  it('should subscribe to to an object that implements Symbol.observable', (done) => {
-    const observableSymbolObject = { [$$symbolObservable]: () => of(42) };
+  it('should subscribe to to an object that implements Symbol.observable', done => {
+    const observableSymbolObject = {[$$symbolObservable]: () => of(42)};
 
-    const subscriber = new OuterSubscriber(x => {
-      expect(x).to.be.equal(42);
-    }, () => {
-      done(new Error('should not be called'));
-    }, done);
+    const subscriber = new OuterSubscriber(
+      x => {
+        expect(x).to.be.equal(42);
+      },
+      () => {
+        done(new Error('should not be called'));
+      },
+      done
+    );
 
     subscribeToResult(subscriber, observableSymbolObject);
   });
 
-  it('should throw an error if value returned by Symbol.observable call is not ' +
-    'a valid observable', () => {
-      const observableSymbolObject = { [$$symbolObservable]: () => ({}) };
+  it(
+    'should throw an error if value returned by Symbol.observable call is not ' +
+      'a valid observable',
+    () => {
+      const observableSymbolObject = {[$$symbolObservable]: () => ({})};
 
-      const subscriber = new OuterSubscriber(x => {
-        throw new Error('should not be called');
-      }, (x) => {
-        throw new Error('should not be called');
-      }, () => {
-        throw new Error('should not be called');
-      });
+      const subscriber = new OuterSubscriber(
+        x => {
+          throw new Error('should not be called');
+        },
+        x => {
+          throw new Error('should not be called');
+        },
+        () => {
+          throw new Error('should not be called');
+        }
+      );
 
-      expect(() => subscribeToResult(subscriber, observableSymbolObject))
-        .to.throw(TypeError, 'Provided object does not correctly implement Symbol.observable');
-    });
+      expect(() =>
+        subscribeToResult(subscriber, observableSymbolObject)
+      ).to.throw(
+        TypeError,
+        'Provided object does not correctly implement Symbol.observable'
+      );
+    }
+  );
 
   it('should emit an error when trying to subscribe to an unknown type of object', () => {
-    const subscriber = new OuterSubscriber(x => {
-      throw new Error('should not be called');
-    }, (x) => {
-      throw new Error('should not be called');
-    }, () => {
-      throw new Error('should not be called');
-    });
+    const subscriber = new OuterSubscriber(
+      x => {
+        throw new Error('should not be called');
+      },
+      x => {
+        throw new Error('should not be called');
+      },
+      () => {
+        throw new Error('should not be called');
+      }
+    );
 
-    expect(() => subscribeToResult(subscriber, {}))
-      .to.throw(TypeError, 'You provided an invalid object where a stream was expected. You can provide an Observable, Promise, Array, or Iterable.');
+    expect(() => subscribeToResult(subscriber, {})).to.throw(
+      TypeError,
+      'You provided an invalid object where a stream was expected. You can provide an Observable, Promise, Array, or Iterable.'
+    );
   });
 
   it('should emit an error when trying to subscribe to a non-object', () => {
-    const subscriber = new OuterSubscriber(x => {
-      throw new Error('should not be called');
-    }, (x) => {
-      throw new Error('should not be called');
-    }, () => {
-      throw new Error('should not be called');
-    });
+    const subscriber = new OuterSubscriber(
+      x => {
+        throw new Error('should not be called');
+      },
+      x => {
+        throw new Error('should not be called');
+      },
+      () => {
+        throw new Error('should not be called');
+      }
+    );
 
-    expect(() => subscribeToResult(subscriber, null))
-      .to.throw(TypeError, `You provided 'null' where a stream was expected. You can provide an Observable, Promise, Array, or Iterable.`);
+    expect(() => subscribeToResult(subscriber, null)).to.throw(
+      TypeError,
+      `You provided 'null' where a stream was expected. You can provide an Observable, Promise, Array, or Iterable.`
+    );
   });
 });
-import { expect } from 'chai';
-import { toSubscriber } from 'rxjs/internal/util/toSubscriber';
+import {expect} from 'chai';
+import {toSubscriber} from 'rxjs/internal/util/toSubscriber';
 
 describe('toSubscriber', () => {
   it('should not be closed when other subscriber created with no arguments completes', () => {
@@ -464,7 +516,9 @@ describe('toSubscriber', () => {
 
   it('should not be closed when other subscriber created with same observer instance completes', () => {
     let observer = {
-      next: function () { /*noop*/ }
+      next: function () {
+        /*noop*/
+      }
     };
 
     let sub1 = toSubscriber(observer);

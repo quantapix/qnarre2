@@ -11,57 +11,50 @@ import {InnerSubscriber} from './InnerSubscriber';
 import {OperatorFunction} from './types';
 import {OuterSubscriber} from './OuterSubscriber';
 import {subscribeToResult} from './util';
-import {async} from './schedulers';
-import {timer} from './observables';
+import {async} from './sched';
+import {timer} from './obs';
 import {SchedulerAction, SchedulerLike} from './types';
 import {isScheduler} from './util';
 import {ObservableInput, ObservedValueOf} from './types';
-import {CombineLatestOperator} from './observables';
+import {CombineLatestOperator} from './obs';
 import {isArray} from './util';
-import {from} from './observables';
-import {
-  ObservedValueUnionFromArray,
-  ObservedValueTupleFromArray,
-  Unshift
-} from './types';
-import {concat as concatStatic} from './observables';
+import {from} from './obs';
+import {ObservedUnionFrom, ObservedTupleFrom, Unshift} from './types';
+import {concat as concatStatic} from './obs';
 import {Observer} from './types';
 import {isDate} from './util';
 import {Notification} from './Notification';
 import {PartialObserver} from './types';
-import {ArgumentOutOfRangeError} from './util';
-import {of} from './observables';
+import {OutOfRangeError} from './util';
+import {of} from './obs';
 import {ValueFromArray} from './types';
 import {EmptyError} from './util';
 import {identity} from './util';
 import {Subject} from './Subject';
-import {merge as mergeStatic} from './observables';
-import {
-  ConnectableObservable,
-  connectableObservableDescriptor
-} from './observables';
+import {merge as mergeStatic} from './obs';
+import {ConnectableObservable, connectableObservableDescriptor} from './obs';
 import {UnaryFunction} from './types';
 import {not} from './util';
 import {BehaviorSubject} from './BehaviorSubject';
 import {AsyncSubject} from './AsyncSubject';
 import {ReplaySubject} from './ReplaySubject';
-import {race as raceStatic} from './observables';
+import {race as raceStatic} from './obs';
 import {pipe} from './util';
-import {EMPTY} from './observables';
-import {SubscribeOnObservable} from './observables';
+import {EMPTY} from './obs';
+import {SubscribeOnObservable} from './obs';
 import {noop} from './util';
 import {isFunction} from './util';
-import {defer} from './observables';
+import {defer} from './obs';
 import {TimeoutError} from './util';
-import {throwError} from './observables';
+import {throwError} from './obs';
 import {
   Timestamp as TimestampInterface,
   TimestampProvider,
   Timestamp
 } from './types';
 import {isNumeric} from './util';
-import {ZipOperator} from './observables';
-import {zip as zipStatic} from './observables';
+import {ZipOperator} from './obs';
+import {zip as zipStatic} from './obs';
 
 export function audit<T>(
   durationSelector: (value: T) => SubscribableOrPromise<any>
@@ -892,7 +885,7 @@ export function combineLatest<T, R>(
 
 export function combineLatestWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperatorFunction<T, Unshift<ObservedValueTupleFromArray<A>, T>> {
+): OperatorFunction<T, Unshift<ObservedTupleFrom<A>, T>> {
   return combineLatest(...otherSources);
 }
 
@@ -941,15 +934,15 @@ export function concatMapTo<T, R, O extends ObservableInput<any>>(
 export function concatWith<T>(): OperatorFunction<T, T>;
 export function concatWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperatorFunction<T, ObservedValueUnionFromArray<A> | T>;
+): OperatorFunction<T, ObservedUnionFrom<A> | T>;
 export function concatWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperatorFunction<T, ObservedValueUnionFromArray<A> | T> {
+): OperatorFunction<T, ObservedUnionFrom<A> | T> {
   return (source: Observable<T>) =>
     source.lift.call(
       concatStatic(source, ...otherSources),
       undefined
-    ) as Observable<ObservedValueUnionFromArray<A> | T>;
+    ) as Observable<ObservedUnionFrom<A> | T>;
 }
 
 export function count<T>(
@@ -1709,7 +1702,7 @@ export function elementAt<T>(
   defaultValue?: T
 ): MonoTypeOperatorFunction<T> {
   if (index < 0) {
-    throw new ArgumentOutOfRangeError();
+    throw new OutOfRangeError();
   }
   const hasDefaultValue = arguments.length >= 2;
   return (source: Observable<T>) =>
@@ -1718,7 +1711,7 @@ export function elementAt<T>(
       take(1),
       hasDefaultValue
         ? defaultIfEmpty(defaultValue)
-        : throwIfEmpty(() => new ArgumentOutOfRangeError())
+        : throwIfEmpty(() => new OutOfRangeError())
     );
 }
 
@@ -3053,10 +3046,10 @@ export class MergeScanSubscriber<T, R> extends OuterSubscriber<T, R> {
 export function mergeWith<T>(): OperatorFunction<T, T>;
 export function mergeWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperatorFunction<T, T | ObservedValueUnionFromArray<A>>;
+): OperatorFunction<T, T | ObservedUnionFrom<A>>;
 export function mergeWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperatorFunction<T, T | ObservedValueUnionFromArray<A>> {
+): OperatorFunction<T, T | ObservedUnionFrom<A>> {
   return merge(...otherSources);
 }
 
@@ -4486,7 +4479,7 @@ export function skipLast<T>(count: number): MonoTypeOperatorFunction<T> {
 class SkipLastOperator<T> implements Operator<T, T> {
   constructor(private _skipCount: number) {
     if (this._skipCount < 0) {
-      throw new ArgumentOutOfRangeError();
+      throw new OutOfRangeError();
     }
   }
 
@@ -4817,7 +4810,7 @@ export function take<T>(count: number): MonoTypeOperatorFunction<T> {
 class TakeOperator<T> implements Operator<T, T> {
   constructor(private total: number) {
     if (this.total < 0) {
-      throw new ArgumentOutOfRangeError();
+      throw new OutOfRangeError();
     }
   }
 
@@ -4861,7 +4854,7 @@ export function takeLast<T>(count: number): MonoTypeOperatorFunction<T> {
 class TakeLastOperator<T> implements Operator<T, T> {
   constructor(private total: number) {
     if (this.total < 0) {
-      throw new ArgumentOutOfRangeError();
+      throw new OutOfRangeError();
     }
   }
 
@@ -6511,6 +6504,6 @@ export function zip<T, R>(
 }
 export function zipWith<T, A extends ObservableInput<any>[]>(
   ...otherInputs: A
-): OperatorFunction<T, Unshift<ObservedValueTupleFromArray<A>, T>> {
+): OperatorFunction<T, Unshift<ObservedTupleFrom<A>, T>> {
   return zip(...otherInputs);
 }

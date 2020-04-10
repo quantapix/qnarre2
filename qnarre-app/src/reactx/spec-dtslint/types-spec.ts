@@ -1,11 +1,11 @@
 import {
   Observable,
   ObservedValueOf,
-  ObservedValueUnionFromArray,
-  ObservedValueTupleFromArray,
+  ObservedUnionFrom,
+  ObservedTupleFrom,
   Unshift
 } from 'rxjs';
-import { A, B, C } from './helpers';
+import {A, B, C} from './helpers';
 
 describe('ObservedValueOf', () => {
   it('should infer from an observable', () => {
@@ -24,43 +24,43 @@ describe('ObservedValueOf', () => {
   });
 });
 
-describe('ObservedUnionFromArray', () => {
+describe('ObservedUnionFrom', () => {
   it('should infer from an array of observables', () => {
-    let explicit: ObservedValueUnionFromArray<[Observable<A>, Observable<B>]>;
+    let explicit: ObservedUnionFrom<[Observable<A>, Observable<B>]>;
     let inferred = explicit!; // $ExpectType A | B
   });
 
   it('should infer from an array of arrays', () => {
-    let explicit: ObservedValueUnionFromArray<[A[], B[]]>;
+    let explicit: ObservedUnionFrom<[A[], B[]]>;
     let inferred = explicit!; // $ExpectType A | B
   });
 
   it('should infer from an array of promises', () => {
-    let explicit: ObservedValueUnionFromArray<[Promise<A>, Promise<B>]>;
+    let explicit: ObservedUnionFrom<[Promise<A>, Promise<B>]>;
     let inferred = explicit!; // $ExpectType A | B
   });
 });
 
-describe('ObservedTupleFromArray', () => {
+describe('ObservedTupleFrom', () => {
   it('should infer from an array of observables', () => {
-    let explicit: ObservedValueTupleFromArray<[Observable<A>, Observable<B>]>;
+    let explicit: ObservedTupleFrom<[Observable<A>, Observable<B>]>;
     let inferred = explicit!; // $ExpectType [A, B]
   });
 
   it('should infer from an array of arrays', () => {
-    let explicit: ObservedValueTupleFromArray<[A[], B[]]>;
+    let explicit: ObservedTupleFrom<[A[], B[]]>;
     let inferred = explicit!; // $ExpectType [A, B]
   });
 
   it('should infer from an array of promises', () => {
-    let explicit: ObservedValueTupleFromArray<[Promise<A>, Promise<B>]>;
+    let explicit: ObservedTupleFrom<[Promise<A>, Promise<B>]>;
     let inferred = explicit!; // $ExpectType [A, B]
   });
 });
 
 describe('Unshift', () => {
   it('should add the type to the beginning of the tuple', () => {
-    let tuple: ObservedValueTupleFromArray<[Observable<A>, Observable<B>]>;
+    let tuple: ObservedTupleFrom<[Observable<A>, Observable<B>]>;
     let explicit: Unshift<typeof tuple, C>;
     let inferred = explicit!; // $ExpectType [C, A, B]
   });

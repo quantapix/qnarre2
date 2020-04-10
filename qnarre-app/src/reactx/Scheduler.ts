@@ -1,4 +1,4 @@
-import {Action} from './schedulers';
+import {Action} from './sched';
 import {Subscription} from './Subscription';
 import {SchedulerLike, SchedulerAction} from './types';
 

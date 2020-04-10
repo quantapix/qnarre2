@@ -1,4 +1,3 @@
-import {Operator} from './Operator';
 import {Subscriber} from './Subscriber';
 import {Subscription} from './Subscription';
 import {
@@ -11,7 +10,6 @@ import {canReportError} from './util';
 import {toSubscriber} from './util';
 //import {iif} from './observable/iif';
 //import {throwError} from './observable/throwError';
-import {observable as Symbol_observable} from './symbol';
 import {pipeFromArray} from './util';
 import {config} from './config';
 import {asyncIteratorFrom} from './asyncIteratorFrom';
@@ -128,7 +126,7 @@ export class Observable<T> implements Subscribable<T> {
   // static if: typeof iif;
   // static throw: typeof throwError;
 
-  [Symbol_observable]() {
+  [Symbol.observable]() {
     return this;
   }
 

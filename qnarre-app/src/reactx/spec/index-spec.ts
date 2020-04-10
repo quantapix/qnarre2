@@ -1,5 +1,5 @@
 import * as index from '../src/index';
-import { expect } from 'chai';
+import {expect} from 'chai';
 
 describe('index', () => {
   it('should export Observable', () => {
@@ -41,7 +41,7 @@ describe('index', () => {
   });
 
   it('should export error types', () => {
-    expect(index.ArgumentOutOfRangeError).to.exist;
+    expect(index.OutOfRangeError).to.exist;
     expect(index.EmptyError).to.exist;
     expect(index.ObjectUnsubscribedError).to.exist;
     expect(index.UnsubscriptionError).to.exist;

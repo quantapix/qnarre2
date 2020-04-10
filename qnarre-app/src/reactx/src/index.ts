@@ -38,7 +38,7 @@ export { lastValueFrom } from '../lastValueFrom';
 export { firstValueFrom } from '../firstValueFrom';
 
 /* Error types */
-export { ArgumentOutOfRangeError } from '../util/ArgumentOutOfRangeError';
+export { OutOfRangeError } from '../util/OutOfRangeError';
 export { EmptyError } from '../util/EmptyError';
 export { ObjectUnsubscribedError } from '../util/ObjectUnsubscribedError';
 export { UnsubscriptionError } from '../util/UnsubscriptionError';

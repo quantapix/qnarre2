@@ -1,39 +1,36 @@
 import {Subscriber} from './Subscriber';
 import {Subject} from './Subject';
-import {InteropObservable} from './types';
-import {observable as Symbol_observable} from './symbol';
-import {iterator as Symbol_iterator} from './symbol';
-import {Observable, ObservableInput} from './Observable';
+import {Observer, ObservableInput, InteropObservable} from './types';
+import {Observable} from './Observable';
 import {SchedulerLike} from './types';
 import {UnaryFunction} from './types';
 import {Subscription} from './Subscription';
-import {rxSubscriber as rxSubscriberSymbol} from './symbol';
-import {empty as emptyObserver} from './Observer';
 import {PartialObserver} from './types';
 
 import {InnerSubscriber} from './InnerSubscriber';
 import {OuterSubscriber} from './OuterSubscriber';
 
-export interface ArgumentOutOfRangeError extends Error {}
+export interface OutOfRangeError extends Error {}
 
-export interface ArgumentOutOfRangeErrorCtor {
-  new (): ArgumentOutOfRangeError;
+export interface OutOfRangeErrorCtor {
+  new (): OutOfRangeError;
 }
 
-const ArgumentOutOfRangeErrorImpl = (() => {
-  function ArgumentOutOfRangeErrorImpl(this: Error) {
+const OutOfRangeErrorImpl = (() => {
+  function OutOfRangeErrorImpl(this: Error) {
     Error.call(this);
     this.message = 'argument out of range';
-    this.name = 'ArgumentOutOfRangeError';
+    this.name = 'OutOfRangeError';
     return this;
   }
 
-  ArgumentOutOfRangeErrorImpl.prototype = Object.create(Error.prototype);
+  OutOfRangeErrorImpl.prototype = Object.create(Error.prototype);
 
-  return ArgumentOutOfRangeErrorImpl;
+  return OutOfRangeErrorImpl;
 })();
 
-export const ArgumentOutOfRangeError: ArgumentOutOfRangeErrorCtor = ArgumentOutOfRangeErrorImpl as any;
+export const OutOfRangeError: OutOfRangeErrorCtor = OutOfRangeErrorImpl as any;
+
 export interface EmptyError extends Error {}
 
 export interface EmptyErrorCtor {
@@ -54,6 +51,7 @@ const EmptyErrorImpl = (() => {
 })();
 
 export const EmptyError: EmptyErrorCtor = EmptyErrorImpl as any;
+
 let nextHandle = 1;
 let resolved: Promise<any>;
 const activeHandles: {[key: number]: any} = {};
@@ -70,9 +68,7 @@ export const Immediate = {
   setImmediate(cb: () => void): number {
     const handle = nextHandle++;
     activeHandles[handle] = true;
-    if (!resolved) {
-      resolved = Promise.resolve();
-    }
+    if (!resolved) resolved = Promise.resolve();
     resolved.then(() => findAndClearHandle(handle) && cb());
     return handle;
   },
@@ -87,6 +83,20 @@ export const TestTools = {
     return Object.keys(activeHandles).length;
   }
 };
+
+export const emptyObserver: Observer<any> = {
+  closed: true,
+  next(_: any): void {
+    /* noop */
+  },
+  error(e: any): void {
+    hostReportError(e);
+  },
+  complete(): void {
+    /*noop*/
+  }
+};
+
 export interface ObjectUnsubscribedError extends Error {}
 
 export interface ObjectUnsubscribedErrorCtor {
@@ -107,6 +117,7 @@ const ObjectUnsubscribedErrorImpl = (() => {
 })();
 
 export const ObjectUnsubscribedError: ObjectUnsubscribedErrorCtor = ObjectUnsubscribedErrorImpl as any;
+
 export interface TimeoutError extends Error {}
 
 export interface TimeoutErrorCtor {
@@ -127,23 +138,24 @@ const TimeoutErrorImpl = (() => {
 })();
 
 export const TimeoutError: TimeoutErrorCtor = TimeoutErrorImpl as any;
+
 export interface UnsubscriptionError extends Error {
   readonly errors: any[];
 }
 
 export interface UnsubscriptionErrorCtor {
-  new (errors: any[]): UnsubscriptionError;
+  new (es: any[]): UnsubscriptionError;
 }
 
 const UnsubscriptionErrorImpl = (() => {
-  function UnsubscriptionErrorImpl(this: Error, errors: (Error | string)[]) {
+  function UnsubscriptionErrorImpl(this: Error, es: (Error | string)[]) {
     Error.call(this);
-    this.message = errors
-      ? `${errors.length} errors occurred during unsubscription:
-${errors.map((err, i) => `${i + 1}) ${err.toString()}`).join('\n  ')}`
+    this.message = es
+      ? `${es.length} errors occurred during unsubscription:
+${es.map((err, i) => `${i + 1}) ${err.toString()}`).join('\n  ')}`
       : '';
     this.name = 'UnsubscriptionError';
-    (this as any).errors = errors;
+    (this as any).errors = es;
     return this;
   }
 
@@ -164,24 +176,23 @@ export function applyMixins(derivedCtor: any, baseCtors: any[]) {
   }
 }
 
-export function canReportError(
-  observer: Subscriber<any> | Subject<any>
-): boolean {
-  while (observer) {
-    const {closed, destination, isStopped} = observer as any;
+export function canReportError(s: Subscriber<any> | Subject<any>): boolean {
+  while (s) {
+    const {closed, destination, isStopped} = s as any;
     if (closed || isStopped) {
       return false;
     } else if (destination && destination instanceof Subscriber) {
-      observer = destination;
+      s = destination;
     } else {
-      observer = null!;
+      s = null!;
     }
   }
   return true;
 }
+
 export class Deferred<T> {
-  resolve: (value?: T | PromiseLike<T> | undefined) => void = null!;
-  reject: (reason?: any) => void = null!;
+  resolve: (_?: T | PromiseLike<T> | undefined) => void = null!;
+  reject: (_: any) => void = null!;
   promise = new Promise<T>((a, b) => {
     this.resolve = a;
     this.reject = b;
@@ -190,61 +201,63 @@ export class Deferred<T> {
 
 export const errorObject: any = {e: {}};
 
-export function hostReportError(err: any) {
+export function hostReportError(e: any) {
   setTimeout(() => {
-    throw err;
+    throw e;
   }, 0);
 }
+
 export function identity<T>(x: T): T {
   return x;
 }
+
 export const isArray = (() =>
   Array.isArray ||
   (<T>(x: any): x is T[] => x && typeof x.length === 'number'))();
+
 export const isArrayLike = <T>(x: any): x is ArrayLike<T> =>
   x && typeof x.length === 'number' && typeof x !== 'function';
-export function isDate(value: any): value is Date {
-  return value instanceof Date && !isNaN(+value);
+
+export function isDate(x: any): x is Date {
+  return x instanceof Date && !isNaN(+x);
 }
+
 export function isFunction(x: any): x is Function {
   return typeof x === 'function';
 }
 
-export function isInteropObservable(
-  input: any
-): input is InteropObservable<any> {
-  return input && typeof input[Symbol_observable] === 'function';
+export function isInteropObservable(x: any): x is InteropObservable<any> {
+  return x && typeof x[Symbol.observable] === 'function';
 }
 
-export function isIterable(input: any): input is Iterable<any> {
-  return input && typeof input[Symbol_iterator] === 'function';
+export function isIterable(x: any): x is Iterable<any> {
+  return x && typeof x[Symbol.iterator] === 'function';
 }
 
-export function isNumeric(val: any): val is number | string {
-  return !isArray(val) && val - parseFloat(val) + 1 >= 0;
+export function isNumeric(x: any): x is number | string {
+  return !isArray(x) && x - parseFloat(x) + 1 >= 0;
 }
+
 export function isObject(x: any): x is Object {
   return x !== null && typeof x === 'object';
 }
 
-export function isObservable<T>(obj: any): obj is Observable<T> {
+export function isObservable<T>(x: any): x is Observable<T> {
   return (
-    !!obj &&
-    (obj instanceof Observable ||
-      (typeof obj.lift === 'function' && typeof obj.subscribe === 'function'))
+    !!x &&
+    (x instanceof Observable ||
+      (typeof x.lift === 'function' && typeof x.subscribe === 'function'))
   );
 }
 
-export function isPromise(value: any): value is PromiseLike<any> {
+export function isPromise(x: any): x is PromiseLike<any> {
   return (
-    !!value &&
-    typeof value.subscribe !== 'function' &&
-    typeof value.then === 'function'
+    !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function'
   );
 }
 
-export function isScheduler(value: any): value is SchedulerLike {
-  return value && typeof (<any>value).schedule === 'function';
+export function isScheduler(x: any): x is SchedulerLike {
+  return x && typeof (<any>x).schedule === 'function';
 }
 
 export function noop() {}
@@ -380,7 +393,7 @@ const _root: any = __window || __global || __self;
 export const subscribeTo = <T>(
   result: ObservableInput<T>
 ): ((subscriber: Subscriber<T>) => Subscription | void) => {
-  if (!!result && typeof (result as any)[Symbol_observable] === 'function') {
+  if (!!result && typeof (result as any)[Symbol.observable] === 'function') {
     return subscribeToObservable(result as any);
   } else if (isArrayLike(result)) {
     return subscribeToArray(result);
@@ -388,7 +401,7 @@ export const subscribeTo = <T>(
     return subscribeToPromise(result);
   } else if (
     !!result &&
-    typeof (result as any)[Symbol_iterator] === 'function'
+    typeof (result as any)[Symbol.iterator] === 'function'
   ) {
     return subscribeToIterable(result as any);
   } else if (
@@ -435,7 +448,7 @@ async function process<T>(
 export const subscribeToIterable = <T>(iterable: Iterable<T>) => (
   subscriber: Subscriber<T>
 ) => {
-  const iterator = (iterable as any)[Symbol_iterator]();
+  const iterator = (iterable as any)[Symbol.iterator]();
   do {
     const item = iterator.next();
     if (item.done) {
@@ -447,8 +460,6 @@ export const subscribeToIterable = <T>(iterable: Iterable<T>) => (
       break;
     }
   } while (true);
-
-  // Finalize the iterator if it happens to be a Generator
   if (typeof iterator.return === 'function') {
     subscriber.add(() => {
       if (iterator.return) {
@@ -456,16 +467,14 @@ export const subscribeToIterable = <T>(iterable: Iterable<T>) => (
       }
     });
   }
-
   return subscriber;
 };
 
 export const subscribeToObservable = <T>(obj: any) => (
   subscriber: Subscriber<T>
 ) => {
-  const obs = (obj as any)[Symbol_observable]();
+  const obs = (obj as any)[Symbol.observable]();
   if (typeof obs.subscribe !== 'function') {
-    // Should be caught by observable subscribe function error handling.
     throw new TypeError(
       'Provided object does not correctly implement Symbol.observable'
     );
@@ -517,35 +526,24 @@ export function subscribeToResult<T, R>(
     outerIndex!
   )
 ): Subscription | undefined {
-  if (innerSubscriber.closed) {
-    return undefined;
-  }
-  if (result instanceof Observable) {
-    return result.subscribe(innerSubscriber);
-  }
+  if (innerSubscriber.closed) return undefined;
+  if (result instanceof Observable) return result.subscribe(innerSubscriber);
   return subscribeTo(result)(innerSubscriber) as Subscription;
 }
 
 export function toSubscriber<T>(
-  nextOrObserver?: PartialObserver<T> | ((value: T) => void) | null,
-  error?: ((error: any) => void) | null,
-  complete?: (() => void) | null
+  o?: PartialObserver<T> | ((_: T) => void) | null,
+  e?: ((_: any) => void) | null,
+  c?: (() => void) | null
 ): Subscriber<T> {
-  if (nextOrObserver) {
-    if (nextOrObserver instanceof Subscriber) {
-      return <Subscriber<T>>nextOrObserver;
-    }
-
-    if ((nextOrObserver as any)[rxSubscriberSymbol]) {
-      return (nextOrObserver as any)[rxSubscriberSymbol]();
+  if (o) {
+    if (o instanceof Subscriber) return <Subscriber<T>>o;
+    if ((o as any)[Symbol.rxSubscriber]) {
+      return (o as any)[Symbol.rxSubscriber]();
     }
   }
-
-  if (!nextOrObserver && !error && !complete) {
-    return new Subscriber(emptyObserver);
-  }
-
-  return new Subscriber(nextOrObserver, error, complete);
+  if (!o && !e && !c) return new Subscriber(emptyObserver);
+  return new Subscriber(o, e, c);
 }
 
 let tryCatchTarget: Function | undefined;

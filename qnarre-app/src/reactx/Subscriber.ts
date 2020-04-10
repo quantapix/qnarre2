@@ -1,13 +1,9 @@
-import {isFunction} from './util';
-import {empty as emptyObserver} from './Observer';
+import {emptyObserver, isFunction, hostReportError} from './util';
 import {Observer, PartialObserver} from './types';
 import {Subscription} from './Subscription';
-import {rxSubscriber as rxSubscriberSymbol} from './symbol';
-import {config} from './config';
-import {hostReportError} from './util';
 
 export class Subscriber<T> extends Subscription implements Observer<T> {
-  [rxSubscriberSymbol]() {
+  [Symbol.rxSubscriber]() {
     return this;
   }
 
@@ -160,46 +156,21 @@ export class SafeSubscriber<T> extends Subscriber<T> {
 
   next(value?: T): void {
     if (!this.isStopped && this._next) {
-      const {_parentSubscriber} = this;
-      if (
-        !config.useDeprecatedSynchronousErrorHandling ||
-        !_parentSubscriber.syncErrorThrowable
-      ) {
-        this.__tryOrUnsub(this._next, value);
-      } else if (this.__tryOrSetError(_parentSubscriber, this._next, value)) {
-        this.unsubscribe();
-      }
+      this.__tryOrUnsub(this._next, value);
     }
   }
 
   error(err?: any): void {
     if (!this.isStopped) {
       const {_parentSubscriber} = this;
-      const {useDeprecatedSynchronousErrorHandling} = config;
       if (this._error) {
-        if (
-          !useDeprecatedSynchronousErrorHandling ||
-          !_parentSubscriber.syncErrorThrowable
-        ) {
-          this.__tryOrUnsub(this._error, err);
-          this.unsubscribe();
-        } else {
-          this.__tryOrSetError(_parentSubscriber, this._error, err);
-          this.unsubscribe();
-        }
+        this.__tryOrUnsub(this._error, err);
+        this.unsubscribe();
       } else if (!_parentSubscriber.syncErrorThrowable) {
         this.unsubscribe();
-        if (useDeprecatedSynchronousErrorHandling) {
-          throw err;
-        }
         hostReportError(err);
       } else {
-        if (useDeprecatedSynchronousErrorHandling) {
-          _parentSubscriber.syncErrorValue = err;
-          _parentSubscriber.syncErrorThrown = true;
-        } else {
-          hostReportError(err);
-        }
+        hostReportError(err);
         this.unsubscribe();
       }
     }
@@ -207,23 +178,11 @@ export class SafeSubscriber<T> extends Subscriber<T> {
 
   complete(): void {
     if (!this.isStopped) {
-      const {_parentSubscriber} = this;
       if (this._complete) {
         const wrappedComplete = () => this._complete.call(this._context);
-
-        if (
-          !config.useDeprecatedSynchronousErrorHandling ||
-          !_parentSubscriber.syncErrorThrowable
-        ) {
-          this.__tryOrUnsub(wrappedComplete);
-          this.unsubscribe();
-        } else {
-          this.__tryOrSetError(_parentSubscriber, wrappedComplete);
-          this.unsubscribe();
-        }
-      } else {
-        this.unsubscribe();
+        this.__tryOrUnsub(wrappedComplete);
       }
+      this.unsubscribe();
     }
   }
 
@@ -232,35 +191,8 @@ export class SafeSubscriber<T> extends Subscriber<T> {
       fn.call(this._context, value);
     } catch (err) {
       this.unsubscribe();
-      if (config.useDeprecatedSynchronousErrorHandling) {
-        throw err;
-      } else {
-        hostReportError(err);
-      }
+      hostReportError(err);
     }
-  }
-
-  private __tryOrSetError(
-    parent: Subscriber<T>,
-    fn: Function,
-    value?: any
-  ): boolean {
-    if (!config.useDeprecatedSynchronousErrorHandling) {
-      throw new Error('bad call');
-    }
-    try {
-      fn.call(this._context, value);
-    } catch (err) {
-      if (config.useDeprecatedSynchronousErrorHandling) {
-        parent.syncErrorValue = err;
-        parent.syncErrorThrown = true;
-        return true;
-      } else {
-        hostReportError(err);
-        return true;
-      }
-    }
-    return false;
   }
 
   _unsubscribe(): void {

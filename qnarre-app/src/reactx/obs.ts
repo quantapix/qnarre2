@@ -4,12 +4,12 @@ import {Observable} from './Observable';
 import {Subscriber} from './Subscriber';
 import {Subscription} from './Subscription';
 import {TeardownLogic} from './types';
-import {refCount as higherOrderRefCount} from './operators';
+import {refCount as higherOrderRefCount} from './ops';
 import {SchedulerLike, SchedulerAction} from './types';
-import {asap} from './schedulers';
+import {asap} from './sched';
 import {isNumeric} from './util';
 import {AsyncSubject} from './AsyncSubject';
-import {map} from './operators';
+import {map} from './ops';
 import {canReportError} from './util';
 import {isArray} from './util';
 import {isScheduler} from './util';
@@ -17,8 +17,8 @@ import {ObservableInput, ObservedValueOf} from './types';
 import {OuterSubscriber} from './OuterSubscriber';
 import {InnerSubscriber} from './InnerSubscriber';
 import {subscribeToResult} from './util';
-import {ObservedValueUnionFromArray} from './types';
-import {concatAll} from './operators';
+import {ObservedUnionFrom} from './types';
+import {concatAll} from './ops';
 import {SubscribableOrPromise} from './types';
 import {isObject} from './util';
 import {subscribeTo} from './util';
@@ -34,12 +34,12 @@ import {scheduleObservable} from './scheduled';
 import {subscribeToPromise} from './util';
 import {schedulePromise} from './scheduled';
 import {identity} from './util';
-import {async} from './schedulers';
-import {mergeAll} from './operators';
+import {async} from './sched';
+import {mergeAll} from './ops';
 import {noop} from './util';
 import {ValueFromArray} from './types';
 import {not} from './util';
-import {filter} from './operators';
+import {filter} from './ops';
 import {Unsubscribable} from './types';
 import {PartialObserver} from './types';
 import {iterator as Symbol_iterator} from './symbol';
@@ -1251,7 +1251,7 @@ export class CombineLatestSubscriber<T, R> extends OuterSubscriber<T, R> {
 
 export function concat<A extends ObservableInput<any>[]>(
   ...observables: A
-): Observable<ObservedValueUnionFromArray<A>>;
+): Observable<ObservedUnionFrom<A>>;
 export function concat<O extends ObservableInput<any>>(
   ...observables: Array<O | SchedulerLike>
 ): Observable<ObservedValueOf<O>> {
@@ -1327,7 +1327,7 @@ export function forkJoin<A, B, C, D, E, F>(
 ): Observable<[A, B, C, D, E, F]>;
 export function forkJoin<A extends ObservableInput<any>[]>(
   sources: A
-): Observable<ObservedValueUnionFromArray<A>[]>;
+): Observable<ObservedUnionFrom<A>[]>;
 export function forkJoin(sourcesObject: {}): Observable<never>;
 export function forkJoin<T, K extends keyof T>(
   sourcesObject: T
@@ -2147,10 +2147,10 @@ export function partition<T>(
 
 export function race<A extends ObservableInput<any>[]>(
   observables: A
-): Observable<ObservedValueUnionFromArray<A>>;
+): Observable<ObservedUnionFrom<A>>;
 export function race<A extends ObservableInput<any>[]>(
   ...observables: A
-): Observable<ObservedValueUnionFromArray<A>>;
+): Observable<ObservedUnionFrom<A>>;
 export function race<T>(
   ...observables: (ObservableInput<T> | ObservableInput<T>[])[]
 ): Observable<any> {
