@@ -1,7 +1,7 @@
 import {Operator} from './Operator';
 import {Subscriber} from './Subscriber';
-import {Observable} from './Observable';
-import {Subscription} from './sub';
+import {Observable} from './observe';
+import {Subscription} from './subscribe';
 import {
   MonoTypeOperatorFunction,
   SubscribableOrPromise,
@@ -10,51 +10,54 @@ import {
 import {InnerSubscriber} from './InnerSubscriber';
 import {OperatorFunction} from './types';
 import {OuterSubscriber} from './OuterSubscriber';
-import {subscribeToResult} from './util';
-import {async} from './sched';
-import {timer} from './obs';
+import {subscribeToResult} from './utils';
+import {async} from './schedule';
+import {timer} from './observe';
 import {SchedulerAction, SchedulerLike} from './types';
-import {isScheduler} from './util';
+import {isScheduler} from './utils';
 import {ObservableInput, ObservedValueOf} from './types';
-import {CombineLatestOperator} from './obs';
-import {isArray} from './util';
-import {from} from './obs';
+import {CombineLatestOperator} from './observe';
+import {isArray} from './utils';
+import {from} from './observe';
 import {ObservedUnionFrom, ObservedTupleFrom, Unshift} from './types';
-import {concat as concatStatic} from './obs';
+import {concat as concatStatic} from './observe';
 import {Observer} from './types';
-import {isDate} from './util';
+import {isDate} from './utils';
 import {Notification} from './Notification';
 import {PartialObserver} from './types';
-import {OutOfRangeError} from './util';
-import {of} from './obs';
+import {OutOfRangeError} from './utils';
+import {of} from './observe';
 import {ValueFromArray} from './types';
-import {EmptyError} from './util';
-import {identity} from './util';
+import {EmptyError} from './utils';
+import {identity} from './utils';
 import {Subject} from './Subject';
-import {merge as mergeStatic} from './obs';
-import {ConnectableObservable, connectableObservableDescriptor} from './obs';
+import {merge as mergeStatic} from './observe';
+import {
+  ConnectableObservable,
+  connectableObservableDescriptor
+} from './observe';
 import {UnaryFunction} from './types';
-import {not} from './util';
+import {not} from './utils';
 import {BehaviorSubject} from './BehaviorSubject';
 import {AsyncSubject} from './AsyncSubject';
 import {ReplaySubject} from './ReplaySubject';
-import {race as raceStatic} from './obs';
-import {pipe} from './util';
-import {EMPTY} from './obs';
-import {SubscribeOnObservable} from './obs';
-import {noop} from './util';
-import {isFunction} from './util';
-import {defer} from './obs';
-import {TimeoutError} from './util';
-import {throwError} from './obs';
+import {race as raceStatic} from './observe';
+import {pipe} from './utils';
+import {EMPTY} from './observe';
+import {SubscribeOnObservable} from './observe';
+import {noop} from './utils';
+import {isFunction} from './utils';
+import {defer} from './observe';
+import {TimeoutError} from './utils';
+import {throwError} from './observe';
 import {
   Timestamp as TimestampInterface,
   TimestampProvider,
   Timestamp
 } from './types';
-import {isNumeric} from './util';
-import {ZipOperator} from './obs';
-import {zip as zipStatic} from './obs';
+import {isNumeric} from './utils';
+import {ZipOperator} from './observe';
+import {zip as zipStatic} from './observe';
 
 export function audit<T>(
   durationSelector: (value: T) => SubscribableOrPromise<any>

@@ -1,5 +1,122 @@
-import {expect} from 'chai';
 import {AsyncSubject, Observer} from 'rxjs';
+import {SafeSubscriber} from 'rxjs/internal/Subscriber';
+import {Subscriber} from 'rxjs';
+import {Observable, UnsubscriptionError, Subscription, merge} from 'rxjs';
+
+/** @test {Subscriber} */
+describe('Subscriber', () => {
+  it('should ignore next messages after unsubscription', () => {
+    let times = 0;
+
+    const sub = new Subscriber({
+      next() {
+        times += 1;
+      }
+    });
+
+    sub.next();
+    sub.next();
+    sub.unsubscribe();
+    sub.next();
+
+    expect(times).to.equal(2);
+  });
+
+  it('should wrap unsafe observers in a safe subscriber', () => {
+    const observer = {
+      next(x: any) {
+        /* noop */
+      },
+      error(err: any) {
+        /* noop */
+      },
+      complete() {
+        /* noop */
+      }
+    };
+
+    const subscriber = new Subscriber(observer);
+    expect((subscriber as any).destination).not.to.equal(observer);
+    expect((subscriber as any).destination).to.be.an.instanceof(SafeSubscriber);
+  });
+
+  it('should ignore error messages after unsubscription', () => {
+    let times = 0;
+    let errorCalled = false;
+
+    const sub = new Subscriber({
+      next() {
+        times += 1;
+      },
+      error() {
+        errorCalled = true;
+      }
+    });
+
+    sub.next();
+    sub.next();
+    sub.unsubscribe();
+    sub.next();
+    sub.error();
+
+    expect(times).to.equal(2);
+    expect(errorCalled).to.be.false;
+  });
+
+  it('should ignore complete messages after unsubscription', () => {
+    let times = 0;
+    let completeCalled = false;
+
+    const sub = new Subscriber({
+      next() {
+        times += 1;
+      },
+      complete() {
+        completeCalled = true;
+      }
+    });
+
+    sub.next();
+    sub.next();
+    sub.unsubscribe();
+    sub.next();
+    sub.complete();
+
+    expect(times).to.equal(2);
+    expect(completeCalled).to.be.false;
+  });
+
+  it('should not be closed when other subscriber with same observer instance completes', () => {
+    const observer = {
+      next: function () {
+        /*noop*/
+      }
+    };
+
+    const sub1 = new Subscriber(observer);
+    const sub2 = new Subscriber(observer);
+
+    sub2.complete();
+
+    expect(sub1.closed).to.be.false;
+    expect(sub2.closed).to.be.true;
+  });
+
+  it('should call complete observer without any arguments', () => {
+    let argument: Array<any> | null = null;
+
+    const observer = {
+      complete: (...args: Array<any>) => {
+        argument = args;
+      }
+    };
+
+    const sub1 = new Subscriber(observer);
+    sub1.complete();
+
+    expect(argument).to.have.lengthOf(0);
+  });
+});
 
 class TestObserver implements Observer<number> {
   results: (number | string)[] = [];
@@ -16,6 +133,167 @@ class TestObserver implements Observer<number> {
     this.results.push('done');
   }
 }
+
+/** @test {Subscription} */
+describe('Subscription', () => {
+  describe('Subscription.add()', () => {
+    it('Should return self if the self is passed', () => {
+      const sub = new Subscription();
+      const ret = sub.add(sub);
+
+      expect(ret).to.equal(sub);
+    });
+
+    it('Should return Subscription.EMPTY if it is passed', () => {
+      const sub = new Subscription();
+      const ret = sub.add(Subscription.EMPTY);
+
+      expect(ret).to.equal(Subscription.EMPTY);
+    });
+
+    it('Should return Subscription.EMPTY if it is called with `void` value', () => {
+      const sub = new Subscription();
+      const ret = sub.add(undefined);
+      expect(ret).to.equal(Subscription.EMPTY);
+    });
+
+    it('Should return a new Subscription created with teardown function if it is passed a function', () => {
+      const sub = new Subscription();
+
+      let isCalled = false;
+      const ret = sub.add(function () {
+        isCalled = true;
+      });
+      ret.unsubscribe();
+
+      expect(isCalled).to.equal(true);
+    });
+
+    it('Should wrap the AnonymousSubscription and return a subscription that unsubscribes and removes it when unsubbed', () => {
+      const sub: any = new Subscription();
+      let called = false;
+      const arg = {
+        unsubscribe: () => (called = true)
+      };
+      const ret = sub.add(arg);
+
+      expect(called).to.equal(false);
+      expect(sub._subscriptions.length).to.equal(1);
+      ret.unsubscribe();
+      expect(called).to.equal(true);
+      expect(sub._subscriptions.length).to.equal(0);
+    });
+
+    it('Should return the passed one if passed a AnonymousSubscription having not function `unsubscribe` member', () => {
+      const sub = new Subscription();
+      const arg = {
+        isUnsubscribed: false,
+        unsubscribe: undefined as any
+      };
+      const ret = sub.add(arg as any);
+
+      expect(ret).to.equal(arg);
+    });
+
+    it('Should return the passed one if the self has been unsubscribed', () => {
+      const main = new Subscription();
+      main.unsubscribe();
+
+      const child = new Subscription();
+      const ret = main.add(child);
+
+      expect(ret).to.equal(child);
+    });
+
+    it('Should unsubscribe the passed one if the self has been unsubscribed', () => {
+      const main = new Subscription();
+      main.unsubscribe();
+
+      let isCalled = false;
+      const child = new Subscription(() => {
+        isCalled = true;
+      });
+      main.add(child);
+
+      expect(isCalled).to.equal(true);
+    });
+  });
+
+  describe('Subscription.unsubscribe()', () => {
+    it('Should unsubscribe from all subscriptions, when some of them throw', done => {
+      const tearDowns: number[] = [];
+
+      const source1 = new Observable(() => {
+        return () => {
+          tearDowns.push(1);
+        };
+      });
+
+      const source2 = new Observable(() => {
+        return () => {
+          tearDowns.push(2);
+          throw new Error('oops, I am a bad unsubscribe!');
+        };
+      });
+
+      const source3 = new Observable(() => {
+        return () => {
+          tearDowns.push(3);
+        };
+      });
+
+      const subscription = merge(source1, source2, source3).subscribe();
+
+      setTimeout(() => {
+        expect(() => {
+          subscription.unsubscribe();
+        }).to.throw(UnsubscriptionError);
+        expect(tearDowns).to.deep.equal([1, 2, 3]);
+        done();
+      });
+    });
+
+    it('Should unsubscribe from all subscriptions, when adding a bad custom subscription to a subscription', done => {
+      const tearDowns: number[] = [];
+
+      const sub = new Subscription();
+
+      const source1 = new Observable(() => {
+        return () => {
+          tearDowns.push(1);
+        };
+      });
+
+      const source2 = new Observable(() => {
+        return () => {
+          tearDowns.push(2);
+          sub.add(<any>{
+            unsubscribe: () => {
+              expect(sub.closed).to.be.true;
+              throw new Error('Who is your daddy, and what does he do?');
+            }
+          });
+        };
+      });
+
+      const source3 = new Observable(() => {
+        return () => {
+          tearDowns.push(3);
+        };
+      });
+
+      sub.add(merge(source1, source2, source3).subscribe());
+
+      setTimeout(() => {
+        expect(() => {
+          sub.unsubscribe();
+        }).to.throw(UnsubscriptionError);
+        expect(tearDowns).to.deep.equal([1, 2, 3]);
+        done();
+      });
+    });
+  });
+});
 
 /** @test {AsyncSubject} */
 describe('AsyncSubject', () => {

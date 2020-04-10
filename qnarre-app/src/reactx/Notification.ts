@@ -1,8 +1,8 @@
 import {PartialObserver} from './types';
-import {Observable} from './Observable';
-import {EMPTY} from './obs';
-import {of} from './obs';
-import {throwError} from './obs';
+import {Observable} from './observe';
+import {EMPTY} from './observe';
+import {of} from './observe';
+import {throwError} from './observe';
 
 export enum NotificationKind {
   NEXT = 'N',

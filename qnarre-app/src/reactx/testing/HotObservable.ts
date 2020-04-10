@@ -1,6 +1,6 @@
 import {Subject} from '../Subject';
 import {Subscriber} from '../Subscriber';
-import {Subscription} from '../sub';
+import {Subscription} from '../subscribe';
 import {Scheduler} from '../Scheduler';
 import {TestMessage} from './TestMessage';
 import {SubscriptionLog} from './SubscriptionLog';

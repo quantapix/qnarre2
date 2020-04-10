@@ -1,6 +1,6 @@
-import {Observable} from './Observable';
+import {Observable} from './observe';
 import * as qt from './types';
-import * as qu from './util';
+import * as qu from './utils';
 
 export class Subscription implements qt.Subscription {
   public static EMPTY = ((s: Subscription) => {

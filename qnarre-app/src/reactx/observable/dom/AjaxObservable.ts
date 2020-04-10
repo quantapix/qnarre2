@@ -1,5 +1,5 @@
 import {root} from '../../util/root';
-import {Observable} from '..';
+import {Observable} from '../../observe';
 import {Subscriber} from '../../Subscriber';
 import {Teardown} from '../../types';
 import {map} from '../../operators/map';

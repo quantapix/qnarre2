@@ -1,5 +1,5 @@
-import {Observable} from '../Observable';
-import {Subscription} from '../sub';
+import {Observable} from '../observe';
+import {Subscription} from '../subscribe';
 import {Scheduler} from '../Scheduler';
 import {TestMessage} from './TestMessage';
 import {SubscriptionLog} from './SubscriptionLog';

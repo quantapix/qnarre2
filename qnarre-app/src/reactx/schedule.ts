@@ -1,12 +1,12 @@
-import {Immediate} from './util';
-import {Observable} from './Observable';
+import {Immediate} from './utils';
+import {Observable} from './observe';
 import {SchedulerLike, SchedulerAction} from './types';
-import {Subscription} from './sub';
+import {Subscription} from './subscribe';
 import {InteropObservable, Subscribable} from './types';
-import {isInteropObservable} from './util';
-import {isPromise} from './util';
-import {isArrayLike} from './util';
-import {isIterable} from './util';
+import {isInteropObservable} from './utils';
+import {isPromise} from './utils';
+import {isArrayLike} from './utils';
+import {isIterable} from './utils';
 import {ObservableInput} from './types';
 
 export class Action<T> extends Subscription {

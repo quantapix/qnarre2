@@ -1,4 +1,4 @@
-import {Observable} from '..';
+import {Observable} from '../../observe';
 
 // TODO: move to types.ts
 export interface TimestampProvider {

@@ -1,5 +1,5 @@
 /* Observable */
-export { Observable } from '../observable
+export { Observable } from '../observee
 export { ConnectableObservable } from '../observable/ConnectableObservable';
 export { GroupedObservable } from '../operators/groupBy';
 export { Operator } from '../Operator';
@@ -21,7 +21,7 @@ export { VirtualTimeScheduler, VirtualAction } from '../scheduler/VirtualTimeSch
 export { Scheduler } from '../scheduler
 
 /* Subscription */
-export { Subscription } from '../sub';
+export { Subscription } from '../subscribe';
 export { Subscriber } from '../Subscriber';
 
 /* Notification */

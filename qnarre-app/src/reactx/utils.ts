@@ -1,10 +1,10 @@
 import {Subscriber} from './Subscriber';
 import {Subject} from './Subject';
 import {Observer, ObservableInput, InteropObservable} from './types';
-import {Observable} from './Observable';
+import {Observable} from './observe';
 import {SchedulerLike} from './types';
 import {UnaryFunction} from './types';
-import {Subscription} from './sub';
+import {Subscription} from './subscribe';
 import {PartialObserver} from './types';
 
 import {InnerSubscriber} from './InnerSubscriber';

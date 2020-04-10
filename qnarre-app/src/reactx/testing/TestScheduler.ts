@@ -1,10 +1,10 @@
-import {Observable} from '../Observable';
+import {Observable} from '../observe';
 import {Notification} from '../Notification';
 import {ColdObservable} from './ColdObservable';
 import {HotObservable} from './HotObservable';
 import {TestMessage} from './TestMessage';
 import {SubscriptionLog} from './SubscriptionLog';
-import {Subscription} from '../sub';
+import {Subscription} from '../subscribe';
 import {
   VirtualTimeScheduler,
   VirtualAction

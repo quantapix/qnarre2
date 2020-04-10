@@ -1,6 +1,6 @@
-import {Observable} from './Observable';
-import {EmptyError} from './util';
-import {Subscription} from './sub';
+import {Observable} from './observe';
+import {EmptyError} from './utils';
+import {Subscription} from './subscribe';
 
 export function firstValueFrom<T>(source$: Observable<T>) {
   return new Promise<T>((resolve, reject) => {
