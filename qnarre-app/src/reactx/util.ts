@@ -97,26 +97,26 @@ export const emptyObserver: Observer<any> = {
   }
 };
 
-export interface ObjectUnsubscribedError extends Error {}
+export interface UnsubscribedError extends Error {}
 
-export interface ObjectUnsubscribedErrorCtor {
-  new (): ObjectUnsubscribedError;
+export interface UnsubscribedErrorCtor {
+  new (): UnsubscribedError;
 }
 
-const ObjectUnsubscribedErrorImpl = (() => {
-  function ObjectUnsubscribedErrorImpl(this: Error) {
+const UnsubscribedErrorImpl = (() => {
+  function UnsubscribedErrorImpl(this: Error) {
     Error.call(this);
     this.message = 'object unsubscribed';
-    this.name = 'ObjectUnsubscribedError';
+    this.name = 'UnsubscribedError';
     return this;
   }
 
-  ObjectUnsubscribedErrorImpl.prototype = Object.create(Error.prototype);
+  UnsubscribedErrorImpl.prototype = Object.create(Error.prototype);
 
-  return ObjectUnsubscribedErrorImpl;
+  return UnsubscribedErrorImpl;
 })();
 
-export const ObjectUnsubscribedError: ObjectUnsubscribedErrorCtor = ObjectUnsubscribedErrorImpl as any;
+export const UnsubscribedError: UnsubscribedErrorCtor = UnsubscribedErrorImpl as any;
 
 export interface TimeoutError extends Error {}
 

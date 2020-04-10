@@ -43,7 +43,7 @@ describe('index', () => {
   it('should export error types', () => {
     expect(index.OutOfRangeError).to.exist;
     expect(index.EmptyError).to.exist;
-    expect(index.ObjectUnsubscribedError).to.exist;
+    expect(index.UnsubscribedError).to.exist;
     expect(index.UnsubscriptionError).to.exist;
     expect(index.TimeoutError).to.exist;
   });

@@ -197,7 +197,7 @@ import {hot, expectObservable} from '../helpers/marble-testing';
 import {
   BehaviorSubject,
   Subject,
-  ObjectUnsubscribedError,
+  UnsubscribedError,
   Observable,
   of
 } from 'rxjs';
@@ -220,14 +220,14 @@ describe('BehaviorSubject', () => {
   });
 
   it(
-    'should throw an ObjectUnsubscribedError if getValue() is called ' +
+    'should throw an UnsubscribedError if getValue() is called ' +
       'and the BehaviorSubject has been unsubscribed',
     () => {
       const subject = new BehaviorSubject('hi there');
       subject.unsubscribe();
       expect(() => {
         subject.getValue();
-      }).to.throw(ObjectUnsubscribedError);
+      }).to.throw(UnsubscribedError);
     }
   );
 

@@ -40,7 +40,7 @@ export { firstValueFrom } from '../firstValueFrom';
 /* Error types */
 export { OutOfRangeError } from '../util/OutOfRangeError';
 export { EmptyError } from '../util/EmptyError';
-export { ObjectUnsubscribedError } from '../util/ObjectUnsubscribedError';
+export { UnsubscribedError } from '../util/UnsubscribedError';
 export { UnsubscriptionError } from '../util/UnsubscriptionError';
 export { TimeoutError } from '../util/TimeoutError';
 

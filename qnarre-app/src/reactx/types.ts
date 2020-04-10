@@ -44,11 +44,19 @@ export interface Unsubscribable {
   unsubscribe(): void;
 }
 
+export type Teardown = Unsubscribable | Function | void;
+
 export interface Subscribable<T> {
   subscribe(_?: PartialObserver<T>): Unsubscribable;
 }
 
-export interface SubscriptionLike extends Unsubscribable {
+export interface Subscriber<T> extends Observer<T> {}
+
+export interface Operator<_T, R> {
+  call(s: Subscriber<R>, _: any): Teardown;
+}
+
+export interface Subscription extends Unsubscribable {
   unsubscribe(): void;
   readonly closed: boolean;
 }
@@ -85,8 +93,6 @@ export type Unshift<X extends any[], Y> = ((y: Y, ...x: X) => any) extends (
 
 export type ValueFromArray<A> = A extends Array<infer T> ? T : never;
 
-export type Teardown = Unsubscribable | Function | void;
-
 export type FactoryOrValue<T> = T | (() => T);
 
 export interface Timestamp<T> {
@@ -108,15 +114,11 @@ export interface SchedulerLike extends TimestampProvider {
     work: (this: SchedulerAction<T>, state?: T) => void,
     delay?: number,
     state?: T
-  ): SubscriptionLike;
+  ): Subscription;
 }
 
-export interface SchedulerAction<T> extends SubscriptionLike {
-  schedule(state?: T, delay?: number): SubscriptionLike;
-}
-
-export interface Operator<_T, R> {
-  call(s: Subscriber<R>, _: any): Teardown;
+export interface SchedulerAction<T> extends Subscription {
+  schedule(state?: T, delay?: number): Subscription;
 }
 
 export interface UnaryFunction<T, R> {

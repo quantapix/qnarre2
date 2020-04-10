@@ -19913,7 +19913,7 @@ describe('multicast operator', () => {
     });
 
     it(
-      'should not throw ObjectUnsubscribedError when used in ' + 'a switchMap',
+      'should not throw UnsubscribedError when used in ' + 'a switchMap',
       done => {
         const source = of(1, 2, 3).pipe(
           multicast(() => new Subject<number>()),
@@ -19942,7 +19942,7 @@ describe('multicast operator', () => {
 
   describe('when given a subject', () => {
     it(
-      'should not throw ObjectUnsubscribedError when used in ' + 'a switchMap',
+      'should not throw UnsubscribedError when used in ' + 'a switchMap',
       done => {
         const source = of(1, 2, 3).pipe(
           multicast(new Subject<number>()),
@@ -32465,7 +32465,7 @@ import {
   expectSubscriptions,
   time
 } from '../helpers/marble-testing';
-import {Observable, NEVER, of, ObjectUnsubscribedError, EMPTY} from 'rxjs';
+import {Observable, NEVER, of, UnsubscribedError, EMPTY} from 'rxjs';
 import {windowToggle, tap, mergeMap} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
 
@@ -32721,7 +32721,7 @@ describe('windowToggle', () => {
     rxTestScheduler.schedule(() => {
       expect(() => {
         window.subscribe();
-      }).to.throw(ObjectUnsubscribedError);
+      }).to.throw(UnsubscribedError);
     }, late);
   });
 

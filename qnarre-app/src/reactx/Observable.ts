@@ -1,25 +1,20 @@
-import {Subscriber} from './Subscriber';
-import {Subscription} from './sub';
-import {
-  Teardown,
-  OperatorFunction,
-  PartialObserver,
-  Subscribable
-} from './types';
-import {canReportError} from './util';
-import {toSubscriber} from './util';
+import * as qt from './types';
+import * as qu from './util';
+
+//import {Subscription} from './sub';
 //import {iif} from './observable/iif';
 //import {throwError} from './observable/throwError';
-import {pipeFromArray} from './util';
-import {Deferred} from './util';
 
-export class Observable<T> implements Subscribable<T> {
+export class Observable<T> implements qt.Subscribable<T> {
   public _isScalar = false;
   source: Observable<any> | undefined;
-  operator: Operator<any, T> | undefined;
+  operator: qt.Operator<any, T> | undefined;
 
   constructor(
-    subscribe?: (this: Observable<T>, subscriber: Subscriber<T>) => Teardown
+    subscribe?: (
+      this: Observable<T>,
+      subscriber: qt.Subscriber<T>
+    ) => qt.Teardown
   ) {
     if (subscribe) {
       this._subscribe = subscribe;
@@ -27,31 +22,31 @@ export class Observable<T> implements Subscribable<T> {
   }
 
   static create: Function = <T>(
-    subscribe?: (subscriber: Subscriber<T>) => Teardown
+    subscribe?: (subscriber: qt.Subscriber<T>) => qt.Teardown
   ) => {
     return new Observable<T>(subscribe);
   };
 
-  lift<R>(operator?: Operator<T, R>): Observable<R> {
+  lift<R>(operator?: qt.Operator<T, R>): Observable<R> {
     const observable = new Observable<R>();
     observable.source = this;
     observable.operator = operator;
     return observable;
   }
 
-  subscribe(observer?: PartialObserver<T>): Subscription;
+  subscribe(observer?: qt.PartialObserver<T>): Subscription;
   subscribe(
     next?: (value: T) => void,
     error?: (error: any) => void,
     complete?: () => void
   ): Subscription;
   subscribe(
-    observerOrNext?: PartialObserver<T> | ((value: T) => void) | null,
+    observerOrNext?: qt.PartialObserver<T> | ((value: T) => void) | null,
     error?: ((error: any) => void) | null,
     complete?: (() => void) | null
   ): Subscription {
     const {operator} = this;
-    const sink = toSubscriber(observerOrNext, error, complete);
+    const sink = qu.toqt.Subscriber(observerOrNext, error, complete);
     if (operator) {
       sink.add(operator.call(sink, this.source));
     } else {
@@ -60,11 +55,11 @@ export class Observable<T> implements Subscribable<T> {
     return sink;
   }
 
-  _trySubscribe(sink: Subscriber<T>): Teardown {
+  _trySubscribe(sink: qt.Subscriber<T>): qt.Teardown {
     try {
       return this._subscribe(sink);
     } catch (err) {
-      if (canReportError(sink)) {
+      if (qu.canReportError(sink)) {
         sink.error(err);
       } else {
         console.warn(err);
@@ -95,7 +90,7 @@ export class Observable<T> implements Subscribable<T> {
     }) as Promise<void>;
   }
 
-  _subscribe(subscriber: Subscriber<any>): Teardown {
+  _subscribe(subscriber: qt.Subscriber<any>): qt.Teardown {
     const {source} = this;
     return source && source.subscribe(subscriber);
   }
@@ -108,82 +103,82 @@ export class Observable<T> implements Subscribable<T> {
   }
 
   pipe(): Observable<T>;
-  pipe<A>(op1: OperatorFunction<T, A>): Observable<A>;
+  pipe<A>(op1: qt.OperatorFunction<T, A>): Observable<A>;
   pipe<A, B>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>
   ): Observable<B>;
   pipe<A, B, C>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>
   ): Observable<C>;
   pipe<A, B, C, D>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>
   ): Observable<D>;
   pipe<A, B, C, D, E>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>,
-    op5: OperatorFunction<D, E>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>,
+    op5: qt.OperatorFunction<D, E>
   ): Observable<E>;
   pipe<A, B, C, D, E, F>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>,
-    op5: OperatorFunction<D, E>,
-    op6: OperatorFunction<E, F>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>,
+    op5: qt.OperatorFunction<D, E>,
+    op6: qt.OperatorFunction<E, F>
   ): Observable<F>;
   pipe<A, B, C, D, E, F, G>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>,
-    op5: OperatorFunction<D, E>,
-    op6: OperatorFunction<E, F>,
-    op7: OperatorFunction<F, G>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>,
+    op5: qt.OperatorFunction<D, E>,
+    op6: qt.OperatorFunction<E, F>,
+    op7: qt.OperatorFunction<F, G>
   ): Observable<G>;
   pipe<A, B, C, D, E, F, G, H>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>,
-    op5: OperatorFunction<D, E>,
-    op6: OperatorFunction<E, F>,
-    op7: OperatorFunction<F, G>,
-    op8: OperatorFunction<G, H>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>,
+    op5: qt.OperatorFunction<D, E>,
+    op6: qt.OperatorFunction<E, F>,
+    op7: qt.OperatorFunction<F, G>,
+    op8: qt.OperatorFunction<G, H>
   ): Observable<H>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>,
-    op5: OperatorFunction<D, E>,
-    op6: OperatorFunction<E, F>,
-    op7: OperatorFunction<F, G>,
-    op8: OperatorFunction<G, H>,
-    op9: OperatorFunction<H, I>
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>,
+    op5: qt.OperatorFunction<D, E>,
+    op6: qt.OperatorFunction<E, F>,
+    op7: qt.OperatorFunction<F, G>,
+    op8: qt.OperatorFunction<G, H>,
+    op9: qt.OperatorFunction<H, I>
   ): Observable<I>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: OperatorFunction<T, A>,
-    op2: OperatorFunction<A, B>,
-    op3: OperatorFunction<B, C>,
-    op4: OperatorFunction<C, D>,
-    op5: OperatorFunction<D, E>,
-    op6: OperatorFunction<E, F>,
-    op7: OperatorFunction<F, G>,
-    op8: OperatorFunction<G, H>,
-    op9: OperatorFunction<H, I>,
-    ...ops: OperatorFunction<any, any>[]
+    op1: qt.OperatorFunction<T, A>,
+    op2: qt.OperatorFunction<A, B>,
+    op3: qt.OperatorFunction<B, C>,
+    op4: qt.OperatorFunction<C, D>,
+    op5: qt.OperatorFunction<D, E>,
+    op6: qt.OperatorFunction<E, F>,
+    op7: qt.OperatorFunction<F, G>,
+    op8: qt.OperatorFunction<G, H>,
+    op9: qt.OperatorFunction<H, I>,
+    ...ops: qt.OperatorFunction<any, any>[]
   ): Observable<unknown>;
-  pipe(...ops: OperatorFunction<any, any>[]): Observable<any> {
+  pipe(...ops: qt.OperatorFunction<any, any>[]): Observable<any> {
     if (ops.length === 0) return this as any;
-    return pipeFromArray(ops)(this);
+    return qu.pipeFromArray(ops)(this);
   }
 
   toPromise<T>(this: Observable<T>): Promise<T | undefined>;
@@ -231,7 +226,7 @@ export function asyncIteratorFrom<T>(source: Observable<T>) {
 }
 
 async function* coroutine<T>(source: Observable<T>) {
-  const deferreds: Deferred<IteratorResult<T>>[] = [];
+  const deferreds: qu.Deferred<IteratorResult<T>>[] = [];
   const values: T[] = [];
   let hasError = false;
   let error: any = null;
@@ -269,7 +264,7 @@ async function* coroutine<T>(source: Observable<T>) {
       } else if (hasError) {
         throw error;
       } else {
-        const d = new Deferred<IteratorResult<T>>();
+        const d = new qu.Deferred<IteratorResult<T>>();
         deferreds.push(d);
         const result = await d.promise;
         if (result.done) {

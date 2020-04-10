@@ -89,13 +89,13 @@ describe('isNumeric', () => {
   });
 });
 import {expect} from 'chai';
-import {ObjectUnsubscribedError} from 'rxjs';
+import {UnsubscribedError} from 'rxjs';
 
-/** @test {ObjectUnsubscribedError} */
-describe('ObjectUnsubscribedError', () => {
-  const error = new ObjectUnsubscribedError();
+/** @test {UnsubscribedError} */
+describe('UnsubscribedError', () => {
+  const error = new UnsubscribedError();
   it('Should have a name', () => {
-    expect(error.name).to.be.equal('ObjectUnsubscribedError');
+    expect(error.name).to.be.equal('UnsubscribedError');
   });
   it('Should have a message', () => {
     expect(error.message).to.be.equal('object unsubscribed');

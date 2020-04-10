@@ -1,11 +1,8 @@
-import {Observer, PartialObserver, SubscriptionLike, Teardown} from './types';
-import {emptyObserver, hostReportError, UnsubscriptionError} from './util';
-import {Operator} from './types';
 import {Observable} from './Observable';
-import {ObjectUnsubscribedError} from './util';
-import {TimestampProvider} from './types';
+import * as qt from './types';
+import * as qu from './util';
 
-export class Subscription implements SubscriptionLike {
+export class Subscription implements qt.Subscription {
   public static EMPTY = ((s: Subscription) => {
     s.closed = true;
     return s;
@@ -13,7 +10,7 @@ export class Subscription implements SubscriptionLike {
 
   public closed = false;
   protected parents?: Subscription | Subscription[];
-  private subs?: SubscriptionLike[];
+  private subs?: qt.Subscription[];
 
   constructor(private unsub?: () => void) {}
 
@@ -26,22 +23,24 @@ export class Subscription implements SubscriptionLike {
     try {
       this.unsub?.call(this);
     } catch (e) {
-      if (e instanceof UnsubscriptionError) es = es.concat(flatten(e.errors));
+      if (e instanceof qu.UnsubscriptionError)
+        es = es.concat(flatten(e.errors));
       else es.push(e);
     }
     this.subs?.forEach(s => {
       try {
         s.unsubscribe();
       } catch (e) {
-        if (e instanceof UnsubscriptionError) es = es.concat(flatten(e.errors));
+        if (e instanceof qu.UnsubscriptionError)
+          es = es.concat(flatten(e.errors));
         else es.push(e);
       }
     });
     this.parents = this.subs = undefined;
-    if (es.length) throw new UnsubscriptionError(es);
+    if (es.length) throw new qu.UnsubscriptionError(es);
   }
 
-  add(t?: Teardown): Subscription {
+  add(t?: qt.Teardown) {
     if (!t) return Subscription.EMPTY;
     let s = t as Subscription;
     switch (typeof t) {
@@ -55,7 +54,7 @@ export class Subscription implements SubscriptionLike {
           s.unsubscribe();
           return s;
         } else if (!(t instanceof Subscription)) {
-          const s2 = t as SubscriptionLike;
+          const s2 = t as qt.Subscription;
           s = new Subscription();
           s.subs = [s2];
         }
@@ -76,7 +75,7 @@ export class Subscription implements SubscriptionLike {
     return s;
   }
 
-  remove(s: SubscriptionLike) {
+  remove(s: qt.Subscription) {
     const ss = this.subs;
     if (ss) {
       const i = ss.indexOf(s);
@@ -87,26 +86,26 @@ export class Subscription implements SubscriptionLike {
 
 function flatten(es: any[]) {
   return es.reduce(
-    (es, e) => es.concat(e instanceof UnsubscriptionError ? e.errors : e),
+    (es, e) => es.concat(e instanceof qu.UnsubscriptionError ? e.errors : e),
     []
   );
 }
 
-export class Subscriber<T> extends Subscription implements Observer<T> {
+export class Subscriber<T> extends Subscription implements qt.Subscriber<T> {
   [Symbol.rxSubscriber]() {
     return this;
   }
 
-  static create<T>(dst?: PartialObserver<any>) {
+  static create<T>(dst?: qt.PartialObserver<any>) {
     return new Subscriber<T>(dst);
   }
 
   protected stopped = false;
-  protected dst: Observer<any> | Subscriber<any>;
+  protected dst: qt.Observer<any> | Subscriber<any>;
 
-  constructor(dst?: PartialObserver<any>) {
+  constructor(dst?: qt.PartialObserver<any>) {
     super();
-    if (!dst) this.dst = emptyObserver;
+    if (!dst) this.dst = qu.emptyObserver;
     else {
       if (dst instanceof Subscriber) {
         this.dst = dst;
@@ -171,40 +170,37 @@ export class SafeSubscriber<T> extends Subscriber<T> {
 
   constructor(
     private psub: Subscriber<T> | undefined,
-    dst: PartialObserver<T>
+    private pdst: qt.PartialObserver<T>
   ) {
     super();
-    this._next = dst.next!;
-    this._error = dst.error!;
-    this._complete = dst.complete!;
-    if (dst !== emptyObserver) this.ctxt = Object.create(dst);
+    if (this.pdst !== qu.emptyObserver) this.ctxt = Object.create(this.pdst);
   }
 
   next(v: T) {
-    if (!this.stopped && this._next) this._tryCall(this._next, v);
+    if (!this.stopped) this._tryCall(this.pdst.next, v);
   }
 
   error(e: any) {
     if (!this.stopped) {
-      if (this._error) this._tryCall(this._error, e);
-      else hostReportError(e);
+      if (this.pdst.error) this._tryCall(this.pdst.error, e);
+      else qu.hostReportError(e);
       this.unsubscribe();
     }
   }
 
   complete() {
     if (!this.stopped) {
-      if (this._complete) this._tryCall(this._complete);
+      this._tryCall(this.pdst.complete);
       this.unsubscribe();
     }
   }
 
-  private _tryCall(f: Function, v?: any) {
+  private _tryCall(f?: Function, v?: any) {
     try {
-      f.call(this.ctxt, v);
+      f?.call(this.ctxt, v);
     } catch (e) {
       this.unsubscribe();
-      hostReportError(e);
+      qu.hostReportError(e);
     }
   }
 
@@ -216,54 +212,54 @@ export class SafeSubscriber<T> extends Subscriber<T> {
 }
 
 export class InnerSubscriber<T, R> extends Subscriber<R> {
-  private index = 0;
+  private idx = 0;
 
   constructor(
-    private parent: OuterSubscriber<T, R>,
+    private outer: OuterSubscriber<T, R>,
     public outerValue: T,
     public outerIndex: number
   ) {
     super();
   }
 
-  protected _next(value: R): void {
-    this.parent.notifyNext(
+  protected _next(v: R) {
+    this.outer.notifyNext(
       this.outerValue,
-      value,
+      v,
       this.outerIndex,
-      this.index++,
+      this.idx++,
       this
     );
   }
 
-  protected _error(error: any): void {
-    this.parent.notifyError(error, this);
+  protected _error(e: any) {
+    this.outer.notifyError(e, this);
     this.unsubscribe();
   }
 
-  protected _complete(): void {
-    this.parent.notifyComplete(this);
+  protected _complete() {
+    this.outer.notifyComplete(this);
     this.unsubscribe();
   }
 }
 
 export class OuterSubscriber<T, R> extends Subscriber<T> {
   notifyNext(
-    outerValue: T,
-    innerValue: R,
-    outerIndex: number,
-    innerIndex: number,
-    innerSub: InnerSubscriber<T, R>
+    _ov: T,
+    v: R,
+    _oi: number,
+    _ii: number,
+    _is: InnerSubscriber<T, R>
   ): void {
-    this.destination.next(innerValue);
+    this.dst.next(v);
   }
 
-  notifyError(error: any, innerSub: InnerSubscriber<T, R>): void {
-    this.destination.error(error);
+  notifyError(e: any, _: InnerSubscriber<T, R>) {
+    this.dst.error(e);
   }
 
-  notifyComplete(innerSub: InnerSubscriber<T, R>): void {
-    this.destination.complete();
+  notifyComplete(_: InnerSubscriber<T, R>) {
+    this.dst.complete();
   }
 }
 
@@ -276,130 +272,103 @@ export class SubjectSubscriber<T> extends Subscriber<T> {
 export class SubjectSubscription<T> extends Subscription {
   closed = false;
 
-  constructor(public subject: Subject<T>, public subscriber: Observer<T>) {
+  constructor(public subj: Subject<T> | undefined, public obs: qt.Observer<T>) {
     super();
   }
 
   unsubscribe() {
     if (this.closed) return;
     this.closed = true;
-    const subject = this.subject;
-    const observers = subject.observers;
-    this.subject = null!;
-    if (
-      !observers ||
-      observers.length === 0 ||
-      subject.stopped ||
-      subject.closed
-    )
-      return;
-    const i = observers.indexOf(this.subscriber);
-    if (i !== -1) observers.splice(i, 1);
+    const s = this.subj;
+    const os = s?.obss;
+    this.subj = undefined;
+    if (!os || !os.length || s?.stopped || s?.closed) return;
+    const i = os.indexOf(this.obs);
+    if (i !== -1) os.splice(i, 1);
   }
 }
 
-export class Subject<T> extends Observable<T> implements SubscriptionLike {
+export class Subject<T> extends Observable<T> implements qt.Subscription {
   [Symbol.rxSubscriber](): SubjectSubscriber<T> {
     return new SubjectSubscriber(this);
   }
 
-  observers: Observer<T>[] = [];
   closed = false;
   stopped = false;
-  hasError = false;
-  thrownError: any = null;
+  failed = false;
+  thrown?: any;
+  obss = [] as qt.Observer<T>[];
 
   constructor() {
     super();
   }
 
-  static create: Function = <T>(
-    destination: Observer<T>,
-    source: Observable<T>
-  ): AnonymousSubject<T> => {
-    return new AnonymousSubject<T>(destination, source);
-  };
+  static create<T>(dst: qt.Observer<T>, src: Observable<T>) {
+    return new AnonymousSubject<T>(dst, src);
+  }
 
-  lift<R>(operator: Operator<T, R>): Observable<R> {
-    const subject = new AnonymousSubject(this, this);
-    subject.operator = <any>operator;
-    return <any>subject;
+  lift<R>(o: qt.Operator<T, R>): Observable<R> {
+    const s = new AnonymousSubject(this, this);
+    s.operator = o;
+    return s as Observable<R>;
   }
 
   next(v: T) {
-    if (this.closed) throw new ObjectUnsubscribedError();
-    if (!this.stopped) {
-      const {observers} = this;
-      const len = observers.length;
-      const copy = observers.slice();
-      for (let i = 0; i < len; i++) {
-        copy[i].next(v);
-      }
-    }
+    if (this.closed) throw new qu.UnsubscribedError();
+    if (!this.stopped) this.obss.slice().forEach(o => o.next(v));
   }
 
   error(e: any) {
-    if (this.closed) throw new ObjectUnsubscribedError();
-    this.hasError = true;
-    this.thrownError = e;
+    if (this.closed) throw new qu.UnsubscribedError();
+    this.failed = true;
+    this.thrown = e;
     this.stopped = true;
-    const {observers} = this;
-    const len = observers.length;
-    const copy = observers.slice();
-    for (let i = 0; i < len; i++) {
-      copy[i].error(e);
-    }
-    this.observers.length = 0;
+    this.obss.slice().forEach(o => o.error(e));
+    this.obss = [];
   }
 
   complete() {
-    if (this.closed) throw new ObjectUnsubscribedError();
+    if (this.closed) throw new qu.UnsubscribedError();
     this.stopped = true;
-    const {observers} = this;
-    const len = observers.length;
-    const copy = observers.slice();
-    for (let i = 0; i < len; i++) {
-      copy[i].complete();
-    }
-    this.observers.length = 0;
+    this.obss.slice().forEach(o => o.complete());
+    this.obss = [];
   }
 
   unsubscribe() {
     this.stopped = true;
     this.closed = true;
-    this.observers = null!;
+    this.obss = [];
   }
 
   _trySubscribe(s: Subscriber<T>) {
-    if (this.closed) throw new ObjectUnsubscribedError();
+    if (this.closed) throw new qu.UnsubscribedError();
     return super._trySubscribe(s);
   }
 
   _subscribe(s: Subscriber<T>): Subscription {
-    if (this.closed) throw new ObjectUnsubscribedError();
-    else if (this.hasError) {
-      s.error(this.thrownError);
+    if (this.closed) throw new qu.UnsubscribedError();
+    else if (this.failed) {
+      s.error(this.thrown);
       return Subscription.EMPTY;
     } else if (this.stopped) {
       s.complete();
       return Subscription.EMPTY;
     } else {
-      this.observers.push(s);
+      this.obss.push(s);
       return new SubjectSubscription(this, s);
     }
   }
 
   asObservable(): Observable<T> {
     const o = new Observable<T>();
-    (<any>o).source = this;
+    o.source = this;
     return o;
   }
 }
 
 export class AnonymousSubject<T> extends Subject<T> {
-  constructor(protected dst?: Observer<T>, src?: Observable<T>) {
+  constructor(protected dst?: qt.Observer<T>, public src?: Observable<T>) {
     super();
-    this.source = src;
   }
 
   next(v: T) {
@@ -415,47 +384,42 @@ export class AnonymousSubject<T> extends Subject<T> {
   }
 
   _subscribe(s: Subscriber<T>) {
-    const {source} = this;
-    if (source) return this.source!.subscribe(s);
+    if (this.src) return this.src.subscribe(s);
     return Subscription.EMPTY;
   }
 }
 
 export class AsyncSubject<T> extends Subject<T> {
-  private value: T | null = null;
-  private hasNext: boolean = false;
-  private hasCompleted: boolean = false;
+  private ready = false;
+  private done = false;
+  private value?: T;
 
-  _subscribe(subscriber: Subscriber<any>): Subscription {
-    if (this.hasError) {
-      subscriber.error(this.thrownError);
+  _subscribe(s: Subscriber<any>) {
+    if (this.failed) {
+      s.error(this.thrown);
       return Subscription.EMPTY;
-    } else if (this.hasCompleted && this.hasNext) {
-      subscriber.next(this.value);
-      subscriber.complete();
+    } else if (this.done && this.ready) {
+      s.next(this.value);
+      s.complete();
       return Subscription.EMPTY;
     }
-    return super._subscribe(subscriber);
+    return super._subscribe(s);
   }
 
-  next(value: T): void {
-    if (!this.hasCompleted) {
-      this.value = value;
-      this.hasNext = true;
+  next(v: T) {
+    if (!this.done) {
+      this.value = v;
+      this.ready = true;
     }
   }
 
-  error(error: any): void {
-    if (!this.hasCompleted) {
-      super.error(error);
-    }
+  error(e: any) {
+    if (!this.done) super.error(e);
   }
 
-  complete(): void {
-    this.hasCompleted = true;
-    if (this.hasNext) {
-      super.next(this.value!);
-    }
+  complete() {
+    this.done = true;
+    if (this.ready) super.next(this.value!);
     super.complete();
   }
 }
@@ -465,31 +429,31 @@ export class BehaviorSubject<T> extends Subject<T> {
     super();
   }
 
-  get value(): T {
+  get value() {
     return this.getValue();
   }
 
-  _subscribe(subscriber: Subscriber<T>): Subscription {
-    const subscription = super._subscribe(subscriber);
-    if (subscription && !(<SubscriptionLike>subscription).closed) {
-      subscriber.next(this._value);
-    }
-    return subscription;
+  _subscribe(s: Subscriber<T>) {
+    const t = super._subscribe(s);
+    if (!t.closed) s.next(this._value);
+    return t;
   }
 
-  getValue(): T {
-    if (this.hasError) {
-      throw this.thrownError;
-    } else if (this.closed) {
-      throw new ObjectUnsubscribedError();
-    } else {
-      return this._value;
-    }
+  getValue() {
+    if (this.failed) throw this.thrown;
+    if (this.closed) throw new qu.UnsubscribedError();
+    return this._value;
   }
 
-  next(value: T): void {
-    super.next((this._value = value));
+  next(v: T) {
+    this._value = v;
+    super.next(v);
   }
+}
+
+interface ReplayEvent<T> {
+  time: number;
+  value: T;
 }
 
 export class ReplaySubject<T> extends Subject<T> {
@@ -501,7 +465,7 @@ export class ReplaySubject<T> extends Subject<T> {
   constructor(
     bufferSize: number = Number.POSITIVE_INFINITY,
     windowTime: number = Number.POSITIVE_INFINITY,
-    private timestampProvider: TimestampProvider = Date
+    private timestampProvider: qt.TimestampProvider = Date
   ) {
     super();
     this._bufferSize = bufferSize < 1 ? 1 : bufferSize;
@@ -509,67 +473,47 @@ export class ReplaySubject<T> extends Subject<T> {
 
     if (windowTime === Number.POSITIVE_INFINITY) {
       this._infiniteTimeWindow = true;
-      /** @override */
       this.next = this.nextInfiniteTimeWindow;
     } else {
       this.next = this.nextTimeWindow;
     }
   }
 
-  private nextInfiniteTimeWindow(value: T): void {
-    const _events = this._events;
-    _events.push(value);
-    // Since this method is invoked in every next() call than the buffer
-    // can overgrow the max size only by one item
-    if (_events.length > this._bufferSize) {
-      _events.shift();
-    }
-
-    super.next(value);
+  private nextInfiniteTimeWindow(v: T) {
+    const es = this._events;
+    es.push(v);
+    if (es.length > this._bufferSize) es.shift();
+    super.next(v);
   }
 
-  private nextTimeWindow(value: T): void {
+  private nextTimeWindow(value: T) {
     this._events.push({time: this._getNow(), value});
     this._trimBufferThenGetEvents();
-
     super.next(value);
   }
 
-  _subscribe(subscriber: Subscriber<T>): Subscription {
-    // When `_infiniteTimeWindow === true` then the buffer is already trimmed
-    const _infiniteTimeWindow = this._infiniteTimeWindow;
-    const _events = _infiniteTimeWindow
-      ? this._events
-      : this._trimBufferThenGetEvents();
-    const len = _events.length;
-    let subscription: Subscription;
-
-    if (this.closed) {
-      throw new ObjectUnsubscribedError();
-    } else if (this.stopped || this.hasError) {
-      subscription = Subscription.EMPTY;
+  _subscribe(s: Subscriber<T>): Subscription {
+    if (this.closed) throw new qu.UnsubscribedError();
+    let t: Subscription;
+    if (this.stopped || this.failed) t = Subscription.EMPTY;
+    else {
+      this.obss.push(s);
+      t = new SubjectSubscription(this, s);
+    }
+    const inf = this._infiniteTimeWindow;
+    const es = inf ? this._events : this._trimBufferThenGetEvents();
+    if (inf) {
+      es.forEach(e => {
+        if (!s.closed) s.next(e as T);
+      });
     } else {
-      this.observers.push(subscriber);
-      subscription = new SubjectSubscription(this, subscriber);
+      es.forEach(e => {
+        if (!s.closed) s.next((e as ReplayEvent<T>).value);
+      });
     }
-
-    if (_infiniteTimeWindow) {
-      for (let i = 0; i < len && !subscriber.closed; i++) {
-        subscriber.next(<T>_events[i]);
-      }
-    } else {
-      for (let i = 0; i < len && !subscriber.closed; i++) {
-        subscriber.next((<ReplayEvent<T>>_events[i]).value);
-      }
-    }
-
-    if (this.hasError) {
-      subscriber.error(this.thrownError);
-    } else if (this.stopped) {
-      subscriber.complete();
-    }
-
-    return subscription;
+    if (this.failed) s.error(this.thrown);
+    else if (this.stopped) s.complete();
+    return t;
   }
 
   private _getNow(): number {
@@ -582,30 +526,19 @@ export class ReplaySubject<T> extends Subject<T> {
     const _bufferSize = this._bufferSize;
     const _windowTime = this._windowTime;
     const _events = <ReplayEvent<T>[]>this._events;
-
     const eventsCount = _events.length;
     let spliceCount = 0;
-
     while (spliceCount < eventsCount) {
       if (now - _events[spliceCount].time < _windowTime) {
         break;
       }
       spliceCount++;
     }
-
     if (eventsCount > _bufferSize) {
       spliceCount = Math.max(spliceCount, eventsCount - _bufferSize);
     }
-
-    if (spliceCount > 0) {
-      _events.splice(0, spliceCount);
-    }
+    if (spliceCount > 0) _events.splice(0, spliceCount);
 
     return _events;
   }
-}
-
-interface ReplayEvent<T> {
-  time: number;
-  value: T;
 }
