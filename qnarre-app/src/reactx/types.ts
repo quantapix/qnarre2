@@ -54,7 +54,7 @@ export interface Subscription extends Unsubscriber {
 export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
 
 export interface Source<N, F, D> {
-  subscribe(_?: Target<N, F, D>): Unsubscriber;
+  subscribe(_?: Target<N, F, D>): Subscription;
 }
 
 export interface Subject<N, F, D> extends Source<N, F, D>, Subscription {

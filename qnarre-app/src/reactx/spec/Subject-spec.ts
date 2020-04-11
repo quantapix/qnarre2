@@ -4,7 +4,7 @@ import {
   Subject,
   UnsubscribedError,
   Observable,
-  AsyncSubject,
+  Async,
   Observer,
   of
 } from 'rxjs';
@@ -673,7 +673,7 @@ describe('Subject', () => {
 
     it('should work with inherited subject', () => {
       const results: (number | string)[] = [];
-      const subject = new AsyncSubject<number>();
+      const subject = new Async<number>();
 
       subject.next(42);
       subject.complete();

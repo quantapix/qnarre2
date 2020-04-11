@@ -1,7 +1,6 @@
 import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
-import {F} from './spec-dtslint/helpers';
 
 export class Subscription implements qt.Subscription {
   public static fake = ((s: Subscription) => {
@@ -276,15 +275,7 @@ export class Outer<N, M, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class SubjSubscriber<N, F, D> extends Subscriber<N, F, D> {
-  constructor(tgt: Subject<N, F, D>) {
-    super(tgt);
-  }
-}
-
 export class SubjSubscription<N, F, D> extends Subscription {
-  closed = false;
-
   constructor(
     public subj: Subject<N, F, D> | undefined,
     public tgt: qt.Observer<N, F, D>
@@ -304,6 +295,12 @@ export class SubjSubscription<N, F, D> extends Subscription {
   }
 }
 
+export class SubjSubscriber<N, F, D> extends Subscriber<N, F, D> {
+  constructor(tgt: Subject<N, F, D>) {
+    super(tgt);
+  }
+}
+
 export class Subject<N, F, D> extends qs.Source<N, F, D>
   implements qt.Subject<N, F, D> {
   [Symbol.rxSubscriber](): SubjSubscriber<N, F, D> {
@@ -313,19 +310,34 @@ export class Subject<N, F, D> extends qs.Source<N, F, D>
   closed = false;
   stopped = false;
   failed = false;
-  thrown?: any;
+  thrown?: F;
   tgts = [] as qt.Observer<N, F, D>[];
 
-  constructor() {
-    super();
+  _subscribe(s: qt.Subscriber<N, F, D>): qt.Subscription {
+    if (this.closed) throw new qu.UnsubscribedError();
+    else if (this.failed) {
+      s.fail(this.thrown);
+      return Subscription.fake;
+    } else if (this.stopped) {
+      s.done();
+      return Subscription.fake;
+    } else {
+      this.tgts.push(s);
+      return new SubjSubscription(this, s);
+    }
+  }
+
+  _trySubscribe(s: qt.Subscriber<N, F, D>) {
+    if (this.closed) throw new qu.UnsubscribedError();
+    return super._trySubscribe(s);
   }
 
   //static create<T>(obs: qt.Observer<T>, src: Observable<T>) {
   //  return new Anonymous<T>(obs, src);
   //}
 
-  lift<M>(o: qt.Operator<N, M, F, D>): qs.Source<M, F, D> {
-    const s = new Anonymous(this, this);
+  lift<M>(o?: qt.Operator<N, M, F, D>): qs.Source<M, F, D> {
+    const s = new Anonymous<M, F, D>(this, this);
     s.oper = o;
     return s;
   }
@@ -357,25 +369,6 @@ export class Subject<N, F, D> extends qs.Source<N, F, D>
     this.tgts = [];
   }
 
-  _trySubscribe(s: qt.Subscriber<N, F, D>) {
-    if (this.closed) throw new qu.UnsubscribedError();
-    return super._trySubscribe(s);
-  }
-
-  _subscribe(s: qt.Subscriber<N, F, D>): Subscription {
-    if (this.closed) throw new qu.UnsubscribedError();
-    else if (this.failed) {
-      s.fail(this.thrown);
-      return Subscription.fake;
-    } else if (this.stopped) {
-      s.done();
-      return Subscription.fake;
-    } else {
-      this.tgts.push(s);
-      return new SubjSubscription(this, s);
-    }
-  }
-
   asSource() {
     const s = new qs.Source<N, F, D>();
     s.src = this;
@@ -384,86 +377,158 @@ export class Subject<N, F, D> extends qs.Source<N, F, D>
 }
 
 export class Anonymous<N, F, D> extends Subject<N, F, D> {
-  constructor(protected obs?: qt.Observer<T>, public src?: Observable<T>) {
+  constructor(tgt?: qt.Observer<N, F, D>, public src?: qs.Source<N, F, D>) {
     super();
+    if (tgt) this.tgts.push(tgt);
   }
 
-  next(v: T) {
-    this.obs?.next?.(v);
-  }
-
-  error(e: any) {
-    this.obs?.error?.(e);
-  }
-
-  complete() {
-    this.obs?.complete?.();
-  }
-
-  _subscribe(s: Subscriber<T>) {
+  _subscribe(s: qt.Subscriber<N, F, D>) {
     if (this.src) return this.src.subscribe(s);
     return Subscription.fake;
   }
 }
 
-export class AsyncSubject<T> extends Subject<T> {
+export class Async<N, F, D> extends Subject<N, F, D> {
   private ready = false;
-  private done = false;
-  private value?: T;
+  private ended = false;
+  private value?: N;
 
-  _subscribe(s: Subscriber<any>) {
+  _subscribe(s: qt.Subscriber<N, F, D>) {
     if (this.failed) {
-      s.error(this.thrown);
+      s.fail(this.thrown);
       return Subscription.fake;
-    } else if (this.done && this.ready) {
+    } else if (this.ready && this.ended) {
       s.next(this.value);
-      s.complete();
+      s.done();
       return Subscription.fake;
     }
     return super._subscribe(s);
   }
 
-  next(v: T) {
-    if (!this.done) {
-      this.value = v;
+  next(n?: N) {
+    if (!this.ended) {
+      this.value = n;
       this.ready = true;
     }
   }
 
-  error(e: any) {
-    if (!this.done) super.error(e);
+  fail(f?: F) {
+    if (!this.ended) super.fail(f);
   }
 
-  complete() {
-    this.done = true;
+  done(d?: D) {
+    this.ended = true;
     if (this.ready) super.next(this.value!);
-    super.complete();
+    super.done(d);
   }
 }
 
-export class BehaviorSubject<T> extends Subject<T> {
-  constructor(private _value: T) {
+export class Behavior<N, F, D> extends Subject<N, F, D> {
+  constructor(private value?: N) {
     super();
   }
 
-  get value() {
-    return this.getValue();
-  }
-
-  _subscribe(s: Subscriber<T>) {
+  _subscribe(s: qt.Subscriber<N, F, D>) {
     const t = super._subscribe(s);
-    if (!t.closed) s.next(this._value);
+    if (!t.closed) s.next(this.value);
     return t;
   }
 
   getValue() {
     if (this.failed) throw this.thrown;
     if (this.closed) throw new qu.UnsubscribedError();
-    return this._value;
+    return this.value;
   }
 
-  next(v: T) {
-    this._value = v;
-    super.next(v);
+  next(n?: N) {
+    this.value = n;
+    super.next(n);
+  }
+}
+
+interface ReplayEvent<T> {
+  time: number;
+  value?: T;
+}
+
+export class Replay<N, F, D> extends Subject<N, F, D> {
+  private size: number;
+  private time: number;
+  private infin = false;
+  private events = [] as (ReplayEvent<N> | N | undefined)[];
+
+  constructor(
+    size = Number.POSITIVE_INFINITY,
+    time = Number.POSITIVE_INFINITY,
+    private stamper: qt.TimestampProvider = Date
+  ) {
+    super();
+    this.size = size < 1 ? 1 : size;
+    this.time = time < 1 ? 1 : time;
+    if (time === Number.POSITIVE_INFINITY) {
+      this.infin = true;
+      this.next = this.nextInfin;
+    } else {
+      this.next = this.nextTime;
+    }
+  }
+
+  _subscribe(s: qt.Subscriber<N, F, D>): Subscription {
+    if (this.closed) throw new qu.UnsubscribedError();
+    let t: Subscription;
+    if (this.stopped || this.failed) t = Subscription.fake;
+    else {
+      this.tgts.push(s);
+      t = new SubjSubscription(this, s);
+    }
+    const inf = this.infin;
+    const es = inf ? this.events : this.trimmedEvents();
+    if (inf) {
+      es.forEach(e => {
+        if (!s.closed) s.next(e as N);
+      });
+    } else {
+      es.forEach(e => {
+        if (!s.closed) s.next((e as ReplayEvent<N>).value);
+      });
+    }
+    if (this.failed) s.fail(this.thrown);
+    else if (this.stopped) s.done();
+    return t;
+  }
+
+  private nextInfin(n?: N) {
+    const es = this.events;
+    es.push(n);
+    if (es.length > this.size) es.shift();
+    super.next(n);
+  }
+
+  private nextTime(value?: N) {
+    this.events.push({time: this.now(), value});
+    this.trimmedEvents();
+    super.next(value);
+  }
+
+  private trimmedEvents() {
+    const now = this.now();
+    const s = this.size;
+    const t = this.time;
+    const es = this.events;
+    const c = es.length;
+    let i = 0;
+    while (i < c) {
+      const d = this.infin ? 0 : (es[i] as any).time;
+      if (now - d < t) break;
+      i++;
+    }
+    if (c > s) i = Math.max(i, c - s);
+    if (i > 0) es.splice(0, i);
+    return es;
+  }
+
+  private now() {
+    const s = this.stamper;
+    return s ? s.now() : Date.now();
   }
 }

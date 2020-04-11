@@ -31,9 +31,9 @@ import {merge as mergeStatic} from './observe';
 import {Connectable, connectableObservableDescriptor} from './observe';
 import {UnaryFun} from './types';
 import {not} from './utils';
-import {BehaviorSubject} from './BehaviorSubject';
-import {AsyncSubject} from './AsyncSubject';
-import {ReplaySubject} from './ReplaySubject';
+import {Behavior} from './Behavior';
+import {Async} from './Async';
+import {Replay} from './Replay';
 import {race as raceStatic} from './observe';
 import {pipe} from './utils';
 import {EMPTY} from './observe';
@@ -3471,11 +3471,11 @@ export function publishBehavior<T>(
   value: T
 ): UnaryFun<Observable<T>, Connectable<T>> {
   return (source: Observable<T>) =>
-    multicast(new BehaviorSubject<T>(value))(source) as Connectable<T>;
+    multicast(new Behavior<T>(value))(source) as Connectable<T>;
 }
 
 export function publishLast<T>(): UnaryFun<Observable<T>, Connectable<T>> {
-  return (source: Observable<T>) => multicast(new AsyncSubject<T>())(source);
+  return (source: Observable<T>) => multicast(new Async<T>())(source);
 }
 
 export function publishReplay<T>(
@@ -3501,7 +3501,7 @@ export function publishReplay<T, R>(
 
   const selector =
     typeof selectorOrScheduler === 'function' ? selectorOrScheduler : undefined;
-  const subject = new ReplaySubject<T>(bufferSize, windowTime, scheduler);
+  const subject = new Replay<T>(bufferSize, windowTime, scheduler);
 
   return (source: Observable<T>) =>
     multicast(() => subject, selector!)(source) as Connectable<R>;
@@ -4270,7 +4270,7 @@ function shareReplayOperator<T>({
   refCount: useRefCount,
   scheduler
 }: ShareReplayConfig) {
-  let subject: ReplaySubject<T> | undefined;
+  let subject: Replay<T> | undefined;
   let refCount = 0;
   let subscription: Subscription | undefined;
   let hasError = false;
@@ -4283,7 +4283,7 @@ function shareReplayOperator<T>({
     refCount++;
     if (!subject || hasError) {
       hasError = false;
-      subject = new ReplaySubject<T>(bufferSize, windowTime, scheduler);
+      subject = new Replay<T>(bufferSize, windowTime, scheduler);
       subscription = source.subscribe({
         next(value) {
           subject!.next(value);

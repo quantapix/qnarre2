@@ -451,7 +451,7 @@ export function bindCallback<T>(
   }
   return function (this: any, ...args: any[]): Observable<T> {
     const context = this;
-    let subject: AsyncSubject<T> | undefined;
+    let subject: Async<T> | undefined;
     const params = {
       context,
       subject: undefined,
@@ -461,7 +461,7 @@ export function bindCallback<T>(
     return new Observable<T>(subscriber => {
       if (!scheduler) {
         if (!subject) {
-          subject = new AsyncSubject<T>();
+          subject = new Async<T>();
           const handler = (...innerArgs: any[]) => {
             subject!.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
             subject!.complete();
@@ -500,7 +500,7 @@ interface ParamsContext<T> {
   callbackFunc: Function;
   scheduler: SchedulerLike;
   context: any;
-  subject?: AsyncSubject<T>;
+  subject?: Async<T>;
 }
 
 function dispatch<T>(
@@ -512,7 +512,7 @@ function dispatch<T>(
   const {callbackFunc, context, scheduler} = params;
   let {subject} = params;
   if (!subject) {
-    subject = params.subject = new AsyncSubject<T>();
+    subject = params.subject = new Async<T>();
 
     const handler = (...innerArgs: any[]) => {
       const value = innerArgs.length <= 1 ? innerArgs[0] : innerArgs;
@@ -535,7 +535,7 @@ function dispatch<T>(
 }
 
 interface NextState<T> {
-  subject: AsyncSubject<T>;
+  subject: Async<T>;
   value: T;
 }
 
@@ -549,7 +549,7 @@ function dispatchNext<T>(
 }
 
 interface ErrorState<T> {
-  subject: AsyncSubject<T>;
+  subject: Async<T>;
   err: any;
 }
 
@@ -886,7 +886,7 @@ export function bindNodeCallback<T>(
       let {subject} = params;
       if (!scheduler) {
         if (!subject) {
-          subject = params.subject = new AsyncSubject<T>();
+          subject = params.subject = new Async<T>();
           const handler = (...innerArgs: any[]) => {
             const err = innerArgs.shift();
 
@@ -931,7 +931,7 @@ interface ParamsState<T> {
   callbackFunc: Function;
   args: any[];
   scheduler: SchedulerLike;
-  subject: AsyncSubject<T>;
+  subject: Async<T>;
   context: any;
 }
 
@@ -944,7 +944,7 @@ function dispatch<T>(
   let subject = params.subject;
 
   if (!subject) {
-    subject = params.subject = new AsyncSubject<T>();
+    subject = params.subject = new Async<T>();
 
     const handler = (...innerArgs: any[]) => {
       const err = innerArgs.shift();
@@ -982,7 +982,7 @@ function dispatch<T>(
 }
 
 interface DispatchNextArg<T> {
-  subject: AsyncSubject<T>;
+  subject: Async<T>;
   value: T;
 }
 
@@ -993,7 +993,7 @@ function dispatchNext<T>(arg: DispatchNextArg<T>) {
 }
 
 interface DispatchErrorArg<T> {
-  subject: AsyncSubject<T>;
+  subject: Async<T>;
   err: any;
 }
 

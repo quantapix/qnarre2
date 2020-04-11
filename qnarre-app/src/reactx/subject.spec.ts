@@ -1,4 +1,4 @@
-import {AsyncSubject, Observer} from 'rxjs';
+import {Async, Observer} from 'rxjs';
 import {Proxy} from 'rxjs/internal/Subscriber';
 import {Subscriber} from 'rxjs';
 import {Observable, UnsubscribeError, Subscription, merge} from 'rxjs';
@@ -295,10 +295,10 @@ describe('Subscription', () => {
   });
 });
 
-/** @test {AsyncSubject} */
-describe('AsyncSubject', () => {
+/** @test {Async} */
+describe('Async', () => {
   it('should emit the last value when complete', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     subject.subscribe(observer);
 
@@ -311,7 +311,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should emit the last value when subscribing after complete', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
 
     subject.next(1);
@@ -323,7 +323,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should keep emitting the last value to subsequent subscriptions', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     const subscription = subject.subscribe(observer);
 
@@ -342,7 +342,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should not emit values after complete', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
 
     subject.subscribe(observer);
@@ -357,7 +357,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should not allow change value after complete', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     const otherObserver = new TestObserver();
     subject.subscribe(observer);
@@ -372,7 +372,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should not emit values if unsubscribed before complete', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     const subscription = subject.subscribe(observer);
 
@@ -390,7 +390,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should just complete if no value has been nexted into it', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     subject.subscribe(observer);
 
@@ -400,7 +400,7 @@ describe('AsyncSubject', () => {
   });
 
   it('should keep emitting complete to subsequent subscriptions', () => {
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     const subscription = subject.subscribe(observer);
 
@@ -419,7 +419,7 @@ describe('AsyncSubject', () => {
 
   it('should only error if an error is passed into it', () => {
     const expected = new Error('bad');
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     subject.subscribe(observer);
 
@@ -432,7 +432,7 @@ describe('AsyncSubject', () => {
 
   it('should keep emitting error to subsequent subscriptions', () => {
     const expected = new Error('bad');
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     const subscription = subject.subscribe(observer);
 
@@ -451,7 +451,7 @@ describe('AsyncSubject', () => {
 
   it('should not allow send complete after error', () => {
     const expected = new Error('bad');
-    const subject = new AsyncSubject<number>();
+    const subject = new Async<number>();
     const observer = new TestObserver();
     const subscription = subject.subscribe(observer);
 
@@ -472,25 +472,19 @@ describe('AsyncSubject', () => {
 });
 import {expect} from 'chai';
 import {hot, expectObservable} from '../helpers/marble-testing';
-import {
-  BehaviorSubject,
-  Subject,
-  UnsubscribedError,
-  Observable,
-  of
-} from 'rxjs';
+import {Behavior, Subject, UnsubscribedError, Observable, of} from 'rxjs';
 import {tap, mergeMapTo} from 'rxjs/operators';
 import {asInteropSubject} from '../helpers/interop-helper';
 
-/** @test {BehaviorSubject} */
-describe('BehaviorSubject', () => {
+/** @test {Behavior} */
+describe('Behavior', () => {
   it('should extend Subject', () => {
-    const subject = new BehaviorSubject(null);
+    const subject = new Behavior(null);
     expect(subject).to.be.instanceof(Subject);
   });
 
   it('should throw if it has received an error and getValue() is called', () => {
-    const subject = new BehaviorSubject(null);
+    const subject = new Behavior(null);
     subject.error(new Error('derp'));
     expect(() => {
       subject.getValue();
@@ -499,9 +493,9 @@ describe('BehaviorSubject', () => {
 
   it(
     'should throw an UnsubscribedError if getValue() is called ' +
-      'and the BehaviorSubject has been unsubscribed',
+      'and the Behavior has been unsubscribed',
     () => {
-      const subject = new BehaviorSubject('hi there');
+      const subject = new Behavior('hi there');
       subject.unsubscribe();
       expect(() => {
         subject.getValue();
@@ -510,7 +504,7 @@ describe('BehaviorSubject', () => {
   );
 
   it('should have a getValue() method to retrieve the current value', () => {
-    const subject = new BehaviorSubject('staltz');
+    const subject = new Behavior('staltz');
     expect(subject.getValue()).to.equal('staltz');
 
     subject.next('oj');
@@ -519,7 +513,7 @@ describe('BehaviorSubject', () => {
   });
 
   it('should not allow you to set `value` directly', () => {
-    const subject = new BehaviorSubject('flibberty');
+    const subject = new Behavior('flibberty');
 
     try {
       // XXX: escape from readonly restriction for testing.
@@ -533,14 +527,14 @@ describe('BehaviorSubject', () => {
   });
 
   it('should still allow you to retrieve the value from the value property', () => {
-    const subject = new BehaviorSubject('fuzzy');
+    const subject = new Behavior('fuzzy');
     expect(subject.value).to.equal('fuzzy');
     subject.next('bunny');
     expect(subject.value).to.equal('bunny');
   });
 
   it('should start with an initialization value', (done: MochaDone) => {
-    const subject = new BehaviorSubject('foo');
+    const subject = new Behavior('foo');
     const expected = ['foo', 'bar'];
     let i = 0;
 
@@ -557,7 +551,7 @@ describe('BehaviorSubject', () => {
   });
 
   it('should pump values to multiple subscribers', (done: MochaDone) => {
-    const subject = new BehaviorSubject('init');
+    const subject = new Behavior('init');
     const expected = ['init', 'foo', 'bar'];
     let i = 0;
     let j = 0;
@@ -581,7 +575,7 @@ describe('BehaviorSubject', () => {
   });
 
   it('should not pass values nexted after a complete', () => {
-    const subject = new BehaviorSubject('init');
+    const subject = new Behavior('init');
     const results: string[] = [];
 
     subject.subscribe((x: string) => {
@@ -600,7 +594,7 @@ describe('BehaviorSubject', () => {
   });
 
   it('should clean out unsubscribed subscribers', (done: MochaDone) => {
-    const subject = new BehaviorSubject('init');
+    const subject = new Behavior('init');
 
     const sub1 = subject.subscribe((x: string) => {
       expect(x).to.equal('init');
@@ -619,7 +613,7 @@ describe('BehaviorSubject', () => {
   });
 
   it('should replay the previous value when subscribed', () => {
-    const behaviorSubject = new BehaviorSubject('0');
+    const behaviorSubject = new Behavior('0');
     function feedNextIntoSubject(x: string) {
       behaviorSubject.next(x);
     }
@@ -657,7 +651,7 @@ describe('BehaviorSubject', () => {
   });
 
   it('should emit complete when subscribed after completed', () => {
-    const behaviorSubject = new BehaviorSubject('0');
+    const behaviorSubject = new Behavior('0');
     function feedNextIntoSubject(x: string) {
       behaviorSubject.next(x);
     }
@@ -684,7 +678,7 @@ describe('BehaviorSubject', () => {
 
   it('should be an Observer which can be given to Observable.subscribe', (done: MochaDone) => {
     const source = of(1, 2, 3, 4, 5);
-    const subject = new BehaviorSubject(0);
+    const subject = new Behavior(0);
     const expected = [0, 1, 2, 3, 4, 5];
 
     subject.subscribe(
@@ -709,7 +703,7 @@ describe('BehaviorSubject', () => {
     // However, it cannot easily be fixed. See this comment:
     // https://github.com/ReactiveX/rxjs/issues/5105#issuecomment-578405446
     const source = of(1, 2, 3, 4, 5);
-    const subject = new BehaviorSubject(0);
+    const subject = new Behavior(0);
     const expected = [0, 1, 2, 3, 4, 5];
 
     subject.subscribe(
@@ -731,20 +725,20 @@ describe('BehaviorSubject', () => {
 import {expect} from 'chai';
 import {TestScheduler} from '../../testing/TestScheduler';
 import {hot, expectObservable} from '../helpers/marble-testing';
-import {ReplaySubject, Subject, of} from 'rxjs';
+import {Replay, Subject, of} from 'rxjs';
 import {mergeMapTo, tap} from 'rxjs/operators';
 
 declare const rxTestScheduler: TestScheduler;
 
-/** @test {ReplaySubject} */
-describe('ReplaySubject', () => {
+/** @test {Replay} */
+describe('Replay', () => {
   it('should extend Subject', () => {
-    const subject = new ReplaySubject();
+    const subject = new Replay();
     expect(subject).to.be.instanceof(Subject);
   });
 
   it('should add the observer before running subscription code', () => {
-    const subject = new ReplaySubject<number>();
+    const subject = new Replay<number>();
     subject.next(1);
     const results: number[] = [];
 
@@ -759,7 +753,7 @@ describe('ReplaySubject', () => {
   });
 
   it('should replay values upon subscription', (done: MochaDone) => {
-    const subject = new ReplaySubject<number>();
+    const subject = new Replay<number>();
     const expects = [1, 2, 3];
     let i = 0;
     subject.next(1);
@@ -782,7 +776,7 @@ describe('ReplaySubject', () => {
   });
 
   it('should replay values and complete', (done: MochaDone) => {
-    const subject = new ReplaySubject<number>();
+    const subject = new Replay<number>();
     const expects = [1, 2, 3];
     let i = 0;
     subject.next(1);
@@ -799,7 +793,7 @@ describe('ReplaySubject', () => {
   });
 
   it('should replay values and error', (done: MochaDone) => {
-    const subject = new ReplaySubject<number>();
+    const subject = new Replay<number>();
     const expects = [1, 2, 3];
     let i = 0;
     subject.next(1);
@@ -818,7 +812,7 @@ describe('ReplaySubject', () => {
   });
 
   it('should only replay values within its buffer size', (done: MochaDone) => {
-    const subject = new ReplaySubject<number>(2);
+    const subject = new Replay<number>(2);
     const expects = [2, 3];
     let i = 0;
     subject.next(1);
@@ -842,7 +836,7 @@ describe('ReplaySubject', () => {
 
   describe('with bufferSize=2', () => {
     it('should replay 2 previous values when subscribed', () => {
-      const replaySubject = new ReplaySubject<string>(2);
+      const replaySubject = new Replay<string>(2);
       function feedNextIntoSubject(x: string) {
         replaySubject.next(x);
       }
@@ -884,7 +878,7 @@ describe('ReplaySubject', () => {
     });
 
     it('should replay 2 last values for when subscribed after completed', () => {
-      const replaySubject = new ReplaySubject<string>(2);
+      const replaySubject = new Replay<string>(2);
       function feedNextIntoSubject(x: string) {
         replaySubject.next(x);
       }
@@ -917,7 +911,7 @@ describe('ReplaySubject', () => {
       'should handle subscribers that arrive and leave at different times, ' +
         'subject does not complete',
       () => {
-        const subject = new ReplaySubject<number>(2);
+        const subject = new Replay<number>(2);
         const results1: (number | string)[] = [];
         const results2: (number | string)[] = [];
         const results3: (number | string)[] = [];
@@ -992,7 +986,7 @@ describe('ReplaySubject', () => {
 
   describe('with windowTime=40', () => {
     it('should replay previous values since 40 time units ago when subscribed', () => {
-      const replaySubject = new ReplaySubject<string>(
+      const replaySubject = new Replay<string>(
         Number.POSITIVE_INFINITY,
         40,
         rxTestScheduler
@@ -1038,7 +1032,7 @@ describe('ReplaySubject', () => {
     });
 
     it('should replay last values since 40 time units ago when subscribed', () => {
-      const replaySubject = new ReplaySubject<string>(
+      const replaySubject = new Replay<string>(
         Number.POSITIVE_INFINITY,
         40,
         rxTestScheduler
@@ -1072,7 +1066,7 @@ describe('ReplaySubject', () => {
     });
 
     it('should only replay bufferSize items when 40 time units ago more were emited', () => {
-      const replaySubject = new ReplaySubject<string>(2, 40, rxTestScheduler);
+      const replaySubject = new Replay<string>(2, 40, rxTestScheduler);
       function feedNextIntoSubject(x: string) {
         replaySubject.next(x);
       }
@@ -1102,7 +1096,7 @@ describe('ReplaySubject', () => {
 
   it('should be an Observer which can be given to Observable.subscribe', () => {
     const source = of(1, 2, 3, 4, 5);
-    const subject = new ReplaySubject<number>(3);
+    const subject = new Replay<number>(3);
     let results: (number | string)[] = [];
 
     subject.subscribe(

@@ -11,9 +11,9 @@ describe('index', () => {
 
   it('should export the Subject types', () => {
     expect(index.Subject).to.exist;
-    expect(index.BehaviorSubject).to.exist;
-    expect(index.ReplaySubject).to.exist;
-    expect(index.AsyncSubject).to.exist;
+    expect(index.Behavior).to.exist;
+    expect(index.Replay).to.exist;
+    expect(index.Async).to.exist;
   });
 
   it('should export the schedulers', () => {

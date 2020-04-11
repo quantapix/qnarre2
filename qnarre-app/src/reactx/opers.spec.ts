@@ -13197,7 +13197,7 @@ import {
 } from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
 import {
-  ReplaySubject,
+  Replay,
   of,
   GroupedObservable,
   Observable,
@@ -13334,7 +13334,7 @@ describe('groupBy operator', () => {
           (x: number) => x % 2,
           null as any,
           null as any,
-          () => new ReplaySubject(1)
+          () => new Replay(1)
         ),
         // Ensure each inner group reaches the destination after the first event
         // has been next'd to the group
@@ -19128,7 +19128,7 @@ import {
 } from 'rxjs/operators';
 import {
   Subject,
-  ReplaySubject,
+  Replay,
   of,
   Connectable,
   zip,
@@ -19200,7 +19200,7 @@ describe('multicast operator', () => {
       multicast(new Subject<number>())
     ) as Connectable<number>;
     const replayed = connectable.pipe(
-      multicast(new ReplaySubject<number>())
+      multicast(new Replay<number>())
     ) as Connectable<number>;
 
     connectable.connect();
@@ -19307,7 +19307,7 @@ describe('multicast operator', () => {
     ];
     const multicasted = source.pipe(
       multicast(
-        () => new ReplaySubject<string>(1),
+        () => new Replay<string>(1),
         x => concat(x, x.pipe(takeLast(1)))
       )
     );
@@ -19567,9 +19567,9 @@ describe('multicast operator', () => {
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
-    it('should be retryable with ReplaySubject and cold source is synchronous', () => {
+    it('should be retryable with Replay and cold source is synchronous', () => {
       function subjectFactory() {
-        return new ReplaySubject(1);
+        return new Replay(1);
       }
       const source = cold('(123#)');
       const multicasted = source.pipe(multicast(subjectFactory), refCount());
@@ -19649,9 +19649,9 @@ describe('multicast operator', () => {
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
-    it('should be repeatable with ReplaySubject and cold source is synchronous', () => {
+    it('should be repeatable with Replay and cold source is synchronous', () => {
       function subjectFactory() {
-        return new ReplaySubject(1);
+        return new Replay(1);
       }
       const source = cold('(123|)');
       const multicasted = source.pipe(multicast(subjectFactory), refCount());
@@ -19726,9 +19726,9 @@ describe('multicast operator', () => {
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
-    it('should be retryable using a ReplaySubject', () => {
+    it('should be retryable using a Replay', () => {
       function subjectFactory() {
-        return new ReplaySubject(1);
+        return new Replay(1);
       }
       const source = cold('-1-2-3----4-#                        ');
       const sourceSubs = [
@@ -19786,9 +19786,9 @@ describe('multicast operator', () => {
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
-    it('should be repeatable using a ReplaySubject', () => {
+    it('should be repeatable using a Replay', () => {
       function subjectFactory() {
-        return new ReplaySubject(1);
+        return new Replay(1);
       }
       const source = cold('-1-2-3----4-|                        ');
       const sourceSubs = [
@@ -26050,14 +26050,14 @@ describe('shareReplay operator', () => {
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
-  it('when no windowTime is given ReplaySubject should be in _infiniteTimeWindow mode', () => {
+  it('when no windowTime is given Replay should be in _infiniteTimeWindow mode', () => {
     const spy = sinon.spy(rxTestScheduler, 'now');
 
     of(1).pipe(shareReplay(1, undefined, rxTestScheduler)).subscribe();
     spy.restore();
     expect(
       spy,
-      'ReplaySubject should not call scheduler.now() when no windowTime is given'
+      'Replay should not call scheduler.now() when no windowTime is given'
     ).to.be.not.called;
   });
 

@@ -8,9 +8,9 @@ export { animationFrames } from '../observable/dom/animationFrames';
 
 /* Subjects */
 export { Subject } from '../Subject';
-export { BehaviorSubject } from '../BehaviorSubject';
-export { ReplaySubject } from '../ReplaySubject';
-export { AsyncSubject } from '../AsyncSubject';
+export { Behavior } from '../Behavior';
+export { Replay } from '../Replay';
+export { Async } from '../Async';
 
 /* Schedulers */
 export { asap as asapScheduler } from '../scheduler/asap';

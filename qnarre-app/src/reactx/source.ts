@@ -15,9 +15,23 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
   oper?: qt.Operator<any, N, F, D>;
 
   constructor(
-    s?: (this: Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Closer
+    s?: (this: Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription
   ) {
     if (s) this._subscribe = s;
+  }
+
+  _subscribe(s: qt.Subscriber<N, F, D>) {
+    return this.src?.subscribe(s);
+  }
+
+  _trySubscribe(s: qt.Subscriber<N, F, D>) {
+    try {
+      return this._subscribe(s);
+    } catch (e) {
+      if (qu.canReportError(s)) s.fail(e);
+      else console.warn(e);
+    }
+    return;
   }
 
   //static create<T>(s?: (_: qt.Subscriber<T>) => qt.Closer) {
@@ -47,19 +61,6 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
     if (o) s.add(o.call(s, this.src));
     else s.add(this.src ? this._subscribe(s) : this._trySubscribe(s));
     return s;
-  }
-
-  _subscribe(s: qt.Subscriber<N, F, D>): qt.Closer {
-    return this.src?.subscribe(s);
-  }
-
-  _trySubscribe(s: qt.Subscriber<N, F, D>) {
-    try {
-      return this._subscribe(s);
-    } catch (e) {
-      if (qu.canReportError(s)) s.fail(e);
-      else console.warn(e);
-    }
   }
 
   forEach(next?: qt.Ofun<N>, c?: PromiseConstructorLike) {

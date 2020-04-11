@@ -3,7 +3,7 @@ import {Subscriber} from '../../Subscriber';
 import {Observable} from '../../observe';
 import {Subscription} from '../../subscribe';
 import {Operator} from '../../Operator';
-import {ReplaySubject} from '../../ReplaySubject';
+import {Replay} from '../../Replay';
 import {Observer, Nobs} from '../../types';
 
 /**
@@ -184,7 +184,7 @@ export class WebSocketSubject<T> extends Anonymous<T> {
       } else if (!config.WebSocketCtor) {
         throw new Error('no WebSocket constructor can be found');
       }
-      this.destination = new ReplaySubject();
+      this.destination = new Replay();
     }
   }
 
@@ -201,7 +201,7 @@ export class WebSocketSubject<T> extends Anonymous<T> {
   private _resetState() {
     this._socket = null;
     if (!this.source) {
-      this.destination = new ReplaySubject();
+      this.destination = new Replay();
     }
     this._output = new Subject<T>();
   }
@@ -336,8 +336,8 @@ export class WebSocketSubject<T> extends Anonymous<T> {
         }
       ) as Subscriber<any>;
 
-      if (queue && queue instanceof ReplaySubject) {
-        subscription.add((<ReplaySubject<T>>queue).subscribe(this.destination));
+      if (queue && queue instanceof Replay) {
+        subscription.add((<Replay<T>>queue).subscribe(this.destination));
       }
     };
 
