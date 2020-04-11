@@ -108,10 +108,10 @@ describe('TimeoutError', () => {
     expect(error.message).to.be.equal('Timeout has occurred');
   });
 });
-import {UnsubscriptionError, Observable, timer, merge} from 'rxjs';
+import {UnsubscribeError, Observable, timer, merge} from 'rxjs';
 
-/** @test {UnsubscriptionError} */
-describe('UnsubscriptionError', () => {
+/** @test {UnsubscribeError} */
+describe('UnsubscribeError', () => {
   it('should create a message that is a clear indication of its internal errors', () => {
     const err1 = new Error('Swiss cheese tastes amazing but smells like socks');
     const err2 = new Error('User too big to fit in tiny European elevator');
@@ -129,9 +129,9 @@ describe('UnsubscriptionError', () => {
     try {
       subscription.unsubscribe();
     } catch (err) {
-      expect(err instanceof UnsubscriptionError).to.equal(true);
+      expect(err instanceof UnsubscribeError).to.equal(true);
       expect(err.errors).to.deep.equal([err1, err2]);
-      expect(err.name).to.equal('UnsubscriptionError');
+      expect(err.name).to.equal('UnsubscribeError');
     }
   });
 });

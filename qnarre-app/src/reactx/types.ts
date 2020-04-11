@@ -7,73 +7,77 @@ declare global {
   }
 }
 
-export interface Observer<T> {
-  closed?: boolean;
-  next: (_: T) => void;
-  error: (_: any) => void;
-  complete: () => void;
+export type Cfun = () => void;
+export type Ofun<T> = (_?: T) => void;
+
+export interface Observer<N, F, D> {
+  readonly closed?: boolean;
+  next: Ofun<N>;
+  fail: Ofun<F>;
+  done: Ofun<D>;
 }
 
-export interface NextObserver<T> {
-  closed?: boolean;
-  next: (_: T) => void;
-  error?: (_: any) => void;
-  complete?: () => void;
+export interface Nobs<N, F, D> {
+  readonly closed?: boolean;
+  next: Ofun<N>;
+  fail?: Ofun<F>;
+  done?: Ofun<D>;
 }
 
-export interface ErrorObserver<T> {
-  closed?: boolean;
-  next?: (_: T) => void;
-  error: (_: any) => void;
-  complete?: () => void;
+export interface Fobs<N, F, D> {
+  readonly closed?: boolean;
+  next?: Ofun<N>;
+  fail: Ofun<F>;
+  done?: Ofun<D>;
 }
 
-export interface CompletionObserver<T> {
-  closed?: boolean;
-  next?: (_: T) => void;
-  error?: (_T: any) => void;
-  complete: () => void;
+export interface Dobs<N, F, D> {
+  readonly closed?: boolean;
+  next?: Ofun<N>;
+  fail?: Ofun<F>;
+  done: Ofun<D>;
 }
 
-export type PartialObserver<T> =
-  | NextObserver<T>
-  | ErrorObserver<T>
-  | CompletionObserver<T>;
+export type Target<N, F, D> = Nobs<N, F, D> | Fobs<N, F, D> | Dobs<N, F, D>;
 
-export interface Unsubscribable {
+export interface Unsubscriber {
   unsubscribe(): void;
 }
 
-export type Teardown = Unsubscribable | Function | void;
+export type Closer = Unsubscriber | Cfun | void;
 
-export interface Subscribable<T> {
-  subscribe(_?: PartialObserver<T>): Unsubscribable;
-}
-
-export interface Subscriber<T> extends Observer<T> {}
-
-export interface Operator<_T, R> {
-  call(s: Subscriber<R>, _: any): Teardown;
-}
-
-export interface Subscription extends Unsubscribable {
+export interface Subscription extends Unsubscriber {
+  readonly closed?: boolean;
+  add(_?: Closer): Subscription;
+  remove(_: Subscription): void;
   unsubscribe(): void;
-  readonly closed: boolean;
 }
 
-export type InteropObservable<T> = {[Symbol.observable]: () => Subscribable<T>};
+export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
 
-export type SubscribableOrPromise<T> =
-  | Subscribable<T>
-  | Subscribable<never>
-  | PromiseLike<T>
-  | InteropObservable<T>;
+export interface Source<N, F, D> {
+  subscribe(_?: Target<N, F, D>): Unsubscriber;
+}
 
-export type ObservableInput<T> =
-  | SubscribableOrPromise<T>
-  | ArrayLike<T>
-  | Iterable<T>
-  | AsyncIterableIterator<T>;
+export interface Operator<_T, R, F, D> {
+  call(s: Subscriber<R, F, D>, _: any): Closer;
+}
+
+export type InteropObservable<N, F, D> = {
+  [Symbol.observable]: () => Source<N, F, D>;
+};
+
+export type SourceOrPromise<N, F, D> =
+  | Source<N, F, D>
+  | Source<never, F, D>
+  | PromiseLike<N>
+  | InteropObservable<N, F, D>;
+
+export type ObservableInput<N, F, D> =
+  | SourceOrPromise<N, F, D>
+  | ArrayLike<N>
+  | Iterable<N>
+  | AsyncIterableIterator<N>;
 
 export type ObservedValueOf<O> = O extends ObservableInput<infer T> ? T : never;
 

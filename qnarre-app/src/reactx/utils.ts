@@ -84,7 +84,7 @@ export const TestTools = {
   }
 };
 
-export const emptyObserver: Observer<any> = {
+export const fakeObserver: Observer<any> = {
   closed: true,
   next(_: any): void {
     /* noop */
@@ -139,32 +139,32 @@ const TimeoutErrorImpl = (() => {
 
 export const TimeoutError: TimeoutErrorCtor = TimeoutErrorImpl as any;
 
-export interface UnsubscriptionError extends Error {
+export interface UnsubscribeError extends Error {
   readonly errors: any[];
 }
 
-export interface UnsubscriptionErrorCtor {
-  new (es: any[]): UnsubscriptionError;
+export interface UnsubscribeErrorCtor {
+  new (es: any[]): UnsubscribeError;
 }
 
-const UnsubscriptionErrorImpl = (() => {
-  function UnsubscriptionErrorImpl(this: Error, es: (Error | string)[]) {
+const UnsubscribeErrorImpl = (() => {
+  function UnsubscribeErrorImpl(this: Error, es: (Error | string)[]) {
     Error.call(this);
     this.message = es
       ? `${es.length} errors occurred during unsubscription:
 ${es.map((err, i) => `${i + 1}) ${err.toString()}`).join('\n  ')}`
       : '';
-    this.name = 'UnsubscriptionError';
+    this.name = 'UnsubscribeError';
     (this as any).errors = es;
     return this;
   }
 
-  UnsubscriptionErrorImpl.prototype = Object.create(Error.prototype);
+  UnsubscribeErrorImpl.prototype = Object.create(Error.prototype);
 
-  return UnsubscriptionErrorImpl;
+  return UnsubscribeErrorImpl;
 })();
 
-export const UnsubscriptionError: UnsubscriptionErrorCtor = UnsubscriptionErrorImpl as any;
+export const UnsubscribeError: UnsubscribeErrorCtor = UnsubscribeErrorImpl as any;
 export function applyMixins(derivedCtor: any, baseCtors: any[]) {
   for (let i = 0, len = baseCtors.length; i < len; i++) {
     const baseCtor = baseCtors[i];
@@ -188,15 +188,6 @@ export function canReportError(s: qt.Subscriber<any> | Subject<any>): boolean {
     }
   }
   return true;
-}
-
-export class Deferred<T> {
-  resolve: (_?: T | PromiseLike<T> | undefined) => void = null!;
-  reject: (_: any) => void = null!;
-  promise = new Promise<T>((a, b) => {
-    this.resolve = a;
-    this.reject = b;
-  });
 }
 
 export const errorObject: any = {e: {}};
@@ -525,21 +516,6 @@ export function subscribeToResult<T, R>(
   if (innerSubscriber.closed) return undefined;
   if (result instanceof Observable) return result.subscribe(innerSubscriber);
   return subscribeTo(result)(innerSubscriber) as Subscription;
-}
-
-export function toSubscriber<T>(
-  o?: qt.PartialObserver<T> | ((_: T) => void),
-  e?: ((_: any) => void) | null,
-  c?: (() => void) | null
-): Subscriber<T> {
-  if (o) {
-    if (o instanceof Subscriber) return o;
-    if ((o as any)[Symbol.rxSubscriber]) {
-      return (o as any)[Symbol.rxSubscriber]();
-    }
-  }
-  if (!o && !e && !c) return new Subscriber(qu.emptyObserver);
-  return new Subscriber(o);
 }
 
 let tryCatchTarget: Function | undefined;

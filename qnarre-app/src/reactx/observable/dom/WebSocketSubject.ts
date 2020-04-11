@@ -4,7 +4,7 @@ import {Observable} from '../../observe';
 import {Subscription} from '../../subscribe';
 import {Operator} from '../../Operator';
 import {ReplaySubject} from '../../ReplaySubject';
-import {Observer, NextObserver} from '../../types';
+import {Observer, Nobs} from '../../types';
 
 /**
  * WebSocketSubjectConfig is a plain Object that allows us to make our
@@ -117,16 +117,16 @@ export interface WebSocketSubjectConfig<T> {
   /**
    * An Observer that watches when open events occur on the underlying web socket.
    */
-  openObserver?: NextObserver<Event>;
+  openObserver?: Nobs<Event>;
   /**
    * An Observer than watches when close events occur on the underlying webSocket
    */
-  closeObserver?: NextObserver<CloseEvent>;
+  closeObserver?: Nobs<CloseEvent>;
   /**
    * An Observer that watches when a close is about to occur due to
    * unsubscription.
    */
-  closingObserver?: NextObserver<void>;
+  closingObserver?: Nobs<void>;
   /**
    * A WebSocket constructor to use. This is useful for situations like using a
    * WebSocket impl in Node (WebSocket is a DOM API), or for mocking a WebSocket

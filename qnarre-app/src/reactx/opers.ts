@@ -2,11 +2,7 @@ import {Operator} from './Operator';
 import {Subscriber} from './Subscriber';
 import {Observable} from './observe';
 import {Subscription} from './subscribe';
-import {
-  MonoTypeOperatorFunction,
-  SubscribableOrPromise,
-  Teardown
-} from './types';
+import {MonoTypeOperatorFunction, SubscribableOrPromise, Closer} from './types';
 import {InnerSubscriber} from './InnerSubscriber';
 import {OperatorFunction} from './types';
 import {OuterSubscriber} from './OuterSubscriber';
@@ -24,7 +20,7 @@ import {concat as concatStatic} from './observe';
 import {Observer} from './types';
 import {isDate} from './utils';
 import {Notification} from './Notification';
-import {PartialObserver} from './types';
+import {Target} from './types';
 import {OutOfRangeError} from './utils';
 import {of} from './observe';
 import {ValueFromArray} from './types';
@@ -72,7 +68,7 @@ class AuditOperator<T> implements Operator<T, T> {
     private durationSelector: (value: T) => SubscribableOrPromise<any>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new AuditSubscriber<T, T>(subscriber, this.durationSelector)
     );
@@ -214,7 +210,7 @@ class BufferCountOperator<T> implements Operator<T, T[]> {
     }
   }
 
-  call(subscriber: Subscriber<T[]>, source: any): Teardown {
+  call(subscriber: Subscriber<T[]>, source: any): Closer {
     return source.subscribe(
       new this.subscriberClass(
         subscriber,
@@ -1025,7 +1021,7 @@ class DebounceOperator<T> implements Operator<T, T> {
     private durationSelector: (value: T) => SubscribableOrPromise<any>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new DebounceSubscriber(subscriber, this.durationSelector)
     );
@@ -1117,7 +1113,7 @@ export function debounceTime<T>(
 class DebounceTimeOperator<T> implements Operator<T, T> {
   constructor(private dueTime: number, private scheduler: SchedulerLike) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new DebounceTimeSubscriber(subscriber, this.dueTime, this.scheduler)
     );
@@ -1236,7 +1232,7 @@ export function delay<T>(
 class DelayOperator<T> implements Operator<T, T> {
   constructor(private delay: number, private scheduler: SchedulerLike) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new DelaySubscriber(subscriber, this.delay, this.scheduler)
     );
@@ -1245,7 +1241,7 @@ class DelayOperator<T> implements Operator<T, T> {
 
 interface DelayState<T> {
   source: DelaySubscriber<T>;
-  destination: PartialObserver<T>;
+  destination: Target<T>;
   scheduler: SchedulerLike;
 }
 
@@ -1369,7 +1365,7 @@ class DelayWhenOperator<T> implements Operator<T, T> {
     private delayDurationSelector: (value: T, index: number) => Observable<any>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new DelayWhenSubscriber(subscriber, this.delayDurationSelector)
     );
@@ -1546,7 +1542,7 @@ class DistinctOperator<T, K> implements Operator<T, T> {
     private flushes?: Observable<any>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new DistinctSubscriber(subscriber, this.keySelector, this.flushes)
     );
@@ -1628,7 +1624,7 @@ class DistinctUntilChangedOperator<T, K> implements Operator<T, T> {
     private keySelector?: (x: T) => K
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new DistinctUntilChangedSubscriber(
         subscriber,
@@ -1807,7 +1803,7 @@ export function exhaust<T>(): OperatorFunction<any, T> {
 }
 
 class SwitchFirstOperator<T> implements Operator<T, T> {
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(new SwitchFirstSubscriber(subscriber));
   }
 }
@@ -2134,7 +2130,7 @@ class FilterOperator<T> implements Operator<T, T> {
     private thisArg?: any
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new FilterSubscriber(subscriber, this.predicate, this.thisArg)
     );
@@ -2173,7 +2169,7 @@ export function finalize<T>(callback: () => void): MonoTypeOperatorFunction<T> {
 class FinallyOperator<T> implements Operator<T, T> {
   constructor(private callback: () => void) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(new FinallySubscriber(subscriber, this.callback));
   }
 }
@@ -3139,7 +3135,7 @@ export function observeOn<T>(
 export class ObserveOnOperator<T> implements Operator<T, T> {
   constructor(private scheduler: SchedulerLike, private delay: number = 0) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new ObserveOnSubscriber(subscriber, this.scheduler, this.delay)
     );
@@ -3194,7 +3190,7 @@ export class ObserveOnSubscriber<T> extends Subscriber<T> {
 export class ObserveOnMessage {
   constructor(
     public notification: Notification<any>,
-    public destination: PartialObserver<any>
+    public destination: Target<any>
   ) {}
 }
 
@@ -3616,7 +3612,7 @@ export function refCount<T>(): MonoTypeOperatorFunction<T> {
 
 class RefCountOperator<T> implements Operator<T, T> {
   constructor(private connectable: ConnectableObservable<T>) {}
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     const {connectable} = this;
     (<any>connectable)._refCount++;
 
@@ -3684,7 +3680,7 @@ export function repeat<T>(count: number = -1): MonoTypeOperatorFunction<T> {
 
 class RepeatOperator<T> implements Operator<T, T> {
   constructor(private count: number, private source: Observable<T>) {}
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new RepeatSubscriber(subscriber, this.count, this.source)
     );
@@ -3724,7 +3720,7 @@ class RepeatWhenOperator<T> implements Operator<T, T> {
     protected notifier: (notifications: Observable<any>) => Observable<any>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new RepeatWhenSubscriber(subscriber, this.notifier, source)
     );
@@ -3846,7 +3842,7 @@ class RetryOperator<T> implements Operator<T, T> {
     private source: Observable<T>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new RetrySubscriber(
         subscriber,
@@ -3904,7 +3900,7 @@ class RetryWhenOperator<T> implements Operator<T, T> {
     protected source: Observable<T>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new RetryWhenSubscriber(subscriber, this.notifier, this.source)
     );
@@ -3993,7 +3989,7 @@ export function sample<T>(
 class SampleOperator<T> implements Operator<T, T> {
   constructor(private notifier: Observable<any>) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     const sampleSubscriber = new SampleSubscriber(subscriber);
     const subscription = source.subscribe(sampleSubscriber);
     subscription.add(subscribeToResult(sampleSubscriber, this.notifier));
@@ -4043,7 +4039,7 @@ export function sampleTime<T>(
 class SampleTimeOperator<T> implements Operator<T, T> {
   constructor(private period: number, private scheduler: SchedulerLike) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new SampleTimeSubscriber(subscriber, this.period, this.scheduler)
     );
@@ -4119,7 +4115,7 @@ class ScanOperator<V, A, S> implements Operator<V, A> {
     private hasSeed: boolean = false
   ) {}
 
-  call(subscriber: Subscriber<A>, source: any): Teardown {
+  call(subscriber: Subscriber<A>, source: any): Closer {
     return source.subscribe(
       new ScanSubscriber(subscriber, this.accumulator, this.seed, this.hasSeed)
     );
@@ -4387,7 +4383,7 @@ class SingleOperator<T> implements Operator<T, T> {
     private source: Observable<T>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new SingleSubscriber(subscriber, this.predicate, this.source)
     );
@@ -4457,7 +4453,7 @@ export function skip<T>(count: number): MonoTypeOperatorFunction<T> {
 class SkipOperator<T> implements Operator<T, T> {
   constructor(private total: number) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(new SkipSubscriber(subscriber, this.total));
   }
 }
@@ -4486,7 +4482,7 @@ class SkipLastOperator<T> implements Operator<T, T> {
     }
   }
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     if (this._skipCount === 0) {
       return source.subscribe(new Subscriber(subscriber));
     } else {
@@ -4533,7 +4529,7 @@ export function skipUntil<T>(
 class SkipUntilOperator<T> implements Operator<T, T> {
   constructor(private notifier: Observable<any>) {}
 
-  call(destination: Subscriber<T>, source: any): Teardown {
+  call(destination: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new SkipUntilSubscriber(destination, this.notifier)
     );
@@ -4596,7 +4592,7 @@ export function skipWhile<T>(
 class SkipWhileOperator<T> implements Operator<T, T> {
   constructor(private predicate: (value: T, index: number) => boolean) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new SkipWhileSubscriber(subscriber, this.predicate)
     );
@@ -4660,7 +4656,7 @@ export function subscribeOn<T>(
 
 class SubscribeOnOperator<T> implements Operator<T, T> {
   constructor(private scheduler: SchedulerLike, private delay: number) {}
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return new SubscribeOnObservable<T>(
       source,
       this.delay,
@@ -4817,7 +4813,7 @@ class TakeOperator<T> implements Operator<T, T> {
     }
   }
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(new TakeSubscriber(subscriber, this.total));
   }
 }
@@ -4861,7 +4857,7 @@ class TakeLastOperator<T> implements Operator<T, T> {
     }
   }
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(new TakeLastSubscriber(subscriber, this.total));
   }
 }
@@ -4915,7 +4911,7 @@ export function takeUntil<T>(
 class TakeUntilOperator<T> implements Operator<T, T> {
   constructor(private notifier: Observable<any>) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     const takeUntilSubscriber = new TakeUntilSubscriber(subscriber);
     const notifierSubscription = subscribeToResult(
       takeUntilSubscriber,
@@ -4977,7 +4973,7 @@ class TakeWhileOperator<T> implements Operator<T, T> {
     private inclusive: boolean
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new TakeWhileSubscriber(subscriber, this.predicate, this.inclusive)
     );
@@ -5025,11 +5021,9 @@ export function tap<T>(
   error?: (e: any) => void,
   complete?: () => void
 ): MonoTypeOperatorFunction<T>;
+export function tap<T>(observer: Target<T>): MonoTypeOperatorFunction<T>;
 export function tap<T>(
-  observer: PartialObserver<T>
-): MonoTypeOperatorFunction<T>;
-export function tap<T>(
-  nextOrObserver?: PartialObserver<T> | ((x: T) => void) | null,
+  nextOrObserver?: Target<T> | ((x: T) => void) | null,
   error?: ((e: any) => void) | null,
   complete?: (() => void) | null
 ): MonoTypeOperatorFunction<T> {
@@ -5040,11 +5034,11 @@ export function tap<T>(
 
 class DoOperator<T> implements Operator<T, T> {
   constructor(
-    private nextOrObserver?: PartialObserver<T> | ((x: T) => void) | null,
+    private nextOrObserver?: Target<T> | ((x: T) => void) | null,
     private error?: ((e: any) => void) | null,
     private complete?: (() => void) | null
   ) {}
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new TapSubscriber(
         subscriber,
@@ -5067,7 +5061,7 @@ class TapSubscriber<T> extends Subscriber<T> {
 
   constructor(
     destination: Subscriber<T>,
-    observerOrNext?: PartialObserver<T> | ((value: T) => void) | null,
+    observerOrNext?: Target<T> | ((value: T) => void) | null,
     error?: ((e?: any) => void) | null,
     complete?: (() => void) | null
   ) {
@@ -5147,7 +5141,7 @@ class ThrottleOperator<T> implements Operator<T, T> {
     private trailing: boolean
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new ThrottleSubscriber(
         subscriber,
@@ -5263,7 +5257,7 @@ class ThrottleTimeOperator<T> implements Operator<T, T> {
     private trailing: boolean
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new ThrottleTimeSubscriber(
         subscriber,
@@ -5358,7 +5352,7 @@ export function throwIfEmpty<T>(
 class ThrowIfEmptyOperator<T> implements Operator<T, T> {
   constructor(private errorFactory: () => any) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new ThrowIfEmptySubscriber(subscriber, this.errorFactory)
     );
@@ -5463,7 +5457,7 @@ class TimeoutWithOperator<T> implements Operator<T, T> {
     private scheduler: SchedulerLike
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
       new TimeoutWithSubscriber(
         subscriber,

@@ -44,7 +44,7 @@ describe('index', () => {
     expect(index.OutOfRangeError).to.exist;
     expect(index.EmptyError).to.exist;
     expect(index.UnsubscribedError).to.exist;
-    expect(index.UnsubscriptionError).to.exist;
+    expect(index.UnsubscribeError).to.exist;
     expect(index.TimeoutError).to.exist;
   });
 

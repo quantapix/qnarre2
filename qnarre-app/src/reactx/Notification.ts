@@ -1,4 +1,4 @@
-import {PartialObserver} from './types';
+import {Target} from './types';
 import {Observable} from './observe';
 import {EMPTY} from './observe';
 import {of} from './observe';
@@ -24,7 +24,7 @@ export class Notification<T> {
     this.hasValue = kind === 'N';
   }
 
-  observe(observer: PartialObserver<T>): any {
+  observe(observer: Target<T>): any {
     switch (this.kind) {
       case 'N':
         return observer.next && observer.next(this.value!);
@@ -52,15 +52,15 @@ export class Notification<T> {
   }
 
   accept(
-    nextOrObserver: PartialObserver<T> | ((value: T) => void),
+    nextOrObserver: Target<T> | ((value: T) => void),
     error?: (err: any) => void,
     complete?: () => void
   ) {
     if (
       nextOrObserver &&
-      typeof (<PartialObserver<T>>nextOrObserver).next === 'function'
+      typeof (<Target<T>>nextOrObserver).next === 'function'
     ) {
-      return this.observe(<PartialObserver<T>>nextOrObserver);
+      return this.observe(<Target<T>>nextOrObserver);
     } else {
       return this.do(<(value: T) => void>nextOrObserver, error, complete);
     }

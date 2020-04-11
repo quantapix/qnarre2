@@ -1,7 +1,7 @@
 import {Subject, SubjectSubscriber} from './Subject';
 import {Subscriber} from './Subscriber';
 import {Subscription} from './subscribe';
-import {Teardown} from './types';
+import {Closer} from './types';
 import {refCount as higherOrderRefCount} from './opers';
 import {SchedulerLike, SchedulerAction} from './types';
 import {asap} from './schedule';
@@ -38,245 +38,14 @@ import {noop} from './utils';
 import {ValueFromArray} from './types';
 import {not} from './utils';
 import {filter} from './opers';
-import {Unsubscribable} from './types';
-import {PartialObserver} from './types';
+import {Unsubscriber} from './types';
+import {Target} from './types';
 
 import * as qt from './types';
 import * as qu from './utils';
 
 //import {iif} from './observable/iif';
 //import {throwError} from './observable/throwError';
-
-export class Observable<T> implements qt.Subscribable<T> {
-  [Symbol.observable]() {
-    return this;
-  }
-
-  [Symbol.asyncIterator](): AsyncIterableIterator<T> {
-    return asyncIterFrom(this);
-  }
-
-  //public _isScalar = false;
-  src?: Observable<any>;
-  oper?: qt.Operator<any, T>;
-
-  constructor(s?: (this: Observable<T>, _: qt.Subscriber<T>) => qt.Teardown) {
-    if (s) this._subscribe = s;
-  }
-
-  //static create<T>(s?: (_: qt.Subscriber<T>) => qt.Teardown) {
-  //  return new Observable<T>(s);
-  //}
-
-  lift<R>(op?: qt.Operator<T, R>) {
-    const o = new Observable<R>();
-    o.src = this;
-    o.oper = op;
-    return o;
-  }
-
-  subscribe(o?: qt.PartialObserver<T>): Subscription;
-  subscribe(
-    next?: (_: T) => void,
-    error?: (_: any) => void,
-    complete?: () => void
-  ): Subscription;
-  subscribe(
-    o?: qt.PartialObserver<T> | ((_: T) => void),
-    error?: (_: any) => void,
-    complete?: () => void
-  ): Subscription {
-    const s = qu.toSubscriber(o, error, complete);
-    const op = this.oper;
-    if (op) s.add(op.call(s, this.src));
-    else s.add(this.src ? this._subscribe(s) : this._trySubscribe(s));
-    return s;
-  }
-
-  forEach(next: (_: T) => void, c?: PromiseConstructorLike) {
-    c = promiseCtor(c);
-    return new c<void>((res, rej) => {
-      let s: Subscription;
-      s = this.subscribe(
-        v => {
-          try {
-            next(v);
-          } catch (e) {
-            rej(e);
-            if (s) s.unsubscribe();
-          }
-        },
-        rej,
-        res
-      );
-    }) as Promise<void>;
-  }
-
-  _trySubscribe(s: qt.Subscriber<T>) {
-    try {
-      return this._subscribe(s);
-    } catch (e) {
-      if (qu.canReportError(s)) s.error(e);
-      else console.warn(e);
-    }
-  }
-
-  _subscribe(s: qt.Subscriber<any>): qt.Teardown {
-    return this.src?.subscribe(s);
-  }
-
-  pipe(): Observable<T>;
-  pipe<A>(op1: qt.OperatorFunction<T, A>): Observable<A>;
-  pipe<A, B>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>
-  ): Observable<B>;
-  pipe<A, B, C>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>
-  ): Observable<C>;
-  pipe<A, B, C, D>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>
-  ): Observable<D>;
-  pipe<A, B, C, D, E>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>
-  ): Observable<E>;
-  pipe<A, B, C, D, E, F>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>
-  ): Observable<F>;
-  pipe<A, B, C, D, E, F, G>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>
-  ): Observable<G>;
-  pipe<A, B, C, D, E, F, G, H>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>,
-    op8: qt.OperatorFunction<G, H>
-  ): Observable<H>;
-  pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>,
-    op8: qt.OperatorFunction<G, H>,
-    op9: qt.OperatorFunction<H, I>
-  ): Observable<I>;
-  pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>,
-    op8: qt.OperatorFunction<G, H>,
-    op9: qt.OperatorFunction<H, I>,
-    ...ops: qt.OperatorFunction<any, any>[]
-  ): Observable<unknown>;
-  pipe(...ops: qt.OperatorFunction<any, any>[]): Observable<any> {
-    if (ops.length === 0) return this as any;
-    return qu.pipeFromArray(ops)(this);
-  }
-
-  toPromise<T>(this: Observable<T>): Promise<T | undefined>;
-  toPromise<T>(this: Observable<T>, c: typeof Promise): Promise<T | undefined>;
-  toPromise<T>(
-    this: Observable<T>,
-    c: PromiseConstructorLike
-  ): Promise<T | undefined>;
-  toPromise(c?: PromiseConstructorLike): Promise<T | undefined> {
-    c = promiseCtor(c);
-    return new c((res, rej) => {
-      let value: T | undefined;
-      this.subscribe(
-        (v: T) => (value = v),
-        (e: any) => rej(e),
-        () => res(value)
-      );
-    }) as Promise<T | undefined>;
-  }
-}
-
-function promiseCtor(c: PromiseConstructorLike | undefined) {
-  if (!c) c = Promise;
-  if (!c) throw new Error('no Promise impl found');
-  return c;
-}
-
-function asyncIterFrom<T>(o: Observable<T>) {
-  return coroutine(o);
-}
-
-async function* coroutine<T>(o: Observable<T>) {
-  const ds = [] as qu.Deferred<IteratorResult<T>>[];
-  const vs = [] as T[];
-  let error: any;
-  let done = false;
-  let failed = false;
-  const subs = o.subscribe({
-    next: value => {
-      if (ds.length > 0) ds.shift()!.resolve({value, done: false});
-      else vs.push(value);
-    },
-    error: e => {
-      failed = true;
-      error = e;
-      while (ds.length > 0) {
-        ds.shift()!.reject(e);
-      }
-    },
-    complete: () => {
-      done = true;
-      while (ds.length > 0) {
-        ds.shift()!.resolve({value: undefined, done: true});
-      }
-    }
-  });
-  try {
-    while (true) {
-      if (vs.length > 0) yield vs.shift()!;
-      else if (done) return;
-      else if (failed) throw error;
-      else {
-        const d = new qu.Deferred<IteratorResult<T>>();
-        ds.push(d);
-        const r = await d.promise;
-        if (r.done) return;
-        else yield r.value;
-      }
-    }
-  } catch (e) {
-    throw e;
-  } finally {
-    subs.unsubscribe();
-  }
-}
 
 export class ConnectableObservable<T> extends Observable<T> {
   subs?: Subscription;
@@ -365,7 +134,7 @@ class ConnectableSubscriber<T> extends SubjectSubscriber<T> {
 class RefCountOperator<T> implements qt.Operator<T, T> {
   constructor(private con: ConnectableObservable<T>) {}
 
-  call(s: Subscriber<T>, source: any): Teardown {
+  call(s: Subscriber<T>, source: any): Closer {
     const c = this.con;
     c.count++;
     const refCounter = new RefCountSubscriber(s, c);
@@ -2374,7 +2143,7 @@ export function race<T>(
 }
 
 export class RaceOperator<T> implements Operator<T, T> {
-  call(subscriber: Subscriber<T>, source: any): Teardown {
+  call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(new RaceSubscriber(subscriber));
   }
 }
@@ -2584,13 +2353,13 @@ function dispatch(this: SchedulerAction<TimerState>, state: TimerState) {
 }
 
 export function using<T>(
-  resourceFactory: () => Unsubscribable | void,
+  resourceFactory: () => Unsubscriber | void,
   observableFactory: (
-    resource: Unsubscribable | void
+    resource: Unsubscriber | void
   ) => ObservableInput<T> | void
 ): Observable<T> {
   return new Observable<T>(subscriber => {
-    let resource: Unsubscribable | void;
+    let resource: Unsubscriber | void;
 
     try {
       resource = resourceFactory();
@@ -2904,7 +2673,7 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R>
   isComplete = false;
 
   constructor(
-    destination: PartialObserver<T>,
+    destination: Target<T>,
     private parent: ZipSubscriber<T, R>,
     private observable: Observable<T>
   ) {

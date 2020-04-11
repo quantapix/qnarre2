@@ -1,7 +1,7 @@
 import {AsyncSubject, Observer} from 'rxjs';
-import {SafeSubscriber} from 'rxjs/internal/Subscriber';
+import {Proxy} from 'rxjs/internal/Subscriber';
 import {Subscriber} from 'rxjs';
-import {Observable, UnsubscriptionError, Subscription, merge} from 'rxjs';
+import {Observable, UnsubscribeError, Subscription, merge} from 'rxjs';
 
 /** @test {Subscriber} */
 describe('Subscriber', () => {
@@ -37,7 +37,7 @@ describe('Subscriber', () => {
 
     const subscriber = new Subscriber(observer);
     expect((subscriber as any).destination).not.to.equal(observer);
-    expect((subscriber as any).destination).to.be.an.instanceof(SafeSubscriber);
+    expect((subscriber as any).destination).to.be.an.instanceof(Proxy);
   });
 
   it('should ignore error messages after unsubscription', () => {
@@ -247,7 +247,7 @@ describe('Subscription', () => {
       setTimeout(() => {
         expect(() => {
           subscription.unsubscribe();
-        }).to.throw(UnsubscriptionError);
+        }).to.throw(UnsubscribeError);
         expect(tearDowns).to.deep.equal([1, 2, 3]);
         done();
       });
@@ -287,7 +287,7 @@ describe('Subscription', () => {
       setTimeout(() => {
         expect(() => {
           sub.unsubscribe();
-        }).to.throw(UnsubscriptionError);
+        }).to.throw(UnsubscribeError);
         expect(tearDowns).to.deep.equal([1, 2, 3]);
         done();
       });

@@ -41,7 +41,7 @@ export { firstValueFrom } from '../firstValueFrom';
 export { OutOfRangeError } from '../util/OutOfRangeError';
 export { EmptyError } from '../util/EmptyError';
 export { UnsubscribedError } from '../util/UnsubscribedError';
-export { UnsubscriptionError } from '../util/UnsubscriptionError';
+export { UnsubscribeError } from '../util/UnsubscribeError';
 export { TimeoutError } from '../util/TimeoutError';
 
 /* Static observable creation exports */
