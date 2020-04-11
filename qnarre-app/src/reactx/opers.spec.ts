@@ -10686,7 +10686,7 @@ import {
   expectObservable,
   expectSubscriptions
 } from '../helpers/marble-testing';
-import {of, OperatorFunction, Observable} from 'rxjs';
+import {of, OperFun, Observable} from 'rxjs';
 
 declare function asDiagram(arg: string): Function;
 declare const type: Function;

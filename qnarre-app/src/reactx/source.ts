@@ -1,21 +1,6 @@
 import * as qt from './types';
 import * as qu from './utils';
 
-export function toSubscriber<N, F, D>(
-  t?: qt.Target<N, F, D> | qt.Ofun<N>,
-  fail?: qt.Ofun<F>,
-  done?: qt.Ofun<D>
-): Subscriber<N, F, D> {
-  if (t) {
-    if (t instanceof Subscriber) return t;
-    if ((t as any)[Symbol.rxSubscriber]) {
-      return (t as any)[Symbol.rxSubscriber]();
-    }
-  }
-  if (!t && !fail && !done) return new Subscriber(qu.fakeObserver);
-  return new Subscriber(t);
-}
-
 export class Source<N, F, D> implements qt.Source<N, F, D> {
   [Symbol.observable]() {
     return this;
@@ -39,11 +24,11 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
   //  return new Observable<T>(s);
   //}
 
-  lift<R>(op?: qt.Operator<N, R, F, D>) {
-    const o = new Source<R, F, D>();
-    o.src = this;
-    o.oper = op;
-    return o;
+  lift<M>(o?: qt.Operator<N, M, F, D>) {
+    const s = new Source<M, F, D>();
+    s.src = this;
+    s.oper = o;
+    return s;
   }
 
   subscribe(t?: qt.Target<N, F, D>): qt.Subscription;
@@ -57,16 +42,29 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
     fail?: qt.Ofun<F>,
     done?: qt.Ofun<D>
   ): qt.Subscription {
-    const s = toSubscriber(t, fail, done);
-    const op = this.oper;
-    if (op) s.add(op.call(s, this.src));
+    const s = qt.context.toSubscriber(t, fail, done);
+    const o = this.oper;
+    if (o) s.add(o.call(s, this.src));
     else s.add(this.src ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
 
+  _subscribe(s: qt.Subscriber<N, F, D>): qt.Closer {
+    return this.src?.subscribe(s);
+  }
+
+  _trySubscribe(s: qt.Subscriber<N, F, D>) {
+    try {
+      return this._subscribe(s);
+    } catch (e) {
+      if (qu.canReportError(s)) s.fail(e);
+      else console.warn(e);
+    }
+  }
+
   forEach(next?: qt.Ofun<N>, c?: PromiseConstructorLike) {
     c = promiseCtor(c);
-    return new c<void>((res, rej) => {
+    return new c<D>((res, rej) => {
       let s: qt.Subscription;
       s = this.subscribe(
         (n?: N) => {
@@ -80,99 +78,86 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
         rej,
         res
       );
-    }) as Promise<void>;
+    }) as Promise<D>;
   }
 
-  _trySubscribe(s: qt.Subscriber<N, F, D>) {
-    try {
-      return this._subscribe(s);
-    } catch (e) {
-      if (qu.canReportError(s)) s.fail(e);
-      else console.warn(e);
-    }
-  }
-
-  _subscribe(s: qt.Subscriber<N, F, D>): qt.Closer {
-    return this.src?.subscribe(s);
-  }
-
-  pipe(): Observable<T>;
-  pipe<A>(op1: qt.OperatorFunction<T, A>): Observable<A>;
+  pipe(): Source<N, F, D>;
+  pipe<A>(op1: qt.OperFun<N, A, F, D>): Source<A, F, D>;
   pipe<A, B>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>
-  ): Observable<B>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>
+  ): Source<B, F, D>;
   pipe<A, B, C>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>
-  ): Observable<C>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>
+  ): Source<C, F, D>;
   pipe<A, B, C, D>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>
-  ): Observable<D>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>
+  ): Source<D, F, D>;
   pipe<A, B, C, D, E>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>
-  ): Observable<E>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>,
+    op5: qt.OperFun<D, E, F, D>
+  ): Source<E, F, D>;
   pipe<A, B, C, D, E, F>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>
-  ): Observable<F>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>,
+    op5: qt.OperFun<D, E, F, D>,
+    op6: qt.OperFun<E, F, F, D>
+  ): Source<F, F, D>;
   pipe<A, B, C, D, E, F, G>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>
-  ): Observable<G>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>,
+    op5: qt.OperFun<D, E, F, D>,
+    op6: qt.OperFun<E, F, F, D>,
+    op7: qt.OperFun<F, G, F, D>
+  ): Source<G, F, D>;
   pipe<A, B, C, D, E, F, G, H>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>,
-    op8: qt.OperatorFunction<G, H>
-  ): Observable<H>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>,
+    op5: qt.OperFun<D, E, F, D>,
+    op6: qt.OperFun<E, F, F, D>,
+    op7: qt.OperFun<F, G, F, D>,
+    op8: qt.OperFun<G, H, F, D>
+  ): Source<H, F, D>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>,
-    op8: qt.OperatorFunction<G, H>,
-    op9: qt.OperatorFunction<H, I>
-  ): Observable<I>;
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>,
+    op5: qt.OperFun<D, E, F, D>,
+    op6: qt.OperFun<E, F, F, D>,
+    op7: qt.OperFun<F, G, F, D>,
+    op8: qt.OperFun<G, H, F, D>,
+    op9: qt.OperFun<H, I, F, D>
+  ): Source<I, F, D>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.OperatorFunction<T, A>,
-    op2: qt.OperatorFunction<A, B>,
-    op3: qt.OperatorFunction<B, C>,
-    op4: qt.OperatorFunction<C, D>,
-    op5: qt.OperatorFunction<D, E>,
-    op6: qt.OperatorFunction<E, F>,
-    op7: qt.OperatorFunction<F, G>,
-    op8: qt.OperatorFunction<G, H>,
-    op9: qt.OperatorFunction<H, I>,
-    ...ops: qt.OperatorFunction<any, any>[]
-  ): Observable<unknown>;
-  pipe(...ops: qt.OperatorFunction<any, any>[]): Observable<any> {
-    if (ops.length === 0) return this as any;
-    return qu.pipeFromArray(ops)(this);
+    op1: qt.OperFun<N, A, F, D>,
+    op2: qt.OperFun<A, B, F, D>,
+    op3: qt.OperFun<B, C, F, D>,
+    op4: qt.OperFun<C, D, F, D>,
+    op5: qt.OperFun<D, E, F, D>,
+    op6: qt.OperFun<E, F, F, D>,
+    op7: qt.OperFun<F, G, F, D>,
+    op8: qt.OperFun<G, H, F, D>,
+    op9: qt.OperFun<H, I, F, D>,
+    ...ops: qt.OperFun<any, any, F, D>[]
+  ): Source<unknown, F, D>;
+  pipe(...ops: qt.OperFun<any, any, F, D>[]): Source<any, F, D> {
+    if (ops.length === 0) return this;
+    return qu.pipeFromArray(ops)(this) as this;
   }
 
   toPromise<T>(this: Source<T, F, D>): Promise<T | undefined>;

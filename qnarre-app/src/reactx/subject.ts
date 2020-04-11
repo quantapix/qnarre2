@@ -163,6 +163,20 @@ export class Subscriber<N, F, D> extends Subscription
   }
 }
 
+export function toSubscriber<N, F, D>(
+  t?: qt.Target<N, F, D> | qt.Ofun<N>,
+  fail?: qt.Ofun<F>,
+  done?: qt.Ofun<D>
+): Subscriber<N, F, D> {
+  if (t instanceof Subscriber) return t;
+  if (typeof t === 'function') t = {next: t, fail, done};
+  else if (t && (t as any)[Symbol.rxSubscriber]) {
+    return (t as any)[Symbol.rxSubscriber]();
+  }
+  if (!t && !fail && !done) return new Subscriber(qu.fakeObserver);
+  return new Subscriber(t);
+}
+
 export class Proxy<N, F, D> extends Subscriber<N, F, D> {
   private ctx?: any;
 

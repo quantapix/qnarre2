@@ -1,17 +1,20 @@
-import { Observable, of, OperatorFunction } from 'rxjs';
-import { mapTo } from 'rxjs/operators';
+import {Observable, of, OperFun} from 'rxjs';
+import {mapTo} from 'rxjs/operators';
 
-function a<I extends string, O extends string>(input: I, output: O): OperatorFunction<I, O>;
-function a<I, O extends string>(output: O): OperatorFunction<I, O>;
+function a<I extends string, O extends string>(
+  input: I,
+  output: O
+): OperFun<I, O>;
+function a<I, O extends string>(output: O): OperFun<I, O>;
 
 /**
  * Used to keep the tests uncluttered.
  *
- * Returns an `OperatorFunction` with the specified literal type parameters.
- * That is, `a('0', '1')` returns `OperatorFunction<'0', '1'>`.
+ * Returns an `OperFun` with the specified literal type parameters.
+ * That is, `a('0', '1')` returns `OperFun<'0', '1'>`.
  * That means that the `a` function can be used to create consecutive
  * arguments that are either compatible or incompatible.
- * 
+ *
  * ```javascript
  * a('0', '1'), a('1', '2') // OK
  * a('0', '1'), a('#', '2') // Error '1' is not compatible with '#'
@@ -22,15 +25,18 @@ function a<I, O extends string>(output: O): OperatorFunction<I, O>;
  *
  * ```javascript
  * of('foo').pipe(
- *   a('1') // OperatorFunction<'foo', '1'>
+ *   a('1') // OperFun<'foo', '1'>
  * );
  * ```
  *
- * @param {string} input The `OperatorFunction` input type parameter
- * @param {string} output The `OperatorFunction` output type parameter
+ * @param {string} input The `OperFun` input type parameter
+ * @param {string} output The `OperFun` output type parameter
  */
-function a<I, O extends string>(inputOrOutput: I | O, output?: O): OperatorFunction<I, O> {
-  return mapTo<I, O>(output === undefined ? inputOrOutput as O : output);
+function a<I, O extends string>(
+  inputOrOutput: I | O,
+  output?: O
+): OperFun<I, O> {
+  return mapTo<I, O>(output === undefined ? (inputOrOutput as O) : output);
 }
 
 describe('pipe', () => {
@@ -63,23 +69,72 @@ describe('pipe', () => {
   });
 
   it('should infer for 7 arguments', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7')); // $ExpectType Observable<"7">
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7')
+    ); // $ExpectType Observable<"7">
   });
 
   it('should infer for 8 arguments', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('8')); // $ExpectType Observable<"8">
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8')
+    ); // $ExpectType Observable<"8">
   });
 
   it('should infer for 9 arguments', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('8'), a('9')); // $ExpectType Observable<"9">
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9')
+    ); // $ExpectType Observable<"9">
   });
 
   it('should infer unknown for more than 9 arguments', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('8'), a('9'), a('10')); // $ExpectType Observable<unknown>
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9'),
+      a('10')
+    ); // $ExpectType Observable<unknown>
   });
 
   it('should require a type assertion for more than 9 arguments', () => {
-    const o: Observable<'10'> = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('8'), a('9'), a('10')); // $ExpectError
+    const o: Observable<'10'> = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9'),
+      a('10')
+    ); // $ExpectError
   });
 
   it('should enforce types for the 1st argument', () => {
@@ -103,23 +158,68 @@ describe('pipe', () => {
   });
 
   it('should enforce types for the 6th argument', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('#', '6')); // $ExpectError
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('#', '6')
+    ); // $ExpectError
   });
 
   it('should enforce types for the 7th argument', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('#', '7')); // $ExpectError
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('#', '7')
+    ); // $ExpectError
   });
 
   it('should enforce types for the 8th argument', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('#', '8')); // $ExpectError
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('#', '8')
+    ); // $ExpectError
   });
 
   it('should enforce types for the 9th argument', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('8'), a('#', '9')); // $ExpectError
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('#', '9')
+    ); // $ExpectError
   });
 
   it('should not enforce types beyond the 9th argument', () => {
-    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7'), a('8'), a('9'), a('#', '10')); // $ExpectType Observable<unknown>
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9'),
+      a('#', '10')
+    ); // $ExpectType Observable<unknown>
   });
 
   it('should support operators that return generics', () => {

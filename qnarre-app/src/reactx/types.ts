@@ -125,11 +125,11 @@ export interface SchedulerAction<T> extends Subscription {
   schedule(state?: T, delay?: number): Subscription;
 }
 
-export interface UnaryFunction<T, R> {
-  (_: T): R;
+export interface UnaryFun<S, T> {
+  (_: S): T;
 }
 
-export interface OperatorFunction<T, R>
-  extends UnaryFunction<Observable<T>, Observable<R>> {}
+export interface OperFun<S, T, F, D>
+  extends UnaryFun<Source<S, F, D>, Source<T, F, D>> {}
 
-export interface MonoTypeOperatorFunction<T> extends OperatorFunction<T, T> {}
+export interface MonoOper<N, F, D> extends OperFun<N, N, F, D> {}
