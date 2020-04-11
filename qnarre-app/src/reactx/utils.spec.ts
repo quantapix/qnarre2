@@ -1,4 +1,3 @@
-import {expect} from 'chai';
 import {OutOfRangeError} from 'rxjs';
 
 /** @test {OutOfRangeError} */
@@ -11,7 +10,6 @@ describe('OutOfRangeError', () => {
     expect(error.message).to.be.equal('argument out of range');
   });
 });
-import {expect} from 'chai';
 import {EmptyError} from 'rxjs';
 
 /** @test {EmptyError} */
@@ -24,7 +22,6 @@ describe('EmptyError', () => {
     expect(error.message).to.be.equal('no elements in sequence');
   });
 });
-import {expect} from 'chai';
 // TODO: import was changed due to the fact that at startup the test referred to rxjs from node_modules
 import {Immediate, TestTools} from '../../util/Immediate';
 
@@ -70,7 +67,6 @@ describe('Immediate', () => {
     });
   });
 });
-import {expect} from 'chai';
 import {isNumeric} from 'rxjs/internal/util/isNumeric';
 
 /** @test {isNumeric} */
@@ -88,7 +84,6 @@ describe('isNumeric', () => {
     expect(isNumeric('6e6')).to.be.true;
   });
 });
-import {expect} from 'chai';
 import {UnsubscribedError} from 'rxjs';
 
 /** @test {UnsubscribedError} */
@@ -101,7 +96,6 @@ describe('UnsubscribedError', () => {
     expect(error.message).to.be.equal('object unsubscribed');
   });
 });
-import {expect} from 'chai';
 import {TimeoutError} from 'rxjs';
 
 /** @test {TimeoutError} */
@@ -114,7 +108,6 @@ describe('TimeoutError', () => {
     expect(error.message).to.be.equal('Timeout has occurred');
   });
 });
-import {expect} from 'chai';
 import {UnsubscriptionError, Observable, timer, merge} from 'rxjs';
 
 /** @test {UnsubscriptionError} */
@@ -142,7 +135,6 @@ describe('UnsubscriptionError', () => {
     }
   });
 });
-import {expect} from 'chai';
 import {noop, Subject, Subscriber} from 'rxjs';
 import {canReportError} from 'rxjs/internal/util/canReportError';
 
@@ -172,7 +164,6 @@ describe('canReportError', () => {
   });
 });
 import {Observable, isObservable} from 'rxjs';
-import {expect} from 'chai';
 
 describe('isObservable', () => {
   it('should return true for RxJS Observable', () => {
@@ -212,7 +203,6 @@ describe('isObservable', () => {
   });
 });
 import {of} from 'rxjs';
-import {expect} from 'chai';
 import {isPromise} from 'rxjs/internal/util/isPromise';
 
 describe('isPromise', () => {
@@ -248,7 +238,6 @@ describe('isPromise', () => {
     expect(isPromise('1')).to.be.false;
   });
 });
-import {expect} from 'chai';
 import {pipe} from 'rxjs';
 
 describe('pipe', () => {
@@ -281,7 +270,7 @@ describe('pipe', () => {
     expect(c(someObj)).to.equal(someObj);
   });
 });
-import {expect} from 'chai';
+
 import {OuterSubscriber} from 'rxjs/internal/OuterSubscriber';
 import {subscribeToResult} from 'rxjs/internal/util/subscribeToResult';
 import {iterator} from 'rxjs/internal/symbol/iterator';
@@ -500,7 +489,6 @@ describe('subscribeToResult', () => {
     );
   });
 });
-import {expect} from 'chai';
 import {toSubscriber} from 'rxjs/internal/util/toSubscriber';
 
 describe('toSubscriber', () => {

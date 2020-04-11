@@ -1,14 +1,14 @@
-import {Subscriber} from './Subscriber';
 import {Subject} from './Subject';
 import {Observer, ObservableInput, InteropObservable} from './types';
 import {Observable} from './observe';
 import {SchedulerLike} from './types';
 import {UnaryFunction} from './types';
 import {Subscription} from './subscribe';
-import {PartialObserver} from './types';
 
 import {InnerSubscriber} from './InnerSubscriber';
 import {OuterSubscriber} from './OuterSubscriber';
+
+import * as qt from './types';
 
 export interface OutOfRangeError extends Error {}
 
@@ -176,7 +176,7 @@ export function applyMixins(derivedCtor: any, baseCtors: any[]) {
   }
 }
 
-export function canReportError(s: Subscriber<any> | Subject<any>): boolean {
+export function canReportError(s: qt.Subscriber<any> | Subject<any>): boolean {
   while (s) {
     const {closed, destination, stopped} = s as any;
     if (closed || stopped) {
@@ -388,7 +388,7 @@ const _root: any = __window || __global || __self;
 
 export const subscribeTo = <T>(
   result: ObservableInput<T>
-): ((subscriber: Subscriber<T>) => Subscription | void) => {
+): ((subscriber: qt.Subscriber<T>) => Subscription | void) => {
   if (!!result && typeof (result as any)[Symbol.observable] === 'function') {
     return subscribeToObservable(result as any);
   } else if (isArrayLike(result)) {
@@ -417,7 +417,7 @@ export const subscribeTo = <T>(
 };
 
 export const subscribeToArray = <T>(array: ArrayLike<T>) => (
-  subscriber: Subscriber<T>
+  subscriber: qt.Subscriber<T>
 ) => {
   for (let i = 0, len = array.length; i < len && !subscriber.closed; i++) {
     subscriber.next(array[i]);
@@ -426,14 +426,14 @@ export const subscribeToArray = <T>(array: ArrayLike<T>) => (
 };
 
 export function subscribeToAsyncIterable<T>(asyncIterable: AsyncIterable<T>) {
-  return (subscriber: Subscriber<T>) => {
+  return (subscriber: qt.Subscriber<T>) => {
     process(asyncIterable, subscriber).catch(err => subscriber.error(err));
   };
 }
 
 async function process<T>(
   asyncIterable: AsyncIterable<T>,
-  subscriber: Subscriber<T>
+  subscriber: qt.Subscriber<T>
 ) {
   for await (const value of asyncIterable) {
     subscriber.next(value);
@@ -442,7 +442,7 @@ async function process<T>(
 }
 
 export const subscribeToIterable = <T>(iterable: Iterable<T>) => (
-  subscriber: Subscriber<T>
+  subscriber: qt.Subscriber<T>
 ) => {
   const iterator = (iterable as any)[Symbol.iterator]();
   do {
@@ -467,7 +467,7 @@ export const subscribeToIterable = <T>(iterable: Iterable<T>) => (
 };
 
 export const subscribeToObservable = <T>(obj: any) => (
-  subscriber: Subscriber<T>
+  subscriber: qt.Subscriber<T>
 ) => {
   const obs = (obj as any)[Symbol.observable]();
   if (typeof obs.subscribe !== 'function') {
@@ -480,7 +480,7 @@ export const subscribeToObservable = <T>(obj: any) => (
 };
 
 export const subscribeToPromise = <T>(promise: PromiseLike<T>) => (
-  subscriber: Subscriber<T>
+  subscriber: qt.Subscriber<T>
 ) => {
   promise
     .then(
@@ -528,18 +528,18 @@ export function subscribeToResult<T, R>(
 }
 
 export function toSubscriber<T>(
-  o?: PartialObserver<T> | ((_: T) => void) | null,
+  o?: qt.PartialObserver<T> | ((_: T) => void),
   e?: ((_: any) => void) | null,
   c?: (() => void) | null
 ): Subscriber<T> {
   if (o) {
-    if (o instanceof Subscriber) return <Subscriber<T>>o;
+    if (o instanceof Subscriber) return o;
     if ((o as any)[Symbol.rxSubscriber]) {
       return (o as any)[Symbol.rxSubscriber]();
     }
   }
-  if (!o && !e && !c) return new Subscriber(emptyObserver);
-  return new Subscriber(o, e, c);
+  if (!o && !e && !c) return new Subscriber(qu.emptyObserver);
+  return new Subscriber(o);
 }
 
 let tryCatchTarget: Function | undefined;

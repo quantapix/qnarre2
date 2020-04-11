@@ -96,22 +96,22 @@ export class Subscriber<T> extends Subscription implements qt.Subscriber<T> {
     return this;
   }
 
-  static create<T>(dst?: qt.PartialObserver<any>) {
-    return new Subscriber<T>(dst);
+  static create<T>(obs?: qt.PartialObserver<any>) {
+    return new Subscriber<T>(obs);
   }
 
   protected stopped = false;
-  protected dst: qt.Observer<any> | Subscriber<any>;
+  protected obs: qt.Observer<any> | Subscriber<any>;
 
-  constructor(dst?: qt.PartialObserver<any>) {
+  constructor(obs?: qt.PartialObserver<any>) {
     super();
-    if (!dst) this.dst = qu.emptyObserver;
+    if (!obs) this.obs = qu.emptyObserver;
     else {
-      if (dst instanceof Subscriber) {
-        this.dst = dst;
-        dst.add(this);
+      if (obs instanceof Subscriber) {
+        this.obs = obs;
+        obs.add(this);
       } else {
-        this.dst = new SafeSubscriber<T>(this, dst);
+        this.obs = new SafeSubscriber<T>(this, obs);
       }
     }
   }
@@ -142,16 +142,16 @@ export class Subscriber<T> extends Subscription implements qt.Subscriber<T> {
   }
 
   protected _next(v: T) {
-    this.dst.next(v);
+    this.obs.next(v);
   }
 
   protected _error(e: any) {
-    this.dst.error(e);
+    this.obs.error(e);
     this.unsubscribe();
   }
 
   protected _complete() {
-    this.dst.complete();
+    this.obs.complete();
     this.unsubscribe();
   }
 
@@ -170,19 +170,19 @@ export class SafeSubscriber<T> extends Subscriber<T> {
 
   constructor(
     private psub: Subscriber<T> | undefined,
-    private pdst: qt.PartialObserver<T>
+    private pobs: qt.PartialObserver<T>
   ) {
     super();
-    if (this.pdst !== qu.emptyObserver) this.ctxt = Object.create(this.pdst);
+    if (this.pobs !== qu.emptyObserver) this.ctxt = Object.create(this.pobs);
   }
 
   next(v: T) {
-    if (!this.stopped) this._tryCall(this.pdst.next, v);
+    if (!this.stopped) this._tryCall(this.pobs.next, v);
   }
 
   error(e: any) {
     if (!this.stopped) {
-      if (this.pdst.error) this._tryCall(this.pdst.error, e);
+      if (this.pobs.error) this._tryCall(this.pobs.error, e);
       else qu.hostReportError(e);
       this.unsubscribe();
     }
@@ -190,7 +190,7 @@ export class SafeSubscriber<T> extends Subscriber<T> {
 
   complete() {
     if (!this.stopped) {
-      this._tryCall(this.pdst.complete);
+      this._tryCall(this.pobs.complete);
       this.unsubscribe();
     }
   }
@@ -251,21 +251,21 @@ export class OuterSubscriber<T, R> extends Subscriber<T> {
     _ii: number,
     _is: InnerSubscriber<T, R>
   ): void {
-    this.dst.next(v);
+    this.obs.next(v);
   }
 
   notifyError(e: any, _: InnerSubscriber<T, R>) {
-    this.dst.error(e);
+    this.obs.error(e);
   }
 
   notifyComplete(_: InnerSubscriber<T, R>) {
-    this.dst.complete();
+    this.obs.complete();
   }
 }
 
 export class SubjectSubscriber<T> extends Subscriber<T> {
-  constructor(dst: Subject<T>) {
-    super(dst);
+  constructor(obs: Subject<T>) {
+    super(obs);
   }
 }
 
@@ -303,13 +303,13 @@ export class Subject<T> extends Observable<T> implements qt.Subscription {
     super();
   }
 
-  static create<T>(dst: qt.Observer<T>, src: Observable<T>) {
-    return new AnonymousSubject<T>(dst, src);
-  }
+  //static create<T>(obs: qt.Observer<T>, src: Observable<T>) {
+  //  return new AnonymousSubject<T>(obs, src);
+  //}
 
   lift<R>(o: qt.Operator<T, R>): Observable<R> {
     const s = new AnonymousSubject(this, this);
-    s.operator = o;
+    s.oper = o;
     return s as Observable<R>;
   }
 
@@ -361,26 +361,26 @@ export class Subject<T> extends Observable<T> implements qt.Subscription {
 
   asObservable(): Observable<T> {
     const o = new Observable<T>();
-    o.source = this;
+    o.src = this;
     return o;
   }
 }
 
 export class AnonymousSubject<T> extends Subject<T> {
-  constructor(protected dst?: qt.Observer<T>, public src?: Observable<T>) {
+  constructor(protected obs?: qt.Observer<T>, public src?: Observable<T>) {
     super();
   }
 
   next(v: T) {
-    this.dst?.next?.(v);
+    this.obs?.next?.(v);
   }
 
   error(e: any) {
-    this.dst?.error?.(e);
+    this.obs?.error?.(e);
   }
 
   complete() {
-    this.dst?.complete?.();
+    this.obs?.complete?.();
   }
 
   _subscribe(s: Subscriber<T>) {
@@ -463,8 +463,8 @@ export class ReplaySubject<T> extends Subject<T> {
   private _infiniteTimeWindow: boolean = false;
 
   constructor(
-    bufferSize: number = Number.POSITIVE_INFINITY,
-    windowTime: number = Number.POSITIVE_INFINITY,
+    bufferSize = Number.POSITIVE_INFINITY,
+    windowTime = Number.POSITIVE_INFINITY,
     private timestampProvider: qt.TimestampProvider = Date
   ) {
     super();

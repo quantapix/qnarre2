@@ -9305,7 +9305,6 @@ describe('distinct operator', () => {
     const e1 = hot('--a--|');
     const e1subs = '^    !';
     const expected = '--a--|';
-
     expectObservable((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -9313,7 +9312,6 @@ describe('distinct operator', () => {
   it('should emit if source is scalar', () => {
     const e1 = of('a');
     const expected = '(a|)';
-
     expectObservable((<any>e1).pipe(distinct())).toBe(expected);
   });
 

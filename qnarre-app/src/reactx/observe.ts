@@ -1,6 +1,4 @@
 import {Subject, SubjectSubscriber} from './Subject';
-import {Operator} from './Operator';
-import {Observable} from './observe';
 import {Subscriber} from './Subscriber';
 import {Subscription} from './subscribe';
 import {Teardown} from './types';
@@ -42,110 +40,89 @@ import {not} from './utils';
 import {filter} from './opers';
 import {Unsubscribable} from './types';
 import {PartialObserver} from './types';
-import {iterator as Symbol_iterator} from './symbol';
 
 import * as qt from './types';
 import * as qu from './utils';
 
-//import {Subscription} from './sub';
 //import {iif} from './observable/iif';
 //import {throwError} from './observable/throwError';
 
 export class Observable<T> implements qt.Subscribable<T> {
-  public _isScalar = false;
-  source: Observable<any> | undefined;
-  operator: qt.Operator<any, T> | undefined;
-
-  constructor(
-    subscribe?: (
-      this: Observable<T>,
-      subscriber: qt.Subscriber<T>
-    ) => qt.Teardown
-  ) {
-    if (subscribe) {
-      this._subscribe = subscribe;
-    }
+  [Symbol.observable]() {
+    return this;
   }
 
-  static create: Function = <T>(
-    subscribe?: (subscriber: qt.Subscriber<T>) => qt.Teardown
-  ) => {
-    return new Observable<T>(subscribe);
-  };
-
-  lift<R>(operator?: qt.Operator<T, R>): Observable<R> {
-    const observable = new Observable<R>();
-    observable.source = this;
-    observable.operator = operator;
-    return observable;
+  [Symbol.asyncIterator](): AsyncIterableIterator<T> {
+    return asyncIterFrom(this);
   }
 
-  subscribe(observer?: qt.PartialObserver<T>): Subscription;
+  //public _isScalar = false;
+  src?: Observable<any>;
+  oper?: qt.Operator<any, T>;
+
+  constructor(s?: (this: Observable<T>, _: qt.Subscriber<T>) => qt.Teardown) {
+    if (s) this._subscribe = s;
+  }
+
+  //static create<T>(s?: (_: qt.Subscriber<T>) => qt.Teardown) {
+  //  return new Observable<T>(s);
+  //}
+
+  lift<R>(op?: qt.Operator<T, R>) {
+    const o = new Observable<R>();
+    o.src = this;
+    o.oper = op;
+    return o;
+  }
+
+  subscribe(o?: qt.PartialObserver<T>): Subscription;
   subscribe(
-    next?: (value: T) => void,
-    error?: (error: any) => void,
+    next?: (_: T) => void,
+    error?: (_: any) => void,
     complete?: () => void
   ): Subscription;
   subscribe(
-    observerOrNext?: qt.PartialObserver<T> | ((value: T) => void) | null,
-    error?: ((error: any) => void) | null,
-    complete?: (() => void) | null
+    o?: qt.PartialObserver<T> | ((_: T) => void),
+    error?: (_: any) => void,
+    complete?: () => void
   ): Subscription {
-    const {operator} = this;
-    const sink = qu.toqt.Subscriber(observerOrNext, error, complete);
-    if (operator) {
-      sink.add(operator.call(sink, this.source));
-    } else {
-      sink.add(this.source ? this._subscribe(sink) : this._trySubscribe(sink));
-    }
-    return sink;
+    const s = qu.toSubscriber(o, error, complete);
+    const op = this.oper;
+    if (op) s.add(op.call(s, this.src));
+    else s.add(this.src ? this._subscribe(s) : this._trySubscribe(s));
+    return s;
   }
 
-  _trySubscribe(sink: qt.Subscriber<T>): qt.Teardown {
-    try {
-      return this._subscribe(sink);
-    } catch (err) {
-      if (qu.canReportError(sink)) {
-        sink.error(err);
-      } else {
-        console.warn(err);
-      }
-    }
-  }
-  forEach(
-    next: (value: T) => void,
-    ctor?: PromiseConstructorLike
-  ): Promise<void> {
-    ctor = getPromiseCtor(ctor);
-    return new ctor<void>((resolve, reject) => {
-      let subscription: Subscription;
-      subscription = this.subscribe(
-        value => {
+  forEach(next: (_: T) => void, c?: PromiseConstructorLike) {
+    c = promiseCtor(c);
+    return new c<void>((res, rej) => {
+      let s: Subscription;
+      s = this.subscribe(
+        v => {
           try {
-            next(value);
-          } catch (err) {
-            reject(err);
-            if (subscription) {
-              subscription.unsubscribe();
-            }
+            next(v);
+          } catch (e) {
+            rej(e);
+            if (s) s.unsubscribe();
           }
         },
-        reject,
-        resolve
+        rej,
+        res
       );
     }) as Promise<void>;
   }
 
-  _subscribe(subscriber: qt.Subscriber<any>): qt.Teardown {
-    const {source} = this;
-    return source && source.subscribe(subscriber);
+  _trySubscribe(s: qt.Subscriber<T>) {
+    try {
+      return this._subscribe(s);
+    } catch (e) {
+      if (qu.canReportError(s)) s.error(e);
+      else console.warn(e);
+    }
   }
 
-  // static if: typeof iif;
-  // static throw: typeof throwError;
-
-  [Symbol.observable]() {
-    return this;
+  _subscribe(s: qt.Subscriber<any>): qt.Teardown {
+    return this.src?.subscribe(s);
   }
 
   pipe(): Observable<T>;
@@ -228,252 +205,206 @@ export class Observable<T> implements qt.Subscribable<T> {
   }
 
   toPromise<T>(this: Observable<T>): Promise<T | undefined>;
+  toPromise<T>(this: Observable<T>, c: typeof Promise): Promise<T | undefined>;
   toPromise<T>(
     this: Observable<T>,
-    PromiseCtor: typeof Promise
+    c: PromiseConstructorLike
   ): Promise<T | undefined>;
-  toPromise<T>(
-    this: Observable<T>,
-    PromiseCtor: PromiseConstructorLike
-  ): Promise<T | undefined>;
-  toPromise(ctor?: PromiseConstructorLike): Promise<T | undefined> {
-    ctor = getPromiseCtor(ctor);
-    return new ctor((r, j) => {
+  toPromise(c?: PromiseConstructorLike): Promise<T | undefined> {
+    c = promiseCtor(c);
+    return new c((res, rej) => {
       let value: T | undefined;
       this.subscribe(
         (v: T) => (value = v),
-        (e: any) => j(e),
-        () => r(value)
+        (e: any) => rej(e),
+        () => res(value)
       );
     }) as Promise<T | undefined>;
   }
 }
 
-function getPromiseCtor(ctor: PromiseConstructorLike | undefined) {
-  if (!ctor) ctor = Promise;
-  if (!ctor) throw new Error('no Promise impl found');
-  return ctor;
+function promiseCtor(c: PromiseConstructorLike | undefined) {
+  if (!c) c = Promise;
+  if (!c) throw new Error('no Promise impl found');
+  return c;
 }
 
-export interface Observable<T> {
-  [Symbol.asyncIterator](): AsyncIterableIterator<T>;
+function asyncIterFrom<T>(o: Observable<T>) {
+  return coroutine(o);
 }
 
-(function () {
-  if (Symbol && Symbol.asyncIterator) {
-    Observable.prototype[Symbol.asyncIterator] = function () {
-      return asyncIteratorFrom(this);
-    };
-  }
-})();
-
-export function asyncIteratorFrom<T>(source: Observable<T>) {
-  return coroutine(source);
-}
-
-async function* coroutine<T>(source: Observable<T>) {
-  const deferreds: qu.Deferred<IteratorResult<T>>[] = [];
-  const values: T[] = [];
-  let hasError = false;
-  let error: any = null;
-  let completed = false;
-
-  const subs = source.subscribe({
+async function* coroutine<T>(o: Observable<T>) {
+  const ds = [] as qu.Deferred<IteratorResult<T>>[];
+  const vs = [] as T[];
+  let error: any;
+  let done = false;
+  let failed = false;
+  const subs = o.subscribe({
     next: value => {
-      if (deferreds.length > 0) {
-        deferreds.shift()!.resolve({value, done: false});
-      } else {
-        values.push(value);
-      }
+      if (ds.length > 0) ds.shift()!.resolve({value, done: false});
+      else vs.push(value);
     },
-    error: err => {
-      hasError = true;
-      error = err;
-      while (deferreds.length > 0) {
-        deferreds.shift()!.reject(err);
+    error: e => {
+      failed = true;
+      error = e;
+      while (ds.length > 0) {
+        ds.shift()!.reject(e);
       }
     },
     complete: () => {
-      completed = true;
-      while (deferreds.length > 0) {
-        deferreds.shift()!.resolve({value: undefined, done: true});
+      done = true;
+      while (ds.length > 0) {
+        ds.shift()!.resolve({value: undefined, done: true});
       }
     }
   });
-
   try {
     while (true) {
-      if (values.length > 0) {
-        yield values.shift();
-      } else if (completed) {
-        return;
-      } else if (hasError) {
-        throw error;
-      } else {
+      if (vs.length > 0) yield vs.shift()!;
+      else if (done) return;
+      else if (failed) throw error;
+      else {
         const d = new qu.Deferred<IteratorResult<T>>();
-        deferreds.push(d);
-        const result = await d.promise;
-        if (result.done) {
-          return;
-        } else {
-          yield result.value;
-        }
+        ds.push(d);
+        const r = await d.promise;
+        if (r.done) return;
+        else yield r.value;
       }
     }
-  } catch (err) {
-    throw err;
+  } catch (e) {
+    throw e;
   } finally {
     subs.unsubscribe();
   }
 }
 
 export class ConnectableObservable<T> extends Observable<T> {
-  protected _subject: Subject<T> | undefined;
-  protected _refCount: number = 0;
-  protected _connection: Subscription | null | undefined;
-  _isComplete = false;
+  subs?: Subscription;
+  subj?: Subject<T>;
+  done = false;
+  count = 0;
 
-  constructor(
-    public source: Observable<T>,
-    protected subjectFactory: () => Subject<T>
-  ) {
+  constructor(public src: Observable<T>, protected subjFac: () => Subject<T>) {
     super();
   }
 
-  _subscribe(subscriber: Subscriber<T>) {
-    return this.getSubject().subscribe(subscriber);
+  _subscribe(s: Subscriber<T>) {
+    return this.subject().subscribe(s);
   }
 
-  protected getSubject(): Subject<T> {
-    const subject = this._subject;
-    if (!subject || subject.stopped) {
-      this._subject = this.subjectFactory();
-    }
-    return this._subject!;
+  protected subject() {
+    const s = this.subj;
+    if (!s || s.stopped) this.subj = this.subjFac();
+    return this.subj!;
   }
 
   connect(): Subscription {
-    let connection = this._connection;
-    if (!connection) {
-      this._isComplete = false;
-      connection = this._connection = new Subscription();
-      connection.add(
-        this.source.subscribe(
-          new ConnectableSubscriber(this.getSubject(), this)
-        )
+    let s = this.subs;
+    if (!s) {
+      this.done = false;
+      s = this.subs = new Subscription();
+      s.add(
+        this.src.subscribe(new ConnectableSubscriber(this.subject(), this))
       );
-      if (connection.closed) {
-        this._connection = null;
-        connection = Subscription.EMPTY;
+      if (s.closed) {
+        this.subs = undefined;
+        s = Subscription.EMPTY;
       }
     }
-    return connection;
+    return s;
   }
 
-  refCount(): Observable<T> {
+  refCount() {
     return higherOrderRefCount()(this) as Observable<T>;
   }
 }
 
 export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
-  const connectableProto = <any>ConnectableObservable.prototype;
+  const p = <any>ConnectableObservable.prototype;
   return {
     operator: {value: null as null},
     _refCount: {value: 0, writable: true},
     _subject: {value: null as null, writable: true},
     _connection: {value: null as null, writable: true},
-    _subscribe: {value: connectableProto._subscribe},
-    _isComplete: {value: connectableProto._isComplete, writable: true},
-    getSubject: {value: connectableProto.getSubject},
-    connect: {value: connectableProto.connect},
-    refCount: {value: connectableProto.refCount}
+    _subscribe: {value: p._subscribe},
+    _isComplete: {value: p._isComplete, writable: true},
+    getSubject: {value: p.getSubject},
+    connect: {value: p.connect},
+    refCount: {value: p.refCount}
   };
 })();
 
 class ConnectableSubscriber<T> extends SubjectSubscriber<T> {
-  constructor(
-    destination: Subject<T>,
-    private connectable: ConnectableObservable<T>
-  ) {
-    super(destination);
+  constructor(obs: Subject<T>, private con?: ConnectableObservable<T>) {
+    super(obs);
   }
-  protected _error(err: any): void {
+
+  protected _error(e: any) {
     this._unsubscribe();
-    super._error(err);
+    super._error(e);
   }
-  protected _complete(): void {
-    this.connectable._isComplete = true;
+
+  protected _complete() {
+    this.con!.done = true;
     this._unsubscribe();
     super._complete();
   }
+
   protected _unsubscribe() {
-    const connectable = <any>this.connectable;
-    if (connectable) {
-      this.connectable = null!;
-      const connection = connectable._connection;
-      connectable._refCount = 0;
-      connectable._subject = null;
-      connectable._connection = null;
-      if (connection) {
-        connection.unsubscribe();
-      }
+    const c = this.con;
+    if (c) {
+      this.con = undefined;
+      const s = c.subs;
+      c.count = 0;
+      c.subs = c.subj = undefined;
+      s?.unsubscribe();
     }
   }
 }
 
-class RefCountOperator<T> implements Operator<T, T> {
-  constructor(private connectable: ConnectableObservable<T>) {}
-  call(subscriber: Subscriber<T>, source: any): Teardown {
-    const {connectable} = this;
-    (<any>connectable)._refCount++;
+class RefCountOperator<T> implements qt.Operator<T, T> {
+  constructor(private con: ConnectableObservable<T>) {}
 
-    const refCounter = new RefCountSubscriber(subscriber, connectable);
-    const subscription = source.subscribe(refCounter);
-
+  call(s: Subscriber<T>, source: any): Teardown {
+    const c = this.con;
+    c.count++;
+    const refCounter = new RefCountSubscriber(s, c);
+    const s = source.subscribe(refCounter);
     if (!refCounter.closed) {
-      (<any>refCounter).connection = connectable.connect();
+      (<any>refCounter).connection = c.connect();
     }
-
-    return subscription;
+    return s;
   }
 }
 
 class RefCountSubscriber<T> extends Subscriber<T> {
-  private connection: Subscription | null | undefined;
+  private subs?: Subscription;
 
-  constructor(
-    destination: Subscriber<T>,
-    private connectable: ConnectableObservable<T>
-  ) {
-    super(destination);
+  constructor(obs: Subscriber<T>, private con?: ConnectableObservable<T>) {
+    super(obs);
   }
 
   protected _unsubscribe() {
-    const {connectable} = this;
-    if (!connectable) {
-      this.connection = null;
+    const c = this.con;
+    if (!c) {
+      this.subs = undefined;
       return;
     }
-
-    this.connectable = null!;
-    const refCount = (<any>connectable)._refCount;
+    this.con = undefined;
+    const refCount = c.count;
     if (refCount <= 0) {
-      this.connection = null;
+      this.subs = undefined;
       return;
     }
-
-    (<any>connectable)._refCount = refCount - 1;
+    c.count = refCount - 1;
     if (refCount > 1) {
-      this.connection = null;
+      this.subs = undefined;
       return;
     }
-    const {connection} = this;
-    const sharedConnection = (<any>connectable)._connection;
-    this.connection = null;
-
-    if (sharedConnection && (!connection || sharedConnection === connection)) {
-      sharedConnection.unsubscribe();
-    }
+    const s = this.subs;
+    const shared = c.subs;
+    this.subs = undefined;
+    if (shared && (!s || shared === s)) shared.unsubscribe();
   }
 }
 
@@ -483,7 +414,6 @@ export interface DispatchArg<T> {
 }
 
 export class SubscribeOnObservable<T> extends Observable<T> {
-  /** @nocollapse */
   static create<T>(
     source: Observable<T>,
     delay: number = 0,
@@ -492,7 +422,6 @@ export class SubscribeOnObservable<T> extends Observable<T> {
     return new SubscribeOnObservable(source, delay, scheduler);
   }
 
-  /** @nocollapse */
   static dispatch<T>(
     this: SchedulerAction<T>,
     arg: DispatchArg<T>
@@ -519,7 +448,6 @@ export class SubscribeOnObservable<T> extends Observable<T> {
     const delay = this.delayTime;
     const source = this.source;
     const scheduler = this.scheduler;
-
     return scheduler.schedule<DispatchArg<any>>(
       SubscribeOnObservable.dispatch as any,
       delay,
@@ -795,7 +723,6 @@ export function bindCallback<T>(
         );
     }
   }
-
   return function (this: any, ...args: any[]): Observable<T> {
     const context = this;
     let subject: AsyncSubject<T> | undefined;
@@ -1220,7 +1147,6 @@ export function bindNodeCallback<T>(
         );
     }
   }
-
   return function (this: any, ...args: any[]): Observable<T> {
     const params: ParamsState<T> = {
       subject: undefined!,
@@ -1903,7 +1829,6 @@ export function fromEventPattern<T>(
       )
     );
   }
-
   return new Observable<T | T[]>(subscriber => {
     const handler = (...e: T[]) => subscriber.next(e.length === 1 ? e[0] : e);
     let retValue: any;
@@ -2769,7 +2694,6 @@ export function zip<
     ObservedValueOf<O6>
   ]
 >;
-
 export function zip<O extends ObservableInput<any>>(
   array: O[]
 ): Observable<ObservedValueOf<O>[]>;
@@ -2828,8 +2752,8 @@ export class ZipSubscriber<T, R> extends Subscriber<T> {
     const iterators = this.iterators;
     if (isArray(value)) {
       iterators.push(new StaticArrayIterator(value));
-    } else if (typeof value[Symbol_iterator] === 'function') {
-      iterators.push(new StaticIterator(value[Symbol_iterator]()));
+    } else if (typeof value[Symbol.iterator] === 'function') {
+      iterators.push(new StaticIterator(value[Symbol.iterator]()));
     } else {
       iterators.push(new ZipBufferIterator(this.destination, this, value));
     }
@@ -2952,7 +2876,7 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
     this.length = array.length;
   }
 
-  [Symbol_iterator]() {
+  [Symbol.iterator]() {
     return this;
   }
 
@@ -2987,7 +2911,7 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R>
     super(destination);
   }
 
-  [Symbol_iterator]() {
+  [Symbol.iterator]() {
     return this;
   }
   // NOTE: there is actually a name collision here with Subscriber.next and Iterator.next

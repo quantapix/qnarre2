@@ -92,13 +92,13 @@ class AuditSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   protected _next(v: T) {
-    this.value = value;
+    this.value = v;
     this.hasValue = true;
     if (!this.throttled) {
       let duration;
       try {
         const {durationSelector} = this;
-        duration = durationSelector(value);
+        duration = durationSelector(v);
       } catch (err) {
         return this.dst.error(err);
       }
