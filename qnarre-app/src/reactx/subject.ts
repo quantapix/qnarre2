@@ -1,6 +1,7 @@
 import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
+import {F} from './spec-dtslint/helpers';
 
 export class Subscription implements qt.Subscription {
   public static fake = ((s: Subscription) => {
@@ -9,7 +10,7 @@ export class Subscription implements qt.Subscription {
   })(new Subscription());
 
   public closed = false;
-  protected parents?: qt.Subscription[] | qt.Subscription;
+  protected parents?: Subscription[] | Subscription;
   private children?: qt.Subscription[];
 
   constructor(private close?: qt.Cfun) {}
@@ -275,34 +276,63 @@ export class Outer<N, M, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Subject<N, F, D> implements qt.Source<N, F, D>, qt.Subscription {
-  [Symbol.rxSubscriber](): SubjectSubscriber<N, F, D> {
-    return new SubjectSubscriber(this);
+export class SubjSubscriber<N, F, D> extends Subscriber<N, F, D> {
+  constructor(tgt: Subject<N, F, D>) {
+    super(tgt);
+  }
+}
+
+export class SubjSubscription<N, F, D> extends Subscription {
+  closed = false;
+
+  constructor(
+    public subj: Subject<N, F, D> | undefined,
+    public tgt: qt.Observer<N, F, D>
+  ) {
+    super();
+  }
+
+  unsubscribe() {
+    if (this.closed) return;
+    this.closed = true;
+    const s = this.subj;
+    this.subj = undefined;
+    const ts = s?.tgts;
+    if (!ts || !ts.length || s?.stopped || s?.closed) return;
+    const i = ts.indexOf(this.tgt);
+    if (i !== -1) ts.splice(i, 1);
+  }
+}
+
+export class Subject<N, F, D> extends qs.Source<N, F, D>
+  implements qt.Subject<N, F, D> {
+  [Symbol.rxSubscriber](): SubjSubscriber<N, F, D> {
+    return new SubjSubscriber(this);
   }
 
   closed = false;
   stopped = false;
   failed = false;
   thrown?: any;
-  obss = [] as qt.Observer<T>[];
+  tgts = [] as qt.Observer<N, F, D>[];
 
   constructor() {
     super();
   }
 
   //static create<T>(obs: qt.Observer<T>, src: Observable<T>) {
-  //  return new AnonymousSubject<T>(obs, src);
+  //  return new Anonymous<T>(obs, src);
   //}
 
-  lift<R>(o: qt.Operator<T, R>): Observable<R> {
-    const s = new AnonymousSubject(this, this);
+  lift<M>(o: qt.Operator<N, M, F, D>): qs.Source<M, F, D> {
+    const s = new Anonymous(this, this);
     s.oper = o;
-    return s as Observable<R>;
+    return s;
   }
 
   next(n?: N) {
     if (this.closed) throw new qu.UnsubscribedError();
-    if (!this.stopped) this.obss.slice().forEach(s => s.next(n));
+    if (!this.stopped) this.tgts.slice().forEach(s => s.next(n));
   }
 
   fail(f?: F) {
@@ -310,21 +340,21 @@ export class Subject<N, F, D> implements qt.Source<N, F, D>, qt.Subscription {
     this.failed = true;
     this.thrown = f;
     this.stopped = true;
-    this.obss.slice().forEach(s => s.fail(f));
-    this.obss = [];
+    this.tgts.slice().forEach(s => s.fail(f));
+    this.tgts = [];
   }
 
   done(d?: D) {
     if (this.closed) throw new qu.UnsubscribedError();
     this.stopped = true;
-    this.obss.slice().forEach(s => s.done(d));
-    this.obss = [];
+    this.tgts.slice().forEach(s => s.done(d));
+    this.tgts = [];
   }
 
   unsubscribe() {
     this.stopped = true;
     this.closed = true;
-    this.obss = [];
+    this.tgts = [];
   }
 
   _trySubscribe(s: qt.Subscriber<N, F, D>) {
@@ -332,23 +362,108 @@ export class Subject<N, F, D> implements qt.Source<N, F, D>, qt.Subscription {
     return super._trySubscribe(s);
   }
 
-  _subscribe(s: Subscriber<T>): Subscription {
+  _subscribe(s: qt.Subscriber<N, F, D>): Subscription {
     if (this.closed) throw new qu.UnsubscribedError();
     else if (this.failed) {
-      s.error(this.thrown);
+      s.fail(this.thrown);
       return Subscription.fake;
     } else if (this.stopped) {
-      s.complete();
+      s.done();
       return Subscription.fake;
     } else {
-      this.obss.push(s);
-      return new SubjectSubscription(this, s);
+      this.tgts.push(s);
+      return new SubjSubscription(this, s);
     }
   }
 
-  asObservable(): Observable<T> {
-    const o = new Observable<T>();
-    o.src = this;
-    return o;
+  asSource() {
+    const s = new qs.Source<N, F, D>();
+    s.src = this;
+    return s;
+  }
+}
+
+export class Anonymous<N, F, D> extends Subject<N, F, D> {
+  constructor(protected obs?: qt.Observer<T>, public src?: Observable<T>) {
+    super();
+  }
+
+  next(v: T) {
+    this.obs?.next?.(v);
+  }
+
+  error(e: any) {
+    this.obs?.error?.(e);
+  }
+
+  complete() {
+    this.obs?.complete?.();
+  }
+
+  _subscribe(s: Subscriber<T>) {
+    if (this.src) return this.src.subscribe(s);
+    return Subscription.fake;
+  }
+}
+
+export class AsyncSubject<T> extends Subject<T> {
+  private ready = false;
+  private done = false;
+  private value?: T;
+
+  _subscribe(s: Subscriber<any>) {
+    if (this.failed) {
+      s.error(this.thrown);
+      return Subscription.fake;
+    } else if (this.done && this.ready) {
+      s.next(this.value);
+      s.complete();
+      return Subscription.fake;
+    }
+    return super._subscribe(s);
+  }
+
+  next(v: T) {
+    if (!this.done) {
+      this.value = v;
+      this.ready = true;
+    }
+  }
+
+  error(e: any) {
+    if (!this.done) super.error(e);
+  }
+
+  complete() {
+    this.done = true;
+    if (this.ready) super.next(this.value!);
+    super.complete();
+  }
+}
+
+export class BehaviorSubject<T> extends Subject<T> {
+  constructor(private _value: T) {
+    super();
+  }
+
+  get value() {
+    return this.getValue();
+  }
+
+  _subscribe(s: Subscriber<T>) {
+    const t = super._subscribe(s);
+    if (!t.closed) s.next(this._value);
+    return t;
+  }
+
+  getValue() {
+    if (this.failed) throw this.thrown;
+    if (this.closed) throw new qu.UnsubscribedError();
+    return this._value;
+  }
+
+  next(v: T) {
+    this._value = v;
+    super.next(v);
   }
 }

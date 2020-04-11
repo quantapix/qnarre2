@@ -28,10 +28,7 @@ import {EmptyError} from './utils';
 import {identity} from './utils';
 import {Subject} from './Subject';
 import {merge as mergeStatic} from './observe';
-import {
-  ConnectableObservable,
-  connectableObservableDescriptor
-} from './observe';
+import {Connectable, connectableObservableDescriptor} from './observe';
 import {UnaryFun} from './types';
 import {not} from './utils';
 import {BehaviorSubject} from './BehaviorSubject';
@@ -3045,14 +3042,14 @@ export function min<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
 
 export function multicast<T>(
   subject: Subject<T>
-): UnaryFun<Observable<T>, ConnectableObservable<T>>;
+): UnaryFun<Observable<T>, Connectable<T>>;
 export function multicast<T, O extends ObservableInput<any>>(
   subject: Subject<T>,
   selector: (shared: Observable<T>) => O
-): UnaryFun<Observable<T>, ConnectableObservable<ObservedValueOf<O>>>;
+): UnaryFun<Observable<T>, Connectable<ObservedValueOf<O>>>;
 export function multicast<T>(
   subjectFactory: (this: Observable<T>) => Subject<T>
-): UnaryFun<Observable<T>, ConnectableObservable<T>>;
+): UnaryFun<Observable<T>, Connectable<T>>;
 export function multicast<T, O extends ObservableInput<any>>(
   SubjectFactory: (this: Observable<T>) => Subject<T>,
   selector: (shared: Observable<T>) => O
@@ -3082,7 +3079,7 @@ export function multicast<T, R>(
     connectable.source = source;
     connectable.subjectFactory = subjectFactory;
 
-    return <ConnectableObservable<R>>connectable;
+    return <Connectable<R>>connectable;
   };
 }
 
@@ -3457,7 +3454,7 @@ export function pluck<T, R>(
   });
 }
 
-export function publish<T>(): UnaryFun<Observable<T>, ConnectableObservable<T>>;
+export function publish<T>(): UnaryFun<Observable<T>, Connectable<T>>;
 export function publish<T, O extends ObservableInput<any>>(
   selector: (shared: Observable<T>) => O
 ): OperFun<T, ObservedValueOf<O>>;
@@ -3472,17 +3469,12 @@ export function publish<T, R>(
 
 export function publishBehavior<T>(
   value: T
-): UnaryFun<Observable<T>, ConnectableObservable<T>> {
+): UnaryFun<Observable<T>, Connectable<T>> {
   return (source: Observable<T>) =>
-    multicast(new BehaviorSubject<T>(value))(source) as ConnectableObservable<
-      T
-    >;
+    multicast(new BehaviorSubject<T>(value))(source) as Connectable<T>;
 }
 
-export function publishLast<T>(): UnaryFun<
-  Observable<T>,
-  ConnectableObservable<T>
-> {
+export function publishLast<T>(): UnaryFun<Observable<T>, Connectable<T>> {
   return (source: Observable<T>) => multicast(new AsyncSubject<T>())(source);
 }
 
@@ -3502,7 +3494,7 @@ export function publishReplay<T, R>(
   windowTime?: number,
   selectorOrScheduler?: SchedulerLike | OperFun<T, R>,
   scheduler?: SchedulerLike
-): UnaryFun<Observable<T>, ConnectableObservable<R>> {
+): UnaryFun<Observable<T>, Connectable<R>> {
   if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
     scheduler = selectorOrScheduler;
   }
@@ -3512,7 +3504,7 @@ export function publishReplay<T, R>(
   const subject = new ReplaySubject<T>(bufferSize, windowTime, scheduler);
 
   return (source: Observable<T>) =>
-    multicast(() => subject, selector!)(source) as ConnectableObservable<R>;
+    multicast(() => subject, selector!)(source) as Connectable<R>;
 }
 
 export function race<T>(
@@ -3565,15 +3557,13 @@ export function reduce<V, A>(
 }
 
 export function refCount<T>(): MonoOper<T> {
-  return function refCountOperFun(
-    source: ConnectableObservable<T>
-  ): Observable<T> {
+  return function refCountOperFun(source: Connectable<T>): Observable<T> {
     return source.lift(new RefCountOperator(source));
   } as MonoOper<T>;
 }
 
 class RefCountOperator<T> implements Operator<T, T> {
-  constructor(private connectable: ConnectableObservable<T>) {}
+  constructor(private connectable: Connectable<T>) {}
   call(subscriber: Subscriber<T>, source: any): Closer {
     const {connectable} = this;
     (<any>connectable)._refCount++;
@@ -3592,10 +3582,7 @@ class RefCountOperator<T> implements Operator<T, T> {
 class RefCountSubscriber<T> extends Subscriber<T> {
   private connection: Subscription | null = null;
 
-  constructor(
-    destination: Subscriber<T>,
-    private connectable: ConnectableObservable<T>
-  ) {
+  constructor(destination: Subscriber<T>, private connectable: Connectable<T>) {
     super(destination);
   }
 

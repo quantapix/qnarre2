@@ -1,95 +1,52 @@
-import {Subject, SubjectSubscriber} from './Subject';
-import {Subscriber} from './Subscriber';
-import {Subscription} from './subscribe';
-import {Closer} from './types';
-import {refCount as higherOrderRefCount} from './opers';
-import {SchedulerLike, SchedulerAction} from './types';
-import {asap} from './schedule';
-import {isNumeric} from './utils';
-import {AsyncSubject} from './AsyncSubject';
-import {map} from './opers';
-import {canReportError} from './utils';
-import {isArray} from './utils';
-import {isScheduler} from './utils';
-import {ObservableInput, ObservedValueOf} from './types';
-import {OuterSubscriber} from './OuterSubscriber';
-import {InnerSubscriber} from './InnerSubscriber';
-import {subscribeToResult} from './utils';
-import {ObservedUnionFrom} from './types';
-import {concatAll} from './opers';
-import {SubscribableOrPromise} from './types';
-import {isObject} from './utils';
-import {subscribeTo} from './utils';
-import {scheduled} from './scheduled';
-import {subscribeToArray} from './utils';
-import {scheduleArray} from './scheduled';
-import {isFunction} from './utils';
-import {subscribeToIterable} from './utils';
-import {scheduleIterable} from './scheduled';
-import {subscribeToObservable} from './utils';
-import {InteropObservable} from './types';
-import {scheduleObservable} from './scheduled';
-import {subscribeToPromise} from './utils';
-import {schedulePromise} from './scheduled';
-import {identity} from './utils';
-import {async} from './schedule';
-import {mergeAll} from './opers';
-import {noop} from './utils';
-import {ValueFromArray} from './types';
-import {not} from './utils';
-import {filter} from './opers';
-import {Unsubscriber} from './types';
-import {Target} from './types';
-
 import * as qt from './types';
 import * as qu from './utils';
+import * as qr from './source';
+import * as qs from './subject';
 
-//import {iif} from './observable/iif';
-//import {throwError} from './observable/throwError';
-
-export class ConnectableObservable<T> extends Observable<T> {
-  subs?: Subscription;
-  subj?: Subject<T>;
+export class Connectable<N, F, D> extends qr.Source<N, F, D> {
+  sub?: qs.Subscription;
+  _subj?: qt.Subject<N, F, D>;
   done = false;
   count = 0;
 
-  constructor(public src: Observable<T>, protected subjFac: () => Subject<T>) {
+  constructor(
+    public src: qr.Source<N, F, D>,
+    protected fac: () => qt.Subject<N, F, D>
+  ) {
     super();
   }
 
-  _subscribe(s: Subscriber<T>) {
-    return this.subject().subscribe(s);
+  _subscribe(s: qt.Subscriber<N, F, D>) {
+    return this.subj.subscribe(s);
   }
 
-  protected subject() {
-    const s = this.subj;
-    if (!s || s.stopped) this.subj = this.subjFac();
-    return this.subj!;
+  get subj() {
+    const s = this._subj;
+    if (!s || s.stopped) this._subj = this.fac();
+    return this._subj!;
   }
 
-  connect(): Subscription {
-    let s = this.subs;
+  connect(): qs.Subscription {
+    let s = this.sub;
     if (!s) {
       this.done = false;
-      s = this.subs = new Subscription();
-      s.add(
-        this.src.subscribe(new ConnectableSubscriber(this.subject(), this))
-      );
+      s = this.sub = new qs.Subscription();
+      s.add(this.src.subscribe(new ConnectableSubscriber(this.subj, this)));
       if (s.closed) {
-        this.subs = undefined;
-        s = Subscription.EMPTY;
+        this.sub = undefined;
+        s = qs.Subscription.fake;
       }
     }
     return s;
   }
 
   refCount() {
-    return higherOrderRefCount()(this) as Observable<T>;
+    return higherOrderRefCount()(this) as qr.Source<N, F, D>;
   }
 }
 
 export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
-  const p = <any>ConnectableObservable.prototype;
+  const p = <any>Connectable.prototype;
   return {
     operator: {value: null as null},
     _refCount: {value: 0, writable: true},
@@ -104,7 +61,7 @@ export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
 })();
 
 class ConnectableSubscriber<T> extends SubjectSubscriber<T> {
-  constructor(obs: Subject<T>, private con?: ConnectableObservable<T>) {
+  constructor(obs: Subject<T>, private con?: Connectable<T>) {
     super(obs);
   }
 
@@ -132,7 +89,7 @@ class ConnectableSubscriber<T> extends SubjectSubscriber<T> {
 }
 
 class RefCountOperator<T> implements qt.Operator<T, T> {
-  constructor(private con: ConnectableObservable<T>) {}
+  constructor(private con: Connectable<T>) {}
 
   call(s: Subscriber<T>, source: any): Closer {
     const c = this.con;
@@ -149,7 +106,7 @@ class RefCountOperator<T> implements qt.Operator<T, T> {
 class RefCountSubscriber<T> extends Subscriber<T> {
   private subs?: Subscription;
 
-  constructor(obs: Subscriber<T>, private con?: ConnectableObservable<T>) {
+  constructor(obs: Subscriber<T>, private con?: Connectable<T>) {
     super(obs);
   }
 

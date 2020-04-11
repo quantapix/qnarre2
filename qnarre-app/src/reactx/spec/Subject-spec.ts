@@ -8,7 +8,7 @@ import {
   Observer,
   of
 } from 'rxjs';
-import {AnonymousSubject} from 'rxjs/internal/Subject';
+import {Anonymous} from 'rxjs/internal/Subject';
 import {delay} from 'rxjs/operators';
 
 /** @test {Subject} */
@@ -691,9 +691,9 @@ describe('Subject', () => {
   });
 });
 
-describe('AnonymousSubject', () => {
+describe('Anonymous', () => {
   it('should be exposed', () => {
-    expect(AnonymousSubject).to.be.a('function');
+    expect(Anonymous).to.be.a('function');
   });
 
   it('should not eager', () => {

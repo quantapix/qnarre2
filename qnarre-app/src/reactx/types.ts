@@ -48,8 +48,6 @@ export type Closer = Unsubscriber | Cfun | void;
 
 export interface Subscription extends Unsubscriber {
   readonly closed?: boolean;
-  add(_?: Closer): Subscription;
-  remove(_: Subscription): void;
   unsubscribe(): void;
 }
 
@@ -57,6 +55,10 @@ export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
 
 export interface Source<N, F, D> {
   subscribe(_?: Target<N, F, D>): Unsubscriber;
+}
+
+export interface Subject<N, F, D> extends Source<N, F, D>, Subscription {
+  readonly stopped?: boolean;
 }
 
 export interface Operator<_T, R, F, D> {

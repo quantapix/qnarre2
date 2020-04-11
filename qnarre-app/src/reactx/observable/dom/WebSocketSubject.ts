@@ -1,4 +1,4 @@
-import {Subject, AnonymousSubject} from '../../Subject';
+import {Subject, Anonymous} from '../../Subject';
 import {Subscriber} from '../../Subscriber';
 import {Observable} from '../../observe';
 import {Subscription} from '../../subscribe';
@@ -148,7 +148,7 @@ const WEBSOCKETSUBJECT_INVALID_ERROR_OBJECT =
 
 export type WebSocketMessage = string | ArrayBuffer | Blob | ArrayBufferView;
 
-export class WebSocketSubject<T> extends AnonymousSubject<T> {
+export class WebSocketSubject<T> extends Anonymous<T> {
   // @ts-ignore: Property has no initializer and is not definitely assigned
   private _config: WebSocketSubjectConfig<T>;
 

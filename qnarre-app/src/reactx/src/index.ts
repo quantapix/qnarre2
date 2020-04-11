@@ -1,6 +1,6 @@
 /* Observable */
 export { Observable } from '../observee
-export { ConnectableObservable } from '../observable/ConnectableObservable';
+export { Connectable } from '../observable/Connectable';
 export { GroupedObservable } from '../operators/groupBy';
 export { Operator } from '../Operator';
 export { observable } from '../symbol/observable';

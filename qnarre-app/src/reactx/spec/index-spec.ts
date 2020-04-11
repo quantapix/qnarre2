@@ -4,7 +4,7 @@ import {expect} from 'chai';
 describe('index', () => {
   it('should export Observable', () => {
     expect(index.Observable).to.exist;
-    expect(index.ConnectableObservable).to.exist;
+    expect(index.Connectable).to.exist;
     // Interfaces can be checked by creating a variable of that type
     let operator: index.Operator<any, any>;
   });

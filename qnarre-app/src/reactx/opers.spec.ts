@@ -19130,7 +19130,7 @@ import {
   Subject,
   ReplaySubject,
   of,
-  ConnectableObservable,
+  Connectable,
   zip,
   concat,
   Subscription,
@@ -19160,7 +19160,7 @@ describe('multicast operator', () => {
       const sourceSubs = '^              !';
       const multicasted = source.pipe(
         multicast(() => new Subject<string>())
-      ) as ConnectableObservable<string>;
+      ) as Connectable<string>;
       const expected = '--1-2---3-4--5-|';
 
       expectObservable(multicasted).toBe(expected);
@@ -19175,7 +19175,7 @@ describe('multicast operator', () => {
 
     const connectable = of(1, 2, 3, 4).pipe(
       multicast(new Subject<number>())
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
 
     connectable.subscribe(
       x => {
@@ -19192,16 +19192,16 @@ describe('multicast operator', () => {
     connectable.connect();
   });
 
-  it('should multicast a ConnectableObservable', done => {
+  it('should multicast a Connectable', done => {
     const expected = [1, 2, 3, 4];
 
     const source = new Subject<number>();
     const connectable = source.pipe(
       multicast(new Subject<number>())
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
     const replayed = connectable.pipe(
       multicast(new ReplaySubject<number>())
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
 
     connectable.connect();
     replayed.connect();
@@ -19231,7 +19231,7 @@ describe('multicast operator', () => {
 
     const connectable = of(1, 2, 3, 4).pipe(
       multicast(() => new Subject<number>())
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
 
     connectable.subscribe(
       x => {
@@ -19339,7 +19339,7 @@ describe('multicast operator', () => {
     const sourceSubs = '^           !';
     const multicasted = source.pipe(
       multicast(() => new Subject<string>())
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
     const expected1 = '-1-2-3----4-|';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
@@ -19360,7 +19360,7 @@ describe('multicast operator', () => {
     const sourceSubs = '^           !';
     const multicasted = source.pipe(
       multicast(() => new Subject<string>())
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
     const expected1 = '-1-2-3----4-#';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
@@ -19384,7 +19384,7 @@ describe('multicast operator', () => {
       const sourceSubs = '^        !   ';
       const multicasted = source.pipe(
         multicast(() => new Subject<string>())
-      ) as ConnectableObservable<string>;
+      ) as Connectable<string>;
       const unsub = '         u   ';
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
       const expected1 = '-1-2-3----   ';
@@ -19418,7 +19418,7 @@ describe('multicast operator', () => {
     const multicasted = source.pipe(
       mergeMap(x => of(x)),
       multicast(() => new Subject<string>())
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
     const expected1 = '-1-2-3----   ';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
@@ -19450,7 +19450,7 @@ describe('multicast operator', () => {
     const sourceSubs = '(^!)';
     const multicasted = source.pipe(
       multicast(() => new Subject<string>())
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const expected = '|';
 
     expectObservable(multicasted).toBe(expected);
@@ -19464,7 +19464,7 @@ describe('multicast operator', () => {
     const sourceSubs = '^';
     const multicasted = source.pipe(
       multicast(() => new Subject<string>())
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const expected = '-';
 
     expectObservable(multicasted).toBe(expected);
@@ -19478,7 +19478,7 @@ describe('multicast operator', () => {
     const sourceSubs = '(^!)';
     const multicasted = source.pipe(
       multicast(() => new Subject<string>())
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const expected = '#';
 
     expectObservable(multicasted).toBe(expected);
@@ -19840,7 +19840,7 @@ describe('multicast operator', () => {
       multicast(() => {
         return new Subject<number>();
       })
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -19866,9 +19866,9 @@ describe('multicast operator', () => {
     const expected = [1, 2, 3, 4];
     let i = 0;
 
-    const source = from([1, 2, 3, 4]).pipe(
-      multicast(subject)
-    ) as ConnectableObservable<number>;
+    const source = from([1, 2, 3, 4]).pipe(multicast(subject)) as Connectable<
+      number
+    >;
 
     source.subscribe(x => {
       expect(x).to.equal(expected[i++]);
@@ -19885,7 +19885,7 @@ describe('multicast operator', () => {
 
       const source = of(1, 2, 3, 4).pipe(
         multicast(() => new Subject<number>())
-      ) as ConnectableObservable<number>;
+      ) as Connectable<number>;
 
       source.subscribe(
         x => {
@@ -19971,9 +19971,9 @@ describe('multicast operator', () => {
     type('should infer the type', () => {
       /* tslint:disable:no-unused-variable */
       const source = of(1, 2, 3);
-      const result: ConnectableObservable<number> = source.pipe(
+      const result: Connectable<number> = source.pipe(
         multicast(() => new Subject<number>())
-      ) as ConnectableObservable<number>;
+      ) as Connectable<number>;
       /* tslint:enable:no-unused-variable */
     });
 
@@ -20005,7 +20005,7 @@ describe('multicast operator', () => {
       /* tslint:disable:no-unused-variable */
       const source = of(1, 2, 3);
       // TODO: https://github.com/ReactiveX/rxjs/issues/2972
-      const result: ConnectableObservable<number> = multicast(
+      const result: Connectable<number> = multicast(
         () => new Subject<number>()
       )(source);
       /* tslint:enable:no-unused-variable */
@@ -20723,7 +20723,7 @@ import {
   repeat,
   map
 } from 'rxjs/operators';
-import {ConnectableObservable, of, Subscription, Observable} from 'rxjs';
+import {Connectable, of, Subscription, Observable} from 'rxjs';
 
 declare function asDiagram(arg: string): Function;
 declare const type: Function;
@@ -20733,7 +20733,7 @@ describe('publish operator', () => {
   asDiagram('publish')('should mirror a simple source Observable', () => {
     const source = cold('--1-2---3-4--5-|');
     const sourceSubs = '^              !';
-    const published = source.pipe(publish()) as ConnectableObservable<any>;
+    const published = source.pipe(publish()) as Connectable<any>;
     const expected = '--1-2---3-4--5-|';
 
     expectObservable(published).toBe(expected);
@@ -20742,8 +20742,8 @@ describe('publish operator', () => {
     published.connect();
   });
 
-  it('should return a ConnectableObservable-ish', () => {
-    const source = of(1).pipe(publish()) as ConnectableObservable<number>;
+  it('should return a Connectable-ish', () => {
+    const source = of(1).pipe(publish()) as Connectable<number>;
     expect(typeof (<any>source)._subscribe === 'function').to.be.true;
     expect(typeof (<any>source).getSubject === 'function').to.be.true;
     expect(typeof source.connect === 'function').to.be.true;
@@ -20763,7 +20763,7 @@ describe('publish operator', () => {
   it('should multicast the same values to multiple observers', () => {
     const source = cold('-1-2-3----4-|');
     const sourceSubs = '^           !';
-    const published = source.pipe(publish()) as ConnectableObservable<string>;
+    const published = source.pipe(publish()) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-3----4-|';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -20803,7 +20803,7 @@ describe('publish operator', () => {
   it('should multicast an error from the source to multiple observers', () => {
     const source = cold('-1-2-3----4-#');
     const sourceSubs = '^           !';
-    const published = source.pipe(publish()) as ConnectableObservable<string>;
+    const published = source.pipe(publish()) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-3----4-#';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -20825,7 +20825,7 @@ describe('publish operator', () => {
     () => {
       const source = cold('-1-2-3----4-|');
       const sourceSubs = '^        !   ';
-      const published = source.pipe(publish()) as ConnectableObservable<string>;
+      const published = source.pipe(publish()) as Connectable<string>;
       const unsub = '         u   ';
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
       const expected1 = '-1-2-3----   ';
@@ -20859,7 +20859,7 @@ describe('publish operator', () => {
     const published = source.pipe(
       mergeMap(x => of(x)),
       publish()
-    ) as ConnectableObservable<any>;
+    ) as Connectable<any>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-3----   ';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -20969,7 +20969,7 @@ describe('publish operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(publish()) as ConnectableObservable<number>;
+    const connectable = source.pipe(publish()) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -21001,7 +21001,7 @@ describe('publish operator', () => {
   it('should multicast an empty source', () => {
     const source = cold('|');
     const sourceSubs = '(^!)';
-    const published = source.pipe(publish()) as ConnectableObservable<string>;
+    const published = source.pipe(publish()) as Connectable<string>;
     const expected = '|';
 
     expectObservable(published).toBe(expected);
@@ -21013,7 +21013,7 @@ describe('publish operator', () => {
   it('should multicast a never source', () => {
     const source = cold('-');
     const sourceSubs = '^';
-    const published = source.pipe(publish()) as ConnectableObservable<string>;
+    const published = source.pipe(publish()) as Connectable<string>;
     const expected = '-';
 
     expectObservable(published).toBe(expected);
@@ -21025,7 +21025,7 @@ describe('publish operator', () => {
   it('should multicast a throw source', () => {
     const source = cold('#');
     const sourceSubs = '(^!)';
-    const published = source.pipe(publish()) as ConnectableObservable<string>;
+    const published = source.pipe(publish()) as Connectable<string>;
     const expected = '#';
 
     expectObservable(published).toBe(expected);
@@ -21048,7 +21048,7 @@ describe('publish operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(publish()) as ConnectableObservable<number>;
+    const connectable = source.pipe(publish()) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -21072,9 +21072,9 @@ describe('publish operator', () => {
   type('should infer the type', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
-    const result: ConnectableObservable<number> = source.pipe(
-      publish()
-    ) as ConnectableObservable<number>;
+    const result: Connectable<number> = source.pipe(publish()) as Connectable<
+      number
+    >;
     /* tslint:enable:no-unused-variable */
   });
 
@@ -21100,7 +21100,7 @@ describe('publish operator', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
     // TODO: https://github.com/ReactiveX/rxjs/issues/2972
-    const result: ConnectableObservable<number> = publish<number>()(source);
+    const result: Connectable<number> = publish<number>()(source);
     /* tslint:enable:no-unused-variable */
   });
 
@@ -21144,7 +21144,7 @@ import {
   retry,
   repeat
 } from 'rxjs/operators';
-import {ConnectableObservable, of, Subscription, Observable} from 'rxjs';
+import {Connectable, of, Subscription, Observable} from 'rxjs';
 
 declare function asDiagram(arg: string): Function;
 declare const type: Function;
@@ -21156,9 +21156,9 @@ describe('publishBehavior operator', () => {
     () => {
       const source = cold('--1-2---3-4--5-|');
       const sourceSubs = '^              !';
-      const published = source.pipe(
-        publishBehavior('0')
-      ) as ConnectableObservable<string>;
+      const published = source.pipe(publishBehavior('0')) as Connectable<
+        string
+      >;
       const expected = '0-1-2---3-4--5-|';
 
       expectObservable(published).toBe(expected);
@@ -21168,10 +21168,8 @@ describe('publishBehavior operator', () => {
     }
   );
 
-  it('should return a ConnectableObservable-ish', () => {
-    const source = of(1).pipe(publishBehavior(1)) as ConnectableObservable<
-      number
-    >;
+  it('should return a Connectable-ish', () => {
+    const source = of(1).pipe(publishBehavior(1)) as Connectable<number>;
     expect(typeof (<any>source)._subscribe === 'function').to.be.true;
     expect(typeof (<any>source).getSubject === 'function').to.be.true;
     expect(typeof source.connect === 'function').to.be.true;
@@ -21191,9 +21189,7 @@ describe('publishBehavior operator', () => {
   it('should multicast the same values to multiple observers', () => {
     const source = cold('-1-2-3----4-|');
     const sourceSubs = '^           !';
-    const published = source.pipe(
-      publishBehavior('0')
-    ) as ConnectableObservable<string>;
+    const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '01-2-3----4-|';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21212,9 +21208,7 @@ describe('publishBehavior operator', () => {
   it('should multicast an error from the source to multiple observers', () => {
     const source = cold('-1-2-3----4-#');
     const sourceSubs = '^           !';
-    const published = source.pipe(
-      publishBehavior('0')
-    ) as ConnectableObservable<string>;
+    const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '01-2-3----4-#';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21236,9 +21230,9 @@ describe('publishBehavior operator', () => {
     () => {
       const source = cold('-1-2-3----4-|');
       const sourceSubs = '^        !   ';
-      const published = source.pipe(
-        publishBehavior('0')
-      ) as ConnectableObservable<string>;
+      const published = source.pipe(publishBehavior('0')) as Connectable<
+        string
+      >;
       const unsub = '         u   ';
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
       const expected1 = '01-2-3----   ';
@@ -21272,7 +21266,7 @@ describe('publishBehavior operator', () => {
     const published = source.pipe(
       mergeMap(x => of(x)),
       publishBehavior('0')
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '01-2-3----   ';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21386,9 +21380,7 @@ describe('publishBehavior operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(
-      publishBehavior(0)
-    ) as ConnectableObservable<number>;
+    const connectable = source.pipe(publishBehavior(0)) as Connectable<number>;
 
     connectable.subscribe(function (x) {
       results1.push(x);
@@ -21420,9 +21412,7 @@ describe('publishBehavior operator', () => {
   it('should multicast an empty source', () => {
     const source = cold('|');
     const sourceSubs = '(^!)';
-    const published = source.pipe(
-      publishBehavior('0')
-    ) as ConnectableObservable<string>;
+    const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const expected = '(0|)';
 
     expectObservable(published).toBe(expected);
@@ -21434,9 +21424,7 @@ describe('publishBehavior operator', () => {
   it('should multicast a never source', () => {
     const source = cold('-');
     const sourceSubs = '^';
-    const published = source.pipe(
-      publishBehavior('0')
-    ) as ConnectableObservable<string>;
+    const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const expected = '0';
 
     expectObservable(published).toBe(expected);
@@ -21448,9 +21436,7 @@ describe('publishBehavior operator', () => {
   it('should multicast a throw source', () => {
     const source = cold('#');
     const sourceSubs = '(^!)';
-    const published = source.pipe(
-      publishBehavior('0')
-    ) as ConnectableObservable<string>;
+    const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const expected = '(0#)';
 
     expectObservable(published).toBe(expected);
@@ -21472,9 +21458,7 @@ describe('publishBehavior operator', () => {
       observer.next(4);
     });
 
-    const connectable = source.pipe(
-      publishBehavior(0)
-    ) as ConnectableObservable<number>;
+    const connectable = source.pipe(publishBehavior(0)) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -21507,9 +21491,7 @@ describe('publishBehavior operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(
-      publishBehavior(0)
-    ) as ConnectableObservable<number>;
+    const connectable = source.pipe(publishBehavior(0)) as Connectable<number>;
 
     connectable.connect();
 
@@ -21524,9 +21506,9 @@ describe('publishBehavior operator', () => {
   type('should infer the type', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
-    const result: ConnectableObservable<number> = source.pipe(
+    const result: Connectable<number> = source.pipe(
       publishBehavior(0)
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
     /* tslint:enable:no-unused-variable */
   });
 
@@ -21534,7 +21516,7 @@ describe('publishBehavior operator', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
     // TODO: https://github.com/ReactiveX/rxjs/issues/2972
-    const result: ConnectableObservable<number> = publishBehavior(0)(source);
+    const result: Connectable<number> = publishBehavior(0)(source);
     /* tslint:enable:no-unused-variable */
   });
 });
@@ -21553,7 +21535,7 @@ import {
   refCount,
   retry
 } from 'rxjs/operators';
-import {ConnectableObservable, of, Subscription, Observable} from 'rxjs';
+import {Connectable, of, Subscription, Observable} from 'rxjs';
 
 declare function asDiagram(arg: string): Function;
 declare const type: Function;
@@ -21565,9 +21547,7 @@ describe('publishLast operator', () => {
     () => {
       const source = cold('--1-2---3-4--5-|');
       const sourceSubs = '^              !';
-      const published = source.pipe(publishLast()) as ConnectableObservable<
-        string
-      >;
+      const published = source.pipe(publishLast()) as Connectable<string>;
       const expected = '---------------(5|)';
 
       expectObservable(published).toBe(expected);
@@ -21577,8 +21557,8 @@ describe('publishLast operator', () => {
     }
   );
 
-  it('should return a ConnectableObservable-ish', () => {
-    const source = of(1).pipe(publishLast()) as ConnectableObservable<number>;
+  it('should return a Connectable-ish', () => {
+    const source = of(1).pipe(publishLast()) as Connectable<number>;
     expect(typeof (<any>source)._subscribe === 'function').to.be.true;
     expect(typeof (<any>source).getSubject === 'function').to.be.true;
     expect(typeof source.connect === 'function').to.be.true;
@@ -21598,9 +21578,7 @@ describe('publishLast operator', () => {
   it('should multicast the same values to multiple observers', () => {
     const source = cold('-1-2-3----4-|');
     const sourceSubs = '^           !';
-    const published = source.pipe(publishLast()) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishLast()) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '------------(4|)';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21619,9 +21597,7 @@ describe('publishLast operator', () => {
   it('should multicast an error from the source to multiple observers', () => {
     const source = cold('-1-2-3----4-#');
     const sourceSubs = '^           !';
-    const published = source.pipe(publishLast()) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishLast()) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '------------#';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21643,9 +21619,7 @@ describe('publishLast operator', () => {
     () => {
       const source = cold('-1-2-3----4-|');
       const sourceSubs = '^        !   ';
-      const published = source.pipe(publishLast()) as ConnectableObservable<
-        string
-      >;
+      const published = source.pipe(publishLast()) as Connectable<string>;
       const unsub = '         u   ';
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
       const expected1 = '----------   ';
@@ -21679,7 +21653,7 @@ describe('publishLast operator', () => {
     const published = source.pipe(
       mergeMap(x => of(x)),
       publishLast()
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '----------   ';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21761,9 +21735,7 @@ describe('publishLast operator', () => {
   it('should multicast an empty source', () => {
     const source = cold('|');
     const sourceSubs = '(^!)';
-    const published = source.pipe(publishLast()) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishLast()) as Connectable<string>;
     const expected = '|';
 
     expectObservable(published).toBe(expected);
@@ -21775,9 +21747,7 @@ describe('publishLast operator', () => {
   it('should multicast a never source', () => {
     const source = cold('-');
     const sourceSubs = '^';
-    const published = source.pipe(publishLast()) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishLast()) as Connectable<string>;
     const expected = '-';
 
     expectObservable(published).toBe(expected);
@@ -21789,9 +21759,7 @@ describe('publishLast operator', () => {
   it('should multicast a throw source', () => {
     const source = cold('#');
     const sourceSubs = '(^!)';
-    const published = source.pipe(publishLast()) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishLast()) as Connectable<string>;
     const expected = '#';
 
     expectObservable(published).toBe(expected);
@@ -21814,9 +21782,7 @@ describe('publishLast operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(publishLast()) as ConnectableObservable<
-      number
-    >;
+    const connectable = source.pipe(publishLast()) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -21840,9 +21806,9 @@ describe('publishLast operator', () => {
   type('should infer the type', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
-    const result: ConnectableObservable<number> = source.pipe(
+    const result: Connectable<number> = source.pipe(
       publishLast()
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
     /* tslint:enable:no-unused-variable */
   });
 
@@ -21850,7 +21816,7 @@ describe('publishLast operator', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
     // TODO: https://github.com/ReactiveX/rxjs/issues/2972
-    const result: ConnectableObservable<unknown> = publishLast()(source);
+    const result: Connectable<unknown> = publishLast()(source);
     /* tslint:enable:no-unused-variable */
   });
 });
@@ -21863,7 +21829,7 @@ import {
 } from '../helpers/marble-testing';
 import {
   throwError,
-  ConnectableObservable,
+  Connectable,
   EMPTY,
   NEVER,
   of,
@@ -21891,9 +21857,7 @@ describe('publishReplay operator', () => {
     () => {
       const source = cold('--1-2---3-4--5-|');
       const sourceSubs = '^              !';
-      const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-        string
-      >;
+      const published = source.pipe(publishReplay(1)) as Connectable<string>;
       const expected = '--1-2---3-4--5-|';
 
       expectObservable(published).toBe(expected);
@@ -21903,8 +21867,8 @@ describe('publishReplay operator', () => {
     }
   );
 
-  it('should return a ConnectableObservable-ish', () => {
-    const source = of(1).pipe(publishReplay()) as ConnectableObservable<number>;
+  it('should return a Connectable-ish', () => {
+    const source = of(1).pipe(publishReplay()) as Connectable<number>;
     expect(typeof (<any>source)._subscribe === 'function').to.be.true;
     expect(typeof (<any>source).getSubject === 'function').to.be.true;
     expect(typeof source.connect === 'function').to.be.true;
@@ -21924,9 +21888,7 @@ describe('publishReplay operator', () => {
   it('should multicast the same values to multiple observers, bufferSize=1', () => {
     const source = cold('-1-2-3----4-|');
     const sourceSubs = '^           !';
-    const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-3----4-|';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21945,9 +21907,7 @@ describe('publishReplay operator', () => {
   it('should multicast the same values to multiple observers, bufferSize=2', () => {
     const source = cold('-1-2-----3------4-|');
     const sourceSubs = '^                 !';
-    const published = source.pipe(publishReplay(2)) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishReplay(2)) as Connectable<string>;
     const subscriber1 = hot('a|                 ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-----3------4-|';
     const subscriber2 = hot('    b|             ').pipe(mergeMapTo(published));
@@ -21966,9 +21926,7 @@ describe('publishReplay operator', () => {
   it('should multicast an error from the source to multiple observers', () => {
     const source = cold('-1-2-3----4-#');
     const sourceSubs = '^           !';
-    const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-3----4-#';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -21990,9 +21948,7 @@ describe('publishReplay operator', () => {
     () => {
       const source = cold('-1-2-3----4-|');
       const sourceSubs = '^        !   ';
-      const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-        string
-      >;
+      const published = source.pipe(publishReplay(1)) as Connectable<string>;
       const unsub = '         u   ';
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
       const expected1 = '-1-2-3----   ';
@@ -22026,7 +21982,7 @@ describe('publishReplay operator', () => {
     const published = source.pipe(
       mergeMap(x => of(x)),
       publishReplay(1)
-    ) as ConnectableObservable<string>;
+    ) as Connectable<string>;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-1-2-3----   ';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -22136,9 +22092,7 @@ describe('publishReplay operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(publishReplay()) as ConnectableObservable<
-      number
-    >;
+    const connectable = source.pipe(publishReplay()) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -22172,9 +22126,7 @@ describe('publishReplay operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(publishReplay(2)) as ConnectableObservable<
-      number
-    >;
+    const connectable = source.pipe(publishReplay(2)) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -22212,9 +22164,7 @@ describe('publishReplay operator', () => {
         // observer.complete();
       });
 
-      const connectable = source.pipe(
-        publishReplay(2)
-      ) as ConnectableObservable<number>;
+      const connectable = source.pipe(publishReplay(2)) as Connectable<number>;
       const subscription1 = connectable.subscribe(x => {
         results1.push(x);
       });
@@ -22256,9 +22206,7 @@ describe('publishReplay operator', () => {
       observer.complete();
     });
 
-    const connectable = source.pipe(publishReplay(2)) as ConnectableObservable<
-      number
-    >;
+    const connectable = source.pipe(publishReplay(2)) as Connectable<number>;
 
     connectable.subscribe(x => {
       results1.push(x);
@@ -22290,9 +22238,7 @@ describe('publishReplay operator', () => {
   it('should multicast an empty source', () => {
     const source = cold('|');
     const sourceSubs = '(^!)';
-    const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const expected = '|';
 
     expectObservable(published).toBe(expected);
@@ -22305,9 +22251,7 @@ describe('publishReplay operator', () => {
     const source = cold('-');
     const sourceSubs = '^';
 
-    const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const expected = '-';
 
     expectObservable(published).toBe(expected);
@@ -22319,9 +22263,7 @@ describe('publishReplay operator', () => {
   it('should multicast a throw source', () => {
     const source = cold('#');
     const sourceSubs = '(^!)';
-    const published = source.pipe(publishReplay(1)) as ConnectableObservable<
-      string
-    >;
+    const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const expected = '#';
 
     expectObservable(published).toBe(expected);
@@ -22418,9 +22360,9 @@ describe('publishReplay operator', () => {
   type('should infer the type', () => {
     /* tslint:disable:no-unused-variable */
     const source = of(1, 2, 3);
-    const result: ConnectableObservable<number> = source.pipe(
+    const result: Connectable<number> = source.pipe(
       publishReplay(1)
-    ) as ConnectableObservable<number>;
+    ) as Connectable<number>;
     /* tslint:enable:no-unused-variable */
   });
 
@@ -22446,7 +22388,7 @@ describe('publishReplay operator', () => {
   // type('should infer the type for the pipeable operator', () => {
   //   /* tslint:disable:no-unused-variable */
   //   const source =of(1, 2, 3);
-  //   const result: ConnectableObservable<number> = publishReplay<number>(1)(source);
+  //   const result: Connectable<number> = publishReplay<number>(1)(source);
   //   /* tslint:enable:no-unused-variable */
   // });
 
@@ -23051,14 +22993,7 @@ import {
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {refCount, publish, publishReplay, first} from 'rxjs/operators';
-import {
-  NEVER,
-  noop,
-  Observable,
-  Observer,
-  Subject,
-  ConnectableObservable
-} from 'rxjs';
+import {NEVER, noop, Observable, Observer, Subject, Connectable} from 'rxjs';
 
 declare function asDiagram(arg: string): Function;
 
