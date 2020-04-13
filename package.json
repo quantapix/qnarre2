@@ -21,6 +21,6 @@
     "eslint-plugin-prettier": "",
     "eslint": "",
     "prettier": "",
-    "typescript": ""
+    "typescript": "next"
   }
 }
