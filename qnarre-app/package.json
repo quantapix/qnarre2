@@ -70,7 +70,7 @@
     "protractor": "",
     "semver": "",
     "tslint": "",
-    "typescript": "",
+    "typescript": "next",
     "webpack": "",
     "webpack-dev-server": ""
   }
