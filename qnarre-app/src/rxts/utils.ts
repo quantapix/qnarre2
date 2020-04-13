@@ -1,4 +1,4 @@
-import {Subject} from './Subject';
+import {Subject} from './subject';
 import {Observer, ObservableInput, InteropObservable} from './types';
 import {Observable} from './observe';
 import {SchedulerLike} from './types';

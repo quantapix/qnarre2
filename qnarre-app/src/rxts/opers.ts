@@ -1,5 +1,5 @@
 import {Operator} from './Operator';
-import {Subscriber} from './Subscriber';
+import {Subscriber} from './subscriber.old';
 import {Observable} from './observe';
 import {Subscription} from './subscribe';
 import {MonoOper, SubscribableOrPromise, Closer} from './types';
@@ -26,7 +26,7 @@ import {of} from './observe';
 import {ValueFromArray} from './types';
 import {EmptyError} from './utils';
 import {identity} from './utils';
-import {Subject} from './Subject';
+import {Subject} from './subject';
 import {merge as mergeStatic} from './observe';
 import {Connectable, connectableObservableDescriptor} from './observe';
 import {UnaryFun} from './types';

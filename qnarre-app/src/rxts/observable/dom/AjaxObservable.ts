@@ -1,6 +1,6 @@
 import {root} from '../../util/root';
 import {Observable} from '../../observe';
-import {Subscriber} from '../../Subscriber';
+import {Subscriber} from '../../subscriber.old';
 import {Closer} from '../../types';
 import {map} from '../../operators/map';
 

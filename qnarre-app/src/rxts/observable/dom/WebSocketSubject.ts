@@ -1,5 +1,5 @@
-import {Subject, Anonymous} from '../../Subject';
-import {Subscriber} from '../../Subscriber';
+import {Subject, Anonymous} from '../../subject';
+import {Subscriber} from '../../subscriber.old';
 import {Observable} from '../../observe';
 import {Subscription} from '../../subscribe';
 import {Operator} from '../../Operator';

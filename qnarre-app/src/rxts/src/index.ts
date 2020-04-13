@@ -7,7 +7,7 @@ export { observable } from '../symbol/observable';
 export { animationFrames } from '../observable/dom/animationFrames';
 
 /* Subjects */
-export { Subject } from '../Subject';
+export { Subject } from '../subject';
 export { Behavior } from '../Behavior';
 export { Replay } from '../Replay';
 export { Async } from '../Async';
@@ -22,7 +22,7 @@ export { Scheduler } from '../scheduler
 
 /* Subscription */
 export { Subscription } from '../subscribe';
-export { Subscriber } from '../Subscriber';
+export { Subscriber } from '../subscriber.old';
 
 /* Notification */
 export { Notification, NotificationKind } from '../Notification';

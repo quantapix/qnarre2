@@ -51,6 +51,11 @@ export interface Subscription extends Unsubscriber {
   unsubscribe(): void;
 }
 
+export interface RefCountSubscription extends Subscription {
+  count: number;
+  attempted?: boolean;
+}
+
 export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
 
 export interface Source<N, F, D> {
@@ -61,8 +66,8 @@ export interface Subject<N, F, D> extends Source<N, F, D>, Subscription {
   readonly stopped?: boolean;
 }
 
-export interface Operator<_T, R, F, D> {
-  call(s: Subscriber<R, F, D>, _: any): Closer;
+export interface Operator<_N, M, F, D> {
+  call(s: Subscriber<M, F, D>, _: any): Closer;
 }
 
 export type InteropObservable<N, F, D> = {

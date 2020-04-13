@@ -5,7 +5,7 @@ import {TestMessage} from './TestMessage';
 import {SubscriptionLog} from './SubscriptionLog';
 import {SubscriptionLoggable} from './SubscriptionLoggable';
 import {applyMixins} from '../util/applyMixins';
-import {Subscriber} from '../Subscriber';
+import {Subscriber} from '../subscriber.old';
 
 /**
  * We need this JSDoc comment for affecting ESDoc.
