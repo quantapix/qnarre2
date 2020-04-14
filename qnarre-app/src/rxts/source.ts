@@ -40,8 +40,8 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
     return;
   }
 
-  lift<M>(o?: qt.Operator<N, M, F, D>) {
-    const s = new Source<M, F, D>();
+  lift<R>(o?: qt.Operator<N, R, F, D>) {
+    const s = new Source<R, F, D>();
     s.src = this;
     s.oper = o;
     return s;
@@ -85,80 +85,80 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
   }
 
   pipe(): Source<N, F, D>;
-  pipe<A>(op1: qt.OperFun<N, A, F, D>): Source<A, F, D>;
+  pipe<A>(op1: qt.Lifter<N, A, F, D>): Source<A, F, D>;
   pipe<A, B>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>
   ): Source<B, F, D>;
   pipe<A, B, C>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>
   ): Source<C, F, D>;
   pipe<A, B, C, D>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>
   ): Source<D, F, D>;
   pipe<A, B, C, D, E>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>,
-    op5: qt.OperFun<D, E, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>,
+    op5: qt.Lifter<D, E, F, D>
   ): Source<E, F, D>;
   pipe<A, B, C, D, E, F>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>,
-    op5: qt.OperFun<D, E, F, D>,
-    op6: qt.OperFun<E, F, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>,
+    op5: qt.Lifter<D, E, F, D>,
+    op6: qt.Lifter<E, F, F, D>
   ): Source<F, F, D>;
   pipe<A, B, C, D, E, F, G>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>,
-    op5: qt.OperFun<D, E, F, D>,
-    op6: qt.OperFun<E, F, F, D>,
-    op7: qt.OperFun<F, G, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>,
+    op5: qt.Lifter<D, E, F, D>,
+    op6: qt.Lifter<E, F, F, D>,
+    op7: qt.Lifter<F, G, F, D>
   ): Source<G, F, D>;
   pipe<A, B, C, D, E, F, G, H>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>,
-    op5: qt.OperFun<D, E, F, D>,
-    op6: qt.OperFun<E, F, F, D>,
-    op7: qt.OperFun<F, G, F, D>,
-    op8: qt.OperFun<G, H, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>,
+    op5: qt.Lifter<D, E, F, D>,
+    op6: qt.Lifter<E, F, F, D>,
+    op7: qt.Lifter<F, G, F, D>,
+    op8: qt.Lifter<G, H, F, D>
   ): Source<H, F, D>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>,
-    op5: qt.OperFun<D, E, F, D>,
-    op6: qt.OperFun<E, F, F, D>,
-    op7: qt.OperFun<F, G, F, D>,
-    op8: qt.OperFun<G, H, F, D>,
-    op9: qt.OperFun<H, I, F, D>
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>,
+    op5: qt.Lifter<D, E, F, D>,
+    op6: qt.Lifter<E, F, F, D>,
+    op7: qt.Lifter<F, G, F, D>,
+    op8: qt.Lifter<G, H, F, D>,
+    op9: qt.Lifter<H, I, F, D>
   ): Source<I, F, D>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.OperFun<N, A, F, D>,
-    op2: qt.OperFun<A, B, F, D>,
-    op3: qt.OperFun<B, C, F, D>,
-    op4: qt.OperFun<C, D, F, D>,
-    op5: qt.OperFun<D, E, F, D>,
-    op6: qt.OperFun<E, F, F, D>,
-    op7: qt.OperFun<F, G, F, D>,
-    op8: qt.OperFun<G, H, F, D>,
-    op9: qt.OperFun<H, I, F, D>,
-    ...ops: qt.OperFun<any, any, F, D>[]
+    op1: qt.Lifter<N, A, F, D>,
+    op2: qt.Lifter<A, B, F, D>,
+    op3: qt.Lifter<B, C, F, D>,
+    op4: qt.Lifter<C, D, F, D>,
+    op5: qt.Lifter<D, E, F, D>,
+    op6: qt.Lifter<E, F, F, D>,
+    op7: qt.Lifter<F, G, F, D>,
+    op8: qt.Lifter<G, H, F, D>,
+    op9: qt.Lifter<H, I, F, D>,
+    ...ops: qt.Lifter<any, any, F, D>[]
   ): Source<unknown, F, D>;
-  pipe(...ops: qt.OperFun<any, any, F, D>[]): Source<any, F, D> {
+  pipe(...ops: qt.Lifter<any, any, F, D>[]): Source<any, F, D> {
     if (ops.length === 0) return this;
     return qu.pipeFromArray(ops)(this) as this;
   }

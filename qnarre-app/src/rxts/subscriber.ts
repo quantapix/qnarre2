@@ -1,77 +1,85 @@
 import * as qt from './types';
+import * as qu from './utils';
 
-import {Inner, Outer, Subscription, Subscriber} from './subject';
+import {Inner, Outer, RSubject, Subscription, Subscriber} from './subject';
 
-export class Audit<N, M, F, D> extends Outer<N, M, F, D> {
-  private value?: N;
-  private hasValue = false;
-  private throttled?: Subscription;
+export {Inner, Outer, RSubject as Subject};
+
+export class Audit<O, I, F, D> extends Outer<O, I, F, D> {
+  private n?: O;
+  private hasN = false;
+  private throttled?: qt.Subscription;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
-    private durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
+    tgt: Subscriber<O, F, D>,
+    private duration: (_?: O) => qt.SourceOrPromise<O, F, D>
   ) {
     super(tgt);
   }
 
-  protected _next(n?: N) {
-    this.value = v;
-    this.hasValue = true;
+  protected _next(n?: O) {
+    this.n = n;
+    this.hasN = true;
     if (!this.throttled) {
-      let duration;
+      let d;
       try {
-        const {durationSelector} = this;
-        duration = durationSelector(v);
+        d = this.duration(n);
       } catch (e) {
         return this.tgt.fail(e);
       }
-      const s = subscribeToResult(this, duration);
-      if (!s || s.closed) this.clearThrottle();
+      const s = qu.subscribeToResult(this, d);
+      if (!s || s.closed) this.clear();
       else this.add((this.throttled = s));
     }
   }
 
-  clearThrottle() {
-    const {value, hasValue, throttled} = this;
+  clear() {
+    const {n, hasN, throttled} = this;
     if (throttled) {
       this.remove(throttled);
       this.throttled = undefined;
       throttled.unsubscribe();
     }
-    if (hasValue) {
-      this.value = undefined;
-      this.hasValue = false;
-      this.tgt.next(value);
+    if (hasN) {
+      this.n = undefined;
+      this.hasN = false;
+      this.tgt.next(n);
     }
   }
 
-  notifyNext(
-    outerN: N,
-    innerValue: MergeScanOperator,
-    outerX: number,
-    innerIndex: number
-  ) {
-    this.clearThrottle();
+  notifyNext(_n?: O, _in?: MergeScanOperator) {
+    this.clear();
   }
 
-  notifyDone(): void {
-    this.clearThrottle();
+  notifyDone(_d?: D, _?: Inner<O, I, F, D>) {
+    this.clear();
+  }
+}
+
+export function buffer<N, F, D>(
+  c: qt.Source<any, F, D>
+): qt.Lifter<N, N[], F, D> {
+  return (s: qt.Source<N, F, D>) => s.lift(new BufferOperator<N, F, D>(c));
+}
+
+class BufferOperator<N, F, D> implements qt.Operator<N, N[], F, D> {
+  constructor(private closing: qt.Source<any, F, D>) {}
+
+  call(r: Subscriber<N[], F, D>, s: qt.Source<N, F, D>) {
+    return s.subscribe(new Buffer(r, this.closing));
   }
 }
 
 export class Buffer<N, F, D> extends Outer<N[], any, F, D> {
   private buffer = [] as (N[] | undefined)[];
 
-  constructor(
-    tgt: Subscriber<N[], F, D>,
-    closingNotifier: qt.Source<any, F, D>
-  ) {
+  constructor(tgt: Subscriber<N[], F, D>, closing: qt.Source<any, F, D>) {
     super(tgt);
-    this.add(subscribeToResult(this, closingNotifier));
+    this.add(qu.subscribeToResult(this, closing));
   }
 
-  protected _next(value?: N[]) {
-    this.buffer.push(value);
+  protected _next(n?: N[]) {
+    this.buffer.push(n);
   }
 
   notifyNext(
@@ -80,10 +88,10 @@ export class Buffer<N, F, D> extends Outer<N[], any, F, D> {
     outerX: number,
     innerIndex: number,
     innerSub: Inner<N[], any, F, D>
-  ): void {
-    const buffer = this.buffer;
+  ) {
+    const b = this.buffer;
     this.buffer = [];
-    this.tgt.next(buffer);
+    this.tgt.next(b);
   }
 }
 
@@ -323,7 +331,7 @@ interface BufferContext<N> {
   subscription?: Subscription;
 }
 
-export class BufferToggle<N, M, F, D> extends Outer<N[], M, F, D> {
+export class BufferToggle<O, I, F, D> extends Outer<N[], M, F, D> {
   private contexts = [] as BufferContext<N>[];
 
   constructor(
@@ -373,12 +381,12 @@ export class BufferToggle<N, M, F, D> extends Outer<N[], M, F, D> {
     innerValue: O,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Inner<O, I, F, D>
   ) {
     outerN ? this.closeBuffer(outerN) : this.openBuffer(innerValue);
   }
 
-  notifyDone(innerSub: Inner<N, M, F, D>) {
+  notifyDone(innerSub: Inner<O, I, F, D>) {
     this.closeBuffer((<any>innerSub).context);
   }
 
@@ -409,7 +417,7 @@ export class BufferToggle<N, M, F, D> extends Outer<N[], M, F, D> {
     const subscription = new Subscription();
     const context = {buffer, subscription};
     contexts.push(context);
-    const s = subscribeToResult(this, closingNotifier, <any>context);
+    const s = qu.subscribeToResult(this, closingNotifier, <any>context);
     if (!s || s.closed) this.closeBuffer(context);
     else {
       (<any>s).context = context;
@@ -487,7 +495,7 @@ export class BufferWhen<N, F, D> extends Outer<N, any, F, D> {
   }
 }
 
-export class Catch<N, M, F, D> extends Outer<N, N | M, F, D> {
+export class Catch<O, I, F, D> extends Outer<N, N | M, F, D> {
   constructor(
     tgt: Subscriber<any, F, D>,
     private selector: (
@@ -511,7 +519,7 @@ export class Catch<N, M, F, D> extends Outer<N, N | M, F, D> {
       this._recycle();
       const i = new Inner(this, undefined, undefined!);
       this.add(i);
-      const s = subscribeToResult(this, result, undefined, undefined, i);
+      const s = qu.subscribeToResult(this, result, undefined, undefined, i);
       if (s !== i) this.add(s);
     }
   }
@@ -553,7 +561,7 @@ export class Count<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Debounce<N, M, F, D> extends Outer<N, M, F, D> {
+export class Debounce<O, I, F, D> extends Outer<O, I, F, D> {
   private value?: N;
   private hasValue = false;
   private durationSubscription?: Subscription;
@@ -587,7 +595,7 @@ export class Debounce<N, M, F, D> extends Outer<N, M, F, D> {
       s.unsubscribe();
       this.remove(s);
     }
-    s = subscribeToResult(this, duration);
+    s = qu.subscribeToResult(this, duration);
     if (s && !s.closed) this.add((this.durationSubscription = s));
   }
 
@@ -596,7 +604,7 @@ export class Debounce<N, M, F, D> extends Outer<N, M, F, D> {
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Inner<O, I, F, D>
   ) {
     this.emitValue();
   }
@@ -839,7 +847,7 @@ export class DelayWhen<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   private tryDelay(delayNotifier: qt.Source<any, F, D>, value: N) {
-    const s = subscribeToResult(this, delayNotifier, value);
+    const s = qu.subscribeToResult(this, delayNotifier, value);
     if (s && !s.closed) {
       const tgt = this.tgt as Subscription;
       tgt.add(s);
@@ -1091,7 +1099,7 @@ export class ExhaustMap<N, M, F, D> extends Outer<N, M, F, D> {
     const innerSubscriber = new Inner(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
-    const s = subscribeToResult<T, R>(
+    const s = qu.subscribeToResult<T, R>(
       this,
       result,
       undefined,
@@ -1525,7 +1533,7 @@ export class MergeMap<N, M, F, D> extends Outer<N, M, F, D> {
     const innerSubscriber = new InnerSubscriber(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
-    const innerSubscription = subscribeToResult<T, R>(
+    const innerSubscription = qu.subscribeToResult<T, R>(
       this,
       ish,
       undefined,
@@ -1609,7 +1617,7 @@ export class MergeScan<N, M, F, D> extends Outer<N, M, F, D> {
     const innerSubscriber = new InnerSubscriber(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
-    const innerSubscription = subscribeToResult<T, R>(
+    const innerSubscription = qu.subscribeToResult<T, R>(
       this,
       ish,
       undefined,
@@ -1744,7 +1752,7 @@ export class OnErrorResumeNext<N, M, F, D> extends Outer<N, M, F, D> {
       const innerSubscriber = new Inner(this, undefined, undefined!);
       const tgt = this.tgt as Subscription;
       tgt.add(innerSubscriber);
-      const innerSubscription = subscribeToResult(
+      const innerSubscription = qu.subscribeToResult(
         this,
         next,
         undefined,
@@ -1893,7 +1901,7 @@ export class RepeatWhen<N, M, F, D> extends Outer<N, M, F, D> {
       return super.complete();
     }
     this.retries = retries;
-    this.retriesSubscription = subscribeToResult(this, retries);
+    this.retriesSubscription = qu.subscribeToResult(this, retries);
   }
 }
 
@@ -1953,7 +1961,7 @@ export class RetryWhen<N, M, F, D> extends Outer<N, M, F, D> {
         } catch (e) {
           return super.fail(e);
         }
-        retriesSubscription = subscribeToResult(this, retries);
+        retriesSubscription = qu.subscribeToResult(this, retries);
       } else {
         this.errors = undefined;
         this.retriesSubscription = undefined;
@@ -2200,7 +2208,7 @@ export class SkipUntil<N, M, F, D> extends Outer<N, M, F, D> {
     const innerSubscriber = new Inner(this, undefined, undefined!);
     this.add(innerSubscriber);
     this.innerSubscription = innerSubscriber;
-    const innerSubscription = subscribeToResult(
+    const innerSubscription = qu.subscribeToResult(
       this,
       notifier,
       undefined,
@@ -2290,7 +2298,7 @@ export class SwitchMap<N, M, F, D> extends Outer<N, M, F, D> {
     const innerSubscriber = new Inner(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
-    this.innerSubscription = subscribeToResult(
+    this.innerSubscription = qu.subscribeToResult(
       this,
       result,
       undefined,
@@ -2540,7 +2548,7 @@ export class Throttle<N, M, F, D> extends Outer<N, M, F, D> {
   private throttle(value: N): void {
     const duration = this.tryDurationSelector(value);
     if (!!duration)
-      this.add((this._throttled = subscribeToResult(this, duration)));
+      this.add((this._throttled = qu.subscribeToResult(this, duration)));
   }
 
   private tryDurationSelector(value: N): qt.SourceOrPromise<any, F, D> | null {

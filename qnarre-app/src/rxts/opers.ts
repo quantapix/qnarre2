@@ -4,7 +4,7 @@ import {Observable} from './observe';
 import {Subscription} from './subscribe';
 import {MonoOper, SubscribableOrPromise, Closer} from './types';
 import {InnerSubscriber} from './InnerSubscriber';
-import {OperFun} from './types';
+import {Lifter} from './types';
 import {OuterSubscriber} from './OuterSubscriber';
 import {subscribeToResult} from './utils';
 import {async} from './schedule';
@@ -51,7 +51,7 @@ import {zip as zipStatic} from './observe';
 export function audit<T>(
   durationSelector: (value: T) => SubscribableOrPromise<any>
 ): MonoOper<T> {
-  return function auditOperFun(source: Observable<T>) {
+  return function auditLifter(source: Observable<T>) {
     return source.lift(new AuditOperator(durationSelector));
   };
 }
@@ -135,8 +135,8 @@ export function auditTime<T>(
   return audit(() => timer(duration, scheduler));
 }
 
-export function buffer<T>(closingNotifier: Observable<any>): OperFun<T, T[]> {
-  return function bufferOperFun(source: Observable<T>) {
+export function buffer<T>(closingNotifier: Observable<any>): Lifter<T, T[]> {
+  return function bufferLifter(source: Observable<T>) {
     return source.lift(new BufferOperator<T>(closingNotifier));
   };
 }
@@ -179,8 +179,8 @@ class BufferSubscriber<T> extends OuterSubscriber<T, any> {
 export function bufferCount<T>(
   bufferSize: number,
   startBufferEvery: number | null = null
-): OperFun<T, T[]> {
-  return function bufferCountOperFun(source: Observable<T>) {
+): Lifter<T, T[]> {
+  return function bufferCountLifter(source: Observable<T>) {
     return source.lift(
       new BufferCountOperator<T>(bufferSize, startBufferEvery)
     );
@@ -285,19 +285,19 @@ class BufferSkipCountSubscriber<T> extends Subscriber<T> {
 export function bufferTime<T>(
   bufferTimeSpan: number,
   scheduler?: SchedulerLike
-): OperFun<T, T[]>;
+): Lifter<T, T[]>;
 export function bufferTime<T>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
   scheduler?: SchedulerLike
-): OperFun<T, T[]>;
+): Lifter<T, T[]>;
 export function bufferTime<T>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
   maxBufferSize: number,
   scheduler?: SchedulerLike
-): OperFun<T, T[]>;
-export function bufferTime<T>(bufferTimeSpan: number): OperFun<T, T[]> {
+): Lifter<T, T[]>;
+export function bufferTime<T>(bufferTimeSpan: number): Lifter<T, T[]> {
   let length: number = arguments.length;
 
   let scheduler: SchedulerLike = async;
@@ -316,7 +316,7 @@ export function bufferTime<T>(bufferTimeSpan: number): OperFun<T, T[]> {
     maxBufferSize = arguments[2];
   }
 
-  return function bufferTimeOperFun(source: Observable<T>) {
+  return function bufferTimeLifter(source: Observable<T>) {
     return source.lift(
       new BufferTimeOperator<T>(
         bufferTimeSpan,
@@ -529,8 +529,8 @@ function dispatchBufferClose<T>(arg: DispatchCloseArg<T>) {
 export function bufferToggle<T, O>(
   openings: SubscribableOrPromise<O>,
   closingSelector: (value: O) => SubscribableOrPromise<any>
-): OperFun<T, T[]> {
-  return function bufferToggleOperFun(source: Observable<T>) {
+): Lifter<T, T[]> {
+  return function bufferToggleLifter(source: Observable<T>) {
     return source.lift(
       new BufferToggleOperator<T, O>(openings, closingSelector)
     );
@@ -669,7 +669,7 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
 
 export function bufferWhen<T>(
   closingSelector: () => Observable<any>
-): OperFun<T, T[]> {
+): Lifter<T, T[]> {
   return function (source: Observable<T>) {
     return source.lift(new BufferWhenOperator(closingSelector));
   };
@@ -766,11 +766,11 @@ class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
 
 export function catchError<T, O extends ObservableInput<any>>(
   selector: (err: any, caught: Observable<T>) => O
-): OperFun<T, T | ObservedValueOf<O>>;
+): Lifter<T, T | ObservedValueOf<O>>;
 export function catchError<T, O extends ObservableInput<any>>(
   selector: (err: any, caught: Observable<T>) => O
-): OperFun<T, T | ObservedValueOf<O>> {
-  return function catchErrorOperFun(
+): Lifter<T, T | ObservedValueOf<O>> {
+  return function catchErrorLifter(
     source: Observable<T>
   ): Observable<T | ObservedValueOf<O>> {
     const operator = new CatchOperator(selector);
@@ -834,17 +834,17 @@ class CatchSubscriber<T, R> extends OuterSubscriber<T, T | R> {
   }
 }
 
-export function combineAll<T>(): OperFun<ObservableInput<T>, T[]>;
-export function combineAll<T>(): OperFun<any, T[]>;
+export function combineAll<T>(): Lifter<ObservableInput<T>, T[]>;
+export function combineAll<T>(): Lifter<any, T[]>;
 export function combineAll<T, R>(
   project: (...values: T[]) => R
-): OperFun<ObservableInput<T>, R>;
+): Lifter<ObservableInput<T>, R>;
 export function combineAll<R>(
   project: (...values: Array<any>) => R
-): OperFun<any, R>;
+): Lifter<any, R>;
 export function combineAll<T, R>(
   project?: (...values: Array<any>) => R
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: Observable<T>) =>
     source.lift(new CombineLatestOperator(project));
 }
@@ -855,7 +855,7 @@ export function combineLatest<T, R>(
     | Array<ObservableInput<any>>
     | ((...values: Array<any>) => R)
   >
-): OperFun<T, R> {
+): Lifter<T, R> {
   let project: ((...values: Array<any>) => R) | undefined = undefined;
   if (typeof observables[observables.length - 1] === 'function') {
     project = <(...values: Array<any>) => R>observables.pop();
@@ -873,19 +873,19 @@ export function combineLatest<T, R>(
 
 export function combineLatestWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, Unshift<ObservedTupleFrom<A>, T>> {
+): Lifter<T, Unshift<ObservedTupleFrom<A>, T>> {
   return combineLatest(...otherSources);
 }
 
-export function concatAll<T>(): OperFun<ObservableInput<T>, T>;
-export function concatAll<R>(): OperFun<any, R>;
-export function concatAll<T>(): OperFun<ObservableInput<T>, T> {
+export function concatAll<T>(): Lifter<ObservableInput<T>, T>;
+export function concatAll<R>(): Lifter<any, R>;
+export function concatAll<T>(): Lifter<ObservableInput<T>, T> {
   return mergeAll<T>(1);
 }
 
 export function concatMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function concatMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
@@ -894,7 +894,7 @@ export function concatMap<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(project, resultSelector, 1);
   }
@@ -903,7 +903,7 @@ export function concatMap<T, R, O extends ObservableInput<any>>(
 
 export function concatMapTo<T, O extends ObservableInput<any>>(
   observable: O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function concatMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?: (
@@ -912,20 +912,20 @@ export function concatMapTo<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return concatMap(() => innerObservable, resultSelector);
   }
   return concatMap(() => innerObservable);
 }
 
-export function concatWith<T>(): OperFun<T, T>;
+export function concatWith<T>(): Lifter<T, T>;
 export function concatWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, ObservedUnionFrom<A> | T>;
+): Lifter<T, ObservedUnionFrom<A> | T>;
 export function concatWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, ObservedUnionFrom<A> | T> {
+): Lifter<T, ObservedUnionFrom<A> | T> {
   return (source: Observable<T>) =>
     source.lift.call(
       concatStatic(source, ...otherSources),
@@ -935,7 +935,7 @@ export function concatWith<T, A extends ObservableInput<any>[]>(
 
 export function count<T>(
   predicate?: (value: T, index: number, source: Observable<T>) => boolean
-): OperFun<T, number> {
+): Lifter<T, number> {
   return (source: Observable<T>) =>
     source.lift(new CountOperator(predicate, source));
 }
@@ -1166,10 +1166,10 @@ function dispatchNext(subscriber: DebounceTimeSubscriber<any>) {
   subscriber.debouncedNext();
 }
 
-export function defaultIfEmpty<T, R = T>(defaultValue?: R): OperFun<T, T | R>;
+export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
 export function defaultIfEmpty<T, R>(
   defaultValue: R | null = null
-): OperFun<T, T | R> {
+): Lifter<T, T | R> {
   return (source: Observable<T>) =>
     source.lift(new DefaultIfEmptyOperator(defaultValue)) as Observable<T | R>;
 }
@@ -1488,8 +1488,8 @@ class SubscriptionDelaySubscriber<T> extends Subscriber<T> {
   }
 }
 
-export function dematerialize<T>(): OperFun<Notification<T>, T> {
-  return function dematerializeOperFun(source: Observable<Notification<T>>) {
+export function dematerialize<T>(): Lifter<Notification<T>, T> {
+  return function dematerializeLifter(source: Observable<Notification<T>>) {
     return source.lift(new DeMaterializeOperator());
   };
 }
@@ -1696,7 +1696,7 @@ export function elementAt<T>(index: number, defaultValue?: T): MonoOper<T> {
 
 export function endWith<T, A extends any[]>(
   ...args: A
-): OperFun<T, T | ValueFromArray<A>>;
+): Lifter<T, T | ValueFromArray<A>>;
 export function endWith<T>(...values: Array<T | SchedulerLike>): MonoOper<T> {
   return (source: Observable<T>) =>
     concatStatic(source, of(...values)) as Observable<T>;
@@ -1705,7 +1705,7 @@ export function endWith<T>(...values: Array<T | SchedulerLike>): MonoOper<T> {
 export function every<T>(
   predicate: (value: T, index: number, source: Observable<T>) => boolean,
   thisArg?: any
-): OperFun<T, boolean> {
+): Lifter<T, boolean> {
   return (source: Observable<T>) =>
     source.lift(new EveryOperator(predicate, thisArg, source));
 }
@@ -1774,9 +1774,9 @@ class EverySubscriber<T> extends Subscriber<T> {
   }
 }
 
-export function exhaust<T>(): OperFun<ObservableInput<T>, T>;
-export function exhaust<R>(): OperFun<any, R>;
-export function exhaust<T>(): OperFun<any, T> {
+export function exhaust<T>(): Lifter<ObservableInput<T>, T>;
+export function exhaust<R>(): Lifter<any, R>;
+export function exhaust<T>(): Lifter<any, T> {
   return (source: Observable<T>) => source.lift(new SwitchFirstOperator<T>());
 }
 
@@ -1819,7 +1819,7 @@ class SwitchFirstSubscriber<T> extends OuterSubscriber<T, T> {
 
 export function exhaustMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function exhaustMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
@@ -1828,7 +1828,7 @@ export function exhaustMap<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (resultSelector) {
     // DEPRECATED PATH
     return (source: Observable<T>) =>
@@ -1938,7 +1938,7 @@ export function expand<T, R>(
   project: (value: T, index: number) => ObservableInput<R>,
   concurrent?: number,
   scheduler?: SchedulerLike
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function expand<T>(
   project: (value: T, index: number) => ObservableInput<T>,
   concurrent?: number,
@@ -1948,7 +1948,7 @@ export function expand<T, R>(
   project: (value: T, index: number) => ObservableInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
   scheduler?: SchedulerLike
-): OperFun<T, R> {
+): Lifter<T, R> {
   concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
 
   return (source: Observable<T>) =>
@@ -2085,10 +2085,10 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
 export function filter<T, S extends T>(
   predicate: (value: T, index: number) => value is S,
   thisArg?: any
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function filter<T>(
   predicate: BooleanConstructor
-): OperFun<T | null | undefined, NonNullable<T>>;
+): Lifter<T | null | undefined, NonNullable<T>>;
 export function filter<T>(
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
@@ -2097,7 +2097,7 @@ export function filter<T>(
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
 ): MonoOper<T> {
-  return function filterOperFun(source: Observable<T>): Observable<T> {
+  return function filterLifter(source: Observable<T>): Observable<T> {
     return source.lift(new FilterOperator(predicate, thisArg));
   };
 }
@@ -2162,15 +2162,15 @@ class FinallySubscriber<T> extends Subscriber<T> {
 export function find<T, S extends T>(
   predicate: (value: T, index: number, source: Observable<T>) => value is S,
   thisArg?: any
-): OperFun<T, S | undefined>;
+): Lifter<T, S | undefined>;
 export function find<T>(
   predicate: (value: T, index: number, source: Observable<T>) => boolean,
   thisArg?: any
-): OperFun<T, T | undefined>;
+): Lifter<T, T | undefined>;
 export function find<T>(
   predicate: (value: T, index: number, source: Observable<T>) => boolean,
   thisArg?: any
-): OperFun<T, T | undefined> {
+): Lifter<T, T | undefined> {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate is not a function');
   }
@@ -2252,7 +2252,7 @@ export class FindValueSubscriber<T> extends Subscriber<T> {
 export function findIndex<T>(
   predicate: (value: T, index: number, source: Observable<T>) => boolean,
   thisArg?: any
-): OperFun<T, number> {
+): Lifter<T, number> {
   return (source: Observable<T>) =>
     source.lift(
       new FindValueOperator(predicate, source, true, thisArg)
@@ -2262,21 +2262,21 @@ export function findIndex<T>(
 export function first<T, D = T>(
   predicate?: null,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function first<T, S extends T>(
   predicate: (value: T, index: number, source: Observable<T>) => value is S,
   defaultValue?: S
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function first<T, D = T>(
   predicate: (value: T, index: number, source: Observable<T>) => boolean,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function first<T, D>(
   predicate?:
     | ((value: T, index: number, source: Observable<T>) => boolean)
     | null,
   defaultValue?: D
-): OperFun<T, T | D> {
+): Lifter<T, T | D> {
   const hasDefaultValue = arguments.length >= 2;
   return (source: Observable<T>) =>
     source.pipe(
@@ -2290,29 +2290,29 @@ export function first<T, D>(
 
 export function groupBy<T, K>(
   keySelector: (value: T) => K
-): OperFun<T, GroupedObservable<K, T>>;
+): Lifter<T, GroupedObservable<K, T>>;
 export function groupBy<T, K>(
   keySelector: (value: T) => K,
   elementSelector: void,
   durationSelector: (grouped: GroupedObservable<K, T>) => Observable<any>
-): OperFun<T, GroupedObservable<K, T>>;
+): Lifter<T, GroupedObservable<K, T>>;
 export function groupBy<T, K, R>(
   keySelector: (value: T) => K,
   elementSelector?: (value: T) => R,
   durationSelector?: (grouped: GroupedObservable<K, R>) => Observable<any>
-): OperFun<T, GroupedObservable<K, R>>;
+): Lifter<T, GroupedObservable<K, R>>;
 export function groupBy<T, K, R>(
   keySelector: (value: T) => K,
   elementSelector?: (value: T) => R,
   durationSelector?: (grouped: GroupedObservable<K, R>) => Observable<any>,
   subjectSelector?: () => Subject<R>
-): OperFun<T, GroupedObservable<K, R>>;
+): Lifter<T, GroupedObservable<K, R>>;
 export function groupBy<T, K, R>(
   keySelector: (value: T) => K,
   elementSelector?: ((value: T) => R) | void,
   durationSelector?: (grouped: GroupedObservable<K, R>) => Observable<any>,
   subjectSelector?: () => Subject<R>
-): OperFun<T, GroupedObservable<K, R>> {
+): Lifter<T, GroupedObservable<K, R>> {
   return (source: Observable<T>) =>
     source.lift(
       new GroupByOperator(
@@ -2530,8 +2530,8 @@ class InnerRefCountSubscription extends Subscription {
   }
 }
 
-export function ignoreElements(): OperFun<any, never> {
-  return function ignoreElementsOperFun(source: Observable<any>) {
+export function ignoreElements(): Lifter<any, never> {
+  return function ignoreElementsLifter(source: Observable<any>) {
     return source.lift(new IgnoreElementsOperator());
   };
 }
@@ -2548,7 +2548,7 @@ class IgnoreElementsSubscriber<T> extends Subscriber<T> {
   }
 }
 
-export function isEmpty<T>(): OperFun<T, boolean> {
+export function isEmpty<T>(): Lifter<T, boolean> {
   return (source: Observable<T>) => source.lift(new IsEmptyOperator());
 }
 
@@ -2582,21 +2582,21 @@ class IsEmptySubscriber extends Subscriber<any> {
 export function last<T, D = T>(
   predicate?: null,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function last<T, S extends T>(
   predicate: (value: T, index: number, source: Observable<T>) => value is S,
   defaultValue?: S
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function last<T, D = T>(
   predicate: (value: T, index: number, source: Observable<T>) => boolean,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function last<T, D>(
   predicate?:
     | ((value: T, index: number, source: Observable<T>) => boolean)
     | null,
   defaultValue?: D
-): OperFun<T, T | D> {
+): Lifter<T, T | D> {
   const hasDefaultValue = arguments.length >= 2;
   return (source: Observable<T>) =>
     source.pipe(
@@ -2611,7 +2611,7 @@ export function last<T, D>(
 export function map<T, R>(
   project: (value: T, index: number) => R,
   thisArg?: any
-): OperFun<T, R> {
+): Lifter<T, R> {
   return function mapOperation(source: Observable<T>): Observable<R> {
     if (typeof project !== 'function') {
       throw new TypeError(
@@ -2660,8 +2660,8 @@ class MapSubscriber<T, R> extends Subscriber<T> {
   }
 }
 
-export function mapTo<R>(value: R): OperFun<any, R>;
-export function mapTo<R>(value: R): OperFun<any, R> {
+export function mapTo<R>(value: R): Lifter<any, R>;
+export function mapTo<R>(value: R): Lifter<any, R> {
   return (source: Observable<any>) => source.lift(new MapToOperator(value));
 }
 
@@ -2690,8 +2690,8 @@ class MapToSubscriber<T, R> extends Subscriber<T> {
   }
 }
 
-export function materialize<T>(): OperFun<T, Notification<T>> {
-  return function materializeOperFun(source: Observable<T>) {
+export function materialize<T>(): Lifter<T, Notification<T>> {
+  return function materializeLifter(source: Observable<T>) {
     return source.lift(new MaterializeOperator());
   };
 }
@@ -2735,14 +2735,14 @@ export function max<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
 
 export function mergeAll<T>(
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<ObservableInput<T>, T> {
+): Lifter<ObservableInput<T>, T> {
   return mergeMap(identity, concurrent);
 }
 
 export function mergeMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   concurrent?: number
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function mergeMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?:
@@ -2754,7 +2754,7 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return (source: Observable<T>) =>
       source.pipe(
@@ -2870,7 +2870,7 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
 export function mergeMapTo<O extends ObservableInput<any>>(
   innerObservable: O,
   concurrent?: number
-): OperFun<any, ObservedValueOf<O>>;
+): Lifter<any, ObservedValueOf<O>>;
 export function mergeMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?:
@@ -2882,7 +2882,7 @@ export function mergeMapTo<T, R, O extends ObservableInput<any>>(
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(() => innerObservable, resultSelector, concurrent);
   }
@@ -2896,7 +2896,7 @@ export function mergeScan<T, R>(
   accumulator: (acc: R, value: T, index: number) => ObservableInput<R>,
   seed: R,
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: Observable<T>) =>
     source.lift(new MergeScanOperator(accumulator, seed, concurrent));
 }
@@ -3018,13 +3018,13 @@ export class MergeScanSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 }
 
-export function mergeWith<T>(): OperFun<T, T>;
+export function mergeWith<T>(): Lifter<T, T>;
 export function mergeWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, T | ObservedUnionFrom<A>>;
+): Lifter<T, T | ObservedUnionFrom<A>>;
 export function mergeWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, T | ObservedUnionFrom<A>> {
+): Lifter<T, T | ObservedUnionFrom<A>> {
   return merge(...otherSources);
 }
 
@@ -3049,12 +3049,12 @@ export function multicast<T>(
 export function multicast<T, O extends ObservableInput<any>>(
   SubjectFactory: (this: Observable<T>) => Subject<T>,
   selector: (shared: Observable<T>) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function multicast<T, R>(
   subjectOrSubjectFactory: Subject<T> | (() => Subject<T>),
   selector?: (source: Observable<T>) => Observable<R>
-): OperFun<T, R> {
-  return function multicastOperFun(source: Observable<T>): Observable<R> {
+): Lifter<T, R> {
+  return function multicastLifter(source: Observable<T>): Observable<R> {
     let subjectFactory: () => Subject<T>;
     if (typeof subjectOrSubjectFactory === 'function') {
       subjectFactory = <() => Subject<T>>subjectOrSubjectFactory;
@@ -3097,7 +3097,7 @@ export function observeOn<T>(
   scheduler: SchedulerLike,
   delay: number = 0
 ): MonoOper<T> {
-  return function observeOnOperFun(source: Observable<T>): Observable<T> {
+  return function observeOnLifter(source: Observable<T>): Observable<T> {
     return source.lift(new ObserveOnOperator(scheduler, delay));
   };
 }
@@ -3164,32 +3164,32 @@ export class ObserveOnMessage {
   ) {}
 }
 
-export function onErrorResumeNext<T>(): OperFun<T, T>;
+export function onErrorResumeNext<T>(): Lifter<T, T>;
 export function onErrorResumeNext<T, T2>(
   v: ObservableInput<T2>
-): OperFun<T, T | T2>;
+): Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>
-): OperFun<T, T | T2 | T3>;
+): Lifter<T, T | T2 | T3>;
 export function onErrorResumeNext<T, T2, T3, T4>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
   v3: ObservableInput<T4>
-): OperFun<T, T | T2 | T3 | T4>;
+): Lifter<T, T | T2 | T3 | T4>;
 export function onErrorResumeNext<T, T2, T3, T4, T5>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
   v3: ObservableInput<T4>,
   v4: ObservableInput<T5>
-): OperFun<T, T | T2 | T3 | T4 | T5>;
+): Lifter<T, T | T2 | T3 | T4 | T5>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
   v3: ObservableInput<T4>,
   v4: ObservableInput<T5>,
   v5: ObservableInput<T6>
-): OperFun<T, T | T2 | T3 | T4 | T5 | T6>;
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
@@ -3197,16 +3197,16 @@ export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
   v4: ObservableInput<T5>,
   v5: ObservableInput<T6>,
   v6: ObservableInput<T7>
-): OperFun<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
 export function onErrorResumeNext<T, R>(
   ...observables: Array<ObservableInput<any>>
-): OperFun<T, T | R>;
+): Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
   array: ObservableInput<any>[]
-): OperFun<T, T | R>;
+): Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
   ...nextSources: Array<ObservableInput<any> | Array<ObservableInput<any>>>
-): OperFun<T, R> {
+): Lifter<T, R> {
   if (nextSources.length === 1 && isArray(nextSources[0])) {
     nextSources = <Array<Observable<any>>>nextSources[0];
   }
@@ -3323,7 +3323,7 @@ class OnErrorResumeNextSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 }
 
-export function pairwise<T>(): OperFun<T, [T, T]> {
+export function pairwise<T>(): Lifter<T, [T, T]> {
   return (source: Observable<T>) => source.lift(new PairwiseOperator());
 }
 
@@ -3369,24 +3369,24 @@ export function partition<T>(
     ] as [Observable<T>, Observable<T>];
 }
 
-export function pluck<T, K1 extends keyof T>(k1: K1): OperFun<T, T[K1]>;
+export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;
 export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
   k1: K1,
   k2: K2
-): OperFun<T, T[K1][K2]>;
+): Lifter<T, T[K1][K2]>;
 export function pluck<
   T,
   K1 extends keyof T,
   K2 extends keyof T[K1],
   K3 extends keyof T[K1][K2]
->(k1: K1, k2: K2, k3: K3): OperFun<T, T[K1][K2][K3]>;
+>(k1: K1, k2: K2, k3: K3): Lifter<T, T[K1][K2][K3]>;
 export function pluck<
   T,
   K1 extends keyof T,
   K2 extends keyof T[K1],
   K3 extends keyof T[K1][K2],
   K4 extends keyof T[K1][K2][K3]
->(k1: K1, k2: K2, k3: K3, k4: K4): OperFun<T, T[K1][K2][K3][K4]>;
+>(k1: K1, k2: K2, k3: K3, k4: K4): Lifter<T, T[K1][K2][K3][K4]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -3394,7 +3394,7 @@ export function pluck<
   K3 extends keyof T[K1][K2],
   K4 extends keyof T[K1][K2][K3],
   K5 extends keyof T[K1][K2][K3][K4]
->(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): OperFun<T, T[K1][K2][K3][K4][K5]>;
+>(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): Lifter<T, T[K1][K2][K3][K4][K5]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -3410,7 +3410,7 @@ export function pluck<
   k4: K4,
   k5: K5,
   k6: K6
-): OperFun<T, T[K1][K2][K3][K4][K5][K6]>;
+): Lifter<T, T[K1][K2][K3][K4][K5][K6]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -3427,11 +3427,11 @@ export function pluck<
   k5: K5,
   k6: K6,
   ...rest: string[]
-): OperFun<T, unknown>;
-export function pluck<T>(...properties: string[]): OperFun<T, unknown>;
+): Lifter<T, unknown>;
+export function pluck<T>(...properties: string[]): Lifter<T, unknown>;
 export function pluck<T, R>(
   ...properties: Array<string | number | symbol>
-): OperFun<T, R> {
+): Lifter<T, R> {
   const length = properties.length;
   if (length === 0) {
     throw new Error('list of properties cannot be empty.');
@@ -3453,11 +3453,11 @@ export function pluck<T, R>(
 export function publish<T>(): UnaryFun<Observable<T>, Connectable<T>>;
 export function publish<T, O extends ObservableInput<any>>(
   selector: (shared: Observable<T>) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function publish<T>(selector: MonoOper<T>): MonoOper<T>;
 export function publish<T, R>(
-  selector?: OperFun<T, R>
-): MonoOper<T> | OperFun<T, R> {
+  selector?: Lifter<T, R>
+): MonoOper<T> | Lifter<T, R> {
   return selector
     ? multicast(() => new Subject<T>(), selector)
     : multicast(new Subject<T>());
@@ -3484,11 +3484,11 @@ export function publishReplay<T, O extends ObservableInput<any>>(
   windowTime?: number,
   selector?: (shared: Observable<T>) => O,
   scheduler?: SchedulerLike
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function publishReplay<T, R>(
   bufferSize?: number,
   windowTime?: number,
-  selectorOrScheduler?: SchedulerLike | OperFun<T, R>,
+  selectorOrScheduler?: SchedulerLike | Lifter<T, R>,
   scheduler?: SchedulerLike
 ): UnaryFun<Observable<T>, Connectable<R>> {
   if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
@@ -3506,7 +3506,7 @@ export function publishReplay<T, R>(
 export function race<T>(
   ...observables: (Observable<T> | Observable<T>[])[]
 ): MonoOper<T> {
-  return function raceOperFun(source: Observable<T>) {
+  return function raceLifter(source: Observable<T>) {
     if (observables.length === 1 && isArray(observables[0])) {
       observables = observables[0] as Observable<T>[];
     }
@@ -3520,21 +3520,21 @@ export function race<T>(
 
 export function reduce<V, A = V>(
   accumulator: (acc: A | V, value: V, index: number) => A
-): OperFun<V, V | A>;
+): Lifter<V, V | A>;
 export function reduce<V, A>(
   accumulator: (acc: A, value: V, index: number) => A,
   seed: A
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function reduce<V, A, S = A>(
   accumulator: (acc: A | S, value: V, index: number) => A,
   seed: S
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function reduce<V, A>(
   accumulator: (acc: V | A, value: V, index: number) => A,
   seed?: any
-): OperFun<V, V | A> {
+): Lifter<V, V | A> {
   if (arguments.length >= 2) {
-    return function reduceOperFunWithSeed(
+    return function reduceLifterWithSeed(
       source: Observable<V>
     ): Observable<V | A> {
       return pipe(
@@ -3544,7 +3544,7 @@ export function reduce<V, A>(
       )(source);
     };
   }
-  return function reduceOperFun(source: Observable<V>): Observable<V | A> {
+  return function reduceLifter(source: Observable<V>): Observable<V | A> {
     return pipe(
       scan<V, V | A>((acc, value, index) => accumulator(acc, value, index + 1)),
       takeLast(1)
@@ -3553,7 +3553,7 @@ export function reduce<V, A>(
 }
 
 export function refCount<T>(): MonoOper<T> {
-  return function refCountOperFun(source: Connectable<T>): Observable<T> {
+  return function refCountLifter(source: Connectable<T>): Observable<T> {
     return source.lift(new RefCountOperator(source));
   } as MonoOper<T>;
 }
@@ -4028,25 +4028,25 @@ function dispatchNotification<T>(this: SchedulerAction<any>, state: any) {
 
 export function scan<V, A = V>(
   accumulator: (acc: A | V, value: V, index: number) => A
-): OperFun<V, V | A>;
+): Lifter<V, V | A>;
 export function scan<V, A>(
   accumulator: (acc: A, value: V, index: number) => A,
   seed: A
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function scan<V, A, S>(
   accumulator: (acc: A | S, value: V, index: number) => A,
   seed: S
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function scan<V, A, S>(
   accumulator: (acc: V | A | S, value: V, index: number) => A,
   seed?: S
-): OperFun<V, V | A> {
+): Lifter<V, V | A> {
   let hasSeed = false;
   if (arguments.length >= 2) {
     hasSeed = true;
   }
 
-  return function scanOperFun(source: Observable<V>) {
+  return function scanLifter(source: Observable<V>) {
     return source.lift(new ScanOperator(accumulator, seed, hasSeed));
   };
 }
@@ -4101,7 +4101,7 @@ class ScanSubscriber<V, A> extends Subscriber<V> {
 export function sequenceEqual<T>(
   compareTo: Observable<T>,
   comparator?: (a: T, b: T) => boolean
-): OperFun<T, boolean> {
+): Lifter<T, boolean> {
   return (source: Observable<T>) =>
     source.lift(new SequenceEqualOperator(compareTo, comparator));
 }
@@ -4571,8 +4571,8 @@ class SkipWhileSubscriber<T> extends Subscriber<T> {
 
 export function startWith<T, A extends any[]>(
   ...values: A
-): OperFun<T, T | ValueFromArray<A>>;
-export function startWith<T, D>(...values: D[]): OperFun<T, T | D> {
+): Lifter<T, T | ValueFromArray<A>>;
+export function startWith<T, D>(...values: D[]): Lifter<T, T | D> {
   const scheduler = values[values.length - 1];
   if (isScheduler(scheduler)) {
     values.pop();
@@ -4586,7 +4586,7 @@ export function subscribeOn<T>(
   scheduler: SchedulerLike,
   delay: number = 0
 ): MonoOper<T> {
-  return function subscribeOnOperFun(source: Observable<T>): Observable<T> {
+  return function subscribeOnLifter(source: Observable<T>): Observable<T> {
     return source.lift(new SubscribeOnOperator<T>(scheduler, delay));
   };
 }
@@ -4602,15 +4602,15 @@ class SubscribeOnOperator<T> implements Operator<T, T> {
   }
 }
 
-export function switchAll<T>(): OperFun<ObservableInput<T>, T>;
-export function switchAll<R>(): OperFun<any, R>;
-export function switchAll<T>(): OperFun<ObservableInput<T>, T> {
+export function switchAll<T>(): Lifter<ObservableInput<T>, T>;
+export function switchAll<R>(): Lifter<any, R>;
+export function switchAll<T>(): Lifter<ObservableInput<T>, T> {
   return switchMap(identity);
 }
 
 export function switchMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function switchMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
@@ -4619,7 +4619,7 @@ export function switchMap<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return (source: Observable<T>) =>
       source.pipe(
@@ -4716,7 +4716,7 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 }
 
-export function switchMapTo<R>(observable: ObservableInput<R>): OperFun<any, R>;
+export function switchMapTo<R>(observable: ObservableInput<R>): Lifter<any, R>;
 export function switchMapTo<T, I, R>(
   innerObservable: ObservableInput<I>,
   resultSelector?: (
@@ -4725,7 +4725,7 @@ export function switchMapTo<T, I, R>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, I | R> {
+): Lifter<T, I | R> {
   return resultSelector
     ? switchMap(() => innerObservable, resultSelector)
     : switchMap(() => innerObservable);
@@ -4774,7 +4774,7 @@ class TakeSubscriber<T> extends Subscriber<T> {
 }
 
 export function takeLast<T>(count: number): MonoOper<T> {
-  return function takeLastOperFun(source: Observable<T>): Observable<T> {
+  return function takeLastLifter(source: Observable<T>): Observable<T> {
     if (count === 0) {
       return EMPTY;
     } else {
@@ -4881,11 +4881,11 @@ class TakeUntilSubscriber<T, R> extends OuterSubscriber<T, R> {
 
 export function takeWhile<T, S extends T>(
   predicate: (value: T, index: number) => value is S
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function takeWhile<T, S extends T>(
   predicate: (value: T, index: number) => value is S,
   inclusive: false
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function takeWhile<T>(
   predicate: (value: T, index: number) => boolean,
   inclusive?: boolean
@@ -4958,7 +4958,7 @@ export function tap<T>(
   error?: ((e: any) => void) | null,
   complete?: (() => void) | null
 ): MonoOper<T> {
-  return function tapOperFun(source: Observable<T>): Observable<T> {
+  return function tapLifter(source: Observable<T>): Observable<T> {
     return source.lift(new DoOperator(nextOrObserver, error, complete));
   };
 }
@@ -5323,7 +5323,7 @@ function defaultErrorFactory() {
 
 export function timeInterval<T>(
   scheduler: SchedulerLike = async
-): OperFun<T, TimeInterval<T>> {
+): Lifter<T, TimeInterval<T>> {
   return (source: Observable<T>) =>
     defer(() => {
       return source.pipe(
@@ -5335,7 +5335,7 @@ export function timeInterval<T>(
             last: current
           }),
           {current: scheduler.now(), value: undefined, last: undefined} as any
-        ) as OperFun<T, any>,
+        ) as Lifter<T, any>,
         map<any, TimeInterval<T>>(
           ({current, last, value}) => new TimeInterval(value, current - last)
         )
@@ -5358,12 +5358,12 @@ export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: ObservableInput<R>,
   scheduler?: SchedulerLike
-): OperFun<T, T | R>;
+): Lifter<T, T | R>;
 export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: ObservableInput<R>,
   scheduler: SchedulerLike = async
-): OperFun<T, T | R> {
+): Lifter<T, T | R> {
   return (source: Observable<T>) => {
     let absoluteTimeout = isDate(due);
     let waitFor = absoluteTimeout
@@ -5458,7 +5458,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
 
 export function timestamp<T>(
   timestampProvider: Stamper = Date
-): OperFun<T, Timestamp<T>> {
+): Lifter<T, Timestamp<T>> {
   return map((value: T) => ({value, timestamp: timestampProvider.now()}));
 }
 
@@ -5470,14 +5470,14 @@ function toArrayReducer<T>(arr: T[], item: T, index: number): T[] {
   return arr;
 }
 
-export function toArray<T>(): OperFun<T, T[]> {
+export function toArray<T>(): Lifter<T, T[]> {
   return reduce(toArrayReducer, [] as T[]);
 }
 
 export function window<T>(
   windowBoundaries: Observable<any>
-): OperFun<T, Observable<T>> {
-  return function windowOperFun(source: Observable<T>) {
+): Lifter<T, Observable<T>> {
+  return function windowLifter(source: Observable<T>) {
     return source.lift(new WindowOperator(windowBoundaries));
   };
 }
@@ -5555,8 +5555,8 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
 export function windowCount<T>(
   windowSize: number,
   startWindowEvery: number = 0
-): OperFun<T, Observable<T>> {
-  return function windowCountOperFun(source: Observable<T>) {
+): Lifter<T, Observable<T>> {
+  return function windowCountLifter(source: Observable<T>) {
     return source.lift(
       new WindowCountOperator<T>(windowSize, startWindowEvery)
     );
@@ -5641,22 +5641,22 @@ class WindowCountSubscriber<T> extends Subscriber<T> {
 export function windowTime<T>(
   windowTimeSpan: number,
   scheduler?: SchedulerLike
-): OperFun<T, Observable<T>>;
+): Lifter<T, Observable<T>>;
 export function windowTime<T>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   scheduler?: SchedulerLike
-): OperFun<T, Observable<T>>;
+): Lifter<T, Observable<T>>;
 export function windowTime<T>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   maxWindowSize: number,
   scheduler?: SchedulerLike
-): OperFun<T, Observable<T>>;
+): Lifter<T, Observable<T>>;
 
 export function windowTime<T>(
   windowTimeSpan: number
-): OperFun<T, Observable<T>> {
+): Lifter<T, Observable<T>> {
   let scheduler: SchedulerLike = async;
   let windowCreationInterval: number | null = null;
   let maxWindowSize: number = Number.POSITIVE_INFINITY;
@@ -5677,7 +5677,7 @@ export function windowTime<T>(
     windowCreationInterval = Number(arguments[1]);
   }
 
-  return function windowTimeOperFun(source: Observable<T>) {
+  return function windowTimeLifter(source: Observable<T>) {
     return source.lift(
       new WindowTimeOperator<T>(
         windowTimeSpan,
@@ -5896,7 +5896,7 @@ function dispatchWindowClose<T>(
 export function windowToggle<T, O>(
   openings: Observable<O>,
   closingSelector: (openValue: O) => Observable<any>
-): OperFun<T, Observable<T>> {
+): Lifter<T, Observable<T>> {
   return (source: Observable<T>) =>
     source.lift(new WindowToggleOperator<T, O>(openings, closingSelector));
 }
@@ -6061,8 +6061,8 @@ class WindowToggleSubscriber<T, O> extends OuterSubscriber<T, any> {
 
 export function windowWhen<T>(
   closingSelector: () => Observable<any>
-): OperFun<T, Observable<T>> {
-  return function windowWhenOperFun(source: Observable<T>) {
+): Lifter<T, Observable<T>> {
+  return function windowWhenLifter(source: Observable<T>) {
     return source.lift(new WindowOperator<T>(closingSelector));
   };
 }
@@ -6158,11 +6158,11 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
   }
 }
 
-export function withLatestFrom<T, R>(project: (v1: T) => R): OperFun<T, R>;
+export function withLatestFrom<T, R>(project: (v1: T) => R): Lifter<T, R>;
 export function withLatestFrom<T, O2 extends ObservableInput<any>, R>(
   source2: O2,
   project: (v1: T, v2: ObservedValueOf<O2>) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -6172,7 +6172,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   project: (v1: T, v2: ObservedValueOf<O2>, v3: ObservedValueOf<O3>) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -6189,7 +6189,7 @@ export function withLatestFrom<
     v3: ObservedValueOf<O3>,
     v4: ObservedValueOf<O4>
   ) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -6209,7 +6209,7 @@ export function withLatestFrom<
     v4: ObservedValueOf<O4>,
     v5: ObservedValueOf<O5>
   ) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -6232,15 +6232,15 @@ export function withLatestFrom<
     v5: ObservedValueOf<O5>,
     v6: ObservedValueOf<O6>
   ) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, O2 extends ObservableInput<any>>(
   source2: O2
-): OperFun<T, [T, ObservedValueOf<O2>]>;
+): Lifter<T, [T, ObservedValueOf<O2>]>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
   O3 extends ObservableInput<any>
->(v2: O2, v3: O3): OperFun<T, [T, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
+>(v2: O2, v3: O3): Lifter<T, [T, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -6250,7 +6250,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   v4: O4
-): OperFun<
+): Lifter<
   T,
   [T, ObservedValueOf<O2>, ObservedValueOf<O3>, ObservedValueOf<O4>]
 >;
@@ -6265,7 +6265,7 @@ export function withLatestFrom<
   v3: O3,
   v4: O4,
   v5: O5
-): OperFun<
+): Lifter<
   T,
   [
     T,
@@ -6288,7 +6288,7 @@ export function withLatestFrom<
   v4: O4,
   v5: O5,
   v6: O6
-): OperFun<
+): Lifter<
   T,
   [
     T,
@@ -6301,17 +6301,17 @@ export function withLatestFrom<
 >;
 export function withLatestFrom<T, R>(
   ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   array: ObservableInput<any>[]
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   array: ObservableInput<any>[],
   project: (...values: Array<any>) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   ...args: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: Observable<T>) => {
     let project: any;
     if (typeof args[args.length - 1] === 'function') {
@@ -6402,23 +6402,23 @@ class WithLatestFromSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 }
 
-export function zipAll<T>(): OperFun<ObservableInput<T>, T[]>;
-export function zipAll<T>(): OperFun<any, T[]>;
+export function zipAll<T>(): Lifter<ObservableInput<T>, T[]>;
+export function zipAll<T>(): Lifter<any, T[]>;
 export function zipAll<T, R>(
   project: (...values: T[]) => R
-): OperFun<ObservableInput<T>, R>;
+): Lifter<ObservableInput<T>, R>;
 export function zipAll<R>(
   project: (...values: Array<any>) => R
-): OperFun<any, R>;
+): Lifter<any, R>;
 export function zipAll<T, R>(
   project?: (...values: Array<any>) => R
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: Observable<T>) => source.lift(new ZipOperator(project));
 }
 export function zip<T, R>(
   ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
-): OperFun<T, R> {
-  return function zipOperFun(source: Observable<T>) {
+): Lifter<T, R> {
+  return function zipLifter(source: Observable<T>) {
     return source.lift.call(
       zipStatic<R>(source, ...observables),
       undefined
@@ -6427,6 +6427,6 @@ export function zip<T, R>(
 }
 export function zipWith<T, A extends ObservableInput<any>[]>(
   ...otherInputs: A
-): OperFun<T, Unshift<ObservedTupleFrom<A>, T>> {
+): Lifter<T, Unshift<ObservedTupleFrom<A>, T>> {
   return zip(...otherInputs);
 }

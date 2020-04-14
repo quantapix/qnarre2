@@ -1,17 +1,17 @@
-import {Observable, of, OperFun} from 'rxjs';
+import {Observable, of, Lifter} from 'rxjs';
 import {mapTo} from 'rxjs/operators';
 
 function a<I extends string, O extends string>(
   input: I,
   output: O
-): OperFun<I, O>;
-function a<I, O extends string>(output: O): OperFun<I, O>;
+): Lifter<I, O>;
+function a<I, O extends string>(output: O): Lifter<I, O>;
 
 /**
  * Used to keep the tests uncluttered.
  *
- * Returns an `OperFun` with the specified literal type parameters.
- * That is, `a('0', '1')` returns `OperFun<'0', '1'>`.
+ * Returns an `Lifter` with the specified literal type parameters.
+ * That is, `a('0', '1')` returns `Lifter<'0', '1'>`.
  * That means that the `a` function can be used to create consecutive
  * arguments that are either compatible or incompatible.
  *
@@ -25,17 +25,17 @@ function a<I, O extends string>(output: O): OperFun<I, O>;
  *
  * ```javascript
  * of('foo').pipe(
- *   a('1') // OperFun<'foo', '1'>
+ *   a('1') // Lifter<'foo', '1'>
  * );
  * ```
  *
- * @param {string} input The `OperFun` input type parameter
- * @param {string} output The `OperFun` output type parameter
+ * @param {string} input The `Lifter` input type parameter
+ * @param {string} output The `Lifter` output type parameter
  */
 function a<I, O extends string>(
   inputOrOutput: I | O,
   output?: O
-): OperFun<I, O> {
+): Lifter<I, O> {
   return mapTo<I, O>(output === undefined ? (inputOrOutput as O) : output);
 }
 

@@ -221,20 +221,20 @@ export class Proxy<N, F, D> extends Subscriber<N, F, D> {
 
 export class Outer<O, I, F, D> extends Subscriber<O, F, D> {
   notifyNext(
-    n: O,
-    _iN: I | undefined,
-    _oX: number,
-    _iX: number,
-    _i: Inner<O, I, F, D>
+    n?: O,
+    _iN?: I,
+    _oX?: number,
+    _iX?: number,
+    _i?: Inner<O, I, F, D>
   ) {
     this.tgt.next(n);
   }
 
-  notifyFail(f: F | undefined, _: Inner<O, I, F, D>) {
+  notifyFail(f?: F, _?: Inner<O, I, F, D>) {
     this.tgt.fail(f);
   }
 
-  notifyDone(d: D | undefined, _: Inner<O, I, F, D>) {
+  notifyDone(d?: D, _?: Inner<O, I, F, D>) {
     this.tgt.done(d);
   }
 }
@@ -244,8 +244,8 @@ export class Inner<O, I, F, D> extends Subscriber<I, F, D> {
 
   constructor(
     private outer: Outer<O, I, F, D>,
-    public outerN: O,
-    public outerX: number
+    public outerN?: O,
+    public outerX?: number
   ) {
     super();
   }

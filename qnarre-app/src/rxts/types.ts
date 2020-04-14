@@ -59,6 +59,7 @@ export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
 
 export interface Source<N, F, D> {
   subscribe(_?: Target<N, F, D>): Subscription;
+  lift<R>(o?: Operator<N, R, F, D>): Source<R, F, D>;
 }
 
 export interface Subject<N, F, D>
@@ -68,8 +69,8 @@ export interface Subject<N, F, D>
   readonly stopped?: boolean;
 }
 
-export interface Operator<_N, M, F, D> {
-  call(s: Subscriber<M, F, D>, _: any): Closer;
+export interface Operator<N, R, F, D> {
+  call(r: Subscriber<R, F, D>, s: Source<N, F, D>): Subscription;
 }
 
 export type InteropObservable<N, F, D> = {
@@ -138,7 +139,7 @@ export interface UnaryFun<S, T> {
   (_: S): T;
 }
 
-export interface OperFun<S, T, F, D>
+export interface Lifter<S, T, F, D>
   extends UnaryFun<Source<S, F, D>, Source<T, F, D>> {}
 
-export interface MonoOper<N, F, D> extends OperFun<N, N, F, D> {}
+export interface MonoOper<N, F, D> extends Lifter<N, N, F, D> {}

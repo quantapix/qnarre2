@@ -2358,7 +2358,7 @@ it('should accept windowTime, bufferSize, scheduler', () => {
   const a = of(1, 2, 3).pipe(publishReplay(1, 1, asyncScheduler)); // $ExpectType Observable<number>
 });
 
-it('should accept windowTime, bufferSize, selector of OperFun', () => {
+it('should accept windowTime, bufferSize, selector of Lifter', () => {
   const a = of(1, 2, 3).pipe(publishReplay(1, 1, x => of('a'))); // $ExpectType Observable<string>
 });
 
@@ -2383,7 +2383,7 @@ it('should accept windowTime, bufferSize, selector returning union type, and a s
   ); // $ExpectType Observable<string | number>
 });
 
-it('should accept windowTime, bufferSize, selector of OperFun, and scheduler', () => {
+it('should accept windowTime, bufferSize, selector of Lifter, and scheduler', () => {
   const a = of(1, 2, 3).pipe(publishReplay(1, 1, x => of('a'), asyncScheduler)); // $ExpectType Observable<string>
 });
 
@@ -2440,7 +2440,7 @@ it('should enforce argument types when not provided ', () => {
   const o = of('a', 'b', 'c').pipe(race(of(1, 2, 3))); // $ExpectError
   const p = of('a', 'b', 'c').pipe(race([of(1, 2, 3)])); // $ExpectError
 });
-import {of, OperFun} from 'rxjs';
+import {of, Lifter} from 'rxjs';
 import {reduce} from 'rxjs/operators';
 
 it('should enforce parameter', () => {
@@ -2515,7 +2515,7 @@ it('should infer types properly from arguments', () => {
     return arr;
   }
 
-  const a = reduce(toArrayReducer, [] as number[]); // $ExpectType OperFun<number, number[]>
+  const a = reduce(toArrayReducer, [] as number[]); // $ExpectType Lifter<number, number[]>
 });
 import {of} from 'rxjs';
 import {refCount} from 'rxjs/operators';
@@ -2673,7 +2673,7 @@ it('should infer types properly from arguments', () => {
     return arr;
   }
 
-  const a = scan(toArrayReducer, [] as number[]); // $ExpectType OperFun<number, number[]>
+  const a = scan(toArrayReducer, [] as number[]); // $ExpectType Lifter<number, number[]>
 });
 import {of} from 'rxjs';
 import {sequenceEqual} from 'rxjs/operators';

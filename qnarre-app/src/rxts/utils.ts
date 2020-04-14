@@ -1,5 +1,6 @@
 import * as qj from './subject';
 import * as qt from './types';
+import * as qs from './source';
 
 import {ObservableInput, InteropObservable} from './types';
 import {Observable} from './observe';
@@ -460,35 +461,29 @@ export const subscribeToPromise = <T>(promise: PromiseLike<T>) => (
   return subscriber;
 };
 
-export function subscribeToResult<T, R>(
-  outerSubscriber: qj.Outer<T, R>,
+export function subscribeToResult<O, I, F, D>(
+  outer: qj.Outer<O, I, F, D>,
   result: any,
   outerN: undefined,
   outerX: undefined,
-  innerSubscriber: qj.Inner<T, R>
-): qj.Subscription | undefined;
-
-export function subscribeToResult<T, R>(
-  outerSubscriber: qj.Outer<T, R>,
+  inner: qj.Inner<O, I, F, D>
+): qt.Subscription | undefined;
+export function subscribeToResult<O, I, F, D>(
+  outer: qj.Outer<O, I, F, D>,
   result: any,
-  outerN?: T,
+  outerN?: O,
   outerX?: number
-): qj.Subscription | undefined;
-
-export function subscribeToResult<T, R>(
-  outerSubscriber: qj.Outer<T, R>,
+): qt.Subscription | undefined;
+export function subscribeToResult<O, I, F, D>(
+  outer: qj.Outer<O, I, F, D>,
   result: any,
-  outerN?: T,
+  outerN?: O,
   outerX?: number,
-  innerSubscriber: Subscriber<R> = new qj.Inner(
-    outerSubscriber,
-    outerN,
-    outerX!
-  )
-): qj.Subscription | undefined {
-  if (innerSubscriber.closed) return undefined;
-  if (result instanceof Observable) return result.subscribe(innerSubscriber);
-  return subscribeTo(result)(innerSubscriber) as qj.Subscription;
+  inner: qj.Subscriber<I, F, D> = new qj.Inner(outer, outerN, outerX)
+): qt.Subscription | undefined {
+  if (inner.closed) return;
+  if (result instanceof qs.Source) return result.subscribe(inner);
+  return subscribeTo(result)(inner) as qj.Subscription;
 }
 
 let tryCatchTarget: Function | undefined;

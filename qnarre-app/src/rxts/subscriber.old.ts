@@ -6,7 +6,7 @@ import {Inner, Outer, Subscription, Subscriber} from './subject';
 export function audit<N, F, D>(
   durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return function auditOperFun(source: qt.Source<N, F, D>) {
+  return function auditLifter(source: qt.Source<N, F, D>) {
     return source.lift(new AuditOperator(durationSelector));
   };
 }
@@ -32,8 +32,8 @@ export function auditTime<N, F, D>(
 
 export function buffer<N, F, D>(
   closingNotifier: qt.Source<any, F, D>
-): qt.OperFun<N, N[], F, D> {
-  return function bufferOperFun(source: qt.Source<N, F, D>) {
+): qt.Lifter<N, N[], F, D> {
+  return function bufferLifter(source: qt.Source<N, F, D>) {
     return source.lift(new BufferOperator<N, F, D>(closingNotifier));
   };
 }
@@ -52,8 +52,8 @@ class BufferOperator<N, F, D> implements qt.Operator<N, N[], F, D> {
 export function bufferCount<N, F, D>(
   bufferSize: number,
   startBufferEvery: number | null = null
-): qt.OperFun<N, N[], F, D> {
-  return function bufferCountOperFun(source: qt.Source<N, F, D>) {
+): qt.Lifter<N, N[], F, D> {
+  return function bufferCountLifter(source: qt.Source<N, F, D>) {
     return source.lift(
       new BufferCountOperator<N, F, D>(bufferSize, startBufferEvery)
     );
@@ -88,21 +88,21 @@ class BufferCountOperator<N, F, D> implements qt.Operator<N, N[], F, D> {
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   scheduler?: qt.SchedulerLike
-): qt.OperFun<N, N[], F, D>;
+): qt.Lifter<N, N[], F, D>;
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
   scheduler?: qt.SchedulerLike
-): qt.OperFun<N, N[], F, D>;
+): qt.Lifter<N, N[], F, D>;
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
   maxBufferSize: number,
   scheduler?: qt.SchedulerLike
-): qt.OperFun<N, N[], F, D>;
+): qt.Lifter<N, N[], F, D>;
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number
-): qt.OperFun<N, N[], F, D> {
+): qt.Lifter<N, N[], F, D> {
   let length: number = arguments.length;
   let scheduler: qt.SchedulerLike = async;
   if (isScheduler(arguments[arguments.length - 1])) {
@@ -113,7 +113,7 @@ export function bufferTime<N, F, D>(
   if (length >= 2) bufferCreationInterval = arguments[1];
   let maxBufferSize: number = Number.POSITIVE_INFINITY;
   if (length >= 3) maxBufferSize = arguments[2];
-  return function bufferTimeOperFun(source: qt.Source<N, F, D>) {
+  return function bufferTimeLifter(source: qt.Source<N, F, D>) {
     return source.lift(
       new BufferTimeOperator<N, F, D>(
         bufferTimeSpan,
@@ -151,8 +151,8 @@ class BufferTimeOperator<N, F, D> implements qt.Operator<T, T[]> {
 export function bufferToggle<N, M, F, D>(
   openings: qt.SourceOrPromise<M, F, D>,
   closingSelector: (value: M) => qt.SourceOrPromise<any, F, D>
-): qt.OperFun<N, N[], F, D> {
-  return function bufferToggleOperFun(source: qt.Source<N, F, D>) {
+): qt.Lifter<N, N[], F, D> {
+  return function bufferToggleLifter(source: qt.Source<N, F, D>) {
     return source.lift(
       new BufferToggleOperator<N, M>(openings, closingSelector)
     );
@@ -179,7 +179,7 @@ class BufferToggleOperator<N, M, F, D> implements qt.Operator<N, N[]> {
 
 export function bufferWhen<N, F, D>(
   closingSelector: () => qt.Source<any, F, D>
-): qt.OperFun<N, N[], F, D> {
+): qt.Lifter<N, N[], F, D> {
   return function (source: qt.Source<N, F, D>) {
     return source.lift(new BufferWhenOperator(closingSelector));
   };
@@ -196,11 +196,11 @@ class BufferWhenOperator<N, F, D> implements qt.Operator<T, T[]> {
 
 export function catchError<T, O extends ObservableInput<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
-): OperFun<T, T | ObservedValueOf<O>>;
+): Lifter<T, T | ObservedValueOf<O>>;
 export function catchError<T, O extends ObservableInput<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
-): OperFun<T, T | ObservedValueOf<O>> {
-  return function catchErrorOperFun(
+): Lifter<T, T | ObservedValueOf<O>> {
+  return function catchErrorLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<T | ObservedValueOf<O>> {
     const operator = new CatchOperator(selector);
@@ -227,17 +227,17 @@ class CatchOperator<T, R> implements qt.Operator<T, T | R> {
 }
 
 
-export function combineAll<N, F, D>(): OperFun<ObservableInput<N, F, D>, T[]>;
-export function combineAll<N, F, D>(): OperFun<any, T[]>;
+export function combineAll<N, F, D>(): Lifter<ObservableInput<N, F, D>, T[]>;
+export function combineAll<N, F, D>(): Lifter<any, T[]>;
 export function combineAll<T, R>(
   project: (...values: T[]) => R
-): OperFun<ObservableInput<N, F, D>, R>;
+): Lifter<ObservableInput<N, F, D>, R>;
 export function combineAll<R>(
   project: (...values: Array<any>) => R
-): OperFun<any, R>;
+): Lifter<any, R>;
 export function combineAll<T, R>(
   project?: (...values: Array<any>) => R
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new CombineLatestOperator(project));
 }
@@ -248,7 +248,7 @@ export function combineLatest<T, R>(
     | Array<ObservableInput<any>>
     | ((...values: Array<any>) => R)
   >
-): OperFun<T, R> {
+): Lifter<T, R> {
   let project: ((...values: Array<any>) => R) | undefined = undefined;
   if (typeof observables[observables.length - 1] === 'function') {
     project = <(...values: Array<any>) => R>observables.pop();
@@ -266,19 +266,19 @@ export function combineLatest<T, R>(
 
 export function combineLatestWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, Unshift<ObservedTupleFrom<A>, T>> {
+): Lifter<T, Unshift<ObservedTupleFrom<A>, T>> {
   return combineLatest(...otherSources);
 }
 
-export function concatAll<N, F, D>(): OperFun<ObservableInput<N, F, D>, T>;
-export function concatAll<R>(): OperFun<any, R>;
-export function concatAll<N, F, D>(): OperFun<ObservableInput<N, F, D>, T> {
+export function concatAll<N, F, D>(): Lifter<ObservableInput<N, F, D>, T>;
+export function concatAll<R>(): Lifter<any, R>;
+export function concatAll<N, F, D>(): Lifter<ObservableInput<N, F, D>, T> {
   return mergeAll<N, F, D>(1);
 }
 
 export function concatMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function concatMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
@@ -287,7 +287,7 @@ export function concatMap<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(project, resultSelector, 1);
   }
@@ -295,7 +295,7 @@ export function concatMap<T, R, O extends ObservableInput<any>>(
 }
 export function concatMapTo<T, O extends ObservableInput<any>>(
   observable: O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function concatMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?: (
@@ -304,20 +304,20 @@ export function concatMapTo<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return concatMap(() => innerObservable, resultSelector);
   }
   return concatMap(() => innerObservable);
 }
 
-export function concatWith<N, F, D>(): OperFun<T, T>;
+export function concatWith<N, F, D>(): Lifter<T, T>;
 export function concatWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, ObservedUnionFrom<A> | T>;
+): Lifter<T, ObservedUnionFrom<A> | T>;
 export function concatWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, ObservedUnionFrom<A> | T> {
+): Lifter<T, ObservedUnionFrom<A> | T> {
   return (source: qt.Source<N, F, D>) =>
     source.lift.call(
       concatStatic(source, ...otherSources),
@@ -327,7 +327,7 @@ export function concatWith<T, A extends ObservableInput<any>[]>(
 
 export function count<N, F, D>(
   predicate?: (value: T, index: number, source: qt.Source<N, F, D>) => boolean
-): OperFun<T, number> {
+): Lifter<T, number> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new CountOperator(predicate, source));
 }
@@ -390,10 +390,10 @@ function dispatchNext(subscriber: DebounceTimeSubscriber<any>) {
   subscriber.debouncedNext();
 }
 
-export function defaultIfEmpty<T, R = T>(defaultValue?: R): OperFun<T, T | R>;
+export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
 export function defaultIfEmpty<T, R>(
   defaultValue: R | null = null
-): OperFun<T, T | R> {
+): Lifter<T, T | R> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new DefaultIfEmptyOperator(defaultValue)) as qt.Source<T | R>;
 }
@@ -483,8 +483,8 @@ class SubscriptionDelayObservable<N, F, D> extends qt.Source<N, F, D> {
 }
 
 
-export function dematerialize<N, F, D>(): OperFun<Notification<N, F, D>, T> {
-  return function dematerializeOperFun(
+export function dematerialize<N, F, D>(): Lifter<Notification<N, F, D>, T> {
+  return function dematerializeLifter(
     source: qt.Source<Notification<N, F, D>>
   ) {
     return source.lift(new DeMaterializeOperator());
@@ -586,7 +586,7 @@ export function elementAt<N, F, D>(
 
 export function endWith<T, A extends any[]>(
   ...args: A
-): OperFun<T, T | ValueFromArray<A>>;
+): Lifter<T, T | ValueFromArray<A>>;
 export function endWith<N, F, D>(
   ...values: Array<T | qt.SchedulerLike>
 ): qt.MonoOper<N, F, D> {
@@ -597,7 +597,7 @@ export function endWith<N, F, D>(
 export function every<N, F, D>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): OperFun<T, boolean> {
+): Lifter<T, boolean> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new EveryOperator(predicate, thisArg, source));
 }
@@ -621,9 +621,9 @@ class EveryOperator<N, F, D> implements qt.Operator<T, boolean> {
 }
 
 
-export function exhaust<N, F, D>(): OperFun<ObservableInput<N, F, D>, T>;
-export function exhaust<R>(): OperFun<any, R>;
-export function exhaust<N, F, D>(): OperFun<any, T> {
+export function exhaust<N, F, D>(): Lifter<ObservableInput<N, F, D>, T>;
+export function exhaust<R>(): Lifter<any, R>;
+export function exhaust<N, F, D>(): Lifter<any, T> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new SwitchFirstOperator<N, F, D>());
 }
@@ -637,7 +637,7 @@ class SwitchFirstOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 export function exhaustMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function exhaustMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
@@ -646,7 +646,7 @@ export function exhaustMap<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (resultSelector) {
     // DEPRECATED PATH
     return (source: qt.Source<N, F, D>) =>
@@ -677,7 +677,7 @@ export function expand<T, R>(
   project: (value: T, index: number) => ObservableInput<R>,
   concurrent?: number,
   scheduler?: qt.SchedulerLike
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function expand<N, F, D>(
   project: (value: T, index: number) => ObservableInput<N, F, D>,
   concurrent?: number,
@@ -687,7 +687,7 @@ export function expand<T, R>(
   project: (value: T, index: number) => ObservableInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
   scheduler?: qt.SchedulerLike
-): OperFun<T, R> {
+): Lifter<T, R> {
   concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
 
   return (source: qt.Source<N, F, D>) =>
@@ -717,10 +717,10 @@ export class ExpandOperator<T, R> implements qt.Operator<T, R> {
 export function filter<T, S extends T>(
   predicate: (value: T, index: number) => value is S,
   thisArg?: any
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function filter<N, F, D>(
   predicate: BooleanConstructor
-): OperFun<T | null | undefined, NonNullable<N, F, D>>;
+): Lifter<T | null | undefined, NonNullable<N, F, D>>;
 export function filter<N, F, D>(
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
@@ -729,7 +729,7 @@ export function filter<N, F, D>(
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
 ): qt.MonoOper<N, F, D> {
-  return function filterOperFun(
+  return function filterLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
     return source.lift(new FilterOperator(predicate, thisArg));
@@ -777,15 +777,15 @@ export function find<T, S extends T>(
     source: qt.Source<N, F, D>
   ) => value is S,
   thisArg?: any
-): OperFun<T, S | undefined>;
+): Lifter<T, S | undefined>;
 export function find<N, F, D>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): OperFun<T, T | undefined>;
+): Lifter<T, T | undefined>;
 export function find<N, F, D>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): OperFun<T, T | undefined> {
+): Lifter<T, T | undefined> {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate is not a function');
   }
@@ -825,7 +825,7 @@ export class FindValueOperator<N, F, D>
 export function findIndex<N, F, D>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): OperFun<T, number> {
+): Lifter<T, number> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(
       new FindValueOperator(predicate, source, true, thisArg)
@@ -835,7 +835,7 @@ export function findIndex<N, F, D>(
 export function first<T, D = T>(
   predicate?: null,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function first<T, S extends T>(
   predicate: (
     value: T,
@@ -843,17 +843,17 @@ export function first<T, S extends T>(
     source: qt.Source<N, F, D>
   ) => value is S,
   defaultValue?: S
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function first<T, D = T>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function first<T, D>(
   predicate?:
     | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
     | null,
   defaultValue?: D
-): OperFun<T, T | D> {
+): Lifter<T, T | D> {
   const hasDefaultValue = arguments.length >= 2;
   return (source: qt.Source<N, F, D>) =>
     source.pipe(
@@ -867,29 +867,29 @@ export function first<T, D>(
 
 export function groupBy<T, K>(
   keySelector: (value: N) => K
-): OperFun<T, GroupedObservable<K, T>>;
+): Lifter<T, GroupedObservable<K, T>>;
 export function groupBy<T, K>(
   keySelector: (value: N) => K,
   elementSelector: void,
   durationSelector: (grouped: GroupedObservable<K, T>) => qt.Source<any, F, D>
-): OperFun<T, GroupedObservable<K, T>>;
+): Lifter<T, GroupedObservable<K, T>>;
 export function groupBy<T, K, R>(
   keySelector: (value: N) => K,
   elementSelector?: (value: N) => R,
   durationSelector?: (grouped: GroupedObservable<K, R>) => qt.Source<any, F, D>
-): OperFun<T, GroupedObservable<K, R>>;
+): Lifter<T, GroupedObservable<K, R>>;
 export function groupBy<T, K, R>(
   keySelector: (value: N) => K,
   elementSelector?: (value: N) => R,
   durationSelector?: (grouped: GroupedObservable<K, R>) => qt.Source<any, F, D>,
   subjectSelector?: () => Subject<R>
-): OperFun<T, GroupedObservable<K, R>>;
+): Lifter<T, GroupedObservable<K, R>>;
 export function groupBy<T, K, R>(
   keySelector: (value: N) => K,
   elementSelector?: ((value: N) => R) | void,
   durationSelector?: (grouped: GroupedObservable<K, R>) => qt.Source<any, F, D>,
   subjectSelector?: () => Subject<R>
-): OperFun<T, GroupedObservable<K, R>> {
+): Lifter<T, GroupedObservable<K, R>> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(
       new GroupByOperator(
@@ -966,8 +966,8 @@ class InnerRefCountSubscription extends Subscription {
   }
 }
 
-export function ignoreElements(): OperFun<any, never> {
-  return function ignoreElementsOperFun(source: qt.Source<any, F, D>) {
+export function ignoreElements(): Lifter<any, never> {
+  return function ignoreElementsLifter(source: qt.Source<any, F, D>) {
     return source.lift(new IgnoreElementsOperator());
   };
 }
@@ -979,7 +979,7 @@ class IgnoreElementsOperator<T, R> implements qt.Operator<T, R> {
 }
 
 
-export function isEmpty<N, F, D>(): OperFun<T, boolean> {
+export function isEmpty<N, F, D>(): Lifter<T, boolean> {
   return (source: qt.Source<N, F, D>) => source.lift(new IsEmptyOperator());
 }
 
@@ -993,7 +993,7 @@ class IsEmptyOperator implements qt.Operator<any, boolean> {
 export function last<T, D = T>(
   predicate?: null,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function last<T, S extends T>(
   predicate: (
     value: T,
@@ -1001,17 +1001,17 @@ export function last<T, S extends T>(
     source: qt.Source<N, F, D>
   ) => value is S,
   defaultValue?: S
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function last<T, D = T>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   defaultValue?: D
-): OperFun<T, T | D>;
+): Lifter<T, T | D>;
 export function last<T, D>(
   predicate?:
     | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
     | null,
   defaultValue?: D
-): OperFun<T, T | D> {
+): Lifter<T, T | D> {
   const hasDefaultValue = arguments.length >= 2;
   return (source: qt.Source<N, F, D>) =>
     source.pipe(
@@ -1026,7 +1026,7 @@ export function last<T, D>(
 export function map<T, R>(
   project: (value: T, index: number) => R,
   thisArg?: any
-): OperFun<T, R> {
+): Lifter<T, R> {
   return function mapOperation(source: qt.Source<N, F, D>): qt.Source<R> {
     if (typeof project !== 'function') {
       throw new TypeError(
@@ -1051,8 +1051,8 @@ export class MapOperator<T, R> implements qt.Operator<T, R> {
 }
 
 
-export function mapTo<R>(value: R): OperFun<any, R>;
-export function mapTo<R>(value: R): OperFun<any, R> {
+export function mapTo<R>(value: R): Lifter<any, R>;
+export function mapTo<R>(value: R): Lifter<any, R> {
   return (source: qt.Source<any, F, D>) =>
     source.lift(new MapToOperator(value));
 }
@@ -1070,8 +1070,8 @@ class MapToOperator<T, R> implements qt.Operator<T, R> {
 }
 
 
-export function materialize<N, F, D>(): OperFun<T, Notification<N, F, D>> {
-  return function materializeOperFun(source: qt.Source<N, F, D>) {
+export function materialize<N, F, D>(): Lifter<T, Notification<N, F, D>> {
+  return function materializeLifter(source: qt.Source<N, F, D>) {
     return source.lift(new MaterializeOperator());
   };
 }
@@ -1097,14 +1097,14 @@ export function max<N, F, D>(
 
 export function mergeAll<N, F, D>(
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<ObservableInput<N, F, D>, T> {
+): Lifter<ObservableInput<N, F, D>, T> {
   return mergeMap(identity, concurrent);
 }
 
 export function mergeMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   concurrent?: number
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function mergeMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?:
@@ -1116,7 +1116,7 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return (source: qt.Source<N, F, D>) =>
       source.pipe(
@@ -1152,7 +1152,7 @@ export class MergeMapOperator<T, R> implements qt.Operator<T, R> {
 export function mergeMapTo<O extends ObservableInput<any>>(
   innerObservable: O,
   concurrent?: number
-): OperFun<any, ObservedValueOf<O>>;
+): Lifter<any, ObservedValueOf<O>>;
 export function mergeMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?:
@@ -1164,7 +1164,7 @@ export function mergeMapTo<T, R, O extends ObservableInput<any>>(
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(() => innerObservable, resultSelector, concurrent);
   }
@@ -1178,7 +1178,7 @@ export function mergeScan<T, R>(
   accumulator: (acc: R, value: T, index: number) => ObservableInput<R>,
   seed: R,
   concurrent: number = Number.POSITIVE_INFINITY
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new MergeScanOperator(accumulator, seed, concurrent));
 }
@@ -1207,13 +1207,13 @@ export class MergeScanOperator<T, R> implements qt.Operator<T, R> {
 }
 
 
-export function mergeWith<N, F, D>(): OperFun<T, T>;
+export function mergeWith<N, F, D>(): Lifter<T, T>;
 export function mergeWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, T | ObservedUnionFrom<A>>;
+): Lifter<T, T | ObservedUnionFrom<A>>;
 export function mergeWith<T, A extends ObservableInput<any>[]>(
   ...otherSources: A
-): OperFun<T, T | ObservedUnionFrom<A>> {
+): Lifter<T, T | ObservedUnionFrom<A>> {
   return merge(...otherSources);
 }
 
@@ -1240,12 +1240,12 @@ export function multicast<N, F, D>(
 export function multicast<T, O extends ObservableInput<any>>(
   SubjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>,
   selector: (shared: qt.Source<N, F, D>) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function multicast<T, R>(
   subjectOrSubjectFactory: Subject<N, F, D> | (() => Subject<N, F, D>),
   selector?: (source: qt.Source<N, F, D>) => qt.Source<R>
-): OperFun<T, R> {
-  return function multicastOperFun(source: qt.Source<N, F, D>): qt.Source<R> {
+): Lifter<T, R> {
+  return function multicastLifter(source: qt.Source<N, F, D>): qt.Source<R> {
     let subjectFactory: () => Subject<N, F, D>;
     if (typeof subjectOrSubjectFactory === 'function') {
       subjectFactory = <() => Subject<N, F, D>>subjectOrSubjectFactory;
@@ -1288,7 +1288,7 @@ export function observeOn<N, F, D>(
   scheduler: qt.SchedulerLike,
   delay: number = 0
 ): qt.MonoOper<N, F, D> {
-  return function observeOnOperFun(
+  return function observeOnLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
     return source.lift(new ObserveOnOperator(scheduler, delay));
@@ -1307,32 +1307,32 @@ export class ObserveOnOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 
 
-export function onErrorResumeNext<N, F, D>(): OperFun<T, T>;
+export function onErrorResumeNext<N, F, D>(): Lifter<T, T>;
 export function onErrorResumeNext<T, T2>(
   v: ObservableInput<T2>
-): OperFun<T, T | T2>;
+): Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>
-): OperFun<T, T | T2 | T3>;
+): Lifter<T, T | T2 | T3>;
 export function onErrorResumeNext<T, T2, T3, T4>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
   v3: ObservableInput<T4>
-): OperFun<T, T | T2 | T3 | T4>;
+): Lifter<T, T | T2 | T3 | T4>;
 export function onErrorResumeNext<T, T2, T3, T4, T5>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
   v3: ObservableInput<T4>,
   v4: ObservableInput<T5>
-): OperFun<T, T | T2 | T3 | T4 | T5>;
+): Lifter<T, T | T2 | T3 | T4 | T5>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
   v3: ObservableInput<T4>,
   v4: ObservableInput<T5>,
   v5: ObservableInput<T6>
-): OperFun<T, T | T2 | T3 | T4 | T5 | T6>;
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
   v: ObservableInput<T2>,
   v2: ObservableInput<T3>,
@@ -1340,16 +1340,16 @@ export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
   v4: ObservableInput<T5>,
   v5: ObservableInput<T6>,
   v6: ObservableInput<T7>
-): OperFun<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
 export function onErrorResumeNext<T, R>(
   ...observables: Array<ObservableInput<any>>
-): OperFun<T, T | R>;
+): Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
   array: ObservableInput<any>[]
-): OperFun<T, T | R>;
+): Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
   ...nextSources: Array<ObservableInput<any> | Array<ObservableInput<any>>>
-): OperFun<T, R> {
+): Lifter<T, R> {
   if (nextSources.length === 1 && isArray(nextSources[0])) {
     nextSources = <Array<Observable<any>>>nextSources[0];
   }
@@ -1417,7 +1417,7 @@ class OnErrorResumeNextOperator<T, R> implements qt.Operator<T, R> {
 }
 
 
-export function pairwise<N, F, D>(): OperFun<T, [T, T]> {
+export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
   return (source: qt.Source<N, F, D>) => source.lift(new PairwiseOperator());
 }
 
@@ -1463,24 +1463,24 @@ export function partition<N, F, D>(
     ] as [Observable<N, F, D>, qt.Source<N, F, D>];
 }
 
-export function pluck<T, K1 extends keyof T>(k1: K1): OperFun<T, T[K1]>;
+export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;
 export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
   k1: K1,
   k2: K2
-): OperFun<T, T[K1][K2]>;
+): Lifter<T, T[K1][K2]>;
 export function pluck<
   T,
   K1 extends keyof T,
   K2 extends keyof T[K1],
   K3 extends keyof T[K1][K2]
->(k1: K1, k2: K2, k3: K3): OperFun<T, T[K1][K2][K3]>;
+>(k1: K1, k2: K2, k3: K3): Lifter<T, T[K1][K2][K3]>;
 export function pluck<
   T,
   K1 extends keyof T,
   K2 extends keyof T[K1],
   K3 extends keyof T[K1][K2],
   K4 extends keyof T[K1][K2][K3]
->(k1: K1, k2: K2, k3: K3, k4: K4): OperFun<T, T[K1][K2][K3][K4]>;
+>(k1: K1, k2: K2, k3: K3, k4: K4): Lifter<T, T[K1][K2][K3][K4]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -1488,7 +1488,7 @@ export function pluck<
   K3 extends keyof T[K1][K2],
   K4 extends keyof T[K1][K2][K3],
   K5 extends keyof T[K1][K2][K3][K4]
->(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): OperFun<T, T[K1][K2][K3][K4][K5]>;
+>(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): Lifter<T, T[K1][K2][K3][K4][K5]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -1504,7 +1504,7 @@ export function pluck<
   k4: K4,
   k5: K5,
   k6: K6
-): OperFun<T, T[K1][K2][K3][K4][K5][K6]>;
+): Lifter<T, T[K1][K2][K3][K4][K5][K6]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -1521,11 +1521,11 @@ export function pluck<
   k5: K5,
   k6: K6,
   ...rest: string[]
-): OperFun<T, unknown>;
-export function pluck<N, F, D>(...properties: string[]): OperFun<T, unknown>;
+): Lifter<T, unknown>;
+export function pluck<N, F, D>(...properties: string[]): Lifter<T, unknown>;
 export function pluck<T, R>(
   ...properties: Array<string | number | symbol>
-): OperFun<T, R> {
+): Lifter<T, R> {
   const length = properties.length;
   if (length === 0) {
     throw new Error('list of properties cannot be empty.');
@@ -1550,13 +1550,13 @@ export function publish<N, F, D>(): UnaryFun<
 >;
 export function publish<T, O extends ObservableInput<any>>(
   selector: (shared: qt.Source<N, F, D>) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function publish<N, F, D>(
   selector: qt.MonoOper<N, F, D>
 ): qt.MonoOper<N, F, D>;
 export function publish<T, R>(
-  selector?: OperFun<T, R>
-): qt.MonoOper<N, F, D> | OperFun<T, R> {
+  selector?: Lifter<T, R>
+): qt.MonoOper<N, F, D> | Lifter<T, R> {
   return selector
     ? multicast(() => new Subject<N, F, D>(), selector)
     : multicast(new Subject<N, F, D>());
@@ -1587,11 +1587,11 @@ export function publishReplay<T, O extends ObservableInput<any>>(
   windowTime?: number,
   selector?: (shared: qt.Source<N, F, D>) => O,
   scheduler?: qt.SchedulerLike
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function publishReplay<T, R>(
   bufferSize?: number,
   windowTime?: number,
-  selectorOrScheduler?: qt.SchedulerLike | OperFun<T, R>,
+  selectorOrScheduler?: qt.SchedulerLike | Lifter<T, R>,
   scheduler?: qt.SchedulerLike
 ): UnaryFun<Observable<N, F, D>, Connectable<R>> {
   if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
@@ -1609,7 +1609,7 @@ export function publishReplay<T, R>(
 export function race<N, F, D>(
   ...observables: (Observable<N, F, D> | qt.Source<N, F, D>[])[]
 ): qt.MonoOper<N, F, D> {
-  return function raceOperFun(source: qt.Source<N, F, D>) {
+  return function raceLifter(source: qt.Source<N, F, D>) {
     if (observables.length === 1 && isArray(observables[0])) {
       observables = observables[0] as qt.Source<N, F, D>[];
     }
@@ -1623,21 +1623,21 @@ export function race<N, F, D>(
 
 export function reduce<V, A = V>(
   accumulator: (acc: A | V, value: V, index: number) => A
-): OperFun<V, V | A>;
+): Lifter<V, V | A>;
 export function reduce<V, A>(
   accumulator: (acc: A, value: V, index: number) => A,
   seed: A
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function reduce<V, A, S = A>(
   accumulator: (acc: A | S, value: V, index: number) => A,
   seed: S
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function reduce<V, A>(
   accumulator: (acc: V | A, value: V, index: number) => A,
   seed?: any
-): OperFun<V, V | A> {
+): Lifter<V, V | A> {
   if (arguments.length >= 2) {
-    return function reduceOperFunWithSeed(
+    return function reduceLifterWithSeed(
       source: qt.Source<V>
     ): qt.Source<V | A> {
       return pipe(
@@ -1647,7 +1647,7 @@ export function reduce<V, A>(
       )(source);
     };
   }
-  return function reduceOperFun(source: qt.Source<V>): qt.Source<V | A> {
+  return function reduceLifter(source: qt.Source<V>): qt.Source<V | A> {
     return pipe(
       scan<V, V | A>((acc, value, index) => accumulator(acc, value, index + 1)),
       takeLast(1)
@@ -1656,7 +1656,7 @@ export function reduce<V, A>(
 }
 
 export function refCount<N, F, D>(): qt.MonoOper<N, F, D> {
-  return function refCountOperFun(
+  return function refCountLifter(
     source: Connectable<N, F, D>
   ): qt.Source<N, F, D> {
     return source.lift(new RefCountOperator(source));
@@ -1869,25 +1869,25 @@ function dispatchNotification<N, F, D>(
 
 export function scan<V, A = V>(
   accumulator: (acc: A | V, value: V, index: number) => A
-): OperFun<V, V | A>;
+): Lifter<V, V | A>;
 export function scan<V, A>(
   accumulator: (acc: A, value: V, index: number) => A,
   seed: A
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function scan<V, A, S>(
   accumulator: (acc: A | S, value: V, index: number) => A,
   seed: S
-): OperFun<V, A>;
+): Lifter<V, A>;
 export function scan<V, A, S>(
   accumulator: (acc: V | A | S, value: V, index: number) => A,
   seed?: S
-): OperFun<V, V | A> {
+): Lifter<V, V | A> {
   let hasSeed = false;
   if (arguments.length >= 2) {
     hasSeed = true;
   }
 
-  return function scanOperFun(source: qt.Source<V>) {
+  return function scanLifter(source: qt.Source<V>) {
     return source.lift(new ScanOperator(accumulator, seed, hasSeed));
   };
 }
@@ -1910,7 +1910,7 @@ class ScanOperator<V, A, S> implements qt.Operator<V, A> {
 export function sequenceEqual<N, F, D>(
   compareTo: qt.Source<N, F, D>,
   comparator?: (a: T, b: N) => boolean
-): OperFun<T, boolean> {
+): Lifter<T, boolean> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new SequenceEqualOperator(compareTo, comparator));
 }
@@ -2150,8 +2150,8 @@ class SkipWhileOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 export function startWith<T, A extends any[]>(
   ...values: A
-): OperFun<T, T | ValueFromArray<A>>;
-export function startWith<T, D>(...values: D[]): OperFun<T, T | D> {
+): Lifter<T, T | ValueFromArray<A>>;
+export function startWith<T, D>(...values: D[]): Lifter<T, T | D> {
   const scheduler = values[values.length - 1];
   if (isScheduler(scheduler)) {
     values.pop();
@@ -2166,7 +2166,7 @@ export function subscribeOn<N, F, D>(
   scheduler: qt.SchedulerLike,
   delay: number = 0
 ): qt.MonoOper<N, F, D> {
-  return function subscribeOnOperFun(
+  return function subscribeOnLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
     return source.lift(new SubscribeOnOperator<N, F, D>(scheduler, delay));
@@ -2184,15 +2184,15 @@ class SubscribeOnOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-export function switchAll<N, F, D>(): OperFun<ObservableInput<N, F, D>, T>;
-export function switchAll<R>(): OperFun<any, R>;
-export function switchAll<N, F, D>(): OperFun<ObservableInput<N, F, D>, T> {
+export function switchAll<N, F, D>(): Lifter<ObservableInput<N, F, D>, T>;
+export function switchAll<R>(): Lifter<any, R>;
+export function switchAll<N, F, D>(): Lifter<ObservableInput<N, F, D>, T> {
   return switchMap(identity);
 }
 
 export function switchMap<T, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O
-): OperFun<T, ObservedValueOf<O>>;
+): Lifter<T, ObservedValueOf<O>>;
 export function switchMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
@@ -2201,7 +2201,7 @@ export function switchMap<T, R, O extends ObservableInput<any>>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, ObservedValueOf<O> | R> {
+): Lifter<T, ObservedValueOf<O> | R> {
   if (typeof resultSelector === 'function') {
     return (source: qt.Source<N, F, D>) =>
       source.pipe(
@@ -2225,7 +2225,7 @@ class SwitchMapOperator<T, R> implements qt.Operator<T, R> {
 }
 
 
-export function switchMapTo<R>(observable: ObservableInput<R>): OperFun<any, R>;
+export function switchMapTo<R>(observable: ObservableInput<R>): Lifter<any, R>;
 export function switchMapTo<T, I, R>(
   innerObservable: ObservableInput<I>,
   resultSelector?: (
@@ -2234,7 +2234,7 @@ export function switchMapTo<T, I, R>(
     outerX: number,
     innerIndex: number
   ) => R
-): OperFun<T, I | R> {
+): Lifter<T, I | R> {
   return resultSelector
     ? switchMap(() => innerObservable, resultSelector)
     : switchMap(() => innerObservable);
@@ -2264,7 +2264,7 @@ class TakeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 
 export function takeLast<N, F, D>(count: number): qt.MonoOper<N, F, D> {
-  return function takeLastOperFun(
+  return function takeLastLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
     if (count === 0) {
@@ -2315,11 +2315,11 @@ class TakeUntilOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 export function takeWhile<T, S extends T>(
   predicate: (value: T, index: number) => value is S
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function takeWhile<T, S extends T>(
   predicate: (value: T, index: number) => value is S,
   inclusive: false
-): OperFun<T, S>;
+): Lifter<T, S>;
 export function takeWhile<N, F, D>(
   predicate: (value: T, index: number) => boolean,
   inclusive?: boolean
@@ -2357,7 +2357,7 @@ export function tap<N, F, D>(
   error?: ((e: any) => void) | null,
   complete?: (() => void) | null
 ): qt.MonoOper<N, F, D> {
-  return function tapOperFun(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
+  return function tapLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
     return source.lift(new DoOperator(nextOrObserver, error, complete));
   };
 }
@@ -2497,7 +2497,7 @@ function defaultErrorFactory() {
 
 export function timeInterval<N, F, D>(
   scheduler: qt.SchedulerLike = async
-): OperFun<T, TimeInterval<N, F, D>> {
+): Lifter<T, TimeInterval<N, F, D>> {
   return (source: qt.Source<N, F, D>) =>
     defer(() => {
       return source.pipe(
@@ -2509,7 +2509,7 @@ export function timeInterval<N, F, D>(
             last: current
           }),
           {current: scheduler.now(), value: undefined, last: undefined} as any
-        ) as OperFun<T, any>,
+        ) as Lifter<T, any>,
         map<any, TimeInterval<N, F, D>>(
           ({current, last, value}) => new TimeInterval(value, current - last)
         )
@@ -2532,12 +2532,12 @@ export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: ObservableInput<R>,
   scheduler?: qt.SchedulerLike
-): OperFun<T, T | R>;
+): Lifter<T, T | R>;
 export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: ObservableInput<R>,
   scheduler: qt.SchedulerLike = async
-): OperFun<T, T | R> {
+): Lifter<T, T | R> {
   return (source: qt.Source<N, F, D>) => {
     let absoluteTimeout = isDate(due);
     let waitFor = absoluteTimeout
@@ -2578,7 +2578,7 @@ class TimeoutWithOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 export function timestamp<N, F, D>(
   timestampProvider: Stamper = Date
-): OperFun<T, Timestamp<N, F, D>> {
+): Lifter<T, Timestamp<N, F, D>> {
   return map((value: N) => ({value, timestamp: timestampProvider.now()}));
 }
 
@@ -2590,14 +2590,14 @@ function toArrayReducer<N, F, D>(arr: T[], item: T, index: number): T[] {
   return arr;
 }
 
-export function toArray<N, F, D>(): qt.OperFun<N, N[], F, D> {
+export function toArray<N, F, D>(): qt.Lifter<N, N[], F, D> {
   return reduce(toArrayReducer, [] as T[]);
 }
 
 export function window<N, F, D>(
   windowBoundaries: qt.Source<any, F, D>
-): OperFun<T, qt.Source<N, F, D>> {
-  return function windowOperFun(source: qt.Source<N, F, D>) {
+): Lifter<T, qt.Source<N, F, D>> {
+  return function windowLifter(source: qt.Source<N, F, D>) {
     return source.lift(new WindowOperator(windowBoundaries));
   };
 }
@@ -2675,8 +2675,8 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
 export function windowCount<N, F, D>(
   windowSize: number,
   startWindowEvery: number = 0
-): OperFun<T, qt.Source<N, F, D>> {
-  return function windowCountOperFun(source: qt.Source<N, F, D>) {
+): Lifter<T, qt.Source<N, F, D>> {
+  return function windowCountLifter(source: qt.Source<N, F, D>) {
     return source.lift(
       new WindowCountOperator<N, F, D>(windowSize, startWindowEvery)
     );
@@ -2762,22 +2762,22 @@ class WindowCountSubscriber<N, F, D> extends Subscriber<N, F, D> {
 export function windowTime<N, F, D>(
   windowTimeSpan: number,
   scheduler?: qt.SchedulerLike
-): OperFun<T, qt.Source<N, F, D>>;
+): Lifter<T, qt.Source<N, F, D>>;
 export function windowTime<N, F, D>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   scheduler?: qt.SchedulerLike
-): OperFun<T, qt.Source<N, F, D>>;
+): Lifter<T, qt.Source<N, F, D>>;
 export function windowTime<N, F, D>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   maxWindowSize: number,
   scheduler?: qt.SchedulerLike
-): OperFun<T, qt.Source<N, F, D>>;
+): Lifter<T, qt.Source<N, F, D>>;
 
 export function windowTime<N, F, D>(
   windowTimeSpan: number
-): OperFun<T, qt.Source<N, F, D>> {
+): Lifter<T, qt.Source<N, F, D>> {
   let scheduler: qt.SchedulerLike = async;
   let windowCreationInterval: number | null = null;
   let maxWindowSize: number = Number.POSITIVE_INFINITY;
@@ -2798,7 +2798,7 @@ export function windowTime<N, F, D>(
     windowCreationInterval = Number(arguments[1]);
   }
 
-  return function windowTimeOperFun(source: qt.Source<N, F, D>) {
+  return function windowTimeLifter(source: qt.Source<N, F, D>) {
     return source.lift(
       new WindowTimeOperator<N, F, D>(
         windowTimeSpan,
@@ -3018,7 +3018,7 @@ function dispatchWindowClose<N, F, D>(
 export function windowToggle<T, O>(
   openings: qt.Source<O>,
   closingSelector: (openValue: O) => qt.Source<any, F, D>
-): OperFun<T, qt.Source<N, F, D>> {
+): Lifter<T, qt.Source<N, F, D>> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new WindowToggleOperator<T, O>(openings, closingSelector));
 }
@@ -3183,8 +3183,8 @@ class WindowToggleSubscriber<T, O> extends Outer<T, any> {
 
 export function windowWhen<N, F, D>(
   closingSelector: () => qt.Source<any, F, D>
-): OperFun<T, qt.Source<N, F, D>> {
-  return function windowWhenOperFun(source: qt.Source<N, F, D>) {
+): Lifter<T, qt.Source<N, F, D>> {
+  return function windowWhenLifter(source: qt.Source<N, F, D>) {
     return source.lift(new WindowOperator<N, F, D>(closingSelector));
   };
 }
@@ -3280,11 +3280,11 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
   }
 }
 
-export function withLatestFrom<T, R>(project: (v1: N) => R): OperFun<T, R>;
+export function withLatestFrom<T, R>(project: (v1: N) => R): Lifter<T, R>;
 export function withLatestFrom<T, O2 extends ObservableInput<any>, R>(
   source2: O2,
   project: (v1: T, v2: ObservedValueOf<O2>) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -3294,7 +3294,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   project: (v1: T, v2: ObservedValueOf<O2>, v3: ObservedValueOf<O3>) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -3311,7 +3311,7 @@ export function withLatestFrom<
     v3: ObservedValueOf<O3>,
     v4: ObservedValueOf<O4>
   ) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -3331,7 +3331,7 @@ export function withLatestFrom<
     v4: ObservedValueOf<O4>,
     v5: ObservedValueOf<O5>
   ) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -3354,15 +3354,15 @@ export function withLatestFrom<
     v5: ObservedValueOf<O5>,
     v6: ObservedValueOf<O6>
   ) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, O2 extends ObservableInput<any>>(
   source2: O2
-): OperFun<T, [T, ObservedValueOf<O2>]>;
+): Lifter<T, [T, ObservedValueOf<O2>]>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
   O3 extends ObservableInput<any>
->(v2: O2, v3: O3): OperFun<T, [T, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
+>(v2: O2, v3: O3): Lifter<T, [T, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
 export function withLatestFrom<
   T,
   O2 extends ObservableInput<any>,
@@ -3372,7 +3372,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   v4: O4
-): OperFun<
+): Lifter<
   T,
   [T, ObservedValueOf<O2>, ObservedValueOf<O3>, ObservedValueOf<O4>]
 >;
@@ -3387,7 +3387,7 @@ export function withLatestFrom<
   v3: O3,
   v4: O4,
   v5: O5
-): OperFun<
+): Lifter<
   T,
   [
     T,
@@ -3410,7 +3410,7 @@ export function withLatestFrom<
   v4: O4,
   v5: O5,
   v6: O6
-): OperFun<
+): Lifter<
   T,
   [
     T,
@@ -3423,17 +3423,17 @@ export function withLatestFrom<
 >;
 export function withLatestFrom<T, R>(
   ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   array: ObservableInput<any>[]
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   array: ObservableInput<any>[],
   project: (...values: Array<any>) => R
-): OperFun<T, R>;
+): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   ...args: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: qt.Source<N, F, D>) => {
     let project: any;
     if (typeof args[args.length - 1] === 'function') {
@@ -3524,23 +3524,23 @@ class WithLatestFromSubscriber<T, R> extends Outer<N, M, F, D> {
   }
 }
 
-export function zipAll<N, F, D>(): OperFun<ObservableInput<N, F, D>, T[]>;
-export function zipAll<N, F, D>(): OperFun<any, T[]>;
+export function zipAll<N, F, D>(): Lifter<ObservableInput<N, F, D>, T[]>;
+export function zipAll<N, F, D>(): Lifter<any, T[]>;
 export function zipAll<T, R>(
   project: (...values: T[]) => R
-): OperFun<ObservableInput<N, F, D>, R>;
+): Lifter<ObservableInput<N, F, D>, R>;
 export function zipAll<R>(
   project: (...values: Array<any>) => R
-): OperFun<any, R>;
+): Lifter<any, R>;
 export function zipAll<T, R>(
   project?: (...values: Array<any>) => R
-): OperFun<T, R> {
+): Lifter<T, R> {
   return (source: qt.Source<N, F, D>) => source.lift(new ZipOperator(project));
 }
 export function zip<T, R>(
   ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
-): OperFun<T, R> {
-  return function zipOperFun(source: qt.Source<N, F, D>) {
+): Lifter<T, R> {
+  return function zipLifter(source: qt.Source<N, F, D>) {
     return source.lift.call(
       zipStatic<R>(source, ...observables),
       undefined
@@ -3549,6 +3549,6 @@ export function zip<T, R>(
 }
 export function zipWith<T, A extends ObservableInput<any>[]>(
   ...otherInputs: A
-): OperFun<T, Unshift<ObservedTupleFrom<A>, T>> {
+): Lifter<T, Unshift<ObservedTupleFrom<A>, T>> {
   return zip(...otherInputs);
 }
