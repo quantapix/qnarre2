@@ -1,76 +1,62 @@
 import * as qt from './types';
 import * as qu from './utils';
 
-import {Inner, Outer, RSubject, Subscription, Subscriber} from './subject';
+import {Actor, Reactor, RSubject, Subscription, Subscriber} from './subject';
 
-export {Inner, Outer, RSubject as Subject};
+export {Actor, Reactor, RSubject as Subject};
 
-export class Audit<O, I, F, D> extends Outer<O, I, F, D> {
-  private n?: O;
-  private hasN = false;
-  private throttled?: qt.Subscription;
+export class Audit<N, R, F, D> extends Reactor<N, R, F, D> {
+  private r?: R;
+  private hasR = false;
+  private act?: qt.Subscription;
 
   constructor(
-    tgt: Subscriber<O, F, D>,
-    private duration: (_?: O) => qt.SourceOrPromise<O, F, D>
+    tgt: Subscriber<R, F, D>,
+    private duration: (_?: R) => qt.SourceOrPromise<N, F, D>
   ) {
     super(tgt);
   }
 
-  protected _next(n?: O) {
-    this.n = n;
-    this.hasN = true;
-    if (!this.throttled) {
-      let d;
+  protected _next(r?: R) {
+    this.r = r;
+    this.hasR = true;
+    if (!this.act) {
+      let d: qt.SourceOrPromise<N, F, D>;
       try {
-        d = this.duration(n);
+        d = this.duration(r);
       } catch (e) {
         return this.tgt.fail(e);
       }
-      const s = qu.subscribeToResult(this, d);
-      if (!s || s.closed) this.clear();
-      else this.add((this.throttled = s));
+      const a = qu.subscribeToResult(this, d);
+      if (!a || a.closed) this.clear();
+      else this.add((this.act = a));
     }
   }
 
   clear() {
-    const {n, hasN, throttled} = this;
-    if (throttled) {
-      this.remove(throttled);
-      this.throttled = undefined;
-      throttled.unsubscribe();
+    const {r, hasR, act} = this;
+    if (act) {
+      this.remove(act);
+      this.act = undefined;
+      act.unsubscribe();
     }
-    if (hasN) {
-      this.n = undefined;
-      this.hasN = false;
-      this.tgt.next(n);
+    if (hasR) {
+      this.r = undefined;
+      this.hasR = false;
+      this.tgt.next(r);
     }
   }
 
-  notifyNext(_n?: O, _in?: MergeScanOperator) {
+  reactNext(_r?: R, _?: MergeScanOperator) {
     this.clear();
   }
 
-  notifyDone(_d?: D, _?: Inner<O, I, F, D>) {
+  reactDone(_d?: D, _?: Actor<N, R, F, D>) {
     this.clear();
   }
 }
 
-export function buffer<N, F, D>(
-  c: qt.Source<any, F, D>
-): qt.Lifter<N, N[], F, D> {
-  return (s: qt.Source<N, F, D>) => s.lift(new BufferOperator<N, F, D>(c));
-}
-
-class BufferOperator<N, F, D> implements qt.Operator<N, N[], F, D> {
-  constructor(private closing: qt.Source<any, F, D>) {}
-
-  call(r: Subscriber<N[], F, D>, s: qt.Source<N, F, D>) {
-    return s.subscribe(new Buffer(r, this.closing));
-  }
-}
-
-export class Buffer<N, F, D> extends Outer<N[], any, F, D> {
+export class Buffer<N, F, D> extends Reactor<any, N[], F, D> {
   private buffer = [] as (N[] | undefined)[];
 
   constructor(tgt: Subscriber<N[], F, D>, closing: qt.Source<any, F, D>) {
@@ -82,12 +68,12 @@ export class Buffer<N, F, D> extends Outer<N[], any, F, D> {
     this.buffer.push(n);
   }
 
-  notifyNext(
-    outerN: N[],
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Inner<N[], any, F, D>
+  reactNext(
+    _r?: N[],
+    _n?: any,
+    _ri?: number,
+    _i?: number,
+    _?: Actor<any, N[], F, D>
   ) {
     const b = this.buffer;
     this.buffer = [];
@@ -331,7 +317,7 @@ interface BufferContext<N> {
   subscription?: Subscription;
 }
 
-export class BufferToggle<O, I, F, D> extends Outer<N[], M, F, D> {
+export class BufferToggle<O, I, F, D> extends Reactor<N[], M, F, D> {
   private contexts = [] as BufferContext<N>[];
 
   constructor(
@@ -376,17 +362,17 @@ export class BufferToggle<O, I, F, D> extends Outer<N[], M, F, D> {
     super._done();
   }
 
-  notifyNext(
+  reactNext(
     outerN: any,
     innerValue: O,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<O, I, F, D>
+    innerSub: Actor<O, I, F, D>
   ) {
     outerN ? this.closeBuffer(outerN) : this.openBuffer(innerValue);
   }
 
-  notifyDone(innerSub: Inner<O, I, F, D>) {
+  reactDone(innerSub: Actor<O, I, F, D>) {
     this.closeBuffer((<any>innerSub).context);
   }
 
@@ -427,7 +413,7 @@ export class BufferToggle<O, I, F, D> extends Outer<N[], M, F, D> {
   }
 }
 
-export class BufferWhen<N, F, D> extends Outer<N, any, F, D> {
+export class BufferWhen<N, F, D> extends Reactor<N, any, F, D> {
   private buffer?: N[];
   private subscribing = false;
   private closingSubscription?: Subscription;
@@ -455,17 +441,17 @@ export class BufferWhen<N, F, D> extends Outer<N, any, F, D> {
     this.subscribing = false;
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, any, F, D>
+    innerSub: Actor<N, any, F, D>
   ): void {
     this.openBuffer();
   }
 
-  notifyDone(): void {
+  reactDone(): void {
     if (this.subscribing) this.done();
     else this.openBuffer();
   }
@@ -495,7 +481,7 @@ export class BufferWhen<N, F, D> extends Outer<N, any, F, D> {
   }
 }
 
-export class Catch<O, I, F, D> extends Outer<N, N | M, F, D> {
+export class Catch<O, I, F, D> extends Reactor<N, N | M, F, D> {
   constructor(
     tgt: Subscriber<any, F, D>,
     private selector: (
@@ -517,7 +503,7 @@ export class Catch<O, I, F, D> extends Outer<N, N | M, F, D> {
         return;
       }
       this._recycle();
-      const i = new Inner(this, undefined, undefined!);
+      const i = new Actor(this, undefined, undefined!);
       this.add(i);
       const s = qu.subscribeToResult(this, result, undefined, undefined, i);
       if (s !== i) this.add(s);
@@ -561,7 +547,7 @@ export class Count<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Debounce<O, I, F, D> extends Outer<O, I, F, D> {
+export class Debounce<O, I, F, D> extends Reactor<O, I, F, D> {
   private value?: N;
   private hasValue = false;
   private durationSubscription?: Subscription;
@@ -599,17 +585,17 @@ export class Debounce<O, I, F, D> extends Outer<O, I, F, D> {
     if (s && !s.closed) this.add((this.durationSubscription = s));
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<O, I, F, D>
+    innerSub: Actor<O, I, F, D>
   ) {
     this.emitValue();
   }
 
-  notifyDone() {
+  reactDone() {
     this.emitValue();
   }
 
@@ -784,7 +770,7 @@ export class Delay<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class DelayWhen<N, M, F, D> extends Outer<N, M, F, D> {
+export class DelayWhen<N, M, F, D> extends Reactor<N, M, F, D> {
   private completed = false;
   private delayNotifierSubscriptions = [] as Subscription[];
   private index = 0;
@@ -799,23 +785,23 @@ export class DelayWhen<N, M, F, D> extends Outer<N, M, F, D> {
     super(tgt);
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ) {
     this.tgt.next(outerN);
     this.removeSubscription(innerSub);
     this.tryComplete();
   }
 
-  notifyFail(error: any, innerSub: Inner<N, M, F, D>) {
+  reactFail(error: any, innerSub: Actor<N, M, F, D>) {
     this._fail(error);
   }
 
-  notifyDone(innerSub: Inner<N, M, F, D>) {
+  reactDone(innerSub: Actor<N, M, F, D>) {
     const value = this.removeSubscription(innerSub);
     if (value) this.tgt.next(value);
     this.tryComplete();
@@ -837,7 +823,7 @@ export class DelayWhen<N, M, F, D> extends Outer<N, M, F, D> {
     this.unsubscribe();
   }
 
-  private removeSubscription(s: Inner<N, M, F, D>): NavigationEvent {
+  private removeSubscription(s: Actor<N, M, F, D>): NavigationEvent {
     s.unsubscribe();
     const i = this.delayNotifierSubscriptions.indexOf(s);
     if (i !== -1) {
@@ -908,7 +894,7 @@ export class DeMaterialize<
   }
 }
 
-export class Distinct<N, M, F, D> extends Outer<N, N, F, D> {
+export class Distinct<N, M, F, D> extends Reactor<N, N, F, D> {
   private values = new Set<M>();
 
   constructor(
@@ -920,17 +906,17 @@ export class Distinct<N, M, F, D> extends Outer<N, N, F, D> {
     if (flushes) this.add(subscribeToResult(this, flushes));
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: N,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, N, F, D>
+    innerSub: Actor<N, N, F, D>
   ) {
     this.values.clear();
   }
 
-  notifyFail(f: F | undefined, _: Inner<N, N, F, D>) {
+  reactFail(f: F | undefined, _: Actor<N, N, F, D>) {
     this._fail(f);
   }
 
@@ -1018,7 +1004,7 @@ export class Every<N, F, D> extends Subscriber<N, F, D> {
     this.thisArg = thisArg || this;
   }
 
-  private notifyDone(everyValueMatch: boolean) {
+  private reactDone(everyValueMatch: boolean) {
     this.tgt.next(everyValueMatch);
     this.tgt.done();
   }
@@ -1031,15 +1017,15 @@ export class Every<N, F, D> extends Subscriber<N, F, D> {
       this.tgt.fail(e);
       return;
     }
-    if (!result) this.notifyDone(false);
+    if (!result) this.reactDone(false);
   }
 
   protected _done(d?: D) {
-    this.notifyDone(true);
+    this.reactDone(true);
   }
 }
 
-export class SwitchFirst<N, F, D> extends Outer<N, N, F, D> {
+export class SwitchFirst<N, F, D> extends Reactor<N, N, F, D> {
   private hasCompleted = false;
   private hasSubscription = false;
 
@@ -1059,14 +1045,14 @@ export class SwitchFirst<N, F, D> extends Outer<N, N, F, D> {
     if (!this.hasSubscription) this.tgt.done();
   }
 
-  notifyDone(innerSub: Subscription) {
+  reactDone(innerSub: Subscription) {
     this.remove(innerSub);
     this.hasSubscription = false;
     if (this.hasCompleted) this.tgt.done();
   }
 }
 
-export class ExhaustMap<N, M, F, D> extends Outer<N, M, F, D> {
+export class ExhaustMap<N, M, F, D> extends Reactor<N, M, F, D> {
   private hasSubscription = false;
   private hasCompleted = false;
   private index = 0;
@@ -1096,7 +1082,7 @@ export class ExhaustMap<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   private _innerSub(result: ObservableInput<R>, value: T, index: number): void {
-    const innerSubscriber = new Inner(this, value, index);
+    const innerSubscriber = new Actor(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
     const s = qu.subscribeToResult<T, R>(
@@ -1115,21 +1101,21 @@ export class ExhaustMap<N, M, F, D> extends Outer<N, M, F, D> {
     this.unsubscribe();
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Innerr<N, M, F, D>
+    innerSub: Actorr<N, M, F, D>
   ): void {
     this.tgt.next(innerValue);
   }
 
-  notifyFail(f?: F) {
+  reactFail(f?: F) {
     this.tgt.fail(f);
   }
 
-  notifyDone(innerSub: Subscription) {
+  reactDone(innerSub: Subscription) {
     const tgt = this.tgt as Subscription;
     tgt.remove(innerSub);
     this.hasSubscription = false;
@@ -1144,7 +1130,7 @@ interface DispatchArg<T, R> {
   index: number;
 }
 
-export class Expand<N, M, F, D> extends Outer<N, M, F, D> {
+export class Expand<N, M, F, D> extends Reactor<N, M, F, D> {
   private index = 0;
   private active = 0;
   private hasCompleted = false;
@@ -1214,17 +1200,17 @@ export class Expand<N, M, F, D> extends Outer<N, M, F, D> {
     this.unsubscribe();
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ) {
     this._next(innerValue);
   }
 
-  notifyDone(innerSub: Subscription) {
+  reactDone(innerSub: Subscription) {
     const buffer = this.buffer;
     const tgt = this.tgt as Subscription;
     tgt.remove(innerSub);
@@ -1274,7 +1260,7 @@ export class FindValue<N, F, D> extends Subscriber<N, F, D> {
     super(tgt);
   }
 
-  private notifyDone(d?: D) {
+  private reactDone(d?: D) {
     const tgt = this.tgt;
     tgt.next(d);
     tgt.done(d);
@@ -1286,14 +1272,14 @@ export class FindValue<N, F, D> extends Subscriber<N, F, D> {
     const index = this.index++;
     try {
       const result = predicate.call(thisArg || this, n, index, this.source);
-      if (result) this.notifyDone(this.yieldIndex ? index : n);
+      if (result) this.reactDone(this.yieldIndex ? index : n);
     } catch (e) {
       this.tgt.fail(e);
     }
   }
 
   protected _done(d?: D) {
-    this.notifyDone(this.yieldIndex ? -1 : undefined);
+    this.reactDone(this.yieldIndex ? -1 : undefined);
   }
 }
 
@@ -1422,18 +1408,18 @@ export class IsEmpty<N extends boolean, F, D> extends Subscriber<N, F, D> {
     super(tgt);
   }
 
-  private notifyDone(empty: N) {
+  private reactDone(empty: N) {
     const tgt = this.tgt;
     tgt.next(empty);
     tgt.done();
   }
 
   protected _next(_n?: N) {
-    this.notifyDone(false as N);
+    this.reactDone(false as N);
   }
 
   protected _done(d?: D) {
-    this.notifyDone(true as N);
+    this.reactDone(true as N);
   }
 }
 
@@ -1497,7 +1483,7 @@ export class Materialize<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class MergeMap<N, M, F, D> extends Outer<N, M, F, D> {
+export class MergeMap<N, M, F, D> extends Reactor<N, M, F, D> {
   private hasCompleted = false;
   private buffer: T[] = [];
   private active = 0;
@@ -1530,7 +1516,7 @@ export class MergeMap<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   private _innerSub(ish: ObservableInput<R>, value: T, index: number): void {
-    const innerSubscriber = new InnerSubscriber(this, value, index);
+    const innerSubscriber = new ActorSubscriber(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
     const innerSubscription = qu.subscribeToResult<T, R>(
@@ -1553,17 +1539,17 @@ export class MergeMap<N, M, F, D> extends Outer<N, M, F, D> {
     this.unsubscribe();
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ): void {
     this.tgt.next(innerValue);
   }
 
-  notifyDone(innerSub: Subscription): void {
+  reactDone(innerSub: Subscription): void {
     const buffer = this.buffer;
     this.remove(innerSub);
     this.active--;
@@ -1575,7 +1561,7 @@ export class MergeMap<N, M, F, D> extends Outer<N, M, F, D> {
   }
 }
 
-export class MergeScan<N, M, F, D> extends Outer<N, M, F, D> {
+export class MergeScan<N, M, F, D> extends Reactor<N, M, F, D> {
   private hasValue = false;
   private hasCompleted = false;
   private buffer: qt.Source<any, F, D>[] = [];
@@ -1614,7 +1600,7 @@ export class MergeScan<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   private _innerSub(ish: any, value: T, index: number): void {
-    const innerSubscriber = new InnerSubscriber(this, value, index);
+    const innerSubscriber = new ActorSubscriber(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
     const innerSubscription = qu.subscribeToResult<T, R>(
@@ -1640,12 +1626,12 @@ export class MergeScan<N, M, F, D> extends Outer<N, M, F, D> {
     this.unsubscribe();
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ): void {
     const {tgt} = this;
     this.acc = innerValue;
@@ -1653,7 +1639,7 @@ export class MergeScan<N, M, F, D> extends Outer<N, M, F, D> {
     tgt.next(innerValue);
   }
 
-  notifyDone(innerSub: Subscription): void {
+  reactDone(innerSub: Subscription): void {
     const buffer = this.buffer;
     const tgt = this.tgt as Subscription;
     tgt.remove(innerSub);
@@ -1720,7 +1706,7 @@ export class ObserveOn<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class OnErrorResumeNext<N, M, F, D> extends Outer<N, M, F, D> {
+export class OnErrorResumeNext<N, M, F, D> extends Reactor<N, M, F, D> {
   constructor(
     protected tgt: Subscriber<N, F, D>,
     private nextSources: Array<ObservableInput<any>>
@@ -1728,11 +1714,11 @@ export class OnErrorResumeNext<N, M, F, D> extends Outer<N, M, F, D> {
     super(tgt);
   }
 
-  notifyError(error: any, innerSub: Inner<N, any, F, D>): void {
+  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
     this.subscribeToNextSource();
   }
 
-  notifyDone(innerSub: Inner<N, any, F, D>): void {
+  reactDone(innerSub: Actor<N, any, F, D>): void {
     this.subscribeToNextSource();
   }
 
@@ -1749,7 +1735,7 @@ export class OnErrorResumeNext<N, M, F, D> extends Outer<N, M, F, D> {
   private subscribeToNextSource(): void {
     const next = this.nextSources.shift();
     if (!!next) {
-      const innerSubscriber = new Inner(this, undefined, undefined!);
+      const innerSubscriber = new Actor(this, undefined, undefined!);
       const tgt = this.tgt as Subscription;
       tgt.add(innerSubscriber);
       const innerSubscription = qu.subscribeToResult(
@@ -1819,7 +1805,7 @@ export class Repeat<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class RepeatWhen<N, M, F, D> extends Outer<N, M, F, D> {
+export class RepeatWhen<N, M, F, D> extends Reactor<N, M, F, D> {
   private notifications: Subject<void> | null = null;
   private retries: qt.Source<any, F, D> | null = null;
   private retriesSubscription: Subscription | null | undefined = null;
@@ -1835,18 +1821,18 @@ export class RepeatWhen<N, M, F, D> extends Outer<N, M, F, D> {
     super(tgt);
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ): void {
     this.sourceIsBeingSubscribedTo = true;
     this.source.subscribe(this);
   }
 
-  notifyDone(innerSub: Inner<N, M, F, D>): void {
+  reactDone(innerSub: Actor<N, M, F, D>): void {
     if (this.sourceIsBeingSubscribedTo === false) {
       return super.complete();
     }
@@ -1935,7 +1921,7 @@ export class Retry<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class RetryWhen<N, M, F, D> extends Outer<N, M, F, D> {
+export class RetryWhen<N, M, F, D> extends Reactor<N, M, F, D> {
   private errors?: Subject<any>;
   private retries?: qt.Source<any, F, D>;
   private retriesSubscription?: Subscription;
@@ -1987,12 +1973,12 @@ export class RetryWhen<N, M, F, D> extends Outer<N, M, F, D> {
     this.retries = undefined;
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ) {
     const {_unsubscribe} = this;
     this._unsubscribe = null!;
@@ -2025,7 +2011,7 @@ export class SampleTime<N, F, D> extends Subscriber<N, F, D> {
     this.hasValue = true;
   }
 
-  notifyNext() {
+  reactNext() {
     if (this.hasValue) {
       this.hasValue = false;
       this.tgt.next(this.lastValue);
@@ -2199,13 +2185,13 @@ export class SkipLast<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class SkipUntil<N, M, F, D> extends Outer<N, M, F, D> {
+export class SkipUntil<N, M, F, D> extends Reactor<N, M, F, D> {
   private hasValue = false;
   private innerSubscription?: Subscription;
 
   constructor(tgt: Subscriber<M, F, D>, notifier: ObservableInput<any>) {
     super(tgt);
-    const innerSubscriber = new Inner(this, undefined, undefined!);
+    const innerSubscriber = new Actor(this, undefined, undefined!);
     this.add(innerSubscriber);
     this.innerSubscription = innerSubscriber;
     const innerSubscription = qu.subscribeToResult(
@@ -2225,18 +2211,18 @@ export class SkipUntil<N, M, F, D> extends Outer<N, M, F, D> {
     if (this.hasValue) super._next(n);
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ) {
     this.hasValue = true;
     if (this.innerSubscription) this.innerSubscription.unsubscribe();
   }
 
-  notifyDone() {
+  reactDone() {
     /* do nothing */
   }
 }
@@ -2267,7 +2253,7 @@ export class SkipWhile<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class SwitchMap<N, M, F, D> extends Outer<N, M, F, D> {
+export class SwitchMap<N, M, F, D> extends Reactor<N, M, F, D> {
   private index = 0;
   private innerSubscription?: Subscription;
 
@@ -2295,7 +2281,7 @@ export class SwitchMap<N, M, F, D> extends Outer<N, M, F, D> {
     if (innerSubscription) {
       innerSubscription.unsubscribe();
     }
-    const innerSubscriber = new Inner(this, value, index);
+    const innerSubscriber = new Actor(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
     this.innerSubscription = qu.subscribeToResult(
@@ -2320,7 +2306,7 @@ export class SwitchMap<N, M, F, D> extends Outer<N, M, F, D> {
     this.innerSubscription = null!;
   }
 
-  notifyDone(innerSub: Subscription) {
+  reactDone(innerSub: Subscription) {
     const tgt = this.tgt as Subscription;
     tgt.remove(innerSub);
     this.innerSubscription = null!;
@@ -2329,12 +2315,12 @@ export class SwitchMap<N, M, F, D> extends Outer<N, M, F, D> {
     }
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ): void {
     this.tgt.next(innerValue);
   }
@@ -2399,25 +2385,25 @@ export class TakeLast<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class TakeUntil<N, M, F, D> extends Outer<N, M, F, D> {
+export class TakeUntil<N, M, F, D> extends Reactor<N, M, F, D> {
   seenValue = false;
 
   constructor(tgt: Subscriber<any, F, D>) {
     super(tgt);
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ): void {
     this.seenValue = true;
     this.done();
   }
 
-  notifyDone() {
+  reactDone() {
     // noop
   }
 }
@@ -2512,7 +2498,7 @@ export class Tap<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Throttle<N, M, F, D> extends Outer<N, M, F, D> {
+export class Throttle<N, M, F, D> extends Reactor<N, M, F, D> {
   private _throttled?: Subscription;
   private _sendValue?: N;
   private _hasValue = false;
@@ -2567,17 +2553,17 @@ export class Throttle<N, M, F, D> extends Outer<N, M, F, D> {
     if (_trailing) this.send();
   }
 
-  notifyNext(
+  reactNext(
     outerN: N,
     innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, M, F, D>
+    innerSub: Actor<N, M, F, D>
   ): void {
     this.throttlingDone();
   }
 
-  notifyDone(): void {
+  reactDone(): void {
     this.throttlingDone();
   }
 }
@@ -2664,7 +2650,7 @@ export class ThrowIfEmpty<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class TimeoutWith<T, R> extends Outer<N, M, F, D> {
+export class TimeoutWith<T, R> extends Reactor<N, M, F, D> {
   private action: qt.SchedulerAction<TimeoutWith<T, R>> | null = null;
 
   constructor(

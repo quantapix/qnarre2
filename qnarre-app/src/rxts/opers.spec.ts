@@ -13933,15 +13933,15 @@ describe('groupBy operator', () => {
     const e1 = hot('--a-b---d---------i-----l-#', values);
     const unsub = '            !';
     const e1subs = '^           !';
-    const expectedOuter = '--w----------';
-    const expectedInner = '-------------';
+    const expectedReactor = '--w----------';
+    const expectedActor = '-------------';
     const outerNs = {w: 'foo'};
 
     const source = e1.pipe(
       groupBy((val: string) => val.toLowerCase().trim()),
       tap((group: any) => {
         rxTestScheduler.schedule(() => {
-          expectObservable(group).toBe(expectedInner);
+          expectObservable(group).toBe(expectedActor);
         }, 260);
       }),
       map((group: any) => {
@@ -13949,7 +13949,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source, unsub).toBe(expectedOuter, outerNs);
+    expectObservable(source, unsub).toBe(expectedReactor, outerNs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 

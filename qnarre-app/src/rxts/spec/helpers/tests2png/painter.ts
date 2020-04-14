@@ -530,7 +530,7 @@ function removeDuplicateInputs(
 // For every inner stream in a higher order stream, create its ghost version
 // A ghost stream is a reference to an Observable that has not yet executed,
 // and is painted as a semi-transparent stream.
-function addGhostInnerInputs(inputStreams: TestStream[]): TestStream[] {
+function addGhostActorInputs(inputStreams: TestStream[]): TestStream[] {
   for (let i = 0; i < inputStreams.length; i++) {
     let inputStream = inputStreams[i];
     for (let j = 0; j < inputStream.messages.length; j++) {
@@ -574,7 +574,7 @@ function sanitizeHigherOrderInputStreams(
   outputStreams: TestStream[]
 ): TestStream[] {
   let newInputStreams = removeDuplicateInputs(inputStreams, outputStreams);
-  newInputStreams = addGhostInnerInputs(newInputStreams);
+  newInputStreams = addGhostActorInputs(newInputStreams);
   return newInputStreams;
 }
 

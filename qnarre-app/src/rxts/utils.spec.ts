@@ -271,7 +271,7 @@ describe('pipe', () => {
   });
 });
 
-import {OuterSubscriber} from 'rxjs/internal/OuterSubscriber';
+import {ReactorSubscriber} from 'rxjs/internal/ReactorSubscriber';
 import {subscribeToResult} from 'rxjs/internal/util/subscribeToResult';
 import {iterator} from 'rxjs/internal/symbol/iterator';
 import {observable as $$symbolObservable} from 'rxjs/internal/symbol/observable';
@@ -281,7 +281,9 @@ describe('subscribeToResult', () => {
   it('should synchronously complete when subscribed to scalarObservable', () => {
     const result = of(42);
     let expected: number;
-    const subscriber = new OuterSubscriber<number, number>(x => (expected = x));
+    const subscriber = new ReactorSubscriber<number, number>(
+      x => (expected = x)
+    );
 
     const subscription = subscribeToResult(subscriber, result);
 
@@ -293,7 +295,7 @@ describe('subscribeToResult', () => {
     const expected = [1, 2, 3];
     const result = range(1, 3);
 
-    const subscriber = new OuterSubscriber<number, number>(
+    const subscriber = new ReactorSubscriber<number, number>(
       x => {
         expect(expected.shift()).to.be.equal(x);
       },
@@ -311,7 +313,7 @@ describe('subscribeToResult', () => {
 
   it('should emit error when observable emits error', done => {
     const result = throwError(new Error('error'));
-    const subscriber = new OuterSubscriber(
+    const subscriber = new ReactorSubscriber(
       x => {
         done(new Error('should not be called'));
       },
@@ -331,7 +333,7 @@ describe('subscribeToResult', () => {
     const result = [1, 2, 3];
     const expected: number[] = [];
 
-    const subscriber = new OuterSubscriber<number, number>(x =>
+    const subscriber = new ReactorSubscriber<number, number>(x =>
       expected.push(x)
     );
 
@@ -344,7 +346,7 @@ describe('subscribeToResult', () => {
     const result = {0: 0, 1: 1, 2: 2, length: 3};
     const expected: number[] = [];
 
-    const subscriber = new OuterSubscriber<number, number>(x =>
+    const subscriber = new ReactorSubscriber<number, number>(x =>
       expected.push(x)
     );
 
@@ -356,7 +358,7 @@ describe('subscribeToResult', () => {
   it('should subscribe to a promise', done => {
     const result = Promise.resolve(42);
 
-    const subscriber = new OuterSubscriber<number, number>(
+    const subscriber = new ReactorSubscriber<number, number>(
       x => {
         expect(x).to.be.equal(42);
       },
@@ -372,7 +374,7 @@ describe('subscribeToResult', () => {
   it('should emits error when the promise rejects', done => {
     const result = Promise.reject(42);
 
-    const subscriber = new OuterSubscriber<number, number>(
+    const subscriber = new ReactorSubscriber<number, number>(
       x => {
         done(new Error('should not be called'));
       },
@@ -402,7 +404,7 @@ describe('subscribeToResult', () => {
       }
     };
 
-    const subscriber = new OuterSubscriber((x: number) => (expected = x));
+    const subscriber = new ReactorSubscriber((x: number) => (expected = x));
 
     subscribeToResult(subscriber, iterable);
     expect(expected!).to.be.equal(42);
@@ -411,7 +413,7 @@ describe('subscribeToResult', () => {
   it('should subscribe to to an object that implements Symbol.observable', done => {
     const observableSymbolObject = {[$$symbolObservable]: () => of(42)};
 
-    const subscriber = new OuterSubscriber(
+    const subscriber = new ReactorSubscriber(
       x => {
         expect(x).to.be.equal(42);
       },
@@ -430,7 +432,7 @@ describe('subscribeToResult', () => {
     () => {
       const observableSymbolObject = {[$$symbolObservable]: () => ({})};
 
-      const subscriber = new OuterSubscriber(
+      const subscriber = new ReactorSubscriber(
         x => {
           throw new Error('should not be called');
         },
@@ -452,7 +454,7 @@ describe('subscribeToResult', () => {
   );
 
   it('should emit an error when trying to subscribe to an unknown type of object', () => {
-    const subscriber = new OuterSubscriber(
+    const subscriber = new ReactorSubscriber(
       x => {
         throw new Error('should not be called');
       },
@@ -471,7 +473,7 @@ describe('subscribeToResult', () => {
   });
 
   it('should emit an error when trying to subscribe to a non-object', () => {
-    const subscriber = new OuterSubscriber(
+    const subscriber = new ReactorSubscriber(
       x => {
         throw new Error('should not be called');
       },

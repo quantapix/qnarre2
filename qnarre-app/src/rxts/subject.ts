@@ -219,48 +219,42 @@ export class Proxy<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Outer<O, I, F, D> extends Subscriber<O, F, D> {
-  notifyNext(
-    n?: O,
-    _iN?: I,
-    _oX?: number,
-    _iX?: number,
-    _i?: Inner<O, I, F, D>
-  ) {
-    this.tgt.next(n);
+export class Reactor<N, R, F, D> extends Subscriber<R, F, D> {
+  reactNext(_r?: R, n?: N, _ri?: number, _i?: number, _?: Actor<N, R, F, D>) {
+    this.tgt.next((n as unknown) as R);
   }
 
-  notifyFail(f?: F, _?: Inner<O, I, F, D>) {
+  reactFail(f?: F, _?: Actor<N, R, F, D>) {
     this.tgt.fail(f);
   }
 
-  notifyDone(d?: D, _?: Inner<O, I, F, D>) {
+  reactDone(d?: D, _?: Actor<N, R, F, D>) {
     this.tgt.done(d);
   }
 }
 
-export class Inner<O, I, F, D> extends Subscriber<I, F, D> {
+export class Actor<N, R, F, D> extends Subscriber<N, F, D> {
   private idx = 0;
 
   constructor(
-    private outer: Outer<O, I, F, D>,
-    public outerN?: O,
-    public outerX?: number
+    private del: Reactor<N, R, F, D>,
+    public r?: R,
+    public ri?: number
   ) {
     super();
   }
 
-  protected _next(n?: I) {
-    this.outer.notifyNext(this.outerN, n, this.outerX, this.idx++, this);
+  protected _next(n?: N) {
+    this.del.reactNext(this.r, n, this.ri, this.idx++, this);
   }
 
   protected _fail(f?: F) {
-    this.outer.notifyFail(f, this);
+    this.del.reactFail(f, this);
     this.unsubscribe();
   }
 
   protected _done(d?: D) {
-    this.outer.notifyDone(d, this);
+    this.del.reactDone(d, this);
     this.unsubscribe();
   }
 }
@@ -343,8 +337,8 @@ export class Subject<N, F, D> extends qs.Source<N, F, D>
     return super._trySubscribe(s);
   }
 
-  lift<M>(o?: qt.Operator<N, M, F, D>): qs.Source<M, F, D> {
-    const s = new Anonymous<M, F, D>(this, this);
+  lift<R>(o?: qt.Operator<N, R, F, D>): qs.Source<R, F, D> {
+    const s = new Anonymous<R, F, D>(this, this);
     s.oper = o;
     return s;
   }

@@ -16,7 +16,6 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
     return asyncIterFrom<N, F, D>(this);
   }
 
-  //public _isScalar = false;
   src?: Source<any, F, D>;
   oper?: qt.Operator<any, N, F, D>;
 

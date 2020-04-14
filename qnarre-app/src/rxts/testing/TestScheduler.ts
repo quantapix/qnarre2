@@ -138,7 +138,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     return subject;
   }
 
-  private materializeInnerObservable(
+  private materializeActorObservable(
     observable: Observable<any>,
     outerFrame: number
   ): TestMessage[] {
@@ -189,7 +189,7 @@ export class TestScheduler extends VirtualTimeScheduler {
           let value = x;
           // Support Observable-of-Observables
           if (x instanceof Observable) {
-            value = this.materializeInnerObservable(value, this.frame);
+            value = this.materializeActorObservable(value, this.frame);
           }
           actual.push({
             frame: this.frame,
@@ -384,7 +384,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     marbles: string,
     values?: any,
     errorValue?: any,
-    materializeInnerObservables: boolean = false,
+    materializeActorObservables: boolean = false,
     runMode = false
   ): TestMessage[] {
     if (marbles.indexOf('!') !== -1) {
@@ -405,7 +405,7 @@ export class TestScheduler extends VirtualTimeScheduler {
         : (x: any) => {
             // Support Observable-of-Observables
             if (
-              materializeInnerObservables &&
+              materializeActorObservables &&
               values[x] instanceof ColdObservable
             ) {
               return values[x].messages;

@@ -1,7 +1,7 @@
 
 import * as qt from './types';
 
-import {Inner, Outer, Subscription, Subscriber} from './subject';
+import {Actor, Reactor, Subscription, Subscriber} from './subject';
 
 export function audit<N, F, D>(
   durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
@@ -941,14 +941,14 @@ export class GroupedObservable<K, T> extends qt.Source<N, F, D> {
     const subscription = new Subscription();
     const {refCountSubscription, groupSubject} = this;
     if (refCountSubscription && !refCountSubscription.closed) {
-      subscription.add(new InnerRefCountSubscription(refCountSubscription));
+      subscription.add(new ActorRefCountSubscription(refCountSubscription));
     }
     subscription.add(groupSubject.subscribe(subscriber));
     return subscription;
   }
 }
 
-class InnerRefCountSubscription extends Subscription {
+class ActorRefCountSubscription extends Subscription {
   constructor(private parent: RefCountSubscription) {
     super();
     parent.count++;
@@ -1808,7 +1808,7 @@ class SampleOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-class SampleSubscriber<T, R> extends Outer<N, M, F, D> {
+class SampleSubscriber<T, R> extends Reactor<N, M, F, D> {
   private value: T | undefined;
   private hasValue = false;
 
@@ -1817,17 +1817,17 @@ class SampleSubscriber<T, R> extends Outer<N, M, F, D> {
     this.hasValue = true;
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, R>
+    innerSub: ActorSubscriber<T, R>
   ): void {
     this.emitValue();
   }
 
-  notifyDone(): void {
+  reactDone(): void {
     this.emitValue();
   }
 
@@ -1863,7 +1863,7 @@ function dispatchNotification<N, F, D>(
   state: any
 ) {
   let {subscriber, period} = state;
-  subscriber.notifyNext();
+  subscriber.reactNext();
   this.schedule(state, period);
 }
 
@@ -2617,7 +2617,7 @@ class WindowOperator<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
   }
 }
 
-class WindowSubscriber<N, F, D> extends Outer<T, any> {
+class WindowSubscriber<N, F, D> extends Reactor<T, any> {
   private window: Subject<N, F, D> = new Subject<N, F, D>();
 
   constructor(tgt: Subscriber<Observable<N, F, D>>) {
@@ -2625,21 +2625,21 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
     tgt.next(this.window);
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, any, F, D>
+    innerSub: Actor<N, any, F, D>
   ): void {
     this.openWindow();
   }
 
-  notifyError(error: any, innerSub: Inner<N, any, F, D>): void {
+  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
     this._fail(error);
   }
 
-  notifyDone(innerSub: Inner<N, any, F, D>): void {
+  reactDone(innerSub: Actor<N, any, F, D>): void {
     this._done();
   }
 
@@ -3045,7 +3045,7 @@ interface WindowContext<N, F, D> {
   subscription: Subscription;
 }
 
-class WindowToggleSubscriber<T, O> extends Outer<T, any> {
+class WindowToggleSubscriber<T, O> extends Reactor<T, any> {
   private contexts: WindowContext<N, F, D>[] = [];
   private openSubscription?: Subscription;
 
@@ -3121,12 +3121,12 @@ class WindowToggleSubscriber<T, O> extends Outer<T, any> {
     }
   }
 
-  notifyNext(
+  reactNext(
     outerN: any,
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, any, F, D>
+    innerSub: Actor<N, any, F, D>
   ): void {
     if (outerN === this.openings) {
       let closingNotifier;
@@ -3160,11 +3160,11 @@ class WindowToggleSubscriber<T, O> extends Outer<T, any> {
     }
   }
 
-  notifyFail(f?: F) {
+  reactFail(f?: F) {
     this.error(err);
   }
 
-  notifyDone(inner: Subscription): void {
+  reactDone(inner: Subscription): void {
     if (inner !== this.openSubscription) {
       this.closeWindow(this.contexts.indexOf((<any>inner).context));
     }
@@ -3199,7 +3199,7 @@ class WindowOperator<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
   }
 }
 
-class WindowSubscriber<N, F, D> extends Outer<T, any> {
+class WindowSubscriber<N, F, D> extends Reactor<T, any> {
   private window: Subject<N, F, D> | undefined;
   private closingNotification?: Subscription;
 
@@ -3211,21 +3211,21 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
     this.openWindow();
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Inner<N, any, F, D>
+    innerSub: Actor<N, any, F, D>
   ): void {
     this.openWindow(innerSub);
   }
 
-  notifyError(error: any, innerSub: Inner<N, any, F, D>): void {
+  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
     this._fail(error);
   }
 
-  notifyDone(innerSub: Inner<N, any, F, D>): void {
+  reactDone(innerSub: Actor<N, any, F, D>): void {
     this.openWindow(innerSub);
   }
 
@@ -3251,7 +3251,7 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
     }
   }
 
-  private openWindow(innerSub: Inner<N, any, F, D> | null = null): void {
+  private openWindow(innerSub: Actor<N, any, F, D> | null = null): void {
     if (innerSub) {
       this.remove(innerSub);
       innerSub.unsubscribe();
@@ -3457,7 +3457,7 @@ class WithLatestFromOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-class WithLatestFromSubscriber<T, R> extends Outer<N, M, F, D> {
+class WithLatestFromSubscriber<T, R> extends Reactor<N, M, F, D> {
   private values: any[];
   private toRespond: number[] = [];
 
@@ -3480,12 +3480,12 @@ class WithLatestFromSubscriber<T, R> extends Outer<N, M, F, D> {
     }
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, R>
+    innerSub: ActorSubscriber<T, R>
   ): void {
     this.values[outerX] = innerValue;
     const toRespond = this.toRespond;
@@ -3497,7 +3497,7 @@ class WithLatestFromSubscriber<T, R> extends Outer<N, M, F, D> {
     }
   }
 
-  notifyDone() {
+  reactDone() {
     // noop
   }
 

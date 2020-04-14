@@ -461,29 +461,29 @@ export const subscribeToPromise = <T>(promise: PromiseLike<T>) => (
   return subscriber;
 };
 
-export function subscribeToResult<O, I, F, D>(
-  outer: qj.Outer<O, I, F, D>,
+export function subscribeToResult<N, R, F, D>(
+  r: qj.Reactor<N, R, F, D>,
   result: any,
-  outerN: undefined,
-  outerX: undefined,
-  inner: qj.Inner<O, I, F, D>
+  rn: undefined,
+  ri: undefined,
+  a: qj.Actor<N, R, F, D>
 ): qt.Subscription | undefined;
-export function subscribeToResult<O, I, F, D>(
-  outer: qj.Outer<O, I, F, D>,
+export function subscribeToResult<N, R, F, D>(
+  r: qj.Reactor<N, R, F, D>,
   result: any,
-  outerN?: O,
-  outerX?: number
+  rn?: R,
+  ri?: number
 ): qt.Subscription | undefined;
-export function subscribeToResult<O, I, F, D>(
-  outer: qj.Outer<O, I, F, D>,
+export function subscribeToResult<N, R, F, D>(
+  r: qj.Reactor<N, R, F, D>,
   result: any,
-  outerN?: O,
-  outerX?: number,
-  inner: qj.Subscriber<I, F, D> = new qj.Inner(outer, outerN, outerX)
+  rn?: R,
+  ri?: number,
+  a: qj.Subscriber<N, F, D> = new qj.Actor(r, rn, ri)
 ): qt.Subscription | undefined {
-  if (inner.closed) return;
-  if (result instanceof qs.Source) return result.subscribe(inner);
-  return subscribeTo(result)(inner) as qj.Subscription;
+  if (a.closed) return;
+  if (result instanceof qs.Source) return result.subscribe(a);
+  return subscribeTo(result)(a) as qj.Subscription;
 }
 
 let tryCatchTarget: Function | undefined;

@@ -135,11 +135,11 @@ export interface SchedulerAction<T> extends Subscription {
   schedule(state?: T, delay?: number): Subscription;
 }
 
-export interface UnaryFun<S, T> {
-  (_: S): T;
+export interface UnaryFun<N, R> {
+  (_: N): R;
 }
 
-export interface Lifter<S, T, F, D>
-  extends UnaryFun<Source<S, F, D>, Source<T, F, D>> {}
+export interface Lifter<N, R, F, D>
+  extends UnaryFun<Source<N, F, D>, Source<R, F, D>> {}
 
 export interface MonoOper<N, F, D> extends Lifter<N, N, F, D> {}

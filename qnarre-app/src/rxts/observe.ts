@@ -1108,7 +1108,7 @@ export class CombineLatestOperator<T, R> implements Operator<T, R> {
   }
 }
 
-export class CombineLatestSubscriber<T, R> extends OuterSubscriber<T, R> {
+export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
   private active: number = 0;
   private values: any[] = [];
   private observables: any[] = [];
@@ -1147,12 +1147,12 @@ export class CombineLatestSubscriber<T, R> extends OuterSubscriber<T, R> {
     }
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, R>
+    innerSub: ActorSubscriber<T, R>
   ): void {
     const values = this.values;
     const oldVal = values[outerX];
@@ -2105,7 +2105,7 @@ export class RaceOperator<T> implements Operator<T, T> {
   }
 }
 
-export class RaceSubscriber<T> extends OuterSubscriber<T, T> {
+export class RaceSubscriber<T> extends ReactorSubscriber<T, T> {
   private hasFirst: boolean = false;
   private observables: Observable<any>[] = [];
   private subscriptions: Subscription[] = [];
@@ -2143,12 +2143,12 @@ export class RaceSubscriber<T> extends OuterSubscriber<T, T> {
     }
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: T,
     outerX: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, T>
+    innerSub: ActorSubscriber<T, T>
   ): void {
     if (!this.hasFirst) {
       this.hasFirst = true;
@@ -2168,12 +2168,12 @@ export class RaceSubscriber<T> extends OuterSubscriber<T, T> {
     this.destination.next(innerValue);
   }
 
-  notifyComplete(innerSub: InnerSubscriber<T, T>): void {
+  notifyComplete(innerSub: ActorSubscriber<T, T>): void {
     this.hasFirst = true;
     super.notifyComplete(innerSub);
   }
 
-  notifyError(error: any, innerSub: InnerSubscriber<T, T>): void {
+  notifyError(error: any, innerSub: ActorSubscriber<T, T>): void {
     this.hasFirst = true;
     super.notifyError(error, innerSub);
   }
@@ -2623,7 +2623,7 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
   }
 }
 
-class ZipBufferIterator<T, R> extends OuterSubscriber<T, R>
+class ZipBufferIterator<T, R> extends ReactorSubscriber<T, R>
   implements LookAheadIterator<T> {
   stillUnsubscribed = true;
   buffer: T[] = [];
@@ -2668,12 +2668,12 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R>
     }
   }
 
-  notifyNext(
+  reactNext(
     outerN: T,
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, R>
+    innerSub: ActorSubscriber<T, R>
   ): void {
     this.buffer.push(innerValue);
     this.parent.checkIterators();
