@@ -1148,20 +1148,20 @@ export class CombineLatestSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
     const values = this.values;
-    const oldVal = values[outerIndex];
+    const oldVal = values[outerX];
     const toRespond = !this.toRespond
       ? 0
       : oldVal === NONE
       ? --this.toRespond
       : this.toRespond;
-    values[outerIndex] = innerValue;
+    values[outerX] = innerValue;
 
     if (toRespond === 0) {
       if (this.resultSelector) {
@@ -2144,9 +2144,9 @@ export class RaceSubscriber<T> extends OuterSubscriber<T, T> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: T,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, T>
   ): void {
@@ -2154,7 +2154,7 @@ export class RaceSubscriber<T> extends OuterSubscriber<T, T> {
       this.hasFirst = true;
 
       for (let i = 0; i < this.subscriptions.length; i++) {
-        if (i !== outerIndex) {
+        if (i !== outerX) {
           let subscription = this.subscriptions[i];
 
           subscription.unsubscribe();
@@ -2669,9 +2669,9 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R>
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {

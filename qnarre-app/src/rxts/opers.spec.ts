@@ -13935,7 +13935,7 @@ describe('groupBy operator', () => {
     const e1subs = '^           !';
     const expectedOuter = '--w----------';
     const expectedInner = '-------------';
-    const outerValues = {w: 'foo'};
+    const outerNs = {w: 'foo'};
 
     const source = e1.pipe(
       groupBy((val: string) => val.toLowerCase().trim()),
@@ -13949,7 +13949,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source, unsub).toBe(expectedOuter, outerValues);
+    expectObservable(source, unsub).toBe(expectedOuter, outerNs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 

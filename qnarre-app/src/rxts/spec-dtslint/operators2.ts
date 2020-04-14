@@ -525,7 +525,7 @@ it('should support a resultSelector that takes an inner and outer index', () => 
   const o = of(1, 2, 3).pipe(
     concatMap(
       p => of(Boolean(p)),
-      (a, b, innnerIndex, outerIndex) => a
+      (a, b, innnerIndex, outerX) => a
     )
   ); // $ExpectType Observable<number>
 });
@@ -584,7 +584,7 @@ it('should support a resultSelector that takes an inner index', () => {
 
 it('should support a resultSelector that takes an inner and outer index', () => {
   const o = of(1, 2, 3).pipe(
-    concatMapTo(of('foo'), (a, b, innnerIndex, outerIndex) => a)
+    concatMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
   ); // $ExpectType Observable<number>
 });
 
@@ -1102,7 +1102,7 @@ it('should support a resultSelector that takes an inner and outer index', () => 
   const o = of(1, 2, 3).pipe(
     exhaustMap(
       p => of(Boolean(p)),
-      (a, b, innnerIndex, outerIndex) => a
+      (a, b, innnerIndex, outerX) => a
     )
   ); // $ExpectType Observable<number>
 });
@@ -1815,7 +1815,7 @@ it('should support a resultSelector that takes an inner and outer index', () => 
   const o = of(1, 2, 3).pipe(
     mergeMap(
       p => of(Boolean(p)),
-      (a, b, innnerIndex, outerIndex) => a
+      (a, b, innnerIndex, outerX) => a
     )
   ); // $ExpectType Observable<number>
 });
@@ -1914,7 +1914,7 @@ it('should support a resultSelector that takes an inner index', () => {
 
 it('should support a resultSelector that takes an inner and outer index', () => {
   const o = of(1, 2, 3).pipe(
-    mergeMapTo(of('foo'), (a, b, innnerIndex, outerIndex) => a)
+    mergeMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
   ); // $ExpectType Observable<number>
 });
 
@@ -2997,7 +2997,7 @@ it('should support a resultSelector that takes an inner index', () => {
 
 it('should support a resultSelector that takes an inner and outer index', () => {
   const o = of(1, 2, 3).pipe(
-    switchMapTo(of('foo'), (a, b, innnerIndex, outerIndex) => a)
+    switchMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
   ); // $ExpectType Observable<number>
 });
 

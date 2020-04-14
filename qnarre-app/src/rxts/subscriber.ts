@@ -46,9 +46,9 @@ export class Audit<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: MergeScanOperator,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) {
     this.clearThrottle();
@@ -75,9 +75,9 @@ export class Buffer<N, F, D> extends Outer<N[], any, F, D> {
   }
 
   notifyNext(
-    outerValue: N[],
+    outerN: N[],
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N[], any, F, D>
   ): void {
@@ -369,13 +369,13 @@ export class BufferToggle<N, M, F, D> extends Outer<N[], M, F, D> {
   }
 
   notifyNext(
-    outerValue: any,
+    outerN: any,
     innerValue: O,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ) {
-    outerValue ? this.closeBuffer(outerValue) : this.openBuffer(innerValue);
+    outerN ? this.closeBuffer(outerN) : this.openBuffer(innerValue);
   }
 
   notifyDone(innerSub: Inner<N, M, F, D>) {
@@ -448,9 +448,9 @@ export class BufferWhen<N, F, D> extends Outer<N, any, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, any, F, D>
   ): void {
@@ -592,9 +592,9 @@ export class Debounce<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: M,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ) {
@@ -792,13 +792,13 @@ export class DelayWhen<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ) {
-    this.tgt.next(outerValue);
+    this.tgt.next(outerN);
     this.removeSubscription(innerSub);
     this.tryComplete();
   }
@@ -835,7 +835,7 @@ export class DelayWhen<N, M, F, D> extends Outer<N, M, F, D> {
     if (i !== -1) {
       this.delayNotifierSubscriptions.splice(i, 1);
     }
-    return s.outerValue;
+    return s.outerN;
   }
 
   private tryDelay(delayNotifier: qt.Source<any, F, D>, value: N) {
@@ -913,9 +913,9 @@ export class Distinct<N, M, F, D> extends Outer<N, N, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: N,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, N, F, D>
   ) {
@@ -1108,9 +1108,9 @@ export class ExhaustMap<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: M,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Innerr<N, M, F, D>
   ): void {
@@ -1207,9 +1207,9 @@ export class Expand<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ) {
@@ -1546,9 +1546,9 @@ export class MergeMap<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ): void {
@@ -1633,9 +1633,9 @@ export class MergeScan<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ): void {
@@ -1828,9 +1828,9 @@ export class RepeatWhen<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ): void {
@@ -1980,9 +1980,9 @@ export class RetryWhen<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: M,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ) {
@@ -2218,9 +2218,9 @@ export class SkipUntil<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ) {
@@ -2322,9 +2322,9 @@ export class SwitchMap<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: M,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ): void {
@@ -2399,9 +2399,9 @@ export class TakeUntil<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: M,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ): void {
@@ -2560,9 +2560,9 @@ export class Throttle<N, M, F, D> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: N,
+    outerN: N,
     innerValue: M,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, M, F, D>
   ): void {

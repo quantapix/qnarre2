@@ -1,7 +1,7 @@
 import {Observable} from '../../observe';
 
 // TODO: move to types.ts
-export interface TimestampProvider {
+export interface Stamper {
   now(): number;
 }
 
@@ -61,11 +61,11 @@ export interface TimestampProvider {
  * Providing a custom timestamp provider
  *
  * ```ts
- * import { animationFrames, TimestampProvider } from 'rxjs';
+ * import { animationFrames, Stamper } from 'rxjs';
  *
  * // A custom timestamp provider
  * let now = 0;
- * const customTSProvider: TimestampProvider = {
+ * const customTSProvider: Stamper = {
  *   now() { return now++; }
  * };
  *
@@ -77,7 +77,7 @@ export interface TimestampProvider {
  *
  * @param timestampProvider An object with a `now` method that provides a numeric timestamp
  */
-export function animationFrames(timestampProvider: TimestampProvider = Date) {
+export function animationFrames(timestampProvider: Stamper = Date) {
   return timestampProvider === Date
     ? DEFAULT_ANIMATION_FRAMES
     : animationFramesFactory(timestampProvider);
@@ -87,7 +87,7 @@ export function animationFrames(timestampProvider: TimestampProvider = Date) {
  * Does the work of creating the observable for `animationFrames`.
  * @param timestampProvider The timestamp provider to use to create the observable
  */
-function animationFramesFactory(timestampProvider: TimestampProvider) {
+function animationFramesFactory(timestampProvider: Stamper) {
   return new Observable<number>(subscriber => {
     let id: number;
     const start = timestampProvider.now();

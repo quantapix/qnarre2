@@ -43,11 +43,7 @@ import {isFunction} from './utils';
 import {defer} from './observe';
 import {TimeoutError} from './utils';
 import {throwError} from './observe';
-import {
-  Timestamp as TimestampInterface,
-  TimestampProvider,
-  Timestamp
-} from './types';
+import {Timestamp as TimestampInterface, Stamper, Timestamp} from './types';
 import {isNumeric} from './utils';
 import {ZipOperator} from './observe';
 import {zip as zipStatic} from './observe';
@@ -119,9 +115,9 @@ class AuditSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ): void {
     this.clearThrottle();
@@ -168,9 +164,9 @@ class BufferSubscriber<T> extends OuterSubscriber<T, any> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, any>
   ): void {
@@ -609,13 +605,13 @@ class BufferToggleSubscriber<T, O> extends OuterSubscriber<T, O> {
   }
 
   notifyNext(
-    outerValue: any,
+    outerN: any,
     innerValue: O,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, O>
   ): void {
-    outerValue ? this.closeBuffer(outerValue) : this.openBuffer(innerValue);
+    outerN ? this.closeBuffer(outerN) : this.openBuffer(innerValue);
   }
 
   notifyComplete(innerSub: InnerSubscriber<T, O>): void {
@@ -720,9 +716,9 @@ class BufferWhenSubscriber<T> extends OuterSubscriber<T, any> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, any>
   ): void {
@@ -893,9 +889,9 @@ export function concatMap<T, O extends ObservableInput<any>>(
 export function concatMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -911,9 +907,9 @@ export function concatMapTo<T, O extends ObservableInput<any>>(
 export function concatMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -1066,9 +1062,9 @@ class DebounceSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -1376,13 +1372,13 @@ class DelayWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.dst.next(outerValue);
+    this.dst.next(outerN);
     this.removeSubscription(innerSub);
     this.tryComplete();
   }
@@ -1427,7 +1423,7 @@ class DelayWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
       this.delayNotifierSubscriptions.splice(subscriptionIdx, 1);
     }
 
-    return subscription.outerValue;
+    return subscription.outerN;
   }
 
   private tryDelay(delayNotifier: Observable<any>, value: T): void {
@@ -1554,9 +1550,9 @@ export class DistinctSubscriber<T, K> extends OuterSubscriber<T, T> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: T,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, T>
   ): void {
@@ -1827,9 +1823,9 @@ export function exhaustMap<T, O extends ObservableInput<any>>(
 export function exhaustMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -1914,9 +1910,9 @@ class ExhaustMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -2063,9 +2059,9 @@ export class ExpandSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -2751,9 +2747,9 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?:
     | ((
-        outerValue: T,
+        outerN: T,
         innerValue: ObservedValueOf<O>,
-        outerIndex: number,
+        outerX: number,
         innerIndex: number
       ) => R)
     | number,
@@ -2850,9 +2846,9 @@ export class MergeMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -2879,9 +2875,9 @@ export function mergeMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?:
     | ((
-        outerValue: T,
+        outerN: T,
         innerValue: ObservedValueOf<O>,
-        outerIndex: number,
+        outerX: number,
         innerIndex: number
       ) => R)
     | number,
@@ -2994,9 +2990,9 @@ export class MergeScanSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -3691,9 +3687,9 @@ class RepeatWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -3913,9 +3909,9 @@ class RetryWhenSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -3954,9 +3950,9 @@ class SampleSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -4508,9 +4504,9 @@ class SkipUntilSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -4618,9 +4614,9 @@ export function switchMap<T, O extends ObservableInput<any>>(
 export function switchMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -4710,9 +4706,9 @@ class SwitchMapSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -4724,9 +4720,9 @@ export function switchMapTo<R>(observable: ObservableInput<R>): OperFun<any, R>;
 export function switchMapTo<T, I, R>(
   innerObservable: ObservableInput<I>,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: I,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, I | R> {
@@ -4868,9 +4864,9 @@ class TakeUntilSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -5154,9 +5150,9 @@ class ThrottleSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -5461,7 +5457,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
 }
 
 export function timestamp<T>(
-  timestampProvider: TimestampProvider = Date
+  timestampProvider: Stamper = Date
 ): OperFun<T, Timestamp<T>> {
   return map((value: T) => ({value, timestamp: timestampProvider.now()}));
 }
@@ -5510,9 +5506,9 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, any>
   ): void {
@@ -6004,13 +6000,13 @@ class WindowToggleSubscriber<T, O> extends OuterSubscriber<T, any> {
   }
 
   notifyNext(
-    outerValue: any,
+    outerN: any,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, any>
   ): void {
-    if (outerValue === this.openings) {
+    if (outerN === this.openings) {
       let closingNotifier;
       try {
         const {closingSelector} = this;
@@ -6038,7 +6034,7 @@ class WindowToggleSubscriber<T, O> extends OuterSubscriber<T, any> {
 
       this.dst.next(window);
     } else {
-      this.closeWindow(this.contexts.indexOf(outerValue));
+      this.closeWindow(this.contexts.indexOf(outerN));
     }
   }
 
@@ -6094,9 +6090,9 @@ class WindowSubscriber<T> extends OuterSubscriber<T, any> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, any>
   ): void {
@@ -6363,16 +6359,16 @@ class WithLatestFromSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.values[outerIndex] = innerValue;
+    this.values[outerX] = innerValue;
     const toRespond = this.toRespond;
     if (toRespond.length > 0) {
-      const found = toRespond.indexOf(outerIndex);
+      const found = toRespond.indexOf(outerX);
       if (found !== -1) {
         toRespond.splice(found, 1);
       }

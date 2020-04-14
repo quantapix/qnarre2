@@ -2,6 +2,12 @@ import * as qt from './types';
 import * as qu from './utils';
 
 export class Source<N, F, D> implements qt.Source<N, F, D> {
+  static createSource<N, F, D>(
+    s?: (_: qt.Subscriber<N, F, D>) => qt.Subscription
+  ) {
+    return new Source<N, F, D>(s);
+  }
+
   [Symbol.observable]() {
     return this;
   }
@@ -33,10 +39,6 @@ export class Source<N, F, D> implements qt.Source<N, F, D> {
     }
     return;
   }
-
-  //static create<T>(s?: (_: qt.Subscriber<T>) => qt.Closer) {
-  //  return new Observable<T>(s);
-  //}
 
   lift<M>(o?: qt.Operator<N, M, F, D>) {
     const s = new Source<M, F, D>();

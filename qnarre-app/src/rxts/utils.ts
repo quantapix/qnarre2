@@ -1,13 +1,8 @@
-import {Subject} from './subject';
-import {Observer, ObservableInput, InteropObservable} from './types';
-import {Observable} from './observe';
-import {SchedulerLike} from './types';
-import {Subscription} from './subscribe';
-
-import {InnerSubscriber} from './InnerSubscriber';
-import {OuterSubscriber} from './OuterSubscriber';
-
+import * as qj from './subject';
 import * as qt from './types';
+
+import {ObservableInput, InteropObservable} from './types';
+import {Observable} from './observe';
 
 export interface OutOfRangeError extends Error {}
 
@@ -18,7 +13,7 @@ export interface OutOfRangeErrorCtor {
 const OutOfRangeErrorImpl = (() => {
   function OutOfRangeErrorImpl(this: Error) {
     Error.call(this);
-    this.message = 'argument out of range';
+    this.message = 'out of range';
     this.name = 'OutOfRangeError';
     return this;
   }
@@ -80,19 +75,6 @@ export const Immediate = {
 export const TestTools = {
   pending() {
     return Object.keys(activeHandles).length;
-  }
-};
-
-export const fakeObserver: Observer<any> = {
-  closed: true,
-  next(_: any): void {
-    /* noop */
-  },
-  error(e: any): void {
-    hostReportError(e);
-  },
-  complete(): void {
-    /*noop*/
   }
 };
 
@@ -191,7 +173,7 @@ export function canReportError(s: qt.Subscriber<any> | Subject<any>): boolean {
 
 export const errorObject: any = {e: {}};
 
-export function hostReportError(e: any) {
+export function delayedThrow(e: any) {
   setTimeout(() => {
     throw e;
   }, 0);
@@ -242,7 +224,7 @@ export function isPromise(x: any): x is PromiseLike<any> {
   );
 }
 
-export function isScheduler(x: any): x is SchedulerLike {
+export function isScheduler(x: any): x is qt.SchedulerLike {
   return x && typeof (<any>x).schedule === 'function';
 }
 
@@ -370,7 +352,7 @@ const _root: any = __window || __global || __self;
 
 export const subscribeTo = <T>(
   result: ObservableInput<T>
-): ((subscriber: qt.Subscriber<T>) => Subscription | void) => {
+): ((subscriber: qt.Subscriber<T>) => qj.Subscription | void) => {
   if (!!result && typeof (result as any)[Symbol.observable] === 'function') {
     return subscribeToObservable(result as any);
   } else if (isArrayLike(result)) {
@@ -474,39 +456,39 @@ export const subscribeToPromise = <T>(promise: PromiseLike<T>) => (
       },
       (err: any) => subscriber.error(err)
     )
-    .then(null, hostReportError);
+    .then(null, delayedThrow);
   return subscriber;
 };
 
 export function subscribeToResult<T, R>(
-  outerSubscriber: OuterSubscriber<T, R>,
+  outerSubscriber: qj.Outer<T, R>,
   result: any,
-  outerValue: undefined,
-  outerIndex: undefined,
-  innerSubscriber: InnerSubscriber<T, R>
-): Subscription | undefined;
+  outerN: undefined,
+  outerX: undefined,
+  innerSubscriber: qj.Inner<T, R>
+): qj.Subscription | undefined;
 
 export function subscribeToResult<T, R>(
-  outerSubscriber: OuterSubscriber<T, R>,
+  outerSubscriber: qj.Outer<T, R>,
   result: any,
-  outerValue?: T,
-  outerIndex?: number
-): Subscription | undefined;
+  outerN?: T,
+  outerX?: number
+): qj.Subscription | undefined;
 
 export function subscribeToResult<T, R>(
-  outerSubscriber: OuterSubscriber<T, R>,
+  outerSubscriber: qj.Outer<T, R>,
   result: any,
-  outerValue?: T,
-  outerIndex?: number,
-  innerSubscriber: Subscriber<R> = new InnerSubscriber(
+  outerN?: T,
+  outerX?: number,
+  innerSubscriber: Subscriber<R> = new qj.Inner(
     outerSubscriber,
-    outerValue,
-    outerIndex!
+    outerN,
+    outerX!
   )
-): Subscription | undefined {
+): qj.Subscription | undefined {
   if (innerSubscriber.closed) return undefined;
   if (result instanceof Observable) return result.subscribe(innerSubscriber);
-  return subscribeTo(result)(innerSubscriber) as Subscription;
+  return subscribeTo(result)(innerSubscriber) as qj.Subscription;
 }
 
 let tryCatchTarget: Function | undefined;

@@ -48,12 +48,11 @@ export type Closer = Unsubscriber | Cfun | void;
 
 export interface Subscription extends Unsubscriber {
   readonly closed?: boolean;
-  unsubscribe(): void;
 }
 
 export interface RefCountSubscription extends Subscription {
-  count: number;
   attempted?: boolean;
+  count: number;
 }
 
 export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
@@ -62,7 +61,10 @@ export interface Source<N, F, D> {
   subscribe(_?: Target<N, F, D>): Subscription;
 }
 
-export interface Subject<N, F, D> extends Source<N, F, D>, Subscription {
+export interface Subject<N, F, D>
+  extends Source<N, F, D>,
+    Observer<N, F, D>,
+    Subscription {
   readonly stopped?: boolean;
 }
 
@@ -116,11 +118,11 @@ export interface TimeInterval<T> {
   interval: number;
 }
 
-export interface TimestampProvider {
+export interface Stamper {
   now(): number;
 }
 
-export interface SchedulerLike extends TimestampProvider {
+export interface SchedulerLike extends Stamper {
   schedule<T>(
     work: (this: SchedulerAction<T>, state?: T) => void,
     delay?: number,

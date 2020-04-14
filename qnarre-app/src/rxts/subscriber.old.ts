@@ -282,9 +282,9 @@ export function concatMap<T, O extends ObservableInput<any>>(
 export function concatMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -299,9 +299,9 @@ export function concatMapTo<T, O extends ObservableInput<any>>(
 export function concatMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -641,9 +641,9 @@ export function exhaustMap<T, O extends ObservableInput<any>>(
 export function exhaustMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -1109,9 +1109,9 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?:
     | ((
-        outerValue: T,
+        outerN: T,
         innerValue: ObservedValueOf<O>,
-        outerIndex: number,
+        outerX: number,
         innerIndex: number
       ) => R)
     | number,
@@ -1157,9 +1157,9 @@ export function mergeMapTo<T, R, O extends ObservableInput<any>>(
   innerObservable: O,
   resultSelector?:
     | ((
-        outerValue: T,
+        outerN: T,
         innerValue: ObservedValueOf<O>,
-        outerIndex: number,
+        outerX: number,
         innerIndex: number
       ) => R)
     | number,
@@ -1818,9 +1818,9 @@ class SampleSubscriber<T, R> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
@@ -2196,9 +2196,9 @@ export function switchMap<T, O extends ObservableInput<any>>(
 export function switchMap<T, R, O extends ObservableInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: ObservedValueOf<O>,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, ObservedValueOf<O> | R> {
@@ -2229,9 +2229,9 @@ export function switchMapTo<R>(observable: ObservableInput<R>): OperFun<any, R>;
 export function switchMapTo<T, I, R>(
   innerObservable: ObservableInput<I>,
   resultSelector?: (
-    outerValue: T,
+    outerN: T,
     innerValue: I,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number
   ) => R
 ): OperFun<T, I | R> {
@@ -2577,7 +2577,7 @@ class TimeoutWithOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 
 export function timestamp<N, F, D>(
-  timestampProvider: TimestampProvider = Date
+  timestampProvider: Stamper = Date
 ): OperFun<T, Timestamp<N, F, D>> {
   return map((value: N) => ({value, timestamp: timestampProvider.now()}));
 }
@@ -2626,9 +2626,9 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, any, F, D>
   ): void {
@@ -3122,13 +3122,13 @@ class WindowToggleSubscriber<T, O> extends Outer<T, any> {
   }
 
   notifyNext(
-    outerValue: any,
+    outerN: any,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, any, F, D>
   ): void {
-    if (outerValue === this.openings) {
+    if (outerN === this.openings) {
       let closingNotifier;
       try {
         const {closingSelector} = this;
@@ -3156,7 +3156,7 @@ class WindowToggleSubscriber<T, O> extends Outer<T, any> {
 
       this.tgt.next(window);
     } else {
-      this.closeWindow(this.contexts.indexOf(outerValue));
+      this.closeWindow(this.contexts.indexOf(outerN));
     }
   }
 
@@ -3212,9 +3212,9 @@ class WindowSubscriber<N, F, D> extends Outer<T, any> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: any,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: Inner<N, any, F, D>
   ): void {
@@ -3481,16 +3481,16 @@ class WithLatestFromSubscriber<T, R> extends Outer<N, M, F, D> {
   }
 
   notifyNext(
-    outerValue: T,
+    outerN: T,
     innerValue: R,
-    outerIndex: number,
+    outerX: number,
     innerIndex: number,
     innerSub: InnerSubscriber<T, R>
   ): void {
-    this.values[outerIndex] = innerValue;
+    this.values[outerX] = innerValue;
     const toRespond = this.toRespond;
     if (toRespond.length > 0) {
-      const found = toRespond.indexOf(outerIndex);
+      const found = toRespond.indexOf(outerX);
       if (found !== -1) {
         toRespond.splice(found, 1);
       }
