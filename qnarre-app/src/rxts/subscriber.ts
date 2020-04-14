@@ -47,62 +47,57 @@ export class Audit<N, R, F, D> extends Reactor<N, R, F, D> {
     }
   }
 
-  reactNext(_r?: R, _?: MergeScanOperator) {
+  reactNext() {
     this.clear();
   }
 
-  reactDone(_d?: D, _?: Actor<N, R, F, D>) {
+  reactDone() {
     this.clear();
   }
 }
 
 export class Buffer<N, F, D> extends Reactor<any, N, F, D> {
-  private buffer = [] as N[];
+  private buf?: (N | undefined)[];
 
   constructor(
-    public tgt2: Subscriber<N[], F, D>,
-    closing: qt.Source<any, F, D>
+    public tgt2: Subscriber<(N | undefined)[], F, D>,
+    act: qt.Source<any, F, D>
   ) {
     super();
-    this.add(qu.subscribeToResult(this, closing));
+    this.add(qu.subscribeToResult(this, act));
   }
 
   protected _next(n?: N) {
-    if (n !== undefined) this.buffer.push(n);
+    if (!this.buf) this.buf = [];
+    this.buf.push(n);
   }
 
-  reactNext(
-    _r?: N,
-    _n?: any,
-    _ri?: number,
-    _i?: number,
-    _?: Actor<any, N, F, D>
-  ) {
-    const b = this.buffer;
-    this.buffer = [];
+  reactNext() {
+    const b = this.buf;
+    this.buf = undefined;
     this.tgt2.next(b);
   }
 }
 
 export class BufferCount<N, F, D> extends Subscriber<N[], F, D> {
-  private buffer = [] as (N[] | undefined)[];
+  private buf = [] as (N[] | undefined)[];
 
-  constructor(tgt: Subscriber<N[], F, D>, private bufferSize: number) {
+  constructor(tgt: Subscriber<N[], F, D>, private size: number) {
     super(tgt);
   }
 
   protected _next(n?: N[]) {
-    const buffer = this.buffer;
+    const buffer = this.buf;
     buffer.push(n);
-    if (buffer.length == this.bufferSize) {
-      this.tgt.next(buffer);
-      this.buffer = [];
+    if (buffer.length == this.size) {
+      this.tgt.next(buf);
+      this.buf = [];
     }
   }
 
   protected _done(d?: D) {
-    const buffer = this.buffer;
-    if (buffer.length > 0) this.tgt.next(buffer);
+    const buffer = this.buf;
+    if (buffer.length > 0) this.tgt.next(buf);
     super._done();
   }
 }

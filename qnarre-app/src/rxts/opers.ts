@@ -10,281 +10,87 @@ export function audit<N, R, F, D>(
 }
 
 export class Audit<N, R, F, D> implements qt.Operator<N, R, F, D> {
-  constructor(private duration: (_?: R) => qt.SourceOrPromise<N, F, D>) {}
+  constructor(private dur: (_?: R) => qt.SourceOrPromise<N, F, D>) {}
 
   call(r: qj.Subscriber<R, F, D>, s: qt.Source<N, F, D>) {
-    const a = new qr.Audit(r, this.duration);
-    return s.subscribe(new qr.Audit(r, this.duration));
+    return s.subscribe(new qr.Audit(r, this.dur));
   }
+}
+
+export function auditTime<N, F, D>(
+  duration: number,
+  s: qt.SchedulerLike = async
+): qt.MonoOper<N, F, D> {
+  return audit(() => timer(duration, s));
 }
 
 export function buffer<N, F, D>(
-  c: qt.Source<any, F, D>
-): qt.Lifter<N, N[], F, D> {
-  return (s: qt.Source<N, F, D>) => s.lift(new Buffer<N, F, D>(c));
+  a: qt.Source<any, F, D>
+): qt.Lifter<N, (N | undefined)[], F, D> {
+  return (s: qt.Source<N, F, D>) => s.lift(new Buffer<N, F, D>(a));
 }
 
-export class Buffer<N, F, D> implements qt.Operator<N, N[], F, D> {
-  constructor(private closing: qt.Source<any, F, D>) {}
+export class Buffer<N, F, D>
+  implements qt.Operator<N, (N | undefined)[], F, D> {
+  constructor(private act: qt.Source<any, F, D>) {}
+
+  call(r: qj.Subscriber<(N | undefined)[], F, D>, s: qt.Source<N, F, D>) {
+    return s.subscribe(new qr.Buffer(r, this.act));
+  }
+}
+
+export function bufferCount<N, F, D>(
+  size: number,
+  every?: number
+): qt.Lifter<N, N[], F, D> {
+  return (s: qt.Source<N, F, D>) =>
+    s.lift(new BufferCount<N, F, D>(size, every));
+}
+
+export class BufferCount<N, F, D> implements qt.Operator<N, N[], F, D> {
+  private cls: any;
+
+  constructor(private size: number, private every?: number) {
+    if (!every || size === every) this.cls = qr.BufferCount;
+    else this.cls = qr.BufferSkipCount;
+  }
 
   call(r: qj.Subscriber<N[], F, D>, s: qt.Source<N, F, D>) {
-    return s.subscribe(new qr.Buffer(r, this.closing));
+    return s.subscribe(new this.cls(r, this.size, this.every));
   }
 }
 
-/*
-
-class AuditSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private value: T | null = null;
-  private hasValue: boolean = false;
-  private throttled: Subscription | null = null;
-
-  constructor(
-    destination: Subscriber<T>,
-    private durationSelector: (value: T) => qt.SourceOrPromise<any>
-  ) {
-    super(destination);
-  }
-
-  protected _next(v: T) {
-    this.value = v;
-    this.hasValue = true;
-    if (!this.throttled) {
-      let duration;
-      try {
-        const {durationSelector} = this;
-        duration = durationSelector(v);
-      } catch (err) {
-        return this.dst.error(err);
-      }
-      const innerSubscription = subscribeToResult(this, duration);
-      if (!innerSubscription || innerSubscription.closed) {
-        this.clearThrottle();
-      } else {
-        this.add((this.throttled = innerSubscription));
-      }
-    }
-  }
-
-  clearThrottle() {
-    const {value, hasValue, throttled} = this;
-    if (throttled) {
-      this.remove(throttled);
-      this.throttled = null;
-      throttled.unsubscribe();
-    }
-    if (hasValue) {
-      this.value = null;
-      this.hasValue = false;
-      this.dst.next(value);
-    }
-  }
-
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number
-  ): void {
-    this.clearThrottle();
-  }
-
-  notifyComplete(): void {
-    this.clearThrottle();
-  }
-}
-
-export function auditTime<T>(
-  duration: number,
-  scheduler: SchedulerLike = async
-): MonoOper<T> {
-  return audit(() => timer(duration, scheduler));
-}
-
-export function buffer<T>(closingNotifier: Observable<any>): Lifter<T, T[]> {
-  return function bufferLifter(source: Observable<T>) {
-    return source.lift(new BufferOperator<T>(closingNotifier));
-  };
-}
-
-class BufferOperator<T> implements Operator<T, T[]> {
-  constructor(private closingNotifier: Observable<any>) {}
-
-  call(subscriber: Subscriber<T[]>, source: any): any {
-    return source.subscribe(
-      new BufferSubscriber(subscriber, this.closingNotifier)
-    );
-  }
-}
-
-class BufferSubscriber<T> extends ReactorSubscriber<T, any> {
-  private buffer: T[] = [];
-
-  constructor(destination: Subscriber<T[]>, closingNotifier: Observable<any>) {
-    super(destination);
-    this.add(subscribeToResult(this, closingNotifier));
-  }
-
-  protected _next(value: T) {
-    this.buffer.push(value);
-  }
-
-  reactNext(
-    outerN: T,
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: ActorSubscriber<T, any>
-  ): void {
-    const buffer = this.buffer;
-    this.buffer = [];
-    this.dst.next(buffer);
-  }
-}
-
-export function bufferCount<T>(
-  bufferSize: number,
-  startBufferEvery: number | null = null
-): Lifter<T, T[]> {
-  return function bufferCountLifter(source: Observable<T>) {
-    return source.lift(
-      new BufferCountOperator<T>(bufferSize, startBufferEvery)
-    );
-  };
-}
-
-class BufferCountOperator<T> implements Operator<T, T[]> {
-  private subscriberClass: any;
-
-  constructor(
-    private bufferSize: number,
-    private startBufferEvery: number | null
-  ) {
-    if (!startBufferEvery || bufferSize === startBufferEvery) {
-      this.subscriberClass = BufferCountSubscriber;
-    } else {
-      this.subscriberClass = BufferSkipCountSubscriber;
-    }
-  }
-
-  call(subscriber: Subscriber<T[]>, source: any): Closer {
-    return source.subscribe(
-      new this.subscriberClass(
-        subscriber,
-        this.bufferSize,
-        this.startBufferEvery
-      )
-    );
-  }
-}
-
-class BufferCountSubscriber<T> extends Subscriber<T> {
-  private buffer: T[] = [];
-
-  constructor(destination: Subscriber<T[]>, private bufferSize: number) {
-    super(destination);
-  }
-
-  protected _next(v: T) {
-    const buffer = this.buffer;
-
-    buffer.push(value);
-
-    if (buffer.length == this.bufferSize) {
-      this.dst.next(buffer);
-      this.buffer = [];
-    }
-  }
-
-  protected _complete() {
-    const buffer = this.buffer;
-    if (buffer.length > 0) {
-      this.dst.next(buffer);
-    }
-    super._complete();
-  }
-}
-
-class BufferSkipCountSubscriber<T> extends Subscriber<T> {
-  private buffers: Array<T[]> = [];
-  private count: number = 0;
-
-  constructor(
-    destination: Subscriber<T[]>,
-    private bufferSize: number,
-    private startBufferEvery: number
-  ) {
-    super(destination);
-  }
-
-  protected _next(v: T) {
-    const {bufferSize, startBufferEvery, buffers, count} = this;
-
-    this.count++;
-    if (count % startBufferEvery === 0) {
-      buffers.push([]);
-    }
-
-    for (let i = buffers.length; i--; ) {
-      const buffer = buffers[i];
-      buffer.push(value);
-      if (buffer.length === bufferSize) {
-        buffers.splice(i, 1);
-        this.dst.next(buffer);
-      }
-    }
-  }
-
-  protected _complete() {
-    const {buffers, destination} = this;
-
-    while (buffers.length > 0) {
-      let buffer = buffers.shift()!;
-      if (buffer.length > 0) {
-        destination.next(buffer);
-      }
-    }
-    super._complete();
-  }
-}
-
-export function bufferTime<T>(
+export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
-  scheduler?: SchedulerLike
-): Lifter<T, T[]>;
-export function bufferTime<T>(
+  scheduler?: qt.SchedulerLike
+): qt.Lifter<N, N[], F, D>;
+export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
-  scheduler?: SchedulerLike
-): Lifter<T, T[]>;
-export function bufferTime<T>(
+  scheduler?: qt.SchedulerLike
+): qt.Lifter<N, N[], F, D>;
+export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
   maxBufferSize: number,
-  scheduler?: SchedulerLike
-): Lifter<T, T[]>;
-export function bufferTime<T>(bufferTimeSpan: number): Lifter<T, T[]> {
+  scheduler?: qt.SchedulerLike
+): qt.Lifter<N, N[], F, D>;
+export function bufferTime<N, F, D>(
+  bufferTimeSpan: number
+): qt.Lifter<N, N[], F, D> {
   let length: number = arguments.length;
-
-  let scheduler: SchedulerLike = async;
+  let scheduler: qt.SchedulerLike = async;
   if (isScheduler(arguments[arguments.length - 1])) {
     scheduler = arguments[arguments.length - 1];
     length--;
   }
-
   let bufferCreationInterval: number | null = null;
-  if (length >= 2) {
-    bufferCreationInterval = arguments[1];
-  }
-
+  if (length >= 2) bufferCreationInterval = arguments[1];
   let maxBufferSize: number = Number.POSITIVE_INFINITY;
-  if (length >= 3) {
-    maxBufferSize = arguments[2];
-  }
-
-  return function bufferTimeLifter(source: Observable<T>) {
+  if (length >= 3) maxBufferSize = arguments[2];
+  return function bufferTimeLifter(source: qt.Source<N, F, D>) {
     return source.lift(
-      new BufferTimeOperator<T>(
+      new BufferTimeOperator<N, F, D>(
         bufferTimeSpan,
         bufferCreationInterval,
         maxBufferSize,
@@ -294,15 +100,15 @@ export function bufferTime<T>(bufferTimeSpan: number): Lifter<T, T[]> {
   };
 }
 
-class BufferTimeOperator<T> implements Operator<T, T[]> {
+export class BufferTime<N, F, D> implements qt.Operator<N, N[], F, D> {
   constructor(
     private bufferTimeSpan: number,
     private bufferCreationInterval: number | null,
     private maxBufferSize: number,
-    private scheduler: SchedulerLike
+    private scheduler: qt.SchedulerLike
   ) {}
 
-  call(subscriber: Subscriber<T[]>, source: any): any {
+  call(subscriber: Subscriber<N[], F, D>, source: any): any {
     return source.subscribe(
       new BufferTimeSubscriber(
         subscriber,
@@ -315,6 +121,7 @@ class BufferTimeOperator<T> implements Operator<T, T[]> {
   }
 }
 
+/*
 class Context<T> {
   buffer: T[] = [];
   closeAction: Subscription | undefined;
