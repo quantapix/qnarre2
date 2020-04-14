@@ -56,28 +56,31 @@ export class Audit<N, R, F, D> extends Reactor<N, R, F, D> {
   }
 }
 
-export class Buffer<N, F, D> extends Reactor<any, N[], F, D> {
-  private buffer = [] as (N[] | undefined)[];
+export class Buffer<N, F, D> extends Reactor<any, N, F, D> {
+  private buffer = [] as N[];
 
-  constructor(tgt: Subscriber<N[], F, D>, closing: qt.Source<any, F, D>) {
-    super(tgt);
+  constructor(
+    public tgt2: Subscriber<N[], F, D>,
+    closing: qt.Source<any, F, D>
+  ) {
+    super();
     this.add(qu.subscribeToResult(this, closing));
   }
 
-  protected _next(n?: N[]) {
-    this.buffer.push(n);
+  protected _next(n?: N) {
+    if (n !== undefined) this.buffer.push(n);
   }
 
   reactNext(
-    _r?: N[],
+    _r?: N,
     _n?: any,
     _ri?: number,
     _i?: number,
-    _?: Actor<any, N[], F, D>
+    _?: Actor<any, N, F, D>
   ) {
     const b = this.buffer;
     this.buffer = [];
-    this.tgt.next(b);
+    this.tgt2.next(b);
   }
 }
 
