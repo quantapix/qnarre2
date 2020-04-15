@@ -25,3 +25,15 @@
 [submodule "dev-libs/rxjs"]
 	path = dev-libs/rxjs
 	url = https://github.com/ReactiveX/rxjs.git
+[submodule "dev-libs/TypeScript"]
+	path = dev-libs/TypeScript
+	url = https://github.com/microsoft/TypeScript.git
+[submodule "dev-libs/julia"]
+	path = dev-libs/julia
+	url = https://github.com/JuliaLang/julia.git
+[submodule "dev-libs/julia-wasm"]
+	path = dev-libs/julia-wasm
+	url = https://github.com/Keno/julia-wasm.git
+[submodule "dev-libs/emsdk"]
+	path = dev-libs/emsdk
+	url = https://github.com/emscripten-core/emsdk.git
