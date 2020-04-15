@@ -1,5 +1,5 @@
 import {TestMessage} from '../../../testing/TestMessage';
-import {ColdObservable} from '../../../testing/ColdObservable';
+import {ColdObservable} from '../../testing';
 
 export interface TestStream {
   messages: TestMessage[];

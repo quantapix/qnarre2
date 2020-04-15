@@ -2,7 +2,7 @@ import {painter} from './painter';
 import {Observable} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
 import {TestMessage} from '../../../testing/TestMessage';
-import {ColdObservable} from '../../../testing/ColdObservable';
+import {ColdObservable} from '../../testing';
 import {HotObservable} from '../../../testing/HotObservable';
 import {TestStream} from './types';
 

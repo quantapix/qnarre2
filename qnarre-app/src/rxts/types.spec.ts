@@ -5,7 +5,7 @@ import {
   ObservedTupleFrom,
   Unshift
 } from 'rxjs';
-import {A, B, C} from './helpers';
+import {A, B, C} from './spec/helpers/helpers';
 
 describe('ObservedValueOf', () => {
   it('should infer from an observable', () => {

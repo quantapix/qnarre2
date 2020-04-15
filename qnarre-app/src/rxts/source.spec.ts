@@ -1,40 +1,14 @@
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {Observer, Closer} from '../types';
+import * as qs from './source';
+import * as qt from './types';
+import * as qu from './utils';
+import * as qj from './subject';
+import {a$} from 'helpers';
+
 import {
   cold,
   expectObservable,
   expectSubscriptions
-} from './helpers/marble-testing';
-import {
-  Observable,
-  config,
-  Subscription,
-  noop,
-  Subscriber,
-  Operator,
-  NEVER,
-  Subject,
-  of,
-  throwError,
-  empty,
-  interval
-} from 'rxjs';
-import {
-  map,
-  multicast,
-  refCount,
-  filter,
-  count,
-  tap,
-  combineLatest,
-  concat,
-  merge,
-  race,
-  zip,
-  take,
-  finalize
-} from 'rxjs/operators';
+} from './spec/helpers/marble-testing';
 
 declare const asDiagram: any, rxTestScheduler: any;
 
@@ -43,10 +17,9 @@ function expectFullObserver(val: any) {
   expect(val.next).to.be.a('function');
   expect(val.error).to.be.a('function');
   expect(val.complete).to.be.a('function');
-  expect(val.closed).to.be.a('boolean');
+  expect(val.closed).toBe('boolean');
 }
 
-/** @test {Observable} */
 describe('Observable', () => {
   let originalConfigPromise: any;
   before(() => (originalConfigPromise = config.Promise));
@@ -704,7 +677,6 @@ describe('Observable', () => {
   });
 });
 
-/** @test {Observable} */
 describe('Observable.create', () => {
   asDiagram('create(obs => { obs.next(1); })')(
     'should create a cold observable that emits just 1',
@@ -753,7 +725,6 @@ describe('Observable.create', () => {
   });
 });
 
-/** @test {Observable} */
 describe('Observable.lift', () => {
   class MyCustomObservable<T> extends Observable<T> {
     static from<T>(source: any) {
@@ -1047,6 +1018,899 @@ describe('Observable.lift', () => {
     } finally {
       consoleStub.restore();
     }
+  });
+});
+
+describe('pipe', () => {
+  it('should infer for no arguments', () => {
+    const o = of('foo').pipe(); // $ExpectType Observable<string>
+  });
+
+  it('should infer for 1 argument', () => {
+    const o = of('foo').pipe(a('1')); // $ExpectType Observable<"1">
+  });
+
+  it('should infer for 2 arguments', () => {
+    const o = of('foo').pipe(a('1'), a('2')); // $ExpectType Observable<"2">
+  });
+
+  it('should infer for 3 arguments', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('3')); // $ExpectType Observable<"3">
+  });
+
+  it('should infer for 4 arguments', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4')); // $ExpectType Observable<"4">
+  });
+
+  it('should infer for 5 arguments', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5')); // $ExpectType Observable<"5">
+  });
+
+  it('should infer for 6 arguments', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6')); // $ExpectType Observable<"6">
+  });
+
+  it('should infer for 7 arguments', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7')
+    ); // $ExpectType Observable<"7">
+  });
+
+  it('should infer for 8 arguments', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8')
+    ); // $ExpectType Observable<"8">
+  });
+
+  it('should infer for 9 arguments', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9')
+    ); // $ExpectType Observable<"9">
+  });
+
+  it('should infer unknown for more than 9 arguments', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9'),
+      a('10')
+    ); // $ExpectType Observable<unknown>
+  });
+
+  it('should require a type assertion for more than 9 arguments', () => {
+    const o: Observable<'10'> = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9'),
+      a('10')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 1st argument', () => {
+    const o = of('foo').pipe(a('#', '1')); // $ExpectError
+  });
+
+  it('should enforce types for the 2nd argument', () => {
+    const o = of('foo').pipe(a('1'), a('#', '2')); // $ExpectError
+  });
+
+  it('should enforce types for the 3rd argument', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('#', '3')); // $ExpectError
+  });
+
+  it('should enforce types for the 4th argument', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('#', '4')); // $ExpectError
+  });
+
+  it('should enforce types for the 5th argument', () => {
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('#', '5')); // $ExpectError
+  });
+
+  it('should enforce types for the 6th argument', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('#', '6')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 7th argument', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('#', '7')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 8th argument', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('#', '8')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 9th argument', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('#', '9')
+    ); // $ExpectError
+  });
+
+  it('should not enforce types beyond the 9th argument', () => {
+    const o = of('foo').pipe(
+      a('1'),
+      a('2'),
+      a('3'),
+      a('4'),
+      a('5'),
+      a('6'),
+      a('7'),
+      a('8'),
+      a('9'),
+      a('#', '10')
+    ); // $ExpectType Observable<unknown>
+  });
+
+  it('should support operators that return generics', () => {
+    const customOperator = () => <T>(a: Observable<T>) => a;
+    const o = of('foo').pipe(customOperator()); // $ExpectType Observable<string>
+  });
+
+  it('should have proper return type for toPromise', () => {
+    const o = of('foo').toPromise(); // $ExpectType Promise<string | undefined>
+  });
+
+  it('should infer unknown for no arguments', () => {
+    const o = pipe(); // $ExpectType UnaryFun<unknown, unknown>
+  });
+
+  it('should infer for 1 argument', () => {
+    const o = pipe(a('0', '1')); // $ExpectType UnaryFun<"0", "1">
+  });
+
+  it('should infer for 2 arguments', () => {
+    const o = pipe(a('0', '1'), a('1', '2')); // $ExpectType UnaryFun<"0", "2">
+  });
+
+  it('should infer for 3 arguments', () => {
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3')); // $ExpectType UnaryFun<"0", "3">
+  });
+
+  it('should infer for 4 arguments', () => {
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3'), a('3', '4')); // $ExpectType UnaryFun<"0", "4">
+  });
+
+  it('should infer for 5 arguments', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5')
+    ); // $ExpectType UnaryFun<"0", "5">
+  });
+
+  it('should infer for 6 arguments', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6')
+    ); // $ExpectType UnaryFun<"0", "6">
+  });
+
+  it('should infer for 7 arguments', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7')
+    ); // $ExpectType UnaryFun<"0", "7">
+  });
+
+  it('should infer for 8 arguments', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7'),
+      a('7', '8')
+    ); // $ExpectType UnaryFun<"0", "8">
+  });
+
+  it('should infer for 9 arguments', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7'),
+      a('7', '8'),
+      a('8', '9')
+    ); // $ExpectType UnaryFun<"0", "9">
+  });
+
+  it('should infer {} for more than 9 arguments', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7'),
+      a('7', '8'),
+      a('8', '9'),
+      a('9', '10')
+    ); // $ExpectType UnaryFun<"0", {}>
+  });
+
+  it('should require a type assertion for more than 9 arguments', () => {
+    const o: UnaryFun<'0', '10'> = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7'),
+      a('7', '8'),
+      a('8', '9'),
+      a('9', '10')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 2nd argument', () => {
+    const o = pipe(a('0', '1'), a('#', '2')); // $ExpectError
+  });
+
+  it('should enforce types for the 3rd argument', () => {
+    const o = pipe(a('0', '1'), a('1', '2'), a('#', '3')); // $ExpectError
+  });
+
+  it('should enforce types for the 4th argument', () => {
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3'), a('#', '4')); // $ExpectError
+  });
+
+  it('should enforce types for the 5th argument', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('#', '5')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 6th argument', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('#', '6')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 7th argument', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('#', '7')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 8th argument', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7'),
+      a('#', '8')
+    ); // $ExpectError
+  });
+
+  it('should enforce types for the 9th argument', () => {
+    const o = pipe(
+      a('0', '1'),
+      a('1', '2'),
+      a('2', '3'),
+      a('3', '4'),
+      a('4', '5'),
+      a('5', '6'),
+      a('6', '7'),
+      a('7', '8'),
+      a('#', '9')
+    ); // $ExpectError
+  });
+
+  it('should return a non-narrowed Observable type', () => {
+    const customOperator = <T>(p: T) => (a: Observable<T>) => a;
+
+    const staticPipe = pipe(customOperator('infer'));
+    const o = of('foo').pipe(staticPipe); // $ExpectType Observable<string>
+  });
+
+  it('should return an explicit Observable type', () => {
+    const customOperator = <T>() => (a: Observable<T>) => a;
+
+    const staticPipe = pipe(customOperator<string>());
+    const o = of('foo').pipe(staticPipe); // $ExpectType Observable<string>
+  });
+
+  it('should return Observable<unknown> when T cannot be inferred', () => {
+    const customOperator = <T>() => (a: Observable<T>) => a;
+
+    // type can't be possibly be inferred here
+    const staticPipe = pipe(customOperator());
+    const o = of('foo').pipe(staticPipe); // $ExpectType Observable<unknown>
+  });
+
+  it('should return a non-narrowed type', () => {
+    const func = pipe(
+      (value: string) => value,
+      (value: string) => value + value
+    );
+    const value = func('foo'); // $ExpectType string
+  });
+});
+
+/**
+ * Used to keep the tests uncluttered.
+ *
+ * Returns a `UnaryFun` with the
+ * specified literal type parameters.
+ * That is, `a('0', '1')` returns `UnaryFun<'0', '1'>`.
+ * That means that the `a` function can be used to create consecutive
+ * arguments that are either compatible or incompatible.
+ *
+ * ```js
+ * a('0', '1'), a('1', '2') // OK
+ * a('0', '1'), a('#', '2') // Error '1' is not compatible with '#'
+ * ```
+ *
+ * @param {string} input The `UnaryFun` input type parameter
+ * @param {string} output The `UnaryFun` output type parameter
+ */
+function a<I extends string, O extends string>(
+  input: I,
+  output: O
+): UnaryFun<I, O> {
+  return i => output;
+}
+
+function a<I extends string, O extends string>(
+  input: I,
+  output: O
+): Lifter<I, O>;
+function a<I, O extends string>(output: O): Lifter<I, O>;
+/**
+ * Used to keep the tests uncluttered.
+ *
+ * Returns an `Lifter` with the specified literal type parameters.
+ * That is, `a('0', '1')` returns `Lifter<'0', '1'>`.
+ * That means that the `a` function can be used to create consecutive
+ * arguments that are either compatible or incompatible.
+ *
+ * ```javascript
+ * a('0', '1'), a('1', '2') // OK
+ * a('0', '1'), a('#', '2') // Error '1' is not compatible with '#'
+ * ```
+ *
+ * If passed only one argument, that argument is used for the output
+ * type parameter and the input type parameters is inferred.
+ *
+ * ```javascript
+ * of('foo').pipe(
+ *   a('1') // Lifter<'foo', '1'>
+ * );
+ * ```
+ *
+ * @param {string} input The `Lifter` input type parameter
+ * @param {string} output The `Lifter` output type parameter
+ */
+function a<I, O extends string>(
+  inputOrOutput: I | O,
+  output?: O
+): Lifter<I, O> {
+  return mapTo<I, O>(output === undefined ? (inputOrOutput as O) : output);
+}
+
+describe('Notification', () => {
+  it('should exist', () => {
+    expect(Notification).exist;
+    expect(Notification).to.be.a('function');
+  });
+
+  it('should not allow convert to observable if given kind is unknown', () => {
+    const n = new Notification('x' as any);
+    expect(() => n.toObservable()).to.throw();
+  });
+
+  describe('createNext', () => {
+    it('should return a Notification', () => {
+      const n = Notification.createNext('test');
+      expect(n instanceof Notification).to.be.true;
+      expect(n.value).to.equal('test');
+      expect(n.kind).to.equal('N');
+      expect(n.error).to.be.a('undefined');
+      expect(n.hasValue).to.be.true;
+    });
+  });
+
+  describe('createError', () => {
+    it('should return a Notification', () => {
+      const n = Notification.createError('test');
+      expect(n instanceof Notification).to.be.true;
+      expect(n.value).to.be.a('undefined');
+      expect(n.kind).to.equal('E');
+      expect(n.error).to.equal('test');
+      expect(n.hasValue).to.be.false;
+    });
+  });
+
+  describe('createComplete', () => {
+    it('should return a Notification', () => {
+      const n = Notification.createComplete();
+      expect(n instanceof Notification).to.be.true;
+      expect(n.value).to.be.a('undefined');
+      expect(n.kind).to.equal('C');
+      expect(n.error).to.be.a('undefined');
+      expect(n.hasValue).to.be.false;
+    });
+  });
+
+  describe('toObservable', () => {
+    it('should create observable from a next Notification', () => {
+      const value = 'a';
+      const next = Notification.createNext(value);
+      expectObservable(next.toObservable()).toBe('(a|)');
+    });
+
+    it('should create observable from a complete Notification', () => {
+      const complete = Notification.createComplete();
+      expectObservable(complete.toObservable()).toBe('|');
+    });
+
+    it('should create observable from a error Notification', () => {
+      const error = Notification.createError('error');
+      expectObservable(error.toObservable()).toBe('#');
+    });
+  });
+
+  describe('static reference', () => {
+    it('should create new next Notification with value', () => {
+      const value = 'a';
+      const first = Notification.createNext(value);
+      const second = Notification.createNext(value);
+
+      expect(first).not.to.equal(second);
+    });
+
+    it('should create new error Notification', () => {
+      const first = Notification.createError();
+      const second = Notification.createError();
+
+      expect(first).not.to.equal(second);
+    });
+
+    it('should return static next Notification reference without value', () => {
+      const first = Notification.createNext(undefined);
+      const second = Notification.createNext(undefined);
+
+      expect(first).to.equal(second);
+    });
+
+    it('should return static complete Notification reference', () => {
+      const first = Notification.createComplete();
+      const second = Notification.createComplete();
+
+      expect(first).to.equal(second);
+    });
+  });
+
+  describe('do', () => {
+    it('should invoke on next', () => {
+      const n = Notification.createNext('a');
+      let invoked = false;
+      n.do(
+        (x: string) => {
+          invoked = true;
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+
+      expect(invoked).to.be.true;
+    });
+
+    it('should invoke on error', () => {
+      const n = Notification.createError();
+      let invoked = false;
+      n.do(
+        (x: any) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          invoked = true;
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+
+      expect(invoked).to.be.true;
+    });
+
+    it('should invoke on complete', () => {
+      const n = Notification.createComplete();
+      let invoked = false;
+      n.do(
+        (x: any) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          invoked = true;
+        }
+      );
+
+      expect(invoked).to.be.true;
+    });
+  });
+
+  describe('accept', () => {
+    it('should accept observer for next Notification', () => {
+      const value = 'a';
+      let observed = false;
+      const n = Notification.createNext(value);
+      const observer = Subscriber.create(
+        (x?: string) => {
+          expect(x).to.equal(value);
+          observed = true;
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+
+      n.accept(observer);
+      expect(observed).to.be.true;
+    });
+
+    it('should accept observer for error Notification', () => {
+      let observed = false;
+      const n = Notification.createError<string>();
+      const observer = Subscriber.create(
+        (x?: string) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          observed = true;
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+
+      n.accept(observer);
+      expect(observed).to.be.true;
+    });
+
+    it('should accept observer for complete Notification', () => {
+      let observed = false;
+      const n = Notification.createComplete();
+      const observer = Subscriber.create(
+        (x?: string) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          observed = true;
+        }
+      );
+
+      n.accept(observer);
+      expect(observed).to.be.true;
+    });
+
+    it('should accept function for next Notification', () => {
+      const value = 'a';
+      let observed = false;
+      const n = Notification.createNext(value);
+
+      n.accept(
+        (x: string) => {
+          expect(x).to.equal(value);
+          observed = true;
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+      expect(observed).to.be.true;
+    });
+
+    it('should accept function for error Notification', () => {
+      let observed = false;
+      const error = 'error';
+      const n = Notification.createError(error);
+
+      n.accept(
+        (x: any) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          expect(err).to.equal(error);
+          observed = true;
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+      expect(observed).to.be.true;
+    });
+
+    it('should accept function for complete Notification', () => {
+      let observed = false;
+      const n = Notification.createComplete();
+
+      n.accept(
+        (x: any) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          observed = true;
+        }
+      );
+      expect(observed).to.be.true;
+    });
+  });
+
+  describe('observe', () => {
+    it('should observe for next Notification', () => {
+      const value = 'a';
+      let observed = false;
+      const n = Notification.createNext(value);
+      const observer = Subscriber.create(
+        (x?: string) => {
+          expect(x).to.equal(value);
+          observed = true;
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+
+      n.observe(observer);
+      expect(observed).to.be.true;
+    });
+
+    it('should observe for error Notification', () => {
+      let observed = false;
+      const n = Notification.createError();
+      const observer = Subscriber.create(
+        (x: any) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          observed = true;
+        },
+        () => {
+          throw 'should not be called';
+        }
+      );
+
+      n.observe(observer);
+      expect(observed).to.be.true;
+    });
+
+    it('should observe for complete Notification', () => {
+      let observed = false;
+      const n = Notification.createComplete();
+      const observer = Subscriber.create(
+        (x: any) => {
+          throw 'should not be called';
+        },
+        (err: any) => {
+          throw 'should not be called';
+        },
+        () => {
+          observed = true;
+        }
+      );
+
+      n.observe(observer);
+      expect(observed).to.be.true;
+    });
+  });
+});
+
+describe('firstValueFrom', () => {
+  const r0 = firstValueFrom(a$); // $ExpectType Promise<A>
+  const r1 = firstValueFrom(); // $ExpectError
+  const r2 = firstValueFrom(Promise.resolve(42)); // $ExpectError
+
+  it('should emit the first value as a promise', async () => {
+    let finalized = false;
+    const source = interval(10).pipe(finalize(() => (finalized = true)));
+    const result = await firstValueFrom(source);
+    expect(result).to.equal(0);
+    expect(finalized).to.be.true;
+  });
+
+  it('should error for empty observables', async () => {
+    const source = EMPTY;
+    let error: any = null;
+    try {
+      await firstValueFrom(source);
+    } catch (err) {
+      error = err;
+    }
+    expect(error).to.be.an.instanceOf(EmptyError);
+  });
+
+  it('should error for errored observables', async () => {
+    const source = throwError(new Error('blorp!'));
+    let error: any = null;
+    try {
+      await firstValueFrom(source);
+    } catch (err) {
+      error = err;
+    }
+    expect(error).to.be.an.instanceOf(Error);
+    expect(error.message).to.equal('blorp!');
+  });
+
+  it('should work with a synchronous observable', async () => {
+    let finalized = false;
+    const source = of('apples', 'bananas').pipe(
+      finalize(() => (finalized = true))
+    );
+    const result = await firstValueFrom(source);
+    expect(result).to.equal('apples');
+    expect(finalized).to.be.true;
+  });
+});
+
+describe('lastValueFrom', () => {
+  const r0 = lastValueFrom(a$); // $ExpectType Promise<A>
+  const r1 = lastValueFrom(); // $ExpectError
+  const r2 = lastValueFrom(Promise.resolve(42)); // $ExpectError
+
+  it('should emit the last value as a promise', async () => {
+    let finalized = false;
+    const source = interval(2).pipe(
+      take(10),
+      finalize(() => (finalized = true))
+    );
+    const result = await lastValueFrom(source);
+    expect(result).to.equal(9);
+    expect(finalized).to.be.true;
+  });
+
+  it('should error for empty observables', async () => {
+    const source = EMPTY;
+    let error: any = null;
+    try {
+      await lastValueFrom(source);
+    } catch (err) {
+      error = err;
+    }
+    expect(error).to.be.an.instanceOf(EmptyError);
+  });
+
+  it('should error for errored observables', async () => {
+    const source = throwError(new Error('blorp!'));
+    let error: any = null;
+    try {
+      await lastValueFrom(source);
+    } catch (err) {
+      error = err;
+    }
+    expect(error).to.be.an.instanceOf(Error);
+    expect(error.message).to.equal('blorp!');
+  });
+
+  it('should work with a synchronous observable', async () => {
+    let finalized = false;
+    const source = of('apples', 'bananas').pipe(
+      finalize(() => (finalized = true))
+    );
+    const result = await lastValueFrom(source);
+    expect(result).to.equal('bananas');
+    expect(finalized).to.be.true;
   });
 });
 

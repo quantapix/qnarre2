@@ -1,10 +1,14 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { animationFrameScheduler, Subscription } from 'rxjs';
+import {animationFrameScheduler, Subscription} from 'rxjs';
+import {
+  hot,
+  cold,
+  expectObservable,
+  expectSubscriptions,
+  time
+} from '../helpers/marble-testing';
 
 const animationFrame = animationFrameScheduler;
 
-/** @test {Scheduler} */
 describe('Scheduler.animationFrame', () => {
   it('should exist', () => {
     expect(animationFrame).exist;
@@ -29,9 +33,11 @@ describe('Scheduler.animationFrame', () => {
     let actionHappened = false;
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
-    animationFrame.schedule(() => {
-      actionHappened = true;
-    }, 50).unsubscribe();
+    animationFrame
+      .schedule(() => {
+        actionHappened = true;
+      }, 50)
+      .unsubscribe();
     expect(actionHappened).to.be.false;
     fakeTimer.tick(25);
     expect(actionHappened).to.be.false;
@@ -54,30 +60,42 @@ describe('Scheduler.animationFrame', () => {
   it('should execute recursively scheduled actions in separate asynchronous contexts', (done: MochaDone) => {
     let syncExec1 = true;
     let syncExec2 = true;
-    animationFrame.schedule(function (index) {
-      if (index === 0) {
-        this.schedule(1);
-        animationFrame.schedule(() => { syncExec1 = false; });
-      } else if (index === 1) {
-        this.schedule(2);
-        animationFrame.schedule(() => { syncExec2 = false; });
-      } else if (index === 2) {
-        this.schedule(3);
-      } else if (index === 3) {
-        if (!syncExec1 && !syncExec2) {
-          done();
-        } else {
-          done(new Error('Execution happened synchronously.'));
+    animationFrame.schedule(
+      function (index) {
+        if (index === 0) {
+          this.schedule(1);
+          animationFrame.schedule(() => {
+            syncExec1 = false;
+          });
+        } else if (index === 1) {
+          this.schedule(2);
+          animationFrame.schedule(() => {
+            syncExec2 = false;
+          });
+        } else if (index === 2) {
+          this.schedule(3);
+        } else if (index === 3) {
+          if (!syncExec1 && !syncExec2) {
+            done();
+          } else {
+            done(new Error('Execution happened synchronously.'));
+          }
         }
-      }
-    }, 0, 0);
+      },
+      0,
+      0
+    );
   });
 
   it('should cancel the animation frame if all scheduled actions unsubscribe before it executes', (done: MochaDone) => {
     let animationFrameExec1 = false;
     let animationFrameExec2 = false;
-    const action1 = animationFrame.schedule(() => { animationFrameExec1 = true; });
-    const action2 = animationFrame.schedule(() => { animationFrameExec2 = true; });
+    const action1 = animationFrame.schedule(() => {
+      animationFrameExec1 = true;
+    });
+    const action2 = animationFrame.schedule(() => {
+      animationFrameExec2 = true;
+    });
     expect(animationFrame.scheduled).to.exist;
     expect(animationFrame.actions.length).to.equal(2);
     action1.unsubscribe();
@@ -116,13 +134,9 @@ describe('Scheduler.animationFrame', () => {
     }
   });
 });
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { asapScheduler, Subscription, SchedulerAction } from 'rxjs';
 
 const asap = asapScheduler;
 
-/** @test {Scheduler} */
 describe('Scheduler.asap', () => {
   it('should exist', () => {
     expect(asap).exist;
@@ -147,9 +161,11 @@ describe('Scheduler.asap', () => {
     let actionHappened = false;
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
-    asap.schedule(() => {
-      actionHappened = true;
-    }, 50).unsubscribe();
+    asap
+      .schedule(() => {
+        actionHappened = true;
+      }, 50)
+      .unsubscribe();
     expect(actionHappened).to.be.false;
     fakeTimer.tick(25);
     expect(actionHappened).to.be.false;
@@ -162,9 +178,11 @@ describe('Scheduler.asap', () => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     // callThrough is missing from the declarations installed by the typings tool in stable
-    const stubSetInterval = (<any> sinon.stub(global, 'setInterval')).callThrough();
+    const stubSetInterval = (<any>(
+      sinon.stub(global, 'setInterval')
+    )).callThrough();
     const period = 50;
-    const state = { index: 0, period };
+    const state = {index: 0, period};
     type State = typeof state;
     function dispatch(this: SchedulerAction<State>, state: State): void {
       state.index += 1;
@@ -189,9 +207,11 @@ describe('Scheduler.asap', () => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     // callThrough is missing from the declarations installed by the typings tool in stable
-    const stubSetInterval = (<any> sinon.stub(global, 'setInterval')).callThrough();
+    const stubSetInterval = (<any>(
+      sinon.stub(global, 'setInterval')
+    )).callThrough();
     const period = 50;
-    const state = { index: 0, period };
+    const state = {index: 0, period};
     type State = typeof state;
     function dispatch(this: SchedulerAction<State>, state: State): void {
       state.index += 1;
@@ -227,30 +247,42 @@ describe('Scheduler.asap', () => {
   it('should execute recursively scheduled actions in separate asynchronous contexts', (done: MochaDone) => {
     let syncExec1 = true;
     let syncExec2 = true;
-    asap.schedule(function (index) {
-      if (index === 0) {
-        this.schedule(1);
-        asap.schedule(() => { syncExec1 = false; });
-      } else if (index === 1) {
-        this.schedule(2);
-        asap.schedule(() => { syncExec2 = false; });
-      } else if (index === 2) {
-        this.schedule(3);
-      } else if (index === 3) {
-        if (!syncExec1 && !syncExec2) {
-          done();
-        } else {
-          done(new Error('Execution happened synchronously.'));
+    asap.schedule(
+      function (index) {
+        if (index === 0) {
+          this.schedule(1);
+          asap.schedule(() => {
+            syncExec1 = false;
+          });
+        } else if (index === 1) {
+          this.schedule(2);
+          asap.schedule(() => {
+            syncExec2 = false;
+          });
+        } else if (index === 2) {
+          this.schedule(3);
+        } else if (index === 3) {
+          if (!syncExec1 && !syncExec2) {
+            done();
+          } else {
+            done(new Error('Execution happened synchronously.'));
+          }
         }
-      }
-    }, 0, 0);
+      },
+      0,
+      0
+    );
   });
 
   it('should cancel the setImmediate if all scheduled actions unsubscribe before it executes', (done: MochaDone) => {
     let asapExec1 = false;
     let asapExec2 = false;
-    const action1 = asap.schedule(() => { asapExec1 = true; });
-    const action2 = asap.schedule(() => { asapExec2 = true; });
+    const action1 = asap.schedule(() => {
+      asapExec1 = true;
+    });
+    const action2 = asap.schedule(() => {
+      asapExec2 = true;
+    });
     expect(asap.scheduled).to.exist;
     expect(asap.actions.length).to.equal(2);
     action1.unsubscribe();
@@ -289,13 +321,9 @@ describe('Scheduler.asap', () => {
     }
   });
 });
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { queueScheduler, Subscription } from 'rxjs';
 
 const queue = queueScheduler;
 
-/** @test {Scheduler} */
 describe('Scheduler.queue', () => {
   it('should act like the async scheduler if delay > 0', () => {
     let actionHappened = false;
@@ -319,15 +347,19 @@ describe('Scheduler.queue', () => {
     let asyncExec = false;
     let state: Array<number> = [];
 
-    queue.schedule(function (index) {
-      state.push(index!);
-      if (index === 0) {
-        this.schedule(1, 100);
-      } else if (index === 1) {
-        asyncExec = true;
-        this.schedule(2, 0);
-      }
-    }, 0, 0);
+    queue.schedule(
+      function (index) {
+        state.push(index!);
+        if (index === 0) {
+          this.schedule(1, 100);
+        } else if (index === 1) {
+          asyncExec = true;
+          this.schedule(2, 0);
+        }
+      },
+      0,
+      0
+    );
 
     expect(asyncExec).to.be.false;
     expect(state).to.be.deep.equal([0]);
@@ -348,31 +380,102 @@ describe('Scheduler.queue', () => {
     try {
       queue.schedule(() => {
         actions.push(
-          queue.schedule(() => { throw new Error('oops'); }),
-          queue.schedule(() => { action2Exec = true; }),
-          queue.schedule(() => { action3Exec = true; })
+          queue.schedule(() => {
+            throw new Error('oops');
+          }),
+          queue.schedule(() => {
+            action2Exec = true;
+          }),
+          queue.schedule(() => {
+            action3Exec = true;
+          })
         );
       });
     } catch (e) {
       errorValue = e;
     }
-    expect(actions.every((action) => action.closed)).to.be.true;
+    expect(actions.every(action => action.closed)).to.be.true;
     expect(action2Exec).to.be.false;
     expect(action3Exec).to.be.false;
     expect(errorValue).exist;
     expect(errorValue.message).to.equal('oops');
   });
 });
-import { expect } from 'chai';
-import { hot, cold, expectObservable, expectSubscriptions, time } from '../helpers/marble-testing';
-import { AsyncScheduler } from 'rxjs/internal/scheduler/AsyncScheduler';
-import { TestScheduler } from 'rxjs/testing';
-import { Observable, NEVER, EMPTY, Subject, of, concat, merge, Notification } from 'rxjs';
-import { delay, debounceTime, concatMap } from 'rxjs/operators';
+
+describe('Scheduler.queue', () => {
+  it('should schedule things recursively', () => {
+    let call1 = false;
+    let call2 = false;
+    (queue as QueueScheduler).active = false;
+    queue.schedule(() => {
+      call1 = true;
+      queue.schedule(() => {
+        call2 = true;
+      });
+    });
+    expect(call1).to.be.true;
+    expect(call2).to.be.true;
+  });
+
+  it('should schedule things recursively via this.schedule', () => {
+    let call1 = false;
+    let call2 = false;
+    (queue as QueueScheduler).active = false;
+    queue.schedule(
+      function (state) {
+        call1 = state!.call1;
+        call2 = state!.call2;
+        if (!call2) {
+          this.schedule({call1: true, call2: true});
+        }
+      },
+      0,
+      {call1: true, call2: false}
+    );
+    expect(call1).to.be.true;
+    expect(call2).to.be.true;
+  });
+
+  it('should schedule things in the future too', (done: MochaDone) => {
+    let called = false;
+    queue.schedule(() => {
+      called = true;
+    }, 60);
+
+    setTimeout(() => {
+      expect(called).to.be.false;
+    }, 20);
+
+    setTimeout(() => {
+      expect(called).to.be.true;
+      done();
+    }, 100);
+  });
+
+  it('should be reusable after an error is thrown during execution', (done: MochaDone) => {
+    const results: number[] = [];
+
+    expect(() => {
+      queue.schedule(() => {
+        results.push(1);
+      });
+
+      queue.schedule(() => {
+        throw new Error('bad');
+      });
+    }).to.throw(Error, 'bad');
+
+    setTimeout(() => {
+      queue.schedule(() => {
+        results.push(2);
+        done();
+      });
+    }, 0);
+  });
+});
 
 declare const rxTestScheduler: TestScheduler;
 
-/** @test {TestScheduler} */
 describe('TestScheduler', () => {
   it('should exist', () => {
     expect(TestScheduler).exist;
@@ -385,78 +488,112 @@ describe('TestScheduler', () => {
 
   describe('parseMarbles()', () => {
     it('should parse a marble string into a series of notifications and types', () => {
-      const result = TestScheduler.parseMarbles('-------a---b---|', { a: 'A', b: 'B' });
+      const result = TestScheduler.parseMarbles('-------a---b---|', {
+        a: 'A',
+        b: 'B'
+      });
       expect(result).deep.equal([
-        { frame: 70, notification: Notification.createNext('A') },
-        { frame: 110, notification: Notification.createNext('B') },
-        { frame: 150, notification: Notification.createComplete() }
+        {frame: 70, notification: Notification.createNext('A')},
+        {frame: 110, notification: Notification.createNext('B')},
+        {frame: 150, notification: Notification.createComplete()}
       ]);
     });
 
     it('should parse a marble string, allowing spaces too', () => {
-      const result = TestScheduler.parseMarbles('--a--b--|   ', { a: 'A', b: 'B' });
+      const result = TestScheduler.parseMarbles('--a--b--|   ', {
+        a: 'A',
+        b: 'B'
+      });
       expect(result).deep.equal([
-        { frame: 20, notification: Notification.createNext('A') },
-        { frame: 50, notification: Notification.createNext('B') },
-        { frame: 80, notification: Notification.createComplete() }
+        {frame: 20, notification: Notification.createNext('A')},
+        {frame: 50, notification: Notification.createNext('B')},
+        {frame: 80, notification: Notification.createComplete()}
       ]);
     });
 
     it('should parse a marble string with a subscription point', () => {
-      const result = TestScheduler.parseMarbles('---^---a---b---|', { a: 'A', b: 'B' });
+      const result = TestScheduler.parseMarbles('---^---a---b---|', {
+        a: 'A',
+        b: 'B'
+      });
       expect(result).deep.equal([
-        { frame: 40, notification: Notification.createNext('A') },
-        { frame: 80, notification: Notification.createNext('B') },
-        { frame: 120, notification: Notification.createComplete() }
+        {frame: 40, notification: Notification.createNext('A')},
+        {frame: 80, notification: Notification.createNext('B')},
+        {frame: 120, notification: Notification.createComplete()}
       ]);
     });
 
     it('should parse a marble string with an error', () => {
-      const result = TestScheduler.parseMarbles('-------a---b---#', { a: 'A', b: 'B' }, 'omg error!');
+      const result = TestScheduler.parseMarbles(
+        '-------a---b---#',
+        {a: 'A', b: 'B'},
+        'omg error!'
+      );
       expect(result).deep.equal([
-        { frame: 70, notification: Notification.createNext('A') },
-        { frame: 110, notification: Notification.createNext('B') },
-        { frame: 150, notification: Notification.createError('omg error!') }
+        {frame: 70, notification: Notification.createNext('A')},
+        {frame: 110, notification: Notification.createNext('B')},
+        {frame: 150, notification: Notification.createError('omg error!')}
       ]);
     });
 
     it('should default in the letter for the value if no value hash was passed', () => {
       const result = TestScheduler.parseMarbles('--a--b--c--');
       expect(result).deep.equal([
-        { frame: 20, notification: Notification.createNext('a') },
-        { frame: 50, notification: Notification.createNext('b') },
-        { frame: 80, notification: Notification.createNext('c') },
+        {frame: 20, notification: Notification.createNext('a')},
+        {frame: 50, notification: Notification.createNext('b')},
+        {frame: 80, notification: Notification.createNext('c')}
       ]);
     });
 
     it('should handle grouped values', () => {
       const result = TestScheduler.parseMarbles('---(abc)---');
       expect(result).deep.equal([
-        { frame: 30, notification: Notification.createNext('a') },
-        { frame: 30, notification: Notification.createNext('b') },
-        { frame: 30, notification: Notification.createNext('c') }
+        {frame: 30, notification: Notification.createNext('a')},
+        {frame: 30, notification: Notification.createNext('b')},
+        {frame: 30, notification: Notification.createNext('c')}
       ]);
     });
 
     it('should ignore whitespace when runMode=true', () => {
       const runMode = true;
-      const result = TestScheduler.parseMarbles('  -a - b -    c |       ', { a: 'A', b: 'B', c: 'C' }, undefined, undefined, runMode);
+      const result = TestScheduler.parseMarbles(
+        '  -a - b -    c |       ',
+        {a: 'A', b: 'B', c: 'C'},
+        undefined,
+        undefined,
+        runMode
+      );
       expect(result).deep.equal([
-        { frame: 10, notification: Notification.createNext('A') },
-        { frame: 30, notification: Notification.createNext('B') },
-        { frame: 50, notification: Notification.createNext('C') },
-        { frame: 60, notification: Notification.createComplete() }
+        {frame: 10, notification: Notification.createNext('A')},
+        {frame: 30, notification: Notification.createNext('B')},
+        {frame: 50, notification: Notification.createNext('C')},
+        {frame: 60, notification: Notification.createComplete()}
       ]);
     });
 
     it('should suppport time progression syntax when runMode=true', () => {
       const runMode = true;
-      const result = TestScheduler.parseMarbles('10.2ms a 1.2s b 1m c|', { a: 'A', b: 'B', c: 'C' }, undefined, undefined, runMode);
+      const result = TestScheduler.parseMarbles(
+        '10.2ms a 1.2s b 1m c|',
+        {a: 'A', b: 'B', c: 'C'},
+        undefined,
+        undefined,
+        runMode
+      );
       expect(result).deep.equal([
-        { frame: 10.2, notification: Notification.createNext('A') },
-        { frame: 10.2 + 10 + (1.2 * 1000), notification: Notification.createNext('B') },
-        { frame: 10.2 + 10 + (1.2 * 1000) + 10 + (1000 * 60), notification: Notification.createNext('C') },
-        { frame: 10.2 + 10 + (1.2 * 1000) + 10 + (1000 * 60) + 10, notification: Notification.createComplete() }
+        {frame: 10.2, notification: Notification.createNext('A')},
+        {
+          frame: 10.2 + 10 + 1.2 * 1000,
+          notification: Notification.createNext('B')
+        },
+        {
+          frame: 10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60,
+          notification: Notification.createNext('C')
+        },
+        {
+          frame: 10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60 + 10,
+          notification: Notification.createComplete()
+        }
       ]);
     });
   });
@@ -482,16 +619,24 @@ describe('TestScheduler', () => {
 
     it('should ignore whitespace when runMode=true', () => {
       const runMode = true;
-      const result = TestScheduler.parseMarblesAsSubscriptions('  - -  - -  ^ -   - !  -- -      ', runMode);
+      const result = TestScheduler.parseMarblesAsSubscriptions(
+        '  - -  - -  ^ -   - !  -- -      ',
+        runMode
+      );
       expect(result.subscribedFrame).to.equal(40);
       expect(result.unsubscribedFrame).to.equal(70);
     });
 
     it('should suppport time progression syntax when runMode=true', () => {
       const runMode = true;
-      const result = TestScheduler.parseMarblesAsSubscriptions('10.2ms ^ 1.2s - 1m !', runMode);
+      const result = TestScheduler.parseMarblesAsSubscriptions(
+        '10.2ms ^ 1.2s - 1m !',
+        runMode
+      );
       expect(result.subscribedFrame).to.equal(10.2);
-      expect(result.unsubscribedFrame).to.equal(10.2 + 10 + (1.2 * 1000) + 10 + (1000 * 60));
+      expect(result.unsubscribedFrame).to.equal(
+        10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60
+      );
     });
   });
 
@@ -514,7 +659,10 @@ describe('TestScheduler', () => {
     it('should create a cold observable', () => {
       const expected = ['A', 'B'];
       const scheduler = new TestScheduler(null!);
-      const source = scheduler.createColdObservable('--a---b--|', { a: 'A', b: 'B' });
+      const source = scheduler.createColdObservable('--a---b--|', {
+        a: 'A',
+        b: 'B'
+      });
       expect(source).to.be.an.instanceOf(Observable);
       source.subscribe(x => {
         expect(x).to.equal(expected.shift());
@@ -528,7 +676,10 @@ describe('TestScheduler', () => {
     it('should create a hot observable', () => {
       const expected = ['A', 'B'];
       const scheduler = new TestScheduler(null!);
-      const source = scheduler.createHotObservable('--a---b--|', { a: 'A', b: 'B' });
+      const source = scheduler.createHotObservable('--a---b--|', {
+        a: 'A',
+        b: 'B'
+      });
       expect(source).to.be.an.instanceof(Subject);
       source.subscribe(x => {
         expect(x).to.equal(expected.shift());
@@ -553,13 +704,17 @@ describe('TestScheduler', () => {
 
       it('should create a cold observable', () => {
         const expected = [1, 2];
-        const source = cold('-a-b-|', { a: 1, b: 2 });
-        source.subscribe((x: number) => {
-          expect(x).to.equal(expected.shift());
-        }, null, () => {
-          expect(expected.length).to.equal(0);
-        });
-        expectObservable(source).toBe('-a-b-|', { a: 1, b: 2 });
+        const source = cold('-a-b-|', {a: 1, b: 2});
+        source.subscribe(
+          (x: number) => {
+            expect(x).to.equal(expected.shift());
+          },
+          null,
+          () => {
+            expect(expected.length).to.equal(0);
+          }
+        );
+        expectObservable(source).toBe('-a-b-|', {a: 1, b: 2});
       });
     });
 
@@ -570,9 +725,9 @@ describe('TestScheduler', () => {
       });
 
       it('should create a hot observable', () => {
-        const source = hot('---^-a-b-|', { a: 1, b: 2 });
+        const source = hot('---^-a-b-|', {a: 1, b: 2});
         expect(source).to.be.an.instanceOf(Subject);
-        expectObservable(source).toBe('--a-b-|', { a: 1, b: 2 });
+        expectObservable(source).toBe('--a-b-|', {a: 1, b: 2});
       });
     });
 
@@ -613,15 +768,15 @@ describe('TestScheduler', () => {
 
       it('should accept an unsubscription marble diagram', () => {
         const source = hot('---^-a-b-|');
-        const unsubscribe  =  '---!';
-        const expected =      '--a';
+        const unsubscribe = '---!';
+        const expected = '--a';
         expectObservable(source, unsubscribe).toBe(expected);
       });
 
       it('should accept a subscription marble diagram', () => {
         const source = hot('-a-b-c|');
-        const subscribe =  '---^';
-        const expected =   '---b-c|';
+        const subscribe = '---^';
+        const expected = '---b-c|';
         expectObservable(source, subscribe).toBe(expected);
       });
     });
@@ -643,7 +798,7 @@ describe('TestScheduler', () => {
 
       it('should assert subscriptions of a cold observable', () => {
         const source = cold('---a---b-|');
-        const subs =        '^--------!';
+        const subs = '^--------!';
         expectSubscriptions(source.subscriptions).toBe(subs);
         source.subscribe();
       });
@@ -651,9 +806,9 @@ describe('TestScheduler', () => {
 
     describe('end-to-end helper tests', () => {
       it('should be awesome', () => {
-        const values = { a: 1, b: 2 };
+        const values = {a: 1, b: 2};
         const myObservable = cold('---a---b--|', values);
-        const subs =              '^---------!';
+        const subs = '^---------!';
         expectObservable(myObservable).toBe('---a---b--|', values);
         expectSubscriptions(myObservable.subscriptions).toBe(subs);
       });
@@ -661,11 +816,14 @@ describe('TestScheduler', () => {
       it('should support testing metastreams', () => {
         const x = cold('-a-b|');
         const y = cold('-c-d|');
-        const myObservable = hot('---x---y----|', { x: x, y: y });
-        const expected =         '---x---y----|';
+        const myObservable = hot('---x---y----|', {x: x, y: y});
+        const expected = '---x---y----|';
         const expectedx = cold('-a-b|');
         const expectedy = cold('-c-d|');
-        expectObservable(myObservable).toBe(expected, { x: expectedx, y: expectedy });
+        expectObservable(myObservable).toBe(expected, {
+          x: expectedx,
+          y: expectedy
+        });
       });
     });
   });
@@ -679,13 +837,9 @@ describe('TestScheduler', () => {
       it('should ignore whitespace', () => {
         const testScheduler = new TestScheduler(assertDeepEquals);
 
-        testScheduler.run(({ cold, expectObservable, expectSubscriptions }) => {
+        testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
           const input = cold('  -a - b -    c |       ');
-          const output = input.pipe(
-            concatMap(d => of(d).pipe(
-              delay(10)
-            ))
-          );
+          const output = input.pipe(concatMap(d => of(d).pipe(delay(10))));
           const expected = '     -- 9ms a 9ms b 9ms (c|) ';
 
           expectObservable(output).toBe(expected);
@@ -696,43 +850,45 @@ describe('TestScheduler', () => {
       it('should support time progression syntax', () => {
         const testScheduler = new TestScheduler(assertDeepEquals);
 
-        testScheduler.run(({ cold, hot, flush, expectObservable, expectSubscriptions }) => {
-          const output = cold('10.2ms a 1.2s b 1m c|');
-          const expected = '   10.2ms a 1.2s b 1m c|';
+        testScheduler.run(
+          ({cold, hot, flush, expectObservable, expectSubscriptions}) => {
+            const output = cold('10.2ms a 1.2s b 1m c|');
+            const expected = '   10.2ms a 1.2s b 1m c|';
 
-          expectObservable(output).toBe(expected);
-        });
+            expectObservable(output).toBe(expected);
+          }
+        );
       });
     });
 
     it('should provide the correct helpers', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({ cold, hot, flush, expectObservable, expectSubscriptions }) => {
-        expect(cold).to.be.a('function');
-        expect(hot).to.be.a('function');
-        expect(flush).to.be.a('function');
-        expect(expectObservable).to.be.a('function');
-        expect(expectSubscriptions).to.be.a('function');
+      testScheduler.run(
+        ({cold, hot, flush, expectObservable, expectSubscriptions}) => {
+          expect(cold).to.be.a('function');
+          expect(hot).to.be.a('function');
+          expect(flush).to.be.a('function');
+          expect(expectObservable).to.be.a('function');
+          expect(expectSubscriptions).to.be.a('function');
 
-        const obs1 = cold('-a-c-e|');
-        const obs2 = hot(' ^-b-d-f|');
-        const output = merge(obs1, obs2);
-        const expected = ' -abcdef|';
+          const obs1 = cold('-a-c-e|');
+          const obs2 = hot(' ^-b-d-f|');
+          const output = merge(obs1, obs2);
+          const expected = ' -abcdef|';
 
-        expectObservable(output).toBe(expected);
-        expectSubscriptions(obs1.subscriptions).toBe('^-----!');
-        expectSubscriptions(obs2.subscriptions).toBe('^------!');
-      });
+          expectObservable(output).toBe(expected);
+          expectSubscriptions(obs1.subscriptions).toBe('^-----!');
+          expectSubscriptions(obs2.subscriptions).toBe('^------!');
+        }
+      );
     });
 
     it('should have each frame represent a single virtual millisecond', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({ cold, expectObservable }) => {
-        const output = cold('-a-b-c--------|').pipe(
-          debounceTime(5)
-        );
+      testScheduler.run(({cold, expectObservable}) => {
+        const output = cold('-a-b-c--------|').pipe(debounceTime(5));
         const expected = '   ------ 4ms c---|';
         expectObservable(output).toBe(expected);
       });
@@ -741,10 +897,8 @@ describe('TestScheduler', () => {
     it('should have no maximum frame count', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({ cold, expectObservable }) => {
-        const output = cold('-a|').pipe(
-          delay(1000 * 10)
-        );
+      testScheduler.run(({cold, expectObservable}) => {
+        const output = cold('-a|').pipe(delay(1000 * 10));
         const expected = '   - 10s (a|)';
         expectObservable(output).toBe(expected);
       });
@@ -753,10 +907,8 @@ describe('TestScheduler', () => {
     it('should make operators that use AsyncScheduler automatically use TestScheduler for actual scheduling', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({ cold, expectObservable }) => {
-        const output = cold('-a-b-c--------|').pipe(
-          debounceTime(5)
-        );
+      testScheduler.run(({cold, expectObservable}) => {
+        const output = cold('-a-b-c--------|').pipe(debounceTime(5));
         const expected = '   ----------c---|';
         expectObservable(output).toBe(expected);
       });
@@ -766,11 +918,9 @@ describe('TestScheduler', () => {
       const testScheduler = new TestScheduler((actual, expected) => {
         expect(actual).deep.equal(expected);
       });
-      testScheduler.run(({ cold, expectObservable }) => {
+      testScheduler.run(({cold, expectObservable}) => {
         const output = cold('-a-b-c|').pipe(
-          concatMap(d => of(d).pipe(
-            delay(10)
-          ))
+          concatMap(d => of(d).pipe(delay(10)))
         );
         const expected = '   -- 9ms a 9ms b 9ms (c|)';
         expectObservable(output).toBe(expected);
@@ -786,11 +936,9 @@ describe('TestScheduler', () => {
     it('should support explicit flushing', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({ cold, expectObservable, flush }) => {
+      testScheduler.run(({cold, expectObservable, flush}) => {
         const output = cold('-a-b-c|').pipe(
-          concatMap(d => of(d).pipe(
-            delay(10)
-          ))
+          concatMap(d => of(d).pipe(delay(10)))
         );
         const expected = '   -- 9ms a 9ms b 9ms (c|)';
         expectObservable(output).toBe(expected);
@@ -808,15 +956,17 @@ describe('TestScheduler', () => {
       expect(testScheduler['actions'].length).to.equal(0);
     });
 
-    it('should pass-through return values, e.g. Promises', (done) => {
+    it('should pass-through return values, e.g. Promises', done => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(() => {
-        return Promise.resolve('foo');
-      }).then(value => {
-        expect(value).to.equal('foo');
-        done();
-      });
+      testScheduler
+        .run(() => {
+          return Promise.resolve('foo');
+        })
+        .then(value => {
+          expect(value).to.equal('foo');
+          done();
+        });
     });
 
     it('should restore changes upon thrown errors', () => {
@@ -831,7 +981,9 @@ describe('TestScheduler', () => {
         testScheduler.run(() => {
           throw new Error('kaboom!');
         });
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
 
       expect(TestScheduler['frameTimeFactor']).to.equal(frameTimeFactor);
       expect(testScheduler.maxFrames).to.equal(maxFrames);
@@ -842,7 +994,7 @@ describe('TestScheduler', () => {
     it('should flush expectations correctly', () => {
       expect(() => {
         const testScheduler = new TestScheduler(assertDeepEquals);
-        testScheduler.run(({ cold, expectObservable, flush }) => {
+        testScheduler.run(({cold, expectObservable, flush}) => {
           expectObservable(cold('-x')).toBe('-x');
           expectObservable(cold('-y')).toBe('-y');
           const expectation = expectObservable(cold('-z'));
@@ -853,10 +1005,7 @@ describe('TestScheduler', () => {
     });
   });
 });
-import { expect } from 'chai';
-import { SchedulerAction, VirtualAction, VirtualTimeScheduler } from 'rxjs';
 
-/** @test {VirtualTimeScheduler} */
 describe('VirtualTimeScheduler', () => {
   it('should exist', () => {
     expect(VirtualTimeScheduler).exist;
@@ -921,14 +1070,18 @@ describe('VirtualTimeScheduler', () => {
     let count = 0;
     const expected = [100, 200, 300];
 
-    v.schedule<string>(function (this: SchedulerAction<string>, state?: string) {
-      if (++count === 3) {
-        return;
-      }
-      const virtualAction = this as VirtualAction<string>;
-      expect(virtualAction.delay).to.equal(expected.shift());
-      this.schedule(state, virtualAction.delay);
-    }, 100, 'test');
+    v.schedule<string>(
+      function (this: SchedulerAction<string>, state?: string) {
+        if (++count === 3) {
+          return;
+        }
+        const virtualAction = this as VirtualAction<string>;
+        expect(virtualAction.delay).to.equal(expected.shift());
+        this.schedule(state, virtualAction.delay);
+      },
+      100,
+      'test'
+    );
 
     v.flush();
     expect(count).to.equal(3);
@@ -938,10 +1091,8 @@ describe('VirtualTimeScheduler', () => {
     const v = new VirtualTimeScheduler();
     const messages: string[] = [];
 
-    const action: VirtualAction<string> = <VirtualAction<string>> v.schedule(
-      state => messages.push(state!),
-      10,
-      'first message'
+    const action: VirtualAction<string> = <VirtualAction<string>>(
+      v.schedule(state => messages.push(state!), 10, 'first message')
     );
 
     action.schedule('second message', 10);
@@ -953,7 +1104,11 @@ describe('VirtualTimeScheduler', () => {
   it('should execute only those virtual actions that fall into the maxFrames timespan', function () {
     const MAX_FRAMES = 50;
     const v = new VirtualTimeScheduler(VirtualAction, MAX_FRAMES);
-    const messages: string[] = ['first message', 'second message', 'third message'];
+    const messages: string[] = [
+      'first message',
+      'second message',
+      'third message'
+    ];
 
     const actualMessages: string[] = [];
 
@@ -974,7 +1129,11 @@ describe('VirtualTimeScheduler', () => {
   it('should pick up actions execution where it left off after reaching previous maxFrames limit', function () {
     const MAX_FRAMES = 50;
     const v = new VirtualTimeScheduler(VirtualAction, MAX_FRAMES);
-    const messages: string[] = ['first message', 'second message', 'third message'];
+    const messages: string[] = [
+      'first message',
+      'second message',
+      'third message'
+    ];
 
     const actualMessages: string[] = [];
 
@@ -991,5 +1150,67 @@ describe('VirtualTimeScheduler', () => {
     v.flush();
 
     expect(actualMessages).to.deep.equal(messages);
+  });
+});
+
+describe('scheduled', () => {
+  let testScheduler: TestScheduler;
+
+  beforeEach(() => {
+    testScheduler = new TestScheduler(observableMatcher);
+  });
+
+  it('should schedule a sync observable', () => {
+    const input = of('a', 'b', 'c');
+    testScheduler.run(({expectObservable}) => {
+      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    });
+  });
+
+  it('should schedule an array', () => {
+    const input = ['a', 'b', 'c'];
+    testScheduler.run(({expectObservable}) => {
+      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    });
+  });
+
+  it('should schedule an iterable', () => {
+    const input = 'abc'; // strings are iterables
+    testScheduler.run(({expectObservable}) => {
+      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    });
+  });
+
+  it('should schedule an observable-like', () => {
+    const input = lowerCaseO('a', 'b', 'c'); // strings are iterables
+    testScheduler.run(({expectObservable}) => {
+      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    });
+  });
+
+  it('should schedule a promise', done => {
+    const results: any[] = [];
+    const input = Promise.resolve('x'); // strings are iterables
+    scheduled(input, testScheduler).subscribe({
+      next(value) {
+        results.push(value);
+      },
+      complete() {
+        results.push('done');
+      }
+    });
+
+    expect(results).to.deep.equal([]);
+
+    // Promises force async, so we can't schedule synchronously, no matter what.
+    testScheduler.flush();
+    expect(results).to.deep.equal([]);
+
+    Promise.resolve().then(() => {
+      // NOW it should work, as the other promise should have resolved.
+      testScheduler.flush();
+      expect(results).to.deep.equal(['x', 'done']);
+      done();
+    });
   });
 });

@@ -1,7 +1,7 @@
 import {Observable} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
 import {SubscriptionLog} from '../../testing/SubscriptionLog';
-import {ColdObservable} from '../../testing/ColdObservable';
+import {ColdObservable} from '../testing';
 import {HotObservable} from '../../testing/HotObservable';
 import {
   observableToBeFn,

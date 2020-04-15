@@ -80,7 +80,7 @@ export class Buffer<N, F, D> extends Reactor<any, N, F, D> {
 }
 
 export class BufferCount<N, F, D> extends Subscriber<N[], F, D> {
-  private buf = [] as (N[] | undefined)[];
+  private buf?: (N[] | undefined)[];
 
   constructor(tgt: Subscriber<N[], F, D>, private size: number) {
     super(tgt);
@@ -96,9 +96,8 @@ export class BufferCount<N, F, D> extends Subscriber<N[], F, D> {
   }
 
   protected _done(d?: D) {
-    const buffer = this.buf;
-    if (buffer.length > 0) this.tgt.next(buf);
-    super._done();
+    if (this.buf?.length) this.tgt.next(this.buf);
+    super._done(d);
   }
 }
 

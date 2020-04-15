@@ -1,5 +1,5 @@
 var _ = require('lodash');
-var mochaSauce = require('mocha-in-sauce');
+var mochaSauce = require('./node_modules/mocha-in-sauce');
 
 var customLaunchers = {
   sl_chrome: {
@@ -145,11 +145,22 @@ _.each(customLaunchers, function (browser) {
 });
 
 sauce.on('start', function (browser) {
-  console.log('  started %s %s %s ...', browser.browserName, browser.version, browser.platform || '');
+  console.log(
+    '  started %s %s %s ...',
+    browser.browserName,
+    browser.version,
+    browser.platform || ''
+  );
 });
 
 sauce.on('end', function (browser, res) {
-  console.log('  completed %s %s %s ... : %d failures', browser.browserName, browser.version, browser.platform || '', res.failures);
+  console.log(
+    '  completed %s %s %s ... : %d failures',
+    browser.browserName,
+    browser.version,
+    browser.platform || '',
+    res.failures
+  );
 });
 
 sauce.start(function (err, res) {

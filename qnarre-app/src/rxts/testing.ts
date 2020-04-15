@@ -1,15 +1,133 @@
-import {Observable} from '../observe';
-import {Notification} from '../Notification';
-import {ColdObservable} from './ColdObservable';
-import {HotObservable} from './HotObservable';
+import {Observable} from './observe';
+import {Subscription} from '../subscribe';
+import {Scheduler} from '../Scheduler';
 import {TestMessage} from './TestMessage';
 import {SubscriptionLog} from './SubscriptionLog';
-import {Subscription} from '../subscribe';
-import {
-  VirtualTimeScheduler,
-  VirtualAction
-} from '../scheduler/VirtualTimeScheduler';
-import {AsyncScheduler} from '../scheduler/AsyncScheduler';
+import {SubscriptionLoggable} from './SubscriptionLoggable';
+import {applyMixins} from '../util/applyMixins';
+import {Subscriber} from './subscriber.old';
+
+export class ColdObservable<T> extends Observable<T>
+  implements SubscriptionLoggable {
+  public subscriptions: SubscriptionLog[] = [];
+  scheduler: Scheduler;
+  // @ts-ignore: Property has no initializer and is not definitely assigned
+  logSubscribedFrame: () => number;
+  // @ts-ignore: Property has no initializer and is not definitely assigned
+  logUnsubscribedFrame: (index: number) => void;
+
+  constructor(public messages: TestMessage[], scheduler: Scheduler) {
+    super(function (this: Observable<T>, subscriber: Subscriber<any>) {
+      const observable: ColdObservable<T> = this as any;
+      const index = observable.logSubscribedFrame();
+      const subscription = new Subscription();
+      subscription.add(
+        new Subscription(() => {
+          observable.logUnsubscribedFrame(index);
+        })
+      );
+      observable.scheduleMessages(subscriber);
+      return subscription;
+    });
+    this.scheduler = scheduler;
+  }
+
+  scheduleMessages(subscriber: Subscriber<any>) {
+    const messagesLength = this.messages.length;
+    for (let i = 0; i < messagesLength; i++) {
+      const message = this.messages[i];
+      subscriber.add(
+        this.scheduler.schedule(
+          state => {
+            const {message, subscriber} = state!;
+            message.notification.observe(subscriber);
+          },
+          message.frame,
+          {message, subscriber}
+        )
+      );
+    }
+  }
+}
+applyMixins(ColdObservable, [SubscriptionLoggable]);
+
+export class HotObservable<T> extends Subject<T>
+  implements SubscriptionLoggable {
+  public subscriptions: SubscriptionLog[] = [];
+  scheduler: Scheduler;
+  // @ts-ignore: Property has no initializer and is not definitely assigned
+  logSubscribedFrame: () => number;
+  // @ts-ignore: Property has no initializer and is not definitely assigned
+  logUnsubscribedFrame: (index: number) => void;
+
+  constructor(public messages: TestMessage[], scheduler: Scheduler) {
+    super();
+    this.scheduler = scheduler;
+  }
+
+  /** @deprecated This is an internal implementation detail, do not use. */
+  _subscribe(subscriber: Subscriber<any>): Subscription {
+    const subject: HotObservable<T> = this;
+    const index = subject.logSubscribedFrame();
+    const subscription = new Subscription();
+    subscription.add(
+      new Subscription(() => {
+        subject.logUnsubscribedFrame(index);
+      })
+    );
+    subscription.add(super._subscribe(subscriber));
+    return subscription;
+  }
+
+  setup() {
+    const subject = this;
+    const messagesLength = subject.messages.length;
+    /* tslint:disable:no-var-keyword */
+    for (var i = 0; i < messagesLength; i++) {
+      (() => {
+        var message = subject.messages[i];
+        /* tslint:enable */
+        subject.scheduler.schedule(() => {
+          message.notification.observe(subject);
+        }, message.frame);
+      })();
+    }
+  }
+}
+applyMixins(HotObservable, [SubscriptionLoggable]);
+
+export class SubscriptionLog {
+  constructor(
+    public subscribedFrame: number,
+    public unsubscribedFrame: number = Number.POSITIVE_INFINITY
+  ) {}
+}
+
+export class SubscriptionLoggable {
+  public subscriptions: SubscriptionLog[] = [];
+  // @ts-ignore: Property has no initializer and is not definitely assigned
+  scheduler: Scheduler;
+
+  logSubscribedFrame(): number {
+    this.subscriptions.push(new SubscriptionLog(this.scheduler.now()));
+    return this.subscriptions.length - 1;
+  }
+
+  logUnsubscribedFrame(index: number) {
+    const subscriptionLogs = this.subscriptions;
+    const oldSubscriptionLog = subscriptionLogs[index];
+    subscriptionLogs[index] = new SubscriptionLog(
+      oldSubscriptionLog.subscribedFrame,
+      this.scheduler.now()
+    );
+  }
+}
+
+export interface TestMessage {
+  frame: number;
+  notification: Notification<any>;
+  isGhost?: boolean;
+}
 
 const defaultMaxFrame: number = 750;
 

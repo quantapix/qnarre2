@@ -1,8 +1,5 @@
-import { expect } from 'chai';
-import { animationFrames, Subject } from 'rxjs';
-import * as sinon from 'sinon';
-import { take, takeUntil } from 'rxjs/operators';
-import { RAFTestTools, stubRAF } from '../../helpers/test-helper';
+import {animationFrames, Subject} from 'rxjs';
+import {RAFTestTools, stubRAF} from '../spec/helpers/test-helper';
 
 describe('animationFrame', () => {
   let raf: RAFTestTools;
@@ -21,6 +18,22 @@ describe('animationFrame', () => {
     DateStub.restore();
   });
 
+  it('should just be an observable of numbers', () => {
+    const o$ = animationFrames(); // $ExpectType Observable<number>
+  });
+
+  it('should allow the passing of a timestampProvider', () => {
+    const o$ = animationFrames(performance); // $ExpectType Observable<number>
+  });
+
+  it('should not allow the passing of an invalid timestamp provider', () => {
+    const o$ = animationFrames({
+      now() {
+        return 'wee';
+      }
+    }); // $ExpectError
+  });
+
   it('should animate', function () {
     const results: any[] = [];
     const source$ = animationFrames();
@@ -28,7 +41,7 @@ describe('animationFrame', () => {
     const subs = source$.subscribe({
       next: ts => results.push(ts),
       error: err => results.push(err),
-      complete: () => results.push('done'),
+      complete: () => results.push('done')
     });
 
     expect(DateStub).to.have.been.calledOnce;
@@ -64,7 +77,7 @@ describe('animationFrame', () => {
     const subs = source$.subscribe({
       next: ts => results.push(ts),
       error: err => results.push(err),
-      complete: () => results.push('done'),
+      complete: () => results.push('done')
     });
 
     expect(DateStub).not.to.have.been.called;
@@ -93,12 +106,10 @@ describe('animationFrame', () => {
     const source$ = animationFrames();
     expect(requestAnimationFrame).not.to.have.been.called;
 
-    source$.pipe(
-      take(2),
-    ).subscribe({
+    source$.pipe(take(2)).subscribe({
       next: ts => results.push(ts),
       error: err => results.push(err),
-      complete: () => results.push('done'),
+      complete: () => results.push('done')
     });
 
     expect(DateStub).to.have.been.calledOnce;
@@ -129,12 +140,10 @@ describe('animationFrame', () => {
     const source$ = animationFrames();
     expect(requestAnimationFrame).not.to.have.been.called;
 
-    source$.pipe(
-      takeUntil(subject),
-    ).subscribe({
+    source$.pipe(takeUntil(subject)).subscribe({
       next: ts => results.push(ts),
       error: err => results.push(err),
-      complete: () => results.push('done'),
+      complete: () => results.push('done')
     });
 
     expect(DateStub).to.have.been.calledOnce;

@@ -5,7 +5,8 @@
     "types": ["jasmine", "node"],
     "outDir": "./out-tsc/spec"
   },
-  "files": ["src/test.ts", "src/polyfills.ts"],
-  "include": ["src/**/*.spec.ts", "src/**/*.d.ts"],
+  "_files": ["src/test.ts", "src/polyfills.ts"],
+  "_include": ["src/**/*.spec.ts", "src/**/*.d.ts"],
+  "include": ["src/rxts/*.spec.ts", "src/rxts/*.d.ts"],
   "exclude": []
 }

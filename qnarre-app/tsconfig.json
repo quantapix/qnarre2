@@ -1,8 +1,8 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "lib": ["ESNext", "ESNext.Array", "dom"],
-    //"skipLibCheck": true,
+    "lib": ["ESNext", "dom"],
+    "skipLibCheck": true,
 
     /* Basic Options */
     // "incremental": true,                   /* Enable incremental compilation */
