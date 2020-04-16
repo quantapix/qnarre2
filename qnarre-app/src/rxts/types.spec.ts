@@ -1,67 +1,62 @@
-import {
-  Observable,
-  ObservedValueOf,
-  ObservedUnionFrom,
-  ObservedTupleFrom,
-  Unshift
-} from 'rxjs';
-import {A, B, C} from './spec/helpers/helpers';
+import * as qt from './types';
+import {A, B, C} from './spec/helpers';
 
-describe('ObservedValueOf', () => {
+describe('Sourced', () => {
   it('should infer from an observable', () => {
-    let explicit: ObservedValueOf<Observable<A>>;
-    let inferred = explicit!; // $ExpectType A
+    const e = {} as qt.Sourced<qt.Source<A, any, boolean>>;
+    expect(typeof e).toBe(typeof A);
   });
-
   it('should infer from an array', () => {
-    let explicit: ObservedValueOf<A[]>;
-    let inferred = explicit!; // $ExpectType A
+    const e = {} as qt.Sourced<A[]>;
+    expect(typeof e).toBe(typeof A);
   });
-
   it('should infer from a promise', () => {
-    let explicit: ObservedValueOf<Promise<A>>;
-    let inferred = explicit!; // $ExpectType A
+    const e = {} as qt.Sourced<Promise<A>>;
+    expect(typeof e).toBe(typeof A);
   });
 });
 
-describe('ObservedUnionFrom', () => {
+describe('SourcedFrom', () => {
   it('should infer from an array of observables', () => {
-    let explicit: ObservedUnionFrom<[Observable<A>, Observable<B>]>;
-    let inferred = explicit!; // $ExpectType A | B
+    const e = {} as qt.SourcedFrom<
+      [qt.Source<A, any, boolean>, qt.Source<B, any, boolean>]
+    >;
+    expect(typeof e).toBe(typeof (A | B));
   });
-
   it('should infer from an array of arrays', () => {
-    let explicit: ObservedUnionFrom<[A[], B[]]>;
-    let inferred = explicit!; // $ExpectType A | B
+    const e = {} as qt.SourcedFrom<[A[], B[]]>;
+    expect(typeof e).toBe(typeof (A | B));
   });
-
   it('should infer from an array of promises', () => {
-    let explicit: ObservedUnionFrom<[Promise<A>, Promise<B>]>;
-    let inferred = explicit!; // $ExpectType A | B
+    const e = {} as qt.SourcedFrom<[Promise<A>, Promise<B>]>;
+    expect(typeof e).toBe(typeof (A | B));
   });
 });
 
-describe('ObservedTupleFrom', () => {
+describe('SourcedTuple', () => {
   it('should infer from an array of observables', () => {
-    let explicit: ObservedTupleFrom<[Observable<A>, Observable<B>]>;
-    let inferred = explicit!; // $ExpectType [A, B]
+    const e = {} as qt.SourcedTuple<
+      [qt.Source<A, any, boolean>, qt.Source<B, any, boolean>]
+    >;
+    expect(typeof e).toBe(typeof [A, B]);
   });
-
   it('should infer from an array of arrays', () => {
-    let explicit: ObservedTupleFrom<[A[], B[]]>;
-    let inferred = explicit!; // $ExpectType [A, B]
+    const e = {} as qt.SourcedTuple<[A[], B[]]>;
+    expect(typeof e).toBe(typeof [A, B]);
   });
-
   it('should infer from an array of promises', () => {
-    let explicit: ObservedTupleFrom<[Promise<A>, Promise<B>]>;
-    let inferred = explicit!; // $ExpectType [A, B]
+    const e = {} as qt.SourcedTuple<[Promise<A>, Promise<B>]>;
+    expect(typeof e).toBe(typeof [A, B]);
   });
 });
 
 describe('Unshift', () => {
   it('should add the type to the beginning of the tuple', () => {
-    let tuple: ObservedTupleFrom<[Observable<A>, Observable<B>]>;
-    let explicit: Unshift<typeof tuple, C>;
-    let inferred = explicit!; // $ExpectType [C, A, B]
+    let tuple: qt.SourcedTuple<[
+      qt.Source<A, any, boolean>,
+      qt.Source<B, any, boolean>
+    ]>;
+    const e = {} as qt.Unshift<typeof tuple, C>;
+    expect(typeof e).toBe(typeof [C, A, B]);
   });
 });

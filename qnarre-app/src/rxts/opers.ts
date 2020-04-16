@@ -537,15 +537,15 @@ class BufferWhenSubscriber<T> extends ReactorSubscriber<T, any> {
   }
 }
 
-export function catchError<T, O extends ObservableInput<any>>(
+export function catchError<T, O extends SourceInput<any>>(
   selector: (err: any, caught: Observable<T>) => O
-): Lifter<T, T | ObservedValueOf<O>>;
-export function catchError<T, O extends ObservableInput<any>>(
+): Lifter<T, T | Sourced<O>>;
+export function catchError<T, O extends SourceInput<any>>(
   selector: (err: any, caught: Observable<T>) => O
-): Lifter<T, T | ObservedValueOf<O>> {
+): Lifter<T, T | Sourced<O>> {
   return function catchErrorLifter(
     source: Observable<T>
-  ): Observable<T | ObservedValueOf<O>> {
+  ): Observable<T | Sourced<O>> {
     const operator = new CatchOperator(selector);
     const caught = source.lift(operator);
     return (operator.caught = caught as Observable<T>);
@@ -559,7 +559,7 @@ class CatchOperator<T, R> implements Operator<T, T | R> {
     private selector: (
       err: any,
       caught: Observable<T>
-    ) => ObservableInput<T | R>
+    ) => SourceInput<T | R>
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
@@ -575,7 +575,7 @@ class CatchSubscriber<T, R> extends ReactorSubscriber<T, T | R> {
     private selector: (
       err: any,
       caught: Observable<T>
-    ) => ObservableInput<T | R>,
+    ) => SourceInput<T | R>,
     private caught: Observable<T>
   ) {
     super(destination);
@@ -607,11 +607,11 @@ class CatchSubscriber<T, R> extends ReactorSubscriber<T, T | R> {
   }
 }
 
-export function combineAll<T>(): Lifter<ObservableInput<T>, T[]>;
+export function combineAll<T>(): Lifter<SourceInput<T>, T[]>;
 export function combineAll<T>(): Lifter<any, T[]>;
 export function combineAll<T, R>(
   project: (...values: T[]) => R
-): Lifter<ObservableInput<T>, R>;
+): Lifter<SourceInput<T>, R>;
 export function combineAll<R>(
   project: (...values: Array<any>) => R
 ): Lifter<any, R>;
@@ -624,8 +624,8 @@ export function combineAll<T, R>(
 
 export function combineLatest<T, R>(
   ...observables: Array<
-    | ObservableInput<any>
-    | Array<ObservableInput<any>>
+    | SourceInput<any>
+    | Array<SourceInput<any>>
     | ((...values: Array<any>) => R)
   >
 ): Lifter<T, R> {
@@ -644,48 +644,48 @@ export function combineLatest<T, R>(
     ) as Observable<R>;
 }
 
-export function combineLatestWith<T, A extends ObservableInput<any>[]>(
+export function combineLatestWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
-): Lifter<T, Unshift<ObservedTupleFrom<A>, T>> {
+): Lifter<T, Unshift<SourcedTuple<A>, T>> {
   return combineLatest(...otherSources);
 }
 
-export function concatAll<T>(): Lifter<ObservableInput<T>, T>;
+export function concatAll<T>(): Lifter<SourceInput<T>, T>;
 export function concatAll<R>(): Lifter<any, R>;
-export function concatAll<T>(): Lifter<ObservableInput<T>, T> {
+export function concatAll<T>(): Lifter<SourceInput<T>, T> {
   return mergeAll<T>(1);
 }
 
-export function concatMap<T, O extends ObservableInput<any>>(
+export function concatMap<T, O extends SourceInput<any>>(
   project: (value: T, index: number) => O
-): Lifter<T, ObservedValueOf<O>>;
-export function concatMap<T, R, O extends ObservableInput<any>>(
+): Lifter<T, Sourced<O>>;
+export function concatMap<T, R, O extends SourceInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
     outerN: T,
-    innerValue: ObservedValueOf<O>,
+    innerValue: Sourced<O>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, ObservedValueOf<O> | R> {
+): Lifter<T, Sourced<O> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(project, resultSelector, 1);
   }
   return mergeMap(project, 1);
 }
 
-export function concatMapTo<T, O extends ObservableInput<any>>(
+export function concatMapTo<T, O extends SourceInput<any>>(
   observable: O
-): Lifter<T, ObservedValueOf<O>>;
-export function concatMapTo<T, R, O extends ObservableInput<any>>(
+): Lifter<T, Sourced<O>>;
+export function concatMapTo<T, R, O extends SourceInput<any>>(
   innerObservable: O,
   resultSelector?: (
     outerN: T,
-    innerValue: ObservedValueOf<O>,
+    innerValue: Sourced<O>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, ObservedValueOf<O> | R> {
+): Lifter<T, Sourced<O> | R> {
   if (typeof resultSelector === 'function') {
     return concatMap(() => innerObservable, resultSelector);
   }
@@ -693,17 +693,17 @@ export function concatMapTo<T, R, O extends ObservableInput<any>>(
 }
 
 export function concatWith<T>(): Lifter<T, T>;
-export function concatWith<T, A extends ObservableInput<any>[]>(
+export function concatWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
-): Lifter<T, ObservedUnionFrom<A> | T>;
-export function concatWith<T, A extends ObservableInput<any>[]>(
+): Lifter<T, SourcedFrom<A> | T>;
+export function concatWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
-): Lifter<T, ObservedUnionFrom<A> | T> {
+): Lifter<T, SourcedFrom<A> | T> {
   return (source: Observable<T>) =>
     source.lift.call(
       concatStatic(source, ...otherSources),
       undefined
-    ) as Observable<ObservedUnionFrom<A> | T>;
+    ) as Observable<SourcedFrom<A> | T>;
 }
 
 export function count<T>(
@@ -1547,7 +1547,7 @@ class EverySubscriber<T> extends Subscriber<T> {
   }
 }
 
-export function exhaust<T>(): Lifter<ObservableInput<T>, T>;
+export function exhaust<T>(): Lifter<SourceInput<T>, T>;
 export function exhaust<R>(): Lifter<any, R>;
 export function exhaust<T>(): Lifter<any, T> {
   return (source: Observable<T>) => source.lift(new SwitchFirstOperator<T>());
@@ -1590,18 +1590,18 @@ class SwitchFirstSubscriber<T> extends ReactorSubscriber<T, T> {
   }
 }
 
-export function exhaustMap<T, O extends ObservableInput<any>>(
+export function exhaustMap<T, O extends SourceInput<any>>(
   project: (value: T, index: number) => O
-): Lifter<T, ObservedValueOf<O>>;
-export function exhaustMap<T, R, O extends ObservableInput<any>>(
+): Lifter<T, Sourced<O>>;
+export function exhaustMap<T, R, O extends SourceInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
     outerN: T,
-    innerValue: ObservedValueOf<O>,
+    innerValue: Sourced<O>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, ObservedValueOf<O> | R> {
+): Lifter<T, Sourced<O> | R> {
   if (resultSelector) {
     // DEPRECATED PATH
     return (source: Observable<T>) =>
@@ -1619,7 +1619,7 @@ export function exhaustMap<T, R, O extends ObservableInput<any>>(
 
 class ExhaustMapOperator<T, R> implements Operator<T, R> {
   constructor(
-    private project: (value: T, index: number) => ObservableInput<R>
+    private project: (value: T, index: number) => SourceInput<R>
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
@@ -1634,7 +1634,7 @@ class ExhaustMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
   constructor(
     destination: Subscriber<R>,
-    private project: (value: T, index: number) => ObservableInput<R>
+    private project: (value: T, index: number) => SourceInput<R>
   ) {
     super(destination);
   }
@@ -1646,7 +1646,7 @@ class ExhaustMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 
   private tryNext(value: T): void {
-    let result: ObservableInput<R>;
+    let result: SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -1658,7 +1658,7 @@ class ExhaustMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(result: ObservableInput<R>, value: T, index: number): void {
+  private _innerSub(result: SourceInput<R>, value: T, index: number): void {
     const innerSubscriber = new ActorSubscriber(this, value, index);
     const destination = this.destination as Subscription;
     destination.add(innerSubscriber);
@@ -1708,17 +1708,17 @@ class ExhaustMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
 }
 
 export function expand<T, R>(
-  project: (value: T, index: number) => ObservableInput<R>,
+  project: (value: T, index: number) => SourceInput<R>,
   concurrent?: number,
   scheduler?: SchedulerLike
 ): Lifter<T, R>;
 export function expand<T>(
-  project: (value: T, index: number) => ObservableInput<T>,
+  project: (value: T, index: number) => SourceInput<T>,
   concurrent?: number,
   scheduler?: SchedulerLike
 ): MonoOper<T>;
 export function expand<T, R>(
-  project: (value: T, index: number) => ObservableInput<R>,
+  project: (value: T, index: number) => SourceInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
   scheduler?: SchedulerLike
 ): Lifter<T, R> {
@@ -1730,7 +1730,7 @@ export function expand<T, R>(
 
 export class ExpandOperator<T, R> implements Operator<T, R> {
   constructor(
-    private project: (value: T, index: number) => ObservableInput<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
     private scheduler?: SchedulerLike
   ) {}
@@ -1749,7 +1749,7 @@ export class ExpandOperator<T, R> implements Operator<T, R> {
 
 interface DispatchArg<T, R> {
   subscriber: ExpandSubscriber<T, R>;
-  result: ObservableInput<R>;
+  result: SourceInput<R>;
   value: any;
   index: number;
 }
@@ -1762,7 +1762,7 @@ export class ExpandSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
   constructor(
     destination: Subscriber<R>,
-    private project: (value: T, index: number) => ObservableInput<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
     private scheduler?: SchedulerLike
   ) {
@@ -2508,26 +2508,26 @@ export function max<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
 
 export function mergeAll<T>(
   concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<ObservableInput<T>, T> {
+): Lifter<SourceInput<T>, T> {
   return mergeMap(identity, concurrent);
 }
 
-export function mergeMap<T, O extends ObservableInput<any>>(
+export function mergeMap<T, O extends SourceInput<any>>(
   project: (value: T, index: number) => O,
   concurrent?: number
-): Lifter<T, ObservedValueOf<O>>;
-export function mergeMap<T, R, O extends ObservableInput<any>>(
+): Lifter<T, Sourced<O>>;
+export function mergeMap<T, R, O extends SourceInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?:
     | ((
         outerN: T,
-        innerValue: ObservedValueOf<O>,
+        innerValue: Sourced<O>,
         outerX: number,
         innerIndex: number
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, ObservedValueOf<O> | R> {
+): Lifter<T, Sourced<O> | R> {
   if (typeof resultSelector === 'function') {
     return (source: Observable<T>) =>
       source.pipe(
@@ -2548,7 +2548,7 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
 
 export class MergeMapOperator<T, R> implements Operator<T, R> {
   constructor(
-    private project: (value: T, index: number) => ObservableInput<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number = Number.POSITIVE_INFINITY
   ) {}
 
@@ -2567,7 +2567,7 @@ export class MergeMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
   constructor(
     destination: Subscriber<R>,
-    private project: (value: T, index: number) => ObservableInput<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number = Number.POSITIVE_INFINITY
   ) {
     super(destination);
@@ -2582,7 +2582,7 @@ export class MergeMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 
   protected _tryNext(value: T) {
-    let result: ObservableInput<R>;
+    let result: SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -2594,7 +2594,7 @@ export class MergeMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(ish: ObservableInput<R>, value: T, index: number): void {
+  private _innerSub(ish: SourceInput<R>, value: T, index: number): void {
     const innerSubscriber = new ActorSubscriber(this, value, index);
     const destination = this.destination as Subscription;
     destination.add(innerSubscriber);
@@ -2640,22 +2640,22 @@ export class MergeMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function mergeMapTo<O extends ObservableInput<any>>(
+export function mergeMapTo<O extends SourceInput<any>>(
   innerObservable: O,
   concurrent?: number
-): Lifter<any, ObservedValueOf<O>>;
-export function mergeMapTo<T, R, O extends ObservableInput<any>>(
+): Lifter<any, Sourced<O>>;
+export function mergeMapTo<T, R, O extends SourceInput<any>>(
   innerObservable: O,
   resultSelector?:
     | ((
         outerN: T,
-        innerValue: ObservedValueOf<O>,
+        innerValue: Sourced<O>,
         outerX: number,
         innerIndex: number
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, ObservedValueOf<O> | R> {
+): Lifter<T, Sourced<O> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(() => innerObservable, resultSelector, concurrent);
   }
@@ -2666,7 +2666,7 @@ export function mergeMapTo<T, R, O extends ObservableInput<any>>(
 }
 
 export function mergeScan<T, R>(
-  accumulator: (acc: R, value: T, index: number) => ObservableInput<R>,
+  accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
   seed: R,
   concurrent: number = Number.POSITIVE_INFINITY
 ): Lifter<T, R> {
@@ -2680,7 +2680,7 @@ export class MergeScanOperator<T, R> implements Operator<T, R> {
       acc: R,
       value: T,
       index: number
-    ) => ObservableInput<R>,
+    ) => SourceInput<R>,
     private seed: R,
     private concurrent: number
   ) {}
@@ -2710,7 +2710,7 @@ export class MergeScanSubscriber<T, R> extends ReactorSubscriber<T, R> {
       acc: R,
       value: T,
       index: number
-    ) => ObservableInput<R>,
+    ) => SourceInput<R>,
     private acc: R,
     private concurrent: number
   ) {
@@ -2792,12 +2792,12 @@ export class MergeScanSubscriber<T, R> extends ReactorSubscriber<T, R> {
 }
 
 export function mergeWith<T>(): Lifter<T, T>;
-export function mergeWith<T, A extends ObservableInput<any>[]>(
+export function mergeWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
-): Lifter<T, T | ObservedUnionFrom<A>>;
-export function mergeWith<T, A extends ObservableInput<any>[]>(
+): Lifter<T, T | SourcedFrom<A>>;
+export function mergeWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
-): Lifter<T, T | ObservedUnionFrom<A>> {
+): Lifter<T, T | SourcedFrom<A>> {
   return merge(...otherSources);
 }
 
@@ -2812,17 +2812,17 @@ export function min<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
 export function multicast<T>(
   subject: Subject<T>
 ): UnaryFun<Observable<T>, Connectable<T>>;
-export function multicast<T, O extends ObservableInput<any>>(
+export function multicast<T, O extends SourceInput<any>>(
   subject: Subject<T>,
   selector: (shared: Observable<T>) => O
-): UnaryFun<Observable<T>, Connectable<ObservedValueOf<O>>>;
+): UnaryFun<Observable<T>, Connectable<Sourced<O>>>;
 export function multicast<T>(
   subjectFactory: (this: Observable<T>) => Subject<T>
 ): UnaryFun<Observable<T>, Connectable<T>>;
-export function multicast<T, O extends ObservableInput<any>>(
+export function multicast<T, O extends SourceInput<any>>(
   SubjectFactory: (this: Observable<T>) => Subject<T>,
   selector: (shared: Observable<T>) => O
-): Lifter<T, ObservedValueOf<O>>;
+): Lifter<T, Sourced<O>>;
 export function multicast<T, R>(
   subjectOrSubjectFactory: Subject<T> | (() => Subject<T>),
   selector?: (source: Observable<T>) => Observable<R>
@@ -2938,46 +2938,46 @@ export class ObserveOnMessage {
 
 export function onErrorResumeNext<T>(): Lifter<T, T>;
 export function onErrorResumeNext<T, T2>(
-  v: ObservableInput<T2>
+  v: SourceInput<T2>
 ): Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
-  v: ObservableInput<T2>,
-  v2: ObservableInput<T3>
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>
 ): Lifter<T, T | T2 | T3>;
 export function onErrorResumeNext<T, T2, T3, T4>(
-  v: ObservableInput<T2>,
-  v2: ObservableInput<T3>,
-  v3: ObservableInput<T4>
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>
 ): Lifter<T, T | T2 | T3 | T4>;
 export function onErrorResumeNext<T, T2, T3, T4, T5>(
-  v: ObservableInput<T2>,
-  v2: ObservableInput<T3>,
-  v3: ObservableInput<T4>,
-  v4: ObservableInput<T5>
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>
 ): Lifter<T, T | T2 | T3 | T4 | T5>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6>(
-  v: ObservableInput<T2>,
-  v2: ObservableInput<T3>,
-  v3: ObservableInput<T4>,
-  v4: ObservableInput<T5>,
-  v5: ObservableInput<T6>
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>,
+  v5: SourceInput<T6>
 ): Lifter<T, T | T2 | T3 | T4 | T5 | T6>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
-  v: ObservableInput<T2>,
-  v2: ObservableInput<T3>,
-  v3: ObservableInput<T4>,
-  v4: ObservableInput<T5>,
-  v5: ObservableInput<T6>,
-  v6: ObservableInput<T7>
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>,
+  v5: SourceInput<T6>,
+  v6: SourceInput<T7>
 ): Lifter<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
 export function onErrorResumeNext<T, R>(
-  ...observables: Array<ObservableInput<any>>
+  ...observables: Array<SourceInput<any>>
 ): Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
-  array: ObservableInput<any>[]
+  array: SourceInput<any>[]
 ): Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
-  ...nextSources: Array<ObservableInput<any> | Array<ObservableInput<any>>>
+  ...nextSources: Array<SourceInput<any> | Array<SourceInput<any>>>
 ): Lifter<T, R> {
   if (nextSources.length === 1 && isArray(nextSources[0])) {
     nextSources = <Array<Observable<any>>>nextSources[0];
@@ -2988,47 +2988,47 @@ export function onErrorResumeNext<T, R>(
 }
 
 export function onErrorResumeNextStatic<R>(
-  v: ObservableInput<R>
+  v: SourceInput<R>
 ): Observable<R>;
 export function onErrorResumeNextStatic<T2, T3, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>
 ): Observable<R>;
 export function onErrorResumeNextStatic<T2, T3, T4, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>
 ): Observable<R>;
 export function onErrorResumeNextStatic<T2, T3, T4, T5, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>
 ): Observable<R>;
 export function onErrorResumeNextStatic<T2, T3, T4, T5, T6, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>,
-  v6: ObservableInput<T6>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
+  v6: SourceInput<T6>
 ): Observable<R>;
 export function onErrorResumeNextStatic<R>(
-  ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Observable<R>;
 export function onErrorResumeNextStatic<R>(
-  array: ObservableInput<any>[]
+  array: SourceInput<any>[]
 ): Observable<R>;
 export function onErrorResumeNextStatic<T, R>(
   ...nextSources: Array<
-    | ObservableInput<any>
-    | Array<ObservableInput<any>>
+    | SourceInput<any>
+    | Array<SourceInput<any>>
     | ((...values: Array<any>) => R)
   >
 ): Observable<R> {
-  let source: ObservableInput<any> | null = null;
+  let source: SourceInput<any> | null = null;
 
   if (nextSources.length === 1 && isArray(nextSources[0])) {
-    nextSources = <Array<ObservableInput<any>>>nextSources[0];
+    nextSources = <Array<SourceInput<any>>>nextSources[0];
   }
   source = nextSources.shift()!;
 
@@ -3038,7 +3038,7 @@ export function onErrorResumeNextStatic<T, R>(
 }
 
 class OnErrorResumeNextOperator<T, R> implements Operator<T, R> {
-  constructor(private nextSources: Array<ObservableInput<any>>) {}
+  constructor(private nextSources: Array<SourceInput<any>>) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
     return source.subscribe(
@@ -3050,7 +3050,7 @@ class OnErrorResumeNextOperator<T, R> implements Operator<T, R> {
 class OnErrorResumeNextSubscriber<T, R> extends ReactorSubscriber<T, R> {
   constructor(
     protected destination: Subscriber<T>,
-    private nextSources: Array<ObservableInput<any>>
+    private nextSources: Array<SourceInput<any>>
   ) {
     super(destination);
   }
@@ -3223,9 +3223,9 @@ export function pluck<T, R>(
 }
 
 export function publish<T>(): UnaryFun<Observable<T>, Connectable<T>>;
-export function publish<T, O extends ObservableInput<any>>(
+export function publish<T, O extends SourceInput<any>>(
   selector: (shared: Observable<T>) => O
-): Lifter<T, ObservedValueOf<O>>;
+): Lifter<T, Sourced<O>>;
 export function publish<T>(selector: MonoOper<T>): MonoOper<T>;
 export function publish<T, R>(
   selector?: Lifter<T, R>
@@ -3251,12 +3251,12 @@ export function publishReplay<T>(
   windowTime?: number,
   scheduler?: SchedulerLike
 ): MonoOper<T>;
-export function publishReplay<T, O extends ObservableInput<any>>(
+export function publishReplay<T, O extends SourceInput<any>>(
   bufferSize?: number,
   windowTime?: number,
   selector?: (shared: Observable<T>) => O,
   scheduler?: SchedulerLike
-): Lifter<T, ObservedValueOf<O>>;
+): Lifter<T, Sourced<O>>;
 export function publishReplay<T, R>(
   bufferSize?: number,
   windowTime?: number,
@@ -4251,7 +4251,7 @@ class SkipUntilSubscriber<T, R> extends ReactorSubscriber<T, R> {
   private hasValue: boolean = false;
   private innerSubscription: Subscription | undefined;
 
-  constructor(destination: Subscriber<R>, notifier: ObservableInput<any>) {
+  constructor(destination: Subscriber<R>, notifier: SourceInput<any>) {
     super(destination);
     const innerSubscriber = new ActorSubscriber(this, undefined, undefined!);
     this.add(innerSubscriber);
@@ -4373,24 +4373,24 @@ class SubscribeOnOperator<T> implements Operator<T, T> {
   }
 }
 
-export function switchAll<T>(): Lifter<ObservableInput<T>, T>;
+export function switchAll<T>(): Lifter<SourceInput<T>, T>;
 export function switchAll<R>(): Lifter<any, R>;
-export function switchAll<T>(): Lifter<ObservableInput<T>, T> {
+export function switchAll<T>(): Lifter<SourceInput<T>, T> {
   return switchMap(identity);
 }
 
-export function switchMap<T, O extends ObservableInput<any>>(
+export function switchMap<T, O extends SourceInput<any>>(
   project: (value: T, index: number) => O
-): Lifter<T, ObservedValueOf<O>>;
-export function switchMap<T, R, O extends ObservableInput<any>>(
+): Lifter<T, Sourced<O>>;
+export function switchMap<T, R, O extends SourceInput<any>>(
   project: (value: T, index: number) => O,
   resultSelector?: (
     outerN: T,
-    innerValue: ObservedValueOf<O>,
+    innerValue: Sourced<O>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, ObservedValueOf<O> | R> {
+): Lifter<T, Sourced<O> | R> {
   if (typeof resultSelector === 'function') {
     return (source: Observable<T>) =>
       source.pipe(
@@ -4404,7 +4404,7 @@ export function switchMap<T, R, O extends ObservableInput<any>>(
 
 class SwitchMapOperator<T, R> implements Operator<T, R> {
   constructor(
-    private project: (value: T, index: number) => ObservableInput<R>
+    private project: (value: T, index: number) => SourceInput<R>
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
@@ -4418,13 +4418,13 @@ class SwitchMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
   constructor(
     destination: Subscriber<R>,
-    private project: (value: T, index: number) => ObservableInput<R>
+    private project: (value: T, index: number) => SourceInput<R>
   ) {
     super(destination);
   }
 
   protected _next(value: T) {
-    let result: ObservableInput<R>;
+    let result: SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -4435,7 +4435,7 @@ class SwitchMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(result: ObservableInput<R>, value: T, index: number) {
+  private _innerSub(result: SourceInput<R>, value: T, index: number) {
     const innerSubscription = this.innerSubscription;
     if (innerSubscription) {
       innerSubscription.unsubscribe();
@@ -4487,9 +4487,9 @@ class SwitchMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function switchMapTo<R>(observable: ObservableInput<R>): Lifter<any, R>;
+export function switchMapTo<R>(observable: SourceInput<R>): Lifter<any, R>;
 export function switchMapTo<T, I, R>(
-  innerObservable: ObservableInput<I>,
+  innerObservable: SourceInput<I>,
   resultSelector?: (
     outerN: T,
     innerValue: I,
@@ -5127,12 +5127,12 @@ export function timeout<T>(
 
 export function timeoutWith<T, R>(
   due: number | Date,
-  withObservable: ObservableInput<R>,
+  withObservable: SourceInput<R>,
   scheduler?: SchedulerLike
 ): Lifter<T, T | R>;
 export function timeoutWith<T, R>(
   due: number | Date,
-  withObservable: ObservableInput<R>,
+  withObservable: SourceInput<R>,
   scheduler: SchedulerLike = async
 ): Lifter<T, T | R> {
   return (source: Observable<T>) => {
@@ -5155,7 +5155,7 @@ class TimeoutWithOperator<T> implements Operator<T, T> {
   constructor(
     private waitFor: number,
     private absoluteTimeout: boolean,
-    private withObservable: ObservableInput<any>,
+    private withObservable: SourceInput<any>,
     private scheduler: SchedulerLike
   ) {}
 
@@ -5179,7 +5179,7 @@ class TimeoutWithSubscriber<T, R> extends ReactorSubscriber<T, R> {
     destination: Subscriber<T>,
     private absoluteTimeout: boolean,
     private waitFor: number,
-    private withObservable: ObservableInput<any>,
+    private withObservable: SourceInput<any>,
     private scheduler: SchedulerLike
   ) {
     super(destination);
@@ -5930,25 +5930,25 @@ class WindowSubscriber<T> extends ReactorSubscriber<T, any> {
 }
 
 export function withLatestFrom<T, R>(project: (v1: T) => R): Lifter<T, R>;
-export function withLatestFrom<T, O2 extends ObservableInput<any>, R>(
+export function withLatestFrom<T, O2 extends SourceInput<any>, R>(
   source2: O2,
-  project: (v1: T, v2: ObservedValueOf<O2>) => R
+  project: (v1: T, v2: Sourced<O2>) => R
 ): Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
   R
 >(
   v2: O2,
   v3: O3,
-  project: (v1: T, v2: ObservedValueOf<O2>, v3: ObservedValueOf<O3>) => R
+  project: (v1: T, v2: Sourced<O2>, v3: Sourced<O3>) => R
 ): Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
   R
 >(
   v2: O2,
@@ -5956,17 +5956,17 @@ export function withLatestFrom<
   v4: O4,
   project: (
     v1: T,
-    v2: ObservedValueOf<O2>,
-    v3: ObservedValueOf<O3>,
-    v4: ObservedValueOf<O4>
+    v2: Sourced<O2>,
+    v3: Sourced<O3>,
+    v4: Sourced<O4>
   ) => R
 ): Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>,
   R
 >(
   v2: O2,
@@ -5975,19 +5975,19 @@ export function withLatestFrom<
   v5: O5,
   project: (
     v1: T,
-    v2: ObservedValueOf<O2>,
-    v3: ObservedValueOf<O3>,
-    v4: ObservedValueOf<O4>,
-    v5: ObservedValueOf<O5>
+    v2: Sourced<O2>,
+    v3: Sourced<O3>,
+    v4: Sourced<O4>,
+    v5: Sourced<O5>
   ) => R
 ): Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>,
-  O6 extends ObservableInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>,
+  O6 extends SourceInput<any>,
   R
 >(
   v2: O2,
@@ -5997,40 +5997,40 @@ export function withLatestFrom<
   v6: O6,
   project: (
     v1: T,
-    v2: ObservedValueOf<O2>,
-    v3: ObservedValueOf<O3>,
-    v4: ObservedValueOf<O4>,
-    v5: ObservedValueOf<O5>,
-    v6: ObservedValueOf<O6>
+    v2: Sourced<O2>,
+    v3: Sourced<O3>,
+    v4: Sourced<O4>,
+    v5: Sourced<O5>,
+    v6: Sourced<O6>
   ) => R
 ): Lifter<T, R>;
-export function withLatestFrom<T, O2 extends ObservableInput<any>>(
+export function withLatestFrom<T, O2 extends SourceInput<any>>(
   source2: O2
-): Lifter<T, [T, ObservedValueOf<O2>]>;
+): Lifter<T, [T, Sourced<O2>]>;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>
->(v2: O2, v3: O3): Lifter<T, [T, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>
+>(v2: O2, v3: O3): Lifter<T, [T, Sourced<O2>, Sourced<O3>]>;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>
 >(
   v2: O2,
   v3: O3,
   v4: O4
 ): Lifter<
   T,
-  [T, ObservedValueOf<O2>, ObservedValueOf<O3>, ObservedValueOf<O4>]
+  [T, Sourced<O2>, Sourced<O3>, Sourced<O4>]
 >;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>
 >(
   v2: O2,
   v3: O3,
@@ -6040,19 +6040,19 @@ export function withLatestFrom<
   T,
   [
     T,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>,
-    ObservedValueOf<O5>
+    Sourced<O2>,
+    Sourced<O3>,
+    Sourced<O4>,
+    Sourced<O5>
   ]
 >;
 export function withLatestFrom<
   T,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>,
-  O6 extends ObservableInput<any>
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>,
+  O6 extends SourceInput<any>
 >(
   v2: O2,
   v3: O3,
@@ -6063,25 +6063,25 @@ export function withLatestFrom<
   T,
   [
     T,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>,
-    ObservedValueOf<O5>,
-    ObservedValueOf<O6>
+    Sourced<O2>,
+    Sourced<O3>,
+    Sourced<O4>,
+    Sourced<O5>,
+    Sourced<O6>
   ]
 >;
 export function withLatestFrom<T, R>(
-  ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Lifter<T, R>;
 export function withLatestFrom<T, R>(
-  array: ObservableInput<any>[]
+  array: SourceInput<any>[]
 ): Lifter<T, R>;
 export function withLatestFrom<T, R>(
-  array: ObservableInput<any>[],
+  array: SourceInput<any>[],
   project: (...values: Array<any>) => R
 ): Lifter<T, R>;
 export function withLatestFrom<T, R>(
-  ...args: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
+  ...args: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Lifter<T, R> {
   return (source: Observable<T>) => {
     let project: any;
@@ -6173,11 +6173,11 @@ class WithLatestFromSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function zipAll<T>(): Lifter<ObservableInput<T>, T[]>;
+export function zipAll<T>(): Lifter<SourceInput<T>, T[]>;
 export function zipAll<T>(): Lifter<any, T[]>;
 export function zipAll<T, R>(
   project: (...values: T[]) => R
-): Lifter<ObservableInput<T>, R>;
+): Lifter<SourceInput<T>, R>;
 export function zipAll<R>(
   project: (...values: Array<any>) => R
 ): Lifter<any, R>;
@@ -6187,7 +6187,7 @@ export function zipAll<T, R>(
   return (source: Observable<T>) => source.lift(new ZipOperator(project));
 }
 export function zip<T, R>(
-  ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Lifter<T, R> {
   return function zipLifter(source: Observable<T>) {
     return source.lift.call(
@@ -6196,9 +6196,9 @@ export function zip<T, R>(
     ) as Observable<R>;
   };
 }
-export function zipWith<T, A extends ObservableInput<any>[]>(
+export function zipWith<T, A extends SourceInput<any>[]>(
   ...otherInputs: A
-): Lifter<T, Unshift<ObservedTupleFrom<A>, T>> {
+): Lifter<T, Unshift<SourcedTuple<A>, T>> {
   return zip(...otherInputs);
 }
 */

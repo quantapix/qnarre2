@@ -7,7 +7,7 @@ import {isInteropObservable} from './utils';
 import {isPromise} from './utils';
 import {isArrayLike} from './utils';
 import {isIterable} from './utils';
-import {ObservableInput} from './types';
+import {SourceInput} from './types';
 
 export class Action<T> extends Subscription {
   constructor(
@@ -641,7 +641,7 @@ export function schedulePromise<T>(
 }
 
 export function scheduled<T>(
-  input: ObservableInput<T>,
+  input: SourceInput<T>,
   scheduler: SchedulerLike
 ): Observable<T> {
   if (input != null) {

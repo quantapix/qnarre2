@@ -1004,80 +1004,54 @@ function dispatchError<T>(arg: DispatchErrorArg<T>) {
 
 const NONE = {};
 
-export function combineLatest<O1 extends ObservableInput<any>>(
+export function combineLatest<O1 extends SourceInput<any>>(
   sources: [O1]
-): Observable<[ObservedValueOf<O1>]>;
+): Observable<[Sourced<O1>]>;
 export function combineLatest<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>
->(sources: [O1, O2]): Observable<[ObservedValueOf<O1>, ObservedValueOf<O2>]>;
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>
+>(sources: [O1, O2]): Observable<[Sourced<O1>, Sourced<O2>]>;
 export function combineLatest<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>
->(
-  sources: [O1, O2, O3]
-): Observable<[ObservedValueOf<O1>, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>
+>(sources: [O1, O2, O3]): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>]>;
 export function combineLatest<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>
 >(
   sources: [O1, O2, O3, O4]
-): Observable<
-  [
-    ObservedValueOf<O1>,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>
-  ]
->;
+): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
 export function combineLatest<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>
 >(
   sources: [O1, O2, O3, O4, O5]
 ): Observable<
-  [
-    ObservedValueOf<O1>,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>,
-    ObservedValueOf<O5>
-  ]
+  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]
 >;
 export function combineLatest<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>,
-  O6 extends ObservableInput<any>
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>,
+  O6 extends SourceInput<any>
 >(
   sources: [O1, O2, O3, O4, O5, O6]
 ): Observable<
-  [
-    ObservedValueOf<O1>,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>,
-    ObservedValueOf<O5>,
-    ObservedValueOf<O6>
-  ]
+  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>, Sourced<O6>]
 >;
-export function combineLatest<O extends ObservableInput<any>>(
+export function combineLatest<O extends SourceInput<any>>(
   sources: O[]
-): Observable<ObservedValueOf<O>[]>;
-export function combineLatest<O extends ObservableInput<any>, R>(
-  ...observables: (
-    | O
-    | ((...values: ObservedValueOf<O>[]) => R)
-    | SchedulerLike
-  )[]
+): Observable<Sourced<O>[]>;
+export function combineLatest<O extends SourceInput<any>, R>(
+  ...observables: (O | ((...values: Sourced<O>[]) => R) | SchedulerLike)[]
 ): Observable<R> {
   let resultSelector: ((...values: Array<any>) => R) | undefined = undefined;
   let scheduler: SchedulerLike | undefined = undefined;
@@ -1094,7 +1068,7 @@ export function combineLatest<O extends ObservableInput<any>, R>(
   }
 
   return fromArray(observables, scheduler).lift(
-    new CombineLatestOperator<ObservedValueOf<O>, R>(resultSelector)
+    new CombineLatestOperator<Sourced<O>, R>(resultSelector)
   );
 }
 
@@ -1184,22 +1158,20 @@ export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function concat<A extends ObservableInput<any>[]>(
+export function concat<A extends SourceInput<any>[]>(
   ...observables: A
-): Observable<ObservedUnionFrom<A>>;
-export function concat<O extends ObservableInput<any>>(
+): Observable<SourcedFrom<A>>;
+export function concat<O extends SourceInput<any>>(
   ...observables: Array<O | SchedulerLike>
-): Observable<ObservedValueOf<O>> {
+): Observable<Sourced<O>> {
   // The cast with `as` below is due to the SchedulerLike, once this is removed, it will no longer be a problem.
-  return concatAll<ObservedValueOf<O>>()(
-    of(...observables) as Observable<ObservedValueOf<O>>
-  );
+  return concatAll<Sourced<O>>()(of(...observables) as Observable<Sourced<O>>);
 }
 
-export function defer<R extends ObservableInput<any> | void>(
+export function defer<R extends SourceInput<any> | void>(
   observableFactory: () => R
-): Observable<ObservedValueOf<R>> {
-  return new Observable<ObservedValueOf<R>>(subscriber => {
+): Observable<Sourced<R>> {
+  return new Observable<Sourced<R>>(subscriber => {
     let input: R | void;
     try {
       input = observableFactory();
@@ -1207,9 +1179,7 @@ export function defer<R extends ObservableInput<any> | void>(
       subscriber.error(err);
       return undefined;
     }
-    const source = input
-      ? from(input as ObservableInput<ObservedValueOf<R>>)
-      : EMPTY;
+    const source = input ? from(input as SourceInput<Sourced<R>>) : EMPTY;
     return source.subscribe(subscriber);
   });
 }
@@ -1226,47 +1196,42 @@ function emptyScheduled(scheduler: SchedulerLike) {
   );
 }
 
-export function forkJoin<A>(sources: [ObservableInput<A>]): Observable<[A]>;
+export function forkJoin<A>(sources: [SourceInput<A>]): Observable<[A]>;
 export function forkJoin<A, B>(
-  sources: [ObservableInput<A>, ObservableInput<B>]
+  sources: [SourceInput<A>, SourceInput<B>]
 ): Observable<[A, B]>;
 export function forkJoin<A, B, C>(
-  sources: [ObservableInput<A>, ObservableInput<B>, ObservableInput<C>]
+  sources: [SourceInput<A>, SourceInput<B>, SourceInput<C>]
 ): Observable<[A, B, C]>;
 export function forkJoin<A, B, C, D>(
-  sources: [
-    ObservableInput<A>,
-    ObservableInput<B>,
-    ObservableInput<C>,
-    ObservableInput<D>
-  ]
+  sources: [SourceInput<A>, SourceInput<B>, SourceInput<C>, SourceInput<D>]
 ): Observable<[A, B, C, D]>;
 export function forkJoin<A, B, C, D, E>(
   sources: [
-    ObservableInput<A>,
-    ObservableInput<B>,
-    ObservableInput<C>,
-    ObservableInput<D>,
-    ObservableInput<E>
+    SourceInput<A>,
+    SourceInput<B>,
+    SourceInput<C>,
+    SourceInput<D>,
+    SourceInput<E>
   ]
 ): Observable<[A, B, C, D, E]>;
 export function forkJoin<A, B, C, D, E, F>(
   sources: [
-    ObservableInput<A>,
-    ObservableInput<B>,
-    ObservableInput<C>,
-    ObservableInput<D>,
-    ObservableInput<E>,
-    ObservableInput<F>
+    SourceInput<A>,
+    SourceInput<B>,
+    SourceInput<C>,
+    SourceInput<D>,
+    SourceInput<E>,
+    SourceInput<F>
   ]
 ): Observable<[A, B, C, D, E, F]>;
-export function forkJoin<A extends ObservableInput<any>[]>(
+export function forkJoin<A extends SourceInput<any>[]>(
   sources: A
-): Observable<ObservedUnionFrom<A>[]>;
+): Observable<SourcedFrom<A>[]>;
 export function forkJoin(sourcesObject: {}): Observable<never>;
 export function forkJoin<T, K extends keyof T>(
   sourcesObject: T
-): Observable<{[K in keyof T]: ObservedValueOf<T[K]>}>;
+): Observable<{[K in keyof T]: Sourced<T[K]>}>;
 export function forkJoin(...sources: any[]): Observable<any> {
   if (sources.length === 1) {
     const first = sources[0];
@@ -1293,7 +1258,7 @@ export function forkJoin(...sources: any[]): Observable<any> {
 }
 
 function forkJoinInternal(
-  sources: ObservableInput<any>[],
+  sources: SourceInput<any>[],
   keys: string[] | null
 ): Observable<any> {
   return new Observable(subscriber => {
@@ -1342,11 +1307,11 @@ function forkJoinInternal(
   });
 }
 
-export function from<O extends ObservableInput<any>>(
+export function from<O extends SourceInput<any>>(
   input: O
-): Observable<ObservedValueOf<O>>;
+): Observable<Sourced<O>>;
 export function from<T>(
-  input: ObservableInput<T>,
+  input: SourceInput<T>,
   scheduler?: SchedulerLike
 ): Observable<T> {
   if (!scheduler) {
@@ -1818,86 +1783,84 @@ interface IntervalState {
   period: number;
 }
 
-export function merge<T>(v1: ObservableInput<T>): Observable<T>;
+export function merge<T>(v1: SourceInput<T>): Observable<T>;
 export function merge<T>(
-  v1: ObservableInput<T>,
+  v1: SourceInput<T>,
   concurrent?: number
 ): Observable<T>;
 export function merge<T, T2>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>
 ): Observable<T | T2>;
 export function merge<T, T2>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
   concurrent?: number
 ): Observable<T | T2>;
 export function merge<T, T2, T3>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>
 ): Observable<T | T2 | T3>;
 export function merge<T, T2, T3>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
   concurrent?: number
 ): Observable<T | T2 | T3>;
 export function merge<T, T2, T3, T4>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>
 ): Observable<T | T2 | T3 | T4>;
 export function merge<T, T2, T3, T4>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
   concurrent?: number
 ): Observable<T | T2 | T3 | T4>;
 export function merge<T, T2, T3, T4, T5>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>
 ): Observable<T | T2 | T3 | T4 | T5>;
 export function merge<T, T2, T3, T4, T5>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>,
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
   concurrent?: number
 ): Observable<T | T2 | T3 | T4 | T5>;
 export function merge<T, T2, T3, T4, T5, T6>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>,
-  v6: ObservableInput<T6>
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
+  v6: SourceInput<T6>
 ): Observable<T | T2 | T3 | T4 | T5 | T6>;
 export function merge<T, T2, T3, T4, T5, T6>(
-  v1: ObservableInput<T>,
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>,
-  v6: ObservableInput<T6>,
+  v1: SourceInput<T>,
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
+  v6: SourceInput<T6>,
   concurrent?: number
 ): Observable<T | T2 | T3 | T4 | T5 | T6>;
 export function merge<T>(
-  ...observables: (ObservableInput<T> | number)[]
+  ...observables: (SourceInput<T> | number)[]
 ): Observable<T>;
 export function merge<T, R>(
-  ...observables: (ObservableInput<any> | number)[]
+  ...observables: (SourceInput<any> | number)[]
 ): Observable<R>;
 export function merge<T, R>(
-  ...observables: Array<
-    ObservableInput<any> | SchedulerLike | number | undefined
-  >
+  ...observables: Array<SourceInput<any> | SchedulerLike | number | undefined>
 ): Observable<R> {
   let concurrent = Number.POSITIVE_INFINITY;
   let scheduler: SchedulerLike | undefined = undefined;
@@ -1948,41 +1911,37 @@ export function of<T>(...args: Array<T | SchedulerLike>): Observable<T> {
   }
 }
 
-export function onErrorResumeNext<R>(v: ObservableInput<R>): Observable<R>;
+export function onErrorResumeNext<R>(v: SourceInput<R>): Observable<R>;
 export function onErrorResumeNext<T2, T3, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>
 ): Observable<R>;
 export function onErrorResumeNext<T2, T3, T4, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>
 ): Observable<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>
 ): Observable<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, T6, R>(
-  v2: ObservableInput<T2>,
-  v3: ObservableInput<T3>,
-  v4: ObservableInput<T4>,
-  v5: ObservableInput<T5>,
-  v6: ObservableInput<T6>
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
+  v6: SourceInput<T6>
 ): Observable<R>;
 
 export function onErrorResumeNext<R>(
-  ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Observable<R>;
-export function onErrorResumeNext<R>(
-  array: ObservableInput<any>[]
-): Observable<R>;
+export function onErrorResumeNext<R>(array: SourceInput<any>[]): Observable<R>;
 export function onErrorResumeNext<T, R>(
   ...sources: Array<
-    | ObservableInput<any>
-    | Array<ObservableInput<any>>
-    | ((...values: Array<any>) => R)
+    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
   >
 ): Observable<R> {
   if (sources.length === 0) {
@@ -2067,7 +2026,7 @@ export function dispatch<T>(
 }
 
 export function partition<T>(
-  source: ObservableInput<T>,
+  source: SourceInput<T>,
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
 ): [Observable<T>, Observable<T>] {
@@ -2079,20 +2038,20 @@ export function partition<T>(
   ] as [Observable<T>, Observable<T>];
 }
 
-export function race<A extends ObservableInput<any>[]>(
+export function race<A extends SourceInput<any>[]>(
   observables: A
-): Observable<ObservedUnionFrom<A>>;
-export function race<A extends ObservableInput<any>[]>(
+): Observable<SourcedFrom<A>>;
+export function race<A extends SourceInput<any>[]>(
   ...observables: A
-): Observable<ObservedUnionFrom<A>>;
+): Observable<SourcedFrom<A>>;
 export function race<T>(
-  ...observables: (ObservableInput<T> | ObservableInput<T>[])[]
+  ...observables: (SourceInput<T> | SourceInput<T>[])[]
 ): Observable<any> {
   if (observables.length === 1) {
     if (isArray(observables[0])) {
-      observables = observables[0] as ObservableInput<T>[];
+      observables = observables[0] as SourceInput<T>[];
     } else {
-      return from(observables[0] as ObservableInput<T>);
+      return from(observables[0] as SourceInput<T>);
     }
   }
 
@@ -2311,9 +2270,7 @@ function dispatch(this: SchedulerAction<TimerState>, state: TimerState) {
 
 export function using<T>(
   resourceFactory: () => Unsubscriber | void,
-  observableFactory: (
-    resource: Unsubscriber | void
-  ) => ObservableInput<T> | void
+  observableFactory: (resource: Unsubscriber | void) => SourceInput<T> | void
 ): Observable<T> {
   return new Observable<T>(subscriber => {
     let resource: Unsubscriber | void;
@@ -2325,7 +2282,7 @@ export function using<T>(
       return undefined;
     }
 
-    let result: ObservableInput<T> | void;
+    let result: SourceInput<T> | void;
     try {
       result = observableFactory(resource);
     } catch (err) {
@@ -2344,43 +2301,32 @@ export function using<T>(
   });
 }
 
-export function zip<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>
->(v1: O1, v2: O2): Observable<[ObservedValueOf<O1>, ObservedValueOf<O2>]>;
-export function zip<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>
->(
+export function zip<O1 extends SourceInput<any>, O2 extends SourceInput<any>>(
   v1: O1,
-  v2: O2,
-  v3: O3
-): Observable<[ObservedValueOf<O1>, ObservedValueOf<O2>, ObservedValueOf<O3>]>;
+  v2: O2
+): Observable<[Sourced<O1>, Sourced<O2>]>;
 export function zip<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>
+>(v1: O1, v2: O2, v3: O3): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>]>;
+export function zip<
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>
 >(
   v1: O1,
   v2: O2,
   v3: O3,
   v4: O4
-): Observable<
-  [
-    ObservedValueOf<O1>,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>
-  ]
->;
+): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
 export function zip<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>
 >(
   v1: O1,
   v2: O2,
@@ -2388,21 +2334,15 @@ export function zip<
   v4: O4,
   v5: O5
 ): Observable<
-  [
-    ObservedValueOf<O1>,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>,
-    ObservedValueOf<O5>
-  ]
+  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]
 >;
 export function zip<
-  O1 extends ObservableInput<any>,
-  O2 extends ObservableInput<any>,
-  O3 extends ObservableInput<any>,
-  O4 extends ObservableInput<any>,
-  O5 extends ObservableInput<any>,
-  O6 extends ObservableInput<any>
+  O1 extends SourceInput<any>,
+  O2 extends SourceInput<any>,
+  O3 extends SourceInput<any>,
+  O4 extends SourceInput<any>,
+  O5 extends SourceInput<any>,
+  O6 extends SourceInput<any>
 >(
   v1: O1,
   v2: O2,
@@ -2411,31 +2351,24 @@ export function zip<
   v5: O5,
   v6: O6
 ): Observable<
-  [
-    ObservedValueOf<O1>,
-    ObservedValueOf<O2>,
-    ObservedValueOf<O3>,
-    ObservedValueOf<O4>,
-    ObservedValueOf<O5>,
-    ObservedValueOf<O6>
-  ]
+  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>, Sourced<O6>]
 >;
-export function zip<O extends ObservableInput<any>>(
+export function zip<O extends SourceInput<any>>(
   array: O[]
-): Observable<ObservedValueOf<O>[]>;
-export function zip<R>(array: ObservableInput<any>[]): Observable<R>;
-export function zip<O extends ObservableInput<any>>(
+): Observable<Sourced<O>[]>;
+export function zip<R>(array: SourceInput<any>[]): Observable<R>;
+export function zip<O extends SourceInput<any>>(
   ...observables: O[]
-): Observable<ObservedValueOf<O>[]>;
-export function zip<O extends ObservableInput<any>, R>(
-  ...observables: Array<O | ((...values: ObservedValueOf<O>[]) => R)>
+): Observable<Sourced<O>[]>;
+export function zip<O extends SourceInput<any>, R>(
+  ...observables: Array<O | ((...values: Sourced<O>[]) => R)>
 ): Observable<R>;
 export function zip<R>(
-  ...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Observable<R>;
-export function zip<O extends ObservableInput<any>, R>(
-  ...observables: Array<O | ((...values: ObservedValueOf<O>[]) => R)>
-): Observable<ObservedValueOf<O>[] | R> {
+export function zip<O extends SourceInput<any>, R>(
+  ...observables: Array<O | ((...values: Sourced<O>[]) => R)>
+): Observable<Sourced<O>[] | R> {
   const last = observables[observables.length - 1];
   let resultSelector: ((...ys: Array<any>) => R) | undefined = undefined;
   if (typeof last === 'function') {

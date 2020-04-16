@@ -1,11 +1,11 @@
 declare const global: any;
 
-import { of, asyncScheduler, Observable, scheduled, ObservableInput } from 'rxjs';
-import { root } from 'rxjs/internal/util/root';
-import { observable } from 'rxjs/internal/symbol/observable';
-import { iterator } from 'rxjs/internal/symbol/iterator';
+import {of, asyncScheduler, Observable, scheduled, SourceInput} from 'rxjs';
+import {root} from 'rxjs/internal/util/root';
+import {observable} from 'rxjs/internal/symbol/observable';
+import {iterator} from 'rxjs/internal/symbol/iterator';
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+import {expect} from 'chai';
 
 if (process && process.on) {
   /**
@@ -26,7 +26,9 @@ export function lowerCaseO<T>(...args: Array<any>): Observable<T> {
       args.forEach(v => observer.next(v));
       observer.complete();
       return {
-        unsubscribe() { /* do nothing */ }
+        unsubscribe() {
+          /* do nothing */
+        }
       };
     }
   };
@@ -38,28 +40,26 @@ export function lowerCaseO<T>(...args: Array<any>): Observable<T> {
   return <any>o;
 }
 
-export const createObservableInputs = <T>(value: T) => of(
-  of(value),
-  scheduled([value], asyncScheduler),
-  [value],
-  Promise.resolve(value),
-  {
-    [iterator]: () => {
-      const iteratorResults = [
-        { value, done: false },
-        { done: true }
-      ];
-      return {
-        next: () => {
-          return iteratorResults.shift();
-        }
-      };
-    }
-  } as any as Iterable<T>,
-  {
-    [observable]: () => of(value)
-  } as any
-) as Observable<ObservableInput<T>>;
+export const createSourceInputs = <T>(value: T) =>
+  of(
+    of(value),
+    scheduled([value], asyncScheduler),
+    [value],
+    Promise.resolve(value),
+    ({
+      [iterator]: () => {
+        const iteratorResults = [{value, done: false}, {done: true}];
+        return {
+          next: () => {
+            return iteratorResults.shift();
+          }
+        };
+      }
+    } as any) as Iterable<T>,
+    {
+      [observable]: () => of(value)
+    } as any
+  ) as Observable<SourceInput<T>>;
 
 /**
  * Used to signify no subscriptions took place to `expectSubscriptions` assertions.
@@ -72,7 +72,7 @@ export const NO_SUBS: string[] = [];
  * @param actual The value to run the expectation against.
  * @param expected The value expected.
  */
-export function assertDeepEquals (actual: any, expected: any) {
+export function assertDeepEquals(actual: any, expected: any) {
   expect(actual).to.deep.equal(expected);
 }
 
@@ -141,11 +141,13 @@ export function stubRAF(): RAFTestTools {
 
   const handlers: any[] = [];
 
-  (requestAnimationFrame as any) = sinon.stub().callsFake((handler: Function) => {
-    const id = _id++;
-    handlers.push({ id, handler });
-    return id;
-  });
+  (requestAnimationFrame as any) = sinon
+    .stub()
+    .callsFake((handler: Function) => {
+      const id = _id++;
+      handlers.push({id, handler});
+      return id;
+    });
 
   (cancelAnimationFrame as any) = sinon.stub().callsFake((id: number) => {
     const index = handlers.findIndex(x => x.id === id);

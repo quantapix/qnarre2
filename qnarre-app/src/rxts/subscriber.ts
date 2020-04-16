@@ -484,7 +484,7 @@ export class Catch<O, I, F, D> extends Reactor<N, N | M, F, D> {
     private selector: (
       err: any,
       caught: qt.Source<N, F, D>
-    ) => qt.ObservableInput<N | M, F, D>,
+    ) => qt.SourceInput<N | M, F, D>,
     private caught: qt.Source<N, F, D>
   ) {
     super(tgt);
@@ -1056,7 +1056,7 @@ export class ExhaustMap<N, M, F, D> extends Reactor<N, M, F, D> {
 
   constructor(
     tgt: Subscriber<M, F, D>,
-    private project: (value: T, index: number) => qt.ObservableInput<R>
+    private project: (value: T, index: number) => qt.SourceInput<R>
   ) {
     super(tgt);
   }
@@ -1066,7 +1066,7 @@ export class ExhaustMap<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 
   private tryNext(value: N) {
-    let result: ObservableInput<R>;
+    let result: SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -1078,7 +1078,7 @@ export class ExhaustMap<N, M, F, D> extends Reactor<N, M, F, D> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(result: ObservableInput<R>, value: T, index: number): void {
+  private _innerSub(result: SourceInput<R>, value: T, index: number): void {
     const innerSubscriber = new Actor(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
@@ -1122,7 +1122,7 @@ export class ExhaustMap<N, M, F, D> extends Reactor<N, M, F, D> {
 
 interface DispatchArg<T, R> {
   subscriber: Expand<T, R>;
-  result: qt.ObservableInput<R>;
+  result: qt.SourceInput<R>;
   value: any;
   index: number;
 }
@@ -1135,7 +1135,7 @@ export class Expand<N, M, F, D> extends Reactor<N, M, F, D> {
 
   constructor(
     tgt: Subscriber<M, F, D>,
-    private project: (value: T, index: number) => ObservableInput<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
     private scheduler?: qt.SchedulerLike
   ) {
@@ -1488,7 +1488,7 @@ export class MergeMap<N, M, F, D> extends Reactor<N, M, F, D> {
 
   constructor(
     tgt: Subscriber<R>,
-    private project: (value: T, index: number) => ObservableInput<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
     private concurrent = Number.POSITIVE_INFINITY
   ) {
     super(tgt);
@@ -1500,7 +1500,7 @@ export class MergeMap<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 
   protected _tryNext(value: N) {
-    let result: ObservableInput<R>;
+    let result: SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -1512,7 +1512,7 @@ export class MergeMap<N, M, F, D> extends Reactor<N, M, F, D> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(ish: ObservableInput<R>, value: T, index: number): void {
+  private _innerSub(ish: SourceInput<R>, value: T, index: number): void {
     const innerSubscriber = new ActorSubscriber(this, value, index);
     const tgt = this.tgt as Subscription;
     tgt.add(innerSubscriber);
@@ -1567,11 +1567,7 @@ export class MergeScan<N, M, F, D> extends Reactor<N, M, F, D> {
 
   constructor(
     tgt: Subscriber<M, F, D>,
-    private accumulator: (
-      acc: M,
-      value: N,
-      index: number
-    ) => ObservableInput<R>,
+    private accumulator: (acc: M, value: N, index: number) => SourceInput<R>,
     private acc: M,
     private concurrent: number
   ) {
@@ -1706,7 +1702,7 @@ export class ObserveOn<N, F, D> extends Subscriber<N, F, D> {
 export class OnErrorResumeNext<N, M, F, D> extends Reactor<N, M, F, D> {
   constructor(
     protected tgt: Subscriber<N, F, D>,
-    private nextSources: Array<ObservableInput<any>>
+    private nextSources: Array<SourceInput<any>>
   ) {
     super(tgt);
   }
@@ -2186,7 +2182,7 @@ export class SkipUntil<N, M, F, D> extends Reactor<N, M, F, D> {
   private hasValue = false;
   private innerSubscription?: Subscription;
 
-  constructor(tgt: Subscriber<M, F, D>, notifier: ObservableInput<any>) {
+  constructor(tgt: Subscriber<M, F, D>, notifier: SourceInput<any>) {
     super(tgt);
     const innerSubscriber = new Actor(this, undefined, undefined!);
     this.add(innerSubscriber);
@@ -2256,13 +2252,13 @@ export class SwitchMap<N, M, F, D> extends Reactor<N, M, F, D> {
 
   constructor(
     tgt: Subscriber<M, F, D>,
-    private project: (n: N | undefined, i: number) => ObservableInput<R>
+    private project: (n: N | undefined, i: number) => SourceInput<R>
   ) {
     super(tgt);
   }
 
   protected _next(n?: N) {
-    let result: ObservableInput<R>;
+    let result: SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(n, index);
@@ -2273,7 +2269,7 @@ export class SwitchMap<N, M, F, D> extends Reactor<N, M, F, D> {
     this._innerSub(result, n, index);
   }
 
-  private _innerSub(result: ObservableInput<R>, value: T, index: number) {
+  private _innerSub(result: SourceInput<R>, value: T, index: number) {
     const innerSubscription = this.innerSubscription;
     if (innerSubscription) {
       innerSubscription.unsubscribe();
@@ -2654,7 +2650,7 @@ export class TimeoutWith<T, R> extends Reactor<N, M, F, D> {
     tgt: Subscriber<N, F, D>,
     private absoluteTimeout: boolean,
     private waitFor: number,
-    private withObservable: ObservableInput<any>,
+    private withObservable: SourceInput<any>,
     private scheduler: qt.SchedulerLike
   ) {
     super(tgt);

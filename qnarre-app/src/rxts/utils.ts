@@ -2,7 +2,7 @@ import * as qj from './subject';
 import * as qt from './types';
 import * as qs from './source';
 
-import {ObservableInput, InteropObservable} from './types';
+import {SourceInput, InteropObservable} from './types';
 import {Observable} from './observe';
 
 export interface OutOfRangeError extends Error {}
@@ -352,7 +352,7 @@ const _root: any = __window || __global || __self;
 })();
 
 export const subscribeTo = <T>(
-  result: ObservableInput<T>
+  result: SourceInput<T>
 ): ((subscriber: qt.Subscriber<T>) => qj.Subscription | void) => {
   if (!!result && typeof (result as any)[Symbol.observable] === 'function') {
     return subscribeToObservable(result as any);

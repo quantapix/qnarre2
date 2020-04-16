@@ -2535,7 +2535,7 @@ import {expect} from 'chai';
 import {concat, defer, Observable, of, throwError, EMPTY, from} from 'rxjs';
 import {catchError, delay, map, mergeMap, takeWhile} from 'rxjs/operators';
 import * as sinon from 'sinon';
-import {createObservableInputs} from '../helpers/test-helper';
+import {createSourceInputs} from '../helpers/test-helper';
 import {TestScheduler} from 'rxjs/testing';
 import {observableMatcher} from '../helpers/observableMatcher';
 import {asInteropObservable} from '../helpers/interop-helper';
@@ -2908,8 +2908,8 @@ describe('catchError operator', () => {
       );
   });
 
-  it('should accept selector returns any ObservableInput', (done: MochaDone) => {
-    const input$ = createObservableInputs(42);
+  it('should accept selector returns any SourceInput', (done: MochaDone) => {
+    const input$ = createSourceInputs(42);
 
     input$
       .pipe(mergeMap(input => throwError('bad').pipe(catchError(err => input))))

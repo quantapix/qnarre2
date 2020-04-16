@@ -62,41 +62,39 @@ export interface Source<N, F, D> {
   lift<R>(o?: Operator<N, R, F, D>): Source<R, F, D>;
 }
 
-export interface Subject<N, F, D>
+export interface Subject<N, F = any, D = any>
   extends Source<N, F, D>,
     Observer<N, F, D>,
     Subscription {
   readonly stopped?: boolean;
 }
 
-export interface Operator<N, R, F, D> {
+export interface Operator<N, R, F = any, D = any> {
   call(r: Subscriber<R, F, D>, s: Source<N, F, D>): Subscription;
 }
 
-export type InteropObservable<N, F, D> = {
+export type InteropObservable<N, F = any, D = any> = {
   [Symbol.observable]: () => Source<N, F, D>;
 };
 
-export type SourceOrPromise<N, F, D> =
+export type SourceOrPromise<N, F = any, D = any> =
   | Source<N, F, D>
   | Source<never, F, D>
   | PromiseLike<N>
   | InteropObservable<N, F, D>;
 
-export type ObservableInput<N, F, D> =
+export type SourceInput<N, F = any, D = any> =
   | SourceOrPromise<N, F, D>
   | ArrayLike<N>
   | Iterable<N>
   | AsyncIterableIterator<N>;
 
-export type ObservedValueOf<O> = O extends ObservableInput<infer T> ? T : never;
+export type Sourced<X> = X extends SourceInput<infer N> ? N : never;
 
-export type ObservedUnionFrom<X> = X extends Array<ObservableInput<infer T>>
-  ? T
-  : never;
+export type SourcedFrom<X> = X extends Array<SourceInput<infer T>> ? T : never;
 
-export type ObservedTupleFrom<X> = X extends Array<ObservableInput<any>>
-  ? {[K in keyof X]: ObservedValueOf<X[K]>}
+export type SourcedTuple<X> = X extends Array<SourceInput<any>>
+  ? {[K in keyof X]: Sourced<X[K]>}
   : never;
 
 export type Unshift<X extends any[], Y> = ((y: Y, ...x: X) => any) extends (
