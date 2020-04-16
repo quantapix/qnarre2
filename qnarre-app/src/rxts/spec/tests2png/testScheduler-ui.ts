@@ -1,21 +1,12 @@
 import * as _ from 'lodash';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
-import * as marble from './marble-testing';
+import * as marble from './marbles';
 import {TestScheduler} from 'rxjs/testing';
 
 //tslint:disable:no-var-requires no-require-imports
 const commonInterface = require('mocha/lib/interfaces/common');
 const escapeRe = require('escape-string-regexp');
-//tslint:enable:no-var-requires no-require-imports
-
-/** Polyfill requestAnimationFrame for testing animationFrame scheduler in Node */
-// http://paulirish.com/2011/requestanimationframe-for-smart-animating/
-// http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
-
-// requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
-
-// MIT license
 
 (function (this: any, window: any) {
   window = window || this;
@@ -47,21 +38,18 @@ const escapeRe = require('escape-string-regexp');
   }
 })(global);
 
-//setup sinon-chai
 chai.use(sinonChai);
 
 declare const module: any, global: any, Suite: any, Test: any;
 
 if (global && !(typeof window !== 'undefined')) {
-  global.mocha = require('mocha'); // tslint:disable-line:no-require-imports no-var-requires
+  global.mocha = require('mocha');
   global.Suite = global.mocha.Suite;
   global.Test = global.mocha.Test;
 }
 
 const diagramFunction = global.asDiagram;
 
-//mocha creates own global context per each test suite, simple patching to global won't deliver its context into test cases.
-//this custom interface is just mimic of existing one amending test scheduler behavior previously test-helper does via global patching.
 module.exports = function (suite: any) {
   const suites = [suite];
 
@@ -73,23 +61,12 @@ module.exports = function (suite: any) {
     context.beforeEach = common.beforeEach;
     context.afterEach = common.afterEach;
     context.run = mocha.options.delay && common.runWithSuite(suite);
-
-    //setting up per-context test scheduler
     context.rxTestScheduler = null;
-
-    //setting up assertion, helper for marble testing
     context.hot = marble.hot;
     context.cold = marble.cold;
     context.expectSource = marble.expectSource;
     context.expectSubscriptions = marble.expectSubscriptions;
     context.time = marble.time;
-
-    /**
-     * Describe a "suite" with the given `title`
-     * and callback `fn` containing nested suites
-     * and/or tests.
-     */
-
     context.describe = context.context = function (title: any, fn: any) {
       const suite = (<any>Suite).create(suites[0], title);
       suite.file = file;
@@ -98,11 +75,6 @@ module.exports = function (suite: any) {
       suites.shift();
       return suite;
     };
-
-    /**
-     * Pending describe.
-     */
-
     context.xdescribe = context.xcontext = context.describe.skip = function (
       title: any,
       fn: any
@@ -113,27 +85,12 @@ module.exports = function (suite: any) {
       fn.call(suite);
       suites.shift();
     };
-
-    /**
-     * Exclusive suite.
-     */
-
     context.describe.only = function (title: any, fn: any) {
       const suite = context.describe(title, fn);
       mocha.grep(suite.fullTitle());
       return suite;
     };
-
-    /**
-     * Describe a test case to test type definition
-     * sanity on build time. Recommended only for
-     * exceptional type definition won't be used in test cases.
-     */
-
-    context.type = function (title: any, fn: any) {
-      //intentionally does not execute to avoid unexpected side effect occurs by subscription,
-      //or infinite source. Suffecient to check build time only.
-    };
+    context.type = function (title: any, fn: any) {};
 
     function stringify(x: any): string {
       return JSON.stringify(x, function (key: string, value: any) {
@@ -164,11 +121,7 @@ module.exports = function (suite: any) {
       return marble;
     }
 
-    /**
-     * custom assertion formatter for expectSource test
-     */
-
-    function observableMatcher(actual: any, expected: any) {
+    function sourceMatcher(actual: any, expected: any) {
       if (Array.isArray(actual) && Array.isArray(expected)) {
         actual = actual.map(deleteErrorNotificationStack);
         expected = expected.map(deleteErrorNotificationStack);
@@ -189,19 +142,13 @@ module.exports = function (suite: any) {
       }
     }
 
-    /**
-     * Describe a specification or test-case
-     * with the given `title` and callback `fn`
-     * acting as a thunk.
-     */
-
     const it = (context.it = context.specify = function (title: any, fn: any) {
       context.rxTestScheduler = null;
       let modified = fn;
 
       if (fn && fn.length === 0) {
         modified = function () {
-          context.rxTestScheduler = new TestScheduler(observableMatcher);
+          context.rxTestScheduler = new TestScheduler(sourceMatcher);
 
           try {
             fn();
@@ -222,21 +169,12 @@ module.exports = function (suite: any) {
       return test;
     });
 
-    /**
-     * Describe a specification or test-case
-     * to be represented as marble diagram png.
-     * It will still serve as normal test cases as well.
-     */
     context.asDiagram = function (label: any) {
       if (diagramFunction) {
         return diagramFunction(label, it);
       }
       return it;
     };
-
-    /**
-     * Exclusive test-case.
-     */
 
     context.it.only = function (title: any, fn: any) {
       const test = it(title, fn);
@@ -245,33 +183,18 @@ module.exports = function (suite: any) {
       return test;
     };
 
-    /**
-     * Pending test case.
-     */
-
     context.xit = context.xspecify = context.it.skip = function (
       title: string
     ) {
       context.it(title);
     };
 
-    /**
-     * Number of attempts to retry.
-     */
     context.it.retries = function (n: number) {
       context.retries(n);
     };
   });
 };
 
-//register into global instnace if browser test page injects mocha globally
-if (global.Mocha) {
-  (<any>window).Mocha.interfaces['testschedulerui'] = module.exports;
-} else {
-  (<any>mocha).interfaces['testschedulerui'] = module.exports;
-}
-
-//overrides JSON.toStringfy to serialize error object
 Object.defineProperty(Error.prototype, 'toJSON', {
   value: function (this: any) {
     const alt: Record<string, any> = {};

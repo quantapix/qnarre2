@@ -4,7 +4,7 @@ import * as qt from './types';
 import * as qu from './utils';
 
 import {merge, mergeMapTo, of, tap} from './testing';
-import {hot, expectSource} from './spec/marble-testing';
+import {hot, expectSource} from './spec/marbles';
 //import {asInteropSubject} from '../helpers/interop-helper';
 import {TestScheduler} from './testing';
 

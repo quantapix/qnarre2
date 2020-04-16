@@ -1,7 +1,83 @@
 import * as qs from './source';
 import * as qj from './subject';
-import * as qt from './types';
-import * as qu from './utils';
+
+export function asInteropObservable<T>(s: qs.Source<T>): qs.Source<T> {
+  return new Proxy(s, {
+    get(target: qs.Source<T>, key: string | number | symbol) {
+      if (key === 'subscribe') {
+        const {subscribe} = target;
+        return interopSubscribe(subscribe);
+      }
+      return Reflect.get(target, key);
+    },
+    getPrototypeOf(target: qs.Source<T>) {
+      const {subscribe, ...rest} = Object.getPrototypeOf(target);
+      return {
+        ...rest,
+        subscribe: interopSubscribe(subscribe)
+      };
+    }
+  });
+}
+
+export function asInteropSubject<T>(subject: qj.Subject<T>): qj.Subject<T> {
+  return asInteropSubscriber(subject as any) as any;
+}
+
+export function asInteropSubscriber<T>(
+  subscriber: qj.Subscriber<T>
+): qj.Subscriber<T> {
+  return new Proxy(subscriber, {
+    get(target: qj.Subscriber<T>, key: string | number | symbol) {
+      if (key === symbolSubscriber) {
+        return undefined;
+      }
+      return Reflect.get(target, key);
+    },
+    getPrototypeOf(target: qj.Subscriber<T>) {
+      const {[symbolSubscriber]: symbol, ...rest} = Object.getPrototypeOf(
+        target
+      );
+      return rest;
+    }
+  });
+}
+
+function interopSubscribe<T>(subscribe: (...args: any[]) => qj.Subscription) {
+  return function (this: qs.Source<T>, ...args: any[]): qj.Subscription {
+    const [arg] = args;
+    if (arg instanceof qj.Subscriber) {
+      return subscribe.call(this, asInteropSubscriber(arg));
+    }
+    return subscribe.apply(this, args);
+  };
+}
+declare const global: any;
+
+export const emptySubs = [] as any[];
+
+export function cold(
+  marbles: string,
+  values?: void,
+  error?: any
+): ColdSource<string>;
+export function cold<V>(
+  marbles: string,
+  values?: {[k: string]: V},
+  error?: any
+): ColdSource<V>;
+export function cold(
+  marbles: string,
+  values?: any,
+  error?: any
+): ColdSource<any> {
+  if (!global.rxTestScheduler) throw 'cold() in async test';
+  return global.rxTestScheduler.createColdSource.apply(global.rxTestScheduler, [
+    marbles,
+    values,
+    error
+  ]);
+}
 
 export class ColdSource<N> extends qs.Source<N>
   implements SubscriptionLoggable {
@@ -14,15 +90,15 @@ export class ColdSource<N> extends qs.Source<N>
 
   constructor(public messages: TestMessage[], scheduler: Scheduler) {
     super(function (this: qs.Source<N>, subscriber: qj.Subscriber<any>) {
-      const observable: ColdSource<N> = this as any;
-      const index = observable.logSubscribedFrame();
+      const s: ColdSource<N> = this as any;
+      const index = s.logSubscribedFrame();
       const subscription = new qj.Subscription();
       subscription.add(
         new qj.Subscription(() => {
-          observable.logUnsubscribedFrame(index);
+          s.logUnsubscribedFrame(index);
         })
       );
-      observable.scheduleMessages(subscriber);
+      s.scheduleMessages(subscriber);
       return subscription;
     });
     this.scheduler = scheduler;
@@ -46,6 +122,29 @@ export class ColdSource<N> extends qs.Source<N>
   }
 }
 applyMixins(ColdSource, [SubscriptionLoggable]);
+
+export function hot(
+  marbles: string,
+  values?: void,
+  error?: any
+): HotSource<string>;
+export function hot<V>(
+  marbles: string,
+  values?: {[k: string]: V},
+  error?: any
+): HotSource<V>;
+export function hot<V>(
+  marbles: string,
+  values?: {[index: string]: V} | void,
+  error?: any
+): HotSource<any> {
+  if (!global.rxTestScheduler) throw 'hot() in async test';
+  return global.rxTestScheduler.createHotSource.apply(global.rxTestScheduler, [
+    marbles,
+    values,
+    error
+  ]);
+}
 
 export class HotSource<N> extends qj.Subject<N>
   implements SubscriptionLoggable {
@@ -90,6 +189,34 @@ export class HotSource<N> extends qj.Subject<N>
   }
 }
 applyMixins(HotSource, [SubscriptionLoggable]);
+
+export function expectSource(
+  s: qs.Source<any>,
+  marbles?: string
+): {toBe: sourceToBe} {
+  if (!global.rxTestScheduler) throw 'expectSource() in async test';
+  return global.rxTestScheduler.expectSource.apply(global.rxTestScheduler, [
+    s,
+    marbles
+  ]);
+}
+
+export function expectSubscriptions(
+  logs: SubscriptionLog[]
+): {toBe: subscriptLogToBe} {
+  if (!global.rxTestScheduler) throw 'expectSubscriptions() in async test';
+  return global.rxTestScheduler.expectSubscriptions.apply(
+    global.rxTestScheduler,
+    [logs]
+  );
+}
+
+export function time(marbles: string): number {
+  if (!global.rxTestScheduler) throw 'time() in async test';
+  return global.rxTestScheduler.createTime.apply(global.rxTestScheduler, [
+    marbles
+  ]);
+}
 
 export class SubscriptionLog {
   constructor(
@@ -170,9 +297,9 @@ export class TestScheduler extends VirtualTimeScheduler {
     return indexOf * TestScheduler.frameTimeFactor;
   }
 
-  createColdSource<T = string>(
+  createColdSource<N = string>(
     marbles: string,
-    values?: {[marble: string]: T},
+    values?: {[k: string]: N},
     error?: any
   ): ColdSource<N> {
     if (marbles.indexOf('^') !== -1) {
@@ -192,6 +319,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     this.coldSources.push(cold);
     return cold;
   }
+
   createHotSource<N = string>(
     marbles: string,
     values?: {[marble: string]: N},
@@ -213,11 +341,11 @@ export class TestScheduler extends VirtualTimeScheduler {
   }
 
   private materializeActorSource(
-    observable: qs.Source<any>,
+    s: qs.Source<any>,
     outerFrame: number
   ): TestMessage[] {
     const messages: TestMessage[] = [];
-    observable.subscribe(
+    s.subscribe(
       value => {
         messages.push({
           frame: this.frame - outerFrame,
@@ -241,9 +369,9 @@ export class TestScheduler extends VirtualTimeScheduler {
   }
 
   expectSource(
-    observable: qs.Source<any>,
+    s: qs.Source<any>,
     subscriptionMarbles: string | null = null
-  ): {toBe: observableToBeFn} {
+  ): {toBe: sourceToBeFn} {
     const actual: TestMessage[] = [];
     const flushTest: FlushableTest = {actual, ready: false};
     const subscriptionParsed = TestScheduler.parseMarblesAsSubscriptions(
@@ -258,7 +386,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     let subscription: qj.Subscription;
 
     this.schedule(() => {
-      subscription = observable.subscribe(
+      subscription = s.subscribe(
         x => {
           let value = x;
           // Support Source-of-Sources
@@ -401,10 +529,7 @@ export class TestScheduler extends VirtualTimeScheduler {
           unsubscriptionFrame = groupStart > -1 ? groupStart : frame;
           break;
         default:
-          // time progression syntax
           if (runMode && c.match(/^[0-9]$/)) {
-            // Time progression must be preceeded by at least one space
-            // if it's not at the beginning of the diagram
             if (i === 0 || marbles[i - 1] === ' ') {
               const buffer = marbles.slice(i);
               const match = buffer.match(/^([0-9]+(?:\.[0-9]+)?)(ms|s|m) /);
@@ -427,13 +552,11 @@ export class TestScheduler extends VirtualTimeScheduler {
                   default:
                     break;
                 }
-
                 advanceFrameBy(durationInMs! / this.frameTimeFactor);
                 break;
               }
             }
           }
-
           throw new Error(
             "there can only be '^' and '!' markers in a " +
               "subscription marble diagram. Found instead '" +
@@ -441,7 +564,6 @@ export class TestScheduler extends VirtualTimeScheduler {
               "'."
           );
       }
-
       frame = nextFrame;
     }
 
@@ -475,20 +597,17 @@ export class TestScheduler extends VirtualTimeScheduler {
       typeof values !== 'object'
         ? (x: any) => x
         : (x: any) => {
-            // Support Source-of-Sources
             if (materializeActorSources && values[x] instanceof ColdSource) {
               return values[x].messages;
             }
             return values[x];
           };
     let groupStart = -1;
-
     for (let i = 0; i < len; i++) {
       let nextFrame = frame;
       const advanceFrameBy = (count: number) => {
         nextFrame += count * this.frameTimeFactor;
       };
-
       let notification: qs.Notification<any> | undefined;
       const c = marbles[i];
       switch (c) {
@@ -521,10 +640,7 @@ export class TestScheduler extends VirtualTimeScheduler {
           advanceFrameBy(1);
           break;
         default:
-          // Might be time progression syntax, or a value literal
           if (runMode && c.match(/^[0-9]$/)) {
-            // Time progression must be preceeded by at least one space
-            // if it's not at the beginning of the diagram
             if (i === 0 || marbles[i - 1] === ' ') {
               const buffer = marbles.slice(i);
               const match = buffer.match(/^([0-9]+(?:\.[0-9]+)?)(ms|s|m) /);
@@ -547,25 +663,21 @@ export class TestScheduler extends VirtualTimeScheduler {
                   default:
                     break;
                 }
-
                 advanceFrameBy(durationInMs! / this.frameTimeFactor);
                 break;
               }
             }
           }
-
           notification = qs.Notification.createNext(getValue(c));
           advanceFrameBy(1);
           break;
       }
-
       if (notification) {
         testMessages.push({
           frame: groupStart > -1 ? groupStart : frame,
           notification
         });
       }
-
       frame = nextFrame;
     }
     return testMessages;
@@ -574,12 +686,10 @@ export class TestScheduler extends VirtualTimeScheduler {
   run<N>(callback: (helpers: RunHelpers) => N): N {
     const prevFrameTimeFactor = TestScheduler.frameTimeFactor;
     const prevMaxFrames = this.maxFrames;
-
     TestScheduler.frameTimeFactor = 1;
     this.maxFrames = Number.POSITIVE_INFINITY;
     this.runMode = true;
     AsyncScheduler.delegate = this;
-
     const helpers = {
       cold: this.createColdSource.bind(this),
       hot: this.createHotSource.bind(this),
@@ -599,4 +709,155 @@ export class TestScheduler extends VirtualTimeScheduler {
       AsyncScheduler.delegate = undefined;
     }
   }
+}
+
+function stringify(x: any): string {
+  return JSON.stringify(x, function (key: string, value: any) {
+    if (Array.isArray(value)) {
+      return (
+        '[' +
+        value.map(function (i) {
+          return '\n\t' + stringify(i);
+        }) +
+        '\n]'
+      );
+    }
+    return value;
+  })
+    .replace(/\\"/g, '"')
+    .replace(/\\t/g, '\t')
+    .replace(/\\n/g, '\n');
+}
+
+function deleteErrorNotificationStack(marble: any) {
+  const {notification} = marble;
+  if (notification) {
+    const {kind, error} = notification;
+    if (kind === 'E' && error instanceof Error) {
+      notification.error = {name: error.name, message: error.message};
+    }
+  }
+  return marble;
+}
+
+export function sourceMatcher(actual: any, expected: any) {
+  if (Array.isArray(actual) && Array.isArray(expected)) {
+    actual = actual.map(deleteErrorNotificationStack);
+    expected = expected.map(deleteErrorNotificationStack);
+    const passed = _.isEqual(actual, expected);
+    if (passed) return;
+    let message = '\nExpected \n';
+    actual.forEach((x: any) => (message += `\t${stringify(x)}\n`));
+    message += '\t\nto deep equal \n';
+    expected.forEach((x: any) => (message += `\t${stringify(x)}\n`));
+    assert(passed, message);
+  } else {
+    assert.deepEqual(actual, expected);
+  }
+}
+
+if (process && process.on) {
+  process.on('unhandledRejection', err => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+export function lowerCaseO<T>(...args: Array<any>): Observable<T> {
+  const o: any = {
+    subscribe(observer: any) {
+      args.forEach(v => observer.next(v));
+      observer.complete();
+      return {
+        unsubscribe() {
+          /* do nothing */
+        }
+      };
+    }
+  };
+  o[observable] = function (this: any) {
+    return this;
+  };
+  return <any>o;
+}
+
+export const createSourceInputs = <T>(value: T) =>
+  of(
+    of(value),
+    scheduled([value], asyncScheduler),
+    [value],
+    Promise.resolve(value),
+    ({
+      [iterator]: () => {
+        const iteratorResults = [{value, done: false}, {done: true}];
+        return {
+          next: () => {
+            return iteratorResults.shift();
+          }
+        };
+      }
+    } as any) as Iterable<T>,
+    {
+      [observable]: () => of(value)
+    } as any
+  ) as Observable<SourceInput<T>>;
+
+export const NO_SUBS: string[] = [];
+
+export function assertDeepEquals(actual: any, expected: any) {
+  expect(actual).to.deep.equal(expected);
+}
+
+global.__root__ = root;
+
+let _raf: any;
+let _caf: any;
+let _id = 0;
+
+export interface RAFTestTools {
+  tick(): void;
+  flush(): void;
+  restore(): void;
+}
+
+export function stubRAF(): RAFTestTools {
+  _raf = requestAnimationFrame;
+  _caf = cancelAnimationFrame;
+
+  const handlers: any[] = [];
+
+  (requestAnimationFrame as any) = sinon
+    .stub()
+    .callsFake((handler: Function) => {
+      const id = _id++;
+      handlers.push({id, handler});
+      return id;
+    });
+  (cancelAnimationFrame as any) = sinon.stub().callsFake((id: number) => {
+    const index = handlers.findIndex(x => x.id === id);
+    if (index >= 0) {
+      handlers.splice(index, 1);
+    }
+  });
+  function tick() {
+    if (handlers.length > 0) {
+      handlers.shift().handler();
+    }
+  }
+  function flush() {
+    while (handlers.length > 0) {
+      handlers.shift().handler();
+    }
+  }
+  return {
+    tick,
+    flush,
+    restore() {
+      (requestAnimationFrame as any) = _raf;
+      (cancelAnimationFrame as any) = _caf;
+      _raf = _caf = undefined;
+      handlers.length = 0;
+      _id = 0;
+    }
+  };
 }

@@ -1157,7 +1157,7 @@ describe('scheduled', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   it('should schedule a sync observable', () => {

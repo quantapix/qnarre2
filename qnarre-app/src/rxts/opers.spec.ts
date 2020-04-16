@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {TestScheduler} from 'rxjs/testing';
 import {of, interval, EMPTY} from 'rxjs';
 import {audit, take, mergeMap} from 'rxjs/operators';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -11,7 +11,7 @@ describe('audit operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('audit')('should emit the last value in each time window', () => {
@@ -453,7 +453,7 @@ import {expect} from 'chai';
 import {of, concat, timer} from 'rxjs';
 import {auditTime, take, map, mergeMap} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -462,7 +462,7 @@ describe('auditTime operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('auditTime(5)')(
@@ -636,7 +636,7 @@ describe('auditTime operator', () => {
 import {buffer, mergeMap, take} from 'rxjs/operators';
 import {EMPTY, NEVER, throwError, of} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -645,7 +645,7 @@ describe('Observable.prototype.buffer', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('buffer')('should emit buffers that close and reopen', () => {
@@ -940,7 +940,7 @@ import {expect} from 'chai';
 import {Subject, of} from 'rxjs';
 import {bufferCount, mergeMap} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -949,7 +949,7 @@ describe('bufferCount operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('bufferCount(3,2)')('should emit buffers at intervals', () => {
@@ -1113,7 +1113,7 @@ describe('bufferCount operator', () => {
 import {of, throwError, interval} from 'rxjs';
 import {bufferTime, mergeMap, take} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare const asDiagram: Function;
 
@@ -1122,7 +1122,7 @@ describe('bufferTime operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('bufferTime(100)')('should emit buffers at intervals', () => {
@@ -1522,7 +1522,7 @@ import {expect} from 'chai';
 import {of, concat, timer, EMPTY} from 'rxjs';
 import {bufferToggle, mergeMap, mapTo} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -1531,7 +1531,7 @@ describe('bufferToggle operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('bufferToggle')(
@@ -2091,7 +2091,7 @@ import {expect} from 'chai';
 import {of, EMPTY} from 'rxjs';
 import {bufferWhen, mergeMap, takeWhile} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -2100,7 +2100,7 @@ describe('bufferWhen operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('bufferWhen')('should emit buffers that close and reopen', () => {
@@ -2527,7 +2527,7 @@ import {catchError, delay, map, mergeMap, takeWhile} from 'rxjs/operators';
 import * as sinon from 'sinon';
 import {createSourceInputs} from '../helpers/test-helper';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 import {asInteropObservable} from '../helpers/interop-helper';
 
 declare function asDiagram(arg: string): Function;
@@ -2537,7 +2537,7 @@ describe('catchError operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('catch')(
@@ -3009,7 +3009,7 @@ import {expect} from 'chai';
 import {queueScheduler, of, Observable} from 'rxjs';
 import {combineAll, mergeMap} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 declare const type: Function;
@@ -3019,7 +3019,7 @@ describe('combineAll operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('combineAll')('should combine events from two observables', () => {
@@ -3705,7 +3705,7 @@ describe('combineAll operator', () => {
 import {of} from 'rxjs';
 import {combineLatest, mergeMap, distinct, count} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -3714,7 +3714,7 @@ describe('combineLatest', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('combineLatest')(
@@ -4292,14 +4292,14 @@ import {
   map
 } from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 /** @test {combineLatestWith} */
 describe('combineLatestWith', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   it('should combine events from two cold observables', () => {
@@ -4935,7 +4935,7 @@ import {expect} from 'chai';
 import {of, Observable} from 'rxjs';
 import {concat, mergeMap} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -4946,7 +4946,7 @@ describe('concat operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('concat')('should concatenate two cold observables', () => {
@@ -5313,7 +5313,7 @@ import {expect} from 'chai';
 import {from, throwError, of, Observable} from 'rxjs';
 import {concatAll, take, mergeMap} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 declare const type: Function;
@@ -5324,7 +5324,7 @@ describe('concatAll operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('concatAll')('should concat an observable of observables', () => {
@@ -8532,7 +8532,7 @@ import {
 import {TestScheduler} from 'rxjs/testing';
 import * as sinon from 'sinon';
 import {expect} from 'chai';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare const asDiagram: Function;
 
@@ -8541,7 +8541,7 @@ describe('delay operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('delay(20)')('should delay by specified timeframe', () => {
@@ -18471,14 +18471,14 @@ import {expect} from 'chai';
 import {mergeWith, map, mergeAll} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
 import {queueScheduler, of} from 'rxjs';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 /** @test {merge} */
 describe('merge operator', () => {
   let rxTestScheduler: TestScheduler;
 
   beforeEach(() => {
-    rxTestScheduler = new TestScheduler(observableMatcher);
+    rxTestScheduler = new TestScheduler(sourceMatcher);
   });
 
   it('should handle merging two hot observables', () => {
@@ -28452,7 +28452,7 @@ import {expect} from 'chai';
 import {take, mergeMap} from 'rxjs/operators';
 import {range, OutOfRangeError, of, Observable, Subject} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 declare function asDiagram(arg: string): Function;
 
@@ -28461,7 +28461,7 @@ describe('take operator', () => {
   let testScheduler: TestScheduler;
 
   beforeEach(() => {
-    testScheduler = new TestScheduler(observableMatcher);
+    testScheduler = new TestScheduler(sourceMatcher);
   });
 
   asDiagram('take(2)')(
@@ -31996,14 +31996,14 @@ describe('windowCount operator', () => {
 import {windowTime, mergeMap, mergeAll} from 'rxjs/operators';
 import {TestScheduler} from 'rxjs/testing';
 import {of, Observable} from 'rxjs';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 /** @test {windowTime} */
 describe('windowTime operator', () => {
   let rxTestScheduler: TestScheduler;
 
   beforeEach(() => {
-    rxTestScheduler = new TestScheduler(observableMatcher);
+    rxTestScheduler = new TestScheduler(sourceMatcher);
   });
 
   it('should emit windows given windowTimeSpan and windowCreationInterval', () => {
@@ -33486,7 +33486,7 @@ import {expect} from 'chai';
 import {zip} from 'rxjs/operators';
 import {from} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 
 /**
  * zip legacy still supports a mapping function, but it's deprecated
@@ -33495,7 +33495,7 @@ describe('zip legacy', () => {
   let rxTestScheduler: TestScheduler;
 
   beforeEach(() => {
-    rxTestScheduler = new TestScheduler(observableMatcher);
+    rxTestScheduler = new TestScheduler(sourceMatcher);
   });
 
   it('should zip the provided observables', done => {
@@ -34592,13 +34592,13 @@ import {expect} from 'chai';
 import {zipWith, mergeMap} from 'rxjs/operators';
 import {queueScheduler, of} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
-import {observableMatcher} from '../helpers/observableMatcher';
+import {sourceMatcher} from '../helpers/sourceMatcher';
 /** @test {zip} */
 describe('zipWith', () => {
   let rxTestScheduler: TestScheduler;
 
   beforeEach(() => {
-    rxTestScheduler = new TestScheduler(observableMatcher);
+    rxTestScheduler = new TestScheduler(sourceMatcher);
   });
 
   it('should combine a source with a second', () => {
