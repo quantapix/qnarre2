@@ -1,7 +1,8 @@
 import * as qt from './types';
 import * as qu from './utils';
+import * as qj from './subject';
 
-export class Source<N, F, D> implements qt.Source<N, F, D> {
+export class Source<N, F = any, D = any> implements qt.Source<N, F, D> {
   static createSource<N, F, D>(
     s?: (_: qt.Subscriber<N, F, D>) => qt.Subscription
   ) {
@@ -201,7 +202,7 @@ export enum NotificationKind {
 }
 
 export class Notification<T> {
-  hasValue: boolean;
+  hasN: boolean;
 
   constructor(kind: 'N', value?: T);
   constructor(kind: 'E', value: undefined, error: any);
@@ -211,7 +212,7 @@ export class Notification<T> {
     public value?: T,
     public error?: any
   ) {
-    this.hasValue = kind === 'N';
+    this.hasN = kind === 'N';
   }
 
   observe(observer: Target<T>): any {
@@ -256,7 +257,7 @@ export class Notification<T> {
     }
   }
 
-  toObservable(): Observable<T> {
+  toSource(): Source<T> {
     const kind = this.kind;
     switch (kind) {
       case 'N':
@@ -346,39 +347,39 @@ async function* coroutine<N, F, D>(s: Source<N, F, D>) {
   }
 }
 
-export function firstValueFrom<T>(source$: Observable<T>) {
-  return new Promise<T>((resolve, reject) => {
-    const subs = new Subscription();
+export function firstFrom<T>(s$: Source<T>) {
+  return new Promise<T>((res, rej) => {
+    const subs = new qj.Subscription();
     subs.add(
-      source$.subscribe({
-        next: value => {
-          resolve(value);
+      s$.subscribe({
+        next: n => {
+          res(n);
           subs.unsubscribe();
         },
-        error: reject,
-        complete: () => {
-          reject(new EmptyError());
+        fail: rej,
+        done: () => {
+          rej(new qu.EmptyError());
         }
       })
     );
   });
 }
 
-export function lastValueFrom<T>(source: Observable<T>) {
-  return new Promise<T>((resolve, reject) => {
-    let _hasValue = false;
-    let _value: T;
-    source.subscribe({
-      next: value => {
-        _value = value;
-        _hasValue = true;
+export function lastFrom<T>(s: Source<T>) {
+  return new Promise<T>((res, rej) => {
+    let hasN = false;
+    let value: T | undefined;
+    s.subscribe({
+      next: n => {
+        value = n;
+        hasN = true;
       },
-      error: reject,
-      complete: () => {
-        if (_hasValue) {
-          resolve(_value);
+      fail: rej,
+      done: () => {
+        if (hasN) {
+          res(value);
         } else {
-          reject(new EmptyError());
+          rej(new qu.EmptyError());
         }
       }
     });

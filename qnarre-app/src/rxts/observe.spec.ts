@@ -4,7 +4,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {Notification, queueScheduler, Subscriber} from 'rxjs';
 import {observeOn, materialize, take, toArray} from 'rxjs/operators';
 
-declare const expectObservable: any;
+declare const expectSource: any;
 declare const rxTestScheduler: TestScheduler;
 
 describe('fromIterable', () => {
@@ -120,7 +120,7 @@ describe('fromIterable', () => {
 
     const values = {a: 10, b: 20, c: 30, d: 40};
 
-    expectObservable(source).toBe('(abcd|)', values);
+    expectSource(source).toBe('(abcd|)', values);
   });
 
   it(
@@ -194,7 +194,7 @@ import * as sinon from 'sinon';
 import {SubscribeOnObservable} from 'rxjs/internal/observable/SubscribeOnObservable';
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {TestScheduler} from 'rxjs/testing';
@@ -209,7 +209,7 @@ describe('SubscribeOnObservable', () => {
     const sub = '^       !';
     const subscribe = new SubscribeOnObservable(e1, 0, rxTestScheduler);
 
-    expectObservable(subscribe).toBe(expected);
+    expectSource(subscribe).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -243,7 +243,7 @@ describe('SubscribeOnObservable', () => {
     const sub = '   ^    !';
     const subscribe = new SubscribeOnObservable(e1, 30, rxTestScheduler);
 
-    expectObservable(subscribe).toBe(expected);
+    expectSource(subscribe).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -253,7 +253,7 @@ describe('SubscribeOnObservable', () => {
     const sub = '^       !';
     const subscribe = new SubscribeOnObservable(e1, -10, rxTestScheduler);
 
-    expectObservable(subscribe).toBe(expected);
+    expectSource(subscribe).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 });
@@ -934,7 +934,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -962,7 +962,7 @@ describe('static combineLatest', () => {
       (a, b) => '' + a + b
     );
 
-    expectObservable(combined).toBe(expected, {
+    expectSource(combined).toBe(expected, {
       u: 'ad',
       v: 'ae',
       w: 'af',
@@ -1010,7 +1010,7 @@ describe('static combineLatest', () => {
       (a: string, b: string) => '' + a + b
     );
 
-    expectObservable(combined).toBe(expected, {
+    expectSource(combined).toBe(expected, {
       u: 'ad',
       v: 'ae',
       w: 'af',
@@ -1029,7 +1029,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1043,7 +1043,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1057,7 +1057,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1071,7 +1071,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1091,7 +1091,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1110,7 +1110,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e2, e1, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1127,7 +1127,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1145,7 +1145,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1159,7 +1159,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
+    expectSource(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1173,7 +1173,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'shazbot!');
+    expectSource(result).toBe(expected, null, 'shazbot!');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1187,7 +1187,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'too bad, honk');
+    expectSource(result).toBe(expected, null, 'too bad, honk');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1201,7 +1201,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'bazinga');
+    expectSource(result).toBe(expected, null, 'bazinga');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1215,7 +1215,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'bazinga');
+    expectSource(result).toBe(expected, null, 'bazinga');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1229,7 +1229,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'bazinga');
+    expectSource(result).toBe(expected, null, 'bazinga');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1243,7 +1243,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'flurp');
+    expectSource(result).toBe(expected, null, 'flurp');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1257,7 +1257,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'flurp');
+    expectSource(result).toBe(expected, null, 'flurp');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1271,7 +1271,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'wokka wokka');
+    expectSource(result).toBe(expected, null, 'wokka wokka');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1285,7 +1285,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'wokka wokka');
+    expectSource(result).toBe(expected, null, 'wokka wokka');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1299,7 +1299,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+    expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1313,7 +1313,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+    expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1327,7 +1327,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(left, right, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'bad things');
+    expectSource(result).toBe(expected, null, 'bad things');
     expectSubscriptions(left.subscriptions).toBe(leftSubs);
     expectSubscriptions(right.subscriptions).toBe(rightSubs);
   });
@@ -1341,7 +1341,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(left, right, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'bad things');
+    expectSource(result).toBe(expected, null, 'bad things');
     expectSubscriptions(left.subscriptions).toBe(leftSubs);
     expectSubscriptions(right.subscriptions).toBe(rightSubs);
   });
@@ -1355,7 +1355,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
+    expectSource(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1369,7 +1369,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
+    expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1383,7 +1383,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(left, right, (x, y) => x + y);
 
-    expectObservable(result).toBe(expected, null, 'jenga');
+    expectSource(result).toBe(expected, null, 'jenga');
     expectSubscriptions(left.subscriptions).toBe(leftSubs);
     expectSubscriptions(right.subscriptions).toBe(rightSubs);
   });
@@ -1401,7 +1401,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(left, right, (x, y) => x + y);
 
-    expectObservable(result).toBe(
+    expectSource(result).toBe(
       expected,
       {x: 'cd', y: 'ce', z: 'cf'},
       'dun dun dun'
@@ -1421,7 +1421,7 @@ describe('static combineLatest', () => {
       throw 'ha ha ' + x + ', ' + y;
     });
 
-    expectObservable(result).toBe(expected, null, 'ha ha 2, 4');
+    expectSource(result).toBe(expected, null, 'ha ha 2, 4');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1437,7 +1437,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(e1, e2, (x, y) => x + y);
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1457,7 +1457,7 @@ describe('static combineLatest', () => {
       (x, y) => x + y
     ).pipe(mergeMap(x => of(x)));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1468,7 +1468,7 @@ import {
   hot,
   cold,
   emptySubs,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -1494,7 +1494,7 @@ describe('static concat', () => {
     const e3subs = '            ^        !';
     const expected = '-a-b-c--0-1--w-x-y-z-|';
 
-    expectObservable(concat(e1, e2, e3)).toBe(expected);
+    expectSource(concat(e1, e2, e3)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -1512,7 +1512,7 @@ describe('static concat', () => {
 
     const result = concat(inner, inner, inner, inner);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
 
@@ -1527,7 +1527,7 @@ describe('static concat', () => {
 
       const result = concat(inner, inner, inner, inner);
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(inner.subscriptions).toBe(innersubs);
     }
   );
@@ -1546,7 +1546,7 @@ describe('static concat', () => {
       innerWrapped
     ).pipe(mergeMap(x => of(x)));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
 
@@ -1557,7 +1557,7 @@ describe('static concat', () => {
     const e2subs = '  ^   !';
     const expected = '------|';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1569,7 +1569,7 @@ describe('static concat', () => {
     const e2subs = emptySubs;
     const expected = '-';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1581,7 +1581,7 @@ describe('static concat', () => {
     const e2subs = '  ^';
     const expected = '---';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1593,7 +1593,7 @@ describe('static concat', () => {
     const e2subs = emptySubs;
     const expected = '-';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1605,7 +1605,7 @@ describe('static concat', () => {
     const e2subs = '  ^   !';
     const expected = '------#';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1617,7 +1617,7 @@ describe('static concat', () => {
     const e2subs = emptySubs;
     const expected = '---#';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1629,7 +1629,7 @@ describe('static concat', () => {
     const e2subs = emptySubs;
     const expected = '---#';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1641,7 +1641,7 @@ describe('static concat', () => {
     const e2subs = '     ^       !';
     const expected = '--a----------|';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1653,7 +1653,7 @@ describe('static concat', () => {
     const e2subs = '  ^    !';
     const expected = '----a--|';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1668,7 +1668,7 @@ describe('static concat', () => {
       const e2subs = '     ^';
       const expected = '--a---';
 
-      expectObservable(concat(e1, e2)).toBe(expected);
+      expectSource(concat(e1, e2)).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -1681,7 +1681,7 @@ describe('static concat', () => {
     const e2subs = emptySubs;
     const expected = '-';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1693,7 +1693,7 @@ describe('static concat', () => {
     const e2subs = '    ^       !';
     const expected = '---a-----b--|';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1706,7 +1706,7 @@ describe('static concat', () => {
     const unsub = '                 !    ';
     const expected = '---a-a--a-----b-b     ';
 
-    expectObservable(concat(e1, e2), unsub).toBe(expected);
+    expectSource(concat(e1, e2), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1718,7 +1718,7 @@ describe('static concat', () => {
     const e2subs = emptySubs;
     const expected = '--#';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1730,7 +1730,7 @@ describe('static concat', () => {
     const e2subs = '     ^      !';
     const expected = '--a---------#';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1745,7 +1745,7 @@ describe('static concat', () => {
       const e2subs = '       ^      !';
       const expected = '--a--b--x--y--|';
 
-      expectObservable(concat(e1, e2)).toBe(expected);
+      expectSource(concat(e1, e2)).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -1761,7 +1761,7 @@ describe('static concat', () => {
       const e2subs = '            ^      !';
       const expected = '--a--b--c----x-y-z-|';
 
-      expectObservable(concat(e1, e2)).toBe(expected);
+      expectSource(concat(e1, e2)).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -1774,7 +1774,7 @@ describe('static concat', () => {
     const e2subs = '           ^     !';
     const expected = '--a--b--c--y--z--|';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1786,7 +1786,7 @@ describe('static concat', () => {
 
     const result = concat(e1, e1);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1797,7 +1797,7 @@ describe('static concat', () => {
 
     const result = concat(e1, e1);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1811,7 +1811,7 @@ describe('static concat', () => {
       const e2subs = '            ^      !';
       const expected = '--a--b--c----x-y-z-|';
 
-      expectObservable(concat(e1, e2)).toBe(expected);
+      expectSource(concat(e1, e2)).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -1824,7 +1824,7 @@ describe('static concat', () => {
     const e2subs = '           ^     !';
     const expected = '--a--b--c--y--z--|';
 
-    expectObservable(concat(e1, e2)).toBe(expected);
+    expectSource(concat(e1, e2)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1865,7 +1865,7 @@ describe('static concat', () => {
     const source = cold('--a---b----c---|');
     const result = concat(source);
 
-    expectObservable(result).toBe('--a---b----c---|');
+    expectSource(result).toBe('--a---b----c---|');
   });
 
   it('should return RxJS Observable when single lowerCaseO was passed', () => {
@@ -1873,7 +1873,7 @@ describe('static concat', () => {
     const result = concat(source);
 
     expect(result).to.be.an.instanceof(Observable);
-    expectObservable(result).toBe('(abc|)');
+    expectSource(result).toBe('(abc|)');
   });
 });
 import {expect} from 'chai';
@@ -1881,7 +1881,7 @@ import {defer, Observable, of} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {mergeMap} from 'rxjs/operators';
@@ -1895,7 +1895,7 @@ describe('defer', () => {
     () => {
       const expected = '-a--b--c--|';
       const e1 = defer(() => cold('-a--b--c--|'));
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     }
   );
 
@@ -1906,7 +1906,7 @@ describe('defer', () => {
 
     const e1 = defer(() => source);
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -1917,7 +1917,7 @@ describe('defer', () => {
 
     const e1 = defer(() => source);
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -1969,7 +1969,7 @@ describe('defer', () => {
 
     const e1 = defer(() => source);
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -1979,7 +1979,7 @@ describe('defer', () => {
     });
     const expected = '#';
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 
   it('should allow unsubscribing early and explicitly', () => {
@@ -1990,7 +1990,7 @@ describe('defer', () => {
 
     const e1 = defer(() => source);
 
-    expectObservable(e1, unsub).toBe(expected);
+    expectSource(e1, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -2007,12 +2007,12 @@ describe('defer', () => {
       )
     );
 
-    expectObservable(e1, unsub).toBe(expected);
+    expectSource(e1, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 });
 import {expect} from 'chai';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {empty, EMPTY} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
 
@@ -2026,7 +2026,7 @@ describe('empty', () => {
     () => {
       const expected = '|';
       const e1 = empty();
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     }
   );
 
@@ -2069,7 +2069,7 @@ import {Observable, forkJoin, of} from 'rxjs';
 import {lowerCaseO} from '../helpers/test-helper';
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions,
   cold
 } from '../helpers/marble-testing';
@@ -2090,7 +2090,7 @@ describe('forkJoin', () => {
       ]);
       const expected = '--------------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: ['e', 'j', '4']});
+      expectSource(e1).toBe(expected, {x: ['e', 'j', '4']});
     }
   );
 
@@ -2140,7 +2140,7 @@ describe('forkJoin', () => {
     const e1 = forkJoin(hot('--a--b--c--d--|'));
     const expected = '--------------(x|)';
 
-    expectObservable(e1).toBe(expected, {x: ['d']});
+    expectSource(e1).toBe(expected, {x: ['d']});
   });
 
   describe('forkJoin([input1, input2, input3])', () => {
@@ -2152,7 +2152,7 @@ describe('forkJoin', () => {
       ]);
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: ['d', 'b', '3']});
+      expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
     });
 
     it('should allow emit null or undefined', () => {
@@ -2164,14 +2164,14 @@ describe('forkJoin', () => {
       ]);
       const expected2 = '--------------(x|)';
 
-      expectObservable(e2).toBe(expected2, {x: [null, 'b', '3', undefined]});
+      expectSource(e2).toBe(expected2, {x: [null, 'b', '3', undefined]});
     });
 
     it('should accept array of observable contains single', () => {
       const e1 = forkJoin([hot('--a--b--c--d--|')]);
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: ['d']});
+      expectSource(e1).toBe(expected, {x: ['d']});
     });
 
     it('should accept lowercase-o observables', () => {
@@ -2182,14 +2182,14 @@ describe('forkJoin', () => {
       ]);
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: ['d', 'b', '3']});
+      expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
     });
 
     it('should accept empty lowercase-o observables', () => {
       const e1 = forkJoin([hot('--a--b--c--d--|'), hot('(b|)'), lowerCaseO()]);
       const expected = '|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should accept promise', done => {
@@ -2209,7 +2209,7 @@ describe('forkJoin', () => {
       ]);
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: ['d', 'b', '3']});
+      expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
     });
 
     it('should not emit if any of source observable is empty', () => {
@@ -2220,7 +2220,7 @@ describe('forkJoin', () => {
       ]);
       const expected = '------------------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete early if any of source is empty and completes before than others', () => {
@@ -2231,70 +2231,70 @@ describe('forkJoin', () => {
       ]);
       const expected = '---------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete when all sources are empty', () => {
       const e1 = forkJoin([hot('--------------|'), hot('---------|')]);
       const expected = '---------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should not complete when only source never completes', () => {
       const e1 = forkJoin([hot('--------------')]);
       const expected = '-';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should not complete when one of the sources never completes', () => {
       const e1 = forkJoin([hot('--------------'), hot('-a---b--c--|')]);
       const expected = '-';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete when one of the sources never completes but other completes without values', () => {
       const e1 = forkJoin([hot('--------------'), hot('------|')]);
       const expected = '------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete if source is not provided', () => {
       const e1 = forkJoin();
       const expected = '|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete if sources list is empty', () => {
       const e1 = forkJoin([]);
       const expected = '|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should raise error when any of source raises error with empty observable', () => {
       const e1 = forkJoin([hot('------#'), hot('---------|')]);
       const expected = '------#';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should raise error when any of source raises error with source that never completes', () => {
       const e1 = forkJoin([hot('------#'), hot('----------')]);
       const expected = '------#';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should raise error when source raises error', () => {
       const e1 = forkJoin([hot('------#'), hot('---a-----|')]);
       const expected = '------#';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should allow unsubscribing early and explicitly', () => {
@@ -2307,7 +2307,7 @@ describe('forkJoin', () => {
 
       const result = forkJoin([e1, e2]);
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2321,7 +2321,7 @@ describe('forkJoin', () => {
 
       const result = forkJoin([e1, e2]);
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2336,7 +2336,7 @@ describe('forkJoin', () => {
       });
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
+      expectSource(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
     });
 
     it('should allow emit null or undefined', () => {
@@ -2348,7 +2348,7 @@ describe('forkJoin', () => {
       });
       const expected2 = '--------------(x|)';
 
-      expectObservable(e2).toBe(expected2, {
+      expectSource(e2).toBe(expected2, {
         x: {foo: null, bar: 'b', baz: '3', qux: undefined}
       });
     });
@@ -2359,7 +2359,7 @@ describe('forkJoin', () => {
       });
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: {foo: 'd'}});
+      expectSource(e1).toBe(expected, {x: {foo: 'd'}});
     });
 
     it('should accept lowercase-o observables', () => {
@@ -2370,7 +2370,7 @@ describe('forkJoin', () => {
       });
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
+      expectSource(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
     });
 
     it('should accept empty lowercase-o observables', () => {
@@ -2381,7 +2381,7 @@ describe('forkJoin', () => {
       });
       const expected = '|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should accept promise', done => {
@@ -2404,7 +2404,7 @@ describe('forkJoin', () => {
       });
       const expected = '--------------(x|)';
 
-      expectObservable(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
+      expectSource(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
     });
 
     it('should not emit if any of source observable is empty', () => {
@@ -2415,7 +2415,7 @@ describe('forkJoin', () => {
       });
       const expected = '------------------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete early if any of source is empty and completes before than others', () => {
@@ -2426,7 +2426,7 @@ describe('forkJoin', () => {
       });
       const expected = '---------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete when all sources are empty', () => {
@@ -2436,7 +2436,7 @@ describe('forkJoin', () => {
       });
       const expected = '---------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should not complete when only source never completes', () => {
@@ -2445,7 +2445,7 @@ describe('forkJoin', () => {
       });
       const expected = '-';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should not complete when one of the sources never completes', () => {
@@ -2455,7 +2455,7 @@ describe('forkJoin', () => {
       });
       const expected = '-';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should complete when one of the sources never completes but other completes without values', () => {
@@ -2465,7 +2465,7 @@ describe('forkJoin', () => {
       });
       const expected = '------|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     // TODO(benlesh): this is the wrong behavior, it should probably throw right away.
@@ -2486,7 +2486,7 @@ describe('forkJoin', () => {
       const e1 = forkJoin({});
       const expected = '|';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should raise error when any of source raises error with empty observable', () => {
@@ -2496,7 +2496,7 @@ describe('forkJoin', () => {
       });
       const expected = '------#';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should raise error when any of source raises error with source that never completes', () => {
@@ -2506,7 +2506,7 @@ describe('forkJoin', () => {
       });
       const expected = '------#';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should raise error when source raises error', () => {
@@ -2516,7 +2516,7 @@ describe('forkJoin', () => {
       });
       const expected = '------#';
 
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     });
 
     it('should allow unsubscribing early and explicitly', () => {
@@ -2532,7 +2532,7 @@ describe('forkJoin', () => {
         e2
       });
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2549,7 +2549,7 @@ describe('forkJoin', () => {
         e2
       });
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2784,7 +2784,7 @@ import {first, concatMap, delay} from 'rxjs/operators';
 
 // tslint:disable:no-any
 declare const asDiagram: any;
-declare const expectObservable: any;
+declare const expectSource: any;
 declare const type: any;
 declare const rxTestScheduler: TestScheduler;
 // tslint:enable:no-any
@@ -2805,7 +2805,7 @@ describe('from', () => {
         )
       );
       const expected = 'x-y-(z|)';
-      expectObservable(e1).toBe(expected, {x: 10, y: 20, z: 30});
+      expectSource(e1).toBe(expected, {x: 10, y: 20, z: 30});
     }
   );
 
@@ -2973,7 +2973,7 @@ describe('from', () => {
   }
 });
 import {expect} from 'chai';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {Observable, fromEvent, NEVER, timer, pipe} from 'rxjs';
 import {
   NodeStyleEventEmitter,
@@ -3004,7 +3004,7 @@ describe('fromEvent', () => {
       };
       const e1 = fromEvent(target as any, 'click');
       const expected = '-----x-x---';
-      expectObservable(e1).toBe(expected, {x: 'ev'});
+      expectSource(e1).toBe(expected, {x: 'ev'});
     }
   );
 
@@ -3478,7 +3478,7 @@ describe('fromEvent', () => {
 });
 import {expect} from 'chai';
 import * as sinon from 'sinon';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 
 import {fromEventPattern, noop, NEVER, timer} from 'rxjs';
 import {mapTo, take, concat} from 'rxjs/operators';
@@ -3499,7 +3499,7 @@ describe('fromEventPattern', () => {
       }
       const e1 = fromEventPattern(addHandler);
       const expected = '-----x-x---';
-      expectObservable(e1).toBe(expected, {x: 'ev'});
+      expectSource(e1).toBe(expected, {x: 'ev'});
     }
   );
 
@@ -3623,7 +3623,7 @@ describe('fromEventPattern', () => {
 });
 import {TestScheduler} from 'rxjs/testing';
 import {expect} from 'chai';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {generate, Subscriber} from 'rxjs';
 import {take} from 'rxjs/operators';
 
@@ -3645,7 +3645,7 @@ describe('generate', () => {
       );
       const expected = '|';
 
-      expectObservable(source).toBe(expected);
+      expectSource(source).toBe(expected);
     }
   );
 
@@ -3659,7 +3659,7 @@ describe('generate', () => {
       );
       const expected = '(1|)';
 
-      expectObservable(source).toBe(expected, {'1': 1});
+      expectSource(source).toBe(expected, {'1': 1});
     }
   );
 
@@ -3673,7 +3673,7 @@ describe('generate', () => {
       );
       const expected = '(12|)';
 
-      expectObservable(source).toBe(expected, {'1': 1, '2': 2});
+      expectSource(source).toBe(expected, {'1': 1, '2': 2});
     }
   );
 
@@ -3686,7 +3686,7 @@ describe('generate', () => {
     );
     const expected = '(23|)';
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should allow omit condition', () => {
@@ -3697,7 +3697,7 @@ describe('generate', () => {
     }).pipe(take(5));
     const expected = '(12345|)';
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should stop producing when unsubscribed', () => {
@@ -3734,7 +3734,7 @@ describe('generate', () => {
     rxTestScheduler.flush();
     expect(count).to.be.equal(3);
 
-    expectObservable(source).toBe(expected, {'1': 1, '2': 2, '3': 3});
+    expectSource(source).toBe(expected, {'1': 1, '2': 2, '3': 3});
   });
 
   it('should allow minimal possible options', () => {
@@ -3744,7 +3744,7 @@ describe('generate', () => {
     }).pipe(take(3));
     const expected = '(124|)';
 
-    expectObservable(source).toBe(expected, {'1': 1, '2': 2, '4': 4});
+    expectSource(source).toBe(expected, {'1': 1, '2': 2, '4': 4});
   });
 
   it('should emit error if result selector throws', () => {
@@ -3755,7 +3755,7 @@ describe('generate', () => {
     });
     const expected = '(#)';
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should emit error if result selector throws on scheduler', () => {
@@ -3767,7 +3767,7 @@ describe('generate', () => {
     });
     const expected = '(#)';
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should emit error after first value if iterate function throws', () => {
@@ -3777,7 +3777,7 @@ describe('generate', () => {
     });
     const expected = '(1#)';
 
-    expectObservable(source).toBe(expected, {'1': 1});
+    expectSource(source).toBe(expected, {'1': 1});
   });
 
   it('should emit error after first value if iterate function throws on scheduler', () => {
@@ -3788,7 +3788,7 @@ describe('generate', () => {
     });
     const expected = '(1#)';
 
-    expectObservable(source).toBe(expected, {'1': 1});
+    expectSource(source).toBe(expected, {'1': 1});
   });
 
   it('should emit error if condition function throws', () => {
@@ -3799,7 +3799,7 @@ describe('generate', () => {
     });
     const expected = '(#)';
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should emit error if condition function throws on scheduler', () => {
@@ -3811,33 +3811,33 @@ describe('generate', () => {
     });
     const expected = '(#)';
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 });
 import {expect} from 'chai';
 import {iif, of} from 'rxjs';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 
 describe('iif', () => {
   it('should subscribe to thenSource when the conditional returns true', () => {
     const e1 = iif(() => true, of('a'));
     const expected = '(a|)';
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 
   it('should subscribe to elseSource when the conditional returns false', () => {
     const e1 = iif(() => false, of('a'), of('b'));
     const expected = '(b|)';
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 
   it('should complete without an elseSource when the conditional returns false', () => {
     const e1 = iif(() => false, of('a'));
     const expected = '|';
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 
   it('should raise error when conditional throws', () => {
@@ -3850,7 +3850,7 @@ describe('iif', () => {
 
     const expected = '#';
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 
   it('should accept resolved promise as thenSource', (done: MochaDone) => {
@@ -3946,7 +3946,7 @@ describe('iif', () => {
   });
 });
 import {expect} from 'chai';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {
   NEVER,
   interval,
@@ -3980,14 +3980,14 @@ describe('interval', () => {
         e: 4,
         f: 5
       };
-      expectObservable(e1).toBe(expected, values);
+      expectSource(e1).toBe(expected, values);
     }
   );
 
   it('should set up an interval', () => {
     const expected =
       '----------0---------1---------2---------3---------4---------5---------6-----';
-    expectObservable(interval(100, rxTestScheduler)).toBe(expected, [
+    expectSource(interval(100, rxTestScheduler)).toBe(expected, [
       0,
       1,
       2,
@@ -4001,13 +4001,13 @@ describe('interval', () => {
   it('should emit when relative interval set to zero', () => {
     const e1 = interval(0, rxTestScheduler).pipe(take(7));
     const expected = '(0123456|)';
-    expectObservable(e1).toBe(expected, [0, 1, 2, 3, 4, 5, 6]);
+    expectSource(e1).toBe(expected, [0, 1, 2, 3, 4, 5, 6]);
   });
 
   it('should consider negative interval as zero', () => {
     const e1 = interval(-1, rxTestScheduler).pipe(take(7));
     const expected = '(0123456|)';
-    expectObservable(e1).toBe(expected, [0, 1, 2, 3, 4, 5, 6]);
+    expectSource(e1).toBe(expected, [0, 1, 2, 3, 4, 5, 6]);
   });
 
   it('should emit values until unsubscribed', (done: MochaDone) => {
@@ -4121,7 +4121,7 @@ import {lowerCaseO} from '../helpers/test-helper';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {TestScheduler} from 'rxjs/testing';
@@ -4141,7 +4141,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4162,7 +4162,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4176,7 +4176,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4190,7 +4190,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4203,7 +4203,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe('|');
+    expectSource(result).toBe('|');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4218,7 +4218,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2, e3);
 
-    expectObservable(result).toBe('|');
+    expectSource(result).toBe('|');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -4232,7 +4232,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe('-');
+    expectSource(result).toBe('-');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4245,7 +4245,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe('-');
+    expectSource(result).toBe('-');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4258,7 +4258,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe('#');
+    expectSource(result).toBe('#');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4271,7 +4271,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe('#');
+    expectSource(result).toBe('#');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4284,7 +4284,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe('#');
+    expectSource(result).toBe('#');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4298,7 +4298,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4312,7 +4312,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4326,7 +4326,7 @@ describe('static merge(...observables)', () => {
 
     const result = merge(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4337,7 +4337,7 @@ describe('static merge(...observables)', () => {
     const result = merge(e1);
 
     expect(result).to.be.instanceof(Observable);
-    expectObservable(result).toBe('(abc|)');
+    expectSource(result).toBe('(abc|)');
   });
 
   it('should merge two lowerCaseO into RxJS Observable', () => {
@@ -4347,7 +4347,7 @@ describe('static merge(...observables)', () => {
     const result = merge(e1, e2);
 
     expect(result).to.be.instanceof(Observable);
-    expectObservable(result).toBe('(abcdef|)');
+    expectSource(result).toBe('(abcdef|)');
   });
 });
 
@@ -4358,7 +4358,7 @@ describe('merge(...observables, Scheduler)', () => {
     const result = merge(e1, rxTestScheduler);
 
     expect(result).to.be.instanceof(Observable);
-    expectObservable(result).toBe('(abc|)');
+    expectSource(result).toBe('(abc|)');
   });
 });
 
@@ -4368,7 +4368,7 @@ describe('merge(...observables, Scheduler, number)', () => {
     const e2 = cold('-d---e---f--|');
     const e3 = cold('---x---y---z---|');
     const expected = '-d-a-e-b-f-c---x---y---z---|';
-    expectObservable(merge(e1, e2, e3, 2)).toBe(expected);
+    expectSource(merge(e1, e2, e3, 2)).toBe(expected);
   });
 
   it('should handle scheduler', () => {
@@ -4376,7 +4376,7 @@ describe('merge(...observables, Scheduler, number)', () => {
     const e2 = of('b').pipe(delay(20, rxTestScheduler));
     const expected = 'a-(b|)';
 
-    expectObservable(merge(e1, e2, rxTestScheduler)).toBe(expected);
+    expectSource(merge(e1, e2, rxTestScheduler)).toBe(expected);
   });
 
   it('should handle scheduler with concurrency limits', () => {
@@ -4384,7 +4384,7 @@ describe('merge(...observables, Scheduler, number)', () => {
     const e2 = cold('-d---e---f--|');
     const e3 = cold('---x---y---z---|');
     const expected = '-d-a-e-b-f-c---x---y---z---|';
-    expectObservable(merge(e1, e2, e3, 2, rxTestScheduler)).toBe(expected);
+    expectSource(merge(e1, e2, e3, 2, rxTestScheduler)).toBe(expected);
   });
 
   it('should use the scheduler even when one Observable is merged', done => {
@@ -4407,7 +4407,7 @@ describe('merge(...observables, Scheduler, number)', () => {
 });
 import {NEVER} from 'rxjs';
 import {expect} from 'chai';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 
 declare const asDiagram: any;
 
@@ -4416,7 +4416,7 @@ describe('NEVER', () => {
   asDiagram('NEVER')('should create a cold observable that never emits', () => {
     const expected = '-';
     const e1 = NEVER;
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 
   it('should return the same instance every time', () => {
@@ -4425,7 +4425,7 @@ describe('NEVER', () => {
 });
 import {expect} from 'chai';
 import {of, Observable} from 'rxjs';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {TestScheduler} from 'rxjs/testing';
 import {concatMap, delay, concatAll} from 'rxjs/operators';
 
@@ -4444,7 +4444,7 @@ describe('of', () => {
         )
       );
       const expected = 'x-y-(z|)';
-      expectObservable(e1).toBe(expected, {x: 1, y: 2, z: 3});
+      expectSource(e1).toBe(expected, {x: 1, y: 2, z: 3});
     }
   );
 
@@ -4486,7 +4486,7 @@ describe('of', () => {
   it('should handle an Observable as the only value', () => {
     const source = of(of('a', 'b', 'c', rxTestScheduler), rxTestScheduler);
     const result = source.pipe(concatAll());
-    expectObservable(result).toBe('(abc|)');
+    expectSource(result).toBe('(abc|)');
   });
 
   it('should handle many Observable as the given values', () => {
@@ -4497,7 +4497,7 @@ describe('of', () => {
     );
 
     const result = source.pipe(concatAll());
-    expectObservable(result).toBe('(abcdef|)');
+    expectSource(result).toBe('(abcdef|)');
   });
 });
 
@@ -4505,7 +4505,7 @@ import {onErrorResumeNext} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -4521,7 +4521,7 @@ describe('onErrorResumeNext', () => {
     const subs4 = '                     ^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectObservable(onErrorResumeNext(s1, s2, s3, s4)).toBe(expected);
+    expectSource(onErrorResumeNext(s1, s2, s3, s4)).toBe(expected);
     expectSubscriptions(s1.subscriptions).toBe(subs1);
     expectSubscriptions(s2.subscriptions).toBe(subs2);
     expectSubscriptions(s3.subscriptions).toBe(subs3);
@@ -4539,7 +4539,7 @@ describe('onErrorResumeNext', () => {
     const subs4 = '                     ^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectObservable(onErrorResumeNext([s1, s2, s3, s4])).toBe(expected);
+    expectSource(onErrorResumeNext([s1, s2, s3, s4])).toBe(expected);
     expectSubscriptions(s1.subscriptions).toBe(subs1);
     expectSubscriptions(s2.subscriptions).toBe(subs2);
     expectSubscriptions(s3.subscriptions).toBe(subs3);
@@ -4551,12 +4551,12 @@ describe('onErrorResumeNext', () => {
     const subs = '(^!)';
     const expected = '|';
 
-    expectObservable(onErrorResumeNext(source)).toBe(expected);
+    expectSource(onErrorResumeNext(source)).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
 import {expect} from 'chai';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {TestScheduler} from 'rxjs/testing';
 import {pairs} from 'rxjs';
 
@@ -4575,7 +4575,7 @@ describe('pairs', () => {
         b: ['b', 2]
       };
 
-      expectObservable(e1).toBe(expected, values);
+      expectSource(e1).toBe(expected, values);
     }
   );
 
@@ -4604,7 +4604,7 @@ describe('pairs', () => {
     const e1 = pairs({}, rxTestScheduler);
     const expected = '|';
 
-    expectObservable(e1).toBe(expected);
+    expectSource(e1).toBe(expected);
   });
 });
 import {expect} from 'chai';
@@ -4613,7 +4613,7 @@ import {map, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -4621,12 +4621,9 @@ declare function asDiagram(arg: string): Function;
 
 /** @test {partition} */
 describe('Observable.prototype.partition', () => {
-  function expectObservableArray(
-    result: Observable<string>[],
-    expected: string[]
-  ) {
+  function expectSourceArray(result: Observable<string>[], expected: string[]) {
     for (let idx = 0; idx < result.length; idx++) {
-      expectObservable(result[idx]).toBe(expected[idx]);
+      expectSource(result[idx]).toBe(expected[idx]);
     }
   }
 
@@ -4642,7 +4639,7 @@ describe('Observable.prototype.partition', () => {
 
       const result = partition(e1, (x: any) => x % 2 === 1);
 
-      expectObservableArray(result, expected);
+      expectSourceArray(result, expected);
       expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
     }
   );
@@ -4659,7 +4656,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4675,7 +4672,7 @@ describe('Observable.prototype.partition', () => {
       return index % 2 === 0;
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4691,7 +4688,7 @@ describe('Observable.prototype.partition', () => {
       return x === this.value;
     }
 
-    expectObservableArray(partition(e1, predicate, {value: 'a'}), expected);
+    expectSourceArray(partition(e1, predicate, {value: 'a'}), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4704,7 +4701,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4717,7 +4714,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4736,7 +4733,7 @@ describe('Observable.prototype.partition', () => {
       return match;
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4749,7 +4746,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'x';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4762,7 +4759,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'x';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4775,7 +4772,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4788,7 +4785,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4801,7 +4798,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4814,7 +4811,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4827,7 +4824,7 @@ describe('Observable.prototype.partition', () => {
       return x === 'a';
     }
 
-    expectObservableArray(partition(e1, predicate), expected);
+    expectSourceArray(partition(e1, predicate), expected);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4843,7 +4840,7 @@ describe('Observable.prototype.partition', () => {
     const result = partition(e1, predicate);
 
     for (let idx = 0; idx < result.length; idx++) {
-      expectObservable(result[idx], unsub).toBe(expected[idx]);
+      expectSource(result[idx], unsub).toBe(expected[idx]);
     }
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
@@ -4857,8 +4854,8 @@ describe('Observable.prototype.partition', () => {
     const e1Pipe = e1.pipe(mergeMap((x: string) => of(x)));
     const result = partition(e1Pipe, (x: string) => x === 'a');
 
-    expectObservable(result[0], unsub).toBe(expected[0]);
-    expectObservable(result[1], unsub).toBe(expected[1]);
+    expectSource(result[0], unsub).toBe(expected[0]);
+    expectSource(result[1], unsub).toBe(expected[1]);
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -4878,7 +4875,7 @@ describe('Observable.prototype.partition', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {race, of} from 'rxjs';
@@ -4894,7 +4891,7 @@ describe('static race', () => {
 
     const result = race(e1);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -4907,7 +4904,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4921,7 +4918,7 @@ describe('static race', () => {
 
     const result = race([e1, e2]);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4935,7 +4932,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4949,7 +4946,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4963,7 +4960,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4977,7 +4974,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -4992,7 +4989,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -5010,7 +5007,7 @@ describe('static race', () => {
       e2.pipe(mergeMap((x: string) => of(x)))
     ).pipe(mergeMap((x: any) => of(x)));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -5023,7 +5020,7 @@ describe('static race', () => {
 
     const source = race(e1, e2);
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5036,7 +5033,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -5050,7 +5047,7 @@ describe('static race', () => {
 
     const result = race(e1, e2);
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -5062,7 +5059,7 @@ describe('static race', () => {
 
     const source = race(e1);
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5073,7 +5070,7 @@ describe('static race', () => {
 
     const source = race(e1);
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5084,7 +5081,7 @@ describe('static race', () => {
 
     const source = race(e1);
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5103,7 +5100,7 @@ import {expect} from 'chai';
 import * as sinon from 'sinon';
 import {Subscriber, asapScheduler as asap, range, of} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 import {dispatch} from 'rxjs/internal/observable/range';
 import {concatMap, delay} from 'rxjs/operators';
 
@@ -5136,7 +5133,7 @@ describe('range', () => {
         i: 9,
         j: 10
       };
-      expectObservable(e1).toBe(expected, values);
+      expectSource(e1).toBe(expected, values);
     }
   );
 
@@ -5152,8 +5149,8 @@ describe('range', () => {
       d: 4,
       e: 5
     };
-    expectObservable(e1).toBe(expected, values);
-    expectObservable(e1).toBe(expected, values);
+    expectSource(e1).toBe(expected, values);
+    expectSource(e1).toBe(expected, values);
   });
 
   it('should synchronously create a range of values by default', () => {
@@ -5198,8 +5195,8 @@ describe('range', () => {
       d: 3,
       e: 4
     };
-    expectObservable(e1).toBe(expected, values);
-    expectObservable(e1).toBe(expected, values);
+    expectSource(e1).toBe(expected, values);
+    expectSource(e1).toBe(expected, values);
   });
 });
 
@@ -5250,7 +5247,7 @@ describe('RangeObservable', () => {
 import {expect} from 'chai';
 import {TestScheduler} from 'rxjs/testing';
 import {throwError} from 'rxjs';
-import {expectObservable} from '../helpers/marble-testing';
+import {expectSource} from '../helpers/marble-testing';
 
 declare function asDiagram(arg: string): Function;
 declare const rxTestScheduler: TestScheduler;
@@ -5262,7 +5259,7 @@ describe('throwError', () => {
     () => {
       const expected = '#';
       const e1 = throwError('error');
-      expectObservable(e1).toBe(expected);
+      expectSource(e1).toBe(expected);
     }
   );
 
@@ -5283,10 +5280,10 @@ describe('throwError', () => {
   it('should accept scheduler', () => {
     const e = throwError('error', rxTestScheduler);
 
-    expectObservable(e).toBe('#');
+    expectSource(e).toBe('#');
   });
 });
-import {cold, expectObservable, time} from '../helpers/marble-testing';
+import {cold, expectSource, time} from '../helpers/marble-testing';
 import {timer, NEVER, merge} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
 import {mergeMap, take, concat} from 'rxjs/operators';
@@ -5310,7 +5307,7 @@ describe('timer', () => {
         c: 2,
         d: 3
       };
-      expectObservable(e1).toBe(expected, values);
+      expectSource(e1).toBe(expected, values);
     }
   );
 
@@ -5319,7 +5316,7 @@ describe('timer', () => {
     const expected = '-----(x|)';
 
     const source = timer(dueTime, undefined, rxTestScheduler);
-    expectObservable(source).toBe(expected, {x: 0});
+    expectSource(source).toBe(expected, {x: 0});
   });
 
   it('should emit a single value immediately', () => {
@@ -5327,7 +5324,7 @@ describe('timer', () => {
     const expected = '(x|)';
 
     const source = timer(dueTime, rxTestScheduler);
-    expectObservable(source).toBe(expected, {x: 0});
+    expectSource(source).toBe(expected, {x: 0});
   });
 
   it('should start after delay and periodically emit values', () => {
@@ -5337,7 +5334,7 @@ describe('timer', () => {
 
     const source = timer(dueTime, period, rxTestScheduler).pipe(take(5));
     const values = {a: 0, b: 1, c: 2, d: 3, e: 4};
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
   });
 
   it('should start immediately and periodically emit values', () => {
@@ -5347,7 +5344,7 @@ describe('timer', () => {
 
     const source = timer(dueTime, period, rxTestScheduler).pipe(take(5));
     const values = {a: 0, b: 1, c: 2, d: 3, e: 4};
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
   });
 
   it('should stop emiting values when subscription is done', () => {
@@ -5358,7 +5355,7 @@ describe('timer', () => {
 
     const source = timer(dueTime, period, rxTestScheduler);
     const values = {a: 0, b: 1, c: 2, d: 3, e: 4};
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
   });
 
   it('should schedule a value at a specified Date', () => {
@@ -5367,7 +5364,7 @@ describe('timer', () => {
 
     const dueTime = new Date(rxTestScheduler.now() + offset);
     const source = timer(dueTime, null as any, rxTestScheduler);
-    expectObservable(source).toBe(expected, {a: 0});
+    expectSource(source).toBe(expected, {a: 0});
   });
 
   it('should start after delay and periodically emit values', () => {
@@ -5378,7 +5375,7 @@ describe('timer', () => {
     const dueTime = new Date(rxTestScheduler.now() + offset);
     const source = timer(dueTime, period, rxTestScheduler).pipe(take(5));
     const values = {a: 0, b: 1, c: 2, d: 3, e: 4};
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
   });
 
   it(
@@ -5395,7 +5392,7 @@ describe('timer', () => {
 
       const testSource = merge(t1, t2).pipe(mergeMap(() => source));
 
-      expectObservable(testSource).toBe(expected, {a: 0});
+      expectSource(testSource).toBe(expected, {a: 0});
     }
   );
 });
@@ -5527,7 +5524,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -5553,7 +5550,7 @@ describe('static zip', () => {
     const bsubs = '^';
     const expected = '---x---y---z';
 
-    expectObservable(zip(a, b)).toBe(expected, {
+    expectSource(zip(a, b)).toBe(expected, {
       x: ['1', '4'],
       y: ['2', '5'],
       z: ['3', '6']
@@ -5593,7 +5590,7 @@ describe('static zip', () => {
       z: ['c', 'f', 'j']
     };
 
-    expectObservable(zip(e1, e2, e3)).toBe(expected, values);
+    expectSource(zip(e1, e2, e3)).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -5616,7 +5613,7 @@ describe('static zip', () => {
         z: ['c', 'f', 'j']
       };
 
-      expectObservable(zip(e1, e2, e3)).toBe(expected, values);
+      expectSource(zip(e1, e2, e3)).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -5647,7 +5644,7 @@ describe('static zip', () => {
         z: ['d', 3]
       };
 
-      expectObservable(zip(e1, myIterator)).toBe(expected, values);
+      expectSource(zip(e1, myIterator)).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
 
@@ -5677,7 +5674,7 @@ describe('static zip', () => {
       const b: number[] = [];
       const expected = '-';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5687,7 +5684,7 @@ describe('static zip', () => {
       const b: number[] = [];
       const expected = '|';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5697,7 +5694,7 @@ describe('static zip', () => {
       const b = [1];
       const expected = '|';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5707,7 +5704,7 @@ describe('static zip', () => {
       const b: number[] = [];
       const expected = '--------|';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5717,7 +5714,7 @@ describe('static zip', () => {
       const b = [1];
       const expected = '-';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5727,7 +5724,7 @@ describe('static zip', () => {
       const b = [2];
       const expected = '-----(x|)';
 
-      expectObservable(zip(a, b)).toBe(expected, {x: ['1', 2]});
+      expectSource(zip(a, b)).toBe(expected, {x: ['1', 2]});
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5737,7 +5734,7 @@ describe('static zip', () => {
       const b: number[] = [];
       const expected = '-----#';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5747,7 +5744,7 @@ describe('static zip', () => {
       const b = [1];
       const expected = '-----#';
 
-      expectObservable(zip(a, b)).toBe(expected);
+      expectSource(zip(a, b)).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -5757,7 +5754,7 @@ describe('static zip', () => {
       const b = [4, 5, 6];
       const expected = '---x--y--(z|)';
 
-      expectObservable(zip(a, b)).toBe(expected, {
+      expectSource(zip(a, b)).toBe(expected, {
         x: ['1', 4],
         y: ['2', 5],
         z: ['3', 6]
@@ -5778,7 +5775,7 @@ describe('static zip', () => {
           return x + y;
         }
       };
-      expectObservable(zip(a, b, selector)).toBe(
+      expectSource(zip(a, b, selector)).toBe(
         expected,
         {x: '14'},
         new Error('too bad')
@@ -5794,9 +5791,10 @@ describe('static zip', () => {
     const bsubs = '^';
     const expected = '---x---y---z';
 
-    expectObservable(
-      zip(a, b, (e1: string, e2: string) => e1 + e2)
-    ).toBe(expected, {x: '14', y: '25', z: '36'});
+    expectSource(zip(a, b, (e1: string, e2: string) => e1 + e2)).toBe(
+      expected,
+      {x: '14', y: '25', z: '36'}
+    );
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5809,7 +5807,7 @@ describe('static zip', () => {
     const c = hot('---1-^---3---6-|  ');
     const expected = '----x---y-|  ';
 
-    expectObservable(zip(a, b, c)).toBe(expected, {
+    expectSource(zip(a, b, c)).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
     });
@@ -5830,7 +5828,7 @@ describe('static zip', () => {
       r1,
       r2
     ]);
-    expectObservable(observable).toBe(expected, {
+    expectSource(observable).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
     });
@@ -5851,7 +5849,7 @@ describe('static zip', () => {
       r1,
       r2
     ]);
-    expectObservable(observable).toBe(expected, {
+    expectSource(observable).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
     });
@@ -5866,9 +5864,10 @@ describe('static zip', () => {
     const bsubs = '^                 !    ';
     const expected = '---a--b--c--d--e--|    ';
 
-    expectObservable(
-      zip(a, b, (r1: string, r2: string) => r1 + r2)
-    ).toBe(expected, {a: '12', b: '34', c: '56', d: '78', e: '90'});
+    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(
+      expected,
+      {a: '12', b: '34', c: '56', d: '78', e: '90'}
+    );
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5880,9 +5879,10 @@ describe('static zip', () => {
     const bsubs = '^                 !    ';
     const expected = '---a--b--c--d--e--|    ';
 
-    expectObservable(
-      zip(a, b, (r1: string, r2: string) => r1 + r2)
-    ).toBe(expected, {a: '21', b: '43', c: '65', d: '87', e: '09'});
+    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(
+      expected,
+      {a: '21', b: '43', c: '65', d: '87', e: '09'}
+    );
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5894,9 +5894,10 @@ describe('static zip', () => {
     const bsubs = '^                ! ';
     const expected = '---a--b--c--d--e-| ';
 
-    expectObservable(
-      zip(a, b, (r1: string, r2: string) => r1 + r2)
-    ).toBe(expected, {a: '12', b: '34', c: '56', d: '78', e: '90'});
+    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(
+      expected,
+      {a: '12', b: '34', c: '56', d: '78', e: '90'}
+    );
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5916,11 +5917,7 @@ describe('static zip', () => {
       }
     };
     const observable = zip(a, b, selector);
-    expectObservable(observable).toBe(
-      expected,
-      {x: '23'},
-      new Error('too bad')
-    );
+    expectSource(observable).toBe(expected, {x: '23'}, new Error('too bad'));
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5932,7 +5929,7 @@ describe('static zip', () => {
     const bsubs = '^     !';
     const expected = '---x--|';
 
-    expectObservable(zip(a, b)).toBe(expected, {x: ['2', '3']});
+    expectSource(zip(a, b)).toBe(expected, {x: ['2', '3']});
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5944,7 +5941,7 @@ describe('static zip', () => {
     const bsubs = '^';
     const expected = '-';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5956,7 +5953,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5968,7 +5965,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5980,7 +5977,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5992,7 +5989,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6004,7 +6001,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6016,7 +6013,7 @@ describe('static zip', () => {
     const bsubs = '^     !';
     const expected = '-';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6028,7 +6025,7 @@ describe('static zip', () => {
     const bsubs = '^';
     const expected = '-';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6040,7 +6037,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6052,7 +6049,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6064,7 +6061,7 @@ describe('static zip', () => {
     const bsubs = '^     !    ';
     const expected = '------#    ';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6076,7 +6073,7 @@ describe('static zip', () => {
     const bsubs = '^     !';
     const expected = '------#';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6088,7 +6085,7 @@ describe('static zip', () => {
     const bsubs = '^     !';
     const expected = '------#';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6100,7 +6097,7 @@ describe('static zip', () => {
     const bsubs = '^     !';
     const expected = '------#';
 
-    expectObservable(zip(a, b)).toBe(expected, null, 'too bad');
+    expectSource(zip(a, b)).toBe(expected, null, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6112,7 +6109,7 @@ describe('static zip', () => {
     const bsubs = '^       !';
     const expected = '-----x--#';
 
-    expectObservable(zip(a, b)).toBe(expected, {x: [1, 2]}, 'too bad');
+    expectSource(zip(a, b)).toBe(expected, {x: [1, 2]}, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6124,7 +6121,7 @@ describe('static zip', () => {
     const bsubs = '^       !';
     const expected = '-----x--#';
 
-    expectObservable(zip(a, b)).toBe(expected, {x: [2, 1]}, 'too bad');
+    expectSource(zip(a, b)).toBe(expected, {x: [2, 1]}, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6136,7 +6133,7 @@ describe('static zip', () => {
     const bsubs = '(^!)';
     const expected = '#';
 
-    expectObservable(zip(a, b)).toBe(expected);
+    expectSource(zip(a, b)).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });

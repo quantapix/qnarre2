@@ -2,7 +2,7 @@ import {animationFrameScheduler, Subscription} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions,
   time
 } from '../helpers/marble-testing';
@@ -714,7 +714,7 @@ describe('TestScheduler', () => {
             expect(expected.length).to.equal(0);
           }
         );
-        expectObservable(source).toBe('-a-b-|', {a: 1, b: 2});
+        expectSource(source).toBe('-a-b-|', {a: 1, b: 2});
       });
     });
 
@@ -727,7 +727,7 @@ describe('TestScheduler', () => {
       it('should create a hot observable', () => {
         const source = hot('---^-a-b-|', {a: 1, b: 2});
         expect(source).to.be.an.instanceOf(Subject);
-        expectObservable(source).toBe('--a-b-|', {a: 1, b: 2});
+        expectSource(source).toBe('--a-b-|', {a: 1, b: 2});
       });
     });
 
@@ -742,42 +742,42 @@ describe('TestScheduler', () => {
       });
     });
 
-    describe('expectObservable()', () => {
+    describe('expectSource()', () => {
       it('should exist', () => {
-        expect(expectObservable).to.exist;
-        expect(expectObservable).to.be.a('function');
+        expect(expectSource).to.exist;
+        expect(expectSource).to.be.a('function');
       });
 
       it('should return an object with a toBe function', () => {
-        expect(expectObservable(of(1)).toBe).to.be.a('function');
+        expect(expectSource(of(1)).toBe).to.be.a('function');
       });
 
       it('should append to flushTests array', () => {
-        expectObservable(EMPTY);
+        expectSource(EMPTY);
         expect((<any>rxTestScheduler).flushTests.length).to.equal(1);
       });
 
       it('should handle empty', () => {
-        expectObservable(EMPTY).toBe('|', {});
+        expectSource(EMPTY).toBe('|', {});
       });
 
       it('should handle never', () => {
-        expectObservable(NEVER).toBe('-', {});
-        expectObservable(NEVER).toBe('---', {});
+        expectSource(NEVER).toBe('-', {});
+        expectSource(NEVER).toBe('---', {});
       });
 
       it('should accept an unsubscription marble diagram', () => {
         const source = hot('---^-a-b-|');
         const unsubscribe = '---!';
         const expected = '--a';
-        expectObservable(source, unsubscribe).toBe(expected);
+        expectSource(source, unsubscribe).toBe(expected);
       });
 
       it('should accept a subscription marble diagram', () => {
         const source = hot('-a-b-c|');
         const subscribe = '---^';
         const expected = '---b-c|';
-        expectObservable(source, subscribe).toBe(expected);
+        expectSource(source, subscribe).toBe(expected);
       });
     });
 
@@ -809,7 +809,7 @@ describe('TestScheduler', () => {
         const values = {a: 1, b: 2};
         const myObservable = cold('---a---b--|', values);
         const subs = '^---------!';
-        expectObservable(myObservable).toBe('---a---b--|', values);
+        expectSource(myObservable).toBe('---a---b--|', values);
         expectSubscriptions(myObservable.subscriptions).toBe(subs);
       });
 
@@ -820,7 +820,7 @@ describe('TestScheduler', () => {
         const expected = '---x---y----|';
         const expectedx = cold('-a-b|');
         const expectedy = cold('-c-d|');
-        expectObservable(myObservable).toBe(expected, {
+        expectSource(myObservable).toBe(expected, {
           x: expectedx,
           y: expectedy
         });
@@ -837,12 +837,12 @@ describe('TestScheduler', () => {
       it('should ignore whitespace', () => {
         const testScheduler = new TestScheduler(assertDeepEquals);
 
-        testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+        testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
           const input = cold('  -a - b -    c |       ');
           const output = input.pipe(concatMap(d => of(d).pipe(delay(10))));
           const expected = '     -- 9ms a 9ms b 9ms (c|) ';
 
-          expectObservable(output).toBe(expected);
+          expectSource(output).toBe(expected);
           expectSubscriptions(input.subscriptions).toBe('  ^- - - - - !');
         });
       });
@@ -851,11 +851,11 @@ describe('TestScheduler', () => {
         const testScheduler = new TestScheduler(assertDeepEquals);
 
         testScheduler.run(
-          ({cold, hot, flush, expectObservable, expectSubscriptions}) => {
+          ({cold, hot, flush, expectSource, expectSubscriptions}) => {
             const output = cold('10.2ms a 1.2s b 1m c|');
             const expected = '   10.2ms a 1.2s b 1m c|';
 
-            expectObservable(output).toBe(expected);
+            expectSource(output).toBe(expected);
           }
         );
       });
@@ -865,11 +865,11 @@ describe('TestScheduler', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
       testScheduler.run(
-        ({cold, hot, flush, expectObservable, expectSubscriptions}) => {
+        ({cold, hot, flush, expectSource, expectSubscriptions}) => {
           expect(cold).to.be.a('function');
           expect(hot).to.be.a('function');
           expect(flush).to.be.a('function');
-          expect(expectObservable).to.be.a('function');
+          expect(expectSource).to.be.a('function');
           expect(expectSubscriptions).to.be.a('function');
 
           const obs1 = cold('-a-c-e|');
@@ -877,7 +877,7 @@ describe('TestScheduler', () => {
           const output = merge(obs1, obs2);
           const expected = ' -abcdef|';
 
-          expectObservable(output).toBe(expected);
+          expectSource(output).toBe(expected);
           expectSubscriptions(obs1.subscriptions).toBe('^-----!');
           expectSubscriptions(obs2.subscriptions).toBe('^------!');
         }
@@ -887,30 +887,30 @@ describe('TestScheduler', () => {
     it('should have each frame represent a single virtual millisecond', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({cold, expectObservable}) => {
+      testScheduler.run(({cold, expectSource}) => {
         const output = cold('-a-b-c--------|').pipe(debounceTime(5));
         const expected = '   ------ 4ms c---|';
-        expectObservable(output).toBe(expected);
+        expectSource(output).toBe(expected);
       });
     });
 
     it('should have no maximum frame count', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({cold, expectObservable}) => {
+      testScheduler.run(({cold, expectSource}) => {
         const output = cold('-a|').pipe(delay(1000 * 10));
         const expected = '   - 10s (a|)';
-        expectObservable(output).toBe(expected);
+        expectSource(output).toBe(expected);
       });
     });
 
     it('should make operators that use AsyncScheduler automatically use TestScheduler for actual scheduling', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({cold, expectObservable}) => {
+      testScheduler.run(({cold, expectSource}) => {
         const output = cold('-a-b-c--------|').pipe(debounceTime(5));
         const expected = '   ----------c---|';
-        expectObservable(output).toBe(expected);
+        expectSource(output).toBe(expected);
       });
     });
 
@@ -918,12 +918,12 @@ describe('TestScheduler', () => {
       const testScheduler = new TestScheduler((actual, expected) => {
         expect(actual).deep.equal(expected);
       });
-      testScheduler.run(({cold, expectObservable}) => {
+      testScheduler.run(({cold, expectSource}) => {
         const output = cold('-a-b-c|').pipe(
           concatMap(d => of(d).pipe(delay(10)))
         );
         const expected = '   -- 9ms a 9ms b 9ms (c|)';
-        expectObservable(output).toBe(expected);
+        expectSource(output).toBe(expected);
 
         expect(testScheduler['flushTests'].length).to.equal(1);
         expect(testScheduler['actions'].length).to.equal(1);
@@ -936,12 +936,12 @@ describe('TestScheduler', () => {
     it('should support explicit flushing', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(({cold, expectObservable, flush}) => {
+      testScheduler.run(({cold, expectSource, flush}) => {
         const output = cold('-a-b-c|').pipe(
           concatMap(d => of(d).pipe(delay(10)))
         );
         const expected = '   -- 9ms a 9ms b 9ms (c|)';
-        expectObservable(output).toBe(expected);
+        expectSource(output).toBe(expected);
 
         expect(testScheduler['flushTests'].length).to.equal(1);
         expect(testScheduler['actions'].length).to.equal(1);
@@ -994,10 +994,10 @@ describe('TestScheduler', () => {
     it('should flush expectations correctly', () => {
       expect(() => {
         const testScheduler = new TestScheduler(assertDeepEquals);
-        testScheduler.run(({cold, expectObservable, flush}) => {
-          expectObservable(cold('-x')).toBe('-x');
-          expectObservable(cold('-y')).toBe('-y');
-          const expectation = expectObservable(cold('-z'));
+        testScheduler.run(({cold, expectSource, flush}) => {
+          expectSource(cold('-x')).toBe('-x');
+          expectSource(cold('-y')).toBe('-y');
+          const expectation = expectSource(cold('-z'));
           flush();
           expectation.toBe('-q');
         });
@@ -1162,29 +1162,29 @@ describe('scheduled', () => {
 
   it('should schedule a sync observable', () => {
     const input = of('a', 'b', 'c');
-    testScheduler.run(({expectObservable}) => {
-      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    testScheduler.run(({expectSource}) => {
+      expectSource(scheduled(input, testScheduler)).toBe('(abc|)');
     });
   });
 
   it('should schedule an array', () => {
     const input = ['a', 'b', 'c'];
-    testScheduler.run(({expectObservable}) => {
-      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    testScheduler.run(({expectSource}) => {
+      expectSource(scheduled(input, testScheduler)).toBe('(abc|)');
     });
   });
 
   it('should schedule an iterable', () => {
     const input = 'abc'; // strings are iterables
-    testScheduler.run(({expectObservable}) => {
-      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    testScheduler.run(({expectSource}) => {
+      expectSource(scheduled(input, testScheduler)).toBe('(abc|)');
     });
   });
 
   it('should schedule an observable-like', () => {
     const input = lowerCaseO('a', 'b', 'c'); // strings are iterables
-    testScheduler.run(({expectObservable}) => {
-      expectObservable(scheduled(input, testScheduler)).toBe('(abc|)');
+    testScheduler.run(({expectSource}) => {
+      expectSource(scheduled(input, testScheduler)).toBe('(abc|)');
     });
   });
 

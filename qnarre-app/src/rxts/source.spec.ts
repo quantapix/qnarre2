@@ -6,7 +6,7 @@ import {a$} from 'helpers';
 
 import {
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from './spec/helpers/marble-testing';
 
@@ -60,7 +60,7 @@ describe('Observable', () => {
 
   it('should allow empty ctor, which is effectively a never-observable', () => {
     const result = new Observable<any>();
-    expectObservable(result).toBe('-');
+    expectSource(result).toBe('-');
   });
 
   describe('forEach', () => {
@@ -685,7 +685,7 @@ describe('Observable.create', () => {
         obs.next(1);
       });
       const expected = 'x';
-      expectObservable(e1).toBe(expected, {x: 1});
+      expectSource(e1).toBe(expected, {x: 1});
     }
   );
 
@@ -853,7 +853,7 @@ describe('Observable.lift', () => {
 
     expect(result instanceof MyCustomObservable).to.be.true;
 
-    expectObservable(result).toBe(expected, {
+    expectSource(result).toBe(expected, {
       A: 'a1',
       B: 'b1',
       C: 'b2',
@@ -876,7 +876,7 @@ describe('Observable.lift', () => {
 
     expect(result instanceof MyCustomObservable).to.be.true;
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should compose through merge', () => {
@@ -888,7 +888,7 @@ describe('Observable.lift', () => {
 
     expect(result instanceof MyCustomObservable).to.be.true;
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should compose through race', () => {
@@ -905,7 +905,7 @@ describe('Observable.lift', () => {
 
     expect(result instanceof MyCustomObservable).to.be.true;
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -921,7 +921,7 @@ describe('Observable.lift', () => {
 
     expect(result instanceof MyCustomObservable).to.be.true;
 
-    expectObservable(result).toBe(expected, {
+    expectSource(result).toBe(expected, {
       A: 'a1',
       B: 'b2',
       C: 'c3',
@@ -1535,17 +1535,17 @@ describe('Notification', () => {
     it('should create observable from a next Notification', () => {
       const value = 'a';
       const next = Notification.createNext(value);
-      expectObservable(next.toObservable()).toBe('(a|)');
+      expectSource(next.toObservable()).toBe('(a|)');
     });
 
     it('should create observable from a complete Notification', () => {
       const complete = Notification.createComplete();
-      expectObservable(complete.toObservable()).toBe('|');
+      expectSource(complete.toObservable()).toBe('|');
     });
 
     it('should create observable from a error Notification', () => {
       const error = Notification.createError('error');
-      expectObservable(error.toObservable()).toBe('#');
+      expectSource(error.toObservable()).toBe('#');
     });
   });
 
@@ -1817,15 +1817,15 @@ describe('Notification', () => {
   });
 });
 
-describe('firstValueFrom', () => {
-  const r0 = firstValueFrom(a$); // $ExpectType Promise<A>
-  const r1 = firstValueFrom(); // $ExpectError
-  const r2 = firstValueFrom(Promise.resolve(42)); // $ExpectError
+describe('firstFrom', () => {
+  const r0 = firstFrom(a$); // $ExpectType Promise<A>
+  const r1 = firstFrom(); // $ExpectError
+  const r2 = firstFrom(Promise.resolve(42)); // $ExpectError
 
   it('should emit the first value as a promise', async () => {
     let finalized = false;
     const source = interval(10).pipe(finalize(() => (finalized = true)));
-    const result = await firstValueFrom(source);
+    const result = await firstFrom(source);
     expect(result).to.equal(0);
     expect(finalized).to.be.true;
   });
@@ -1834,7 +1834,7 @@ describe('firstValueFrom', () => {
     const source = EMPTY;
     let error: any = null;
     try {
-      await firstValueFrom(source);
+      await firstFrom(source);
     } catch (err) {
       error = err;
     }
@@ -1845,7 +1845,7 @@ describe('firstValueFrom', () => {
     const source = throwError(new Error('blorp!'));
     let error: any = null;
     try {
-      await firstValueFrom(source);
+      await firstFrom(source);
     } catch (err) {
       error = err;
     }
@@ -1858,16 +1858,16 @@ describe('firstValueFrom', () => {
     const source = of('apples', 'bananas').pipe(
       finalize(() => (finalized = true))
     );
-    const result = await firstValueFrom(source);
+    const result = await firstFrom(source);
     expect(result).to.equal('apples');
     expect(finalized).to.be.true;
   });
 });
 
-describe('lastValueFrom', () => {
-  const r0 = lastValueFrom(a$); // $ExpectType Promise<A>
-  const r1 = lastValueFrom(); // $ExpectError
-  const r2 = lastValueFrom(Promise.resolve(42)); // $ExpectError
+describe('lastFrom', () => {
+  const r0 = lastFrom(a$); // $ExpectType Promise<A>
+  const r1 = lastFrom(); // $ExpectError
+  const r2 = lastFrom(Promise.resolve(42)); // $ExpectError
 
   it('should emit the last value as a promise', async () => {
     let finalized = false;
@@ -1875,7 +1875,7 @@ describe('lastValueFrom', () => {
       take(10),
       finalize(() => (finalized = true))
     );
-    const result = await lastValueFrom(source);
+    const result = await lastFrom(source);
     expect(result).to.equal(9);
     expect(finalized).to.be.true;
   });
@@ -1884,7 +1884,7 @@ describe('lastValueFrom', () => {
     const source = EMPTY;
     let error: any = null;
     try {
-      await lastValueFrom(source);
+      await lastFrom(source);
     } catch (err) {
       error = err;
     }
@@ -1895,7 +1895,7 @@ describe('lastValueFrom', () => {
     const source = throwError(new Error('blorp!'));
     let error: any = null;
     try {
-      await lastValueFrom(source);
+      await lastFrom(source);
     } catch (err) {
       error = err;
     }
@@ -1908,7 +1908,7 @@ describe('lastValueFrom', () => {
     const source = of('apples', 'bananas').pipe(
       finalize(() => (finalized = true))
     );
-    const result = await lastValueFrom(source);
+    const result = await lastFrom(source);
     expect(result).to.equal('bananas');
     expect(finalized).to.be.true;
   });

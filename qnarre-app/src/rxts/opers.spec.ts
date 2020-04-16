@@ -15,7 +15,7 @@ describe('audit operator', () => {
   });
 
   asDiagram('audit')('should emit the last value in each time window', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('    -a-xy-----b--x--cxxx-|');
       const e1subs = '    ^--------------------!';
       const e2 = cold('    ----|                ');
@@ -28,14 +28,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should delay the source if values are not emitted often enough', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a--------b-----c----|');
       const e1subs = '  ^--------------------!';
       const e2 = cold('  ----|                ');
@@ -48,14 +48,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should audit with duration Observable using next to close the duration', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('   -a-xy-----b--x--cxxx-|');
       const e1subs = '   ^--------------------!';
       const e2 = cold('   ----x-y-z            ');
@@ -68,14 +68,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should interrupt source and duration when result is unsubscribed early', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a-x-y-z-xyz-x-y-z----b--x-x-|');
       const unsub = '   --------------!               ';
       const e1subs = '  ^-------------!               ';
@@ -89,14 +89,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a-x-y-z-xyz-x-y-z----b--x-x-|');
       const e1subs = '  ^-------------!               ';
       const e2 = cold('  -----x------------|          ');
@@ -114,14 +114,14 @@ describe('audit operator', () => {
         mergeMap((x: string) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle a busy producer emitting a regular repeating sequence', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  abcdefabcdefabcdefabcdefa|');
       const e1subs = '  ^------------------------!';
       const e2 = cold(' -----|                    ');
@@ -136,14 +136,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should mirror source if durations are always empty', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  abcdefabcdefabcdefabcdefa|');
       const e1subs = '  ^------------------------!';
       const e2 = cold(' |');
@@ -151,13 +151,13 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should mirror source if durations are EMPTY', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('abcdefabcdefabcdefabcdefa|');
       const e1subs = '^------------------------!';
       const e2 = EMPTY;
@@ -165,13 +165,13 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should emit no values if duration is a never', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----abcdefabcdefabcdefabcdefa|');
       const e1subs = '  ^----------------------------!';
       const e2 = cold(' -');
@@ -180,14 +180,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should unsubscribe duration Observable when source raise error', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----abcdefabcdefabcdefabcdefa#');
       const e1subs = '  ^----------------------------!';
       const e2 = cold(' -');
@@ -196,14 +196,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should mirror source if durations are synchronous observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  abcdefabcdefabcdefabcdefa|');
       const e1subs = '  ^------------------------!';
       const e2 = of('one single value');
@@ -211,13 +211,13 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should raise error as soon as just-throw duration is used', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----abcdefabcdefabcdefabcdefa|');
       const e1subs = '  ^---!                         ';
       const e2 = cold(' #');
@@ -226,14 +226,14 @@ describe('audit operator', () => {
 
       const result = e1.pipe(audit(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should audit using durations of varying lengths', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  abcdefabcdabcdefghabca|');
       const e1subs = '  ^---------------------!';
       const e2 = [
@@ -255,7 +255,7 @@ describe('audit operator', () => {
       let i = 0;
       const result = e1.pipe(audit(() => e2[i++]));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       for (let j = 0; j < e2.length; j++) {
         expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
@@ -264,7 +264,7 @@ describe('audit operator', () => {
   });
 
   it('should propagate error from duration Observable', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  abcdefabcdabcdefghabca|');
       const e1subs = '  ^----------------!     ';
       const e2 = [
@@ -282,7 +282,7 @@ describe('audit operator', () => {
       let i = 0;
       const result = e1.pipe(audit(() => e2[i++]));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       for (let j = 0; j < e2.length; j++) {
         expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
@@ -291,7 +291,7 @@ describe('audit operator', () => {
   });
 
   it('should propagate error thrown from durationSelector function', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('abcdefabcdabcdefghabca|   ');
       const e1subs = '^---------!               ';
       const e2 = [
@@ -315,7 +315,7 @@ describe('audit operator', () => {
         })
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       for (let j = 0; j < e2subs.length; j++) {
         expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
@@ -324,7 +324,7 @@ describe('audit operator', () => {
   });
 
   it('should complete when source does not emit', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -----|');
       const subs = '    ^----!';
       const expected = '-----|';
@@ -332,13 +332,13 @@ describe('audit operator', () => {
         return cold('-----|');
       }
 
-      expectObservable(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should raise error when source does not emit and raises error', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -----#');
       const subs = '    ^----!';
       const expected = '-----#';
@@ -346,13 +346,13 @@ describe('audit operator', () => {
         return cold('   -----|');
       }
 
-      expectObservable(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle an empty source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const subs = '    (^!)';
       const expected = '|';
@@ -360,13 +360,13 @@ describe('audit operator', () => {
         return cold('   -----|');
       }
 
-      expectObservable(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle a never source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const subs = '    ^';
       const expected = '-';
@@ -374,13 +374,13 @@ describe('audit operator', () => {
         return cold('   -----|');
       }
 
-      expectObservable(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle a throw source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' #');
       const subs = '    (^!)';
       const expected = '#';
@@ -388,7 +388,7 @@ describe('audit operator', () => {
         return cold('   -----|');
       }
 
-      expectObservable(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
@@ -468,14 +468,14 @@ describe('auditTime operator', () => {
   asDiagram('auditTime(5)')(
     'should emit the last value in each time window',
     () => {
-      testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const e1 = hot('  -a-x-y----b---x-cx---|');
         const subs = '    ^--------------------!';
         const expected = '------y--------x-----|';
 
         const result = e1.pipe(auditTime(5, testScheduler));
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(subs);
       });
     }
@@ -516,98 +516,96 @@ describe('auditTime operator', () => {
   });
 
   it('should delay the source if values are not emitted often enough', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a--------b-----c----|');
       const subs = '    ^--------------------!';
       const expected = '------a--------b-----|';
 
-      expectObservable(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle a busy producer emitting a regular repeating sequence', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  abcdefabcdefabcdefabcdefa|');
       const subs = '    ^------------------------!';
       const expected = '-----f-----f-----f-----f-|';
 
-      expectObservable(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should complete when source does not emit', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -----|');
       const subs = '    ^----!';
       const expected = '-----|';
 
-      expectObservable(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should raise error when source does not emit and raises error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -----#');
       const subs = '    ^----!';
       const expected = '-----#';
 
-      expectObservable(e1.pipe(auditTime(1, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(1, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle an empty source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const subs = '    (^!)';
       const expected = '|';
 
-      expectObservable(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle a never source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const subs = '    ^';
       const expected = '-';
 
-      expectObservable(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle a throw source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' #');
       const subs = '    (^!)';
       const expected = '#';
 
-      expectObservable(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not complete when source does not complete', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a--(bc)-------d----------------');
       const unsub = '   -------------------------------!';
       const subs = '    ^------------------------------!';
       const expected = '------c-------------d-----------';
 
-      expectObservable(e1.pipe(auditTime(5, testScheduler)), unsub).toBe(
-        expected
-      );
+      expectSource(e1.pipe(auditTime(5, testScheduler)), unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a--(bc)-------d----------------');
       const subs = '    ^------------------------------!';
       const expected = '------c-------------d-----------';
@@ -619,18 +617,18 @@ describe('auditTime operator', () => {
         mergeMap((x: string) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should auditTime values until source raises error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -a--(bc)-------d---------------#');
       const subs = '    ^------------------------------!';
       const expected = '------c-------------d----------#';
 
-      expectObservable(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
@@ -651,7 +649,7 @@ describe('Observable.prototype.buffer', () => {
   });
 
   asDiagram('buffer')('should emit buffers that close and reopen', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('   -a-b-c-d-e-f-g-h-i-|');
       const b = hot('   -----B-----B-----B-|');
       const expected = '-----x-----y-----z-|';
@@ -660,70 +658,70 @@ describe('Observable.prototype.buffer', () => {
         y: ['d', 'e', 'f'],
         z: ['g', 'h', 'i']
       };
-      expectObservable(a.pipe(buffer(b))).toBe(expected, expectedValues);
+      expectSource(a.pipe(buffer(b))).toBe(expected, expectedValues);
     });
   });
 
   it('should work with empty and empty selector', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const a = EMPTY;
       const b = EMPTY;
       const expected = '|';
-      expectObservable(a.pipe(buffer(b))).toBe(expected);
+      expectSource(a.pipe(buffer(b))).toBe(expected);
     });
   });
 
   it('should work with empty and non-empty selector', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = EMPTY;
       const b = hot('-----a-----');
       const expected = '|';
-      expectObservable(a.pipe(buffer(b))).toBe(expected);
+      expectSource(a.pipe(buffer(b))).toBe(expected);
     });
   });
 
   it('should work with non-empty and empty selector', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const b = EMPTY;
       const expected = '|';
-      expectObservable(a.pipe(buffer(b))).toBe(expected);
+      expectSource(a.pipe(buffer(b))).toBe(expected);
     });
   });
 
   it('should work with never and never selector', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const a = NEVER;
       const b = NEVER;
       const expected = '-';
-      expectObservable(a.pipe(buffer(b))).toBe(expected);
+      expectSource(a.pipe(buffer(b))).toBe(expected);
     });
   });
 
   it('should work with never and empty selector', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const a = NEVER;
       const b = EMPTY;
       const expected = '|';
-      expectObservable(a.pipe(buffer(b))).toBe(expected);
+      expectSource(a.pipe(buffer(b))).toBe(expected);
     });
   });
 
   it('should work with empty and never selector', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const a = EMPTY;
       const b = NEVER;
       const expected = '|';
-      expectObservable(a.pipe(buffer(b))).toBe(expected);
+      expectSource(a.pipe(buffer(b))).toBe(expected);
     });
   });
 
   it('should work with non-empty and throw selector', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('---^--a--');
       const b = throwError(new Error('too bad'));
       const expected = '#';
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         null,
         new Error('too bad')
@@ -732,11 +730,11 @@ describe('Observable.prototype.buffer', () => {
   });
 
   it('should work with throw and non-empty selector', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = throwError(new Error('too bad'));
       const b = hot('---^--a--');
       const expected = '#';
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         null,
         new Error('too bad')
@@ -745,11 +743,11 @@ describe('Observable.prototype.buffer', () => {
   });
 
   it('should work with error', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('---^-------#', undefined, new Error('too bad'));
       const b = hot('---^--------');
       const expected = '--------#';
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         null,
         new Error('too bad')
@@ -758,11 +756,11 @@ describe('Observable.prototype.buffer', () => {
   });
 
   it('should work with error and non-empty selector', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('---^-------#', undefined, new Error('too bad'));
       const b = hot('---^---a----');
       const expected = '----a---#';
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         {a: []},
         new Error('too bad')
@@ -772,7 +770,7 @@ describe('Observable.prototype.buffer', () => {
 
   it('should work with selector', () => {
     // Buffer Boundaries Simple (RxJS 4)
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const b = hot('--------^--a-------b---cd---------e---f---|');
       const expected = '     ---a-------b---cd---------e---f-|';
@@ -784,13 +782,13 @@ describe('Observable.prototype.buffer', () => {
         e: ['7', '8', '9'],
         f: ['0']
       };
-      expectObservable(a.pipe(buffer(b))).toBe(expected, expectedValues);
+      expectSource(a.pipe(buffer(b))).toBe(expected, expectedValues);
     });
   });
 
   it(' work with selector completed', () => {
     // Buffshoulder Boundaries onCompletedBoundaries (RxJS 4)
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const subs = '         ^----------------!               ';
       const b = hot('--------^--a-------b---cd|               ');
@@ -801,13 +799,13 @@ describe('Observable.prototype.buffer', () => {
         c: ['6'],
         d: [] as string[]
       };
-      expectObservable(a.pipe(buffer(b))).toBe(expected, expectedValues);
+      expectSource(a.pipe(buffer(b))).toBe(expected, expectedValues);
       expectSubscriptions(a.subscriptions).toBe(subs);
     });
   });
 
   it('should allow unsubscribing the result Observable early', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const unsub = '        --------------!                  ';
       const subs = '         ^-------------!                  ';
@@ -817,13 +815,13 @@ describe('Observable.prototype.buffer', () => {
         a: ['3'],
         b: ['4', '5']
       };
-      expectObservable(a.pipe(buffer(b)), unsub).toBe(expected, expectedValues);
+      expectSource(a.pipe(buffer(b)), unsub).toBe(expected, expectedValues);
       expectSubscriptions(a.subscriptions).toBe(subs);
     });
   });
 
   it('should not break unsubscription chains when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const subs = '         ^-------------!                  ';
       const b = hot('--------^--a-------b---cd|               ');
@@ -840,14 +838,14 @@ describe('Observable.prototype.buffer', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, expectedValues);
+      expectSource(result, unsub).toBe(expected, expectedValues);
       expectSubscriptions(a.subscriptions).toBe(subs);
     });
   });
 
   it('should work with non-empty and selector error', () => {
     // Buffer Boundaries onErrorSource (RxJS 4)
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('--1--2--^--3-----#', {'3': 3}, new Error('too bad'));
       const subs = '         ^--------!';
       const b = hot('--------^--a--b---');
@@ -856,7 +854,7 @@ describe('Observable.prototype.buffer', () => {
         a: [3],
         b: [] as string[]
       };
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         expectedValues,
         new Error('too bad')
@@ -866,7 +864,7 @@ describe('Observable.prototype.buffer', () => {
   });
 
   it('should work with non-empty and empty selector error', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const b = hot(
         '--------^----------------#',
@@ -874,7 +872,7 @@ describe('Observable.prototype.buffer', () => {
         new Error('too bad')
       );
       const expected = '     -----------------#';
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         null,
         new Error('too bad')
@@ -884,7 +882,7 @@ describe('Observable.prototype.buffer', () => {
 
   it('should work with non-empty and selector error', () => {
     // Buffer Boundaries onErrorBoundaries (RxJS 4)
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const obj = {a: true, b: true, c: true};
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const subs = '         ^----------------!';
@@ -895,7 +893,7 @@ describe('Observable.prototype.buffer', () => {
         b: ['4', '5'],
         c: ['6']
       };
-      expectObservable(a.pipe(buffer(b))).toBe(
+      expectSource(a.pipe(buffer(b))).toBe(
         expected,
         expectedValues,
         new Error('too bad')
@@ -905,7 +903,7 @@ describe('Observable.prototype.buffer', () => {
   });
 
   it('should unsubscribe notifier when source unsubscribed', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
       const unsub = '        --------------!                  ';
       const subs = '         ^-------------!                  ';
@@ -917,14 +915,14 @@ describe('Observable.prototype.buffer', () => {
         b: ['4', '5']
       };
 
-      expectObservable(a.pipe(buffer(b)), unsub).toBe(expected, expectedValues);
+      expectSource(a.pipe(buffer(b)), unsub).toBe(expected, expectedValues);
       expectSubscriptions(a.subscriptions).toBe(subs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should unsubscribe notifier when source unsubscribed', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   -a-b-c-d-e-f-g-h-i-|');
       const b = hot('   -----1-----2-----3-|');
       const bsubs = '   ^----!';
@@ -933,10 +931,7 @@ describe('Observable.prototype.buffer', () => {
         x: ['a', 'b', 'c']
       };
 
-      expectObservable(a.pipe(buffer(b), take(1))).toBe(
-        expected,
-        expectedValues
-      );
+      expectSource(a.pipe(buffer(b), take(1))).toBe(expected, expectedValues);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
@@ -958,7 +953,7 @@ describe('bufferCount operator', () => {
   });
 
   asDiagram('bufferCount(3,2)')('should emit buffers at intervals', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const values = {
         v: ['a', 'b', 'c'],
         w: ['c', 'd', 'e'],
@@ -969,12 +964,12 @@ describe('bufferCount operator', () => {
       const e1 = hot('  --a--b--c--d--e--f--g--h--i--|');
       const expected = '--------v-----w-----x-----y--(z|)';
 
-      expectObservable(e1.pipe(bufferCount(3, 2))).toBe(expected, values);
+      expectSource(e1.pipe(bufferCount(3, 2))).toBe(expected, values);
     });
   });
 
   it('should emit buffers at buffersize of intervals if not specified', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const values = {
         x: ['a', 'b'],
         y: ['c', 'd'],
@@ -983,7 +978,7 @@ describe('bufferCount operator', () => {
       const e1 = hot('  --a--b--c--d--e--f--|');
       const expected = '-----x-----y-----z--|';
 
-      expectObservable(e1.pipe(bufferCount(2))).toBe(expected, values);
+      expectSource(e1.pipe(bufferCount(2))).toBe(expected, values);
     });
   });
 
@@ -1009,23 +1004,23 @@ describe('bufferCount operator', () => {
   });
 
   it('should emit partial buffers if source completes before reaching specified buffer count', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const e1 = hot('  --a--b--c--d--|');
       const expected = '--------------(x|)';
 
-      expectObservable(e1.pipe(bufferCount(5))).toBe(expected, {
+      expectSource(e1.pipe(bufferCount(5))).toBe(expected, {
         x: ['a', 'b', 'c', 'd']
       });
     });
   });
 
   it('should emit full buffer then last partial buffer if source completes', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a^-b--c--d--e--|');
       const e1subs = '     ^-------------!';
       const expected = '   --------y-----(z|)';
 
-      expectObservable(e1.pipe(bufferCount(3))).toBe(expected, {
+      expectSource(e1.pipe(bufferCount(3))).toBe(expected, {
         y: ['b', 'c', 'd'],
         z: ['e']
       });
@@ -1034,7 +1029,7 @@ describe('bufferCount operator', () => {
   });
 
   it('should emit buffers at intervals, but stop when result is unsubscribed early', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         v: ['a', 'b', 'c'],
         w: ['c', 'd', 'e']
@@ -1044,16 +1039,13 @@ describe('bufferCount operator', () => {
       const subs = '    ^-----------------!           ';
       const expected = '--------v-----w----           ';
 
-      expectObservable(e1.pipe(bufferCount(3, 2)), unsub).toBe(
-        expected,
-        values
-      );
+      expectSource(e1.pipe(bufferCount(3, 2)), unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         v: ['a', 'b', 'c'],
         w: ['c', 'd', 'e']
@@ -1069,24 +1061,24 @@ describe('bufferCount operator', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should raise error if source raise error before reaching specified buffer count', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--d--#');
       const e1subs = '  ^-------------!';
       const expected = '--------------#';
 
-      expectObservable(e1.pipe(bufferCount(5))).toBe(expected);
+      expectSource(e1.pipe(bufferCount(5))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should emit buffers with specified skip count when skip count is less than window count', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         v: ['a', 'b', 'c'],
         w: ['b', 'c', 'd'],
@@ -1098,13 +1090,13 @@ describe('bufferCount operator', () => {
       const e1subs = '  ^----------------!';
       const expected = '--------v--w--x--(yz|)';
 
-      expectObservable(e1.pipe(bufferCount(3, 1))).toBe(expected, values);
+      expectSource(e1.pipe(bufferCount(3, 1))).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should emit buffers with specified skip count when skip count is more than window count', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--d--e--|');
       const e1subs = '  ^----------------!';
       const expected = '-----y--------z--|';
@@ -1113,7 +1105,7 @@ describe('bufferCount operator', () => {
         z: ['d', 'e']
       };
 
-      expectObservable(e1.pipe(bufferCount(2, 3))).toBe(expected, values);
+      expectSource(e1.pipe(bufferCount(2, 3))).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -1134,7 +1126,7 @@ describe('bufferTime operator', () => {
   });
 
   asDiagram('bufferTime(100)')('should emit buffers at intervals', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---c---d---e---f---g-----|   ');
       const subs = '    ^--------------------------------!   ';
       const t = time('  ----------|                          ');
@@ -1150,13 +1142,13 @@ describe('bufferTime operator', () => {
         bufferTime(t, null, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should emit buffers at intervals test 2', () => {
-    testScheduler.run(({hot, time, expectObservable}) => {
+    testScheduler.run(({hot, time, expectSource}) => {
       const e1 = hot(
         '  ---------a---------b---------c---------d---------e---------g--------|   '
       );
@@ -1175,12 +1167,12 @@ describe('bufferTime operator', () => {
         bufferTime(t, null, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     });
   });
 
   it('should emit buffers at intervals or when the buffer is full', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---c---d---e---f---g-----|   ');
       const subs = '    ^--------------------------------!   ';
       const t = time('  ----------|                          ');
@@ -1194,13 +1186,13 @@ describe('bufferTime operator', () => {
 
       const result = e1.pipe(bufferTime(t, null, 2, testScheduler));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should emit buffers at intervals or when the buffer is full test 2', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---c---d---e---f---g-----|   ');
       const subs = '    ^--------------------------------!   ';
       const t = time('  ----------|                          ');
@@ -1214,13 +1206,13 @@ describe('bufferTime operator', () => {
 
       const result = e1.pipe(bufferTime(t, null, 3, testScheduler));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should emit buffers that have been created at intervals and close after the specified delay', () => {
-    testScheduler.run(({hot, time, expectObservable}) => {
+    testScheduler.run(({hot, time, expectSource}) => {
       const e1 = hot(
         '       ---a---b---c----d----e----f----g----h----i----(k|)'
       );
@@ -1246,7 +1238,7 @@ describe('bufferTime operator', () => {
         bufferTime(t, interval, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     });
   });
 
@@ -1254,7 +1246,7 @@ describe('bufferTime operator', () => {
     'should emit buffers that have been created at intervals and close after the specified delay ' +
       'or when the buffer is full',
     () => {
-      testScheduler.run(({hot, time, expectObservable}) => {
+      testScheduler.run(({hot, time, expectSource}) => {
         const e1 = hot('  ---a---b---c----d----e----f----g----h----i----(k|)');
         //                --------------------*--------------------*----  start interval
         //                ---------------------|                          timespans
@@ -1271,13 +1263,13 @@ describe('bufferTime operator', () => {
 
         const result = e1.pipe(bufferTime(t, interval, 4, testScheduler));
 
-        expectObservable(result).toBe(expected, values);
+        expectSource(result).toBe(expected, values);
       });
     }
   );
 
   it('should emit buffers with timeSpan 10 and creationInterval 7', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('--1--^2--3---4---5--6--7---8----9------------|   ');
       //                   -------*------*------*------*------*----- creation interval
       //                   ----------|                               timespans
@@ -1303,13 +1295,13 @@ describe('bufferTime operator', () => {
         bufferTime(t, interval, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should emit buffers but handle source ending with an error', () => {
-    testScheduler.run(({hot, time, expectObservable}) => {
+    testScheduler.run(({hot, time, expectSource}) => {
       const e1 = hot('--1--^2--3---4---5--6--7---8----9------------#');
       //                   -------*------*------*------*------*----- creation interval
       //                   ----------|                               timespans
@@ -1333,12 +1325,12 @@ describe('bufferTime operator', () => {
         bufferTime(t, interval, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     });
   });
 
   it('should emit buffers and allow result to unsubscribed early', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('--1--^2--3---4---5--6--7---8----9------------|');
       const unsub = '      -----------------!                       ';
       const subs = '       ^----------------!                       ';
@@ -1357,13 +1349,13 @@ describe('bufferTime operator', () => {
         bufferTime(t, interval, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('--1--^2--3---4---5--6--7---8----9------------|');
       const subs = '       ^---------------!                        ';
       //                   -------*------*------*------*------*----- creation interval
@@ -1384,13 +1376,13 @@ describe('bufferTime operator', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle empty', () => {
-    testScheduler.run(({cold, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, time, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const expected = '(b|)';
@@ -1401,13 +1393,13 @@ describe('bufferTime operator', () => {
         bufferTime(t, null, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should handle never', () => {
-    testScheduler.run(({cold, time, expectObservable}) => {
+    testScheduler.run(({cold, time, expectSource}) => {
       const e1 = cold('-');
       const unsub = '   --------------------------------------------!';
       const t = time('  ----------|                                  ');
@@ -1417,12 +1409,12 @@ describe('bufferTime operator', () => {
         bufferTime(t, null, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result, unsub).toBe(expected, {a: []});
+      expectSource(result, unsub).toBe(expected, {a: []});
     });
   });
 
   it('should handle throw', () => {
-    testScheduler.run(({time, expectObservable}) => {
+    testScheduler.run(({time, expectSource}) => {
       const e1 = throwError(new Error('haha'));
       const expected = '#';
       const t = time('----------|');
@@ -1431,12 +1423,12 @@ describe('bufferTime operator', () => {
         bufferTime(t, null, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, undefined, new Error('haha'));
+      expectSource(result).toBe(expected, undefined, new Error('haha'));
     });
   });
 
   it('should handle errors', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---c---#');
       const e1subs = '  ^--------------!';
       const t = time('  ----------|');
@@ -1449,7 +1441,7 @@ describe('bufferTime operator', () => {
         bufferTime(t, null, Number.POSITIVE_INFINITY, testScheduler)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -1458,35 +1450,33 @@ describe('bufferTime operator', () => {
     'should emit buffers that have been created at intervals and close after ' +
       'the specified delay with errors',
     () => {
-      testScheduler.run(
-        ({hot, time, expectObservable, expectSubscriptions}) => {
-          const e1 = hot('  ---a---b---c----d----e----f----g----h----i--#');
-          //                --------------------*--------------------*----  start interval
-          //                ---------------------|                          timespans
-          //                                    ---------------------|
-          //                                                         -----|
-          const e1subs = '  ^-------------------------------------------!';
-          const t = time('  ---------------------|                       ');
-          const interval = time('                --------------------|   ');
-          const expected = '---------------------x-------------------y--#';
-          const values = {
-            x: ['a', 'b', 'c', 'd', 'e'],
-            y: ['e', 'f', 'g', 'h', 'i']
-          };
+      testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
+        const e1 = hot('  ---a---b---c----d----e----f----g----h----i--#');
+        //                --------------------*--------------------*----  start interval
+        //                ---------------------|                          timespans
+        //                                    ---------------------|
+        //                                                         -----|
+        const e1subs = '  ^-------------------------------------------!';
+        const t = time('  ---------------------|                       ');
+        const interval = time('                --------------------|   ');
+        const expected = '---------------------x-------------------y--#';
+        const values = {
+          x: ['a', 'b', 'c', 'd', 'e'],
+          y: ['e', 'f', 'g', 'h', 'i']
+        };
 
-          const result = e1.pipe(
-            bufferTime(t, interval, Number.POSITIVE_INFINITY, testScheduler)
-          );
+        const result = e1.pipe(
+          bufferTime(t, interval, Number.POSITIVE_INFINITY, testScheduler)
+        );
 
-          expectObservable(result).toBe(expected, values);
-          expectSubscriptions(e1.subscriptions).toBe(e1subs);
-        }
-      );
+        expectSource(result).toBe(expected, values);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      });
     }
   );
 
   it('should not throw when subscription synchronously unsubscribed after emit', () => {
-    testScheduler.run(({hot, time, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, time, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---c---d---e---f---g-----|');
       const subs = '    ^-------------------!             ';
       const t = time('  ----------|                       ');
@@ -1501,13 +1491,13 @@ describe('bufferTime operator', () => {
         take(2)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not have errors when take follows and maxBufferSize is provided', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const tick = 1;
       const buffTime = 5;
       const expected = '-----a----b----c----d----(e|)';
@@ -1524,7 +1514,7 @@ describe('bufferTime operator', () => {
         take(5)
       );
 
-      expectObservable(source).toBe(expected, values);
+      expectSource(source).toBe(expected, values);
     });
   });
 });
@@ -1547,7 +1537,7 @@ describe('bufferToggle operator', () => {
   asDiagram('bufferToggle')(
     'should emit buffers using hot openings and hot closings',
     () => {
-      testScheduler.run(({hot, expectObservable}) => {
+      testScheduler.run(({hot, expectSource}) => {
         const e1 = hot('  ---a---b---c---d---e---f---g---|');
         const e2 = hot('  --o------------------o---------|');
         const e3 = hot('  ---------c---------------c-----|');
@@ -1559,7 +1549,7 @@ describe('bufferToggle operator', () => {
 
         const result = e1.pipe(bufferToggle(e2, (x: any) => e3));
 
-        expectObservable(result).toBe(expected, values);
+        expectSource(result).toBe(expected, values);
       });
     }
   );
@@ -1568,7 +1558,7 @@ describe('bufferToggle operator', () => {
     'should emit buffers that are opened by an observable from the first argument ' +
       'and closed by an observable returned by the function in the second argument',
     () => {
-      testScheduler.run(({hot, cold, expectObservable}) => {
+      testScheduler.run(({hot, cold, expectSource}) => {
         const e1 = hot('  -----a----b----c----d----e----f----g----h----i----|');
         const e2 = cold(' -------------x-------------y--------------z-------|');
         const e3 = cold('              ---------------(j|)');
@@ -1584,7 +1574,7 @@ describe('bufferToggle operator', () => {
         };
         const innerVals = ['x', 'y', 'z'];
 
-        expectObservable(
+        expectSource(
           e1.pipe(
             bufferToggle(e2, (x: string) => {
               expect(x).to.equal(innerVals.shift());
@@ -1597,7 +1587,7 @@ describe('bufferToggle operator', () => {
   );
 
   it('should emit buffers using varying cold closings', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|    ');
       const e2 = cold('    --x-----------y--------z---|            ');
       const subs = '       ^----------------------------------!    ';
@@ -1621,7 +1611,7 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -1630,7 +1620,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should emit buffers using varying hot closings', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|   ');
       const e2 = cold('    --x-----------y--------z---|           ');
       const subs = '       ^----------------------------------!   ';
@@ -1659,7 +1649,7 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++].obs));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       for (let j = 0; j < closings.length; j++) {
         expectSubscriptions(closings[j].obs.subscriptions).toBe(
@@ -1670,7 +1660,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should emit buffers using varying empty delayed closings', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|   ');
       const e2 = cold('    --x-----------y--------z---|           ');
       const subs = '       ^----------------------------------!   ';
@@ -1689,13 +1679,13 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should emit buffers using varying cold closings, outer unsubscribed early', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|      ');
       const subs = '       ^---------!                               ';
       const e2 = cold('    --x-----------y--------z---|              ');
@@ -1714,7 +1704,7 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++]));
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(csub0);
       expectSubscriptions(closings[1].subscriptions).toBe([]);
@@ -1723,7 +1713,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|    ');
       const subs = '       ^-----------------!                     ';
       const e2 = cold('    --x-----------y--------z---|            ');
@@ -1745,13 +1735,13 @@ describe('bufferToggle operator', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should propagate error thrown from closingSelector', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|    ');
       const e2 = cold('    --x-----------y--------z---|            ');
       const subs = '       ^-------------!                         ';
@@ -1773,7 +1763,7 @@ describe('bufferToggle operator', () => {
         })
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs0);
       expectSubscriptions(closings[1].subscriptions).toBe([]);
@@ -1782,7 +1772,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should propagate error emitted from a closing', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const e2 = cold('    --x-----------y--------z---|        ');
       const subs = '       ^-------------!                     ';
@@ -1799,7 +1789,7 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++]));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -1807,7 +1797,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should propagate error emitted late from a closing', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const e2 = cold('    --x-----------y--------z---|        ');
       const subs = '       ^------------------!                ';
@@ -1827,7 +1817,7 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -1835,7 +1825,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should handle errors', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e--#        ');
       const e2 = cold('    --x-----------y--------z---|');
       const subs = '       ^------------------!        ';
@@ -1855,7 +1845,7 @@ describe('bufferToggle operator', () => {
       let i = 0;
       const result = e1.pipe(bufferToggle(e2, () => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -1863,7 +1853,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should handle empty source', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold(' |');
       const e2 = cold(' --o-----|');
       const e3 = cold('   -----c--|');
@@ -1872,12 +1862,12 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => e3));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     });
   });
 
   it('should handle throw', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold(' #');
       const e2 = cold(' --o-----|');
       const e3 = cold('   -----c--|');
@@ -1886,12 +1876,12 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => e3));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     });
   });
 
   it('should handle never', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -');
       const e2 = cold(' --o-----o------o-----o---o-----|');
       const e3 = cold('   --c-|');
@@ -1902,13 +1892,13 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => e3));
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should handle a never opening Observable', () => {
-    testScheduler.run(({hot, cold, expectObservable}) => {
+    testScheduler.run(({hot, cold, expectSource}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const e2 = cold('    -');
       const e3 = cold('   --c-|');
@@ -1916,12 +1906,12 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => e3));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
   it('should handle a never closing Observable', () => {
-    testScheduler.run(({hot, cold, expectObservable}) => {
+    testScheduler.run(({hot, cold, expectSource}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|    ');
       const e2 = cold('    ---o---------------o-----------|        ');
       const e3 = cold('    -');
@@ -1933,12 +1923,12 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => e3));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     });
   });
 
   it('should handle opening Observable that just throws', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const e1subs = '     (^!)';
       const e2 = cold('    #');
@@ -1948,7 +1938,7 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => e3));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2084,7 +2074,7 @@ describe('bufferToggle operator', () => {
   });
 
   it('should handle empty closing observable', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const subs = '       ^----------------------------------!';
       const e2 = cold('    --x-----------y--------z---|        ');
@@ -2092,7 +2082,7 @@ describe('bufferToggle operator', () => {
 
       const result = e1.pipe(bufferToggle(e2, () => EMPTY));
 
-      expectObservable(result).toBe(expected, {l: [], m: [], n: []});
+      expectSource(result).toBe(expected, {l: [], m: [], n: []});
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
@@ -2114,7 +2104,7 @@ describe('bufferWhen operator', () => {
   });
 
   asDiagram('bufferWhen')('should emit buffers that close and reopen', () => {
-    testScheduler.run(({hot, cold, expectObservable}) => {
+    testScheduler.run(({hot, cold, expectSource}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---------|   ');
       const e2 = cold('    --------------(s|)                    ');
       //                                 --------------(s |)
@@ -2125,12 +2115,12 @@ describe('bufferWhen operator', () => {
         z: [] as string[]
       };
 
-      expectObservable(e1.pipe(bufferWhen(() => e2))).toBe(expected, values);
+      expectSource(e1.pipe(bufferWhen(() => e2))).toBe(expected, values);
     });
   });
 
   it('should emit buffers using varying cold closings', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|      ');
       const subs = '       ^----------------------------------!      ';
       const closings = [
@@ -2148,13 +2138,13 @@ describe('bufferWhen operator', () => {
       let i = 0;
       const result = e1.pipe(bufferWhen(() => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should emit buffers using varying hot closings', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|   ');
       const subs = '       ^----------------------------------!   ';
       const closings = [
@@ -2181,7 +2171,7 @@ describe('bufferWhen operator', () => {
       let i = 0;
       const result = e1.pipe(bufferWhen(() => closings[i++].obs));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       for (let j = 0; j < closings.length; j++) {
         expectSubscriptions(closings[j].obs.subscriptions).toBe(
@@ -2192,7 +2182,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should emit buffers using varying empty delayed closings', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|   ');
       const subs = '       ^----------------------------------!   ';
       const closings = [
@@ -2215,7 +2205,7 @@ describe('bufferWhen operator', () => {
       let i = 0;
       const result = e1.pipe(bufferWhen(() => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -2224,7 +2214,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should emit buffers using varying cold closings, outer unsubscribed early', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|      ');
       const unsub = '      ------------------!                       ';
       const subs = '       ^-----------------!                       ';
@@ -2245,7 +2235,7 @@ describe('bufferWhen operator', () => {
       let i = 0;
       const result = e1.pipe(bufferWhen(() => closings[i++]));
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -2254,7 +2244,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|      ');
       const subs = '       ^-----------------!                       ';
       const closings = [
@@ -2279,7 +2269,7 @@ describe('bufferWhen operator', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -2288,7 +2278,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should propagate error thrown from closingSelector', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|      ');
       const subs = '       ^--------------!                          ';
       const closings = [
@@ -2310,14 +2300,14 @@ describe('bufferWhen operator', () => {
         })
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs0);
     });
   });
 
   it('should propagate error emitted from a closing', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const subs = '       ^--------------!                    ';
       const closings = [
@@ -2336,7 +2326,7 @@ describe('bufferWhen operator', () => {
       let i = 0;
       const result = e1.pipe(bufferWhen(() => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -2344,7 +2334,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should propagate error emitted late from a closing', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const subs = '       ^--------------------!              ';
       const closings = [
@@ -2361,7 +2351,7 @@ describe('bufferWhen operator', () => {
       let i = 0;
       const result = e1.pipe(bufferWhen(() => closings[i++]));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
       expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -2369,7 +2359,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should handle errors', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---#');
       const e2 = cold('    ---------------(s|)      ');
       //                                ---------------(s|)
@@ -2384,13 +2374,13 @@ describe('bufferWhen operator', () => {
 
       const result = e1.pipe(bufferWhen(() => e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e2 = cold(' --------(s|)');
       const e1subs = '  (^!)';
@@ -2401,13 +2391,13 @@ describe('bufferWhen operator', () => {
 
       const result = e1.pipe(bufferWhen(() => e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should handle throw', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' #');
       const e2 = cold(' --------(s|)');
       const e1subs = '  (^!)';
@@ -2418,13 +2408,13 @@ describe('bufferWhen operator', () => {
 
       const result = e1.pipe(bufferWhen(() => e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should handle never', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -');
       const unsub = '   --------------------------------------------!';
       const e1subs = '  ^-------------------------------------------!';
@@ -2444,14 +2434,14 @@ describe('bufferWhen operator', () => {
 
       const source = e1.pipe(bufferWhen(() => e2));
 
-      expectObservable(source, unsub).toBe(expected, values);
+      expectSource(source, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle an inner never', () => {
-    testScheduler.run(({hot, cold, expectObservable}) => {
+    testScheduler.run(({hot, cold, expectSource}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const e2 = cold('-');
       const expected = '   -----------------------------------(x|)';
@@ -2459,7 +2449,7 @@ describe('bufferWhen operator', () => {
         x: ['b', 'c', 'd', 'e', 'f', 'g', 'h']
       };
 
-      expectObservable(e1.pipe(bufferWhen(() => e2))).toBe(expected, values);
+      expectSource(e1.pipe(bufferWhen(() => e2))).toBe(expected, values);
     });
   });
 
@@ -2492,7 +2482,7 @@ describe('bufferWhen operator', () => {
   });
 
   it('should handle inner throw', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const e1subs = '     (^!)';
       const e2 = cold('    #');
@@ -2504,14 +2494,14 @@ describe('bufferWhen operator', () => {
 
       const result = e1.pipe(bufferWhen(() => e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle disposing of source', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
       const subs = '       ^-------------------!';
       const unsub = '      --------------------!';
@@ -2526,7 +2516,7 @@ describe('bufferWhen operator', () => {
 
       const source = e1.pipe(bufferWhen(() => e2));
 
-      expectObservable(source, unsub).toBe(expected, values);
+      expectSource(source, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
@@ -2553,20 +2543,20 @@ describe('catchError operator', () => {
   asDiagram('catch')(
     'should catch error and replace with a cold Observable',
     () => {
-      testScheduler.run(({hot, cold, expectObservable}) => {
+      testScheduler.run(({hot, cold, expectSource}) => {
         const e1 = hot('  --a--b--#       ');
         const e2 = cold('         -1-2-3-|');
         const expected = '--a--b---1-2-3-|';
 
         const result = e1.pipe(catchError((err: any) => e2));
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
       });
     }
   );
 
   it('should catch error and replace it with Observable.of()', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--------|');
       const subs = '    ^-------!';
       const expected = '--a--b--(XYZ|)';
@@ -2583,13 +2573,13 @@ describe('catchError operator', () => {
         })
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should catch error and replace it with a cold Observable', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--#          ');
       const e1subs = '  ^-------!          ';
       const e2 = cold('         1-2-3-4-5-|');
@@ -2598,14 +2588,14 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError((err: any) => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should allow unsubscribing explicitly and early', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --1-2-3-4-5-6---#');
       const e1subs = '  ^------!         ';
       const expected = '--1-2-3-         ';
@@ -2617,13 +2607,13 @@ describe('catchError operator', () => {
         })
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should not break unsubscription chain when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --1-2-3-4-5-6---#');
       const e1subs = '  ^------!         ';
       const expected = '--1-2-3-         ';
@@ -2637,13 +2627,13 @@ describe('catchError operator', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should unsubscribe from a caught hot caught observable when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -1-2-3-#          ');
       const e1subs = '  ^------!          ';
       const e2 = hot('  ---3-4-5-6-7-8-9-|');
@@ -2653,14 +2643,14 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError(() => e2));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should unsubscribe from a caught cold caught observable when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -1-2-3-#          ');
       const e1subs = '  ^------!          ';
       const e2 = cold('       5-6-7-8-9-|');
@@ -2670,14 +2660,14 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError(() => e2));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should unsubscribe from a caught cold caught interop observable when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  -1-2-3-#          ');
       const e1subs = '  ^------!          ';
       const e2 = cold('       5-6-7-8-9-|');
@@ -2693,7 +2683,7 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError(() => asInteropObservable(e2)));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2729,7 +2719,7 @@ describe('catchError operator', () => {
   });
 
   it('should catch error and replace it with a hot Observable', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--#          ');
       const e1subs = '  ^-------!          ';
       const e2 = hot('  1-2-3-4-5-6-7-8-9-|');
@@ -2738,7 +2728,7 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError((err: any) => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2748,7 +2738,7 @@ describe('catchError operator', () => {
     'should catch and allow the cold observable to be repeated with the third ' +
       '(caught) argument',
     () => {
-      testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const e1 = cold('--a--b--c--------|       ');
         const subs = [
           '               ^-------!                ',
@@ -2773,7 +2763,7 @@ describe('catchError operator', () => {
           })
         );
 
-        expectObservable(result).toBe(expected, undefined, 'done');
+        expectSource(result).toBe(expected, undefined, 'done');
         expectSubscriptions(e1.subscriptions).toBe(subs);
       });
     }
@@ -2783,7 +2773,7 @@ describe('catchError operator', () => {
     'should catch and allow the hot observable to proceed with the third ' +
       '(caught) argument',
     () => {
-      testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const e1 = hot('  --a--b--c----d---|');
         const subs = [
           '               ^-------!         ',
@@ -2807,40 +2797,40 @@ describe('catchError operator', () => {
           })
         );
 
-        expectObservable(result).toBe(expected, undefined, 'done');
+        expectSource(result).toBe(expected, undefined, 'done');
         expectSubscriptions(e1.subscriptions).toBe(subs);
       });
     }
   );
 
   it('should catch and replace a Observable.throw() as the source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' #');
       const subs = '    (^!)';
       const expected = '(abc|)';
 
       const result = e1.pipe(catchError((err: any) => of('a', 'b', 'c')));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should mirror the source if it does not raise errors', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --a--b--c--|');
       const subs = '    ^----------!';
       const expected = '--a--b--c--|';
 
       const result = e1.pipe(catchError((err: any) => of('x', 'y', 'z')));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should complete if you return Observable.empty()', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--#');
       const e1subs = '  ^-------!';
       const e2 = cold('         |');
@@ -2849,14 +2839,14 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error if you return Observable.throw()', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--#');
       const e1subs = '  ^-------!';
       const e2 = cold('         #');
@@ -2865,14 +2855,14 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should never terminate if you return NEVER', () => {
-    testScheduler.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--#');
       const e1subs = '  ^-------!';
       const e2 = cold('         -');
@@ -2881,7 +2871,7 @@ describe('catchError operator', () => {
 
       const result = e1.pipe(catchError(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -2928,7 +2918,7 @@ describe('catchError operator', () => {
 
   it('should catch errors throw from within the constructor', () => {
     // See https://github.com/ReactiveX/rxjs/issues/3740
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const source = concat(
         new Observable<string>(o => {
           o.next('a');
@@ -2937,7 +2927,7 @@ describe('catchError operator', () => {
         of('c')
       );
       const expected = '(abc|)';
-      expectObservable(source).toBe(expected);
+      expectSource(source).toBe(expected);
     });
   });
 
@@ -3033,7 +3023,7 @@ describe('combineAll operator', () => {
   });
 
   asDiagram('combineAll')('should combine events from two observables', () => {
-    testScheduler.run(({hot, cold, expectObservable}) => {
+    testScheduler.run(({hot, cold, expectSource}) => {
       const x = cold('                  -a-----b---|');
       const y = cold('                  --1-2-|     ');
       const outer = hot('-x----y--------|           ', {x: x, y: y});
@@ -3041,12 +3031,12 @@ describe('combineAll operator', () => {
 
       const result = outer.pipe(combineAll((a, b) => String(a) + String(b)));
 
-      expectObservable(result).toBe(expected, {A: 'a1', B: 'a2', C: 'b2'});
+      expectSource(result).toBe(expected, {A: 'a1', B: 'a2', C: 'b2'});
     });
   });
 
   it('should work with two nevers', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const e1subs = '  ^';
       const e2 = cold(' -');
@@ -3055,14 +3045,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const e1subs = '  ^';
       const e2 = cold(' |');
@@ -3071,14 +3061,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with empty and never', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const e2 = cold(' -');
@@ -3087,14 +3077,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with empty and empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const e2 = cold(' |');
@@ -3103,14 +3093,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-empty and hot-single', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^-|');
       const e1subs = '   ^-!';
       const e2 = hot('-b-^-c-|');
@@ -3119,14 +3109,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-single and hot-empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^-|');
       const e1subs = '   ^-!';
       const e2 = hot('-b-^-c-|');
@@ -3135,14 +3125,14 @@ describe('combineAll operator', () => {
 
       const result = of(e2, e1).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-single and never', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^-|');
       const e1subs = '   ^-!';
       const e2 = hot('------'); //never
@@ -3151,14 +3141,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and hot-single', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--------'); //never
       const e1subs = '   ^----';
       const e2 = hot('-a-^-b-|');
@@ -3167,14 +3157,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot and hot', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|');
       const e1subs = '     ^--------!';
       const e2 = hot('---e-^---f--g--|');
@@ -3183,14 +3173,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
+      expectSource(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should allow unsubscribing early and explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c---d-| ');
       const e1subs = '     ^--------!    ';
       const e2 = hot('---e-^---f--g---h-|');
@@ -3201,14 +3191,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--^--b--c---d-| ');
       const e1subs = '       ^--------!    ';
       const e2 = hot('  ---e-^---f--g---h-|');
@@ -3223,14 +3213,14 @@ describe('combineAll operator', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should combine 3 observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|');
       const e1subs = '     ^--------!';
       const e2 = hot('---e-^---f--g--|');
@@ -3241,7 +3231,7 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2, e3).pipe(combineAll((x, y, z) => x + y + z));
 
-      expectObservable(result).toBe(expected, {
+      expectSource(result).toBe(expected, {
         w: 'bfi',
         x: 'cfi',
         y: 'cgi',
@@ -3254,7 +3244,7 @@ describe('combineAll operator', () => {
   });
 
   it('should work with empty and error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----------|'); //empty
       const e1subs = '  ^-----!';
       const e2 = hot('  ------#', undefined, 'shazbot!'); //error
@@ -3263,14 +3253,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'shazbot!');
+      expectSource(result).toBe(expected, null, 'shazbot!');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with error and empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--^---#', undefined, 'too bad, honk'); //error
       const e1subs = '  ^---!';
       const e2 = hot('--^--------|'); //empty
@@ -3279,14 +3269,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'too bad, honk');
+      expectSource(result).toBe(expected, null, 'too bad, honk');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^--b--c--|');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'bazinga');
@@ -3295,14 +3285,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and hot', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-#', undefined, 'bazinga');
       const e1subs = '   ^-!';
       const e2 = hot('-a-^--b--c--|');
@@ -3311,14 +3301,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^----#', undefined, 'jenga');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'bazinga');
@@ -3327,14 +3317,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with error and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^--b--#', undefined, 'wokka wokka');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'flurp');
@@ -3343,14 +3333,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'flurp');
+      expectSource(result).toBe(expected, null, 'flurp');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-#', undefined, 'flurp');
       const e1subs = '   ^-!';
       const e2 = hot('-a-^--b--#', undefined, 'wokka wokka');
@@ -3359,14 +3349,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'flurp');
+      expectSource(result).toBe(expected, null, 'flurp');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-----------');
       const e1subs = '   ^-----!';
       const e2 = hot('---^-----#', undefined, 'wokka wokka');
@@ -3375,14 +3365,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and never', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('   ---^----#', undefined, 'wokka wokka');
       const e1subs = '      ^----!';
       const e2 = hot('   ---^-----------');
@@ -3391,14 +3381,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with some and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^----a---b--|');
       const e1subs = '   ^--!';
       const e2 = hot('---^--#', undefined, 'wokka wokka');
@@ -3407,14 +3397,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+      expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and some', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^--#', undefined, 'wokka wokka');
       const e1subs = '   ^--!';
       const e2 = hot('---^----a---b--|');
@@ -3423,14 +3413,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle throw after complete left', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b---|');
       const leftSubs = '      ^------!';
       const right = hot('-----^--------#', undefined, 'bad things');
@@ -3439,14 +3429,14 @@ describe('combineAll operator', () => {
 
       const result = of(left, right).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bad things');
+      expectSource(result).toBe(expected, null, 'bad things');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle throw after complete right', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot('  -----^--------#', undefined, 'bad things');
       const leftSubs = '       ^--------!';
       const right = hot('--a--^--b---|');
@@ -3455,14 +3445,14 @@ describe('combineAll operator', () => {
 
       const result = of(left, right).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bad things');
+      expectSource(result).toBe(expected, null, 'bad things');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle interleaved with tail', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a--^--b---c---|');
       const e1subs = '    ^----------!';
       const e2 = hot('--d-^----e---f--|');
@@ -3471,14 +3461,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
+      expectSource(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle two consecutive hot observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|');
       const e1subs = '     ^--------!';
       const e2 = hot('-----^----------d--e--f--|');
@@ -3487,14 +3477,14 @@ describe('combineAll operator', () => {
 
       const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle two consecutive hot observables with error left', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b--c--#', undefined, 'jenga');
       const leftSubs = '      ^--------!';
       const right = hot('-----^----------d--e--f--|');
@@ -3503,14 +3493,14 @@ describe('combineAll operator', () => {
 
       const result = of(left, right).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'jenga');
+      expectSource(result).toBe(expected, null, 'jenga');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle two consecutive hot observables with error right', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b--c--|');
       const leftSubs = '      ^--------!';
       const right = hot('-----^----------d--e--f--#', undefined, 'dun dun dun');
@@ -3519,7 +3509,7 @@ describe('combineAll operator', () => {
 
       const result = of(left, right).pipe(combineAll((x, y) => x + y));
 
-      expectObservable(result).toBe(
+      expectSource(result).toBe(
         expected,
         {x: 'cd', y: 'ce', z: 'cf'},
         'dun dun dun'
@@ -3530,7 +3520,7 @@ describe('combineAll operator', () => {
   });
 
   it('should handle selector throwing', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--|');
       const e1subs = '     ^--!';
       const e2 = hot('--c--^--d--|');
@@ -3543,7 +3533,7 @@ describe('combineAll operator', () => {
         })
       );
 
-      expectObservable(result).toBe(expected, null, 'ha ha b, d');
+      expectSource(result).toBe(expected, null, 'ha ha b, d');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -3730,7 +3720,7 @@ describe('combineLatest', () => {
   asDiagram('combineLatest')(
     'should combine events from two cold observables',
     () => {
-      testScheduler.run(({cold, expectObservable}) => {
+      testScheduler.run(({cold, expectSource}) => {
         const e1 = cold(' -a--b-----c-d-e-|');
         const e2 = cold(' --1--2-3-4---|   ');
         const expected = '--A-BC-D-EF-G-H-|';
@@ -3739,7 +3729,7 @@ describe('combineLatest', () => {
           combineLatest(e2, (a, b) => String(a) + String(b))
         );
 
-        expectObservable(result).toBe(expected, {
+        expectSource(result).toBe(expected, {
           A: 'a1',
           B: 'b1',
           C: 'b2',
@@ -3754,7 +3744,7 @@ describe('combineLatest', () => {
   );
 
   it('should work with two nevers', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const e1subs = '  ^';
       const e2 = cold(' -');
@@ -3763,14 +3753,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const e1subs = '  ^';
       const e2 = cold(' |');
@@ -3779,14 +3769,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with empty and never', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const e2 = cold(' -');
@@ -3795,14 +3785,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with empty and empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const e2 = cold(' |');
@@ -3811,14 +3801,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-empty and hot-single', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1,
         b: 2,
@@ -3833,14 +3823,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-single and hot-empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1,
         b: 2,
@@ -3854,14 +3844,14 @@ describe('combineLatest', () => {
 
       const result = e2.pipe(combineLatest(e1, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-single and never', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1
       };
@@ -3873,14 +3863,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and hot-single', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1,
         b: 2
@@ -3893,14 +3883,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot and hot', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
       const e1subs = '     ^--------!';
       const e2 = hot('---e-^---f--g--|', {e: 'e', f: 'f', g: 'g'});
@@ -3909,14 +3899,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
+      expectSource(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should accept array of observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|');
       const e1subs = '     ^--------!';
       const e2 = hot('---e-^---f--g--|');
@@ -3929,7 +3919,7 @@ describe('combineLatest', () => {
         combineLatest([e2, e3], (x: string, y: string, z: string) => x + y + z)
       );
 
-      expectObservable(result).toBe(expected, {
+      expectSource(result).toBe(expected, {
         w: 'bfi',
         x: 'cfi',
         y: 'cgi',
@@ -3942,7 +3932,7 @@ describe('combineLatest', () => {
   });
 
   it('should work with empty and error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----------|'); //empty
       const e1subs = '  ^-----!';
       const e2 = hot('  ------#', undefined, 'shazbot!'); //error
@@ -3951,14 +3941,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'shazbot!');
+      expectSource(result).toBe(expected, null, 'shazbot!');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with error and empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--^---#', undefined, 'too bad, honk'); //error
       const e1subs = '  ^---!';
       const e2 = hot('--^--------|'); //empty
@@ -3967,14 +3957,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'too bad, honk');
+      expectSource(result).toBe(expected, null, 'too bad, honk');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^--b--c--|', {a: 1, b: 2, c: 3});
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'bazinga');
@@ -3983,14 +3973,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and hot', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-#', undefined, 'bazinga');
       const e1subs = '   ^-!';
       const e2 = hot('-a-^--b--c--|', {a: 1, b: 2, c: 3});
@@ -3999,14 +3989,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^----#', undefined, 'jenga');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'bazinga');
@@ -4015,14 +4005,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with error and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^--b--#', {a: 1, b: 2}, 'wokka wokka');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'flurp');
@@ -4031,14 +4021,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'flurp');
+      expectSource(result).toBe(expected, null, 'flurp');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-#', undefined, 'flurp');
       const e1subs = '   ^-!';
       const e2 = hot('-a-^--b--#', {a: 1, b: 2}, 'wokka wokka');
@@ -4047,14 +4037,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'flurp');
+      expectSource(result).toBe(expected, null, 'flurp');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-----------');
       const e1subs = '   ^-----!';
       const e2 = hot('---^-----#', undefined, 'wokka wokka');
@@ -4063,14 +4053,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and never', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^----#', undefined, 'wokka wokka');
       const e1subs = '   ^----!';
       const e2 = hot('---^-----------');
@@ -4079,14 +4069,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with some and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('   ---^----a---b--|', {a: 1, b: 2});
       const e1subs = '      ^--!';
       const e2 = hot('   ---^--#', undefined, 'wokka wokka');
@@ -4095,14 +4085,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+      expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and some', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^--#', undefined, 'wokka wokka');
       const e1subs = '   ^--!';
       const e2 = hot('---^----a---b--|', {a: 1, b: 2});
@@ -4111,14 +4101,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+      expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle throw after complete left', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b---|', {a: 1, b: 2});
       const leftSubs = '      ^------!';
       const right = hot('-----^--------#', undefined, 'bad things');
@@ -4127,14 +4117,14 @@ describe('combineLatest', () => {
 
       const result = left.pipe(combineLatest(right, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bad things');
+      expectSource(result).toBe(expected, null, 'bad things');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle throw after complete right', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot('  -----^--------#', undefined, 'bad things');
       const leftSubs = '       ^--------!';
       const right = hot(' --a--^--b---|', {a: 1, b: 2});
@@ -4143,14 +4133,14 @@ describe('combineLatest', () => {
 
       const result = left.pipe(combineLatest(right, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'bad things');
+      expectSource(result).toBe(expected, null, 'bad things');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle interleaved with tail', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a--^--b---c---|', {a: 'a', b: 'b', c: 'c'});
       const e1subs = '    ^----------!';
       const e2 = hot('--d-^----e---f--|', {d: 'd', e: 'e', f: 'f'});
@@ -4159,14 +4149,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
+      expectSource(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle two consecutive hot observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
       const e1subs = '     ^--------!';
       const e2 = hot('-----^----------d--e--f--|', {d: 'd', e: 'e', f: 'f'});
@@ -4175,14 +4165,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle two consecutive hot observables with error left', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b--c--#', {a: 'a', b: 'b', c: 'c'}, 'jenga');
       const leftSubs = '      ^--------!';
       const right = hot('-----^----------d--e--f--|', {d: 'd', e: 'e', f: 'f'});
@@ -4191,14 +4181,14 @@ describe('combineLatest', () => {
 
       const result = left.pipe(combineLatest(right, (x, y) => x + y));
 
-      expectObservable(result).toBe(expected, null, 'jenga');
+      expectSource(result).toBe(expected, null, 'jenga');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle two consecutive hot observables with error right', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
       const leftSubs = '      ^--------!';
       const right = hot(
@@ -4211,7 +4201,7 @@ describe('combineLatest', () => {
 
       const result = left.pipe(combineLatest(right, (x, y) => x + y));
 
-      expectObservable(result).toBe(
+      expectSource(result).toBe(
         expected,
         {x: 'cd', y: 'ce', z: 'cf'},
         'dun dun dun'
@@ -4222,7 +4212,7 @@ describe('combineLatest', () => {
   });
 
   it('should handle selector throwing', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--|', {a: 1, b: 2});
       const e1subs = '     ^--!';
       const e2 = hot('--c--^--d--|', {c: 3, d: 4});
@@ -4235,14 +4225,14 @@ describe('combineLatest', () => {
         })
       );
 
-      expectObservable(result).toBe(expected, null, 'ha ha 2, 4');
+      expectSource(result).toBe(expected, null, 'ha ha 2, 4');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should allow unsubscribing early and explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c---d-| ');
       const e1subs = '     ^--------!    ';
       const e2 = hot('---e-^---f--g---h-|');
@@ -4253,14 +4243,14 @@ describe('combineLatest', () => {
 
       const result = e1.pipe(combineLatest(e2, (x, y) => x + y));
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c---d-| ');
       const e1subs = '     ^--------!    ';
       const e2 = hot('---e-^---f--g---h-|');
@@ -4275,21 +4265,21 @@ describe('combineLatest', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit unique array instances with the default projection', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const e1 = hot('  -a--b--|');
       const e2 = hot('  --1--2-|');
       const expected = '-------(c|)';
 
       const result = e1.pipe(combineLatest(e2), distinct(), count());
 
-      expectObservable(result).toBe(expected, {c: 3});
+      expectSource(result).toBe(expected, {c: 3});
     });
   });
 });
@@ -4313,7 +4303,7 @@ describe('combineLatestWith', () => {
   });
 
   it('should combine events from two cold observables', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold(' -a--b-----c-d-e-|');
       const e2 = cold(' --1--2-3-4---|   ');
       const expected = '--A-BC-D-EF-G-H-|';
@@ -4323,7 +4313,7 @@ describe('combineLatestWith', () => {
         map(([a, b]) => a + b)
       );
 
-      expectObservable(result).toBe(expected, {
+      expectSource(result).toBe(expected, {
         A: 'a1',
         B: 'b1',
         C: 'b2',
@@ -4337,7 +4327,7 @@ describe('combineLatestWith', () => {
   });
 
   it('should work with two nevers', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const e1subs = '  ^';
       const e2 = cold(' -');
@@ -4349,14 +4339,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' -');
       const e1subs = '  ^';
       const e2 = cold(' |');
@@ -4368,14 +4358,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with empty and never', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const e2 = cold(' -');
@@ -4387,14 +4377,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with empty and empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const e2 = cold(' |');
@@ -4406,14 +4396,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-empty and hot-single', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1,
         b: 2,
@@ -4431,14 +4421,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-single and hot-empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1,
         b: 2,
@@ -4455,14 +4445,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot-single and never', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1
       };
@@ -4477,14 +4467,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and hot-single', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const values = {
         a: 1,
         b: 2
@@ -4500,14 +4490,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot and hot', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
       const e1subs = '     ^--------!';
       const e2 = hot('---e-^---f--g--|', {e: 'e', f: 'f', g: 'g'});
@@ -4519,14 +4509,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
+      expectSource(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should accept array of observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|');
       const e1subs = '     ^--------!';
       const e2 = hot('---e-^---f--g--|');
@@ -4542,7 +4532,7 @@ describe('combineLatestWith', () => {
         )
       );
 
-      expectObservable(result).toBe(expected, {
+      expectSource(result).toBe(expected, {
         w: 'bfi',
         x: 'cfi',
         y: 'cgi',
@@ -4555,7 +4545,7 @@ describe('combineLatestWith', () => {
   });
 
   it('should work with empty and error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----------|'); //empty
       const e1subs = '  ^-----!';
       const e2 = hot('  ------#', undefined, 'shazbot!'); //error
@@ -4567,14 +4557,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'shazbot!');
+      expectSource(result).toBe(expected, null, 'shazbot!');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with error and empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--^---#', undefined, 'too bad, honk'); //error
       const e1subs = '  ^---!';
       const e2 = hot('--^--------|'); //empty
@@ -4586,14 +4576,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'too bad, honk');
+      expectSource(result).toBe(expected, null, 'too bad, honk');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with hot and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^--b--c--|', {a: 1, b: 2, c: 3});
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'bazinga');
@@ -4605,14 +4595,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and hot', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-#', undefined, 'bazinga');
       const e1subs = '   ^-!';
       const e2 = hot('-a-^--b--c--|', {a: 1, b: 2, c: 3});
@@ -4624,14 +4614,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^----#', undefined, 'jenga');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'bazinga');
@@ -4643,14 +4633,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'bazinga');
+      expectSource(result).toBe(expected, null, 'bazinga');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with error and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a-^--b--#', {a: 1, b: 2}, 'wokka wokka');
       const e1subs = '   ^-!';
       const e2 = hot('---^-#', undefined, 'flurp');
@@ -4662,14 +4652,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'flurp');
+      expectSource(result).toBe(expected, null, 'flurp');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-#', undefined, 'flurp');
       const e1subs = '   ^-!';
       const e2 = hot('-a-^--b--#', {a: 1, b: 2}, 'wokka wokka');
@@ -4681,14 +4671,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'flurp');
+      expectSource(result).toBe(expected, null, 'flurp');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with never and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^-----------');
       const e1subs = '   ^-----!';
       const e2 = hot('---^-----#', undefined, 'wokka wokka');
@@ -4700,14 +4690,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and never', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^----#', undefined, 'wokka wokka');
       const e1subs = '   ^----!';
       const e2 = hot('---^-----------');
@@ -4719,14 +4709,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'wokka wokka');
+      expectSource(result).toBe(expected, null, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with some and throw', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('   ---^----a---b--|', {a: 1, b: 2});
       const e1subs = '      ^--!';
       const e2 = hot('   ---^--#', undefined, 'wokka wokka');
@@ -4738,14 +4728,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+      expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should work with throw and some', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^--#', undefined, 'wokka wokka');
       const e1subs = '   ^--!';
       const e2 = hot('---^----a---b--|', {a: 1, b: 2});
@@ -4757,14 +4747,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+      expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle throw after complete left', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b---|', {a: 1, b: 2});
       const leftSubs = '      ^------!';
       const right = hot('-----^--------#', undefined, 'bad things');
@@ -4776,14 +4766,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'bad things');
+      expectSource(result).toBe(expected, null, 'bad things');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle throw after complete right', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot('  -----^--------#', undefined, 'bad things');
       const leftSubs = '       ^--------!';
       const right = hot(' --a--^--b---|', {a: 1, b: 2});
@@ -4795,14 +4785,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'bad things');
+      expectSource(result).toBe(expected, null, 'bad things');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle interleaved with tail', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('-a--^--b---c---|', {a: 'a', b: 'b', c: 'c'});
       const e1subs = '    ^----------!';
       const e2 = hot('--d-^----e---f--|', {d: 'd', e: 'e', f: 'f'});
@@ -4814,14 +4804,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
+      expectSource(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle two consecutive hot observables', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
       const e1subs = '     ^--------!';
       const e2 = hot('-----^----------d--e--f--|', {d: 'd', e: 'e', f: 'f'});
@@ -4833,14 +4823,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should handle two consecutive hot observables with error left', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b--c--#', {a: 'a', b: 'b', c: 'c'}, 'jenga');
       const leftSubs = '      ^--------!';
       const right = hot('-----^----------d--e--f--|', {d: 'd', e: 'e', f: 'f'});
@@ -4852,14 +4842,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(expected, null, 'jenga');
+      expectSource(result).toBe(expected, null, 'jenga');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
   });
 
   it('should handle two consecutive hot observables with error right', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const left = hot(' --a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
       const leftSubs = '      ^--------!';
       const right = hot(
@@ -4875,7 +4865,7 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result).toBe(
+      expectSource(result).toBe(
         expected,
         {x: 'cd', y: 'ce', z: 'cf'},
         'dun dun dun'
@@ -4886,7 +4876,7 @@ describe('combineLatestWith', () => {
   });
 
   it('should allow unsubscribing early and explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c---d-| ');
       const e1subs = '     ^--------!    ';
       const e2 = hot('---e-^---f--g---h-|');
@@ -4900,14 +4890,14 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b--c---d-| ');
       const e1subs = '     ^--------!    ';
       const e2 = hot('---e-^---f--g---h-|');
@@ -4923,21 +4913,21 @@ describe('combineLatestWith', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected, values);
+      expectSource(result, unsub).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit unique array instances with the default projection', () => {
-    testScheduler.run(({hot, expectObservable}) => {
+    testScheduler.run(({hot, expectSource}) => {
       const e1 = hot('  -a--b--|');
       const e2 = hot('  --1--2-|');
       const expected = '-------(c|)';
 
       const result = e1.pipe(combineLatestWith(e2), distinct(), count());
 
-      expectObservable(result).toBe(expected, {c: 3});
+      expectSource(result).toBe(expected, {c: 3});
     });
   });
 });
@@ -4960,12 +4950,12 @@ describe('concat operator', () => {
   });
 
   asDiagram('concat')('should concatenate two cold observables', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold('  --a--b-|');
       const e2 = cold('         --x---y--|');
       const expected = ' --a--b---x---y--|';
 
-      expectObservable(e1.pipe(concat(e2, rxTestScheduler))).toBe(expected);
+      expectSource(e1.pipe(concat(e2, rxTestScheduler))).toBe(expected);
     });
   });
 
@@ -4995,126 +4985,126 @@ describe('concat operator', () => {
   });
 
   it('should complete without emit if both sources are empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('    ----|');
       const e2subs = '   --^---!';
       const expected = ' ------|';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if first source does not complete', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  -');
       const e1subs = '   ^';
       const e2 = cold('  --|');
       const e2subs: string[] = [];
       const expected = ' -';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if second source does not complete', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('  ---');
       const e2subs = '   --^';
       const expected = ' ---';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if both sources do not complete', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  -');
       const e1subs = '   ^';
       const e2 = cold('  -');
       const e2subs: string[] = [];
       const expected = ' -';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error when first source is empty, second source raises error', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('    ----#');
       const e2subs = '   --^---!';
       const expected = ' ------#';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error when first source raises error, second source is empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---#');
       const e1subs = '   ^--!';
       const e2 = cold('  ----|');
       const e2subs: string[] = [];
       const expected = ' ---#';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise first error when both source raise error', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---#');
       const e1subs = '   ^--!';
       const e2 = cold('  ------#');
       const e2subs: string[] = [];
       const expected = ' ---#';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should concat if first source emits once, second source is empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --a--|');
       const e1subs = '   ^----!';
       const e2 = cold('       --------|');
       const e2subs = '   -----^-------!';
       const expected = ' --a----------|';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should concat if first source is empty, second source emits once', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('    --a--|');
       const e2subs = '   --^----!';
       const expected = ' ----a--|';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -5124,14 +5114,14 @@ describe('concat operator', () => {
     'should emit element from first source, and should not complete if second ' +
       'source does not complete',
     () => {
-      testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const e1 = cold('  --a--|');
         const e1subs = '   ^----!';
         const e2 = cold('       -');
         const e2subs = '   -----^';
         const expected = ' --a---';
 
-        expectObservable(e1.pipe(concat(e2))).toBe(expected);
+        expectSource(e1.pipe(concat(e2))).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -5139,35 +5129,35 @@ describe('concat operator', () => {
   );
 
   it('should not complete if first source does not complete', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  -');
       const e1subs = '   ^';
       const e2 = cold('  --a--|');
       const e2subs: string[] = [];
       const expected = ' -';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit elements from each source when source emit once', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a|');
       const e1subs = '   ^---!';
       const e2 = cold('      -----b--|');
       const e2subs = '   ----^-------!';
       const expected = ' ---a-----b--|';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should unsubscribe to inner source if outer is unsubscribed early', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-a--a|            ');
       const e1subs = '   ^--------!            ';
       const e2 = cold('           -----b-b--b-|');
@@ -5175,14 +5165,14 @@ describe('concat operator', () => {
       const unsub = '    -----------------!    ';
       const expected = ' ---a-a--a-----b-b     ';
 
-      expectObservable(e1.pipe(concat(e2)), unsub).toBe(expected);
+      expectSource(e1.pipe(concat(e2)), unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-a--a|            ');
       const e1subs = '   ^--------!            ';
       const e2 = cold('           -----b-b--b-|');
@@ -5196,35 +5186,35 @@ describe('concat operator', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error from first source and does not emit from second source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --#');
       const e1subs = '   ^-!';
       const e2 = cold('  ----a--|');
       const e2subs: string[] = [];
       const expected = ' --#';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit element from first source then raise error from second source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --a--|');
       const e1subs = '   ^----!';
       const e2 = cold('       -------#');
       const e2subs = '   -----^------!';
       const expected = ' --a---------#';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -5234,14 +5224,14 @@ describe('concat operator', () => {
     'should emit all elements from both hot observable sources if first source ' +
       'completes before second source starts emit',
     () => {
-      testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const e1 = hot('  --a--b-|');
         const e1subs = '  ^------!';
         const e2 = hot('  --------x--y--|');
         const e2subs = '  -------^------!';
         const expected = '--a--b--x--y--|';
 
-        expectObservable(e1.pipe(concat(e2))).toBe(expected);
+        expectSource(e1.pipe(concat(e2))).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -5252,38 +5242,36 @@ describe('concat operator', () => {
     'should emit elements from second source regardless of completion time ' +
       'when second source is cold observable',
     () => {
-      testScheduler.run(
-        ({hot, cold, expectObservable, expectSubscriptions}) => {
-          const e1 = hot('  --a--b--c---|');
-          const e1subs = '  ^-----------!';
-          const e2 = cold(' -x-y-z-|');
-          const e2subs = '  ------------^------!';
-          const expected = '--a--b--c----x-y-z-|';
+      testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+        const e1 = hot('  --a--b--c---|');
+        const e1subs = '  ^-----------!';
+        const e2 = cold(' -x-y-z-|');
+        const e2subs = '  ------------^------!';
+        const expected = '--a--b--c----x-y-z-|';
 
-          expectObservable(e1.pipe(concat(e2))).toBe(expected);
-          expectSubscriptions(e1.subscriptions).toBe(e1subs);
-          expectSubscriptions(e2.subscriptions).toBe(e2subs);
-        }
-      );
+        expectSource(e1.pipe(concat(e2))).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+        expectSubscriptions(e2.subscriptions).toBe(e2subs);
+      });
     }
   );
 
   it('should not emit collapsing element from second source', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--|');
       const e1subs = '  ^----------!';
       const e2 = hot('  --------x--y--z--|');
       const e2subs = '  -----------^-----!';
       const expected = '--a--b--c--y--z--|';
 
-      expectObservable(e1.pipe(concat(e2))).toBe(expected);
+      expectSource(e1.pipe(concat(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should accept scheduler with multiple observables', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a|');
       const e1subs = '   ^---!';
       const e2 = cold('      ---b--|');
@@ -5292,7 +5280,7 @@ describe('concat operator', () => {
       const e3subs = '   ----------^-----!';
       const expected = ' ---a---b-----c--|';
 
-      expectObservable(e1.pipe(concat(e2, e3, rxTestScheduler))).toBe(expected);
+      expectSource(e1.pipe(concat(e2, e3, rxTestScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -5300,23 +5288,23 @@ describe('concat operator', () => {
   });
 
   it('should accept scheduler without observable parameters', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-|');
       const e1subs = '   ^----!';
       const expected = ' ---a-|';
 
-      expectObservable(e1.pipe(concat(rxTestScheduler))).toBe(expected);
+      expectSource(e1.pipe(concat(rxTestScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should emit self without parameters', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-|');
       const e1subs = '   ^----!';
       const expected = ' ---a-|';
 
-      expectObservable(e1.pipe(concat())).toBe(expected);
+      expectSource(e1.pipe(concat())).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -5340,7 +5328,7 @@ describe('concatAll operator', () => {
   });
 
   asDiagram('concatAll')('should concat an observable of observables', () => {
-    testScheduler.run(({cold, hot, expectObservable}) => {
+    testScheduler.run(({cold, hot, expectSource}) => {
       const x = cold('    ----a------b------|                 ');
       const y = cold('                      ---c-d---|        ');
       const z = cold('                               ---e--f-|');
@@ -5349,7 +5337,7 @@ describe('concatAll operator', () => {
 
       const result = outer.pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
@@ -5420,25 +5408,25 @@ describe('concatAll operator', () => {
   });
 
   it('should concat all observables in an observable', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const e1 = from([of('a'), of('b'), of('c')]).pipe(take(10));
       const expected = '(abc|)';
 
-      expectObservable(e1.pipe(concatAll())).toBe(expected);
+      expectSource(e1.pipe(concatAll())).toBe(expected);
     });
   });
 
   it('should throw if any child observable throws', () => {
-    testScheduler.run(({expectObservable}) => {
+    testScheduler.run(({expectSource}) => {
       const e1 = from([of('a'), throwError('error'), of('c')]).pipe(take(10));
       const expected = '(a#)';
 
-      expectObservable(e1.pipe(concatAll())).toBe(expected);
+      expectSource(e1.pipe(concatAll())).toBe(expected);
     });
   });
 
   it('should concat merging a hot observable of non-overlapped observables', () => {
-    testScheduler.run(({cold, hot, expectObservable}) => {
+    testScheduler.run(({cold, hot, expectSource}) => {
       const values = {
         x: cold('       a-b---------|'),
         y: cold('                 c-d-e-f-|'),
@@ -5448,12 +5436,12 @@ describe('concatAll operator', () => {
       const e1 = hot('  --x---------y--------z--------|', values);
       const expected = '--a-b---------c-d-e-f-g-h-i-j-k-|';
 
-      expectObservable(e1.pipe(concatAll())).toBe(expected);
+      expectSource(e1.pipe(concatAll())).toBe(expected);
     });
   });
 
   it('should raise error if inner observable raises error', () => {
-    testScheduler.run(({cold, hot, expectObservable}) => {
+    testScheduler.run(({cold, hot, expectSource}) => {
       const values = {
         x: cold('       a-b---------|'),
         y: cold('                 c-d-e-f-#'),
@@ -5462,12 +5450,12 @@ describe('concatAll operator', () => {
       const e1 = hot('  --x---------y--------z--------|', values);
       const expected = '--a-b---------c-d-e-f-#';
 
-      expectObservable(e1.pipe(concatAll())).toBe(expected);
+      expectSource(e1.pipe(concatAll())).toBe(expected);
     });
   });
 
   it('should raise error if outer observable raises error', () => {
-    testScheduler.run(({cold, hot, expectObservable}) => {
+    testScheduler.run(({cold, hot, expectSource}) => {
       const values = {
         y: cold('       a-b---------|'),
         z: cold('                 c-d-e-f-|')
@@ -5475,12 +5463,12 @@ describe('concatAll operator', () => {
       const e1 = hot('  --y---------z---#    ', values);
       const expected = '--a-b---------c-#';
 
-      expectObservable(e1.pipe(concatAll())).toBe(expected);
+      expectSource(e1.pipe(concatAll())).toBe(expected);
     });
   });
 
   it('should complete without emit if both sources are empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('    ----|');
@@ -5489,14 +5477,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if first source does not completes', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  -');
       const e1subs = '   ^';
       const e2 = cold('  --|');
@@ -5505,14 +5493,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if second source does not completes', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('  ---');
@@ -5521,14 +5509,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if both sources do not complete', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  -');
       const e1subs = '   ^';
       const e2 = cold('  -');
@@ -5537,14 +5525,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error when first source is empty, second source raises error', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('    ----#');
@@ -5553,14 +5541,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error when first source raises error, second source is empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---#');
       const e1subs = '   ^--!';
       const e2 = cold('  ----|');
@@ -5569,14 +5557,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise first error when both source raise error', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---#');
       const e1subs = '   ^--!';
       const e2 = cold('  ------#');
@@ -5585,14 +5573,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should concat if first source emits once, second source is empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --a--|');
       const e1subs = '   ^----!';
       const e2 = cold('       --------|');
@@ -5601,14 +5589,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should concat if first source is empty, second source emits once', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --|');
       const e1subs = '   ^-!';
       const e2 = cold('    --a--|');
@@ -5617,7 +5605,7 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -5627,7 +5615,7 @@ describe('concatAll operator', () => {
     'should emit element from first source, and should not complete if second ' +
       'source does not completes',
     () => {
-      testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const e1 = cold('  --a--|');
         const e1subs = '   ^----!';
         const e2 = cold('       -');
@@ -5636,7 +5624,7 @@ describe('concatAll operator', () => {
 
         const result = of(e1, e2).pipe(concatAll());
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -5644,7 +5632,7 @@ describe('concatAll operator', () => {
   );
 
   it('should not complete if first source does not complete', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  -');
       const e1subs = '   ^';
       const e2 = cold('  --a--|');
@@ -5653,14 +5641,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit elements from each source when source emit once', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a|');
       const e1subs = '   ^---!';
       const e2 = cold('      -----b--|');
@@ -5669,14 +5657,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should unsubscribe to inner source if outer is unsubscribed early', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-a--a|            ');
       const e1subs = '   ^--------!            ';
       const e2 = cold('           -----b-b--b-|');
@@ -5686,14 +5674,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-a--a|            ');
       const e1subs = '   ^--------!            ';
       const e2 = cold('           -----b-b--b-|');
@@ -5707,14 +5695,14 @@ describe('concatAll operator', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error from first source and does not emit from second source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --#');
       const e1subs = '   ^-!';
       const e2 = cold('  ----a--|');
@@ -5723,14 +5711,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit element from first source then raise error from second source', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  --a--|');
       const e1subs = '   ^----!';
       const e2 = cold('       -------#');
@@ -5739,7 +5727,7 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -5749,7 +5737,7 @@ describe('concatAll operator', () => {
     'should emit all elements from both hot observable sources if first source ' +
       'completes before second source starts emit',
     () => {
-      testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const e1 = hot('  --a--b-|');
         const e1subs = '  ^------!';
         const e2 = hot('  --------x--y--|');
@@ -5758,7 +5746,7 @@ describe('concatAll operator', () => {
 
         const result = of(e1, e2).pipe(concatAll());
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -5769,26 +5757,24 @@ describe('concatAll operator', () => {
     'should emit elements from second source regardless of completion time ' +
       'when second source is cold observable',
     () => {
-      testScheduler.run(
-        ({cold, hot, expectObservable, expectSubscriptions}) => {
-          const e1 = hot('  --a--b--c---|');
-          const e1subs = '  ^-----------!';
-          const e2 = cold(' -x-y-z-|');
-          const e2subs = '  ------------^------!';
-          const expected = '--a--b--c----x-y-z-|';
+      testScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+        const e1 = hot('  --a--b--c---|');
+        const e1subs = '  ^-----------!';
+        const e2 = cold(' -x-y-z-|');
+        const e2subs = '  ------------^------!';
+        const expected = '--a--b--c----x-y-z-|';
 
-          const result = of(e1, e2).pipe(concatAll());
+        const result = of(e1, e2).pipe(concatAll());
 
-          expectObservable(result).toBe(expected);
-          expectSubscriptions(e1.subscriptions).toBe(e1subs);
-          expectSubscriptions(e2.subscriptions).toBe(e2subs);
-        }
-      );
+        expectSource(result).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+        expectSubscriptions(e2.subscriptions).toBe(e2subs);
+      });
     }
   );
 
   it('should not emit collapsing element from second source', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--|');
       const e1subs = '  ^----------!';
       const e2 = hot('  --------x--y--z--|');
@@ -5797,14 +5783,14 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should be able to work on a different scheduler', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a|');
       const e1subs = '   ^---!';
       const e2 = cold('      ---b--|');
@@ -5815,7 +5801,7 @@ describe('concatAll operator', () => {
 
       const result = of(e1, e2, e3, rxTestScheduler).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -5823,27 +5809,27 @@ describe('concatAll operator', () => {
   });
 
   it('should concatAll a nested observable with a single inner observable', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-|');
       const e1subs = '   ^----!';
       const expected = ' ---a-|';
 
       const result = of(e1).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should concatAll a nested observable with a single inner observable, and a scheduler', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-|');
       const e1subs = '   ^----!';
       const expected = ' ---a-|';
 
       const result = of(e1, rxTestScheduler).pipe(concatAll());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -5906,7 +5892,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {Observable, of, from} from 'rxjs';
@@ -5929,7 +5915,7 @@ describe('Observable.prototype.concatMap', () => {
         concatMap(x => e2.pipe(map(i => i * parseInt(x))))
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -6006,7 +5992,7 @@ describe('Observable.prototype.concatMap', () => {
     };
     const source = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6029,7 +6015,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6043,7 +6029,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(() => inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6061,7 +6047,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6079,7 +6065,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6097,7 +6083,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6115,7 +6101,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6133,7 +6119,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6156,7 +6142,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6179,7 +6165,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6194,7 +6180,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6209,7 +6195,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6224,7 +6210,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6239,7 +6225,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -6280,7 +6266,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6327,7 +6313,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6374,7 +6360,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6421,7 +6407,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6468,7 +6454,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6516,7 +6502,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => observableLookup[value]));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6568,7 +6554,7 @@ describe('Observable.prototype.concatMap', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6622,7 +6608,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
     expectSubscriptions(c.subscriptions).toBe(csubs);
@@ -6648,7 +6634,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => arrayRepeat(value, +value)));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -6660,7 +6646,7 @@ describe('Observable.prototype.concatMap', () => {
 
     const result = e1.pipe(concatMap(value => arrayRepeat(value, +value)));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -6680,7 +6666,7 @@ describe('Observable.prototype.concatMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
   it('should map values to constant resolved promises and concatenate', (done: MochaDone) => {
@@ -6767,7 +6753,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, from, Observable} from 'rxjs';
@@ -6788,7 +6774,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
       const result = e1.pipe(concatMapTo(e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -6854,7 +6840,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6868,7 +6854,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6882,7 +6868,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6896,7 +6882,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6910,7 +6896,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6924,7 +6910,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6938,7 +6924,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6961,7 +6947,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -6984,7 +6970,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -7004,7 +6990,7 @@ describe('Observable.prototype.concatMapTo', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -7019,7 +7005,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -7034,7 +7020,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -7049,7 +7035,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -7064,7 +7050,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
   });
@@ -7075,7 +7061,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(['0', '1', '2', '3']));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should concatMapTo many outer to inner arrays, and outer throws', () => {
@@ -7084,7 +7070,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(['0', '1', '2', '3']));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should mergeMap many outer to inner arrays, outer unsubscribed early', () => {
@@ -7094,7 +7080,7 @@ describe('Observable.prototype.concatMapTo', () => {
 
     const result = e1.pipe(concatMapTo(['0', '1', '2', '3']));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
   });
 
   it('should map values to constant resolved promises and concatenate', (done: MochaDone) => {
@@ -7149,12 +7135,12 @@ describe('concat operator', () => {
   });
 
   it('should concatenate two cold observables', () => {
-    rxTest.run(({cold, expectObservable}) => {
+    rxTest.run(({cold, expectSource}) => {
       const e1 = cold(' --a--b-|');
       const e2 = cold('        --x---y--|');
       const expected = '--a--b---x---y--|';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
     });
   });
 
@@ -7184,126 +7170,126 @@ describe('concat operator', () => {
   });
 
   it('should complete without emit if both sources are empty', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --|');
       const e1subs = '  ^-!';
       const e2 = cold('   ----|');
       const e2subs = '  --^---!';
       const expected = '------|';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if first source does not completes', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---');
       const e1subs = '  ^--';
       const e2 = cold('    --|');
       const e2subs = NO_SUBS;
       const expected = '---';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if second source does not completes', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --|');
       const e1subs = '  ^-!';
       const e2 = cold('   ---');
       const e2subs = '  --^--';
       const expected = '-----';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not complete if both sources do not complete', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---');
       const e1subs = '  ^--';
       const e2 = cold('    ---');
       const e2subs = NO_SUBS;
       const expected = '---';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error when first source is empty, second source raises error', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --|');
       const e1subs = '  ^-!';
       const e2 = cold('   ----#');
       const e2subs = '  --^---!';
       const expected = '------#';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error when first source raises error, second source is empty', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---#');
       const e1subs = '  ^--!';
       const e2 = cold('    ----|');
       const expected = '---#';
       const e2subs = NO_SUBS;
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise first error when both source raise error', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---#');
       const e1subs = '  ^--!';
       const e2 = cold('    ------#');
       const expected = '---#';
       const e2subs = NO_SUBS;
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should concat if first source emits once, second source is empty', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --a--|');
       const e1subs = '  ^----!';
       const e2 = cold('      --------|');
       const e2subs = '  -----^-------!';
       const expected = '--a----------|';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should concat if first source is empty, second source emits once', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --|');
       const e1subs = '  ^-!';
       const e2 = cold('   --a--|');
       const e2subs = '  --^----!';
       const expected = '----a--|';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -7313,14 +7299,14 @@ describe('concat operator', () => {
     'should emit element from first source, and should not complete if second ' +
       'source does not completes',
     () => {
-      rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+      rxTest.run(({cold, expectSource, expectSubscriptions}) => {
         const e1 = cold(' --a--|');
         const e1subs = '  ^----!';
         const e2 = cold('      ---');
         const e2subs = '  -----^--';
         const expected = '--a-----';
 
-        expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+        expectSource(e1.pipe(concatWith(e2))).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -7328,35 +7314,35 @@ describe('concat operator', () => {
   );
 
   it('should not complete if first source does not complete', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---');
       const e1subs = '  ^--';
       const e2 = cold('    --a--|');
       const e2subs = NO_SUBS;
       const expected = '---';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit elements from each source when source emit once', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---a|');
       const e1subs = '  ^---!';
       const e2 = cold('     -----b--|');
       const e2subs = '  ----^-------!';
       const expected = '---a-----b--|';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should unsubscribe to inner source if outer is unsubscribed early', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('  ---a-a--a|            ');
       const e1subs = '   ^--------!            ';
       const e2 = cold('           -----b-b--b-|');
@@ -7364,14 +7350,14 @@ describe('concat operator', () => {
       const unsub = '    -----------------!  ';
       const expected = ' ---a-a--a-----b-b     ';
 
-      expectObservable(e1.pipe(concatWith(e2)), unsub).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2)), unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---a-a--a|            ');
       const e1subs = '  ^--------!            ';
       const e2 = cold('          -----b-b--b-|');
@@ -7385,35 +7371,35 @@ describe('concat operator', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should raise error from first source and does not emit from second source', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --#');
       const e1subs = '  ^-!';
       const e2 = cold('   ----a--|');
       const e2subs = NO_SUBS;
       const expected = '--#';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit element from first source then raise error from second source', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' --a--|');
       const e1subs = '  ^----!';
       const e2 = cold('      -------#');
       const e2subs = '  -----^------!';
       const expected = '--a---------#';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -7423,14 +7409,14 @@ describe('concat operator', () => {
     'should emit all elements from both hot observable sources if first source ' +
       'completes before second source starts emit',
     () => {
-      rxTest.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTest.run(({hot, expectSource, expectSubscriptions}) => {
         const e1 = hot('  --a--b-|');
         const e1subs = '  ^------!';
         const e2 = hot('  --------x--y--|');
         const e2subs = '  -------^------!';
         const expected = '--a--b--x--y--|';
 
-        expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+        expectSource(e1.pipe(concatWith(e2))).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -7441,14 +7427,14 @@ describe('concat operator', () => {
     'should emit elements from second source regardless of completion time ' +
       'when second source is cold observable',
     () => {
-      rxTest.run(({hot, cold, expectObservable, expectSubscriptions}) => {
+      rxTest.run(({hot, cold, expectSource, expectSubscriptions}) => {
         const e1 = hot('  --a--b--c---|');
         const e1subs = '  ^-----------!';
         const e2 = cold('           -x-y-z-|');
         const e2subs = '  ------------^------!';
         const expected = '--a--b--c----x-y-z-|';
 
-        expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+        expectSource(e1.pipe(concatWith(e2))).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       });
@@ -7456,26 +7442,26 @@ describe('concat operator', () => {
   );
 
   it('should not emit collapsing element from second source', () => {
-    rxTest.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--|');
       const e1subs = '  ^----------!';
       const e2 = hot('  --------x--y--z--|');
       const e2subs = '  -----------^-----!';
       const expected = '--a--b--c--y--z--|';
 
-      expectObservable(e1.pipe(concatWith(e2))).toBe(expected);
+      expectSource(e1.pipe(concatWith(e2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should emit self without parameters', () => {
-    rxTest.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTest.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---a-|');
       const e1subs = '  ^----!';
       const expected = '---a-|';
 
-      expectObservable(e1.pipe(concatWith())).toBe(expected);
+      expectSource(e1.pipe(concatWith())).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -7486,7 +7472,7 @@ import {count, skip, take, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -7499,7 +7485,7 @@ describe('count operator', () => {
     const subs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable(source.pipe(count())).toBe(expected, {x: 3});
+    expectSource(source.pipe(count())).toBe(expected, {x: 3});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -7508,7 +7494,7 @@ describe('count operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(count())).toBe(expected);
+    expectSource(e1.pipe(count())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7517,7 +7503,7 @@ describe('count operator', () => {
     const e1subs = '(^!)';
     const expected = '(w|)';
 
-    expectObservable(e1.pipe(count())).toBe(expected, {w: 0});
+    expectSource(e1.pipe(count())).toBe(expected, {w: 0});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7526,7 +7512,7 @@ describe('count operator', () => {
     const e1subs = '^     ';
     const expected = '------';
 
-    expectObservable(e1.pipe(count())).toBe(expected);
+    expectSource(e1.pipe(count())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7535,7 +7521,7 @@ describe('count operator', () => {
     const e1subs = '^   !';
     const expected = '----(w|)';
 
-    expectObservable(e1.pipe(count())).toBe(expected, {w: 0});
+    expectSource(e1.pipe(count())).toBe(expected, {w: 0});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7544,7 +7530,7 @@ describe('count operator', () => {
     const e1subs = '^     !';
     const expected = '------(w|)';
 
-    expectObservable(e1.pipe(count())).toBe(expected, {w: 1});
+    expectSource(e1.pipe(count())).toBe(expected, {w: 1});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7553,7 +7539,7 @@ describe('count operator', () => {
     const subs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable(source.pipe(count())).toBe(expected, {x: 3});
+    expectSource(source.pipe(count())).toBe(expected, {x: 3});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -7610,7 +7596,7 @@ describe('count operator', () => {
     const e1subs = '^        !';
     const expected = '---------#';
 
-    expectObservable(e1.pipe(count())).toBe(expected, null, 'too bad');
+    expectSource(e1.pipe(count())).toBe(expected, null, 'too bad');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7619,7 +7605,7 @@ describe('count operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(count())).toBe(expected);
+    expectSource(e1.pipe(count())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7631,7 +7617,7 @@ describe('count operator', () => {
       return true;
     };
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected, {w: 0});
+    expectSource(e1.pipe(count(predicate))).toBe(expected, {w: 0});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7643,7 +7629,7 @@ describe('count operator', () => {
       return false;
     };
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected, {w: 0});
+    expectSource(e1.pipe(count(predicate))).toBe(expected, {w: 0});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7655,7 +7641,7 @@ describe('count operator', () => {
       return true;
     };
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected, {w: 1});
+    expectSource(e1.pipe(count(predicate))).toBe(expected, {w: 1});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7667,7 +7653,7 @@ describe('count operator', () => {
       return false;
     };
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected, {w: 0});
+    expectSource(e1.pipe(count(predicate))).toBe(expected, {w: 0});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7679,7 +7665,7 @@ describe('count operator', () => {
 
     const result = e1.pipe(count((value: string) => parseInt(value) < 10));
 
-    expectObservable(result, unsub).toBe(expected, {w: 3});
+    expectSource(result, unsub).toBe(expected, {w: 3});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7695,7 +7681,7 @@ describe('count operator', () => {
       mergeMap((x: number) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, {w: 3});
+    expectSource(result, unsub).toBe(expected, {w: 3});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7705,7 +7691,7 @@ describe('count operator', () => {
     const expected = '----------(w|)';
     const predicate = (value: string) => parseInt(value) < 10;
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected, {w: 3});
+    expectSource(e1.pipe(count(predicate))).toBe(expected, {w: 3});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7715,7 +7701,7 @@ describe('count operator', () => {
     const expected = '----------(w|)';
     const predicate = (value: string) => parseInt(value) > 10;
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected, {w: 0});
+    expectSource(e1.pipe(count(predicate))).toBe(expected, {w: 0});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7725,7 +7711,7 @@ describe('count operator', () => {
     const expected = '----#';
     const predicate = () => true;
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected);
+    expectSource(e1.pipe(count(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7735,7 +7721,7 @@ describe('count operator', () => {
     const expected = '----#';
     const predicate = () => false;
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected);
+    expectSource(e1.pipe(count(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7745,7 +7731,7 @@ describe('count operator', () => {
     const expected = '-----';
     const predicate = () => true;
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected);
+    expectSource(e1.pipe(count(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7760,7 +7746,7 @@ describe('count operator', () => {
       return true;
     };
 
-    expectObservable(e1.pipe(count(predicate))).toBe(expected);
+    expectSource(e1.pipe(count(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -7771,7 +7757,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -7795,7 +7781,7 @@ describe('debounce operator', () => {
 
       const result = e1.pipe(debounce(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     }
   );
 
@@ -7804,7 +7790,7 @@ describe('debounce operator', () => {
     const e1subs = '^                    !';
     const expected = '----a--b--c--d-------|';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7813,7 +7799,7 @@ describe('debounce operator', () => {
     const e1subs = '^             !';
     const expected = '----a---c--d--|';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7825,7 +7811,7 @@ describe('debounce operator', () => {
     const e1subs = '^             !';
     const expected = '--a--bc--d----|';
 
-    expectObservable(e1.pipe(debounce(() => of(0)))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => of(0)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7834,7 +7820,7 @@ describe('debounce operator', () => {
     const e1subs = '^    !';
     const expected = '-----|';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7843,7 +7829,7 @@ describe('debounce operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7852,7 +7838,7 @@ describe('debounce operator', () => {
     const e1subs = '^    !';
     const expected = '-----#';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7861,7 +7847,7 @@ describe('debounce operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7873,7 +7859,7 @@ describe('debounce operator', () => {
 
     const result = e1.pipe(debounce(getTimerSelector(20)));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7889,7 +7875,7 @@ describe('debounce operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7898,7 +7884,7 @@ describe('debounce operator', () => {
     const e1subs = '^            ';
     const expected = '----a---c--d-';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7907,7 +7893,7 @@ describe('debounce operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7916,7 +7902,7 @@ describe('debounce operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7925,7 +7911,7 @@ describe('debounce operator', () => {
     const e1subs = '^                    !';
     const expected = '----a--b--c--d-------#';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(20)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7934,7 +7920,7 @@ describe('debounce operator', () => {
     const e1subs = '^                   !';
     const expected = '--------------------(e|)';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(40)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(40)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7943,7 +7929,7 @@ describe('debounce operator', () => {
     const e1subs = '^            !';
     const expected = '-------------#';
 
-    expectObservable(e1.pipe(debounce(getTimerSelector(50)))).toBe(expected);
+    expectSource(e1.pipe(debounce(getTimerSelector(50)))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -7960,7 +7946,7 @@ describe('debounce operator', () => {
       '                    ^ !      '
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -7984,7 +7970,7 @@ describe('debounce operator', () => {
       '                    ^ !      '
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8010,7 +7996,7 @@ describe('debounce operator', () => {
       '                    ^!'
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8028,7 +8014,7 @@ describe('debounce operator', () => {
       '                          ^  !'
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8052,7 +8038,7 @@ describe('debounce operator', () => {
       '                                    ^!'
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8077,7 +8063,7 @@ describe('debounce operator', () => {
       }
     }
 
-    expectObservable(e1.pipe(debounce(selectorFunction as any))).toBe(expected);
+    expectSource(e1.pipe(debounce(selectorFunction as any))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8093,7 +8079,7 @@ describe('debounce operator', () => {
       return EMPTY;
     }
 
-    expectObservable(e1.pipe(debounce(selectorFunction))).toBe(expected);
+    expectSource(e1.pipe(debounce(selectorFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8106,7 +8092,7 @@ describe('debounce operator', () => {
       return NEVER;
     }
 
-    expectObservable(e1.pipe(debounce(selectorFunction))).toBe(expected);
+    expectSource(e1.pipe(debounce(selectorFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8121,7 +8107,7 @@ describe('debounce operator', () => {
       '                          ^  !       '
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8147,7 +8133,7 @@ describe('debounce operator', () => {
       '                    ^    !         '
     ];
 
-    expectObservable(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
+    expectSource(e1.pipe(debounce(() => selector.shift()!))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let i = 0; i < selectorSubs.length; i++) {
       expectSubscriptions(selector[i].subscriptions).toBe(selectorSubs[i]);
@@ -8259,7 +8245,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {VirtualTimeScheduler} from '../../scheduler/VirtualTimeScheduler';
@@ -8276,9 +8262,7 @@ describe('debounceTime operator', () => {
       const e1 = hot('-a--bc--d---|');
       const expected = '---a---c--d-|';
 
-      expectObservable(e1.pipe(debounceTime(20, rxTestScheduler))).toBe(
-        expected
-      );
+      expectSource(e1.pipe(debounceTime(20, rxTestScheduler))).toBe(expected);
     }
   );
 
@@ -8287,7 +8271,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^                     !';
     const expected = '------a--------b------(c|)';
 
-    expectObservable(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8296,7 +8280,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^                          !';
     const expected = '---------c--------------d--|';
 
-    expectObservable(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8305,7 +8289,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^    !';
     const expected = '-----|';
 
-    expectObservable(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8314,7 +8298,7 @@ describe('debounceTime operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8323,7 +8307,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^    !';
     const expected = '-----#';
 
-    expectObservable(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8332,7 +8316,7 @@ describe('debounceTime operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8344,7 +8328,7 @@ describe('debounceTime operator', () => {
 
     const result = e1.pipe(debounceTime(20, rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8360,7 +8344,7 @@ describe('debounceTime operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8369,7 +8353,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^                          ';
     const expected = '---------c--------------d--';
 
-    expectObservable(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8378,7 +8362,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8387,7 +8371,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8396,7 +8380,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^                     !';
     const expected = '------a--------b------#';
 
-    expectObservable(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8405,7 +8389,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^                        !';
     const expected = '-------------------------(h|)';
 
-    expectObservable(e1.pipe(debounceTime(40, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(40, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8414,7 +8398,7 @@ describe('debounceTime operator', () => {
     const e1subs = '^                        !';
     const expected = '-------------------------#';
 
-    expectObservable(e1.pipe(debounceTime(40, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(debounceTime(40, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8439,7 +8423,7 @@ describe('debounceTime operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -8456,7 +8440,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
       const expected = '--------(x|)';
 
       // TODO: Fix `defaultIfEmpty` typings
-      expectObservable(e1.pipe(defaultIfEmpty(42) as any)).toBe(expected, {
+      expectSource(e1.pipe(defaultIfEmpty(42) as any)).toBe(expected, {
         x: 42
       });
     }
@@ -8467,7 +8451,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
     const e1subs = '(^!)';
     const expected = '(x|)';
 
-    expectObservable(e1.pipe(defaultIfEmpty('x'))).toBe(expected);
+    expectSource(e1.pipe(defaultIfEmpty('x'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8476,7 +8460,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
     const e1subs = '(^!)';
     const expected = '(x|)';
 
-    expectObservable(e1.pipe(defaultIfEmpty())).toBe(expected, {x: null});
+    expectSource(e1.pipe(defaultIfEmpty())).toBe(expected, {x: null});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8485,7 +8469,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
     const e1subs = '^       !';
     const expected = '--a--b--|';
 
-    expectObservable(e1.pipe(defaultIfEmpty('x'))).toBe(expected);
+    expectSource(e1.pipe(defaultIfEmpty('x'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8494,7 +8478,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
     const e1subs = '^       !';
     const expected = '--a--b--|';
 
-    expectObservable(e1.pipe(defaultIfEmpty())).toBe(expected);
+    expectSource(e1.pipe(defaultIfEmpty())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8506,7 +8490,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
 
     const result = e1.pipe(defaultIfEmpty('x'));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8522,7 +8506,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -8531,7 +8515,7 @@ describe('Observable.prototype.defaultIfEmpty', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(defaultIfEmpty('x'))).toBe(expected);
+    expectSource(e1.pipe(defaultIfEmpty('x'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -8561,7 +8545,7 @@ describe('delay operator', () => {
   });
 
   asDiagram('delay(20)')('should delay by specified timeframe', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---a--b--|');
       const t = 2; //      --|
       const expected = '-----a--b|';
@@ -8569,13 +8553,13 @@ describe('delay operator', () => {
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should delay by absolute time period', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--|   ');
       const t = 3; //     ---|
       const expected = '-----a--(b|)';
@@ -8584,13 +8568,13 @@ describe('delay operator', () => {
       const absoluteDelay = new Date(testScheduler.now() + t);
       const result = e1.pipe(delay(absoluteDelay, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should delay by absolute time period after subscription', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---^--a--b--|   ');
       const t = 3; //         ---|
       const expected = '   ------a--(b|)';
@@ -8599,13 +8583,13 @@ describe('delay operator', () => {
       const absoluteDelay = new Date(testScheduler.now() + t);
       const result = e1.pipe(delay(absoluteDelay, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should raise error when source raises error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---#');
       const t = 3; //      ---|
       const expected = '------a---b#';
@@ -8613,13 +8597,13 @@ describe('delay operator', () => {
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should raise error when source raises error', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--#');
       const t = 3; //     ---|
       const expected = '-----a--#';
@@ -8628,13 +8612,13 @@ describe('delay operator', () => {
       const absoluteDelay = new Date(testScheduler.now() + t);
       const result = e1.pipe(delay(absoluteDelay, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should raise error when source raises error after subscription', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---^---a---b---#');
       const t = 3; //          ---|
       const expected = '   -------a---b#';
@@ -8643,13 +8627,13 @@ describe('delay operator', () => {
       const absoluteDelay = new Date(testScheduler.now() + t);
       const result = e1.pipe(delay(absoluteDelay, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1Sub);
     });
   });
 
   it('should delay when source does not emits', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ----|   ');
       const t = 3; //       ---|
       const expected = '----|';
@@ -8657,37 +8641,37 @@ describe('delay operator', () => {
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not delay when source is empty', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold('|');
       const t = 3; // ---|
       const expected = '|';
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
   it('should delay complete when a value is scheduled', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold('-a-|');
       const t = 3; //    ---|
       const expected = '----(a|)';
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
   it('should not complete when source does not completes', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b---------');
       const t = 3; //      ---|
       const expected = '------a---b------';
@@ -8696,13 +8680,13 @@ describe('delay operator', () => {
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a---b----');
       const t = 3; //      ---|
       const e1subs = '  ^-------!   ';
@@ -8715,25 +8699,25 @@ describe('delay operator', () => {
         mergeMap((x: any) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should not complete when source never completes', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       const e1 = cold(' -');
       const t = 3; //   ---|
       const expected = '-';
 
       const result = e1.pipe(delay(t, testScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
   it('should unsubscribe scheduled actions after execution', () => {
-    testScheduler.run(({cold, expectObservable}) => {
+    testScheduler.run(({cold, expectSource}) => {
       let subscribeSpy: any = null;
       const counts: number[] = [];
 
@@ -8759,12 +8743,12 @@ describe('delay operator', () => {
         })
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
   it('should be possible to delay complete by composition', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---a--b--|');
       const t = 2; //      --|--|
       const expected = '-----a--b--|';
@@ -8775,7 +8759,7 @@ describe('delay operator', () => {
         of(undefined).pipe(delay(t, testScheduler), ignoreElements())
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     });
   });
@@ -8786,7 +8770,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {expect} from 'chai';
@@ -8817,7 +8801,7 @@ describe('delayWhen operator', () => {
 
       const result = e1.pipe(delayWhen(durationSelector));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       expectSubscriptions(selector[0].subscriptions).toBe(selectorSubs[0]);
       expectSubscriptions(selector[1].subscriptions).toBe(selectorSubs[1]);
@@ -8834,7 +8818,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8848,7 +8832,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8862,7 +8846,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8876,7 +8860,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8890,7 +8874,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8902,7 +8886,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => EMPTY));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -8913,7 +8897,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => EMPTY));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -8926,7 +8910,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8940,7 +8924,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8954,7 +8938,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
   });
@@ -8971,7 +8955,7 @@ describe('delayWhen operator', () => {
       }))
     );
 
-    expectObservable(result).toBe(expected, null, err);
+    expectSource(result).toBe(expected, null, err);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -8986,7 +8970,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector, subDelay));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
     expectSubscriptions(subDelay.subscriptions).toBe(subDelaySub);
@@ -9003,7 +8987,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector, subDelay));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(selector.subscriptions).toBe(selectorSubs);
     expectSubscriptions(subDelay.subscriptions).toBe(subDelaySub);
@@ -9018,7 +9002,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen((x: any) => selector, subDelay));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe([]);
     expectSubscriptions(selector.subscriptions).toBe([]);
     expectSubscriptions(subDelay.subscriptions).toBe(subDelaySub);
@@ -9053,7 +9037,7 @@ describe('delayWhen operator', () => {
 
     const result = e1.pipe(delayWhen(predicate));
 
-    expectObservable(
+    expectSource(
       result.pipe(
         tap(null, null, () => {
           expect(indices).to.deep.equal([0, 1, 2]);
@@ -9067,7 +9051,7 @@ import {dematerialize, map, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -9099,7 +9083,7 @@ describe('dematerialize operator', () => {
       dematerialize()
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should dematerialize a happy stream', () => {
@@ -9114,7 +9098,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^          !';
     const expected = '--w--x--y--|';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9130,7 +9114,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^          !';
     const expected = '--w--x--y--#';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9139,7 +9123,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9148,7 +9132,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9157,7 +9141,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^   !';
     const expected = '----|';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9166,7 +9150,7 @@ describe('dematerialize operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9176,7 +9160,7 @@ describe('dematerialize operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected, null, error);
+    expectSource(e1.pipe(dematerialize())).toBe(expected, null, error);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9193,7 +9177,7 @@ describe('dematerialize operator', () => {
 
     const result = e1.pipe(dematerialize());
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9214,7 +9198,7 @@ describe('dematerialize operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9223,7 +9207,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^   !';
     const expected = '----|';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9232,7 +9216,7 @@ describe('dematerialize operator', () => {
     const e1subs = '^   !';
     const expected = '----|';
 
-    expectObservable(e1.pipe(dematerialize())).toBe(expected);
+    expectSource(e1.pipe(dematerialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -9240,7 +9224,7 @@ import {distinct, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -9252,7 +9236,7 @@ describe('distinct operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--------b--------|';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9261,7 +9245,7 @@ describe('distinct operator', () => {
     const e1subs = '^                  ';
     const expected = '--a--------b-------';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9270,7 +9254,7 @@ describe('distinct operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9279,7 +9263,7 @@ describe('distinct operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9288,7 +9272,7 @@ describe('distinct operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9297,7 +9281,7 @@ describe('distinct operator', () => {
     const e1subs = '^     !';
     const expected = '------|';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9305,14 +9289,14 @@ describe('distinct operator', () => {
     const e1 = hot('--a--|');
     const e1subs = '^    !';
     const expected = '--a--|';
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
   it('should emit if source is scalar', () => {
     const e1 = of('a');
     const expected = '(a|)';
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
   });
 
   it('should raises error if source raises error', () => {
@@ -9320,7 +9304,7 @@ describe('distinct operator', () => {
     const e1subs = '^       !';
     const expected = '--a-----#';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9329,7 +9313,7 @@ describe('distinct operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9338,7 +9322,7 @@ describe('distinct operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--b--c--d--e--f--|';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9350,7 +9334,7 @@ describe('distinct operator', () => {
 
     const result = (<any>e1).pipe(distinct());
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9366,7 +9350,7 @@ describe('distinct operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9375,7 +9359,7 @@ describe('distinct operator', () => {
     const e1subs = '^                   !';
     const expected = '--a-----------------|';
 
-    expectObservable((<any>e1).pipe(distinct())).toBe(expected);
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9386,7 +9370,7 @@ describe('distinct operator', () => {
     const expected = '--a--b--c-----------|';
     const selector = (value: number) => value % 3;
 
-    expectObservable((<any>e1).pipe(distinct(selector))).toBe(expected, values);
+    expectSource((<any>e1).pipe(distinct(selector))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9401,7 +9385,7 @@ describe('distinct operator', () => {
       return value;
     };
 
-    expectObservable((<any>e1).pipe(distinct(selector))).toBe(
+    expectSource((<any>e1).pipe(distinct(selector))).toBe(
       expected,
       undefined,
       new Error('d is for dumb')
@@ -9416,7 +9400,7 @@ describe('distinct operator', () => {
     const e2subs = '^                   !';
     const expected = '--a--b--------a--b--|';
 
-    expectObservable((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
+    expectSource((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -9428,7 +9412,7 @@ describe('distinct operator', () => {
     const e2subs = '^            !';
     const expected = '--a--b-------#';
 
-    expectObservable((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
+    expectSource((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -9441,7 +9425,7 @@ describe('distinct operator', () => {
     const unsub = '           !         ';
     const expected = '--a--b------';
 
-    expectObservable((<any>e1).pipe(distinct(null as any, e2)), unsub).toBe(
+    expectSource((<any>e1).pipe(distinct(null as any, e2)), unsub).toBe(
       expected
     );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -9455,7 +9439,7 @@ describe('distinct operator', () => {
     const e2subs = '^                   !';
     const expected = '--a--b--------a--b--|';
 
-    expectObservable((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
+    expectSource((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -9465,7 +9449,7 @@ import {of} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -9477,7 +9461,7 @@ describe('distinctUntilChanged operator', () => {
     const e1 = hot('-1--2-2----1-3-|');
     const expected = '-1--2------1-3-|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
   });
 
   it('should distinguish between values', () => {
@@ -9485,7 +9469,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--------b-----a--|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9494,7 +9478,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^                  ';
     const expected = '--a--------b-----a-';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9503,7 +9487,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9512,7 +9496,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9521,7 +9505,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9530,7 +9514,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^     !';
     const expected = '------|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9539,7 +9523,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^    !';
     const expected = '--a--|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9547,7 +9531,7 @@ describe('distinctUntilChanged operator', () => {
     const e1 = of('a');
     const expected = '(a|)';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
   });
 
   it('should raises error if source raises error', () => {
@@ -9555,7 +9539,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^       !';
     const expected = '--a-----#';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9564,7 +9548,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9573,7 +9557,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--b--c--d--e--f--|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9585,7 +9569,7 @@ describe('distinctUntilChanged operator', () => {
 
     const result = e1.pipe(distinctUntilChanged());
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9601,7 +9585,7 @@ describe('distinctUntilChanged operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9610,7 +9594,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a-----------------|';
 
-    expectObservable(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9619,7 +9603,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a-----------------|';
 
-    expectObservable(
+    expectSource(
       e1.pipe(
         distinctUntilChanged(() => {
           return true;
@@ -9634,7 +9618,7 @@ describe('distinctUntilChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--a--a--a--a--a--|';
 
-    expectObservable(
+    expectSource(
       e1.pipe(
         distinctUntilChanged(() => {
           return false;
@@ -9657,7 +9641,7 @@ describe('distinctUntilChanged operator', () => {
     const expected = '--a-----c-----e-----|';
     const comparator = (x: number, y: number) => y % 2 === 0;
 
-    expectObservable(e1.pipe(distinctUntilChanged(comparator))).toBe(expected, {
+    expectSource(e1.pipe(distinctUntilChanged(comparator))).toBe(expected, {
       a: 1,
       c: 3,
       e: 5
@@ -9676,7 +9660,7 @@ describe('distinctUntilChanged operator', () => {
       return x === y;
     };
 
-    expectObservable(e1.pipe(distinctUntilChanged(comparator))).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged(comparator))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9694,7 +9678,7 @@ describe('distinctUntilChanged operator', () => {
     const comparator = (x: number, y: number) => y % 2 === 1;
     const keySelector = (x: number) => x % 2;
 
-    expectObservable(
+    expectSource(
       e1.pipe(distinctUntilChanged(comparator, keySelector))
     ).toBe(expected, {a: 1, b: 2, d: 4, f: 6});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -9711,9 +9695,9 @@ describe('distinctUntilChanged operator', () => {
       return x;
     };
 
-    expectObservable(
-      e1.pipe(distinctUntilChanged(null as any, keySelector))
-    ).toBe(expected);
+    expectSource(e1.pipe(distinctUntilChanged(null as any, keySelector))).toBe(
+      expected
+    );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -9721,7 +9705,7 @@ import {distinctUntilKeyChanged, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -9739,7 +9723,7 @@ describe('distinctUntilKeyChanged operator', () => {
 
       const result = (<any>e1).pipe(distinctUntilKeyChanged('k'));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
     }
   );
 
@@ -9749,7 +9733,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--------b-----a--|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9762,7 +9746,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                  ';
     const expected = '--a--------b-----a-';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9781,7 +9765,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                !';
     const expected = '--a--b-----d--e--|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9800,7 +9784,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                !';
     const expected = '--a--------------|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9812,9 +9796,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9823,9 +9805,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9834,9 +9814,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9845,9 +9823,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^     !';
     const expected = '------|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9857,7 +9833,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^    !';
     const expected = '--a--|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9869,7 +9845,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1 = of(values.a);
     const expected = '(a|)';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9881,7 +9857,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^       !';
     const expected = '--a-----#';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9893,9 +9869,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9911,7 +9885,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                !';
     const expected = '--a--b--c--d--e--|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9933,7 +9907,7 @@ describe('distinctUntilKeyChanged operator', () => {
 
     const result = (<any>e1).pipe(distinctUntilKeyChanged('val'));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9956,7 +9930,7 @@ describe('distinctUntilKeyChanged operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -9966,7 +9940,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a-----------------|';
 
-    expectObservable((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
       expected,
       values
     );
@@ -9985,7 +9959,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                !';
     const expected = '--a--------------|';
 
-    expectObservable(e1.pipe(distinctUntilKeyChanged('val', () => true))).toBe(
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', () => true))).toBe(
       expected,
       values
     );
@@ -9998,7 +9972,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const e1subs = '^                   !';
     const expected = '--a--a--a--a--a--a--|';
 
-    expectObservable(e1.pipe(distinctUntilKeyChanged('val', () => false))).toBe(
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', () => false))).toBe(
       expected,
       values
     );
@@ -10018,7 +9992,7 @@ describe('distinctUntilKeyChanged operator', () => {
     const expected = '--a-----c-----e--|';
     const selector = (x: number, y: number) => y % 2 === 0;
 
-    expectObservable(e1.pipe(distinctUntilKeyChanged('val', selector))).toBe(
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', selector))).toBe(
       expected,
       values
     );
@@ -10043,7 +10017,7 @@ describe('distinctUntilKeyChanged operator', () => {
       return x === y;
     };
 
-    expectObservable(e1.pipe(distinctUntilKeyChanged('val', selector))).toBe(
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', selector))).toBe(
       expected,
       values
     );
@@ -10055,7 +10029,7 @@ import {elementAt, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {OutOfRangeError, of, range} from 'rxjs';
@@ -10071,7 +10045,7 @@ describe('elementAt operator', () => {
       const subs = '^       !      ';
       const expected = '--------(c|)   ';
 
-      expectObservable((<any>source).pipe(elementAt(2))).toBe(expected);
+      expectSource((<any>source).pipe(elementAt(2))).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -10081,7 +10055,7 @@ describe('elementAt operator', () => {
     const subs = '^ !';
     const expected = '--(a|)';
 
-    expectObservable((<any>source).pipe(elementAt(0))).toBe(expected);
+    expectSource((<any>source).pipe(elementAt(0))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10090,7 +10064,7 @@ describe('elementAt operator', () => {
     const subs = '^          !';
     const expected = '-----------(d|)';
 
-    expectObservable((<any>source).pipe(elementAt(3))).toBe(expected);
+    expectSource((<any>source).pipe(elementAt(3))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10099,7 +10073,7 @@ describe('elementAt operator', () => {
     const subs = '^       !';
     const expected = '--------(c|)';
 
-    expectObservable((<any>source).pipe(elementAt(2))).toBe(expected);
+    expectSource((<any>source).pipe(elementAt(2))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10108,7 +10082,7 @@ describe('elementAt operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>source).pipe(elementAt(0))).toBe(
+    expectSource((<any>source).pipe(elementAt(0))).toBe(
       expected,
       undefined,
       new OutOfRangeError()
@@ -10121,7 +10095,7 @@ describe('elementAt operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>source).pipe(elementAt(0))).toBe(expected);
+    expectSource((<any>source).pipe(elementAt(0))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10130,7 +10104,7 @@ describe('elementAt operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable((<any>source).pipe(elementAt(0))).toBe(expected);
+    expectSource((<any>source).pipe(elementAt(0))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10142,7 +10116,7 @@ describe('elementAt operator', () => {
 
     const result = (<any>source).pipe(elementAt(2));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10158,7 +10132,7 @@ describe('elementAt operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -10173,7 +10147,7 @@ describe('elementAt operator', () => {
     const subs = '^    !';
     const expected = '-----#';
 
-    expectObservable((<any>source).pipe(elementAt(3))).toBe(
+    expectSource((<any>source).pipe(elementAt(3))).toBe(
       expected,
       null,
       new OutOfRangeError()
@@ -10187,7 +10161,7 @@ describe('elementAt operator', () => {
     const expected = '-----(x|)';
     const defaultValue = '42';
 
-    expectObservable(source.pipe(elementAt(3, defaultValue))).toBe(expected, {
+    expectSource(source.pipe(elementAt(3, defaultValue))).toBe(expected, {
       x: defaultValue
     });
     expectSubscriptions(source.subscriptions).toBe(subs);
@@ -10199,7 +10173,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -10216,7 +10190,7 @@ describe('endWith operator', () => {
     const e1subs = '^           !';
     const expected = '---a--b--c--(s|)';
 
-    expectObservable(e1.pipe(endWith('s'))).toBe(expected);
+    expectSource(e1.pipe(endWith('s'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10226,7 +10200,7 @@ describe('endWith operator', () => {
     const e1subs = '^           !';
     const expected = '---a--b--c--(s|)';
 
-    expectObservable(e1.pipe(endWith(values.s))).toBe(expected, values);
+    expectSource(e1.pipe(endWith(values.s))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10235,7 +10209,7 @@ describe('endWith operator', () => {
     const e1subs = '^    !';
     const expected = '--a--(x|)';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10244,7 +10218,7 @@ describe('endWith operator', () => {
     const e1subs = '^     ';
     const expected = '----a-';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10253,7 +10227,7 @@ describe('endWith operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10262,7 +10236,7 @@ describe('endWith operator', () => {
     const e1subs = '^  !';
     const expected = '---(x|)';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10271,7 +10245,7 @@ describe('endWith operator', () => {
     const e1subs = '(^!)';
     const expected = '(x|)';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10280,7 +10254,7 @@ describe('endWith operator', () => {
     const e1subs = '(^!)';
     const expected = '(ax|)';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10289,7 +10263,7 @@ describe('endWith operator', () => {
     const e1subs = '^       !';
     const expected = '-----a--(yz|)';
 
-    expectObservable(e1.pipe(endWith('y', 'z'))).toBe(expected);
+    expectSource(e1.pipe(endWith('y', 'z'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10298,7 +10272,7 @@ describe('endWith operator', () => {
     const e1subs = '^ !';
     const expected = '--#';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(
       expected,
       defaultStartValue
     );
@@ -10310,7 +10284,7 @@ describe('endWith operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue))).toBe(
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(
       expected,
       defaultStartValue
     );
@@ -10325,7 +10299,7 @@ describe('endWith operator', () => {
 
     const result = e1.pipe(endWith('s', rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10341,7 +10315,7 @@ describe('endWith operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10350,7 +10324,7 @@ describe('endWith operator', () => {
     const e1subs = '^  !';
     const expected = '-a-|';
 
-    expectObservable(e1.pipe(endWith(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(endWith(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10359,7 +10333,7 @@ describe('endWith operator', () => {
     const e1subs = '^    !';
     const expected = '--a--(x|)';
 
-    expectObservable(e1.pipe(endWith(defaultStartValue, rxTestScheduler))).toBe(
+    expectSource(e1.pipe(endWith(defaultStartValue, rxTestScheduler))).toBe(
       expected
     );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -10370,9 +10344,7 @@ describe('endWith operator', () => {
     const e1subs = '^       !';
     const expected = '-----a--(yz|)';
 
-    expectObservable(e1.pipe(endWith('y', 'z', rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(endWith('y', 'z', rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -10381,7 +10353,7 @@ import {every, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, Observable, Observer} from 'rxjs';
@@ -10411,7 +10383,7 @@ describe('every operator', () => {
       const sourceSubs = '^          !      ';
       const expected = '-----------(F|)   ';
 
-      expectObservable(source.pipe(every(predicate))).toBe(expected, {
+      expectSource(source.pipe(every(predicate))).toBe(expected, {
         F: false
       });
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
@@ -10465,7 +10437,7 @@ describe('every operator', () => {
     const sourceSubs = '^    !';
     const expected = '-----(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: true});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10474,7 +10446,7 @@ describe('every operator', () => {
     const sourceSubs = '^ !';
     const expected = '--(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: false});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: false});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10483,7 +10455,7 @@ describe('every operator', () => {
     const sourceSubs = '^ !';
     const expected = '--(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: false});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: false});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10492,7 +10464,7 @@ describe('every operator', () => {
     const sourceSubs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: false});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: false});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10504,7 +10476,7 @@ describe('every operator', () => {
 
     const result = source.pipe(every(predicate));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10520,7 +10492,7 @@ describe('every operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10537,7 +10509,7 @@ describe('every operator', () => {
       }
     }
 
-    expectObservable(source.pipe(every(faultyPredicate))).toBe(expected);
+    expectSource(source.pipe(every(faultyPredicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10546,7 +10518,7 @@ describe('every operator', () => {
     const sourceSubs = '^    !';
     const expected = '-----(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: true});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10554,14 +10526,14 @@ describe('every operator', () => {
     const source = of(5);
     const expected = '(T|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {T: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {T: true});
   });
 
   it('should emit false if Scalar source does not match with predicate', () => {
     const source = of(3);
     const expected = '(F|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {F: false});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {F: false});
   });
 
   it('should propagate error if predicate throws on Scalar source', () => {
@@ -10572,21 +10544,21 @@ describe('every operator', () => {
       throw 'error';
     }
 
-    expectObservable(source.pipe(every(<any>faultyPredicate))).toBe(expected);
+    expectSource(source.pipe(every(<any>faultyPredicate))).toBe(expected);
   });
 
   it('should emit true if Array source matches with predicate', () => {
     const source = of(5, 10, 15, 20);
     const expected = '(T|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {T: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {T: true});
   });
 
   it('should emit false if Array source does not match with predicate', () => {
     const source = of(5, 9, 15, 20);
     const expected = '(F|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {F: false});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {F: false});
   });
 
   it('should propagate error if predicate eventually throws on Array source', () => {
@@ -10600,7 +10572,7 @@ describe('every operator', () => {
       return true;
     }
 
-    expectObservable(source.pipe(every(faultyPredicate))).toBe(expected);
+    expectSource(source.pipe(every(faultyPredicate))).toBe(expected);
   });
 
   it('should emit true if all source element matches with predicate', () => {
@@ -10614,7 +10586,7 @@ describe('every operator', () => {
     const sourceSubs = '^                !';
     const expected = '-----------------(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: true});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10623,7 +10595,7 @@ describe('every operator', () => {
     const sourceSubs = '^ !';
     const expected = '--#';
 
-    expectObservable(source.pipe(every(truePredicate))).toBe(expected);
+    expectSource(source.pipe(every(truePredicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10632,7 +10604,7 @@ describe('every operator', () => {
     const sourceSubs = '^';
     const expected = '-';
 
-    expectObservable(source.pipe(every(truePredicate))).toBe(expected);
+    expectSource(source.pipe(every(truePredicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10647,7 +10619,7 @@ describe('every operator', () => {
     const sourceSubs = '^                 !';
     const expected = '------------------(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: true});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10656,7 +10628,7 @@ describe('every operator', () => {
     const sourceSubs = '^        !';
     const expected = '---------(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: false});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: false});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10665,7 +10637,7 @@ describe('every operator', () => {
     const sourceSubs = '^  !';
     const expected = '---#';
 
-    expectObservable(source.pipe(every(truePredicate))).toBe(expected);
+    expectSource(source.pipe(every(truePredicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -10674,7 +10646,7 @@ describe('every operator', () => {
     const sourceSubs = '^     !';
     const expected = '------(x|)';
 
-    expectObservable(source.pipe(every(predicate))).toBe(expected, {x: true});
+    expectSource(source.pipe(every(predicate))).toBe(expected, {x: true});
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 });
@@ -10683,7 +10655,7 @@ import {exhaust, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, Lifter, Observable} from 'rxjs';
@@ -10702,7 +10674,7 @@ describe('exhaust operator', () => {
       const e1 = hot('------x-------y-----z-------------|', {x: x, y: y, z: z});
       const expected = '--------a---b---c------g--h---i---|';
 
-      expectObservable(e1.pipe(exhaust())).toBe(expected);
+      expectSource(e1.pipe(exhaust())).toBe(expected);
     }
   );
 
@@ -10713,7 +10685,7 @@ describe('exhaust operator', () => {
     const e2subs: string[] = [];
     const expected = '(ab|)';
 
-    expectObservable(of(e1, e2).pipe(exhaust())).toBe(expected);
+    expectSource(of(e1, e2).pipe(exhaust())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -10723,7 +10695,7 @@ describe('exhaust operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10732,7 +10704,7 @@ describe('exhaust operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10741,7 +10713,7 @@ describe('exhaust operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10755,7 +10727,7 @@ describe('exhaust operator', () => {
     const e1 = hot('------x-------y-----z-------------|', {x: x, y: y, z: z});
     const expected = '--------a---b---c------g--h---i---|';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -10770,7 +10742,7 @@ describe('exhaust operator', () => {
     const unsub = '                !            ';
     const expected = '--------a---b---             ';
 
-    expectObservable(e1.pipe(exhaust()), unsub).toBe(expected);
+    expectSource(e1.pipe(exhaust()), unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -10790,7 +10762,7 @@ describe('exhaust operator', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -10805,7 +10777,7 @@ describe('exhaust operator', () => {
     const e1 = hot('---x---y------z----------| ', {x: x, y: y, z: z});
     const expected = '-----a---b-------f--g---h--';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -10819,7 +10791,7 @@ describe('exhaust operator', () => {
     const e1 = hot('------(xy)------------|', {x: x, y: y});
     const expected = '--------a---b---c-----|';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -10832,7 +10804,7 @@ describe('exhaust operator', () => {
     const e1 = hot('------x-------y------|       ', {x: x, y: y});
     const expected = '--------a---#                ';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -10845,7 +10817,7 @@ describe('exhaust operator', () => {
     const e1 = hot('------x-------y-------#      ', {x: x, y: y});
     const expected = '--------a---b---c-----#      ';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -10855,7 +10827,7 @@ describe('exhaust operator', () => {
     const e1subs = '^     !';
     const expected = '------|';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10864,7 +10836,7 @@ describe('exhaust operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -10874,7 +10846,7 @@ describe('exhaust operator', () => {
     const e1 = hot('------x---------------|', {x: x});
     const expected = '--------a---b---c-----|';
 
-    expectObservable(e1.pipe(exhaust())).toBe(expected);
+    expectSource(e1.pipe(exhaust())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
   });
 
@@ -10969,7 +10941,7 @@ describe('exhaust operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {concat, defer, Observable, of, from} from 'rxjs';
@@ -10992,7 +10964,7 @@ describe('exhaustMap', () => {
 
       const result = e1.pipe(exhaustMap(x => e2.pipe(map(i => i * +x))));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -11056,7 +11028,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(() => x));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -11069,7 +11041,7 @@ describe('exhaustMap', () => {
     const expected = '|';
 
     const result = e1.pipe(exhaustMap(() => x));
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -11083,7 +11055,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(() => x));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -11099,7 +11071,7 @@ describe('exhaustMap', () => {
       })
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11122,7 +11094,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -11149,7 +11121,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -11180,7 +11152,7 @@ describe('exhaustMap', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -11217,7 +11189,7 @@ describe('exhaustMap', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -11272,7 +11244,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -11292,7 +11264,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -11311,7 +11283,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -11336,7 +11308,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -11356,7 +11328,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -11375,7 +11347,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -11394,7 +11366,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -11413,7 +11385,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -11430,7 +11402,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(exhaustMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -11441,7 +11413,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {Subscribable, EMPTY, Observable, of, Observer} from 'rxjs';
@@ -11466,7 +11438,7 @@ describe('expand operator', () => {
         expand(x => (x === 8 ? EMPTY : e2.pipe(map(c => c * x))))
       );
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -11486,7 +11458,7 @@ describe('expand operator', () => {
       )
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11529,7 +11501,7 @@ describe('expand operator', () => {
       )
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11555,7 +11527,7 @@ describe('expand operator', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11581,7 +11553,7 @@ describe('expand operator', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11610,7 +11582,7 @@ describe('expand operator', () => {
       )
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11641,7 +11613,7 @@ describe('expand operator', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11669,7 +11641,7 @@ describe('expand operator', () => {
       )
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11709,7 +11681,7 @@ describe('expand operator', () => {
       }, concurrencyLimit)
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11744,7 +11716,7 @@ describe('expand operator', () => {
       }, concurrencyLimit)
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11776,7 +11748,7 @@ describe('expand operator', () => {
       }, concurrencyLimit)
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11801,7 +11773,7 @@ describe('expand operator', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -11907,7 +11879,7 @@ describe('expand operator', () => {
 
     const result = e1.pipe(expand(project, undefined, undefined));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -11916,7 +11888,7 @@ import {filter, tap, map, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, Observable, from} from 'rxjs';
@@ -11947,7 +11919,7 @@ describe('filter operator', () => {
     const subs = '^                !';
     const expected = '-----1-----3-----|';
 
-    expectObservable(source.pipe(filter(oddFilter))).toBe(expected);
+    expectSource(source.pipe(filter(oddFilter))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -11956,7 +11928,7 @@ describe('filter operator', () => {
     const subs = '^                  !';
     const expected = '--3---5----7-------|';
 
-    expectObservable(source.pipe(filter(isPrime))).toBe(expected);
+    expectSource(source.pipe(filter(isPrime))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -11967,7 +11939,7 @@ describe('filter operator', () => {
       return true;
     };
 
-    expectObservable(source.pipe(filter(predicate))).toBe(expected);
+    expectSource(source.pipe(filter(predicate))).toBe(expected);
   });
 
   it('should filter with an always-false predicate', () => {
@@ -11977,7 +11949,7 @@ describe('filter operator', () => {
       return false;
     };
 
-    expectObservable(source.pipe(filter(predicate))).toBe(expected);
+    expectSource(source.pipe(filter(predicate))).toBe(expected);
   });
 
   it('should filter in only prime numbers, source unsubscribes early', () => {
@@ -11986,7 +11958,7 @@ describe('filter operator', () => {
     const unsub = '            !       ';
     const expected = '--3---5----7-       ';
 
-    expectObservable(source.pipe(filter(isPrime)), unsub).toBe(expected);
+    expectSource(source.pipe(filter(isPrime)), unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -11995,7 +11967,7 @@ describe('filter operator', () => {
     const subs = '^                  !';
     const expected = '--3---5----7-------#';
 
-    expectObservable(source.pipe(filter(isPrime))).toBe(expected);
+    expectSource(source.pipe(filter(isPrime))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12013,7 +11985,7 @@ describe('filter operator', () => {
       return isPrime(x);
     }
 
-    expectObservable((<any>source).pipe(filter(predicate))).toBe(expected);
+    expectSource((<any>source).pipe(filter(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12026,7 +11998,7 @@ describe('filter operator', () => {
       return isPrime(+x + i * 10);
     }
 
-    expectObservable((<any>source).pipe(filter(predicate))).toBe(expected);
+    expectSource((<any>source).pipe(filter(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12047,7 +12019,7 @@ describe('filter operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
   });
 
   it(
@@ -12062,9 +12034,7 @@ describe('filter operator', () => {
       function predicate(x: any, i: number) {
         return isPrime(+x + i * 10);
       }
-      expectObservable((<any>source).pipe(filter(predicate)), unsub).toBe(
-        expected
-      );
+      expectSource((<any>source).pipe(filter(predicate)), unsub).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -12077,7 +12047,7 @@ describe('filter operator', () => {
     function predicate(x: any, i: number) {
       return isPrime(+x + i * 10);
     }
-    expectObservable((<any>source).pipe(filter(predicate))).toBe(expected);
+    expectSource((<any>source).pipe(filter(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12095,7 +12065,7 @@ describe('filter operator', () => {
       return isPrime(+x + i * 10);
     }
 
-    expectObservable((<any>source).pipe(filter(predicate))).toBe(expected);
+    expectSource((<any>source).pipe(filter(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12103,7 +12073,7 @@ describe('filter operator', () => {
     const source = hot('-1--2--^-3-4-5-6--7-8--9--|');
     const expected = '--------6----------|';
 
-    expectObservable(
+    expectSource(
       source.pipe(
         filter((x: string) => +x % 2 === 0),
         filter((x: string) => +x % 3 === 0)
@@ -12122,7 +12092,7 @@ describe('filter operator', () => {
 
     const filterer = new Filterer();
 
-    expectObservable(
+    expectSource(
       source.pipe(
         filter(function (this: any, x) {
           return this.filter1(x);
@@ -12142,7 +12112,7 @@ describe('filter operator', () => {
     const expected = '----a---b----c-----|';
     const values = {a: 16, b: 36, c: 64};
 
-    expectObservable(
+    expectSource(
       source.pipe(
         filter((x: string) => +x % 2 === 0),
         map((x: string) => +x * +x)
@@ -12155,7 +12125,7 @@ describe('filter operator', () => {
     const subs = '^                !';
     const expected = '-----1-----3-----#';
 
-    expectObservable(source.pipe(filter(oddFilter))).toBe(expected);
+    expectSource(source.pipe(filter(oddFilter))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12164,7 +12134,7 @@ describe('filter operator', () => {
     const subs = '(^!)';
     const expected = '|';
 
-    expectObservable(source.pipe(filter(oddFilter))).toBe(expected);
+    expectSource(source.pipe(filter(oddFilter))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12173,7 +12143,7 @@ describe('filter operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable(source.pipe(filter(oddFilter))).toBe(expected);
+    expectSource(source.pipe(filter(oddFilter))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12182,7 +12152,7 @@ describe('filter operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable(source.pipe(filter(oddFilter))).toBe(expected);
+    expectSource(source.pipe(filter(oddFilter))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12219,7 +12189,7 @@ describe('filter operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(r, unsub).toBe(expected);
+    expectSource(r, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12291,7 +12261,7 @@ describe('filter operator', () => {
     const subs = '^                  !';
     const expected = '--t---t----t-------|';
 
-    expectObservable(source.pipe(filter(Boolean))).toBe(expected, {t: 1, f: 0});
+    expectSource(source.pipe(filter(Boolean))).toBe(expected, {t: 1, f: 0});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
@@ -12301,7 +12271,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, timer, interval} from 'rxjs';
@@ -12387,7 +12357,7 @@ describe('finalize operator', () => {
     let s1 = hot('|');
     let result = s1.pipe(finalize(() => (executed = true)));
     let expected = '|';
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
     expect(executed).to.be.true;
@@ -12398,7 +12368,7 @@ describe('finalize operator', () => {
     let s1 = hot('-');
     let result = s1.pipe(finalize(() => (executed = true)));
     let expected = '-';
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
     expect(executed).to.be.false;
@@ -12409,7 +12379,7 @@ describe('finalize operator', () => {
     let s1 = hot('#');
     let result = s1.pipe(finalize(() => (executed = true)));
     let expected = '#';
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
     expect(executed).to.be.true;
@@ -12421,7 +12391,7 @@ describe('finalize operator', () => {
     let subs = '^          !';
     let expected = '--a--b--c--|';
     let result = s1.pipe(finalize(() => (executed = true)));
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(s1.subscriptions).toBe(subs);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
@@ -12434,7 +12404,7 @@ describe('finalize operator', () => {
     let subs = '^          !';
     let expected = '--a--b--c--|';
     let result = s1.pipe(finalize(() => (executed = true)));
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(s1.subscriptions).toBe(subs);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
@@ -12447,7 +12417,7 @@ describe('finalize operator', () => {
     let subs = '^          !';
     let expected = '--a--b--c--#';
     let result = s1.pipe(finalize(() => (executed = true)));
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(s1.subscriptions).toBe(subs);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
@@ -12461,7 +12431,7 @@ describe('finalize operator', () => {
     let expected = '--a--b-';
     let unsub = '      !';
     let result = s1.pipe(finalize(() => (executed = true)));
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(s1.subscriptions).toBe(subs);
     // manually flush so `finalize()` has chance to execute before the test is over.
     rxTestScheduler.flush();
@@ -12474,7 +12444,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, Observable, from} from 'rxjs';
@@ -12501,7 +12471,7 @@ describe('find operator', () => {
         return x % 5 === 0;
       };
 
-      expectObservable(source.pipe(find(predicate))).toBe(expected, values);
+      expectSource(source.pipe(find(predicate))).toBe(expected, values);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -12517,7 +12487,7 @@ describe('find operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable(source.pipe(find(truePredicate))).toBe(expected);
+    expectSource(source.pipe(find(truePredicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12528,7 +12498,7 @@ describe('find operator', () => {
 
     const result = source.pipe(find(truePredicate));
 
-    expectObservable(result).toBe(expected, {x: undefined});
+    expectSource(result).toBe(expected, {x: undefined});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12541,7 +12511,7 @@ describe('find operator', () => {
       return value === 'a';
     };
 
-    expectObservable(source.pipe(find(predicate))).toBe(expected);
+    expectSource(source.pipe(find(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12554,7 +12524,7 @@ describe('find operator', () => {
       return value === 'b';
     };
 
-    expectObservable(source.pipe(find(predicate))).toBe(expected);
+    expectSource(source.pipe(find(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12570,7 +12540,7 @@ describe('find operator', () => {
       return value === this.target;
     };
 
-    expectObservable(source.pipe(find(predicate, finder))).toBe(expected);
+    expectSource(source.pipe(find(predicate, finder))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12583,7 +12553,7 @@ describe('find operator', () => {
       return value === 'z';
     };
 
-    expectObservable(source.pipe(find(predicate))).toBe(expected, {
+    expectSource(source.pipe(find(predicate))).toBe(expected, {
       x: undefined
     });
     expectSubscriptions(source.subscriptions).toBe(subs);
@@ -12597,7 +12567,7 @@ describe('find operator', () => {
 
     const result = source.pipe(find((value: string) => value === 'z'));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12613,7 +12583,7 @@ describe('find operator', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12624,7 +12594,7 @@ describe('find operator', () => {
 
     const duration = rxTestScheduler.createTime('--|');
 
-    expectObservable(
+    expectSource(
       source.pipe(
         find((value: string) => value === 'b'),
         delay(duration, rxTestScheduler)
@@ -12642,7 +12612,7 @@ describe('find operator', () => {
       return value === 'z';
     };
 
-    expectObservable(source.pipe(find(predicate))).toBe(expected);
+    expectSource(source.pipe(find(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12655,7 +12625,7 @@ describe('find operator', () => {
       throw 'error';
     };
 
-    expectObservable(source.pipe(find(predicate))).toBe(expected);
+    expectSource(source.pipe(find(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12725,7 +12695,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -12752,7 +12722,7 @@ describe('findIndex operator', () => {
         return x % 5 === 0;
       };
 
-      expectObservable(source.pipe(findIndex(predicate))).toBe(expected, {
+      expectSource(source.pipe(findIndex(predicate))).toBe(expected, {
         x: 2
       });
       expectSubscriptions(source.subscriptions).toBe(subs);
@@ -12764,7 +12734,7 @@ describe('findIndex operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable(source.pipe(findIndex(truePredicate))).toBe(expected);
+    expectSource(source.pipe(findIndex(truePredicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12775,7 +12745,7 @@ describe('findIndex operator', () => {
 
     const result = source.pipe(findIndex(truePredicate));
 
-    expectObservable(result).toBe(expected, {x: -1});
+    expectSource(result).toBe(expected, {x: -1});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12789,7 +12759,7 @@ describe('findIndex operator', () => {
       return value === sourceValue;
     };
 
-    expectObservable(source.pipe(findIndex(predicate))).toBe(expected, {x: 0});
+    expectSource(source.pipe(findIndex(predicate))).toBe(expected, {x: 0});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12802,7 +12772,7 @@ describe('findIndex operator', () => {
       return value === 7;
     };
 
-    expectObservable(source.pipe(findIndex(predicate))).toBe(expected, {x: 1});
+    expectSource(source.pipe(findIndex(predicate))).toBe(expected, {x: 1});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12817,7 +12787,7 @@ describe('findIndex operator', () => {
     };
     const result = source.pipe(findIndex(predicate, sourceValues));
 
-    expectObservable(result).toBe(expected, {x: 1});
+    expectSource(result).toBe(expected, {x: 1});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12830,7 +12800,7 @@ describe('findIndex operator', () => {
       return value === 'z';
     };
 
-    expectObservable(source.pipe(findIndex(predicate))).toBe(expected, {x: -1});
+    expectSource(source.pipe(findIndex(predicate))).toBe(expected, {x: -1});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12842,7 +12812,7 @@ describe('findIndex operator', () => {
 
     const result = source.pipe(findIndex((value: string) => value === 'z'));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12858,7 +12828,7 @@ describe('findIndex operator', () => {
       mergeMap((x: number) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12869,7 +12839,7 @@ describe('findIndex operator', () => {
 
     const duration = rxTestScheduler.createTime('--|');
 
-    expectObservable(
+    expectSource(
       source.pipe(
         findIndex((value: string) => value === 'b'),
         delay(duration, rxTestScheduler)
@@ -12887,7 +12857,7 @@ describe('findIndex operator', () => {
       return value === 'z';
     };
 
-    expectObservable(source.pipe(findIndex(predicate))).toBe(expected);
+    expectSource(source.pipe(findIndex(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -12900,14 +12870,14 @@ describe('findIndex operator', () => {
       throw 'error';
     };
 
-    expectObservable(source.pipe(findIndex(predicate))).toBe(expected);
+    expectSource(source.pipe(findIndex(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
 import {expect} from 'chai';
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {first, mergeMap, delay} from 'rxjs/operators';
@@ -12927,7 +12897,7 @@ describe('Observable.prototype.first', () => {
       const expected = '-----(a|)           ';
       const sub = '^    !              ';
 
-      expectObservable(e1.pipe(first())).toBe(expected);
+      expectSource(e1.pipe(first())).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(sub);
     }
   );
@@ -12937,7 +12907,7 @@ describe('Observable.prototype.first', () => {
     const expected = '---(a|)';
     const sub = '^  !';
 
-    expectObservable(e1.pipe(first())).toBe(expected);
+    expectSource(e1.pipe(first())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -12946,7 +12916,7 @@ describe('Observable.prototype.first', () => {
     const expected = '-----#';
     const sub = '^    !';
 
-    expectObservable(e1.pipe(first())).toBe(expected, null, new EmptyError());
+    expectSource(e1.pipe(first())).toBe(expected, null, new EmptyError());
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -12955,7 +12925,7 @@ describe('Observable.prototype.first', () => {
     const expected = '-----(a|)';
     const sub = '^    !';
 
-    expectObservable(e1.pipe(first(null, 'a'))).toBe(expected);
+    expectSource(e1.pipe(first(null, 'a'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -12978,7 +12948,7 @@ describe('Observable.prototype.first', () => {
     const expected = '----#';
     const sub = '^   !';
 
-    expectObservable(e1.pipe(first())).toBe(expected);
+    expectSource(e1.pipe(first())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -12987,7 +12957,7 @@ describe('Observable.prototype.first', () => {
     const expected = '--------';
     const sub = '^       ';
 
-    expectObservable(e1.pipe(first())).toBe(expected);
+    expectSource(e1.pipe(first())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -12997,7 +12967,7 @@ describe('Observable.prototype.first', () => {
     const expected = '----               ';
     const unsub = '   !               ';
 
-    expectObservable(e1.pipe(first()), unsub).toBe(expected);
+    expectSource(e1.pipe(first()), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13013,7 +12983,7 @@ describe('Observable.prototype.first', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13024,9 +12994,9 @@ describe('Observable.prototype.first', () => {
 
     const duration = rxTestScheduler.createTime('--|');
 
-    expectObservable(
-      source.pipe(first(), delay(duration, rxTestScheduler))
-    ).toBe(expected);
+    expectSource(source.pipe(first(), delay(duration, rxTestScheduler))).toBe(
+      expected
+    );
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -13035,7 +13005,7 @@ describe('Observable.prototype.first', () => {
     const expected = '------(c|)';
     const sub = '^     !';
 
-    expectObservable(e1.pipe(first(value => value === 'c'))).toBe(expected);
+    expectSource(e1.pipe(first(value => value === 'c'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -13044,7 +13014,7 @@ describe('Observable.prototype.first', () => {
     const expected = '------(c|)';
     const sub = '^     !';
 
-    expectObservable(e1.pipe(first(x => x % 2 === 1))).toBe(expected, {c: 3});
+    expectSource(e1.pipe(first(x => x % 2 === 1))).toBe(expected, {c: 3});
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -13053,7 +13023,7 @@ describe('Observable.prototype.first', () => {
     const expected = '---------------#';
     const sub = '^              !';
 
-    expectObservable(e1.pipe(first(x => x === 's'))).toBe(
+    expectSource(e1.pipe(first(x => x === 's'))).toBe(
       expected,
       null,
       new EmptyError()
@@ -13065,9 +13035,7 @@ describe('Observable.prototype.first', () => {
     const e1 = hot('--a-^--b--c--a--c--|');
     const expected = '---------------(d|)';
     const sub = '^              !';
-    expectObservable(e1.pipe(first<string>(x => x === 's', 'd'))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(first<string>(x => x === 's', 'd'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -13076,7 +13044,7 @@ describe('Observable.prototype.first', () => {
     const expected = '------------#';
     const sub = '^           !';
 
-    expectObservable(e1.pipe(first(x => x === 's'))).toBe(expected);
+    expectSource(e1.pipe(first(x => x === 's'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -13085,7 +13053,7 @@ describe('Observable.prototype.first', () => {
     const expected = '---------(a|)';
     const sub = '^        !';
 
-    expectObservable(e1.pipe(first((_, i) => i === 2))).toBe(expected);
+    expectSource(e1.pipe(first((_, i) => i === 2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -13101,7 +13069,7 @@ describe('Observable.prototype.first', () => {
       }
     };
 
-    expectObservable(e1.pipe(first(predicate))).toBe(expected, null, 'error');
+    expectSource(e1.pipe(first(predicate))).toBe(expected, null, 'error');
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -13207,7 +13175,7 @@ import {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -13225,7 +13193,7 @@ describe('groupBy operator', () => {
     const expectedValues = {x: x, y: y};
 
     const source = e1.pipe(groupBy((val: string) => parseInt(val) % 2));
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
   });
 
   function reverseString(str: string) {
@@ -13361,7 +13329,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13372,7 +13340,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13383,7 +13351,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13397,7 +13365,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13427,7 +13395,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13452,7 +13420,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13481,7 +13449,7 @@ describe('groupBy operator', () => {
       map((g: any) => g.key)
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13510,7 +13478,7 @@ describe('groupBy operator', () => {
       map((g: any) => g.key)
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13540,7 +13508,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13570,7 +13538,7 @@ describe('groupBy operator', () => {
       map((group: any) => group.key)
     );
 
-    expectObservable(source, unsub).toBe(expected, expectedValues);
+    expectSource(source, unsub).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13599,7 +13567,7 @@ describe('groupBy operator', () => {
       mergeMap(group => group.pipe(take(1)))
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13630,7 +13598,7 @@ describe('groupBy operator', () => {
       mergeMap((group: any) => of(group.key))
     );
 
-    expectObservable(source, unsub).toBe(expected, expectedValues);
+    expectSource(source, unsub).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13669,7 +13637,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13715,7 +13683,7 @@ describe('groupBy operator', () => {
         )
       );
 
-      expectObservable(source).toBe(expected, expectedValues);
+      expectSource(source).toBe(expected, expectedValues);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -13744,7 +13712,7 @@ describe('groupBy operator', () => {
 
     const source = e1.pipe(groupBy((val: string) => val.toLowerCase().trim()));
 
-    expectObservable(source, unsub).toBe(expected, expectedValues);
+    expectSource(source, unsub).toBe(expected, expectedValues);
   });
 
   it('should allow an inner to be unsubscribed early but other inners continue', () => {
@@ -13806,7 +13774,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedGroups);
+    expectSource(source).toBe(expected, expectedGroups);
   });
 
   it('should allow inners to be unsubscribed early at different times', () => {
@@ -13872,7 +13840,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedGroups);
+    expectSource(source).toBe(expected, expectedGroups);
   });
 
   it('should allow subscribing late to an inner Observable, outer completes', () => {
@@ -13890,7 +13858,7 @@ describe('groupBy operator', () => {
     e1.pipe(groupBy((val: string) => val.toLowerCase().trim())).subscribe(
       (group: any) => {
         rxTestScheduler.schedule(() => {
-          expectObservable(group).toBe(expected);
+          expectSource(group).toBe(expected);
         }, 260);
       }
     );
@@ -13912,7 +13880,7 @@ describe('groupBy operator', () => {
     e1.pipe(groupBy((val: string) => val.toLowerCase().trim())).subscribe(
       (group: any) => {
         rxTestScheduler.schedule(() => {
-          expectObservable(group).toBe(expected);
+          expectSource(group).toBe(expected);
         }, 260);
       },
       () => {
@@ -13941,7 +13909,7 @@ describe('groupBy operator', () => {
       groupBy((val: string) => val.toLowerCase().trim()),
       tap((group: any) => {
         rxTestScheduler.schedule(() => {
-          expectObservable(group).toBe(expectedActor);
+          expectSource(group).toBe(expectedActor);
         }, 260);
       }),
       map((group: any) => {
@@ -13949,7 +13917,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source, unsub).toBe(expectedReactor, outerNs);
+    expectSource(source, unsub).toBe(expectedReactor, outerNs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -13987,7 +13955,7 @@ describe('groupBy operator', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14029,7 +13997,7 @@ describe('groupBy operator', () => {
           )
       )
     );
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
   });
 
   it('should allow using a keySelector and a durationSelector, outer throws', () => {
@@ -14065,7 +14033,7 @@ describe('groupBy operator', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14100,7 +14068,7 @@ describe('groupBy operator', () => {
       )
     );
 
-    expectObservable(source, unsub).toBe(expected, expectedValues);
+    expectSource(source, unsub).toBe(expected, expectedValues);
   });
 
   it('should allow using a durationSelector, outer and all inners unsubscribed early', () => {
@@ -14161,7 +14129,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source, unsub).toBe(expected, expectedGroups);
+    expectSource(source, unsub).toBe(expected, expectedGroups);
   });
 
   it('should dispose a durationSelector after closing the group', () => {
@@ -14231,7 +14199,7 @@ describe('groupBy operator', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14275,7 +14243,7 @@ describe('groupBy operator', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14318,7 +14286,7 @@ describe('groupBy operator', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, expectedValues);
+    expectSource(source).toBe(expected, expectedValues);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14395,7 +14363,7 @@ describe('groupBy operator', () => {
         })
       );
 
-      expectObservable(source).toBe(expected, expectedGroups);
+      expectSource(source).toBe(expected, expectedGroups);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -14477,7 +14445,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedGroups);
+    expectSource(source).toBe(expected, expectedGroups);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14551,7 +14519,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, expectedGroups);
+    expectSource(result).toBe(expected, expectedGroups);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14606,7 +14574,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedGroups);
+    expectSource(source).toBe(expected, expectedGroups);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14661,7 +14629,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source).toBe(expected, expectedGroups);
+    expectSource(source).toBe(expected, expectedGroups);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -14717,7 +14685,7 @@ describe('groupBy operator', () => {
       })
     );
 
-    expectObservable(source, unsub).toBe(expected, expectedGroups);
+    expectSource(source, unsub).toBe(expected, expectedGroups);
     expectSubscriptions(e1.subscriptions).toBe(expectedSubs);
   });
 
@@ -14772,7 +14740,7 @@ import {ignoreElements, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -14788,7 +14756,7 @@ describe('ignoreElements operator', () => {
       const subs = '^             !';
       const expected = '--------------|';
 
-      expectObservable(source.pipe(ignoreElements())).toBe(expected);
+      expectSource(source.pipe(ignoreElements())).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -14801,7 +14769,7 @@ describe('ignoreElements operator', () => {
 
     const result = source.pipe(ignoreElements());
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14817,7 +14785,7 @@ describe('ignoreElements operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14826,7 +14794,7 @@ describe('ignoreElements operator', () => {
     const subs = '^    !';
     const expected = '-----#';
 
-    expectObservable(source.pipe(ignoreElements())).toBe(expected);
+    expectSource(source.pipe(ignoreElements())).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14835,7 +14803,7 @@ describe('ignoreElements operator', () => {
     const subs = '(^!)';
     const expected = '|';
 
-    expectObservable(source.pipe(ignoreElements())).toBe(expected);
+    expectSource(source.pipe(ignoreElements())).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14844,7 +14812,7 @@ describe('ignoreElements operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable(source.pipe(ignoreElements())).toBe(expected);
+    expectSource(source.pipe(ignoreElements())).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14853,7 +14821,7 @@ describe('ignoreElements operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable(source.pipe(ignoreElements())).toBe(expected);
+    expectSource(source.pipe(ignoreElements())).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
@@ -14963,7 +14931,7 @@ import {isEmpty, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -14977,7 +14945,7 @@ describe('isEmpty operator', () => {
     const subs = '^    !';
     const expected = '-----(T|)';
 
-    expectObservable((<any>source).pipe(isEmpty())).toBe(expected, {T: true});
+    expectSource((<any>source).pipe(isEmpty())).toBe(expected, {T: true});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14986,7 +14954,7 @@ describe('isEmpty operator', () => {
     const subs = '^  !';
     const expected = '---(F|)';
 
-    expectObservable((<any>source).pipe(isEmpty())).toBe(expected, {F: false});
+    expectSource((<any>source).pipe(isEmpty())).toBe(expected, {F: false});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -14995,7 +14963,7 @@ describe('isEmpty operator', () => {
     const subs = '^ !';
     const expected = '--#';
 
-    expectObservable((<any>source).pipe(isEmpty())).toBe(expected);
+    expectSource((<any>source).pipe(isEmpty())).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -15004,7 +14972,7 @@ describe('isEmpty operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable((<any>source).pipe(isEmpty())).toBe(expected);
+    expectSource((<any>source).pipe(isEmpty())).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -15013,7 +14981,7 @@ describe('isEmpty operator', () => {
     const subs = '(^!)';
     const expected = '(T|)';
 
-    expectObservable((<any>source).pipe(isEmpty())).toBe(expected, {T: true});
+    expectSource((<any>source).pipe(isEmpty())).toBe(expected, {T: true});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -15023,7 +14991,7 @@ describe('isEmpty operator', () => {
     const subs = '^     !           ';
     const expected = '-------           ';
 
-    expectObservable((<any>source).pipe(isEmpty()), unsub).toBe(expected);
+    expectSource((<any>source).pipe(isEmpty()), unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -15039,7 +15007,7 @@ describe('isEmpty operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
@@ -15047,7 +15015,7 @@ describe('isEmpty operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {last, mergeMap} from 'rxjs/operators';
@@ -15062,7 +15030,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '^            !';
     const expected = '-------------(c|)';
 
-    expectObservable(e1.pipe(last())).toBe(expected);
+    expectSource(e1.pipe(last())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15071,7 +15039,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '^    !';
     const expected = '-----#';
 
-    expectObservable(e1.pipe(last())).toBe(expected, null, new EmptyError());
+    expectSource(e1.pipe(last())).toBe(expected, null, new EmptyError());
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15080,7 +15048,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(last())).toBe(expected, null, new EmptyError());
+    expectSource(e1.pipe(last())).toBe(expected, null, new EmptyError());
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15089,7 +15057,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(last())).toBe(expected);
+    expectSource(e1.pipe(last())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15098,7 +15066,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '^             !';
     const expected = '--------------(b|)';
 
-    expectObservable(e1.pipe(last(value => value === 'b'))).toBe(expected);
+    expectSource(e1.pipe(last(value => value === 'b'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15108,7 +15076,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '^      !       ';
     const expected = '--------       ';
 
-    expectObservable(e1.pipe(last()), unsub).toBe(expected);
+    expectSource(e1.pipe(last()), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15124,7 +15092,7 @@ describe('Observable.prototype.last', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15133,7 +15101,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '(^!)';
     const expected = '(a|)';
 
-    expectObservable(e1.pipe(last(null, 'a'))).toBe(expected);
+    expectSource(e1.pipe(last(null, 'a'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15142,7 +15110,7 @@ describe('Observable.prototype.last', () => {
     const e1subs = '^               !';
     const expected = '----------------(d|)';
 
-    expectObservable(e1.pipe(last(null, 'x'))).toBe(expected);
+    expectSource(e1.pipe(last(null, 'x'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15159,7 +15127,7 @@ describe('Observable.prototype.last', () => {
       }
     };
 
-    expectObservable(e1.pipe(last(predicate))).toBe(expected);
+    expectSource(e1.pipe(last(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15247,7 +15215,7 @@ import {map, tap, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -15275,7 +15243,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected, {x: 10, y: 20, z: 30});
+    expectSource(r).toBe(expected, {x: 10, y: 20, z: 30});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15286,7 +15254,7 @@ describe('map operator', () => {
 
     const r = a.pipe(map(addDrama));
 
-    expectObservable(r).toBe(expected, {y: '42!'});
+    expectSource(r).toBe(expected, {y: '42!'});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15306,7 +15274,7 @@ describe('map operator', () => {
 
     const r = a.pipe(map(addDrama));
 
-    expectObservable(r).toBe(expected, {x: '1!', y: '2!', z: '3!'});
+    expectSource(r).toBe(expected, {x: '1!', y: '2!', z: '3!'});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15321,7 +15289,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected, null, 'too bad');
+    expectSource(r).toBe(expected, null, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15331,7 +15299,7 @@ describe('map operator', () => {
     const expected = '#';
 
     const r = a.pipe(map(identity));
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15341,7 +15309,7 @@ describe('map operator', () => {
     const expected = '--x--y--#';
 
     const r = a.pipe(map(addDrama));
-    expectObservable(r).toBe(expected, {x: '1!', y: '2!'}, 'too bad');
+    expectSource(r).toBe(expected, {x: '1!', y: '2!'}, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15361,7 +15329,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15373,7 +15341,7 @@ describe('map operator', () => {
 
     const r = a.pipe(map(addDrama));
 
-    expectObservable(r, unsub).toBe(expected, {x: '1!', y: '2!'});
+    expectSource(r, unsub).toBe(expected, {x: '1!', y: '2!'});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15394,7 +15362,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected, values);
+    expectSource(r).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15415,7 +15383,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected, values);
+    expectSource(r).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15436,7 +15404,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected, values, 'too bad');
+    expectSource(r).toBe(expected, values, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15456,7 +15424,7 @@ describe('map operator', () => {
       }, foo)
     );
 
-    expectObservable(r).toBe(expected, values);
+    expectSource(r).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15483,7 +15451,7 @@ describe('map operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected, values);
+    expectSource(r).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15511,7 +15479,7 @@ describe('map operator', () => {
       }, filterer)
     );
 
-    expectObservable(r).toBe(expected, values);
+    expectSource(r).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15527,7 +15495,7 @@ describe('map operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(r, unsub).toBe(expected, {x: '1!', y: '2!'});
+    expectSource(r, unsub).toBe(expected, {x: '1!', y: '2!'});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 });
@@ -15536,7 +15504,7 @@ import {mapTo, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of} from 'rxjs';
@@ -15550,7 +15518,7 @@ describe('mapTo operator', () => {
     const asubs = '^          !';
     const expected = '--a--a--a--|';
 
-    expectObservable(a.pipe(mapTo('a'))).toBe(expected);
+    expectSource(a.pipe(mapTo('a'))).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15559,7 +15527,7 @@ describe('mapTo operator', () => {
     const asubs = '^    !';
     const expected = '--y--|';
 
-    expectObservable(a.pipe(mapTo('y'))).toBe(expected);
+    expectSource(a.pipe(mapTo('y'))).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15569,7 +15537,7 @@ describe('mapTo operator', () => {
     const asubs = '^     !     ';
     const expected = '--x--x-     ';
 
-    expectObservable(a.pipe(mapTo('x')), unsub).toBe(expected);
+    expectSource(a.pipe(mapTo('x')), unsub).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15578,7 +15546,7 @@ describe('mapTo operator', () => {
     const asubs = '^ !';
     const expected = '--#';
 
-    expectObservable(a.pipe(mapTo(1))).toBe(expected, null, 'too bad');
+    expectSource(a.pipe(mapTo(1))).toBe(expected, null, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15587,7 +15555,7 @@ describe('mapTo operator', () => {
     const asubs = '^       !';
     const expected = '--x--x--#';
 
-    expectObservable(a.pipe(mapTo('x'))).toBe(expected, undefined, 'too bad');
+    expectSource(a.pipe(mapTo('x'))).toBe(expected, undefined, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15596,7 +15564,7 @@ describe('mapTo operator', () => {
     const asubs = '(^!)';
     const expected = '|';
 
-    expectObservable(a.pipe(mapTo(-1))).toBe(expected);
+    expectSource(a.pipe(mapTo(-1))).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15607,7 +15575,7 @@ describe('mapTo operator', () => {
 
     const r = a.pipe(mapTo(-1), mapTo('h'));
 
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -15623,7 +15591,7 @@ describe('mapTo operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(r, unsub).toBe(expected);
+    expectSource(r, unsub).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 });
@@ -15632,7 +15600,7 @@ import {Notification, of} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -15656,7 +15624,7 @@ describe('materialize operator', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
   });
 
   it('should materialize a happy stream', () => {
@@ -15671,7 +15639,7 @@ describe('materialize operator', () => {
       z: Notification.createComplete()
     };
 
-    expectObservable(e1.pipe(materialize())).toBe(expected, expectedValue);
+    expectSource(e1.pipe(materialize())).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15687,7 +15655,7 @@ describe('materialize operator', () => {
       z: Notification.createError('error')
     };
 
-    expectObservable(e1.pipe(materialize())).toBe(expected, expectedValue);
+    expectSource(e1.pipe(materialize())).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15702,10 +15670,7 @@ describe('materialize operator', () => {
       x: Notification.createNext('b')
     };
 
-    expectObservable(e1.pipe(materialize()), unsub).toBe(
-      expected,
-      expectedValue
-    );
+    expectSource(e1.pipe(materialize()), unsub).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15726,7 +15691,7 @@ describe('materialize operator', () => {
       mergeMap((x: Notification<any>) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, expectedValue);
+    expectSource(result, unsub).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15735,7 +15700,7 @@ describe('materialize operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(materialize())).toBe(expected);
+    expectSource(e1.pipe(materialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15744,7 +15709,7 @@ describe('materialize operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(materialize())).toBe(expected);
+    expectSource(e1.pipe(materialize())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15753,7 +15718,7 @@ describe('materialize operator', () => {
     const e1subs = '^   !';
     const expected = '----(x|)';
 
-    expectObservable(e1.pipe(materialize())).toBe(expected, {
+    expectSource(e1.pipe(materialize())).toBe(expected, {
       x: Notification.createComplete()
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -15764,7 +15729,7 @@ describe('materialize operator', () => {
     const e1subs = '(^!)';
     const expected = '(x|)';
 
-    expectObservable(e1.pipe(materialize())).toBe(expected, {
+    expectSource(e1.pipe(materialize())).toBe(expected, {
       x: Notification.createComplete()
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -15775,7 +15740,7 @@ describe('materialize operator', () => {
     const e1subs = '(^!)';
     const expected = '(x|)';
 
-    expectObservable(e1.pipe(materialize())).toBe(expected, {
+    expectSource(e1.pipe(materialize())).toBe(expected, {
       x: Notification.createError('error')
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -15786,7 +15751,7 @@ import {max, mergeMap, skip, take} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, range} from 'rxjs';
@@ -15800,7 +15765,7 @@ describe('max operator', () => {
     const subs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected, {x: 42});
+    expectSource((<any>e1).pipe(max())).toBe(expected, {x: 42});
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -15809,7 +15774,7 @@ describe('max operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected);
+    expectSource((<any>e1).pipe(max())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15818,7 +15783,7 @@ describe('max operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected);
+    expectSource((<any>e1).pipe(max())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15827,7 +15792,7 @@ describe('max operator', () => {
     const e1subs = '^     ';
     const expected = '------';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected);
+    expectSource((<any>e1).pipe(max())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15836,7 +15801,7 @@ describe('max operator', () => {
     const e1subs = '^   !';
     const expected = '----|';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected);
+    expectSource((<any>e1).pipe(max())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15845,7 +15810,7 @@ describe('max operator', () => {
     const e1subs = '^     !';
     const expected = '------(w|)';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected, {w: 42});
+    expectSource((<any>e1).pipe(max())).toBe(expected, {w: 42});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15854,7 +15819,7 @@ describe('max operator', () => {
     const subs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected, {x: 666});
+    expectSource((<any>e1).pipe(max())).toBe(expected, {x: 666});
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -15864,7 +15829,7 @@ describe('max operator', () => {
     const subs = '^     !     ';
     const expected = '-------     ';
 
-    expectObservable((<any>e1).pipe(max()), unsub).toBe(expected, {x: 42});
+    expectSource((<any>e1).pipe(max()), unsub).toBe(expected, {x: 42});
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -15880,7 +15845,7 @@ describe('max operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, {x: 42});
+    expectSource(result, unsub).toBe(expected, {x: 42});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -15931,7 +15896,7 @@ describe('max operator', () => {
     const e1subs = '^        !';
     const expected = '---------#';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected, null, 'too bad');
+    expectSource((<any>e1).pipe(max())).toBe(expected, null, 'too bad');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15940,7 +15905,7 @@ describe('max operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>e1).pipe(max())).toBe(expected);
+    expectSource((<any>e1).pipe(max())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15953,7 +15918,7 @@ describe('max operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15966,7 +15931,7 @@ describe('max operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15979,7 +15944,7 @@ describe('max operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected, {w: 1});
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected, {w: 1});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -15992,7 +15957,7 @@ describe('max operator', () => {
       return x > y ? -1 : 1;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected, {w: -1});
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected, {w: -1});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16005,7 +15970,7 @@ describe('max operator', () => {
       return x > y ? -1 : 1;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected, {w: 'b'});
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected, {w: 'b'});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16018,7 +15983,7 @@ describe('max operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16034,7 +15999,7 @@ describe('max operator', () => {
       return x > y ? -1 : 1;
     };
 
-    expectObservable((<any>e1).pipe(max(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(max(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -16066,7 +16031,7 @@ import {mergeAll, mergeMap, take} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {throwError, from, of, Observable, queueScheduler} from 'rxjs';
@@ -16084,7 +16049,7 @@ describe('mergeAll oeprator', () => {
       const e1 = hot('--x------y-------|       ', {x: x, y: y});
       const expected = '----a---b--c-e-d-f--g---|';
 
-      expectObservable(e1.pipe(mergeAll())).toBe(expected);
+      expectSource(e1.pipe(mergeAll())).toBe(expected);
     }
   );
 
@@ -16092,14 +16057,14 @@ describe('mergeAll oeprator', () => {
     const e1 = from([of('a'), of('b'), of('c')]);
     const expected = '(abc|)';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
   });
 
   it('should throw if any child observable throws', () => {
     const e1 = from([of('a'), throwError('error'), of('c')]);
     const expected = '(a#)';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
   });
 
   it('should handle merging a hot observable of observables', () => {
@@ -16111,7 +16076,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !         ';
     const expected = '--a--db--ec--f---|';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16126,7 +16091,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !                  ';
     const expected = '--a---b---c---d---e---f---|';
 
-    expectObservable(e1.pipe(mergeAll(1))).toBe(expected);
+    expectSource(e1.pipe(mergeAll(1))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16143,7 +16108,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^          !           ';
     const expected = '--a--db--ec--f--g---h-|';
 
-    expectObservable(e1.pipe(mergeAll(2))).toBe(expected);
+    expectSource(e1.pipe(mergeAll(2))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -16159,7 +16124,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !                 ';
     const expected = '---a---b---c-----e---f---|';
 
-    expectObservable(e1.pipe(mergeAll(1))).toBe(expected);
+    expectSource(e1.pipe(mergeAll(1))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16176,7 +16141,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^          !            ';
     const expected = '---a--db--ec--f--g---h-|';
 
-    expectObservable(e1.pipe(mergeAll(2))).toBe(expected);
+    expectSource(e1.pipe(mergeAll(2))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -16193,7 +16158,7 @@ describe('mergeAll oeprator', () => {
     const unsub = '            !     ';
     const expected = '--a--db--ec--     ';
 
-    expectObservable(e1.pipe(mergeAll()), unsub).toBe(expected);
+    expectSource(e1.pipe(mergeAll()), unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16215,7 +16180,7 @@ describe('mergeAll oeprator', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16230,7 +16195,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !            ';
     const expected = '------(ad)-(be)-(cf)|';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16245,7 +16210,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !';
     const expected = '--------|';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16262,7 +16227,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^          !';
     const expected = '-----------|';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -16278,7 +16243,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !';
     const expected = '---------';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16293,7 +16258,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !';
     const expected = '---------';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16308,7 +16273,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^    !   ';
     const expected = '-----#   ';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16323,7 +16288,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^    !   ';
     const expected = '-----#   ';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16338,7 +16303,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !   ';
     const expected = '-----------#';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16353,7 +16318,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^       !   ';
     const expected = '-----------#';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16364,7 +16329,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16373,7 +16338,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16382,7 +16347,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16397,7 +16362,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^                             ! ';
     const expected = '--a-b-------c-d-e-f--g-h-i-j-k-|';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -16415,7 +16380,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^                   !           ';
     const expected = '--a-b-------c-d-e-f-#           ';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -16431,7 +16396,7 @@ describe('mergeAll oeprator', () => {
     const e1subs = '^               !              ';
     const expected = '--a-b-------c-d-#              ';
 
-    expectObservable(e1.pipe(mergeAll())).toBe(expected);
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16569,7 +16534,7 @@ import {asapScheduler, defer, Observable, from, of, timer} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {asInteropObservable} from '../helpers/interop-helper';
@@ -16590,7 +16555,7 @@ describe('mergeMap', () => {
 
       const result = e1.pipe(mergeMap(x => e2.pipe(map(i => i * +x))));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -16681,7 +16646,7 @@ describe('mergeMap', () => {
     };
     const source = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16784,7 +16749,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -16801,7 +16766,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16818,7 +16783,7 @@ describe('mergeMap', () => {
 
     const source = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16839,7 +16804,7 @@ describe('mergeMap', () => {
       map(x => x)
     );
 
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16867,7 +16832,7 @@ describe('mergeMap', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -16882,7 +16847,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16895,7 +16860,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16908,7 +16873,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16921,7 +16886,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => inner));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -16949,7 +16914,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -16971,7 +16936,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17014,7 +16979,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(hotA.subscriptions).toBe(asubs);
     expectSubscriptions(hotB.subscriptions).toBe(bsubs);
@@ -17043,7 +17008,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(hotA.subscriptions).toBe(asubs);
     expectSubscriptions(hotB.subscriptions).toBe(bsubs);
@@ -17074,7 +17039,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17096,7 +17061,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17139,7 +17104,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(hotA.subscriptions).toBe(asubs);
     expectSubscriptions(hotB.subscriptions).toBe(bsubs);
@@ -17168,7 +17133,7 @@ describe('mergeMap', () => {
     }
     const result = e1.pipe(mergeMap(project, 2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(hotA.subscriptions).toBe(asubs);
     expectSubscriptions(hotB.subscriptions).toBe(bsubs);
@@ -17199,7 +17164,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17227,7 +17192,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17255,7 +17220,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17283,7 +17248,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17311,7 +17276,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17339,7 +17304,7 @@ describe('mergeMap', () => {
     };
     const source = e1.pipe(mergeMap(value => observableLookup[value]));
 
-    expectObservable(source, unsub).toBe(expected);
+    expectSource(source, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17375,7 +17340,7 @@ describe('mergeMap', () => {
       })
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17394,7 +17359,7 @@ describe('mergeMap', () => {
 
     const source = e1.pipe(mergeMap(value => arrayRepeat(value, +value)));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17405,7 +17370,7 @@ describe('mergeMap', () => {
 
     const source = e1.pipe(mergeMap(value => arrayRepeat(value, +value)));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17417,7 +17382,7 @@ describe('mergeMap', () => {
 
     const source = e1.pipe(mergeMap(value => arrayRepeat(value, +value)));
 
-    expectObservable(source, unsub).toBe(expected);
+    expectSource(source, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17437,7 +17402,7 @@ describe('mergeMap', () => {
       })
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17588,7 +17553,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {mergeMapTo, map} from 'rxjs/operators';
@@ -17610,7 +17575,7 @@ describe('mergeMapTo', () => {
 
       const result = e1.pipe(mergeMapTo(e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -17678,7 +17643,7 @@ describe('mergeMapTo', () => {
 
     const source = e1.pipe(mergeMapTo(x));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17733,7 +17698,7 @@ describe('mergeMapTo', () => {
     ];
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)k---l---|';
 
-    expectObservable(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
+    expectSource(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17751,7 +17716,7 @@ describe('mergeMapTo', () => {
     ];
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)k---l-------|';
 
-    expectObservable(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
+    expectSource(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17773,7 +17738,7 @@ describe('mergeMapTo', () => {
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)(ki)(lj)k---l---i-';
 
     const source = e1.pipe(mergeMapTo(inner));
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17800,7 +17765,7 @@ describe('mergeMapTo', () => {
       map(x => x)
     );
 
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17818,7 +17783,7 @@ describe('mergeMapTo', () => {
     ];
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)k---l-';
 
-    expectObservable(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
+    expectSource(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17836,7 +17801,7 @@ describe('mergeMapTo', () => {
     ];
     const expected = '-----i---j---(ki)(lj)(ki)#';
 
-    expectObservable(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
+    expectSource(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17854,7 +17819,7 @@ describe('mergeMapTo', () => {
     ];
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)#';
 
-    expectObservable(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
+    expectSource(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17871,7 +17836,7 @@ describe('mergeMapTo', () => {
     ];
     const expected = '-----i---j---(ki)(lj)#';
 
-    expectObservable(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
+    expectSource(e1.pipe(mergeMapTo(inner))).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17897,7 +17862,7 @@ describe('mergeMapTo', () => {
 
     const result = e1.pipe(mergeMapTo(inner, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17916,7 +17881,7 @@ describe('mergeMapTo', () => {
 
     const result = e1.pipe(mergeMapTo(inner, 2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -17928,7 +17893,7 @@ describe('mergeMapTo', () => {
 
     const source = e1.pipe(mergeMapTo(['0', '1', '2', '3']));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17939,7 +17904,7 @@ describe('mergeMapTo', () => {
 
     const source = e1.pipe(mergeMapTo(['0', '1', '2', '3']));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -17951,7 +17916,7 @@ describe('mergeMapTo', () => {
 
     const source = e1.pipe(mergeMapTo(['0', '1', '2', '3']));
 
-    expectObservable(source, unsub).toBe(expected);
+    expectSource(source, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18008,7 +17973,7 @@ describe('mergeMapTo', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {TestScheduler} from 'rxjs/testing';
@@ -18037,7 +18002,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18056,7 +18021,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18081,7 +18046,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18106,7 +18071,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18131,7 +18096,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source, e1subs).toBe(expected, values);
+    expectSource(source, e1subs).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18161,7 +18126,7 @@ describe('mergeScan', () => {
       })
     );
 
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18213,7 +18178,7 @@ describe('mergeScan', () => {
       }, [] as string[])
     );
 
-    expectObservable(source).toBe(expected, values, new Error('bad!'));
+    expectSource(source).toBe(expected, values, new Error('bad!'));
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18226,7 +18191,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => throwError(new Error('bad!')), [])
     );
 
-    expectObservable(source).toBe(expected, undefined, new Error('bad!'));
+    expectSource(source).toBe(expected, undefined, new Error('bad!'));
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18239,7 +18204,7 @@ describe('mergeScan', () => {
 
     const source = e1.pipe(mergeScan((acc, x) => EMPTY, []));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18252,7 +18217,7 @@ describe('mergeScan', () => {
 
     const source = e1.pipe(mergeScan((acc, x) => NEVER, []));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18269,7 +18234,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18282,7 +18247,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18295,7 +18260,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18316,7 +18281,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
     );
 
-    expectObservable(source, sub).toBe(expected, values);
+    expectSource(source, sub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -18348,7 +18313,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
 
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner[0].subscriptions).toBe(xsubs);
@@ -18363,7 +18328,7 @@ describe('mergeScan', () => {
 
     const source = e1.pipe(mergeScan((acc, x) => EMPTY, ['1']));
 
-    expectObservable(source).toBe(expected, {x: ['1']});
+    expectSource(source).toBe(expected, {x: ['1']});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18376,7 +18341,7 @@ describe('mergeScan', () => {
       mergeScan((acc, x) => EMPTY.pipe(delay(50, rxTestScheduler)), ['1'])
     );
 
-    expectObservable(source).toBe(expected, {x: ['1']});
+    expectSource(source).toBe(expected, {x: ['1']});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18408,7 +18373,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
 
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner[0].subscriptions).toBe(xsubs);
@@ -18444,7 +18409,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
 
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner[0].subscriptions).toBe(xsubs);
@@ -18480,7 +18445,7 @@ describe('mergeScan', () => {
       )
     );
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
 
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(inner[0].subscriptions).toBe(xsubs);
@@ -18517,7 +18482,7 @@ describe('merge operator', () => {
   });
 
   it('should handle merging two hot observables', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a-----b-----c----|');
       const e1subs = '  ^------------------!';
       const e2 = hot('-----d-----e-----f---|');
@@ -18526,7 +18491,7 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -18551,7 +18516,7 @@ describe('merge operator', () => {
   });
 
   it('should merge cold and cold', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' ---a-----b-----c----|');
       const e1subs = '  ^-------------------!';
       const e2 = cold(' ------x-----y-----z----|');
@@ -18560,14 +18525,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge hot and hot', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---a---^-b-----c----|');
       const e1subs = '       ^------------!';
       const e2 = hot('-----x-^----y-----z----|');
@@ -18576,32 +18541,30 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge hot and cold', () => {
-    rxTestScheduler.run(
-      ({hot, cold, expectObservable, expectSubscriptions}) => {
-        const e1 = hot('---a-^---b-----c----|');
-        const e1subs = '     ^--------------!';
-        const e2 = cold('    --x-----y-----z----|');
-        const e2subs = '     ^------------------!';
-        const expected = '   --x-b---y-c---z----|';
+    rxTestScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---a-^---b-----c----|');
+      const e1subs = '     ^--------------!';
+      const e2 = cold('    --x-----y-----z----|');
+      const e2subs = '     ^------------------!';
+      const expected = '   --x-b---y-c---z----|';
 
-        const result = e1.pipe(mergeWith(e2));
+      const result = e1.pipe(mergeWith(e2));
 
-        expectObservable(result).toBe(expected);
-        expectSubscriptions(e1.subscriptions).toBe(e1subs);
-        expectSubscriptions(e2.subscriptions).toBe(e2subs);
-      }
-    );
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
   });
 
   it('should merge parallel emissions', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a----b----c----|');
       const e1subs = '  ^-----------------!';
       const e2 = hot('  ---x----y----z----|');
@@ -18610,14 +18573,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should allow unsubscribing explicitly and early', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a-----b-----c----|  ');
       const e1subs = '  ^---------!           ';
       const e2 = hot('  -----d-----e-----f---|');
@@ -18627,14 +18590,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a-----b-----c----|  ');
       const e1subs = '  ^---------!           ';
       const e2 = hot('  -----d-----e-----f---|');
@@ -18648,14 +18611,14 @@ describe('merge operator', () => {
         map(x => x)
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge empty and empty', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('|   ');
       const e1subs = ' (^!)';
       const e2 = cold('|   ');
@@ -18663,14 +18626,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe('|');
+      expectSource(result).toBe('|');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge three empties', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('|');
       const e1subs = ' (^!)';
       const e2 = cold('|');
@@ -18680,7 +18643,7 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2, e3));
 
-      expectObservable(result).toBe('|');
+      expectSource(result).toBe('|');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -18688,7 +18651,7 @@ describe('merge operator', () => {
   });
 
   it('should merge never and empty', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('-');
       const e1subs = ' ^';
       const e2 = cold('|');
@@ -18696,14 +18659,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe('-');
+      expectSource(result).toBe('-');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge never and never', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('-');
       const e1subs = ' ^';
       const e2 = cold('-');
@@ -18711,14 +18674,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe('-');
+      expectSource(result).toBe('-');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge empty and throw', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('|');
       const e1subs = ' (^!)';
       const e2 = cold('#');
@@ -18726,31 +18689,29 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe('#');
+      expectSource(result).toBe('#');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge hot and throw', () => {
-    rxTestScheduler.run(
-      ({hot, cold, expectObservable, expectSubscriptions}) => {
-        const e1 = hot(' --a--b--c--|');
-        const e1subs = '(^!)';
-        const e2 = cold('#');
-        const e2subs = '(^!)';
+    rxTestScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot(' --a--b--c--|');
+      const e1subs = '(^!)';
+      const e2 = cold('#');
+      const e2subs = '(^!)';
 
-        const result = e1.pipe(mergeWith(e2));
+      const result = e1.pipe(mergeWith(e2));
 
-        expectObservable(result).toBe('#');
-        expectSubscriptions(e1.subscriptions).toBe(e1subs);
-        expectSubscriptions(e2.subscriptions).toBe(e2subs);
-      }
-    );
+      expectSource(result).toBe('#');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
   });
 
   it('should merge never and throw', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('-');
       const e1subs = ' (^!)';
       const e2 = cold('#');
@@ -18758,32 +18719,30 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe('#');
+      expectSource(result).toBe('#');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge empty and eventual error', () => {
-    rxTestScheduler.run(
-      ({hot, cold, expectObservable, expectSubscriptions}) => {
-        const e1 = cold(' |');
-        const e1subs = '  (^!)    ';
-        const e2 = hot('  -------#');
-        const e2subs = '  ^------!';
-        const expected = '-------#';
+    rxTestScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' |');
+      const e1subs = '  (^!)    ';
+      const e2 = hot('  -------#');
+      const e2subs = '  ^------!';
+      const expected = '-------#';
 
-        const result = e1.pipe(mergeWith(e2));
+      const result = e1.pipe(mergeWith(e2));
 
-        expectObservable(result).toBe(expected);
-        expectSubscriptions(e1.subscriptions).toBe(e1subs);
-        expectSubscriptions(e2.subscriptions).toBe(e2subs);
-      }
-    );
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
   });
 
   it('should merge hot and error', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --a--b--c--|');
       const e1subs = '  ^------!    ';
       const e2 = hot('  -------#    ');
@@ -18792,14 +18751,14 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
   });
 
   it('should merge never and error', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  --------');
       const e1subs = '  ^------!';
       const e2 = hot('  -------#');
@@ -18808,7 +18767,7 @@ describe('merge operator', () => {
 
       const result = e1.pipe(mergeWith(e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     });
@@ -18853,7 +18812,7 @@ import {min, skip, take, mergeMap} from 'rxjs/operators';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {range, of} from 'rxjs';
@@ -18867,7 +18826,7 @@ describe('min operator', () => {
     const subs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable((<any>source).pipe(min())).toBe(expected, {x: -1});
+    expectSource((<any>source).pipe(min())).toBe(expected, {x: -1});
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -18876,7 +18835,7 @@ describe('min operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected);
+    expectSource((<any>e1).pipe(min())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18885,7 +18844,7 @@ describe('min operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected);
+    expectSource((<any>e1).pipe(min())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18894,7 +18853,7 @@ describe('min operator', () => {
     const e1subs = '^     ';
     const expected = '------';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected);
+    expectSource((<any>e1).pipe(min())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18903,7 +18862,7 @@ describe('min operator', () => {
     const e1subs = '^   !';
     const expected = '----|';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected);
+    expectSource((<any>e1).pipe(min())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18912,7 +18871,7 @@ describe('min operator', () => {
     const e1subs = '^     !';
     const expected = '------(w|)';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected, {w: 42});
+    expectSource((<any>e1).pipe(min())).toBe(expected, {w: 42});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18921,7 +18880,7 @@ describe('min operator', () => {
     const subs = '^          !';
     const expected = '-----------(x|)';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected, {x: -1});
+    expectSource((<any>e1).pipe(min())).toBe(expected, {x: -1});
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -18972,7 +18931,7 @@ describe('min operator', () => {
     const e1subs = '^        !';
     const expected = '---------#';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected, null, 'too bad');
+    expectSource((<any>e1).pipe(min())).toBe(expected, null, 'too bad');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18981,7 +18940,7 @@ describe('min operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>e1).pipe(min())).toBe(expected);
+    expectSource((<any>e1).pipe(min())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -18994,7 +18953,7 @@ describe('min operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19007,7 +18966,7 @@ describe('min operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19020,7 +18979,7 @@ describe('min operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected, {w: 1});
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected, {w: 1});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19034,7 +18993,7 @@ describe('min operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate)), unsub).toBe(expected);
+    expectSource((<any>e1).pipe(min(predicate)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19054,7 +19013,7 @@ describe('min operator', () => {
       mergeMap((x: number) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19067,7 +19026,7 @@ describe('min operator', () => {
       return x > y ? -1 : 1;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected, {w: 666});
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected, {w: 666});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19080,7 +19039,7 @@ describe('min operator', () => {
       return x > y ? -1 : 1;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected, {w: 'd'});
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected, {w: 'd'});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19093,7 +19052,7 @@ describe('min operator', () => {
       return 42;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -19109,7 +19068,7 @@ describe('min operator', () => {
       return x > y ? -1 : 1;
     };
 
-    expectObservable((<any>e1).pipe(min(predicate))).toBe(expected);
+    expectSource((<any>e1).pipe(min(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -19141,7 +19100,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions,
   time
 } from '../helpers/marble-testing';
@@ -19163,7 +19122,7 @@ describe('multicast operator', () => {
       ) as Connectable<string>;
       const expected = '--1-2---3-4--5-|';
 
-      expectObservable(multicasted).toBe(expected);
+      expectSource(multicasted).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       multicasted.connect();
@@ -19265,9 +19224,9 @@ describe('multicast operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(multicasted));
     const expected3 = '        --8-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -19292,9 +19251,9 @@ describe('multicast operator', () => {
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(multicasted));
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -19318,9 +19277,9 @@ describe('multicast operator', () => {
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(multicasted));
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -19330,7 +19289,7 @@ describe('multicast operator', () => {
     const multicasted = source.pipe(multicast(() => new Subject<string>()));
     const expected = '-';
 
-    expectObservable(multicasted).toBe(expected);
+    expectSource(multicasted).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -19347,9 +19306,9 @@ describe('multicast operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(multicasted));
     const expected3 = '        --4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     multicasted.connect();
@@ -19368,9 +19327,9 @@ describe('multicast operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(multicasted));
     const expected3 = '        --4-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     multicasted.connect();
@@ -19393,14 +19352,14 @@ describe('multicast operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(multicasted));
       const expected3 = '        --   ';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       // Set up unsubscription action
       let connection: Subscription;
-      expectObservable(
+      expectSource(
         hot(unsub).pipe(
           tap(() => {
             connection.unsubscribe();
@@ -19427,14 +19386,14 @@ describe('multicast operator', () => {
     const expected3 = '        --   ';
     const unsub = '         u   ';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     // Set up unsubscription action
     let connection: Subscription;
-    expectObservable(
+    expectSource(
       hot(unsub).pipe(
         tap(() => {
           connection.unsubscribe();
@@ -19453,7 +19412,7 @@ describe('multicast operator', () => {
     ) as Connectable<string>;
     const expected = '|';
 
-    expectObservable(multicasted).toBe(expected);
+    expectSource(multicasted).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     multicasted.connect();
@@ -19467,7 +19426,7 @@ describe('multicast operator', () => {
     ) as Connectable<string>;
     const expected = '-';
 
-    expectObservable(multicasted).toBe(expected);
+    expectSource(multicasted).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     multicasted.connect();
@@ -19481,7 +19440,7 @@ describe('multicast operator', () => {
     ) as Connectable<string>;
     const expected = '#';
 
-    expectObservable(multicasted).toBe(expected);
+    expectSource(multicasted).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     multicasted.connect();
@@ -19502,9 +19461,9 @@ describe('multicast operator', () => {
       const subscriber3 = hot('           c|   ').pipe(mergeMapTo(multicasted));
       const expected3 = '           --4-|';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -19522,8 +19481,8 @@ describe('multicast operator', () => {
       const unsub2 = '            !   ';
       const expected2 = '       -3----   ';
 
-      expectObservable(subscriber1, unsub1).toBe(expected1);
-      expectObservable(subscriber2, unsub2).toBe(expected2);
+      expectSource(subscriber1, unsub1).toBe(expected1);
+      expectSource(subscriber2, unsub2).toBe(expected2);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -19548,18 +19507,18 @@ describe('multicast operator', () => {
         ' (^!)'
       ];
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(retry(3))).toBe(expected1);
+            expectSource(multicasted.pipe(retry(3))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(retry(3))).toBe(expected2);
+            expectSource(multicasted.pipe(retry(3))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -19588,18 +19547,18 @@ describe('multicast operator', () => {
         ' (^!)'
       ];
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(retry(3))).toBe(expected1);
+            expectSource(multicasted.pipe(retry(3))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(retry(3))).toBe(expected2);
+            expectSource(multicasted.pipe(retry(3))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -19630,18 +19589,18 @@ describe('multicast operator', () => {
         ' (^!)'
       ];
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(5))).toBe(expected1);
+            expectSource(multicasted.pipe(repeat(5))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(5))).toBe(expected2);
+            expectSource(multicasted.pipe(repeat(5))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -19672,18 +19631,18 @@ describe('multicast operator', () => {
         ' (^!)'
       ];
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(5))).toBe(expected1);
+            expectSource(multicasted.pipe(repeat(5))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(5))).toBe(expected2);
+            expectSource(multicasted.pipe(repeat(5))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -19707,18 +19666,18 @@ describe('multicast operator', () => {
       const subscribe2 = '    s                                ';
       const expected2 = '    -3----4--1-2-3----4--1-2-3----4-#';
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(retry(2))).toBe(expected1);
+            expectSource(multicasted.pipe(retry(2))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(retry(2))).toBe(expected2);
+            expectSource(multicasted.pipe(retry(2))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -19741,10 +19700,10 @@ describe('multicast operator', () => {
       const subscribe2 = time('----|                                ');
       const expected2 = '    23----4--1-2-3----4--1-2-3----4-#';
 
-      expectObservable(multicasted.pipe(retry(2))).toBe(expected1);
+      expectSource(multicasted.pipe(retry(2))).toBe(expected1);
 
       rxTestScheduler.schedule(
-        () => expectObservable(multicasted.pipe(retry(2))).toBe(expected2),
+        () => expectSource(multicasted.pipe(retry(2))).toBe(expected2),
         subscribe2
       );
 
@@ -19767,18 +19726,18 @@ describe('multicast operator', () => {
       const subscribe2 = '    s                                ';
       const expected2 = '    -3----4--1-2-3----4--1-2-3----4-|';
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(3))).toBe(expected1);
+            expectSource(multicasted.pipe(repeat(3))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(3))).toBe(expected2);
+            expectSource(multicasted.pipe(repeat(3))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -19802,18 +19761,18 @@ describe('multicast operator', () => {
       const subscribe2 = '    s                                ';
       const expected2 = '    23----4--1-2-3----4--1-2-3----4-|';
 
-      expectObservable(
+      expectSource(
         hot(subscribe1).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(3))).toBe(expected1);
+            expectSource(multicasted.pipe(repeat(3))).toBe(expected1);
           })
         )
       ).toBe(subscribe1);
 
-      expectObservable(
+      expectSource(
         hot(subscribe2).pipe(
           tap(() => {
-            expectObservable(multicasted.pipe(repeat(3))).toBe(expected2);
+            expectSource(multicasted.pipe(repeat(3))).toBe(expected2);
           })
         )
       ).toBe(subscribe2);
@@ -20047,7 +20006,7 @@ import {TestScheduler} from 'rxjs/testing';
 import {expect} from 'chai';
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {of, Observable, asapScheduler} from 'rxjs';
@@ -20065,7 +20024,7 @@ describe('observeOn operator', () => {
       const expected = '--a--b--|';
       const sub = '^       !';
 
-      expectObservable(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
+      expectSource(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(sub);
     }
   );
@@ -20075,7 +20034,7 @@ describe('observeOn operator', () => {
     const expected = '-----a--b--|';
     const sub = '^       !   ';
 
-    expectObservable(e1.pipe(observeOn(rxTestScheduler, 30))).toBe(expected);
+    expectSource(e1.pipe(observeOn(rxTestScheduler, 30))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -20084,7 +20043,7 @@ describe('observeOn operator', () => {
     const expected = '--a--#';
     const sub = '^    !';
 
-    expectObservable(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -20093,7 +20052,7 @@ describe('observeOn operator', () => {
     const expected = '-----|';
     const sub = '^    !';
 
-    expectObservable(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -20102,7 +20061,7 @@ describe('observeOn operator', () => {
     const expected = '-----';
     const sub = '^    ';
 
-    expectObservable(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -20114,7 +20073,7 @@ describe('observeOn operator', () => {
 
     const result = e1.pipe(observeOn(rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -20130,7 +20089,7 @@ describe('observeOn operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -20180,7 +20139,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {onErrorResumeNext, takeWhile} from 'rxjs/operators';
@@ -20198,7 +20157,7 @@ describe('onErrorResumeNext operator', () => {
       const subs = '^       !';
       const expected = '--a--b----c--d--|';
 
-      expectObservable(source.pipe(onErrorResumeNext(next))).toBe(expected);
+      expectSource(source.pipe(onErrorResumeNext(next))).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -20209,7 +20168,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d--|';
 
-    expectObservable(source.pipe(onErrorResumeNext(next))).toBe(expected);
+    expectSource(source.pipe(onErrorResumeNext(next))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -20219,7 +20178,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectObservable(source.pipe(onErrorResumeNext(next))).toBe(expected);
+    expectSource(source.pipe(onErrorResumeNext(next))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -20231,7 +20190,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectObservable(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
+    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
       expected
     );
     expectSubscriptions(source.subscriptions).toBe(subs);
@@ -20245,7 +20204,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectObservable(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
+    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
       expected
     );
     expectSubscriptions(source.subscriptions).toBe(subs);
@@ -20259,7 +20218,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '(^!)';
     const expected = '--c--d----e----f--g--|';
 
-    expectObservable(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
+    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
       expected
     );
     expectSubscriptions(source.subscriptions).toBe(subs);
@@ -20271,7 +20230,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       !';
     const expected = '--a--b----';
 
-    expectObservable(source.pipe(onErrorResumeNext(next1))).toBe(expected);
+    expectSource(source.pipe(onErrorResumeNext(next1))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -20281,7 +20240,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       ';
     const expected = '-';
 
-    expectObservable(source.pipe(onErrorResumeNext(next1))).toBe(expected);
+    expectSource(source.pipe(onErrorResumeNext(next1))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -20291,7 +20250,7 @@ describe('onErrorResumeNext operator', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d--|';
 
-    expectObservable(source.pipe(onErrorResumeNext(next))).toBe(expected);
+    expectSource(source.pipe(onErrorResumeNext(next))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -20337,7 +20296,7 @@ describe('onErrorResumeNext operator', () => {
     // test ensures that unsubscriptions are chained all the way to the
     // interop subscriber.
 
-    expectObservable(
+    expectSource(
       source.pipe(onErrorResumeNext(asInteropObservable(next))),
       subs
     ).toBe(expected);
@@ -20365,7 +20324,7 @@ describe('onErrorResumeNext operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {pairwise, take} from 'rxjs/operators';
@@ -20391,7 +20350,7 @@ describe('pairwise operator', () => {
 
       const source = (<any>e1).pipe(pairwise());
 
-      expectObservable(source).toBe(expected, values);
+      expectSource(source).toBe(expected, values);
     }
   );
 
@@ -20410,7 +20369,7 @@ describe('pairwise operator', () => {
 
     const source = (<any>e1).pipe(pairwise());
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -20423,7 +20382,7 @@ describe('pairwise operator', () => {
 
     const source = (<any>e1).pipe(pairwise());
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -20440,7 +20399,7 @@ describe('pairwise operator', () => {
 
     const source = (<any>e1).pipe(pairwise());
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -20451,7 +20410,7 @@ describe('pairwise operator', () => {
 
     const source = (<any>e1).pipe(pairwise());
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -20462,7 +20421,7 @@ describe('pairwise operator', () => {
 
     const source = (<any>e1).pipe(pairwise());
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -20473,7 +20432,7 @@ describe('pairwise operator', () => {
 
     const source = (<any>e1).pipe(pairwise());
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -20500,7 +20459,7 @@ describe('pairwise operator', () => {
 import {expect} from 'chai';
 import {
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {pluck, map, tap, mergeMap} from 'rxjs/operators';
@@ -20525,7 +20484,7 @@ describe('pluck operator', () => {
       pluck('v')
     );
 
-    expectObservable(result).toBe(expected, {x: '1', y: '2', z: '3'});
+    expectSource(result).toBe(expected, {x: '1', y: '2', z: '3'});
   });
 
   it('should work for one array', () => {
@@ -20534,7 +20493,7 @@ describe('pluck operator', () => {
     const expected = '--y--|';
 
     const r = a.pipe(pluck(0));
-    expectObservable(r).toBe(expected, {y: 'abc'});
+    expectSource(r).toBe(expected, {y: 'abc'});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20544,7 +20503,7 @@ describe('pluck operator', () => {
     const expected = '--y--|';
 
     const r = a.pipe(pluck('prop'));
-    expectObservable(r).toBe(expected, {y: 42});
+    expectSource(r).toBe(expected, {y: 42});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20561,7 +20520,7 @@ describe('pluck operator', () => {
     const expected = '--1-2--3-4---5-|';
 
     const r = a.pipe(pluck('prop'));
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20578,7 +20537,7 @@ describe('pluck operator', () => {
     const expected = '--1-2--3-4---5-|';
 
     const r = a.pipe(pluck('a', 'b', 'c'));
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20602,7 +20561,7 @@ describe('pluck operator', () => {
     };
 
     const r = a.pipe(pluck('a', 'b', 'c'));
-    expectObservable(r).toBe(expected, values);
+    expectSource(r).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20618,7 +20577,7 @@ describe('pluck operator', () => {
     const expected = '#';
 
     const r = a.pipe(pluck('whatever'));
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20628,7 +20587,7 @@ describe('pluck operator', () => {
     const expected = '--1--2--#';
 
     const r = a.pipe(pluck('prop'));
-    expectObservable(r).toBe(expected, undefined, 'too bad');
+    expectSource(r).toBe(expected, undefined, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20645,7 +20604,7 @@ describe('pluck operator', () => {
       })
     );
 
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20656,7 +20615,7 @@ describe('pluck operator', () => {
     const expected = '--1--2-     ';
 
     const r = a.pipe(pluck('prop'));
-    expectObservable(r, unsub).toBe(expected);
+    expectSource(r, unsub).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20673,7 +20632,7 @@ describe('pluck operator', () => {
     const expected = '--1-2--3-4---5-|';
 
     const r = a.pipe(pluck('a', 'b'), pluck('c'));
-    expectObservable(r).toBe(expected);
+    expectSource(r).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20689,7 +20648,7 @@ describe('pluck operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(r, unsub).toBe(expected);
+    expectSource(r, unsub).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
@@ -20701,7 +20660,7 @@ describe('pluck operator', () => {
     const expected = '--y--|';
 
     const r = a.pipe(pluck(sym));
-    expectObservable(r).toBe(expected, {y: 'abc'});
+    expectSource(r).toBe(expected, {y: 'abc'});
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 });
@@ -20709,7 +20668,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -20736,7 +20695,7 @@ describe('publish operator', () => {
     const published = source.pipe(publish()) as Connectable<any>;
     const expected = '--1-2---3-4--5-|';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -20756,7 +20715,7 @@ describe('publish operator', () => {
     const published = source.pipe(publish());
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -20771,9 +20730,9 @@ describe('publish operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        --4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -20794,9 +20753,9 @@ describe('publish operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        --8-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -20811,9 +20770,9 @@ describe('publish operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        --4-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -20834,14 +20793,14 @@ describe('publish operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        --   ';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       // Set up unsubscription action
       let connection: Subscription;
-      expectObservable(
+      expectSource(
         hot(unsub).pipe(
           tap(() => {
             connection.unsubscribe();
@@ -20868,14 +20827,14 @@ describe('publish operator', () => {
     const expected3 = '        --   ';
     const unsub = '         u   ';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     // Set up unsubscription action
     let connection: Subscription;
-    expectObservable(
+    expectSource(
       hot(unsub).pipe(
         tap(() => {
           connection.unsubscribe();
@@ -20898,9 +20857,9 @@ describe('publish operator', () => {
       const subscriber3 = hot('           c|   ').pipe(mergeMapTo(replayed));
       const expected3 = '           --4-|';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -20915,8 +20874,8 @@ describe('publish operator', () => {
       const unsub2 = '            !   ';
       const expected2 = '       -3----   ';
 
-      expectObservable(subscriber1, unsub1).toBe(expected1);
-      expectObservable(subscriber2, unsub2).toBe(expected2);
+      expectSource(subscriber1, unsub1).toBe(expected1);
+      expectSource(subscriber2, unsub2).toBe(expected2);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -20931,9 +20890,9 @@ describe('publish operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        --4-#';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -20948,9 +20907,9 @@ describe('publish operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        --4-|';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
   });
@@ -21004,7 +20963,7 @@ describe('publish operator', () => {
     const published = source.pipe(publish()) as Connectable<string>;
     const expected = '|';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21016,7 +20975,7 @@ describe('publish operator', () => {
     const published = source.pipe(publish()) as Connectable<string>;
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21028,7 +20987,7 @@ describe('publish operator', () => {
     const published = source.pipe(publish()) as Connectable<string>;
     const expected = '#';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21132,7 +21091,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -21161,7 +21120,7 @@ describe('publishBehavior operator', () => {
       >;
       const expected = '0-1-2---3-4--5-|';
 
-      expectObservable(published).toBe(expected);
+      expectSource(published).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       published.connect();
@@ -21182,7 +21141,7 @@ describe('publishBehavior operator', () => {
     const published = source.pipe(publishBehavior('0'));
     const expected = '0';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -21197,9 +21156,9 @@ describe('publishBehavior operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        3-4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21216,9 +21175,9 @@ describe('publishBehavior operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        3-4-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21241,14 +21200,14 @@ describe('publishBehavior operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        3-   ';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       // Set up unsubscription action
       let connection: Subscription;
-      expectObservable(
+      expectSource(
         hot(unsub).pipe(
           tap(() => {
             connection.unsubscribe();
@@ -21275,14 +21234,14 @@ describe('publishBehavior operator', () => {
     const expected3 = '        3-   ';
     const unsub = '         u   ';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     // Set up unsubscription action
     let connection: Subscription;
-    expectObservable(
+    expectSource(
       hot(unsub).pipe(
         tap(() => {
           connection.unsubscribe();
@@ -21305,9 +21264,9 @@ describe('publishBehavior operator', () => {
       const subscriber3 = hot('           c|   ').pipe(mergeMapTo(replayed));
       const expected3 = '           3-4-|';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -21322,8 +21281,8 @@ describe('publishBehavior operator', () => {
       const unsub2 = '            !   ';
       const expected2 = '       23----   ';
 
-      expectObservable(subscriber1, unsub1).toBe(expected1);
-      expectObservable(subscriber2, unsub2).toBe(expected2);
+      expectSource(subscriber1, unsub1).toBe(expected1);
+      expectSource(subscriber2, unsub2).toBe(expected2);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -21338,9 +21297,9 @@ describe('publishBehavior operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        3-4-#';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -21359,9 +21318,9 @@ describe('publishBehavior operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        3-4-|';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
   });
@@ -21415,7 +21374,7 @@ describe('publishBehavior operator', () => {
     const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const expected = '(0|)';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21427,7 +21386,7 @@ describe('publishBehavior operator', () => {
     const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const expected = '0';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21439,7 +21398,7 @@ describe('publishBehavior operator', () => {
     const published = source.pipe(publishBehavior('0')) as Connectable<string>;
     const expected = '(0#)';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21524,7 +21483,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -21550,7 +21509,7 @@ describe('publishLast operator', () => {
       const published = source.pipe(publishLast()) as Connectable<string>;
       const expected = '---------------(5|)';
 
-      expectObservable(published).toBe(expected);
+      expectSource(published).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       published.connect();
@@ -21571,7 +21530,7 @@ describe('publishLast operator', () => {
     const published = source.pipe(publishLast());
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -21586,9 +21545,9 @@ describe('publishLast operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        ----(4|)';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21605,9 +21564,9 @@ describe('publishLast operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        ----#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21628,14 +21587,14 @@ describe('publishLast operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        --   ';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       // Set up unsubscription action
       let connection: Subscription;
-      expectObservable(
+      expectSource(
         hot(unsub).pipe(
           tap(() => {
             connection.unsubscribe();
@@ -21662,14 +21621,14 @@ describe('publishLast operator', () => {
     const expected3 = '        --   ';
     const unsub = '         u   ';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     // Set up unsubscription action
     let connection: Subscription;
-    expectObservable(
+    expectSource(
       hot(unsub).pipe(
         tap(() => {
           connection.unsubscribe();
@@ -21692,9 +21651,9 @@ describe('publishLast operator', () => {
       const subscriber3 = hot('           c|   ').pipe(mergeMapTo(replayed));
       const expected3 = '           ----(4|)';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -21709,8 +21668,8 @@ describe('publishLast operator', () => {
       const unsub2 = '            !   ';
       const expected2 = '       ------   ';
 
-      expectObservable(subscriber1, unsub1).toBe(expected1);
-      expectObservable(subscriber2, unsub2).toBe(expected2);
+      expectSource(subscriber1, unsub1).toBe(expected1);
+      expectSource(subscriber2, unsub2).toBe(expected2);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -21725,9 +21684,9 @@ describe('publishLast operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        ----#';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
   });
@@ -21738,7 +21697,7 @@ describe('publishLast operator', () => {
     const published = source.pipe(publishLast()) as Connectable<string>;
     const expected = '|';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21750,7 +21709,7 @@ describe('publishLast operator', () => {
     const published = source.pipe(publishLast()) as Connectable<string>;
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21762,7 +21721,7 @@ describe('publishLast operator', () => {
     const published = source.pipe(publishLast()) as Connectable<string>;
     const expected = '#';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21824,7 +21783,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -21860,7 +21819,7 @@ describe('publishReplay operator', () => {
       const published = source.pipe(publishReplay(1)) as Connectable<string>;
       const expected = '--1-2---3-4--5-|';
 
-      expectObservable(published).toBe(expected);
+      expectSource(published).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       published.connect();
@@ -21881,7 +21840,7 @@ describe('publishReplay operator', () => {
     const published = source.pipe(publishReplay(1));
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -21896,9 +21855,9 @@ describe('publishReplay operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        3-4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21915,9 +21874,9 @@ describe('publishReplay operator', () => {
     const subscriber3 = hot('           c|       ').pipe(mergeMapTo(published));
     const expected3 = '           (23)-4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21934,9 +21893,9 @@ describe('publishReplay operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
     const expected3 = '        3-4-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -21957,14 +21916,14 @@ describe('publishReplay operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        3-   ';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
       // Set up unsubscription action
       let connection: Subscription;
-      expectObservable(
+      expectSource(
         hot(unsub).pipe(
           tap(() => {
             connection.unsubscribe();
@@ -21991,14 +21950,14 @@ describe('publishReplay operator', () => {
     const expected3 = '        3-   ';
     const unsub = '         u   ';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     // Set up unsubscription action
     let connection: Subscription;
-    expectObservable(
+    expectSource(
       hot(unsub).pipe(
         tap(() => {
           connection.unsubscribe();
@@ -22021,9 +21980,9 @@ describe('publishReplay operator', () => {
       const subscriber3 = hot('           c|   ').pipe(mergeMapTo(replayed));
       const expected3 = '           3-4-|';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -22038,8 +21997,8 @@ describe('publishReplay operator', () => {
       const unsub2 = '            !   ';
       const expected2 = '       23----   ';
 
-      expectObservable(subscriber1, unsub1).toBe(expected1);
-      expectObservable(subscriber2, unsub2).toBe(expected2);
+      expectSource(subscriber1, unsub1).toBe(expected1);
+      expectSource(subscriber2, unsub2).toBe(expected2);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -22054,9 +22013,9 @@ describe('publishReplay operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        3-4-(444#)';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       // expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
 
@@ -22071,9 +22030,9 @@ describe('publishReplay operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(published));
       const expected3 = '        3-4-(44|)';
 
-      expectObservable(subscriber1).toBe(expected1);
-      expectObservable(subscriber2).toBe(expected2);
-      expectObservable(subscriber3).toBe(expected3);
+      expectSource(subscriber1).toBe(expected1);
+      expectSource(subscriber2).toBe(expected2);
+      expectSource(subscriber3).toBe(expected3);
       // expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     });
   });
@@ -22241,7 +22200,7 @@ describe('publishReplay operator', () => {
     const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const expected = '|';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -22254,7 +22213,7 @@ describe('publishReplay operator', () => {
     const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -22266,7 +22225,7 @@ describe('publishReplay operator', () => {
     const published = source.pipe(publishReplay(1)) as Connectable<string>;
     const expected = '#';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
     published.connect();
@@ -22283,7 +22242,7 @@ describe('publishReplay operator', () => {
     );
     const expected = '--a-b---c-d---|';
 
-    expectObservable(published).toBe(expected, values);
+    expectSource(published).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -22313,7 +22272,7 @@ describe('publishReplay operator', () => {
     );
     const expected = '----5-65-6-#';
 
-    expectObservable(published).toBe(expected, undefined, error);
+    expectSource(published).toBe(expected, undefined, error);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -22326,7 +22285,7 @@ describe('publishReplay operator', () => {
     );
     const expected = '|';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -22339,7 +22298,7 @@ describe('publishReplay operator', () => {
     );
     const expected = '-';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -22353,7 +22312,7 @@ describe('publishReplay operator', () => {
     );
     const expected = '#';
 
-    expectObservable(published).toBe(expected, undefined, error);
+    expectSource(published).toBe(expected, undefined, error);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -22421,7 +22380,7 @@ import * as sinon from 'sinon';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -22447,7 +22406,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22461,7 +22420,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race([e2]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22475,7 +22434,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22489,7 +22448,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22503,7 +22462,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22517,7 +22476,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22532,7 +22491,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22551,7 +22510,7 @@ describe('race operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22564,7 +22523,7 @@ describe('race operator', () => {
 
     const source = e1.pipe(race(e2));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22577,7 +22536,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22591,7 +22550,7 @@ describe('race operator', () => {
 
     const result = e1.pipe(race(e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -22672,7 +22631,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {reduce, mergeMap} from 'rxjs/operators';
@@ -22698,7 +22657,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, 0))).toBe(expected, values);
+    expectSource(e1.pipe(reduce(reduceFunction, 0))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22712,7 +22671,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, seed))).toBe(expected, {
+    expectSource(e1.pipe(reduce(reduceFunction, seed))).toBe(expected, {
       x: seed + 'ab'
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -22731,7 +22690,7 @@ describe('reduce operator', () => {
       reduce((acc: any, x: string) => acc + ' ' + x, undefined)
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22746,7 +22705,7 @@ describe('reduce operator', () => {
 
     const source = e1.pipe(reduce((acc: any, x: string) => acc + ' ' + x));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22792,9 +22751,10 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(
-      e1.pipe(reduce(reduceFunction, expectedValue))
-    ).toBe(expected, {x: expectedValue});
+    expectSource(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(
+      expected,
+      {x: expectedValue}
+    );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22807,7 +22767,7 @@ describe('reduce operator', () => {
       throw 'error';
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22823,7 +22783,7 @@ describe('reduce operator', () => {
 
     const result = e1.pipe(reduce(reduceFunction));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22843,7 +22803,7 @@ describe('reduce operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22857,9 +22817,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22873,9 +22831,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22889,7 +22845,7 @@ describe('reduce operator', () => {
       throw 'error';
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, seed))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction, seed))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22903,7 +22859,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, seed))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction, seed))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22917,7 +22873,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction, seed))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction, seed))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22930,7 +22886,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22943,7 +22899,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22956,7 +22912,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22969,7 +22925,7 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -22982,14 +22938,14 @@ describe('reduce operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(reduce(reduceFunction))).toBe(expected);
+    expectSource(e1.pipe(reduce(reduceFunction))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 import {expect} from 'chai';
 import {
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {refCount, publish, publishReplay, first} from 'rxjs/operators';
@@ -23009,7 +22965,7 @@ describe('refCount', () => {
 
       const result = source.pipe(publish(), refCount());
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     }
   );
@@ -23115,7 +23071,7 @@ describe('refCount', () => {
 import {expect} from 'chai';
 import {
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {repeat, mergeMap, map, multicast, refCount} from 'rxjs/operators';
@@ -23137,7 +23093,7 @@ describe('repeat operator', () => {
     ];
     const expected = '--a--b----a--b----a--b--|';
 
-    expectObservable(e1.pipe(repeat(3))).toBe(expected);
+    expectSource(e1.pipe(repeat(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23151,7 +23107,7 @@ describe('repeat operator', () => {
     ];
     const expected = '--a--b----a--b----a--b----a--b--|';
 
-    expectObservable(e1.pipe(repeat(2), repeat(2))).toBe(expected);
+    expectSource(e1.pipe(repeat(2), repeat(2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23160,7 +23116,7 @@ describe('repeat operator', () => {
     const subs: string[] = [];
     const expected = '|';
 
-    expectObservable(e1.pipe(repeat(0))).toBe(expected);
+    expectSource(e1.pipe(repeat(0))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23169,7 +23125,7 @@ describe('repeat operator', () => {
     const subs = '^       !';
     const expected = '--a--b--|';
 
-    expectObservable(e1.pipe(repeat(1))).toBe(expected);
+    expectSource(e1.pipe(repeat(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23179,7 +23135,7 @@ describe('repeat operator', () => {
     const unsub = '              !';
     const expected = '--a--b----a--b-';
 
-    expectObservable(e1.pipe(repeat(10)), unsub).toBe(expected);
+    expectSource(e1.pipe(repeat(10)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23196,7 +23152,7 @@ describe('repeat operator', () => {
     const unsub = '                                            !';
     const expected = '--a--b----a--b----a--b----a--b----a--b----a--';
 
-    expectObservable(e1.pipe(repeat()), unsub).toBe(expected);
+    expectSource(e1.pipe(repeat()), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23219,7 +23175,7 @@ describe('repeat operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23236,7 +23192,7 @@ describe('repeat operator', () => {
     const unsub = '                                            !';
     const expected = '--a--b----a--b----a--b----a--b----a--b----a--';
 
-    expectObservable(e1.pipe(repeat(-1)), unsub).toBe(expected);
+    expectSource(e1.pipe(repeat(-1)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23245,7 +23201,7 @@ describe('repeat operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(repeat(3))).toBe(expected);
+    expectSource(e1.pipe(repeat(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -23255,7 +23211,7 @@ describe('repeat operator', () => {
     const subs = '^                             !';
     const expected = '-';
 
-    expectObservable(e1.pipe(repeat(3)), unsub).toBe(expected);
+    expectSource(e1.pipe(repeat(3)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23264,7 +23220,7 @@ describe('repeat operator', () => {
     const subs: string[] = [];
     const expected = '|';
 
-    expectObservable(e1.pipe(repeat(0))).toBe(expected);
+    expectSource(e1.pipe(repeat(0))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23273,7 +23229,7 @@ describe('repeat operator', () => {
     const subs: string[] = [];
     const expected = '|';
 
-    expectObservable(e1.pipe(repeat(0))).toBe(expected);
+    expectSource(e1.pipe(repeat(0))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23282,7 +23238,7 @@ describe('repeat operator', () => {
     const subs = ['^       '];
     const expected = '--a--b--';
 
-    expectObservable(e1.pipe(repeat(3))).toBe(expected);
+    expectSource(e1.pipe(repeat(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23291,7 +23247,7 @@ describe('repeat operator', () => {
     const e1subs = ['(^!)', '(^!)', '(^!)'];
     const expected = '|';
 
-    expectObservable(e1.pipe(repeat(3))).toBe(expected);
+    expectSource(e1.pipe(repeat(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -23300,7 +23256,7 @@ describe('repeat operator', () => {
     const subs = ['^   !        ', '    ^   !    ', '        ^   !'];
     const expected = '------------|';
 
-    expectObservable(e1.pipe(repeat(3))).toBe(expected);
+    expectSource(e1.pipe(repeat(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23309,7 +23265,7 @@ describe('repeat operator', () => {
     const subs: string[] = [];
     const expected = '|';
 
-    expectObservable(e1.pipe(repeat(0))).toBe(expected);
+    expectSource(e1.pipe(repeat(0))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23318,7 +23274,7 @@ describe('repeat operator', () => {
     const subs = '^       !';
     const expected = '--a--b--#';
 
-    expectObservable(e1.pipe(repeat(2))).toBe(expected);
+    expectSource(e1.pipe(repeat(2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -23327,7 +23283,7 @@ describe('repeat operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(repeat(3))).toBe(expected);
+    expectSource(e1.pipe(repeat(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -23336,7 +23292,7 @@ describe('repeat operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(repeat())).toBe(expected);
+    expectSource(e1.pipe(repeat())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -23355,7 +23311,7 @@ describe('repeat operator', () => {
     );
     const expected = '--a----#';
 
-    expectObservable(e1.pipe(repeat(2))).toBe(expected);
+    expectSource(e1.pipe(repeat(2))).toBe(expected);
   });
 
   it('should repeat a synchronous source (multicasted and refCounted) multiple times', (done: MochaDone) => {
@@ -23385,7 +23341,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {repeatWhen, map, mergeMap, takeUntil} from 'rxjs/operators';
@@ -23409,7 +23365,7 @@ describe('repeatWhen operator', () => {
 
       const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -23426,7 +23382,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23553,7 +23509,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23565,7 +23521,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23578,7 +23534,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23591,7 +23547,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23602,7 +23558,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should return a error observable given a just-throw source and never notifier', () => {
@@ -23612,7 +23568,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   xit('should hide errors using a never notifier on a source with eventual error', () => {
@@ -23623,7 +23579,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23638,7 +23594,7 @@ describe('repeatWhen operator', () => {
       }))
     );
 
-    expectObservable(result).toBe(expected, undefined, 'bad!');
+    expectSource(result).toBe(expected, undefined, 'bad!');
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23653,7 +23609,7 @@ describe('repeatWhen operator', () => {
 
       const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -23666,7 +23622,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23678,7 +23634,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23690,7 +23646,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -23711,7 +23667,7 @@ describe('repeatWhen operator', () => {
       repeatWhen(() => notifier)
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(ssubs);
     expectSubscriptions(notifier.subscriptions).toBe(nsubs);
   });
@@ -23730,7 +23686,7 @@ describe('repeatWhen operator', () => {
 
     const result = source.pipe(repeatWhen((notifications: any) => notifier));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(notifier.subscriptions).toBe(nsubs);
   });
@@ -23753,7 +23709,7 @@ describe('repeatWhen operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(notifier.subscriptions).toBe(nsubs);
   });
@@ -23785,7 +23741,7 @@ describe('repeatWhen operator', () => {
         )
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -23822,7 +23778,7 @@ describe('repeatWhen operator', () => {
         )
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -23831,7 +23787,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {
@@ -23870,7 +23826,7 @@ describe('retry operator', () => {
 
       const result = source.pipe(retry(2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -24057,7 +24013,7 @@ describe('retry operator', () => {
 
     const result = source.pipe(retry());
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24068,7 +24024,7 @@ describe('retry operator', () => {
 
     const result = source.pipe(retry());
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24079,7 +24035,7 @@ describe('retry operator', () => {
 
     const result = source.pipe(retry());
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
   });
 
   it('should handle a basic source that emits next then completes', () => {
@@ -24089,7 +24045,7 @@ describe('retry operator', () => {
 
     const result = source.pipe(retry());
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24100,7 +24056,7 @@ describe('retry operator', () => {
 
     const result = source.pipe(retry());
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24118,7 +24074,7 @@ describe('retry operator', () => {
 
     const result = source.pipe(retry());
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24133,7 +24089,7 @@ describe('retry operator', () => {
 
       const result = source.pipe(retry(3));
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -24150,7 +24106,7 @@ describe('retry operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24183,7 +24139,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {retryWhen, map, mergeMap, takeUntil} from 'rxjs/operators';
@@ -24207,7 +24163,7 @@ describe('retryWhen operator', () => {
 
       const result = source.pipe(retryWhen((errors: any) => notifier));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -24224,7 +24180,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24297,7 +24253,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24309,7 +24265,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24322,7 +24278,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24335,7 +24291,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24346,7 +24302,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should return a never observable given a just-throw source and never notifier', () => {
@@ -24356,7 +24312,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
   });
 
   it('should hide errors using a never notifier on a source with eventual error', () => {
@@ -24367,7 +24323,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24382,7 +24338,7 @@ describe('retryWhen operator', () => {
       }))
     );
 
-    expectObservable(result).toBe(expected, undefined, 'bad!');
+    expectSource(result).toBe(expected, undefined, 'bad!');
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24397,7 +24353,7 @@ describe('retryWhen operator', () => {
 
       const result = source.pipe(retryWhen((errors: any) => notifier));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -24410,7 +24366,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24422,7 +24378,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24434,7 +24390,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -24455,7 +24411,7 @@ describe('retryWhen operator', () => {
       retryWhen(() => notifier)
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(ssubs);
     expectSubscriptions(notifier.subscriptions).toBe(nsubs);
   });
@@ -24474,7 +24430,7 @@ describe('retryWhen operator', () => {
 
     const result = source.pipe(retryWhen((errors: any) => notifier));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(notifier.subscriptions).toBe(nsubs);
   });
@@ -24497,7 +24453,7 @@ describe('retryWhen operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(notifier.subscriptions).toBe(nsubs);
   });
@@ -24529,7 +24485,7 @@ describe('retryWhen operator', () => {
         )
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -24566,7 +24522,7 @@ describe('retryWhen operator', () => {
         )
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(subs);
     }
   );
@@ -24574,7 +24530,7 @@ describe('retryWhen operator', () => {
 import {expect} from 'chai';
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {sample, mergeMap} from 'rxjs/operators';
@@ -24591,7 +24547,7 @@ describe('sample operator', () => {
     const e2subs = '^                            !   ';
     const expected = '-----a----------c----------d-|   ';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24603,7 +24559,7 @@ describe('sample operator', () => {
     const e2subs = '^            !';
     const expected = '-------------|';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24628,7 +24584,7 @@ describe('sample operator', () => {
     const e2subs = '^            !';
     const expected = '-------------|';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24640,7 +24596,7 @@ describe('sample operator', () => {
     const e2subs = '^          !';
     const expected = '-----------b------|';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24652,7 +24608,7 @@ describe('sample operator', () => {
     const e2subs = '^       !                         ';
     const expected = '------a---------------------------';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24664,7 +24620,7 @@ describe('sample operator', () => {
     const e2subs = '^       !                         ';
     const expected = '------a--------------------------|';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24677,7 +24633,7 @@ describe('sample operator', () => {
     const e2subs = '^             !                        ';
     const expected = '-----b---------                        ';
 
-    expectObservable(e1.pipe(sample(e2)), unsub).toBe(expected);
+    expectSource(e1.pipe(sample(e2)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24696,7 +24652,7 @@ describe('sample operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24708,7 +24664,7 @@ describe('sample operator', () => {
     const e2subs = '^                                 !  ';
     const expected = '------a--------c------c----e------|  ';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24720,7 +24676,7 @@ describe('sample operator', () => {
     const e2subs = '^                 !                    ';
     const expected = '-----b----------d-#                    ';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24732,7 +24688,7 @@ describe('sample operator', () => {
     const e1subs = '(^!)';
     const e2subs = '(^!)';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24744,7 +24700,7 @@ describe('sample operator', () => {
     const e1subs = '(^!)';
     const e2subs = '(^!)';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24756,7 +24712,7 @@ describe('sample operator', () => {
     const e1subs = '^   !';
     const e2subs = '^   !';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24768,7 +24724,7 @@ describe('sample operator', () => {
     const e2subs = '^             !';
     const expected = '-';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24780,7 +24736,7 @@ describe('sample operator', () => {
     const e2subs = '^                    !';
     const expected = '-----------b---------|';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24792,7 +24748,7 @@ describe('sample operator', () => {
     const e2subs = '(^!)';
     const expected = '---------------------|';
 
-    expectObservable(e1.pipe(sample(e2))).toBe(expected);
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -24800,7 +24756,7 @@ describe('sample operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {sampleTime, mergeMap} from 'rxjs/operators';
@@ -24819,7 +24775,7 @@ describe('sampleTime operator', () => {
     const expected = '-------c-------------e------h-|';
     // timer          -------!------!------!------!--
 
-    expectObservable(e1.pipe(sampleTime(70, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(70, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24829,7 +24785,7 @@ describe('sampleTime operator', () => {
     const expected = '-----------c----------------|';
     // timer              -----------!----------!---------
 
-    expectObservable(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24839,7 +24795,7 @@ describe('sampleTime operator', () => {
     const expected = '-----------c----------c-----|';
     // timer              -----------!----------!---------
 
-    expectObservable(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24849,7 +24805,7 @@ describe('sampleTime operator', () => {
     const expected = '----------------------b-----|';
     // timer              -----------!----------!---------
 
-    expectObservable(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24859,7 +24815,7 @@ describe('sampleTime operator', () => {
     const expected = '-----------c------#';
     // timer              -----------!----------!---------
 
-    expectObservable(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24870,7 +24826,7 @@ describe('sampleTime operator', () => {
     const expected = '-----------c-----            ';
     // timer              -----------!----------!---------
 
-    expectObservable(e1.pipe(sampleTime(110, rxTestScheduler)), unsub).toBe(
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler)), unsub).toBe(
       expected
     );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -24889,7 +24845,7 @@ describe('sampleTime operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24898,7 +24854,7 @@ describe('sampleTime operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24907,7 +24863,7 @@ describe('sampleTime operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24916,7 +24872,7 @@ describe('sampleTime operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -24924,7 +24880,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {scan, mergeMap, finalize} from 'rxjs/operators';
@@ -24952,7 +24908,7 @@ describe('scan operator', () => {
       return o + x;
     };
 
-    expectObservable(e1.pipe(scan(scanFunction, 0))).toBe(expected, values);
+    expectSource(e1.pipe(scan(scanFunction, 0))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24972,7 +24928,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -24994,7 +24950,7 @@ describe('scan operator', () => {
       scan((acc: any, x: string) => acc + ' ' + x, undefined)
     );
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25011,7 +24967,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc: any, x: string) => acc + x));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25028,7 +24984,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25055,7 +25011,7 @@ describe('scan operator', () => {
       }, [] as string[])
     );
 
-    expectObservable(source).toBe(expected, values, 'bad!');
+    expectSource(source).toBe(expected, values, 'bad!');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25066,7 +25022,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25077,7 +25033,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25088,7 +25044,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25108,7 +25064,7 @@ describe('scan operator', () => {
 
     const source = e1.pipe(scan((acc, x) => acc.concat(x), [] as string[]));
 
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25132,7 +25088,7 @@ describe('scan operator', () => {
       mergeMap((x: string[]) => of(x))
     );
 
-    expectObservable(source, unsub).toBe(expected, values);
+    expectSource(source, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25163,7 +25119,7 @@ describe('scan operator', () => {
       })
     );
 
-    expectObservable(scanObs).toBe(expected, values);
+    expectSource(scanObs).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -25171,7 +25127,7 @@ import * as _ from 'lodash';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions,
   time
 } from '../helpers/marble-testing';
@@ -25196,7 +25152,7 @@ describe('sequenceEqual operator', () => {
 
       const source = s1.pipe(sequenceEqual(s2));
 
-      expectObservable(source).toBe(expected, booleans);
+      expectSource(source).toBe(expected, booleans);
       expectSubscriptions(s1.subscriptions).toBe(s1subs);
       expectSubscriptions(s2.subscriptions).toBe(s2subs);
     }
@@ -25209,7 +25165,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
   });
 
   it('should return true for two sync observables that match', () => {
@@ -25219,7 +25175,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
   });
 
   it('should return true for two observables that match when the last one emits and completes in the same frame', () => {
@@ -25231,7 +25187,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25245,7 +25201,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25258,7 +25214,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(sub);
     expectSubscriptions(s2.subscriptions).toBe(sub);
   });
@@ -25271,7 +25227,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(sub);
     expectSubscriptions(s2.subscriptions).toBe(sub);
   });
@@ -25283,7 +25239,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should never return if source is a never', () => {
@@ -25293,7 +25249,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should never return if compareTo is a never', () => {
@@ -25303,7 +25259,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should return false if source is empty and compareTo is not', () => {
@@ -25315,7 +25271,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25329,7 +25285,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25341,7 +25297,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should return never if source is empty and compareTo is never', () => {
@@ -25351,7 +25307,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
   });
 
   it('should error if the comparor errors', () => {
@@ -25381,7 +25337,7 @@ describe('sequenceEqual operator', () => {
       z: {value: 'derp', weCouldBe: 'dancin, yeah'}
     };
 
-    expectObservable(source).toBe(
+    expectSource(source).toBe(
       expected,
       _.assign(booleans, values),
       new Error('shazbot')
@@ -25411,7 +25367,7 @@ describe('sequenceEqual operator', () => {
       z: {value: 'derp', weCouldBe: 'dancin, yeah'}
     };
 
-    expectObservable(source).toBe(expected, _.assign(booleans, values));
+    expectSource(source).toBe(expected, _.assign(booleans, values));
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25425,7 +25381,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25439,7 +25395,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25453,7 +25409,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25467,7 +25423,7 @@ describe('sequenceEqual operator', () => {
 
     const source = s1.pipe(sequenceEqual(s2));
 
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -25478,7 +25434,7 @@ describe('sequenceEqual operator', () => {
     const expected = '(T|)';
 
     const source = s1.pipe(sequenceEqual(s2));
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
   });
 
   it('should return false for an empty observable and an observable that emits', () => {
@@ -25487,7 +25443,7 @@ describe('sequenceEqual operator', () => {
     const expected = '---(F|)';
 
     const source = s1.pipe(sequenceEqual(s2));
-    expectObservable(source).toBe(expected, booleans);
+    expectSource(source).toBe(expected, booleans);
   });
 
   it('should return compare hot and cold observables', () => {
@@ -25503,9 +25459,9 @@ describe('sequenceEqual operator', () => {
     const test1 = s1.pipe(sequenceEqual(s2));
     const test2 = s1.pipe(sequenceEqual(s3));
 
-    expectObservable(test1).toBe(expected1, booleans);
+    expectSource(test1).toBe(expected1, booleans);
     rxTestScheduler.schedule(
-      () => expectObservable(test2).toBe(expected2, booleans),
+      () => expectSource(test2).toBe(expected2, booleans),
       time(delay)
     );
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
@@ -25516,7 +25472,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {share, retry, mergeMapTo, mergeMap, tap, repeat} from 'rxjs/operators';
@@ -25533,7 +25489,7 @@ describe('share operator', () => {
 
     const shared = source.pipe(share());
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25558,7 +25514,7 @@ describe('share operator', () => {
     const e1subs = '^              !';
     const expected = '---b--c--d--e--#';
 
-    expectObservable(e1.pipe(share())).toBe(expected);
+    expectSource(e1.pipe(share())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25567,7 +25523,7 @@ describe('share operator', () => {
     const e1subs = '^                 !';
     const expected = '---a--b--c--d--e--|';
 
-    expectObservable(e1.pipe(share())).toBe(expected);
+    expectSource(e1.pipe(share())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25576,7 +25532,7 @@ describe('share operator', () => {
     const e1subs = '^                 !';
     const expected = '---a--b--c--d--e--#';
 
-    expectObservable(e1.pipe(share())).toBe(expected);
+    expectSource(e1.pipe(share())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25588,7 +25544,7 @@ describe('share operator', () => {
     ];
     const expected = '---a--b--c--d--e-----a--b--c--d--e--#';
 
-    expectObservable(e1.pipe(share(), retry(1))).toBe(expected);
+    expectSource(e1.pipe(share(), retry(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -25603,9 +25559,9 @@ describe('share operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(shared));
     const expected3 = '        --4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25620,9 +25576,9 @@ describe('share operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(shared));
     const expected3 = '        --4-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25641,9 +25597,9 @@ describe('share operator', () => {
       const subscriber3 = hot('        c|   ').pipe(mergeMapTo(shared));
       const expected3 = '        --   ';
 
-      expectObservable(subscriber1, unsub).toBe(expected1);
-      expectObservable(subscriber2, unsub).toBe(expected2);
-      expectObservable(subscriber3, unsub).toBe(expected3);
+      expectSource(subscriber1, unsub).toBe(expected1);
+      expectSource(subscriber2, unsub).toBe(expected2);
+      expectSource(subscriber3, unsub).toBe(expected3);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     }
   );
@@ -25654,7 +25610,7 @@ describe('share operator', () => {
     const shared = source.pipe(share());
     const expected = '|';
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25664,7 +25620,7 @@ describe('share operator', () => {
     const shared = source.pipe(share());
     const expected = '-';
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25674,7 +25630,7 @@ describe('share operator', () => {
     const shared = source.pipe(share());
     const expected = '#';
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25689,9 +25645,9 @@ describe('share operator', () => {
     const subscriber3 = hot('           c|   ').pipe(mergeMapTo(shared));
     const expected3 = '           --4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25706,8 +25662,8 @@ describe('share operator', () => {
     const unsub2 = '            !   ';
     const expected2 = '       -3----   ';
 
-    expectObservable(subscriber1, unsub1).toBe(expected1);
-    expectObservable(subscriber2, unsub2).toBe(expected2);
+    expectSource(subscriber1, unsub1).toBe(expected1);
+    expectSource(subscriber2, unsub2).toBe(expected2);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25726,8 +25682,8 @@ describe('share operator', () => {
     const unsub2 = '            !   ';
     const expected2 = '       -3----   ';
 
-    expectObservable(subscriber1, unsub1).toBe(expected1);
-    expectObservable(subscriber2, unsub2).toBe(expected2);
+    expectSource(subscriber1, unsub1).toBe(expected1);
+    expectSource(subscriber2, unsub2).toBe(expected2);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25740,18 +25696,18 @@ describe('share operator', () => {
     const expected2 = ' (123123#)';
     const sourceSubs = ['(^!)', '(^!)', ' (^!)', ' (^!)'];
 
-    expectObservable(
+    expectSource(
       hot(subscribe1).pipe(
         tap(() => {
-          expectObservable(shared.pipe(retry(1))).toBe(expected1);
+          expectSource(shared.pipe(retry(1))).toBe(expected1);
         })
       )
     ).toBe(subscribe1);
 
-    expectObservable(
+    expectSource(
       hot(subscribe2).pipe(
         tap(() => {
-          expectObservable(shared.pipe(retry(1))).toBe(expected2);
+          expectSource(shared.pipe(retry(1))).toBe(expected2);
         })
       )
     ).toBe(subscribe2);
@@ -25768,18 +25724,18 @@ describe('share operator', () => {
     const expected2 = ' (123123|)';
     const sourceSubs = ['(^!)', '(^!)', ' (^!)', ' (^!)'];
 
-    expectObservable(
+    expectSource(
       hot(subscribe1).pipe(
         tap(() => {
-          expectObservable(shared.pipe(repeat(2))).toBe(expected1);
+          expectSource(shared.pipe(repeat(2))).toBe(expected1);
         })
       )
     ).toBe(subscribe1);
 
-    expectObservable(
+    expectSource(
       hot(subscribe2).pipe(
         tap(() => {
-          expectObservable(shared.pipe(repeat(2))).toBe(expected2);
+          expectSource(shared.pipe(repeat(2))).toBe(expected2);
         })
       )
     ).toBe(subscribe2);
@@ -25800,18 +25756,18 @@ describe('share operator', () => {
     const subscribe2 = '    s                                ';
     const expected2 = '    -3----4--1-2-3----4--1-2-3----4-#';
 
-    expectObservable(
+    expectSource(
       hot(subscribe1).pipe(
         tap(() => {
-          expectObservable(shared.pipe(retry(2))).toBe(expected1);
+          expectSource(shared.pipe(retry(2))).toBe(expected1);
         })
       )
     ).toBe(subscribe1);
 
-    expectObservable(
+    expectSource(
       hot(subscribe2).pipe(
         tap(() => {
-          expectObservable(shared.pipe(retry(2))).toBe(expected2);
+          expectSource(shared.pipe(retry(2))).toBe(expected2);
         })
       )
     ).toBe(subscribe2);
@@ -25832,18 +25788,18 @@ describe('share operator', () => {
     const subscribe2 = '    s                                ';
     const expected2 = '    -3----4--1-2-3----4--1-2-3----4-|';
 
-    expectObservable(
+    expectSource(
       hot(subscribe1).pipe(
         tap(() => {
-          expectObservable(shared.pipe(repeat(3))).toBe(expected1);
+          expectSource(shared.pipe(repeat(3))).toBe(expected1);
         })
       )
     ).toBe(subscribe1);
 
-    expectObservable(
+    expectSource(
       hot(subscribe2).pipe(
         tap(() => {
-          expectObservable(shared.pipe(repeat(3))).toBe(expected2);
+          expectSource(shared.pipe(repeat(3))).toBe(expected2);
         })
       )
     ).toBe(subscribe2);
@@ -25855,14 +25811,14 @@ describe('share operator', () => {
     const e1 = NEVER;
     const expected = '-';
 
-    expectObservable(e1.pipe(share())).toBe(expected);
+    expectSource(e1.pipe(share())).toBe(expected);
   });
 
   it('should not change the output of the observable when empty', () => {
     const e1 = EMPTY;
     const expected = '|';
 
-    expectObservable(e1.pipe(share())).toBe(expected);
+    expectSource(e1.pipe(share())).toBe(expected);
   });
 });
 import {expect} from 'chai';
@@ -25870,7 +25826,7 @@ import * as sinon from 'sinon';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {shareReplay, mergeMapTo, retry, take} from 'rxjs/operators';
@@ -25888,7 +25844,7 @@ describe('shareReplay operator', () => {
     const published = source.pipe(shareReplay());
     const expected = '--1-2---3-4--5-|';
 
-    expectObservable(published).toBe(expected);
+    expectSource(published).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25912,9 +25868,9 @@ describe('shareReplay operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(shared));
     const expected3 = '        3-4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25929,9 +25885,9 @@ describe('shareReplay operator', () => {
     const subscriber3 = hot('           c|       ').pipe(mergeMapTo(shared));
     const expected3 = '           (23)-4-|';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25946,9 +25902,9 @@ describe('shareReplay operator', () => {
     const subscriber3 = hot('        c|   ').pipe(mergeMapTo(shared));
     const expected3 = '        3-4-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25958,7 +25914,7 @@ describe('shareReplay operator', () => {
     const shared = source.pipe(shareReplay(1));
     const expected = '|';
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25969,7 +25925,7 @@ describe('shareReplay operator', () => {
     const shared = source.pipe(shareReplay(1));
     const expected = '-';
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25979,7 +25935,7 @@ describe('shareReplay operator', () => {
     const shared = source.pipe(shareReplay(1));
     const expected = '#';
 
-    expectObservable(shared).toBe(expected);
+    expectSource(shared).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -25994,9 +25950,9 @@ describe('shareReplay operator', () => {
     const subscriber3 = hot('               (c|) ').pipe(mergeMapTo(shared));
     const expected3 = '               (23|)';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -26018,9 +25974,9 @@ describe('shareReplay operator', () => {
     const expected3 = '               -1-2-----3-#';
     const sourceSubs2 = '               ^          !';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe([sourceSubs1, sourceSubs2]);
   });
 
@@ -26044,9 +26000,9 @@ describe('shareReplay operator', () => {
     );
     const expected3 = '               (12)-3--1-2-----3-#';
 
-    expectObservable(subscriber1).toBe(expected1);
-    expectObservable(subscriber2).toBe(expected2);
-    expectObservable(subscriber3).toBe(expected3);
+    expectSource(subscriber1).toBe(expected1);
+    expectSource(subscriber2).toBe(expected2);
+    expectSource(subscriber3).toBe(expected3);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26070,8 +26026,8 @@ describe('shareReplay operator', () => {
 
     const shared = source.pipe(shareReplay({bufferSize: 1, refCount: false}));
 
-    expectObservable(shared, sub1).toBe(expected1);
-    expectObservable(shared, sub2).toBe(expected2);
+    expectSource(shared, sub1).toBe(expected1);
+    expectSource(shared, sub2).toBe(expected2);
   });
 
   it('should restart due to unsubscriptions if refCount is true', () => {
@@ -26083,8 +26039,8 @@ describe('shareReplay operator', () => {
 
     const shared = source.pipe(shareReplay({bufferSize: 1, refCount: true}));
 
-    expectObservable(shared, sub1).toBe(expected1);
-    expectObservable(shared, sub2).toBe(expected2);
+    expectSource(shared, sub1).toBe(expected1);
+    expectSource(shared, sub2).toBe(expected2);
   });
 
   it('should default to refCount being false', () => {
@@ -26096,8 +26052,8 @@ describe('shareReplay operator', () => {
 
     const shared = source.pipe(shareReplay(1));
 
-    expectObservable(shared, sub1).toBe(expected1);
-    expectObservable(shared, sub2).toBe(expected2);
+    expectSource(shared, sub1).toBe(expected1);
+    expectSource(shared, sub2).toBe(expected2);
   });
 
   it('should not break lift() composability', (done: MochaDone) => {
@@ -26138,7 +26094,7 @@ describe('shareReplay operator', () => {
 import {expect} from 'chai';
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {single, mergeMap, tap} from 'rxjs/operators';
@@ -26156,7 +26112,7 @@ describe('single operator', () => {
       const expected = '-----#      ';
       const errorMsg = 'Sequence contains more than one element';
 
-      expectObservable(e1.pipe(single())).toBe(expected, null, errorMsg);
+      expectSource(e1.pipe(single())).toBe(expected, null, errorMsg);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -26166,7 +26122,7 @@ describe('single operator', () => {
     const e1subs = '^  !';
     const expected = '---#';
 
-    expectObservable(e1.pipe(single())).toBe(expected, null, new EmptyError());
+    expectSource(e1.pipe(single())).toBe(expected, null, new EmptyError());
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26175,7 +26131,7 @@ describe('single operator', () => {
     const e1subs = '^    !';
     const expected = '-----(a|)';
 
-    expectObservable(e1.pipe(single())).toBe(expected);
+    expectSource(e1.pipe(single())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26185,7 +26141,7 @@ describe('single operator', () => {
     const e1subs = '^  !        ';
     const expected = '----        ';
 
-    expectObservable(e1.pipe(single()), unsub).toBe(expected);
+    expectSource(e1.pipe(single()), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26201,7 +26157,7 @@ describe('single operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26210,7 +26166,7 @@ describe('single operator', () => {
     const e1subs = '^  !';
     const expected = '---#';
 
-    expectObservable(e1.pipe(single())).toBe(expected);
+    expectSource(e1.pipe(single())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26223,7 +26179,7 @@ describe('single operator', () => {
       return value === 'c';
     };
 
-    expectObservable(e1.pipe(single(predicate))).toBe(expected);
+    expectSource(e1.pipe(single(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26239,7 +26195,7 @@ describe('single operator', () => {
       throw 'error';
     };
 
-    expectObservable(e1.pipe(single(predicate))).toBe(expected);
+    expectSource(e1.pipe(single(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26252,7 +26208,7 @@ describe('single operator', () => {
       return value === 'b';
     };
 
-    expectObservable(e1.pipe(single(predicate))).toBe(expected);
+    expectSource(e1.pipe(single(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26265,7 +26221,7 @@ describe('single operator', () => {
       return value === 'b';
     };
 
-    expectObservable(e1.pipe(single(predicate))).toBe(
+    expectSource(e1.pipe(single(predicate))).toBe(
       expected,
       null,
       'Sequence contains more than one element'
@@ -26282,7 +26238,7 @@ describe('single operator', () => {
       return value === 'a';
     };
 
-    expectObservable(e1.pipe(single(predicate))).toBe(
+    expectSource(e1.pipe(single(predicate))).toBe(
       expected,
       null,
       new EmptyError()
@@ -26299,7 +26255,7 @@ describe('single operator', () => {
       return value === 'x';
     };
 
-    expectObservable(e1.pipe(single(predicate))).toBe(expected, {z: undefined});
+    expectSource(e1.pipe(single(predicate))).toBe(expected, {z: undefined});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26314,7 +26270,7 @@ describe('single operator', () => {
       return value === 'b';
     };
 
-    expectObservable(
+    expectSource(
       e1.pipe(
         single(predicate),
         tap(null, null, () => {
@@ -26328,7 +26284,7 @@ describe('single operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {skip, mergeMap} from 'rxjs/operators';
@@ -26343,7 +26299,7 @@ describe('skip operator', () => {
     const subs = '^                !';
     const expected = '-----------d--e--|';
 
-    expectObservable(source.pipe(skip(3))).toBe(expected);
+    expectSource(source.pipe(skip(3))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26352,7 +26308,7 @@ describe('skip operator', () => {
     const subs = '^                !';
     const expected = '-----------------|';
 
-    expectObservable(source.pipe(skip(6))).toBe(expected);
+    expectSource(source.pipe(skip(6))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26361,7 +26317,7 @@ describe('skip operator', () => {
     const subs = '^                !';
     const expected = '-----------------|';
 
-    expectObservable(source.pipe(skip(5))).toBe(expected);
+    expectSource(source.pipe(skip(5))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26370,7 +26326,7 @@ describe('skip operator', () => {
     const subs = '^                !';
     const expected = '--a--b--c--d--e--|';
 
-    expectObservable(source.pipe(skip(0))).toBe(expected);
+    expectSource(source.pipe(skip(0))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26380,7 +26336,7 @@ describe('skip operator', () => {
     const subs = '^         !       ';
     const expected = '--------c--       ';
 
-    expectObservable(source.pipe(skip(2)), unsub).toBe(expected);
+    expectSource(source.pipe(skip(2)), unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26396,7 +26352,7 @@ describe('skip operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26405,7 +26361,7 @@ describe('skip operator', () => {
     const subs = '^             !';
     const expected = '--------------#';
 
-    expectObservable(source.pipe(skip(6))).toBe(expected);
+    expectSource(source.pipe(skip(6))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26414,7 +26370,7 @@ describe('skip operator', () => {
     const subs = '^             !';
     const expected = '--------------#';
 
-    expectObservable(source.pipe(skip(4))).toBe(expected);
+    expectSource(source.pipe(skip(4))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26423,7 +26379,7 @@ describe('skip operator', () => {
     const subs = '^             !';
     const expected = '-----------d--#';
 
-    expectObservable(source.pipe(skip(3))).toBe(expected);
+    expectSource(source.pipe(skip(3))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -26432,7 +26388,7 @@ describe('skip operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(skip(3))).toBe(expected);
+    expectSource(e1.pipe(skip(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26441,7 +26397,7 @@ describe('skip operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(skip(3))).toBe(expected);
+    expectSource(e1.pipe(skip(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26450,7 +26406,7 @@ describe('skip operator', () => {
     const e1subs = '^         ';
     const expected = '-----b--c-';
 
-    expectObservable(e1.pipe(skip(1))).toBe(expected);
+    expectSource(e1.pipe(skip(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26459,7 +26415,7 @@ describe('skip operator', () => {
     const e1subs = '^         ';
     const expected = '----------';
 
-    expectObservable(e1.pipe(skip(6))).toBe(expected);
+    expectSource(e1.pipe(skip(6))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26468,7 +26424,7 @@ describe('skip operator', () => {
     const e1subs = '^         ';
     const expected = '----------';
 
-    expectObservable(e1.pipe(skip(3))).toBe(expected);
+    expectSource(e1.pipe(skip(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26477,7 +26433,7 @@ describe('skip operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(skip(3))).toBe(expected);
+    expectSource(e1.pipe(skip(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -26485,7 +26441,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {skipLast, mergeMap} from 'rxjs/operators';
@@ -26502,7 +26458,7 @@ describe('skipLast operator', () => {
       const e1subs = '^                   !';
       const expected = '-------------a---b--|';
 
-      expectObservable(e1.pipe(skipLast(2))).toBe(expected);
+      expectSource(e1.pipe(skipLast(2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -26512,7 +26468,7 @@ describe('skipLast operator', () => {
     const e1subs = '^                   !';
     const expected = '-----------------a--|';
 
-    expectObservable(e1.pipe(skipLast(3))).toBe(expected);
+    expectSource(e1.pipe(skipLast(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26521,7 +26477,7 @@ describe('skipLast operator', () => {
     const e1subs = '^                   !';
     const expected = '--------------------|';
 
-    expectObservable(e1.pipe(skipLast(5))).toBe(expected);
+    expectSource(e1.pipe(skipLast(5))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26530,7 +26486,7 @@ describe('skipLast operator', () => {
     const e1subs = '^                   !';
     const expected = '--------------------|';
 
-    expectObservable(e1.pipe(skipLast(4))).toBe(expected);
+    expectSource(e1.pipe(skipLast(4))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26539,7 +26495,7 @@ describe('skipLast operator', () => {
     const e1subs = '^                   !';
     const expected = '--a-----b----c---d--|';
 
-    expectObservable(e1.pipe(skipLast(0))).toBe(expected);
+    expectSource(e1.pipe(skipLast(0))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26548,7 +26504,7 @@ describe('skipLast operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(skipLast(42))).toBe(expected);
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26557,7 +26513,7 @@ describe('skipLast operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(skipLast(42))).toBe(expected);
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26566,7 +26522,7 @@ describe('skipLast operator', () => {
     const e1subs = '^  !   ';
     const expected = '---|   ';
 
-    expectObservable(e1.pipe(skipLast(1))).toBe(expected);
+    expectSource(e1.pipe(skipLast(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26575,7 +26531,7 @@ describe('skipLast operator', () => {
     const e1subs = '^              !';
     const expected = '--------b---c--|';
 
-    expectObservable(e1.pipe(skipLast(1))).toBe(expected);
+    expectSource(e1.pipe(skipLast(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26584,7 +26540,7 @@ describe('skipLast operator', () => {
     const e1subs = '^    !';
     const expected = '-----|';
 
-    expectObservable(e1.pipe(skipLast(42))).toBe(expected);
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26593,7 +26549,7 @@ describe('skipLast operator', () => {
     const e1subs = '^   !';
     const expected = '----#';
 
-    expectObservable(e1.pipe(skipLast(42))).toBe(expected, null, 'too bad');
+    expectSource(e1.pipe(skipLast(42))).toBe(expected, null, 'too bad');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26602,7 +26558,7 @@ describe('skipLast operator', () => {
     const e1subs = '^        !';
     const expected = '---------#';
 
-    expectObservable(e1.pipe(skipLast(42))).toBe(expected);
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26612,7 +26568,7 @@ describe('skipLast operator', () => {
     const e1subs = '^        !            ';
     const expected = '----------            ';
 
-    expectObservable(e1.pipe(skipLast(42)), unsub).toBe(expected);
+    expectSource(e1.pipe(skipLast(42)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26621,7 +26577,7 @@ describe('skipLast operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(skipLast(42))).toBe(expected);
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26643,7 +26599,7 @@ describe('skipLast operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -26651,7 +26607,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {concat, defer, Observable, of, Subject} from 'rxjs';
@@ -26671,7 +26627,7 @@ describe('skipUntil', () => {
       const skipSubs = '^        !          ';
       const expected = '-----------d--e----|';
 
-      expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+      expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(skip.subscriptions).toBe(skipSubs);
     }
@@ -26684,7 +26640,7 @@ describe('skipUntil', () => {
     const skipSubs = '^        !        ';
     const expected = '-----------d--e--|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26710,7 +26666,7 @@ describe('skipUntil', () => {
     const skipSubs = '^            !    ';
     const expected = '-------------#    ';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26722,7 +26678,7 @@ describe('skipUntil', () => {
     const skipSubs = '^           !';
     const expected = '-----------------|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26735,7 +26691,7 @@ describe('skipUntil', () => {
     const skipSubs = '^        !          ';
     const expected = '----------          ';
 
-    expectObservable(e1.pipe(skipUntil(skip)), unsub).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26754,7 +26710,7 @@ describe('skipUntil', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26779,7 +26735,7 @@ describe('skipUntil', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26791,7 +26747,7 @@ describe('skipUntil', () => {
     const skipSubs = '(^!)';
     const expected = '-----------------|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26803,7 +26759,7 @@ describe('skipUntil', () => {
     const skipSubs = '^      !                       ';
     const expected = '------------------------------|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26815,7 +26771,7 @@ describe('skipUntil', () => {
     const skipSubs = '^            !   ';
     const expected = '-';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26827,7 +26783,7 @@ describe('skipUntil', () => {
     const skipSubs = '^            !   ';
     const expected = '-';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26839,7 +26795,7 @@ describe('skipUntil', () => {
     const skipSubs = '^            !';
     const expected = '-------------#';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26851,7 +26807,7 @@ describe('skipUntil', () => {
     const skipSubs = '^                !';
     const expected = '-----------------|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26863,7 +26819,7 @@ describe('skipUntil', () => {
     const skipSubs = '^                !';
     const expected = '-----------------|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26875,7 +26831,7 @@ describe('skipUntil', () => {
     const skipSubs = '^                !';
     const expected = '-----------------|';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26887,7 +26843,7 @@ describe('skipUntil', () => {
     const skipSubs = '^             !';
     const expected = '-';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26899,7 +26855,7 @@ describe('skipUntil', () => {
     const skipSubs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(skip.subscriptions).toBe(skipSubs);
   });
@@ -26918,7 +26874,7 @@ describe('skipUntil', () => {
       skip.unsubscribe();
     });
 
-    expectObservable(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -26929,7 +26885,7 @@ describe('skipUntil', () => {
     const expected = '-^---------o---o---o---o---|';
     const result = source.pipe(skipUntil(notifier));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(notifier.subscriptions).toBe(nSubs);
   });
 
@@ -26961,7 +26917,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {skipWhile, mergeMap, tap} from 'rxjs/operators';
@@ -26982,7 +26938,7 @@ describe('skipWhile operator', () => {
         return +v < 4;
       };
 
-      expectObservable(source.pipe(skipWhile(predicate))).toBe(expected);
+      expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     }
   );
@@ -26992,7 +26948,7 @@ describe('skipWhile operator', () => {
     const sourceSubs = '^               !';
     const expected = '----------------|';
 
-    expectObservable(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27001,7 +26957,7 @@ describe('skipWhile operator', () => {
     const sourceSubs = '^               !';
     const expected = '----------------|';
 
-    expectObservable(
+    expectSource(
       source.pipe(
         skipWhile((): any => {
           return {};
@@ -27016,7 +26972,7 @@ describe('skipWhile operator', () => {
     const sourceSubs = '^               !';
     const expected = '-2--3--4--5--6--|';
 
-    expectObservable(source.pipe(skipWhile(() => false))).toBe(expected);
+    expectSource(source.pipe(skipWhile(() => false))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27025,9 +26981,7 @@ describe('skipWhile operator', () => {
     const sourceSubs = '^               !';
     const expected = '-2--3--4--5--6--|';
 
-    expectObservable(source.pipe(skipWhile(() => undefined as any))).toBe(
-      expected
-    );
+    expectSource(source.pipe(skipWhile(() => undefined as any))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27040,7 +26994,7 @@ describe('skipWhile operator', () => {
       return +v < 5;
     };
 
-    expectObservable(source.pipe(skipWhile(predicate))).toBe(expected);
+    expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27053,7 +27007,7 @@ describe('skipWhile operator', () => {
       return index < 2;
     };
 
-    expectObservable(source.pipe(skipWhile(predicate))).toBe(expected);
+    expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27067,7 +27021,7 @@ describe('skipWhile operator', () => {
       return index < 1;
     };
 
-    expectObservable(source.pipe(skipWhile(predicate)), unsub).toBe(expected);
+    expectSource(source.pipe(skipWhile(predicate)), unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27091,7 +27045,7 @@ describe('skipWhile operator', () => {
       })
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27104,7 +27058,7 @@ describe('skipWhile operator', () => {
       return v !== 'd';
     };
 
-    expectObservable(source.pipe(skipWhile(predicate))).toBe(expected);
+    expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 
@@ -27119,7 +27073,7 @@ describe('skipWhile operator', () => {
       return v !== 'e';
     };
 
-    expectObservable(
+    expectSource(
       source.pipe(
         skipWhile(predicate),
         tap(null, null, () => {
@@ -27143,7 +27097,7 @@ describe('skipWhile operator', () => {
       return v !== 'f';
     };
 
-    expectObservable(source.pipe(skipWhile(predicate))).toBe(
+    expectSource(source.pipe(skipWhile(predicate))).toBe(
       expected,
       undefined,
       new Error("nom d'une pipe !")
@@ -27156,7 +27110,7 @@ describe('skipWhile operator', () => {
     const subs = '(^!)';
     const expected = '|';
 
-    expectObservable(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -27165,7 +27119,7 @@ describe('skipWhile operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -27174,14 +27128,14 @@ describe('skipWhile operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {startWith, mergeMap} from 'rxjs/operators';
@@ -27201,7 +27155,7 @@ describe('startWith operator', () => {
     const e1subs = '^           !';
     const expected = 's--a--b--c--|';
 
-    expectObservable(e1.pipe(startWith('s'))).toBe(expected);
+    expectSource(e1.pipe(startWith('s'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27210,7 +27164,7 @@ describe('startWith operator', () => {
     const e1subs = '^    !';
     const expected = 'x-a--|';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27219,7 +27173,7 @@ describe('startWith operator', () => {
     const e1subs = '^     ';
     const expected = 'x---a-';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27228,7 +27182,7 @@ describe('startWith operator', () => {
     const e1subs = '^';
     const expected = 'x-';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27237,7 +27191,7 @@ describe('startWith operator', () => {
     const e1subs = '^  !';
     const expected = 'x--|';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27246,7 +27200,7 @@ describe('startWith operator', () => {
     const e1subs = '(^!)';
     const expected = '(x|)';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27255,7 +27209,7 @@ describe('startWith operator', () => {
     const e1subs = '(^!)';
     const expected = '(xa|)';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27264,7 +27218,7 @@ describe('startWith operator', () => {
     const e1subs = '^       !';
     const expected = '(yz)-a--|';
 
-    expectObservable(e1.pipe(startWith('y', 'z'))).toBe(expected);
+    expectSource(e1.pipe(startWith('y', 'z'))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27273,7 +27227,7 @@ describe('startWith operator', () => {
     const e1subs = '^ !';
     const expected = 'x-#';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(
       expected,
       defaultStartValue
     );
@@ -27285,7 +27239,7 @@ describe('startWith operator', () => {
     const e1subs = '(^!)';
     const expected = '(x#)';
 
-    expectObservable(e1.pipe(startWith(defaultStartValue))).toBe(
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(
       expected,
       defaultStartValue
     );
@@ -27301,7 +27255,7 @@ describe('startWith operator', () => {
 
     const result = e1.pipe(startWith('s', rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27318,7 +27272,7 @@ describe('startWith operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27327,7 +27281,7 @@ describe('startWith operator', () => {
     const e1subs = '^  !';
     const expected = '-a-|';
 
-    expectObservable(e1.pipe(startWith(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(startWith(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27336,9 +27290,9 @@ describe('startWith operator', () => {
     const e1subs = '^    !';
     const expected = 'x-a--|';
 
-    expectObservable(
-      e1.pipe(startWith(defaultStartValue, rxTestScheduler))
-    ).toBe(expected);
+    expectSource(e1.pipe(startWith(defaultStartValue, rxTestScheduler))).toBe(
+      expected
+    );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27347,15 +27301,13 @@ describe('startWith operator', () => {
     const e1subs = '^       !';
     const expected = '(yz)-a--|';
 
-    expectObservable(e1.pipe(startWith('y', 'z', rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(startWith('y', 'z', rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 import {
   hot,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {subscribeOn, mergeMap} from 'rxjs/operators';
@@ -27375,7 +27327,7 @@ describe('subscribeOn operator', () => {
       const expected = '--a--b--|';
       const sub = '^       !';
 
-      expectObservable(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
+      expectSource(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(sub);
     }
   );
@@ -27385,7 +27337,7 @@ describe('subscribeOn operator', () => {
     const expected = '-----b--|';
     const sub = '   ^    !';
 
-    expectObservable(e1.pipe(subscribeOn(rxTestScheduler, 30))).toBe(expected);
+    expectSource(e1.pipe(subscribeOn(rxTestScheduler, 30))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -27394,7 +27346,7 @@ describe('subscribeOn operator', () => {
     const expected = '--a--#';
     const sub = '^    !';
 
-    expectObservable(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -27403,7 +27355,7 @@ describe('subscribeOn operator', () => {
     const expected = '----|';
     const sub = '^   !';
 
-    expectObservable(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -27412,7 +27364,7 @@ describe('subscribeOn operator', () => {
     const expected = '----';
     const sub = '^   ';
 
-    expectObservable(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -27424,7 +27376,7 @@ describe('subscribeOn operator', () => {
 
     const result = e1.pipe(subscribeOn(rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -27440,7 +27392,7 @@ describe('subscribeOn operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 });
@@ -27448,7 +27400,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {Observable, of, NEVER, queueScheduler, Subject} from 'rxjs';
@@ -27467,7 +27419,7 @@ describe('switchAll', () => {
       const e1 = hot('--x------y-------|       ', {x: x, y: y});
       const expected = '----a---b----e---f--g---|';
 
-      expectObservable(e1.pipe(switchAll())).toBe(expected);
+      expectSource(e1.pipe(switchAll())).toBe(expected);
     }
   );
 
@@ -27531,7 +27483,7 @@ describe('switchAll', () => {
     const ysubs = '              ^             !';
     const e1 = hot('------x-------y------|       ', {x: x, y: y});
     const expected = '--------a---b----d--e---f---|';
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27544,7 +27496,7 @@ describe('switchAll', () => {
     const e1 = hot('------x-------y------|       ', {x: x, y: y});
     const unsub = '                !            ';
     const expected = '--------a---b---             ';
-    expectObservable(e1.pipe(switchAll()), unsub).toBe(expected);
+    expectSource(e1.pipe(switchAll()), unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27564,7 +27516,7 @@ describe('switchAll', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27576,7 +27528,7 @@ describe('switchAll', () => {
     const ysubs = '              ^               ';
     const e1 = hot('------x-------y------|        ', {x: x, y: y});
     const expected = '--------a---b----d--e---f-----';
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27588,7 +27540,7 @@ describe('switchAll', () => {
     const ysubs = '      ^             !  ';
     const e1 = hot('------(xy)------------|', {x: x, y: y});
     const expected = '---------d--e---f-----|';
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27600,7 +27552,7 @@ describe('switchAll', () => {
     const ysubs: string[] = [];
     const e1 = hot('------x-------y------|       ', {x: x, y: y});
     const expected = '--------a---#                ';
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27612,7 +27564,7 @@ describe('switchAll', () => {
     const ysubs = '              ^       !      ';
     const e1 = hot('------x-------y-------#      ', {x: x, y: y});
     const expected = '--------a---b----d--e-#      ';
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
   });
@@ -27622,7 +27574,7 @@ describe('switchAll', () => {
     const e1subs = '^     !';
     const expected = '------|';
 
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27631,7 +27583,7 @@ describe('switchAll', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27642,7 +27594,7 @@ describe('switchAll', () => {
     const e1subs = '^                     !';
     const expected = '--------a---b---c-----|';
 
-    expectObservable(e1.pipe(switchAll())).toBe(expected);
+    expectSource(e1.pipe(switchAll())).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -27742,7 +27694,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {switchMap, mergeMap, map, takeWhile} from 'rxjs/operators';
@@ -27764,7 +27716,7 @@ describe('switchMap', () => {
 
       const result = e1.pipe(switchMap(x => e2.pipe(map(i => i * +x))));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -27853,7 +27805,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -27867,7 +27819,7 @@ describe('switchMap', () => {
       throw 'error';
     }
 
-    expectObservable(e1.pipe(switchMap(project))).toBe(expected);
+    expectSource(e1.pipe(switchMap(project))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -27885,7 +27837,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -27909,7 +27861,7 @@ describe('switchMap', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -27939,7 +27891,7 @@ describe('switchMap', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -27987,7 +27939,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28006,7 +27958,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28025,7 +27977,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28044,7 +27996,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28063,7 +28015,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28082,7 +28034,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28101,7 +28053,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28120,7 +28072,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected, undefined, 'sad');
+    expectSource(result).toBe(expected, undefined, 'sad');
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28139,7 +28091,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected, undefined, 'sad');
+    expectSource(result).toBe(expected, undefined, 'sad');
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -28152,7 +28104,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => of(value)));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28163,7 +28115,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => of(value)));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28174,7 +28126,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => of(value)));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28189,7 +28141,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(switchMap(value => observableLookup[value]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28198,7 +28150,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {Observable, of, from} from 'rxjs';
@@ -28219,7 +28171,7 @@ describe('switchMapTo', () => {
 
       const result = e1.pipe(switchMapTo(e2));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -28312,7 +28264,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                            !       ';
     const expected = '-----------a--b--c---a--b--c--d--e--|';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28324,7 +28276,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                  !       ';
     const expected = '-----------a--b--c-#       ';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28341,7 +28293,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                     !       ';
     const expected = '-----------a--b--c---a-       ';
 
-    expectObservable(e1.pipe(switchMapTo(x)), unsub).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x)), unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28364,7 +28316,7 @@ describe('switchMapTo', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28380,7 +28332,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                            !     ';
     const expected = '-----------a--b--c---a--b--c--d--e-';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28395,7 +28347,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                            !';
     const expected = '-----------a--b--c--d--e-----|';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28407,7 +28359,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                !            ';
     const expected = '-----------a--b--#            ';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28422,7 +28374,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                            !';
     const expected = '------------a--b--c--d-------|';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28437,7 +28389,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                            !';
     const expected = '-----------------------------|';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28452,7 +28404,7 @@ describe('switchMapTo', () => {
     const e1subs = '^                            !';
     const expected = '------------------------------';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28464,7 +28416,7 @@ describe('switchMapTo', () => {
     const e1subs = '^        !                    ';
     const expected = '---------#                    ';
 
-    expectObservable(e1.pipe(switchMapTo(x))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(x))).toBe(expected);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -28474,7 +28426,7 @@ describe('switchMapTo', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(switchMapTo(of('foo')))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(of('foo')))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28483,7 +28435,7 @@ describe('switchMapTo', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(switchMapTo(of('foo')))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(of('foo')))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28492,7 +28444,7 @@ describe('switchMapTo', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(switchMapTo(of('foo')))).toBe(expected);
+    expectSource(e1.pipe(switchMapTo(of('foo')))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -28515,124 +28467,124 @@ describe('take operator', () => {
   asDiagram('take(2)')(
     'should take two values of an observable with many values',
     () => {
-      testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const e1 = cold(' --a-----b----c---d--|');
         const e1subs = '  ^-------!------------';
         const expected = '--a-----(b|)         ';
 
-        expectObservable(e1.pipe(take(2))).toBe(expected);
+        expectSource(e1.pipe(take(2))).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
       });
     }
   );
 
   it('should work with empty', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' |');
       const e1subs = '  (^!)';
       const expected = '|';
 
-      expectObservable(e1.pipe(take(42))).toBe(expected);
+      expectSource(e1.pipe(take(42))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should go on forever on never', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold('-');
       const e1subs = '  ^';
       const expected = '-';
 
-      expectObservable(e1.pipe(take(42))).toBe(expected);
+      expectSource(e1.pipe(take(42))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should be empty on take(0)', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b----c---d--|');
       const e1subs: string[] = []; // Don't subscribe at all
       const expected = '   |';
 
-      expectObservable(e1.pipe(take(0))).toBe(expected);
+      expectSource(e1.pipe(take(0))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should take one value of an observable with one value', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---(a|)');
       const e1subs = '  ^--!---';
       const expected = '---(a|)';
 
-      expectObservable(e1.pipe(take(1))).toBe(expected);
+      expectSource(e1.pipe(take(1))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should take one values of an observable with many values', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^--b----c---d--|');
       const e1subs = '     ^--!------------';
       const expected = '   ---(b|)         ';
 
-      expectObservable(e1.pipe(take(1))).toBe(expected);
+      expectSource(e1.pipe(take(1))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should error on empty', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('--a--^----|');
       const e1subs = '     ^----!';
       const expected = '   -----|';
 
-      expectObservable(e1.pipe(take(42))).toBe(expected);
+      expectSource(e1.pipe(take(42))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should propagate error from the source observable', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^---#', undefined, 'too bad');
       const e1subs = '   ^---!';
       const expected = ' ----#';
 
-      expectObservable(e1.pipe(take(42))).toBe(expected, null, 'too bad');
+      expectSource(e1.pipe(take(42))).toBe(expected, null, 'too bad');
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should propagate error from an observable with values', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^--a--b--#');
       const e1subs = '   ^--------!';
       const expected = ' ---a--b--#';
 
-      expectObservable(e1.pipe(take(42))).toBe(expected);
+      expectSource(e1.pipe(take(42))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should allow unsubscribing explicitly and early', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^--a--b-----c--d--e--|');
       const unsub = '    ---------!------------';
       const e1subs = '   ^--------!------------';
       const expected = ' ---a--b---            ';
 
-      expectObservable(e1.pipe(take(42)), unsub).toBe(expected);
+      expectSource(e1.pipe(take(42)), unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
 
   it('should work with throw', () => {
-    testScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const e1 = cold(' #');
       const e1subs = '  (^!)';
       const expected = '#';
 
-      expectObservable(e1.pipe(take(42))).toBe(expected);
+      expectSource(e1.pipe(take(42))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -28644,7 +28596,7 @@ describe('take operator', () => {
   });
 
   it('should not break unsubscription chain when unsubscribed explicitly', () => {
-    testScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('---^--a--b-----c--d--e--|');
       const unsub = '    ---------!            ';
       const e1subs = '   ^--------!            ';
@@ -28656,7 +28608,7 @@ describe('take operator', () => {
         mergeMap((x: string) => of(x))
       );
 
-      expectObservable(result, unsub).toBe(expected);
+      expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
   });
@@ -28690,7 +28642,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {takeLast, mergeMap} from 'rxjs/operators';
@@ -28707,7 +28659,7 @@ describe('takeLast operator', () => {
       const e1subs = '^                   !    ';
       const expected = '--------------------(cd|)';
 
-      expectObservable(e1.pipe(takeLast(2))).toBe(expected);
+      expectSource(e1.pipe(takeLast(2))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -28717,7 +28669,7 @@ describe('takeLast operator', () => {
     const e1subs = '^                   !    ';
     const expected = '--------------------(bcd|)';
 
-    expectObservable(e1.pipe(takeLast(3))).toBe(expected);
+    expectSource(e1.pipe(takeLast(3))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28726,7 +28678,7 @@ describe('takeLast operator', () => {
     const e1subs = '^                   !    ';
     const expected = '--------------------(abcd|)';
 
-    expectObservable(e1.pipe(takeLast(5))).toBe(expected);
+    expectSource(e1.pipe(takeLast(5))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28735,7 +28687,7 @@ describe('takeLast operator', () => {
     const e1subs = '^                   !    ';
     const expected = '--------------------(abcd|)';
 
-    expectObservable(e1.pipe(takeLast(4))).toBe(expected);
+    expectSource(e1.pipe(takeLast(4))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28743,7 +28695,7 @@ describe('takeLast operator', () => {
     const e1 = cold('--a-----b----c---d--|');
     const expected = '|';
 
-    expectObservable(e1.pipe(takeLast(0))).toBe(expected);
+    expectSource(e1.pipe(takeLast(0))).toBe(expected);
   });
 
   it('should work with empty', () => {
@@ -28751,7 +28703,7 @@ describe('takeLast operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(takeLast(42))).toBe(expected);
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28760,7 +28712,7 @@ describe('takeLast operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(takeLast(42))).toBe(expected);
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28769,7 +28721,7 @@ describe('takeLast operator', () => {
     const e1subs: string[] = []; // Don't subscribe at all
     const expected = '|';
 
-    expectObservable(e1.pipe(takeLast(0))).toBe(expected);
+    expectSource(e1.pipe(takeLast(0))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28778,7 +28730,7 @@ describe('takeLast operator', () => {
     const e1subs = '^  !   ';
     const expected = '---(a|)';
 
-    expectObservable(e1.pipe(takeLast(1))).toBe(expected);
+    expectSource(e1.pipe(takeLast(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28787,7 +28739,7 @@ describe('takeLast operator', () => {
     const e1subs = '^              !   ';
     const expected = '---------------(d|)';
 
-    expectObservable(e1.pipe(takeLast(1))).toBe(expected);
+    expectSource(e1.pipe(takeLast(1))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28796,7 +28748,7 @@ describe('takeLast operator', () => {
     const e1subs = '^    !';
     const expected = '-----|';
 
-    expectObservable(e1.pipe(takeLast(42))).toBe(expected);
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28805,7 +28757,7 @@ describe('takeLast operator', () => {
     const e1subs = '^   !';
     const expected = '----#';
 
-    expectObservable(e1.pipe(takeLast(42))).toBe(expected, null, 'too bad');
+    expectSource(e1.pipe(takeLast(42))).toBe(expected, null, 'too bad');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28814,7 +28766,7 @@ describe('takeLast operator', () => {
     const e1subs = '^        !';
     const expected = '---------#';
 
-    expectObservable(e1.pipe(takeLast(42))).toBe(expected);
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28824,7 +28776,7 @@ describe('takeLast operator', () => {
     const e1subs = '^        !            ';
     const expected = '----------            ';
 
-    expectObservable(e1.pipe(takeLast(42)), unsub).toBe(expected);
+    expectSource(e1.pipe(takeLast(42)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28833,7 +28785,7 @@ describe('takeLast operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(takeLast(42))).toBe(expected);
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28855,14 +28807,14 @@ describe('takeLast operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {takeUntil, mergeMap} from 'rxjs/operators';
@@ -28879,7 +28831,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^            !          ';
     const expected = '--a--b--c--d-|          ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28891,7 +28843,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^            !          ';
     const expected = '--a--b--c--d-#          ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28903,7 +28855,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^            !          ';
     const expected = '--a--b--c--d--e--f--g--|';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28915,7 +28867,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^                      !';
     const expected = '--a--b--c--d--e--f--g--|';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28925,7 +28877,7 @@ describe('takeUntil operator', () => {
     const e2 = of(1, 2, 3);
     const expected = '(|)     ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe([]);
   });
 
@@ -28935,7 +28887,7 @@ describe('takeUntil operator', () => {
     const e2 = EMPTY;
     const expected = '----a--|';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -28947,7 +28899,7 @@ describe('takeUntil operator', () => {
     const unsub = '       !                ';
     const expected = '--a--b--                ';
 
-    expectObservable(e1.pipe(takeUntil(e2)), unsub).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28959,7 +28911,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^ !';
     const expected = '--|';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28971,7 +28923,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^ !';
     const expected = '--#';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28983,7 +28935,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^ !';
     const expected = '---';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -28995,7 +28947,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29007,7 +28959,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^ !     ';
     const expected = '--|     ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29019,7 +28971,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^             !     ';
     const expected = '--a--b--c--d--#     ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29031,7 +28983,7 @@ describe('takeUntil operator', () => {
     const e2subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29043,7 +28995,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^ !     ';
     const expected = '--|     ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29055,7 +29007,7 @@ describe('takeUntil operator', () => {
     const e2subs = '^    !     ';
     const expected = '--a--|     ';
 
-    expectObservable(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29074,7 +29026,7 @@ describe('takeUntil operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29083,7 +29035,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {takeWhile, tap, mergeMap} from 'rxjs/operators';
@@ -29102,7 +29054,7 @@ describe('takeWhile operator', () => {
 
       const result = source.pipe(takeWhile((v: any) => +v < 4));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     }
   );
@@ -29112,7 +29064,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^             !';
     const expected = '--b--c--d--e--|';
 
-    expectObservable(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29121,7 +29073,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^             !';
     const expected = '--b--c--d--e--|';
 
-    expectObservable(
+    expectSource(
       e1.pipe(
         takeWhile(<any>(() => {
           return {};
@@ -29136,7 +29088,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^ !            ';
     const expected = '--|            ';
 
-    expectObservable(e1.pipe(takeWhile(() => false))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(() => false))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29145,7 +29097,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^ !            ';
     const expected = '--|            ';
 
-    expectObservable(e1.pipe(takeWhile(() => null as any))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(() => null as any))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29158,7 +29110,7 @@ describe('takeWhile operator', () => {
       return value !== 'd';
     }
 
-    expectObservable(e1.pipe(takeWhile(predicate))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29175,7 +29127,7 @@ describe('takeWhile operator', () => {
       }
       const inclusive = true;
 
-      expectObservable(e1.pipe(takeWhile(predicate, inclusive))).toBe(expected);
+      expectSource(e1.pipe(takeWhile(predicate, inclusive))).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -29185,7 +29137,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^             ';
     const expected = '--b--c--d--e--';
 
-    expectObservable(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29196,7 +29148,7 @@ describe('takeWhile operator', () => {
 
     const result = e1.pipe(takeWhile(() => true));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29205,7 +29157,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^            !';
     const expected = '-------------|';
 
-    expectObservable(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29216,7 +29168,7 @@ describe('takeWhile operator', () => {
 
     const result = e1.pipe(takeWhile(() => true));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29229,7 +29181,7 @@ describe('takeWhile operator', () => {
       return index < 2;
     }
 
-    expectObservable(e1.pipe(takeWhile(predicate))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29238,7 +29190,7 @@ describe('takeWhile operator', () => {
     const e1subs = '^             !';
     const expected = '--b--c--d--e--#';
 
-    expectObservable(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29247,7 +29199,7 @@ describe('takeWhile operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable(source.pipe(takeWhile(() => true))).toBe(expected);
+    expectSource(source.pipe(takeWhile(() => true))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -29268,7 +29220,7 @@ describe('takeWhile operator', () => {
         expect(invoked).to.equal(3);
       })
     );
-    expectObservable(source).toBe(expected);
+    expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29281,7 +29233,7 @@ describe('takeWhile operator', () => {
       throw 'error';
     }
 
-    expectObservable(e1.pipe(takeWhile(<any>predicate))).toBe(expected);
+    expectSource(e1.pipe(takeWhile(<any>predicate))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29295,7 +29247,7 @@ describe('takeWhile operator', () => {
       return value !== 'd';
     }
 
-    expectObservable(e1.pipe(takeWhile(predicate)), unsub).toBe(expected);
+    expectSource(e1.pipe(takeWhile(predicate)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29315,7 +29267,7 @@ describe('takeWhile operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29383,7 +29335,7 @@ import {Subject, of, throwError, Observer, EMPTY} from 'rxjs';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 
@@ -29403,7 +29355,7 @@ describe('tap operator', () => {
           //noop
         })
       );
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -29594,7 +29546,7 @@ describe('tap operator', () => {
         //noop
       })
     );
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29612,7 +29564,7 @@ describe('tap operator', () => {
       mergeMap((x: any) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29626,7 +29578,7 @@ describe('tap operator', () => {
         //noop
       })
     );
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29640,7 +29592,7 @@ describe('tap operator', () => {
         //noop
       })
     );
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -29648,7 +29600,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {throttle, mergeMap, mapTo} from 'rxjs/operators';
@@ -29674,7 +29626,7 @@ describe('throttle operator', () => {
 
       const result = e1.pipe(throttle(() => e2));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -29693,7 +29645,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29711,7 +29663,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29726,7 +29678,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29745,7 +29697,7 @@ describe('throttle operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29765,7 +29717,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29778,7 +29730,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -29791,7 +29743,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29805,7 +29757,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29819,7 +29771,7 @@ describe('throttle operator', () => {
 
     const result = e1.pipe(throttle(() => e2));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -29846,7 +29798,7 @@ describe('throttle operator', () => {
     let i = 0;
     const result = e1.pipe(throttle(() => e2[i++]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let j = 0; j < e2.length; j++) {
       expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
@@ -29871,7 +29823,7 @@ describe('throttle operator', () => {
     let i = 0;
     const result = e1.pipe(throttle(() => e2[i++]));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     for (let j = 0; j < e2.length; j++) {
       expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
@@ -29898,7 +29850,7 @@ describe('throttle operator', () => {
         return n1;
       })
     );
-    expectObservable(result).toBe(exp, undefined, new Error('lol'));
+    expectSource(result).toBe(exp, undefined, new Error('lol'));
     expectSubscriptions(s1.subscriptions).toBe(s1Subs);
     expectSubscriptions(n1.subscriptions).toBe(n1Subs);
   });
@@ -29911,7 +29863,7 @@ describe('throttle operator', () => {
       return cold('-----|');
     }
 
-    expectObservable(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -29923,7 +29875,7 @@ describe('throttle operator', () => {
       return cold('-----|');
     }
 
-    expectObservable(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -29935,7 +29887,7 @@ describe('throttle operator', () => {
       return cold('-----|');
     }
 
-    expectObservable(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -29947,7 +29899,7 @@ describe('throttle operator', () => {
       return cold('-----|');
     }
 
-    expectObservable(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -29959,7 +29911,7 @@ describe('throttle operator', () => {
       return cold('-----|');
     }
 
-    expectObservable(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30066,7 +30018,7 @@ describe('throttle operator', () => {
           throttle(() => e2, {leading: true, trailing: true})
         );
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       }
@@ -30082,7 +30034,7 @@ describe('throttle operator', () => {
       const result = s1.pipe(
         throttle(() => n1, {leading: true, trailing: true})
       );
-      expectObservable(result).toBe(exp);
+      expectSource(result).toBe(exp);
       expectSubscriptions(s1.subscriptions).toBe(s1Subs);
       expectSubscriptions(n1.subscriptions).toBe(n1Subs);
     });
@@ -30109,7 +30061,7 @@ describe('throttle operator', () => {
           throttle(() => e2, {leading: true, trailing: true})
         );
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
       }
@@ -30125,7 +30077,7 @@ describe('throttle operator', () => {
       const result = s1.pipe(
         throttle(() => n1, {leading: true, trailing: true})
       );
-      expectObservable(result).toBe(exp);
+      expectSource(result).toBe(exp);
       expectSubscriptions(s1.subscriptions).toBe(s1Subs);
       expectSubscriptions(n1.subscriptions).toBe(n1Subs);
     });
@@ -30135,7 +30087,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions,
   time
 } from '../helpers/marble-testing';
@@ -30158,7 +30110,7 @@ describe('throttleTime operator', () => {
 
       const result = e1.pipe(throttleTime(50, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(subs);
     }
   );
@@ -30200,7 +30152,7 @@ describe('throttleTime operator', () => {
     const subs = '^                    !';
     const expected = '-a--------b-----c----|';
 
-    expectObservable(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30209,7 +30161,7 @@ describe('throttleTime operator', () => {
     const subs = '^                        !';
     const expected = 'a-----a-----a-----a-----a|';
 
-    expectObservable(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30218,7 +30170,7 @@ describe('throttleTime operator', () => {
     const subs = '^    !';
     const expected = '-----|';
 
-    expectObservable(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30227,7 +30179,7 @@ describe('throttleTime operator', () => {
     const subs = '^    !';
     const expected = '-----#';
 
-    expectObservable(e1.pipe(throttleTime(10, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(10, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30236,7 +30188,7 @@ describe('throttleTime operator', () => {
     const subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30245,7 +30197,7 @@ describe('throttleTime operator', () => {
     const subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30254,7 +30206,7 @@ describe('throttleTime operator', () => {
     const subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30264,7 +30216,7 @@ describe('throttleTime operator', () => {
     const subs = '^                              !';
     const expected = '-a-------------d----------------';
 
-    expectObservable(e1.pipe(throttleTime(50, rxTestScheduler)), unsub).toBe(
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler)), unsub).toBe(
       expected
     );
     expectSubscriptions(e1.subscriptions).toBe(subs);
@@ -30282,7 +30234,7 @@ describe('throttleTime operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30291,7 +30243,7 @@ describe('throttleTime operator', () => {
     const subs = '^                              !';
     const expected = '-a-------------d---------------#';
 
-    expectObservable(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 
@@ -30308,7 +30260,7 @@ describe('throttleTime operator', () => {
           throttleTime(t, rxTestScheduler, {leading: true, trailing: true})
         );
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
       }
     );
@@ -30322,7 +30274,7 @@ describe('throttleTime operator', () => {
         throttleTime(t, rxTestScheduler, {leading: true, trailing: true})
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 
@@ -30339,7 +30291,7 @@ describe('throttleTime operator', () => {
           throttleTime(t, rxTestScheduler, {leading: false, trailing: true})
         );
 
-        expectObservable(result).toBe(expected);
+        expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
       }
     );
@@ -30354,7 +30306,7 @@ describe('throttleTime operator', () => {
         throttleTime(t, rxTestScheduler, {leading: false, trailing: true})
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     });
 
@@ -30367,7 +30319,7 @@ describe('throttleTime operator', () => {
         throttleTime(t, rxTestScheduler, {leading: false, trailing: true})
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
     });
   });
 });
@@ -30375,7 +30327,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {EMPTY, of, EmptyError, defer, throwError} from 'rxjs';
@@ -30389,7 +30341,7 @@ describe('throwIfEmpty', () => {
     asDiagram('throwIfEmpty')('should error when empty', () => {
       const source = cold('----|');
       const expected = '----#';
-      expectObservable(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
+      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
         expected,
         undefined,
         new Error('test')
@@ -30428,7 +30380,7 @@ describe('throwIfEmpty', () => {
       const source = cold('----a---b---c---|');
       const sub1 = '^               !';
       const expected = '----a---b---c---|';
-      expectObservable(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
+      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
         expected
       );
       expectSubscriptions(source.subscriptions).toBe([sub1]);
@@ -30438,7 +30390,7 @@ describe('throwIfEmpty', () => {
       const source = cold('-');
       const sub1 = '^';
       const expected = '-';
-      expectObservable(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
+      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
         expected
       );
       expectSubscriptions(source.subscriptions).toBe([sub1]);
@@ -30448,7 +30400,7 @@ describe('throwIfEmpty', () => {
       const source = cold('----|');
       const sub1 = '^   !';
       const expected = '----#';
-      expectObservable(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
+      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
         expected,
         undefined,
         new Error('test')
@@ -30522,7 +30474,7 @@ describe('throwIfEmpty', () => {
       const source = cold('----a---b---c---|');
       const sub1 = '^               !';
       const expected = '----a---b---c---|';
-      expectObservable(source.pipe(throwIfEmpty())).toBe(expected);
+      expectSource(source.pipe(throwIfEmpty())).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe([sub1]);
     });
 
@@ -30530,7 +30482,7 @@ describe('throwIfEmpty', () => {
       const source = cold('-');
       const sub1 = '^';
       const expected = '-';
-      expectObservable(source.pipe(throwIfEmpty())).toBe(expected);
+      expectSource(source.pipe(throwIfEmpty())).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe([sub1]);
     });
 
@@ -30538,7 +30490,7 @@ describe('throwIfEmpty', () => {
       const source = cold('----|');
       const sub1 = '^   !';
       const expected = '----#';
-      expectObservable(source.pipe(throwIfEmpty())).toBe(
+      expectSource(source.pipe(throwIfEmpty())).toBe(
         expected,
         undefined,
         new EmptyError()
@@ -30583,7 +30535,7 @@ describe('throwIfEmpty', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {timeInterval, map, mergeMap} from 'rxjs/operators';
@@ -30610,7 +30562,7 @@ describe('timeInterval operator', () => {
         map((x: any) => x.interval)
       );
 
-      expectObservable(result).toBe(expected, expectedValue);
+      expectSource(result).toBe(expected, expectedValue);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -30627,7 +30579,7 @@ describe('timeInterval operator', () => {
       z: new TimeInterval('e', 40)
     };
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
       expected,
       expectedValue
     );
@@ -30639,9 +30591,7 @@ describe('timeInterval operator', () => {
     const e1subs = '^        !';
     const expected = '---------|';
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30650,9 +30600,7 @@ describe('timeInterval operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30666,7 +30614,7 @@ describe('timeInterval operator', () => {
       z: new TimeInterval('b', 30)
     };
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
       expected,
       expectedValue
     );
@@ -30686,7 +30634,7 @@ describe('timeInterval operator', () => {
 
     const result = (<any>e1).pipe(timeInterval(rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected, expectedValue);
+    expectSource(result, unsub).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30707,7 +30655,7 @@ describe('timeInterval operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, expectedValue);
+    expectSource(result, unsub).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30716,9 +30664,7 @@ describe('timeInterval operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30727,9 +30673,7 @@ describe('timeInterval operator', () => {
     const e1subs = '^  !';
     const expected = '---#';
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30743,7 +30687,7 @@ describe('timeInterval operator', () => {
       z: new TimeInterval('b', 30)
     };
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
       expected,
       expectedValue
     );
@@ -30755,9 +30699,7 @@ describe('timeInterval operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(timeInterval(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -30765,7 +30707,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {timeout, mergeMap} from 'rxjs/operators';
@@ -30788,7 +30730,7 @@ describe('timeout operator', () => {
 
       const result = e1.pipe(timeout(50, rxTestScheduler));
 
-      expectObservable(result).toBe(expected, null, defaultTimeoutError);
+      expectSource(result).toBe(expected, null, defaultTimeoutError);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -30822,7 +30764,7 @@ describe('timeout operator', () => {
       rxTestScheduler.now() + (expected.length + 2) * 10
     );
 
-    expectObservable(e1.pipe(timeout(timeoutValue, rxTestScheduler))).toBe(
+    expectSource(e1.pipe(timeout(timeoutValue, rxTestScheduler))).toBe(
       expected
     );
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -30833,7 +30775,7 @@ describe('timeout operator', () => {
     const e1subs = '^                !';
     const expected = '--a--b--c--d--e--|';
 
-    expectObservable(e1.pipe(timeout(50, rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(timeout(50, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30845,7 +30787,7 @@ describe('timeout operator', () => {
 
     const result = e1.pipe(timeout(50, rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30861,7 +30803,7 @@ describe('timeout operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30876,7 +30818,7 @@ describe('timeout operator', () => {
 
       const result = e1.pipe(timeout(50, rxTestScheduler));
 
-      expectObservable(result).toBe(expected, values, defaultTimeoutError);
+      expectSource(result).toBe(expected, values, defaultTimeoutError);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -30890,7 +30832,7 @@ describe('timeout operator', () => {
       timeout(new Date(rxTestScheduler.now() + 100), rxTestScheduler)
     );
 
-    expectObservable(result).toBe(expected, null, defaultTimeoutError);
+    expectSource(result).toBe(expected, null, defaultTimeoutError);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30904,7 +30846,7 @@ describe('timeout operator', () => {
       timeout(new Date(rxTestScheduler.now() + 100), rxTestScheduler)
     );
 
-    expectObservable(result).toBe(expected, values, defaultTimeoutError);
+    expectSource(result).toBe(expected, values, defaultTimeoutError);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -30932,14 +30874,14 @@ describe('timeout operator', () => {
       })
       .pipe(timeout(50, rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {timeoutWith, mergeMap} from 'rxjs/operators';
@@ -30962,7 +30904,7 @@ describe('timeoutWith operator', () => {
 
       const result = e1.pipe(timeoutWith(50, e2, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -30979,7 +30921,7 @@ describe('timeoutWith operator', () => {
       timeoutWith(new Date(rxTestScheduler.now() + 100), e2, rxTestScheduler)
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -30996,7 +30938,7 @@ describe('timeoutWith operator', () => {
 
       const result = e1.pipe(timeoutWith(40, e2, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -31012,7 +30954,7 @@ describe('timeoutWith operator', () => {
 
     const result = e1.pipe(timeoutWith(40, e2, rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31031,7 +30973,7 @@ describe('timeoutWith operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31050,7 +30992,7 @@ describe('timeoutWith operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31067,7 +31009,7 @@ describe('timeoutWith operator', () => {
 
       const result = e1.pipe(timeoutWith(100, e2, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -31085,7 +31027,7 @@ describe('timeoutWith operator', () => {
 
       const result = e1.pipe(timeoutWith(40, e2, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -31103,7 +31045,7 @@ describe('timeoutWith operator', () => {
 
       const result = e1.pipe(timeoutWith(100, e2, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -31121,7 +31063,7 @@ describe('timeoutWith operator', () => {
 
       const result = e1.pipe(timeoutWith(100, e2, rxTestScheduler));
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -31136,7 +31078,7 @@ describe('timeoutWith operator', () => {
 
     const result = e1.pipe(timeoutWith(100, e2, rxTestScheduler));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31150,7 +31092,7 @@ describe('timeoutWith operator', () => {
 
     const result = e1.pipe(timeoutWith(100, e2, rxTestScheduler));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31164,7 +31106,7 @@ describe('timeoutWith operator', () => {
 
     const result = e1.pipe(timeoutWith(50, e2, rxTestScheduler));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31180,7 +31122,7 @@ describe('timeoutWith operator', () => {
       timeoutWith(new Date(rxTestScheduler.now() + 70), e2, rxTestScheduler)
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31196,7 +31138,7 @@ describe('timeoutWith operator', () => {
 
     const result = e1.pipe(timeoutWith(timeoutValue, e2, rxTestScheduler));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31212,7 +31154,7 @@ describe('timeoutWith operator', () => {
       timeoutWith(new Date(Date.now() + 100), e2, rxTestScheduler)
     );
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31231,7 +31173,7 @@ describe('timeoutWith operator', () => {
         timeoutWith(new Date(rxTestScheduler.now() + 100), e2, rxTestScheduler)
       );
 
-      expectObservable(result).toBe(expected);
+      expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
     }
@@ -31263,7 +31205,7 @@ describe('timeoutWith operator', () => {
       })
       .pipe(timeoutWith(40, e2, rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -31271,7 +31213,7 @@ describe('timeoutWith operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {timestamp, map, mergeMap} from 'rxjs/operators';
@@ -31297,7 +31239,7 @@ describe('timestamp operator', () => {
         map(x => x.timestamp)
       );
 
-      expectObservable(result).toBe(expected, expectedValue);
+      expectSource(result).toBe(expected, expectedValue);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -31314,7 +31256,7 @@ describe('timestamp operator', () => {
       z: {value: 'e', timestamp: 130}
     };
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(
       expected,
       expectedValue
     );
@@ -31326,7 +31268,7 @@ describe('timestamp operator', () => {
     const e1subs = '^        !';
     const expected = '---------|';
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31335,7 +31277,7 @@ describe('timestamp operator', () => {
     const e1subs = '(^!)';
     const expected = '|';
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31349,7 +31291,7 @@ describe('timestamp operator', () => {
       z: {value: 'b', timestamp: 40}
     };
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(
       expected,
       expectedValue
     );
@@ -31369,7 +31311,7 @@ describe('timestamp operator', () => {
 
     const result = e1.pipe(timestamp(rxTestScheduler));
 
-    expectObservable(result, unsub).toBe(expected, expectedValue);
+    expectSource(result, unsub).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31390,7 +31332,7 @@ describe('timestamp operator', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, expectedValue);
+    expectSource(result, unsub).toBe(expected, expectedValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31399,7 +31341,7 @@ describe('timestamp operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31408,7 +31350,7 @@ describe('timestamp operator', () => {
     const e1subs = '^  !';
     const expected = '---#';
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31422,7 +31364,7 @@ describe('timestamp operator', () => {
       z: {value: 'b', timestamp: 40}
     };
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(
       expected,
       expectedValue
     );
@@ -31434,14 +31376,14 @@ describe('timestamp operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
+    expectSource(e1.pipe(timestamp(rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {toArray, mergeMap} from 'rxjs/operators';
@@ -31459,7 +31401,7 @@ describe('toArray operator', () => {
       const e1subs = '^        !';
       const expected = '---------(w|)';
 
-      expectObservable(e1.pipe(toArray())).toBe(expected, {w: ['a', 'b']});
+      expectSource(e1.pipe(toArray())).toBe(expected, {w: ['a', 'b']});
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
@@ -31469,7 +31411,7 @@ describe('toArray operator', () => {
     const e1subs = '^';
     const expected = '-';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected);
+    expectSource(e1.pipe(toArray())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31478,7 +31420,7 @@ describe('toArray operator', () => {
     const e1subs = '(^!)';
     const expected = '(w|)';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected, {w: []});
+    expectSource(e1.pipe(toArray())).toBe(expected, {w: []});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31487,7 +31429,7 @@ describe('toArray operator', () => {
     const e1subs = '^     ';
     const expected = '------';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected);
+    expectSource(e1.pipe(toArray())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31496,7 +31438,7 @@ describe('toArray operator', () => {
     const e1subs = '^   !';
     const expected = '----(w|)';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected, {w: []});
+    expectSource(e1.pipe(toArray())).toBe(expected, {w: []});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31505,7 +31447,7 @@ describe('toArray operator', () => {
     const e1subs = '^     !';
     const expected = '------(w|)';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected, {w: ['y']});
+    expectSource(e1.pipe(toArray())).toBe(expected, {w: ['y']});
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31515,8 +31457,8 @@ describe('toArray operator', () => {
     const expected = '------(w|)';
 
     const result = e1.pipe(toArray());
-    expectObservable(result).toBe(expected, {w: ['y']});
-    expectObservable(result).toBe(expected, {w: ['y']});
+    expectSource(result).toBe(expected, {w: ['y']});
+    expectSource(result).toBe(expected, {w: ['y']});
     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
   });
 
@@ -31526,7 +31468,7 @@ describe('toArray operator', () => {
     const e1subs = '^       !                 ';
     const expected = '---------                 ';
 
-    expectObservable(e1.pipe(toArray()), unsub).toBe(expected);
+    expectSource(e1.pipe(toArray()), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31542,7 +31484,7 @@ describe('toArray operator', () => {
       mergeMap((x: Array<string>) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected);
+    expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31551,7 +31493,7 @@ describe('toArray operator', () => {
     const e1subs = '^        !';
     const expected = '---------#';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected, null, 'too bad');
+    expectSource(e1.pipe(toArray())).toBe(expected, null, 'too bad');
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31560,7 +31502,7 @@ describe('toArray operator', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectObservable(e1.pipe(toArray())).toBe(expected);
+    expectSource(e1.pipe(toArray())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -31630,7 +31572,7 @@ describe('Observable.toPromise', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {window, mergeMap} from 'rxjs/operators';
@@ -31657,7 +31599,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31673,7 +31615,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31689,7 +31631,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31703,7 +31645,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(EMPTY));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     // expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31719,7 +31661,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31735,7 +31677,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31753,7 +31695,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31769,7 +31711,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31788,7 +31730,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31807,7 +31749,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31825,7 +31767,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result, unsub).toBe(expected, expectedValues);
+    expectSource(result, unsub).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31847,7 +31789,7 @@ describe('window operator', () => {
       mergeMap((x: Observable<string>) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, expectedValues);
+    expectSource(result, unsub).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31863,7 +31805,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31881,7 +31823,7 @@ describe('window operator', () => {
 
     const result = source.pipe(window(closings));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
     expectSubscriptions(closings.subscriptions).toBe(closingSubs);
   });
@@ -31889,7 +31831,7 @@ describe('window operator', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {windowCount, mergeMap} from 'rxjs/operators';
@@ -31917,7 +31859,7 @@ describe('windowCount operator', () => {
 
       const result = source.pipe(windowCount(3));
 
-      expectObservable(result).toBe(expected, expectedValues);
+      expectSource(result).toBe(expected, expectedValues);
       expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     }
   );
@@ -31935,7 +31877,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(2, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -31951,7 +31893,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -31964,7 +31906,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(2, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -31977,7 +31919,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(2, 1));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -31990,7 +31932,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(2, 1));
 
-    expectObservable(result).toBe(expected, expectedValues);
+    expectSource(result).toBe(expected, expectedValues);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -32009,7 +31951,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(3, 1));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -32026,7 +31968,7 @@ describe('windowCount operator', () => {
 
     const result = source.pipe(windowCount(2, 1));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -32047,7 +31989,7 @@ describe('windowCount operator', () => {
       mergeMap((x: Observable<string>) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
@@ -32065,31 +32007,29 @@ describe('windowTime operator', () => {
   });
 
   it('should emit windows given windowTimeSpan and windowCreationInterval', () => {
-    rxTestScheduler.run(
-      ({hot, cold, expectObservable, expectSubscriptions}) => {
-        const source = hot('--1--2--^-a--b--c--d--e---f--g--h-|');
-        const subs = '^-------------------------!';
-        //  10 frames              0---------1---------2-----|
-        //  5                      -----|
-        //  5                                -----|
-        //  5                                          -----|
-        const expected = 'x---------y---------z-----|';
-        const x = cold('--a--(b|)                  ');
-        const y = cold('-d--e|           ');
-        const z = cold('-g--h| ');
-        const values = {x, y, z};
+    rxTestScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const source = hot('--1--2--^-a--b--c--d--e---f--g--h-|');
+      const subs = '^-------------------------!';
+      //  10 frames              0---------1---------2-----|
+      //  5                      -----|
+      //  5                                -----|
+      //  5                                          -----|
+      const expected = 'x---------y---------z-----|';
+      const x = cold('--a--(b|)                  ');
+      const y = cold('-d--e|           ');
+      const z = cold('-g--h| ');
+      const values = {x, y, z};
 
-        const result = source.pipe(windowTime(5, 10, rxTestScheduler));
+      const result = source.pipe(windowTime(5, 10, rxTestScheduler));
 
-        expectObservable(result).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should close windows after max count is reached', () => {
     rxTestScheduler.run(
-      ({hot, time, cold, expectObservable, expectSubscriptions}) => {
+      ({hot, time, cold, expectSource, expectSubscriptions}) => {
         const source = hot('--1--2--^--a--b--c--d--e--f--g-----|');
         const subs = '^--------------------------!';
         const timeSpan = time('----------|');
@@ -32104,38 +32044,36 @@ describe('windowTime operator', () => {
           windowTime(timeSpan, null as any, 2, rxTestScheduler)
         );
 
-        expectObservable(result).toBe(expected, values);
+        expectSource(result).toBe(expected, values);
         expectSubscriptions(source.subscriptions).toBe(subs);
       }
     );
   });
 
   it('should close window after max count is reached with windowCreationInterval', () => {
-    rxTestScheduler.run(
-      ({hot, cold, expectSubscriptions, expectObservable}) => {
-        const source = hot('--1--2--^-a--b--c--de-f---g--h--i-|');
-        const subs = '^-------------------------!';
-        //  10 frames              0---------1---------2-----|
-        //  5                      -----|
-        //  5                                -----|');
-        //  5                                          -----|');
-        const expected = 'x---------y---------z-----|';
-        const x = cold('            --a--(b|)                 ');
-        const y = cold('                      -de-(f|)         ');
-        const z = cold('                                -h--i| ');
-        const values = {x, y, z};
+    rxTestScheduler.run(({hot, cold, expectSubscriptions, expectSource}) => {
+      const source = hot('--1--2--^-a--b--c--de-f---g--h--i-|');
+      const subs = '^-------------------------!';
+      //  10 frames              0---------1---------2-----|
+      //  5                      -----|
+      //  5                                -----|');
+      //  5                                          -----|');
+      const expected = 'x---------y---------z-----|';
+      const x = cold('            --a--(b|)                 ');
+      const y = cold('                      -de-(f|)         ');
+      const z = cold('                                -h--i| ');
+      const values = {x, y, z};
 
-        const result = source.pipe(windowTime(5, 10, 3, rxTestScheduler));
+      const result = source.pipe(windowTime(5, 10, 3, rxTestScheduler));
 
-        expectObservable(result).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should emit windows given windowTimeSpan', () => {
     rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectObservable}) => {
+      ({hot, cold, time, expectSubscriptions, expectSource}) => {
         const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
         const subs = '^--------------------------!';
         const timeSpan = time('----------|');
@@ -32148,7 +32086,7 @@ describe('windowTime operator', () => {
 
         const result = source.pipe(windowTime(timeSpan, rxTestScheduler));
 
-        expectObservable(result).toBe(expected, values);
+        expectSource(result).toBe(expected, values);
         expectSubscriptions(source.subscriptions).toBe(subs);
       }
     );
@@ -32156,7 +32094,7 @@ describe('windowTime operator', () => {
 
   it('should emit windows given windowTimeSpan and windowCreationInterval', () => {
     rxTestScheduler.run(
-      ({hot, time, cold, expectSubscriptions, expectObservable}) => {
+      ({hot, time, cold, expectSubscriptions, expectSource}) => {
         const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
         const subs = '^--------------------------!';
         const timeSpan = time('-----|');
@@ -32175,57 +32113,53 @@ describe('windowTime operator', () => {
           windowTime(timeSpan, interval, rxTestScheduler)
         );
 
-        expectObservable(result).toBe(expected, values);
+        expectSource(result).toBe(expected, values);
         expectSubscriptions(source.subscriptions).toBe(subs);
       }
     );
   });
 
   it('should return a single empty window if source is empty', () => {
-    rxTestScheduler.run(
-      ({cold, time, expectSubscriptions, expectObservable}) => {
-        const source = cold('|');
-        const subs = '(^!)';
-        const expected = '(w|)';
-        const w = cold('|');
-        const expectedValues = {w};
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
+    rxTestScheduler.run(({cold, time, expectSubscriptions, expectSource}) => {
+      const source = cold('|');
+      const subs = '(^!)';
+      const expected = '(w|)';
+      const w = cold('|');
+      const expectedValues = {w};
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(
+        windowTime(timeSpan, interval, rxTestScheduler)
+      );
 
-        expectObservable(result).toBe(expected, expectedValues);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, expectedValues);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should split a Just source into a single window identical to source', () => {
-    rxTestScheduler.run(
-      ({cold, time, expectSubscriptions, expectObservable}) => {
-        const source = cold('(a|)');
-        const subs = '(^!)';
-        const expected = '(w|)';
-        const w = cold('(a|)');
-        const expectedValues = {w};
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
+    rxTestScheduler.run(({cold, time, expectSubscriptions, expectSource}) => {
+      const source = cold('(a|)');
+      const subs = '(^!)';
+      const expected = '(w|)';
+      const w = cold('(a|)');
+      const expectedValues = {w};
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(
+        windowTime(timeSpan, interval, rxTestScheduler)
+      );
 
-        expectObservable(result).toBe(expected, expectedValues);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, expectedValues);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should be able to split a never Observable into timely empty windows', () => {
     rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectObservable}) => {
+      ({hot, cold, time, expectSubscriptions, expectSource}) => {
         const source = hot('^----------');
         const subs = '^---------!';
         const expected = 'a--b--c--d-';
@@ -32242,36 +32176,34 @@ describe('windowTime operator', () => {
           windowTime(timeSpan, interval, rxTestScheduler)
         );
 
-        expectObservable(result, unsub).toBe(expected, expectedValues);
+        expectSource(result, unsub).toBe(expected, expectedValues);
         expectSubscriptions(source.subscriptions).toBe(subs);
       }
     );
   });
 
   it('should emit an error-only window if outer is a simple throw-Observable', () => {
-    rxTestScheduler.run(
-      ({cold, time, expectSubscriptions, expectObservable}) => {
-        const source = cold('#');
-        const subs = '(^!)';
-        const expected = '(w#)';
-        const w = cold('#');
-        const expectedValues = {w};
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
+    rxTestScheduler.run(({cold, time, expectSubscriptions, expectSource}) => {
+      const source = cold('#');
+      const subs = '(^!)';
+      const expected = '(w#)';
+      const w = cold('#');
+      const expectedValues = {w};
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(
+        windowTime(timeSpan, interval, rxTestScheduler)
+      );
 
-        expectObservable(result).toBe(expected, expectedValues);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, expectedValues);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should handle source Observable which eventually emits an error', () => {
     rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectObservable}) => {
+      ({hot, cold, time, expectSubscriptions, expectSource}) => {
         const source = hot('--1--2--^--a--b--c--d--e--f--g--h--#');
         const subs = '^--------------------------!';
         const timeSpan = time('-----|');
@@ -32290,7 +32222,7 @@ describe('windowTime operator', () => {
           windowTime(timeSpan, interval, rxTestScheduler)
         );
 
-        expectObservable(result).toBe(expected, values);
+        expectSource(result).toBe(expected, values);
         expectSubscriptions(source.subscriptions).toBe(subs);
       }
     );
@@ -32298,7 +32230,7 @@ describe('windowTime operator', () => {
 
   it('should emit windows given windowTimeSpan and windowCreationInterval, but outer is unsubscribed early', () => {
     rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectObservable}) => {
+      ({hot, cold, time, expectSubscriptions, expectSource}) => {
         const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
         const subs = '^----------!                ';
         const timeSpan = time('-----|');
@@ -32317,7 +32249,7 @@ describe('windowTime operator', () => {
           windowTime(timeSpan, interval, rxTestScheduler)
         );
 
-        expectObservable(result, unsub).toBe(expected, values);
+        expectSource(result, unsub).toBe(expected, values);
         expectSubscriptions(source.subscriptions).toBe(subs);
       }
     );
@@ -32325,7 +32257,7 @@ describe('windowTime operator', () => {
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
     rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectObservable}) => {
+      ({hot, cold, time, expectSubscriptions, expectSource}) => {
         const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
         const sourcesubs = '^-------------!             ';
         const timeSpan = time('-----|');
@@ -32346,14 +32278,14 @@ describe('windowTime operator', () => {
           mergeMap((x: Observable<string>) => of(x))
         );
 
-        expectObservable(result, unsub).toBe(expected, values);
+        expectSource(result, unsub).toBe(expected, values);
         expectSubscriptions(source.subscriptions).toBe(sourcesubs);
       }
     );
   });
 
   it('should not error if maxWindowSize is hit while nexting to other windows.', () => {
-    rxTestScheduler.run(({cold, time, expectObservable}) => {
+    rxTestScheduler.run(({cold, time, expectSource}) => {
       const source = cold(
         '                ----a---b---c---d---e---f---g---h---i---j---'
       );
@@ -32386,7 +32318,7 @@ describe('windowTime operator', () => {
           rxTestScheduler
         )
       );
-      expectObservable(result, killSub).toBe(expected, values);
+      expectSource(result, killSub).toBe(expected, values);
     });
   });
 });
@@ -32394,7 +32326,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions,
   time
 } from '../helpers/marble-testing';
@@ -32431,7 +32363,7 @@ describe('windowToggle', () => {
 
       const result = source.pipe(windowToggle(e2, () => e3));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(source.subscriptions).toBe(subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -32467,7 +32399,7 @@ describe('windowToggle', () => {
         })
       );
 
-      expectObservable(source).toBe(expected, values);
+      expectSource(source).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -32498,7 +32430,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => close[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(close[0].subscriptions).toBe(closeSubs[0]);
@@ -32534,7 +32466,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => closings[i++].obs));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(closings[0].obs.subscriptions).toBe(closings[0].sub);
@@ -32561,7 +32493,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => close[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32589,7 +32521,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => close[i++]));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(close[0].subscriptions).toBe(closeSubs[0]);
@@ -32624,7 +32556,7 @@ describe('windowToggle', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(close[0].subscriptions).toBe(closeSubs[0]);
@@ -32649,7 +32581,7 @@ describe('windowToggle', () => {
       })
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
     rxTestScheduler.schedule(() => {
       expect(() => {
@@ -32682,7 +32614,7 @@ describe('windowToggle', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32704,7 +32636,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => close[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32726,7 +32658,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => close[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32748,7 +32680,7 @@ describe('windowToggle', () => {
     let i = 0;
     const result = e1.pipe(windowToggle(e2, () => close[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32763,7 +32695,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32778,7 +32710,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32800,7 +32732,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32815,7 +32747,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32833,7 +32765,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32849,7 +32781,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
@@ -32868,7 +32800,7 @@ describe('windowToggle', () => {
 
     const result = e1.pipe(windowToggle(e2, () => e3));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32876,7 +32808,7 @@ describe('windowToggle', () => {
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {TestScheduler} from 'rxjs/testing';
@@ -32907,7 +32839,7 @@ describe('windowWhen operator', () => {
 
     const source = e1.pipe(windowWhen(() => e2));
 
-    expectObservable(source).toBe(expected, values);
+    expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -32934,7 +32866,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -32967,7 +32899,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++].obs));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(subs);
     expectSubscriptions(closings[0].obs.subscriptions).toBe(closings[0].sub);
     expectSubscriptions(closings[1].obs.subscriptions).toBe(closings[1].sub);
@@ -32996,7 +32928,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -33023,7 +32955,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++]));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -33053,7 +32985,7 @@ describe('windowWhen operator', () => {
       mergeMap((x: Observable<string>) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -33083,7 +33015,7 @@ describe('windowWhen operator', () => {
       })
     );
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
   });
@@ -33107,7 +33039,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -33132,7 +33064,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -33157,7 +33089,7 @@ describe('windowWhen operator', () => {
     let i = 0;
     const result = e1.pipe(windowWhen(() => closings[i++]));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(closings[0].subscriptions).toBe(closeSubs[0]);
     expectSubscriptions(closings[1].subscriptions).toBe(closeSubs[1]);
@@ -33173,7 +33105,7 @@ describe('windowWhen operator', () => {
 
     const result = e1.pipe(windowWhen(() => e2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -33199,7 +33131,7 @@ describe('windowWhen operator', () => {
 
     const result = e1.pipe(windowWhen(() => e2));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -33215,7 +33147,7 @@ describe('windowWhen operator', () => {
 
     const result = e1.pipe(windowWhen(() => e2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -33231,7 +33163,7 @@ describe('windowWhen operator', () => {
 
     const result = e1.pipe(windowWhen(() => e2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -33247,7 +33179,7 @@ describe('windowWhen operator', () => {
 
     const result = e1.pipe(windowWhen(() => e2));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -33257,7 +33189,7 @@ import {lowerCaseO} from '../helpers/test-helper';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {withLatestFrom, mergeMap, delay} from 'rxjs/operators';
@@ -33278,7 +33210,7 @@ describe('withLatestFrom operator', () => {
         withLatestFrom(e2, (a: string, b: string) => String(a) + String(b))
       );
 
-      expectObservable(result).toBe(expected, {
+      expectSource(result).toBe(expected, {
         B: 'b1',
         C: 'c4',
         D: 'd4',
@@ -33303,7 +33235,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected, values);
+    expectSource(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33331,7 +33263,7 @@ describe('withLatestFrom operator', () => {
 
       const result = e1.pipe(withLatestFrom(e2, e3, project));
 
-      expectObservable(result).toBe(expected, values);
+      expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33358,7 +33290,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3, project));
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33388,7 +33320,7 @@ describe('withLatestFrom operator', () => {
       mergeMap((x: string) => of(x))
     );
 
-    expectObservable(result, unsub).toBe(expected, values);
+    expectSource(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33405,7 +33337,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33422,7 +33354,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33439,7 +33371,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33459,7 +33391,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected, values, new Error('boo-hoo'));
+    expectSource(result).toBe(expected, values, new Error('boo-hoo'));
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33482,7 +33414,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3, project));
 
-    expectObservable(result).toBe(expected, values, new Error('boo-hoo'));
+    expectSource(result).toBe(expected, values, new Error('boo-hoo'));
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33499,7 +33431,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33516,7 +33448,7 @@ describe('withLatestFrom operator', () => {
 
     const result = e1.pipe(withLatestFrom(e2, e3));
 
-    expectObservable(result).toBe(expected);
+    expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33582,7 +33514,7 @@ describe('zip legacy', () => {
   });
 
   it('should work with selector throws', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-2---4----|  ');
       const asubs = '     ^-------!     ';
       const b = hot('---1-^--3----5----|');
@@ -33597,25 +33529,21 @@ describe('zip legacy', () => {
         }
       };
       const observable = a.pipe(zip(b, selector));
-      expectObservable(observable).toBe(
-        expected,
-        {x: '23'},
-        new Error('too bad')
-      );
+      expectSource(observable).toBe(expected, {x: '23'}, new Error('too bad'));
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with some data asymmetric 1', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-1-3-5-7-9-x-y-z-w-u-|');
       const asubs = '     ^-----------------!    ';
       const b = hot('---1-^--2--4--6--8--0--|    ');
       const bsubs = '     ^-----------------!    ';
       const expected = '  ---a--b--c--d--e--|    ';
 
-      expectObservable(
+      expectSource(
         a.pipe(
           zip(b, function (r1, r2) {
             return r1 + r2;
@@ -33628,14 +33556,14 @@ describe('zip legacy', () => {
   });
 
   it('should work with some data asymmetric 2', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^--2--4--6--8--0--|    ');
       const asubs = '     ^-----------------!    ';
       const b = hot('---1-^-1-3-5-7-9-x-y-z-w-u-|');
       const bsubs = '     ^-----------------!    ';
       const expected = '  ---a--b--c--d--e--|    ';
 
-      expectObservable(
+      expectSource(
         a.pipe(
           zip(b, function (r1, r2) {
             return r1 + r2;
@@ -33648,14 +33576,14 @@ describe('zip legacy', () => {
   });
 
   it('should work with some data symmetric', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-1-3-5-7-9------| ');
       const asubs = '     ^----------------! ';
       const b = hot('---1-^--2--4--6--8--0--|');
       const bsubs = '     ^----------------! ';
       const expected = '  ---a--b--c--d--e-| ';
 
-      expectObservable(
+      expectSource(
         a.pipe(
           zip(b, function (r1, r2) {
             return r1 + r2;
@@ -33668,7 +33596,7 @@ describe('zip legacy', () => {
   });
 
   it('should work with n-ary symmetric selector', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-1----4----|');
       const asubs = '     ^---------!  ';
       const b = hot('---1-^--2--5----| ');
@@ -33681,7 +33609,7 @@ describe('zip legacy', () => {
           return [r0, r1, r2];
         })
       );
-      expectObservable(observable).toBe(expected, {
+      expectSource(observable).toBe(expected, {
         x: ['1', '2', '3'],
         y: ['4', '5', '6']
       });
@@ -33691,7 +33619,7 @@ describe('zip legacy', () => {
   });
 
   it('should work with n-ary symmetric array selector', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-1----4----|');
       const asubs = '     ^---------!  ';
       const b = hot('---1-^--2--5----| ');
@@ -33704,7 +33632,7 @@ describe('zip legacy', () => {
           return [r0, r1, r2];
         })
       );
-      expectObservable(observable).toBe(expected, {
+      expectSource(observable).toBe(expected, {
         x: ['1', '2', '3'],
         y: ['4', '5', '6']
       });
@@ -33714,14 +33642,14 @@ describe('zip legacy', () => {
   });
 
   it('should combine two observables and selector', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   ---1---2---3---');
       const asubs = '   ^';
       const b = hot('   --4--5--6--7--8--');
       const bsubs = '   ^';
       const expected = '---x---y---z';
 
-      expectObservable(
+      expectSource(
         a.pipe(
           zip(b, function (e1, e2) {
             return e1 + e2;
@@ -33737,7 +33665,7 @@ import {expect} from 'chai';
 import {
   hot,
   cold,
-  expectObservable,
+  expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
 import {zipAll, mergeMap} from 'rxjs/operators';
@@ -33758,7 +33686,7 @@ describe('zipAll operator', () => {
 
       const result = outer.pipe(zipAll((a, b) => String(a) + String(b)));
 
-      expectObservable(result).toBe(expected, {A: 'a1', B: 'b2'});
+      expectSource(result).toBe(expected, {A: 'a1', B: 'b2'});
     }
   );
 
@@ -33770,7 +33698,7 @@ describe('zipAll operator', () => {
     const expected = '---x---y---z';
     const values = {x: ['1', '4'], y: ['2', '5'], z: ['3', '6']};
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected, values);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -33803,7 +33731,7 @@ describe('zipAll operator', () => {
       z: ['c', 'f', 'j']
     };
 
-    expectObservable(of(e1, e2, e3).pipe(zipAll())).toBe(expected, values);
+    expectSource(of(e1, e2, e3).pipe(zipAll())).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
     expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33826,7 +33754,7 @@ describe('zipAll operator', () => {
         z: ['c', 'f', 'j']
       };
 
-      expectObservable(of(e1, e2, e3).pipe(zipAll())).toBe(expected, values);
+      expectSource(of(e1, e2, e3).pipe(zipAll())).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -33856,7 +33784,7 @@ describe('zipAll operator', () => {
         z: ['d', 3]
       };
 
-      expectObservable(of(e1, myIterator).pipe(zipAll<string | number>())).toBe(
+      expectSource(of(e1, myIterator).pipe(zipAll<string | number>())).toBe(
         expected,
         values
       );
@@ -33889,7 +33817,7 @@ describe('zipAll operator', () => {
       const b: string[] = [];
       const expected = '-';
 
-      expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33899,7 +33827,7 @@ describe('zipAll operator', () => {
       const b: string[] = [];
       const expected = '|';
 
-      expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33909,7 +33837,7 @@ describe('zipAll operator', () => {
       const b = [1];
       const expected = '|';
 
-      expectObservable(of(a, b).pipe(zipAll<string | number>())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll<string | number>())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33919,7 +33847,7 @@ describe('zipAll operator', () => {
       const b: string[] = [];
       const expected = '--------|';
 
-      expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33929,7 +33857,7 @@ describe('zipAll operator', () => {
       const b = [1];
       const expected = '-';
 
-      expectObservable(of(a, b).pipe(zipAll<string | number>())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll<string | number>())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33939,10 +33867,9 @@ describe('zipAll operator', () => {
       const b = [2];
       const expected = '-----(x|)';
 
-      expectObservable(of(a, b).pipe(zipAll<string | number>())).toBe(
-        expected,
-        {x: ['1', 2]}
-      );
+      expectSource(of(a, b).pipe(zipAll<string | number>())).toBe(expected, {
+        x: ['1', 2]
+      });
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33952,7 +33879,7 @@ describe('zipAll operator', () => {
       const b: string[] = [];
       const expected = '-----#';
 
-      expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33962,7 +33889,7 @@ describe('zipAll operator', () => {
       const b = [1];
       const expected = '-----#';
 
-      expectObservable(of(a, b).pipe(zipAll<string | number>())).toBe(expected);
+      expectSource(of(a, b).pipe(zipAll<string | number>())).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33972,10 +33899,11 @@ describe('zipAll operator', () => {
       const b = [4, 5, 6];
       const expected = '---x--y--(z|)';
 
-      expectObservable(of(a, b).pipe(zipAll<string | number>())).toBe(
-        expected,
-        {x: ['1', 4], y: ['2', 5], z: ['3', 6]}
-      );
+      expectSource(of(a, b).pipe(zipAll<string | number>())).toBe(expected, {
+        x: ['1', 4],
+        y: ['2', 5],
+        z: ['3', 6]
+      });
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
 
@@ -33992,7 +33920,7 @@ describe('zipAll operator', () => {
           return x + y;
         }
       };
-      expectObservable(of(a, b).pipe(zipAll(selector))).toBe(
+      expectSource(of(a, b).pipe(zipAll(selector))).toBe(
         expected,
         {x: '14'},
         new Error('too bad')
@@ -34008,10 +33936,11 @@ describe('zipAll operator', () => {
     const bsubs = '^';
     const expected = '---x---y---z';
 
-    expectObservable(of(a, b).pipe(zipAll((e1, e2) => e1 + e2))).toBe(
-      expected,
-      {x: '14', y: '25', z: '36'}
-    );
+    expectSource(of(a, b).pipe(zipAll((e1, e2) => e1 + e2))).toBe(expected, {
+      x: '14',
+      y: '25',
+      z: '36'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34024,7 +33953,7 @@ describe('zipAll operator', () => {
     const c = hot('---1-^---3---6-|  ');
     const expected = '----x---y-|  ';
 
-    expectObservable(of(a, b, c).pipe(zipAll())).toBe(expected, {
+    expectSource(of(a, b, c).pipe(zipAll())).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
     });
@@ -34041,7 +33970,7 @@ describe('zipAll operator', () => {
     const expected = '----x---y-|  ';
 
     const observable = of(a, b, c).pipe(zipAll((r0, r1, r2) => [r0, r1, r2]));
-    expectObservable(observable).toBe(expected, {
+    expectSource(observable).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
     });
@@ -34058,7 +33987,7 @@ describe('zipAll operator', () => {
     const expected = '----x---y-|  ';
 
     const observable = of(a, b, c).pipe(zipAll((r0, r1, r2) => [r0, r1, r2]));
-    expectObservable(observable).toBe(expected, {
+    expectSource(observable).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
     });
@@ -34073,10 +34002,13 @@ describe('zipAll operator', () => {
     const bsubs = '^                 !    ';
     const expected = '---a--b--c--d--e--|    ';
 
-    expectObservable(of(a, b).pipe(zipAll((r1, r2) => r1 + r2))).toBe(
-      expected,
-      {a: '12', b: '34', c: '56', d: '78', e: '90'}
-    );
+    expectSource(of(a, b).pipe(zipAll((r1, r2) => r1 + r2))).toBe(expected, {
+      a: '12',
+      b: '34',
+      c: '56',
+      d: '78',
+      e: '90'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34088,10 +34020,13 @@ describe('zipAll operator', () => {
     const bsubs = '^                 !    ';
     const expected = '---a--b--c--d--e--|    ';
 
-    expectObservable(of(a, b).pipe(zipAll((r1, r2) => r1 + r2))).toBe(
-      expected,
-      {a: '21', b: '43', c: '65', d: '87', e: '09'}
-    );
+    expectSource(of(a, b).pipe(zipAll((r1, r2) => r1 + r2))).toBe(expected, {
+      a: '21',
+      b: '43',
+      c: '65',
+      d: '87',
+      e: '09'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34103,10 +34038,13 @@ describe('zipAll operator', () => {
     const bsubs = '^                ! ';
     const expected = '---a--b--c--d--e-| ';
 
-    expectObservable(of(a, b).pipe(zipAll((r1, r2) => r1 + r2))).toBe(
-      expected,
-      {a: '12', b: '34', c: '56', d: '78', e: '90'}
-    );
+    expectSource(of(a, b).pipe(zipAll((r1, r2) => r1 + r2))).toBe(expected, {
+      a: '12',
+      b: '34',
+      c: '56',
+      d: '78',
+      e: '90'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34126,11 +34064,7 @@ describe('zipAll operator', () => {
       }
     };
     const observable = of(a, b).pipe(zipAll(selector));
-    expectObservable(observable).toBe(
-      expected,
-      {x: '23'},
-      new Error('too bad')
-    );
+    expectSource(observable).toBe(expected, {x: '23'}, new Error('too bad'));
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34142,7 +34076,7 @@ describe('zipAll operator', () => {
     const bsubs = '^     !';
     const expected = '---x--|';
 
-    expectObservable(zip(a, b)).toBe(expected, {x: ['2', '3']});
+    expectSource(zip(a, b)).toBe(expected, {x: ['2', '3']});
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34175,7 +34109,7 @@ describe('zipAll operator', () => {
       w: ['c', 'f']
     };
 
-    expectObservable(e1.pipe(zipAll())).toBe(expected, values);
+    expectSource(e1.pipe(zipAll())).toBe(expected, values);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -34200,7 +34134,7 @@ describe('zipAll operator', () => {
       v: ['b', 'd', 'h']
     };
 
-    expectObservable(e1.pipe(zipAll())).toBe(expected, values);
+    expectSource(e1.pipe(zipAll())).toBe(expected, values);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -34227,7 +34161,7 @@ describe('zipAll operator', () => {
       v: ['b', 'd', 'h']
     };
 
-    expectObservable(e1.pipe(zipAll())).toBe(expected, expectedValues);
+    expectSource(e1.pipe(zipAll())).toBe(expected, expectedValues);
     expectSubscriptions(x.subscriptions).toBe(xsubs);
     expectSubscriptions(y.subscriptions).toBe(ysubs);
     expectSubscriptions(z.subscriptions).toBe(zsubs);
@@ -34241,7 +34175,7 @@ describe('zipAll operator', () => {
     const e1subs = '^               !';
     const expected = '----------------#';
 
-    expectObservable(e1.pipe(zipAll())).toBe(expected);
+    expectSource(e1.pipe(zipAll())).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -34252,7 +34186,7 @@ describe('zipAll operator', () => {
     const bsubs = '^';
     const expected = '-';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34264,7 +34198,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34276,7 +34210,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34288,7 +34222,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34300,7 +34234,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34312,7 +34246,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34324,7 +34258,7 @@ describe('zipAll operator', () => {
     const bsubs = '^     !';
     const expected = '-';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34336,7 +34270,7 @@ describe('zipAll operator', () => {
     const bsubs = '^';
     const expected = '-';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34348,7 +34282,7 @@ describe('zipAll operator', () => {
     const bsubs = '^';
     const expected = '---x---y---z';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected, {
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected, {
       x: ['1', '4'],
       y: ['2', '5'],
       z: ['3', '6']
@@ -34364,7 +34298,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34376,7 +34310,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '|';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34388,7 +34322,7 @@ describe('zipAll operator', () => {
     const bsubs = '^     !    ';
     const expected = '------#    ';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34400,7 +34334,7 @@ describe('zipAll operator', () => {
     const bsubs = '^     !';
     const expected = '------#';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34412,7 +34346,7 @@ describe('zipAll operator', () => {
     const bsubs = '^     !';
     const expected = '------#';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34424,7 +34358,7 @@ describe('zipAll operator', () => {
     const bsubs = '^     !';
     const expected = '------#';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected, null, 'too bad');
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected, null, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34436,7 +34370,7 @@ describe('zipAll operator', () => {
     const bsubs = '^       !';
     const expected = '-----x--#';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(
+    expectSource(of(a, b).pipe(zipAll())).toBe(
       expected,
       {x: [1, 2]},
       'too bad'
@@ -34452,7 +34386,7 @@ describe('zipAll operator', () => {
     const bsubs = '^       !';
     const expected = '-----x--#';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(
+    expectSource(of(a, b).pipe(zipAll())).toBe(
       expected,
       {x: [2, 1]},
       'too bad'
@@ -34468,7 +34402,7 @@ describe('zipAll operator', () => {
     const bsubs = '(^!)';
     const expected = '#';
 
-    expectObservable(of(a, b).pipe(zipAll())).toBe(expected);
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34530,7 +34464,7 @@ describe('zipAll operator', () => {
       mergeMap(x => of(x))
     );
 
-    expectObservable(r, unsub).toBe(expected, values);
+    expectSource(r, unsub).toBe(expected, values);
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -34539,7 +34473,7 @@ describe('zipAll operator', () => {
     const source = hot('|');
     const expected = '|';
 
-    expectObservable(source.pipe(zipAll())).toBe(expected);
+    expectSource(source.pipe(zipAll())).toBe(expected);
   });
 
   type(() => {
@@ -34668,13 +34602,13 @@ describe('zipWith', () => {
   });
 
   it('should combine a source with a second', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   ---1---2---3---');
       const asubs = '   ^';
       const b = hot('   --4--5--6--7--8--');
       const bsubs = '   ^';
       const expected = '---x---y---z';
-      expectObservable(a.pipe(zipWith(b))).toBe(expected, {
+      expectSource(a.pipe(zipWith(b))).toBe(expected, {
         x: ['1', '4'],
         y: ['2', '5'],
         z: ['3', '6']
@@ -34685,7 +34619,7 @@ describe('zipWith', () => {
   });
 
   it('should end once one observable completes and its buffer is empty', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const e1 = hot('  ---a--b--c--|               ');
       const e1subs = '  ^-----------!               ';
       const e2 = hot('  ------d----e----f--------|  ');
@@ -34699,7 +34633,7 @@ describe('zipWith', () => {
         z: ['c', 'f', 'j']
       };
 
-      expectObservable(e1.pipe(zipWith(e2, e3))).toBe(expected, values);
+      expectSource(e1.pipe(zipWith(e2, e3))).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
       expectSubscriptions(e2.subscriptions).toBe(e2subs);
       expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -34710,7 +34644,7 @@ describe('zipWith', () => {
     'should end once one observable nexts and zips value from completed other ' +
       'observable whose buffer is empty',
     () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const e1 = hot('  ---a--b--c--|             ');
         const e1subs = '  ^-----------!             ';
         const e2 = hot('  ------d----e----f|        ');
@@ -34724,7 +34658,7 @@ describe('zipWith', () => {
           z: ['c', 'f', 'j']
         };
 
-        expectObservable(e1.pipe(zipWith(e2, e3))).toBe(expected, values);
+        expectSource(e1.pipe(zipWith(e2, e3))).toBe(expected, values);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
         expectSubscriptions(e2.subscriptions).toBe(e2subs);
         expectSubscriptions(e3.subscriptions).toBe(e3subs);
@@ -34734,7 +34668,7 @@ describe('zipWith', () => {
 
   describe('with iterables', () => {
     it('should zip them with values', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const myIterator = <any>{
           count: 0,
           next: function () {
@@ -34756,7 +34690,7 @@ describe('zipWith', () => {
           z: ['d', 3]
         };
 
-        expectObservable(e1.pipe(zipWith(myIterator))).toBe(expected, values);
+        expectSource(e1.pipe(zipWith(myIterator))).toBe(expected, values);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
       });
     });
@@ -34782,109 +34716,109 @@ describe('zipWith', () => {
     });
 
     it('should work with never observable and empty iterable', () => {
-      rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const a = cold('  -');
         const asubs = '   ^';
         const expected = '-';
         const b: string[] = [];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with empty observable and empty iterable', () => {
-      rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const a = cold('  |');
         const asubs = '   (^!)';
         const expected = '|';
         const b: string[] = [];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with empty observable and non-empty iterable', () => {
-      rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const a = cold('  |');
         const asubs = '   (^!)';
         const expected = '|';
         const b = [1];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with non-empty observable and empty iterable', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const a = hot('   ---^----a--|');
         const asubs = '   ^-------!';
         const b: string[] = [];
         const expected = '--------|';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with never observable and non-empty iterable', () => {
-      rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
         const a = cold('  -');
         const asubs = '   ^';
         const expected = '-';
         const b = [1];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with non-empty observable and non-empty iterable', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const a = hot('---^----1--|');
         const asubs = '   ^----!   ';
         const expected = '-----(x|)';
         const b = [2];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected, {x: ['1', 2]});
+        expectSource(a.pipe(zipWith(b))).toBe(expected, {x: ['1', 2]});
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with non-empty observable and empty iterable', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const a = hot('---^----#');
         const asubs = '   ^----!';
         const expected = '-----#';
         const b: string[] = [];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with observable which raises error and non-empty iterable', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const a = hot('---^----#');
         const asubs = '   ^----!';
         const expected = '-----#';
         const b = [1];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
+        expectSource(a.pipe(zipWith(b))).toBe(expected);
         expectSubscriptions(a.subscriptions).toBe(asubs);
       });
     });
 
     it('should work with non-empty many observable and non-empty many iterable', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const a = hot('---^--1--2--3--|');
         const asubs = '   ^--------!   ';
         const expected = '---x--y--(z|)';
         const b = [4, 5, 6];
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected, {
+        expectSource(a.pipe(zipWith(b))).toBe(expected, {
           x: ['1', 4],
           y: ['2', 5],
           z: ['3', 6]
@@ -34894,7 +34828,7 @@ describe('zipWith', () => {
     });
 
     it('should work with non-empty observable and non-empty iterable selector that throws', () => {
-      rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+      rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
         const a = hot('---^--1--2--3--|');
         const asubs = '   ^-----!';
         const expected = '---x--#';
@@ -34907,7 +34841,7 @@ describe('zipWith', () => {
             return x + y;
           }
         };
-        expectObservable(a.pipe(zipWith(b, selector))).toBe(
+        expectSource(a.pipe(zipWith(b, selector))).toBe(
           expected,
           {x: '14'},
           new Error('too bad')
@@ -34918,7 +34852,7 @@ describe('zipWith', () => {
   });
 
   it('should work with n-ary symmetric', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-1----4----|');
       const asubs = '     ^---------!  ';
       const b = hot('---1-^--2--5----| ');
@@ -34926,7 +34860,7 @@ describe('zipWith', () => {
       const c = hot('---1-^---3---6-|  ');
       const expected = '  ----x---y-|  ';
 
-      expectObservable(a.pipe(zipWith(b, c))).toBe(expected, {
+      expectSource(a.pipe(zipWith(b, c))).toBe(expected, {
         x: ['1', '2', '3'],
         y: ['4', '5', '6']
       });
@@ -34936,281 +34870,255 @@ describe('zipWith', () => {
   });
 
   it('should work with right completes first', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('---1-^-2-----|');
       const asubs = '     ^-----!';
       const b = hot('---1-^--3--|');
       const bsubs = '     ^-----!';
       const expected = '  ---x--|';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected, {x: ['2', '3']});
+      expectSource(a.pipe(zipWith(b))).toBe(expected, {x: ['2', '3']});
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with two nevers', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const a = cold('  -');
       const asubs = '   ^';
       const b = cold('  -');
       const bsubs = '   ^';
       const expected = '-';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected);
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with never and empty', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const a = cold('  -');
       const asubs = '   (^!)';
       const b = cold('  |');
       const bsubs = '   (^!)';
       const expected = '|';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected);
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with empty and never', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const a = cold('  |');
       const asubs = '   (^!)';
       const b = cold('  -');
       const bsubs = '   (^!)';
       const expected = '|';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected);
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with empty and empty', () => {
-    rxTestScheduler.run(({cold, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({cold, expectSource, expectSubscriptions}) => {
       const a = cold('  |');
       const asubs = '   (^!)';
       const b = cold('  |');
       const bsubs = '   (^!)';
       const expected = '|';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected);
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with empty and non-empty', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = cold('  |');
-        const asubs = '   (^!)';
-        const b = hot('   ---1--|');
-        const bsubs = '   (^!)';
-        const expected = '|';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = cold('  |');
+      const asubs = '   (^!)';
+      const b = hot('   ---1--|');
+      const bsubs = '   (^!)';
+      const expected = '|';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with non-empty and empty', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = hot('   ---1--|');
-        const asubs = '   (^!)';
-        const b = cold('  |');
-        const bsubs = '   (^!)';
-        const expected = '|';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = hot('   ---1--|');
+      const asubs = '   (^!)';
+      const b = cold('  |');
+      const bsubs = '   (^!)';
+      const expected = '|';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with never and non-empty', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = cold('  -');
-        const asubs = '   ^';
-        const b = hot('   ---1--|');
-        const bsubs = '   ^-----!';
-        const expected = '-';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = cold('  -');
+      const asubs = '   ^';
+      const b = hot('   ---1--|');
+      const bsubs = '   ^-----!';
+      const expected = '-';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with non-empty and never', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = hot('   ---1--|');
-        const asubs = '   ^-----!';
-        const b = cold('  -');
-        const bsubs = '   ^';
-        const expected = '-';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = hot('   ---1--|');
+      const asubs = '   ^-----!';
+      const b = cold('  -');
+      const bsubs = '   ^';
+      const expected = '-';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with empty and error', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = cold('  |');
-        const asubs = '   (^!)';
-        const b = hot('   ------#', undefined, 'too bad');
-        const bsubs = '   (^!)';
-        const expected = '|';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = cold('  |');
+      const asubs = '   (^!)';
+      const b = hot('   ------#', undefined, 'too bad');
+      const bsubs = '   (^!)';
+      const expected = '|';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with error and empty', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = hot('   ------#', undefined, 'too bad');
-        const asubs = '   (^!)';
-        const b = cold('  |');
-        const bsubs = '   (^!)';
-        const expected = '|';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = hot('   ------#', undefined, 'too bad');
+      const asubs = '   (^!)';
+      const b = cold('  |');
+      const bsubs = '   (^!)';
+      const expected = '|';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with error', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   ----------|');
       const asubs = '   ^-----!    ';
       const b = hot('   ------#    ');
       const bsubs = '   ^-----!    ';
       const expected = '------#    ';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected);
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with never and error', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = cold('  -------');
-        const asubs = '   ^-----!';
-        const b = hot('   ------#');
-        const bsubs = '   ^-----!';
-        const expected = '------#';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = cold('  -------');
+      const asubs = '   ^-----!';
+      const b = hot('   ------#');
+      const bsubs = '   ^-----!';
+      const expected = '------#';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with error and never', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = hot('   ------#');
-        const asubs = '   ^-----!';
-        const b = cold('  -------');
-        const bsubs = '   ^-----!';
-        const expected = '------#';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = hot('   ------#');
+      const asubs = '   ^-----!';
+      const b = cold('  -------');
+      const bsubs = '   ^-----!';
+      const expected = '------#';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should work with error and error', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   ------#', undefined, 'too bad');
       const asubs = '   ^-----!';
       const b = hot('   ----------#', undefined, 'too bad 2');
       const bsubs = '   ^-----!';
       const expected = '------#';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(expected, null, 'too bad');
+      expectSource(a.pipe(zipWith(b))).toBe(expected, null, 'too bad');
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with two sources that eventually raise errors', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   --w-----#----', {w: 1}, 'too bad');
       const asubs = '   ^-------!';
       const b = hot('   -----z-----#-', {z: 2}, 'too bad 2');
       const bsubs = '   ^-------!';
       const expected = '-----x--#';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(
-        expected,
-        {x: [1, 2]},
-        'too bad'
-      );
+      expectSource(a.pipe(zipWith(b))).toBe(expected, {x: [1, 2]}, 'too bad');
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with two sources that eventually raise errors (swapped)', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   -----z-----#-', {z: 2}, 'too bad 2');
       const asubs = '   ^-------!';
       const b = hot('   --w-----#----', {w: 1}, 'too bad');
       const bsubs = '   ^-------!';
       const expected = '-----x--#';
 
-      expectObservable(a.pipe(zipWith(b))).toBe(
-        expected,
-        {x: [2, 1]},
-        'too bad'
-      );
+      expectSource(a.pipe(zipWith(b))).toBe(expected, {x: [2, 1]}, 'too bad');
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });
   });
 
   it('should work with error and some', () => {
-    rxTestScheduler.run(
-      ({cold, hot, expectObservable, expectSubscriptions}) => {
-        const a = cold('  #');
-        const asubs = '   (^!)';
-        const b = hot('   --1--2--3--');
-        const bsubs = '   (^!)';
-        const expected = '#';
+    rxTestScheduler.run(({cold, hot, expectSource, expectSubscriptions}) => {
+      const a = cold('  #');
+      const asubs = '   (^!)';
+      const b = hot('   --1--2--3--');
+      const bsubs = '   (^!)';
+      const expected = '#';
 
-        expectObservable(a.pipe(zipWith(b))).toBe(expected);
-        expectSubscriptions(a.subscriptions).toBe(asubs);
-        expectSubscriptions(b.subscriptions).toBe(bsubs);
-      }
-    );
+      expectSource(a.pipe(zipWith(b))).toBe(expected);
+      expectSubscriptions(a.subscriptions).toBe(asubs);
+      expectSubscriptions(b.subscriptions).toBe(bsubs);
+    });
   });
 
   it('should combine an immediately-scheduled source with an immediately-scheduled second', done => {
@@ -35233,7 +35141,7 @@ describe('zipWith', () => {
   });
 
   it('should not break unsubscription chain when unsubscribed explicitly', () => {
-    rxTestScheduler.run(({hot, expectObservable, expectSubscriptions}) => {
+    rxTestScheduler.run(({hot, expectSource, expectSubscriptions}) => {
       const a = hot('   ---1---2---3---|');
       const unsub = '   ---------!';
       const asubs = '   ^--------!';
@@ -35247,7 +35155,7 @@ describe('zipWith', () => {
         mergeMap(x => of(x))
       );
 
-      expectObservable(r, unsub).toBe(expected, {x: ['1', '4'], y: ['2', '5']});
+      expectSource(r, unsub).toBe(expected, {x: ['1', '4'], y: ['2', '5']});
       expectSubscriptions(a.subscriptions).toBe(asubs);
       expectSubscriptions(b.subscriptions).toBe(bsubs);
     });

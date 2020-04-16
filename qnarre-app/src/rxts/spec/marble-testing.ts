@@ -1,12 +1,8 @@
-import {Observable} from 'rxjs';
-import {TestScheduler} from 'rxjs/testing';
-import {SubscriptionLog} from '../../testing/SubscriptionLog';
-import {ColdObservable} from '../testing';
-import {HotObservable} from '../../testing/HotObservable';
-import {
-  observableToBeFn,
-  subscriptionLogsToBeFn
-} from '../../testing/TestScheduler';
+import * as qs from '../source';
+import * as qt from '../types';
+import * as qu from '../utils';
+
+import {ColdSource, HotSource} from '../testing';
 
 declare const global: any;
 
@@ -16,21 +12,21 @@ export function hot(
   marbles: string,
   values?: void,
   error?: any
-): HotObservable<string>;
+): HotSource<string>;
 export function hot<V>(
   marbles: string,
   values?: {[index: string]: V},
   error?: any
-): HotObservable<V>;
+): HotSource<V>;
 export function hot<V>(
   marbles: string,
   values?: {[index: string]: V} | void,
   error?: any
-): HotObservable<any> {
+): HotSource<any> {
   if (!global.rxTestScheduler) {
     throw 'tried to use hot() in async test';
   }
-  return global.rxTestScheduler.createHotObservable.apply(
+  return global.rxTestScheduler.createHotSource.apply(
     global.rxTestScheduler,
     arguments
   );
@@ -40,34 +36,34 @@ export function cold(
   marbles: string,
   values?: void,
   error?: any
-): ColdObservable<string>;
+): ColdSource<string>;
 export function cold<V>(
   marbles: string,
   values?: {[index: string]: V},
   error?: any
-): ColdObservable<V>;
+): ColdSource<V>;
 export function cold(
   marbles: string,
   values?: any,
   error?: any
-): ColdObservable<any> {
+): ColdSource<any> {
   if (!global.rxTestScheduler) {
     throw 'tried to use cold() in async test';
   }
-  return global.rxTestScheduler.createColdObservable.apply(
+  return global.rxTestScheduler.createColdSource.apply(
     global.rxTestScheduler,
     arguments
   );
 }
 
-export function expectObservable(
-  observable: Observable<any>,
+export function expectSource(
+  observable: qs.Source<any>,
   unsubscriptionMarbles: string | null = null
 ): {toBe: observableToBeFn} {
   if (!global.rxTestScheduler) {
-    throw 'tried to use expectObservable() in async test';
+    throw 'tried to use expectSource() in async test';
   }
-  return global.rxTestScheduler.expectObservable.apply(
+  return global.rxTestScheduler.expectSource.apply(
     global.rxTestScheduler,
     arguments
   );

@@ -1,13 +1,9 @@
-import {Observable} from './observe';
-import {Subscription} from '../subscribe';
-import {Scheduler} from '../Scheduler';
-import {TestMessage} from './TestMessage';
-import {SubscriptionLog} from './SubscriptionLog';
-import {SubscriptionLoggable} from './SubscriptionLoggable';
-import {applyMixins} from '../util/applyMixins';
-import {Subscriber} from './subscriber.old';
+import * as qs from './source';
+import * as qj from './subject';
+import * as qt from './types';
+import * as qu from './utils';
 
-export class ColdObservable<T> extends Observable<T>
+export class ColdSource<N> extends qs.Source<N>
   implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
@@ -17,12 +13,12 @@ export class ColdObservable<T> extends Observable<T>
   logUnsubscribedFrame: (index: number) => void;
 
   constructor(public messages: TestMessage[], scheduler: Scheduler) {
-    super(function (this: Observable<T>, subscriber: Subscriber<any>) {
-      const observable: ColdObservable<T> = this as any;
+    super(function (this: qs.Source<N>, subscriber: qj.Subscriber<any>) {
+      const observable: ColdSource<N> = this as any;
       const index = observable.logSubscribedFrame();
-      const subscription = new Subscription();
+      const subscription = new qj.Subscription();
       subscription.add(
-        new Subscription(() => {
+        new qj.Subscription(() => {
           observable.logUnsubscribedFrame(index);
         })
       );
@@ -32,7 +28,7 @@ export class ColdObservable<T> extends Observable<T>
     this.scheduler = scheduler;
   }
 
-  scheduleMessages(subscriber: Subscriber<any>) {
+  scheduleMessages(subscriber: qj.Subscriber<any>) {
     const messagesLength = this.messages.length;
     for (let i = 0; i < messagesLength; i++) {
       const message = this.messages[i];
@@ -49,9 +45,9 @@ export class ColdObservable<T> extends Observable<T>
     }
   }
 }
-applyMixins(ColdObservable, [SubscriptionLoggable]);
+applyMixins(ColdSource, [SubscriptionLoggable]);
 
-export class HotObservable<T> extends Subject<T>
+export class HotSource<N> extends qj.Subject<N>
   implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
@@ -65,13 +61,12 @@ export class HotObservable<T> extends Subject<T>
     this.scheduler = scheduler;
   }
 
-  /** @deprecated This is an internal implementation detail, do not use. */
-  _subscribe(subscriber: Subscriber<any>): Subscription {
-    const subject: HotObservable<T> = this;
+  _subscribe(subscriber: qj.Subscriber<any>): qj.Subscription {
+    const subject: HotSource<N> = this;
     const index = subject.logSubscribedFrame();
-    const subscription = new Subscription();
+    const subscription = new qj.Subscription();
     subscription.add(
-      new Subscription(() => {
+      new qj.Subscription(() => {
         subject.logUnsubscribedFrame(index);
       })
     );
@@ -94,7 +89,7 @@ export class HotObservable<T> extends Subject<T>
     }
   }
 }
-applyMixins(HotObservable, [SubscriptionLoggable]);
+applyMixins(HotSource, [SubscriptionLoggable]);
 
 export class SubscriptionLog {
   constructor(
@@ -125,18 +120,18 @@ export class SubscriptionLoggable {
 
 export interface TestMessage {
   frame: number;
-  notification: Notification<any>;
+  notification: qs.Notification<any>;
   isGhost?: boolean;
 }
 
 const defaultMaxFrame: number = 750;
 
 export interface RunHelpers {
-  cold: typeof TestScheduler.prototype.createColdObservable;
-  hot: typeof TestScheduler.prototype.createHotObservable;
+  cold: typeof TestScheduler.prototype.createColdSource;
+  hot: typeof TestScheduler.prototype.createHotSource;
   flush: typeof TestScheduler.prototype.flush;
   time: typeof TestScheduler.prototype.createTime;
-  expectObservable: typeof TestScheduler.prototype.expectObservable;
+  expectSource: typeof TestScheduler.prototype.expectSource;
   expectSubscriptions: typeof TestScheduler.prototype.expectSubscriptions;
 }
 
@@ -154,39 +149,11 @@ export type observableToBeFn = (
 export type subscriptionLogsToBeFn = (marbles: string | string[]) => void;
 
 export class TestScheduler extends VirtualTimeScheduler {
-  /**
-   * The number of virtual time units each character in a marble diagram represents. If
-   * the test scheduler is being used in "run mode", via the `run` method, this is temporarly
-   * set to `1` for the duration of the `run` block, then set back to whatever value it was.
-   * @nocollapse
-   */
   static frameTimeFactor = 10;
-
-  /**
-   * @deprecated remove in v8. Not for public use.
-   */
-  public readonly hotObservables: HotObservable<any>[] = [];
-
-  /**
-   * @deprecated remove in v8. Not for public use.
-   */
-  public readonly coldObservables: ColdObservable<any>[] = [];
-
-  /**
-   * Test meta data to be processed during `flush()`
-   */
+  public readonly hotSources: HotSource<any>[] = [];
+  public readonly coldSources: ColdSource<any>[] = [];
   private flushTests: FlushableTest[] = [];
-
-  /**
-   * Indicates whether the TestScheduler instance is operating in "run mode",
-   * meaning it's processing a call to `run()`
-   */
   private runMode = false;
-
-  /**
-   *
-   * @param assertDeepEqual A function to set up your assertion for your test harness
-   */
   constructor(
     public assertDeepEqual: (actual: any, expected: any) => boolean | void
   ) {
@@ -203,16 +170,11 @@ export class TestScheduler extends VirtualTimeScheduler {
     return indexOf * TestScheduler.frameTimeFactor;
   }
 
-  /**
-   * @param marbles A diagram in the marble DSL. Letters map to keys in `values` if provided.
-   * @param values Values to use for the letters in `marbles`. If ommitted, the letters themselves are used.
-   * @param error The error to use for the `#` marble (if present).
-   */
-  createColdObservable<T = string>(
+  createColdSource<T = string>(
     marbles: string,
     values?: {[marble: string]: T},
     error?: any
-  ): ColdObservable<T> {
+  ): ColdSource<N> {
     if (marbles.indexOf('^') !== -1) {
       throw new Error('cold observable cannot have subscription offset "^"');
     }
@@ -226,21 +188,15 @@ export class TestScheduler extends VirtualTimeScheduler {
       undefined,
       this.runMode
     );
-    const cold = new ColdObservable<T>(messages, this);
-    this.coldObservables.push(cold);
+    const cold = new ColdSource<N>(messages, this);
+    this.coldSources.push(cold);
     return cold;
   }
-
-  /**
-   * @param marbles A diagram in the marble DSL. Letters map to keys in `values` if provided.
-   * @param values Values to use for the letters in `marbles`. If ommitted, the letters themselves are used.
-   * @param error The error to use for the `#` marble (if present).
-   */
-  createHotObservable<T = string>(
+  createHotSource<N = string>(
     marbles: string,
-    values?: {[marble: string]: T},
+    values?: {[marble: string]: N},
     error?: any
-  ): HotObservable<T> {
+  ): HotSource<N> {
     if (marbles.indexOf('!') !== -1) {
       throw new Error('hot observable cannot have unsubscription marker "!"');
     }
@@ -251,13 +207,13 @@ export class TestScheduler extends VirtualTimeScheduler {
       undefined,
       this.runMode
     );
-    const subject = new HotObservable<T>(messages, this);
-    this.hotObservables.push(subject);
+    const subject = new HotSource<N>(messages, this);
+    this.hotSources.push(subject);
     return subject;
   }
 
-  private materializeActorObservable(
-    observable: Observable<any>,
+  private materializeActorSource(
+    observable: qs.Source<any>,
     outerFrame: number
   ): TestMessage[] {
     const messages: TestMessage[] = [];
@@ -265,27 +221,27 @@ export class TestScheduler extends VirtualTimeScheduler {
       value => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: Notification.createNext(value)
+          notification: qs.Notification.createNext(value)
         });
       },
       err => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: Notification.createError(err)
+          notification: qs.Notification.createError(err)
         });
       },
       () => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: Notification.createComplete()
+          notification: qs.Notification.createComplete()
         });
       }
     );
     return messages;
   }
 
-  expectObservable(
-    observable: Observable<any>,
+  expectSource(
+    observable: qs.Source<any>,
     subscriptionMarbles: string | null = null
   ): {toBe: observableToBeFn} {
     const actual: TestMessage[] = [];
@@ -299,31 +255,31 @@ export class TestScheduler extends VirtualTimeScheduler {
         ? 0
         : subscriptionParsed.subscribedFrame;
     const unsubscriptionFrame = subscriptionParsed.unsubscribedFrame;
-    let subscription: Subscription;
+    let subscription: qj.Subscription;
 
     this.schedule(() => {
       subscription = observable.subscribe(
         x => {
           let value = x;
-          // Support Observable-of-Observables
-          if (x instanceof Observable) {
-            value = this.materializeActorObservable(value, this.frame);
+          // Support Source-of-Sources
+          if (x instanceof qs.Source) {
+            value = this.materializeActorSource(value, this.frame);
           }
           actual.push({
             frame: this.frame,
-            notification: Notification.createNext(value)
+            notification: qs.Notification.createNext(value)
           });
         },
         err => {
           actual.push({
             frame: this.frame,
-            notification: Notification.createError(err)
+            notification: qs.Notification.createError(err)
           });
         },
         () => {
           actual.push({
             frame: this.frame,
-            notification: Notification.createComplete()
+            notification: qs.Notification.createComplete()
           });
         }
       );
@@ -372,9 +328,9 @@ export class TestScheduler extends VirtualTimeScheduler {
   }
 
   flush() {
-    const hotObservables = this.hotObservables;
-    while (hotObservables.length > 0) {
-      hotObservables.shift()!.setup();
+    const hotSources = this.hotSources;
+    while (hotSources.length > 0) {
+      hotSources.shift()!.setup();
     }
 
     super.flush();
@@ -388,7 +344,6 @@ export class TestScheduler extends VirtualTimeScheduler {
     });
   }
 
-  /** @nocollapse */
   static parseMarblesAsSubscriptions(
     marbles: string | null,
     runMode = false
@@ -497,12 +452,11 @@ export class TestScheduler extends VirtualTimeScheduler {
     }
   }
 
-  /** @nocollapse */
   static parseMarbles(
     marbles: string,
     values?: any,
     errorValue?: any,
-    materializeActorObservables: boolean = false,
+    materializeActorSources: boolean = false,
     runMode = false
   ): TestMessage[] {
     if (marbles.indexOf('!') !== -1) {
@@ -521,11 +475,8 @@ export class TestScheduler extends VirtualTimeScheduler {
       typeof values !== 'object'
         ? (x: any) => x
         : (x: any) => {
-            // Support Observable-of-Observables
-            if (
-              materializeActorObservables &&
-              values[x] instanceof ColdObservable
-            ) {
+            // Support Source-of-Sources
+            if (materializeActorSources && values[x] instanceof ColdSource) {
               return values[x].messages;
             }
             return values[x];
@@ -538,7 +489,7 @@ export class TestScheduler extends VirtualTimeScheduler {
         nextFrame += count * this.frameTimeFactor;
       };
 
-      let notification: Notification<any> | undefined;
+      let notification: qs.Notification<any> | undefined;
       const c = marbles[i];
       switch (c) {
         case ' ':
@@ -559,14 +510,14 @@ export class TestScheduler extends VirtualTimeScheduler {
           advanceFrameBy(1);
           break;
         case '|':
-          notification = Notification.createComplete();
+          notification = qs.Notification.createComplete();
           advanceFrameBy(1);
           break;
         case '^':
           advanceFrameBy(1);
           break;
         case '#':
-          notification = Notification.createError(errorValue || 'error');
+          notification = qs.Notification.createError(errorValue || 'error');
           advanceFrameBy(1);
           break;
         default:
@@ -603,7 +554,7 @@ export class TestScheduler extends VirtualTimeScheduler {
             }
           }
 
-          notification = Notification.createNext(getValue(c));
+          notification = qs.Notification.createNext(getValue(c));
           advanceFrameBy(1);
           break;
       }
@@ -620,7 +571,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     return testMessages;
   }
 
-  run<T>(callback: (helpers: RunHelpers) => T): T {
+  run<N>(callback: (helpers: RunHelpers) => N): N {
     const prevFrameTimeFactor = TestScheduler.frameTimeFactor;
     const prevMaxFrames = this.maxFrames;
 
@@ -630,11 +581,11 @@ export class TestScheduler extends VirtualTimeScheduler {
     AsyncScheduler.delegate = this;
 
     const helpers = {
-      cold: this.createColdObservable.bind(this),
-      hot: this.createHotObservable.bind(this),
+      cold: this.createColdSource.bind(this),
+      hot: this.createHotSource.bind(this),
       flush: this.flush.bind(this),
       time: this.createTime.bind(this),
-      expectObservable: this.expectObservable.bind(this),
+      expectSource: this.expectSource.bind(this),
       expectSubscriptions: this.expectSubscriptions.bind(this)
     };
     try {

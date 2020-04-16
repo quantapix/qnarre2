@@ -10,35 +10,38 @@ declare global {
 export type Cfun = () => void;
 export type Ofun<T> = (_?: T) => void;
 
-export interface Observer<N, F, D> {
+export interface Observer<N, F = any, D = any> {
   readonly closed?: boolean;
   next: Ofun<N>;
   fail: Ofun<F>;
   done: Ofun<D>;
 }
 
-export interface Nobs<N, F, D> {
+export interface Nobs<N, F = any, D = any> {
   readonly closed?: boolean;
   next: Ofun<N>;
   fail?: Ofun<F>;
   done?: Ofun<D>;
 }
 
-export interface Fobs<N, F, D> {
+export interface Fobs<N, F = any, D = any> {
   readonly closed?: boolean;
   next?: Ofun<N>;
   fail: Ofun<F>;
   done?: Ofun<D>;
 }
 
-export interface Dobs<N, F, D> {
+export interface Dobs<N, F = any, D = any> {
   readonly closed?: boolean;
   next?: Ofun<N>;
   fail?: Ofun<F>;
   done: Ofun<D>;
 }
 
-export type Target<N, F, D> = Nobs<N, F, D> | Fobs<N, F, D> | Dobs<N, F, D>;
+export type Target<N, F = any, D = any> =
+  | Nobs<N, F, D>
+  | Fobs<N, F, D>
+  | Dobs<N, F, D>;
 
 export interface Unsubscriber {
   unsubscribe(): void;
@@ -55,9 +58,11 @@ export interface RefCountSubscription extends Subscription {
   count: number;
 }
 
-export interface Subscriber<N, F, D> extends Observer<N, F, D>, Subscription {}
+export interface Subscriber<N, F = any, D = any>
+  extends Observer<N, F, D>,
+    Subscription {}
 
-export interface Source<N, F, D> {
+export interface Source<N, F = any, D = any> {
   subscribe(_?: Target<N, F, D>): Subscription;
   lift<R>(o?: Operator<N, R, F, D>): Source<R, F, D>;
 }
@@ -112,7 +117,7 @@ export interface Timestamp<T> {
   timestamp: number;
 }
 
-export interface TimeInterval<T> {
+export interface Interval<T> {
   value: T;
   interval: number;
 }
