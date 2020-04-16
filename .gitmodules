@@ -37,3 +37,6 @@
 [submodule "dev-libs/emsdk"]
 	path = dev-libs/emsdk
 	url = https://github.com/emscripten-core/emsdk.git
+[submodule "dev-libs/llvm-project"]
+	path = dev-libs/llvm-project
+	url = https://github.com/llvm/llvm-project

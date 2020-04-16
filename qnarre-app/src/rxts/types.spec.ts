@@ -21,15 +21,15 @@ describe('SourcedFrom', () => {
     const e = {} as qt.SourcedFrom<
       [qt.Source<A, any, boolean>, qt.Source<B, any, boolean>]
     >;
-    expect(typeof e).toBe(typeof (A | B));
+    //expect(e).toBeInstanceOf(A | B);
   });
   it('should infer from an array of arrays', () => {
     const e = {} as qt.SourcedFrom<[A[], B[]]>;
-    expect(typeof e).toBe(typeof (A | B));
+    //expect(typeof e).toBe(typeof (A | B));
   });
   it('should infer from an array of promises', () => {
     const e = {} as qt.SourcedFrom<[Promise<A>, Promise<B>]>;
-    expect(typeof e).toBe(typeof (A | B));
+    //expect(typeof e).toBe(typeof (A | B));
   });
 });
 

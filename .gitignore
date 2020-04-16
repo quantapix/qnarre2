@@ -1,6 +1,7 @@
 node_modules
 qnarre-new
 qnarre-old
+llvm-build
 
 yarn.lock
 
