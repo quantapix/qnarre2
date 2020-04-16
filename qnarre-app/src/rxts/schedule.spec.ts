@@ -495,7 +495,7 @@ describe('TestScheduler', () => {
       expect(result).deep.equal([
         {frame: 70, notification: Notification.createNext('A')},
         {frame: 110, notification: Notification.createNext('B')},
-        {frame: 150, notification: Notification.createComplete()}
+        {frame: 150, notification: Notification.createDone()}
       ]);
     });
 
@@ -507,7 +507,7 @@ describe('TestScheduler', () => {
       expect(result).deep.equal([
         {frame: 20, notification: Notification.createNext('A')},
         {frame: 50, notification: Notification.createNext('B')},
-        {frame: 80, notification: Notification.createComplete()}
+        {frame: 80, notification: Notification.createDone()}
       ]);
     });
 
@@ -519,7 +519,7 @@ describe('TestScheduler', () => {
       expect(result).deep.equal([
         {frame: 40, notification: Notification.createNext('A')},
         {frame: 80, notification: Notification.createNext('B')},
-        {frame: 120, notification: Notification.createComplete()}
+        {frame: 120, notification: Notification.createDone()}
       ]);
     });
 
@@ -532,7 +532,7 @@ describe('TestScheduler', () => {
       expect(result).deep.equal([
         {frame: 70, notification: Notification.createNext('A')},
         {frame: 110, notification: Notification.createNext('B')},
-        {frame: 150, notification: Notification.createError('omg error!')}
+        {frame: 150, notification: Notification.createFail('omg error!')}
       ]);
     });
 
@@ -567,7 +567,7 @@ describe('TestScheduler', () => {
         {frame: 10, notification: Notification.createNext('A')},
         {frame: 30, notification: Notification.createNext('B')},
         {frame: 50, notification: Notification.createNext('C')},
-        {frame: 60, notification: Notification.createComplete()}
+        {frame: 60, notification: Notification.createDone()}
       ]);
     });
 
@@ -592,7 +592,7 @@ describe('TestScheduler', () => {
         },
         {
           frame: 10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60 + 10,
-          notification: Notification.createComplete()
+          notification: Notification.createDone()
         }
       ]);
     });

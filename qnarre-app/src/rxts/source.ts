@@ -197,99 +197,84 @@ function asyncIterFrom<N, F, D>(s: Source<N, F, D>) {
 
 export enum NotificationKind {
   NEXT = 'N',
-  ERROR = 'E',
-  COMPLETE = 'C'
+  FAIL = 'F',
+  DONE = 'D'
 }
 
-export class Notification<T> {
+export class Notification<N, F = any, D = any> {
   hasN: boolean;
 
-  constructor(kind: 'N', value?: T);
-  constructor(kind: 'E', value: undefined, error: any);
-  constructor(kind: 'C');
+  constructor(kind: 'N', n?: N);
+  constructor(kind: 'F', n: undefined, f?: F);
+  constructor(kind: 'D', d?: D);
   constructor(
-    public kind: 'N' | 'E' | 'C',
-    public value?: T,
-    public error?: any
+    public kind: 'N' | 'F' | 'D',
+    public n?: N,
+    public f?: F,
+    public d?: D
   ) {
     this.hasN = kind === 'N';
   }
 
-  observe(observer: Target<T>): any {
+  observe(t?: qt.Target<N, F, D>) {
     switch (this.kind) {
       case 'N':
-        return observer.next && observer.next(this.value!);
-      case 'E':
-        return observer.error && observer.error(this.error);
-      case 'C':
-        return observer.complete && observer.complete();
+        return t?.next && t.next(this.n);
+      case 'F':
+        return t?.fail && t.fail(this.f);
+      case 'D':
+        return t?.done && t.done(this.d);
     }
   }
 
-  do(
-    next: (value: T) => void,
-    error?: (err: any) => void,
-    complete?: () => void
-  ): any {
-    const kind = this.kind;
-    switch (kind) {
+  do(next?: qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>) {
+    switch (this.kind) {
       case 'N':
-        return next && next(this.value!);
-      case 'E':
-        return error && error(this.error);
-      case 'C':
-        return complete && complete();
+        return next && next(this.n);
+      case 'F':
+        return fail && fail(this.f);
+      case 'D':
+        return done && done(this.d);
     }
   }
 
   accept(
-    nextOrObserver: Target<T> | ((value: T) => void),
-    error?: (err: any) => void,
-    complete?: () => void
+    t?: qt.Target<N, F, D> | qt.Ofun<N>,
+    fail?: qt.Ofun<F>,
+    done?: qt.Ofun<D>
   ) {
-    if (
-      nextOrObserver &&
-      typeof (<Target<T>>nextOrObserver).next === 'function'
-    ) {
-      return this.observe(<Target<T>>nextOrObserver);
-    } else {
-      return this.do(<(value: T) => void>nextOrObserver, error, complete);
-    }
+    if (typeof t === 'function') return this.do(t, fail, done);
+    return this.observe(t);
   }
 
-  toSource(): Source<T> {
-    const kind = this.kind;
-    switch (kind) {
+  toSource(): Source<N, F, D> {
+    switch (this.kind) {
       case 'N':
-        return of(this.value!);
-      case 'E':
-        return throwError(this.error);
-      case 'C':
+        return of(this.n);
+      case 'F':
+        return throwError(this.f);
+      case 'D':
         return EMPTY;
     }
-    throw new Error('unexpected notification kind value');
   }
 
-  private static completeNotification: Notification<any> = new Notification(
-    'C'
+  private static doneNote: Notification<any> = new Notification('D');
+  private static undefineNote: Notification<any> = new Notification(
+    'N',
+    undefined
   );
-  private static undefinedValueNotification: Notification<
-    any
-  > = new Notification('N', undefined);
 
-  static createNext<T>(value: T): Notification<T> {
-    if (typeof value !== 'undefined') {
-      return new Notification('N', value);
-    }
-    return Notification.undefinedValueNotification;
+  static createNext<N, F = any, D = any>(n?: N): Notification<N, F, D> {
+    if (n !== undefined) return new Notification('N', n);
+    return Notification.undefineNote;
   }
 
-  static createError<T>(err?: any): Notification<T> {
-    return new Notification('E', undefined, err);
+  static createFail<N, F = any, D = any>(f?: F): Notification<N, F, D> {
+    return new Notification('F', undefined, f);
   }
 
-  static createComplete(): Notification<any> {
-    return Notification.completeNotification;
+  static createDone<N = any, F = any, D = any>(): Notification<N, F, D> {
+    return Notification.doneNote;
   }
 }
 

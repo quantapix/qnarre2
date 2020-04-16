@@ -9075,7 +9075,7 @@ describe('dematerialize operator', () => {
     const result = e1.pipe(
       map((x: string) => {
         if (x === '|') {
-          return Notification.createComplete();
+          return Notification.createDone();
         } else {
           return Notification.createNext(x.replace('{', '').replace('}', ''));
         }
@@ -9091,7 +9091,7 @@ describe('dematerialize operator', () => {
       a: Notification.createNext('w'),
       b: Notification.createNext('x'),
       c: Notification.createNext('y'),
-      d: Notification.createComplete()
+      d: Notification.createDone()
     };
 
     const e1 = hot('--a--b--c--d--|', values);
@@ -9107,7 +9107,7 @@ describe('dematerialize operator', () => {
       a: Notification.createNext('w'),
       b: Notification.createNext('x'),
       c: Notification.createNext('y'),
-      d: Notification.createError('error')
+      d: Notification.createFail('error')
     };
 
     const e1 = hot('--a--b--c--d--|', values);
@@ -9156,7 +9156,7 @@ describe('dematerialize operator', () => {
 
   it('should dematerialize stream throws', () => {
     const error = 'error';
-    const e1 = hot('(x|)', {x: Notification.createError(error)});
+    const e1 = hot('(x|)', {x: Notification.createFail(error)});
     const e1subs = '(^!)';
     const expected = '#';
 
@@ -9203,7 +9203,7 @@ describe('dematerialize operator', () => {
   });
 
   it('should dematerialize and completes when stream compltes with complete notification', () => {
-    const e1 = hot('----(a|)', {a: Notification.createComplete()});
+    const e1 = hot('----(a|)', {a: Notification.createDone()});
     const e1subs = '^   !';
     const expected = '----|';
 
@@ -9212,7 +9212,7 @@ describe('dematerialize operator', () => {
   });
 
   it('should dematerialize and completes when stream emits complete notification', () => {
-    const e1 = hot('----a--|', {a: Notification.createComplete()});
+    const e1 = hot('----a--|', {a: Notification.createDone()});
     const e1subs = '^   !';
     const expected = '----|';
 
@@ -15636,7 +15636,7 @@ describe('materialize operator', () => {
       w: Notification.createNext('a'),
       x: Notification.createNext('b'),
       y: Notification.createNext('c'),
-      z: Notification.createComplete()
+      z: Notification.createDone()
     };
 
     expectSource(e1.pipe(materialize())).toBe(expected, expectedValue);
@@ -15652,7 +15652,7 @@ describe('materialize operator', () => {
       w: Notification.createNext('a'),
       x: Notification.createNext('b'),
       y: Notification.createNext('c'),
-      z: Notification.createError('error')
+      z: Notification.createFail('error')
     };
 
     expectSource(e1.pipe(materialize())).toBe(expected, expectedValue);
@@ -15719,7 +15719,7 @@ describe('materialize operator', () => {
     const expected = '----(x|)';
 
     expectSource(e1.pipe(materialize())).toBe(expected, {
-      x: Notification.createComplete()
+      x: Notification.createDone()
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -15730,7 +15730,7 @@ describe('materialize operator', () => {
     const expected = '(x|)';
 
     expectSource(e1.pipe(materialize())).toBe(expected, {
-      x: Notification.createComplete()
+      x: Notification.createDone()
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -15741,7 +15741,7 @@ describe('materialize operator', () => {
     const expected = '(x|)';
 
     expectSource(e1.pipe(materialize())).toBe(expected, {
-      x: Notification.createError('error')
+      x: Notification.createFail('error')
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });

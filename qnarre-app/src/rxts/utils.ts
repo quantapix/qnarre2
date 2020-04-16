@@ -2,8 +2,7 @@ import * as qj from './subject';
 import * as qt from './types';
 import * as qs from './source';
 
-import {SourceInput, InteropObservable} from './types';
-import {Observable} from './observe';
+import {SourceInput, InteropSource} from './types';
 
 export interface OutOfRangeError extends Error {}
 
@@ -158,12 +157,14 @@ export function applyMixins(derivedCtor: any, baseCtors: any[]) {
   }
 }
 
-export function canReportError(s: qt.Subscriber<any> | Subject<any>): boolean {
+export function canReportError(
+  s: qt.Subscriber<any> | qj.Subject<any>
+): boolean {
   while (s) {
     const {closed, destination, stopped} = s as any;
     if (closed || stopped) {
       return false;
-    } else if (destination && destination instanceof Subscriber) {
+    } else if (destination && destination instanceof qj.Subscriber) {
       s = destination;
     } else {
       s = null!;
@@ -195,7 +196,7 @@ export function isFunction(x: any): x is Function {
   return typeof x === 'function';
 }
 
-export function isInteropObservable(x: any): x is InteropObservable<any> {
+export function isInteropSource(x: any): x is InteropSource<any> {
   return x && typeof x[Symbol.observable] === 'function';
 }
 
@@ -211,10 +212,10 @@ export function isObject(x: any): x is Object {
   return x !== null && typeof x === 'object';
 }
 
-export function isObservable<T>(x: any): x is Observable<T> {
+export function isSource<T>(x: any): x is qs.Source<T> {
   return (
     !!x &&
-    (x instanceof Observable ||
+    (x instanceof qs.Source ||
       (typeof x.lift === 'function' && typeof x.subscribe === 'function'))
   );
 }
@@ -351,114 +352,103 @@ const _root: any = __window || __global || __self;
   }
 })();
 
-export const subscribeTo = <T>(
-  result: SourceInput<T>
-): ((subscriber: qt.Subscriber<T>) => qj.Subscription | void) => {
-  if (!!result && typeof (result as any)[Symbol.observable] === 'function') {
-    return subscribeToObservable(result as any);
-  } else if (isArrayLike(result)) {
-    return subscribeToArray(result);
-  } else if (isPromise(result)) {
-    return subscribeToPromise(result);
-  } else if (
-    !!result &&
-    typeof (result as any)[Symbol.iterator] === 'function'
-  ) {
-    return subscribeToIterable(result as any);
+export const subscribeTo = <N, F = any, D = any>(
+  r: SourceInput<N, F, D>
+): ((_: qj.Subscriber<N, F, D>) => qj.Subscription | void) => {
+  if (!!r && typeof (r as any)[Symbol.observable] === 'function') {
+    return subscribeToSource(r as any);
+  } else if (isArrayLike(r)) {
+    return subscribeToArray(r);
+  } else if (isPromise(r)) {
+    return subscribeToPromise(r);
+  } else if (!!r && typeof (r as any)[Symbol.iterator] === 'function') {
+    return subscribeToIterable(r as any);
   } else if (
     Symbol &&
     Symbol.asyncIterator &&
-    !!result &&
-    typeof (result as any)[Symbol.asyncIterator] === 'function'
+    !!r &&
+    typeof (r as any)[Symbol.asyncIterator] === 'function'
   ) {
-    return subscribeToAsyncIterable(result as any);
+    return subscribeToAsyncIterable(r as any);
   } else {
-    const value = isObject(result) ? 'an invalid object' : `'${result}'`;
+    const value = isObject(r) ? 'an invalid object' : `'${r}'`;
     const msg =
       `You provided ${value} where a stream was expected.` +
-      ' You can provide an Observable, Promise, Array, or Iterable.';
+      ' You can provide an Source, Promise, Array, or Iterable.';
     throw new TypeError(msg);
   }
 };
 
-export const subscribeToArray = <T>(array: ArrayLike<T>) => (
-  subscriber: qt.Subscriber<T>
+export const subscribeToArray = <N, F = any, D = any>(a: ArrayLike<N>) => (
+  s: qt.Subscriber<N, F, D>
 ) => {
-  for (let i = 0, len = array.length; i < len && !subscriber.closed; i++) {
-    subscriber.next(array[i]);
+  for (let i = 0, len = a.length; i < len && !s.closed; i++) {
+    s.next(a[i]);
   }
-  subscriber.complete();
+  s.done();
 };
 
-export function subscribeToAsyncIterable<T>(asyncIterable: AsyncIterable<T>) {
-  return (subscriber: qt.Subscriber<T>) => {
-    process(asyncIterable, subscriber).catch(err => subscriber.error(err));
+export function subscribeToAsyncIterable<N, F = any, D = any>(
+  a: AsyncIterable<N>
+) {
+  return (s: qt.Subscriber<N, F, D>) => {
+    process(a, s).catch(e => s.fail(e));
   };
 }
 
-async function process<T>(
-  asyncIterable: AsyncIterable<T>,
-  subscriber: qt.Subscriber<T>
-) {
-  for await (const value of asyncIterable) {
-    subscriber.next(value);
+async function process<T>(a: AsyncIterable<T>, s: qt.Subscriber<T>) {
+  for await (const n of a) {
+    s.next(n);
   }
-  subscriber.complete();
+  s.done();
 }
 
-export const subscribeToIterable = <T>(iterable: Iterable<T>) => (
-  subscriber: qt.Subscriber<T>
+export const subscribeToIterable = <N, F = any, D = any>(it: Iterable<N>) => (
+  s: qj.Subscriber<N, F, D>
 ) => {
-  const iterator = (iterable as any)[Symbol.iterator]();
+  const i = (it as any)[Symbol.iterator]();
   do {
-    const item = iterator.next();
+    const item = i.next();
     if (item.done) {
-      subscriber.complete();
+      s.done();
       break;
     }
-    subscriber.next(item.value);
-    if (subscriber.closed) {
-      break;
-    }
+    s.next(item.value);
+    if (s.closed) break;
   } while (true);
-  if (typeof iterator.return === 'function') {
-    subscriber.add(() => {
-      if (iterator.return) {
-        iterator.return();
-      }
+  if (typeof i.return === 'function') {
+    s.add(() => {
+      if (i.return) i.return();
     });
   }
-  return subscriber;
+  return s;
 };
 
-export const subscribeToObservable = <T>(obj: any) => (
-  subscriber: qt.Subscriber<T>
+export const subscribeToSource = <N, F = any, D = any>(o: any) => (
+  s: qj.Subscriber<N, F, D>
 ) => {
-  const obs = (obj as any)[Symbol.observable]();
+  const obs = (o as any)[Symbol.observable]();
   if (typeof obs.subscribe !== 'function') {
     throw new TypeError(
       'Provided object does not correctly implement Symbol.observable'
     );
-  } else {
-    return obs.subscribe(subscriber);
   }
+  return obs.subscribe(s);
 };
 
-export const subscribeToPromise = <T>(promise: PromiseLike<T>) => (
-  subscriber: qt.Subscriber<T>
+export const subscribeToPromise = <N, F = any, D = any>(p: PromiseLike<N>) => (
+  s: qj.Subscriber<N, F, D>
 ) => {
-  promise
-    .then(
-      value => {
-        if (!subscriber.closed) {
-          subscriber.next(value);
-          subscriber.complete();
-        }
-      },
-      (err: any) => subscriber.error(err)
-    )
-    .then(null, delayedThrow);
-  return subscriber;
+  p.then(
+    n => {
+      if (!s.closed) {
+        s.next(n);
+        s.done();
+      }
+    },
+    f => s.fail(f)
+  ).then(null, delayedThrow);
+  return s;
 };
 
 export function subscribeToResult<N, R, F, D>(

@@ -163,12 +163,12 @@ describe('canReportError', () => {
     expect(canReportError(subscriber)).to.be.false;
   });
 });
-import {Observable, isObservable} from 'rxjs';
+import {Observable, isSource} from 'rxjs';
 
-describe('isObservable', () => {
+describe('isSource', () => {
   it('should return true for RxJS Observable', () => {
     const o = new Observable<any>();
-    expect(isObservable(o)).to.be.true;
+    expect(isSource(o)).to.be.true;
   });
 
   it('should return true for an observable that comes from another RxJS 5+ library', () => {
@@ -181,7 +181,7 @@ describe('isObservable', () => {
       }
     };
 
-    expect(isObservable(o)).to.be.true;
+    expect(isSource(o)).to.be.true;
   });
 
   it('should NOT return true for any old subscribable', () => {
@@ -191,15 +191,15 @@ describe('isObservable', () => {
       }
     };
 
-    expect(isObservable(o)).to.be.false;
+    expect(isSource(o)).to.be.false;
   });
 
   it('should return false for null', () => {
-    expect(isObservable(null)).to.be.false;
+    expect(isSource(null)).to.be.false;
   });
 
   it('should return false for a number', () => {
-    expect(isObservable(1)).to.be.false;
+    expect(isSource(1)).to.be.false;
   });
 });
 import {of} from 'rxjs';

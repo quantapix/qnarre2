@@ -37,7 +37,7 @@ describe('fromIterable', () => {
     const expected = [
       Notification.createNext(10),
       Notification.createNext(20),
-      Notification.createComplete()
+      Notification.createDone()
     ];
 
     const e1 = fromIterable<number>(new Int32Array([10, 20]), undefined).pipe(

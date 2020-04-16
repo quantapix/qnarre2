@@ -1509,9 +1509,9 @@ describe('Notification', () => {
     });
   });
 
-  describe('createError', () => {
+  describe('createFail', () => {
     it('should return a Notification', () => {
-      const n = Notification.createError('test');
+      const n = Notification.createFail('test');
       expect(n instanceof Notification).to.be.true;
       expect(n.value).to.be.a('undefined');
       expect(n.kind).to.equal('E');
@@ -1520,9 +1520,9 @@ describe('Notification', () => {
     });
   });
 
-  describe('createComplete', () => {
+  describe('createDone', () => {
     it('should return a Notification', () => {
-      const n = Notification.createComplete();
+      const n = Notification.createDone();
       expect(n instanceof Notification).to.be.true;
       expect(n.value).to.be.a('undefined');
       expect(n.kind).to.equal('C');
@@ -1539,12 +1539,12 @@ describe('Notification', () => {
     });
 
     it('should create observable from a complete Notification', () => {
-      const complete = Notification.createComplete();
+      const complete = Notification.createDone();
       expectSource(complete.toObservable()).toBe('|');
     });
 
     it('should create observable from a error Notification', () => {
-      const error = Notification.createError('error');
+      const error = Notification.createFail('error');
       expectSource(error.toObservable()).toBe('#');
     });
   });
@@ -1559,8 +1559,8 @@ describe('Notification', () => {
     });
 
     it('should create new error Notification', () => {
-      const first = Notification.createError();
-      const second = Notification.createError();
+      const first = Notification.createFail();
+      const second = Notification.createFail();
 
       expect(first).not.to.equal(second);
     });
@@ -1573,8 +1573,8 @@ describe('Notification', () => {
     });
 
     it('should return static complete Notification reference', () => {
-      const first = Notification.createComplete();
-      const second = Notification.createComplete();
+      const first = Notification.createDone();
+      const second = Notification.createDone();
 
       expect(first).to.equal(second);
     });
@@ -1600,7 +1600,7 @@ describe('Notification', () => {
     });
 
     it('should invoke on error', () => {
-      const n = Notification.createError();
+      const n = Notification.createFail();
       let invoked = false;
       n.do(
         (x: any) => {
@@ -1618,7 +1618,7 @@ describe('Notification', () => {
     });
 
     it('should invoke on complete', () => {
-      const n = Notification.createComplete();
+      const n = Notification.createDone();
       let invoked = false;
       n.do(
         (x: any) => {
@@ -1660,7 +1660,7 @@ describe('Notification', () => {
 
     it('should accept observer for error Notification', () => {
       let observed = false;
-      const n = Notification.createError<string>();
+      const n = Notification.createFail<string>();
       const observer = Subscriber.create(
         (x?: string) => {
           throw 'should not be called';
@@ -1679,7 +1679,7 @@ describe('Notification', () => {
 
     it('should accept observer for complete Notification', () => {
       let observed = false;
-      const n = Notification.createComplete();
+      const n = Notification.createDone();
       const observer = Subscriber.create(
         (x?: string) => {
           throw 'should not be called';
@@ -1719,7 +1719,7 @@ describe('Notification', () => {
     it('should accept function for error Notification', () => {
       let observed = false;
       const error = 'error';
-      const n = Notification.createError(error);
+      const n = Notification.createFail(error);
 
       n.accept(
         (x: any) => {
@@ -1738,7 +1738,7 @@ describe('Notification', () => {
 
     it('should accept function for complete Notification', () => {
       let observed = false;
-      const n = Notification.createComplete();
+      const n = Notification.createDone();
 
       n.accept(
         (x: any) => {
@@ -1779,7 +1779,7 @@ describe('Notification', () => {
 
     it('should observe for error Notification', () => {
       let observed = false;
-      const n = Notification.createError();
+      const n = Notification.createFail();
       const observer = Subscriber.create(
         (x: any) => {
           throw 'should not be called';
@@ -1798,7 +1798,7 @@ describe('Notification', () => {
 
     it('should observe for complete Notification', () => {
       let observed = false;
-      const n = Notification.createComplete();
+      const n = Notification.createDone();
       const observer = Subscriber.create(
         (x: any) => {
           throw 'should not be called';

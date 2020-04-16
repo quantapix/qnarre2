@@ -355,13 +355,13 @@ export class TestScheduler extends VirtualTimeScheduler {
       err => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: qs.Notification.createError(err)
+          notification: qs.Notification.createFail(err)
         });
       },
       () => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: qs.Notification.createComplete()
+          notification: qs.Notification.createDone()
         });
       }
     );
@@ -401,13 +401,13 @@ export class TestScheduler extends VirtualTimeScheduler {
         err => {
           actual.push({
             frame: this.frame,
-            notification: qs.Notification.createError(err)
+            notification: qs.Notification.createFail(err)
           });
         },
         () => {
           actual.push({
             frame: this.frame,
-            notification: qs.Notification.createComplete()
+            notification: qs.Notification.createDone()
           });
         }
       );
@@ -629,14 +629,14 @@ export class TestScheduler extends VirtualTimeScheduler {
           advanceFrameBy(1);
           break;
         case '|':
-          notification = qs.Notification.createComplete();
+          notification = qs.Notification.createDone();
           advanceFrameBy(1);
           break;
         case '^':
           advanceFrameBy(1);
           break;
         case '#':
-          notification = qs.Notification.createError(errorValue || 'error');
+          notification = qs.Notification.createFail(errorValue || 'error');
           advanceFrameBy(1);
           break;
         default:

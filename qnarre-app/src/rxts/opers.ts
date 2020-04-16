@@ -2486,13 +2486,13 @@ class MaterializeSubscriber<T> extends Subscriber<T> {
 
   protected _error(err: any) {
     const destination = this.destination;
-    destination.next(Notification.createError(err));
+    destination.next(Notification.createFail(err));
     destination.complete();
   }
 
   protected _complete() {
     const destination = this.destination;
-    destination.next(Notification.createComplete());
+    destination.next(Notification.createDone());
     destination.complete();
   }
 }
@@ -2919,12 +2919,12 @@ export class ObserveOnSubscriber<T> extends Subscriber<T> {
   }
 
   protected _error(e: any) {
-    this.scheduleMessage(Notification.createError(err));
+    this.scheduleMessage(Notification.createFail(err));
     this.unsubscribe();
   }
 
   protected _complete() {
-    this.scheduleMessage(Notification.createComplete());
+    this.scheduleMessage(Notification.createDone());
     this.unsubscribe();
   }
 }
