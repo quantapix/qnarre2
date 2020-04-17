@@ -153,7 +153,7 @@ interface DispatchCreateArg<N, F, D> {
   bufferTimeSpan: number;
   bufferCreationInterval: number | null;
   subscriber: BufferTime<N, F, D>;
-  scheduler: qt.SchedulerLike;
+  scheduler: qt.Scheduler;
 }
 
 interface DispatchCloseArg<N, F, D> {
@@ -170,7 +170,7 @@ export class BufferTime<N, F, D> extends Subscriber<N, F, D> {
     private bufferTimeSpan: number,
     private bufferCreationInterval: number | null,
     private maxBufferSize: number,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {
     super(tgt);
     const context = this.openContext();
@@ -275,7 +275,7 @@ export class BufferTime<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-function dispatchBufferTimeSpanOnly(this: qt.SchedulerAction<any>, state: any) {
+function dispatchBufferTimeSpanOnly(this: qt.Action<any>, state: any) {
   const subscriber: BufferTime<any> = state.subscriber;
   const prevContext = state.context;
   if (prevContext) subscriber.closeContext(prevContext);
@@ -286,12 +286,12 @@ function dispatchBufferTimeSpanOnly(this: qt.SchedulerAction<any>, state: any) {
 }
 
 function dispatchBufferCreation<N, F, D>(
-  this: qt.SchedulerAction<DispatchCreateArg<N, F, D>>,
+  this: qt.Action<DispatchCreateArg<N, F, D>>,
   state: DispatchCreateArg<N, F, D>
 ) {
   const {bufferCreationInterval, bufferTimeSpan, subscriber, scheduler} = state;
   const context = subscriber.openContext();
-  const action = <SchedulerAction<DispatchCreateArg<N, F, D>>>this;
+  const action = <Action<DispatchCreateArg<N, F, D>>>this;
   if (!subscriber.closed) {
     subscriber.add(
       (context.closeAction = scheduler.schedule<DispatchCloseArg<N, F, D>>(
@@ -620,7 +620,7 @@ export class DebounceTime<N, F, D> extends Subscriber<N, F, D> {
   constructor(
     tgt: Subscriber<N, F, D>,
     private dueTime: number,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {
     super(tgt);
   }
@@ -684,7 +684,7 @@ export class DefaultIfEmpty<N, M, F, D> extends Subscriber<N, F, D> {
 interface DelayState<N, F, D> {
   source: DelaySubscriber<N, F, D>;
   tgt: qt.Target<N, F, D>;
-  scheduler: qt.SchedulerLike;
+  scheduler: qt.Scheduler;
 }
 
 class DelayMessage<N, F, D> {
@@ -700,7 +700,7 @@ export class Delay<N, F, D> extends Subscriber<N, F, D> {
   private errored = false;
 
   private static dispatch<N, F, D>(
-    this: qt.SchedulerAction<DelayState<N, F, D>>,
+    this: qt.Action<DelayState<N, F, D>>,
     state: DelayState<N, F, D>
   ): void {
     const source = state.source;
@@ -725,12 +725,12 @@ export class Delay<N, F, D> extends Subscriber<N, F, D> {
   constructor(
     tgt: Subscriber<N, F, D>,
     private delay: number,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {
     super(tgt);
   }
 
-  private _schedule(s: qt.SchedulerLike): void {
+  private _schedule(s: qt.Scheduler): void {
     this.active = true;
     const tgt = this.tgt as Subscription;
     tgt.add(
@@ -1137,7 +1137,7 @@ export class Expand<N, M, F, D> extends Reactor<N, M, F, D> {
     tgt: Subscriber<M, F, D>,
     private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
-    private scheduler?: qt.SchedulerLike
+    private scheduler?: qt.Scheduler
   ) {
     super(tgt);
     if (concurrent < Number.POSITIVE_INFINITY) this.buffer = [];
@@ -1656,10 +1656,7 @@ export class ObserveOnMessage {
 }
 
 export class ObserveOn<N, F, D> extends Subscriber<N, F, D> {
-  static dispatch(
-    this: qt.SchedulerAction<ObserveOnMessage>,
-    arg: ObserveOnMessage
-  ) {
+  static dispatch(this: qt.Action<ObserveOnMessage>, arg: ObserveOnMessage) {
     const {notification, tgt} = arg;
     notification.observe(tgt);
     this.unsubscribe();
@@ -1667,7 +1664,7 @@ export class ObserveOn<N, F, D> extends Subscriber<N, F, D> {
 
   constructor(
     tgt: Subscriber<N, F, D>,
-    private scheduler: qt.SchedulerLike,
+    private scheduler: qt.Scheduler,
     private delay = 0
   ) {
     super(tgt);
@@ -1988,7 +1985,7 @@ export class SampleTime<N, F, D> extends Subscriber<N, F, D> {
   constructor(
     tgt: Subscriber<N, F, D>,
     private period: number,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {
     super(tgt);
     this.add(
@@ -2569,7 +2566,7 @@ export class ThrottleTime<N, F, D> extends Subscriber<N, F, D> {
   constructor(
     tgt: Subscriber<N, F, D>,
     private duration: number,
-    private scheduler: qt.SchedulerLike,
+    private scheduler: qt.Scheduler,
     private leading: boolean,
     private trailing: boolean
   ) {
@@ -2644,14 +2641,14 @@ export class ThrowIfEmpty<N, F, D> extends Subscriber<N, F, D> {
 }
 
 export class TimeoutWith<T, R> extends Reactor<N, M, F, D> {
-  private action: qt.SchedulerAction<TimeoutWith<T, R>> | null = null;
+  private action: qt.Action<TimeoutWith<T, R>> | null = null;
 
   constructor(
     tgt: Subscriber<N, F, D>,
     private absoluteTimeout: boolean,
     private waitFor: number,
     private withObservable: SourceInput<any>,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {
     super(tgt);
     this.scheduleTimeout();
@@ -2666,12 +2663,12 @@ export class TimeoutWith<T, R> extends Reactor<N, M, F, D> {
   private scheduleTimeout() {
     const {action} = this;
     if (action) {
-      this.action = <SchedulerAction<TimeoutWith<T, R>>>(
+      this.action = <Action<TimeoutWith<T, R>>>(
         action.schedule(this, this.waitFor)
       );
     } else {
       this.add(
-        (this.action = <SchedulerAction<TimeoutWith<T, R>>>(
+        (this.action = <Action<TimeoutWith<T, R>>>(
           this.scheduler.schedule<TimeoutWith<T, R>>(
             TimeoutWith.dispatchTimeout as any,
             this.waitFor,

@@ -1,6 +1,6 @@
 import {bindCallback} from 'rxjs';
 import {a, b, c, d, e, f, g, A, B, C, D, E, F, G} from '../helpers';
-import {SchedulerLike} from '../../src';
+import {Scheduler} from '../../src';
 import {combineLatest} from 'rxjs';
 import {from, of, animationFrameScheduler} from 'rxjs';
 
@@ -883,7 +883,7 @@ describe('xxx', () => {
     const res = of([a, b, c]); // $ExpectType Observable<(A | B | C)[]>
   });
 
-  // SchedulerLike inclusions (remove in v8)
+  // Scheduler inclusions (remove in v8)
   it('should infer never with 0 params', () => {
     const res = of(queueScheduler); // $ExpectType Observable<never>
   });

@@ -58,12 +58,12 @@ export interface Stamper {
  *
  * ### Example
  *
- * Providing a custom timestamp provider
+ * Providing a custom time provider
  *
  * ```ts
  * import { animationFrames, Stamper } from 'rxjs';
  *
- * // A custom timestamp provider
+ * // A custom time provider
  * let now = 0;
  * const customTSProvider: Stamper = {
  *   now() { return now++; }
@@ -75,24 +75,24 @@ export interface Stamper {
  * source$.subscribe(x => console.log(x));
  * ```
  *
- * @param timestampProvider An object with a `now` method that provides a numeric timestamp
+ * @param timeProvider An object with a `now` method that provides a numeric time
  */
-export function animationFrames(timestampProvider: Stamper = Date) {
-  return timestampProvider === Date
+export function animationFrames(timeProvider: Stamper = Date) {
+  return timeProvider === Date
     ? DEFAULT_ANIMATION_FRAMES
-    : animationFramesFactory(timestampProvider);
+    : animationFramesFactory(timeProvider);
 }
 
 /**
  * Does the work of creating the observable for `animationFrames`.
- * @param timestampProvider The timestamp provider to use to create the observable
+ * @param timeProvider The time provider to use to create the observable
  */
-function animationFramesFactory(timestampProvider: Stamper) {
+function animationFramesFactory(timeProvider: Stamper) {
   return new Observable<number>(subscriber => {
     let id: number;
-    const start = timestampProvider.now();
+    const start = timeProvider.now();
     const run = () => {
-      subscriber.next(timestampProvider.now() - start);
+      subscriber.next(timeProvider.now() - start);
       if (!subscriber.closed) {
         id = requestAnimationFrame(run);
       }

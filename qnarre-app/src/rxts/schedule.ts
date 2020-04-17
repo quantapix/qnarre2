@@ -3,95 +3,75 @@ import * as qj from './subject';
 import * as qu from './utils';
 import * as qt from './types';
 
-export class Action<T> extends qj.Subscription {
+export class Action<S> extends qj.Subscription implements qt.Action<S> {
   constructor(
-    scheduler: Scheduler,
-    work: (this: SchedulerAction<T>, state?: T) => void
+    public sched: Scheduler,
+    public work: (this: Action<S>, state?: S) => void
   ) {
     super();
   }
 
-  public schedule(state?: T, delay: number = 0): qj.Subscription {
+  schedule(_state?: S, _delay = 0): qj.Subscription {
     return this;
   }
 }
 
-export class Scheduler implements qt.SchedulerLike {
-  public static now: () => number = () => Date.now();
+export class Scheduler implements qt.Scheduler {
+  static now: () => number = () => Date.now();
 
-  constructor(
-    private SchedulerAction: typeof Action,
-    now: () => number = Scheduler.now
-  ) {
-    this.now = now;
-  }
+  constructor(private act: typeof Action, public now = Scheduler.now) {}
 
-  public now: () => number;
-
-  public schedule<T>(
-    work: (this: SchedulerAction<T>, state?: T) => void,
-    delay: number = 0,
-    state?: T
+  schedule<S>(
+    work: (this: Action<S>, state?: S) => void,
+    state?: S,
+    delay = 0
   ): qj.Subscription {
-    return new this.SchedulerAction<T>(this, work).schedule(state, delay);
+    return new this.act<S>(this, work).schedule(state, delay);
   }
 }
 
 export class AsyncScheduler extends Scheduler {
-  public static delegate?: Scheduler;
-  public actions: Array<AsyncAction<any>> = [];
-  public active: boolean = false;
-  public scheduled: any = undefined;
+  static del?: Scheduler;
 
-  constructor(
-    SchedulerAction: typeof Action,
-    now: () => number = Scheduler.now
-  ) {
-    super(SchedulerAction, () => {
-      if (AsyncScheduler.delegate && AsyncScheduler.delegate !== this) {
-        return AsyncScheduler.delegate.now();
-      } else {
-        return now();
-      }
+  acts: Array<AsyncAction<any>> = [];
+  active = false;
+  scheduled?: any;
+
+  constructor(act: typeof Action, now = Scheduler.now) {
+    super(act, () => {
+      if (AsyncScheduler.del && AsyncScheduler.del !== this)
+        return AsyncScheduler.del.now();
+      else return now();
     });
   }
 
-  public schedule<T>(
-    work: (this: SchedulerAction<T>, state?: T) => void,
-    delay: number = 0,
-    state?: T
+  schedule<S>(
+    work: (this: Action<S>, state?: S) => void,
+    state?: S,
+    delay = 0
   ): qj.Subscription {
-    if (AsyncScheduler.delegate && AsyncScheduler.delegate !== this) {
-      return AsyncScheduler.delegate.schedule(work, delay, state);
-    } else {
-      return super.schedule(work, delay, state);
-    }
+    if (AsyncScheduler.del && AsyncScheduler.del !== this)
+      return AsyncScheduler.del.schedule(work, state, delay);
+    return super.schedule(work, state, delay);
   }
 
-  public flush(action: AsyncAction<any>): void {
-    const {actions} = this;
-
+  flush(a: AsyncAction<any>) {
+    const {acts} = this;
     if (this.active) {
-      actions.push(action);
+      acts.push(a);
       return;
     }
-
-    let error: any;
+    let e: any;
     this.active = true;
-
     do {
-      if ((error = action.execute(action.state, action.delay))) {
-        break;
-      }
-    } while ((action = actions.shift()!));
-
+      if ((e = a.execute(a.state, a.delay))) break;
+    } while ((a = acts.shift()!));
     this.active = false;
-
-    if (error) {
-      while ((action = actions.shift()!)) {
-        action.unsubscribe();
+    if (e) {
+      while ((a = acts.shift()!)) {
+        a.unsubscribe();
       }
-      throw error;
+      throw e;
     }
   }
 }
@@ -104,27 +84,20 @@ export class AsyncAction<T> extends Action<T> {
 
   constructor(
     protected scheduler: AsyncScheduler,
-    protected work: (this: SchedulerAction<T>, state?: T) => void
+    protected work: (this: Action<T>, state?: T) => void
   ) {
     super(scheduler, work);
   }
 
   public schedule(state?: T, delay: number = 0): qj.Subscription {
-    if (this.closed) {
-      return this;
-    }
+    if (this.closed) return this;
     this.state = state;
-
     const id = this.id;
     const scheduler = this.scheduler;
-    if (id != null) {
-      this.id = this.recycleAsyncId(scheduler, id, delay);
-    }
+    if (id != null) this.id = this.recycleAsyncId(scheduler, id, delay);
     this.pending = true;
-
     this.delay = delay;
     this.id = this.id || this.requestAsyncId(scheduler, this.id, delay);
-
     return this;
   }
 
@@ -203,7 +176,7 @@ export class AsyncAction<T> extends Action<T> {
 export class AnimationFrameAction<T> extends AsyncAction<T> {
   constructor(
     protected scheduler: AnimationFrameScheduler,
-    protected work: (this: SchedulerAction<T>, state?: T) => void
+    protected work: (this: Action<T>, state?: T) => void
   ) {
     super(scheduler, work);
   }
@@ -272,7 +245,7 @@ export class AnimationFrameScheduler extends AsyncScheduler {
 export class AsapAction<T> extends AsyncAction<T> {
   constructor(
     protected scheduler: AsapScheduler,
-    protected work: (this: SchedulerAction<T>, state?: T) => void
+    protected work: (this: Action<T>, state?: T) => void
   ) {
     super(scheduler, work);
   }
@@ -340,7 +313,7 @@ export class AsapScheduler extends AsyncScheduler {
 export class QueueAction<T> extends AsyncAction<T> {
   constructor(
     protected scheduler: QueueScheduler,
-    protected work: (this: SchedulerAction<T>, state?: T) => void
+    protected work: (this: Action<T>, state?: T) => void
   ) {
     super(scheduler, work);
   }
@@ -380,10 +353,10 @@ export class VirtualTimeScheduler extends AsyncScheduler {
   public frame: number = 0;
   public index: number = -1;
   constructor(
-    SchedulerAction: typeof AsyncAction = VirtualAction as any,
+    Action: typeof AsyncAction = VirtualAction as any,
     public maxFrames: number = Number.POSITIVE_INFINITY
   ) {
-    super(SchedulerAction, () => this.frame);
+    super(Action, () => this.frame);
   }
 
   public flush(): void {
@@ -413,7 +386,7 @@ export class VirtualAction<T> extends AsyncAction<T> {
 
   constructor(
     protected scheduler: VirtualTimeScheduler,
-    protected work: (this: SchedulerAction<T>, state?: T) => void,
+    protected work: (this: Action<T>, state?: T) => void,
     protected index: number = (scheduler.index += 1)
   ) {
     super(scheduler, work);
@@ -478,10 +451,7 @@ export const asap = new AsapScheduler(AsapAction);
 export const async = new AsyncScheduler(AsyncAction);
 export const queue = new QueueScheduler(QueueAction);
 
-export function scheduleArray<T>(
-  input: ArrayLike<T>,
-  scheduler: qt.SchedulerLike
-) {
+export function scheduleArray<T>(input: ArrayLike<T>, scheduler: qt.Scheduler) {
   return new Observable<T>(subscriber => {
     const sub = new qj.Subscription();
     let i = 0;
@@ -503,7 +473,7 @@ export function scheduleArray<T>(
 
 export function scheduleAsyncIterable<T>(
   input: AsyncIterable<T>,
-  scheduler: qt.SchedulerLike
+  scheduler: qt.Scheduler
 ) {
   if (!input) {
     throw new Error('Iterable cannot be null');
@@ -533,7 +503,7 @@ export function scheduleAsyncIterable<T>(
 
 export function scheduleIterable<T>(
   input: Iterable<T>,
-  scheduler: qt.SchedulerLike
+  scheduler: qt.Scheduler
 ) {
   if (!input) {
     throw new Error('Iterable cannot be null');
@@ -581,7 +551,7 @@ export function scheduleIterable<T>(
 
 export function scheduleObservable<T>(
   input: InteropSource<T>,
-  scheduler: qt.SchedulerLike
+  scheduler: qt.Scheduler
 ) {
   return new Observable<T>(subscriber => {
     const sub = new qj.Subscription();
@@ -609,7 +579,7 @@ export function scheduleObservable<T>(
 
 export function schedulePromise<T>(
   input: PromiseLike<T>,
-  scheduler: qt.SchedulerLike
+  scheduler: qt.Scheduler
 ) {
   return new Observable<T>(subscriber => {
     const sub = new qj.Subscription();
@@ -636,7 +606,7 @@ export function schedulePromise<T>(
 
 export function scheduled<T>(
   input: SourceInput<T>,
-  scheduler: qt.SchedulerLike
+  scheduler: qt.Scheduler
 ): Observable<T> {
   if (input != null) {
     if (isInteropSource(input)) {

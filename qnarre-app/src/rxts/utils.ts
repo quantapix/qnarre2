@@ -226,7 +226,7 @@ export function isPromise(x: any): x is PromiseLike<any> {
   );
 }
 
-export function isScheduler(x: any): x is qt.SchedulerLike {
+export function isScheduler(x: any): x is qt.Scheduler {
   return x && typeof (<any>x).schedule === 'function';
 }
 

@@ -232,14 +232,14 @@ class DebounceOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 export function debounceTime<N, F, D>(
   dueTime: number,
-  scheduler: qt.SchedulerLike = async
+  scheduler: qt.Scheduler = async
 ): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new DebounceTimeOperator(dueTime, scheduler));
 }
 
 class DebounceTimeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private dueTime: number, private scheduler: qt.SchedulerLike) {}
+  constructor(private dueTime: number, private scheduler: qt.Scheduler) {}
 
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
@@ -273,7 +273,7 @@ class DefaultIfEmptyOperator<T, R> implements qt.Operator<T, T | R> {
 
 export function delay<N, F, D>(
   delay: number | Date,
-  scheduler: qt.SchedulerLike = async
+  scheduler: qt.Scheduler = async
 ): qt.MonoOper<N, F, D> {
   const absoluteDelay = isDate(delay);
   const delayFor = absoluteDelay
@@ -284,7 +284,7 @@ export function delay<N, F, D>(
 }
 
 class DelayOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private delay: number, private scheduler: qt.SchedulerLike) {}
+  constructor(private delay: number, private scheduler: qt.Scheduler) {}
 
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
@@ -450,7 +450,7 @@ export function endWith<T, A extends any[]>(
   ...args: A
 ): Lifter<T, T | ValueFromArray<A>>;
 export function endWith<N, F, D>(
-  ...values: Array<T | qt.SchedulerLike>
+  ...values: Array<T | qt.Scheduler>
 ): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
     concatStatic(source, of(...values)) as qt.Source<N, F, D>;
@@ -538,17 +538,17 @@ class ExhaustMapOperator<T, R> implements qt.Operator<T, R> {
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
   concurrent?: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, R>;
 export function expand<N, F, D>(
   project: (value: T, index: number) => SourceInput<N, F, D>,
   concurrent?: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.MonoOper<N, F, D>;
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, R> {
   concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
 
@@ -560,7 +560,7 @@ export class ExpandOperator<T, R> implements qt.Operator<T, R> {
   constructor(
     private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
-    private scheduler?: qt.SchedulerLike
+    private scheduler?: qt.Scheduler
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
@@ -1147,7 +1147,7 @@ export class MulticastOperator<T, R> implements qt.Operator<T, R> {
 }
 
 export function observeOn<N, F, D>(
-  scheduler: qt.SchedulerLike,
+  scheduler: qt.Scheduler,
   delay: number = 0
 ): qt.MonoOper<N, F, D> {
   return function observeOnLifter(
@@ -1158,7 +1158,7 @@ export function observeOn<N, F, D>(
 }
 
 export class ObserveOnOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private scheduler: qt.SchedulerLike, private delay: number = 0) {}
+  constructor(private scheduler: qt.Scheduler, private delay: number = 0) {}
 
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
@@ -1442,19 +1442,19 @@ export function publishLast<N, F, D>(): UnaryFun<
 export function publishReplay<N, F, D>(
   bufferSize?: number,
   windowTime?: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.MonoOper<N, F, D>;
 export function publishReplay<T, O extends SourceInput<any>>(
   bufferSize?: number,
   windowTime?: number,
   selector?: (shared: qt.Source<N, F, D>) => O,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, Sourced<O>>;
 export function publishReplay<T, R>(
   bufferSize?: number,
   windowTime?: number,
-  selectorOrScheduler?: qt.SchedulerLike | Lifter<T, R>,
-  scheduler?: qt.SchedulerLike
+  selectorOrScheduler?: qt.Scheduler | Lifter<T, R>,
+  scheduler?: qt.Scheduler
 ): UnaryFun<Observable<N, F, D>, Connectable<R>> {
   if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
     scheduler = selectorOrScheduler;
@@ -1703,14 +1703,14 @@ class SampleSubscriber<T, R> extends Reactor<N, M, F, D> {
 
 export function sampleTime<N, F, D>(
   period: number,
-  scheduler: qt.SchedulerLike = async
+  scheduler: qt.Scheduler = async
 ): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new SampleTimeOperator(period, scheduler));
 }
 
 class SampleTimeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private period: number, private scheduler: qt.SchedulerLike) {}
+  constructor(private period: number, private scheduler: qt.Scheduler) {}
 
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
@@ -1721,7 +1721,7 @@ class SampleTimeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 
 function dispatchNotification<N, F, D>(
-  this: qt.SchedulerAction<any>,
+  this: qt.Action<any>,
   state: any
 ) {
   let {subscriber, period} = state;
@@ -1824,7 +1824,7 @@ export interface ShareReplayConfig {
   bufferSize?: number;
   windowTime?: number;
   refCount: boolean;
-  scheduler?: qt.SchedulerLike;
+  scheduler?: qt.Scheduler;
 }
 
 export function shareReplay<N, F, D>(
@@ -1833,12 +1833,12 @@ export function shareReplay<N, F, D>(
 export function shareReplay<N, F, D>(
   bufferSize?: number,
   windowTime?: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.MonoOper<N, F, D>;
 export function shareReplay<N, F, D>(
   configOrBufferSize?: ShareReplayConfig | number,
   windowTime?: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.MonoOper<N, F, D> {
   let config: ShareReplayConfig;
   if (configOrBufferSize && typeof configOrBufferSize === 'object') {
@@ -2025,7 +2025,7 @@ export function startWith<T, D>(...values: D[]): Lifter<T, T | D> {
 }
 
 export function subscribeOn<N, F, D>(
-  scheduler: qt.SchedulerLike,
+  scheduler: qt.Scheduler,
   delay: number = 0
 ): qt.MonoOper<N, F, D> {
   return function subscribeOnLifter(
@@ -2036,7 +2036,7 @@ export function subscribeOn<N, F, D>(
 }
 
 class SubscribeOnOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private scheduler: qt.SchedulerLike, private delay: number) {}
+  constructor(private scheduler: qt.Scheduler, private delay: number) {}
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return new SubscribeOnObservable<N, F, D>(
       source,
@@ -2289,7 +2289,7 @@ class ThrottleOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 
 export function throttleTime<N, F, D>(
   duration: number,
-  scheduler: qt.SchedulerLike = async,
+  scheduler: qt.Scheduler = async,
   config: ThrottleConfig = defaultThrottleConfig
 ): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
@@ -2306,7 +2306,7 @@ export function throttleTime<N, F, D>(
 class ThrottleTimeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
     private duration: number,
-    private scheduler: qt.SchedulerLike,
+    private scheduler: qt.Scheduler,
     private leading: boolean,
     private trailing: boolean
   ) {}
@@ -2358,7 +2358,7 @@ function defaultErrorFactory() {
 }
 
 export function timeInterval<N, F, D>(
-  scheduler: qt.SchedulerLike = async
+  scheduler: qt.Scheduler = async
 ): Lifter<T, TimeInterval<N, F, D>> {
   return (source: qt.Source<N, F, D>) =>
     defer(() => {
@@ -2385,7 +2385,7 @@ export class TimeInterval<N, F, D> {
 
 export function timeout<N, F, D>(
   due: number | Date,
-  scheduler: qt.SchedulerLike = async
+  scheduler: qt.Scheduler = async
 ): qt.MonoOper<N, F, D> {
   return timeoutWith(due, throwError(new TimeoutError()), scheduler);
 }
@@ -2393,12 +2393,12 @@ export function timeout<N, F, D>(
 export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: SourceInput<R>,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, T | R>;
 export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: SourceInput<R>,
-  scheduler: qt.SchedulerLike = async
+  scheduler: qt.Scheduler = async
 ): Lifter<T, T | R> {
   return (source: qt.Source<N, F, D>) => {
     let absoluteTimeout = isDate(due);
@@ -2421,7 +2421,7 @@ class TimeoutWithOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     private waitFor: number,
     private absoluteTimeout: boolean,
     private withObservable: SourceInput<any>,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {}
 
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
@@ -2438,10 +2438,10 @@ class TimeoutWithOperator<N, F, D> implements qt.Operator<N, N, F, D> {
 }
 
 
-export function timestamp<N, F, D>(
-  timestampProvider: Stamper = Date
-): Lifter<T, Timestamp<N, F, D>> {
-  return map((value: N) => ({value, timestamp: timestampProvider.now()}));
+export function time<N, F, D>(
+  timeProvider: Stamper = Date
+): Lifter<T, Stamp<N, F, D>> {
+  return map((value: N) => ({value, time: timeProvider.now()}));
 }
 
 function toArrayReducer<N, F, D>(arr: T[], item: T, index: number): T[] {
@@ -2623,24 +2623,24 @@ class WindowCountSubscriber<N, F, D> extends Subscriber<N, F, D> {
 
 export function windowTime<N, F, D>(
   windowTimeSpan: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, qt.Source<N, F, D>>;
 export function windowTime<N, F, D>(
   windowTimeSpan: number,
   windowCreationInterval: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, qt.Source<N, F, D>>;
 export function windowTime<N, F, D>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   maxWindowSize: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): Lifter<T, qt.Source<N, F, D>>;
 
 export function windowTime<N, F, D>(
   windowTimeSpan: number
 ): Lifter<T, qt.Source<N, F, D>> {
-  let scheduler: qt.SchedulerLike = async;
+  let scheduler: qt.Scheduler = async;
   let windowCreationInterval: number | null = null;
   let maxWindowSize: number = Number.POSITIVE_INFINITY;
 
@@ -2678,7 +2678,7 @@ class WindowTimeOperator<N, F, D>
     private windowTimeSpan: number,
     private windowCreationInterval: number | null,
     private maxWindowSize: number,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {}
 
   call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
@@ -2698,7 +2698,7 @@ interface CreationState<N, F, D> {
   windowTimeSpan: number;
   windowCreationInterval: number;
   subscriber: WindowTimeSubscriber<N, F, D>;
-  scheduler: qt.SchedulerLike;
+  scheduler: qt.Scheduler;
 }
 
 interface TimeSpanOnlyState<N, F, D> {
@@ -2708,7 +2708,7 @@ interface TimeSpanOnlyState<N, F, D> {
 }
 
 interface CloseWindowContext<N, F, D> {
-  action: qt.SchedulerAction<CreationState<N, F, D>>;
+  action: qt.Action<CreationState<N, F, D>>;
   subscription: Subscription;
 }
 
@@ -2739,7 +2739,7 @@ class WindowTimeSubscriber<N, F, D> extends Subscriber<N, F, D> {
     windowTimeSpan: number,
     windowCreationInterval: number | null,
     private maxWindowSize: number,
-    scheduler: qt.SchedulerLike
+    scheduler: qt.Scheduler
   ) {
     super(tgt);
 
@@ -2837,7 +2837,7 @@ class WindowTimeSubscriber<N, F, D> extends Subscriber<N, F, D> {
 }
 
 function dispatchWindowTimeSpanOnly<N, F, D>(
-  this: qt.SchedulerAction<TimeSpanOnlyState<N, F, D>>,
+  this: qt.Action<TimeSpanOnlyState<N, F, D>>,
   state: TimeSpanOnlyState<N, F, D>
 ): void {
   const {subscriber, windowTimeSpan, window} = state;
@@ -2849,7 +2849,7 @@ function dispatchWindowTimeSpanOnly<N, F, D>(
 }
 
 function dispatchWindowCreation<N, F, D>(
-  this: qt.SchedulerAction<CreationState<N, F, D>>,
+  this: qt.Action<CreationState<N, F, D>>,
   state: CreationState<N, F, D>
 ): void {
   const {windowTimeSpan, subscriber, scheduler, windowCreationInterval} = state;
@@ -2867,7 +2867,7 @@ function dispatchWindowCreation<N, F, D>(
 }
 
 function dispatchWindowClose<N, F, D>(
-  this: qt.SchedulerAction<CloseState<N, F, D>>,
+  this: qt.Action<CloseState<N, F, D>>,
   state: CloseState<N, F, D>
 ): void {
   const {subscriber, window, context} = state;

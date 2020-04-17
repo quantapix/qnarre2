@@ -114,13 +114,13 @@ export type ValueFromArray<A> = A extends Array<infer T> ? T : never;
 
 export type FactoryOrValue<T> = T | (() => T);
 
-export interface Timestamp<T> {
-  value: T;
-  timestamp: number;
+export interface Stamp<V> {
+  value: V;
+  time: number;
 }
 
-export interface Interval<T> {
-  value: T;
+export interface Interval<V> {
+  value: V;
   interval: number;
 }
 
@@ -128,16 +128,16 @@ export interface Stamper {
   now(): number;
 }
 
-export interface SchedulerLike extends Stamper {
-  schedule<T>(
-    work: (this: SchedulerAction<T>, state?: T) => void,
-    delay?: number,
-    state?: T
+export interface Scheduler extends Stamper {
+  schedule<S>(
+    work: (this: Action<S>, state?: S) => void,
+    state?: S,
+    delay?: number
   ): Subscription;
 }
 
-export interface SchedulerAction<T> extends Subscription {
-  schedule(state?: T, delay?: number): Subscription;
+export interface Action<S> extends Subscription {
+  schedule(state?: S, delay?: number): Subscription;
 }
 
 export interface UnaryFun<N, R> {
@@ -159,12 +159,8 @@ export abstract class Context<N, F = any, D = any> {
     fail?: Ofun<F>,
     done?: Ofun<D>
   ): Subscriber<N, F, D>;
-  abstract createSubject(
-    o: Observer<N, F, D>,
-    s: Source<N, F, D>
-  ): Subject<N, F, D>;
-  abstract createAnonymous<R = N>(
-    t?: Observer<N, F, D>,
-    s?: Source<N, F, D>
+  abstract createSubject<R = N>(
+    o: Observer<any, F, D>,
+    s: Source<any, F, D>
   ): Subject<R, F, D>;
 }

@@ -23,7 +23,7 @@ export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
   }
 
   _subscribe(s: qt.Subscriber<N, F, D>) {
-    return this.src!.subscribe(s);
+    return this.src?.subscribe(s);
   }
 
   _trySubscribe(s: qt.Subscriber<N, F, D>) {
@@ -277,7 +277,7 @@ export class Notification<N, F = any, D = any> {
     }
   }
 
-  do(next?: qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>) {
+  act(next?: qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>) {
     switch (this.kind) {
       case 'N':
         return next && next(this.n);
@@ -293,7 +293,7 @@ export class Notification<N, F = any, D = any> {
     fail?: qt.Ofun<F>,
     done?: qt.Ofun<D>
   ) {
-    if (typeof t === 'function') return this.do(t, fail, done);
+    if (typeof t === 'function') return this.act(t, fail, done);
     return this.observe(t);
   }
 

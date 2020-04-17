@@ -22,11 +22,11 @@ describe('animationFrame', () => {
     const o$ = animationFrames(); // $ExpectType Observable<number>
   });
 
-  it('should allow the passing of a timestampProvider', () => {
+  it('should allow the passing of a timeProvider', () => {
     const o$ = animationFrames(performance); // $ExpectType Observable<number>
   });
 
-  it('should not allow the passing of an invalid timestamp provider', () => {
+  it('should not allow the passing of an invalid time provider', () => {
     const o$ = animationFrames({
       now() {
         return 'wee';
@@ -63,16 +63,16 @@ describe('animationFrame', () => {
     subs.unsubscribe();
   });
 
-  it('should use any passed timestampProvider', () => {
+  it('should use any passed timeProvider', () => {
     const results: any[] = [];
     let i = 0;
-    const timestampProvider = {
+    const timeProvider = {
       now: sinon.stub().callsFake(() => {
         return [100, 200, 210, 300][i++];
       })
     };
 
-    const source$ = animationFrames(timestampProvider);
+    const source$ = animationFrames(timeProvider);
 
     const subs = source$.subscribe({
       next: ts => results.push(ts),
@@ -81,17 +81,17 @@ describe('animationFrame', () => {
     });
 
     expect(DateStub).not.to.have.been.called;
-    expect(timestampProvider.now).to.have.been.calledOnce;
+    expect(timeProvider.now).to.have.been.calledOnce;
     expect(results).to.deep.equal([]);
 
     raf.tick();
     expect(DateStub).not.to.have.been.called;
-    expect(timestampProvider.now).to.have.been.calledTwice;
+    expect(timeProvider.now).to.have.been.calledTwice;
     expect(results).to.deep.equal([100]);
 
     raf.tick();
     expect(DateStub).not.to.have.been.called;
-    expect(timestampProvider.now).to.have.been.calledThrice;
+    expect(timeProvider.now).to.have.been.calledThrice;
     expect(results).to.deep.equal([100, 110]);
 
     raf.tick();

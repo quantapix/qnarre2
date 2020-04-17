@@ -19,7 +19,7 @@ export class Audit<N, R, F, D> implements qt.Operator<N, R, F, D> {
 
 export function auditTime<N, F, D>(
   duration: number,
-  s: qt.SchedulerLike = async
+  s: qt.Scheduler = async
 ): qt.MonoOper<N, F, D> {
   return audit(() => timer(duration, s));
 }
@@ -62,24 +62,24 @@ export class BufferCount<N, F, D> implements qt.Operator<N, N[], F, D> {
 
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.Lifter<N, N[], F, D>;
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.Lifter<N, N[], F, D>;
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number,
   bufferCreationInterval: number | null | undefined,
   maxBufferSize: number,
-  scheduler?: qt.SchedulerLike
+  scheduler?: qt.Scheduler
 ): qt.Lifter<N, N[], F, D>;
 export function bufferTime<N, F, D>(
   bufferTimeSpan: number
 ): qt.Lifter<N, N[], F, D> {
   let length: number = arguments.length;
-  let scheduler: qt.SchedulerLike = async;
+  let scheduler: qt.Scheduler = async;
   if (isScheduler(arguments[arguments.length - 1])) {
     scheduler = arguments[arguments.length - 1];
     length--;
@@ -105,7 +105,7 @@ export class BufferTime<N, F, D> implements qt.Operator<N, N[], F, D> {
     private bufferTimeSpan: number,
     private bufferCreationInterval: number | null,
     private maxBufferSize: number,
-    private scheduler: qt.SchedulerLike
+    private scheduler: qt.Scheduler
   ) {}
 
   call(subscriber: Subscriber<N[], F, D>, source: any): any {
@@ -131,7 +131,7 @@ interface DispatchCreateArg<T> {
   bufferTimeSpan: number;
   bufferCreationInterval: number | null;
   subscriber: BufferTimeSubscriber<T>;
-  scheduler: SchedulerLike;
+  scheduler: Scheduler;
 }
 
 interface DispatchCloseArg<T> {
@@ -148,7 +148,7 @@ class BufferTimeSubscriber<T> extends Subscriber<T> {
     private bufferTimeSpan: number,
     private bufferCreationInterval: number | null,
     private maxBufferSize: number,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {
     super(destination);
     const context = this.openContext();
@@ -261,7 +261,7 @@ class BufferTimeSubscriber<T> extends Subscriber<T> {
   }
 }
 
-function dispatchBufferTimeSpanOnly(this: SchedulerAction<any>, state: any) {
+function dispatchBufferTimeSpanOnly(this: Action<any>, state: any) {
   const subscriber: BufferTimeSubscriber<any> = state.subscriber;
 
   const prevContext = state.context;
@@ -276,12 +276,12 @@ function dispatchBufferTimeSpanOnly(this: SchedulerAction<any>, state: any) {
 }
 
 function dispatchBufferCreation<T>(
-  this: SchedulerAction<DispatchCreateArg<T>>,
+  this: Action<DispatchCreateArg<T>>,
   state: DispatchCreateArg<T>
 ) {
   const {bufferCreationInterval, bufferTimeSpan, subscriber, scheduler} = state;
   const context = subscriber.openContext();
-  const action = <SchedulerAction<DispatchCreateArg<T>>>this;
+  const action = <Action<DispatchCreateArg<T>>>this;
   if (!subscriber.closed) {
     subscriber.add(
       (context.closeAction = scheduler.schedule<DispatchCloseArg<T>>(
@@ -866,14 +866,14 @@ class DebounceSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
 export function debounceTime<T>(
   dueTime: number,
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): MonoOper<T> {
   return (source: Observable<T>) =>
     source.lift(new DebounceTimeOperator(dueTime, scheduler));
 }
 
 class DebounceTimeOperator<T> implements Operator<T, T> {
-  constructor(private dueTime: number, private scheduler: SchedulerLike) {}
+  constructor(private dueTime: number, private scheduler: Scheduler) {}
 
   call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
@@ -890,7 +890,7 @@ class DebounceTimeSubscriber<T> extends Subscriber<T> {
   constructor(
     destination: Subscriber<T>,
     private dueTime: number,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {
     super(destination);
   }
@@ -979,7 +979,7 @@ class DefaultIfEmptySubscriber<T, R> extends Subscriber<T> {
 
 export function delay<T>(
   delay: number | Date,
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): MonoOper<T> {
   const absoluteDelay = isDate(delay);
   const delayFor = absoluteDelay
@@ -990,7 +990,7 @@ export function delay<T>(
 }
 
 class DelayOperator<T> implements Operator<T, T> {
-  constructor(private delay: number, private scheduler: SchedulerLike) {}
+  constructor(private delay: number, private scheduler: Scheduler) {}
 
   call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
@@ -1002,7 +1002,7 @@ class DelayOperator<T> implements Operator<T, T> {
 interface DelayState<T> {
   source: DelaySubscriber<T>;
   destination: Target<T>;
-  scheduler: SchedulerLike;
+  scheduler: Scheduler;
 }
 
 class DelaySubscriber<T> extends Subscriber<T> {
@@ -1011,7 +1011,7 @@ class DelaySubscriber<T> extends Subscriber<T> {
   private errored: boolean = false;
 
   private static dispatch<T>(
-    this: SchedulerAction<DelayState<T>>,
+    this: Action<DelayState<T>>,
     state: DelayState<T>
   ): void {
     const source = state.source;
@@ -1038,12 +1038,12 @@ class DelaySubscriber<T> extends Subscriber<T> {
   constructor(
     destination: Subscriber<T>,
     private delay: number,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {
     super(destination);
   }
 
-  private _schedule(scheduler: SchedulerLike): void {
+  private _schedule(scheduler: Scheduler): void {
     this.active = true;
     const destination = this.destination as Subscription;
     destination.add(
@@ -1470,7 +1470,7 @@ export function elementAt<T>(index: number, defaultValue?: T): MonoOper<T> {
 export function endWith<T, A extends any[]>(
   ...args: A
 ): Lifter<T, T | ValueFromArray<A>>;
-export function endWith<T>(...values: Array<T | SchedulerLike>): MonoOper<T> {
+export function endWith<T>(...values: Array<T | Scheduler>): MonoOper<T> {
   return (source: Observable<T>) =>
     concatStatic(source, of(...values)) as Observable<T>;
 }
@@ -1710,17 +1710,17 @@ class ExhaustMapSubscriber<T, R> extends ReactorSubscriber<T, R> {
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
   concurrent?: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, R>;
 export function expand<T>(
   project: (value: T, index: number) => SourceInput<T>,
   concurrent?: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): MonoOper<T>;
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, R> {
   concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
 
@@ -1732,7 +1732,7 @@ export class ExpandOperator<T, R> implements Operator<T, R> {
   constructor(
     private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
-    private scheduler?: SchedulerLike
+    private scheduler?: Scheduler
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
@@ -1764,7 +1764,7 @@ export class ExpandSubscriber<T, R> extends ReactorSubscriber<T, R> {
     destination: Subscriber<R>,
     private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
-    private scheduler?: SchedulerLike
+    private scheduler?: Scheduler
   ) {
     super(destination);
     if (concurrent < Number.POSITIVE_INFINITY) {
@@ -2867,7 +2867,7 @@ export class MulticastOperator<T, R> implements Operator<T, R> {
 }
 
 export function observeOn<T>(
-  scheduler: SchedulerLike,
+  scheduler: Scheduler,
   delay: number = 0
 ): MonoOper<T> {
   return function observeOnLifter(source: Observable<T>): Observable<T> {
@@ -2876,7 +2876,7 @@ export function observeOn<T>(
 }
 
 export class ObserveOnOperator<T> implements Operator<T, T> {
-  constructor(private scheduler: SchedulerLike, private delay: number = 0) {}
+  constructor(private scheduler: Scheduler, private delay: number = 0) {}
 
   call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
@@ -2887,7 +2887,7 @@ export class ObserveOnOperator<T> implements Operator<T, T> {
 
 export class ObserveOnSubscriber<T> extends Subscriber<T> {
   static dispatch(
-    this: SchedulerAction<ObserveOnMessage>,
+    this: Action<ObserveOnMessage>,
     arg: ObserveOnMessage
   ) {
     const {notification, destination} = arg;
@@ -2897,7 +2897,7 @@ export class ObserveOnSubscriber<T> extends Subscriber<T> {
 
   constructor(
     destination: Subscriber<T>,
-    private scheduler: SchedulerLike,
+    private scheduler: Scheduler,
     private delay: number = 0
   ) {
     super(destination);
@@ -3249,19 +3249,19 @@ export function publishLast<T>(): UnaryFun<Observable<T>, Connectable<T>> {
 export function publishReplay<T>(
   bufferSize?: number,
   windowTime?: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): MonoOper<T>;
 export function publishReplay<T, O extends SourceInput<any>>(
   bufferSize?: number,
   windowTime?: number,
   selector?: (shared: Observable<T>) => O,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, Sourced<O>>;
 export function publishReplay<T, R>(
   bufferSize?: number,
   windowTime?: number,
-  selectorOrScheduler?: SchedulerLike | Lifter<T, R>,
-  scheduler?: SchedulerLike
+  selectorOrScheduler?: Scheduler | Lifter<T, R>,
+  scheduler?: Scheduler
 ): UnaryFun<Observable<T>, Connectable<R>> {
   if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
     scheduler = selectorOrScheduler;
@@ -3745,14 +3745,14 @@ class SampleSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
 export function sampleTime<T>(
   period: number,
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): MonoOper<T> {
   return (source: Observable<T>) =>
     source.lift(new SampleTimeOperator(period, scheduler));
 }
 
 class SampleTimeOperator<T> implements Operator<T, T> {
-  constructor(private period: number, private scheduler: SchedulerLike) {}
+  constructor(private period: number, private scheduler: Scheduler) {}
 
   call(subscriber: Subscriber<T>, source: any): Closer {
     return source.subscribe(
@@ -3768,7 +3768,7 @@ class SampleTimeSubscriber<T> extends Subscriber<T> {
   constructor(
     destination: Subscriber<T>,
     private period: number,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {
     super(destination);
     this.add(
@@ -3792,7 +3792,7 @@ class SampleTimeSubscriber<T> extends Subscriber<T> {
   }
 }
 
-function dispatchNotification<T>(this: SchedulerAction<any>, state: any) {
+function dispatchNotification<T>(this: Action<any>, state: any) {
   let {subscriber, period} = state;
   subscriber.reactNext();
   this.schedule(state, period);
@@ -4004,19 +4004,19 @@ export interface ShareReplayConfig {
   bufferSize?: number;
   windowTime?: number;
   refCount: boolean;
-  scheduler?: SchedulerLike;
+  scheduler?: Scheduler;
 }
 
 export function shareReplay<T>(config: ShareReplayConfig): MonoOper<T>;
 export function shareReplay<T>(
   bufferSize?: number,
   windowTime?: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): MonoOper<T>;
 export function shareReplay<T>(
   configOrBufferSize?: ShareReplayConfig | number,
   windowTime?: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): MonoOper<T> {
   let config: ShareReplayConfig;
   if (configOrBufferSize && typeof configOrBufferSize === 'object') {
@@ -4354,7 +4354,7 @@ export function startWith<T, D>(...values: D[]): Lifter<T, T | D> {
 }
 
 export function subscribeOn<T>(
-  scheduler: SchedulerLike,
+  scheduler: Scheduler,
   delay: number = 0
 ): MonoOper<T> {
   return function subscribeOnLifter(source: Observable<T>): Observable<T> {
@@ -4363,7 +4363,7 @@ export function subscribeOn<T>(
 }
 
 class SubscribeOnOperator<T> implements Operator<T, T> {
-  constructor(private scheduler: SchedulerLike, private delay: number) {}
+  constructor(private scheduler: Scheduler, private delay: number) {}
   call(subscriber: Subscriber<T>, source: any): Closer {
     return new SubscribeOnObservable<T>(
       source,
@@ -4937,7 +4937,7 @@ class ThrottleSubscriber<T, R> extends ReactorSubscriber<T, R> {
 
 export function throttleTime<T>(
   duration: number,
-  scheduler: SchedulerLike = async,
+  scheduler: Scheduler = async,
   config: ThrottleConfig = defaultThrottleConfig
 ): MonoOper<T> {
   return (source: Observable<T>) =>
@@ -4954,7 +4954,7 @@ export function throttleTime<T>(
 class ThrottleTimeOperator<T> implements Operator<T, T> {
   constructor(
     private duration: number,
-    private scheduler: SchedulerLike,
+    private scheduler: Scheduler,
     private leading: boolean,
     private trailing: boolean
   ) {}
@@ -4980,7 +4980,7 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
   constructor(
     destination: Subscriber<T>,
     private duration: number,
-    private scheduler: SchedulerLike,
+    private scheduler: Scheduler,
     private leading: boolean,
     private trailing: boolean
   ) {
@@ -5093,7 +5093,7 @@ function defaultErrorFactory() {
 }
 
 export function timeInterval<T>(
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): Lifter<T, TimeInterval<T>> {
   return (source: Observable<T>) =>
     defer(() => {
@@ -5120,7 +5120,7 @@ export class TimeInterval<T> {
 
 export function timeout<T>(
   due: number | Date,
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): MonoOper<T> {
   return timeoutWith(due, throwError(new TimeoutError()), scheduler);
 }
@@ -5128,12 +5128,12 @@ export function timeout<T>(
 export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: SourceInput<R>,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, T | R>;
 export function timeoutWith<T, R>(
   due: number | Date,
   withObservable: SourceInput<R>,
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): Lifter<T, T | R> {
   return (source: Observable<T>) => {
     let absoluteTimeout = isDate(due);
@@ -5156,7 +5156,7 @@ class TimeoutWithOperator<T> implements Operator<T, T> {
     private waitFor: number,
     private absoluteTimeout: boolean,
     private withObservable: SourceInput<any>,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {}
 
   call(subscriber: Subscriber<T>, source: any): Closer {
@@ -5173,14 +5173,14 @@ class TimeoutWithOperator<T> implements Operator<T, T> {
 }
 
 class TimeoutWithSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private action: SchedulerAction<TimeoutWithSubscriber<T, R>> | null = null;
+  private action: Action<TimeoutWithSubscriber<T, R>> | null = null;
 
   constructor(
     destination: Subscriber<T>,
     private absoluteTimeout: boolean,
     private waitFor: number,
     private withObservable: SourceInput<any>,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {
     super(destination);
     this.scheduleTimeout();
@@ -5197,12 +5197,12 @@ class TimeoutWithSubscriber<T, R> extends ReactorSubscriber<T, R> {
   private scheduleTimeout(): void {
     const {action} = this;
     if (action) {
-      this.action = <SchedulerAction<TimeoutWithSubscriber<T, R>>>(
+      this.action = <Action<TimeoutWithSubscriber<T, R>>>(
         action.schedule(this, this.waitFor)
       );
     } else {
       this.add(
-        (this.action = <SchedulerAction<TimeoutWithSubscriber<T, R>>>(
+        (this.action = <Action<TimeoutWithSubscriber<T, R>>>(
           this.scheduler.schedule<TimeoutWithSubscriber<T, R>>(
             TimeoutWithSubscriber.dispatchTimeout as any,
             this.waitFor,
@@ -5227,10 +5227,10 @@ class TimeoutWithSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function timestamp<T>(
-  timestampProvider: Stamper = Date
-): Lifter<T, Timestamp<T>> {
-  return map((value: T) => ({value, timestamp: timestampProvider.now()}));
+export function time<T>(
+  timeProvider: Stamper = Date
+): Lifter<T, Stamp<T>> {
+  return map((value: T) => ({value, time: timeProvider.now()}));
 }
 
 function toArrayReducer<T>(arr: T[], item: T, index: number): T[] {
@@ -5411,24 +5411,24 @@ class WindowCountSubscriber<T> extends Subscriber<T> {
 
 export function windowTime<T>(
   windowTimeSpan: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, Observable<T>>;
 export function windowTime<T>(
   windowTimeSpan: number,
   windowCreationInterval: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, Observable<T>>;
 export function windowTime<T>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   maxWindowSize: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Lifter<T, Observable<T>>;
 
 export function windowTime<T>(
   windowTimeSpan: number
 ): Lifter<T, Observable<T>> {
-  let scheduler: SchedulerLike = async;
+  let scheduler: Scheduler = async;
   let windowCreationInterval: number | null = null;
   let maxWindowSize: number = Number.POSITIVE_INFINITY;
 
@@ -5465,7 +5465,7 @@ class WindowTimeOperator<T> implements Operator<T, Observable<T>> {
     private windowTimeSpan: number,
     private windowCreationInterval: number | null,
     private maxWindowSize: number,
-    private scheduler: SchedulerLike
+    private scheduler: Scheduler
   ) {}
 
   call(subscriber: Subscriber<Observable<T>>, source: any): any {
@@ -5485,7 +5485,7 @@ interface CreationState<T> {
   windowTimeSpan: number;
   windowCreationInterval: number;
   subscriber: WindowTimeSubscriber<T>;
-  scheduler: SchedulerLike;
+  scheduler: Scheduler;
 }
 
 interface TimeSpanOnlyState<T> {
@@ -5495,7 +5495,7 @@ interface TimeSpanOnlyState<T> {
 }
 
 interface CloseWindowContext<T> {
-  action: SchedulerAction<CreationState<T>>;
+  action: Action<CreationState<T>>;
   subscription: Subscription;
 }
 
@@ -5526,7 +5526,7 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     windowTimeSpan: number,
     windowCreationInterval: number | null,
     private maxWindowSize: number,
-    scheduler: SchedulerLike
+    scheduler: Scheduler
   ) {
     super(destination);
 
@@ -5624,7 +5624,7 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
 }
 
 function dispatchWindowTimeSpanOnly<T>(
-  this: SchedulerAction<TimeSpanOnlyState<T>>,
+  this: Action<TimeSpanOnlyState<T>>,
   state: TimeSpanOnlyState<T>
 ): void {
   const {subscriber, windowTimeSpan, window} = state;
@@ -5636,7 +5636,7 @@ function dispatchWindowTimeSpanOnly<T>(
 }
 
 function dispatchWindowCreation<T>(
-  this: SchedulerAction<CreationState<T>>,
+  this: Action<CreationState<T>>,
   state: CreationState<T>
 ): void {
   const {windowTimeSpan, subscriber, scheduler, windowCreationInterval} = state;
@@ -5654,7 +5654,7 @@ function dispatchWindowCreation<T>(
 }
 
 function dispatchWindowClose<T>(
-  this: SchedulerAction<CloseState<T>>,
+  this: Action<CloseState<T>>,
   state: CloseState<T>
 ): void {
   const {subscriber, window, context} = state;

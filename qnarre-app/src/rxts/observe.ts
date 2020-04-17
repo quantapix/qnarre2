@@ -143,15 +143,12 @@ export class SubscribeOnObservable<T> extends Observable<T> {
   static create<T>(
     source: Observable<T>,
     delay: number = 0,
-    scheduler: SchedulerLike = asap
+    scheduler: Scheduler = asap
   ): Observable<T> {
     return new SubscribeOnObservable(source, delay, scheduler);
   }
 
-  static dispatch<T>(
-    this: SchedulerAction<T>,
-    arg: DispatchArg<T>
-  ): Subscription {
+  static dispatch<T>(this: Action<T>, arg: DispatchArg<T>): Subscription {
     const {source, subscriber} = arg;
     return this.add(source.subscribe(subscriber));
   }
@@ -159,7 +156,7 @@ export class SubscribeOnObservable<T> extends Observable<T> {
   constructor(
     public source: Observable<T>,
     private delayTime: number = 0,
-    private scheduler: SchedulerLike = asap
+    private scheduler: Scheduler = asap
   ) {
     super();
     if (!isNumeric(delayTime) || delayTime < 0) {
@@ -189,49 +186,49 @@ export function bindCallback<R1, R2, R3, R4>(
   callbackFunc: (
     callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<any[]>;
 export function bindCallback<R1, R2, R3>(
   callbackFunc: (callback: (res1: R1, res2: R2, res3: R3) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<[R1, R2, R3]>;
 export function bindCallback<R1, R2>(
   callbackFunc: (callback: (res1: R1, res2: R2) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<[R1, R2]>;
 export function bindCallback<R1>(
   callbackFunc: (callback: (res1: R1) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<R1>;
 export function bindCallback(
   callbackFunc: (callback: () => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<void>;
 export function bindCallback<A1, R1, R2, R3, R4>(
   callbackFunc: (
     arg1: A1,
     callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<any[]>;
 export function bindCallback<A1, R1, R2, R3>(
   callbackFunc: (
     arg1: A1,
     callback: (res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<[R1, R2, R3]>;
 export function bindCallback<A1, R1, R2>(
   callbackFunc: (arg1: A1, callback: (res1: R1, res2: R2) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<[R1, R2]>;
 export function bindCallback<A1, R1>(
   callbackFunc: (arg1: A1, callback: (res1: R1) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<R1>;
 export function bindCallback<A1>(
   callbackFunc: (arg1: A1, callback: () => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<void>;
 export function bindCallback<A1, A2, R1, R2, R3, R4>(
   callbackFunc: (
@@ -239,7 +236,7 @@ export function bindCallback<A1, A2, R1, R2, R3, R4>(
     arg2: A2,
     callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<any[]>;
 export function bindCallback<A1, A2, R1, R2, R3>(
   callbackFunc: (
@@ -247,7 +244,7 @@ export function bindCallback<A1, A2, R1, R2, R3>(
     arg2: A2,
     callback: (res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<[R1, R2, R3]>;
 export function bindCallback<A1, A2, R1, R2>(
   callbackFunc: (
@@ -255,15 +252,15 @@ export function bindCallback<A1, A2, R1, R2>(
     arg2: A2,
     callback: (res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<[R1, R2]>;
 export function bindCallback<A1, A2, R1>(
   callbackFunc: (arg1: A1, arg2: A2, callback: (res1: R1) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<R1>;
 export function bindCallback<A1, A2>(
   callbackFunc: (arg1: A1, arg2: A2, callback: () => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<void>;
 export function bindCallback<A1, A2, A3, R1, R2, R3, R4>(
   callbackFunc: (
@@ -272,7 +269,7 @@ export function bindCallback<A1, A2, A3, R1, R2, R3, R4>(
     arg3: A3,
     callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<any[]>;
 export function bindCallback<A1, A2, A3, R1, R2, R3>(
   callbackFunc: (
@@ -281,7 +278,7 @@ export function bindCallback<A1, A2, A3, R1, R2, R3>(
     arg3: A3,
     callback: (res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2, R3]>;
 export function bindCallback<A1, A2, A3, R1, R2>(
   callbackFunc: (
@@ -290,7 +287,7 @@ export function bindCallback<A1, A2, A3, R1, R2>(
     arg3: A3,
     callback: (res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2]>;
 export function bindCallback<A1, A2, A3, R1>(
   callbackFunc: (
@@ -299,11 +296,11 @@ export function bindCallback<A1, A2, A3, R1>(
     arg3: A3,
     callback: (res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<R1>;
 export function bindCallback<A1, A2, A3>(
   callbackFunc: (arg1: A1, arg2: A2, arg3: A3, callback: () => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<void>;
 export function bindCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
   callbackFunc: (
@@ -313,7 +310,7 @@ export function bindCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
     arg4: A4,
     callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<any[]>;
 export function bindCallback<A1, A2, A3, A4, R1, R2, R3>(
   callbackFunc: (
@@ -323,7 +320,7 @@ export function bindCallback<A1, A2, A3, A4, R1, R2, R3>(
     arg4: A4,
     callback: (res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2, R3]>;
 export function bindCallback<A1, A2, A3, A4, R1, R2>(
   callbackFunc: (
@@ -333,7 +330,7 @@ export function bindCallback<A1, A2, A3, A4, R1, R2>(
     arg4: A4,
     callback: (res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2]>;
 export function bindCallback<A1, A2, A3, A4, R1>(
   callbackFunc: (
@@ -343,7 +340,7 @@ export function bindCallback<A1, A2, A3, A4, R1>(
     arg4: A4,
     callback: (res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<R1>;
 export function bindCallback<A1, A2, A3, A4>(
   callbackFunc: (
@@ -353,7 +350,7 @@ export function bindCallback<A1, A2, A3, A4>(
     arg4: A4,
     callback: () => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<void>;
 export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
   callbackFunc: (
@@ -364,7 +361,7 @@ export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
     arg5: A5,
     callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<any[]>;
 export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
   callbackFunc: (
@@ -375,7 +372,7 @@ export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
     arg5: A5,
     callback: (res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (
   arg1: A1,
   arg2: A2,
@@ -392,7 +389,7 @@ export function bindCallback<A1, A2, A3, A4, A5, R1, R2>(
     arg5: A5,
     callback: (res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<[R1, R2]>;
 export function bindCallback<A1, A2, A3, A4, A5, R1>(
   callbackFunc: (
@@ -403,7 +400,7 @@ export function bindCallback<A1, A2, A3, A4, A5, R1>(
     arg5: A5,
     callback: (res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<R1>;
 export function bindCallback<A1, A2, A3, A4, A5>(
   callbackFunc: (
@@ -414,24 +411,24 @@ export function bindCallback<A1, A2, A3, A4, A5>(
     arg5: A5,
     callback: () => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<void>;
 export function bindCallback<A, R>(
   callbackFunc: (...args: Array<A | ((result: R) => any)>) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: A[]) => Observable<R>;
 export function bindCallback<A, R>(
   callbackFunc: (...args: Array<A | ((...results: R[]) => any)>) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: A[]) => Observable<R[]>;
 export function bindCallback(
   callbackFunc: Function,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any>;
 export function bindCallback<T>(
   callbackFunc: Function,
-  resultSelector?: Function | SchedulerLike,
-  scheduler?: SchedulerLike
+  resultSelector?: Function | Scheduler,
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<T> {
   if (resultSelector) {
     if (isScheduler(resultSelector)) {
@@ -498,15 +495,12 @@ interface DispatchState<T> {
 
 interface ParamsContext<T> {
   callbackFunc: Function;
-  scheduler: SchedulerLike;
+  scheduler: Scheduler;
   context: any;
   subject?: Async<T>;
 }
 
-function dispatch<T>(
-  this: SchedulerAction<DispatchState<T>>,
-  state: DispatchState<T>
-) {
+function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
   const self = this;
   const {args, subscriber, params} = state;
   const {callbackFunc, context, scheduler} = params;
@@ -539,10 +533,7 @@ interface NextState<T> {
   value: T;
 }
 
-function dispatchNext<T>(
-  this: SchedulerAction<NextState<T>>,
-  state: NextState<T>
-) {
+function dispatchNext<T>(this: Action<NextState<T>>, state: NextState<T>) {
   const {value, subject} = state;
   subject.next(value);
   subject.complete();
@@ -553,10 +544,7 @@ interface ErrorState<T> {
   err: any;
 }
 
-function dispatchError<T>(
-  this: SchedulerAction<ErrorState<T>>,
-  state: ErrorState<T>
-) {
+function dispatchError<T>(this: Action<ErrorState<T>>, state: ErrorState<T>) {
   const {err, subject} = state;
   subject.error(err);
 }
@@ -572,25 +560,25 @@ export function bindNodeCallback<R1, R2, R3, R4>(
       ...args: any[]
     ) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<R1, R2, R3>(
   callbackFunc: (
     callback: (err: any, res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<[R1, R2, R3]>;
 export function bindNodeCallback<R1, R2>(
   callbackFunc: (callback: (err: any, res1: R1, res2: R2) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<[R1, R2]>;
 export function bindNodeCallback<R1>(
   callbackFunc: (callback: (err: any, res1: R1) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<R1>;
 export function bindNodeCallback(
   callbackFunc: (callback: (err: any) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): () => Observable<void>;
 export function bindNodeCallback<A1, R1, R2, R3, R4>(
   callbackFunc: (
@@ -604,29 +592,29 @@ export function bindNodeCallback<A1, R1, R2, R3, R4>(
       ...args: any[]
     ) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<A1, R1, R2, R3>(
   callbackFunc: (
     arg1: A1,
     callback: (err: any, res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<[R1, R2, R3]>;
 export function bindNodeCallback<A1, R1, R2>(
   callbackFunc: (
     arg1: A1,
     callback: (err: any, res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<[R1, R2]>;
 export function bindNodeCallback<A1, R1>(
   callbackFunc: (arg1: A1, callback: (err: any, res1: R1) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<R1>;
 export function bindNodeCallback<A1>(
   callbackFunc: (arg1: A1, callback: (err: any) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1) => Observable<void>;
 export function bindNodeCallback<A1, A2, R1, R2, R3, R4>(
   callbackFunc: (
@@ -641,7 +629,7 @@ export function bindNodeCallback<A1, A2, R1, R2, R3, R4>(
       ...args: any[]
     ) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<A1, A2, R1, R2, R3>(
   callbackFunc: (
@@ -649,7 +637,7 @@ export function bindNodeCallback<A1, A2, R1, R2, R3>(
     arg2: A2,
     callback: (err: any, res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, R1, R2>(
   callbackFunc: (
@@ -657,7 +645,7 @@ export function bindNodeCallback<A1, A2, R1, R2>(
     arg2: A2,
     callback: (err: any, res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<[R1, R2]>;
 export function bindNodeCallback<A1, A2, R1>(
   callbackFunc: (
@@ -665,11 +653,11 @@ export function bindNodeCallback<A1, A2, R1>(
     arg2: A2,
     callback: (err: any, res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<R1>;
 export function bindNodeCallback<A1, A2>(
   callbackFunc: (arg1: A1, arg2: A2, callback: (err: any) => any) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2) => Observable<void>;
 export function bindNodeCallback<A1, A2, A3, R1, R2, R3, R4>(
   callbackFunc: (
@@ -685,7 +673,7 @@ export function bindNodeCallback<A1, A2, A3, R1, R2, R3, R4>(
       ...args: any[]
     ) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<A1, A2, A3, R1, R2, R3>(
   callbackFunc: (
@@ -694,7 +682,7 @@ export function bindNodeCallback<A1, A2, A3, R1, R2, R3>(
     arg3: A3,
     callback: (err: any, res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, R1, R2>(
   callbackFunc: (
@@ -703,7 +691,7 @@ export function bindNodeCallback<A1, A2, A3, R1, R2>(
     arg3: A3,
     callback: (err: any, res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, R1>(
   callbackFunc: (
@@ -712,7 +700,7 @@ export function bindNodeCallback<A1, A2, A3, R1>(
     arg3: A3,
     callback: (err: any, res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<R1>;
 export function bindNodeCallback<A1, A2, A3>(
   callbackFunc: (
@@ -721,7 +709,7 @@ export function bindNodeCallback<A1, A2, A3>(
     arg3: A3,
     callback: (err: any) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3) => Observable<void>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
   callbackFunc: (
@@ -738,7 +726,7 @@ export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
       ...args: any[]
     ) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3>(
   callbackFunc: (
@@ -748,7 +736,7 @@ export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3>(
     arg4: A4,
     callback: (err: any, res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2>(
   callbackFunc: (
@@ -758,7 +746,7 @@ export function bindNodeCallback<A1, A2, A3, A4, R1, R2>(
     arg4: A4,
     callback: (err: any, res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1>(
   callbackFunc: (
@@ -768,7 +756,7 @@ export function bindNodeCallback<A1, A2, A3, A4, R1>(
     arg4: A4,
     callback: (err: any, res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<R1>;
 export function bindNodeCallback<A1, A2, A3, A4>(
   callbackFunc: (
@@ -778,7 +766,7 @@ export function bindNodeCallback<A1, A2, A3, A4>(
     arg4: A4,
     callback: (err: any) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<void>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
   callbackFunc: (
@@ -796,7 +784,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
       ...args: any[]
     ) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
   callbackFunc: (
@@ -807,7 +795,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
     arg5: A5,
     callback: (err: any, res1: R1, res2: R2, res3: R3) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (
   arg1: A1,
   arg2: A2,
@@ -824,7 +812,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2>(
     arg5: A5,
     callback: (err: any, res1: R1, res2: R2) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1>(
   callbackFunc: (
@@ -835,7 +823,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1>(
     arg5: A5,
     callback: (err: any, res1: R1) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<R1>;
 export function bindNodeCallback<A1, A2, A3, A4, A5>(
   callbackFunc: (
@@ -846,16 +834,16 @@ export function bindNodeCallback<A1, A2, A3, A4, A5>(
     arg5: A5,
     callback: (err: any) => any
   ) => any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<void>;
 export function bindNodeCallback(
   callbackFunc: Function,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<any[]>;
 export function bindNodeCallback<T>(
   callbackFunc: Function,
-  resultSelector?: Function | SchedulerLike,
-  scheduler?: SchedulerLike
+  resultSelector?: Function | Scheduler,
+  scheduler?: Scheduler
 ): (...args: any[]) => Observable<T> {
   if (resultSelector) {
     if (isScheduler(resultSelector)) {
@@ -930,15 +918,12 @@ interface DispatchState<T> {
 interface ParamsState<T> {
   callbackFunc: Function;
   args: any[];
-  scheduler: SchedulerLike;
+  scheduler: Scheduler;
   subject: Async<T>;
   context: any;
 }
 
-function dispatch<T>(
-  this: SchedulerAction<DispatchState<T>>,
-  state: DispatchState<T>
-) {
+function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
   const {params, subscriber, context} = state;
   const {callbackFunc, args, scheduler} = params;
   let subject = params.subject;
@@ -1051,13 +1036,13 @@ export function combineLatest<O extends SourceInput<any>>(
   sources: O[]
 ): Observable<Sourced<O>[]>;
 export function combineLatest<O extends SourceInput<any>, R>(
-  ...observables: (O | ((...values: Sourced<O>[]) => R) | SchedulerLike)[]
+  ...observables: (O | ((...values: Sourced<O>[]) => R) | Scheduler)[]
 ): Observable<R> {
   let resultSelector: ((...values: Array<any>) => R) | undefined = undefined;
-  let scheduler: SchedulerLike | undefined = undefined;
+  let scheduler: Scheduler | undefined = undefined;
 
   if (isScheduler(observables[observables.length - 1])) {
-    scheduler = observables.pop() as SchedulerLike;
+    scheduler = observables.pop() as Scheduler;
   }
 
   if (typeof observables[observables.length - 1] === 'function') {
@@ -1162,9 +1147,9 @@ export function concat<A extends SourceInput<any>[]>(
   ...observables: A
 ): Observable<SourcedFrom<A>>;
 export function concat<O extends SourceInput<any>>(
-  ...observables: Array<O | SchedulerLike>
+  ...observables: Array<O | Scheduler>
 ): Observable<Sourced<O>> {
-  // The cast with `as` below is due to the SchedulerLike, once this is removed, it will no longer be a problem.
+  // The cast with `as` below is due to the Scheduler, once this is removed, it will no longer be a problem.
   return concatAll<Sourced<O>>()(of(...observables) as Observable<Sourced<O>>);
 }
 
@@ -1186,11 +1171,11 @@ export function defer<R extends SourceInput<any> | void>(
 
 export const EMPTY = new Observable<never>(subscriber => subscriber.complete());
 
-export function empty(scheduler?: SchedulerLike) {
+export function empty(scheduler?: Scheduler) {
   return scheduler ? emptyScheduled(scheduler) : EMPTY;
 }
 
-function emptyScheduled(scheduler: SchedulerLike) {
+function emptyScheduled(scheduler: Scheduler) {
   return new Observable<never>(subscriber =>
     scheduler.schedule(() => subscriber.complete())
   );
@@ -1312,7 +1297,7 @@ export function from<O extends SourceInput<any>>(
 ): Observable<Sourced<O>>;
 export function from<T>(
   input: SourceInput<T>,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Observable<T> {
   if (!scheduler) {
     if (input instanceof Observable) {
@@ -1324,7 +1309,7 @@ export function from<T>(
   }
 }
 
-export function fromArray<T>(input: ArrayLike<T>, scheduler?: SchedulerLike) {
+export function fromArray<T>(input: ArrayLike<T>, scheduler?: Scheduler) {
   if (!scheduler) {
     return new Observable<T>(subscribeToArray(input));
   } else {
@@ -1538,7 +1523,7 @@ export function fromEventPattern<T>(
   });
 }
 
-export function fromIterable<T>(input: Iterable<T>, scheduler?: SchedulerLike) {
+export function fromIterable<T>(input: Iterable<T>, scheduler?: Scheduler) {
   if (!input) {
     throw new Error('Iterable cannot be null');
   }
@@ -1551,7 +1536,7 @@ export function fromIterable<T>(input: Iterable<T>, scheduler?: SchedulerLike) {
 
 export function fromObservable<T>(
   input: InteropSource<T>,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ) {
   if (!scheduler) {
     return new Observable<T>(subscribeToObservable(input));
@@ -1560,10 +1545,7 @@ export function fromObservable<T>(
   }
 }
 
-export function fromPromise<T>(
-  input: PromiseLike<T>,
-  scheduler?: SchedulerLike
-) {
+export function fromPromise<T>(input: PromiseLike<T>, scheduler?: Scheduler) {
   if (!scheduler) {
     return new Observable<T>(subscribeToPromise(input));
   } else {
@@ -1588,7 +1570,7 @@ export interface GenerateBaseOptions<S> {
   initialState: S;
   condition?: ConditionFunc<S>;
   iterate: IterateFunc<S>;
-  scheduler?: SchedulerLike;
+  scheduler?: Scheduler;
 }
 
 export interface GenerateOptions<T, S> extends GenerateBaseOptions<S> {
@@ -1600,13 +1582,13 @@ export function generate<T, S>(
   condition: ConditionFunc<S>,
   iterate: IterateFunc<S>,
   resultSelector: ResultFunc<S, T>,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Observable<T>;
 export function generate<S>(
   initialState: S,
   condition: ConditionFunc<S>,
   iterate: IterateFunc<S>,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Observable<S>;
 export function generate<S>(options: GenerateBaseOptions<S>): Observable<S>;
 export function generate<T, S>(options: GenerateOptions<T, S>): Observable<T>;
@@ -1614,8 +1596,8 @@ export function generate<T, S>(
   initialStateOrOptions: S | GenerateOptions<T, S>,
   condition?: ConditionFunc<S>,
   iterate?: IterateFunc<S>,
-  resultSelectorOrScheduler?: ResultFunc<S, T> | SchedulerLike,
-  scheduler?: SchedulerLike
+  resultSelectorOrScheduler?: ResultFunc<S, T> | Scheduler,
+  scheduler?: Scheduler
 ): Observable<T> {
   let resultSelector: ResultFunc<S, T>;
   let initialState: S;
@@ -1633,7 +1615,7 @@ export function generate<T, S>(
   ) {
     initialState = initialStateOrOptions as S;
     resultSelector = identity as ResultFunc<S, T>;
-    scheduler = resultSelectorOrScheduler as SchedulerLike;
+    scheduler = resultSelectorOrScheduler as Scheduler;
   } else {
     initialState = initialStateOrOptions as S;
     resultSelector = resultSelectorOrScheduler as ResultFunc<S, T>;
@@ -1689,7 +1671,7 @@ export function generate<T, S>(
 }
 
 function dispatch<T, S>(
-  this: SchedulerAction<SchedulerState<T, S>>,
+  this: Action<SchedulerState<T, S>>,
   state: SchedulerState<T, S>
 ) {
   const {subscriber, condition} = state;
@@ -1749,7 +1731,7 @@ export function iif<T = never, F = never>(
 
 export function interval(
   period = 0,
-  scheduler: SchedulerLike = async
+  scheduler: Scheduler = async
 ): Observable<number> {
   if (!isNumeric(period) || period < 0) {
     period = 0;
@@ -1771,7 +1753,7 @@ export function interval(
   });
 }
 
-function dispatch(this: SchedulerAction<IntervalState>, state: IntervalState) {
+function dispatch(this: Action<IntervalState>, state: IntervalState) {
   const {subscriber, counter, period} = state;
   subscriber.next(counter);
   this.schedule({subscriber, counter: counter + 1, period}, period);
@@ -1860,13 +1842,13 @@ export function merge<T, R>(
   ...observables: (SourceInput<any> | number)[]
 ): Observable<R>;
 export function merge<T, R>(
-  ...observables: Array<SourceInput<any> | SchedulerLike | number | undefined>
+  ...observables: Array<SourceInput<any> | Scheduler | number | undefined>
 ): Observable<R> {
   let concurrent = Number.POSITIVE_INFINITY;
-  let scheduler: SchedulerLike | undefined = undefined;
+  let scheduler: Scheduler | undefined = undefined;
   let last: any = observables[observables.length - 1];
   if (isScheduler(last)) {
-    scheduler = <SchedulerLike>observables.pop();
+    scheduler = <Scheduler>observables.pop();
     if (
       observables.length > 1 &&
       typeof observables[observables.length - 1] === 'number'
@@ -1901,8 +1883,8 @@ export function of<T, U, V>(
 export function of<A extends Array<any>>(
   ...args: A
 ): Observable<ValueFromArray<A>>;
-export function of<T>(...args: Array<T | SchedulerLike>): Observable<T> {
-  let scheduler = args[args.length - 1] as SchedulerLike;
+export function of<T>(...args: Array<T | Scheduler>): Observable<T> {
+  let scheduler = args[args.length - 1] as Scheduler;
   if (isScheduler(scheduler)) {
     args.pop();
     return scheduleArray(args as T[], scheduler);
@@ -1970,7 +1952,7 @@ export function onErrorResumeNext<T, R>(
 
 export function pairs<T>(
   obj: Object,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Observable<[string, T]> {
   if (!scheduler) {
     return new Observable<[string, T]>(subscriber => {
@@ -2002,7 +1984,7 @@ export function pairs<T>(
 }
 
 export function dispatch<T>(
-  this: SchedulerAction<any>,
+  this: Action<any>,
   state: {
     keys: string[];
     index: number;
@@ -2141,7 +2123,7 @@ export class RaceSubscriber<T> extends ReactorSubscriber<T, T> {
 export function range(
   start: number = 0,
   count?: number,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Observable<number> {
   return new Observable<number>(subscriber => {
     if (count === undefined) {
@@ -2177,7 +2159,7 @@ export function range(
 }
 
 /** @internal */
-export function dispatch(this: SchedulerAction<any>, state: any) {
+export function dispatch(this: Action<any>, state: any) {
   const {start, index, count, subscriber} = state;
 
   if (index >= count) {
@@ -2199,7 +2181,7 @@ export function dispatch(this: SchedulerAction<any>, state: any) {
 
 export function throwError(
   error: any,
-  scheduler?: SchedulerLike
+  scheduler?: Scheduler
 ): Observable<never> {
   if (!scheduler) {
     return new Observable(subscriber => subscriber.error(error));
@@ -2221,8 +2203,8 @@ function dispatch({error, subscriber}: DispatchArg) {
 
 export function timer(
   dueTime: number | Date = 0,
-  periodOrScheduler?: number | SchedulerLike,
-  scheduler?: SchedulerLike
+  periodOrScheduler?: number | Scheduler,
+  scheduler?: Scheduler
 ): Observable<number> {
   let period = -1;
   if (isNumeric(periodOrScheduler)) {
@@ -2254,7 +2236,7 @@ interface TimerState {
   subscriber: Subscriber<number>;
 }
 
-function dispatch(this: SchedulerAction<TimerState>, state: TimerState) {
+function dispatch(this: Action<TimerState>, state: TimerState) {
   const {index, period, subscriber} = state;
   subscriber.next(index);
 

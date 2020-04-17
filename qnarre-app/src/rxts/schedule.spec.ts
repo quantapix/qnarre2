@@ -184,7 +184,7 @@ describe('Scheduler.asap', () => {
     const period = 50;
     const state = {index: 0, period};
     type State = typeof state;
-    function dispatch(this: SchedulerAction<State>, state: State): void {
+    function dispatch(this: Action<State>, state: State): void {
       state.index += 1;
       if (state.index < 3) {
         this.schedule(state, state.period);
@@ -213,7 +213,7 @@ describe('Scheduler.asap', () => {
     const period = 50;
     const state = {index: 0, period};
     type State = typeof state;
-    function dispatch(this: SchedulerAction<State>, state: State): void {
+    function dispatch(this: Action<State>, state: State): void {
       state.index += 1;
       state.period -= 1;
       if (state.index < 3) {
@@ -1071,7 +1071,7 @@ describe('VirtualTimeScheduler', () => {
     const expected = [100, 200, 300];
 
     v.schedule<string>(
-      function (this: SchedulerAction<string>, state?: string) {
+      function (this: Action<string>, state?: string) {
         if (++count === 3) {
           return;
         }

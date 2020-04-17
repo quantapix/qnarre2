@@ -88,17 +88,13 @@ function flatten(es: any[]) {
   );
 }
 
-const fakeObs = {
+const fake = {
   closed: true,
-  next(_?: any) {
-    /* noop */
-  },
+  next(_?: any) {},
   fail(e?: any) {
     qu.delayedThrow(e);
   },
-  done(_?: any) {
-    /* noop */
-  }
+  done(_?: any) {}
 } as qt.Observer<any, any, any>;
 
 export class Subscriber<N, F = any, D = any> extends Subscription
@@ -111,7 +107,7 @@ export class Subscriber<N, F = any, D = any> extends Subscription
 
   constructor(tgt?: qt.Target<N, F, D>) {
     super();
-    if (!tgt) this.tgt = fakeObs;
+    if (!tgt) this.tgt = fake;
     else {
       if (tgt instanceof Subscriber) {
         this.tgt = tgt;
@@ -184,7 +180,7 @@ export function toSubscriber<N, F, D>(
     const s = t ? (t as Subscriber<N, F, D>)[Symbol.rxSubscriber] : undefined;
     if (s) return s();
   }
-  if (!t && !fail && !done) return new Subscriber(fakeObs);
+  if (!t && !fail && !done) return new Subscriber(fake);
   return new Subscriber(t);
 }
 
@@ -196,7 +192,7 @@ export class Proxy<N, F = any, D = any> extends Subscriber<N, F, D> {
     private del: qt.Target<N, F, D>
   ) {
     super();
-    if (this.del !== fakeObs) this.ctx = Object.create(this.del);
+    if (this.del !== fake) this.ctx = Object.create(this.del);
   }
 
   next(n?: N) {
@@ -311,18 +307,27 @@ export abstract class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
   thrown?: F;
   tgts = [] as qt.Observer<N, F, D>[];
 
+  constructor(
+    t?: qt.Observer<N, F, D>,
+    public src?: qs.Source<N, F, D>,
+    s?: (this: qs.Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription
+  ) {
+    super(s);
+    if (t) this.tgts.push(t);
+  }
+
   _subscribe(s: qt.Subscriber<N, F, D>): qt.Subscription {
+    if (this.src) return this.src.subscribe(s);
     if (this.closed) throw new qu.UnsubscribedError();
-    else if (this.failed) {
+    if (this.failed) {
       s.fail(this.thrown);
       return Subscription.fake;
     } else if (this.stopped) {
       s.done();
       return Subscription.fake;
-    } else {
-      this.tgts.push(s);
-      return new SSubject(this, s);
     }
+    this.tgts.push(s);
+    return new SSubject(this, s);
   }
 
   _trySubscribe(s: qt.Subscriber<N, F, D>) {
@@ -331,7 +336,7 @@ export abstract class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
   }
 
   lift<R>(o?: qt.Operator<N, R, F, D>): qt.Source<R, F, D> {
-    const s = this.createAnonymous<R>(this, this);
+    const s = this.createSubject<R>(this, this);
     s.oper = o;
     return s;
   }
@@ -367,18 +372,6 @@ export abstract class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
     const s = this.createSource<N>();
     s.src = this;
     return s;
-  }
-}
-
-export abstract class Anonymous<N, F = any, D = any> extends Subject<N, F, D> {
-  constructor(t?: qt.Observer<N, F, D>, public src?: qs.Source<N, F, D>) {
-    super();
-    if (t) this.tgts.push(t);
-  }
-
-  _subscribe(s: qt.Subscriber<N, F, D>) {
-    if (this.src) return this.src.subscribe(s);
-    return Subscription.fake;
   }
 }
 
