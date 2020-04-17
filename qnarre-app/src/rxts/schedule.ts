@@ -1,15 +1,9 @@
-import {Immediate} from './utils';
-import {Observable} from './observe';
-import {SchedulerLike, SchedulerAction} from './types';
-import {Subscription} from './subscribe';
-import {InteropObservable, Subscribable} from './types';
-import {isInteropObservable} from './utils';
-import {isPromise} from './utils';
-import {isArrayLike} from './utils';
-import {isIterable} from './utils';
-import {SourceInput} from './types';
+import * as qs from './source';
+import * as qj from './subject';
+import * as qu from './utils';
+import * as qt from './types';
 
-export class Action<T> extends Subscription {
+export class Action<T> extends qj.Subscription {
   constructor(
     scheduler: Scheduler,
     work: (this: SchedulerAction<T>, state?: T) => void
@@ -17,12 +11,12 @@ export class Action<T> extends Subscription {
     super();
   }
 
-  public schedule(state?: T, delay: number = 0): Subscription {
+  public schedule(state?: T, delay: number = 0): qj.Subscription {
     return this;
   }
 }
 
-export class Scheduler implements SchedulerLike {
+export class Scheduler implements qt.SchedulerLike {
   public static now: () => number = () => Date.now();
 
   constructor(
@@ -38,7 +32,7 @@ export class Scheduler implements SchedulerLike {
     work: (this: SchedulerAction<T>, state?: T) => void,
     delay: number = 0,
     state?: T
-  ): Subscription {
+  ): qj.Subscription {
     return new this.SchedulerAction<T>(this, work).schedule(state, delay);
   }
 }
@@ -66,7 +60,7 @@ export class AsyncScheduler extends Scheduler {
     work: (this: SchedulerAction<T>, state?: T) => void,
     delay: number = 0,
     state?: T
-  ): Subscription {
+  ): qj.Subscription {
     if (AsyncScheduler.delegate && AsyncScheduler.delegate !== this) {
       return AsyncScheduler.delegate.schedule(work, delay, state);
     } else {
@@ -115,7 +109,7 @@ export class AsyncAction<T> extends Action<T> {
     super(scheduler, work);
   }
 
-  public schedule(state?: T, delay: number = 0): Subscription {
+  public schedule(state?: T, delay: number = 0): qj.Subscription {
     if (this.closed) {
       return this;
     }
@@ -351,7 +345,7 @@ export class QueueAction<T> extends AsyncAction<T> {
     super(scheduler, work);
   }
 
-  public schedule(state?: T, delay: number = 0): Subscription {
+  public schedule(state?: T, delay: number = 0): qj.Subscription {
     if (delay > 0) {
       return super.schedule(state, delay);
     }
@@ -426,7 +420,7 @@ export class VirtualAction<T> extends AsyncAction<T> {
     this.index = scheduler.index = index;
   }
 
-  public schedule(state?: T, delay: number = 0): Subscription {
+  public schedule(state?: T, delay: number = 0): qj.Subscription {
     if (!this.id) {
       return super.schedule(state, delay);
     }
@@ -486,10 +480,10 @@ export const queue = new QueueScheduler(QueueAction);
 
 export function scheduleArray<T>(
   input: ArrayLike<T>,
-  scheduler: SchedulerLike
+  scheduler: qt.SchedulerLike
 ) {
   return new Observable<T>(subscriber => {
-    const sub = new Subscription();
+    const sub = new qj.Subscription();
     let i = 0;
     sub.add(
       scheduler.schedule(function () {
@@ -509,13 +503,13 @@ export function scheduleArray<T>(
 
 export function scheduleAsyncIterable<T>(
   input: AsyncIterable<T>,
-  scheduler: SchedulerLike
+  scheduler: qt.SchedulerLike
 ) {
   if (!input) {
     throw new Error('Iterable cannot be null');
   }
   return new Observable<T>(subscriber => {
-    const sub = new Subscription();
+    const sub = new qj.Subscription();
     sub.add(
       scheduler.schedule(() => {
         const iterator = input[Symbol.asyncIterator]();
@@ -539,13 +533,13 @@ export function scheduleAsyncIterable<T>(
 
 export function scheduleIterable<T>(
   input: Iterable<T>,
-  scheduler: SchedulerLike
+  scheduler: qt.SchedulerLike
 ) {
   if (!input) {
     throw new Error('Iterable cannot be null');
   }
   return new Observable<T>(subscriber => {
-    const sub = new Subscription();
+    const sub = new qj.Subscription();
     let iterator: Iterator<T>;
     sub.add(() => {
       // Finalize generators
@@ -587,10 +581,10 @@ export function scheduleIterable<T>(
 
 export function scheduleObservable<T>(
   input: InteropObservable<T>,
-  scheduler: SchedulerLike
+  scheduler: qt.SchedulerLike
 ) {
   return new Observable<T>(subscriber => {
-    const sub = new Subscription();
+    const sub = new qj.Subscription();
     sub.add(
       scheduler.schedule(() => {
         const observable: Subscribable<T> = (input as any)[Symbol.observable]();
@@ -615,10 +609,10 @@ export function scheduleObservable<T>(
 
 export function schedulePromise<T>(
   input: PromiseLike<T>,
-  scheduler: SchedulerLike
+  scheduler: qt.SchedulerLike
 ) {
   return new Observable<T>(subscriber => {
-    const sub = new Subscription();
+    const sub = new qj.Subscription();
     sub.add(
       scheduler.schedule(() =>
         input.then(
@@ -642,7 +636,7 @@ export function schedulePromise<T>(
 
 export function scheduled<T>(
   input: SourceInput<T>,
-  scheduler: SchedulerLike
+  scheduler: qt.SchedulerLike
 ): Observable<T> {
   if (input != null) {
     if (isInteropObservable(input)) {
