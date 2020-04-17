@@ -410,7 +410,7 @@ describe('subscribeToResult', () => {
     expect(expected!).to.be.equal(42);
   });
 
-  it('should subscribe to to an object that implements Symbol.observable', done => {
+  it('should subscribe to to an object that implements Symbol.rxSource', done => {
     const observableSymbolObject = {[$$symbolObservable]: () => of(42)};
 
     const subscriber = new ReactorSubscriber(
@@ -427,7 +427,7 @@ describe('subscribeToResult', () => {
   });
 
   it(
-    'should throw an error if value returned by Symbol.observable call is not ' +
+    'should throw an error if value returned by Symbol.rxSource call is not ' +
       'a valid observable',
     () => {
       const observableSymbolObject = {[$$symbolObservable]: () => ({})};
@@ -448,7 +448,7 @@ describe('subscribeToResult', () => {
         subscribeToResult(subscriber, observableSymbolObject)
       ).to.throw(
         TypeError,
-        'Provided object does not correctly implement Symbol.observable'
+        'Provided object does not correctly implement Symbol.rxSource'
       );
     }
   );

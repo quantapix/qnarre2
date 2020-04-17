@@ -103,10 +103,6 @@ const fakeObs = {
 
 export class Subscriber<N, F = any, D = any> extends Subscription
   implements qt.Subscriber<N, F, D> {
-  static create<N, F, D>(tgt?: qt.Target<N, F, D>) {
-    return new Subscriber<N, F, D>(tgt);
-  }
-
   [Symbol.rxSubscriber]() {
     return this;
   }
@@ -171,6 +167,25 @@ export class Subscriber<N, F = any, D = any> extends Subscription
     this.parents = ps;
     return this;
   }
+}
+
+export function createSubscriber<N, F, D>(tgt?: qt.Target<N, F, D>) {
+  return new Subscriber<N, F, D>(tgt);
+}
+
+export function toSubscriber<N, F, D>(
+  t?: qt.Target<N, F, D> | qt.Ofun<N>,
+  fail?: qt.Ofun<F>,
+  done?: qt.Ofun<D>
+): Subscriber<N, F, D> {
+  if (t instanceof Subscriber) return t;
+  if (typeof t === 'function') t = {next: t, fail, done};
+  else {
+    const s = t ? (t as Subscriber<N, F, D>)[Symbol.rxSubscriber] : undefined;
+    if (s) return s();
+  }
+  if (!t && !fail && !done) return new Subscriber(fakeObs);
+  return new Subscriber(t);
 }
 
 export class Proxy<N, F = any, D = any> extends Subscriber<N, F, D> {
@@ -259,21 +274,6 @@ export class Actor<N, R, F = any, D = any> extends Subscriber<N, F, D> {
   }
 }
 
-export function toSubscriber<N, F, D>(
-  t?: qt.Target<N, F, D> | qt.Ofun<N>,
-  fail?: qt.Ofun<F>,
-  done?: qt.Ofun<D>
-): Subscriber<N, F, D> {
-  if (t instanceof Subscriber) return t;
-  if (typeof t === 'function') t = {next: t, fail, done};
-  else {
-    const s = t ? (t as Subscriber<N, F, D>)[Symbol.rxSubscriber] : undefined;
-    if (s) return s();
-  }
-  if (!t && !fail && !done) return new Subscriber(fakeObs);
-  return new Subscriber(t);
-}
-
 export class SSubject<N, F = any, D = any> extends Subscription {
   constructor(
     public subj: Subject<N, F, D> | undefined,
@@ -300,15 +300,8 @@ export class RSubject<N, F = any, D = any> extends Subscriber<N, F, D> {
   }
 }
 
-export class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
+export abstract class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
   implements qt.Subject<N, F, D> {
-  static createSubject<N, F, D>(
-    o: qt.Observer<N, F, D>,
-    s: qs.Source<N, F, D>
-  ) {
-    return new Anonymous<N, F, D>(o, s);
-  }
-
   [Symbol.rxSubscriber](): RSubject<N, F, D> {
     return new RSubject(this);
   }
@@ -337,8 +330,8 @@ export class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
     return super._trySubscribe(s);
   }
 
-  lift<R>(o?: qt.Operator<N, R, F, D>): qs.Source<R, F, D> {
-    const s = new Anonymous<R, F, D>(this, this);
+  lift<R>(o?: qt.Operator<N, R, F, D>): qt.Source<R, F, D> {
+    const s = this.createAnonymous<R>(this, this);
     s.oper = o;
     return s;
   }
@@ -371,13 +364,13 @@ export class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
   }
 
   asSource() {
-    const s = new qs.Source<N, F, D>();
+    const s = this.createSource<N>();
     s.src = this;
     return s;
   }
 }
 
-export class Anonymous<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Anonymous<N, F = any, D = any> extends Subject<N, F, D> {
   constructor(t?: qt.Observer<N, F, D>, public src?: qs.Source<N, F, D>) {
     super();
     if (t) this.tgts.push(t);
@@ -389,7 +382,7 @@ export class Anonymous<N, F = any, D = any> extends Subject<N, F, D> {
   }
 }
 
-export class Async<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Async<N, F = any, D = any> extends Subject<N, F, D> {
   private ready = false;
   private ended = false;
   private n?: N;
@@ -424,7 +417,7 @@ export class Async<N, F = any, D = any> extends Subject<N, F, D> {
   }
 }
 
-export class Behavior<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Behavior<N, F = any, D = any> extends Subject<N, F, D> {
   constructor(public n?: N) {
     super();
   }
@@ -452,7 +445,7 @@ interface Event<N> {
   n?: N;
 }
 
-export class Replay<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Replay<N, F = any, D = any> extends Subject<N, F, D> {
   private size: number;
   private time: number;
   private events = [] as (N | undefined)[];

@@ -2818,7 +2818,7 @@ describe('from', () => {
     expect(r).to.throw();
   });
 
-  type('should return T for InteropObservable objects', () => {
+  type('should return T for InteropSource objects', () => {
     /* tslint:disable:no-unused-variable */
     const o1: Observable<number> = from([] as number[], asapScheduler);
     const o2: Observable<{a: string}> = from(EMPTY);

@@ -4,7 +4,10 @@ namespace qpx {
     clear(): void;
     delete(key: K): boolean;
     entries(): IterableIterator<[K, V]>;
-    forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void;
+    forEach(
+      callbackfn: (value: V, key: K, map: Map<K, V>) => void,
+      thisArg?: any
+    ): void;
     get(key: K): V | undefined;
     has(key: K): boolean;
     keys(): IterableIterator<K>;
@@ -27,7 +30,10 @@ namespace qpx {
   export interface ReadonlyMap<K, V> {
     [Symbol.iterator](): IterableIterator<[K, V]>;
     entries(): IterableIterator<[K, V]>;
-    forEach(callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: any): void;
+    forEach(
+      callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void,
+      thisArg?: any
+    ): void;
     get(key: K): V | undefined;
     has(key: K): boolean;
     keys(): IterableIterator<K>;
@@ -44,7 +50,9 @@ namespace qpx {
   }
 
   interface WeakMapConstructor {
-    new <K extends object = object, V = any>(entries?: readonly [K, V][] | null): WeakMap<K, V>;
+    new <K extends object = object, V = any>(
+      entries?: readonly [K, V][] | null
+    ): WeakMap<K, V>;
     new <K extends object, V>(iterable: Iterable<[K, V]>): WeakMap<K, V>;
     readonly prototype: WeakMap<object, any>;
   }
@@ -57,7 +65,10 @@ namespace qpx {
     clear(): void;
     delete(value: T): boolean;
     entries(): IterableIterator<[T, T]>;
-    forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void;
+    forEach(
+      callbackfn: (value: T, value2: T, set: Set<T>) => void,
+      thisArg?: any
+    ): void;
     has(value: T): boolean;
     keys(): IterableIterator<T>;
     readonly [Symbol.toStringTag]: string;
@@ -77,7 +88,10 @@ namespace qpx {
   export interface ReadonlySet<T> {
     [Symbol.iterator](): IterableIterator<T>;
     entries(): IterableIterator<[T, T]>;
-    forEach(callbackfn: (value: T, value2: T, set: ReadonlySet<T>) => void, thisArg?: any): void;
+    forEach(
+      callbackfn: (value: T, value2: T, set: ReadonlySet<T>) => void,
+      thisArg?: any
+    ): void;
     has(value: T): boolean;
     keys(): IterableIterator<T>;
     readonly size: number;
@@ -106,10 +120,18 @@ namespace qpx {
 
   interface ArrayConstructor {
     from<T>(arrayLike: ArrayLike<T>): T[];
-    from<T, U>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[];
+    from<T, U>(
+      arrayLike: ArrayLike<T>,
+      mapfn: (v: T, k: number) => U,
+      thisArg?: any
+    ): U[];
     of<T>(...items: T[]): T[];
     from<T>(iterable: Iterable<T> | ArrayLike<T>): T[];
-    from<T, U>(iterable: Iterable<T> | ArrayLike<T>, mapfn: (v: T, k: number) => U, thisArg?: any): U[];
+    from<T, U>(
+      iterable: Iterable<T> | ArrayLike<T>,
+      mapfn: (v: T, k: number) => U,
+      thisArg?: any
+    ): U[];
     readonly [Symbol.species]: ArrayConstructor;
     new (arrayLength?: number): any[];
     new <T>(arrayLength: number): T[];
@@ -126,18 +148,44 @@ namespace qpx {
   interface Array<T> {
     [n: number]: T;
     [Symbol.iterator](): IterableIterator<T>;
-    [Symbol.unscopables](): {copyWithin: boolean; entries: boolean; fill: boolean; find: boolean; findIndex: boolean; keys: boolean; values: boolean};
+    [Symbol.unscopables](): {
+      copyWithin: boolean;
+      entries: boolean;
+      fill: boolean;
+      find: boolean;
+      findIndex: boolean;
+      keys: boolean;
+      values: boolean;
+    };
     concat(...items: (T | ConcatArray<T>)[]): T[];
     concat(...items: ConcatArray<T>[]): T[];
     copyWithin(target: number, start: number, end?: number): this;
     entries(): IterableIterator<[number, T]>;
-    every(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean;
+    every(
+      callbackfn: (value: T, index: number, array: T[]) => unknown,
+      thisArg?: any
+    ): boolean;
     fill(value: T, start?: number, end?: number): this;
-    filter(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): T[];
-    filter<S extends T>(callbackfn: (value: T, index: number, array: T[]) => value is S, thisArg?: any): S[];
-    find(predicate: (value: T, index: number, obj: T[]) => unknown, thisArg?: any): T | undefined;
-    find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined;
-    findIndex(predicate: (value: T, index: number, obj: T[]) => unknown, thisArg?: any): number;
+    filter(
+      callbackfn: (value: T, index: number, array: T[]) => unknown,
+      thisArg?: any
+    ): T[];
+    filter<S extends T>(
+      callbackfn: (value: T, index: number, array: T[]) => value is S,
+      thisArg?: any
+    ): S[];
+    find(
+      predicate: (value: T, index: number, obj: T[]) => unknown,
+      thisArg?: any
+    ): T | undefined;
+    find<S extends T>(
+      predicate: (this: void, value: T, index: number, obj: T[]) => value is S,
+      thisArg?: any
+    ): S | undefined;
+    findIndex(
+      predicate: (value: T, index: number, obj: T[]) => unknown,
+      thisArg?: any
+    ): number;
     flat<_U>(depth?: number): any[];
     flat<U>(depth?: number): any[];
     flat<U>(this: U[], depth: 0): U[];
@@ -156,28 +204,99 @@ namespace qpx {
     flat<U>(this: U[][][][][][][], depth: 6): U[];
     flat<U>(this: U[][][][][][][][], depth: 7): U[];
     flat<U>(this: U[][][][][][][][], depth: 7): U[];
-    flatMap<U, This = undefined>(callback: (this: This, value: T, index: number, array: T[]) => U | ReadonlyArray<U>, thisArg?: This): U[];
-    flatMap<U, This = undefined>(callback: (this: This, value: T, index: number, array: T[]) => U | ReadonlyArray<U>, thisArg?: This): U[];
-    forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any): void;
+    flatMap<U, This = undefined>(
+      callback: (
+        this: This,
+        value: T,
+        index: number,
+        array: T[]
+      ) => U | ReadonlyArray<U>,
+      thisArg?: This
+    ): U[];
+    flatMap<U, This = undefined>(
+      callback: (
+        this: This,
+        value: T,
+        index: number,
+        array: T[]
+      ) => U | ReadonlyArray<U>,
+      thisArg?: This
+    ): U[];
+    forEach(
+      callbackfn: (value: T, index: number, array: T[]) => void,
+      thisArg?: any
+    ): void;
     includes(searchElement: T, fromIndex?: number): boolean;
     indexOf(searchElement: T, fromIndex?: number): number;
     join(separator?: string): string;
     keys(): IterableIterator<number>;
     lastIndexOf(searchElement: T, fromIndex?: number): number;
     length: number;
-    map<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[];
+    map<U>(
+      callbackfn: (value: T, index: number, array: T[]) => U,
+      thisArg?: any
+    ): U[];
     pop(): T | undefined;
     push(...items: T[]): number;
-    reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T): T;
-    reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T): T;
-    reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
-    reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T): T;
-    reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T): T;
-    reduceRight<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
+    reduce(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: T[]
+      ) => T,
+      initialValue: T
+    ): T;
+    reduce(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: T[]
+      ) => T
+    ): T;
+    reduce<U>(
+      callbackfn: (
+        previousValue: U,
+        currentValue: T,
+        currentIndex: number,
+        array: T[]
+      ) => U,
+      initialValue: U
+    ): U;
+    reduceRight(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: T[]
+      ) => T,
+      initialValue: T
+    ): T;
+    reduceRight(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: T[]
+      ) => T
+    ): T;
+    reduceRight<U>(
+      callbackfn: (
+        previousValue: U,
+        currentValue: T,
+        currentIndex: number,
+        array: T[]
+      ) => U,
+      initialValue: U
+    ): U;
     reverse(): T[];
     shift(): T | undefined;
     slice(start?: number, end?: number): T[];
-    some(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean;
+    some(
+      callbackfn: (value: T, index: number, array: T[]) => unknown,
+      thisArg?: any
+    ): boolean;
     sort(compareFn?: (a: T, b: T) => number): this;
     splice(start: number, deleteCount: number, ...items: T[]): T[];
     splice(start: number, deleteCount: number): T[];
@@ -221,43 +340,221 @@ namespace qpx {
     concat(...items: (T | ConcatArray<T>)[]): T[];
     concat(...items: ConcatArray<T>[]): T[];
     entries(): IterableIterator<[number, T]>;
-    every(callbackfn: (value: T, index: number, array: readonly T[]) => unknown, thisArg?: any): boolean;
-    filter(callbackfn: (value: T, index: number, array: readonly T[]) => unknown, thisArg?: any): T[];
-    filter<S extends T>(callbackfn: (value: T, index: number, array: readonly T[]) => value is S, thisArg?: any): S[];
-    find(predicate: (value: T, index: number, obj: readonly T[]) => unknown, thisArg?: any): T | undefined;
-    find<S extends T>(predicate: (this: void, value: T, index: number, obj: readonly T[]) => value is S, thisArg?: any): S | undefined;
-    findIndex(predicate: (value: T, index: number, obj: readonly T[]) => unknown, thisArg?: any): number;
+    every(
+      callbackfn: (value: T, index: number, array: readonly T[]) => unknown,
+      thisArg?: any
+    ): boolean;
+    filter(
+      callbackfn: (value: T, index: number, array: readonly T[]) => unknown,
+      thisArg?: any
+    ): T[];
+    filter<S extends T>(
+      callbackfn: (value: T, index: number, array: readonly T[]) => value is S,
+      thisArg?: any
+    ): S[];
+    find(
+      predicate: (value: T, index: number, obj: readonly T[]) => unknown,
+      thisArg?: any
+    ): T | undefined;
+    find<S extends T>(
+      predicate: (
+        this: void,
+        value: T,
+        index: number,
+        obj: readonly T[]
+      ) => value is S,
+      thisArg?: any
+    ): S | undefined;
+    findIndex(
+      predicate: (value: T, index: number, obj: readonly T[]) => unknown,
+      thisArg?: any
+    ): number;
     flat<_U>(depth?: number): any[];
     flat<U>(depth?: number): any[];
-    flat<U>(this: ReadonlyArray<U[][][][]> | ReadonlyArray<ReadonlyArray<U[][][]>> | ReadonlyArray<ReadonlyArray<U[][]>[]> | ReadonlyArray<ReadonlyArray<U[]>[][]> | ReadonlyArray<ReadonlyArray<U>[][][]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[][]>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[][]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[][]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>[]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>>, depth: 4): U[];
-    flat<U>(this: ReadonlyArray<U[][][][]> | ReadonlyArray<ReadonlyArray<U[][][]>> | ReadonlyArray<ReadonlyArray<U[][]>[]> | ReadonlyArray<ReadonlyArray<U[]>[][]> | ReadonlyArray<ReadonlyArray<U>[][][]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[][]>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[][]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[][]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>[]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>>, depth: 4): U[];
-    flat<U>(this: ReadonlyArray<U[][][]> | ReadonlyArray<ReadonlyArray<U>[][]> | ReadonlyArray<ReadonlyArray<U[]>[]> | ReadonlyArray<ReadonlyArray<U[][]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>, depth: 3): U[];
-    flat<U>(this: ReadonlyArray<U[][][]> | ReadonlyArray<ReadonlyArray<U>[][]> | ReadonlyArray<ReadonlyArray<U[]>[]> | ReadonlyArray<ReadonlyArray<U[][]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>, depth: 3): U[];
-    flat<U>(this: ReadonlyArray<U[][]> | ReadonlyArray<ReadonlyArray<U[]>> | ReadonlyArray<ReadonlyArray<U>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>, depth: 2): U[];
-    flat<U>(this: ReadonlyArray<U[][]> | ReadonlyArray<ReadonlyArray<U[]>> | ReadonlyArray<ReadonlyArray<U>[]> | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>, depth: 2): U[];
-    flat<U>(this: ReadonlyArray<U[]> | ReadonlyArray<ReadonlyArray<U>>, depth?: 1): U[];
-    flat<U>(this: ReadonlyArray<U[]> | ReadonlyArray<ReadonlyArray<U>>, depth?: 1): U[];
+    flat<U>(
+      this:
+        | ReadonlyArray<U[][][][]>
+        | ReadonlyArray<ReadonlyArray<U[][][]>>
+        | ReadonlyArray<ReadonlyArray<U[][]>[]>
+        | ReadonlyArray<ReadonlyArray<U[]>[][]>
+        | ReadonlyArray<ReadonlyArray<U>[][][]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[][]>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[][]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[][]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>[]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>[]>
+        | ReadonlyArray<
+            ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>
+          >,
+      depth: 4
+    ): U[];
+    flat<U>(
+      this:
+        | ReadonlyArray<U[][][][]>
+        | ReadonlyArray<ReadonlyArray<U[][][]>>
+        | ReadonlyArray<ReadonlyArray<U[][]>[]>
+        | ReadonlyArray<ReadonlyArray<U[]>[][]>
+        | ReadonlyArray<ReadonlyArray<U>[][][]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[][]>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[][]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[][]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>[]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>[]>
+        | ReadonlyArray<
+            ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>
+          >,
+      depth: 4
+    ): U[];
+    flat<U>(
+      this:
+        | ReadonlyArray<U[][][]>
+        | ReadonlyArray<ReadonlyArray<U>[][]>
+        | ReadonlyArray<ReadonlyArray<U[]>[]>
+        | ReadonlyArray<ReadonlyArray<U[][]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>,
+      depth: 3
+    ): U[];
+    flat<U>(
+      this:
+        | ReadonlyArray<U[][][]>
+        | ReadonlyArray<ReadonlyArray<U>[][]>
+        | ReadonlyArray<ReadonlyArray<U[]>[]>
+        | ReadonlyArray<ReadonlyArray<U[][]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U[]>>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>[]>>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>>,
+      depth: 3
+    ): U[];
+    flat<U>(
+      this:
+        | ReadonlyArray<U[][]>
+        | ReadonlyArray<ReadonlyArray<U[]>>
+        | ReadonlyArray<ReadonlyArray<U>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>,
+      depth: 2
+    ): U[];
+    flat<U>(
+      this:
+        | ReadonlyArray<U[][]>
+        | ReadonlyArray<ReadonlyArray<U[]>>
+        | ReadonlyArray<ReadonlyArray<U>[]>
+        | ReadonlyArray<ReadonlyArray<ReadonlyArray<U>>>,
+      depth: 2
+    ): U[];
+    flat<U>(
+      this: ReadonlyArray<U[]> | ReadonlyArray<ReadonlyArray<U>>,
+      depth?: 1
+    ): U[];
+    flat<U>(
+      this: ReadonlyArray<U[]> | ReadonlyArray<ReadonlyArray<U>>,
+      depth?: 1
+    ): U[];
     flat<U>(this: ReadonlyArray<U>, depth: 0): U[];
     flat<U>(this: ReadonlyArray<U>, depth: 0): U[];
-    flatMap<U, This = undefined>(callback: (this: This, value: T, index: number, array: T[]) => U | ReadonlyArray<U>, thisArg?: This): U[];
-    flatMap<U, This = undefined>(callback: (this: This, value: T, index: number, array: T[]) => U | ReadonlyArray<U>, thisArg?: This): U[];
-    forEach(callbackfn: (value: T, index: number, array: readonly T[]) => void, thisArg?: any): void;
+    flatMap<U, This = undefined>(
+      callback: (
+        this: This,
+        value: T,
+        index: number,
+        array: T[]
+      ) => U | ReadonlyArray<U>,
+      thisArg?: This
+    ): U[];
+    flatMap<U, This = undefined>(
+      callback: (
+        this: This,
+        value: T,
+        index: number,
+        array: T[]
+      ) => U | ReadonlyArray<U>,
+      thisArg?: This
+    ): U[];
+    forEach(
+      callbackfn: (value: T, index: number, array: readonly T[]) => void,
+      thisArg?: any
+    ): void;
     includes(searchElement: T, fromIndex?: number): boolean;
     indexOf(searchElement: T, fromIndex?: number): number;
     join(separator?: string): string;
     keys(): IterableIterator<number>;
     lastIndexOf(searchElement: T, fromIndex?: number): number;
-    map<U>(callbackfn: (value: T, index: number, array: readonly T[]) => U, thisArg?: any): U[];
+    map<U>(
+      callbackfn: (value: T, index: number, array: readonly T[]) => U,
+      thisArg?: any
+    ): U[];
     readonly [n: number]: T;
     readonly length: number;
-    reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: readonly T[]) => T, initialValue: T): T;
-    reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: readonly T[]) => T): T;
-    reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: readonly T[]) => U, initialValue: U): U;
-    reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: readonly T[]) => T, initialValue: T): T;
-    reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: readonly T[]) => T): T;
-    reduceRight<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: readonly T[]) => U, initialValue: U): U;
+    reduce(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: readonly T[]
+      ) => T,
+      initialValue: T
+    ): T;
+    reduce(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: readonly T[]
+      ) => T
+    ): T;
+    reduce<U>(
+      callbackfn: (
+        previousValue: U,
+        currentValue: T,
+        currentIndex: number,
+        array: readonly T[]
+      ) => U,
+      initialValue: U
+    ): U;
+    reduceRight(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: readonly T[]
+      ) => T,
+      initialValue: T
+    ): T;
+    reduceRight(
+      callbackfn: (
+        previousValue: T,
+        currentValue: T,
+        currentIndex: number,
+        array: readonly T[]
+      ) => T
+    ): T;
+    reduceRight<U>(
+      callbackfn: (
+        previousValue: U,
+        currentValue: T,
+        currentIndex: number,
+        array: readonly T[]
+      ) => U,
+      initialValue: U
+    ): U;
     slice(start?: number, end?: number): T[];
-    some(callbackfn: (value: T, index: number, array: readonly T[]) => unknown, thisArg?: any): boolean;
+    some(
+      callbackfn: (value: T, index: number, array: readonly T[]) => unknown,
+      thisArg?: any
+    ): boolean;
     toLocaleString(): string;
     toString(): string;
     values(): IterableIterator<T>;
@@ -315,7 +612,10 @@ namespace qpx {
   interface RegExp {
     [Symbol.match](string: string): RegExpMatchArray | null;
     [Symbol.matchAll](str: string): IterableIterator<RegExpMatchArray>;
-    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
+    [Symbol.replace](
+      string: string,
+      replacer: (substring: string, ...args: any[]) => string
+    ): string;
     [Symbol.replace](string: string, replaceValue: string): string;
     [Symbol.search](string: string): number;
     [Symbol.split](string: string, limit?: number): string[];
@@ -377,9 +677,15 @@ namespace qpx {
     italics(): string;
     lastIndexOf(searchString: string, position?: number): number;
     link(url: string): string;
-    localeCompare(that: string, locales?: string | string[], options?: Intl.CollatorOptions): number;
+    localeCompare(
+      that: string,
+      locales?: string | string[],
+      options?: Intl.CollatorOptions
+    ): number;
     localeCompare(that: string): number;
-    match(matcher: {[Symbol.match](string: string): RegExpMatchArray | null}): RegExpMatchArray | null;
+    match(matcher: {
+      [Symbol.match](string: string): RegExpMatchArray | null;
+    }): RegExpMatchArray | null;
     match(regexp: string | RegExp): RegExpMatchArray | null;
     matchAll(regexp: RegExp): IterableIterator<RegExpMatchArray>;
     normalize(form: 'NFC' | 'NFD' | 'NFKC' | 'NFKD'): string;
@@ -389,7 +695,10 @@ namespace qpx {
     readonly [index: number]: string;
     readonly length: number;
     repeat(count: number): string;
-    replace(searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string): string;
+    replace(
+      searchValue: string | RegExp,
+      replacer: (substring: string, ...args: any[]) => string
+    ): string;
     replace(searchValue: string | RegExp, replaceValue: string): string;
     replaceAll(searchValue: string | RegExp, replaceValue: string): string;
     search(regexp: string | RegExp): number;
@@ -397,7 +706,10 @@ namespace qpx {
     slice(start?: number, end?: number): string;
     small(): string;
     split(separator: string | RegExp, limit?: number): string[];
-    split(splitter: {[Symbol.split](string: string, limit?: number): string[]}, limit?: number): string[];
+    split(
+      splitter: {[Symbol.split](string: string, limit?: number): string[]},
+      limit?: number
+    ): string[];
     startsWith(searchString: string, position?: number): boolean;
     strike(): string;
     sub(): string;
@@ -423,7 +735,10 @@ namespace qpx {
     ): string;
     replace(
       searchValue: {
-        [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
+        [Symbol.replace](
+          string: string,
+          replacer: (substring: string, ...args: any[]) => string
+        ): string;
       },
       replacer: (substring: string, ...args: any[]) => string
     ): string;
@@ -440,7 +755,8 @@ namespace qpx {
 
   declare var String: StringConstructor;
 
-  interface Generator<T = unknown, TReturn = any, TNext = unknown> extends Iterator<T, TReturn, TNext> {
+  interface Generator<T = unknown, TReturn = any, TNext = unknown>
+    extends Iterator<T, TReturn, TNext> {
     // NOTE: 'next' is defined using a tuple to ensure we report the correct assignability errors in all places.
     next(...args: [] | [TNext]): IteratorResult<T, TReturn>;
     return(value: TReturn): IteratorResult<T, TReturn>;
@@ -475,7 +791,9 @@ namespace qpx {
     value: TReturn;
   }
 
-  type IteratorResult<T, TReturn = any> = IteratorYieldResult<T> | IteratorReturnResult<TReturn>;
+  type IteratorResult<T, TReturn = any> =
+    | IteratorYieldResult<T>
+    | IteratorReturnResult<TReturn>;
 
   interface Iterator<T, TReturn = any, TNext = undefined> {
     next(...args: [] | [TNext]): IteratorResult<T, TReturn>;
@@ -492,42 +810,151 @@ namespace qpx {
   }
 
   interface Promise<T> {
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null
+    ): Promise<T | TResult>;
     finally(onfinally?: (() => void) | undefined | null): Promise<T>;
     readonly [Symbol.toStringTag]: string;
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null
+    ): Promise<TResult1 | TResult2>;
   }
 
-  type PromiseSettledResult<T> = PromiseFulfilledResult<T> | PromiseRejectedResult;
+  type PromiseSettledResult<T> =
+    | PromiseFulfilledResult<T>
+    | PromiseRejectedResult;
 
   interface PromiseConstructor {
     all<T>(values: Iterable<T | PromiseLike<T>>): Promise<T[]>;
     all<T>(values: readonly (T | PromiseLike<T>)[]): Promise<T[]>;
-    all<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>, T6 | PromiseLike<T6>, T7 | PromiseLike<T7>, T8 | PromiseLike<T8>, T9 | PromiseLike<T9>, T10 | PromiseLike<T10>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10]>;
-    all<T1, T2, T3, T4, T5, T6, T7, T8, T9>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>, T6 | PromiseLike<T6>, T7 | PromiseLike<T7>, T8 | PromiseLike<T8>, T9 | PromiseLike<T9>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9]>;
-    all<T1, T2, T3, T4, T5, T6, T7, T8>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>, T6 | PromiseLike<T6>, T7 | PromiseLike<T7>, T8 | PromiseLike<T8>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8]>;
-    all<T1, T2, T3, T4, T5, T6, T7>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>, T6 | PromiseLike<T6>, T7 | PromiseLike<T7>]): Promise<[T1, T2, T3, T4, T5, T6, T7]>;
-    all<T1, T2, T3, T4, T5, T6>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>, T6 | PromiseLike<T6>]): Promise<[T1, T2, T3, T4, T5, T6]>;
-    all<T1, T2, T3, T4, T5>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>]): Promise<[T1, T2, T3, T4, T5]>;
-    all<T1, T2, T3, T4>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>]): Promise<[T1, T2, T3, T4]>;
-    all<T1, T2, T3>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>]): Promise<[T1, T2, T3]>;
-    all<T1, T2>(values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>]): Promise<[T1, T2]>;
-    allSettled<T>(values: Iterable<T>): Promise<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>[]>;
-    new <T>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void): Promise<T>;
+    all<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>,
+        T5 | PromiseLike<T5>,
+        T6 | PromiseLike<T6>,
+        T7 | PromiseLike<T7>,
+        T8 | PromiseLike<T8>,
+        T9 | PromiseLike<T9>,
+        T10 | PromiseLike<T10>
+      ]
+    ): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10]>;
+    all<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>,
+        T5 | PromiseLike<T5>,
+        T6 | PromiseLike<T6>,
+        T7 | PromiseLike<T7>,
+        T8 | PromiseLike<T8>,
+        T9 | PromiseLike<T9>
+      ]
+    ): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9]>;
+    all<T1, T2, T3, T4, T5, T6, T7, T8>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>,
+        T5 | PromiseLike<T5>,
+        T6 | PromiseLike<T6>,
+        T7 | PromiseLike<T7>,
+        T8 | PromiseLike<T8>
+      ]
+    ): Promise<[T1, T2, T3, T4, T5, T6, T7, T8]>;
+    all<T1, T2, T3, T4, T5, T6, T7>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>,
+        T5 | PromiseLike<T5>,
+        T6 | PromiseLike<T6>,
+        T7 | PromiseLike<T7>
+      ]
+    ): Promise<[T1, T2, T3, T4, T5, T6, T7]>;
+    all<T1, T2, T3, T4, T5, T6>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>,
+        T5 | PromiseLike<T5>,
+        T6 | PromiseLike<T6>
+      ]
+    ): Promise<[T1, T2, T3, T4, T5, T6]>;
+    all<T1, T2, T3, T4, T5>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>,
+        T5 | PromiseLike<T5>
+      ]
+    ): Promise<[T1, T2, T3, T4, T5]>;
+    all<T1, T2, T3, T4>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>,
+        T4 | PromiseLike<T4>
+      ]
+    ): Promise<[T1, T2, T3, T4]>;
+    all<T1, T2, T3>(
+      values: readonly [
+        T1 | PromiseLike<T1>,
+        T2 | PromiseLike<T2>,
+        T3 | PromiseLike<T3>
+      ]
+    ): Promise<[T1, T2, T3]>;
+    all<T1, T2>(
+      values: readonly [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>]
+    ): Promise<[T1, T2]>;
+    allSettled<T>(
+      values: Iterable<T>
+    ): Promise<PromiseSettledResult<T extends PromiseLike<infer U> ? U : T>[]>;
+    new <T>(
+      executor: (
+        resolve: (value?: T | PromiseLike<T>) => void,
+        reject: (reason?: any) => void
+      ) => void
+    ): Promise<T>;
     race<T>(values: Iterable<T | PromiseLike<T>>): Promise<T>;
-    race<T>(values: Iterable<T>): Promise<T extends PromiseLike<infer U> ? U : T>;
-    race<T>(values: readonly T[]): Promise<T extends PromiseLike<infer U> ? U : T>;
+    race<T>(
+      values: Iterable<T>
+    ): Promise<T extends PromiseLike<infer U> ? U : T>;
+    race<T>(
+      values: readonly T[]
+    ): Promise<T extends PromiseLike<infer U> ? U : T>;
     readonly [Symbol.species]: PromiseConstructor;
     readonly prototype: Promise<any>;
     reject<T = never>(reason?: any): Promise<T>;
     resolve(): Promise<void>;
     resolve<T>(value: T | PromiseLike<T>): Promise<T>;
-    any<T>(values: (T | PromiseLike<T>)[] | Iterable<T | PromiseLike<T>>): Promise<T>;
+    any<T>(
+      values: (T | PromiseLike<T>)[] | Iterable<T | PromiseLike<T>>
+    ): Promise<T>;
     allSettled<T extends readonly unknown[] | readonly [unknown]>(
       values: T
     ): Promise<
       {
-        readonly [P in keyof T]: PromiseSettledResult<T[P] extends PromiseLike<infer U> ? U : T[P]>;
+        readonly [P in keyof T]: PromiseSettledResult<
+          T[P] extends PromiseLike<infer U> ? U : T[P]
+        >;
       }
     >;
   }
@@ -539,12 +966,19 @@ namespace qpx {
     setPrototypeOf?(target: T, v: any): boolean;
     isExtensible?(target: T): boolean;
     preventExtensions?(target: T): boolean;
-    getOwnPropertyDescriptor?(target: T, p: PropertyKey): PropertyDescriptor | undefined;
+    getOwnPropertyDescriptor?(
+      target: T,
+      p: PropertyKey
+    ): PropertyDescriptor | undefined;
     has?(target: T, p: PropertyKey): boolean;
     get?(target: T, p: PropertyKey, receiver: any): any;
     set?(target: T, p: PropertyKey, value: any, receiver: any): boolean;
     deleteProperty?(target: T, p: PropertyKey): boolean;
-    defineProperty?(target: T, p: PropertyKey, attributes: PropertyDescriptor): boolean;
+    defineProperty?(
+      target: T,
+      p: PropertyKey,
+      attributes: PropertyDescriptor
+    ): boolean;
     enumerate?(target: T): PropertyKey[];
     ownKeys?(target: T): PropertyKey[];
     apply?(target: T, thisArg: any, argArray?: any): any;
@@ -552,25 +986,48 @@ namespace qpx {
   }
 
   interface ProxyConstructor {
-    revocable<T extends object>(target: T, handler: ProxyHandler<T>): {proxy: T; revoke: () => void};
+    revocable<T extends object>(
+      target: T,
+      handler: ProxyHandler<T>
+    ): {proxy: T; revoke: () => void};
     new <T extends object>(target: T, handler: ProxyHandler<T>): T;
   }
   declare var Proxy: ProxyConstructor;
 
   declare namespace Reflect {
-    function apply(target: Function, thisArgument: any, argumentsList: ArrayLike<any>): any;
-    function construct(target: Function, argumentsList: ArrayLike<any>, newTarget?: any): any;
-    function defineProperty(target: object, propertyKey: PropertyKey, attributes: PropertyDescriptor): boolean;
+    function apply(
+      target: Function,
+      thisArgument: any,
+      argumentsList: ArrayLike<any>
+    ): any;
+    function construct(
+      target: Function,
+      argumentsList: ArrayLike<any>,
+      newTarget?: any
+    ): any;
+    function defineProperty(
+      target: object,
+      propertyKey: PropertyKey,
+      attributes: PropertyDescriptor
+    ): boolean;
     function deleteProperty(target: object, propertyKey: PropertyKey): boolean;
     function enumerate(target: object): IterableIterator<any>;
     function get(target: object, propertyKey: PropertyKey, receiver?: any): any;
-    function getOwnPropertyDescriptor(target: object, propertyKey: PropertyKey): PropertyDescriptor | undefined;
+    function getOwnPropertyDescriptor(
+      target: object,
+      propertyKey: PropertyKey
+    ): PropertyDescriptor | undefined;
     function getPrototypeOf(target: object): object;
     function has(target: object, propertyKey: PropertyKey): boolean;
     function isExtensible(target: object): boolean;
     function ownKeys(target: object): PropertyKey[];
     function preventExtensions(target: object): boolean;
-    function set(target: object, propertyKey: PropertyKey, value: any, receiver?: any): boolean;
+    function set(
+      target: object,
+      propertyKey: PropertyKey,
+      value: any,
+      receiver?: any
+    ): boolean;
     function setPrototypeOf(target: object, proto: any): boolean;
   }
 
@@ -618,41 +1075,139 @@ namespace qpx {
   declare var SharedArrayBuffer: SharedArrayBufferConstructor;
 
   interface Atomics {
-    add(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
-    and(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
-    compareExchange(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, expectedValue: number, replacementValue: number): number;
-    exchange(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
+    add(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
+    and(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
+    compareExchange(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      expectedValue: number,
+      replacementValue: number
+    ): number;
+    exchange(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
     isLockFree(size: number): boolean;
-    load(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number): number;
-    or(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
-    store(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
-    sub(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
-    wait(typedArray: Int32Array, index: number, value: number, timeout?: number): 'ok' | 'not-equal' | 'timed-out';
+    load(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number
+    ): number;
+    or(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
+    store(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
+    sub(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
+    wait(
+      typedArray: Int32Array,
+      index: number,
+      value: number,
+      timeout?: number
+    ): 'ok' | 'not-equal' | 'timed-out';
     notify(typedArray: Int32Array, index: number, count: number): number;
-    xor(typedArray: Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array, index: number, value: number): number;
+    xor(
+      typedArray:
+        | Int8Array
+        | Uint8Array
+        | Int16Array
+        | Uint16Array
+        | Int32Array
+        | Uint32Array,
+      index: number,
+      value: number
+    ): number;
     readonly [Symbol.toStringTag]: 'Atomics';
   }
 
   declare var Atomics: Atomics;
 
-  interface AsyncGenerator<T = unknown, TReturn = any, TNext = unknown> extends AsyncIterator<T, TReturn, TNext> {
-    next(...args: [] | [TNext]): Promise<IteratorResult<T, TReturn>>;
-    return(value: TReturn | PromiseLike<TReturn>): Promise<IteratorResult<T, TReturn>>;
-    throw(e: any): Promise<IteratorResult<T, TReturn>>;
+  interface AsyncGenerator<T = unknown, TReturn = any, TNext = unknown>
+    extends AsyncIterator<T, TReturn, TNext> {
     [Symbol.asyncIterator](): AsyncGenerator<T, TReturn, TNext>;
+    next(...args: [] | [TNext]): Promise<IteratorResult<T, TReturn>>;
+    return(
+      value: TReturn | PromiseLike<TReturn>
+    ): Promise<IteratorResult<T, TReturn>>;
+    throw(e: any): Promise<IteratorResult<T, TReturn>>;
   }
 
   interface AsyncGeneratorFunction {
-    new (...args: any[]): AsyncGenerator;
     (...args: any[]): AsyncGenerator;
+    new (...args: any[]): AsyncGenerator;
     readonly length: number;
     readonly name: string;
     readonly prototype: AsyncGenerator;
   }
 
   export interface AsyncGeneratorFunctionConstructor {
-    new (...args: string[]): AsyncGeneratorFunction;
     (...args: string[]): AsyncGeneratorFunction;
+    new (...args: string[]): AsyncGeneratorFunction;
     readonly length: number;
     readonly name: string;
     readonly prototype: AsyncGeneratorFunction;
@@ -660,10 +1215,12 @@ namespace qpx {
 
   interface AsyncIterator<T, TReturn = any, TNext = undefined> {
     next(...args: [] | [TNext]): Promise<IteratorResult<T, TReturn>>;
-    return?(value?: TReturn | PromiseLike<TReturn>): Promise<IteratorResult<T, TReturn>>;
-    throw?(e?: any): Promise<IteratorResult<T, TReturn>>;
     next(value?: any): Promise<IteratorResult<T>>;
     return?(value?: any): Promise<IteratorResult<T>>;
+    return?(
+      value?: TReturn | PromiseLike<TReturn>
+    ): Promise<IteratorResult<T, TReturn>>;
+    throw?(e?: any): Promise<IteratorResult<T, TReturn>>;
     throw?(e?: any): Promise<IteratorResult<T>>;
   }
 
@@ -708,10 +1265,26 @@ namespace qpx {
     readonly buffer: ArrayBuffer;
     readonly byteLength: number;
     readonly byteOffset: number;
-    setBigInt64(byteOffset: number, value: bigint, littleEndian?: boolean): void;
-    setBigInt64(byteOffset: number, value: bigint, littleEndian?: boolean): void;
-    setBigUint64(byteOffset: number, value: bigint, littleEndian?: boolean): void;
-    setBigUint64(byteOffset: number, value: bigint, littleEndian?: boolean): void;
+    setBigInt64(
+      byteOffset: number,
+      value: bigint,
+      littleEndian?: boolean
+    ): void;
+    setBigInt64(
+      byteOffset: number,
+      value: bigint,
+      littleEndian?: boolean
+    ): void;
+    setBigUint64(
+      byteOffset: number,
+      value: bigint,
+      littleEndian?: boolean
+    ): void;
+    setBigUint64(
+      byteOffset: number,
+      value: bigint,
+      littleEndian?: boolean
+    ): void;
     setFloat32(byteOffset: number, value: number, littleEndian?: boolean): void;
     setFloat64(byteOffset: number, value: number, littleEndian?: boolean): void;
     setInt16(byteOffset: number, value: number, littleEndian?: boolean): void;
@@ -723,7 +1296,11 @@ namespace qpx {
   }
 
   interface DataViewConstructor {
-    new (buffer: ArrayBufferLike, byteOffset?: number, byteLength?: number): DataView;
+    new (
+      buffer: ArrayBufferLike,
+      byteOffset?: number,
+      byteLength?: number
+    ): DataView;
   }
   declare var DataView: DataViewConstructor;
 
@@ -743,7 +1320,9 @@ namespace qpx {
   declare function decodeURI(encodedURI: string): string;
   declare function decodeURIComponent(encodedURIComponent: string): string;
   declare function encodeURI(uri: string): string;
-  declare function encodeURIComponent(uriComponent: string | number | boolean): string;
+  declare function encodeURIComponent(
+    uriComponent: string | number | boolean
+  ): string;
   declare function escape(string: string): string;
   //declare function eval(x: string): any;
   declare function isFinite(number: number): boolean;
@@ -782,21 +1361,41 @@ namespace qpx {
     (): any;
     (value: any): any;
     assign(target: object, ...sources: any[]): any;
-    assign<T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
+    assign<T, U, V, W>(
+      target: T,
+      source1: U,
+      source2: V,
+      source3: W
+    ): T & U & V & W;
     assign<T, U, V>(target: T, source1: U, source2: V): T & U & V;
     assign<T, U>(target: T, source: U): T & U;
-    create(o: object | null, properties: PropertyDescriptorMap & ThisType<any>): any;
+    create(
+      o: object | null,
+      properties: PropertyDescriptorMap & ThisType<any>
+    ): any;
     create(o: object | null): any;
-    defineProperties(o: any, properties: PropertyDescriptorMap & ThisType<any>): any;
-    defineProperty(o: any, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>): any;
+    defineProperties(
+      o: any,
+      properties: PropertyDescriptorMap & ThisType<any>
+    ): any;
+    defineProperty(
+      o: any,
+      p: PropertyKey,
+      attributes: PropertyDescriptor & ThisType<any>
+    ): any;
     entries(o: {}): [string, any][];
     entries<T>(o: {[s: string]: T} | ArrayLike<T>): [string, T][];
     freeze<T extends Function>(f: T): T;
     freeze<T>(a: T[]): readonly T[];
     freeze<T>(o: T): Readonly<T>;
     fromEntries(entries: Iterable<readonly any[]>): any;
-    fromEntries<T = any>(entries: Iterable<readonly [PropertyKey, T]>): {[k: string]: T};
-    getOwnPropertyDescriptor(o: any, p: PropertyKey): PropertyDescriptor | undefined;
+    fromEntries<T = any>(
+      entries: Iterable<readonly [PropertyKey, T]>
+    ): {[k: string]: T};
+    getOwnPropertyDescriptor(
+      o: any,
+      p: PropertyKey
+    ): PropertyDescriptor | undefined;
     getOwnPropertyNames(o: any): string[];
     getOwnPropertySymbols(o: any): symbol[];
     getPrototypeOf(o: any): any;
@@ -843,31 +1442,105 @@ namespace qpx {
 
   declare var Function: FunctionConstructor;
 
-  type ThisParameterType<T> = T extends (this: infer U, ...args: any[]) => any ? U : unknown;
-  type OmitThisParameter<T> = unknown extends ThisParameterType<T> ? T : T extends (...args: infer A) => infer R ? (...args: A) => R : T;
+  type ThisParameterType<T> = T extends (this: infer U, ...args: any[]) => any
+    ? U
+    : unknown;
+  type OmitThisParameter<T> = unknown extends ThisParameterType<T>
+    ? T
+    : T extends (...args: infer A) => infer R
+    ? (...args: A) => R
+    : T;
 
   export interface CallableFunction extends Function {
-    apply<T, A extends any[], R>(this: (this: T, ...args: A) => R, thisArg: T, args: A): R;
+    apply<T, A extends any[], R>(
+      this: (this: T, ...args: A) => R,
+      thisArg: T,
+      args: A
+    ): R;
     apply<T, R>(this: (this: T) => R, thisArg: T): R;
-    bind<T, A0, A extends any[], R>(this: (this: T, arg0: A0, ...args: A) => R, thisArg: T, arg0: A0): (...args: A) => R;
-    bind<T, A0, A1, A extends any[], R>(this: (this: T, arg0: A0, arg1: A1, ...args: A) => R, thisArg: T, arg0: A0, arg1: A1): (...args: A) => R;
-    bind<T, A0, A1, A2, A extends any[], R>(this: (this: T, arg0: A0, arg1: A1, arg2: A2, ...args: A) => R, thisArg: T, arg0: A0, arg1: A1, arg2: A2): (...args: A) => R;
-    bind<T, A0, A1, A2, A3, A extends any[], R>(this: (this: T, arg0: A0, arg1: A1, arg2: A2, arg3: A3, ...args: A) => R, thisArg: T, arg0: A0, arg1: A1, arg2: A2, arg3: A3): (...args: A) => R;
-    bind<T, AX, R>(this: (this: T, ...args: AX[]) => R, thisArg: T, ...args: AX[]): (...args: AX[]) => R;
+    bind<T, A0, A extends any[], R>(
+      this: (this: T, arg0: A0, ...args: A) => R,
+      thisArg: T,
+      arg0: A0
+    ): (...args: A) => R;
+    bind<T, A0, A1, A extends any[], R>(
+      this: (this: T, arg0: A0, arg1: A1, ...args: A) => R,
+      thisArg: T,
+      arg0: A0,
+      arg1: A1
+    ): (...args: A) => R;
+    bind<T, A0, A1, A2, A extends any[], R>(
+      this: (this: T, arg0: A0, arg1: A1, arg2: A2, ...args: A) => R,
+      thisArg: T,
+      arg0: A0,
+      arg1: A1,
+      arg2: A2
+    ): (...args: A) => R;
+    bind<T, A0, A1, A2, A3, A extends any[], R>(
+      this: (this: T, arg0: A0, arg1: A1, arg2: A2, arg3: A3, ...args: A) => R,
+      thisArg: T,
+      arg0: A0,
+      arg1: A1,
+      arg2: A2,
+      arg3: A3
+    ): (...args: A) => R;
+    bind<T, AX, R>(
+      this: (this: T, ...args: AX[]) => R,
+      thisArg: T,
+      ...args: AX[]
+    ): (...args: AX[]) => R;
     bind<T>(this: T, thisArg: ThisParameterType<T>): OmitThisParameter<T>;
-    call<T, A extends any[], R>(this: (this: T, ...args: A) => R, thisArg: T, ...args: A): R;
+    call<T, A extends any[], R>(
+      this: (this: T, ...args: A) => R,
+      thisArg: T,
+      ...args: A
+    ): R;
   }
 
   export interface NewableFunction extends Function {
-    apply<T, A extends any[]>(this: new (...args: A) => T, thisArg: T, args: A): void;
+    apply<T, A extends any[]>(
+      this: new (...args: A) => T,
+      thisArg: T,
+      args: A
+    ): void;
     apply<T>(this: new () => T, thisArg: T): void;
-    bind<A0, A extends any[], R>(this: new (arg0: A0, ...args: A) => R, thisArg: any, arg0: A0): new (...args: A) => R;
-    bind<A0, A1, A extends any[], R>(this: new (arg0: A0, arg1: A1, ...args: A) => R, thisArg: any, arg0: A0, arg1: A1): new (...args: A) => R;
-    bind<A0, A1, A2, A extends any[], R>(this: new (arg0: A0, arg1: A1, arg2: A2, ...args: A) => R, thisArg: any, arg0: A0, arg1: A1, arg2: A2): new (...args: A) => R;
-    bind<A0, A1, A2, A3, A extends any[], R>(this: new (arg0: A0, arg1: A1, arg2: A2, arg3: A3, ...args: A) => R, thisArg: any, arg0: A0, arg1: A1, arg2: A2, arg3: A3): new (...args: A) => R;
-    bind<AX, R>(this: new (...args: AX[]) => R, thisArg: any, ...args: AX[]): new (...args: AX[]) => R;
+    bind<A0, A extends any[], R>(
+      this: new (arg0: A0, ...args: A) => R,
+      thisArg: any,
+      arg0: A0
+    ): new (...args: A) => R;
+    bind<A0, A1, A extends any[], R>(
+      this: new (arg0: A0, arg1: A1, ...args: A) => R,
+      thisArg: any,
+      arg0: A0,
+      arg1: A1
+    ): new (...args: A) => R;
+    bind<A0, A1, A2, A extends any[], R>(
+      this: new (arg0: A0, arg1: A1, arg2: A2, ...args: A) => R,
+      thisArg: any,
+      arg0: A0,
+      arg1: A1,
+      arg2: A2
+    ): new (...args: A) => R;
+    bind<A0, A1, A2, A3, A extends any[], R>(
+      this: new (arg0: A0, arg1: A1, arg2: A2, arg3: A3, ...args: A) => R,
+      thisArg: any,
+      arg0: A0,
+      arg1: A1,
+      arg2: A2,
+      arg3: A3
+    ): new (...args: A) => R;
+    bind<AX, R>(
+      this: new (...args: AX[]) => R,
+      thisArg: any,
+      ...args: AX[]
+    ): new (...args: AX[]) => R;
     bind<T>(this: T, thisArg: any): T;
-    call<T, A extends any[]>(this: new (...args: A) => T, thisArg: T, ...args: A): void;
+    call<T, A extends any[]>(
+      this: new (...args: A) => T,
+      thisArg: T,
+      ...args: A
+    ): void;
   }
 
   export interface IArguments {
@@ -892,7 +1565,10 @@ namespace qpx {
   interface Number {
     toExponential(fractionDigits?: number): string;
     toFixed(fractionDigits?: number): string;
-    toLocaleString(locales?: string | string[], options?: Intl.NumberFormatOptions): string;
+    toLocaleString(
+      locales?: string | string[],
+      options?: Intl.NumberFormatOptions
+    ): string;
     toPrecision(precision?: number): string;
     toString(radix?: number): string;
     valueOf(): number;
@@ -968,11 +1644,20 @@ namespace qpx {
     toISOString(): string;
     toJSON(key?: any): string;
     toLocaleDateString(): string;
-    toLocaleDateString(locales?: string | string[], options?: Intl.DateTimeFormatOptions): string;
+    toLocaleDateString(
+      locales?: string | string[],
+      options?: Intl.DateTimeFormatOptions
+    ): string;
     toLocaleString(): string;
-    toLocaleString(locales?: string | string[], options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(
+      locales?: string | string[],
+      options?: Intl.DateTimeFormatOptions
+    ): string;
     toLocaleTimeString(): string;
-    toLocaleTimeString(locales?: string | string[], options?: Intl.DateTimeFormatOptions): string;
+    toLocaleTimeString(
+      locales?: string | string[],
+      options?: Intl.DateTimeFormatOptions
+    ): string;
     toString(): string;
     toTimeString(): string;
     toUTCString(): string;
@@ -984,11 +1669,27 @@ namespace qpx {
     new (): Date;
     new (value: number | string | Date): Date;
     new (value: number | string): Date;
-    new (year: number, month: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number): Date;
+    new (
+      year: number,
+      month: number,
+      date?: number,
+      hours?: number,
+      minutes?: number,
+      seconds?: number,
+      ms?: number
+    ): Date;
     now(): number;
     parse(s: string): number;
     readonly prototype: Date;
-    UTC(year: number, month: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number): number;
+    UTC(
+      year: number,
+      month: number,
+      date?: number,
+      hours?: number,
+      minutes?: number,
+      seconds?: number,
+      ms?: number
+    ): number;
   }
 
   declare var Date: DateConstructor;
@@ -1068,10 +1769,21 @@ namespace qpx {
   declare var URIError: URIErrorConstructor;
 
   interface JSON {
-    parse(text: string, reviver?: (this: any, key: string, value: any) => any): any;
+    parse(
+      text: string,
+      reviver?: (this: any, key: string, value: any) => any
+    ): any;
     readonly [Symbol.toStringTag]: string;
-    stringify(value: any, replacer?: (number | string)[] | null, space?: string | number): string;
-    stringify(value: any, replacer?: (this: any, key: string, value: any) => any, space?: string | number): string;
+    stringify(
+      value: any,
+      replacer?: (number | string)[] | null,
+      space?: string | number
+    ): string;
+    stringify(
+      value: any,
+      replacer?: (this: any, key: string, value: any) => any,
+      space?: string | number
+    ): string;
   }
 
   declare var JSON: JSON;
@@ -1092,14 +1804,41 @@ namespace qpx {
     set?: (value: T) => void;
   }
 
-  declare type ClassDecorator = <TFunction extends Function>(target: TFunction) => TFunction | void;
-  declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
-  declare type MethodDecorator = <T>(target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<T>) => TypedPropertyDescriptor<T> | void;
-  declare type ParameterDecorator = (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-  declare type PromiseConstructorLike = new <T>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) => PromiseLike<T>;
+  declare type ClassDecorator = <TFunction extends Function>(
+    target: TFunction
+  ) => TFunction | void;
+  declare type PropertyDecorator = (
+    target: Object,
+    propertyKey: string | symbol
+  ) => void;
+  declare type MethodDecorator = <T>(
+    target: Object,
+    propertyKey: string | symbol,
+    descriptor: TypedPropertyDescriptor<T>
+  ) => TypedPropertyDescriptor<T> | void;
+  declare type ParameterDecorator = (
+    target: Object,
+    propertyKey: string | symbol,
+    parameterIndex: number
+  ) => void;
+  declare type PromiseConstructorLike = new <T>(
+    executor: (
+      resolve: (value?: T | PromiseLike<T>) => void,
+      reject: (reason?: any) => void
+    ) => void
+  ) => PromiseLike<T>;
 
   interface PromiseLike<T> {
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): PromiseLike<TResult1 | TResult2>;
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null
+    ): PromiseLike<TResult1 | TResult2>;
   }
 
   export type Partial<T> = {
@@ -1130,13 +1869,25 @@ namespace qpx {
 
   export type NonNullable<T> = T extends null | undefined ? never : T;
 
-  export type Parameters<T extends (...args: any) => any> = T extends (...args: infer P) => any ? P : never;
+  export type Parameters<T extends (...args: any) => any> = T extends (
+    ...args: infer P
+  ) => any
+    ? P
+    : never;
 
-  export type ConstructorParameters<T extends new (...args: any) => any> = T extends new (...args: infer P) => any ? P : never;
+  export type ConstructorParameters<
+    T extends new (...args: any) => any
+  > = T extends new (...args: infer P) => any ? P : never;
 
-  export type ReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : any;
+  export type ReturnType<T extends (...args: any) => any> = T extends (
+    ...args: any
+  ) => infer R
+    ? R
+    : any;
 
-  export type InstanceType<T extends new (...args: any) => any> = T extends new (...args: any) => infer R ? R : any;
+  export type InstanceType<
+    T extends new (...args: any) => any
+  > = T extends new (...args: any) => infer R ? R : any;
 
   interface ThisType<_T> {}
 

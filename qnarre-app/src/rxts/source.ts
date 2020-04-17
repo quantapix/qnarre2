@@ -2,19 +2,14 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qj from './subject';
 
-export class Source<N, F = any, D = any> implements qt.Source<N, F, D> {
-  static createSource<N, F, D>(
-    s?: (_: qt.Subscriber<N, F, D>) => qt.Subscription
-  ) {
-    return new Source<N, F, D>(s);
-  }
-
-  [Symbol.observable]() {
+export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
+  implements qt.Source<N, F, D> {
+  [Symbol.rxSource]() {
     return this;
   }
 
-  [Symbol.asyncIterator](): AsyncIterableIterator<N> {
-    return asyncIterFrom<N, F, D>(this);
+  [Symbol.asyncIterator](): AsyncIterableIterator<N | undefined> {
+    return asyncIterFrom(this);
   }
 
   src?: Source<any, F, D>;
@@ -23,11 +18,12 @@ export class Source<N, F = any, D = any> implements qt.Source<N, F, D> {
   constructor(
     s?: (this: Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription
   ) {
+    super();
     if (s) this._subscribe = s;
   }
 
   _subscribe(s: qt.Subscriber<N, F, D>) {
-    return this.src?.subscribe(s);
+    return this.src!.subscribe(s);
   }
 
   _trySubscribe(s: qt.Subscriber<N, F, D>) {
@@ -41,7 +37,7 @@ export class Source<N, F = any, D = any> implements qt.Source<N, F, D> {
   }
 
   lift<R>(o?: qt.Operator<N, R, F, D>) {
-    const s = new Source<R, F, D>();
+    const s = this.createSource<R>();
     s.src = this;
     s.oper = o;
     return s;
@@ -58,9 +54,9 @@ export class Source<N, F = any, D = any> implements qt.Source<N, F, D> {
     fail?: qt.Ofun<F>,
     done?: qt.Ofun<D>
   ): qt.Subscription {
-    const s = qt.context.toSubscriber(t, fail, done);
+    const s = this.toSubscriber(t, fail, done);
     const o = this.oper;
-    if (o) s.add(o.call(s, this.src));
+    if (o && this.src) s.add(o.call(s, this.src));
     else s.add(this.src ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
@@ -195,6 +191,60 @@ function asyncIterFrom<N, F, D>(s: Source<N, F, D>) {
   return coroutine(s);
 }
 
+class Deferred<N, F> {
+  resolve?: (_?: N | PromiseLike<N>) => void;
+  reject?: (_?: F) => void;
+  promise = new Promise<N>((res, rej) => {
+    this.resolve = res;
+    this.reject = rej;
+  });
+}
+
+async function* coroutine<N, F, D>(s: Source<N, F, D>) {
+  const ds = [] as Deferred<IteratorResult<N | undefined>, F>[];
+  const ns = [] as (N | undefined)[];
+  let done = false;
+  let failed = false;
+  let err: F | undefined;
+  const ss = s.subscribe({
+    next: (n?: N) => {
+      if (ds.length > 0) ds.shift()!.resolve?.({value: n, done: false});
+      else ns.push(n);
+    },
+    fail: (f?: F) => {
+      failed = true;
+      err = f;
+      while (ds.length > 0) {
+        ds.shift()!.reject?.(f);
+      }
+    },
+    done: (_?: D) => {
+      done = true;
+      while (ds.length > 0) {
+        ds.shift()!.resolve?.({value: undefined, done: true});
+      }
+    }
+  });
+  try {
+    while (true) {
+      if (ns.length > 0) yield ns.shift()!;
+      else if (done) return;
+      else if (failed) throw err;
+      else {
+        const d = new Deferred<IteratorResult<N | undefined>, F>();
+        ds.push(d);
+        const r = await d.promise;
+        if (r.done) return;
+        else yield r.value;
+      }
+    }
+  } catch (e) {
+    throw e;
+  } finally {
+    ss.unsubscribe();
+  }
+}
+
 export enum NotificationKind {
   NEXT = 'N',
   FAIL = 'F',
@@ -275,60 +325,6 @@ export class Notification<N, F = any, D = any> {
 
   static createDone<N = any, F = any, D = any>(): Notification<N, F, D> {
     return Notification.doneNote;
-  }
-}
-
-class Deferred<N, F> {
-  resolve?: (_?: N | PromiseLike<N>) => void;
-  reject?: (_?: F) => void;
-  promise = new Promise<N>((res, rej) => {
-    this.resolve = res;
-    this.reject = rej;
-  });
-}
-
-async function* coroutine<N, F, D>(s: Source<N, F, D>) {
-  const ds = [] as Deferred<IteratorResult<N | undefined>, F>[];
-  const ns = [] as (N | undefined)[];
-  let done = false;
-  let failed = false;
-  let err: F | undefined;
-  const ss = s.subscribe({
-    next: (n?: N) => {
-      if (ds.length > 0) ds.shift()!.resolve?.({value: n, done: false});
-      else ns.push(n);
-    },
-    fail: (f?: F) => {
-      failed = true;
-      err = f;
-      while (ds.length > 0) {
-        ds.shift()!.reject?.(f);
-      }
-    },
-    done: (_?: D) => {
-      done = true;
-      while (ds.length > 0) {
-        ds.shift()!.resolve?.({value: undefined, done: true});
-      }
-    }
-  });
-  try {
-    while (true) {
-      if (ns.length > 0) yield ns.shift()!;
-      else if (done) return;
-      else if (failed) throw err;
-      else {
-        const d = new Deferred<IteratorResult<N | undefined>, F>();
-        ds.push(d);
-        const r = await d.promise;
-        if (r.done) return;
-        else yield r.value;
-      }
-    }
-  } catch (e) {
-    throw e;
-  } finally {
-    ss.unsubscribe();
   }
 }
 

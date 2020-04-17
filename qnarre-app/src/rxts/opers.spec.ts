@@ -2528,7 +2528,7 @@ import * as sinon from 'sinon';
 import {createSourceInputs} from '../helpers/test-helper';
 import {TestScheduler} from 'rxjs/testing';
 import {sourceMatcher} from '../helpers/sourceMatcher';
-import {asInteropObservable} from '../helpers/interop-helper';
+import {asInteropSource} from '../helpers/interop-helper';
 
 declare function asDiagram(arg: string): Function;
 
@@ -2681,7 +2681,7 @@ describe('catchError operator', () => {
       // they are wrapped in a safe subscriber. This test ensures that
       // unsubscriptions are chained all the way to the interop subscriber.
 
-      const result = e1.pipe(catchError(() => asInteropObservable(e2)));
+      const result = e1.pipe(catchError(() => asInteropSource(e2)));
 
       expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -10947,7 +10947,7 @@ import {
 import {concat, defer, Observable, of, from} from 'rxjs';
 import {exhaustMap, mergeMap, takeWhile, map} from 'rxjs/operators';
 import {expect} from 'chai';
-import {asInteropObservable} from '../helpers/interop-helper';
+import {asInteropSource} from '../helpers/interop-helper';
 
 declare function asDiagram(arg: string): Function;
 
@@ -11185,7 +11185,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      exhaustMap(value => asInteropObservable(observableLookup[value])),
+      exhaustMap(value => asInteropSource(observableLookup[value])),
       mergeMap(x => of(x))
     );
 
@@ -11837,7 +11837,7 @@ describe('expand operator', () => {
         }
       };
 
-      ish[Symbol.observable] = function () {
+      ish[Symbol.rxSource] = function () {
         return this;
       };
       return <Subscribable<number>>ish;
@@ -16537,7 +16537,7 @@ import {
   expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
-import {asInteropObservable} from '../helpers/interop-helper';
+import {asInteropSource} from '../helpers/interop-helper';
 
 declare const type: Function;
 declare const asDiagram: Function;
@@ -16828,7 +16828,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      mergeMap(value => asInteropObservable(observableLookup[value])),
+      mergeMap(value => asInteropSource(observableLookup[value])),
       mergeMap(x => of(x))
     );
 
@@ -20144,7 +20144,7 @@ import {
 } from '../helpers/marble-testing';
 import {onErrorResumeNext, takeWhile} from 'rxjs/operators';
 import {concat, defer, throwError, of} from 'rxjs';
-import {asInteropObservable} from '../helpers/interop-helper';
+import {asInteropSource} from '../helpers/interop-helper';
 
 declare function asDiagram(arg: string): Function;
 
@@ -20297,7 +20297,7 @@ describe('onErrorResumeNext operator', () => {
     // interop subscriber.
 
     expectSource(
-      source.pipe(onErrorResumeNext(asInteropObservable(next))),
+      source.pipe(onErrorResumeNext(asInteropSource(next))),
       subs
     ).toBe(expected);
     expectSubscriptions(next.subscriptions).toBe(nextSubs);
@@ -26612,7 +26612,7 @@ import {
 } from '../helpers/marble-testing';
 import {concat, defer, Observable, of, Subject} from 'rxjs';
 import {skipUntil, mergeMap} from 'rxjs/operators';
-import {asInteropObservable} from '../helpers/interop-helper';
+import {asInteropSource} from '../helpers/interop-helper';
 
 declare function asDiagram(arg: string): Function;
 
@@ -26731,7 +26731,7 @@ describe('skipUntil', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      skipUntil(asInteropObservable(skip)),
+      skipUntil(asInteropSource(skip)),
       mergeMap(x => of(x))
     );
 
@@ -27699,7 +27699,7 @@ import {
 } from '../helpers/marble-testing';
 import {switchMap, mergeMap, map, takeWhile} from 'rxjs/operators';
 import {concat, defer, of, Observable} from 'rxjs';
-import {asInteropObservable} from '../helpers/interop-helper';
+import {asInteropSource} from '../helpers/interop-helper';
 
 declare function asDiagram(arg: string): Function;
 
@@ -27887,7 +27887,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      switchMap(value => asInteropObservable(observableLookup[value])),
+      switchMap(value => asInteropSource(observableLookup[value])),
       mergeMap(x => of(x))
     );
 

@@ -1,7 +1,7 @@
 import * as qs from './source';
 import * as qj from './subject';
 
-export function asInteropObservable<T>(s: qs.Source<T>): qs.Source<T> {
+export function asInteropSource<T>(s: qs.Source<T>): qs.Source<T> {
   return new Proxy(s, {
     get(target: qs.Source<T>, key: string | number | symbol) {
       if (key === 'subscribe') {

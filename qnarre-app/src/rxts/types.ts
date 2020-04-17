@@ -1,11 +1,11 @@
-export const rxSubscriber = Symbol('rxSubscriber');
-
 declare global {
   interface SymbolConstructor {
-    readonly observable: symbol;
+    readonly rxSource: symbol;
     readonly rxSubscriber: symbol;
   }
 }
+
+export const rxSubscriber = Symbol('rxSubscriber');
 
 export type Cfun = () => void;
 export type Ofun<T> = (_?: T) => void;
@@ -51,6 +51,7 @@ export type Closer = Unsubscriber | Cfun | void;
 
 export interface Subscription extends Unsubscriber {
   readonly closed?: boolean;
+  add(c?: Closer): Subscription;
 }
 
 export interface RefCountSubscription extends Subscription {
@@ -63,14 +64,15 @@ export interface Subscriber<N, F = any, D = any>
     Subscription {}
 
 export interface Source<N, F = any, D = any> {
+  src?: Source<any, F, D>;
+  oper?: Operator<any, N, F, D>;
   subscribe(_?: Target<N, F, D>): Subscription;
   lift<R>(o?: Operator<N, R, F, D>): Source<R, F, D>;
 }
 
 export interface Subject<N, F = any, D = any>
   extends Source<N, F, D>,
-    Observer<N, F, D>,
-    Subscription {
+    Observer<N, F, D> {
   readonly stopped?: boolean;
 }
 
@@ -78,15 +80,15 @@ export interface Operator<N, R, F = any, D = any> {
   call(r: Subscriber<R, F, D>, s: Source<N, F, D>): Subscription;
 }
 
-export type InteropObservable<N, F = any, D = any> = {
-  [Symbol.observable]: () => Source<N, F, D>;
+export type InteropSource<N, F = any, D = any> = {
+  [Symbol.rxSource]: () => Source<N, F, D>;
 };
 
 export type SourceOrPromise<N, F = any, D = any> =
   | Source<N, F, D>
   | Source<never, F, D>
   | PromiseLike<N>
-  | InteropObservable<N, F, D>;
+  | InteropSource<N, F, D>;
 
 export type SourceInput<N, F = any, D = any> =
   | SourceOrPromise<N, F, D>
@@ -146,3 +148,23 @@ export interface Lifter<N, R, F, D>
   extends UnaryFun<Source<N, F, D>, Source<R, F, D>> {}
 
 export interface MonoOper<N, F, D> extends Lifter<N, N, F, D> {}
+
+export abstract class Context<N, F = any, D = any> {
+  abstract createSource<R = N>(
+    _?: (_: Subscriber<R, F, D>) => Subscription
+  ): Source<R, F, D>;
+  abstract createSubscriber(_?: Target<N, F, D>): Subscriber<N, F, D>;
+  abstract toSubscriber(
+    t?: Target<N, F, D> | Ofun<N>,
+    fail?: Ofun<F>,
+    done?: Ofun<D>
+  ): Subscriber<N, F, D>;
+  abstract createSubject(
+    o: Observer<N, F, D>,
+    s: Source<N, F, D>
+  ): Subject<N, F, D>;
+  abstract createAnonymous<R = N>(
+    t?: Observer<N, F, D>,
+    s?: Source<N, F, D>
+  ): Subject<R, F, D>;
+}

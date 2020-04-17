@@ -1550,7 +1550,7 @@ export function fromIterable<T>(input: Iterable<T>, scheduler?: SchedulerLike) {
 }
 
 export function fromObservable<T>(
-  input: InteropObservable<T>,
+  input: InteropSource<T>,
   scheduler?: SchedulerLike
 ) {
   if (!scheduler) {

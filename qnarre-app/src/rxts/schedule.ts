@@ -580,14 +580,14 @@ export function scheduleIterable<T>(
 }
 
 export function scheduleObservable<T>(
-  input: InteropObservable<T>,
+  input: InteropSource<T>,
   scheduler: qt.SchedulerLike
 ) {
   return new Observable<T>(subscriber => {
     const sub = new qj.Subscription();
     sub.add(
       scheduler.schedule(() => {
-        const observable: Subscribable<T> = (input as any)[Symbol.observable]();
+        const observable: Subscribable<T> = (input as any)[Symbol.rxSource]();
         sub.add(
           observable.subscribe({
             next(value) {
@@ -639,7 +639,7 @@ export function scheduled<T>(
   scheduler: qt.SchedulerLike
 ): Observable<T> {
   if (input != null) {
-    if (isInteropObservable(input)) {
+    if (isInteropSource(input)) {
       return scheduleObservable(input, scheduler);
     } else if (isPromise(input)) {
       return schedulePromise(input, scheduler);

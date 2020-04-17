@@ -197,7 +197,7 @@ export function isFunction(x: any): x is Function {
 }
 
 export function isInteropSource(x: any): x is InteropSource<any> {
-  return x && typeof x[Symbol.observable] === 'function';
+  return x && typeof x[Symbol.rxSource] === 'function';
 }
 
 export function isIterable(x: any): x is Iterable<any> {
@@ -355,7 +355,7 @@ const _root: any = __window || __global || __self;
 export const subscribeTo = <N, F = any, D = any>(
   r: SourceInput<N, F, D>
 ): ((_: qj.Subscriber<N, F, D>) => qj.Subscription | void) => {
-  if (!!r && typeof (r as any)[Symbol.observable] === 'function') {
+  if (!!r && typeof (r as any)[Symbol.rxSource] === 'function') {
     return subscribeToSource(r as any);
   } else if (isArrayLike(r)) {
     return subscribeToArray(r);
@@ -427,10 +427,10 @@ export const subscribeToIterable = <N, F = any, D = any>(it: Iterable<N>) => (
 export const subscribeToSource = <N, F = any, D = any>(o: any) => (
   s: qj.Subscriber<N, F, D>
 ) => {
-  const obs = (o as any)[Symbol.observable]();
+  const obs = (o as any)[Symbol.rxSource]();
   if (typeof obs.subscribe !== 'function') {
     throw new TypeError(
-      'Provided object does not correctly implement Symbol.observable'
+      'Provided object does not correctly implement Symbol.rxSource'
     );
   }
   return obs.subscribe(s);
