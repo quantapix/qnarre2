@@ -319,6 +319,40 @@ export class BufferTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
+function dispatchBufferTimeSpanOnly(this: qt.Action<any>, state: any) {
+  const subscriber: BufferTime<any> = state.subscriber;
+  const prevContext = state.context;
+  if (prevContext) subscriber.closeContext(prevContext);
+  if (!subscriber.closed) {
+    state.context = subscriber.openContext();
+    state.context.closeAction = this.schedule(state, state.bufferTimeSpan);
+  }
+}
+
+function dispatchBufferCreation<N, F, D>(
+  this: qt.Action<DispatchCreateArg<N, F, D>>,
+  state: DispatchCreateArg<N, F, D>
+) {
+  const {bufferCreationInterval, bufferTimeSpan, subscriber, scheduler} = state;
+  const context = subscriber.openContext();
+  const action = <Action<DispatchCreateArg<N, F, D>>>this;
+  if (!subscriber.closed) {
+    subscriber.add(
+      (context.closeAction = scheduler.schedule<DispatchCloseArg<N, F, D>>(
+        dispatchBufferClose as any,
+        bufferTimeSpan,
+        {subscriber, context}
+      ))
+    );
+    action.schedule(state, bufferCreationInterval!);
+  }
+}
+
+function dispatchBufferClose<N, F, D>(arg: DispatchCloseArg<N, F, D>) {
+  const {subscriber, context} = arg;
+  subscriber.closeContext(context);
+}
+
 export function bufferToggle<N, M, F, D>(
   openings: qt.SourceOrPromise<M, F, D>,
   closingSelector: (value: M) => qt.SourceOrPromise<any, F, D>
@@ -345,6 +379,107 @@ export class BufferToggleO<N, M, F, D> implements qt.Operator<N, N[]> {
   }
 }
 
+interface BufferContext<N> {
+  buffer?: N[];
+  subscription?: Subscription;
+}
+
+export class BufferToggleR<O, I, F, D> extends Reactor<N[], M, F, D> {
+  private contexts = [] as BufferContext<N>[];
+
+  constructor(
+    tgt: Subscriber<N[], F, D>,
+    private openings: qt.SourceOrPromise<M, F, D>,
+    private closingSelector: (value: M) => qt.SourceOrPromise<any, F, D> | void
+  ) {
+    super(tgt);
+    this.add(subscribeToResult(this, openings));
+  }
+
+  protected _next(n?: N[]) {
+    const contexts = this.contexts;
+    const len = contexts.length;
+    for (let i = 0; i < len; i++) {
+      contexts[i].buffer?.push(n);
+    }
+  }
+
+  protected _fail(f?: F) {
+    const contexts = this.contexts;
+    while (contexts.length > 0) {
+      const context = contexts.shift()!;
+      context.subscription?.unsubscribe();
+      context.buffer = undefined;
+      context.subscription = undefined;
+    }
+    this.contexts = null!;
+    super._fail(f);
+  }
+
+  protected _done(d?: D) {
+    const contexts = this.contexts;
+    while (contexts.length > 0) {
+      const context = contexts.shift()!;
+      this.tgt.next(context.buffer);
+      context.subscription?.unsubscribe();
+      context.buffer = undefined;
+      context.subscription = undefined;
+    }
+    this.contexts = null!;
+    super._done();
+  }
+
+  reactNext(
+    outerN: any,
+    innerValue: O,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<O, I, F, D>
+  ) {
+    outerN ? this.closeBuffer(outerN) : this.openBuffer(innerValue);
+  }
+
+  reactDone(innerSub: Actor<O, I, F, D>) {
+    this.closeBuffer((<any>innerSub).context);
+  }
+
+  private openBuffer(value: N) {
+    try {
+      const closingSelector = this.closingSelector;
+      const closingNotifier = closingSelector.call(this, value);
+      if (closingNotifier) this.trySubscribe(closingNotifier);
+    } catch (err) {
+      this._fail(err);
+    }
+  }
+
+  private closeBuffer(context: BufferContext<N>) {
+    const contexts = this.contexts;
+    if (contexts && context) {
+      const {buffer, subscription} = context;
+      this.tgt.next(buffer);
+      contexts.splice(contexts.indexOf(context), 1);
+      this.remove(subscription);
+      subscription.unsubscribe();
+    }
+  }
+
+  private trySubscribe(closingNotifier: any) {
+    const contexts = this.contexts;
+    const buffer: Array<N> = [];
+    const subscription = new Subscription();
+    const context = {buffer, subscription};
+    contexts.push(context);
+    const s = qu.subscribeToResult(this, closingNotifier, <any>context);
+    if (!s || s.closed) this.closeBuffer(context);
+    else {
+      (<any>s).context = context;
+      this.add(s);
+      subscription.add(s);
+    }
+  }
+}
+
 export function bufferWhen<N, F, D>(
   closingSelector: () => qt.Source<any, F, D>
 ): qt.Lifter<N, N[], F, D> {
@@ -359,5 +494,73 @@ class BufferWhenO<N, F, D> implements qt.Operator<T, T[]> {
     return source.subscribe(
       new BufferWhenSubscriber(subscriber, this.closingSelector)
     );
+  }
+}
+
+export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
+  private buffer?: N[];
+  private subscribing = false;
+  private closingSubscription?: Subscription;
+
+  constructor(
+    tgt: Subscriber<N, F, D>,
+    private closingSelector: () => qt.Source<any, F, D>
+  ) {
+    super(tgt);
+    this.openBuffer();
+  }
+
+  protected _next(n?: N) {
+    this.buffer!.push(value);
+  }
+
+  protected _done(d?: D) {
+    const buffer = this.buffer;
+    if (buffer) this.tgt.next(buffer);
+    super._done();
+  }
+
+  _unsubscribe() {
+    this.buffer = null!;
+    this.subscribing = false;
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: any,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, any, F, D>
+  ): void {
+    this.openBuffer();
+  }
+
+  reactDone(): void {
+    if (this.subscribing) this.done();
+    else this.openBuffer();
+  }
+
+  openBuffer() {
+    let {closingSubscription} = this;
+    if (closingSubscription) {
+      this.remove(closingSubscription);
+      closingSubscription.unsubscribe();
+    }
+    const buffer = this.buffer;
+    if (this.buffer) this.tgt.next(buffer);
+    this.buffer = [];
+    let closingNotifier;
+    try {
+      const {closingSelector} = this;
+      closingNotifier = closingSelector();
+    } catch (e) {
+      return this.fail(e);
+    }
+    closingSubscription = new Subscription();
+    this.closingSubscription = closingSubscription;
+    this.add(closingSubscription);
+    this.subscribing = true;
+    closingSubscription.add(subscribeToResult(this, closingNotifier));
+    this.subscribing = false;
   }
 }
