@@ -937,17 +937,12 @@ import {
   expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
-import {
-  queueScheduler as rxQueueScheduler,
-  combineLatest,
-  of,
-  Observable
-} from 'rxjs';
+import {queueScheduler as rxQueue, combineLatest, of, Observable} from 'rxjs';
 import {mergeMap} from 'rxjs/operators';
 
 declare const type: Function;
 
-const queueScheduler = rxQueueScheduler;
+const queueScheduler = rxQueue;
 
 /** @test {combineLatest} */
 describe('static combineLatest', () => {
@@ -1473,7 +1468,7 @@ import {
 } from '../helpers/marble-testing';
 import {
   asyncScheduler,
-  queueScheduler as rxQueueScheduler,
+  queueScheduler as rxQueue,
   concat,
   of,
   defer,
@@ -1481,7 +1476,7 @@ import {
 } from 'rxjs';
 import {mergeMap} from 'rxjs/operators';
 
-const queueScheduler = rxQueueScheduler;
+const queueScheduler = rxQueue;
 
 /** @test {concat} */
 describe('static concat', () => {
@@ -3952,7 +3947,7 @@ import {
   interval,
   asapScheduler,
   Observable,
-  animationFrameScheduler,
+  animationFrame,
   queueScheduler
 } from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
@@ -4032,7 +4027,7 @@ describe('interval', () => {
     );
   });
 
-  it('should create an observable emitting periodically with the AsapScheduler', (done: MochaDone) => {
+  it('should create an observable emitting periodically with the Asap', (done: MochaDone) => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     const period = 10;
@@ -4060,7 +4055,7 @@ describe('interval', () => {
     }
   });
 
-  it('should create an observable emitting periodically with the QueueScheduler', (done: MochaDone) => {
+  it('should create an observable emitting periodically with the Queue', (done: MochaDone) => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     const period = 10;
@@ -4088,12 +4083,12 @@ describe('interval', () => {
     }
   });
 
-  it('should create an observable emitting periodically with the AnimationFrameScheduler', (done: MochaDone) => {
+  it('should create an observable emitting periodically with the Frame', (done: MochaDone) => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     const period = 10;
     const events = [0, 1, 2, 3, 4, 5];
-    const source = interval(period, animationFrameScheduler).pipe(take(6));
+    const source = interval(period, animationFrame).pipe(take(6));
     source.subscribe({
       next(x) {
         expect(x).to.equal(events.shift());
@@ -4103,8 +4098,8 @@ describe('interval', () => {
         done(e);
       },
       complete() {
-        expect(animationFrameScheduler.actions.length).to.equal(0);
-        expect(animationFrameScheduler.scheduled).to.equal(undefined);
+        expect(animationFrame.actions.length).to.equal(0);
+        expect(animationFrame.scheduled).to.equal(undefined);
         sandbox.restore();
         done();
       }
@@ -5527,19 +5522,13 @@ import {
   expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
-import {
-  queueScheduler as rxQueueScheduler,
-  zip,
-  from,
-  of,
-  Observable
-} from 'rxjs';
+import {queueScheduler as rxQueue, zip, from, of, Observable} from 'rxjs';
 
 declare const type: Function;
 
 declare const Symbol: any;
 
-const queueScheduler = rxQueueScheduler;
+const queueScheduler = rxQueue;
 
 /** @test {zip} */
 describe('static zip', () => {

@@ -8248,7 +8248,7 @@ import {
   expectSource,
   expectSubscriptions
 } from '../helpers/marble-testing';
-import {VirtualTimeScheduler} from '../../scheduler/VirtualTimeScheduler';
+import {Virtual} from '../../scheduler/Virtual';
 
 declare function asDiagram(arg: string): Function;
 
@@ -8405,7 +8405,7 @@ describe('debounceTime operator', () => {
   it('should debounce correctly when synchronously reentered', () => {
     const results: number[] = [];
     const source = new Subject<number>();
-    const scheduler = new VirtualTimeScheduler();
+    const scheduler = new Virtual();
 
     source.pipe(debounceTime(0, scheduler)).subscribe(value => {
       results.push(value);

@@ -1,4 +1,4 @@
-import {animationFrameScheduler, Subscription} from 'rxjs';
+import {animationFrame, Subscription} from 'rxjs';
 import {
   hot,
   cold,
@@ -7,7 +7,7 @@ import {
   time
 } from '../helpers/marble-testing';
 
-const animationFrame = animationFrameScheduler;
+const animationFrame = animationFrame;
 
 describe('Scheduler.animationFrame', () => {
   it('should exist', () => {
@@ -406,7 +406,7 @@ describe('Scheduler.queue', () => {
   it('should schedule things recursively', () => {
     let call1 = false;
     let call2 = false;
-    (queue as QueueScheduler).active = false;
+    (queue as Queue).active = false;
     queue.schedule(() => {
       call1 = true;
       queue.schedule(() => {
@@ -420,7 +420,7 @@ describe('Scheduler.queue', () => {
   it('should schedule things recursively via this.schedule', () => {
     let call1 = false;
     let call2 = false;
-    (queue as QueueScheduler).active = false;
+    (queue as Queue).active = false;
     queue.schedule(
       function (state) {
         call1 = state!.call1;
@@ -904,7 +904,7 @@ describe('TestScheduler', () => {
       });
     });
 
-    it('should make operators that use AsyncScheduler automatically use TestScheduler for actual scheduling', () => {
+    it('should make operators that use Async automatically use TestScheduler for actual scheduling', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
       testScheduler.run(({cold, expectSource}) => {
@@ -975,7 +975,7 @@ describe('TestScheduler', () => {
       const frameTimeFactor = TestScheduler['frameTimeFactor'];
       const maxFrames = testScheduler.maxFrames;
       const runMode = testScheduler['runMode'];
-      const delegate = AsyncScheduler.delegate;
+      const delegate = Async.delegate;
 
       try {
         testScheduler.run(() => {
@@ -988,7 +988,7 @@ describe('TestScheduler', () => {
       expect(TestScheduler['frameTimeFactor']).to.equal(frameTimeFactor);
       expect(testScheduler.maxFrames).to.equal(maxFrames);
       expect(testScheduler['runMode']).to.equal(runMode);
-      expect(AsyncScheduler.delegate).to.equal(delegate);
+      expect(Async.delegate).to.equal(delegate);
     });
 
     it('should flush expectations correctly', () => {
@@ -1006,14 +1006,14 @@ describe('TestScheduler', () => {
   });
 });
 
-describe('VirtualTimeScheduler', () => {
+describe('Virtual', () => {
   it('should exist', () => {
-    expect(VirtualTimeScheduler).exist;
-    expect(VirtualTimeScheduler).to.be.a('function');
+    expect(Virtual).exist;
+    expect(Virtual).to.be.a('function');
   });
 
   it('should schedule things in order when flushed if each this is scheduled synchrously', () => {
-    const v = new VirtualTimeScheduler();
+    const v = new Virtual();
     const invoked: number[] = [];
     const invoke: any = (state: number) => {
       invoked.push(state);
@@ -1030,7 +1030,7 @@ describe('VirtualTimeScheduler', () => {
   });
 
   it('should schedule things in order when flushed if each this is scheduled at random', () => {
-    const v = new VirtualTimeScheduler();
+    const v = new Virtual();
     const invoked: number[] = [];
     const invoke: any = (state: number) => {
       invoked.push(state);
@@ -1048,7 +1048,7 @@ describe('VirtualTimeScheduler', () => {
   });
 
   it('should schedule things in order when there are negative delays', () => {
-    const v = new VirtualTimeScheduler();
+    const v = new Virtual();
     const invoked: number[] = [];
     const invoke: any = (state: number) => {
       invoked.push(state);
@@ -1066,7 +1066,7 @@ describe('VirtualTimeScheduler', () => {
   });
 
   it('should support recursive scheduling', () => {
-    const v = new VirtualTimeScheduler();
+    const v = new Virtual();
     let count = 0;
     const expected = [100, 200, 300];
 
@@ -1088,7 +1088,7 @@ describe('VirtualTimeScheduler', () => {
   });
 
   it('should not execute virtual actions that have been rescheduled before flush', () => {
-    const v = new VirtualTimeScheduler();
+    const v = new Virtual();
     const messages: string[] = [];
 
     const action: VirtualAction<string> = <VirtualAction<string>>(
@@ -1103,7 +1103,7 @@ describe('VirtualTimeScheduler', () => {
 
   it('should execute only those virtual actions that fall into the maxFrames timespan', function () {
     const MAX_FRAMES = 50;
-    const v = new VirtualTimeScheduler(VirtualAction, MAX_FRAMES);
+    const v = new Virtual(VirtualAction, MAX_FRAMES);
     const messages: string[] = [
       'first message',
       'second message',
@@ -1128,7 +1128,7 @@ describe('VirtualTimeScheduler', () => {
 
   it('should pick up actions execution where it left off after reaching previous maxFrames limit', function () {
     const MAX_FRAMES = 50;
-    const v = new VirtualTimeScheduler(VirtualAction, MAX_FRAMES);
+    const v = new Virtual(VirtualAction, MAX_FRAMES);
     const messages: string[] = [
       'first message',
       'second message',

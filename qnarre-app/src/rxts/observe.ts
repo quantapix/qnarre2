@@ -1541,7 +1541,7 @@ export function fromObservable<T>(
   if (!scheduler) {
     return new Observable<T>(subscribeToObservable(input));
   } else {
-    return scheduleObservable(input, scheduler);
+    return scheduleSource(input, scheduler);
   }
 }
 

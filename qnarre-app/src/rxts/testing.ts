@@ -275,7 +275,7 @@ export type observableToBeFn = (
 ) => void;
 export type subscriptionLogsToBeFn = (marbles: string | string[]) => void;
 
-export class TestScheduler extends VirtualTimeScheduler {
+export class TestScheduler extends Virtual {
   static frameTimeFactor = 10;
   public readonly hotSources: HotSource<any>[] = [];
   public readonly coldSources: ColdSource<any>[] = [];
@@ -689,7 +689,7 @@ export class TestScheduler extends VirtualTimeScheduler {
     TestScheduler.frameTimeFactor = 1;
     this.maxFrames = Number.POSITIVE_INFINITY;
     this.runMode = true;
-    AsyncScheduler.delegate = this;
+    Async.delegate = this;
     const helpers = {
       cold: this.createColdSource.bind(this),
       hot: this.createHotSource.bind(this),
@@ -706,7 +706,7 @@ export class TestScheduler extends VirtualTimeScheduler {
       TestScheduler.frameTimeFactor = prevFrameTimeFactor;
       this.maxFrames = prevMaxFrames;
       this.runMode = false;
-      AsyncScheduler.delegate = undefined;
+      Async.delegate = undefined;
     }
   }
 }

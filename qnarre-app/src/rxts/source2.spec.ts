@@ -2,7 +2,7 @@ import {bindCallback} from 'rxjs';
 import {a, b, c, d, e, f, g, A, B, C, D, E, F, G} from '../helpers';
 import {Scheduler} from '../../src';
 import {combineLatest} from 'rxjs';
-import {from, of, animationFrameScheduler} from 'rxjs';
+import {from, of, animationFrame} from 'rxjs';
 
 describe('callbackFunc', () => {
   const f0 = (cb: () => any) => {
@@ -578,14 +578,14 @@ describe('xxx', () => {
       }
     }); // $ExpectType Observable<number>
   });
-  import {of, empty, animationFrameScheduler, EMPTY} from 'rxjs';
+  import {of, empty, animationFrame, EMPTY} from 'rxjs';
 
   it('should infer correctly with no parameter', () => {
     const a = empty(); // $ExpectType Observable<never>
   });
 
   it('should support scheduler parameter', () => {
-    const a = empty(animationFrameScheduler); // $ExpectType Observable<never>
+    const a = empty(animationFrame); // $ExpectType Observable<never>
   });
 
   it('should always infer empty observable', () => {
@@ -765,7 +765,7 @@ describe('xxx', () => {
   });
 
   it('should support scheduler', () => {
-    const a = from([1, 2, 3], animationFrameScheduler); // $ExpectType Observable<number>
+    const a = from([1, 2, 3], animationFrame); // $ExpectType Observable<number>
   });
 });
 
@@ -795,7 +795,7 @@ describe('xxx', () => {
   });
 
   it('should support scheduler', () => {
-    const a = interval(1, animationFrameScheduler); // $ExpectType Observable<number>
+    const a = interval(1, animationFrame); // $ExpectType Observable<number>
   });
   import {never} from 'rxjs';
 
@@ -876,7 +876,7 @@ describe('xxx', () => {
   });
 
   it('should support scheduler', () => {
-    const res = of(a, animationFrameScheduler); // $ExpectType Observable<A>
+    const res = of(a, animationFrame); // $ExpectType Observable<A>
   });
 
   it('should infer correctly with array', () => {
@@ -1008,7 +1008,7 @@ describe('xxx', () => {
   });
 
   it('should support scheduler', () => {
-    const a = range(1, 2, animationFrameScheduler); // $ExpectType Observable<number>
+    const a = range(1, 2, animationFrame); // $ExpectType Observable<number>
   });
 
   it('should accept any type and return never observable', () => {
@@ -1018,7 +1018,7 @@ describe('xxx', () => {
   });
 
   it('should support scheduler', () => {
-    const a = throwError(1, animationFrameScheduler); // $ExpectType Observable<never>
+    const a = throwError(1, animationFrame); // $ExpectType Observable<never>
   });
 
   it('should infer correctly with 1 parameter of number type', () => {
@@ -1038,11 +1038,11 @@ describe('xxx', () => {
   });
 
   it('should support scheduler as second parameter', () => {
-    const a = timer(1, animationFrameScheduler); // $ExpectType Observable<number>
+    const a = timer(1, animationFrame); // $ExpectType Observable<number>
   });
 
   it('should support scheduler as third parameter', () => {
-    const a = timer(1, 2, animationFrameScheduler); // $ExpectType Observable<number>
+    const a = timer(1, 2, animationFrame); // $ExpectType Observable<number>
   });
 
   it('should support observables', () => {
