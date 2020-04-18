@@ -315,6 +315,161 @@ export function distinctUntilKeyChanged<T, K extends keyof T>(
   );
 }
 
+export function elementAt<N, F, D>(
+  index: number,
+  defaultValue?: N
+): qt.MonoOper<N, F, D> {
+  if (index < 0) {
+    throw new OutOfRangeError();
+  }
+  const hasDefaultValue = arguments.length >= 2;
+  return (source: qt.Source<N, F, D>) =>
+    source.pipe(
+      filter((v, i) => i === index),
+      take(1),
+      hasDefaultValue
+        ? defaultIfEmpty(defaultValue)
+        : throwIfEmpty(() => new OutOfRangeError())
+    );
+}
+
+export function filter<T, S extends T>(
+  predicate: (value: T, index: number) => value is S,
+  thisArg?: any
+): Lifter<T, S>;
+export function filter<N, F, D>(
+  predicate: BooleanConstructor
+): Lifter<T | null | undefined, NonNullable<N, F, D>>;
+export function filter<N, F, D>(
+  predicate: (value: T, index: number) => boolean,
+  thisArg?: any
+): qt.MonoOper<N, F, D>;
+export function filter<N, F, D>(
+  predicate: (value: T, index: number) => boolean,
+  thisArg?: any
+): qt.MonoOper<N, F, D> {
+  return function filterLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
+    return source.lift(new FilterO(predicate, thisArg));
+  };
+}
+
+class FilterO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    private predicate: (value: T, index: number) => boolean,
+    private thisArg?: any
+  ) {}
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new FilterR(subscriber, this.predicate, this.thisArg)
+    );
+  }
+}
+
+export class FilterR<N, F, D> extends Subscriber<N, F, D> {
+  count = 0;
+
+  constructor(
+    tgt: Subscriber<N, F, D>,
+    private predicate: (value: N, index: number) => boolean,
+    private thisArg: any
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    let result: any;
+    try {
+      result = this.predicate.call(this.thisArg, n, this.count++);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    if (result) this.tgt.next(n);
+  }
+}
+
+export function first<T, D = T>(
+  predicate?: null,
+  defaultValue?: D
+): Lifter<T, T | D>;
+export function first<T, S extends T>(
+  predicate: (
+    value: T,
+    index: number,
+    source: qt.Source<N, F, D>
+  ) => value is S,
+  defaultValue?: S
+): Lifter<T, S>;
+export function first<T, D = T>(
+  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  defaultValue?: D
+): Lifter<T, T | D>;
+export function first<T, D>(
+  predicate?:
+    | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
+    | null,
+  defaultValue?: D
+): Lifter<T, T | D> {
+  const hasDefaultValue = arguments.length >= 2;
+  return (source: qt.Source<N, F, D>) =>
+    source.pipe(
+      predicate ? filter((v, i) => predicate(v, i, source)) : identity,
+      take(1),
+      hasDefaultValue
+        ? defaultIfEmpty<T, D>(defaultValue)
+        : throwIfEmpty(() => new EmptyError())
+    );
+}
+
+export function ignoreElements(): Lifter<any, never> {
+  return function ignoreElementsLifter(source: qt.Source<any, F, D>) {
+    return source.lift(new IgnoreElementsO());
+  };
+}
+
+class IgnoreElementsO<T, R> implements qt.Operator<T, R> {
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(new IgnoreElementsR(subscriber));
+  }
+}
+
+class IgnoreElementsR<T> extends Subscriber<T> {
+  protected _next(unused: T): void {}
+}
+
+export function last<T, D = T>(
+  predicate?: null,
+  defaultValue?: D
+): Lifter<T, T | D>;
+export function last<T, S extends T>(
+  predicate: (
+    value: T,
+    index: number,
+    source: qt.Source<N, F, D>
+  ) => value is S,
+  defaultValue?: S
+): Lifter<T, S>;
+export function last<T, D = T>(
+  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  defaultValue?: D
+): Lifter<T, T | D>;
+export function last<T, D>(
+  predicate?:
+    | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
+    | null,
+  defaultValue?: D
+): Lifter<T, T | D> {
+  const hasDefaultValue = arguments.length >= 2;
+  return (source: qt.Source<N, F, D>) =>
+    source.pipe(
+      predicate ? filter((v, i) => predicate(v, i, source)) : identity,
+      takeLast(1),
+      hasDefaultValue
+        ? defaultIfEmpty<T, D>(defaultValue)
+        : throwIfEmpty(() => new EmptyError())
+    );
+}
+
 export function sample<N, F, D>(
   notifier: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {

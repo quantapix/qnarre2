@@ -255,24 +255,6 @@ class DeMaterializeOperator<T extends Notification<any>, R>
   }
 }
 
-export function elementAt<N, F, D>(
-  index: number,
-  defaultValue?: N
-): qt.MonoOper<N, F, D> {
-  if (index < 0) {
-    throw new OutOfRangeError();
-  }
-  const hasDefaultValue = arguments.length >= 2;
-  return (source: qt.Source<N, F, D>) =>
-    source.pipe(
-      filter((v, i) => i === index),
-      take(1),
-      hasDefaultValue
-        ? defaultIfEmpty(defaultValue)
-        : throwIfEmpty(() => new OutOfRangeError())
-    );
-}
-
 export function endWith<T, A extends any[]>(
   ...args: A
 ): Lifter<T, T | ValueFromArray<A>>;
@@ -397,39 +379,6 @@ export class ExpandOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-export function filter<T, S extends T>(
-  predicate: (value: T, index: number) => value is S,
-  thisArg?: any
-): Lifter<T, S>;
-export function filter<N, F, D>(
-  predicate: BooleanConstructor
-): Lifter<T | null | undefined, NonNullable<N, F, D>>;
-export function filter<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
-  thisArg?: any
-): qt.MonoOper<N, F, D>;
-export function filter<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
-  thisArg?: any
-): qt.MonoOper<N, F, D> {
-  return function filterLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
-    return source.lift(new FilterOperator(predicate, thisArg));
-  };
-}
-
-class FilterOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(
-    private predicate: (value: T, index: number) => boolean,
-    private thisArg?: any
-  ) {}
-
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new FilterSubscriber(subscriber, this.predicate, this.thisArg)
-    );
-  }
-}
-
 export function finalize<N, F, D>(callback: () => void): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new FinallyOperator(callback));
@@ -509,39 +458,6 @@ export function findIndex<N, F, D>(
     source.lift(
       new FindValueOperator(predicate, source, true, thisArg)
     ) as qt.Source<any, F, D>;
-}
-
-export function first<T, D = T>(
-  predicate?: null,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function first<T, S extends T>(
-  predicate: (
-    value: T,
-    index: number,
-    source: qt.Source<N, F, D>
-  ) => value is S,
-  defaultValue?: S
-): Lifter<T, S>;
-export function first<T, D = T>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function first<T, D>(
-  predicate?:
-    | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
-    | null,
-  defaultValue?: D
-): Lifter<T, T | D> {
-  const hasDefaultValue = arguments.length >= 2;
-  return (source: qt.Source<N, F, D>) =>
-    source.pipe(
-      predicate ? filter((v, i) => predicate(v, i, source)) : identity,
-      take(1),
-      hasDefaultValue
-        ? defaultIfEmpty<T, D>(defaultValue)
-        : throwIfEmpty(() => new EmptyError())
-    );
 }
 
 export function groupBy<T, K>(
@@ -642,18 +558,6 @@ class ActorRefCountSubscription extends Subscription {
   }
 }
 
-export function ignoreElements(): Lifter<any, never> {
-  return function ignoreElementsLifter(source: qt.Source<any, F, D>) {
-    return source.lift(new IgnoreElementsOperator());
-  };
-}
-
-class IgnoreElementsOperator<T, R> implements qt.Operator<T, R> {
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new IgnoreElementsSubscriber(subscriber));
-  }
-}
-
 export function isEmpty<N, F, D>(): Lifter<T, boolean> {
   return (source: qt.Source<N, F, D>) => source.lift(new IsEmptyOperator());
 }
@@ -662,39 +566,6 @@ class IsEmptyOperator implements qt.Operator<any, boolean> {
   call(observer: Subscriber<boolean>, source: any): any {
     return source.subscribe(new IsEmptySubscriber(observer));
   }
-}
-
-export function last<T, D = T>(
-  predicate?: null,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function last<T, S extends T>(
-  predicate: (
-    value: T,
-    index: number,
-    source: qt.Source<N, F, D>
-  ) => value is S,
-  defaultValue?: S
-): Lifter<T, S>;
-export function last<T, D = T>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function last<T, D>(
-  predicate?:
-    | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
-    | null,
-  defaultValue?: D
-): Lifter<T, T | D> {
-  const hasDefaultValue = arguments.length >= 2;
-  return (source: qt.Source<N, F, D>) =>
-    source.pipe(
-      predicate ? filter((v, i) => predicate(v, i, source)) : identity,
-      takeLast(1),
-      hasDefaultValue
-        ? defaultIfEmpty<T, D>(defaultValue)
-        : throwIfEmpty(() => new EmptyError())
-    );
 }
 
 export function map<T, R>(

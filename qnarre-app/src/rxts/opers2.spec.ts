@@ -575,37 +575,6 @@ describe('xxx', () => {
   });
 
   it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(debounce(() => timer(47))); // $ExpectType Observable<number>
-  });
-
-  it('should infer correctly with a Promise', () => {
-    const o = of(1, 2, 3).pipe(
-      debounce(
-        () => new Promise<boolean>(() => {})
-      )
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(debounce()); // $ExpectError
-    const p = of(1, 2, 3).pipe(debounce(() => {})); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(debounceTime(47)); // $ExpectType Observable<number>
-  });
-
-  it('should support a scheduler', () => {
-    const o = of(1, 2, 3).pipe(debounceTime(47, asyncScheduler)); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(debounceTime()); // $ExpectError
-    const p = of(1, 2, 3).pipe(debounceTime('foo')); // $ExpectError
-    const q = of(1, 2, 3).pipe(debounceTime(47, 'foo')); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(defaultIfEmpty()); // $ExpectType Observable<number>
   });
 
@@ -692,145 +661,11 @@ describe('xxx', () => {
   it('should enforce Notification source', () => {
     const o = of('foo').pipe(dematerialize()); // $ExpectError
   });
-
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(distinct()); // $ExpectType Observable<number>
-  });
-
-  it('should accept a keySelector', () => {
-    interface Person {
-      name: string;
-    }
-    const o = of({name: 'Tim'} as Person).pipe(distinct(person => person.name)); // $ExpectType Observable<Person>
-  });
-
-  it('should accept flushes', () => {
-    const o = of(1, 2, 3).pipe(distinct(n => n, of('t', 'i', 'm'))); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(distinct('F00D')); // $ExpectError
-  });
-
-  it('should enforce types of keySelector', () => {
-    const o = of<{id: string}>({id: 'F00D'}).pipe(distinct(item => item.foo)); // $ExpectError
-  });
-});
-
-interface Person {
-  name: string;
-}
-const sample: Person = {name: 'Tim'};
-
-describe('xxx', () => {
-  it('should infer correctly', () => {
-    const o = of(sample).pipe(distinctUntilChanged()); // $ExpectType Observable<Person>
-  });
-
-  it('should accept a compare', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged((p1, p2) => p1.name === p2.name)
-    ); // $ExpectType Observable<Person>
-  });
-
-  it('should accept a keySelector', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged(
-        (name1, name2) => name1 === name2,
-        p => p.name
-      )
-    ); // $ExpectType Observable<Person>
-  });
-
-  it('should enforce types', () => {
-    const o = of(sample).pipe(distinctUntilChanged('F00D')); // $ExpectError
-  });
-
-  it('should enforce types of compare', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged((p1, p2) => p1.foo === p2.name)
-    ); // $ExpectError
-    const p = of(sample).pipe(
-      distinctUntilChanged((p1, p2) => p1.name === p2.foo)
-    ); // $ExpectError
-  });
-
-  it('should enforce types of keySelector', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged(
-        (name1, name2) => name1 === name2,
-        p => p.foo
-      )
-    ); // $ExpectError
-  });
-
-  it('should enforce types of compare in combination with keySelector', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged(
-        (name1: number, name2) => name1 === name2,
-        p => p.name
-      )
-    ); // $ExpectError
-    const p = of(sample).pipe(
-      distinctUntilChanged(
-        (name1, name2: number) => name1 === name2,
-        p => p.name
-      )
-    ); // $ExpectError
-  });
 });
 
 const sample = {name: 'foobar', num: 42};
 
 describe('xxx', () => {
-  it('should infer correctly', () => {
-    const o = of(sample).pipe(distinctUntilKeyChanged('name')); // $ExpectType Observable<{ name: string; num: number; }>
-  });
-
-  it('should infer correctly with compare', () => {
-    const o = of(sample).pipe(distinctUntilKeyChanged('name', () => true)); // $ExpectType Observable<{ name: string; num: number; }>
-  });
-
-  it('should enforce key set', () => {
-    const o = of(sample).pipe(distinctUntilKeyChanged('something')); // $ExpectError
-  });
-
-  it('should enforce key set with compare', () => {
-    const o = of(sample).pipe(distinctUntilKeyChanged('something', () => true)); // $ExpectError
-  });
-
-  it("should enforce compare's type", () => {
-    const o = of(sample).pipe(
-      distinctUntilKeyChanged('name', (a: number, b: number) => true)
-    ); // $ExpectError
-  });
-
-  it("should enforce key set and compare's type", () => {
-    const o = of(sample).pipe(
-      distinctUntilKeyChanged('something', (a: number, b: number) => true)
-    ); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const o = of('foo').pipe(elementAt(47)); // $ExpectType Observable<string>
-  });
-
-  it('should support a default value', () => {
-    const o = of('foo').pipe(elementAt(47, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should enforce types', () => {
-    const o = of('foo').pipe(elementAt()); // $ExpectError
-  });
-
-  it('should enforce of index', () => {
-    const o = of('foo').pipe(elementAt('foo')); // $ExpectError
-  });
-
-  it('should enforce of default', () => {
-    const o = of('foo').pipe(elementAt(5, 5)); // $ExpectError
-  });
-
   it('should support a scheduler', () => {
     const r = of(a).pipe(endWith(asyncScheduler)); // $ExpectType Observable<A>
   });
@@ -1150,69 +985,6 @@ describe('xxx', () => {
     const o = of('foo', 'bar', 'baz').pipe(findIndex(p => p)); // $ExpectError
   });
 
-  const isFooBar = (value: string): value is 'foo' | 'bar' =>
-    /^(foo|bar)$/.test(value);
-
-  it('should support an undefined predicate with no default', () => {
-    const o = of('foo').pipe(first(undefined)); // $ExpectType Observable<string>
-  });
-
-  it('should support an undefined predicate with a T default', () => {
-    const o = of('foo').pipe(first(undefined, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should support an undefined predicate with a non-T default', () => {
-    const o = of('foo').pipe(first(undefined, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should default D to T with an undfined predicate', () => {
-    const o = of('foo').pipe(first<string>(undefined)); // $Observable<string>
-  });
-
-  it('should support a null predicate with no default', () => {
-    const o = of('foo').pipe(first(null)); // $ExpectType Observable<string>
-  });
-
-  it('should support a null predicate with a T default', () => {
-    const o = of('foo').pipe(first(null, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should support a null predicate with a non-T default', () => {
-    const o = of('foo').pipe(first(null, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should default D to T with a null predicate', () => {
-    const o = of('foo').pipe(first<string>(null)); // $Observable<string>
-  });
-
-  it('should support a user-defined type guard with no default', () => {
-    const o = of('foo').pipe(first(isFooBar)); // $ExpectType Observable<"foo" | "bar">
-  });
-
-  it('should support a user-defined type guard with an S default', () => {
-    const o = of('foo').pipe(first(isFooBar, 'bar')); // $ExpectType Observable<"foo" | "bar">
-  });
-
-  it('should widen a user-defined type guard with a non-S default', () => {
-    const o = of('foo').pipe(first(isFooBar, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should support a predicate with no default', () => {
-    const o = of('foo').pipe(first(x => !!x)); // $ExpectType Observable<string>
-  });
-
-  it('should support a predicate with a T default', () => {
-    const o = of('foo').pipe(first(x => !!x, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should support a predicate with a non-T default', () => {
-    const o = of('foo').pipe(first(x => !!x, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should default D to T with a predicate', () => {
-    const o = of('foo').pipe(first<string>(x => !!x)); // $Observable<string>
-  });
-
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(groupBy(value => value.toString())); // $ExpectType Observable<GroupedObservable<string, number>>
   });
@@ -1334,14 +1106,6 @@ describe('xxx', () => {
   });
 
   it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(ignoreElements()); // $ExpectType Observable<never>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(ignoreElements('nope')); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(isEmpty()); // $ExpectType Observable<boolean>
   });
 
@@ -1351,66 +1115,6 @@ describe('xxx', () => {
 
   const isFooBar = (value: string): value is 'foo' | 'bar' =>
     /^(foo|bar)$/.test(value);
-
-  it('should support an undefined predicate with no default', () => {
-    const o = of('foo').pipe(last(undefined)); // $ExpectType Observable<string>
-  });
-
-  it('should support an undefined predicate with a T default', () => {
-    const o = of('foo').pipe(last(undefined, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should support an undefined predicate with a non-T default', () => {
-    const o = of('foo').pipe(last(undefined, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should default D to T with an undfined predicate', () => {
-    const o = of('foo').pipe(last<string>(undefined)); // $Observable<string>
-  });
-
-  it('should support a null predicate with no default', () => {
-    const o = of('foo').pipe(last(null)); // $ExpectType Observable<string>
-  });
-
-  it('should support a null predicate with a T default', () => {
-    const o = of('foo').pipe(last(null, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should support a null predicate with a non-T default', () => {
-    const o = of('foo').pipe(last(null, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should default D to T with a null predicate', () => {
-    const o = of('foo').pipe(last<string>(null)); // $Observable<string>
-  });
-
-  it('should support a user-defined type guard with no default', () => {
-    const o = of('foo').pipe(last(isFooBar)); // $ExpectType Observable<"foo" | "bar">
-  });
-
-  it('should support a user-defined type guard with an S default', () => {
-    const o = of('foo').pipe(last(isFooBar, 'bar')); // $ExpectType Observable<"foo" | "bar">
-  });
-
-  it('should widen a user-defined type guard with a non-S default', () => {
-    const o = of('foo').pipe(last(isFooBar, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should support a predicate with no default', () => {
-    const o = of('foo').pipe(last(x => !!x)); // $ExpectType Observable<string>
-  });
-
-  it('should support a predicate with a T default', () => {
-    const o = of('foo').pipe(last(x => !!x, 'bar')); // $ExpectType Observable<string>
-  });
-
-  it('should support a predicate with a non-T default', () => {
-    const o = of('foo').pipe(last(x => !!x, false)); // $ExpectType Observable<string | boolean>
-  });
-
-  it('should default D to T with a predicate', () => {
-    const o = of('foo').pipe(last<string>(x => !!x)); // $Observable<string>
-  });
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(map(value => value)); // $ExpectType Observable<number>

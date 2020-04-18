@@ -579,29 +579,6 @@ export class Expand<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
-export class Filter<N, F, D> extends Subscriber<N, F, D> {
-  count = 0;
-
-  constructor(
-    tgt: Subscriber<N, F, D>,
-    private predicate: (value: N, index: number) => boolean,
-    private thisArg: any
-  ) {
-    super(tgt);
-  }
-
-  protected _next(n?: N) {
-    let result: any;
-    try {
-      result = this.predicate.call(this.thisArg, n, this.count++);
-    } catch (e) {
-      this.tgt.fail(e);
-      return;
-    }
-    if (result) this.tgt.next(n);
-  }
-}
-
 export class FindValue<N, F, D> extends Subscriber<N, F, D> {
   private index = 0;
 

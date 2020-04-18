@@ -606,23 +606,6 @@ class DeMaterializeSubscriber<T extends Notification<any>> extends Subscriber<
   }
 }
 
-
-
-export function elementAt<T>(index: number, defaultValue?: T): MonoOper<T> {
-  if (index < 0) {
-    throw new OutOfRangeError();
-  }
-  const hasDefaultValue = arguments.length >= 2;
-  return (source: Observable<T>) =>
-    source.pipe(
-      filter((v, i) => i === index),
-      take(1),
-      hasDefaultValue
-        ? defaultIfEmpty(defaultValue)
-        : throwIfEmpty(() => new OutOfRangeError())
-    );
-}
-
 export function endWith<T, A extends any[]>(
   ...args: A
 ): Lifter<T, T | ValueFromArray<A>>;
@@ -1011,64 +994,6 @@ export class ExpandSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function filter<T, S extends T>(
-  predicate: (value: T, index: number) => value is S,
-  thisArg?: any
-): Lifter<T, S>;
-export function filter<T>(
-  predicate: BooleanConstructor
-): Lifter<T | null | undefined, NonNullable<T>>;
-export function filter<T>(
-  predicate: (value: T, index: number) => boolean,
-  thisArg?: any
-): MonoOper<T>;
-export function filter<T>(
-  predicate: (value: T, index: number) => boolean,
-  thisArg?: any
-): MonoOper<T> {
-  return function filterLifter(source: Observable<T>): Observable<T> {
-    return source.lift(new FilterOperator(predicate, thisArg));
-  };
-}
-
-class FilterOperator<T> implements Operator<T, T> {
-  constructor(
-    private predicate: (value: T, index: number) => boolean,
-    private thisArg?: any
-  ) {}
-
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new FilterSubscriber(subscriber, this.predicate, this.thisArg)
-    );
-  }
-}
-
-class FilterSubscriber<T> extends Subscriber<T> {
-  count: number = 0;
-
-  constructor(
-    destination: Subscriber<T>,
-    private predicate: (value: T, index: number) => boolean,
-    private thisArg: any
-  ) {
-    super(destination);
-  }
-
-  protected _next(value: T) {
-    let result: any;
-    try {
-      result = this.predicate.call(this.thisArg, value, this.count++);
-    } catch (err) {
-      this.dst.error(err);
-      return;
-    }
-    if (result) {
-      this.dst.next(value);
-    }
-  }
-}
-
 export function finalize<T>(callback: () => void): MonoOper<T> {
   return (source: Observable<T>) => source.lift(new FinallyOperator(callback));
 }
@@ -1186,35 +1111,6 @@ export function findIndex<T>(
     source.lift(
       new FindValueOperator(predicate, source, true, thisArg)
     ) as Observable<any>;
-}
-
-export function first<T, D = T>(
-  predicate?: null,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function first<T, S extends T>(
-  predicate: (value: T, index: number, source: Observable<T>) => value is S,
-  defaultValue?: S
-): Lifter<T, S>;
-export function first<T, D = T>(
-  predicate: (value: T, index: number, source: Observable<T>) => boolean,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function first<T, D>(
-  predicate?:
-    | ((value: T, index: number, source: Observable<T>) => boolean)
-    | null,
-  defaultValue?: D
-): Lifter<T, T | D> {
-  const hasDefaultValue = arguments.length >= 2;
-  return (source: Observable<T>) =>
-    source.pipe(
-      predicate ? filter((v, i) => predicate(v, i, source)) : identity,
-      take(1),
-      hasDefaultValue
-        ? defaultIfEmpty<T, D>(defaultValue)
-        : throwIfEmpty(() => new EmptyError())
-    );
 }
 
 export function groupBy<T, K>(
@@ -1459,24 +1355,6 @@ class ActorRefCountSubscription extends Subscription {
   }
 }
 
-export function ignoreElements(): Lifter<any, never> {
-  return function ignoreElementsLifter(source: Observable<any>) {
-    return source.lift(new IgnoreElementsOperator());
-  };
-}
-
-class IgnoreElementsOperator<T, R> implements Operator<T, R> {
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new IgnoreElementsSubscriber(subscriber));
-  }
-}
-
-class IgnoreElementsSubscriber<T> extends Subscriber<T> {
-  protected _next(unused: T): void {
-    // Do nothing
-  }
-}
-
 export function isEmpty<T>(): Lifter<T, boolean> {
   return (source: Observable<T>) => source.lift(new IsEmptyOperator());
 }
@@ -1508,34 +1386,6 @@ class IsEmptySubscriber extends Subscriber<any> {
   }
 }
 
-export function last<T, D = T>(
-  predicate?: null,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function last<T, S extends T>(
-  predicate: (value: T, index: number, source: Observable<T>) => value is S,
-  defaultValue?: S
-): Lifter<T, S>;
-export function last<T, D = T>(
-  predicate: (value: T, index: number, source: Observable<T>) => boolean,
-  defaultValue?: D
-): Lifter<T, T | D>;
-export function last<T, D>(
-  predicate?:
-    | ((value: T, index: number, source: Observable<T>) => boolean)
-    | null,
-  defaultValue?: D
-): Lifter<T, T | D> {
-  const hasDefaultValue = arguments.length >= 2;
-  return (source: Observable<T>) =>
-    source.pipe(
-      predicate ? filter((v, i) => predicate(v, i, source)) : identity,
-      takeLast(1),
-      hasDefaultValue
-        ? defaultIfEmpty<T, D>(defaultValue)
-        : throwIfEmpty(() => new EmptyError())
-    );
-}
 
 export function map<T, R>(
   project: (value: T, index: number) => R,
