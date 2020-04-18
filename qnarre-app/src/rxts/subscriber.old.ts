@@ -1,60 +1,6 @@
-
 import * as qt from './types';
 
 import {Actor, Reactor, Subscription, Subscriber} from './subject';
-
-
-
-
-
-
-
-
-export function bufferToggle<N, M, F, D>(
-  openings: qt.SourceOrPromise<M, F, D>,
-  closingSelector: (value: M) => qt.SourceOrPromise<any, F, D>
-): qt.Lifter<N, N[], F, D> {
-  return function bufferToggleLifter(source: qt.Source<N, F, D>) {
-    return source.lift(
-      new BufferToggleOperator<N, M>(openings, closingSelector)
-    );
-  };
-}
-
-class BufferToggleOperator<N, M, F, D> implements qt.Operator<N, N[]> {
-  constructor(
-    private openings: qt.SourceOrPromise<O>,
-    private closingSelector: (value: O) => qt.SourceOrPromise<any, F, D>
-  ) {}
-
-  call(subscriber: Subscriber<N[], F, D>, source: any): any {
-    return source.subscribe(
-      new BufferToggleSubscriber(
-        subscriber,
-        this.openings,
-        this.closingSelector
-      )
-    );
-  }
-}
-
-
-export function bufferWhen<N, F, D>(
-  closingSelector: () => qt.Source<any, F, D>
-): qt.Lifter<N, N[], F, D> {
-  return function (source: qt.Source<N, F, D>) {
-    return source.lift(new BufferWhenOperator(closingSelector));
-  };
-}
-
-class BufferWhenOperator<N, F, D> implements qt.Operator<T, T[]> {
-  constructor(private closingSelector: () => qt.Source<any, F, D>) {}
-  call(subscriber: Subscriber<N[], F, D>, source: any): any {
-    return source.subscribe(
-      new BufferWhenSubscriber(subscriber, this.closingSelector)
-    );
-  }
-}
 
 export function catchError<T, O extends SourceInput<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
@@ -88,7 +34,6 @@ class CatchOperator<T, R> implements qt.Operator<T, T | R> {
   }
 }
 
-
 export function combineAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T[]>;
 export function combineAll<N, F, D>(): Lifter<any, T[]>;
 export function combineAll<T, R>(
@@ -106,9 +51,7 @@ export function combineAll<T, R>(
 
 export function combineLatest<T, R>(
   ...observables: Array<
-    | SourceInput<any>
-    | Array<SourceInput<any>>
-    | ((...values: Array<any>) => R)
+    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
   >
 ): Lifter<T, R> {
   let project: ((...values: Array<any>) => R) | undefined = undefined;
@@ -209,7 +152,6 @@ class CountOperator<N, F, D> implements qt.Operator<T, number> {
   }
 }
 
-
 export function debounce<N, F, D>(
   durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
 ): qt.MonoOper<N, F, D> {
@@ -228,7 +170,6 @@ class DebounceOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function debounceTime<N, F, D>(
   dueTime: number,
@@ -270,7 +211,6 @@ class DefaultIfEmptyOperator<T, R> implements qt.Operator<T, T | R> {
   }
 }
 
-
 export function delay<N, F, D>(
   delay: number | Date,
   scheduler: qt.Scheduler = async
@@ -292,8 +232,6 @@ class DelayOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
-
 
 export function delayWhen<N, F, D>(
   delayDurationSelector: (value: T, index: number) => qt.Source<any, F, D>,
@@ -328,7 +266,6 @@ class DelayWhenOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 class SubscriptionDelayObservable<N, F, D> extends qt.Source<N, F, D> {
   constructor(
     public source: qt.Source<N, F, D>,
@@ -344,7 +281,6 @@ class SubscriptionDelayObservable<N, F, D> extends qt.Source<N, F, D> {
   }
 }
 
-
 export function dematerialize<N, F, D>(): Lifter<Notification<N, F, D>, T> {
   return function dematerializeLifter(
     source: qt.Source<Notification<N, F, D>>
@@ -359,7 +295,6 @@ class DeMaterializeOperator<T extends Notification<any>, R>
     return source.subscribe(new DeMaterializeSubscriber(subscriber));
   }
 }
-
 
 export function distinct<T, K>(
   keySelector?: (value: N) => K,
@@ -381,7 +316,6 @@ class DistinctOperator<T, K> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function distinctUntilChanged<N, F, D>(
   compare?: (x: T, y: N) => boolean
@@ -410,7 +344,6 @@ class DistinctUntilChangedOperator<T, K> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function distinctUntilKeyChanged<N, F, D>(
   key: keyof T
@@ -482,7 +415,6 @@ class EveryOperator<N, F, D> implements qt.Operator<T, boolean> {
   }
 }
 
-
 export function exhaust<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
 export function exhaust<R>(): Lifter<any, R>;
 export function exhaust<N, F, D>(): Lifter<any, T> {
@@ -495,7 +427,6 @@ class SwitchFirstOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     return source.subscribe(new SwitchFirstSubscriber(subscriber));
   }
 }
-
 
 export function exhaustMap<T, O extends SourceInput<any>>(
   project: (value: T, index: number) => O
@@ -525,15 +456,12 @@ export function exhaustMap<T, R, O extends SourceInput<any>>(
 }
 
 class ExhaustMapOperator<T, R> implements qt.Operator<T, R> {
-  constructor(
-    private project: (value: T, index: number) => SourceInput<R>
-  ) {}
+  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
     return source.subscribe(new ExhaustMapSubscriber(subscriber, this.project));
   }
 }
-
 
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
@@ -575,7 +503,6 @@ export class ExpandOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-
 export function filter<T, S extends T>(
   predicate: (value: T, index: number) => value is S,
   thisArg?: any
@@ -591,9 +518,7 @@ export function filter<N, F, D>(
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
 ): qt.MonoOper<N, F, D> {
-  return function filterLifter(
-    source: qt.Source<N, F, D>
-  ): qt.Source<N, F, D> {
+  return function filterLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
     return source.lift(new FilterOperator(predicate, thisArg));
   };
 }
@@ -610,7 +535,6 @@ class FilterOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function finalize<N, F, D>(callback: () => void): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
@@ -682,7 +606,6 @@ export class FindValueOperator<N, F, D>
     );
   }
 }
-
 
 export function findIndex<N, F, D>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
@@ -763,7 +686,6 @@ export function groupBy<T, K, R>(
     );
 }
 
-
 class GroupByOperator<T, K, R>
   implements qt.Operator<T, GroupedObservable<K, R>> {
   constructor(
@@ -787,8 +709,6 @@ class GroupByOperator<T, K, R>
     );
   }
 }
-
-
 
 export class GroupedObservable<K, T> extends qt.Source<N, F, D> {
   constructor(
@@ -840,7 +760,6 @@ class IgnoreElementsOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-
 export function isEmpty<N, F, D>(): Lifter<T, boolean> {
   return (source: qt.Source<N, F, D>) => source.lift(new IsEmptyOperator());
 }
@@ -850,7 +769,6 @@ class IsEmptyOperator implements qt.Operator<any, boolean> {
     return source.subscribe(new IsEmptySubscriber(observer));
   }
 }
-
 
 export function last<T, D = T>(
   predicate?: null,
@@ -912,7 +830,6 @@ export class MapOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-
 export function mapTo<R>(value: R): Lifter<any, R>;
 export function mapTo<R>(value: R): Lifter<any, R> {
   return (source: qt.Source<any, F, D>) =>
@@ -931,7 +848,6 @@ class MapToOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-
 export function materialize<N, F, D>(): Lifter<T, Notification<N, F, D>> {
   return function materializeLifter(source: qt.Source<N, F, D>) {
     return source.lift(new MaterializeOperator());
@@ -944,7 +860,6 @@ class MaterializeOperator<N, F, D>
     return source.subscribe(new MaterializeSubscriber(subscriber));
   }
 }
-
 
 export function max<N, F, D>(
   comparer?: (x: T, y: N) => number
@@ -1010,7 +925,6 @@ export class MergeMapOperator<T, R> implements qt.Operator<T, R> {
   }
 }
 
-
 export function mergeMapTo<O extends SourceInput<any>>(
   innerObservable: O,
   concurrent?: number
@@ -1047,11 +961,7 @@ export function mergeScan<T, R>(
 
 export class MergeScanOperator<T, R> implements qt.Operator<T, R> {
   constructor(
-    private accumulator: (
-      acc: R,
-      value: T,
-      index: number
-    ) => SourceInput<R>,
+    private accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
     private seed: R,
     private concurrent: number
   ) {}
@@ -1067,7 +977,6 @@ export class MergeScanOperator<T, R> implements qt.Operator<T, R> {
     );
   }
 }
-
 
 export function mergeWith<N, F, D>(): Lifter<T, T>;
 export function mergeWith<T, A extends SourceInput<any>[]>(
@@ -1167,12 +1076,8 @@ export class ObserveOnOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
-
 export function onErrorResumeNext<N, F, D>(): Lifter<T, T>;
-export function onErrorResumeNext<T, T2>(
-  v: SourceInput<T2>
-): Lifter<T, T | T2>;
+export function onErrorResumeNext<T, T2>(v: SourceInput<T2>): Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
   v: SourceInput<T2>,
   v2: SourceInput<T3>
@@ -1251,9 +1156,7 @@ export function onErrorResumeNextStatic<R>(
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<T, R>(
   ...nextSources: Array<
-    | SourceInput<any>
-    | Array<SourceInput<any>>
-    | ((...values: Array<any>) => R)
+    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
   >
 ): qt.Source<R> {
   let source: SourceInput<any> | null = null;
@@ -1277,7 +1180,6 @@ class OnErrorResumeNextOperator<T, R> implements qt.Operator<T, R> {
     );
   }
 }
-
 
 export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
   return (source: qt.Source<N, F, D>) => source.lift(new PairwiseOperator());
@@ -1406,7 +1308,6 @@ export function pluck<T, R>(
   });
 }
 
-
 export function race<N, F, D>(
   ...observables: (Observable<N, F, D> | qt.Source<N, F, D>[])[]
 ): qt.MonoOper<N, F, D> {
@@ -1456,7 +1357,6 @@ export function reduce<V, A>(
   };
 }
 
-
 export function repeat<N, F, D>(count: number = -1): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) => {
     if (count === 0) {
@@ -1478,7 +1378,6 @@ class RepeatOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function repeatWhen<N, F, D>(
   notifier: (notifications: qt.Source<any, F, D>) => qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
@@ -1499,7 +1398,6 @@ class RepeatWhenOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export interface RetryConfig {
   count: number;
@@ -1544,7 +1442,6 @@ class RetryOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function retryWhen<N, F, D>(
   notifier: (errors: qt.Source<any, F, D>) => qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
@@ -1564,7 +1461,6 @@ class RetryWhenOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function sample<N, F, D>(
   notifier: qt.Source<any, F, D>
@@ -1633,11 +1529,7 @@ class SampleTimeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
-function dispatchNotification<N, F, D>(
-  this: qt.Action<any>,
-  state: any
-) {
+function dispatchNotification<N, F, D>(this: qt.Action<any>, state: any) {
   let {subscriber, period} = state;
   subscriber.reactNext();
   this.schedule(state, period);
@@ -1682,7 +1574,6 @@ class ScanOperator<V, A, S> implements qt.Operator<V, A> {
   }
 }
 
-
 export function sequenceEqual<N, F, D>(
   compareTo: qt.Source<N, F, D>,
   comparator?: (a: T, b: N) => boolean
@@ -1703,7 +1594,6 @@ export class SequenceEqualOperator<N, F, D> implements qt.Operator<T, boolean> {
     );
   }
 }
-
 
 class SequenceEqualCompareToSubscriber<T, R> extends Subscriber<N, F, D> {
   constructor(tgt: Observer<R>, private parent: SequenceEqualSubscriber<T, R>) {
@@ -1777,7 +1667,7 @@ function shareReplayOperator<N, F, D>({
 }: ShareReplayConfig) {
   let subject: Replay<N, F, D> | undefined;
   let refCount = 0;
-  let subscription?: Subscription;
+  let subscription: Subscription;
   let hasError = false;
   let isComplete = false;
 
@@ -1840,7 +1730,6 @@ class SingleOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function skip<N, F, D>(count: number): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) => source.lift(new SkipOperator(count));
 }
@@ -1889,7 +1778,6 @@ class SkipLastOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function skipUntil<N, F, D>(
   notifier: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
@@ -1904,7 +1792,6 @@ class SkipUntilOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     return source.subscribe(new SkipUntilSubscriber(tgt, this.notifier));
   }
 }
-
 
 export function skipWhile<N, F, D>(
   predicate: (value: T, index: number) => boolean
@@ -1922,7 +1809,6 @@ class SkipWhileOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function startWith<T, A extends any[]>(
   ...values: A
@@ -1991,15 +1877,12 @@ export function switchMap<T, R, O extends SourceInput<any>>(
 }
 
 class SwitchMapOperator<T, R> implements qt.Operator<T, R> {
-  constructor(
-    private project: (value: T, index: number) => SourceInput<R>
-  ) {}
+  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
     return source.subscribe(new SwitchMapSubscriber(subscriber, this.project));
   }
 }
-
 
 export function switchMapTo<R>(observable: SourceInput<R>): Lifter<any, R>;
 export function switchMapTo<T, I, R>(
@@ -2038,7 +1921,6 @@ class TakeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function takeLast<N, F, D>(count: number): qt.MonoOper<N, F, D> {
   return function takeLastLifter(
     source: qt.Source<N, F, D>
@@ -2063,7 +1945,6 @@ class TakeLastOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function takeUntil<N, F, D>(
   notifier: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
@@ -2087,7 +1968,6 @@ class TakeUntilOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     return takeUntilSubscriber;
   }
 }
-
 
 export function takeWhile<T, S extends T>(
   predicate: (value: T, index: number) => value is S
@@ -2120,7 +2000,6 @@ class TakeWhileOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function tap<N, F, D>(
   next?: (x: N) => void,
@@ -2155,7 +2034,6 @@ class DoOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export interface ThrottleConfig {
   leading?: boolean;
@@ -2200,7 +2078,6 @@ class ThrottleOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 export function throttleTime<N, F, D>(
   duration: number,
   scheduler: qt.Scheduler = async,
@@ -2238,7 +2115,6 @@ class ThrottleTimeOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-
 interface DispatchArg<N, F, D> {
   subscriber: ThrottleTimeSubscriber<N, F, D>;
 }
@@ -2265,7 +2141,6 @@ class ThrowIfEmptyOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 function defaultErrorFactory() {
   return new EmptyError();
@@ -2350,7 +2225,6 @@ class TimeoutWithOperator<N, F, D> implements qt.Operator<N, N, F, D> {
     );
   }
 }
-
 
 export function time<N, F, D>(
   timeProvider: Stamper = Date
@@ -3081,12 +2955,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   v4: O4,
-  project: (
-    v1: T,
-    v2: Sourced<O2>,
-    v3: Sourced<O3>,
-    v4: Sourced<O4>
-  ) => R
+  project: (v1: T, v2: Sourced<O2>, v3: Sourced<O3>, v4: Sourced<O4>) => R
 ): Lifter<T, R>;
 export function withLatestFrom<
   T,
@@ -3148,10 +3017,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   v4: O4
-): Lifter<
-  T,
-  [T, Sourced<O2>, Sourced<O3>, Sourced<O4>]
->;
+): Lifter<T, [T, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
 export function withLatestFrom<
   T,
   O2 extends SourceInput<any>,
@@ -3163,16 +3029,7 @@ export function withLatestFrom<
   v3: O3,
   v4: O4,
   v5: O5
-): Lifter<
-  T,
-  [
-    T,
-    Sourced<O2>,
-    Sourced<O3>,
-    Sourced<O4>,
-    Sourced<O5>
-  ]
->;
+): Lifter<T, [T, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]>;
 export function withLatestFrom<
   T,
   O2 extends SourceInput<any>,
@@ -3188,21 +3045,12 @@ export function withLatestFrom<
   v6: O6
 ): Lifter<
   T,
-  [
-    T,
-    Sourced<O2>,
-    Sourced<O3>,
-    Sourced<O4>,
-    Sourced<O5>,
-    Sourced<O6>
-  ]
+  [T, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>, Sourced<O6>]
 >;
 export function withLatestFrom<T, R>(
   ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Lifter<T, R>;
-export function withLatestFrom<T, R>(
-  array: SourceInput<any>[]
-): Lifter<T, R>;
+export function withLatestFrom<T, R>(array: SourceInput<any>[]): Lifter<T, R>;
 export function withLatestFrom<T, R>(
   array: SourceInput<any>[],
   project: (...values: Array<any>) => R
