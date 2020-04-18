@@ -2811,14 +2811,14 @@ export function min<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
 
 export function multicast<T>(
   subject: Subject<T>
-): UnaryFun<Observable<T>, Connectable<T>>;
+): UnaryFun<Observable<T>, Connect<T>>;
 export function multicast<T, O extends SourceInput<any>>(
   subject: Subject<T>,
   selector: (shared: Observable<T>) => O
-): UnaryFun<Observable<T>, Connectable<Sourced<O>>>;
+): UnaryFun<Observable<T>, Connect<Sourced<O>>>;
 export function multicast<T>(
   subjectFactory: (this: Observable<T>) => Subject<T>
-): UnaryFun<Observable<T>, Connectable<T>>;
+): UnaryFun<Observable<T>, Connect<T>>;
 export function multicast<T, O extends SourceInput<any>>(
   SubjectFactory: (this: Observable<T>) => Subject<T>,
   selector: (shared: Observable<T>) => O
@@ -2848,7 +2848,7 @@ export function multicast<T, R>(
     connectable.source = source;
     connectable.subjectFactory = subjectFactory;
 
-    return <Connectable<R>>connectable;
+    return <Connect<R>>connectable;
   };
 }
 
@@ -3222,58 +3222,6 @@ export function pluck<T, R>(
   });
 }
 
-export function publish<T>(): UnaryFun<Observable<T>, Connectable<T>>;
-export function publish<T, O extends SourceInput<any>>(
-  selector: (shared: Observable<T>) => O
-): Lifter<T, Sourced<O>>;
-export function publish<T>(selector: MonoOper<T>): MonoOper<T>;
-export function publish<T, R>(
-  selector?: Lifter<T, R>
-): MonoOper<T> | Lifter<T, R> {
-  return selector
-    ? multicast(() => new Subject<T>(), selector)
-    : multicast(new Subject<T>());
-}
-
-export function publishBehavior<T>(
-  value: T
-): UnaryFun<Observable<T>, Connectable<T>> {
-  return (source: Observable<T>) =>
-    multicast(new Behavior<T>(value))(source) as Connectable<T>;
-}
-
-export function publishLast<T>(): UnaryFun<Observable<T>, Connectable<T>> {
-  return (source: Observable<T>) => multicast(new Async<T>())(source);
-}
-
-export function publishReplay<T>(
-  bufferSize?: number,
-  windowTime?: number,
-  scheduler?: Scheduler
-): MonoOper<T>;
-export function publishReplay<T, O extends SourceInput<any>>(
-  bufferSize?: number,
-  windowTime?: number,
-  selector?: (shared: Observable<T>) => O,
-  scheduler?: Scheduler
-): Lifter<T, Sourced<O>>;
-export function publishReplay<T, R>(
-  bufferSize?: number,
-  windowTime?: number,
-  selectorOrScheduler?: Scheduler | Lifter<T, R>,
-  scheduler?: Scheduler
-): UnaryFun<Observable<T>, Connectable<R>> {
-  if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
-    scheduler = selectorOrScheduler;
-  }
-
-  const selector =
-    typeof selectorOrScheduler === 'function' ? selectorOrScheduler : undefined;
-  const subject = new Replay<T>(bufferSize, windowTime, scheduler);
-
-  return (source: Observable<T>) =>
-    multicast(() => subject, selector!)(source) as Connectable<R>;
-}
 
 export function race<T>(
   ...observables: (Observable<T> | Observable<T>[])[]
@@ -3322,65 +3270,6 @@ export function reduce<V, A>(
       takeLast(1)
     )(source);
   };
-}
-
-export function refCount<T>(): MonoOper<T> {
-  return function refCountLifter(source: Connectable<T>): Observable<T> {
-    return source.lift(new RefCountOperator(source));
-  } as MonoOper<T>;
-}
-
-class RefCountOperator<T> implements Operator<T, T> {
-  constructor(private connectable: Connectable<T>) {}
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    const {connectable} = this;
-    (<any>connectable)._refCount++;
-
-    const refCounter = new RefCountSubscriber(subscriber, connectable);
-    const subscription = source.subscribe(refCounter);
-
-    if (!refCounter.closed) {
-      (<any>refCounter).connection = connectable.connect();
-    }
-
-    return subscription;
-  }
-}
-
-class RefCountSubscriber<T> extends Subscriber<T> {
-  private connection: Subscription | null = null;
-
-  constructor(destination: Subscriber<T>, private connectable: Connectable<T>) {
-    super(destination);
-  }
-
-  protected _unsubscribe() {
-    const {connectable} = this;
-    if (!connectable) {
-      this.connection = null;
-      return;
-    }
-
-    this.connectable = null!;
-    const refCount = (connectable as any)._refCount;
-    if (refCount <= 0) {
-      this.connection = null;
-      return;
-    }
-
-    (connectable as any)._refCount = refCount - 1;
-    if (refCount > 1) {
-      this.connection = null;
-      return;
-    }
-    const {connection} = this;
-    const sharedConnection = (<any>connectable)._connection;
-    this.connection = null;
-
-    if (sharedConnection && (!connection || sharedConnection === connection)) {
-      sharedConnection.unsubscribe();
-    }
-  }
 }
 
 export function repeat<T>(count: number = -1): MonoOper<T> {
@@ -6173,32 +6062,4 @@ class WithLatestFromSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function zipAll<T>(): Lifter<SourceInput<T>, T[]>;
-export function zipAll<T>(): Lifter<any, T[]>;
-export function zipAll<T, R>(
-  project: (...values: T[]) => R
-): Lifter<SourceInput<T>, R>;
-export function zipAll<R>(
-  project: (...values: Array<any>) => R
-): Lifter<any, R>;
-export function zipAll<T, R>(
-  project?: (...values: Array<any>) => R
-): Lifter<T, R> {
-  return (source: Observable<T>) => source.lift(new ZipOperator(project));
-}
-export function zip<T, R>(
-  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
-): Lifter<T, R> {
-  return function zipLifter(source: Observable<T>) {
-    return source.lift.call(
-      zipStatic<R>(source, ...observables),
-      undefined
-    ) as Observable<R>;
-  };
-}
-export function zipWith<T, A extends SourceInput<any>[]>(
-  ...otherInputs: A
-): Lifter<T, Unshift<SourcedTuple<A>, T>> {
-  return zip(...otherInputs);
-}
 */

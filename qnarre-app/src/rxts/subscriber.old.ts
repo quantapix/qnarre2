@@ -1091,14 +1091,14 @@ export function min<N, F, D>(
 
 export function multicast<N, F, D>(
   subject: Subject<N, F, D>
-): UnaryFun<Observable<N, F, D>, Connectable<N, F, D>>;
+): UnaryFun<Observable<N, F, D>, Connect<N, F, D>>;
 export function multicast<T, O extends SourceInput<any>>(
   subject: Subject<N, F, D>,
   selector: (shared: qt.Source<N, F, D>) => O
-): UnaryFun<Observable<N, F, D>, Connectable<Sourced<O>>>;
+): UnaryFun<Observable<N, F, D>, Connect<Sourced<O>>>;
 export function multicast<N, F, D>(
   subjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>
-): UnaryFun<Observable<N, F, D>, Connectable<N, F, D>>;
+): UnaryFun<Observable<N, F, D>, Connect<N, F, D>>;
 export function multicast<T, O extends SourceInput<any>>(
   SubjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>,
   selector: (shared: qt.Source<N, F, D>) => O
@@ -1128,7 +1128,7 @@ export function multicast<T, R>(
     connectable.source = source;
     connectable.subjectFactory = subjectFactory;
 
-    return <Connectable<R>>connectable;
+    return <Connect<R>>connectable;
   };
 }
 
@@ -1406,67 +1406,6 @@ export function pluck<T, R>(
   });
 }
 
-export function publish<N, F, D>(): UnaryFun<
-  Observable<N, F, D>,
-  Connectable<N, F, D>
->;
-export function publish<T, O extends SourceInput<any>>(
-  selector: (shared: qt.Source<N, F, D>) => O
-): Lifter<T, Sourced<O>>;
-export function publish<N, F, D>(
-  selector: qt.MonoOper<N, F, D>
-): qt.MonoOper<N, F, D>;
-export function publish<T, R>(
-  selector?: Lifter<T, R>
-): qt.MonoOper<N, F, D> | Lifter<T, R> {
-  return selector
-    ? multicast(() => new Subject<N, F, D>(), selector)
-    : multicast(new Subject<N, F, D>());
-}
-
-export function publishBehavior<N, F, D>(
-  value: T
-): UnaryFun<Observable<N, F, D>, Connectable<N, F, D>> {
-  return (source: qt.Source<N, F, D>) =>
-    multicast(new Behavior<N, F, D>(value))(source) as Connectable<N, F, D>;
-}
-
-export function publishLast<N, F, D>(): UnaryFun<
-  Observable<N, F, D>,
-  Connectable<N, F, D>
-> {
-  return (source: qt.Source<N, F, D>) =>
-    multicast(new Async<N, F, D>())(source);
-}
-
-export function publishReplay<N, F, D>(
-  bufferSize?: number,
-  windowTime?: number,
-  scheduler?: qt.Scheduler
-): qt.MonoOper<N, F, D>;
-export function publishReplay<T, O extends SourceInput<any>>(
-  bufferSize?: number,
-  windowTime?: number,
-  selector?: (shared: qt.Source<N, F, D>) => O,
-  scheduler?: qt.Scheduler
-): Lifter<T, Sourced<O>>;
-export function publishReplay<T, R>(
-  bufferSize?: number,
-  windowTime?: number,
-  selectorOrScheduler?: qt.Scheduler | Lifter<T, R>,
-  scheduler?: qt.Scheduler
-): UnaryFun<Observable<N, F, D>, Connectable<R>> {
-  if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
-    scheduler = selectorOrScheduler;
-  }
-
-  const selector =
-    typeof selectorOrScheduler === 'function' ? selectorOrScheduler : undefined;
-  const subject = new Replay<N, F, D>(bufferSize, windowTime, scheduler);
-
-  return (source: qt.Source<N, F, D>) =>
-    multicast(() => subject, selector!)(source) as Connectable<R>;
-}
 
 export function race<N, F, D>(
   ...observables: (Observable<N, F, D> | qt.Source<N, F, D>[])[]
@@ -1515,31 +1454,6 @@ export function reduce<V, A>(
       takeLast(1)
     )(source);
   };
-}
-
-export function refCount<N, F, D>(): qt.MonoOper<N, F, D> {
-  return function refCountLifter(
-    source: Connectable<N, F, D>
-  ): qt.Source<N, F, D> {
-    return source.lift(new RefCountOperator(source));
-  } as qt.MonoOper<N, F, D>;
-}
-
-class RefCountOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private connectable: Connectable<N, F, D>) {}
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    const {connectable} = this;
-    (<any>connectable)._refCount++;
-
-    const refCounter = new RefCountSubscriber(subscriber, connectable);
-    const subscription = source.subscribe(refCounter);
-
-    if (!refCounter.closed) {
-      (<any>refCounter).connection = connectable.connect();
-    }
-
-    return subscription;
-  }
 }
 
 
@@ -3384,33 +3298,4 @@ class WithLatestFromSubscriber<T, R> extends Reactor<N, M, F, D> {
     }
     this.tgt.next(result);
   }
-}
-
-export function zipAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T[]>;
-export function zipAll<N, F, D>(): Lifter<any, T[]>;
-export function zipAll<T, R>(
-  project: (...values: T[]) => R
-): Lifter<SourceInput<N, F, D>, R>;
-export function zipAll<R>(
-  project: (...values: Array<any>) => R
-): Lifter<any, R>;
-export function zipAll<T, R>(
-  project?: (...values: Array<any>) => R
-): Lifter<T, R> {
-  return (source: qt.Source<N, F, D>) => source.lift(new ZipOperator(project));
-}
-export function zip<T, R>(
-  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
-): Lifter<T, R> {
-  return function zipLifter(source: qt.Source<N, F, D>) {
-    return source.lift.call(
-      zipStatic<R>(source, ...observables),
-      undefined
-    ) as qt.Source<R>;
-  };
-}
-export function zipWith<T, A extends SourceInput<any>[]>(
-  ...otherInputs: A
-): Lifter<T, Unshift<SourcedTuple<A>, T>> {
-  return zip(...otherInputs);
 }

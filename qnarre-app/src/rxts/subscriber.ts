@@ -1742,40 +1742,6 @@ export class OnErrorResumeNext<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
-export class RefCount<N, F, D> extends Subscriber<N, F, D> {
-  private connection?: Subscription;
-
-  constructor(
-    tgt: Subscriber<N, F, D>,
-    private connectable?: Connectable<N, F, D>
-  ) {
-    super(tgt);
-  }
-
-  protected _unsubscribe() {
-    const {connectable} = this;
-    if (!connectable) {
-      this.connection = undefined;
-      return;
-    }
-    this.connectable = undefined;
-    const refCount = (connectable as any)._refCount;
-    if (refCount <= 0) {
-      this.connection = undefined;
-      return;
-    }
-    (connectable as any)._refCount = refCount - 1;
-    if (refCount > 1) {
-      this.connection = undefined;
-      return;
-    }
-    const {connection} = this;
-    const c = (<any>connectable)._connection;
-    this.connection = undefined;
-    if (c && (!connection || c === connection)) c.unsubscribe();
-  }
-}
-
 export class Repeat<N, F, D> extends Subscriber<N, F, D> {
   constructor(
     tgt: Subscriber<any>,

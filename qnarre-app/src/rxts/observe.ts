@@ -1,162 +1,32 @@
 import * as qt from './types';
 import * as qu from './utils';
-import * as qr from './source';
-import * as qs from './subject';
-
-export class Connectable<N, F, D> extends qr.Source<N, F, D> {
-  sub?: qs.Subscription;
-  _subj?: qt.Subject<N, F, D>;
-  done = false;
-  count = 0;
-
-  constructor(
-    public src: qr.Source<N, F, D>,
-    protected fac: () => qt.Subject<N, F, D>
-  ) {
-    super();
-  }
-
-  _subscribe(s: qt.Subscriber<N, F, D>) {
-    return this.subj.subscribe(s);
-  }
-
-  get subj() {
-    const s = this._subj;
-    if (!s || s.stopped) this._subj = this.fac();
-    return this._subj!;
-  }
-
-  connect(): qs.Subscription {
-    let s = this.sub;
-    if (!s) {
-      this.done = false;
-      s = this.sub = new qs.Subscription();
-      s.add(this.src.subscribe(new ConnectableSubscriber(this.subj, this)));
-      if (s.closed) {
-        this.sub = undefined;
-        s = qs.Subscription.fake;
-      }
-    }
-    return s;
-  }
-
-  refCount() {
-    return higherOrderRefCount()(this) as qr.Source<N, F, D>;
-  }
-}
-
-export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
-  const p = <any>Connectable.prototype;
-  return {
-    operator: {value: null as null},
-    _refCount: {value: 0, writable: true},
-    _subject: {value: null as null, writable: true},
-    _connection: {value: null as null, writable: true},
-    _subscribe: {value: p._subscribe},
-    _isComplete: {value: p._isComplete, writable: true},
-    getSubject: {value: p.getSubject},
-    connect: {value: p.connect},
-    refCount: {value: p.refCount}
-  };
-})();
-
-class ConnectableSubscriber<T> extends SubjectSubscriber<T> {
-  constructor(obs: Subject<T>, private con?: Connectable<T>) {
-    super(obs);
-  }
-
-  protected _error(e: any) {
-    this._unsubscribe();
-    super._error(e);
-  }
-
-  protected _complete() {
-    this.con!.done = true;
-    this._unsubscribe();
-    super._complete();
-  }
-
-  protected _unsubscribe() {
-    const c = this.con;
-    if (c) {
-      this.con = undefined;
-      const s = c.subs;
-      c.count = 0;
-      c.subs = c.subj = undefined;
-      s?.unsubscribe();
-    }
-  }
-}
-
-class RefCountOperator<T> implements qt.Operator<T, T> {
-  constructor(private con: Connectable<T>) {}
-
-  call(s: Subscriber<T>, source: any): Closer {
-    const c = this.con;
-    c.count++;
-    const refCounter = new RefCountSubscriber(s, c);
-    const s = source.subscribe(refCounter);
-    if (!refCounter.closed) {
-      (<any>refCounter).connection = c.connect();
-    }
-    return s;
-  }
-}
-
-class RefCountSubscriber<T> extends Subscriber<T> {
-  private subs?: Subscription;
-
-  constructor(obs: Subscriber<T>, private con?: Connectable<T>) {
-    super(obs);
-  }
-
-  protected _unsubscribe() {
-    const c = this.con;
-    if (!c) {
-      this.subs = undefined;
-      return;
-    }
-    this.con = undefined;
-    const refCount = c.count;
-    if (refCount <= 0) {
-      this.subs = undefined;
-      return;
-    }
-    c.count = refCount - 1;
-    if (refCount > 1) {
-      this.subs = undefined;
-      return;
-    }
-    const s = this.subs;
-    const shared = c.subs;
-    this.subs = undefined;
-    if (shared && (!s || shared === s)) shared.unsubscribe();
-  }
-}
+import * as qs from './source';
+import * as qj from './subject';
+import * as qh from './scheduler';
 
 export interface DispatchArg<T> {
-  source: Observable<T>;
-  subscriber: Subscriber<T>;
+  source: qs.Source<T>;
+  subscriber: qj.Subscriber<T>;
 }
 
-export class SubscribeOnObservable<T> extends Observable<T> {
+export class SubscribeOnObservable<T> extends qs.Source<T> {
   static create<T>(
-    source: Observable<T>,
+    source: qs.Source<T>,
     delay: number = 0,
-    scheduler: Scheduler = asap
-  ): Observable<T> {
+    scheduler: qh.Scheduler = asap
+  ): qs.Source<T> {
     return new SubscribeOnObservable(source, delay, scheduler);
   }
 
-  static dispatch<T>(this: Action<T>, arg: DispatchArg<T>): Subscription {
+  static dispatch<T>(this: qh.Action<T>, arg: DispatchArg<T>): qj.Subscription {
     const {source, subscriber} = arg;
     return this.add(source.subscribe(subscriber));
   }
 
   constructor(
-    public source: Observable<T>,
+    public source: qs.Source<T>,
     private delayTime: number = 0,
-    private scheduler: Scheduler = asap
+    private scheduler: qh.Scheduler = asap
   ) {
     super();
     if (!isNumeric(delayTime) || delayTime < 0) {
@@ -167,7 +37,7 @@ export class SubscribeOnObservable<T> extends Observable<T> {
     }
   }
 
-  _subscribe(subscriber: Subscriber<T>) {
+  _subscribe(subscriber: qj.Subscriber<T>) {
     const delay = this.delayTime;
     const source = this.source;
     const scheduler = this.scheduler;
@@ -183,253 +53,187 @@ export class SubscribeOnObservable<T> extends Observable<T> {
 }
 
 export function bindCallback<R1, R2, R3, R4>(
-  callbackFunc: (
-    callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
-  ) => any,
-  scheduler?: Scheduler
-): () => Observable<any[]>;
+  cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<any[]>;
 export function bindCallback<R1, R2, R3>(
-  callbackFunc: (callback: (res1: R1, res2: R2, res3: R3) => any) => any,
-  scheduler?: Scheduler
-): () => Observable<[R1, R2, R3]>;
+  cb: (_: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<[R1, R2, R3]>;
 export function bindCallback<R1, R2>(
-  callbackFunc: (callback: (res1: R1, res2: R2) => any) => any,
-  scheduler?: Scheduler
-): () => Observable<[R1, R2]>;
+  cb: (_: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<[R1, R2]>;
 export function bindCallback<R1>(
-  callbackFunc: (callback: (res1: R1) => any) => any,
-  scheduler?: Scheduler
-): () => Observable<R1>;
+  cb: (_: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<R1>;
 export function bindCallback(
-  callbackFunc: (callback: () => any) => any,
-  scheduler?: Scheduler
-): () => Observable<void>;
+  cb: (_: () => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<void>;
 export function bindCallback<A1, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
+  cb: (
+    a1: A1,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<any[]>;
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<any[]>;
 export function bindCallback<A1, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    callback: (res1: R1, res2: R2, res3: R3) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<[R1, R2, R3]>;
+  cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<[R1, R2, R3]>;
 export function bindCallback<A1, R1, R2>(
-  callbackFunc: (arg1: A1, callback: (res1: R1, res2: R2) => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<[R1, R2]>;
+  cb: (a1: A1, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<[R1, R2]>;
 export function bindCallback<A1, R1>(
-  callbackFunc: (arg1: A1, callback: (res1: R1) => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<R1>;
+  cb: (a1: A1, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<R1>;
 export function bindCallback<A1>(
-  callbackFunc: (arg1: A1, callback: () => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<void>;
+  cb: (a1: A1, _: () => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<void>;
 export function bindCallback<A1, A2, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<any[]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<any[]>;
 export function bindCallback<A1, A2, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (res1: R1, res2: R2, res3: R3) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<[R1, R2, R3]>;
+  cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<[R1, R2, R3]>;
 export function bindCallback<A1, A2, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (res1: R1, res2: R2) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<[R1, R2]>;
+  cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<[R1, R2]>;
 export function bindCallback<A1, A2, R1>(
-  callbackFunc: (arg1: A1, arg2: A2, callback: (res1: R1) => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<R1>;
+  cb: (a1: A1, a2: A2, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<R1>;
 export function bindCallback<A1, A2>(
-  callbackFunc: (arg1: A1, arg2: A2, callback: () => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<void>;
+  cb: (a1: A1, a2: A2, _: () => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<void>;
 export function bindCallback<A1, A2, A3, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<any[]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<any[]>;
 export function bindCallback<A1, A2, A3, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (res1: R1, res2: R2, res3: R3) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2, R3]>;
+  cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2, R3]>;
 export function bindCallback<A1, A2, A3, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (res1: R1, res2: R2) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2]>;
+  cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2]>;
 export function bindCallback<A1, A2, A3, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (res1: R1) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<R1>;
+  cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<R1>;
 export function bindCallback<A1, A2, A3>(
-  callbackFunc: (arg1: A1, arg2: A2, arg3: A3, callback: () => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<void>;
+  cb: (a1: A1, a2: A2, a3: A3, _: () => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<void>;
 export function bindCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<any[]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<any[]>;
 export function bindCallback<A1, A2, A3, A4, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (res1: R1, res2: R2, res3: R3) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2, R3]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2, R3]>;
 export function bindCallback<A1, A2, A3, A4, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (res1: R1, res2: R2) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2]>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2]>;
 export function bindCallback<A1, A2, A3, A4, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (res1: R1) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<R1>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<R1>;
 export function bindCallback<A1, A2, A3, A4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: () => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<void>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: () => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<void>;
 export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (res1: R1, res2: R2, res3: R3, res4: R4, ...args: any[]) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<any[]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<any[]>;
 export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (res1: R1, res2: R2, res3: R3) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  scheduler?: Scheduler
-): (
-  arg1: A1,
-  arg2: A2,
-  arg3: A3,
-  arg4: A4,
-  arg5: A5
-) => Observable<[R1, R2, R3]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2, R3]>;
 export function bindCallback<A1, A2, A3, A4, A5, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (res1: R1, res2: R2) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (r1: R1, r2: R2) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<[R1, R2]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2]>;
 export function bindCallback<A1, A2, A3, A4, A5, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (res1: R1) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<R1>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<R1>;
 export function bindCallback<A1, A2, A3, A4, A5>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: () => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<void>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: () => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<void>;
 export function bindCallback<A, R>(
-  callbackFunc: (...args: Array<A | ((result: R) => any)>) => any,
-  scheduler?: Scheduler
-): (...args: A[]) => Observable<R>;
+  cb: (...args: Array<A | ((result: R) => any)>) => any,
+  h?: qh.Scheduler
+): (...args: A[]) => qs.Source<R>;
 export function bindCallback<A, R>(
-  callbackFunc: (...args: Array<A | ((...results: R[]) => any)>) => any,
-  scheduler?: Scheduler
-): (...args: A[]) => Observable<R[]>;
+  cb: (...args: Array<A | ((...results: R[]) => any)>) => any,
+  h?: qh.Scheduler
+): (...args: A[]) => qs.Source<R[]>;
 export function bindCallback(
-  callbackFunc: Function,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any>;
+  cb: Function,
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any>;
 export function bindCallback<T>(
-  callbackFunc: Function,
-  resultSelector?: Function | Scheduler,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<T> {
+  cb: Function,
+  resultSelector?: Function | qh.Scheduler,
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<T> {
   if (resultSelector) {
     if (isScheduler(resultSelector)) {
       scheduler = resultSelector;
@@ -437,7 +241,7 @@ export function bindCallback<T>(
       // DEPRECATED PATH
       return (...args: any[]) =>
         bindCallback(
-          callbackFunc,
+          cb,
           scheduler
         )(...args).pipe(
           map(args =>
@@ -446,26 +250,26 @@ export function bindCallback<T>(
         );
     }
   }
-  return function (this: any, ...args: any[]): Observable<T> {
+  return function (this: any, ...args: any[]): qs.Source<T> {
     const context = this;
-    let subject: Async<T> | undefined;
+    let subject: qj.Async<T> | undefined;
     const params = {
       context,
       subject: undefined,
-      callbackFunc,
+      cb,
       scheduler: scheduler!
     };
-    return new Observable<T>(subscriber => {
+    return new qs.Source<T>(subscriber => {
       if (!scheduler) {
         if (!subject) {
-          subject = new Async<T>();
+          subject = new qj.Async<T>();
           const handler = (...innerArgs: any[]) => {
             subject!.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
-            subject!.complete();
+            subject!.done();
           };
 
           try {
-            callbackFunc.apply(context, [...args, handler]);
+            cb.apply(context, [...args, handler]);
           } catch (err) {
             if (canReportError(subject)) {
               subject.error(err);
@@ -489,24 +293,27 @@ export function bindCallback<T>(
 
 interface DispatchState<T> {
   args: any[];
-  subscriber: Subscriber<T>;
+  subscriber: qj.Subscriber<T>;
   params: ParamsContext<T>;
 }
 
 interface ParamsContext<T> {
-  callbackFunc: Function;
-  scheduler: Scheduler;
+  cb: Function;
+  scheduler: qh.Scheduler;
   context: any;
-  subject?: Async<T>;
+  subject?: qj.Async<T>;
 }
 
-function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
+function dispatch<T>(
+  this: qh.Action<DispatchState<T>>,
+  state: DispatchState<T>
+) {
   const self = this;
   const {args, subscriber, params} = state;
-  const {callbackFunc, context, scheduler} = params;
+  const {cb, context, scheduler} = params;
   let {subject} = params;
   if (!subject) {
-    subject = params.subject = new Async<T>();
+    subject = params.subject = new qj.Async<T>();
 
     const handler = (...innerArgs: any[]) => {
       const value = innerArgs.length <= 1 ? innerArgs[0] : innerArgs;
@@ -519,7 +326,7 @@ function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
     };
 
     try {
-      callbackFunc.apply(context, [...args, handler]);
+      cb.apply(context, [...args, handler]);
     } catch (err) {
       subject.error(err);
     }
@@ -529,331 +336,232 @@ function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
 }
 
 interface NextState<T> {
-  subject: Async<T>;
+  subject: qj.Async<T>;
   value: T;
 }
 
-function dispatchNext<T>(this: Action<NextState<T>>, state: NextState<T>) {
+function dispatchNext<T>(this: qh.Action<NextState<T>>, state: NextState<T>) {
   const {value, subject} = state;
   subject.next(value);
-  subject.complete();
+  subject.done();
 }
 
 interface ErrorState<T> {
-  subject: Async<T>;
-  err: any;
+  subject: qj.Async<T>;
+  e: any;
 }
 
-function dispatchError<T>(this: Action<ErrorState<T>>, state: ErrorState<T>) {
+function dispatchError<T>(
+  this: qh.Action<ErrorState<T>>,
+  state: ErrorState<T>
+) {
   const {err, subject} = state;
   subject.error(err);
 }
 
 export function bindNodeCallback<R1, R2, R3, R4>(
-  callbackFunc: (
-    callback: (
-      err: any,
-      res1: R1,
-      res2: R2,
-      res3: R3,
-      res4: R4,
-      ...args: any[]
-    ) => any
+  cb: (
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<R1, R2, R3>(
-  callbackFunc: (
-    callback: (err: any, res1: R1, res2: R2, res3: R3) => any
-  ) => any,
-  scheduler?: Scheduler
-): () => Observable<[R1, R2, R3]>;
+  cb: (_: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<R1, R2>(
-  callbackFunc: (callback: (err: any, res1: R1, res2: R2) => any) => any,
-  scheduler?: Scheduler
-): () => Observable<[R1, R2]>;
+  cb: (_: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<[R1, R2]>;
 export function bindNodeCallback<R1>(
-  callbackFunc: (callback: (err: any, res1: R1) => any) => any,
-  scheduler?: Scheduler
-): () => Observable<R1>;
+  cb: (_: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<R1>;
 export function bindNodeCallback(
-  callbackFunc: (callback: (err: any) => any) => any,
-  scheduler?: Scheduler
-): () => Observable<void>;
+  cb: (_: (e: any) => any) => any,
+  h?: qh.Scheduler
+): () => qs.Source<void>;
 export function bindNodeCallback<A1, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    callback: (
-      err: any,
-      res1: R1,
-      res2: R2,
-      res3: R3,
-      res4: R4,
-      ...args: any[]
-    ) => any
+  cb: (
+    a1: A1,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    callback: (err: any, res1: R1, res2: R2, res3: R3) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<[R1, R2, R3]>;
+  cb: (a1: A1, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    callback: (err: any, res1: R1, res2: R2) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<[R1, R2]>;
+  cb: (a1: A1, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, R1>(
-  callbackFunc: (arg1: A1, callback: (err: any, res1: R1) => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<R1>;
+  cb: (a1: A1, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<R1>;
 export function bindNodeCallback<A1>(
-  callbackFunc: (arg1: A1, callback: (err: any) => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1) => Observable<void>;
+  cb: (a1: A1, _: (e: any) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (
-      err: any,
-      res1: R1,
-      res2: R2,
-      res3: R3,
-      res4: R4,
-      ...args: any[]
-    ) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (err: any, res1: R1, res2: R2, res3: R3) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<[R1, R2, R3]>;
+  cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (err: any, res1: R1, res2: R2) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<[R1, R2]>;
+  cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    callback: (err: any, res1: R1) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<R1>;
+  cb: (a1: A1, a2: A2, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2>(
-  callbackFunc: (arg1: A1, arg2: A2, callback: (err: any) => any) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2) => Observable<void>;
+  cb: (a1: A1, a2: A2, _: (e: any) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, A3, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (
-      err: any,
-      res1: R1,
-      res2: R2,
-      res3: R3,
-      res4: R4,
-      ...args: any[]
-    ) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, A3, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (err: any, res1: R1, res2: R2, res3: R3) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    _: (e: any, r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2, R3]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (err: any, res1: R1, res2: R2) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<[R1, R2]>;
+  cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (err: any, res1: R1) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<R1>;
+  cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2, A3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    callback: (err: any) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3) => Observable<void>;
+  cb: (a1: A1, a2: A2, a3: A3, _: (e: any) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (
-      err: any,
-      res1: R1,
-      res2: R2,
-      res3: R3,
-      res4: R4,
-      ...args: any[]
-    ) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (err: any, res1: R1, res2: R2, res3: R3) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (e: any, r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2, R3]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (err: any, res1: R1, res2: R2) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (e: any, r1: R1, r2: R2) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<[R1, R2]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (err: any, res1: R1) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<R1>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2, A3, A4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    callback: (err: any) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4) => Observable<void>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (
-      err: any,
-      res1: R1,
-      res2: R2,
-      res3: R3,
-      res4: R4,
-      ...args: any[]
-    ) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (err: any, res1: R1, res2: R2, res3: R3) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (e: any, r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  scheduler?: Scheduler
-): (
-  arg1: A1,
-  arg2: A2,
-  arg3: A3,
-  arg4: A4,
-  arg5: A5
-) => Observable<[R1, R2, R3]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (err: any, res1: R1, res2: R2) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (e: any, r1: R1, r2: R2) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<[R1, R2]>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (err: any, res1: R1) => any
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (e: any, r1: R1) => any
   ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<R1>;
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2, A3, A4, A5>(
-  callbackFunc: (
-    arg1: A1,
-    arg2: A2,
-    arg3: A3,
-    arg4: A4,
-    arg5: A5,
-    callback: (err: any) => any
-  ) => any,
-  scheduler?: Scheduler
-): (arg1: A1, arg2: A2, arg3: A3, arg4: A4, arg5: A5) => Observable<void>;
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<void>;
 export function bindNodeCallback(
-  callbackFunc: Function,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<any[]>;
+  cb: Function,
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<T>(
-  callbackFunc: Function,
-  resultSelector?: Function | Scheduler,
-  scheduler?: Scheduler
-): (...args: any[]) => Observable<T> {
+  cb: Function,
+  resultSelector?: Function | qh.Scheduler,
+  h?: qh.Scheduler
+): (...args: any[]) => qs.Source<T> {
   if (resultSelector) {
     if (isScheduler(resultSelector)) {
-      scheduler = resultSelector;
+      h = resultSelector;
     } else {
       // DEPRECATED PATH
       return (...args: any[]) =>
         bindNodeCallback(
-          callbackFunc,
-          scheduler
+          cb,
+          h
         )(...args).pipe(
           map(args =>
             isArray(args) ? resultSelector(...args) : resultSelector(args)
@@ -861,20 +569,20 @@ export function bindNodeCallback<T>(
         );
     }
   }
-  return function (this: any, ...args: any[]): Observable<T> {
+  return function (this: any, ...args: any[]): qs.Source<T> {
     const params: ParamsState<T> = {
       subject: undefined!,
       args,
-      callbackFunc,
-      scheduler: scheduler!,
+      cb,
+      scheduler: h!,
       context: this
     };
-    return new Observable<T>(subscriber => {
+    return new qs.Source<T>(subscriber => {
       const {context} = params;
       let {subject} = params;
-      if (!scheduler) {
+      if (!h) {
         if (!subject) {
-          subject = params.subject = new Async<T>();
+          subject = params.subject = new qj.Async<T>();
           const handler = (...innerArgs: any[]) => {
             const err = innerArgs.shift();
 
@@ -884,11 +592,11 @@ export function bindNodeCallback<T>(
             }
 
             subject.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
-            subject.complete();
+            subject.done();
           };
 
           try {
-            callbackFunc.apply(context, [...args, handler]);
+            cb.apply(context, [...args, handler]);
           } catch (err) {
             if (canReportError(subject)) {
               subject.error(err);
@@ -899,7 +607,7 @@ export function bindNodeCallback<T>(
         }
         return subject.subscribe(subscriber);
       } else {
-        return scheduler.schedule<DispatchState<T>>(dispatch as any, 0, {
+        return h.schedule<DispatchState<T>>(dispatch as any, 0, {
           params,
           subscriber,
           context
@@ -910,26 +618,29 @@ export function bindNodeCallback<T>(
 }
 
 interface DispatchState<T> {
-  subscriber: Subscriber<T>;
+  subscriber: qj.Subscriber<T>;
   context: any;
   params: ParamsState<T>;
 }
 
 interface ParamsState<T> {
-  callbackFunc: Function;
+  cb: Function;
   args: any[];
-  scheduler: Scheduler;
-  subject: Async<T>;
+  scheduler: qh.Scheduler;
+  subject: qj.Async<T>;
   context: any;
 }
 
-function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
+function dispatch<T>(
+  this: qh.Action<DispatchState<T>>,
+  state: DispatchState<T>
+) {
   const {params, subscriber, context} = state;
-  const {callbackFunc, args, scheduler} = params;
+  const {cb, args, scheduler} = params;
   let subject = params.subject;
 
   if (!subject) {
-    subject = params.subject = new Async<T>();
+    subject = params.subject = new qj.Async<T>();
 
     const handler = (...innerArgs: any[]) => {
       const err = innerArgs.shift();
@@ -950,9 +661,8 @@ function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
         );
       }
     };
-
     try {
-      callbackFunc.apply(context, [...args, handler]);
+      cb.apply(context, [...args, handler]);
     } catch (err) {
       this.add(
         scheduler.schedule<DispatchErrorArg<T>>(dispatchError as any, 0, {
@@ -967,19 +677,19 @@ function dispatch<T>(this: Action<DispatchState<T>>, state: DispatchState<T>) {
 }
 
 interface DispatchNextArg<T> {
-  subject: Async<T>;
+  subject: qj.Async<T>;
   value: T;
 }
 
 function dispatchNext<T>(arg: DispatchNextArg<T>) {
   const {value, subject} = arg;
   subject.next(value);
-  subject.complete();
+  subject.done();
 }
 
 interface DispatchErrorArg<T> {
-  subject: Async<T>;
-  err: any;
+  subject: qj.Async<T>;
+  e: any;
 }
 
 function dispatchError<T>(arg: DispatchErrorArg<T>) {
@@ -989,60 +699,58 @@ function dispatchError<T>(arg: DispatchErrorArg<T>) {
 
 const NONE = {};
 
-export function combineLatest<O1 extends SourceInput<any>>(
+export function combineLatest<O1 extends qt.SourceInput<any>>(
   sources: [O1]
-): Observable<[Sourced<O1>]>;
+): qs.Source<[Sourced<O1>]>;
 export function combineLatest<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>
->(sources: [O1, O2]): Observable<[Sourced<O1>, Sourced<O2>]>;
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>
+>(sources: [O1, O2]): qs.Source<[Sourced<O1>, Sourced<O2>]>;
 export function combineLatest<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>
->(sources: [O1, O2, O3]): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>]>;
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>
+>(sources: [O1, O2, O3]): qs.Source<[Sourced<O1>, Sourced<O2>, Sourced<O3>]>;
 export function combineLatest<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>,
-  O4 extends SourceInput<any>
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>,
+  O4 extends qt.SourceInput<any>
 >(
   sources: [O1, O2, O3, O4]
-): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
+): qs.Source<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
 export function combineLatest<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>,
-  O4 extends SourceInput<any>,
-  O5 extends SourceInput<any>
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>,
+  O4 extends qt.SourceInput<any>,
+  O5 extends qt.SourceInput<any>
 >(
   sources: [O1, O2, O3, O4, O5]
-): Observable<
-  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]
->;
+): qs.Source<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]>;
 export function combineLatest<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>,
-  O4 extends SourceInput<any>,
-  O5 extends SourceInput<any>,
-  O6 extends SourceInput<any>
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>,
+  O4 extends qt.SourceInput<any>,
+  O5 extends qt.SourceInput<any>,
+  O6 extends qt.SourceInput<any>
 >(
   sources: [O1, O2, O3, O4, O5, O6]
-): Observable<
+): qs.Source<
   [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>, Sourced<O6>]
 >;
-export function combineLatest<O extends SourceInput<any>>(
+export function combineLatest<O extends qt.SourceInput<any>>(
   sources: O[]
-): Observable<Sourced<O>[]>;
-export function combineLatest<O extends SourceInput<any>, R>(
-  ...observables: (O | ((...values: Sourced<O>[]) => R) | Scheduler)[]
-): Observable<R> {
+): qs.Source<Sourced<O>[]>;
+export function combineLatest<O extends qt.SourceInput<any>, R>(
+  ...observables: (O | ((...values: Sourced<O>[]) => R) | qh.Scheduler)[]
+): qs.Source<R> {
   let resultSelector: ((...values: Array<any>) => R) | undefined = undefined;
-  let scheduler: Scheduler | undefined = undefined;
+  let scheduler: qh.Scheduler | undefined = undefined;
 
   if (isScheduler(observables[observables.length - 1])) {
-    scheduler = observables.pop() as Scheduler;
+    scheduler = observables.pop() as qh.Scheduler;
   }
 
   if (typeof observables[observables.length - 1] === 'function') {
@@ -1057,10 +765,10 @@ export function combineLatest<O extends SourceInput<any>, R>(
   );
 }
 
-export class CombineLatestOperator<T, R> implements Operator<T, R> {
+export class CombineLatestOperator<T, R> implements qt.Operator<T, R> {
   constructor(private resultSelector?: (...values: Array<any>) => R) {}
 
-  call(subscriber: Subscriber<R>, source: any): any {
+  call(subscriber: qj.Subscriber<R>, source: any): any {
     return source.subscribe(
       new CombineLatestSubscriber(subscriber, this.resultSelector)
     );
@@ -1074,7 +782,7 @@ export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
   private toRespond: number | undefined;
 
   constructor(
-    destination: Subscriber<R>,
+    destination: qj.Subscriber<R>,
     private resultSelector?: (...values: Array<any>) => R
   ) {
     super(destination);
@@ -1085,11 +793,11 @@ export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
     this.observables.push(observable);
   }
 
-  protected _complete() {
+  protected _done() {
     const observables = this.observables;
     const len = observables.length;
     if (len === 0) {
-      this.destination.complete();
+      this.destination.done();
     } else {
       this.active = len;
       this.toRespond = len;
@@ -1100,9 +808,9 @@ export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
     }
   }
 
-  notifyComplete(unused: Subscriber<R>): void {
+  notifyComplete(unused: qj.Subscriber<R>): void {
     if ((this.active -= 1) === 0) {
-      this.destination.complete();
+      this.destination.done();
     }
   }
 
@@ -1143,20 +851,20 @@ export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function concat<A extends SourceInput<any>[]>(
+export function concat<A extends qt.SourceInput<any>[]>(
   ...observables: A
-): Observable<SourcedFrom<A>>;
-export function concat<O extends SourceInput<any>>(
-  ...observables: Array<O | Scheduler>
-): Observable<Sourced<O>> {
-  // The cast with `as` below is due to the Scheduler, once this is removed, it will no longer be a problem.
-  return concatAll<Sourced<O>>()(of(...observables) as Observable<Sourced<O>>);
+): qs.Source<SourcedFrom<A>>;
+export function concat<O extends qt.SourceInput<any>>(
+  ...observables: Array<O | qh.Scheduler>
+): qs.Source<Sourced<O>> {
+  // The cast with `as` below is due to the qh.Scheduler, once this is removed, it will no longer be a problem.
+  return concatAll<Sourced<O>>()(of(...observables) as qs.Source<Sourced<O>>);
 }
 
-export function defer<R extends SourceInput<any> | void>(
+export function defer<R extends qt.SourceInput<any> | void>(
   observableFactory: () => R
-): Observable<Sourced<R>> {
-  return new Observable<Sourced<R>>(subscriber => {
+): qs.Source<Sourced<R>> {
+  return new qs.Source<Sourced<R>>(subscriber => {
     let input: R | void;
     try {
       input = observableFactory();
@@ -1164,60 +872,65 @@ export function defer<R extends SourceInput<any> | void>(
       subscriber.error(err);
       return undefined;
     }
-    const source = input ? from(input as SourceInput<Sourced<R>>) : EMPTY;
+    const source = input ? from(input as qt.SourceInput<Sourced<R>>) : EMPTY;
     return source.subscribe(subscriber);
   });
 }
 
-export const EMPTY = new Observable<never>(subscriber => subscriber.complete());
+export const EMPTY = new qs.Source<never>(subscriber => subscriber.done());
 
-export function empty(scheduler?: Scheduler) {
+export function empty(h?: qh.Scheduler) {
   return scheduler ? emptyScheduled(scheduler) : EMPTY;
 }
 
-function emptyScheduled(scheduler: Scheduler) {
-  return new Observable<never>(subscriber =>
-    scheduler.schedule(() => subscriber.complete())
+function emptyScheduled(scheduler: qh.Scheduler) {
+  return new qs.Source<never>(subscriber =>
+    scheduler.schedule(() => subscriber.done())
   );
 }
 
-export function forkJoin<A>(sources: [SourceInput<A>]): Observable<[A]>;
+export function forkJoin<A>(sources: [SourceInput<A>]): qs.Source<[A]>;
 export function forkJoin<A, B>(
-  sources: [SourceInput<A>, SourceInput<B>]
-): Observable<[A, B]>;
+  sources: [SourceInput<A>, qt.SourceInput<B>]
+): qs.Source<[A, B]>;
 export function forkJoin<A, B, C>(
-  sources: [SourceInput<A>, SourceInput<B>, SourceInput<C>]
-): Observable<[A, B, C]>;
+  sources: [SourceInput<A>, qt.SourceInput<B>, qt.SourceInput<C>]
+): qs.Source<[A, B, C]>;
 export function forkJoin<A, B, C, D>(
-  sources: [SourceInput<A>, SourceInput<B>, SourceInput<C>, SourceInput<D>]
-): Observable<[A, B, C, D]>;
+  sources: [
+    SourceInput<A>,
+    qt.SourceInput<B>,
+    qt.SourceInput<C>,
+    qt.SourceInput<D>
+  ]
+): qs.Source<[A, B, C, D]>;
 export function forkJoin<A, B, C, D, E>(
   sources: [
-    SourceInput<A>,
-    SourceInput<B>,
-    SourceInput<C>,
-    SourceInput<D>,
-    SourceInput<E>
+    qt.SourceInput<A>,
+    qt.SourceInput<B>,
+    qt.SourceInput<C>,
+    qt.SourceInput<D>,
+    qt.SourceInput<E>
   ]
-): Observable<[A, B, C, D, E]>;
+): qs.Source<[A, B, C, D, E]>;
 export function forkJoin<A, B, C, D, E, F>(
   sources: [
-    SourceInput<A>,
-    SourceInput<B>,
-    SourceInput<C>,
-    SourceInput<D>,
-    SourceInput<E>,
-    SourceInput<F>
+    qt.SourceInput<A>,
+    qt.SourceInput<B>,
+    qt.SourceInput<C>,
+    qt.SourceInput<D>,
+    qt.SourceInput<E>,
+    qt.SourceInput<F>
   ]
-): Observable<[A, B, C, D, E, F]>;
-export function forkJoin<A extends SourceInput<any>[]>(
+): qs.Source<[A, B, C, D, E, F]>;
+export function forkJoin<A extends qt.SourceInput<any>[]>(
   sources: A
-): Observable<SourcedFrom<A>[]>;
-export function forkJoin(sourcesObject: {}): Observable<never>;
+): qs.Source<SourcedFrom<A>[]>;
+export function forkJoin(sourcesObject: {}): qs.Source<never>;
 export function forkJoin<T, K extends keyof T>(
   sourcesObject: T
-): Observable<{[K in keyof T]: Sourced<T[K]>}>;
-export function forkJoin(...sources: any[]): Observable<any> {
+): qs.Source<{[K in keyof T]: Sourced<T[K]>}>;
+export function forkJoin(...sources: any[]): qs.Source<any> {
   if (sources.length === 1) {
     const first = sources[0];
     if (isArray(first)) {
@@ -1243,13 +956,13 @@ export function forkJoin(...sources: any[]): Observable<any> {
 }
 
 function forkJoinInternal(
-  sources: SourceInput<any>[],
+  sources: qt.SourceInput<any>[],
   keys: string[] | null
-): Observable<any> {
-  return new Observable(subscriber => {
+): qs.Source<any> {
+  return new qs.Source(subscriber => {
     const len = sources.length;
     if (len === 0) {
-      subscriber.complete();
+      subscriber.done();
       return;
     }
     const values = new Array(len);
@@ -1283,7 +996,7 @@ function forkJoinInternal(
                     : values
                 );
               }
-              subscriber.complete();
+              subscriber.done();
             }
           }
         })
@@ -1292,26 +1005,26 @@ function forkJoinInternal(
   });
 }
 
-export function from<O extends SourceInput<any>>(
+export function from<O extends qt.SourceInput<any>>(
   input: O
-): Observable<Sourced<O>>;
+): qs.Source<Sourced<O>>;
 export function from<T>(
-  input: SourceInput<T>,
-  scheduler?: Scheduler
-): Observable<T> {
+  input: qt.SourceInput<T>,
+  h?: qh.Scheduler
+): qs.Source<T> {
   if (!scheduler) {
     if (input instanceof Observable) {
       return input;
     }
-    return new Observable<T>(subscribeTo(input));
+    return new qs.Source<T>(subscribeTo(input));
   } else {
     return scheduled(input, scheduler);
   }
 }
 
-export function fromArray<T>(input: ArrayLike<T>, scheduler?: Scheduler) {
+export function fromArray<T>(input: ArrayLike<T>, h?: qh.Scheduler) {
   if (!scheduler) {
-    return new Observable<T>(subscribeToArray(input));
+    return new qs.Source<T>(subscribeToArray(input));
   } else {
     return scheduleArray(input, scheduler);
   }
@@ -1374,18 +1087,18 @@ export interface AddEventListenerOptions extends EventListenerOptions {
 export function fromEvent<T>(
   target: FromEventTarget<T>,
   eventName: string
-): Observable<T>;
+): qs.Source<T>;
 export function fromEvent<T>(
   target: FromEventTarget<T>,
   eventName: string,
   options?: EventListenerOptions
-): Observable<T>;
+): qs.Source<T>;
 export function fromEvent<T>(
   target: FromEventTarget<T>,
   eventName: string,
   options?: EventListenerOptions | ((...args: any[]) => T),
   resultSelector?: (...args: any[]) => T
-): Observable<T> {
+): qs.Source<T> {
   if (isFunction(options)) {
     resultSelector = options;
     options = undefined;
@@ -1402,7 +1115,7 @@ export function fromEvent<T>(
     );
   }
 
-  return new Observable<T>(subscriber => {
+  return new qs.Source<T>(subscriber => {
     function handler(e: T) {
       if (arguments.length > 1) {
         subscriber.next(Array.prototype.slice.call(arguments) as any);
@@ -1424,7 +1137,7 @@ function setupSubscription<T>(
   sourceObj: FromEventTarget<T>,
   eventName: string,
   handler: (...args: any[]) => void,
-  subscriber: Subscriber<T>,
+  subscriber: qj.Subscriber<T>,
   options?: EventListenerOptions
 ) {
   let unsubscribe: (() => void) | undefined;
@@ -1491,12 +1204,12 @@ function isEventTarget(
 export function fromEventPattern<T>(
   addHandler: (handler: NodeEventHandler) => any,
   removeHandler?: (handler: NodeEventHandler, signal?: any) => void
-): Observable<T>;
+): qs.Source<T>;
 export function fromEventPattern<T>(
   addHandler: (handler: NodeEventHandler) => any,
   removeHandler?: (handler: NodeEventHandler, signal?: any) => void,
   resultSelector?: (...args: any[]) => T
-): Observable<T | T[]> {
+): qs.Source<T | T[]> {
   if (resultSelector) {
     // DEPRECATED PATH
     return fromEventPattern<T>(addHandler, removeHandler).pipe(
@@ -1505,7 +1218,7 @@ export function fromEventPattern<T>(
       )
     );
   }
-  return new Observable<T | T[]>(subscriber => {
+  return new qs.Source<T | T[]>(subscriber => {
     const handler = (...e: T[]) => subscriber.next(e.length === 1 ? e[0] : e);
     let retValue: any;
     try {
@@ -1523,31 +1236,31 @@ export function fromEventPattern<T>(
   });
 }
 
-export function fromIterable<T>(input: Iterable<T>, scheduler?: Scheduler) {
+export function fromIterable<T>(input: Iterable<T>, h?: qh.Scheduler) {
   if (!input) {
     throw new Error('Iterable cannot be null');
   }
   if (!scheduler) {
-    return new Observable<T>(subscribeToIterable(input));
+    return new qs.Source<T>(subscribeToIterable(input));
   } else {
     return scheduleIterable(input, scheduler);
   }
 }
 
 export function fromObservable<T>(
-  input: InteropSource<T>,
-  scheduler?: Scheduler
+  input: qt.InteropSource<T>,
+  h?: qh.Scheduler
 ) {
   if (!scheduler) {
-    return new Observable<T>(subscribeToObservable(input));
+    return new qs.Source<T>(subscribeToObservable(input));
   } else {
     return scheduleSource(input, scheduler);
   }
 }
 
-export function fromPromise<T>(input: PromiseLike<T>, scheduler?: Scheduler) {
+export function fromPromise<T>(input: PromiseLike<T>, h?: qh.Scheduler) {
   if (!scheduler) {
-    return new Observable<T>(subscribeToPromise(input));
+    return new qs.Source<T>(subscribeToPromise(input));
   } else {
     return schedulePromise(input, scheduler);
   }
@@ -1560,7 +1273,7 @@ export type ResultFunc<S, T> = (state: S) => T;
 interface SchedulerState<T, S> {
   needIterate?: boolean;
   state: S;
-  subscriber: Subscriber<T>;
+  subscriber: qj.Subscriber<T>;
   condition?: ConditionFunc<S>;
   iterate: IterateFunc<S>;
   resultSelector: ResultFunc<S, T>;
@@ -1570,7 +1283,7 @@ export interface GenerateBaseOptions<S> {
   initialState: S;
   condition?: ConditionFunc<S>;
   iterate: IterateFunc<S>;
-  scheduler?: Scheduler;
+  h?: qh.Scheduler;
 }
 
 export interface GenerateOptions<T, S> extends GenerateBaseOptions<S> {
@@ -1582,23 +1295,23 @@ export function generate<T, S>(
   condition: ConditionFunc<S>,
   iterate: IterateFunc<S>,
   resultSelector: ResultFunc<S, T>,
-  scheduler?: Scheduler
-): Observable<T>;
+  h?: qh.Scheduler
+): qs.Source<T>;
 export function generate<S>(
   initialState: S,
   condition: ConditionFunc<S>,
   iterate: IterateFunc<S>,
-  scheduler?: Scheduler
-): Observable<S>;
-export function generate<S>(options: GenerateBaseOptions<S>): Observable<S>;
-export function generate<T, S>(options: GenerateOptions<T, S>): Observable<T>;
+  h?: qh.Scheduler
+): qs.Source<S>;
+export function generate<S>(options: GenerateBaseOptions<S>): qs.Source<S>;
+export function generate<T, S>(options: GenerateOptions<T, S>): qs.Source<T>;
 export function generate<T, S>(
   initialStateOrOptions: S | GenerateOptions<T, S>,
   condition?: ConditionFunc<S>,
   iterate?: IterateFunc<S>,
-  resultSelectorOrScheduler?: ResultFunc<S, T> | Scheduler,
-  scheduler?: Scheduler
-): Observable<T> {
+  resultSelectorOrScheduler?: ResultFunc<S, T> | qh.Scheduler,
+  h?: qh.Scheduler
+): qs.Source<T> {
   let resultSelector: ResultFunc<S, T>;
   let initialState: S;
 
@@ -1615,13 +1328,13 @@ export function generate<T, S>(
   ) {
     initialState = initialStateOrOptions as S;
     resultSelector = identity as ResultFunc<S, T>;
-    scheduler = resultSelectorOrScheduler as Scheduler;
+    scheduler = resultSelectorOrScheduler as qh.Scheduler;
   } else {
     initialState = initialStateOrOptions as S;
     resultSelector = resultSelectorOrScheduler as ResultFunc<S, T>;
   }
 
-  return new Observable<T>(subscriber => {
+  return new qs.Source<T>(subscriber => {
     let state = initialState;
     if (scheduler) {
       return scheduler.schedule<SchedulerState<T, S>>(dispatch as any, 0, {
@@ -1643,7 +1356,7 @@ export function generate<T, S>(
           return undefined;
         }
         if (!conditionResult) {
-          subscriber.complete();
+          subscriber.done();
           break;
         }
       }
@@ -1671,7 +1384,7 @@ export function generate<T, S>(
 }
 
 function dispatch<T, S>(
-  this: Action<SchedulerState<T, S>>,
+  this: qh.Action<SchedulerState<T, S>>,
   state: SchedulerState<T, S>
 ) {
   const {subscriber, condition} = state;
@@ -1697,7 +1410,7 @@ function dispatch<T, S>(
       return undefined;
     }
     if (!conditionResult) {
-      subscriber.complete();
+      subscriber.done();
       return undefined;
     }
     if (subscriber.closed) {
@@ -1723,16 +1436,16 @@ function dispatch<T, S>(
 
 export function iif<T = never, F = never>(
   condition: () => boolean,
-  trueResult: SubscribableOrPromise<T> = EMPTY,
-  falseResult: SubscribableOrPromise<F> = EMPTY
-): Observable<T | F> {
+  trueResult: qt.SourceOrPromise<T> = EMPTY,
+  falseResult: qt.SourceOrPromise<F> = EMPTY
+): qs.Source<T | F> {
   return defer(() => (condition() ? trueResult : falseResult));
 }
 
 export function interval(
   period = 0,
-  scheduler: Scheduler = async
-): Observable<number> {
+  scheduler: qh.Scheduler = async
+): qs.Source<number> {
   if (!isNumeric(period) || period < 0) {
     period = 0;
   }
@@ -1741,7 +1454,7 @@ export function interval(
     scheduler = async;
   }
 
-  return new Observable<number>(subscriber => {
+  return new qs.Source<number>(subscriber => {
     subscriber.add(
       scheduler.schedule(dispatch as any, period, {
         subscriber,
@@ -1753,99 +1466,99 @@ export function interval(
   });
 }
 
-function dispatch(this: Action<IntervalState>, state: IntervalState) {
+function dispatch(this: qh.Action<IntervalState>, state: IntervalState) {
   const {subscriber, counter, period} = state;
   subscriber.next(counter);
   this.schedule({subscriber, counter: counter + 1, period}, period);
 }
 
 interface IntervalState {
-  subscriber: Subscriber<number>;
+  subscriber: qj.Subscriber<number>;
   counter: number;
   period: number;
 }
 
-export function merge<T>(v1: SourceInput<T>): Observable<T>;
+export function merge<T>(v1: qt.SourceInput<T>): qs.Source<T>;
 export function merge<T>(
-  v1: SourceInput<T>,
+  v1: qt.SourceInput<T>,
   concurrent?: number
-): Observable<T>;
+): qs.Source<T>;
 export function merge<T, T2>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>
-): Observable<T | T2>;
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>
+): qs.Source<T | T2>;
 export function merge<T, T2>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
   concurrent?: number
-): Observable<T | T2>;
+): qs.Source<T | T2>;
 export function merge<T, T2, T3>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>
-): Observable<T | T2 | T3>;
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>
+): qs.Source<T | T2 | T3>;
 export function merge<T, T2, T3>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
   concurrent?: number
-): Observable<T | T2 | T3>;
+): qs.Source<T | T2 | T3>;
 export function merge<T, T2, T3, T4>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>
-): Observable<T | T2 | T3 | T4>;
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>
+): qs.Source<T | T2 | T3 | T4>;
 export function merge<T, T2, T3, T4>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
   concurrent?: number
-): Observable<T | T2 | T3 | T4>;
+): qs.Source<T | T2 | T3 | T4>;
 export function merge<T, T2, T3, T4, T5>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
-  v5: SourceInput<T5>
-): Observable<T | T2 | T3 | T4 | T5>;
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
+  v5: qt.SourceInput<T5>
+): qs.Source<T | T2 | T3 | T4 | T5>;
 export function merge<T, T2, T3, T4, T5>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
-  v5: SourceInput<T5>,
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
+  v5: qt.SourceInput<T5>,
   concurrent?: number
-): Observable<T | T2 | T3 | T4 | T5>;
+): qs.Source<T | T2 | T3 | T4 | T5>;
 export function merge<T, T2, T3, T4, T5, T6>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
-  v5: SourceInput<T5>,
-  v6: SourceInput<T6>
-): Observable<T | T2 | T3 | T4 | T5 | T6>;
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
+  v5: qt.SourceInput<T5>,
+  v6: qt.SourceInput<T6>
+): qs.Source<T | T2 | T3 | T4 | T5 | T6>;
 export function merge<T, T2, T3, T4, T5, T6>(
-  v1: SourceInput<T>,
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
-  v5: SourceInput<T5>,
-  v6: SourceInput<T6>,
+  v1: qt.SourceInput<T>,
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
+  v5: qt.SourceInput<T5>,
+  v6: qt.SourceInput<T6>,
   concurrent?: number
-): Observable<T | T2 | T3 | T4 | T5 | T6>;
+): qs.Source<T | T2 | T3 | T4 | T5 | T6>;
 export function merge<T>(
   ...observables: (SourceInput<T> | number)[]
-): Observable<T>;
+): qs.Source<T>;
 export function merge<T, R>(
   ...observables: (SourceInput<any> | number)[]
-): Observable<R>;
+): qs.Source<R>;
 export function merge<T, R>(
-  ...observables: Array<SourceInput<any> | Scheduler | number | undefined>
-): Observable<R> {
+  ...observables: Array<qt.SourceInput<any> | qh.Scheduler | number | undefined>
+): qs.Source<R> {
   let concurrent = Number.POSITIVE_INFINITY;
-  let scheduler: Scheduler | undefined = undefined;
+  let scheduler: qh.Scheduler | undefined = undefined;
   let last: any = observables[observables.length - 1];
   if (isScheduler(last)) {
     scheduler = <Scheduler>observables.pop();
@@ -1870,21 +1583,21 @@ export function merge<T, R>(
   return mergeAll<R>(concurrent)(fromArray<any>(observables, scheduler));
 }
 
-export const NEVER = new Observable<never>(noop);
+export const NEVER = new qs.Source<never>(noop);
 
-export function of(): Observable<never>;
-export function of<T>(value: T): Observable<T>;
-export function of<T, U>(value1: T, value2: U): Observable<T | U>;
+export function of(): qs.Source<never>;
+export function of<T>(value: T): qs.Source<T>;
+export function of<T, U>(value1: T, value2: U): qs.Source<T | U>;
 export function of<T, U, V>(
   value1: T,
   value2: U,
   value3: V
-): Observable<T | U | V>;
+): qs.Source<T | U | V>;
 export function of<A extends Array<any>>(
   ...args: A
-): Observable<ValueFromArray<A>>;
-export function of<T>(...args: Array<T | Scheduler>): Observable<T> {
-  let scheduler = args[args.length - 1] as Scheduler;
+): qs.Source<ValueFromArray<A>>;
+export function of<T>(...args: Array<T | qh.Scheduler>): qs.Source<T> {
+  let scheduler = args[args.length - 1] as qh.Scheduler;
   if (isScheduler(scheduler)) {
     args.pop();
     return scheduleArray(args as T[], scheduler);
@@ -1893,39 +1606,42 @@ export function of<T>(...args: Array<T | Scheduler>): Observable<T> {
   }
 }
 
-export function onErrorResumeNext<R>(v: SourceInput<R>): Observable<R>;
+export function onErrorResumeNext<R>(v: qt.SourceInput<R>): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, R>(
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>
-): Observable<R>;
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>
+): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, R>(
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>
-): Observable<R>;
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>
+): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, R>(
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
-  v5: SourceInput<T5>
-): Observable<R>;
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
+  v5: qt.SourceInput<T5>
+): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, T6, R>(
-  v2: SourceInput<T2>,
-  v3: SourceInput<T3>,
-  v4: SourceInput<T4>,
-  v5: SourceInput<T5>,
-  v6: SourceInput<T6>
-): Observable<R>;
-
+  v2: qt.SourceInput<T2>,
+  v3: qt.SourceInput<T3>,
+  v4: qt.SourceInput<T4>,
+  v5: qt.SourceInput<T5>,
+  v6: qt.SourceInput<T6>
+): qs.Source<R>;
 export function onErrorResumeNext<R>(
-  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
-): Observable<R>;
-export function onErrorResumeNext<R>(array: SourceInput<any>[]): Observable<R>;
+  ...observables: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+): qs.Source<R>;
+export function onErrorResumeNext<R>(
+  array: qt.SourceInput<any>[]
+): qs.Source<R>;
 export function onErrorResumeNext<T, R>(
   ...sources: Array<
-    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
+    | qt.SourceInput<any>
+    | Array<qt.SourceInput<any>>
+    | ((...values: Array<any>) => R)
   >
-): Observable<R> {
+): qs.Source<R> {
   if (sources.length === 0) {
     return EMPTY;
   }
@@ -1936,7 +1652,7 @@ export function onErrorResumeNext<T, R>(
     return onErrorResumeNext(...first);
   }
 
-  return new Observable(subscriber => {
+  return new qs.Source(subscriber => {
     const subNext = () =>
       subscriber.add(onErrorResumeNext(...remainder).subscribe(subscriber));
 
@@ -1952,10 +1668,10 @@ export function onErrorResumeNext<T, R>(
 
 export function pairs<T>(
   obj: Object,
-  scheduler?: Scheduler
-): Observable<[string, T]> {
+  h?: qh.Scheduler
+): qs.Source<[string, T]> {
   if (!scheduler) {
-    return new Observable<[string, T]>(subscriber => {
+    return new qs.Source<[string, T]>(subscriber => {
       const keys = Object.keys(obj);
       for (let i = 0; i < keys.length && !subscriber.closed; i++) {
         const key = keys[i];
@@ -1963,18 +1679,18 @@ export function pairs<T>(
           subscriber.next([key, (obj as any)[key]]);
         }
       }
-      subscriber.complete();
+      subscriber.done();
     });
   } else {
-    return new Observable<[string, T]>(subscriber => {
+    return new qs.Source<[string, T]>(subscriber => {
       const keys = Object.keys(obj);
-      const subscription = new Subscription();
+      const subscription = new qj.Subscription();
       subscription.add(
         scheduler.schedule<{
           keys: string[];
           index: number;
-          subscriber: Subscriber<[string, T]>;
-          subscription: Subscription;
+          subscriber: qj.Subscriber<[string, T]>;
+          subscription: qj.Subscription;
           obj: Object;
         }>(dispatch as any, 0, {keys, index: 0, subscriber, subscription, obj})
       );
@@ -1984,12 +1700,12 @@ export function pairs<T>(
 }
 
 export function dispatch<T>(
-  this: Action<any>,
+  this: qh.Action<any>,
   state: {
     keys: string[];
     index: number;
-    subscriber: Subscriber<[string, T]>;
-    subscription: Subscription;
+    subscriber: qj.Subscriber<[string, T]>;
+    subscription: qj.Subscription;
     obj: Object;
   }
 ) {
@@ -2002,56 +1718,56 @@ export function dispatch<T>(
         this.schedule({keys, index: index + 1, subscriber, subscription, obj})
       );
     } else {
-      subscriber.complete();
+      subscriber.done();
     }
   }
 }
 
 export function partition<T>(
-  source: SourceInput<T>,
+  source: qt.SourceInput<T>,
   predicate: (value: T, index: number) => boolean,
   thisArg?: any
-): [Observable<T>, Observable<T>] {
+): [Observable<T>, qs.Source<T>] {
   return [
-    filter(predicate, thisArg)(new Observable<T>(subscribeTo(source))),
+    filter(predicate, thisArg)(new qs.Source<T>(subscribeTo(source))),
     filter(not(predicate, thisArg) as any)(
-      new Observable<T>(subscribeTo(source))
+      new qs.Source<T>(subscribeTo(source))
     )
-  ] as [Observable<T>, Observable<T>];
+  ] as [Observable<T>, qs.Source<T>];
 }
 
-export function race<A extends SourceInput<any>[]>(
+export function race<A extends qt.SourceInput<any>[]>(
   observables: A
-): Observable<SourcedFrom<A>>;
-export function race<A extends SourceInput<any>[]>(
+): qs.Source<SourcedFrom<A>>;
+export function race<A extends qt.SourceInput<any>[]>(
   ...observables: A
-): Observable<SourcedFrom<A>>;
+): qs.Source<SourcedFrom<A>>;
 export function race<T>(
-  ...observables: (SourceInput<T> | SourceInput<T>[])[]
-): Observable<any> {
+  ...observables: (SourceInput<T> | qt.SourceInput<T>[])[]
+): qs.Source<any> {
   if (observables.length === 1) {
     if (isArray(observables[0])) {
-      observables = observables[0] as SourceInput<T>[];
+      observables = observables[0] as qt.SourceInput<T>[];
     } else {
-      return from(observables[0] as SourceInput<T>);
+      return from(observables[0] as qt.SourceInput<T>);
     }
   }
 
   return fromArray(observables, undefined).lift(new RaceOperator<T>());
 }
 
-export class RaceOperator<T> implements Operator<T, T> {
-  call(subscriber: Subscriber<T>, source: any): Closer {
+export class RaceOperator<T> implements qt.Operator<T, T> {
+  call(subscriber: qj.Subscriber<T>, source: any): qt.Closer {
     return source.subscribe(new RaceSubscriber(subscriber));
   }
 }
 
 export class RaceSubscriber<T> extends ReactorSubscriber<T, T> {
   private hasFirst: boolean = false;
-  private observables: Observable<any>[] = [];
-  private subscriptions: Subscription[] = [];
+  private observables: qs.Source<any>[] = [];
+  private subscriptions: qj.Subscription[] = [];
 
-  constructor(destination: Subscriber<T>) {
+  constructor(destination: qj.Subscriber<T>) {
     super(destination);
   }
 
@@ -2059,12 +1775,12 @@ export class RaceSubscriber<T> extends ReactorSubscriber<T, T> {
     this.observables.push(observable);
   }
 
-  protected _complete() {
+  protected _done() {
     const observables = this.observables;
     const len = observables.length;
 
     if (len === 0) {
-      this.destination.complete();
+      this.destination.done();
     } else {
       for (let i = 0; i < len && !this.hasFirst; i++) {
         let observable = observables[i];
@@ -2123,9 +1839,9 @@ export class RaceSubscriber<T> extends ReactorSubscriber<T, T> {
 export function range(
   start: number = 0,
   count?: number,
-  scheduler?: Scheduler
-): Observable<number> {
-  return new Observable<number>(subscriber => {
+  h?: qh.Scheduler
+): qs.Source<number> {
+  return new qs.Source<number>(subscriber => {
     if (count === undefined) {
       count = start;
       start = 0;
@@ -2144,7 +1860,7 @@ export function range(
     } else {
       do {
         if (index++ >= count) {
-          subscriber.complete();
+          subscriber.done();
           break;
         }
         subscriber.next(current++);
@@ -2159,11 +1875,11 @@ export function range(
 }
 
 /** @internal */
-export function dispatch(this: Action<any>, state: any) {
+export function dispatch(this: qh.Action<any>, state: any) {
   const {start, index, count, subscriber} = state;
 
   if (index >= count) {
-    subscriber.complete();
+    subscriber.done();
     return;
   }
 
@@ -2179,14 +1895,11 @@ export function dispatch(this: Action<any>, state: any) {
   this.schedule(state);
 }
 
-export function throwError(
-  error: any,
-  scheduler?: Scheduler
-): Observable<never> {
+export function throwError(error: any, h?: qh.Scheduler): qs.Source<never> {
   if (!scheduler) {
-    return new Observable(subscriber => subscriber.error(error));
+    return new qs.Source(subscriber => subscriber.error(error));
   } else {
-    return new Observable(subscriber =>
+    return new qs.Source(subscriber =>
       scheduler.schedule(dispatch as any, 0, {error, subscriber})
     );
   }
@@ -2194,7 +1907,7 @@ export function throwError(
 
 interface DispatchArg {
   error: any;
-  subscriber: Subscriber<any>;
+  subscriber: qj.Subscriber<any>;
 }
 
 function dispatch({error, subscriber}: DispatchArg) {
@@ -2203,9 +1916,9 @@ function dispatch({error, subscriber}: DispatchArg) {
 
 export function timer(
   dueTime: number | Date = 0,
-  periodOrScheduler?: number | Scheduler,
-  scheduler?: Scheduler
-): Observable<number> {
+  periodOrScheduler?: number | qh.Scheduler,
+  h?: qh.Scheduler
+): qs.Source<number> {
   let period = -1;
   if (isNumeric(periodOrScheduler)) {
     period = (Number(periodOrScheduler) < 1 && 1) || Number(periodOrScheduler);
@@ -2217,7 +1930,7 @@ export function timer(
     scheduler = async;
   }
 
-  return new Observable(subscriber => {
+  return new qs.Source(subscriber => {
     const due = isNumeric(dueTime)
       ? (dueTime as number)
       : +dueTime - scheduler!.now();
@@ -2233,17 +1946,17 @@ export function timer(
 interface TimerState {
   index: number;
   period: number;
-  subscriber: Subscriber<number>;
+  subscriber: qj.Subscriber<number>;
 }
 
-function dispatch(this: Action<TimerState>, state: TimerState) {
+function dispatch(this: qh.Action<TimerState>, state: TimerState) {
   const {index, period, subscriber} = state;
   subscriber.next(index);
 
   if (subscriber.closed) {
     return;
   } else if (period === -1) {
-    return subscriber.complete();
+    return subscriber.done();
   }
 
   state.index = index + 1;
@@ -2251,11 +1964,13 @@ function dispatch(this: Action<TimerState>, state: TimerState) {
 }
 
 export function using<T>(
-  resourceFactory: () => Unsubscriber | void,
-  observableFactory: (resource: Unsubscriber | void) => SourceInput<T> | void
-): Observable<T> {
-  return new Observable<T>(subscriber => {
-    let resource: Unsubscriber | void;
+  resourceFactory: () => qt.Unsubscriber | void,
+  observableFactory: (
+    resource: qt.Unsubscriber | void
+  ) => qt.SourceInput<T> | void
+): qs.Source<T> {
+  return new qs.Source<T>(subscriber => {
+    let resource: qt.Unsubscriber | void;
 
     try {
       resource = resourceFactory();
@@ -2264,7 +1979,7 @@ export function using<T>(
       return undefined;
     }
 
-    let result: SourceInput<T> | void;
+    let result: qt.SourceInput<T> | void;
     try {
       result = observableFactory(resource);
     } catch (err) {
@@ -2281,320 +1996,4 @@ export function using<T>(
       }
     };
   });
-}
-
-export function zip<O1 extends SourceInput<any>, O2 extends SourceInput<any>>(
-  v1: O1,
-  v2: O2
-): Observable<[Sourced<O1>, Sourced<O2>]>;
-export function zip<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>
->(v1: O1, v2: O2, v3: O3): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>]>;
-export function zip<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>,
-  O4 extends SourceInput<any>
->(
-  v1: O1,
-  v2: O2,
-  v3: O3,
-  v4: O4
-): Observable<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
-export function zip<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>,
-  O4 extends SourceInput<any>,
-  O5 extends SourceInput<any>
->(
-  v1: O1,
-  v2: O2,
-  v3: O3,
-  v4: O4,
-  v5: O5
-): Observable<
-  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]
->;
-export function zip<
-  O1 extends SourceInput<any>,
-  O2 extends SourceInput<any>,
-  O3 extends SourceInput<any>,
-  O4 extends SourceInput<any>,
-  O5 extends SourceInput<any>,
-  O6 extends SourceInput<any>
->(
-  v1: O1,
-  v2: O2,
-  v3: O3,
-  v4: O4,
-  v5: O5,
-  v6: O6
-): Observable<
-  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>, Sourced<O6>]
->;
-export function zip<O extends SourceInput<any>>(
-  array: O[]
-): Observable<Sourced<O>[]>;
-export function zip<R>(array: SourceInput<any>[]): Observable<R>;
-export function zip<O extends SourceInput<any>>(
-  ...observables: O[]
-): Observable<Sourced<O>[]>;
-export function zip<O extends SourceInput<any>, R>(
-  ...observables: Array<O | ((...values: Sourced<O>[]) => R)>
-): Observable<R>;
-export function zip<R>(
-  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
-): Observable<R>;
-export function zip<O extends SourceInput<any>, R>(
-  ...observables: Array<O | ((...values: Sourced<O>[]) => R)>
-): Observable<Sourced<O>[] | R> {
-  const last = observables[observables.length - 1];
-  let resultSelector: ((...ys: Array<any>) => R) | undefined = undefined;
-  if (typeof last === 'function') {
-    resultSelector = observables.pop() as typeof resultSelector;
-  }
-  return fromArray(observables, undefined).lift(
-    new ZipOperator(resultSelector)
-  );
-}
-
-export class ZipOperator<T, R> implements Operator<T, R> {
-  resultSelector?: (...values: Array<any>) => R;
-
-  constructor(resultSelector?: (...values: Array<any>) => R) {
-    this.resultSelector = resultSelector;
-  }
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new ZipSubscriber(subscriber, this.resultSelector));
-  }
-}
-
-export class ZipSubscriber<T, R> extends Subscriber<T> {
-  private values: any;
-  private resultSelector?: (...values: Array<any>) => R;
-  private iterators: LookAheadIterator<any>[] = [];
-  private active = 0;
-
-  constructor(
-    destination: Subscriber<R>,
-    resultSelector?: (...values: Array<any>) => R,
-    values: any = Object.create(null)
-  ) {
-    super(destination);
-    this.resultSelector = resultSelector;
-    this.values = values;
-  }
-
-  protected _next(value: any) {
-    const iterators = this.iterators;
-    if (isArray(value)) {
-      iterators.push(new StaticArrayIterator(value));
-    } else if (typeof value[Symbol.iterator] === 'function') {
-      iterators.push(new StaticIterator(value[Symbol.iterator]()));
-    } else {
-      iterators.push(new ZipBufferIterator(this.destination, this, value));
-    }
-  }
-
-  protected _complete() {
-    const iterators = this.iterators;
-    const len = iterators.length;
-
-    this.unsubscribe();
-
-    if (len === 0) {
-      this.destination.complete();
-      return;
-    }
-
-    this.active = len;
-    for (let i = 0; i < len; i++) {
-      let iterator: ZipBufferIterator<any, any> = <any>iterators[i];
-      if (iterator.stillUnsubscribed) {
-        const destination = this.destination as Subscription;
-        destination.add(iterator.subscribe(iterator, i));
-      } else {
-        this.active--; // not an observable
-      }
-    }
-  }
-
-  notifyInactive() {
-    this.active--;
-    if (this.active === 0) {
-      this.destination.complete();
-    }
-  }
-
-  checkIterators() {
-    const iterators = this.iterators;
-    const len = iterators.length;
-    const destination = this.destination;
-    for (let i = 0; i < len; i++) {
-      let iterator = iterators[i];
-      if (typeof iterator.hasValue === 'function' && !iterator.hasValue()) {
-        return;
-      }
-    }
-
-    let shouldComplete = false;
-    const args: any[] = [];
-    for (let i = 0; i < len; i++) {
-      let iterator = iterators[i];
-      let result = iterator.next();
-      if (iterator.hasCompleted()) {
-        shouldComplete = true;
-      }
-
-      if (result.done) {
-        destination.complete();
-        return;
-      }
-
-      args.push(result.value);
-    }
-
-    if (this.resultSelector) {
-      this._tryresultSelector(args);
-    } else {
-      destination.next(args);
-    }
-
-    if (shouldComplete) {
-      destination.complete();
-    }
-  }
-
-  protected _tryresultSelector(args: any[]) {
-    let result: any;
-    try {
-      result = this.resultSelector!.apply(this, args);
-    } catch (err) {
-      this.destination.error(err);
-      return;
-    }
-    this.destination.next(result);
-  }
-}
-
-interface LookAheadIterator<T> extends Iterator<T> {
-  hasValue(): boolean;
-  hasCompleted(): boolean;
-}
-
-class StaticIterator<T> implements LookAheadIterator<T> {
-  private nextResult: IteratorResult<T>;
-
-  constructor(private iterator: Iterator<T>) {
-    this.nextResult = iterator.next();
-  }
-
-  hasValue() {
-    return true;
-  }
-
-  next(): IteratorResult<T> {
-    const result = this.nextResult;
-    this.nextResult = this.iterator.next();
-    return result;
-  }
-
-  hasCompleted() {
-    const nextResult = this.nextResult;
-    return nextResult && !!nextResult.done;
-  }
-}
-
-class StaticArrayIterator<T> implements LookAheadIterator<T> {
-  private index = 0;
-  private length = 0;
-
-  constructor(private array: T[]) {
-    this.length = array.length;
-  }
-
-  [Symbol.iterator]() {
-    return this;
-  }
-
-  next(value?: any): IteratorResult<T> {
-    const i = this.index++;
-    const array = this.array;
-    return i < this.length
-      ? {value: array[i], done: false}
-      : {value: null, done: true};
-  }
-
-  hasValue() {
-    return this.array.length > this.index;
-  }
-
-  hasCompleted() {
-    return this.array.length === this.index;
-  }
-}
-
-class ZipBufferIterator<T, R> extends ReactorSubscriber<T, R>
-  implements LookAheadIterator<T> {
-  stillUnsubscribed = true;
-  buffer: T[] = [];
-  isComplete = false;
-
-  constructor(
-    destination: Target<T>,
-    private parent: ZipSubscriber<T, R>,
-    private observable: Observable<T>
-  ) {
-    super(destination);
-  }
-
-  [Symbol.iterator]() {
-    return this;
-  }
-  // NOTE: there is actually a name collision here with Subscriber.next and Iterator.next
-  //    this is legit because `next()` will never be called by a subscription in this case.
-  next(): IteratorResult<T> {
-    const buffer = this.buffer;
-    if (buffer.length === 0 && this.isComplete) {
-      return {value: null, done: true};
-    } else {
-      return {value: buffer.shift()!, done: false};
-    }
-  }
-
-  hasValue() {
-    return this.buffer.length > 0;
-  }
-
-  hasCompleted() {
-    return this.buffer.length === 0 && this.isComplete;
-  }
-
-  notifyComplete() {
-    if (this.buffer.length > 0) {
-      this.isComplete = true;
-      this.parent.notifyInactive();
-    } else {
-      this.destination.complete();
-    }
-  }
-
-  reactNext(
-    outerN: T,
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: ActorSubscriber<T, R>
-  ): void {
-    this.buffer.push(innerValue);
-    this.parent.checkIterators();
-  }
-
-  subscribe(value: any, index: number) {
-    return subscribeToResult<any, any>(this, this.observable, this, index);
-  }
 }
