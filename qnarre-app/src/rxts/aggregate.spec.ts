@@ -4135,7 +4135,6 @@ describe('reduce', () => {
   });
 
   it('should act appropriately with no seed', () => {
-    // Starting in TS 3.5, the return type is inferred from the accumulator's type if it's provided without a seed.
     const a = of(1, 2, 3).pipe(reduce((a: any, v) => '' + v)); // $ExpectType Observable<any>
     const b = of(1, 2, 3).pipe(reduce((a, v) => v)); // $ExpectType Observable<number>
     const c = of(1, 2, 3).pipe(reduce(() => {})); // $ExpectType Observable<number | void>

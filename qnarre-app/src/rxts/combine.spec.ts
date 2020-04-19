@@ -14,6 +14,366 @@ declare const Symbol: any;
 
 const queueScheduler = rxQueue;
 
+describe('endWith', () => {
+  const defaultStartValue = 'x';
+
+  asDiagram('endWith(s)')('should append to a cold Observable', () => {
+    const e1 = cold('---a--b--c--|');
+    const e1subs = '^           !';
+    const expected = '---a--b--c--(s|)';
+
+    expectSource(e1.pipe(endWith('s'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+  it('should support a scheduler', () => {
+    const r = of(a).pipe(endWith(asyncScheduler)); // $ExpectType Observable<A>
+  });
+
+  it('should infer type for N values', () => {
+    const r0 = of(a).pipe(endWith()); // $ExpectType Observable<A>
+    const r1 = of(a).pipe(endWith(b)); // $ExpectType Observable<A | B>
+    const r2 = of(a).pipe(endWith(b, c)); // $ExpectType Observable<A | B | C>
+    const r3 = of(a).pipe(endWith(b, c, d)); // $ExpectType Observable<A | B | C | D>
+    const r4 = of(a).pipe(endWith(b, c, d, e)); // $ExpectType Observable<A | B | C | D | E>
+    const r5 = of(a).pipe(endWith(b, c, d, e, f)); // $ExpectType Observable<A | B | C | D | E | F>
+    const r6 = of(a).pipe(endWith(b, c, d, e, f, g)); // $ExpectType Observable<A | B | C | D | E | F | G>
+    const r7 = of(a).pipe(endWith(b, c, d, e, f, g, h)); // $ExpectType Observable<A | B | C | D | E | F | G | H>
+  });
+
+  it('should append numbers to a cold Observable', () => {
+    const values = {a: 1, b: 2, c: 3, s: 4};
+    const e1 = cold('---a--b--c--|', values);
+    const e1subs = '^           !';
+    const expected = '---a--b--c--(s|)';
+
+    expectSource(e1.pipe(endWith(values.s))).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should end an observable with given value', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = '--a--(x|)';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not end with given value if source does not complete', () => {
+    const e1 = hot('----a-');
+    const e1subs = '^     ';
+    const expected = '----a-';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not end with given value if source never emits and does not completes', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should end with given value if source does not emit but does complete', () => {
+    const e1 = hot('---|');
+    const e1subs = '^  !';
+    const expected = '---(x|)';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit given value and complete immediately if source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '(x|)';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should end with given value and source both if source emits single value', () => {
+    const e1 = cold('(a|)');
+    const e1subs = '(^!)';
+    const expected = '(ax|)';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should end with given values when given more than one value', () => {
+    const e1 = hot('-----a--|');
+    const e1subs = '^       !';
+    const expected = '-----a--(yz|)';
+
+    expectSource(e1.pipe(endWith('y', 'z'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error and not end with given value if source raises error', () => {
+    const e1 = hot('--#');
+    const e1subs = '^ !';
+    const expected = '--#';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(
+      expected,
+      defaultStartValue
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error immediately and not end with given value if source throws error immediately', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(
+      expected,
+      defaultStartValue
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('---a--b----c--d--|');
+    const unsub = '         !        ';
+    const e1subs = '^        !        ';
+    const expected = '---a--b---';
+
+    const result = e1.pipe(endWith('s', rxTestScheduler));
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('---a--b----c--d--|');
+    const e1subs = '^        !        ';
+    const expected = '---a--b---        ';
+    const unsub = '         !        ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      endWith('s', rxTestScheduler),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should end with empty if given value is not specified', () => {
+    const e1 = hot('-a-|');
+    const e1subs = '^  !';
+    const expected = '-a-|';
+
+    expectSource(e1.pipe(endWith(rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should accept scheduler as last argument with single value', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = '--a--(x|)';
+
+    expectSource(e1.pipe(endWith(defaultStartValue, rxTestScheduler))).toBe(
+      expected
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should accept scheduler as last argument with multiple value', () => {
+    const e1 = hot('-----a--|');
+    const e1subs = '^       !';
+    const expected = '-----a--(yz|)';
+
+    expectSource(e1.pipe(endWith('y', 'z', rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
+describe('startWith', () => {
+  const defaultStartValue = 'x';
+
+  asDiagram('startWith(s)')('should prepend to a cold Observable', () => {
+    const e1 = cold('---a--b--c--|');
+    const e1subs = '^           !';
+    const expected = 's--a--b--c--|';
+
+    expectSource(e1.pipe(startWith('s'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+  it('should infer correctly with N values', () => {
+    const r0 = of(a).pipe(startWith()); // $ExpectType Observable<A>
+    const r1 = of(a).pipe(startWith(b)); // $ExpectType Observable<A | B>
+    const r2 = of(a).pipe(startWith(b, c)); // $ExpectType Observable<A | B | C>
+    const r3 = of(a).pipe(startWith(b, c, d)); // $ExpectType Observable<A | B | C | D>
+    const r4 = of(a).pipe(startWith(b, c, d, e)); // $ExpectType Observable<A | B | C | D | E>
+    const r5 = of(a).pipe(startWith(b, c, d, e, f)); // $ExpectType Observable<A | B | C | D | E | F>
+    const r6 = of(a).pipe(startWith(b, c, d, e, f, g)); // $ExpectType Observable<A | B | C | D | E | F | G>
+    const r7 = of(a).pipe(startWith(b, c, d, e, f, g, h)); // $ExpectType Observable<A | B | C | D | E | F | G | H>
+  });
+
+  it('should infer correctly with only a scheduler', () => {
+    const r = of(a).pipe(startWith(asyncScheduler)); // $ExpectType Observable<A>
+    const r1 = of(a).pipe(startWith(b, asyncScheduler)); // $ExpectType Observable<A | B>
+    const r2 = of(a).pipe(startWith(b, c, asyncScheduler)); // $ExpectType Observable<A | B | C>
+    const r3 = of(a).pipe(startWith(b, c, d, asyncScheduler)); // $ExpectType Observable<A | B | C | D>
+    const r4 = of(a).pipe(startWith(b, c, d, e, asyncScheduler)); // $ExpectType Observable<A | B | C | D | E>
+    const r5 = of(a).pipe(startWith(b, c, d, e, f, asyncScheduler)); // $ExpectType Observable<A | B | C | D | E | F>
+    const r6 = of(a).pipe(startWith(b, c, d, e, f, g, asyncScheduler)); // $ExpectType Observable<A | B | C | D | E | F | G>
+  });
+
+  it('should start an observable with given value', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = 'x-a--|';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and does not completes if source does not completes', () => {
+    const e1 = hot('----a-');
+    const e1subs = '^     ';
+    const expected = 'x---a-';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and does not completes if source never emits', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = 'x-';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and completes if source does not emits', () => {
+    const e1 = hot('---|');
+    const e1subs = '^  !';
+    const expected = 'x--|';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and complete immediately if source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '(x|)';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and source both if source emits single value', () => {
+    const e1 = cold('(a|)');
+    const e1subs = '(^!)';
+    const expected = '(xa|)';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given values when given value is more than one', () => {
+    const e1 = hot('-----a--|');
+    const e1subs = '^       !';
+    const expected = '(yz)-a--|';
+
+    expectSource(e1.pipe(startWith('y', 'z'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and raises error if source raises error', () => {
+    const e1 = hot('--#');
+    const e1subs = '^ !';
+    const expected = 'x-#';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(
+      expected,
+      defaultStartValue
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with given value and raises error immediately if source throws error', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '(x#)';
+
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(
+      expected,
+      defaultStartValue
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('---a--b----c--d--|');
+    const unsub = '         !        ';
+    const e1subs = '^        !        ';
+    const expected = 's--a--b---';
+    const values = {s: 's', a: 'a', b: 'b'};
+
+    const result = e1.pipe(startWith('s', rxTestScheduler));
+
+    expectSource(result, unsub).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('---a--b----c--d--|');
+    const e1subs = '^        !        ';
+    const expected = 's--a--b---        ';
+    const unsub = '         !        ';
+    const values = {s: 's', a: 'a', b: 'b'};
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      startWith('s', rxTestScheduler),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should start with empty if given value is not specified', () => {
+    const e1 = hot('-a-|');
+    const e1subs = '^  !';
+    const expected = '-a-|';
+
+    expectSource(e1.pipe(startWith(rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should accept scheduler as last argument with single value', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = 'x-a--|';
+
+    expectSource(e1.pipe(startWith(defaultStartValue, rxTestScheduler))).toBe(
+      expected
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should accept scheduler as last argument with multiple value', () => {
+    const e1 = hot('-----a--|');
+    const e1subs = '^       !';
+    const expected = '(yz)-a--|';
+
+    expectSource(e1.pipe(startWith('y', 'z', rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
 describe('zip', () => {
   it('should support observables', () => {
     const a = of(1); // $ExpectType Observable<number>

@@ -1,6 +1,3 @@
-import {OutOfRangeError} from 'rxjs';
-
-/** @test {OutOfRangeError} */
 describe('OutOfRangeError', () => {
   const error = new OutOfRangeError();
   it('Should have a name', () => {
@@ -10,9 +7,7 @@ describe('OutOfRangeError', () => {
     expect(error.message).to.be.equal('argument out of range');
   });
 });
-import {EmptyError} from 'rxjs';
 
-/** @test {EmptyError} */
 describe('EmptyError', () => {
   const error = new EmptyError();
   it('Should have a name', () => {
@@ -22,8 +17,6 @@ describe('EmptyError', () => {
     expect(error.message).to.be.equal('no elements in sequence');
   });
 });
-// TODO: import was changed due to the fact that at startup the test referred to rxjs from node_modules
-import {Immediate, TestTools} from '../../util/Immediate';
 
 describe('Immediate', () => {
   it('should schedule on the next microtask', done => {
@@ -67,9 +60,7 @@ describe('Immediate', () => {
     });
   });
 });
-import {isNumeric} from 'rxjs/internal/util/isNumeric';
 
-/** @test {isNumeric} */
 describe('isNumeric', () => {
   it('should cover the following numeric scenario', () => {
     expect(isNumeric(' ')).to.be.false;
@@ -84,9 +75,7 @@ describe('isNumeric', () => {
     expect(isNumeric('6e6')).to.be.true;
   });
 });
-import {UnsubscribedError} from 'rxjs';
 
-/** @test {UnsubscribedError} */
 describe('UnsubscribedError', () => {
   const error = new UnsubscribedError();
   it('Should have a name', () => {
@@ -96,9 +85,7 @@ describe('UnsubscribedError', () => {
     expect(error.message).to.be.equal('object unsubscribed');
   });
 });
-import {TimeoutError} from 'rxjs';
 
-/** @test {TimeoutError} */
 describe('TimeoutError', () => {
   const error = new TimeoutError();
   it('Should have a name', () => {
@@ -108,9 +95,7 @@ describe('TimeoutError', () => {
     expect(error.message).to.be.equal('Timeout has occurred');
   });
 });
-import {UnsubscribeError, Observable, timer, merge} from 'rxjs';
 
-/** @test {UnsubscribeError} */
 describe('UnsubscribeError', () => {
   it('should create a message that is a clear indication of its internal errors', () => {
     const err1 = new Error('Swiss cheese tastes amazing but smells like socks');
@@ -135,8 +120,6 @@ describe('UnsubscribeError', () => {
     }
   });
 });
-import {noop, Subject, Subscriber} from 'rxjs';
-import {canReportError} from 'rxjs/internal/util/canReportError';
 
 describe('canReportError', () => {
   it('should report errors to an observer if possible', () => {
@@ -163,7 +146,6 @@ describe('canReportError', () => {
     expect(canReportError(subscriber)).to.be.false;
   });
 });
-import {Observable, isSource} from 'rxjs';
 
 describe('isSource', () => {
   it('should return true for RxJS Observable', () => {
@@ -202,8 +184,6 @@ describe('isSource', () => {
     expect(isSource(1)).to.be.false;
   });
 });
-import {of} from 'rxjs';
-import {isPromise} from 'rxjs/internal/util/isPromise';
 
 describe('isPromise', () => {
   it('should return true for new Promise', () => {
@@ -238,7 +218,6 @@ describe('isPromise', () => {
     expect(isPromise('1')).to.be.false;
   });
 });
-import {pipe} from 'rxjs';
 
 describe('pipe', () => {
   it('should exist', () => {
@@ -270,12 +249,6 @@ describe('pipe', () => {
     expect(c(someObj)).to.equal(someObj);
   });
 });
-
-import {ReactorSubscriber} from 'rxjs/internal/ReactorSubscriber';
-import {subscribeToResult} from 'rxjs/internal/util/subscribeToResult';
-import {iterator} from 'rxjs/internal/symbol/iterator';
-import {observable as $$symbolObservable} from 'rxjs/internal/symbol/observable';
-import {of, range, throwError} from 'rxjs';
 
 describe('subscribeToResult', () => {
   it('should synchronously complete when subscribed to scalarObservable', () => {
@@ -491,7 +464,6 @@ describe('subscribeToResult', () => {
     );
   });
 });
-import {toSubscriber} from 'rxjs/internal/util/toSubscriber';
 
 describe('toSubscriber', () => {
   it('should not be closed when other subscriber created with no arguments completes', () => {

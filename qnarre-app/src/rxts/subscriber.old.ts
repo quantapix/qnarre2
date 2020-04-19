@@ -178,16 +178,6 @@ class DeMaterializeOperator<T extends Notification<any>, R>
   }
 }
 
-export function endWith<T, A extends any[]>(
-  ...args: A
-): Lifter<T, T | ValueFromArray<A>>;
-export function endWith<N, F, D>(
-  ...values: Array<T | qt.Scheduler>
-): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    concatStatic(source, of(...values)) as qt.Source<N, F, D>;
-}
-
 export function every<N, F, D>(
   predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
@@ -211,54 +201,6 @@ class EveryOperator<N, F, D> implements qt.Operator<T, boolean> {
     return source.subscribe(
       new EverySubscriber(observer, this.predicate, this.thisArg, this.source)
     );
-  }
-}
-
-export function exhaust<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function exhaust<R>(): Lifter<any, R>;
-export function exhaust<N, F, D>(): Lifter<any, T> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new SwitchFirstOperator<N, F, D>());
-}
-
-class SwitchFirstOperator<N, F, D> implements qt.Operator<N, N, F, D> {
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new SwitchFirstSubscriber(subscriber));
-  }
-}
-
-export function exhaustMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function exhaustMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (resultSelector) {
-    // DEPRECATED PATH
-    return (source: qt.Source<N, F, D>) =>
-      source.pipe(
-        exhaustMap((a, i) =>
-          from(project(a, i)).pipe(
-            map((b: any, ii: any) => resultSelector(a, b, i, ii))
-          )
-        )
-      );
-  }
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new ExhaustMapOperator(project));
-}
-
-class ExhaustMapOperator<T, R> implements qt.Operator<T, R> {
-  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new ExhaustMapSubscriber(subscriber, this.project));
   }
 }
 
@@ -547,122 +489,6 @@ class MaterializeOperator<N, F, D>
   call(subscriber: Subscriber<Notification<N, F, D>>, source: any): any {
     return source.subscribe(new MaterializeSubscriber(subscriber));
   }
-}
-
-export function mergeAll<N, F, D>(
-  concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<SourceInput<N, F, D>, T> {
-  return mergeMap(identity, concurrent);
-}
-
-export function mergeMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  concurrent?: number
-): Lifter<T, Sourced<O>>;
-export function mergeMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?:
-    | ((
-        outerN: T,
-        innerValue: Sourced<O>,
-        outerX: number,
-        innerIndex: number
-      ) => R)
-    | number,
-  concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return (source: qt.Source<N, F, D>) =>
-      source.pipe(
-        mergeMap(
-          (a, i) =>
-            from(project(a, i)).pipe(
-              map((b: any, ii: number) => resultSelector(a, b, i, ii))
-            ),
-          concurrent
-        )
-      );
-  } else if (typeof resultSelector === 'number') {
-    concurrent = resultSelector;
-  }
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new MergeMapOperator(project, concurrent));
-}
-
-export class MergeMapOperator<T, R> implements qt.Operator<T, R> {
-  constructor(
-    private project: (value: T, index: number) => SourceInput<R>,
-    private concurrent: number = Number.POSITIVE_INFINITY
-  ) {}
-
-  call(observer: Subscriber<R>, source: any): any {
-    return source.subscribe(
-      new MergeMapSubscriber(observer, this.project, this.concurrent)
-    );
-  }
-}
-
-export function mergeMapTo<O extends SourceInput<any>>(
-  innerObservable: O,
-  concurrent?: number
-): Lifter<any, Sourced<O>>;
-export function mergeMapTo<T, R, O extends SourceInput<any>>(
-  innerObservable: O,
-  resultSelector?:
-    | ((
-        outerN: T,
-        innerValue: Sourced<O>,
-        outerX: number,
-        innerIndex: number
-      ) => R)
-    | number,
-  concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return mergeMap(() => innerObservable, resultSelector, concurrent);
-  }
-  if (typeof resultSelector === 'number') {
-    concurrent = resultSelector;
-  }
-  return mergeMap(() => innerObservable, concurrent);
-}
-
-export function mergeScan<T, R>(
-  accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
-  seed: R,
-  concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, R> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new MergeScanOperator(accumulator, seed, concurrent));
-}
-
-export class MergeScanOperator<T, R> implements qt.Operator<T, R> {
-  constructor(
-    private accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
-    private seed: R,
-    private concurrent: number
-  ) {}
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(
-      new MergeScanSubscriber(
-        subscriber,
-        this.accumulator,
-        this.seed,
-        this.concurrent
-      )
-    );
-  }
-}
-
-export function mergeWith<N, F, D>(): Lifter<T, T>;
-export function mergeWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, T | SourcedFrom<A>>;
-export function mergeWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, T | SourcedFrom<A>> {
-  return merge(...otherSources);
 }
 
 export function multicast<N, F, D>(
@@ -1296,20 +1122,6 @@ class SingleOperator<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-export function startWith<T, A extends any[]>(
-  ...values: A
-): Lifter<T, T | ValueFromArray<A>>;
-export function startWith<T, D>(...values: D[]): Lifter<T, T | D> {
-  const scheduler = values[values.length - 1];
-  if (isScheduler(scheduler)) {
-    values.pop();
-    return (source: qt.Source<N, F, D>) =>
-      concatStatic(values, source, scheduler);
-  } else {
-    return (source: qt.Source<N, F, D>) => concatStatic(values, source);
-  }
-}
-
 export function subscribeOn<N, F, D>(
   scheduler: qt.Scheduler,
   delay: number = 0
@@ -1330,59 +1142,6 @@ class SubscribeOnOperator<N, F, D> implements qt.Operator<N, N, F, D> {
       this.scheduler
     ).subscribe(subscriber);
   }
-}
-
-export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function switchAll<R>(): Lifter<any, R>;
-export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
-  return switchMap(identity);
-}
-
-export function switchMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function switchMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return (source: qt.Source<N, F, D>) =>
-      source.pipe(
-        switchMap((a, i) =>
-          from(project(a, i)).pipe(map((b, ii) => resultSelector(a, b, i, ii)))
-        )
-      );
-  }
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new SwitchMapOperator(project));
-}
-
-class SwitchMapOperator<T, R> implements qt.Operator<T, R> {
-  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new SwitchMapSubscriber(subscriber, this.project));
-  }
-}
-
-export function switchMapTo<R>(observable: SourceInput<R>): Lifter<any, R>;
-export function switchMapTo<T, I, R>(
-  innerObservable: SourceInput<I>,
-  resultSelector?: (
-    outerN: T,
-    innerValue: I,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, I | R> {
-  return resultSelector
-    ? switchMap(() => innerObservable, resultSelector)
-    : switchMap(() => innerObservable);
 }
 
 export function tap<N, F, D>(

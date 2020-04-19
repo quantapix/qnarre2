@@ -371,21 +371,6 @@ describe('xxx', () => {
 const sample = {name: 'foobar', num: 42};
 
 describe('xxx', () => {
-  it('should support a scheduler', () => {
-    const r = of(a).pipe(endWith(asyncScheduler)); // $ExpectType Observable<A>
-  });
-
-  it('should infer type for N values', () => {
-    const r0 = of(a).pipe(endWith()); // $ExpectType Observable<A>
-    const r1 = of(a).pipe(endWith(b)); // $ExpectType Observable<A | B>
-    const r2 = of(a).pipe(endWith(b, c)); // $ExpectType Observable<A | B | C>
-    const r3 = of(a).pipe(endWith(b, c, d)); // $ExpectType Observable<A | B | C | D>
-    const r4 = of(a).pipe(endWith(b, c, d, e)); // $ExpectType Observable<A | B | C | D | E>
-    const r5 = of(a).pipe(endWith(b, c, d, e, f)); // $ExpectType Observable<A | B | C | D | E | F>
-    const r6 = of(a).pipe(endWith(b, c, d, e, f, g)); // $ExpectType Observable<A | B | C | D | E | F | G>
-    const r7 = of(a).pipe(endWith(b, c, d, e, f, g, h)); // $ExpectType Observable<A | B | C | D | E | F | G | H>
-  });
-
   it('should infer correctly', () => {
     const a = of(1, 2, 3).pipe(every(val => val < 3)); // $ExpectType Observable<boolean>
   });
@@ -1593,7 +1578,6 @@ describe('xxx', () => {
   });
 
   it('should act appropriately with no seed', () => {
-    // Starting in TS 3.5, the return type is inferred from the accumulator's type if it's provided without a seed.
     const a = of(1, 2, 3).pipe(scan((a: any, v) => '' + v)); // $ExpectType Observable<any>
     const b = of(1, 2, 3).pipe(scan((a, v) => v)); // $ExpectType Observable<number>
     const c = of(1, 2, 3).pipe(scan(() => {})); // $ExpectType Observable<number | void>
@@ -1768,27 +1752,6 @@ describe('xxx', () => {
 
   it('should enforce predicate return type', () => {
     const o = of('foo', 'bar', 'baz').pipe(skipWhile(value => value)); // $ExpectError
-  });
-
-  it('should infer correctly with N values', () => {
-    const r0 = of(a).pipe(startWith()); // $ExpectType Observable<A>
-    const r1 = of(a).pipe(startWith(b)); // $ExpectType Observable<A | B>
-    const r2 = of(a).pipe(startWith(b, c)); // $ExpectType Observable<A | B | C>
-    const r3 = of(a).pipe(startWith(b, c, d)); // $ExpectType Observable<A | B | C | D>
-    const r4 = of(a).pipe(startWith(b, c, d, e)); // $ExpectType Observable<A | B | C | D | E>
-    const r5 = of(a).pipe(startWith(b, c, d, e, f)); // $ExpectType Observable<A | B | C | D | E | F>
-    const r6 = of(a).pipe(startWith(b, c, d, e, f, g)); // $ExpectType Observable<A | B | C | D | E | F | G>
-    const r7 = of(a).pipe(startWith(b, c, d, e, f, g, h)); // $ExpectType Observable<A | B | C | D | E | F | G | H>
-  });
-
-  it('should infer correctly with only a scheduler', () => {
-    const r = of(a).pipe(startWith(asyncScheduler)); // $ExpectType Observable<A>
-    const r1 = of(a).pipe(startWith(b, asyncScheduler)); // $ExpectType Observable<A | B>
-    const r2 = of(a).pipe(startWith(b, c, asyncScheduler)); // $ExpectType Observable<A | B | C>
-    const r3 = of(a).pipe(startWith(b, c, d, asyncScheduler)); // $ExpectType Observable<A | B | C | D>
-    const r4 = of(a).pipe(startWith(b, c, d, e, asyncScheduler)); // $ExpectType Observable<A | B | C | D | E>
-    const r5 = of(a).pipe(startWith(b, c, d, e, f, asyncScheduler)); // $ExpectType Observable<A | B | C | D | E | F>
-    const r6 = of(a).pipe(startWith(b, c, d, e, f, g, asyncScheduler)); // $ExpectType Observable<A | B | C | D | E | F | G>
   });
 
   it('should infer correctly', () => {
