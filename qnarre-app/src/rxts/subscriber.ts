@@ -485,100 +485,6 @@ export class FindValue<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class GroupBy<N, K, M, F, D> extends Subscriber<N, F, D>
-  implements qt.RefCountSubscription {
-  private groups?: Map<K, Subject<N | M>>;
-  public attempted = false;
-  public count = 0;
-
-  constructor(
-    tgt: Subscriber<GroupedObservable<K, R>>,
-    private keySelector: (value: N) => K,
-    private elementSelector?: ((value: N) => R) | void,
-    private durationSelector?: (
-      grouped: GroupedObservable<K, R>
-    ) => qt.Source<any, F, D>,
-    private subjectSelector?: () => Subject<R>
-  ) {
-    super(tgt);
-  }
-
-  protected _next(n?: N) {
-    let key: K;
-    try {
-      key = this.keySelector(n);
-    } catch (e) {
-      this.fail(e);
-      return;
-    }
-    this._group(n, key);
-  }
-
-  private _group(value: T, key: K) {
-    let groups = this.groups;
-    if (!groups) groups = this.groups = new Map<K, Subject<T | R>>();
-    let group = groups.get(key);
-    let element: R;
-    if (this.elementSelector) {
-      try {
-        element = this.elementSelector(value);
-      } catch (e) {
-        this.fail(e);
-      }
-    } else element = value as any;
-    if (!group) {
-      group = (this.subjectSelector
-        ? this.subjectSelector()
-        : new Subject<R>()) as Subject<T | R>;
-      groups.set(key, group);
-      const groupedObservable = new GroupedObservable(key, group, this);
-      this.tgt.next(groupedObservable);
-      if (this.durationSelector) {
-        let duration: any;
-        try {
-          duration = this.durationSelector(
-            new GroupedObservable<K, R>(key, <Subject<R>>group)
-          );
-        } catch (e) {
-          this.fail(e);
-          return;
-        }
-        this.add(duration.subscribe(new GroupDuration(key, group, this)));
-      }
-    }
-    if (!group.closed) group.next(element!);
-  }
-
-  protected _fail(f?: F) {
-    const groups = this.groups;
-    if (groups) {
-      groups.forEach((group, key) => group.error(f));
-      groups.clear();
-    }
-    this.tgt.fail(f);
-  }
-
-  protected _done(d?: D) {
-    const groups = this.groups;
-    if (groups) {
-      groups.forEach(group => group.complete());
-      groups.clear();
-    }
-    this.tgt.done(d);
-  }
-
-  removeGroup(key: K) {
-    this.groups!.delete(key);
-  }
-
-  unsubscribe() {
-    if (!this.closed) {
-      this.attemptedToUnsubscribe = true;
-      if (!this.count) super.unsubscribe();
-    }
-  }
-}
-
 export class GroupDuration<K, N, F, D> extends Subscriber<N, F, D> {
   constructor(
     private key: K,
@@ -605,7 +511,17 @@ export class IgnoreElements<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class IsEmpty<N extends boolean, F, D> extends Subscriber<N, F, D> {
+export function isEmpty<N, F, D>(): Lifter<T, boolean> {
+  return (source: qt.Source<N, F, D>) => source.lift(new IsEmptyO());
+}
+
+class IsEmptyO implements qt.Operator<any, boolean> {
+  call(observer: Subscriber<boolean>, source: any): any {
+    return source.subscribe(new IsEmptyR(observer));
+  }
+}
+
+export class IsEmptyR<N extends boolean, F, D> extends Subscriber<N, F, D> {
   constructor(tgt: Subscriber<N, F, D>) {
     super(tgt);
   }
@@ -625,45 +541,19 @@ export class IsEmpty<N extends boolean, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Map<N, M, F, D> extends Subscriber<N, F, D> {
-  count = 0;
-  private thisArg: any;
+export function materialize<N, F, D>(): Lifter<T, Notification<N, F, D>> {
+  return function materializeLifter(source: qt.Source<N, F, D>) {
+    return source.lift(new MaterializeO());
+  };
+}
 
-  constructor(
-    tgt: Subscriber<M, F, D>,
-    private project: (value: N, i: number) => M,
-    thisArg: any
-  ) {
-    super(tgt);
-    this.thisArg = thisArg || this;
-  }
-
-  protected _next(n?: N) {
-    let result: M;
-    try {
-      result = this.project.call(this.thisArg, n, this.count++);
-    } catch (e) {
-      this.tgt.fail(e);
-      return;
-    }
-    this.tgt.next(result);
+class MaterializeO<N, F, D> implements qt.Operator<T, Notification<N, F, D>> {
+  call(subscriber: Subscriber<Notification<N, F, D>>, source: any): any {
+    return source.subscribe(new MaterializeR(subscriber));
   }
 }
 
-export class MapTo<N, M, F, D> extends Subscriber<N, F, D> {
-  value: M;
-
-  constructor(tgt: Subscriber<M, F, D>, value: M) {
-    super(tgt);
-    this.value = value;
-  }
-
-  protected _next(_n?: N) {
-    this.tgt.next(this.value);
-  }
-}
-
-export class Materialize<N, F, D> extends Subscriber<N, F, D> {
+export class MaterializeR<N, F, D> extends Subscriber<N, F, D> {
   constructor(tgt: Subscriber<Notification<N, F, D>>) {
     super(tgt);
   }
@@ -685,6 +575,63 @@ export class Materialize<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
+export function multicast<N, F, D>(
+  subject: Subject<N, F, D>
+): UnaryFun<Observable<N, F, D>, Connect<N, F, D>>;
+export function multicast<T, O extends SourceInput<any>>(
+  subject: Subject<N, F, D>,
+  selector: (shared: qt.Source<N, F, D>) => O
+): UnaryFun<Observable<N, F, D>, Connect<Sourced<O>>>;
+export function multicast<N, F, D>(
+  subjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>
+): UnaryFun<Observable<N, F, D>, Connect<N, F, D>>;
+export function multicast<T, O extends SourceInput<any>>(
+  SubjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>,
+  selector: (shared: qt.Source<N, F, D>) => O
+): Lifter<T, Sourced<O>>;
+export function multicast<T, R>(
+  subjectOrSubjectFactory: Subject<N, F, D> | (() => Subject<N, F, D>),
+  selector?: (source: qt.Source<N, F, D>) => qt.Source<R>
+): Lifter<T, R> {
+  return function multicastLifter(source: qt.Source<N, F, D>): qt.Source<R> {
+    let subjectFactory: () => Subject<N, F, D>;
+    if (typeof subjectOrSubjectFactory === 'function') {
+      subjectFactory = <() => Subject<N, F, D>>subjectOrSubjectFactory;
+    } else {
+      subjectFactory = function subjectFactory() {
+        return <Subject<N, F, D>>subjectOrSubjectFactory;
+      };
+    }
+
+    if (typeof selector === 'function') {
+      return source.lift(new MulticastO(subjectFactory, selector));
+    }
+
+    const connectable: any = Object.create(
+      source,
+      connectableObservableDescriptor
+    );
+    connectable.source = source;
+    connectable.subjectFactory = subjectFactory;
+
+    return <Connect<R>>connectable;
+  };
+}
+
+export class MulticastO<T, R> implements qt.Operator<T, R> {
+  constructor(
+    private subjectFactory: () => Subject<N, F, D>,
+    private selector: (source: qt.Source<N, F, D>) => qt.Source<R>
+  ) {}
+  call(subscriber: Subscriber<R>, source: any): any {
+    const {selector} = this;
+    const subject = this.subjectFactory();
+    const subscription = selector(subject).subscribe(subscriber);
+    subscription.add(source.subscribe(subject));
+    return subscription;
+  }
+}
+
 export class ObserveOnMessage {
   constructor(
     public notification: qt.Notification<any>,
@@ -692,7 +639,28 @@ export class ObserveOnMessage {
   ) {}
 }
 
-export class ObserveOn<N, F, D> extends Subscriber<N, F, D> {
+export function observeOn<N, F, D>(
+  scheduler: qt.Scheduler,
+  delay: number = 0
+): qt.MonoOper<N, F, D> {
+  return function observeOnLifter(
+    source: qt.Source<N, F, D>
+  ): qt.Source<N, F, D> {
+    return source.lift(new ObserveOnO(scheduler, delay));
+  };
+}
+
+export class ObserveOnO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(private scheduler: qt.Scheduler, private delay: number = 0) {}
+
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new ObserveOnR(subscriber, this.scheduler, this.delay)
+    );
+  }
+}
+
+export class ObserveOnR<N, F, D> extends Subscriber<N, F, D> {
   static dispatch(this: qt.Action<ObserveOnMessage>, arg: ObserveOnMessage) {
     const {notification, tgt} = arg;
     notification.observe(tgt);
@@ -733,7 +701,110 @@ export class ObserveOn<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class OnErrorResumeNext<N, M, F, D> extends Reactor<N, M, F, D> {
+export function onErrorResumeNext<N, F, D>(): Lifter<T, T>;
+export function onErrorResumeNext<T, T2>(v: SourceInput<T2>): Lifter<T, T | T2>;
+export function onErrorResumeNext<T, T2, T3>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>
+): Lifter<T, T | T2 | T3>;
+export function onErrorResumeNext<T, T2, T3, T4>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>
+): Lifter<T, T | T2 | T3 | T4>;
+export function onErrorResumeNext<T, T2, T3, T4, T5>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>
+): Lifter<T, T | T2 | T3 | T4 | T5>;
+export function onErrorResumeNext<T, T2, T3, T4, T5, T6>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>,
+  v5: SourceInput<T6>
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6>;
+export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>,
+  v5: SourceInput<T6>,
+  v6: SourceInput<T7>
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
+export function onErrorResumeNext<T, R>(
+  ...observables: Array<SourceInput<any>>
+): Lifter<T, T | R>;
+export function onErrorResumeNext<T, R>(
+  array: SourceInput<any>[]
+): Lifter<T, T | R>;
+export function onErrorResumeNext<T, R>(
+  ...nextSources: Array<SourceInput<any> | Array<SourceInput<any>>>
+): Lifter<T, R> {
+  if (nextSources.length === 1 && isArray(nextSources[0])) {
+    nextSources = <Array<Observable<any>>>nextSources[0];
+  }
+
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new OnErrorResumeNextO<T, R>(nextSources));
+}
+
+export function onErrorResumeNextStatic<R>(v: SourceInput<R>): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, T4, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, T4, T5, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, T4, T5, T6, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
+  v6: SourceInput<T6>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<R>(
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<R>(
+  array: SourceInput<any>[]
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T, R>(
+  ...nextSources: Array<
+    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
+  >
+): qt.Source<R> {
+  let source: SourceInput<any> | null = null;
+
+  if (nextSources.length === 1 && isArray(nextSources[0])) {
+    nextSources = <Array<SourceInput<any>>>nextSources[0];
+  }
+  source = nextSources.shift()!;
+
+  return from(source, null!).lift(new OnErrorResumeNextO<T, R>(nextSources));
+}
+
+class OnErrorResumeNextO<T, R> implements qt.Operator<T, R> {
+  constructor(private nextSources: Array<SourceInput<any>>) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(
+      new OnErrorResumeNextR(subscriber, this.nextSources)
+    );
+  }
+}
+
+export class OnErrorResumeNextR<N, M, F, D> extends Reactor<N, M, F, D> {
   constructor(
     protected tgt: Subscriber<N, F, D>,
     private nextSources: Array<SourceInput<any>>
@@ -777,6 +848,133 @@ export class OnErrorResumeNext<N, M, F, D> extends Reactor<N, M, F, D> {
       }
     } else this.tgt.done(d);
   }
+}
+
+export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
+  return (source: qt.Source<N, F, D>) => source.lift(new PairwiseO());
+}
+
+class PairwiseO<N, F, D> implements qt.Operator<T, [T, T]> {
+  call(subscriber: Subscriber<[T, T]>, source: any): any {
+    return source.subscribe(new PairwiseR(subscriber));
+  }
+}
+
+class PairwiseR<N, F, D> extends Subscriber<N, F, D> {
+  private prev: T | undefined;
+  private hasPrev = false;
+
+  constructor(tgt: Subscriber<[T, T]>) {
+    super(tgt);
+  }
+
+  _next(value: N): void {
+    let pair: [T, T] | undefined;
+
+    if (this.hasPrev) {
+      pair = [this.prev!, value];
+    } else {
+      this.hasPrev = true;
+    }
+
+    this.prev = value;
+
+    if (pair) {
+      this.tgt.next(pair);
+    }
+  }
+}
+
+export function partition<N, F, D>(
+  predicate: (value: T, index: number) => boolean,
+  thisArg?: any
+): UnaryFun<Observable<N, F, D>, [Observable<N, F, D>, qt.Source<N, F, D>]> {
+  return (source: qt.Source<N, F, D>) =>
+    [
+      filter(predicate, thisArg)(source),
+      filter(not(predicate, thisArg) as any)(source)
+    ] as [Observable<N, F, D>, qt.Source<N, F, D>];
+}
+
+export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;
+export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
+  k1: K1,
+  k2: K2
+): Lifter<T, T[K1][K2]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2]
+>(k1: K1, k2: K2, k3: K3): Lifter<T, T[K1][K2][K3]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3]
+>(k1: K1, k2: K2, k3: K3, k4: K4): Lifter<T, T[K1][K2][K3][K4]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4]
+>(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): Lifter<T, T[K1][K2][K3][K4][K5]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4],
+  K6 extends keyof T[K1][K2][K3][K4][K5]
+>(
+  k1: K1,
+  k2: K2,
+  k3: K3,
+  k4: K4,
+  k5: K5,
+  k6: K6
+): Lifter<T, T[K1][K2][K3][K4][K5][K6]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4],
+  K6 extends keyof T[K1][K2][K3][K4][K5]
+>(
+  k1: K1,
+  k2: K2,
+  k3: K3,
+  k4: K4,
+  k5: K5,
+  k6: K6,
+  ...rest: string[]
+): Lifter<T, unknown>;
+export function pluck<N, F, D>(...properties: string[]): Lifter<T, unknown>;
+export function pluck<T, R>(
+  ...properties: Array<string | number | symbol>
+): Lifter<T, R> {
+  const length = properties.length;
+  if (length === 0) {
+    throw new Error('list of properties cannot be empty.');
+  }
+  return map(x => {
+    let currentProp: any = x;
+    for (let i = 0; i < length; i++) {
+      const p = currentProp[properties[i]];
+      if (typeof p !== 'undefined') {
+        currentProp = p;
+      } else {
+        return undefined;
+      }
+    }
+    return currentProp;
+  });
 }
 
 export class Repeat<N, F, D> extends Subscriber<N, F, D> {
@@ -884,7 +1082,43 @@ export class RepeatWhen<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
-export class Retry<N, F, D> extends Subscriber<N, F, D> {
+export interface RetryConfig {
+  count: number;
+  resetOnSuccess?: boolean;
+}
+
+export function retry<N, F, D>(count?: number): qt.MonoOper<N, F, D>;
+export function retry<N, F, D>(config: RetryConfig): qt.MonoOper<N, F, D>;
+export function retry<N, F, D>(
+  configOrCount: number | RetryConfig = -1
+): qt.MonoOper<N, F, D> {
+  let config: RetryConfig;
+  if (configOrCount && typeof configOrCount === 'object') {
+    config = configOrCount as RetryConfig;
+  } else {
+    config = {
+      count: configOrCount as number
+    };
+  }
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new RetryO(config.count, !!config.resetOnSuccess, source));
+}
+
+class RetryO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    private count: number,
+    private resetOnSuccess: boolean,
+    private source: qt.Source<N, F, D>
+  ) {}
+
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new RetryR(subscriber, this.count, this.resetOnSuccess, this.source)
+    );
+  }
+}
+
+export class RetryR<N, F, D> extends Subscriber<N, F, D> {
   private readonly initialCount: number;
 
   constructor(
@@ -914,7 +1148,27 @@ export class Retry<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class RetryWhen<N, M, F, D> extends Reactor<N, M, F, D> {
+export function retryWhen<N, F, D>(
+  notifier: (errors: qt.Source<any, F, D>) => qt.Source<any, F, D>
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new RetryWhenO(notifier, source));
+}
+
+class RetryWhenO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    protected notifier: (errors: qt.Source<any, F, D>) => qt.Source<any, F, D>,
+    protected source: qt.Source<N, F, D>
+  ) {}
+
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new RetryWhenR(subscriber, this.notifier, this.source)
+    );
+  }
+}
+
+export class RetryWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
   private errors?: Subject<any>;
   private retries?: qt.Source<any, F, D>;
   private retriesSubscription?: Subscription;
@@ -978,38 +1232,6 @@ export class RetryWhen<N, M, F, D> extends Reactor<N, M, F, D> {
     this._recycle();
     this._unsubscribe = _unsubscribe;
     this.source.subscribe(this);
-  }
-}
-
-export class Scan<N, M, F, D> extends Subscriber<N, F, D> {
-  private index = 0;
-
-  constructor(
-    tgt: Subscriber<M, F, D>,
-    private accumulator: (acc: N | M, n: N | undefined, i: number) => M,
-    private _state: any,
-    private _hasState: boolean
-  ) {
-    super(tgt);
-  }
-
-  protected _next(n?: N) {
-    if (!this._hasState) {
-      this._state = n;
-      this._hasState = true;
-      this.tgt.next(n);
-    } else {
-      const index = this.index++;
-      let result: M;
-      try {
-        result = this.accumulator(this._state, n, index);
-      } catch (e) {
-        this.tgt.fail(e);
-        return;
-      }
-      this._state = result;
-      this.tgt.next(result);
-    }
   }
 }
 

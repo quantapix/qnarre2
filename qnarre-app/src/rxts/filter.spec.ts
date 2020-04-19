@@ -911,6 +911,7 @@ describe('distinct', () => {
 interface Person {
   name: string;
 }
+
 const sample: Person = {name: 'Tim'};
 
 describe('distinctUntilChanged', () => {
@@ -1732,6 +1733,84 @@ describe('filter', () => {
 
     expectSource(source.pipe(filter(oddFilter))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should support a predicate', () => {
+    const o = of(1, 2, 3).pipe(filter(value => value < 3)); // $ExpectType Observable<number>
+  });
+
+  it('should support a predicate with an index', () => {
+    const o = of(1, 2, 3).pipe(filter((value, index) => index < 3)); // $ExpectType Observable<number>
+  });
+
+  it('should support a predicate and an argument', () => {
+    const o = of(1, 2, 3).pipe(filter(value => value < 3, 'bonjour')); // $ExpectType Observable<number>
+  });
+
+  it('should support a user-defined type guard', () => {
+    const o = of(1, 2, 3).pipe(
+      filter((value: number): value is 1 => value < 3)
+    ); // $ExpectType Observable<1>
+  });
+
+  it('should support a user-defined type guard with an index', () => {
+    const o = of(1, 2, 3).pipe(
+      filter((value: number, index): value is 1 => index < 3)
+    ); // $ExpectType Observable<1>
+  });
+
+  it('should support a user-defined type guard and an argument', () => {
+    const o = of(1, 2, 3).pipe(
+      filter((value: number): value is 1 => value < 3, 'hola')
+    ); // $ExpectType Observable<1>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(filter()); // $ExpectError
+  });
+
+  it('should enforce predicate types', () => {
+    const o = of(1, 2, 3).pipe(filter(value => value < '3')); // $ExpectError
+    const p = of(1, 2, 3).pipe(filter((value, index) => index < '3')); // $ExpectError
+  });
+
+  it('should enforce user-defined type guard types', () => {
+    const o = of(1, 2, 3).pipe(
+      filter((value: string): value is '1' => value < '3')
+    ); // $ExpectError
+    const p = of(1, 2, 3).pipe(
+      filter((value: number, index): value is 1 => index < '3')
+    ); // $ExpectError
+  });
+
+  it('should support Boolean as a predicate', () => {
+    const o = of(1, 2, 3).pipe(filter(Boolean)); // $ExpectType Observable<number>
+    const p = of(1, null, undefined).pipe(filter(Boolean)); // $ExpectType Observable<number>
+    const q = of(null, undefined).pipe(filter(Boolean)); // $ExpectType Observable<never>
+  });
+
+  it('should support inference from a return type with Boolean as a predicate', () => {
+    interface I {
+      a: string | null;
+    }
+
+    const i$: Observable<I> = of();
+    const s$: Observable<string> = i$.pipe(
+      map(i => i.a),
+      filter(Boolean)
+    ); // $ExpectType Observable<string>
+  });
+
+  it('should support inference from a generic return type of the predicate', () => {
+    function isDefined<T>() {
+      return (value: T | undefined | null): value is T => {
+        return value !== undefined && value !== null;
+      };
+    }
+
+    const o$ = of(1, null, {foo: 'bar'}, true, undefined, 'Nick Cage').pipe(
+      filter(isDefined())
+    ); // $ExpectType Observable<string | number | boolean | { foo: string; }>
   });
 
   it('should filter in only prime numbers', () => {
@@ -2721,5 +2800,2075 @@ describe('last', () => {
     }
 
     // tslint:disable enable
+  });
+});
+
+describe('sample', () => {
+  asDiagram('sample')('should get samples when the notifier emits', () => {
+    const e1 = hot('---a----b---c----------d-----|   ');
+    const e1subs = '^                            !   ';
+    const e2 = hot('-----x----------x---x------x---|');
+    const e2subs = '^                            !   ';
+    const expected = '-----a----------c----------d-|   ';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+  it('should enforce parameter', () => {
+    const a = of(1, 2, 3).pipe(sample()); // $ExpectError
+  });
+
+  it('should accept observable as notifier parameter', () => {
+    const a = of(1, 2, 3).pipe(sample(of(4))); // $ExpectType Observable<number>
+    const b = of(1, 2, 3).pipe(sample(of('a'))); // $ExpectType Observable<number>
+  });
+
+  it('should sample nothing if source has not nexted at all', () => {
+    const e1 = hot('----a-^------------|');
+    const e1subs = '^            !';
+    const e2 = hot('-----x-------|');
+    const e2subs = '^            !';
+    const expected = '-------------|';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should behave properly when notified by the same observable as the source (issue #2075)', () => {
+    const item$ = new Subject<number>();
+    const results: number[] = [];
+
+    item$.pipe(sample(item$)).subscribe(value => results.push(value));
+
+    item$.next(1);
+    item$.next(2);
+    item$.next(3);
+
+    expect(results).to.deep.equal([1, 2, 3]);
+  });
+
+  it('should sample nothing if source has nexted after all notifications, but notifier does not complete', () => {
+    const e1 = hot('----a-^------b-----|');
+    const e1subs = '^            !';
+    const e2 = hot('-----x--------');
+    const e2subs = '^            !';
+    const expected = '-------------|';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should sample when the notifier completes', () => {
+    const e1 = hot('----a-^------b----------|');
+    const e1subs = '^                 !';
+    const e2 = hot('-----x-----|');
+    const e2subs = '^          !';
+    const expected = '-----------b------|';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not complete when the notifier completes, nor should it emit', () => {
+    const e1 = hot('----a----b----c----d----e----f----');
+    const e1subs = '^                                 ';
+    const e2 = hot('------x-|                         ');
+    const e2subs = '^       !                         ';
+    const expected = '------a---------------------------';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should complete only when the source completes, if notifier completes early', () => {
+    const e1 = hot('----a----b----c----d----e----f---|');
+    const e1subs = '^                                !';
+    const e2 = hot('------x-|                         ');
+    const e2subs = '^       !                         ';
+    const expected = '------a--------------------------|';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('----a-^--b----c----d----e----f----|          ');
+    const unsub = '              !                        ';
+    const e1subs = '^             !                        ';
+    const e2 = hot('-----x----------x----------x----------|');
+    const e2subs = '^             !                        ';
+    const expected = '-----b---------                        ';
+
+    expectSource(e1.pipe(sample(e2)), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('----a-^--b----c----d----e----f----|          ');
+    const e1subs = '^             !                        ';
+    const e2 = hot('-----x----------x----------x----------|');
+    const e2subs = '^             !                        ';
+    const expected = '-----b---------                        ';
+    const unsub = '              !                        ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      sample(e2),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should only sample when a new value arrives, even if it is the same value', () => {
+    const e1 = hot('----a----b----c----c----e----f----|  ');
+    const e1subs = '^                                 !  ';
+    const e2 = hot('------x-x------xx-x---x----x--------|');
+    const e2subs = '^                                 !  ';
+    const expected = '------a--------c------c----e------|  ';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error if source raises error', () => {
+    const e1 = hot('----a-^--b----c----d----#                    ');
+    const e1subs = '^                 !                    ';
+    const e2 = hot('-----x----------x----------x----------|');
+    const e2subs = '^                 !                    ';
+    const expected = '-----b----------d-#                    ';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should completes if source does not emits', () => {
+    const e1 = hot('|');
+    const e2 = hot('------x-------|');
+    const expected = '|';
+    const e1subs = '(^!)';
+    const e2subs = '(^!)';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error if source throws immediately', () => {
+    const e1 = hot('#');
+    const e2 = hot('------x-------|');
+    const expected = '#';
+    const e1subs = '(^!)';
+    const e2subs = '(^!)';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error if notification raises error', () => {
+    const e1 = hot('--a-----|');
+    const e2 = hot('----#');
+    const expected = '----#';
+    const e1subs = '^   !';
+    const e2subs = '^   !';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not completes if source does not complete', () => {
+    const e1 = hot('-');
+    const e1subs = '^              ';
+    const e2 = hot('------x-------|');
+    const e2subs = '^             !';
+    const expected = '-';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should sample only until source completes', () => {
+    const e1 = hot('----a----b----c----d-|');
+    const e1subs = '^                    !';
+    const e2 = hot('-----------x----------x------------|');
+    const e2subs = '^                    !';
+    const expected = '-----------b---------|';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should complete sampling if sample observable completes', () => {
+    const e1 = hot('----a----b----c----d-|');
+    const e1subs = '^                    !';
+    const e2 = hot('|');
+    const e2subs = '(^!)';
+    const expected = '---------------------|';
+
+    expectSource(e1.pipe(sample(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+});
+
+describe('sampleTime', () => {
+  asDiagram('sampleTime(70)')('should get samples on a delay', () => {
+    const e1 = hot('a---b-c---------d--e---f-g-h--|');
+    const e1subs = '^                             !';
+    const expected = '-------c-------------e------h-|';
+    // timer          -------!------!------!------!--
+
+    expectSource(e1.pipe(sampleTime(70, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+  it('should enforce period parameter', () => {
+    const a = of(1, 2, 3).pipe(sampleTime()); // $ExpectError
+  });
+
+  it('should infer correctly', () => {
+    const a = of(1, 2, 3).pipe(sampleTime(1000)); // $ExpectType Observable<number>
+  });
+
+  it('should accept scheduler parameter', () => {
+    const a = of(1, 2, 3).pipe(sampleTime(1000, asyncScheduler)); // $ExpectType Observable<number>
+  });
+
+  it('should sample nothing if new value has not arrived', () => {
+    const e1 = hot('----a-^--b----c--------------f----|');
+    const e1subs = '^                           !';
+    const expected = '-----------c----------------|';
+    // timer              -----------!----------!---------
+
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should sample if new value has arrived, even if it is the same value', () => {
+    const e1 = hot('----a-^--b----c----------c---f----|');
+    const e1subs = '^                           !';
+    const expected = '-----------c----------c-----|';
+    // timer              -----------!----------!---------
+
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should sample nothing if source has not nexted by time of sample', () => {
+    const e1 = hot('----a-^-------------b-------------|');
+    const e1subs = '^                           !';
+    const expected = '----------------------b-----|';
+    // timer              -----------!----------!---------
+
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error if source raises error', () => {
+    const e1 = hot('----a-^--b----c----d----#');
+    const e1subs = '^                 !';
+    const expected = '-----------c------#';
+    // timer              -----------!----------!---------
+
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('----a-^--b----c----d----e----f----|');
+    const unsub = '                !            ';
+    const e1subs = '^               !            ';
+    const expected = '-----------c-----            ';
+    // timer              -----------!----------!---------
+
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler)), unsub).toBe(
+      expected
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('----a-^--b----c----d----e----f----|');
+    const e1subs = '^               !            ';
+    // timer              -----------!----------!---------
+    const expected = '-----------c-----            ';
+    const unsub = '                !            ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      sampleTime(110, rxTestScheduler),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should completes if source does not emits', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error if source throws immediately', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source does not complete', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(sampleTime(60, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
+describe('skip', () => {
+  asDiagram('skip(3)')('should skip values before a total', () => {
+    const source = hot('--a--b--c--d--e--|');
+    const subs = '^                !';
+    const expected = '-----------d--e--|';
+
+    expectSource(source.pipe(skip(3))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+  it('should infer correctly', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skip(7)); // $ExpectType Observable<string>
+  });
+
+  it('should enforce types', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skip()); // $ExpectError
+    const p = of('foo', 'bar', 'baz').pipe(skip('7')); // $ExpectError
+  });
+
+  it('should skip all values without error if total is more than actual number of values', () => {
+    const source = hot('--a--b--c--d--e--|');
+    const subs = '^                !';
+    const expected = '-----------------|';
+
+    expectSource(source.pipe(skip(6))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should skip all values without error if total is same as actual number of values', () => {
+    const source = hot('--a--b--c--d--e--|');
+    const subs = '^                !';
+    const expected = '-----------------|';
+
+    expectSource(source.pipe(skip(5))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should not skip if count is zero', () => {
+    const source = hot('--a--b--c--d--e--|');
+    const subs = '^                !';
+    const expected = '--a--b--c--d--e--|';
+
+    expectSource(source.pipe(skip(0))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const source = hot('--a--b--c--d--e--|');
+    const unsub = '          !       ';
+    const subs = '^         !       ';
+    const expected = '--------c--       ';
+
+    expectSource(source.pipe(skip(2)), unsub).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const source = hot('--a--b--c--d--e--|');
+    const subs = '^         !       ';
+    const expected = '--------c--       ';
+    const unsub = '          !       ';
+
+    const result = source.pipe(
+      mergeMap((x: string) => of(x)),
+      skip(2),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should raise error if skip count is more than actual number of emits and source raises error', () => {
+    const source = hot('--a--b--c--d--#');
+    const subs = '^             !';
+    const expected = '--------------#';
+
+    expectSource(source.pipe(skip(6))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should raise error if skip count is same as emits of source and source raises error', () => {
+    const source = hot('--a--b--c--d--#');
+    const subs = '^             !';
+    const expected = '--------------#';
+
+    expectSource(source.pipe(skip(4))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should skip values before a total and raises error if source raises error', () => {
+    const source = hot('--a--b--c--d--#');
+    const subs = '^             !';
+    const expected = '-----------d--#';
+
+    expectSource(source.pipe(skip(3))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should complete regardless of skip count if source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource(e1.pipe(skip(3))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not complete if source never completes without emit', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(skip(3))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip values before total and never completes if source emits and does not complete', () => {
+    const e1 = hot('--a--b--c-');
+    const e1subs = '^         ';
+    const expected = '-----b--c-';
+
+    expectSource(e1.pipe(skip(1))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip all values and never completes if total is more than numbers of value and source does not complete', () => {
+    const e1 = hot('--a--b--c-');
+    const e1subs = '^         ';
+    const expected = '----------';
+
+    expectSource(e1.pipe(skip(6))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip all values and never completes if total is same asnumbers of value and source does not complete', () => {
+    const e1 = hot('--a--b--c-');
+    const e1subs = '^         ';
+    const expected = '----------';
+
+    expectSource(e1.pipe(skip(3))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error if source throws', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(skip(3))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
+describe('skipLast', () => {
+  asDiagram('skipLast(2)')(
+    'should skip two values of an observable with many values',
+    () => {
+      const e1 = cold('--a-----b----c---d--|');
+      const e1subs = '^                   !';
+      const expected = '-------------a---b--|';
+
+      expectSource(e1.pipe(skipLast(2))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    }
+  );
+  it('should infer correctly', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipLast(7)); // $ExpectType Observable<string>
+  });
+
+  it('should enforce types', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipLast()); // $ExpectError
+    const p = of('foo', 'bar', 'baz').pipe(skipLast('7')); // $ExpectError
+  });
+
+  it('should skip last three values', () => {
+    const e1 = cold('--a-----b----c---d--|');
+    const e1subs = '^                   !';
+    const expected = '-----------------a--|';
+
+    expectSource(e1.pipe(skipLast(3))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip all values when trying to take larger then source', () => {
+    const e1 = cold('--a-----b----c---d--|');
+    const e1subs = '^                   !';
+    const expected = '--------------------|';
+
+    expectSource(e1.pipe(skipLast(5))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip all element when try to take exact', () => {
+    const e1 = cold('--a-----b----c---d--|');
+    const e1subs = '^                   !';
+    const expected = '--------------------|';
+
+    expectSource(e1.pipe(skipLast(4))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not skip any values', () => {
+    const e1 = cold('--a-----b----c---d--|');
+    const e1subs = '^                   !';
+    const expected = '--a-----b----c---d--|';
+
+    expectSource(e1.pipe(skipLast(0))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should work with empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should go on forever on never', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip one value from an observable with one value', () => {
+    const e1 = hot('---(a|)');
+    const e1subs = '^  !   ';
+    const expected = '---|   ';
+
+    expectSource(e1.pipe(skipLast(1))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip one value from an observable with many values', () => {
+    const e1 = hot('--a--^--b----c---d--|');
+    const e1subs = '^              !';
+    const expected = '--------b---c--|';
+
+    expectSource(e1.pipe(skipLast(1))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should work with empty and early emission', () => {
+    const e1 = hot('--a--^----|');
+    const e1subs = '^    !';
+    const expected = '-----|';
+
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should propagate error from the source observable', () => {
+    const e1 = hot('---^---#', undefined, 'too bad');
+    const e1subs = '^   !';
+    const expected = '----#';
+
+    expectSource(e1.pipe(skipLast(42))).toBe(expected, null, 'too bad');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should propagate error from an observable with values', () => {
+    const e1 = hot('---^--a--b--#');
+    const e1subs = '^        !';
+    const expected = '---------#';
+
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('---^--a--b-----c--d--e--|');
+    const unsub = '         !            ';
+    const e1subs = '^        !            ';
+    const expected = '----------            ';
+
+    expectSource(e1.pipe(skipLast(42)), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should work with throw', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(skipLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should throw if total is less than zero', () => {
+    expect(() => {
+      range(0, 10).pipe(skipLast(-1));
+    }).to.throw(OutOfRangeError);
+  });
+
+  it('should not break unsubscription chain when unsubscribed explicitly', () => {
+    const e1 = hot('---^--a--b-----c--d--e--|');
+    const unsub = '         !            ';
+    const e1subs = '^        !            ';
+    const expected = '----------            ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      skipLast(42),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
+describe('skipUntil', () => {
+  asDiagram('skipUntil')(
+    'should skip values until another observable notifies',
+    () => {
+      const e1 = hot('--a--b--c--d--e----|');
+      const e1subs = '^                  !';
+      const skip = hot('---------x------|   ');
+      const skipSubs = '^        !          ';
+      const expected = '-----------d--e----|';
+
+      expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+    }
+  );
+  it('should infer correctly', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipUntil(of(4, 'RxJS', 7))); // $ExpectType Observable<string>
+  });
+
+  it('should enforce types', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipUntil()); // $ExpectError
+    const p = of('foo', 'bar', 'baz').pipe(skipUntil('7')); // $ExpectError
+  });
+
+  it('should emit elements after notifer emits', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = '^                !';
+    const skip = hot('---------x----|   ');
+    const skipSubs = '^        !        ';
+    const expected = '-----------d--e--|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should emit elements after a synchronous notifier emits', () => {
+    const values: string[] = [];
+
+    of('a', 'b')
+      .pipe(skipUntil(of('x')))
+      .subscribe(
+        value => values.push(value),
+        err => {
+          throw err;
+        },
+        () => expect(values).to.deep.equal(['a', 'b'])
+      );
+  });
+
+  it('should raise an error if notifier throws and source is hot', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = '^            !    ';
+    const skip = hot('-------------#    ');
+    const skipSubs = '^            !    ';
+    const expected = '-------------#    ';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should skip all elements when notifier does not emit and completes early', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = '^                !';
+    const skip = hot('------------|');
+    const skipSubs = '^           !';
+    const expected = '-----------------|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('--a--b--c--d--e----|');
+    const unsub = '         !          ';
+    const e1subs = '^        !          ';
+    const skip = hot('-------------x--|   ');
+    const skipSubs = '^        !          ';
+    const expected = '----------          ';
+
+    expectSource(e1.pipe(skipUntil(skip)), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('--a--b--c--d--e----|');
+    const e1subs = '^        !          ';
+    const skip = hot('-------------x--|   ');
+    const skipSubs = '^        !          ';
+    const expected = '----------          ';
+    const unsub = '         !          ';
+
+    const result = e1.pipe(
+      mergeMap(x => of(x)),
+      skipUntil(skip),
+      mergeMap(x => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should not break unsubscription chains with interop inners when result is unsubscribed explicitly', () => {
+    const e1 = hot('--a--b--c--d--e----|');
+    const e1subs = '^        !          ';
+    const skip = hot('-------------x--|   ');
+    const skipSubs = '^        !          ';
+    const expected = '----------          ';
+    const unsub = '         !          ';
+
+    // This test is the same as the previous test, but the observable is
+    // manipulated to make it look like an interop observable - an observable
+    // from a foreign library. Interop subscribers are treated differently:
+    // they are wrapped in a safe subscriber. This test ensures that
+    // unsubscriptions are chained all the way to the interop subscriber.
+
+    const result = e1.pipe(
+      mergeMap(x => of(x)),
+      skipUntil(asInteropSource(skip)),
+      mergeMap(x => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should skip all elements when notifier is empty', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = '^                !';
+    const skip = cold('|');
+    const skipSubs = '(^!)';
+    const expected = '-----------------|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should keep subscription to source, to wait for its eventual completion', () => {
+    const e1 = hot('------------------------------|');
+    const e1subs = '^                             !';
+    const skip = hot('-------|                       ');
+    const skipSubs = '^      !                       ';
+    const expected = '------------------------------|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should not complete if hot source observable does not complete', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const skip = hot('-------------x--|');
+    const skipSubs = '^            !   ';
+    const expected = '-';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should not complete if cold source observable never completes', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const skip = hot('-------------x--|');
+    const skipSubs = '^            !   ';
+    const expected = '-';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should raise error if cold source is never and notifier errors', () => {
+    const e1 = cold('-');
+    const e1subs = '^            !';
+    const skip = hot('-------------#');
+    const skipSubs = '^            !';
+    const expected = '-------------#';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should skip all elements and complete if notifier is cold never', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = '^                !';
+    const skip = cold('-');
+    const skipSubs = '^                !';
+    const expected = '-----------------|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should skip all elements and complete if notifier is a hot never', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = '^                !';
+    const skip = hot('-');
+    const skipSubs = '^                !';
+    const expected = '-----------------|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should skip all elements and complete, even if notifier would not complete until later', () => {
+    const e1 = hot('^-a--b--c--d--e--|');
+    const e1subs = '^                !';
+    const skip = hot('^-----------------------|');
+    const skipSubs = '^                !';
+    const expected = '-----------------|';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should not complete if source does not complete if notifier completes without emission', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const skip = hot('--------------|');
+    const skipSubs = '^             !';
+    const expected = '-';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should not complete if source and notifier are both hot never', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const skip = hot('-');
+    const skipSubs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
+
+  it('should skip skip all elements if notifier is unsubscribed explicitly before the notifier emits', () => {
+    const e1 = hot('--a--b--c--d--e--|');
+    const e1subs = ['^                !', '^                !']; // for the explicit subscribe some lines below
+    const skip = new Subject<string>();
+    const expected = '-----------------|';
+
+    e1.subscribe((x: string) => {
+      if (x === 'd' && !skip.closed) {
+        skip.next('x');
+      }
+
+      skip.unsubscribe();
+    });
+
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should unsubscribe the notifier after its first nexted value', () => {
+    const source = hot('-^-o---o---o---o---o---o---|');
+    const notifier = hot('-^--------n--n--n--n--n--n-|');
+    const nSubs = '^        !';
+    const expected = '-^---------o---o---o---o---|';
+    const result = source.pipe(skipUntil(notifier));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(notifier.subscriptions).toBe(nSubs);
+  });
+
+  it('should stop listening to a synchronous notifier after its first nexted value', () => {
+    const sideEffects: number[] = [];
+    const synchronousNotifer = concat(
+      defer(() => {
+        sideEffects.push(1);
+        return of(1);
+      }),
+      defer(() => {
+        sideEffects.push(2);
+        return of(2);
+      }),
+      defer(() => {
+        sideEffects.push(3);
+        return of(3);
+      })
+    );
+    of(null)
+      .pipe(skipUntil(synchronousNotifer))
+      .subscribe(() => {
+        /* noop */
+      });
+    expect(sideEffects).to.deep.equal([1]);
+  });
+});
+
+describe('skipWhile', () => {
+  asDiagram('skipWhile(x => x < 4)')(
+    'should skip all elements until predicate is false',
+    () => {
+      const source = hot('-1-^2--3--4--5--6--|');
+      const sourceSubs = '^               !';
+      const expected = '-------4--5--6--|';
+
+      const predicate = function (v: string) {
+        return +v < 4;
+      };
+
+      expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
+      expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+    }
+  );
+  it('should support a predicate', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipWhile(value => value === 'bar')); // $ExpectType Observable<string>
+  });
+
+  it('should support a predicate with an index', () => {
+    const o = of('foo', 'bar', 'baz').pipe(
+      skipWhile((value, index) => index < 3)
+    ); // $ExpectType Observable<string>
+  });
+
+  it('should enforce types', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipWhile()); // $ExpectError
+  });
+
+  it('should enforce predicate types', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipWhile(value => value < 3)); // $ExpectError
+    const p = of('foo', 'bar', 'baz').pipe(
+      skipWhile((value, index) => index < '3')
+    ); // $ExpectError
+  });
+
+  it('should enforce predicate return type', () => {
+    const o = of('foo', 'bar', 'baz').pipe(skipWhile(value => value)); // $ExpectError
+  });
+
+  it('should skip all elements with a true predicate', () => {
+    const source = hot('-1-^2--3--4--5--6--|');
+    const sourceSubs = '^               !';
+    const expected = '----------------|';
+
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should skip all elements with a truthy predicate', () => {
+    const source = hot('-1-^2--3--4--5--6--|');
+    const sourceSubs = '^               !';
+    const expected = '----------------|';
+
+    expectSource(
+      source.pipe(
+        skipWhile((): any => {
+          return {};
+        })
+      )
+    ).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should not skip any element with a false predicate', () => {
+    const source = hot('-1-^2--3--4--5--6--|');
+    const sourceSubs = '^               !';
+    const expected = '-2--3--4--5--6--|';
+
+    expectSource(source.pipe(skipWhile(() => false))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should not skip any elements with a falsy predicate', () => {
+    const source = hot('-1-^2--3--4--5--6--|');
+    const sourceSubs = '^               !';
+    const expected = '-2--3--4--5--6--|';
+
+    expectSource(source.pipe(skipWhile(() => undefined as any))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should skip elements on hot source', () => {
+    const source = hot('--1--2-^-3--4--5--6--7--8--');
+    const sourceSubs = '^                   ';
+    const expected = '--------5--6--7--8--';
+
+    const predicate = function (v: string) {
+      return +v < 5;
+    };
+
+    expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it("should be possible to skip using the element's index", () => {
+    const source = hot('--a--b-^-c--d--e--f--g--h--|');
+    const sourceSubs = '^                   !';
+    const expected = '--------e--f--g--h--|';
+
+    const predicate = function (v: string, index: number) {
+      return index < 2;
+    };
+
+    expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should skip using index with source unsubscribes early', () => {
+    const source = hot('--a--b-^-c--d--e--f--g--h--|');
+    const sourceSubs = '^          !';
+    const unsub = '-----------!';
+    const expected = '-----d--e---';
+
+    const predicate = function (v: string, index: number) {
+      return index < 1;
+    };
+
+    expectSource(source.pipe(skipWhile(predicate)), unsub).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const source = hot('--a--b-^-c--d--e--f--g--h--|');
+    const sourceSubs = '^          !';
+    const expected = '-----d--e---';
+    const unsub = '           !';
+
+    const predicate = function (v: string, index: number) {
+      return index < 1;
+    };
+
+    const result = source.pipe(
+      mergeMap(function (x) {
+        return of(x);
+      }),
+      skipWhile(predicate),
+      mergeMap(function (x) {
+        return of(x);
+      })
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should skip using value with source throws', () => {
+    const source = hot('--a--b-^-c--d--e--f--g--h--#');
+    const sourceSubs = '^                   !';
+    const expected = '-----d--e--f--g--h--#';
+
+    const predicate = function (v: string) {
+      return v !== 'd';
+    };
+
+    expectSource(source.pipe(skipWhile(predicate))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should invoke predicate while its false and never again', () => {
+    const source = hot('--a--b-^-c--d--e--f--g--h--|');
+    const sourceSubs = '^                   !';
+    const expected = '--------e--f--g--h--|';
+
+    let invoked = 0;
+    const predicate = function (v: string) {
+      invoked++;
+      return v !== 'e';
+    };
+
+    expectSource(
+      source.pipe(
+        skipWhile(predicate),
+        tap(null, null, () => {
+          expect(invoked).to.equal(3);
+        })
+      )
+    ).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should handle predicate that throws', () => {
+    const source = hot('--a--b-^-c--d--e--f--g--h--|');
+    const sourceSubs = '^       !';
+    const expected = '--------#';
+
+    const predicate = function (v: string) {
+      if (v === 'e') {
+        throw new Error("nom d'une pipe !");
+      }
+
+      return v !== 'f';
+    };
+
+    expectSource(source.pipe(skipWhile(predicate))).toBe(
+      expected,
+      undefined,
+      new Error("nom d'une pipe !")
+    );
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+  });
+
+  it('should handle Observable.empty', () => {
+    const source = cold('|');
+    const subs = '(^!)';
+    const expected = '|';
+
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should handle Observable.never', () => {
+    const source = cold('-');
+    const subs = '^';
+    const expected = '-';
+
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should handle Observable.throw', () => {
+    const source = cold('#');
+    const subs = '(^!)';
+    const expected = '#';
+
+    expectSource(source.pipe(skipWhile(() => true))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+});
+
+describe('take', () => {
+  let testScheduler: TestScheduler;
+
+  beforeEach(() => {
+    testScheduler = new TestScheduler(sourceMatcher);
+  });
+
+  asDiagram('take(2)')(
+    'should take two values of an observable with many values',
+    () => {
+      testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+        const e1 = cold(' --a-----b----c---d--|');
+        const e1subs = '  ^-------!------------';
+        const expected = '--a-----(b|)         ';
+
+        expectSource(e1.pipe(take(2))).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      });
+    }
+  );
+
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(take(7)); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(take('7')); // $ExpectError
+  });
+
+  it('should work with empty', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' |');
+      const e1subs = '  (^!)';
+      const expected = '|';
+
+      expectSource(e1.pipe(take(42))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should go on forever on never', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold('-');
+      const e1subs = '  ^';
+      const expected = '-';
+
+      expectSource(e1.pipe(take(42))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should be empty on take(0)', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b----c---d--|');
+      const e1subs: string[] = []; // Don't subscribe at all
+      const expected = '   |';
+
+      expectSource(e1.pipe(take(0))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should take one value of an observable with one value', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  ---(a|)');
+      const e1subs = '  ^--!---';
+      const expected = '---(a|)';
+
+      expectSource(e1.pipe(take(1))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should take one values of an observable with many values', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b----c---d--|');
+      const e1subs = '     ^--!------------';
+      const expected = '   ---(b|)         ';
+
+      expectSource(e1.pipe(take(1))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should error on empty', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^----|');
+      const e1subs = '     ^----!';
+      const expected = '   -----|';
+
+      expectSource(e1.pipe(take(42))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should propagate error from the source observable', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^---#', undefined, 'too bad');
+      const e1subs = '   ^---!';
+      const expected = ' ----#';
+
+      expectSource(e1.pipe(take(42))).toBe(expected, null, 'too bad');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should propagate error from an observable with values', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^--a--b--#');
+      const e1subs = '   ^--------!';
+      const expected = ' ---a--b--#';
+
+      expectSource(e1.pipe(take(42))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^--a--b-----c--d--e--|');
+      const unsub = '    ---------!------------';
+      const e1subs = '   ^--------!------------';
+      const expected = ' ---a--b---            ';
+
+      expectSource(e1.pipe(take(42)), unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should work with throw', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' #');
+      const e1subs = '  (^!)';
+      const expected = '#';
+
+      expectSource(e1.pipe(take(42))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should throw if total is less than zero', () => {
+    expect(() => {
+      range(0, 10).pipe(take(-1));
+    }).to.throw(OutOfRangeError);
+  });
+
+  it('should not break unsubscription chain when unsubscribed explicitly', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^--a--b-----c--d--e--|');
+      const unsub = '    ---------!            ';
+      const e1subs = '   ^--------!            ';
+      const expected = ' ---a--b---            ';
+
+      const result = e1.pipe(
+        mergeMap((x: string) => of(x)),
+        take(42),
+        mergeMap((x: string) => of(x))
+      );
+
+      expectSource(result, unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should unsubscribe from the source when it reaches the limit', () => {
+    const source = new Observable<number>(observer => {
+      expect(observer.closed).to.be.false;
+      observer.next(42);
+      expect(observer.closed).to.be.true;
+    }).pipe(take(1));
+
+    source.subscribe();
+  });
+
+  it('should complete when the source is reentrant', () => {
+    let completed = false;
+    const source = new Subject();
+    source.pipe(take(5)).subscribe({
+      next() {
+        source.next();
+      },
+      complete() {
+        completed = true;
+      }
+    });
+    source.next();
+    expect(completed).to.be.true;
+  });
+});
+
+describe('takeLast', () => {
+  asDiagram('takeLast(2)')(
+    'should take two values of an observable with many values',
+    () => {
+      const e1 = cold('--a-----b----c---d--|    ');
+      const e1subs = '^                   !    ';
+      const expected = '--------------------(cd|)';
+
+      expectSource(e1.pipe(takeLast(2))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    }
+  );
+
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(takeLast(7)); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(takeLast('7')); // $ExpectError
+  });
+
+  it('should take last three values', () => {
+    const e1 = cold('--a-----b----c---d--|    ');
+    const e1subs = '^                   !    ';
+    const expected = '--------------------(bcd|)';
+
+    expectSource(e1.pipe(takeLast(3))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take all element when try to take larger then source', () => {
+    const e1 = cold('--a-----b----c---d--|    ');
+    const e1subs = '^                   !    ';
+    const expected = '--------------------(abcd|)';
+
+    expectSource(e1.pipe(takeLast(5))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take all element when try to take exact', () => {
+    const e1 = cold('--a-----b----c---d--|    ');
+    const e1subs = '^                   !    ';
+    const expected = '--------------------(abcd|)';
+
+    expectSource(e1.pipe(takeLast(4))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not take any values', () => {
+    const e1 = cold('--a-----b----c---d--|');
+    const expected = '|';
+
+    expectSource(e1.pipe(takeLast(0))).toBe(expected);
+  });
+
+  it('should work with empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should go on forever on never', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should be empty on takeLast(0)', () => {
+    const e1 = hot('--a--^--b----c---d--|');
+    const e1subs: string[] = []; // Don't subscribe at all
+    const expected = '|';
+
+    expectSource(e1.pipe(takeLast(0))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take one value from an observable with one value', () => {
+    const e1 = hot('---(a|)');
+    const e1subs = '^  !   ';
+    const expected = '---(a|)';
+
+    expectSource(e1.pipe(takeLast(1))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take one value from an observable with many values', () => {
+    const e1 = hot('--a--^--b----c---d--|   ');
+    const e1subs = '^              !   ';
+    const expected = '---------------(d|)';
+
+    expectSource(e1.pipe(takeLast(1))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should error on empty', () => {
+    const e1 = hot('--a--^----|');
+    const e1subs = '^    !';
+    const expected = '-----|';
+
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should propagate error from the source observable', () => {
+    const e1 = hot('---^---#', undefined, 'too bad');
+    const e1subs = '^   !';
+    const expected = '----#';
+
+    expectSource(e1.pipe(takeLast(42))).toBe(expected, null, 'too bad');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should propagate error from an observable with values', () => {
+    const e1 = hot('---^--a--b--#');
+    const e1subs = '^        !';
+    const expected = '---------#';
+
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('---^--a--b-----c--d--e--|');
+    const unsub = '         !            ';
+    const e1subs = '^        !            ';
+    const expected = '----------            ';
+
+    expectSource(e1.pipe(takeLast(42)), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should work with throw', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(takeLast(42))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should throw if total is less than zero', () => {
+    expect(() => {
+      range(0, 10).pipe(takeLast(-1));
+    }).to.throw(OutOfRangeError);
+  });
+
+  it('should not break unsubscription chain when unsubscribed explicitly', () => {
+    const e1 = hot('---^--a--b-----c--d--e--|');
+    const unsub = '         !            ';
+    const e1subs = '^        !            ';
+    const expected = '----------            ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      takeLast(42),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
+describe('takeUntil', () => {
+  asDiagram('takeUntil')('should take values until notifier emits', () => {
+    const e1 = hot('--a--b--c--d--e--f--g--|');
+    const e1subs = '^            !          ';
+    const e2 = hot('-------------z--|       ');
+    const e2subs = '^            !          ';
+    const expected = '--a--b--c--d-|          ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(takeUntil(of(1, 2, 3))); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(takeUntil(value => value < 3)); // $ExpectError
+  });
+
+  it('should take values and raises error when notifier raises error', () => {
+    const e1 = hot('--a--b--c--d--e--f--g--|');
+    const e1subs = '^            !          ';
+    const e2 = hot('-------------#          ');
+    const e2subs = '^            !          ';
+    const expected = '--a--b--c--d-#          ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should take all values when notifier is empty', () => {
+    const e1 = hot('--a--b--c--d--e--f--g--|');
+    const e1subs = '^                      !';
+    const e2 = hot('-------------|          ');
+    const e2subs = '^            !          ';
+    const expected = '--a--b--c--d--e--f--g--|';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should take all values when notifier does not complete', () => {
+    const e1 = hot('--a--b--c--d--e--f--g--|');
+    const e1subs = '^                      !';
+    const e2 = hot('-');
+    const e2subs = '^                      !';
+    const expected = '--a--b--c--d--e--f--g--|';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should complete without subscribing to the source when notifier synchronously emits', () => {
+    const e1 = hot('----a--|');
+    const e2 = of(1, 2, 3);
+    const expected = '(|)     ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe([]);
+  });
+
+  it('should subscribe to the source when notifier synchronously completes without emitting', () => {
+    const e1 = hot('----a--|');
+    const e1subs = '^      !';
+    const e2 = EMPTY;
+    const expected = '----a--|';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('--a--b--c--d--e--f--g--|');
+    const e1subs = '^      !                ';
+    const e2 = hot('-------------z--|       ');
+    const e2subs = '^      !                ';
+    const unsub = '       !                ';
+    const expected = '--a--b--                ';
+
+    expectSource(e1.pipe(takeUntil(e2)), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should complete when notifier emits if source observable does not complete', () => {
+    const e1 = hot('-');
+    const e1subs = '^ !';
+    const e2 = hot('--a--b--|');
+    const e2subs = '^ !';
+    const expected = '--|';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error when notifier raises error if source observable does not complete', () => {
+    const e1 = hot('-');
+    const e1subs = '^ !';
+    const e2 = hot('--#');
+    const e2subs = '^ !';
+    const expected = '--#';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not complete when notifier is empty if source observable does not complete', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const e2 = hot('--|');
+    const e2subs = '^ !';
+    const expected = '---';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not complete when source and notifier do not complete', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const e2 = hot('-');
+    const e2subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should complete when notifier emits before source observable emits', () => {
+    const e1 = hot('----a--|');
+    const e1subs = '^ !     ';
+    const e2 = hot('--x     ');
+    const e2subs = '^ !     ';
+    const expected = '--|     ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error if source raises error before notifier emits', () => {
+    const e1 = hot('--a--b--c--d--#     ');
+    const e1subs = '^             !     ';
+    const e2 = hot('----------------a--|');
+    const e2subs = '^             !     ';
+    const expected = '--a--b--c--d--#     ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error immediately if source throws', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const e2 = hot('--x');
+    const e2subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should dispose source observable if notifier emits before source emits', () => {
+    const e1 = hot('---a---|');
+    const e1subs = '^ !     ';
+    const e2 = hot('--x-|   ');
+    const e2subs = '^ !     ';
+    const expected = '--|     ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should dispose notifier if source observable completes', () => {
+    const e1 = hot('--a--|     ');
+    const e1subs = '^    !     ';
+    const e2 = hot('-------x--|');
+    const e2subs = '^    !     ';
+    const expected = '--a--|     ';
+
+    expectSource(e1.pipe(takeUntil(e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not break unsubscription chain when unsubscribed explicitly', () => {
+    const e1 = hot('--a--b--c--d--e--f--g--|');
+    const e1subs = '^      !                ';
+    const e2 = hot('-------------z--|       ');
+    const e2subs = '^      !                ';
+    const unsub = '       !                ';
+    const expected = '--a--b--                ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      takeUntil(e2),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+});
+
+describe('takeWhile', () => {
+  asDiagram('takeWhile(x => x < 4)')(
+    'should take all elements until predicate is false',
+    () => {
+      const source = hot('-1-^2--3--4--5--6--|');
+      const sourceSubs = '^      !         ';
+      const expected = '-2--3--|         ';
+
+      const result = source.pipe(takeWhile((v: any) => +v < 4));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+    }
+  );
+  it('should support a user-defined type guard', () => {
+    const o = of('foo').pipe(takeWhile((s): s is 'foo' => true)); // $ExpectType Observable<"foo">
+  });
+
+  it('should support a user-defined type guard with inclusive option', () => {
+    const o = of('foo').pipe(takeWhile((s): s is 'foo' => true, false)); // $ExpectType Observable<"foo">
+  });
+
+  it('should support a predicate', () => {
+    const o = of('foo').pipe(takeWhile(s => true)); // $ExpectType Observable<string>
+  });
+
+  it('should support a predicate with inclusive option', () => {
+    const o = of('foo').pipe(takeWhile(s => true, true)); // $ExpectType Observable<string>
+  });
+
+  it('should take all elements with predicate returns true', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^             !';
+    const expected = '--b--c--d--e--|';
+
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take all elements with truthy predicate', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^             !';
+    const expected = '--b--c--d--e--|';
+
+    expectSource(
+      e1.pipe(
+        takeWhile(<any>(() => {
+          return {};
+        }))
+      )
+    ).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip all elements with predicate returns false', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^ !            ';
+    const expected = '--|            ';
+
+    expectSource(e1.pipe(takeWhile(() => false))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should skip all elements with falsy predicate', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^ !            ';
+    const expected = '--|            ';
+
+    expectSource(e1.pipe(takeWhile(() => null as any))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take all elements until predicate return false', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^       !      ';
+    const expected = '--b--c--|      ';
+
+    function predicate(value: string) {
+      return value !== 'd';
+    }
+
+    expectSource(e1.pipe(takeWhile(predicate))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it(
+    'should take all elements up to and including the element that made ' +
+      'the predicate return false',
+    () => {
+      const e1 = hot('--a-^-b--c--d--e--|');
+      const e1subs = '^       !      ';
+      const expected = '--b--c--(d|)   ';
+
+      function predicate(value: string) {
+        return value !== 'd';
+      }
+      const inclusive = true;
+
+      expectSource(e1.pipe(takeWhile(predicate, inclusive))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    }
+  );
+
+  it('should take elements with predicate when source does not complete', () => {
+    const e1 = hot('--a-^-b--c--d--e--');
+    const e1subs = '^             ';
+    const expected = '--b--c--d--e--';
+
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not complete when source never completes', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    const result = e1.pipe(takeWhile(() => true));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete when source does not emit', () => {
+    const e1 = hot('--a-^------------|');
+    const e1subs = '^            !';
+    const expected = '-------------|';
+
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete when source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    const result = e1.pipe(takeWhile(() => true));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should pass element index to predicate', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^       !      ';
+    const expected = '--b--c--|      ';
+
+    function predicate(value: string, index: number) {
+      return index < 2;
+    }
+
+    expectSource(e1.pipe(takeWhile(predicate))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error when source raises error', () => {
+    const e1 = hot('--a-^-b--c--d--e--#');
+    const e1subs = '^             !';
+    const expected = '--b--c--d--e--#';
+
+    expectSource(e1.pipe(takeWhile(() => true))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error when source throws', () => {
+    const source = cold('#');
+    const subs = '(^!)';
+    const expected = '#';
+
+    expectSource(source.pipe(takeWhile(() => true))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
+
+  it('should invoke predicate until return false', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^       !      ';
+    const expected = '--b--c--|      ';
+
+    let invoked = 0;
+    function predicate(value: string) {
+      invoked++;
+      return value !== 'd';
+    }
+
+    const source = e1.pipe(
+      takeWhile(predicate),
+      tap(null, null, () => {
+        expect(invoked).to.equal(3);
+      })
+    );
+    expectSource(source).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error if predicate throws', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const e1subs = '^ !            ';
+    const expected = '--#            ';
+
+    function predicate(value: string) {
+      throw 'error';
+    }
+
+    expectSource(e1.pipe(takeWhile(<any>predicate))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take elements until unsubscribed', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const unsub = '-----!         ';
+    const e1subs = '^    !         ';
+    const expected = '--b---         ';
+
+    function predicate(value: string) {
+      return value !== 'd';
+    }
+
+    expectSource(e1.pipe(takeWhile(predicate)), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chain when unsubscribed explicitly', () => {
+    const e1 = hot('--a-^-b--c--d--e--|');
+    const unsub = '-----!         ';
+    const e1subs = '^    !         ';
+    const expected = '--b---         ';
+
+    function predicate(value: string) {
+      return value !== 'd';
+    }
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      takeWhile(predicate),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should support type guards without breaking previous behavior', () => {
+    // type guards with interfaces and classes
+    {
+      interface Bar {
+        bar?: string;
+      }
+      interface Baz {
+        baz?: number;
+      }
+      class Foo implements Bar, Baz {
+        constructor(public bar: string = 'name', public baz: number = 42) {}
+      }
+
+      const isBar = (x: any): x is Bar => x && (<Bar>x).bar !== undefined;
+
+      const foo: Foo = new Foo();
+      of(foo)
+        .pipe(takeWhile(foo => foo.baz === 42))
+        .subscribe(x => x.baz); // x is still Foo
+      of(foo)
+        .pipe(takeWhile(isBar))
+        .subscribe(x => x.bar); // x is Bar!
+
+      const foobar: Bar = new Foo(); // type is interface, not the class
+      of(foobar)
+        .pipe(takeWhile(foobar => foobar.bar === 'name'))
+        .subscribe(x => x.bar); // <-- x is still Bar
+      of(foobar)
+        .pipe(takeWhile(isBar))
+        .subscribe(x => x.bar); // <--- x is Bar!
+
+      const barish = {bar: 'quack', baz: 42}; // type can quack like a Bar
+      of(barish)
+        .pipe(takeWhile(x => x.bar === 'quack'))
+        .subscribe(x => x.bar); // x is still { bar: string; baz: number; }
+      of(barish)
+        .pipe(takeWhile(isBar))
+        .subscribe(bar => bar.bar); // x is Bar!
+    }
+
+    // type guards with primitive types
+    {
+      const xs: Observable<string | number> = from([1, 'aaa', 3, 'bb']);
+
+      // This type guard will narrow a `string | number` to a string in the examples below
+      const isString = (x: string | number): x is string =>
+        typeof x === 'string';
+
+      xs.pipe(takeWhile(isString)).subscribe(s => s.length); // s is string
+
+      // In contrast, this type of regular boolean predicate still maintains the original type
+      xs.pipe(takeWhile(x => typeof x === 'number')).subscribe(x => x); // x is still string | number
+      xs.pipe(takeWhile((x, i) => typeof x === 'number' && x > i)).subscribe(
+        x => x
+      ); // x is still string | number
+    }
   });
 });

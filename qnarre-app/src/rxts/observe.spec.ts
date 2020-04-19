@@ -189,18 +189,6 @@ describe('fromIterable', () => {
     fromIterable([10, 20, 30, 40, 50, 60], undefined).subscribe(subscriber);
   });
 });
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {SubscribeOnObservable} from 'rxjs/internal/observable/SubscribeOnObservable';
-import {
-  hot,
-  expectSource,
-  expectSubscriptions
-} from '../helpers/marble-testing';
-import {TestScheduler} from 'rxjs/testing';
-import {asapScheduler} from 'rxjs';
-
-declare const rxTestScheduler: TestScheduler;
 
 describe('SubscribeOnObservable', () => {
   it('should create Observable to be subscribed on specified scheduler', () => {
@@ -257,12 +245,6 @@ describe('SubscribeOnObservable', () => {
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 });
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {bindCallback} from 'rxjs';
-import {TestScheduler} from 'rxjs/testing';
-
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {bindCallback} */
 describe('bindCallback', () => {
@@ -588,12 +570,6 @@ describe('bindCallback', () => {
     }
   });
 });
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {bindNodeCallback} from 'rxjs';
-import {TestScheduler} from 'rxjs/testing';
-
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {bindNodeCallback} */
 describe('bindNodeCallback', () => {
@@ -1054,13 +1030,6 @@ describe('defer', () => {
     expectSubscriptions(source.subscriptions).toBe(sourceSubs);
   });
 });
-import {expect} from 'chai';
-import {expectSource} from '../helpers/marble-testing';
-import {empty, EMPTY} from 'rxjs';
-import {TestScheduler} from 'rxjs/testing';
-
-declare const asDiagram: any;
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {empty} */
 describe('empty', () => {
@@ -1107,19 +1076,6 @@ describe('empty', () => {
     expect(hit).to.be.true;
   });
 });
-import {expect} from 'chai';
-import {Observable, forkJoin, of} from 'rxjs';
-import {lowerCaseO} from '../helpers/test-helper';
-import {
-  hot,
-  expectSource,
-  expectSubscriptions,
-  cold
-} from '../helpers/marble-testing';
-import {AssertionError} from 'assert';
-
-declare const type: Function;
-declare const asDiagram: Function;
 
 /** @test {forkJoin} */
 describe('forkJoin', () => {
@@ -1611,11 +1567,6 @@ describe('forkJoin', () => {
     });
   });
 });
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {asapScheduler, from} from 'rxjs';
-
-declare const process: any;
 
 /** @test {fromPromise} */
 describe('from (fromPromise)', () => {
@@ -1810,27 +1761,6 @@ describe('from (fromPromise)', () => {
     });
   });
 });
-import {expect} from 'chai';
-import {TestScheduler} from 'rxjs/testing';
-import {
-  asyncScheduler,
-  of,
-  from,
-  Observable,
-  asapScheduler,
-  Observer,
-  observable,
-  Subject,
-  EMPTY
-} from 'rxjs';
-import {first, concatMap, delay} from 'rxjs/operators';
-
-// tslint:disable:no-any
-declare const asDiagram: any;
-declare const expectSource: any;
-declare const type: any;
-declare const rxTestScheduler: TestScheduler;
-// tslint:enable:no-any
 
 function getArguments<T>(...args: T[]) {
   return arguments;
@@ -2015,21 +1945,6 @@ describe('from', () => {
     });
   }
 });
-import {expect} from 'chai';
-import {expectSource} from '../helpers/marble-testing';
-import {Observable, fromEvent, NEVER, timer, pipe} from 'rxjs';
-import {
-  NodeStyleEventEmitter,
-  NodeCompatibleEventEmitter,
-  NodeEventHandler
-} from 'rxjs/internal/observable/fromEvent';
-import {mapTo, take, concat} from 'rxjs/operators';
-import {TestScheduler} from 'rxjs/testing';
-
-declare const type: Function;
-
-declare function asDiagram(arg: string): Function;
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {fromEvent} */
 describe('fromEvent', () => {
@@ -2519,16 +2434,6 @@ describe('fromEvent', () => {
     /* tslint:enable:no-unused-variable */
   });
 });
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {expectSource} from '../helpers/marble-testing';
-
-import {fromEventPattern, noop, NEVER, timer} from 'rxjs';
-import {mapTo, take, concat} from 'rxjs/operators';
-import {TestScheduler} from 'rxjs/testing';
-
-declare function asDiagram(arg: string): Function;
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {fromEventPattern} */
 describe('fromEventPattern', () => {
@@ -2664,14 +2569,6 @@ describe('fromEventPattern', () => {
     trigger('test');
   });
 });
-import {TestScheduler} from 'rxjs/testing';
-import {expect} from 'chai';
-import {expectSource} from '../helpers/marble-testing';
-import {generate, Subscriber} from 'rxjs';
-import {take} from 'rxjs/operators';
-
-declare function asDiagram(arg: string): Function;
-declare const rxTestScheduler: TestScheduler;
 
 function err(): any {
   throw 'error';
@@ -2857,9 +2754,6 @@ describe('generate', () => {
     expectSource(source).toBe(expected);
   });
 });
-import {expect} from 'chai';
-import {iif, of} from 'rxjs';
-import {expectSource} from '../helpers/marble-testing';
 
 describe('iif', () => {
   it('should subscribe to thenSource when the conditional returns true', () => {
@@ -2988,22 +2882,6 @@ describe('iif', () => {
     );
   });
 });
-import {expect} from 'chai';
-import {expectSource} from '../helpers/marble-testing';
-import {
-  NEVER,
-  interval,
-  asapScheduler,
-  Observable,
-  animationFrame,
-  queueScheduler
-} from 'rxjs';
-import {TestScheduler} from 'rxjs/testing';
-import {take, concat} from 'rxjs/operators';
-import * as sinon from 'sinon';
-
-declare const asDiagram: any;
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {interval} */
 describe('interval', () => {
@@ -3172,14 +3050,6 @@ describe('NEVER', () => {
     expect(NEVER).to.equal(NEVER);
   });
 });
-import {expect} from 'chai';
-import {of, Observable} from 'rxjs';
-import {expectSource} from '../helpers/marble-testing';
-import {TestScheduler} from 'rxjs/testing';
-import {concatMap, delay, concatAll} from 'rxjs/operators';
-
-declare const asDiagram: any;
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {of} */
 describe('of', () => {
@@ -3250,14 +3120,6 @@ describe('of', () => {
   });
 });
 
-import {onErrorResumeNext} from 'rxjs';
-import {
-  hot,
-  cold,
-  expectSource,
-  expectSubscriptions
-} from '../helpers/marble-testing';
-
 describe('onErrorResumeNext', () => {
   it('should continue with observables', () => {
     const s1 = hot('--a--b--#');
@@ -3304,14 +3166,6 @@ describe('onErrorResumeNext', () => {
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 });
-import {expect} from 'chai';
-import {expectSource} from '../helpers/marble-testing';
-import {TestScheduler} from 'rxjs/testing';
-import {pairs} from 'rxjs';
-
-declare const asDiagram: any;
-
-declare const rxTestScheduler: TestScheduler;
 
 describe('pairs', () => {
   asDiagram('pairs({a: 1, b:2})')(
@@ -3825,17 +3679,6 @@ describe('static race', () => {
     );
   });
 });
-import {expect} from 'chai';
-import * as sinon from 'sinon';
-import {Subscriber, asapScheduler as asap, range, of} from 'rxjs';
-import {TestScheduler} from 'rxjs/testing';
-import {expectSource} from '../helpers/marble-testing';
-import {dispatch} from 'rxjs/internal/observable/range';
-import {concatMap, delay} from 'rxjs/operators';
-
-declare const asDiagram: any;
-
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {range} */
 describe('range', () => {
@@ -3973,13 +3816,6 @@ describe('RangeObservable', () => {
     });
   });
 });
-import {expect} from 'chai';
-import {TestScheduler} from 'rxjs/testing';
-import {throwError} from 'rxjs';
-import {expectSource} from '../helpers/marble-testing';
-
-declare function asDiagram(arg: string): Function;
-declare const rxTestScheduler: TestScheduler;
 
 /** @test {throw} */
 describe('throwError', () => {
@@ -4118,9 +3954,6 @@ describe('timer', () => {
     }
   );
 });
-import {expect} from 'chai';
-import {using, range, Subscription} from 'rxjs';
-import {take} from 'rxjs/operators';
 
 describe('using', () => {
   it('should dispose of the resource when the subscription is disposed', done => {

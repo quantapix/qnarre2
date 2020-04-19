@@ -2953,6 +2953,13 @@ describe('exhaust', () => {
       expectSource(e1.pipe(exhaust())).toBe(expected);
     }
   );
+  it('should infer correctly', () => {
+    const o = of(of(1, 2, 3)).pipe(exhaust()); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(exhaust()); // $ExpectError
+  });
 
   it('should switch to first immediately-scheduled inner Observable', () => {
     const e1 = cold('(ab|)');
@@ -3231,6 +3238,69 @@ describe('exhaustMap', () => {
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
+
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(exhaustMap(p => of(Boolean(p)))); // $ExpectType Observable<boolean>
+  });
+
+  it('should support a projector that takes an index', () => {
+    const o = of(1, 2, 3).pipe(exhaustMap((p, index) => of(Boolean(p)))); // $ExpectType Observable<boolean>
+  });
+
+  it('should infer correctly by using the resultSelector first parameter', () => {
+    const o = of(1, 2, 3).pipe(
+      exhaustMap(
+        p => of(Boolean(p)),
+        a => a
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should infer correctly by using the resultSelector second parameter', () => {
+    const o = of(1, 2, 3).pipe(
+      exhaustMap(
+        p => of(Boolean(p)),
+        (a, b) => b
+      )
+    ); // $ExpectType Observable<boolean>
+  });
+
+  it('should support a resultSelector that takes an inner index', () => {
+    const o = of(1, 2, 3).pipe(
+      exhaustMap(
+        p => of(Boolean(p)),
+        (a, b, innnerIndex) => a
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support a resultSelector that takes an inner and outer index', () => {
+    const o = of(1, 2, 3).pipe(
+      exhaustMap(
+        p => of(Boolean(p)),
+        (a, b, innnerIndex, outerX) => a
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support an undefined resultSelector', () => {
+    const o = of(1, 2, 3).pipe(exhaustMap(p => of(Boolean(p)), undefined)); // $ExpectType Observable<boolean>
+  });
+
+  it('should report projections to union types', () => {
+    const o = of(Math.random()).pipe(
+      exhaustMap(n => (n > 0.5 ? of('life') : of(42)))
+    ); // $ExpectType Observable<string | number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(exhaustMap()); // $ExpectError
+  });
+
+  it('should enforce the return type', () => {
+    const o = of(1, 2, 3).pipe(exhaustMap(p => p)); // $ExpectError
+  });
+
   it('should support the deprecated resultSelector', () => {
     const results: Array<number[]> = [];
 
@@ -7175,6 +7245,13 @@ describe('switchAll', () => {
       expectSource(e1.pipe(switchAll())).toBe(expected);
     }
   );
+  it('should infer correctly', () => {
+    const o = of(of(1, 2, 3)).pipe(switchAll()); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(switchAll()); // $ExpectError
+  });
 
   it('should switch to each immediately-scheduled inner Observable', done => {
     const a = of(1, 2, 3, queueScheduler);
@@ -7460,6 +7537,67 @@ describe('switchMap', () => {
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(switchMap(p => of(Boolean(p)))); // $ExpectType Observable<boolean>
+  });
+
+  it('should support a projector that takes an index', () => {
+    const o = of(1, 2, 3).pipe(switchMap(p => of(Boolean(p)))); // $ExpectType Observable<boolean>
+  });
+
+  it('should infer correctly by using the resultSelector first parameter', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMap(
+        p => of(Boolean(p)),
+        a => a
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should infer correctly by using the resultSelector second parameter', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMap(
+        p => of(Boolean(p)),
+        (a, b) => b
+      )
+    ); // $ExpectType Observable<boolean>
+  });
+
+  it('should support a resultSelector that takes an inner index', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMap(
+        p => of(Boolean(p)),
+        (a, b, i) => a
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support a resultSelector that takes an inner and outer index', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMap(
+        p => of(Boolean(p)),
+        (a, b, i, ii) => a
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support an undefined resultSelector', () => {
+    const o = of(1, 2, 3).pipe(switchMap(p => of(Boolean(p)), undefined)); // $ExpectType Observable<boolean>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(switchMap()); // $ExpectError
+  });
+
+  it('should enforce the return type', () => {
+    const o = of(1, 2, 3).pipe(switchMap(p => p)); // $ExpectError
+  });
+
+  it('should support projecting to union types', () => {
+    const o = of(Math.random()).pipe(
+      switchMap(n => (n > 0.5 ? of(123) : of('test')))
+    ); // $ExpectType Observable<string | number>
+  });
 
   it('should support the deprecated resultSelector', () => {
     const results: Array<number[]> = [];
@@ -7903,6 +8041,58 @@ describe('switchMapTo', () => {
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
   );
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo'))); // $ExpectType Observable<string>
+  });
+
+  it('should infer correctly with multiple types', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo', 4))); // $ExpectType Observable<string | number>
+  });
+
+  it('should infer correctly with an array', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo([4, 5, 6])); // $ExpectType Observable<number>
+  });
+
+  it('should infer correctly with a Promise', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMapTo(
+        new Promise<string>(() => {})
+      )
+    ); // $ExpectType Observable<string>
+  });
+
+  it('should infer correctly by using the resultSelector first parameter', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo'), a => a)); // $ExpectType Observable<number>
+  });
+
+  it('should infer correctly by using the resultSelector second parameter', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo'), (a, b) => b)); // $ExpectType Observable<string>
+  });
+
+  it('should support a resultSelector that takes an inner index', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMapTo(of('foo'), (a, b, innnerIndex) => a)
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support a resultSelector that takes an inner and outer index', () => {
+    const o = of(1, 2, 3).pipe(
+      switchMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support an undefined resultSelector', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo'), undefined)); // $ExpectType Observable<string>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo()); // $ExpectError
+  });
+
+  it('should enforce the return type', () => {
+    const o = of(1, 2, 3).pipe(switchMapTo(p => p)); // $ExpectError
+    const p = of(1, 2, 3).pipe(switchMapTo(4)); // $ExpectError
+  });
 
   it('should support the deprecated resultSelector', () => {
     const results: Array<number[]> = [];

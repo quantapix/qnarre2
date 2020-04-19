@@ -564,3 +564,976 @@ export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
     this.subscribing = false;
   }
 }
+
+export function groupBy<T, K>(
+  keySelector: (value: N) => K
+): Lifter<T, GroupedSource<K, T>>;
+export function groupBy<T, K>(
+  keySelector: (value: N) => K,
+  elementSelector: void,
+  durationSelector: (grouped: GroupedSource<K, T>) => qt.Source<any, F, D>
+): Lifter<T, GroupedSource<K, T>>;
+export function groupBy<T, K, R>(
+  keySelector: (value: N) => K,
+  elementSelector?: (value: N) => R,
+  durationSelector?: (grouped: GroupedSource<K, R>) => qt.Source<any, F, D>
+): Lifter<T, GroupedSource<K, R>>;
+export function groupBy<T, K, R>(
+  keySelector: (value: N) => K,
+  elementSelector?: (value: N) => R,
+  durationSelector?: (grouped: GroupedSource<K, R>) => qt.Source<any, F, D>,
+  subjectSelector?: () => Subject<R>
+): Lifter<T, GroupedSource<K, R>>;
+export function groupBy<T, K, R>(
+  keySelector: (value: N) => K,
+  elementSelector?: ((value: N) => R) | void,
+  durationSelector?: (grouped: GroupedSource<K, R>) => qt.Source<any, F, D>,
+  subjectSelector?: () => Subject<R>
+): Lifter<T, GroupedSource<K, R>> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(
+      new GroupByO(
+        keySelector,
+        elementSelector,
+        durationSelector,
+        subjectSelector
+      )
+    );
+}
+
+class GroupByO<T, K, R> implements qt.Operator<T, GroupedSource<K, R>> {
+  constructor(
+    private keySelector: (value: N) => K,
+    private elementSelector?: ((value: N) => R) | void,
+    private durationSelector?: (
+      grouped: GroupedSource<K, R>
+    ) => qt.Source<any, F, D>,
+    private subjectSelector?: () => Subject<R>
+  ) {}
+
+  call(subscriber: Subscriber<GroupedSource<K, R>>, source: any): any {
+    return source.subscribe(
+      new GroupByR(
+        subscriber,
+        this.keySelector,
+        this.elementSelector,
+        this.durationSelector,
+        this.subjectSelector
+      )
+    );
+  }
+}
+
+export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
+  implements qt.RefCountSubscription {
+  private groups?: Map<K, Subject<N | M>>;
+  public attempted = false;
+  public count = 0;
+
+  constructor(
+    tgt: Subscriber<GroupedSource<K, R>>,
+    private keySelector: (value: N) => K,
+    private elementSelector?: ((value: N) => R) | void,
+    private durationSelector?: (
+      grouped: GroupedSource<K, R>
+    ) => qt.Source<any, F, D>,
+    private subjectSelector?: () => Subject<R>
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    let key: K;
+    try {
+      key = this.keySelector(n);
+    } catch (e) {
+      this.fail(e);
+      return;
+    }
+    this._group(n, key);
+  }
+
+  private _group(value: T, key: K) {
+    let groups = this.groups;
+    if (!groups) groups = this.groups = new Map<K, Subject<T | R>>();
+    let group = groups.get(key);
+    let element: R;
+    if (this.elementSelector) {
+      try {
+        element = this.elementSelector(value);
+      } catch (e) {
+        this.fail(e);
+      }
+    } else element = value as any;
+    if (!group) {
+      group = (this.subjectSelector
+        ? this.subjectSelector()
+        : new Subject<R>()) as Subject<T | R>;
+      groups.set(key, group);
+      const groupedObservable = new GroupedSource(key, group, this);
+      this.tgt.next(groupedObservable);
+      if (this.durationSelector) {
+        let duration: any;
+        try {
+          duration = this.durationSelector(
+            new GroupedSource<K, R>(key, <Subject<R>>group)
+          );
+        } catch (e) {
+          this.fail(e);
+          return;
+        }
+        this.add(duration.subscribe(new GroupDuration(key, group, this)));
+      }
+    }
+    if (!group.closed) group.next(element!);
+  }
+
+  protected _fail(f?: F) {
+    const groups = this.groups;
+    if (groups) {
+      groups.forEach((group, key) => group.error(f));
+      groups.clear();
+    }
+    this.tgt.fail(f);
+  }
+
+  protected _done(d?: D) {
+    const groups = this.groups;
+    if (groups) {
+      groups.forEach(group => group.complete());
+      groups.clear();
+    }
+    this.tgt.done(d);
+  }
+
+  removeGroup(key: K) {
+    this.groups!.delete(key);
+  }
+
+  unsubscribe() {
+    if (!this.closed) {
+      this.attemptedToUnsubscribe = true;
+      if (!this.count) super.unsubscribe();
+    }
+  }
+}
+
+export function map<T, R>(
+  project: (value: T, index: number) => R,
+  thisArg?: any
+): Lifter<T, R> {
+  return function mapOperation(source: qt.Source<N, F, D>): qt.Source<R> {
+    if (typeof project !== 'function') {
+      throw new TypeError(
+        'argument is not a function. Are you looking for `mapTo()`?'
+      );
+    }
+    return source.lift(new MapO(project, thisArg));
+  };
+}
+
+export class MapO<T, R> implements qt.Operator<T, R> {
+  constructor(
+    private project: (value: T, index: number) => R,
+    private thisArg: any
+  ) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(new MapR(subscriber, this.project, this.thisArg));
+  }
+}
+
+export class MapR<N, M, F, D> extends Subscriber<N, F, D> {
+  count = 0;
+  private thisArg: any;
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private project: (value: N, i: number) => M,
+    thisArg: any
+  ) {
+    super(tgt);
+    this.thisArg = thisArg || this;
+  }
+
+  protected _next(n?: N) {
+    let result: M;
+    try {
+      result = this.project.call(this.thisArg, n, this.count++);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    this.tgt.next(result);
+  }
+}
+
+export function mapTo<R>(value: R): Lifter<any, R>;
+export function mapTo<R>(value: R): Lifter<any, R> {
+  return (source: qt.Source<any, F, D>) => source.lift(new MapToO(value));
+}
+
+class MapToO<T, R> implements qt.Operator<T, R> {
+  value: R;
+
+  constructor(value: R) {
+    this.value = value;
+  }
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(new MapToR(subscriber, this.value));
+  }
+}
+
+export class MapToR<N, M, F, D> extends Subscriber<N, F, D> {
+  value: M;
+
+  constructor(tgt: Subscriber<M, F, D>, value: M) {
+    super(tgt);
+    this.value = value;
+  }
+
+  protected _next(_n?: N) {
+    this.tgt.next(this.value);
+  }
+}
+
+export function scan<V, A = V>(
+  accumulator: (acc: A | V, value: V, index: number) => A
+): Lifter<V, V | A>;
+export function scan<V, A>(
+  accumulator: (acc: A, value: V, index: number) => A,
+  seed: A
+): Lifter<V, A>;
+export function scan<V, A, S>(
+  accumulator: (acc: A | S, value: V, index: number) => A,
+  seed: S
+): Lifter<V, A>;
+export function scan<V, A, S>(
+  accumulator: (acc: V | A | S, value: V, index: number) => A,
+  seed?: S
+): Lifter<V, V | A> {
+  let hasSeed = false;
+  if (arguments.length >= 2) {
+    hasSeed = true;
+  }
+
+  return function scanLifter(source: qt.Source<V>) {
+    return source.lift(new ScanO(accumulator, seed, hasSeed));
+  };
+}
+
+class ScanO<V, A, S> implements qt.Operator<V, A> {
+  constructor(
+    private accumulator: (acc: V | A | S, value: V, index: number) => A,
+    private seed?: S,
+    private hasSeed: boolean = false
+  ) {}
+
+  call(subscriber: Subscriber<A>, source: any): qt.Closer {
+    return source.subscribe(
+      new ScanR(subscriber, this.accumulator, this.seed, this.hasSeed)
+    );
+  }
+}
+
+export class ScanR<N, M, F, D> extends Subscriber<N, F, D> {
+  private index = 0;
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private accumulator: (acc: N | M, n: N | undefined, i: number) => M,
+    private _state: any,
+    private _hasState: boolean
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    if (!this._hasState) {
+      this._state = n;
+      this._hasState = true;
+      this.tgt.next(n);
+    } else {
+      const index = this.index++;
+      let result: M;
+      try {
+        result = this.accumulator(this._state, n, index);
+      } catch (e) {
+        this.tgt.fail(e);
+        return;
+      }
+      this._state = result;
+      this.tgt.next(result);
+    }
+  }
+}
+
+export function window<N, F, D>(
+  windowBoundaries: qt.Source<any, F, D>
+): Lifter<T, qt.Source<N, F, D>> {
+  return function windowLifter(source: qt.Source<N, F, D>) {
+    return source.lift(new WindowO(windowBoundaries));
+  };
+}
+
+class WindowO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+  constructor(private windowBoundaries: qt.Source<any, F, D>) {}
+
+  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+    const windowSubscriber = new WindowR(subscriber);
+    const sourceSubscription = source.subscribe(windowSubscriber);
+    if (!sourceSubscription.closed) {
+      windowSubscriber.add(
+        subscribeToResult(windowSubscriber, this.windowBoundaries)
+      );
+    }
+    return sourceSubscription;
+  }
+}
+
+class WindowR<N, F, D> extends Reactor<T, any> {
+  private window: Subject<N, F, D> = new Subject<N, F, D>();
+
+  constructor(tgt: Subscriber<Observable<N, F, D>>) {
+    super(tgt);
+    tgt.next(this.window);
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: any,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, any, F, D>
+  ): void {
+    this.openWindow();
+  }
+
+  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
+    this._fail(error);
+  }
+
+  reactDone(innerSub: Actor<N, any, F, D>): void {
+    this._done();
+  }
+
+  protected _next(v: N) {
+    this.window.next(value);
+  }
+
+  protected _fail(f?: F) {
+    this.window.error(err);
+    this.tgt.error(err);
+  }
+
+  protected _done(d?: D) {
+    this.window.complete();
+    this.tgt.complete();
+  }
+
+  _unsubscribe() {
+    this.window = null!;
+  }
+
+  private openWindow(): void {
+    const prevWindow = this.window;
+    if (prevWindow) {
+      prevWindow.complete();
+    }
+    const tgt = this.tgt;
+    const newWindow = (this.window = new Subject<N, F, D>());
+    tgt.next(newWindow);
+  }
+}
+
+export function windowCount<N, F, D>(
+  windowSize: number,
+  startWindowEvery: number = 0
+): Lifter<T, qt.Source<N, F, D>> {
+  return function windowCountLifter(source: qt.Source<N, F, D>) {
+    return source.lift(new WindowCountO<N, F, D>(windowSize, startWindowEvery));
+  };
+}
+
+class WindowCountO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+  constructor(private windowSize: number, private startWindowEvery: number) {}
+
+  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+    return source.subscribe(
+      new WindowCountR(subscriber, this.windowSize, this.startWindowEvery)
+    );
+  }
+}
+
+class WindowCountR<N, F, D> extends Subscriber<N, F, D> {
+  private windows: Subject<N, F, D>[] = [new Subject<N, F, D>()];
+  private count: number = 0;
+
+  constructor(
+    protected tgt: Subscriber<Observable<N, F, D>>,
+    private windowSize: number,
+    private startWindowEvery: number
+  ) {
+    super(tgt);
+    tgt.next(this.windows[0]);
+  }
+
+  protected _next(n?: N) {
+    const startWindowEvery =
+      this.startWindowEvery > 0 ? this.startWindowEvery : this.windowSize;
+    const tgt = this.tgt;
+    const windowSize = this.windowSize;
+    const windows = this.windows;
+    const len = windows.length;
+
+    for (let i = 0; i < len && !this.closed; i++) {
+      windows[i].next(value);
+    }
+    const c = this.count - windowSize + 1;
+    if (c >= 0 && c % startWindowEvery === 0 && !this.closed) {
+      windows.shift()!.complete();
+    }
+    if (++this.count % startWindowEvery === 0 && !this.closed) {
+      const window = new Subject<N, F, D>();
+      windows.push(window);
+      tgt.next(window);
+    }
+  }
+
+  protected _fail(f?: F) {
+    const windows = this.windows;
+    if (windows) {
+      while (windows.length > 0 && !this.closed) {
+        windows.shift()!.error(err);
+      }
+    }
+    this.tgt.error(err);
+  }
+
+  protected _done(d?: D) {
+    const windows = this.windows;
+    if (windows) {
+      while (windows.length > 0 && !this.closed) {
+        windows.shift()!.complete();
+      }
+    }
+    this.tgt.complete();
+  }
+
+  protected _unsubscribe() {
+    this.count = 0;
+    this.windows = null!;
+  }
+}
+
+export function windowTime<N, F, D>(
+  windowTimeSpan: number,
+  scheduler?: qt.Scheduler
+): Lifter<T, qt.Source<N, F, D>>;
+export function windowTime<N, F, D>(
+  windowTimeSpan: number,
+  windowCreationInterval: number,
+  scheduler?: qt.Scheduler
+): Lifter<T, qt.Source<N, F, D>>;
+export function windowTime<N, F, D>(
+  windowTimeSpan: number,
+  windowCreationInterval: number,
+  maxWindowSize: number,
+  scheduler?: qt.Scheduler
+): Lifter<T, qt.Source<N, F, D>>;
+export function windowTime<N, F, D>(
+  windowTimeSpan: number
+): Lifter<T, qt.Source<N, F, D>> {
+  let scheduler: qt.Scheduler = async;
+  let windowCreationInterval: number | null = null;
+  let maxWindowSize: number = Number.POSITIVE_INFINITY;
+
+  if (isScheduler(arguments[3])) {
+    scheduler = arguments[3];
+  }
+
+  if (isScheduler(arguments[2])) {
+    scheduler = arguments[2];
+  } else if (isNumeric(arguments[2])) {
+    maxWindowSize = Number(arguments[2]);
+  }
+
+  if (isScheduler(arguments[1])) {
+    scheduler = arguments[1];
+  } else if (isNumeric(arguments[1])) {
+    windowCreationInterval = Number(arguments[1]);
+  }
+
+  return function windowTimeLifter(source: qt.Source<N, F, D>) {
+    return source.lift(
+      new WindowTimeO<N, F, D>(
+        windowTimeSpan,
+        windowCreationInterval,
+        maxWindowSize,
+        scheduler
+      )
+    );
+  };
+}
+
+class WindowTimeO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+  constructor(
+    private windowTimeSpan: number,
+    private windowCreationInterval: number | null,
+    private maxWindowSize: number,
+    private scheduler: qt.Scheduler
+  ) {}
+
+  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+    return source.subscribe(
+      new WindowTimeR(
+        subscriber,
+        this.windowTimeSpan,
+        this.windowCreationInterval,
+        this.maxWindowSize,
+        this.scheduler
+      )
+    );
+  }
+}
+
+interface CreationState<N, F, D> {
+  windowTimeSpan: number;
+  windowCreationInterval: number;
+  subscriber: WindowTimeR<N, F, D>;
+  scheduler: qt.Scheduler;
+}
+
+interface TimeSpanOnlyState<N, F, D> {
+  window: CountedSubject<N, F, D>;
+  windowTimeSpan: number;
+  subscriber: WindowTimeR<N, F, D>;
+}
+
+interface CloseWindowContext<N, F, D> {
+  action: qt.Action<CreationState<N, F, D>>;
+  subscription: Subscription;
+}
+
+interface CloseState<N, F, D> {
+  subscriber: WindowTimeR<N, F, D>;
+  window: CountedSubject<N, F, D>;
+  context: CloseWindowContext<N, F, D>;
+}
+
+class CountedSubject<N, F, D> extends Subject<N, F, D> {
+  private _numberOfNextedValues: number = 0;
+  next(value: N): void {
+    this._numberOfNextedValues++;
+    super.next(value);
+  }
+  get numberOfNextedValues(): number {
+    return this._numberOfNextedValues;
+  }
+}
+
+class WindowTimeR<N, F, D> extends Subscriber<N, F, D> {
+  private windows: CountedSubject<N, F, D>[] = [];
+
+  constructor(
+    protected tgt: Subscriber<Observable<N, F, D>>,
+    windowTimeSpan: number,
+    windowCreationInterval: number | null,
+    private maxWindowSize: number,
+    scheduler: qt.Scheduler
+  ) {
+    super(tgt);
+
+    const window = this.openWindow();
+    if (windowCreationInterval !== null && windowCreationInterval >= 0) {
+      const closeState: CloseState<N, F, D> = {
+        subscriber: this,
+        window,
+        context: null!
+      };
+      const creationState: CreationState<N, F, D> = {
+        windowTimeSpan,
+        windowCreationInterval,
+        subscriber: this,
+        scheduler
+      };
+      this.add(
+        scheduler.schedule<CloseState<N, F, D>>(
+          dispatchWindowClose as any,
+          windowTimeSpan,
+          closeState
+        )
+      );
+      this.add(
+        scheduler.schedule<CreationState<N, F, D>>(
+          dispatchWindowCreation as any,
+          windowCreationInterval,
+          creationState
+        )
+      );
+    } else {
+      const timeSpanOnlyState: TimeSpanOnlyState<N, F, D> = {
+        subscriber: this,
+        window,
+        windowTimeSpan
+      };
+      this.add(
+        scheduler.schedule<TimeSpanOnlyState<N, F, D>>(
+          dispatchWindowTimeSpanOnly as any,
+          windowTimeSpan,
+          timeSpanOnlyState
+        )
+      );
+    }
+  }
+
+  protected _next(v: N) {
+    const windows =
+      this.maxWindowSize < Number.POSITIVE_INFINITY
+        ? this.windows.slice()
+        : this.windows;
+    const len = windows.length;
+    for (let i = 0; i < len; i++) {
+      const window = windows[i];
+      if (!window.closed) {
+        window.next(value);
+        if (this.maxWindowSize <= window.numberOfNextedValues) {
+          this.closeWindow(window);
+        }
+      }
+    }
+  }
+
+  protected _fail(f?: F) {
+    const windows = this.windows;
+    while (windows.length > 0) {
+      windows.shift()!.error(err);
+    }
+    this.tgt.error(err);
+  }
+
+  protected _done(d?: D) {
+    const windows = this.windows;
+    while (windows.length > 0) {
+      windows.shift()!.complete();
+    }
+    this.tgt.complete();
+  }
+
+  public openWindow(): CountedSubject<N, F, D> {
+    const window = new CountedSubject<N, F, D>();
+    this.windows.push(window);
+    const tgt = this.tgt;
+    tgt.next(window);
+    return window;
+  }
+
+  public closeWindow(window: CountedSubject<N, F, D>): void {
+    const index = this.windows.indexOf(window);
+    if (index >= 0) {
+      window.complete();
+      this.windows.splice(index, 1);
+    }
+  }
+}
+
+function dispatchWindowTimeSpanOnly<N, F, D>(
+  this: qt.Action<TimeSpanOnlyState<N, F, D>>,
+  state: TimeSpanOnlyState<N, F, D>
+): void {
+  const {subscriber, windowTimeSpan, window} = state;
+  if (window) {
+    subscriber.closeWindow(window);
+  }
+  state.window = subscriber.openWindow();
+  this.schedule(state, windowTimeSpan);
+}
+
+function dispatchWindowCreation<N, F, D>(
+  this: qt.Action<CreationState<N, F, D>>,
+  state: CreationState<N, F, D>
+): void {
+  const {windowTimeSpan, subscriber, scheduler, windowCreationInterval} = state;
+  const window = subscriber.openWindow();
+  const action = this;
+  let context: CloseWindowContext<N, F, D> = {action, subscription: null!};
+  const timeSpanState: CloseState<N, F, D> = {subscriber, window, context};
+  context.subscription = scheduler.schedule<CloseState<N, F, D>>(
+    dispatchWindowClose as any,
+    windowTimeSpan,
+    timeSpanState
+  );
+  action.add(context.subscription);
+  action.schedule(state, windowCreationInterval);
+}
+
+function dispatchWindowClose<N, F, D>(
+  this: qt.Action<CloseState<N, F, D>>,
+  state: CloseState<N, F, D>
+): void {
+  const {subscriber, window, context} = state;
+  if (context && context.action && context.subscription) {
+    context.action.remove(context.subscription);
+  }
+  subscriber.closeWindow(window);
+}
+
+export function windowToggle<T, O>(
+  openings: qt.Source<O>,
+  closingSelector: (openValue: O) => qt.Source<any, F, D>
+): Lifter<T, qt.Source<N, F, D>> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new WindowToggleO<T, O>(openings, closingSelector));
+}
+
+class WindowToggleO<T, O> implements qt.Operator<T, qt.Source<N, F, D>> {
+  constructor(
+    private openings: qt.Source<O>,
+    private closingSelector: (openValue: O) => qt.Source<any, F, D>
+  ) {}
+
+  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+    return source.subscribe(
+      new WindowToggleR(subscriber, this.openings, this.closingSelector)
+    );
+  }
+}
+
+interface WindowContext<N, F, D> {
+  window: Subject<N, F, D>;
+  subscription: Subscription;
+}
+
+class WindowToggleR<T, O> extends Reactor<T, any> {
+  private contexts: WindowContext<N, F, D>[] = [];
+  private openSubscription?: Subscription;
+
+  constructor(
+    tgt: Subscriber<Observable<N, F, D>>,
+    private openings: qt.Source<O>,
+    private closingSelector: (openValue: O) => qt.Source<any, F, D>
+  ) {
+    super(tgt);
+    this.add(
+      (this.openSubscription = subscribeToResult(
+        this,
+        openings,
+        openings as any
+      ))
+    );
+  }
+
+  protected _next(n?: N) {
+    const {contexts} = this;
+    if (contexts) {
+      const len = contexts.length;
+      for (let i = 0; i < len; i++) {
+        contexts[i].window.next(value);
+      }
+    }
+  }
+
+  protected _fail(f?: F) {
+    const {contexts} = this;
+    this.contexts = null!;
+
+    if (contexts) {
+      const len = contexts.length;
+      let index = -1;
+
+      while (++index < len) {
+        const context = contexts[index];
+        context.window.error(err);
+        context.subscription.unsubscribe();
+      }
+    }
+
+    super._fail(err);
+  }
+
+  protected _done(d?: D) {
+    const {contexts} = this;
+    this.contexts = null!;
+    if (contexts) {
+      const len = contexts.length;
+      let index = -1;
+      while (++index < len) {
+        const context = contexts[index];
+        context.window.complete();
+        context.subscription.unsubscribe();
+      }
+    }
+    super._done();
+  }
+
+  _unsubscribe() {
+    const {contexts} = this;
+    this.contexts = null!;
+    if (contexts) {
+      const len = contexts.length;
+      let index = -1;
+      while (++index < len) {
+        const context = contexts[index];
+        context.window.unsubscribe();
+        context.subscription.unsubscribe();
+      }
+    }
+  }
+
+  reactNext(
+    outerN: any,
+    innerValue: any,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, any, F, D>
+  ): void {
+    if (outerN === this.openings) {
+      let closingNotifier;
+      try {
+        const {closingSelector} = this;
+        closingNotifier = closingSelector(innerValue);
+      } catch (e) {
+        return this.error(e);
+      }
+
+      const window = new Subject<N, F, D>();
+      const subscription = new Subscription();
+      const context = {window, subscription};
+      this.contexts.push(context);
+      const innerSubscription = subscribeToResult(
+        this,
+        closingNotifier,
+        context as any
+      );
+
+      if (innerSubscription!.closed) {
+        this.closeWindow(this.contexts.length - 1);
+      } else {
+        (<any>innerSubscription).context = context;
+        subscription.add(innerSubscription);
+      }
+
+      this.tgt.next(window);
+    } else {
+      this.closeWindow(this.contexts.indexOf(outerN));
+    }
+  }
+
+  reactFail(f?: F) {
+    this.error(err);
+  }
+
+  reactDone(inner: Subscription): void {
+    if (inner !== this.openSubscription) {
+      this.closeWindow(this.contexts.indexOf((<any>inner).context));
+    }
+  }
+
+  private closeWindow(index: number): void {
+    if (index === -1) return;
+    const {contexts} = this;
+    const context = contexts[index];
+    const {window, subscription} = context;
+    contexts.splice(index, 1);
+    window.complete();
+    subscription.unsubscribe();
+  }
+}
+
+export function windowWhen<N, F, D>(
+  closingSelector: () => qt.Source<any, F, D>
+): Lifter<T, qt.Source<N, F, D>> {
+  return function windowWhenLifter(source: qt.Source<N, F, D>) {
+    return source.lift(new WindowWhenO<N, F, D>(closingSelector));
+  };
+}
+
+class WindowWhenO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+  constructor(private closingSelector: () => qt.Source<any, F, D>) {}
+
+  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+    return source.subscribe(new WindowWhenR(subscriber, this.closingSelector));
+  }
+}
+
+class WindowWhenR<N, F, D> extends Reactor<T, any> {
+  private window: Subject<N, F, D> | undefined;
+  private closingNotification?: Subscription;
+
+  constructor(
+    protected tgt: Subscriber<Observable<N, F, D>>,
+    private closingSelector: () => qt.Source<any, F, D>
+  ) {
+    super(tgt);
+    this.openWindow();
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: any,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, any, F, D>
+  ): void {
+    this.openWindow(innerSub);
+  }
+
+  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
+    this._fail(error);
+  }
+
+  reactDone(innerSub: Actor<N, any, F, D>): void {
+    this.openWindow(innerSub);
+  }
+
+  protected _next(v: N) {
+    this.window!.next(value);
+  }
+
+  protected _fail(f?: F) {
+    this.window!.error(e);
+    this.tgt.error(e);
+    this.unsubscribeClosingNotification();
+  }
+
+  protected _done(d?: D) {
+    this.window!.complete();
+    this.tgt.complete();
+    this.unsubscribeClosingNotification();
+  }
+
+  private unsubscribeClosingNotification(): void {
+    if (this.closingNotification) {
+      this.closingNotification.unsubscribe();
+    }
+  }
+
+  private openWindow(innerSub: Actor<N, any, F, D> | null = null): void {
+    if (innerSub) {
+      this.remove(innerSub);
+      innerSub.unsubscribe();
+    }
+
+    const prevWindow = this.window;
+    if (prevWindow) {
+      prevWindow.complete();
+    }
+
+    const window = (this.window = new Subject<N, F, D>());
+    this.tgt.next(window);
+
+    let closingNotifier;
+    try {
+      const {closingSelector} = this;
+      closingNotifier = closingSelector();
+    } catch (e) {
+      this.tgt.error(e);
+      this.window.error(e);
+      return;
+    }
+    this.add(
+      (this.closingNotification = subscribeToResult(this, closingNotifier))
+    );
+  }
+}
