@@ -3,6 +3,199 @@ import * as qu from './utils';
 import * as qs from './source';
 import * as qj from './subject';
 
+export function combineLatest<O1 extends qt.SourceInput<any>>(
+  sources: [O1]
+): qs.Source<[Sourced<O1>]>;
+export function combineLatest<
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>
+>(sources: [O1, O2]): qs.Source<[Sourced<O1>, Sourced<O2>]>;
+export function combineLatest<
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>
+>(sources: [O1, O2, O3]): qs.Source<[Sourced<O1>, Sourced<O2>, Sourced<O3>]>;
+export function combineLatest<
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>,
+  O4 extends qt.SourceInput<any>
+>(
+  sources: [O1, O2, O3, O4]
+): qs.Source<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>]>;
+export function combineLatest<
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>,
+  O4 extends qt.SourceInput<any>,
+  O5 extends qt.SourceInput<any>
+>(
+  sources: [O1, O2, O3, O4, O5]
+): qs.Source<[Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>]>;
+export function combineLatest<
+  O1 extends qt.SourceInput<any>,
+  O2 extends qt.SourceInput<any>,
+  O3 extends qt.SourceInput<any>,
+  O4 extends qt.SourceInput<any>,
+  O5 extends qt.SourceInput<any>,
+  O6 extends qt.SourceInput<any>
+>(
+  sources: [O1, O2, O3, O4, O5, O6]
+): qs.Source<
+  [Sourced<O1>, Sourced<O2>, Sourced<O3>, Sourced<O4>, Sourced<O5>, Sourced<O6>]
+>;
+export function combineLatest<O extends qt.SourceInput<any>>(
+  sources: O[]
+): qs.Source<Sourced<O>[]>;
+export function combineLatest<O extends qt.SourceInput<any>, R>(
+  ...observables: (O | ((...values: Sourced<O>[]) => R) | qh.Scheduler)[]
+): qs.Source<R> {
+  let resultSelector: ((...values: Array<any>) => R) | undefined = undefined;
+  let scheduler: qh.Scheduler | undefined = undefined;
+
+  if (isScheduler(observables[observables.length - 1])) {
+    scheduler = observables.pop() as qh.Scheduler;
+  }
+
+  if (typeof observables[observables.length - 1] === 'function') {
+    resultSelector = observables.pop() as (...values: Array<any>) => R;
+  }
+  if (observables.length === 1 && isArray(observables[0])) {
+    observables = observables[0] as any;
+  }
+
+  return fromArray(observables, scheduler).lift(
+    new CombineLatestO<Sourced<O>, R>(resultSelector)
+  );
+}
+
+export class CombineLatestO<T, R> implements qt.Operator<T, R> {
+  constructor(private resultSelector?: (...values: Array<any>) => R) {}
+
+  call(subscriber: qj.Subscriber<R>, source: any): any {
+    return source.subscribe(
+      new CombineLatestR(subscriber, this.resultSelector)
+    );
+  }
+}
+
+export class CombineLatestR<T, R> extends ReactorSubscriber<T, R> {
+  private active: number = 0;
+  private values: any[] = [];
+  private observables: any[] = [];
+  private toRespond: number | undefined;
+
+  constructor(
+    destination: qj.Subscriber<R>,
+    private resultSelector?: (...values: Array<any>) => R
+  ) {
+    super(destination);
+  }
+
+  protected _next(observable: any) {
+    this.values.push(NONE);
+    this.observables.push(observable);
+  }
+
+  protected _done() {
+    const observables = this.observables;
+    const len = observables.length;
+    if (len === 0) {
+      this.destination.done();
+    } else {
+      this.active = len;
+      this.toRespond = len;
+      for (let i = 0; i < len; i++) {
+        const observable = observables[i];
+        this.add(subscribeToResult(this, observable, observable, i));
+      }
+    }
+  }
+
+  notifyComplete(unused: qj.Subscriber<R>): void {
+    if ((this.active -= 1) === 0) {
+      this.destination.done();
+    }
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: R,
+    outerX: number,
+    innerIndex: number,
+    innerSub: ActorSubscriber<T, R>
+  ): void {
+    const values = this.values;
+    const oldVal = values[outerX];
+    const toRespond = !this.toRespond
+      ? 0
+      : oldVal === NONE
+      ? --this.toRespond
+      : this.toRespond;
+    values[outerX] = innerValue;
+
+    if (toRespond === 0) {
+      if (this.resultSelector) {
+        this._tryResultSelector(values);
+      } else {
+        this.destination.next(values.slice());
+      }
+    }
+  }
+
+  private _tryResultSelector(values: any[]) {
+    let result: any;
+    try {
+      result = this.resultSelector!.apply(this, values);
+    } catch (err) {
+      this.destination.error(err);
+      return;
+    }
+    this.destination.next(result);
+  }
+}
+
+export function combineLatest<T, R>(
+  ...observables: Array<
+    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
+  >
+): Lifter<T, R> {
+  let project: ((...values: Array<any>) => R) | undefined = undefined;
+  if (typeof observables[observables.length - 1] === 'function') {
+    project = <(...values: Array<any>) => R>observables.pop();
+  }
+  if (observables.length === 1 && isArray(observables[0])) {
+    observables = (<any>observables[0]).slice();
+  }
+
+  return (source: qt.Source<N, F, D>) =>
+    source.lift.call(
+      from([source, ...observables]),
+      new CombineLatestO(project)
+    ) as qt.Source<R>;
+}
+
+export function combineLatestWith<T, A extends SourceInput<any>[]>(
+  ...otherSources: A
+): Lifter<T, Unshift<SourcedTuple<A>, T>> {
+  return combineLatest(...otherSources);
+}
+
+export function combineAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T[]>;
+export function combineAll<N, F, D>(): Lifter<any, T[]>;
+export function combineAll<T, R>(
+  project: (...values: T[]) => R
+): Lifter<SourceInput<N, F, D>, R>;
+export function combineAll<R>(
+  project: (...values: Array<any>) => R
+): Lifter<any, R>;
+export function combineAll<T, R>(
+  project?: (...values: Array<any>) => R
+): Lifter<T, R> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new CombineLatestO(project));
+}
+
 export function endWith<T, A extends any[]>(
   ...args: A
 ): Lifter<T, T | ValueFromArray<A>>;

@@ -14,6 +14,662 @@ declare const Symbol: any;
 
 const queueScheduler = rxQueue;
 
+describe('static combineLatest', () => {
+  it('should combineLatest the provided observables', () => {
+    const firstSource = hot('----a----b----c----|');
+    const secondSource = hot('--d--e--f--g--|');
+    const expected = '----uv--wx-y--z----|';
+
+    const combined = combineLatest(
+      firstSource,
+      secondSource,
+      (a, b) => '' + a + b
+    );
+
+    expectSource(combined).toBe(expected, {
+      u: 'ad',
+      v: 'ae',
+      w: 'af',
+      x: 'bf',
+      y: 'bg',
+      z: 'cg'
+    });
+  });
+  it('should accept 1 param', () => {
+    const o = combineLatest(a$); // $ExpectType Observable<[A]>
+  });
+
+  it('should accept 2 params', () => {
+    const o = combineLatest(a$, b$); // $ExpectType Observable<[A, B]>
+  });
+
+  it('should accept 3 params', () => {
+    const o = combineLatest(a$, b$, c$); // $ExpectType Observable<[A, B, C]>
+  });
+
+  it('should accept 4 params', () => {
+    const o = combineLatest(a$, b$, c$, d$); // $ExpectType Observable<[A, B, C, D]>
+  });
+
+  it('should accept 5 params', () => {
+    const o = combineLatest(a$, b$, c$, d$, e$); // $ExpectType Observable<[A, B, C, D, E]>
+  });
+
+  it('should accept 6 params', () => {
+    const o = combineLatest(a$, b$, c$, d$, e$, f$); // $ExpectType Observable<[A, B, C, D, E, F]>
+  });
+
+  it('should result in Observable<unknown> for 7 or more params', () => {
+    const o = combineLatest(a$, b$, c$, d$, e$, f$, g$); // $ExpectType Observable<unknown>
+  });
+
+  it('should accept union types', () => {
+    const u1: typeof a$ | typeof b$ = Math.random() > 0.5 ? a$ : b$;
+    const u2: typeof c$ | typeof d$ = Math.random() > 0.5 ? c$ : d$;
+    const o = combineLatest(u1, u2); // $ExpectType Observable<[A | B, C | D]>
+  });
+
+  it('should accept 1 param and a result selector', () => {
+    const o = combineLatest(a$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 2 params and a result selector', () => {
+    const o = combineLatest(a$, b$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 3 params and a result selector', () => {
+    const o = combineLatest(a$, b$, c$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 4 params and a result selector', () => {
+    const o = combineLatest(a$, b$, c$, d$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 5 params and a result selector', () => {
+    const o = combineLatest(a$, b$, c$, d$, e$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 6 params and a result selector', () => {
+    const o = combineLatest(a$, b$, c$, d$, e$, f$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 7 or more params and a result selector', () => {
+    const o = combineLatest(a$, b$, c$, d$, e$, f$, g$, g$, g$, () => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 1 param', () => {
+    const o = combineLatest([a$]); // $ExpectType Observable<[A]>
+  });
+
+  it('should accept 2 params', () => {
+    const o = combineLatest([a$, b$]); // $ExpectType Observable<[A, B]>
+  });
+
+  it('should accept 3 params', () => {
+    const o = combineLatest([a$, b$, c$]); // $ExpectType Observable<[A, B, C]>
+  });
+
+  it('should accept 4 params', () => {
+    const o = combineLatest([a$, b$, c$, d$]); // $ExpectType Observable<[A, B, C, D]>
+  });
+
+  it('should accept 5 params', () => {
+    const o = combineLatest([a$, b$, c$, d$, e$]); // $ExpectType Observable<[A, B, C, D, E]>
+  });
+
+  it('should accept 6 params', () => {
+    const o = combineLatest([a$, b$, c$, d$, e$, f$]); // $ExpectType Observable<[A, B, C, D, E, F]>
+  });
+
+  it('should have basic support for 7 or more params', () => {
+    const o = combineLatest([a$, b$, c$, d$, e$, f$, g$]); // $ExpectType Observable<(A | B | C | D | E | F | G)[]>
+  });
+
+  it('should handle an array of Observables', () => {
+    const o = combineLatest([a$, a$, a$, a$, a$, a$, a$, a$, a$, a$, a$]); // $ExpectType Observable<A[]>
+  });
+
+  it('should accept 1 param and a result selector', () => {
+    const o = combineLatest([a$], (a: A) => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 2 params and a result selector', () => {
+    const o = combineLatest([a$, b$], (a: A, b: B) => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 3 params and a result selector', () => {
+    const o = combineLatest([a$, b$, c$], (a: A, b: B, c: C) => new A()); // $ExpectType Observable<A>
+  });
+
+  it('should accept 4 params and a result selector', () => {
+    const o = combineLatest(
+      [a$, b$, c$, d$],
+      (a: A, b: B, c: C, d: D) => new A()
+    ); // $ExpectType Observable<A>
+  });
+
+  it('should accept 5 params and a result selector', () => {
+    const o = combineLatest(
+      [a$, b$, c$, d$, e$],
+      (a: A, b: B, c: C, d: D, e: E) => new A()
+    ); // $ExpectType Observable<A>
+  });
+
+  it('should accept 6 params and a result selector', () => {
+    const o = combineLatest(
+      [a$, b$, c$, d$, e$, f$],
+      (a: A, b: B, c: C, d: D, e: E, f: F) => new A()
+    ); // $ExpectType Observable<A>
+  });
+
+  it('should accept 7 or more params and a result selector', () => {
+    const o = combineLatest(
+      [a$, b$, c$, d$, e$, f$, g$, g$, g$],
+      (
+        a: any,
+        b: any,
+        c: any,
+        d: any,
+        e: any,
+        f: any,
+        g1: any,
+        g2: any,
+        g3: any
+      ) => new A()
+    ); // $ExpectType Observable<A>
+  });
+
+  it('should combine an immediately-scheduled source with an immediately-scheduled second', done => {
+    const a = of(1, 2, 3, queueScheduler);
+    const b = of(4, 5, 6, 7, 8, queueScheduler);
+    const r = [
+      [1, 4],
+      [2, 4],
+      [2, 5],
+      [3, 5],
+      [3, 6],
+      [3, 7],
+      [3, 8]
+    ];
+
+    //type definition need to be updated
+    combineLatest(a, b, queueScheduler).subscribe(
+      vals => {
+        expect(vals).to.deep.equal(r.shift());
+      },
+      x => {
+        done(new Error('should not be called'));
+      },
+      () => {
+        expect(r.length).to.equal(0);
+        done();
+      }
+    );
+  });
+
+  it('should accept array of observables', () => {
+    const firstSource = hot('----a----b----c----|');
+    const secondSource = hot('--d--e--f--g--|');
+    const expected = '----uv--wx-y--z----|';
+
+    const combined = combineLatest(
+      [firstSource, secondSource],
+      (a: string, b: string) => '' + a + b
+    );
+
+    expectSource(combined).toBe(expected, {
+      u: 'ad',
+      v: 'ae',
+      w: 'af',
+      x: 'bf',
+      y: 'bg',
+      z: 'cg'
+    });
+  });
+
+  it('should work with two nevers', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const e2 = cold('-');
+    const e2subs = '^';
+    const expected = '-';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with never and empty', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const e2 = cold('|');
+    const e2subs = '(^!)';
+    const expected = '-';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with empty and never', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const e2 = cold('-');
+    const e2subs = '^';
+    const expected = '-';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with empty and empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const e2 = cold('|');
+    const e2subs = '(^!)';
+    const expected = '|';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with hot-empty and hot-single', () => {
+    const values = {
+      a: 1,
+      b: 2,
+      c: 3,
+      r: 1 + 3 //a + c
+    };
+    const e1 = hot('-a-^-|', values);
+    const e1subs = '^ !';
+    const e2 = hot('-b-^-c-|', values);
+    const e2subs = '^   !';
+    const expected = '----|';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with hot-single and hot-empty', () => {
+    const values = {
+      a: 1,
+      b: 2,
+      c: 3
+    };
+    const e1 = hot('-a-^-|', values);
+    const e1subs = '^ !';
+    const e2 = hot('-b-^-c-|', values);
+    const e2subs = '^   !';
+    const expected = '----|';
+
+    const result = combineLatest(e2, e1, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with hot-single and never', () => {
+    const values = {
+      a: 1
+    };
+    const e1 = hot('-a-^-|', values);
+    const e1subs = '^ !';
+    const e2 = hot('------', values); //never
+    const e2subs = '^  ';
+    const expected = '-'; //never
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with never and hot-single', () => {
+    const values = {
+      a: 1,
+      b: 2
+    };
+    const e1 = hot('--------', values); //never
+    const e1subs = '^    ';
+    const e2 = hot('-a-^-b-|', values);
+    const e2subs = '^   !';
+    const expected = '-----'; //never
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with hot and hot', () => {
+    const e1 = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
+    const e1subs = '^        !';
+    const e2 = hot('---e-^---f--g--|', {e: 'e', f: 'f', g: 'g'});
+    const e2subs = '^         !';
+    const expected = '----x-yz--|';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with empty and error', () => {
+    const e1 = hot('----------|'); //empty
+    const e1subs = '^     !';
+    const e2 = hot('------#', undefined, 'shazbot!'); //error
+    const e2subs = '^     !';
+    const expected = '------#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'shazbot!');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with error and empty', () => {
+    const e1 = hot('--^---#', undefined, 'too bad, honk'); //error
+    const e1subs = '^   !';
+    const e2 = hot('--^--------|'); //empty
+    const e2subs = '^   !';
+    const expected = '----#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'too bad, honk');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with hot and throw', () => {
+    const e1 = hot('-a-^--b--c--|', {a: 1, b: 2, c: 3});
+    const e1subs = '^ !';
+    const e2 = hot('---^-#', undefined, 'bazinga');
+    const e2subs = '^ !';
+    const expected = '--#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'bazinga');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with throw and hot', () => {
+    const e1 = hot('---^-#', undefined, 'bazinga');
+    const e1subs = '^ !';
+    const e2 = hot('-a-^--b--c--|', {a: 1, b: 2, c: 3});
+    const e2subs = '^ !';
+    const expected = '--#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'bazinga');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with throw and throw', () => {
+    const e1 = hot('---^----#', undefined, 'jenga');
+    const e1subs = '^ !';
+    const e2 = hot('---^-#', undefined, 'bazinga');
+    const e2subs = '^ !';
+    const expected = '--#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'bazinga');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with error and throw', () => {
+    const e1 = hot('-a-^--b--#', {a: 1, b: 2}, 'wokka wokka');
+    const e1subs = '^ !';
+    const e2 = hot('---^-#', undefined, 'flurp');
+    const e2subs = '^ !';
+    const expected = '--#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'flurp');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with throw and error', () => {
+    const e1 = hot('---^-#', undefined, 'flurp');
+    const e1subs = '^ !';
+    const e2 = hot('-a-^--b--#', {a: 1, b: 2}, 'wokka wokka');
+    const e2subs = '^ !';
+    const expected = '--#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'flurp');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with never and throw', () => {
+    const e1 = hot('---^-----------');
+    const e1subs = '^     !';
+    const e2 = hot('---^-----#', undefined, 'wokka wokka');
+    const e2subs = '^     !';
+    const expected = '------#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'wokka wokka');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with throw and never', () => {
+    const e1 = hot('---^----#', undefined, 'wokka wokka');
+    const e1subs = '^    !';
+    const e2 = hot('---^-----------');
+    const e2subs = '^    !';
+    const expected = '-----#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'wokka wokka');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with some and throw', () => {
+    const e1 = hot('---^----a---b--|', {a: 1, b: 2});
+    const e1subs = '^  !';
+    const e2 = hot('---^--#', undefined, 'wokka wokka');
+    const e2subs = '^  !';
+    const expected = '---#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should work with throw and some', () => {
+    const e1 = hot('---^--#', undefined, 'wokka wokka');
+    const e1subs = '^  !';
+    const e2 = hot('---^----a---b--|', {a: 1, b: 2});
+    const e2subs = '^  !';
+    const expected = '---#';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should handle throw after complete left', () => {
+    const left = hot('--a--^--b---|', {a: 1, b: 2});
+    const leftSubs = '^      !';
+    const right = hot('-----^--------#', undefined, 'bad things');
+    const rightSubs = '^        !';
+    const expected = '---------#';
+
+    const result = combineLatest(left, right, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'bad things');
+    expectSubscriptions(left.subscriptions).toBe(leftSubs);
+    expectSubscriptions(right.subscriptions).toBe(rightSubs);
+  });
+
+  it('should handle throw after complete right', () => {
+    const left = hot('-----^--------#', undefined, 'bad things');
+    const leftSubs = '^        !';
+    const right = hot('--a--^--b---|', {a: 1, b: 2});
+    const rightSubs = '^      !';
+    const expected = '---------#';
+
+    const result = combineLatest(left, right, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'bad things');
+    expectSubscriptions(left.subscriptions).toBe(leftSubs);
+    expectSubscriptions(right.subscriptions).toBe(rightSubs);
+  });
+
+  it('should handle interleaved with tail', () => {
+    const e1 = hot('-a--^--b---c---|', {a: 'a', b: 'b', c: 'c'});
+    const e1subs = '^          !';
+    const e2 = hot('--d-^----e---f--|', {d: 'd', e: 'e', f: 'f'});
+    const e2subs = '^           !';
+    const expected = '-----x-y-z--|';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should handle two consecutive hot observables', () => {
+    const e1 = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
+    const e1subs = '^        !';
+    const e2 = hot('-----^----------d--e--f--|', {d: 'd', e: 'e', f: 'f'});
+    const e2subs = '^                   !';
+    const expected = '-----------x--y--z--|';
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should handle two consecutive hot observables with error left', () => {
+    const left = hot('--a--^--b--c--#', {a: 'a', b: 'b', c: 'c'}, 'jenga');
+    const leftSubs = '^        !';
+    const right = hot('-----^----------d--e--f--|', {d: 'd', e: 'e', f: 'f'});
+    const rightSubs = '^        !';
+    const expected = '---------#';
+
+    const result = combineLatest(left, right, (x, y) => x + y);
+
+    expectSource(result).toBe(expected, null, 'jenga');
+    expectSubscriptions(left.subscriptions).toBe(leftSubs);
+    expectSubscriptions(right.subscriptions).toBe(rightSubs);
+  });
+
+  it('should handle two consecutive hot observables with error right', () => {
+    const left = hot('--a--^--b--c--|', {a: 'a', b: 'b', c: 'c'});
+    const leftSubs = '^        !';
+    const right = hot(
+      '-----^----------d--e--f--#',
+      {d: 'd', e: 'e', f: 'f'},
+      'dun dun dun'
+    );
+    const rightSubs = '^                   !';
+    const expected = '-----------x--y--z--#';
+
+    const result = combineLatest(left, right, (x, y) => x + y);
+
+    expectSource(result).toBe(
+      expected,
+      {x: 'cd', y: 'ce', z: 'cf'},
+      'dun dun dun'
+    );
+    expectSubscriptions(left.subscriptions).toBe(leftSubs);
+    expectSubscriptions(right.subscriptions).toBe(rightSubs);
+  });
+
+  it('should handle selector throwing', () => {
+    const e1 = hot('--a--^--b--|', {a: 1, b: 2});
+    const e1subs = '^  !';
+    const e2 = hot('--c--^--d--|', {c: 3, d: 4});
+    const e2subs = '^  !';
+    const expected = '---#';
+
+    const result = combineLatest(e1, e2, (x, y) => {
+      throw 'ha ha ' + x + ', ' + y;
+    });
+
+    expectSource(result).toBe(expected, null, 'ha ha 2, 4');
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    const e1 = hot('--a--^--b--c---d-| ');
+    const e1subs = '^        !    ';
+    const e2 = hot('---e-^---f--g---h-|');
+    const e2subs = '^        !    ';
+    const expected = '----x-yz--    ';
+    const unsub = '         !    ';
+    const values = {x: 'bf', y: 'cf', z: 'cg'};
+
+    const result = combineLatest(e1, e2, (x, y) => x + y);
+
+    expectSource(result, unsub).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not break unsubscription chains when unsubscribed explicitly', () => {
+    const e1 = hot('--a--^--b--c---d-| ');
+    const e1subs = '^        !    ';
+    const e2 = hot('---e-^---f--g---h-|');
+    const e2subs = '^        !    ';
+    const expected = '----x-yz--    ';
+    const unsub = '         !    ';
+    const values = {x: 'bf', y: 'cf', z: 'cg'};
+
+    const result = combineLatest(
+      e1.pipe(mergeMap(x => of(x))),
+      e2.pipe(mergeMap(x => of(x))),
+      (x, y) => x + y
+    ).pipe(mergeMap(x => of(x)));
+
+    expectSource(result, unsub).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+});
+
 describe('combineLatest', () => {
   let testScheduler: TestScheduler;
 
@@ -1384,6 +2040,722 @@ describe('combineLatestWith', () => {
 
       expectSource(result).toBe(expected, {c: 3});
     });
+  });
+});
+
+describe('combineAll', () => {
+  let testScheduler: TestScheduler;
+
+  beforeEach(() => {
+    testScheduler = new TestScheduler(sourceMatcher);
+  });
+
+  asDiagram('combineAll')('should combine events from two observables', () => {
+    testScheduler.run(({hot, cold, expectSource}) => {
+      const x = cold('                  -a-----b---|');
+      const y = cold('                  --1-2-|     ');
+      const outer = hot('-x----y--------|           ', {x: x, y: y});
+      const expected = ' -----------------A-B--C---|';
+
+      const result = outer.pipe(combineAll((a, b) => String(a) + String(b)));
+
+      expectSource(result).toBe(expected, {A: 'a1', B: 'a2', C: 'b2'});
+    });
+  });
+  it('should infer correctly', () => {
+    const o = of([1, 2, 3]).pipe(combineAll()); // $ExpectType Observable<number[]>
+  });
+
+  it('should infer correctly with the projector', () => {
+    const o = of([1, 2, 3]).pipe(
+      combineAll((values: number) => ['x', 'y', 'z'])
+    ); // $ExpectType Observable<string[]>
+  });
+
+  it('is possible to make the projector have an `any` type', () => {
+    const o = of([1, 2, 3]).pipe(
+      combineAll<string[]>(values => ['x', 'y', 'z'])
+    ); // $ExpectType Observable<string[]>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(combineAll()); // $ExpectError
+  });
+
+  it('should enforce type of the projector', () => {
+    const o = of([1, 2, 3]).pipe(
+      combineAll((values: string) => ['x', 'y', 'z'])
+    ); // $ExpectError
+    const p = of([1, 2, 3]).pipe(
+      combineAll<number[]>(values => ['x', 'y', 'z'])
+    ); // $ExpectError
+  });
+
+  it('should work with two nevers', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' -');
+      const e1subs = '  ^';
+      const e2 = cold(' -');
+      const e2subs = '  ^';
+      const expected = '-';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with never and empty', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' -');
+      const e1subs = '  ^';
+      const e2 = cold(' |');
+      const e2subs = '  (^!)';
+      const expected = '-';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with empty and never', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' |');
+      const e1subs = '  (^!)';
+      const e2 = cold(' -');
+      const e2subs = '  ^';
+      const expected = '-';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with empty and empty', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' |');
+      const e1subs = '  (^!)';
+      const e2 = cold(' |');
+      const e2subs = '  (^!)';
+      const expected = '|';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with hot-empty and hot-single', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('-a-^-|');
+      const e1subs = '   ^-!';
+      const e2 = hot('-b-^-c-|');
+      const e2subs = '   ^---!';
+      const expected = ' ----|';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with hot-single and hot-empty', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('-a-^-|');
+      const e1subs = '   ^-!';
+      const e2 = hot('-b-^-c-|');
+      const e2subs = '   ^---!';
+      const expected = ' ----|';
+
+      const result = of(e2, e1).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with hot-single and never', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('-a-^-|');
+      const e1subs = '   ^-!';
+      const e2 = hot('------'); //never
+      const e2subs = '   ^--';
+      const expected = ' ---'; //never
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with never and hot-single', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--------'); //never
+      const e1subs = '   ^----';
+      const e2 = hot('-a-^-b-|');
+      const e2subs = '   ^---!';
+      const expected = ' -----'; //never
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with hot and hot', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b--c--|');
+      const e1subs = '     ^--------!';
+      const e2 = hot('---e-^---f--g--|');
+      const e2subs = '     ^---------!';
+      const expected = '   ----x-yz--|';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, {x: 'bf', y: 'cf', z: 'cg'});
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b--c---d-| ');
+      const e1subs = '     ^--------!    ';
+      const e2 = hot('---e-^---f--g---h-|');
+      const e2subs = '     ^--------!    ';
+      const expected = '   ----x-yz--    ';
+      const unsub = '      ---------!    ';
+      const values = {x: 'bf', y: 'cf', z: 'cg'};
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result, unsub).toBe(expected, values);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should not break unsubscription chains when unsubscribed explicitly', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  --a--^--b--c---d-| ');
+      const e1subs = '       ^--------!    ';
+      const e2 = hot('  ---e-^---f--g---h-|');
+      const e2subs = '       ^--------!    ';
+      const expected = '     ----x-yz--    ';
+      const unsub = '        ---------!    ';
+      const values = {x: 'bf', y: 'cf', z: 'cg'};
+
+      const result = of(e1, e2).pipe(
+        mergeMap(x => of(x)),
+        combineAll((x, y) => x + y),
+        mergeMap(x => of(x))
+      );
+
+      expectSource(result, unsub).toBe(expected, values);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should combine 3 observables', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b--c--|');
+      const e1subs = '     ^--------!';
+      const e2 = hot('---e-^---f--g--|');
+      const e2subs = '     ^---------!';
+      const e3 = hot('---h-^----i--j-|');
+      const e3subs = '     ^---------!';
+      const expected = '   -----wxyz-|';
+
+      const result = of(e1, e2, e3).pipe(combineAll((x, y, z) => x + y + z));
+
+      expectSource(result).toBe(expected, {
+        w: 'bfi',
+        x: 'cfi',
+        y: 'cgi',
+        z: 'cgj'
+      });
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+      expectSubscriptions(e3.subscriptions).toBe(e3subs);
+    });
+  });
+
+  it('should work with empty and error', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  ----------|'); //empty
+      const e1subs = '  ^-----!';
+      const e2 = hot('  ------#', undefined, 'shazbot!'); //error
+      const e2subs = '  ^-----!';
+      const expected = '------#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'shazbot!');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with error and empty', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--^---#', undefined, 'too bad, honk'); //error
+      const e1subs = '  ^---!';
+      const e2 = hot('--^--------|'); //empty
+      const e2subs = '  ^---!';
+      const expected = '----#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'too bad, honk');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with hot and throw', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('-a-^--b--c--|');
+      const e1subs = '   ^-!';
+      const e2 = hot('---^-#', undefined, 'bazinga');
+      const e2subs = '   ^-!';
+      const expected = ' --#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'bazinga');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with throw and hot', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^-#', undefined, 'bazinga');
+      const e1subs = '   ^-!';
+      const e2 = hot('-a-^--b--c--|');
+      const e2subs = '   ^-!';
+      const expected = ' --#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'bazinga');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with throw and throw', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^----#', undefined, 'jenga');
+      const e1subs = '   ^-!';
+      const e2 = hot('---^-#', undefined, 'bazinga');
+      const e2subs = '   ^-!';
+      const expected = ' --#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'bazinga');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with error and throw', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('-a-^--b--#', undefined, 'wokka wokka');
+      const e1subs = '   ^-!';
+      const e2 = hot('---^-#', undefined, 'flurp');
+      const e2subs = '   ^-!';
+      const expected = ' --#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'flurp');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with throw and error', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^-#', undefined, 'flurp');
+      const e1subs = '   ^-!';
+      const e2 = hot('-a-^--b--#', undefined, 'wokka wokka');
+      const e2subs = '   ^-!';
+      const expected = ' --#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'flurp');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with never and throw', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^-----------');
+      const e1subs = '   ^-----!';
+      const e2 = hot('---^-----#', undefined, 'wokka wokka');
+      const e2subs = '   ^-----!';
+      const expected = ' ------#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'wokka wokka');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with throw and never', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('   ---^----#', undefined, 'wokka wokka');
+      const e1subs = '      ^----!';
+      const e2 = hot('   ---^-----------');
+      const e2subs = '      ^----!';
+      const expected = '    -----#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'wokka wokka');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with some and throw', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^----a---b--|');
+      const e1subs = '   ^--!';
+      const e2 = hot('---^--#', undefined, 'wokka wokka');
+      const e2subs = '   ^--!';
+      const expected = ' ---#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, {a: 1, b: 2}, 'wokka wokka');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should work with throw and some', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('---^--#', undefined, 'wokka wokka');
+      const e1subs = '   ^--!';
+      const e2 = hot('---^----a---b--|');
+      const e2subs = '   ^--!';
+      const expected = ' ---#';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'wokka wokka');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should handle throw after complete left', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const left = hot(' --a--^--b---|');
+      const leftSubs = '      ^------!';
+      const right = hot('-----^--------#', undefined, 'bad things');
+      const rightSubs = '     ^--------!';
+      const expected = '      ---------#';
+
+      const result = of(left, right).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'bad things');
+      expectSubscriptions(left.subscriptions).toBe(leftSubs);
+      expectSubscriptions(right.subscriptions).toBe(rightSubs);
+    });
+  });
+
+  it('should handle throw after complete right', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const left = hot('  -----^--------#', undefined, 'bad things');
+      const leftSubs = '       ^--------!';
+      const right = hot('--a--^--b---|');
+      const rightSubs = '      ^------!';
+      const expected = '       ---------#';
+
+      const result = of(left, right).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'bad things');
+      expectSubscriptions(left.subscriptions).toBe(leftSubs);
+      expectSubscriptions(right.subscriptions).toBe(rightSubs);
+    });
+  });
+
+  it('should handle interleaved with tail', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('-a--^--b---c---|');
+      const e1subs = '    ^----------!';
+      const e2 = hot('--d-^----e---f--|');
+      const e2subs = '    ^-----------!';
+      const expected = '  -----x-y-z--|';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, {x: 'be', y: 'ce', z: 'cf'});
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should handle two consecutive hot observables', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b--c--|');
+      const e1subs = '     ^--------!';
+      const e2 = hot('-----^----------d--e--f--|');
+      const e2subs = '     ^-------------------!';
+      const expected = '   -----------x--y--z--|';
+
+      const result = of(e1, e2).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'});
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should handle two consecutive hot observables with error left', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const left = hot(' --a--^--b--c--#', undefined, 'jenga');
+      const leftSubs = '      ^--------!';
+      const right = hot('-----^----------d--e--f--|');
+      const rightSubs = '     ^--------!';
+      const expected = '      ---------#';
+
+      const result = of(left, right).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(expected, null, 'jenga');
+      expectSubscriptions(left.subscriptions).toBe(leftSubs);
+      expectSubscriptions(right.subscriptions).toBe(rightSubs);
+    });
+  });
+
+  it('should handle two consecutive hot observables with error right', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const left = hot(' --a--^--b--c--|');
+      const leftSubs = '      ^--------!';
+      const right = hot('-----^----------d--e--f--#', undefined, 'dun dun dun');
+      const rightSubs = '     ^-------------------!';
+      const expected = '      -----------x--y--z--#';
+
+      const result = of(left, right).pipe(combineAll((x, y) => x + y));
+
+      expectSource(result).toBe(
+        expected,
+        {x: 'cd', y: 'ce', z: 'cf'},
+        'dun dun dun'
+      );
+      expectSubscriptions(left.subscriptions).toBe(leftSubs);
+      expectSubscriptions(right.subscriptions).toBe(rightSubs);
+    });
+  });
+
+  it('should handle selector throwing', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('--a--^--b--|');
+      const e1subs = '     ^--!';
+      const e2 = hot('--c--^--d--|');
+      const e2subs = '     ^--!';
+      const expected = '   ---#';
+
+      const result = of(e1, e2).pipe(
+        combineAll((x, y) => {
+          throw 'ha ha ' + x + ', ' + y;
+        })
+      );
+
+      expectSource(result).toBe(expected, null, 'ha ha b, d');
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should combine two observables', done => {
+    const a = of(1, 2, 3);
+    const b = of(4, 5, 6, 7, 8);
+    const expected = [
+      [3, 4],
+      [3, 5],
+      [3, 6],
+      [3, 7],
+      [3, 8]
+    ];
+    of(a, b)
+      .pipe(combineAll())
+      .subscribe(
+        vals => {
+          expect(vals).to.deep.equal(expected.shift());
+        },
+        null,
+        () => {
+          expect(expected.length).to.equal(0);
+          done();
+        }
+      );
+  });
+
+  it('should combine two immediately-scheduled observables', done => {
+    const a = of(1, 2, 3, queueScheduler);
+    const b = of(4, 5, 6, 7, 8, queueScheduler);
+    const r = [
+      [1, 4],
+      [2, 4],
+      [2, 5],
+      [3, 5],
+      [3, 6],
+      [3, 7],
+      [3, 8]
+    ];
+
+    of(a, b, queueScheduler)
+      .pipe(combineAll())
+      .subscribe(
+        vals => {
+          expect(vals).to.deep.equal(r.shift());
+        },
+        null,
+        () => {
+          expect(r.length).to.equal(0);
+          done();
+        }
+      );
+  });
+
+  type(() => {
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<number[]> = of(source1, source2, source3).pipe(
+      combineAll()
+    );
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<number> = of(source1, source2, source3).pipe(
+      combineAll((...args) => args.reduce((acc, x) => acc + x, 0))
+    );
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<number[]> = of(source1, source2, source3).pipe(
+      combineAll()
+    );
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<number> = of(source1, source2, source3).pipe(
+      combineAll((...args) => args.reduce((acc, x) => acc + x, 0))
+    );
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    // coerce type to a specific type
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<string[]> = of(
+      <any>source1,
+      <any>source2,
+      <any>source3
+    ).pipe(combineAll<string>());
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    // coerce type to a specific type
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<string> = of(
+      <any>source1,
+      <any>source2,
+      <any>source3
+    ).pipe(
+      combineAll<string>((...args) => args.reduce((acc, x) => acc + x, 0))
+    );
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    // coerce type to a specific type
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<string[]> = of(
+      <any>source1,
+      <any>source2,
+      <any>source3
+    ).pipe(combineAll<string>());
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    // coerce type to a specific type
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<string> = of(
+      <any>source1,
+      <any>source2,
+      <any>source3
+    ).pipe(
+      combineAll<string>((...args) => args.reduce((acc, x) => acc + x, 0))
+    );
+    /* tslint:enable:no-unused-variable */
   });
 });
 

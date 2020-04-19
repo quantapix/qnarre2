@@ -34,47 +34,6 @@ class CatchOperator<T, R> implements qt.Operator<T, T | R> {
   }
 }
 
-export function combineAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T[]>;
-export function combineAll<N, F, D>(): Lifter<any, T[]>;
-export function combineAll<T, R>(
-  project: (...values: T[]) => R
-): Lifter<SourceInput<N, F, D>, R>;
-export function combineAll<R>(
-  project: (...values: Array<any>) => R
-): Lifter<any, R>;
-export function combineAll<T, R>(
-  project?: (...values: Array<any>) => R
-): Lifter<T, R> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new CombineLatestOperator(project));
-}
-
-export function combineLatest<T, R>(
-  ...observables: Array<
-    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
-  >
-): Lifter<T, R> {
-  let project: ((...values: Array<any>) => R) | undefined = undefined;
-  if (typeof observables[observables.length - 1] === 'function') {
-    project = <(...values: Array<any>) => R>observables.pop();
-  }
-  if (observables.length === 1 && isArray(observables[0])) {
-    observables = (<any>observables[0]).slice();
-  }
-
-  return (source: qt.Source<N, F, D>) =>
-    source.lift.call(
-      from([source, ...observables]),
-      new CombineLatestOperator(project)
-    ) as qt.Source<R>;
-}
-
-export function combineLatestWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, Unshift<SourcedTuple<A>, T>> {
-  return combineLatest(...otherSources);
-}
-
 export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
 export function defaultIfEmpty<T, R>(
   defaultValue: R | null = null

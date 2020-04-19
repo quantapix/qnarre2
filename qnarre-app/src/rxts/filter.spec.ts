@@ -693,6 +693,219 @@ describe('distinct', () => {
   it('should enforce types of keySelector', () => {
     const o = of<{id: string}>({id: 'F00D'}).pipe(distinct(item => item.foo)); // $ExpectError
   });
+
+  it('should distinguish between values', () => {
+    const e1 = hot('--a--a--a--b--b--a--|');
+    const e1subs = '^                   !';
+    const expected = '--a--------b--------|';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish between values and does not completes', () => {
+    const e1 = hot('--a--a--a--b--b--a-');
+    const e1subs = '^                  ';
+    const expected = '--a--------b-------';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source never completes', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source does not completes', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete if source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete if source does not emit', () => {
+    const e1 = hot('------|');
+    const e1subs = '^     !';
+    const expected = '------|';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit if source emits single element only', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = '--a--|';
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit if source is scalar', () => {
+    const e1 = of('a');
+    const expected = '(a|)';
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+  });
+
+  it('should raises error if source raises error', () => {
+    const e1 = hot('--a--a--#');
+    const e1subs = '^       !';
+    const expected = '--a-----#';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error if source throws', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not omit if source elements are all different', () => {
+    const e1 = hot('--a--b--c--d--e--f--|');
+    const e1subs = '^                   !';
+    const expected = '--a--b--c--d--e--f--|';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    const e1 = hot('--a--b--b--d--a--f--|');
+    const e1subs = '^         !          ';
+    const expected = '--a--b-----          ';
+    const unsub = '          !          ';
+
+    const result = (<any>e1).pipe(distinct());
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when unsubscribed explicitly', () => {
+    const e1 = hot('--a--b--b--d--a--f--|');
+    const e1subs = '^         !          ';
+    const expected = '--a--b-----          ';
+    const unsub = '          !          ';
+
+    const result = (<any>e1).pipe(
+      mergeMap((x: any) => of(x)),
+      distinct(),
+      mergeMap((x: any) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit once if source elements are all same', () => {
+    const e1 = hot('--a--a--a--a--a--a--|');
+    const e1subs = '^                   !';
+    const expected = '--a-----------------|';
+
+    expectSource((<any>e1).pipe(distinct())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish values by key', () => {
+    const values = {a: 1, b: 2, c: 3, d: 4, e: 5, f: 6};
+    const e1 = hot('--a--b--c--d--e--f--|', values);
+    const e1subs = '^                   !';
+    const expected = '--a--b--c-----------|';
+    const selector = (value: number) => value % 3;
+
+    expectSource((<any>e1).pipe(distinct(selector))).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error when selector throws', () => {
+    const e1 = hot('--a--b--c--d--e--f--|');
+    const e1subs = '^          !         ';
+    const expected = '--a--b--c--#         ';
+    const selector = (value: string) => {
+      if (value === 'd') {
+        throw new Error('d is for dumb');
+      }
+      return value;
+    };
+
+    expectSource((<any>e1).pipe(distinct(selector))).toBe(
+      expected,
+      undefined,
+      new Error('d is for dumb')
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should support a flushing stream', () => {
+    const e1 = hot('--a--b--a--b--a--b--|');
+    const e1subs = '^                   !';
+    const e2 = hot('-----------x--------|');
+    const e2subs = '^                   !';
+    const expected = '--a--b--------a--b--|';
+
+    expectSource((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error if flush raises error', () => {
+    const e1 = hot('--a--b--a--b--a--b--|');
+    const e1subs = '^            !';
+    const e2 = hot('-----------x-#');
+    const e2subs = '^            !';
+    const expected = '--a--b-------#';
+
+    expectSource((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should unsubscribe from the flushing stream when the main stream is unsubbed', () => {
+    const e1 = hot('--a--b--a--b--a--b--|');
+    const e1subs = '^          !         ';
+    const e2 = hot('-----------x--------|');
+    const e2subs = '^          !         ';
+    const unsub = '           !         ';
+    const expected = '--a--b------';
+
+    expectSource((<any>e1).pipe(distinct(null as any, e2)), unsub).toBe(
+      expected
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should allow opting in to default comparator with flush', () => {
+    const e1 = hot('--a--b--a--b--a--b--|');
+    const e1subs = '^                   !';
+    const e2 = hot('-----------x--------|');
+    const e2subs = '^                   !';
+    const expected = '--a--b--------a--b--|';
+
+    expectSource((<any>e1).pipe(distinct(null as any, e2))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
 });
 
 interface Person {
@@ -701,6 +914,13 @@ interface Person {
 const sample: Person = {name: 'Tim'};
 
 describe('distinctUntilChanged', () => {
+  asDiagram('distinctUntilChanged')('should distinguish between values', () => {
+    const e1 = hot('-1--2-2----1-3-|');
+    const expected = '-1--2------1-3-|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+  });
+
   it('should infer correctly', () => {
     const o = of(sample).pipe(distinctUntilChanged()); // $ExpectType Observable<Person>
   });
@@ -756,11 +976,260 @@ describe('distinctUntilChanged', () => {
       )
     ); // $ExpectError
   });
+
+  it('should distinguish between values', () => {
+    const e1 = hot('--a--a--a--b--b--a--|');
+    const e1subs = '^                   !';
+    const expected = '--a--------b-----a--|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish between values and does not completes', () => {
+    const e1 = hot('--a--a--a--b--b--a-');
+    const e1subs = '^                  ';
+    const expected = '--a--------b-----a-';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source never completes', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source does not completes', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete if source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete if source does not emit', () => {
+    const e1 = hot('------|');
+    const e1subs = '^     !';
+    const expected = '------|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit if source emits single element only', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = '--a--|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit if source is scalar', () => {
+    const e1 = of('a');
+    const expected = '(a|)';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+  });
+
+  it('should raises error if source raises error', () => {
+    const e1 = hot('--a--a--#');
+    const e1subs = '^       !';
+    const expected = '--a-----#';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error if source throws', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not omit if source elements are all different', () => {
+    const e1 = hot('--a--b--c--d--e--f--|');
+    const e1subs = '^                   !';
+    const expected = '--a--b--c--d--e--f--|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    const e1 = hot('--a--b--b--d--a--f--|');
+    const e1subs = '^         !          ';
+    const expected = '--a--b-----          ';
+    const unsub = '          !          ';
+
+    const result = e1.pipe(distinctUntilChanged());
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when unsubscribed explicitly', () => {
+    const e1 = hot('--a--b--b--d--a--f--|');
+    const e1subs = '^         !          ';
+    const expected = '--a--b-----          ';
+    const unsub = '          !          ';
+
+    const result = e1.pipe(
+      mergeMap((x: any) => of(x)),
+      distinctUntilChanged(),
+      mergeMap((x: any) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit once if source elements are all same', () => {
+    const e1 = hot('--a--a--a--a--a--a--|');
+    const e1subs = '^                   !';
+    const expected = '--a-----------------|';
+
+    expectSource(e1.pipe(distinctUntilChanged())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit once if comparator returns true always regardless of source emits', () => {
+    const e1 = hot('--a--b--c--d--e--f--|');
+    const e1subs = '^                   !';
+    const expected = '--a-----------------|';
+
+    expectSource(
+      e1.pipe(
+        distinctUntilChanged(() => {
+          return true;
+        })
+      )
+    ).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit all if comparator returns false always regardless of source emits', () => {
+    const e1 = hot('--a--a--a--a--a--a--|');
+    const e1subs = '^                   !';
+    const expected = '--a--a--a--a--a--a--|';
+
+    expectSource(
+      e1.pipe(
+        distinctUntilChanged(() => {
+          return false;
+        })
+      )
+    ).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish values by comparator', () => {
+    const e1 = hot('--a--b--c--d--e--f--|', {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4,
+      e: 5,
+      f: 6
+    });
+    const e1subs = '^                   !';
+    const expected = '--a-----c-----e-----|';
+    const comparator = (x: number, y: number) => y % 2 === 0;
+
+    expectSource(e1.pipe(distinctUntilChanged(comparator))).toBe(expected, {
+      a: 1,
+      c: 3,
+      e: 5
+    });
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error when comparator throws', () => {
+    const e1 = hot('--a--b--c--d--e--f--|');
+    const e1subs = '^          !         ';
+    const expected = '--a--b--c--#         ';
+    const comparator = (x: string, y: string) => {
+      if (y === 'd') {
+        throw 'error';
+      }
+      return x === y;
+    };
+
+    expectSource(e1.pipe(distinctUntilChanged(comparator))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should use the keySelector to pick comparator values', () => {
+    const e1 = hot('--a--b--c--d--e--f--|', {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4,
+      e: 5,
+      f: 6
+    });
+    const e1subs = '^                   !';
+    const expected = '--a--b-----d-----f--|';
+    const comparator = (x: number, y: number) => y % 2 === 1;
+    const keySelector = (x: number) => x % 2;
+
+    expectSource(
+      e1.pipe(distinctUntilChanged(comparator, keySelector))
+    ).toBe(expected, {a: 1, b: 2, d: 4, f: 6});
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error when keySelector throws', () => {
+    const e1 = hot('--a--b--c--d--e--f--|');
+    const e1subs = '^          !         ';
+    const expected = '--a--b--c--#         ';
+    const keySelector = (x: string) => {
+      if (x === 'd') {
+        throw 'error';
+      }
+      return x;
+    };
+
+    expectSource(e1.pipe(distinctUntilChanged(null as any, keySelector))).toBe(
+      expected
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
 });
 
 const sample = {name: 'foobar', num: 42};
 
 describe('distinctUntilKeyChanged', () => {
+  asDiagram("distinctUntilKeyChanged('k')")(
+    'should distinguish between values',
+    () => {
+      const values = {a: {k: 1}, b: {k: 2}, c: {k: 3}};
+      const e1 = hot('-a--b-b----a-c-|', values);
+      const expected = '-a--b------a-c-|';
+
+      const result = (<any>e1).pipe(distinctUntilKeyChanged('k'));
+
+      expectSource(result).toBe(expected, values);
+    }
+  );
   it('should infer correctly', () => {
     const o = of(sample).pipe(distinctUntilKeyChanged('name')); // $ExpectType Observable<{ name: string; num: number; }>
   });
@@ -787,6 +1256,303 @@ describe('distinctUntilKeyChanged', () => {
     const o = of(sample).pipe(
       distinctUntilKeyChanged('something', (a: number, b: number) => true)
     ); // $ExpectError
+  });
+
+  it('should distinguish between values', () => {
+    const values = {a: {val: 1}, b: {val: 2}};
+    const e1 = hot('--a--a--a--b--b--a--|', values);
+    const e1subs = '^                   !';
+    const expected = '--a--------b-----a--|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish between values and does not completes', () => {
+    const values = {a: {val: 1}, b: {val: 2}};
+    const e1 = hot('--a--a--a--b--b--a-', values);
+    const e1subs = '^                  ';
+    const expected = '--a--------b-----a-';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish between values with key', () => {
+    const values = {
+      a: {val: 1},
+      b: {valOther: 1},
+      c: {valOther: 3},
+      d: {val: 1},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--c--d--e--|', values);
+    const e1subs = '^                !';
+    const expected = '--a--b-----d--e--|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not compare if source does not have element with key', () => {
+    const values = {
+      a: {valOther: 1},
+      b: {valOther: 1},
+      c: {valOther: 3},
+      d: {valOther: 1},
+      e: {valOther: 5}
+    };
+    const e1 = hot('--a--b--c--d--e--|', values);
+    const e1subs = '^                !';
+    const expected = '--a--------------|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source never completes', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not completes if source does not completes', () => {
+    const e1 = hot('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete if source is empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should complete if source does not emit', () => {
+    const e1 = hot('------|');
+    const e1subs = '^     !';
+    const expected = '------|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit if source emits single element only', () => {
+    const values = {a: {val: 1}};
+    const e1 = hot('--a--|', values);
+    const e1subs = '^    !';
+    const expected = '--a--|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit if source is scalar', () => {
+    const values = {a: {val: 1}};
+    const e1 = of(values.a);
+    const expected = '(a|)';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+  });
+
+  it('should raises error if source raises error', () => {
+    const values = {a: {val: 1}};
+    const e1 = hot('--a--a--#', values);
+    const e1subs = '^       !';
+    const expected = '--a-----#';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error if source throws', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not omit if source elements are all different', () => {
+    const values = {
+      a: {val: 1},
+      b: {val: 2},
+      c: {val: 3},
+      d: {val: 4},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--c--d--e--|', values);
+    const e1subs = '^                !';
+    const expected = '--a--b--c--d--e--|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    const values = {
+      a: {val: 1},
+      b: {val: 2},
+      c: {val: 3},
+      d: {val: 4},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--b--d--a--e--|', values);
+    const e1subs = '^         !          ';
+    const expected = '--a--b-----          ';
+    const unsub = '          !          ';
+
+    const result = (<any>e1).pipe(distinctUntilKeyChanged('val'));
+
+    expectSource(result, unsub).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when unsubscribed explicitly', () => {
+    const values = {
+      a: {val: 1},
+      b: {val: 2},
+      c: {val: 3},
+      d: {val: 4},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--b--d--a--e--|', values);
+    const e1subs = '^         !          ';
+    const expected = '--a--b-----          ';
+    const unsub = '          !          ';
+
+    const result = (<any>e1).pipe(
+      mergeMap((x: any) => of(x)),
+      distinctUntilKeyChanged('val'),
+      mergeMap((x: any) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit once if source elements are all same', () => {
+    const values = {a: {val: 1}};
+    const e1 = hot('--a--a--a--a--a--a--|', values);
+    const e1subs = '^                   !';
+    const expected = '--a-----------------|';
+
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit once if comparer returns true always regardless of source emits', () => {
+    const values = {
+      a: {val: 1},
+      b: {val: 2},
+      c: {val: 3},
+      d: {val: 4},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--c--d--e--|', values);
+    const e1subs = '^                !';
+    const expected = '--a--------------|';
+
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', () => true))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should emit all if comparer returns false always regardless of source emits', () => {
+    const values = {a: {val: 1}};
+    const e1 = hot('--a--a--a--a--a--a--|', values);
+    const e1subs = '^                   !';
+    const expected = '--a--a--a--a--a--a--|';
+
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', () => false))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should distinguish values by selector', () => {
+    const values = {
+      a: {val: 1},
+      b: {val: 2},
+      c: {val: 3},
+      d: {val: 4},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--c--d--e--|', values);
+    const e1subs = '^                !';
+    const expected = '--a-----c-----e--|';
+    const selector = (x: number, y: number) => y % 2 === 0;
+
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', selector))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raises error when comparer throws', () => {
+    const values = {
+      a: {val: 1},
+      b: {val: 2},
+      c: {val: 3},
+      d: {val: 4},
+      e: {val: 5}
+    };
+    const e1 = hot('--a--b--c--d--e--|', values);
+    const e1subs = '^          !      ';
+    const expected = '--a--b--c--#      ';
+    const selector = (x: number, y: number) => {
+      if (y === 4) {
+        throw 'error';
+      }
+      return x === y;
+    };
+
+    expectSource(e1.pipe(distinctUntilKeyChanged('val', selector))).toBe(
+      expected,
+      values
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 
