@@ -851,16 +851,6 @@ export class CombineLatestSubscriber<T, R> extends ReactorSubscriber<T, R> {
   }
 }
 
-export function concat<A extends qt.SourceInput<any>[]>(
-  ...observables: A
-): qs.Source<SourcedFrom<A>>;
-export function concat<O extends qt.SourceInput<any>>(
-  ...observables: Array<O | qh.Scheduler>
-): qs.Source<Sourced<O>> {
-  // The cast with `as` below is due to the qh.Scheduler, once this is removed, it will no longer be a problem.
-  return concatAll<Sourced<O>>()(of(...observables) as qs.Source<Sourced<O>>);
-}
-
 export function defer<R extends qt.SourceInput<any> | void>(
   observableFactory: () => R
 ): qs.Source<Sourced<R>> {

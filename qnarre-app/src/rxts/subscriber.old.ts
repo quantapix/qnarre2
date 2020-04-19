@@ -75,83 +75,6 @@ export function combineLatestWith<T, A extends SourceInput<any>[]>(
   return combineLatest(...otherSources);
 }
 
-export function concatAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function concatAll<R>(): Lifter<any, R>;
-export function concatAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
-  return mergeAll<N, F, D>(1);
-}
-
-export function concatMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function concatMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return mergeMap(project, resultSelector, 1);
-  }
-  return mergeMap(project, 1);
-}
-export function concatMapTo<T, O extends SourceInput<any>>(
-  observable: O
-): Lifter<T, Sourced<O>>;
-export function concatMapTo<T, R, O extends SourceInput<any>>(
-  innerObservable: O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return concatMap(() => innerObservable, resultSelector);
-  }
-  return concatMap(() => innerObservable);
-}
-
-export function concatWith<N, F, D>(): Lifter<T, T>;
-export function concatWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, SourcedFrom<A> | T>;
-export function concatWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, SourcedFrom<A> | T> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift.call(
-      concatStatic(source, ...otherSources),
-      undefined
-    ) as qt.Source<SourcedFrom<A> | T>;
-}
-
-export function count<N, F, D>(
-  predicate?: (value: T, index: number, source: qt.Source<N, F, D>) => boolean
-): Lifter<T, number> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new CountOperator(predicate, source));
-}
-
-class CountOperator<N, F, D> implements qt.Operator<T, number> {
-  constructor(
-    private predicate:
-      | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
-      | undefined,
-    private source: qt.Source<N, F, D>
-  ) {}
-
-  call(subscriber: Subscriber<number>, source: any): any {
-    return source.subscribe(
-      new CountSubscriber(subscriber, this.predicate, this.source)
-    );
-  }
-}
-
 export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
 export function defaultIfEmpty<T, R>(
   defaultValue: R | null = null
@@ -626,17 +549,6 @@ class MaterializeOperator<N, F, D>
   }
 }
 
-export function max<N, F, D>(
-  comparer?: (x: T, y: N) => number
-): qt.MonoOper<N, F, D> {
-  const max: (x: T, y: N) => T =
-    typeof comparer === 'function'
-      ? (x, y) => (comparer(x, y) > 0 ? x : y)
-      : (x, y) => (x > y ? x : y);
-
-  return reduce(max);
-}
-
 export function mergeAll<N, F, D>(
   concurrent: number = Number.POSITIVE_INFINITY
 ): Lifter<SourceInput<N, F, D>, T> {
@@ -751,16 +663,6 @@ export function mergeWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
 ): Lifter<T, T | SourcedFrom<A>> {
   return merge(...otherSources);
-}
-
-export function min<N, F, D>(
-  comparer?: (x: T, y: N) => number
-): qt.MonoOper<N, F, D> {
-  const min: (x: T, y: N) => T =
-    typeof comparer === 'function'
-      ? (x, y) => (comparer(x, y) < 0 ? x : y)
-      : (x, y) => (x < y ? x : y);
-  return reduce(min);
 }
 
 export function multicast<N, F, D>(
@@ -1085,40 +987,6 @@ export function race<N, F, D>(
       raceStatic(source, ...(observables as qt.Source<N, F, D>[])),
       undefined
     ) as qt.Source<N, F, D>;
-  };
-}
-
-export function reduce<V, A = V>(
-  accumulator: (acc: A | V, value: V, index: number) => A
-): Lifter<V, V | A>;
-export function reduce<V, A>(
-  accumulator: (acc: A, value: V, index: number) => A,
-  seed: A
-): Lifter<V, A>;
-export function reduce<V, A, S = A>(
-  accumulator: (acc: A | S, value: V, index: number) => A,
-  seed: S
-): Lifter<V, A>;
-export function reduce<V, A>(
-  accumulator: (acc: V | A, value: V, index: number) => A,
-  seed?: any
-): Lifter<V, V | A> {
-  if (arguments.length >= 2) {
-    return function reduceLifterWithSeed(
-      source: qt.Source<V>
-    ): qt.Source<V | A> {
-      return pipe(
-        scan(accumulator, seed),
-        takeLast(1),
-        defaultIfEmpty(seed)
-      )(source);
-    };
-  }
-  return function reduceLifter(source: qt.Source<V>): qt.Source<V | A> {
-    return pipe(
-      scan<V, V | A>((acc, value, index) => accumulator(acc, value, index + 1)),
-      takeLast(1)
-    )(source);
   };
 }
 

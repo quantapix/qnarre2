@@ -82,42 +82,6 @@ export class Catch<O, I, F, D> extends Reactor<N, N | M, F, D> {
   }
 }
 
-export class Count<N, F, D> extends Subscriber<N, F, D> {
-  private count = 0;
-  private index = 0;
-
-  constructor(
-    tgt: qt.Observer<number, F, D>,
-    private predicate:
-      | ((value: N, index: number, source: qt.Source<N, F, D>) => boolean)
-      | undefined,
-    private source: qt.Source<N, F, D>
-  ) {
-    super(tgt);
-  }
-
-  protected _next(n?: N) {
-    if (this.predicate) this._tryPredicate(v);
-    else this.count++;
-  }
-
-  private _tryPredicate(value: N) {
-    let result: any;
-    try {
-      result = this.predicate!(value, this.index++, this.source);
-    } catch (e) {
-      this.tgt.fail(e);
-      return;
-    }
-    if (result) this.count++;
-  }
-
-  protected _done(d?: D) {
-    this.tgt.next(this.count);
-    this.tgt.done();
-  }
-}
-
 export class DefaultIfEmpty<N, M, F, D> extends Subscriber<N, F, D> {
   private isEmpty = true;
 

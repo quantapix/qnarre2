@@ -138,126 +138,7 @@ export function combineLatestWith<T, A extends SourceInput<any>[]>(
   return combineLatest(...otherSources);
 }
 
-export function concatAll<T>(): Lifter<SourceInput<T>, T>;
-export function concatAll<R>(): Lifter<any, R>;
-export function concatAll<T>(): Lifter<SourceInput<T>, T> {
-  return mergeAll<T>(1);
-}
 
-export function concatMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function concatMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return mergeMap(project, resultSelector, 1);
-  }
-  return mergeMap(project, 1);
-}
-
-export function concatMapTo<T, O extends SourceInput<any>>(
-  observable: O
-): Lifter<T, Sourced<O>>;
-export function concatMapTo<T, R, O extends SourceInput<any>>(
-  innerObservable: O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return concatMap(() => innerObservable, resultSelector);
-  }
-  return concatMap(() => innerObservable);
-}
-
-export function concatWith<T>(): Lifter<T, T>;
-export function concatWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, SourcedFrom<A> | T>;
-export function concatWith<T, A extends SourceInput<any>[]>(
-  ...otherSources: A
-): Lifter<T, SourcedFrom<A> | T> {
-  return (source: Observable<T>) =>
-    source.lift.call(
-      concatStatic(source, ...otherSources),
-      undefined
-    ) as Observable<SourcedFrom<A> | T>;
-}
-
-export function count<T>(
-  predicate?: (value: T, index: number, source: Observable<T>) => boolean
-): Lifter<T, number> {
-  return (source: Observable<T>) =>
-    source.lift(new CountOperator(predicate, source));
-}
-
-class CountOperator<T> implements Operator<T, number> {
-  constructor(
-    private predicate:
-      | ((value: T, index: number, source: Observable<T>) => boolean)
-      | undefined,
-    private source: Observable<T>
-  ) {}
-
-  call(subscriber: Subscriber<number>, source: any): any {
-    return source.subscribe(
-      new CountSubscriber(subscriber, this.predicate, this.source)
-    );
-  }
-}
-
-class CountSubscriber<T> extends Subscriber<T> {
-  private count: number = 0;
-  private index: number = 0;
-
-  constructor(
-    destination: Observer<number>,
-    private predicate:
-      | ((value: T, index: number, source: Observable<T>) => boolean)
-      | undefined,
-    private source: Observable<T>
-  ) {
-    super(destination);
-  }
-
-  protected _next(v: T) {
-    if (this.predicate) {
-      this._tryPredicate(v);
-    } else {
-      this.count++;
-    }
-  }
-
-  private _tryPredicate(value: T) {
-    let result: any;
-
-    try {
-      result = this.predicate!(value, this.index++, this.source);
-    } catch (err) {
-      this.dst.error(err);
-      return;
-    }
-
-    if (result) {
-      this.count++;
-    }
-  }
-
-  protected _complete() {
-    this.dst.next(this.count);
-    this.dst.complete();
-  }
-}
 
 export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
 export function defaultIfEmpty<T, R>(
@@ -1503,15 +1384,6 @@ class MaterializeSubscriber<T> extends Subscriber<T> {
   }
 }
 
-export function max<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
-  const max: (x: T, y: T) => T =
-    typeof comparer === 'function'
-      ? (x, y) => (comparer(x, y) > 0 ? x : y)
-      : (x, y) => (x > y ? x : y);
-
-  return reduce(max);
-}
-
 export function mergeAll<T>(
   concurrent: number = Number.POSITIVE_INFINITY
 ): Lifter<SourceInput<T>, T> {
@@ -1807,13 +1679,6 @@ export function mergeWith<T, A extends SourceInput<any>[]>(
   return merge(...otherSources);
 }
 
-export function min<T>(comparer?: (x: T, y: T) => number): MonoOper<T> {
-  const min: (x: T, y: T) => T =
-    typeof comparer === 'function'
-      ? (x, y) => (comparer(x, y) < 0 ? x : y)
-      : (x, y) => (x < y ? x : y);
-  return reduce(min);
-}
 
 export function multicast<T>(
   subject: Subject<T>
@@ -2241,40 +2106,6 @@ export function race<T>(
       raceStatic(source, ...(observables as Observable<T>[])),
       undefined
     ) as Observable<T>;
-  };
-}
-
-export function reduce<V, A = V>(
-  accumulator: (acc: A | V, value: V, index: number) => A
-): Lifter<V, V | A>;
-export function reduce<V, A>(
-  accumulator: (acc: A, value: V, index: number) => A,
-  seed: A
-): Lifter<V, A>;
-export function reduce<V, A, S = A>(
-  accumulator: (acc: A | S, value: V, index: number) => A,
-  seed: S
-): Lifter<V, A>;
-export function reduce<V, A>(
-  accumulator: (acc: V | A, value: V, index: number) => A,
-  seed?: any
-): Lifter<V, V | A> {
-  if (arguments.length >= 2) {
-    return function reduceLifterWithSeed(
-      source: Observable<V>
-    ): Observable<V | A> {
-      return pipe(
-        scan(accumulator, seed),
-        takeLast(1),
-        defaultIfEmpty(seed)
-      )(source);
-    };
-  }
-  return function reduceLifter(source: Observable<V>): Observable<V | A> {
-    return pipe(
-      scan<V, V | A>((acc, value, index) => accumulator(acc, value, index + 1)),
-      takeLast(1)
-    )(source);
   };
 }
 
