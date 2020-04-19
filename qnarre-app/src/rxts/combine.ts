@@ -13,6 +13,118 @@ export function endWith<N, F, D>(
     concatStatic(source, of(...values)) as qt.Source<N, F, D>;
 }
 
+export function exhaust<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
+export function exhaust<R>(): Lifter<any, R>;
+export function exhaust<N, F, D>(): Lifter<any, T> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new SwitchFirstO<N, F, D>());
+}
+
+export function exhaustMap<T, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O
+): Lifter<T, Sourced<O>>;
+export function exhaustMap<T, R, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O,
+  resultSelector?: (
+    outerN: T,
+    innerValue: Sourced<O>,
+    outerX: number,
+    innerIndex: number
+  ) => R
+): Lifter<T, Sourced<O> | R> {
+  if (resultSelector) {
+    // DEPRECATED PATH
+    return (source: qt.Source<N, F, D>) =>
+      source.pipe(
+        exhaustMap((a, i) =>
+          from(project(a, i)).pipe(
+            map((b: any, ii: any) => resultSelector(a, b, i, ii))
+          )
+        )
+      );
+  }
+  return (source: qt.Source<N, F, D>) => source.lift(new ExhaustMapO(project));
+}
+
+class ExhaustMapO<T, R> implements qt.Operator<T, R> {
+  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(new ExhaustMapR(subscriber, this.project));
+  }
+}
+
+export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private hasSubscription = false;
+  private hasCompleted = false;
+  private index = 0;
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private project: (value: T, index: number) => qt.SourceInput<R>
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    if (!this.hasSubscription) this.tryNext(n);
+  }
+
+  private tryNext(value: N) {
+    let result: SourceInput<R>;
+    const index = this.index++;
+    try {
+      result = this.project(value, index);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    this.hasSubscription = true;
+    this._innerSub(result, value, index);
+  }
+
+  private _innerSub(result: SourceInput<R>, value: T, index: number): void {
+    const innerSubscriber = new Actor(this, value, index);
+    const tgt = this.tgt as Subscription;
+    tgt.add(innerSubscriber);
+    const s = qu.subscribeToResult<T, R>(
+      this,
+      result,
+      undefined,
+      undefined,
+      innerSubscriber
+    );
+    if (s !== innerSubscriber) tgt.add(s);
+  }
+
+  protected _done(d?: D) {
+    this.hasCompleted = true;
+    if (!this.hasSubscription) this.tgt.done(d);
+    this.unsubscribe();
+  }
+
+  reactNext(
+    outerN: N,
+    innerValue: M,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actorr<N, M, F, D>
+  ): void {
+    this.tgt.next(innerValue);
+  }
+
+  reactFail(f?: F) {
+    this.tgt.fail(f);
+  }
+
+  reactDone(innerSub: Subscription) {
+    const tgt = this.tgt as Subscription;
+    tgt.remove(innerSub);
+    this.hasSubscription = false;
+    if (this.hasCompleted) this.tgt.done();
+  }
+}
+
 export function merge<T>(v1: qt.SourceInput<T>): qs.Source<T>;
 export function merge<T>(
   v1: qt.SourceInput<T>,
@@ -411,13 +523,6 @@ export function startWith<T, D>(...values: D[]): Lifter<T, T | D> {
   }
 }
 
-export function exhaust<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function exhaust<R>(): Lifter<any, R>;
-export function exhaust<N, F, D>(): Lifter<any, T> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new SwitchFirstO<N, F, D>());
-}
-
 class SwitchFirstO<N, F, D> implements qt.Operator<N, N, F, D> {
   call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(new SwitchFirstR(subscriber));
@@ -451,109 +556,10 @@ export class SwitchFirstR<N, F, D> extends Reactor<N, N, F, D> {
   }
 }
 
-export function exhaustMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function exhaustMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (resultSelector) {
-    // DEPRECATED PATH
-    return (source: qt.Source<N, F, D>) =>
-      source.pipe(
-        exhaustMap((a, i) =>
-          from(project(a, i)).pipe(
-            map((b: any, ii: any) => resultSelector(a, b, i, ii))
-          )
-        )
-      );
-  }
-  return (source: qt.Source<N, F, D>) => source.lift(new ExhaustMapO(project));
-}
-
-class ExhaustMapO<T, R> implements qt.Operator<T, R> {
-  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new ExhaustMapR(subscriber, this.project));
-  }
-}
-
-export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
-  private hasSubscription = false;
-  private hasCompleted = false;
-  private index = 0;
-
-  constructor(
-    tgt: Subscriber<M, F, D>,
-    private project: (value: T, index: number) => qt.SourceInput<R>
-  ) {
-    super(tgt);
-  }
-
-  protected _next(n?: N) {
-    if (!this.hasSubscription) this.tryNext(n);
-  }
-
-  private tryNext(value: N) {
-    let result: SourceInput<R>;
-    const index = this.index++;
-    try {
-      result = this.project(value, index);
-    } catch (e) {
-      this.tgt.fail(e);
-      return;
-    }
-    this.hasSubscription = true;
-    this._innerSub(result, value, index);
-  }
-
-  private _innerSub(result: SourceInput<R>, value: T, index: number): void {
-    const innerSubscriber = new Actor(this, value, index);
-    const tgt = this.tgt as Subscription;
-    tgt.add(innerSubscriber);
-    const s = qu.subscribeToResult<T, R>(
-      this,
-      result,
-      undefined,
-      undefined,
-      innerSubscriber
-    );
-    if (s !== innerSubscriber) tgt.add(s);
-  }
-
-  protected _done(d?: D) {
-    this.hasCompleted = true;
-    if (!this.hasSubscription) this.tgt.done(d);
-    this.unsubscribe();
-  }
-
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actorr<N, M, F, D>
-  ): void {
-    this.tgt.next(innerValue);
-  }
-
-  reactFail(f?: F) {
-    this.tgt.fail(f);
-  }
-
-  reactDone(innerSub: Subscription) {
-    const tgt = this.tgt as Subscription;
-    tgt.remove(innerSub);
-    this.hasSubscription = false;
-    if (this.hasCompleted) this.tgt.done();
-  }
+export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
+export function switchAll<R>(): Lifter<any, R>;
+export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
+  return switchMap(identity);
 }
 
 export function switchMap<T, O extends SourceInput<any>>(
@@ -673,12 +679,6 @@ export function switchMapTo<T, I, R>(
   return resultSelector
     ? switchMap(() => innerObservable, resultSelector)
     : switchMap(() => innerObservable);
-}
-
-export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function switchAll<R>(): Lifter<any, R>;
-export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
-  return switchMap(identity);
 }
 
 export function zip<
