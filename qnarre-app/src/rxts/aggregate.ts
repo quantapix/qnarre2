@@ -18,42 +18,6 @@ export function concatAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
   return mergeAll<N, F, D>(1);
 }
 
-export function concatMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function concatMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return mergeMap(project, resultSelector, 1);
-  }
-  return mergeMap(project, 1);
-}
-
-export function concatMapTo<T, O extends SourceInput<any>>(
-  observable: O
-): Lifter<T, Sourced<O>>;
-export function concatMapTo<T, R, O extends SourceInput<any>>(
-  innerObservable: O,
-  resultSelector?: (
-    outerN: T,
-    innerValue: Sourced<O>,
-    outerX: number,
-    innerIndex: number
-  ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
-    return concatMap(() => innerObservable, resultSelector);
-  }
-  return concatMap(() => innerObservable);
-}
-
 export function concatWith<N, F, D>(): Lifter<T, T>;
 export function concatWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A

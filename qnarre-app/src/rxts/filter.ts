@@ -3,6 +3,78 @@ import * as qu from './utils';
 import * as qr from './opers';
 import * as qj from './subject';
 
+export function audit<N, R, F, D>(
+  d: (_?: R) => qt.SourceOrPromise<N, F, D>
+): qt.MonoOper<N, F, D> {
+  return (s: qt.Source<N, F, D>) => s.lift(new AuditO<N, R, F, D>(d));
+}
+
+class AuditO<N, R, F, D> implements qt.Operator<N, R, F, D> {
+  constructor(private dur: (_?: R) => qt.SourceOrPromise<N, F, D>) {}
+
+  call(r: qj.Subscriber<R, F, D>, s: qt.Source<N, F, D>) {
+    return s.subscribe(new AuditR(r, this.dur));
+  }
+}
+
+export class AuditR<N, R, F, D> extends Reactor<N, R, F, D> {
+  private r?: R;
+  private hasR = false;
+  private act?: qt.Subscription;
+
+  constructor(
+    tgt: Subscriber<R, F, D>,
+    private duration: (_?: R) => qt.SourceOrPromise<N, F, D>
+  ) {
+    super(tgt);
+  }
+
+  protected _next(r?: R) {
+    this.r = r;
+    this.hasR = true;
+    if (!this.act) {
+      let d: qt.SourceOrPromise<N, F, D>;
+      try {
+        d = this.duration(r);
+      } catch (e) {
+        return this.tgt.fail(e);
+      }
+      const a = qu.subscribeToResult(this, d);
+      if (!a || a.closed) this.clear();
+      else this.add((this.act = a));
+    }
+  }
+
+  clear() {
+    const {r, hasR, act} = this;
+    if (act) {
+      this.remove(act);
+      this.act = undefined;
+      act.unsubscribe();
+    }
+    if (hasR) {
+      this.r = undefined;
+      this.hasR = false;
+      this.tgt.next(r);
+    }
+  }
+
+  reactNext() {
+    this.clear();
+  }
+
+  reactDone() {
+    this.clear();
+  }
+}
+
+export function auditTime<N, F, D>(
+  duration: number,
+  s: qt.Scheduler = async
+): qt.MonoOper<N, F, D> {
+  return audit(() => timer(duration, s));
+}
+
 export function debounce<N, F, D>(
   durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
 ): qt.MonoOper<N, F, D> {
@@ -567,6 +639,75 @@ export class SampleTimeR<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
+export function single<N, F, D>(
+  predicate?: (value: T, index: number, source: qt.Source<N, F, D>) => boolean
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new SingleO(predicate, source));
+}
+
+class SingleO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    private predicate:
+      | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
+      | undefined,
+    private source: qt.Source<N, F, D>
+  ) {}
+
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new SingleR(subscriber, this.predicate, this.source)
+    );
+  }
+}
+
+export class SingleR<N, F, D> extends Subscriber<N, F, D> {
+  private seenValue = false;
+  private singleValue?: N;
+  private index = 0;
+
+  constructor(
+    tgt: qt.Observer<N, F, D>,
+    private predicate:
+      | ((n: N | undefined, i: number, source: qt.Source<N, F, D>) => boolean)
+      | undefined,
+    private source: qt.Source<N, F, D>
+  ) {
+    super(tgt);
+  }
+
+  private applySingleValue(n?: N) {
+    if (this.seenValue)
+      this.tgt.fail('Sequence contains more than one element');
+    else {
+      this.seenValue = true;
+      this.singleValue = n;
+    }
+  }
+
+  protected _next(n?: N) {
+    const i = this.index++;
+    if (this.predicate) this.tryNext(n, i);
+    else this.applySingleValue(n);
+  }
+
+  private tryNext(n: N | undefined, i: number) {
+    try {
+      if (this.predicate!(n, i, this.source)) this.applySingleValue(n);
+    } catch (e) {
+      this.tgt.fail(e);
+    }
+  }
+
+  protected _done(d?: D) {
+    const tgt = this.tgt;
+    if (this.index > 0) {
+      tgt.next(this.seenValue ? this.singleValue : undefined);
+      tgt.done();
+    } else tgt.fail(new EmptyError());
+  }
+}
+
 export function skip<N, F, D>(count: number): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) => source.lift(new SkipO(count));
 }
@@ -937,4 +1078,211 @@ export class TakeWhileR<N, F, D> extends Subscriber<N, F, D> {
       tgt.done();
     }
   }
+}
+
+export interface ThrottleConfig {
+  leading?: boolean;
+  trailing?: boolean;
+}
+
+export const defaultThrottleConfig: ThrottleConfig = {
+  leading: true,
+  trailing: false
+};
+
+export function throttle<N, F, D>(
+  durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>,
+  config: ThrottleConfig = defaultThrottleConfig
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(
+      new ThrottleO(durationSelector, !!config.leading, !!config.trailing)
+    );
+}
+
+class ThrottleO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    private durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>,
+    private leading: boolean,
+    private trailing: boolean
+  ) {}
+
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new ThrottleR(
+        subscriber,
+        this.durationSelector,
+        this.leading,
+        this.trailing
+      )
+    );
+  }
+}
+
+export class ThrottleR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private _throttled?: Subscription;
+  private _sendValue?: N;
+  private _hasValue = false;
+
+  constructor(
+    protected tgt: Subscriber<N, F, D>,
+    private durationSelector: (value: N) => qt.SourceOrPromise<number>,
+    private _leading: boolean,
+    private _trailing: boolean
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    this._hasValue = true;
+    this._sendValue = n;
+    if (!this._throttled) {
+      if (this._leading) this.send();
+      else this.throttle(n);
+    }
+  }
+
+  private send() {
+    const {_hasValue, _sendValue} = this;
+    if (_hasValue) {
+      this.tgt.next(_sendValue!);
+      this.throttle(_sendValue!);
+    }
+    this._hasValue = false;
+    this._sendValue = undefined;
+  }
+
+  private throttle(value: N): void {
+    const duration = this.tryDurationSelector(value);
+    if (!!duration)
+      this.add((this._throttled = qu.subscribeToResult(this, duration)));
+  }
+
+  private tryDurationSelector(value: N): qt.SourceOrPromise<any, F, D> | null {
+    try {
+      return this.durationSelector(value);
+    } catch (e) {
+      this.tgt.fail(e);
+      return null;
+    }
+  }
+
+  private throttlingDone() {
+    const {_throttled, _trailing} = this;
+    if (_throttled) _throttled.unsubscribe();
+    this._throttled = undefined;
+    if (_trailing) this.send();
+  }
+
+  reactNext(
+    outerN: N,
+    innerValue: M,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, M, F, D>
+  ): void {
+    this.throttlingDone();
+  }
+
+  reactDone(): void {
+    this.throttlingDone();
+  }
+}
+
+export function throttleTime<N, F, D>(
+  duration: number,
+  scheduler: qt.Scheduler = async,
+  config: ThrottleConfig = defaultThrottleConfig
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(
+      new ThrottleTimeO(
+        duration,
+        scheduler,
+        !!config.leading,
+        !!config.trailing
+      )
+    );
+}
+
+class ThrottleTimeO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    private duration: number,
+    private scheduler: qt.Scheduler,
+    private leading: boolean,
+    private trailing: boolean
+  ) {}
+
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new ThrottleTimeR(
+        subscriber,
+        this.duration,
+        this.scheduler,
+        this.leading,
+        this.trailing
+      )
+    );
+  }
+}
+
+export class ThrottleTimeR<N, F, D> extends Subscriber<N, F, D> {
+  private throttled?: Subscription;
+  private _hasTrailingValue = false;
+  private _trailingValue?: N;
+
+  constructor(
+    tgt: Subscriber<N, F, D>,
+    private duration: number,
+    private scheduler: qt.Scheduler,
+    private leading: boolean,
+    private trailing: boolean
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    if (this.throttled) {
+      if (this.trailing) {
+        this._trailingValue = n;
+        this._hasTrailingValue = true;
+      }
+    } else {
+      this.add(
+        (this.throttled = this.scheduler.schedule<DispatchArg<N, F, D>>(
+          dispatchNext as any,
+          this.duration,
+          {subscriber: this}
+        ))
+      );
+      if (this.leading) this.tgt.next(n);
+      else if (this.trailing) {
+        this._trailingValue = n;
+        this._hasTrailingValue = true;
+      }
+    }
+  }
+
+  protected _done(d?: D) {
+    if (this._hasTrailingValue) this.tgt.next(this._trailingValue);
+    this.tgt.done(d);
+  }
+
+  clearThrottle() {
+    const throttled = this.throttled;
+    if (throttled) {
+      if (this.trailing && this._hasTrailingValue) {
+        this.tgt.next(this._trailingValue);
+        this._trailingValue = null;
+        this._hasTrailingValue = false;
+      }
+      throttled.unsubscribe();
+      this.remove(throttled);
+      this.throttled = null!;
+    }
+  }
+}
+
+interface DispatchArg<N, F, D> {
+  subscriber: ThrottleTimeR<N, F, D>;
 }

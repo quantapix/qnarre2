@@ -2,37 +2,7 @@ import {of, NEVER} from 'rxjs';
 import {audit} from 'rxjs/operators';
 
 describe('xxx', () => {
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(audit(() => of('foo'))); // $ExpectType Observable<number>
-    const p = of(1, 2, 3).pipe(audit(() => NEVER)); // $ExpectType Observable<number>
-  });
 
-  it('should infer correctly with a Promise', () => {
-    const o = of(1, 2, 3).pipe(
-      audit(
-        () => new Promise<string>(() => {})
-      )
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(audit()); // $ExpectError
-    const p = of(1, 2, 3).pipe(audit((p: string) => of('foo'))); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const o = of('a', 'b', 'c').pipe(auditTime(47)); // $ExpectType Observable<string>
-  });
-
-  it('should support a scheduler', () => {
-    const o = of('a', 'b', 'c').pipe(auditTime(47, asyncScheduler)); // $ExpectType Observable<string>
-  });
-
-  it('should enforce types', () => {
-    const o = of('a', 'b', 'c').pipe(auditTime()); // $ExpectError
-    const p = of('a', 'b', 'c').pipe(auditTime('47')); // $ExpectError
-    const q = of('a', 'b', 'c').pipe(auditTime(47, 'foo')); // $ExpectError
-  });
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(catchError(() => of(4, 5, 6))); // $ExpectType Observable<number>
@@ -214,53 +184,6 @@ describe('xxx', () => {
   it('should expect function parameter', () => {
     const a = of(1, 2, 3).pipe(every(9)); // $ExpectError
   });
-
-
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(expand(value => of(value))); // $ExpectType Observable<number>
-    const p = of(1, 2, 3).pipe(expand(value => [value])); // $ExpectType Observable<number>
-    const q = of(1, 2, 3).pipe(expand(value => Promise.resolve(value))); // $ExpectType Observable<number>
-  });
-
-  it('should infer correctly with a different type as the source', () => {
-    const o = of(1, 2, 3).pipe(expand(value => of('foo'))); // $ExpectType Observable<string>
-    const p = of(1, 2, 3).pipe(expand(value => ['foo'])); // $ExpectType Observable<string>
-    const q = of(1, 2, 3).pipe(expand(value => Promise.resolve('foo'))); // $ExpectType Observable<string>
-  });
-
-  it('should support a project function with index', () => {
-    const o = of(1, 2, 3).pipe(expand((value, index) => of(index))); // $ExpectType Observable<number>
-  });
-
-  it('should support concurrent parameter', () => {
-    const o = of(1, 2, 3).pipe(expand(value => of(1), 47)); // $ExpectType Observable<number>
-  });
-
-  it('should support a scheduler', () => {
-    const o = of(1, 2, 3).pipe(expand(value => of(1), 47, asyncScheduler)); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(expand()); // $ExpectError
-  });
-
-  it('should enforce project types', () => {
-    const o = of(1, 2, 3).pipe(expand((value: string, index) => of(1))); // $ExpectError
-    const p = of(1, 2, 3).pipe(expand((value, index: string) => of(1))); // $ExpectError
-  });
-
-  it('should enforce project return type', () => {
-    const o = of(1, 2, 3).pipe(expand(value => 1)); // $ExpectError
-  });
-
-  it('should enforce concurrent type', () => {
-    const o = of(1, 2, 3).pipe(expand(value => of(1), 'foo')); // $ExpectError
-  });
-
-  it('should enforce scheduler type', () => {
-    const o = of(1, 2, 3).pipe(expand(value => of(1), 47, 'foo')); // $ExpectError
-  });
-
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(finalize(() => {})); // $ExpectType Observable<number>
@@ -524,94 +447,6 @@ describe('xxx', () => {
     ); // $ExpectError
   });
 
-  it('should infer correctly', () => {
-    const o = of('apple', 'banana', 'peach').pipe(pairwise()); // $ExpectType Observable<[string, string]>
-  });
-
-  it('should infer correctly with multiple types', () => {
-    const o = of('apple', 4, 'peach', 7).pipe(pairwise()); // $ExpectType Observable<[string | number, string | number]>
-  });
-
-  it('should enforce types', () => {
-    const o = of('apple', 'banana', 'peach').pipe(pairwise('lemon')); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const a = of({name: 'abc'}).pipe(pluck('name')); // $ExpectType Observable<string>
-  });
-
-  it('should support nested object of 2 layer depth', () => {
-    const a = of({a: {name: 'abc'}}).pipe(pluck('a', 'name')); // $ExpectType Observable<string>
-  });
-
-  it('should support nested object of 3 layer depth', () => {
-    const a = of({a: {b: {name: 'abc'}}}).pipe(pluck('a', 'b', 'name')); // $ExpectType Observable<string>
-  });
-
-  it('should support nested object of 4 layer depth', () => {
-    const a = of({a: {b: {c: {name: 'abc'}}}}).pipe(
-      pluck('a', 'b', 'c', 'name')
-    ); // $ExpectType Observable<string>
-  });
-
-  it('should support nested object of 5 layer depth', () => {
-    const a = of({a: {b: {c: {d: {name: 'abc'}}}}}).pipe(
-      pluck('a', 'b', 'c', 'd', 'name')
-    ); // $ExpectType Observable<string>
-  });
-
-  it('should support nested object of 6 layer depth', () => {
-    const a = of({a: {b: {c: {d: {e: {name: 'abc'}}}}}}).pipe(
-      pluck('a', 'b', 'c', 'd', 'e', 'name')
-    ); // $ExpectType Observable<string>
-  });
-
-  it('should support nested object of more than 6 layer depth', () => {
-    const a = of({a: {b: {c: {d: {e: {f: {name: 'abc'}}}}}}}).pipe(
-      pluck('a', 'b', 'c', 'd', 'e', 'f', 'name')
-    ); // $ExpectType Observable<unknown>
-  });
-
-  it('should accept existing keys only', () => {
-    const a = of({name: 'abc'}).pipe(pluck('xyz')); // $ExpectType Observable<unknown>
-  });
-
-  it('should not accept empty parameter', () => {
-    const a = of({name: 'abc'}).pipe(pluck()); // $ExpectType Observable<unknown>
-  });
-
-  it('should not accept a number when plucking an object', () => {
-    const a = of({name: 'abc'}).pipe(pluck(1)); // $ExpectError
-  });
-
-  it("should not infer type from the variable if key doesn't exist", () => {
-    const a: Observable<number> = of({name: 'abc'}).pipe(pluck('xyz')); // $ExpectError
-  });
-
-  it('should accept a spread of arguments', () => {
-    const obj = {
-      foo: {
-        bar: {
-          baz: 123
-        }
-      }
-    };
-
-    const path = ['foo', 'bar', 'baz'];
-    const a = of(obj).pipe(pluck(...path)); // $ExpectType Observable<unknown>
-
-    const path2 = ['bar', 'baz'];
-    const b = of(obj).pipe(pluck('foo', ...path2)); // $ExpectType Observable<unknown>
-  });
-
-  it('should support arrays', () => {
-    const a = of(['abc']).pipe(pluck(0)); // $ExpectType Observable<string>
-  });
-
-  it('should support picking by symbols', () => {
-    const sym = Symbol('sym');
-    const a = of({[sym]: 'abc'}).pipe(pluck(sym)); // $ExpectType Observable<string>
-  });
 
   it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(race()); // $ExpectType Observable<string>
@@ -767,40 +602,6 @@ describe('xxx', () => {
   });
 
   it('should infer correctly', () => {
-    const o = of('foo').pipe(single()); // $ExpectType Observable<string>
-  });
-
-  it('should support a value', () => {
-    const o = of('foo').pipe(single(value => value === 'foo')); // $ExpectType Observable<string>
-  });
-
-  it('should support an index', () => {
-    const o = of('foo').pipe(single((value, index) => index === 2)); // $Observable<string>
-  });
-
-  it('should support a source', () => {
-    const o = of('foo').pipe(single((value, index, source) => value === 'foo')); // $Observable<string>
-  });
-
-  it('should enforce value type', () => {
-    const o = of('foo').pipe(single((value: number) => value === 2)); // $ExpectError
-  });
-
-  it('should enforce return type', () => {
-    const o = of('foo').pipe(single(value => value)); // $ExpectError
-  });
-
-  it('should enforce index type', () => {
-    const o = of('foo').pipe(single((value, index: string) => index === '2')); // $ExpectError
-  });
-
-  it('should enforce source type', () => {
-    const o = of('foo').pipe(
-      single((value, index, source: Observable<number>) => value === 'foo')
-    ); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(subscribeOn(asyncScheduler)); // $ExpectType Observable<string>
   });
 
@@ -836,68 +637,6 @@ describe('xxx', () => {
 
   it('should enforce type for next observer function', () => {
     const a = of(1, 2, 3).pipe(tap({next: (x: string) => {}})); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(throttle(() => timer(47))); // $ExpectType Observable<number>
-  });
-
-  it('should infer correctly with a Promise', () => {
-    const o = of(1, 2, 3).pipe(
-      throttle(
-        () => new Promise<boolean>(() => {})
-      )
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should support a config', () => {
-    const o = of(1, 2, 3).pipe(
-      throttle(() => timer(47), {leading: true, trailing: true})
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(throttle()); // $ExpectError
-    const p = of(1, 2, 3).pipe(throttle(() => {})); // $ExpectError
-  });
-
-  it('should enforce config types', () => {
-    const o = of(1, 2, 3).pipe(throttle(() => timer(47), {x: 1})); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      throttle(() => timer(47), {leading: 1, trailing: 1})
-    ); // $ExpectError
-    const q = of(1, 2, 3).pipe(throttle(() => timer(47), null)); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(throttleTime(47)); // $ExpectType Observable<number>
-  });
-
-  it('should support a scheduler', () => {
-    const o = of(1, 2, 3).pipe(throttleTime(47, asyncScheduler)); // $ExpectType Observable<number>
-  });
-
-  it('should support a config', () => {
-    const o = of(1, 2, 3).pipe(
-      throttleTime(47, asyncScheduler, {leading: true, trailing: true})
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(throttleTime()); // $ExpectError
-    const p = of(1, 2, 3).pipe(throttleTime('foo')); // $ExpectError
-  });
-
-  it('should enforce scheduler types', () => {
-    const o = of(1, 2, 3).pipe(throttleTime(47, null)); // $ExpectError
-  });
-
-  it('should enforce config types', () => {
-    const o = of(1, 2, 3).pipe(throttleTime(47, asyncScheduler, {x: 1})); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      throttleTime(47, asyncScheduler, {leading: 1, trailing: 1})
-    ); // $ExpectError
-    const q = of(1, 2, 3).pipe(throttleTime(47, asyncScheduler, null)); // $ExpectError
   });
 
   it('should infer correctly', () => {

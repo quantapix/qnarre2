@@ -2,6 +2,656 @@ import {hot, cold, expectSource, expectSubscriptions} from './testing';
 
 declare function asDiagram(arg: string): Function;
 
+describe('audit', () => {
+  let testScheduler: TestScheduler;
+
+  beforeEach(() => {
+    testScheduler = new TestScheduler(sourceMatcher);
+  });
+
+  asDiagram('audit')('should emit the last value in each time window', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('    -a-xy-----b--x--cxxx-|');
+      const e1subs = '    ^--------------------!';
+      const e2 = cold('    ----|                ');
+      const e2subs = [
+        '                 -^---!                ',
+        '                 ----------^---!        ',
+        '                 ----------------^---!  '
+      ];
+      const expected = '  -----y--------x-----x|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(audit(() => of('foo'))); // $ExpectType Observable<number>
+    const p = of(1, 2, 3).pipe(audit(() => NEVER)); // $ExpectType Observable<number>
+  });
+
+  it('should infer correctly with a Promise', () => {
+    const o = of(1, 2, 3).pipe(
+      audit(
+        () => new Promise<string>(() => {})
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(audit()); // $ExpectError
+    const p = of(1, 2, 3).pipe(audit((p: string) => of('foo'))); // $ExpectError
+  });
+
+  it('should delay the source if values are not emitted often enough', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a--------b-----c----|');
+      const e1subs = '  ^--------------------!';
+      const e2 = cold('  ----|                ');
+      const e2subs = [
+        '               -^---!                ',
+        '               ----------^---!       ',
+        '               ----------------^---! '
+      ];
+      const expected = '-----a--------b-----c|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should audit with duration Observable using next to close the duration', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('   -a-xy-----b--x--cxxx-|');
+      const e1subs = '   ^--------------------!';
+      const e2 = cold('   ----x-y-z            ');
+      const e2subs = [
+        '                -^---!                ',
+        '                ----------^---!       ',
+        '                ----------------^---! '
+      ];
+      const expected = ' -----y--------x-----x|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should interrupt source and duration when result is unsubscribed early', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a-x-y-z-xyz-x-y-z----b--x-x-|');
+      const unsub = '   --------------!               ';
+      const e1subs = '  ^-------------!               ';
+      const e2 = cold('  -----x------------|          ');
+      const e2subs = [
+        '               -^----!                       ',
+        '               -------^----!                 ',
+        '               -------------^!               '
+      ];
+      const expected = '------y-----z--               ';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result, unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a-x-y-z-xyz-x-y-z----b--x-x-|');
+      const e1subs = '  ^-------------!               ';
+      const e2 = cold('  -----x------------|          ');
+      const e2subs = [
+        '               -^----!                       ',
+        '               -------^----!                 ',
+        '               -------------^!               '
+      ];
+      const expected = '------y-----z--               ';
+      const unsub = '   --------------!               ';
+
+      const result = e1.pipe(
+        mergeMap((x: string) => of(x)),
+        audit(() => e2),
+        mergeMap((x: string) => of(x))
+      );
+
+      expectSource(result, unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should handle a busy producer emitting a regular repeating sequence', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  abcdefabcdefabcdefabcdefa|');
+      const e1subs = '  ^------------------------!';
+      const e2 = cold(' -----|                    ');
+      const e2subs = [
+        '               ^----!                    ',
+        '               ------^----!              ',
+        '               ------------^----!        ',
+        '               ------------------^----!  ',
+        '               ------------------------^!'
+      ];
+      const expected = '-----f-----f-----f-----f-|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should mirror source if durations are always empty', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  abcdefabcdefabcdefabcdefa|');
+      const e1subs = '  ^------------------------!';
+      const e2 = cold(' |');
+      const expected = 'abcdefabcdefabcdefabcdefa|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should mirror source if durations are EMPTY', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('abcdefabcdefabcdefabcdefa|');
+      const e1subs = '^------------------------!';
+      const e2 = EMPTY;
+      const expected = 'abcdefabcdefabcdefabcdefa|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should emit no values if duration is a never', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  ----abcdefabcdefabcdefabcdefa|');
+      const e1subs = '  ^----------------------------!';
+      const e2 = cold(' -');
+      const e2subs = '  ----^------------------------!';
+      const expected = '-----------------------------|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should unsubscribe duration Observable when source raise error', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  ----abcdefabcdefabcdefabcdefa#');
+      const e1subs = '  ^----------------------------!';
+      const e2 = cold(' -');
+      const e2subs = '  ----^------------------------!';
+      const expected = '-----------------------------#';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should mirror source if durations are synchronous observables', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  abcdefabcdefabcdefabcdefa|');
+      const e1subs = '  ^------------------------!';
+      const e2 = of('one single value');
+      const expected = 'abcdefabcdefabcdefabcdefa|';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
+
+  it('should raise error as soon as just-throw duration is used', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  ----abcdefabcdefabcdefabcdefa|');
+      const e1subs = '  ^---!                         ';
+      const e2 = cold(' #');
+      const e2subs = '  ----(^!)                      ';
+      const expected = '----(-#)                      ';
+
+      const result = e1.pipe(audit(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  it('should audit using durations of varying lengths', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  abcdefabcdabcdefghabca|');
+      const e1subs = '  ^---------------------!';
+      const e2 = [
+        cold('          -----|                 '),
+        cold('              ---|               '),
+        cold('                  -------|       '),
+        cold('                        --|      '),
+        cold('                           ----| ')
+      ];
+      const e2subs = [
+        '               ^----!                  ',
+        '               ------^--!              ',
+        '               ----------^------!      ',
+        '               ------------------^-!   ',
+        '               ---------------------^! '
+      ];
+      const expected = '-----f---d-------h--c-| ';
+
+      let i = 0;
+      const result = e1.pipe(audit(() => e2[i++]));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      for (let j = 0; j < e2.length; j++) {
+        expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
+      }
+    });
+  });
+
+  it('should propagate error from duration Observable', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  abcdefabcdabcdefghabca|');
+      const e1subs = '  ^----------------!     ';
+      const e2 = [
+        cold('          -----|                 '),
+        cold('              ---|               '),
+        cold('                  -------#       ')
+      ];
+      const e2subs = [
+        '               ^----!                 ',
+        '               ------^--!             ',
+        '               ----------^------!     '
+      ];
+      const expected = '-----f---d-------#     ';
+
+      let i = 0;
+      const result = e1.pipe(audit(() => e2[i++]));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      for (let j = 0; j < e2.length; j++) {
+        expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
+      }
+    });
+  });
+
+  it('should propagate error thrown from durationSelector function', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('abcdefabcdabcdefghabca|   ');
+      const e1subs = '^---------!               ';
+      const e2 = [
+        cold('          -----|                    '),
+        cold('              ---|                  '),
+        cold('                  -------|          ')
+      ];
+      const e2subs = [
+        '               ^----!                     ',
+        '               ------^--!                   '
+      ];
+      const expected = '-----f---d#                ';
+
+      let i = 0;
+      const result = e1.pipe(
+        audit(() => {
+          if (i === 2) {
+            throw 'error';
+          }
+          return e2[i++];
+        })
+      );
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      for (let j = 0; j < e2subs.length; j++) {
+        expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
+      }
+    });
+  });
+
+  it('should complete when source does not emit', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -----|');
+      const subs = '    ^----!';
+      const expected = '-----|';
+      function durationSelector() {
+        return cold('-----|');
+      }
+
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should raise error when source does not emit and raises error', () => {
+    testScheduler.run(({hot, cold, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -----#');
+      const subs = '    ^----!';
+      const expected = '-----#';
+      function durationSelector() {
+        return cold('   -----|');
+      }
+
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle an empty source', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' |');
+      const subs = '    (^!)';
+      const expected = '|';
+      function durationSelector() {
+        return cold('   -----|');
+      }
+
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle a never source', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' -');
+      const subs = '    ^';
+      const expected = '-';
+      function durationSelector() {
+        return cold('   -----|');
+      }
+
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle a throw source', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' #');
+      const subs = '    (^!)';
+      const expected = '#';
+      function durationSelector() {
+        return cold('   -----|');
+      }
+
+      expectSource(e1.pipe(audit(durationSelector))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should audit by promise resolves', (done: MochaDone) => {
+    const e1 = interval(10).pipe(take(5));
+    const expected = [0, 1, 2, 3];
+
+    e1.pipe(
+      audit(() => {
+        return new Promise((resolve: any) => {
+          resolve(42);
+        });
+      })
+    ).subscribe(
+      (x: number) => {
+        expect(x).to.equal(expected.shift());
+      },
+      () => {
+        done(new Error('should not be called'));
+      },
+      () => {
+        expect(expected.length).to.equal(0);
+        done();
+      }
+    );
+  });
+
+  it('should raise error when promise rejects', (done: MochaDone) => {
+    const e1 = interval(10).pipe(take(10));
+    const expected = [0, 1, 2];
+    const error = new Error('error');
+
+    e1.pipe(
+      audit((x: number) => {
+        if (x === 3) {
+          return new Promise((resolve: any, reject: any) => {
+            reject(error);
+          });
+        } else {
+          return new Promise((resolve: any) => {
+            resolve(42);
+          });
+        }
+      })
+    ).subscribe(
+      (x: number) => {
+        expect(x).to.equal(expected.shift());
+      },
+      (err: any) => {
+        expect(err).to.be.an('error', 'error');
+        expect(expected.length).to.equal(0);
+        done();
+      },
+      () => {
+        done(new Error('should not be called'));
+      }
+    );
+  });
+});
+
+describe('auditTime', () => {
+  let testScheduler: TestScheduler;
+
+  beforeEach(() => {
+    testScheduler = new TestScheduler(sourceMatcher);
+  });
+
+  asDiagram('auditTime(5)')(
+    'should emit the last value in each time window',
+    () => {
+      testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+        const e1 = hot('  -a-x-y----b---x-cx---|');
+        const subs = '    ^--------------------!';
+        const expected = '------y--------x-----|';
+
+        const result = e1.pipe(auditTime(5, testScheduler));
+
+        expectSource(result).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(subs);
+      });
+    }
+  );
+  it('should infer correctly', () => {
+    const o = of('a', 'b', 'c').pipe(auditTime(47)); // $ExpectType Observable<string>
+  });
+
+  it('should support a scheduler', () => {
+    const o = of('a', 'b', 'c').pipe(auditTime(47, asyncScheduler)); // $ExpectType Observable<string>
+  });
+
+  it('should enforce types', () => {
+    const o = of('a', 'b', 'c').pipe(auditTime()); // $ExpectError
+    const p = of('a', 'b', 'c').pipe(auditTime('47')); // $ExpectError
+    const q = of('a', 'b', 'c').pipe(auditTime(47, 'foo')); // $ExpectError
+  });
+
+  it('should auditTime events by 5 time units', (done: MochaDone) => {
+    of(1, 2, 3)
+      .pipe(auditTime(5))
+      .subscribe(
+        (x: number) => {
+          done(new Error('should not be called'));
+        },
+        null,
+        () => {
+          done();
+        }
+      );
+  });
+
+  it('should auditTime events multiple times', () => {
+    const expected = ['1-2', '2-2'];
+    concat(
+      timer(0, 10, testScheduler).pipe(
+        take(3),
+        map((x: number) => '1-' + x)
+      ),
+      timer(80, 10, testScheduler).pipe(
+        take(5),
+        map((x: number) => '2-' + x)
+      )
+    )
+      .pipe(auditTime(50, testScheduler))
+      .subscribe((x: string) => {
+        expect(x).to.equal(expected.shift());
+      });
+
+    testScheduler.flush();
+  });
+
+  it('should delay the source if values are not emitted often enough', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a--------b-----c----|');
+      const subs = '    ^--------------------!';
+      const expected = '------a--------b-----|';
+
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle a busy producer emitting a regular repeating sequence', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  abcdefabcdefabcdefabcdefa|');
+      const subs = '    ^------------------------!';
+      const expected = '-----f-----f-----f-----f-|';
+
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should complete when source does not emit', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -----|');
+      const subs = '    ^----!';
+      const expected = '-----|';
+
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should raise error when source does not emit and raises error', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -----#');
+      const subs = '    ^----!';
+      const expected = '-----#';
+
+      expectSource(e1.pipe(auditTime(1, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle an empty source', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' |');
+      const subs = '    (^!)';
+      const expected = '|';
+
+      expectSource(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle a never source', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' -');
+      const subs = '    ^';
+      const expected = '-';
+
+      expectSource(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should handle a throw source', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' #');
+      const subs = '    (^!)';
+      const expected = '#';
+
+      expectSource(e1.pipe(auditTime(3, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should not complete when source does not complete', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a--(bc)-------d----------------');
+      const unsub = '   -------------------------------!';
+      const subs = '    ^------------------------------!';
+      const expected = '------c-------------d-----------';
+
+      expectSource(e1.pipe(auditTime(5, testScheduler)), unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a--(bc)-------d----------------');
+      const subs = '    ^------------------------------!';
+      const expected = '------c-------------d-----------';
+      const unsub = '   -------------------------------!';
+
+      const result = e1.pipe(
+        mergeMap((x: string) => of(x)),
+        auditTime(5, testScheduler),
+        mergeMap((x: string) => of(x))
+      );
+
+      expectSource(result, unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+
+  it('should auditTime values until source raises error', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a--(bc)-------d---------------#');
+      const subs = '    ^------------------------------!';
+      const expected = '------c-------------d----------#';
+
+      expectSource(e1.pipe(auditTime(5, testScheduler))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
+});
+
 describe('debounce', () => {
   function getTimerSelector(x: number) {
     return () => timer(x, rxTestScheduler);
@@ -3146,6 +3796,219 @@ describe('sampleTime', () => {
   });
 });
 
+describe('single', () => {
+  asDiagram('single')(
+    'should raise error from empty predicate if observable emits multiple time',
+    () => {
+      const e1 = hot('--a--b--c--|');
+      const e1subs = '^    !      ';
+      const expected = '-----#      ';
+      const errorMsg = 'Sequence contains more than one element';
+
+      expectSource(e1.pipe(single())).toBe(expected, null, errorMsg);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    }
+  );
+
+  it('should infer correctly', () => {
+    const o = of('foo').pipe(single()); // $ExpectType Observable<string>
+  });
+
+  it('should support a value', () => {
+    const o = of('foo').pipe(single(value => value === 'foo')); // $ExpectType Observable<string>
+  });
+
+  it('should support an index', () => {
+    const o = of('foo').pipe(single((value, index) => index === 2)); // $Observable<string>
+  });
+
+  it('should support a source', () => {
+    const o = of('foo').pipe(single((value, index, source) => value === 'foo')); // $Observable<string>
+  });
+
+  it('should enforce value type', () => {
+    const o = of('foo').pipe(single((value: number) => value === 2)); // $ExpectError
+  });
+
+  it('should enforce return type', () => {
+    const o = of('foo').pipe(single(value => value)); // $ExpectError
+  });
+
+  it('should enforce index type', () => {
+    const o = of('foo').pipe(single((value, index: string) => index === '2')); // $ExpectError
+  });
+
+  it('should enforce source type', () => {
+    const o = of('foo').pipe(
+      single((value, index, source: Observable<number>) => value === 'foo')
+    ); // $ExpectError
+  });
+
+  it('should raise error from empty predicate if observable does not emit', () => {
+    const e1 = hot('--a--^--|');
+    const e1subs = '^  !';
+    const expected = '---#';
+
+    expectSource(e1.pipe(single())).toBe(expected, null, new EmptyError());
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should return only element from empty predicate if observable emits only once', () => {
+    const e1 = hot('--a--|');
+    const e1subs = '^    !';
+    const expected = '-----(a|)';
+
+    expectSource(e1.pipe(single())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should allow unsubscribing explicitly and early', () => {
+    const e1 = hot('--a--b--c--|');
+    const unsub = '   !        ';
+    const e1subs = '^  !        ';
+    const expected = '----        ';
+
+    expectSource(e1.pipe(single()), unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('--a--b--c--|');
+    const e1subs = '^  !        ';
+    const expected = '----        ';
+    const unsub = '   !        ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      single(),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error from empty predicate if observable emits error', () => {
+    const e1 = hot('--a--b^--#');
+    const e1subs = '^  !';
+    const expected = '---#';
+
+    expectSource(e1.pipe(single())).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error from predicate if observable emits error', () => {
+    const e1 = hot('--a--b^--#');
+    const e1subs = '^  !';
+    const expected = '---#';
+
+    const predicate = function (value: string) {
+      return value === 'c';
+    };
+
+    expectSource(e1.pipe(single(predicate))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error if predicate throws error', () => {
+    const e1 = hot('--a--b--c--d--|');
+    const e1subs = '^          !   ';
+    const expected = '-----------#   ';
+
+    const predicate = function (value: string) {
+      if (value !== 'd') {
+        return false;
+      }
+      throw 'error';
+    };
+
+    expectSource(e1.pipe(single(predicate))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should return element from predicate if observable have single matching element', () => {
+    const e1 = hot('--a--b--c--|');
+    const e1subs = '^          !';
+    const expected = '-----------(b|)';
+
+    const predicate = function (value: string) {
+      return value === 'b';
+    };
+
+    expectSource(e1.pipe(single(predicate))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error from predicate if observable have multiple matching element', () => {
+    const e1 = hot('--a--b--a--b--b--|');
+    const e1subs = '^          !      ';
+    const expected = '-----------#      ';
+
+    const predicate = function (value: string) {
+      return value === 'b';
+    };
+
+    expectSource(e1.pipe(single(predicate))).toBe(
+      expected,
+      null,
+      'Sequence contains more than one element'
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should raise error from predicate if observable does not emit', () => {
+    const e1 = hot('--a--^--|');
+    const e1subs = '^  !';
+    const expected = '---#';
+
+    const predicate = function (value: string) {
+      return value === 'a';
+    };
+
+    expectSource(e1.pipe(single(predicate))).toBe(
+      expected,
+      null,
+      new EmptyError()
+    );
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should return undefined from predicate if observable does not contain matching element', () => {
+    const e1 = hot('--a--b--c--|');
+    const e1subs = '^          !';
+    const expected = '-----------(z|)';
+
+    const predicate = function (value: string) {
+      return value === 'x';
+    };
+
+    expectSource(e1.pipe(single(predicate))).toBe(expected, {z: undefined});
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should call predicate with indices starting at 0', () => {
+    const e1 = hot('--a--b--c--|');
+    const e1subs = '^          !';
+    const expected = '-----------(b|)';
+
+    let indices: number[] = [];
+    const predicate = function (value: string, index: number) {
+      indices.push(index);
+      return value === 'b';
+    };
+
+    expectSource(
+      e1.pipe(
+        single(predicate),
+        tap(null, null, () => {
+          expect(indices).to.deep.equal([0, 1, 2]);
+        })
+      )
+    ).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+});
+
 describe('skip', () => {
   asDiagram('skip(3)')('should skip values before a total', () => {
     const source = hot('--a--b--c--d--e--|');
@@ -4870,5 +5733,765 @@ describe('takeWhile', () => {
         x => x
       ); // x is still string | number
     }
+  });
+});
+
+describe('throttle', () => {
+  asDiagram('throttle')(
+    'should immediately emit the first value in each time window',
+    () => {
+      const e1 = hot('-a-xy-----b--x--cxxx-|');
+      const e1subs = '^                    !';
+      const e2 = cold('----|                ');
+      const e2subs = [
+        ' ^   !                ',
+        '          ^   !       ',
+        '                ^   ! '
+      ];
+      const expected = '-a--------b-----c----|';
+
+      const result = e1.pipe(throttle(() => e2));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    }
+  );
+
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(throttle(() => timer(47))); // $ExpectType Observable<number>
+  });
+
+  it('should infer correctly with a Promise', () => {
+    const o = of(1, 2, 3).pipe(
+      throttle(
+        () => new Promise<boolean>(() => {})
+      )
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should support a config', () => {
+    const o = of(1, 2, 3).pipe(
+      throttle(() => timer(47), {leading: true, trailing: true})
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(throttle()); // $ExpectError
+    const p = of(1, 2, 3).pipe(throttle(() => {})); // $ExpectError
+  });
+
+  it('should enforce config types', () => {
+    const o = of(1, 2, 3).pipe(throttle(() => timer(47), {x: 1})); // $ExpectError
+    const p = of(1, 2, 3).pipe(
+      throttle(() => timer(47), {leading: 1, trailing: 1})
+    ); // $ExpectError
+    const q = of(1, 2, 3).pipe(throttle(() => timer(47), null)); // $ExpectError
+  });
+
+  it('should simply mirror the source if values are not emitted often enough', () => {
+    const e1 = hot('-a--------b-----c----|');
+    const e1subs = '^                    !';
+    const e2 = cold('----|                ');
+    const e2subs = [
+      ' ^   !                ',
+      '          ^   !       ',
+      '                ^   ! '
+    ];
+    const expected = '-a--------b-----c----|';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should throttle with duration Observable using next to close the duration', () => {
+    const e1 = hot('-a-xy-----b--x--cxxx-|');
+    const e1subs = '^                    !';
+    const e2 = cold('----x-y-z            ');
+    const e2subs = [
+      ' ^   !                ',
+      '          ^   !       ',
+      '                ^   ! '
+    ];
+    const expected = '-a--------b-----c----|';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should interrupt source and duration when result is unsubscribed early', () => {
+    const e1 = hot('-a-x-y-z-xyz-x-y-z----b--x-x-|');
+    const unsub = '              !               ';
+    const e1subs = '^             !               ';
+    const e2 = cold('------------------|          ');
+    const e2subs = ' ^            !               ';
+    const expected = '-a-------------               ';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('-a-x-y-z-xyz-x-y-z----b--x-x-|');
+    const e1subs = '^             !               ';
+    const e2 = cold('------------------|          ');
+    const e2subs = ' ^            !               ';
+    const expected = '-a-------------               ';
+    const unsub = '              !               ';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      throttle(() => e2),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should handle a busy producer emitting a regular repeating sequence', () => {
+    const e1 = hot('abcdefabcdefabcdefabcdefa|');
+    const e1subs = '^                        !';
+    const e2 = cold('-----|                    ');
+    const e2subs = [
+      '^    !                    ',
+      '      ^    !              ',
+      '            ^    !        ',
+      '                  ^    !  ',
+      '                        ^!'
+    ];
+    const expected = 'a-----a-----a-----a-----a|';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should mirror source if durations are always empty', () => {
+    const e1 = hot('abcdefabcdefabcdefabcdefa|');
+    const e1subs = '^                        !';
+    const e2 = cold('|');
+    const expected = 'abcdefabcdefabcdefabcdefa|';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should take only the first value emitted if duration is a never', () => {
+    const e1 = hot('----abcdefabcdefabcdefabcdefa|');
+    const e1subs = '^                            !';
+    const e2 = cold('-');
+    const e2subs = '    ^                        !';
+    const expected = '----a------------------------|';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should unsubscribe duration Observable when source raise error', () => {
+    const e1 = hot('----abcdefabcdefabcdefabcdefa#');
+    const e1subs = '^                            !';
+    const e2 = cold('-');
+    const e2subs = '    ^                        !';
+    const expected = '----a------------------------#';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should raise error as soon as just-throw duration is used', () => {
+    const e1 = hot('----abcdefabcdefabcdefabcdefa|');
+    const e1subs = '^   !                         ';
+    const e2 = cold('#');
+    const e2subs = '    (^!)                      ';
+    const expected = '----(a#)                      ';
+
+    const result = e1.pipe(throttle(() => e2));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should throttle using durations of constying lengths', () => {
+    const e1 = hot('abcdefabcdabcdefghabca|   ');
+    const e1subs = '^                     !   ';
+    const e2 = [
+      cold('-----|                    '),
+      cold('---|                '),
+      cold('-------|        '),
+      cold('--|     '),
+      cold('----|')
+    ];
+    const e2subs = [
+      '^    !                    ',
+      '      ^  !                ',
+      '          ^      !        ',
+      '                  ^ !     ',
+      '                     ^!   '
+    ];
+    const expected = 'a-----a---a-------a--a|   ';
+
+    let i = 0;
+    const result = e1.pipe(throttle(() => e2[i++]));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    for (let j = 0; j < e2.length; j++) {
+      expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
+    }
+  });
+
+  it('should propagate error from duration Observable', () => {
+    const e1 = hot('abcdefabcdabcdefghabca|   ');
+    const e1subs = '^                !        ';
+    const e2 = [
+      cold('-----|                    '),
+      cold('---|                '),
+      cold('-------#        ')
+    ];
+    const e2subs = [
+      '^    !                    ',
+      '      ^  !                ',
+      '          ^      !        '
+    ];
+    const expected = 'a-----a---a------#        ';
+
+    let i = 0;
+    const result = e1.pipe(throttle(() => e2[i++]));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    for (let j = 0; j < e2.length; j++) {
+      expectSubscriptions(e2[j].subscriptions).toBe(e2subs[j]);
+    }
+  });
+
+  it('should propagate error thrown from durationSelector function', () => {
+    const s1 = hot('--^--x--x--x--x--x--x--e--x--x--x--|');
+    const s1Subs = '^                    !';
+    const n1 = cold('----|');
+    const n1Subs = [
+      '   ^   !                          ',
+      '         ^   !                    ',
+      '               ^   !              '
+    ];
+    const exp = '---x-----x-----x-----(e#)';
+
+    let i = 0;
+    const result = s1.pipe(
+      throttle(() => {
+        if (i++ === 3) {
+          throw new Error('lol');
+        }
+        return n1;
+      })
+    );
+    expectSource(result).toBe(exp, undefined, new Error('lol'));
+    expectSubscriptions(s1.subscriptions).toBe(s1Subs);
+    expectSubscriptions(n1.subscriptions).toBe(n1Subs);
+  });
+
+  it('should complete when source does not emit', () => {
+    const e1 = hot('-----|');
+    const subs = '^    !';
+    const expected = '-----|';
+    function durationSelector() {
+      return cold('-----|');
+    }
+
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should raise error when source does not emit and raises error', () => {
+    const e1 = hot('-----#');
+    const subs = '^    !';
+    const expected = '-----#';
+    function durationSelector() {
+      return cold('-----|');
+    }
+
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle an empty source', () => {
+    const e1 = cold('|');
+    const subs = '(^!)';
+    const expected = '|';
+    function durationSelector() {
+      return cold('-----|');
+    }
+
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle a never source', () => {
+    const e1 = cold('-');
+    const subs = '^';
+    const expected = '-';
+    function durationSelector() {
+      return cold('-----|');
+    }
+
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle a throw source', () => {
+    const e1 = cold('#');
+    const subs = '(^!)';
+    const expected = '#';
+    function durationSelector() {
+      return cold('-----|');
+    }
+
+    expectSource(e1.pipe(throttle(durationSelector))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should throttle by promise resolves', (done: MochaDone) => {
+    const e1 = concat(
+      of(1),
+      timer(10).pipe(mapTo(2)),
+      timer(10).pipe(mapTo(3)),
+      timer(50).pipe(mapTo(4))
+    );
+    const expected = [1, 2, 3, 4];
+
+    e1.pipe(
+      throttle(() => {
+        return new Promise((resolve: any) => {
+          resolve(42);
+        });
+      })
+    ).subscribe(
+      (x: number) => {
+        expect(x).to.equal(expected.shift());
+      },
+      () => {
+        done(new Error('should not be called'));
+      },
+      () => {
+        expect(expected.length).to.equal(0);
+        done();
+      }
+    );
+  });
+
+  it('should raise error when promise rejects', (done: MochaDone) => {
+    const e1 = concat(
+      of(1),
+      timer(10).pipe(mapTo(2)),
+      timer(10).pipe(mapTo(3)),
+      timer(50).pipe(mapTo(4))
+    );
+    const expected = [1, 2, 3];
+    const error = new Error('error');
+
+    e1.pipe(
+      throttle((x: number) => {
+        if (x === 3) {
+          return new Promise((resolve: any, reject: any) => {
+            reject(error);
+          });
+        } else {
+          return new Promise((resolve: any) => {
+            resolve(42);
+          });
+        }
+      })
+    ).subscribe(
+      (x: number) => {
+        expect(x).to.equal(expected.shift());
+      },
+      (err: any) => {
+        expect(err).to.be.an('error', 'error');
+        expect(expected.length).to.equal(0);
+        done();
+      },
+      () => {
+        done(new Error('should not be called'));
+      }
+    );
+  });
+
+  type('should support selectors of the same type', () => {
+    /* tslint:disable:no-unused-variable */
+    let o: Observable<number>;
+    let s: Observable<number>;
+    let r: Observable<number> = o!.pipe(throttle(n => s));
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type('should support selectors of a different type', () => {
+    /* tslint:disable:no-unused-variable */
+    let o: Observable<number>;
+    let s: Observable<string>;
+    let r: Observable<number> = o!.pipe(throttle(n => s));
+    /* tslint:enable:no-unused-variable */
+  });
+
+  describe('throttle(fn, { leading: true, trailing: true })', () => {
+    asDiagram('throttle(fn, { leading: true, trailing: true })')(
+      'should immediately emit the first value in each time window',
+      () => {
+        const e1 = hot('-a-xy-----b--x--cxxx------|');
+        const e1subs = '^                         !';
+        const e2 = cold('----|                     ');
+        const e2subs = [
+          ' ^   !                     ',
+          '     ^   !                 ',
+          '          ^   !            ',
+          '              ^   !        ',
+          '                  ^   !    ',
+          '                      ^   !'
+        ];
+        const expected = '-a---y----b---x---x---x---|';
+
+        const result = e1.pipe(
+          throttle(() => e2, {leading: true, trailing: true})
+        );
+
+        expectSource(result).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+        expectSubscriptions(e2.subscriptions).toBe(e2subs);
+      }
+    );
+
+    it('should work for individual values', () => {
+      const s1 = hot('-^-x------------------|');
+      const s1Subs = '^                    !';
+      const n1 = cold('------------------------|');
+      const n1Subs = ['  ^                  !'];
+      const exp = '--x------------------|';
+
+      const result = s1.pipe(
+        throttle(() => n1, {leading: true, trailing: true})
+      );
+      expectSource(result).toBe(exp);
+      expectSubscriptions(s1.subscriptions).toBe(s1Subs);
+      expectSubscriptions(n1.subscriptions).toBe(n1Subs);
+    });
+  });
+
+  describe('throttle(fn, { leading: false, trailing: true })', () => {
+    asDiagram('throttle(fn, { leading: false, trailing: true })')(
+      'should immediately emit the first value in each time window',
+      () => {
+        const e1 = hot('-a-xy-----b--x--cxxx------|');
+        const e1subs = '^                         !';
+        const e2 = cold('----|                     ');
+        const e2subs = [
+          ' ^   !                     ',
+          '     ^   !                 ',
+          '          ^   !            ',
+          '              ^   !        ',
+          '                  ^   !    ',
+          '                      ^   !'
+        ];
+        const expected = '-a---y----b---x---x---x---|';
+
+        const result = e1.pipe(
+          throttle(() => e2, {leading: true, trailing: true})
+        );
+
+        expectSource(result).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+        expectSubscriptions(e2.subscriptions).toBe(e2subs);
+      }
+    );
+
+    it('should work for individual values', () => {
+      const s1 = hot('-^-x------------------|');
+      const s1Subs = '^                    !';
+      const n1 = cold('------------------------|');
+      const n1Subs = ['  ^                  !'];
+      const exp = '--x------------------|';
+
+      const result = s1.pipe(
+        throttle(() => n1, {leading: true, trailing: true})
+      );
+      expectSource(result).toBe(exp);
+      expectSubscriptions(s1.subscriptions).toBe(s1Subs);
+      expectSubscriptions(n1.subscriptions).toBe(n1Subs);
+    });
+  });
+});
+
+describe('throttleTime', () => {
+  asDiagram('throttleTime(50)')(
+    'should immediately emit the first value in each time window',
+    () => {
+      const e1 = hot('-a-x-y----b---x-cx---|');
+      const subs = '^                    !';
+      const expected = '-a--------b-----c----|';
+
+      const result = e1.pipe(throttleTime(50, rxTestScheduler));
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    }
+  );
+
+  it('should infer correctly', () => {
+    const o = of(1, 2, 3).pipe(throttleTime(47)); // $ExpectType Observable<number>
+  });
+
+  it('should support a scheduler', () => {
+    const o = of(1, 2, 3).pipe(throttleTime(47, asyncScheduler)); // $ExpectType Observable<number>
+  });
+
+  it('should support a config', () => {
+    const o = of(1, 2, 3).pipe(
+      throttleTime(47, asyncScheduler, {leading: true, trailing: true})
+    ); // $ExpectType Observable<number>
+  });
+
+  it('should enforce types', () => {
+    const o = of(1, 2, 3).pipe(throttleTime()); // $ExpectError
+    const p = of(1, 2, 3).pipe(throttleTime('foo')); // $ExpectError
+  });
+
+  it('should enforce scheduler types', () => {
+    const o = of(1, 2, 3).pipe(throttleTime(47, null)); // $ExpectError
+  });
+
+  it('should enforce config types', () => {
+    const o = of(1, 2, 3).pipe(throttleTime(47, asyncScheduler, {x: 1})); // $ExpectError
+    const p = of(1, 2, 3).pipe(
+      throttleTime(47, asyncScheduler, {leading: 1, trailing: 1})
+    ); // $ExpectError
+    const q = of(1, 2, 3).pipe(throttleTime(47, asyncScheduler, null)); // $ExpectError
+  });
+
+  it('should throttle events by 50 time units', (done: MochaDone) => {
+    of(1, 2, 3)
+      .pipe(throttleTime(50))
+      .subscribe(
+        (x: number) => {
+          expect(x).to.equal(1);
+        },
+        null,
+        done
+      );
+  });
+
+  it('should throttle events multiple times', () => {
+    const expected = ['1-0', '2-0'];
+    concat(
+      timer(0, 10, rxTestScheduler).pipe(
+        take(3),
+        map((x: number) => '1-' + x)
+      ),
+      timer(80, 10, rxTestScheduler).pipe(
+        take(5),
+        map((x: number) => '2-' + x)
+      )
+    )
+      .pipe(throttleTime(50, rxTestScheduler))
+      .subscribe((x: string) => {
+        expect(x).to.equal(expected.shift());
+      });
+
+    rxTestScheduler.flush();
+  });
+
+  it('should simply mirror the source if values are not emitted often enough', () => {
+    const e1 = hot('-a--------b-----c----|');
+    const subs = '^                    !';
+    const expected = '-a--------b-----c----|';
+
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle a busy producer emitting a regular repeating sequence', () => {
+    const e1 = hot('abcdefabcdefabcdefabcdefa|');
+    const subs = '^                        !';
+    const expected = 'a-----a-----a-----a-----a|';
+
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should complete when source does not emit', () => {
+    const e1 = hot('-----|');
+    const subs = '^    !';
+    const expected = '-----|';
+
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should raise error when source does not emit and raises error', () => {
+    const e1 = hot('-----#');
+    const subs = '^    !';
+    const expected = '-----#';
+
+    expectSource(e1.pipe(throttleTime(10, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle an empty source', () => {
+    const e1 = cold('|');
+    const subs = '(^!)';
+    const expected = '|';
+
+    expectSource(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle a never source', () => {
+    const e1 = cold('-');
+    const subs = '^';
+    const expected = '-';
+
+    expectSource(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should handle a throw source', () => {
+    const e1 = cold('#');
+    const subs = '(^!)';
+    const expected = '#';
+
+    expectSource(e1.pipe(throttleTime(30, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should throttle and does not complete when source does not completes', () => {
+    const e1 = hot('-a--(bc)-------d----------------');
+    const unsub = '                               !';
+    const subs = '^                              !';
+    const expected = '-a-------------d----------------';
+
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler)), unsub).toBe(
+      expected
+    );
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
+    const e1 = hot('-a--(bc)-------d----------------');
+    const subs = '^                              !';
+    const expected = '-a-------------d----------------';
+    const unsub = '                               !';
+
+    const result = e1.pipe(
+      mergeMap((x: string) => of(x)),
+      throttleTime(50, rxTestScheduler),
+      mergeMap((x: string) => of(x))
+    );
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  it('should throttle values until source raises error', () => {
+    const e1 = hot('-a--(bc)-------d---------------#');
+    const subs = '^                              !';
+    const expected = '-a-------------d---------------#';
+
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+  });
+
+  describe('throttleTime(fn, { leading: true, trailing: true })', () => {
+    asDiagram('throttleTime(fn, { leading: true, trailing: true })')(
+      'should immediately emit the first and last values in each time window',
+      () => {
+        const e1 = hot('-a-xy-----b--x--cxxx--|');
+        const e1subs = '^                     !';
+        const t = time('----|                  ');
+        const expected = '-a---y----b---x-c---x-|';
+
+        const result = e1.pipe(
+          throttleTime(t, rxTestScheduler, {leading: true, trailing: true})
+        );
+
+        expectSource(result).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      }
+    );
+
+    it('should emit the value if only a single one is given', () => {
+      const e1 = hot('-a--------------------|');
+      const t = time('----|                  ');
+      const expected = '-a--------------------|';
+
+      const result = e1.pipe(
+        throttleTime(t, rxTestScheduler, {leading: true, trailing: true})
+      );
+
+      expectSource(result).toBe(expected);
+    });
+  });
+
+  describe('throttleTime(fn, { leading: false, trailing: true })', () => {
+    asDiagram('throttleTime(fn, { leading: false, trailing: true })')(
+      'should immediately emit the last value in each time window',
+      () => {
+        const e1 = hot('-a-xy-----b--x--cxxx--|');
+        const e1subs = '^                     !';
+        const t = time('----|                  ');
+        const expected = '-----y--------x-----x-|';
+
+        const result = e1.pipe(
+          throttleTime(t, rxTestScheduler, {leading: false, trailing: true})
+        );
+
+        expectSource(result).toBe(expected);
+        expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      }
+    );
+
+    it('should emit the last throttled value when complete', () => {
+      const e1 = hot('-a-xy-----b--x--cxx|');
+      const e1subs = '^                  !';
+      const t = time('----|               ');
+      const expected = '-----y--------x----(x|)';
+
+      const result = e1.pipe(
+        throttleTime(t, rxTestScheduler, {leading: false, trailing: true})
+      );
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+
+    it('should emit the value if only a single one is given', () => {
+      const e1 = hot('-a--------------------|');
+      const t = time('----|                  ');
+      const expected = '-----a----------------|';
+
+      const result = e1.pipe(
+        throttleTime(t, rxTestScheduler, {leading: false, trailing: true})
+      );
+
+      expectSource(result).toBe(expected);
+    });
   });
 });

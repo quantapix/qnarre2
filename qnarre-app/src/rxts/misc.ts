@@ -20,7 +20,7 @@ export function delay<N, F, D>(
   delay: number | Date,
   scheduler: qt.Scheduler = async
 ): qt.MonoOper<N, F, D> {
-  const absoluteDelay = isDate(delay);
+  const absoluteDelay = qu.isDate(delay);
   const delayFor = absoluteDelay
     ? +delay - scheduler.now()
     : Math.abs(<number>delay);

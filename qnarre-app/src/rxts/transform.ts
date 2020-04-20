@@ -565,6 +565,318 @@ export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
   }
 }
 
+export function concatMap<T, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O
+): Lifter<T, Sourced<O>>;
+export function concatMap<T, R, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O,
+  resultSelector?: (
+    outerN: T,
+    innerValue: Sourced<O>,
+    outerX: number,
+    innerIndex: number
+  ) => R
+): Lifter<T, Sourced<O> | R> {
+  if (typeof resultSelector === 'function') {
+    return mergeMap(project, resultSelector, 1);
+  }
+  return mergeMap(project, 1);
+}
+
+export function concatMapTo<T, O extends SourceInput<any>>(
+  observable: O
+): Lifter<T, Sourced<O>>;
+export function concatMapTo<T, R, O extends SourceInput<any>>(
+  innerObservable: O,
+  resultSelector?: (
+    outerN: T,
+    innerValue: Sourced<O>,
+    outerX: number,
+    innerIndex: number
+  ) => R
+): Lifter<T, Sourced<O> | R> {
+  if (typeof resultSelector === 'function') {
+    return concatMap(() => innerObservable, resultSelector);
+  }
+  return concatMap(() => innerObservable);
+}
+
+export function exhaust<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
+export function exhaust<R>(): Lifter<any, R>;
+export function exhaust<N, F, D>(): Lifter<any, T> {
+  return (source: qt.Source<N, F, D>) => source.lift(new ExhaustO<N, F, D>());
+}
+
+class ExhaustO<N, F, D> implements qt.Operator<N, N, F, D> {
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(new ExhaustR(subscriber));
+  }
+}
+
+export class ExhaustR<N, F, D> extends Reactor<N, N, F, D> {
+  private hasCompleted = false;
+  private hasSubscription = false;
+
+  constructor(tgt: Subscriber<N, F, D>) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    if (!this.hasSubscription) {
+      this.hasSubscription = true;
+      this.add(subscribeToResult(this, n));
+    }
+  }
+
+  protected _done(d?: D) {
+    this.hasCompleted = true;
+    if (!this.hasSubscription) this.tgt.done();
+  }
+
+  reactDone(innerSub: Subscription) {
+    this.remove(innerSub);
+    this.hasSubscription = false;
+    if (this.hasCompleted) this.tgt.done();
+  }
+}
+
+export function exhaustMap<T, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O
+): Lifter<T, Sourced<O>>;
+export function exhaustMap<T, R, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O,
+  resultSelector?: (
+    outerN: T,
+    innerValue: Sourced<O>,
+    outerX: number,
+    innerIndex: number
+  ) => R
+): Lifter<T, Sourced<O> | R> {
+  if (resultSelector) {
+    // DEPRECATED PATH
+    return (source: qt.Source<N, F, D>) =>
+      source.pipe(
+        exhaustMap((a, i) =>
+          from(project(a, i)).pipe(
+            map((b: any, ii: any) => resultSelector(a, b, i, ii))
+          )
+        )
+      );
+  }
+  return (source: qt.Source<N, F, D>) => source.lift(new ExhaustMapO(project));
+}
+
+class ExhaustMapO<T, R> implements qt.Operator<T, R> {
+  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(new ExhaustMapR(subscriber, this.project));
+  }
+}
+
+export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private hasSubscription = false;
+  private hasCompleted = false;
+  private index = 0;
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private project: (value: T, index: number) => qt.SourceInput<R>
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    if (!this.hasSubscription) this.tryNext(n);
+  }
+
+  private tryNext(value: N) {
+    let result: SourceInput<R>;
+    const index = this.index++;
+    try {
+      result = this.project(value, index);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    this.hasSubscription = true;
+    this._innerSub(result, value, index);
+  }
+
+  private _innerSub(result: SourceInput<R>, value: T, index: number): void {
+    const innerSubscriber = new Actor(this, value, index);
+    const tgt = this.tgt as Subscription;
+    tgt.add(innerSubscriber);
+    const s = qu.subscribeToResult<T, R>(
+      this,
+      result,
+      undefined,
+      undefined,
+      innerSubscriber
+    );
+    if (s !== innerSubscriber) tgt.add(s);
+  }
+
+  protected _done(d?: D) {
+    this.hasCompleted = true;
+    if (!this.hasSubscription) this.tgt.done(d);
+    this.unsubscribe();
+  }
+
+  reactNext(
+    outerN: N,
+    innerValue: M,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actorr<N, M, F, D>
+  ): void {
+    this.tgt.next(innerValue);
+  }
+
+  reactFail(f?: F) {
+    this.tgt.fail(f);
+  }
+
+  reactDone(innerSub: Subscription) {
+    const tgt = this.tgt as Subscription;
+    tgt.remove(innerSub);
+    this.hasSubscription = false;
+    if (this.hasCompleted) this.tgt.done();
+  }
+}
+
+export function expand<T, R>(
+  project: (value: T, index: number) => SourceInput<R>,
+  concurrent?: number,
+  scheduler?: qt.Scheduler
+): Lifter<T, R>;
+export function expand<N, F, D>(
+  project: (value: T, index: number) => SourceInput<N, F, D>,
+  concurrent?: number,
+  scheduler?: qt.Scheduler
+): qt.MonoOper<N, F, D>;
+export function expand<T, R>(
+  project: (value: T, index: number) => SourceInput<R>,
+  concurrent: number = Number.POSITIVE_INFINITY,
+  scheduler?: qt.Scheduler
+): Lifter<T, R> {
+  concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
+
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new ExpandO(project, concurrent, scheduler));
+}
+
+export class ExpandO<T, R> implements qt.Operator<T, R> {
+  constructor(
+    private project: (value: T, index: number) => SourceInput<R>,
+    private concurrent: number,
+    private scheduler?: qt.Scheduler
+  ) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(
+      new ExpandR(subscriber, this.project, this.concurrent, this.scheduler)
+    );
+  }
+}
+
+export class ExpandR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private index = 0;
+  private active = 0;
+  private hasCompleted = false;
+  private buffer?: any[];
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private project: (value: T, index: number) => SourceInput<R>,
+    private concurrent: number,
+    private scheduler?: qt.Scheduler
+  ) {
+    super(tgt);
+    if (concurrent < Number.POSITIVE_INFINITY) this.buffer = [];
+  }
+
+  private static dispatch<N, M>(arg: DispatchArg<N, M>) {
+    const {subscriber, result, value, index} = arg;
+    subscriber.subscribeToProjection(result, value, index);
+  }
+
+  protected _next(n?: N) {
+    const tgt = this.tgt;
+    if (tgt.closed) {
+      this._done();
+      return;
+    }
+    const index = this.index++;
+    if (this.active < this.concurrent) {
+      tgt.next(n);
+      try {
+        const {project} = this;
+        const result = project(n, index);
+        if (!this.scheduler) {
+          this.subscribeToProjection(result, n, index);
+        } else {
+          const state: DispatchArg<N, M> = {
+            subscriber: this,
+            result,
+            n,
+            index
+          };
+          const tgt = this.tgt as Subscription;
+          tgt.add(
+            this.scheduler.schedule<DispatchArg<N, M>>(
+              Expand.dispatch as any,
+              0,
+              state
+            )
+          );
+        }
+      } catch (e) {
+        tgt.fail(e);
+      }
+    } else this.buffer!.push(n);
+  }
+
+  private subscribeToProjection(result: any, value: N, index: number) {
+    this.active++;
+    const tgt = this.tgt as Subscription;
+    tgt.add(subscribeToResult<T, R>(this, result, value, index));
+  }
+
+  protected _done(d?: D) {
+    this.hasCompleted = true;
+    if (this.hasCompleted && this.active === 0) this.tgt.done(d);
+
+    this.unsubscribe();
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: R,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, M, F, D>
+  ) {
+    this._next(innerValue);
+  }
+
+  reactDone(innerSub: Subscription) {
+    const buffer = this.buffer;
+    const tgt = this.tgt as Subscription;
+    tgt.remove(innerSub);
+    this.active--;
+    if (buffer && buffer.length > 0) this._next(buffer.shift());
+    if (this.hasCompleted && this.active === 0) this.tgt.done();
+  }
+}
+
+interface DispatchArg<T, R> {
+  subscriber: Expand<T, R>;
+  result: qt.SourceInput<R>;
+  value: any;
+  index: number;
+}
+
 export function groupBy<T, K>(
   keySelector: (value: N) => K
 ): Lifter<T, GroupedSource<K, T>>;
@@ -798,6 +1110,396 @@ export class MapToR<N, M, F, D> extends Subscriber<N, F, D> {
   }
 }
 
+export function mergeMap<T, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O,
+  concurrent?: number
+): Lifter<T, Sourced<O>>;
+export function mergeMap<T, R, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O,
+  resultSelector?:
+    | ((
+        outerN: T,
+        innerValue: Sourced<O>,
+        outerX: number,
+        innerIndex: number
+      ) => R)
+    | number,
+  concurrent: number = Number.POSITIVE_INFINITY
+): Lifter<T, Sourced<O> | R> {
+  if (typeof resultSelector === 'function') {
+    return (source: qt.Source<N, F, D>) =>
+      source.pipe(
+        mergeMap(
+          (a, i) =>
+            from(project(a, i)).pipe(
+              map((b: any, ii: number) => resultSelector(a, b, i, ii))
+            ),
+          concurrent
+        )
+      );
+  } else if (typeof resultSelector === 'number') {
+    concurrent = resultSelector;
+  }
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new MergeMapO(project, concurrent));
+}
+
+export class MergeMapO<T, R> implements qt.Operator<T, R> {
+  constructor(
+    private project: (value: T, index: number) => SourceInput<R>,
+    private concurrent: number = Number.POSITIVE_INFINITY
+  ) {}
+
+  call(observer: Subscriber<R>, source: any): any {
+    return source.subscribe(
+      new MergeMapR(observer, this.project, this.concurrent)
+    );
+  }
+}
+
+export class MergeMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private hasCompleted = false;
+  private buffer: T[] = [];
+  private active = 0;
+  protected index = 0;
+
+  constructor(
+    tgt: Subscriber<R>,
+    private project: (value: T, index: number) => SourceInput<R>,
+    private concurrent = Number.POSITIVE_INFINITY
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    if (this.active < this.concurrent) this._tryNext(n);
+    else this.buffer.push(n);
+  }
+
+  protected _tryNext(value: N) {
+    let result: SourceInput<R>;
+    const index = this.index++;
+    try {
+      result = this.project(value, index);
+    } catch (err) {
+      this.tgt.fail(err);
+      return;
+    }
+    this.active++;
+    this._innerSub(result, value, index);
+  }
+
+  private _innerSub(ish: SourceInput<R>, value: T, index: number): void {
+    const innerSubscriber = new ActorSubscriber(this, value, index);
+    const tgt = this.tgt as Subscription;
+    tgt.add(innerSubscriber);
+    const innerSubscription = qu.subscribeToResult<T, R>(
+      this,
+      ish,
+      undefined,
+      undefined,
+      innerSubscriber
+    );
+    if (innerSubscription !== innerSubscriber) {
+      tgt.add(innerSubscription);
+    }
+  }
+
+  protected _done(d?: D) {
+    this.hasCompleted = true;
+    if (this.active === 0 && this.buffer.length === 0) {
+      this.tgt.done(d);
+    }
+    this.unsubscribe();
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: R,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, M, F, D>
+  ): void {
+    this.tgt.next(innerValue);
+  }
+
+  reactDone(innerSub: Subscription): void {
+    const buffer = this.buffer;
+    this.remove(innerSub);
+    this.active--;
+    if (buffer.length > 0) {
+      this._next(buffer.shift()!);
+    } else if (this.active === 0 && this.hasCompleted) {
+      this.tgt.done(d);
+    }
+  }
+}
+
+export function mergeMapTo<O extends SourceInput<any>>(
+  innerObservable: O,
+  concurrent?: number
+): Lifter<any, Sourced<O>>;
+export function mergeMapTo<T, R, O extends SourceInput<any>>(
+  innerObservable: O,
+  resultSelector?:
+    | ((
+        outerN: T,
+        innerValue: Sourced<O>,
+        outerX: number,
+        innerIndex: number
+      ) => R)
+    | number,
+  concurrent: number = Number.POSITIVE_INFINITY
+): Lifter<T, Sourced<O> | R> {
+  if (typeof resultSelector === 'function') {
+    return mergeMap(() => innerObservable, resultSelector, concurrent);
+  }
+  if (typeof resultSelector === 'number') {
+    concurrent = resultSelector;
+  }
+  return mergeMap(() => innerObservable, concurrent);
+}
+
+export function mergeScan<T, R>(
+  accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
+  seed: R,
+  concurrent: number = Number.POSITIVE_INFINITY
+): Lifter<T, R> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new MergeScanO(accumulator, seed, concurrent));
+}
+
+export class MergeScanO<T, R> implements qt.Operator<T, R> {
+  constructor(
+    private accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
+    private seed: R,
+    private concurrent: number
+  ) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(
+      new MergeScanR(subscriber, this.accumulator, this.seed, this.concurrent)
+    );
+  }
+}
+
+export class MergeScanR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private hasValue = false;
+  private hasCompleted = false;
+  private buffer: qt.Source<any, F, D>[] = [];
+  private active = 0;
+  protected index = 0;
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private accumulator: (acc: M, value: N, index: number) => SourceInput<R>,
+    private acc: M,
+    private concurrent: number
+  ) {
+    super(tgt);
+  }
+
+  protected _next(value: any): void {
+    if (this.active < this.concurrent) {
+      const index = this.index++;
+      const tgt = this.tgt;
+      let ish;
+      try {
+        const {accumulator} = this;
+        ish = accumulator(this.acc, value, index);
+      } catch (e) {
+        return tgt.fail(e);
+      }
+      this.active++;
+      this._innerSub(ish, value, index);
+    } else {
+      this.buffer.push(value);
+    }
+  }
+
+  private _innerSub(ish: any, value: T, index: number): void {
+    const innerSubscriber = new ActorSubscriber(this, value, index);
+    const tgt = this.tgt as Subscription;
+    tgt.add(innerSubscriber);
+    const innerSubscription = qu.subscribeToResult<T, R>(
+      this,
+      ish,
+      undefined,
+      undefined,
+      innerSubscriber
+    );
+    if (innerSubscription !== innerSubscriber) {
+      tgt.add(innerSubscription);
+    }
+  }
+
+  protected _done(d?: D) {
+    this.hasCompleted = true;
+    if (this.active === 0 && this.buffer.length === 0) {
+      if (this.hasValue === false) {
+        this.tgt.next(this.acc);
+      }
+      this.tgt.done(d);
+    }
+    this.unsubscribe();
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: R,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, M, F, D>
+  ): void {
+    const {tgt} = this;
+    this.acc = innerValue;
+    this.hasValue = true;
+    tgt.next(innerValue);
+  }
+
+  reactDone(innerSub: Subscription): void {
+    const buffer = this.buffer;
+    const tgt = this.tgt as Subscription;
+    tgt.remove(innerSub);
+    this.active--;
+    if (buffer.length > 0) {
+      this._next(buffer.shift());
+    } else if (this.active === 0 && this.hasCompleted) {
+      if (this.hasValue === false) {
+        this.tgt.next(this.acc);
+      }
+      this.tgt.done(d);
+    }
+  }
+}
+
+export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
+  return (source: qt.Source<N, F, D>) => source.lift(new PairwiseO());
+}
+
+class PairwiseO<N, F, D> implements qt.Operator<T, [T, T]> {
+  call(subscriber: Subscriber<[T, T]>, source: any): any {
+    return source.subscribe(new PairwiseR(subscriber));
+  }
+}
+
+class PairwiseR<N, F, D> extends Subscriber<N, F, D> {
+  private prev: T | undefined;
+  private hasPrev = false;
+
+  constructor(tgt: Subscriber<[T, T]>) {
+    super(tgt);
+  }
+
+  _next(value: N): void {
+    let pair: [T, T] | undefined;
+
+    if (this.hasPrev) {
+      pair = [this.prev!, value];
+    } else {
+      this.hasPrev = true;
+    }
+
+    this.prev = value;
+
+    if (pair) {
+      this.tgt.next(pair);
+    }
+  }
+}
+
+export function partition<N, F, D>(
+  predicate: (value: T, index: number) => boolean,
+  thisArg?: any
+): UnaryFun<Observable<N, F, D>, [Observable<N, F, D>, qt.Source<N, F, D>]> {
+  return (source: qt.Source<N, F, D>) =>
+    [
+      filter(predicate, thisArg)(source),
+      filter(not(predicate, thisArg) as any)(source)
+    ] as [Observable<N, F, D>, qt.Source<N, F, D>];
+}
+
+export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;
+export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
+  k1: K1,
+  k2: K2
+): Lifter<T, T[K1][K2]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2]
+>(k1: K1, k2: K2, k3: K3): Lifter<T, T[K1][K2][K3]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3]
+>(k1: K1, k2: K2, k3: K3, k4: K4): Lifter<T, T[K1][K2][K3][K4]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4]
+>(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): Lifter<T, T[K1][K2][K3][K4][K5]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4],
+  K6 extends keyof T[K1][K2][K3][K4][K5]
+>(
+  k1: K1,
+  k2: K2,
+  k3: K3,
+  k4: K4,
+  k5: K5,
+  k6: K6
+): Lifter<T, T[K1][K2][K3][K4][K5][K6]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4],
+  K6 extends keyof T[K1][K2][K3][K4][K5]
+>(
+  k1: K1,
+  k2: K2,
+  k3: K3,
+  k4: K4,
+  k5: K5,
+  k6: K6,
+  ...rest: string[]
+): Lifter<T, unknown>;
+export function pluck<N, F, D>(...properties: string[]): Lifter<T, unknown>;
+export function pluck<T, R>(
+  ...properties: Array<string | number | symbol>
+): Lifter<T, R> {
+  const length = properties.length;
+  if (length === 0) {
+    throw new Error('list of properties cannot be empty.');
+  }
+  return map(x => {
+    let currentProp: any = x;
+    for (let i = 0; i < length; i++) {
+      const p = currentProp[properties[i]];
+      if (typeof p !== 'undefined') {
+        currentProp = p;
+      } else {
+        return undefined;
+      }
+    }
+    return currentProp;
+  });
+}
+
 export function scan<V, A = V>(
   accumulator: (acc: A | V, value: V, index: number) => A
 ): Lifter<V, V | A>;
@@ -867,6 +1569,131 @@ export class ScanR<N, M, F, D> extends Subscriber<N, F, D> {
       this.tgt.next(result);
     }
   }
+}
+
+export function switchMap<T, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O
+): Lifter<T, Sourced<O>>;
+export function switchMap<T, R, O extends SourceInput<any>>(
+  project: (value: T, index: number) => O,
+  resultSelector?: (
+    outerN: T,
+    innerValue: Sourced<O>,
+    outerX: number,
+    innerIndex: number
+  ) => R
+): Lifter<T, Sourced<O> | R> {
+  if (typeof resultSelector === 'function') {
+    return (source: qt.Source<N, F, D>) =>
+      source.pipe(
+        switchMap((a, i) =>
+          from(project(a, i)).pipe(map((b, ii) => resultSelector(a, b, i, ii)))
+        )
+      );
+  }
+  return (source: qt.Source<N, F, D>) => source.lift(new SwitchMapO(project));
+}
+
+class SwitchMapO<T, R> implements qt.Operator<T, R> {
+  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(new SwitchMapR(subscriber, this.project));
+  }
+}
+
+export class SwitchMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private index = 0;
+  private innerSubscription?: Subscription;
+
+  constructor(
+    tgt: Subscriber<M, F, D>,
+    private project: (n: N | undefined, i: number) => SourceInput<R>
+  ) {
+    super(tgt);
+  }
+
+  protected _next(n?: N) {
+    let result: SourceInput<R>;
+    const index = this.index++;
+    try {
+      result = this.project(n, index);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    this._innerSub(result, n, index);
+  }
+
+  private _innerSub(result: SourceInput<R>, value: T, index: number) {
+    const innerSubscription = this.innerSubscription;
+    if (innerSubscription) {
+      innerSubscription.unsubscribe();
+    }
+    const innerSubscriber = new Actor(this, value, index);
+    const tgt = this.tgt as Subscription;
+    tgt.add(innerSubscriber);
+    this.innerSubscription = qu.subscribeToResult(
+      this,
+      result,
+      undefined,
+      undefined,
+      innerSubscriber
+    );
+    if (this.innerSubscription !== innerSubscriber) {
+      tgt.add(this.innerSubscription);
+    }
+  }
+
+  protected _done(d?: D) {
+    const {innerSubscription} = this;
+    if (!innerSubscription || innerSubscription.closed) super._done();
+    this.unsubscribe();
+  }
+
+  protected _unsubscribe() {
+    this.innerSubscription = null!;
+  }
+
+  reactDone(innerSub: Subscription) {
+    const tgt = this.tgt as Subscription;
+    tgt.remove(innerSub);
+    this.innerSubscription = null!;
+    if (this.stopped) {
+      super._done();
+    }
+  }
+
+  reactNext(
+    outerN: N,
+    innerValue: M,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, M, F, D>
+  ): void {
+    this.tgt.next(innerValue);
+  }
+}
+
+export function switchMapTo<R>(observable: SourceInput<R>): Lifter<any, R>;
+export function switchMapTo<T, I, R>(
+  innerObservable: SourceInput<I>,
+  resultSelector?: (
+    outerN: T,
+    innerValue: I,
+    outerX: number,
+    innerIndex: number
+  ) => R
+): Lifter<T, I | R> {
+  return resultSelector
+    ? switchMap(() => innerObservable, resultSelector)
+    : switchMap(() => innerObservable);
+}
+
+export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
+export function switchAll<R>(): Lifter<any, R>;
+export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
+  return switchMap(identity);
 }
 
 export function window<N, F, D>(
