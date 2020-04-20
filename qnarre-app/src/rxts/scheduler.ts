@@ -3,16 +3,50 @@ import * as qj from './subject';
 import * as qu from './utils';
 import * as qt from './types';
 
-export class Action<S> extends qj.Subscription implements qt.Action<S> {
+export class Action<N, F = any, D = any> extends qj.Subscription
+  implements qt.Action<N, F, D> {
   constructor(
     public sched: Scheduler,
-    public work: (this: Action<S>, state?: S) => void
+    public work: (this: Action<N, F, D>, _?: qt.State<N, F, D>) => void
   ) {
     super();
   }
 
-  schedule(_state?: S, _delay = 0): qj.Subscription {
+  schedule(_?: qt.State<N, F, D>, _delay = 0): qj.Subscription {
     return this;
+  }
+
+  dispatch(t: qt.State<N, F, D>, c: qt.Context<N, F, D>) {
+    const {args, r, ps} = t;
+    const {cb, ctx, h} = ps;
+    let {s} = ps;
+    if (!s) {
+      s = ps.s = c.createAsync();
+      const handler = (...ns: any[]) => {
+        const value = ns.length <= 1 ? ns[0] : innerArgs;
+        this.add(
+          h.schedule<Nstate<N>>(dispatchNext as any, 0, {
+            value,
+            subject: subject!
+          })
+        );
+      };
+      try {
+        cb.apply(ctx, [...args, handler]);
+      } catch (e) {
+        s.fail(e);
+      }
+    }
+    this.add(s.subscribe(r));
+  }
+
+  next(t: qt.Step<N, F, D>) {
+    t.s.next(t.n);
+    t.s.done(t.d);
+  }
+
+  fail(t: qt.Step<N, F, D>) {
+    t.s.fail(t.f);
   }
 }
 
@@ -40,7 +74,7 @@ export class AsyncAction<S> extends Action<S> {
     super(sched, work);
   }
 
-  public schedule(state?: S, delay = 0): qj.Subscription {
+  schedule(state?: S, delay = 0): qj.Subscription {
     if (this.closed) return this;
     this.state = state;
     const i = this.id;

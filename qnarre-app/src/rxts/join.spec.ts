@@ -2940,6 +2940,619 @@ describe('endWith', () => {
   });
 });
 
+describe('forkJoin', () => {
+  asDiagram('forkJoin')(
+    'should join the last values of the provided observables into an array',
+    () => {
+      const e1 = forkJoin([
+        hot('-a--b-----c-d-e-|'),
+        hot('--------f--g-h-i--j-|'),
+        cold('--1--2-3-4---|')
+      ]);
+      const expected = '--------------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: ['e', 'j', '4']});
+    }
+  );
+  it('should infer correctly for array of 1 observable', () => {
+    const res = forkJoin([of(1, 2, 3)]); // $ExpectType Observable<[number]>
+  });
+
+  it('should infer correctly for array of 2 observables', () => {
+    const res = forkJoin([of(1, 2, 3), of('a', 'b', 'c')]); // $ExpectType Observable<[number, string]>
+  });
+
+  it('should infer correctly for array of 3 observables', () => {
+    const res = forkJoin([
+      of(1, 2, 3),
+      of('a', 'b', 'c'),
+      of(true, true, false)
+    ]); // $ExpectType Observable<[number, string, boolean]>
+  });
+
+  it('should infer correctly for array of 4 observables', () => {
+    const res = forkJoin([
+      of(1, 2, 3),
+      of('a', 'b', 'c'),
+      of(1, 2, 3),
+      of(1, 2, 3)
+    ]); // $ExpectType Observable<[number, string, number, number]>
+  });
+
+  it('should infer correctly for array of 5 observables', () => {
+    const res = forkJoin([
+      of(1, 2, 3),
+      of('a', 'b', 'c'),
+      of(1, 2, 3),
+      of(1, 2, 3),
+      of(1, 2, 3)
+    ]); // $ExpectType Observable<[number, string, number, number, number]>
+  });
+
+  it('should infer correctly for array of 6 observables', () => {
+    const res = forkJoin([
+      of(1, 2, 3),
+      of('a', 'b', 'c'),
+      of(1, 2, 3),
+      of(1, 2, 3),
+      of(1, 2, 3),
+      of(1, 2, 3)
+    ]); // $ExpectType Observable<[number, string, number, number, number, number]>
+  });
+
+  it('should force user cast for array of 6+ observables', () => {
+    const res = forkJoin([
+      of(1, 2, 3),
+      of('a', 'b', 'c'),
+      of(1, 2, 3),
+      of(1, 2, 3),
+      of(1, 2, 3),
+      of(1, 2, 3),
+      of(1, 2, 3)
+    ]); // $ExpectType Observable<(string | number)[]>
+  });
+
+  it('should support the deprecated resultSelector with an Array of SourceInputs', () => {
+    const results: Array<number | string> = [];
+    forkJoin(
+      [of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)],
+      (a: number, b: number, c: number) => a + b + c
+    ).subscribe({
+      next(value) {
+        results.push(value);
+      },
+      error(err) {
+        throw err;
+      },
+      complete() {
+        results.push('done');
+      }
+    });
+
+    expect(results).to.deep.equal([18, 'done']);
+  });
+
+  it('should support the deprecated resultSelector with a spread of SourceInputs', () => {
+    const results: Array<number | string> = [];
+    forkJoin(
+      of(1, 2, 3),
+      of(4, 5, 6),
+      of(7, 8, 9),
+      (a: number, b: number, c: number) => a + b + c
+    ).subscribe({
+      next(value) {
+        results.push(value);
+      },
+      error(err) {
+        throw err;
+      },
+      complete() {
+        results.push('done');
+      }
+    });
+
+    expect(results).to.deep.equal([18, 'done']);
+  });
+
+  it('should accept single observable', () => {
+    const e1 = forkJoin(hot('--a--b--c--d--|'));
+    const expected = '--------------(x|)';
+
+    expectSource(e1).toBe(expected, {x: ['d']});
+  });
+
+  it('should properly type empty objects', () => {
+    const res = forkJoin({}); // $ExpectType Observable<never>
+  });
+
+  it('should work for the simple case', () => {
+    const res = forkJoin({foo: of(1), bar: of('two'), baz: of(false)}); // $ExpectType Observable<{ foo: number; bar: string; baz: boolean; }>
+  });
+
+  it('should infer of type any for more than 6 parameters', () => {
+    const a = of(1, 2, 3);
+    const b = of('a', 'b', 'c');
+    const c = of(1, 2, 3);
+    const d = of(1, 2, 3);
+    const e = of(1, 2, 3);
+    const f = of(1, 2, 3);
+    const g = of(1, 2, 3);
+    const res = forkJoin(a, b, c, d, e, f, g); // $ExpectType Observable<any>
+  });
+
+  describe('forkJoin([input1, input2, input3])', () => {
+    it('should join the last values of the provided observables into an array', () => {
+      const e1 = forkJoin([
+        hot('--a--b--c--d--|'),
+        hot('(b|)'),
+        hot('--1--2--3--|')
+      ]);
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
+    });
+
+    it('should allow emit null or undefined', () => {
+      const e2 = forkJoin([
+        hot('--a--b--c--d--|', {d: null}),
+        hot('(b|)'),
+        hot('--1--2--3--|'),
+        hot('-----r--t--u--|', {u: undefined})
+      ]);
+      const expected2 = '--------------(x|)';
+
+      expectSource(e2).toBe(expected2, {x: [null, 'b', '3', undefined]});
+    });
+
+    it('should accept array of observable contains single', () => {
+      const e1 = forkJoin([hot('--a--b--c--d--|')]);
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: ['d']});
+    });
+
+    it('should accept lowercase-o observables', () => {
+      const e1 = forkJoin([
+        hot('--a--b--c--d--|'),
+        hot('(b|)'),
+        lowerCaseO('1', '2', '3')
+      ]);
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
+    });
+
+    it('should accept empty lowercase-o observables', () => {
+      const e1 = forkJoin([hot('--a--b--c--d--|'), hot('(b|)'), lowerCaseO()]);
+      const expected = '|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should accept promise', done => {
+      const e1 = forkJoin([of(1), Promise.resolve(2)]);
+
+      e1.subscribe({
+        next: x => expect(x).to.deep.equal([1, 2]),
+        complete: done
+      });
+    });
+
+    it('should accept array of observables', () => {
+      const e1 = forkJoin([
+        hot('--a--b--c--d--|'),
+        hot('(b|)'),
+        hot('--1--2--3--|')
+      ]);
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
+    });
+
+    it('should not emit if any of source observable is empty', () => {
+      const e1 = forkJoin([
+        hot('--a--b--c--d--|'),
+        hot('(b|)'),
+        hot('------------------|')
+      ]);
+      const expected = '------------------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete early if any of source is empty and completes before than others', () => {
+      const e1 = forkJoin([
+        hot('--a--b--c--d--|'),
+        hot('(b|)'),
+        hot('---------|')
+      ]);
+      const expected = '---------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete when all sources are empty', () => {
+      const e1 = forkJoin([hot('--------------|'), hot('---------|')]);
+      const expected = '---------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should not complete when only source never completes', () => {
+      const e1 = forkJoin([hot('--------------')]);
+      const expected = '-';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should not complete when one of the sources never completes', () => {
+      const e1 = forkJoin([hot('--------------'), hot('-a---b--c--|')]);
+      const expected = '-';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete when one of the sources never completes but other completes without values', () => {
+      const e1 = forkJoin([hot('--------------'), hot('------|')]);
+      const expected = '------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete if source is not provided', () => {
+      const e1 = forkJoin();
+      const expected = '|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete if sources list is empty', () => {
+      const e1 = forkJoin([]);
+      const expected = '|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should raise error when any of source raises error with empty observable', () => {
+      const e1 = forkJoin([hot('------#'), hot('---------|')]);
+      const expected = '------#';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should raise error when any of source raises error with source that never completes', () => {
+      const e1 = forkJoin([hot('------#'), hot('----------')]);
+      const expected = '------#';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should raise error when source raises error', () => {
+      const e1 = forkJoin([hot('------#'), hot('---a-----|')]);
+      const expected = '------#';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should allow unsubscribing early and explicitly', () => {
+      const e1 = hot('--a--^--b--c---d-| ');
+      const e1subs = '^        !    ';
+      const e2 = hot('---e-^---f--g---h-|');
+      const e2subs = '^        !    ';
+      const expected = '----------    ';
+      const unsub = '         !    ';
+
+      const result = forkJoin([e1, e2]);
+
+      expectSource(result, unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+
+    it('should unsubscribe other Observables, when one of them errors', () => {
+      const e1 = hot('--a--^--b--c---d-| ');
+      const e1subs = '^        !    ';
+      const e2 = hot('---e-^---f--g-#');
+      const e2subs = '^        !    ';
+      const expected = '---------#    ';
+
+      const result = forkJoin([e1, e2]);
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+  });
+
+  describe('forkJoin({ foo, bar, baz })', () => {
+    it('should join the last values of the provided observables into an array', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|'),
+        bar: hot('(b|)'),
+        baz: hot('--1--2--3--|')
+      });
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
+    });
+
+    it('should allow emit null or undefined', () => {
+      const e2 = forkJoin({
+        foo: hot('--a--b--c--d--|', {d: null}),
+        bar: hot('(b|)'),
+        baz: hot('--1--2--3--|'),
+        qux: hot('-----r--t--u--|', {u: undefined})
+      });
+      const expected2 = '--------------(x|)';
+
+      expectSource(e2).toBe(expected2, {
+        x: {foo: null, bar: 'b', baz: '3', qux: undefined}
+      });
+    });
+
+    it('should accept array of observable contains single', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|')
+      });
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: {foo: 'd'}});
+    });
+
+    it('should accept lowercase-o observables', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|'),
+        bar: hot('(b|)'),
+        baz: lowerCaseO('1', '2', '3')
+      });
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
+    });
+
+    it('should accept empty lowercase-o observables', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|'),
+        bar: hot('(b|)'),
+        baz: lowerCaseO()
+      });
+      const expected = '|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should accept promise', done => {
+      const e1 = forkJoin({
+        foo: of(1),
+        bar: Promise.resolve(2)
+      });
+
+      e1.subscribe({
+        next: x => expect(x).to.deep.equal({foo: 1, bar: 2}),
+        complete: done
+      });
+    });
+
+    it('should accept array of observables', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|'),
+        bar: hot('(b|)'),
+        baz: hot('--1--2--3--|')
+      });
+      const expected = '--------------(x|)';
+
+      expectSource(e1).toBe(expected, {x: {foo: 'd', bar: 'b', baz: '3'}});
+    });
+
+    it('should not emit if any of source observable is empty', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|'),
+        bar: hot('(b|)'),
+        baz: hot('------------------|')
+      });
+      const expected = '------------------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete early if any of source is empty and completes before than others', () => {
+      const e1 = forkJoin({
+        foo: hot('--a--b--c--d--|'),
+        bar: hot('(b|)'),
+        baz: hot('---------|')
+      });
+      const expected = '---------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete when all sources are empty', () => {
+      const e1 = forkJoin({
+        foo: hot('--------------|'),
+        bar: hot('---------|')
+      });
+      const expected = '---------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should not complete when only source never completes', () => {
+      const e1 = forkJoin({
+        foo: hot('--------------')
+      });
+      const expected = '-';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should not complete when one of the sources never completes', () => {
+      const e1 = forkJoin({
+        foo: hot('--------------'),
+        bar: hot('-a---b--c--|')
+      });
+      const expected = '-';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should complete when one of the sources never completes but other completes without values', () => {
+      const e1 = forkJoin({
+        foo: hot('--------------'),
+        bar: hot('------|')
+      });
+      const expected = '------|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    // TODO(benlesh): this is the wrong behavior, it should probably throw right away.
+    it('should have same v5/v6 throwing behavior full argument of null', done => {
+      // It doesn't throw when you pass null
+      expect(() => forkJoin(null)).not.to.throw();
+
+      // It doesn't even throw if you subscribe to forkJoin(null).
+      expect(() =>
+        forkJoin(null).subscribe({
+          // It sends the error to the subscription.
+          error: err => done()
+        })
+      ).not.to.throw();
+    });
+
+    it('should complete if sources object is empty', () => {
+      const e1 = forkJoin({});
+      const expected = '|';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should raise error when any of source raises error with empty observable', () => {
+      const e1 = forkJoin({
+        lol: hot('------#'),
+        wut: hot('---------|')
+      });
+      const expected = '------#';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should raise error when any of source raises error with source that never completes', () => {
+      const e1 = forkJoin({
+        lol: hot('------#'),
+        wut: hot('----------')
+      });
+      const expected = '------#';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should raise error when source raises error', () => {
+      const e1 = forkJoin({
+        lol: hot('------#'),
+        foo: hot('---a-----|')
+      });
+      const expected = '------#';
+
+      expectSource(e1).toBe(expected);
+    });
+
+    it('should allow unsubscribing early and explicitly', () => {
+      const e1 = hot('--a--^--b--c---d-| ');
+      const e1subs = '^        !    ';
+      const e2 = hot('---e-^---f--g---h-|');
+      const e2subs = '^        !    ';
+      const expected = '----------    ';
+      const unsub = '         !    ';
+
+      const result = forkJoin({
+        e1,
+        e2
+      });
+
+      expectSource(result, unsub).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+
+    it('should unsubscribe other Observables, when one of them errors', () => {
+      const e1 = hot('--a--^--b--c---d-| ');
+      const e1subs = '^        !    ';
+      const e2 = hot('---e-^---f--g-#');
+      const e2subs = '^        !    ';
+      const expected = '---------#    ';
+
+      const result = forkJoin({
+        e1,
+        e2
+      });
+
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+      expectSubscriptions(e2.subscriptions).toBe(e2subs);
+    });
+
+    it('should accept promise as the first arg', done => {
+      const e1 = forkJoin(Promise.resolve(1));
+      const values: number[][] = [];
+
+      e1.subscribe({
+        next: x => values.push(x),
+        complete: () => {
+          expect(values).to.deep.equal([[1]]);
+          done();
+        }
+      });
+    });
+  });
+
+  describe('deprecated rest args', () => {
+    it('should infer correctly with 1 parameter', () => {
+      const a = of(1, 2, 3);
+      const res = forkJoin(a); // $ExpectType Observable<[number]>
+    });
+
+    it('should infer correctly with 2 parameters', () => {
+      const a = of(1, 2, 3);
+      const b = of('a', 'b', 'c');
+      const res = forkJoin(a, b); // $ExpectType Observable<[number, string]>
+    });
+
+    it('should infer correctly with 3 parameters', () => {
+      const a = of(1, 2, 3);
+      const b = of('a', 'b', 'c');
+      const c = of(1, 2, 3);
+      const res = forkJoin(a, b, c); // $ExpectType Observable<[number, string, number]>
+    });
+
+    it('should infer correctly with 4 parameters', () => {
+      const a = of(1, 2, 3);
+      const b = of('a', 'b', 'c');
+      const c = of(1, 2, 3);
+      const d = of(1, 2, 3);
+      const res = forkJoin(a, b, c, d); // $ExpectType Observable<[number, string, number, number]>
+    });
+
+    it('should infer correctly with 5 parameters', () => {
+      const a = of(1, 2, 3);
+      const b = of('a', 'b', 'c');
+      const c = of(1, 2, 3);
+      const d = of(1, 2, 3);
+      const e = of(1, 2, 3);
+      const res = forkJoin(a, b, c, d, e); // $ExpectType Observable<[number, string, number, number, number]>
+    });
+
+    it('should infer correctly with 6 parameters', () => {
+      const a = of(1, 2, 3);
+      const b = of('a', 'b', 'c');
+      const c = of(1, 2, 3);
+      const d = of(1, 2, 3);
+      const e = of(1, 2, 3);
+      const f = of(1, 2, 3);
+      const res = forkJoin(a, b, c, d, e, f); // $ExpectType Observable<[number, string, number, number, number, number]>
+    });
+  });
+});
+
 describe('merge', () => {
   it('should accept no parameter', () => {
     const res = a$.pipe(merge()); // $ExpectType Observable<A>
@@ -4141,6 +4754,246 @@ describe('mergeAll', () => {
         null,
         done
       );
+  });
+});
+
+describe('race', () => {
+  it('should support N arguments of different types', () => {
+    const o1 = race(a$); // $ExpectType Observable<A>
+    const o2 = race(a$, b$); // $ExpectType Observable<A | B>
+    const o3 = race(a$, b$, c$); // $ExpectType Observable<A | B | C>
+    const o4 = race(a$, b$, c$, d$); // $ExpectType Observable<A | B | C | D>
+    const o5 = race(a$, b$, c$, d$, e$); // $ExpectType Observable<A | B | C | D | E>
+    const o6 = race(a$, b$, c$, d$, e$, f$); // $ExpectType Observable<A | B | C | D | E | F>
+  });
+
+  it('should support N arguments of different types', () => {
+    const o1 = race([a$]); // $ExpectType Observable<A>
+    const o2 = race([a$, b$]); // $ExpectType Observable<A | B>
+    const o3 = race([a$, b$, c$]); // $ExpectType Observable<A | B | C>
+    const o4 = race([a$, b$, c$, d$]); // $ExpectType Observable<A | B | C | D>
+    const o5 = race([a$, b$, c$, d$, e$]); // $ExpectType Observable<A | B | C | D | E>
+    const o6 = race([a$, b$, c$, d$, e$, f$]); // $ExpectType Observable<A | B | C | D | E | F>
+  });
+
+  it('should race observable inputs', () => {
+    const o = race(a$, Promise.resolve(b), [c]); // $ExpectType Observable<A | B | C>
+  });
+
+  it('should race an array observable inputs', () => {
+    const o = race([a$, Promise.resolve(b), [c]]); // $ExpectType Observable<A | B | C>
+  });
+
+  it('should race a single observable', () => {
+    const e1 = cold('---a-----b-----c----|');
+    const e1subs = '^                   !';
+    const expected = '---a-----b-----c----|';
+
+    const result = race(e1);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should race cold and cold', () => {
+    const e1 = cold('---a-----b-----c----|');
+    const e1subs = '^                   !';
+    const e2 = cold('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---a-----b-----c----|';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should race with array of observable', () => {
+    const e1 = cold('---a-----b-----c----|');
+    const e1subs = '^                   !';
+    const e2 = cold('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---a-----b-----c----|';
+
+    const result = race([e1, e2]);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should race hot and hot', () => {
+    const e1 = hot('---a-----b-----c----|');
+    const e1subs = '^                   !';
+    const e2 = hot('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---a-----b-----c----|';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should race hot and cold', () => {
+    const e1 = cold('---a-----b-----c----|');
+    const e1subs = '^                   !';
+    const e2 = hot('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---a-----b-----c----|';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should race 2nd and 1st', () => {
+    const e1 = cold('------x-----y-----z----|');
+    const e1subs = '^  !';
+    const e2 = cold('---a-----b-----c----|');
+    const e2subs = '^                   !';
+    const expected = '---a-----b-----c----|';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should race emit and complete', () => {
+    const e1 = cold('-----|');
+    const e1subs = '^    !';
+    const e2 = hot('------x-----y-----z----|');
+    const e2subs = '^    !';
+    const expected = '-----|';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    const e1 = cold('---a-----b-----c----|');
+    const e1subs = '^           !';
+    const e2 = hot('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---a-----b---';
+    const unsub = '            !';
+
+    const result = race(e1, e2);
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should not break unsubscription chains when unsubscribed explicitly', () => {
+    const e1 = hot('--a--^--b--c---d-| ');
+    const e1subs = '^        !    ';
+    const e2 = hot('---e-^---f--g---h-|');
+    const e2subs = '^  !    ';
+    const expected = '---b--c---    ';
+    const unsub = '         !    ';
+
+    const result = race(
+      e1.pipe(mergeMap((x: string) => of(x))),
+      e2.pipe(mergeMap((x: string) => of(x)))
+    ).pipe(mergeMap((x: any) => of(x)));
+
+    expectSource(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should never emit when given non emitting sources', () => {
+    const e1 = cold('---|');
+    const e2 = cold('---|');
+    const e1subs = '^  !';
+    const expected = '---|';
+
+    const source = race(e1, e2);
+
+    expectSource(source).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should throw when error occurs mid stream', () => {
+    const e1 = cold('---a-----#');
+    const e1subs = '^        !';
+    const e2 = cold('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---a-----#';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should throw when error occurs before a winner is found', () => {
+    const e1 = cold('---#');
+    const e1subs = '^  !';
+    const e2 = cold('------x-----y-----z----|');
+    const e2subs = '^  !';
+    const expected = '---#';
+
+    const result = race(e1, e2);
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('handle empty', () => {
+    const e1 = cold('|');
+    const e1subs = '(^!)';
+    const expected = '|';
+
+    const source = race(e1);
+
+    expectSource(source).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('handle never', () => {
+    const e1 = cold('-');
+    const e1subs = '^';
+    const expected = '-';
+
+    const source = race(e1);
+
+    expectSource(source).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('handle throw', () => {
+    const e1 = cold('#');
+    const e1subs = '(^!)';
+    const expected = '#';
+
+    const source = race(e1);
+
+    expectSource(source).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should support a single SourceInput argument', (done: MochaDone) => {
+    const source = race(Promise.resolve(42));
+    source.subscribe(
+      value => {
+        expect(value).to.equal(42);
+      },
+      done,
+      done
+    );
   });
 });
 

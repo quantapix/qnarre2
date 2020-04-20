@@ -8771,6 +8771,50 @@ describe('mergeScan', () => {
   });
 });
 
+describe('pairs', () => {
+  asDiagram('pairs({a: 1, b:2})')(
+    'should create an observable emits key-value pair',
+    () => {
+      const e1 = pairs({a: 1, b: 2}, rxTestScheduler);
+      const expected = '(ab|)';
+      const values = {
+        a: ['a', 1],
+        b: ['b', 2]
+      };
+
+      expectSource(e1).toBe(expected, values);
+    }
+  );
+
+  it('should create an observable without scheduler', (done: MochaDone) => {
+    let expected = [
+      ['a', 1],
+      ['b', 2],
+      ['c', 3]
+    ];
+
+    pairs({a: 1, b: 2, c: 3}).subscribe(
+      x => {
+        expect(x).to.deep.equal(expected.shift());
+      },
+      x => {
+        done(new Error('should not be called'));
+      },
+      () => {
+        expect(expected).to.be.empty;
+        done();
+      }
+    );
+  });
+
+  it('should work with empty object', () => {
+    const e1 = pairs({}, rxTestScheduler);
+    const expected = '|';
+
+    expectSource(e1).toBe(expected);
+  });
+});
+
 describe('pairwise', () => {
   asDiagram('pairwise')(
     'should group consecutive emissions as arrays of two',
@@ -8929,6 +8973,24 @@ describe('partition', () => {
       expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
     }
   );
+  it('should infer correctly', () => {
+    const o = partition(of('a', 'b', 'c'), (value, index) => true); // $ExpectType [Observable<string>, Observable<string>]
+    const p = partition(of('a', 'b', 'c'), () => true); // $ExpectType [Observable<string>, Observable<string>]
+  });
+
+  it('should accept a thisArg parameter', () => {
+    const o = partition(of('a', 'b', 'c'), () => true, 5); // $ExpectType [Observable<string>, Observable<string>]
+  });
+
+  it('should enforce predicate', () => {
+    const o = partition(of('a', 'b', 'c')); // $ExpectError
+  });
+
+  it('should enforce predicate types', () => {
+    const o = partition(of('a', 'b', 'c'), 'nope'); // $ExpectError
+    const p = partition(of('a', 'b', 'c'), (value: number) => true); // $ExpectError
+    const q = partition(of('a', 'b', 'c'), (value, index: string) => true); // $ExpectError
+  });
 
   it('should partition an observable into two using a predicate', () => {
     const e1 = hot('--a-b---a------d--a---c--|');

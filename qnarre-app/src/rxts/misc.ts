@@ -651,3 +651,38 @@ function toArrayReducer<N, F, D>(arr: T[], item: T, index: number): T[] {
 export function toArray<N, F, D>(): qt.Lifter<N, N[], F, D> {
   return reduce(toArrayReducer, [] as T[]);
 }
+
+export function using<T>(
+  resourceFactory: () => qt.Unsubscriber | void,
+  observableFactory: (
+    resource: qt.Unsubscriber | void
+  ) => qt.SourceInput<T> | void
+): qs.Source<T> {
+  return new qs.Source<T>(subscriber => {
+    let resource: qt.Unsubscriber | void;
+
+    try {
+      resource = resourceFactory();
+    } catch (err) {
+      subscriber.error(err);
+      return undefined;
+    }
+
+    let result: qt.SourceInput<T> | void;
+    try {
+      result = observableFactory(resource);
+    } catch (err) {
+      subscriber.error(err);
+      return undefined;
+    }
+
+    const source = result ? from(result) : EMPTY;
+    const subscription = source.subscribe(subscriber);
+    return () => {
+      subscription.unsubscribe();
+      if (resource) {
+        resource.unsubscribe();
+      }
+    };
+  });
+}

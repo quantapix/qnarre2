@@ -206,6 +206,122 @@ export function endWith<N, F, D>(
     concatStatic(source, of(...values)) as qt.Source<N, F, D>;
 }
 
+export function forkJoin<A>(sources: [SourceInput<A>]): qs.Source<[A]>;
+export function forkJoin<A, B>(
+  sources: [SourceInput<A>, qt.SourceInput<B>]
+): qs.Source<[A, B]>;
+export function forkJoin<A, B, C>(
+  sources: [SourceInput<A>, qt.SourceInput<B>, qt.SourceInput<C>]
+): qs.Source<[A, B, C]>;
+export function forkJoin<A, B, C, D>(
+  sources: [
+    SourceInput<A>,
+    qt.SourceInput<B>,
+    qt.SourceInput<C>,
+    qt.SourceInput<D>
+  ]
+): qs.Source<[A, B, C, D]>;
+export function forkJoin<A, B, C, D, E>(
+  sources: [
+    qt.SourceInput<A>,
+    qt.SourceInput<B>,
+    qt.SourceInput<C>,
+    qt.SourceInput<D>,
+    qt.SourceInput<E>
+  ]
+): qs.Source<[A, B, C, D, E]>;
+export function forkJoin<A, B, C, D, E, F>(
+  sources: [
+    qt.SourceInput<A>,
+    qt.SourceInput<B>,
+    qt.SourceInput<C>,
+    qt.SourceInput<D>,
+    qt.SourceInput<E>,
+    qt.SourceInput<F>
+  ]
+): qs.Source<[A, B, C, D, E, F]>;
+export function forkJoin<A extends qt.SourceInput<any>[]>(
+  sources: A
+): qs.Source<SourcedFrom<A>[]>;
+export function forkJoin(sourcesObject: {}): qs.Source<never>;
+export function forkJoin<T, K extends keyof T>(
+  sourcesObject: T
+): qs.Source<{[K in keyof T]: Sourced<T[K]>}>;
+export function forkJoin(...sources: any[]): qs.Source<any> {
+  if (sources.length === 1) {
+    const first = sources[0];
+    if (isArray(first)) {
+      return forkJoinInternal(first, null);
+    }
+    if (isObject(first) && Object.getPrototypeOf(first) === Object.prototype) {
+      const keys = Object.keys(first);
+      return forkJoinInternal(
+        keys.map(key => first[key]),
+        keys
+      );
+    }
+  }
+  if (typeof sources[sources.length - 1] === 'function') {
+    const resultSelector = sources.pop() as Function;
+    sources =
+      sources.length === 1 && isArray(sources[0]) ? sources[0] : sources;
+    return forkJoinInternal(sources, null).pipe(
+      map((args: any[]) => resultSelector(...args))
+    );
+  }
+  return forkJoinInternal(sources, null);
+}
+
+function forkJoinInternal(
+  sources: qt.SourceInput<any>[],
+  keys: string[] | null
+): qs.Source<any> {
+  return new qs.Source(subscriber => {
+    const len = sources.length;
+    if (len === 0) {
+      subscriber.done();
+      return;
+    }
+    const values = new Array(len);
+    let completed = 0;
+    let emitted = 0;
+    for (let i = 0; i < len; i++) {
+      const source = from(sources[i]);
+      let hasValue = false;
+      subscriber.add(
+        source.subscribe({
+          next: value => {
+            if (!hasValue) {
+              hasValue = true;
+              emitted++;
+            }
+            values[i] = value;
+          },
+          error: err => subscriber.error(err),
+          complete: () => {
+            completed++;
+            if (completed === len || !hasValue) {
+              if (emitted === len) {
+                subscriber.next(
+                  keys
+                    ? keys.reduce(
+                        (result, key, i) => (
+                          ((result as any)[key] = values[i]), result
+                        ),
+                        {}
+                      )
+                    : values
+                );
+              }
+              subscriber.done();
+            }
+          }
+        })
+      );
+    }
+  });
+}
+
 export function merge<T>(v1: qt.SourceInput<T>): qs.Source<T>;
 export function merge<T>(
   v1: qt.SourceInput<T>,
@@ -325,6 +441,106 @@ export function mergeWith<T, A extends SourceInput<any>[]>(
   ...otherSources: A
 ): Lifter<T, T | SourcedFrom<A>> {
   return merge(...otherSources);
+}
+
+export function race<A extends qt.SourceInput<any>[]>(
+  observables: A
+): qs.Source<SourcedFrom<A>>;
+export function race<A extends qt.SourceInput<any>[]>(
+  ...observables: A
+): qs.Source<SourcedFrom<A>>;
+export function race<T>(
+  ...observables: (SourceInput<T> | qt.SourceInput<T>[])[]
+): qs.Source<any> {
+  if (observables.length === 1) {
+    if (isArray(observables[0])) {
+      observables = observables[0] as qt.SourceInput<T>[];
+    } else {
+      return from(observables[0] as qt.SourceInput<T>);
+    }
+  }
+
+  return fromArray(observables, undefined).lift(new RaceOperator<T>());
+}
+
+export class RaceOperator<T> implements qt.Operator<T, T> {
+  call(subscriber: qj.Subscriber<T>, source: any): qt.Closer {
+    return source.subscribe(new RaceSubscriber(subscriber));
+  }
+}
+
+export class RaceSubscriber<T> extends ReactorSubscriber<T, T> {
+  private hasFirst: boolean = false;
+  private observables: qs.Source<any>[] = [];
+  private subscriptions: qj.Subscription[] = [];
+
+  constructor(destination: qj.Subscriber<T>) {
+    super(destination);
+  }
+
+  protected _next(observable: any): void {
+    this.observables.push(observable);
+  }
+
+  protected _done() {
+    const observables = this.observables;
+    const len = observables.length;
+
+    if (len === 0) {
+      this.destination.done();
+    } else {
+      for (let i = 0; i < len && !this.hasFirst; i++) {
+        let observable = observables[i];
+        let subscription = subscribeToResult(
+          this,
+          observable,
+          observable as any,
+          i
+        );
+
+        if (this.subscriptions) {
+          this.subscriptions.push(subscription!);
+        }
+        this.add(subscription);
+      }
+      this.observables = null!;
+    }
+  }
+
+  reactNext(
+    outerN: T,
+    innerValue: T,
+    outerX: number,
+    innerIndex: number,
+    innerSub: ActorSubscriber<T, T>
+  ): void {
+    if (!this.hasFirst) {
+      this.hasFirst = true;
+
+      for (let i = 0; i < this.subscriptions.length; i++) {
+        if (i !== outerX) {
+          let subscription = this.subscriptions[i];
+
+          subscription.unsubscribe();
+          this.remove(subscription);
+        }
+      }
+
+      this.subscriptions = null!;
+    }
+
+    this.destination.next(innerValue);
+  }
+
+  notifyComplete(innerSub: ActorSubscriber<T, T>): void {
+    this.hasFirst = true;
+    super.notifyComplete(innerSub);
+  }
+
+  notifyError(error: any, innerSub: ActorSubscriber<T, T>): void {
+    this.hasFirst = true;
+    super.notifyError(error, innerSub);
+  }
 }
 
 export function startWith<T, A extends any[]>(

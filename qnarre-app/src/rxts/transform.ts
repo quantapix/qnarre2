@@ -1373,6 +1373,39 @@ export class MergeScanR<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
+export function pairs<T>(
+  obj: Object,
+  h?: qh.Scheduler
+): qs.Source<[string, T]> {
+  if (!scheduler) {
+    return new qs.Source<[string, T]>(subscriber => {
+      const keys = Object.keys(obj);
+      for (let i = 0; i < keys.length && !subscriber.closed; i++) {
+        const key = keys[i];
+        if (obj.hasOwnProperty(key)) {
+          subscriber.next([key, (obj as any)[key]]);
+        }
+      }
+      subscriber.done();
+    });
+  } else {
+    return new qs.Source<[string, T]>(subscriber => {
+      const keys = Object.keys(obj);
+      const subscription = new qj.Subscription();
+      subscription.add(
+        scheduler.schedule<{
+          keys: string[];
+          index: number;
+          subscriber: qj.Subscriber<[string, T]>;
+          subscription: qj.Subscription;
+          obj: Object;
+        }>(dispatch as any, 0, {keys, index: 0, subscriber, subscription, obj})
+      );
+      return subscription;
+    });
+  }
+}
+
 export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
   return (source: qt.Source<N, F, D>) => source.lift(new PairwiseO());
 }
@@ -1417,6 +1450,19 @@ export function partition<N, F, D>(
       filter(predicate, thisArg)(source),
       filter(not(predicate, thisArg) as any)(source)
     ] as [Observable<N, F, D>, qt.Source<N, F, D>];
+}
+
+export function partition<T>(
+  source: qt.SourceInput<T>,
+  predicate: (value: T, index: number) => boolean,
+  thisArg?: any
+): [Observable<T>, qs.Source<T>] {
+  return [
+    filter(predicate, thisArg)(new qs.Source<T>(subscribeTo(source))),
+    filter(not(predicate, thisArg) as any)(
+      new qs.Source<T>(subscribeTo(source))
+    )
+  ] as [Observable<T>, qs.Source<T>];
 }
 
 export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;

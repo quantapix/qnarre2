@@ -136,8 +136,33 @@ export interface Scheduler extends Stamper {
   ): Subscription;
 }
 
-export interface Action<S> extends Subscription {
-  schedule(state?: S, delay?: number): Subscription;
+export interface DArg<N> {
+  src: qs.Source<N>;
+  r: qj.Subscriber<N>;
+}
+
+export interface Params<N, F = any, D = any> {
+  ctx: any;
+  cb: Function;
+  h: Scheduler;
+  s?: Subject<N, F, D>;
+}
+
+export interface State<N, F = any, D = any> {
+  args: any[];
+  ps: Params<N, F, D>;
+  r: Subscriber<N, F, D>;
+}
+
+export interface Step<N, F = any, D = any> {
+  s: Subject<N, F, D>;
+  n?: N;
+  f?: F;
+  d?: D;
+}
+
+export interface Action<N, F = any, D = any> extends Subscription {
+  schedule(_?: State<N, F, D>, delay?: number): Subscription;
 }
 
 export interface UnaryFun<N, R> {
@@ -160,7 +185,11 @@ export abstract class Context<N, F = any, D = any> {
     done?: Ofun<D>
   ): Subscriber<N, F, D>;
   abstract createSubject<R = N>(
-    o: Observer<any, F, D>,
-    s: Source<any, F, D>
+    o?: Observer<any, F, D>,
+    s?: Source<any, F, D>
+  ): Subject<R, F, D>;
+  abstract createAsync<R = N>(
+    o?: Observer<any, F, D>,
+    s?: Source<any, F, D>
   ): Subject<R, F, D>;
 }
