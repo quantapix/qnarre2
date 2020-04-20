@@ -1,19 +1,68 @@
 import * as qt from './types';
 import * as qu from './utils';
-import * as qr from './subscriber';
-import * as qj from './subject';
 
 export function audit<N, R, F, D>(
   d: (_?: R) => qt.SourceOrPromise<N, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (s: qt.Source<N, F, D>) => s.lift(new Audit<N, R, F, D>(d));
+  return (s: qt.Source<N, F, D>) => s.lift(new AuditO<N, R, F, D>(d));
 }
 
-export class Audit<N, R, F, D> implements qt.Operator<N, R, F, D> {
+class AuditO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(private dur: (_?: R) => qt.SourceOrPromise<N, F, D>) {}
 
   call(r: qj.Subscriber<R, F, D>, s: qt.Source<N, F, D>) {
-    return s.subscribe(new qr.Audit(r, this.dur));
+    return s.subscribe(new AuditR(r, this.dur));
+  }
+}
+
+export class AuditR<N, R, F, D> extends Reactor<N, R, F, D> {
+  private r?: R;
+  private hasR = false;
+  private act?: qt.Subscription;
+
+  constructor(
+    tgt: Subscriber<R, F, D>,
+    private duration: (_?: R) => qt.SourceOrPromise<N, F, D>
+  ) {
+    super(tgt);
+  }
+
+  protected _next(r?: R) {
+    this.r = r;
+    this.hasR = true;
+    if (!this.act) {
+      let d: qt.SourceOrPromise<N, F, D>;
+      try {
+        d = this.duration(r);
+      } catch (e) {
+        return this.tgt.fail(e);
+      }
+      const a = qu.subscribeToResult(this, d);
+      if (!a || a.closed) this.clear();
+      else this.add((this.act = a));
+    }
+  }
+
+  clear() {
+    const {r, hasR, act} = this;
+    if (act) {
+      this.remove(act);
+      this.act = undefined;
+      act.unsubscribe();
+    }
+    if (hasR) {
+      this.r = undefined;
+      this.hasR = false;
+      this.tgt.next(r);
+    }
+  }
+
+  reactNext() {
+    this.clear();
+  }
+
+  reactDone() {
+    this.clear();
   }
 }
 
@@ -24,610 +73,206 @@ export function auditTime<N, F, D>(
   return audit(() => timer(duration, s));
 }
 
-export function catchError<T, O extends SourceInput<any>>(
-  selector: (err: any, caught: Observable<T>) => O
-): Lifter<T, T | Sourced<O>>;
-export function catchError<T, O extends SourceInput<any>>(
-  selector: (err: any, caught: Observable<T>) => O
-): Lifter<T, T | Sourced<O>> {
-  return function catchErrorLifter(
-    source: Observable<T>
-  ): Observable<T | Sourced<O>> {
-    const operator = new CatchOperator(selector);
-    const caught = source.lift(operator);
-    return (operator.caught = caught as Observable<T>);
-  };
-}
-
-class CatchOperator<T, R> implements Operator<T, T | R> {
-  caught: Observable<T> | undefined;
-
-  constructor(
-    private selector: (err: any, caught: Observable<T>) => SourceInput<T | R>
-  ) {}
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(
-      new CatchSubscriber(subscriber, this.selector, this.caught!)
-    );
-  }
-}
-
-class CatchSubscriber<T, R> extends ReactorSubscriber<T, T | R> {
-  constructor(
-    destination: Subscriber<any>,
-    private selector: (err: any, caught: Observable<T>) => SourceInput<T | R>,
-    private caught: Observable<T>
-  ) {
-    super(destination);
-  }
-
-  error(err: any) {
-    if (!this.stopped) {
-      let result: any;
-      try {
-        result = this.selector(err, this.caught);
-      } catch (err2) {
-        super.error(err2);
-        return;
-      }
-      this._recycle();
-      const innerSubscriber = new ActorSubscriber(this, undefined, undefined!);
-      this.add(innerSubscriber);
-      const innerSubscription = subscribeToResult(
-        this,
-        result,
-        undefined,
-        undefined,
-        innerSubscriber
-      );
-      if (innerSubscription !== innerSubscriber) {
-        this.add(innerSubscription);
-      }
-    }
-  }
-}
-
 export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
 export function defaultIfEmpty<T, R>(
   defaultValue: R | null = null
 ): Lifter<T, T | R> {
-  return (source: Observable<T>) =>
-    source.lift(new DefaultIfEmptyOperator(defaultValue)) as Observable<T | R>;
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new DefaultIfEmptyO(defaultValue)) as qt.Source<T | R>;
 }
 
-class DefaultIfEmptyOperator<T, R> implements Operator<T, T | R> {
+class DefaultIfEmptyO<T, R> implements qt.Operator<T, T | R> {
   constructor(private defaultValue: R) {}
 
   call(subscriber: Subscriber<T | R>, source: any): any {
-    return source.subscribe(
-      new DefaultIfEmptySubscriber(subscriber, this.defaultValue)
-    );
+    return source.subscribe(new DefaultIfEmptyR(subscriber, this.defaultValue));
   }
 }
 
-class DefaultIfEmptySubscriber<T, R> extends Subscriber<T> {
-  private isEmpty: boolean = true;
+export class DefaultIfEmptyR<N, M, F, D> extends Subscriber<N, F, D> {
+  private isEmpty = true;
 
-  constructor(destination: Subscriber<T | R>, private defaultValue: R) {
-    super(destination);
+  constructor(tgt: Subscriber<N | M, F, D>, private defaultValue: M) {
+    super(tgt);
   }
 
-  protected _next(v: T) {
+  protected _next(n?: N | M) {
     this.isEmpty = false;
-    this.dst.next(value);
+    this.tgt.next(n);
   }
 
-  protected _complete() {
-    if (this.isEmpty) {
-      this.dst.next(this.defaultValue);
-    }
-    this.dst.complete();
+  protected _done(d?: D) {
+    if (this.isEmpty) this.tgt.next(this.defaultValue);
+    this.tgt.done();
   }
 }
 
-export function delay<T>(
-  delay: number | Date,
-  scheduler: Scheduler = async
-): MonoOper<T> {
-  const absoluteDelay = isDate(delay);
-  const delayFor = absoluteDelay
-    ? +delay - scheduler.now()
-    : Math.abs(<number>delay);
-  return (source: Observable<T>) =>
-    source.lift(new DelayOperator(delayFor, scheduler));
-}
-
-class DelayOperator<T> implements Operator<T, T> {
-  constructor(private delay: number, private scheduler: Scheduler) {}
-
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new DelaySubscriber(subscriber, this.delay, this.scheduler)
-    );
-  }
-}
-
-interface DelayState<T> {
-  source: DelaySubscriber<T>;
-  destination: Target<T>;
-  scheduler: Scheduler;
-}
-
-class DelaySubscriber<T> extends Subscriber<T> {
-  private queue: Array<DelayMessage<T>> = [];
-  private active: boolean = false;
-  private errored: boolean = false;
-
-  private static dispatch<T>(
-    this: Action<DelayState<T>>,
-    state: DelayState<T>
-  ): void {
-    const source = state.source;
-    const queue = source.queue;
-    const scheduler = state.scheduler;
-    const destination = state.destination;
-
-    while (queue.length > 0 && queue[0].time - scheduler.now() <= 0) {
-      queue.shift()!.notification.observe(destination);
-    }
-
-    if (queue.length > 0) {
-      const delay = Math.max(0, queue[0].time - scheduler.now());
-      this.schedule(state, delay);
-    } else if (source.stopped) {
-      source.destination.complete();
-      source.active = false;
-    } else {
-      this.unsubscribe();
-      source.active = false;
-    }
-  }
-
-  constructor(
-    destination: Subscriber<T>,
-    private delay: number,
-    private scheduler: Scheduler
-  ) {
-    super(destination);
-  }
-
-  private _schedule(scheduler: Scheduler): void {
-    this.active = true;
-    const destination = this.destination as Subscription;
-    destination.add(
-      scheduler.schedule<DelayState<T>>(
-        DelaySubscriber.dispatch as any,
-        this.delay,
-        {
-          source: this,
-          destination: this.destination,
-          scheduler: scheduler
-        }
-      )
-    );
-  }
-
-  private scheduleNotification(notification: Notification<T>): void {
-    if (this.errored === true) {
-      return;
-    }
-
-    const scheduler = this.scheduler;
-    const message = new DelayMessage(
-      scheduler.now() + this.delay,
-      notification
-    );
-    this.queue.push(message);
-
-    if (this.active === false) {
-      this._schedule(scheduler);
-    }
-  }
-
-  protected _next(value: T) {
-    this.scheduleNotification(Notification.createNext(value));
-  }
-
-  protected _error(err: any) {
-    this.errored = true;
-    this.queue = [];
-    this.dst.error(err);
-    this.unsubscribe();
-  }
-
-  protected _complete() {
-    if (this.queue.length === 0) {
-      this.dst.complete();
-    }
-    this.unsubscribe();
-  }
-}
-
-class DelayMessage<T> {
-  constructor(
-    public readonly time: number,
-    public readonly notification: Notification<T>
-  ) {}
-}
-
-export function delayWhen<T>(
-  delayDurationSelector: (value: T, index: number) => Observable<any>,
-  subscriptionDelay?: Observable<any>
-): MonoOper<T>;
-export function delayWhen<T>(
-  delayDurationSelector: (value: T, index: number) => Observable<any>,
-  subscriptionDelay?: Observable<any>
-): MonoOper<T> {
-  if (subscriptionDelay) {
-    return (source: Observable<T>) =>
-      new SubscriptionDelayObservable(source, subscriptionDelay).lift(
-        new DelayWhenOperator(delayDurationSelector)
-      );
-  }
-  return (source: Observable<T>) =>
-    source.lift(new DelayWhenOperator(delayDurationSelector));
-}
-
-class DelayWhenOperator<T> implements Operator<T, T> {
-  constructor(
-    private delayDurationSelector: (value: T, index: number) => Observable<any>
-  ) {}
-
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new DelayWhenSubscriber(subscriber, this.delayDurationSelector)
-    );
-  }
-}
-
-class DelayWhenSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private completed: boolean = false;
-  private delayNotifierSubscriptions: Array<Subscription> = [];
-  private index: number = 0;
-
-  constructor(
-    destination: Subscriber<T>,
-    private delayDurationSelector: (value: T, index: number) => Observable<any>
-  ) {
-    super(destination);
-  }
-
-  reactNext(
-    outerN: T,
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: ActorSubscriber<T, R>
-  ): void {
-    this.dst.next(outerN);
-    this.removeSubscription(innerSub);
-    this.tryComplete();
-  }
-
-  notifyError(error: any, innerSub: ActorSubscriber<T, R>): void {
-    this._error(error);
-  }
-
-  notifyComplete(innerSub: ActorSubscriber<T, R>): void {
-    const value = this.removeSubscription(innerSub);
-    if (value) {
-      this.dst.next(value);
-    }
-    this.tryComplete();
-  }
-
-  protected _next(v: T) {
-    const index = this.index++;
-    try {
-      const delayNotifier = this.delayDurationSelector(value, index);
-      if (delayNotifier) {
-        this.tryDelay(delayNotifier, value);
-      }
-    } catch (err) {
-      this.dst.error(err);
-    }
-  }
-
-  protected _complete() {
-    this.completed = true;
-    this.tryComplete();
-    this.unsubscribe();
-  }
-
-  private removeSubscription(subscription: ActorSubscriber<T, R>): T {
-    subscription.unsubscribe();
-
-    const subscriptionIdx = this.delayNotifierSubscriptions.indexOf(
-      subscription
-    );
-    if (subscriptionIdx !== -1) {
-      this.delayNotifierSubscriptions.splice(subscriptionIdx, 1);
-    }
-
-    return subscription.outerN;
-  }
-
-  private tryDelay(delayNotifier: Observable<any>, value: T): void {
-    const notifierSubscription = subscribeToResult(this, delayNotifier, value);
-
-    if (notifierSubscription && !notifierSubscription.closed) {
-      const destination = this.destination as Subscription;
-      destination.add(notifierSubscription);
-      this.delayNotifierSubscriptions.push(notifierSubscription);
-    }
-  }
-
-  private tryComplete(): void {
-    if (this.completed && this.delayNotifierSubscriptions.length === 0) {
-      this.dst.complete();
-    }
-  }
-}
-
-class SubscriptionDelayObservable<T> extends Observable<T> {
-  constructor(
-    public source: Observable<T>,
-    private subscriptionDelay: Observable<any>
-  ) {
-    super();
-  }
-
-  _subscribe(subscriber: Subscriber<T>) {
-    this.subscriptionDelay.subscribe(
-      new SubscriptionDelaySubscriber(subscriber, this.source)
-    );
-  }
-}
-
-class SubscriptionDelaySubscriber<T> extends Subscriber<T> {
-  private sourceSubscribed: boolean = false;
-
-  constructor(private parent: Subscriber<T>, private source: Observable<T>) {
-    super();
-  }
-
-  protected _next(unused: any) {
-    this.subscribeToSource();
-  }
-
-  protected _error(err: any) {
-    this.unsubscribe();
-    this.parent.error(err);
-  }
-
-  protected _complete() {
-    this.unsubscribe();
-    this.subscribeToSource();
-  }
-
-  private subscribeToSource(): void {
-    if (!this.sourceSubscribed) {
-      this.sourceSubscribed = true;
-      this.unsubscribe();
-      this.source.subscribe(this.parent);
-    }
-  }
-}
-
-export function dematerialize<T>(): Lifter<Notification<T>, T> {
-  return function dematerializeLifter(source: Observable<Notification<T>>) {
-    return source.lift(new DeMaterializeOperator());
-  };
-}
-
-class DeMaterializeOperator<T extends Notification<any>, R>
-  implements Operator<T, R> {
-  call(subscriber: Subscriber<any>, source: any): any {
-    return source.subscribe(new DeMaterializeSubscriber(subscriber));
-  }
-}
-
-class DeMaterializeSubscriber<T extends Notification<any>> extends Subscriber<
-  T
-> {
-  constructor(destination: Subscriber<any>) {
-    super(destination);
-  }
-
-  protected _next(value: T) {
-    value.observe(this.destination);
-  }
-}
-
-export function every<T>(
-  predicate: (value: T, index: number, source: Observable<T>) => boolean,
+export function every<N, F, D>(
+  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
 ): Lifter<T, boolean> {
-  return (source: Observable<T>) =>
-    source.lift(new EveryOperator(predicate, thisArg, source));
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new EveryO(predicate, thisArg, source));
 }
 
-class EveryOperator<T> implements Operator<T, boolean> {
+class EveryO<N, F, D> implements qt.Operator<T, boolean> {
   constructor(
     private predicate: (
       value: T,
       index: number,
-      source: Observable<T>
+      source: qt.Source<N, F, D>
     ) => boolean,
     private thisArg: any,
-    private source: Observable<T>
+    private source: qt.Source<N, F, D>
   ) {}
 
   call(observer: Subscriber<boolean>, source: any): any {
     return source.subscribe(
-      new EverySubscriber(observer, this.predicate, this.thisArg, this.source)
+      new EveryR(observer, this.predicate, this.thisArg, this.source)
     );
   }
 }
 
-class EverySubscriber<T> extends Subscriber<T> {
-  private index: number = 0;
+export class EveryR<N, F, D> extends Subscriber<N, F, D> {
+  private index = 0;
 
   constructor(
-    destination: Observer<boolean>,
+    tgt: qt.Observer<boolean, F, D>,
     private predicate: (
-      value: T,
+      value: N,
       index: number,
-      source: Observable<T>
+      source: qt.Source<N, F, D>
     ) => boolean,
     private thisArg: any,
-    private source: Observable<T>
+    private source: qt.Source<N, F, D>
   ) {
-    super(destination);
+    super(tgt);
     this.thisArg = thisArg || this;
   }
 
-  private notifyComplete(everyValueMatch: boolean): void {
-    this.dst.next(everyValueMatch);
-    this.dst.complete();
+  private reactDone(everyValueMatch: boolean) {
+    this.tgt.next(everyValueMatch);
+    this.tgt.done();
   }
 
-  protected _next(v: T) {
+  protected _next(n?: N) {
     let result = false;
     try {
-      result = this.predicate.call(
-        this.thisArg,
-        value,
-        this.index++,
-        this.source
-      );
-    } catch (err) {
-      this.dst.error(err);
+      result = this.predicate.call(this.thisArg, n, this.index++, this.source);
+    } catch (e) {
+      this.tgt.fail(e);
       return;
     }
-
-    if (!result) {
-      this.notifyComplete(false);
-    }
+    if (!result) this.reactDone(false);
   }
 
-  protected _complete() {
-    this.notifyComplete(true);
+  protected _done(d?: D) {
+    this.reactDone(true);
   }
 }
 
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
   concurrent?: number,
-  scheduler?: Scheduler
+  scheduler?: qt.Scheduler
 ): Lifter<T, R>;
-export function expand<T>(
-  project: (value: T, index: number) => SourceInput<T>,
+export function expand<N, F, D>(
+  project: (value: T, index: number) => SourceInput<N, F, D>,
   concurrent?: number,
-  scheduler?: Scheduler
-): MonoOper<T>;
+  scheduler?: qt.Scheduler
+): qt.MonoOper<N, F, D>;
 export function expand<T, R>(
   project: (value: T, index: number) => SourceInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
-  scheduler?: Scheduler
+  scheduler?: qt.Scheduler
 ): Lifter<T, R> {
   concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
 
-  return (source: Observable<T>) =>
-    source.lift(new ExpandOperator(project, concurrent, scheduler));
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new ExpandO(project, concurrent, scheduler));
 }
 
-export class ExpandOperator<T, R> implements Operator<T, R> {
+export class ExpandO<T, R> implements qt.Operator<T, R> {
   constructor(
     private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
-    private scheduler?: Scheduler
+    private scheduler?: qt.Scheduler
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
     return source.subscribe(
-      new ExpandSubscriber(
-        subscriber,
-        this.project,
-        this.concurrent,
-        this.scheduler
-      )
+      new ExpandR(subscriber, this.project, this.concurrent, this.scheduler)
     );
   }
 }
 
-interface DispatchArg<T, R> {
-  subscriber: ExpandSubscriber<T, R>;
-  result: SourceInput<R>;
-  value: any;
-  index: number;
-}
-
-export class ExpandSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private index: number = 0;
-  private active: number = 0;
-  private hasCompleted: boolean = false;
-  private buffer: any[] | undefined;
+export class ExpandR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private index = 0;
+  private active = 0;
+  private hasCompleted = false;
+  private buffer?: any[];
 
   constructor(
-    destination: Subscriber<R>,
+    tgt: Subscriber<M, F, D>,
     private project: (value: T, index: number) => SourceInput<R>,
     private concurrent: number,
-    private scheduler?: Scheduler
+    private scheduler?: qt.Scheduler
   ) {
-    super(destination);
-    if (concurrent < Number.POSITIVE_INFINITY) {
-      this.buffer = [];
-    }
+    super(tgt);
+    if (concurrent < Number.POSITIVE_INFINITY) this.buffer = [];
   }
 
-  private static dispatch<T, R>(arg: DispatchArg<T, R>): void {
+  private static dispatch<N, M>(arg: DispatchArg<N, M>) {
     const {subscriber, result, value, index} = arg;
     subscriber.subscribeToProjection(result, value, index);
   }
 
-  protected _next(value: any): void {
-    const destination = this.destination;
-
-    if (destination.closed) {
-      this._complete();
+  protected _next(n?: N) {
+    const tgt = this.tgt;
+    if (tgt.closed) {
+      this._done();
       return;
     }
-
     const index = this.index++;
     if (this.active < this.concurrent) {
-      destination.next(value);
+      tgt.next(n);
       try {
         const {project} = this;
-        const result = project(value, index);
+        const result = project(n, index);
         if (!this.scheduler) {
-          this.subscribeToProjection(result, value, index);
+          this.subscribeToProjection(result, n, index);
         } else {
-          const state: DispatchArg<T, R> = {
+          const state: DispatchArg<N, M> = {
             subscriber: this,
             result,
-            value,
+            n,
             index
           };
-          const destination = this.destination as Subscription;
-          destination.add(
-            this.scheduler.schedule<DispatchArg<T, R>>(
-              ExpandSubscriber.dispatch as any,
+          const tgt = this.tgt as Subscription;
+          tgt.add(
+            this.scheduler.schedule<DispatchArg<N, M>>(
+              Expand.dispatch as any,
               0,
               state
             )
           );
         }
       } catch (e) {
-        destination.error(e);
+        tgt.fail(e);
       }
-    } else {
-      this.buffer!.push(value);
-    }
+    } else this.buffer!.push(n);
   }
 
-  private subscribeToProjection(result: any, value: T, index: number): void {
+  private subscribeToProjection(result: any, value: N, index: number) {
     this.active++;
-    const destination = this.destination as Subscription;
-    destination.add(subscribeToResult<T, R>(this, result, value, index));
+    const tgt = this.tgt as Subscription;
+    tgt.add(subscribeToResult<T, R>(this, result, value, index));
   }
 
-  protected _complete() {
+  protected _done(d?: D) {
     this.hasCompleted = true;
-    if (this.hasCompleted && this.active === 0) {
-      this.dst.complete();
-    }
+    if (this.hasCompleted && this.active === 0) this.tgt.done(d);
+
     this.unsubscribe();
   }
 
@@ -636,81 +281,100 @@ export class ExpandSubscriber<T, R> extends ReactorSubscriber<T, R> {
     innerValue: R,
     outerX: number,
     innerIndex: number,
-    innerSub: ActorSubscriber<T, R>
-  ): void {
+    innerSub: Actor<N, M, F, D>
+  ) {
     this._next(innerValue);
   }
 
-  notifyComplete(innerSub: Subscription): void {
+  reactDone(innerSub: Subscription) {
     const buffer = this.buffer;
-    const destination = this.destination as Subscription;
-    destination.remove(innerSub);
+    const tgt = this.tgt as Subscription;
+    tgt.remove(innerSub);
     this.active--;
-    if (buffer && buffer.length > 0) {
-      this._next(buffer.shift());
-    }
-    if (this.hasCompleted && this.active === 0) {
-      this.dst.complete();
-    }
+    if (buffer && buffer.length > 0) this._next(buffer.shift());
+    if (this.hasCompleted && this.active === 0) this.tgt.done();
   }
 }
 
-export function finalize<T>(callback: () => void): MonoOper<T> {
-  return (source: Observable<T>) => source.lift(new FinallyOperator(callback));
+interface DispatchArg<T, R> {
+  subscriber: Expand<T, R>;
+  result: qt.SourceInput<R>;
+  value: any;
+  index: number;
 }
 
-class FinallyOperator<T> implements Operator<T, T> {
+export function finalize<N, F, D>(callback: () => void): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) => source.lift(new FinallyO(callback));
+}
+
+class FinallyO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private callback: () => void) {}
 
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(new FinallySubscriber(subscriber, this.callback));
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(new FinallyR(subscriber, this.callback));
   }
 }
 
-class FinallySubscriber<T> extends Subscriber<T> {
-  constructor(destination: Subscriber<T>, callback: () => void) {
-    super(destination);
+class FinallyR<N, F, D> extends Subscriber<N, F, D> {
+  constructor(tgt: Subscriber<N, F, D>, callback: () => void) {
+    super(tgt);
     this.add(new Subscription(callback));
   }
 }
 
 export function find<T, S extends T>(
-  predicate: (value: T, index: number, source: Observable<T>) => value is S,
+  predicate: (
+    value: T,
+    index: number,
+    source: qt.Source<N, F, D>
+  ) => value is S,
   thisArg?: any
 ): Lifter<T, S | undefined>;
-export function find<T>(
-  predicate: (value: T, index: number, source: Observable<T>) => boolean,
+export function find<N, F, D>(
+  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
 ): Lifter<T, T | undefined>;
-export function find<T>(
-  predicate: (value: T, index: number, source: Observable<T>) => boolean,
+export function find<N, F, D>(
+  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
 ): Lifter<T, T | undefined> {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate is not a function');
   }
-  return (source: Observable<T>) =>
-    source.lift(
-      new FindValueOperator(predicate, source, false, thisArg)
-    ) as Observable<T | undefined>;
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new FindValueO(predicate, source, false, thisArg)) as qt.Source<
+      T | undefined
+    >;
 }
 
-export class FindValueOperator<T>
-  implements Operator<T, T | number | undefined> {
+export function findIndex<N, F, D>(
+  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  thisArg?: any
+): Lifter<T, number> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new FindValueO(predicate, source, true, thisArg)) as qt.Source<
+      any,
+      F,
+      D
+    >;
+}
+
+export class FindValueO<N, F, D>
+  implements qt.Operator<T, T | number | undefined> {
   constructor(
     private predicate: (
       value: T,
       index: number,
-      source: Observable<T>
+      source: qt.Source<N, F, D>
     ) => boolean,
-    private source: Observable<T>,
+    private source: qt.Source<N, F, D>,
     private yieldIndex: boolean,
     private thisArg?: any
   ) {}
 
-  call(observer: Subscriber<T>, source: any): any {
+  call(observer: Subscriber<N, F, D>, source: any): any {
     return source.subscribe(
-      new FindValueSubscriber(
+      new FindValueR(
         observer,
         this.predicate,
         this.source,
@@ -721,326 +385,498 @@ export class FindValueOperator<T>
   }
 }
 
-export class FindValueSubscriber<T> extends Subscriber<T> {
-  private index: number = 0;
+export class FindValueR<N, F, D> extends Subscriber<N, F, D> {
+  private index = 0;
 
   constructor(
-    destination: Subscriber<T>,
+    tgt: Subscriber<N, F, D>,
     private predicate: (
-      value: T,
+      value: N,
       index: number,
-      source: Observable<T>
+      source: qt.Source<N, F, D>
     ) => boolean,
-    private source: Observable<T>,
+    private source: qt.Source<N, F, D>,
     private yieldIndex: boolean,
     private thisArg?: any
   ) {
-    super(destination);
+    super(tgt);
   }
 
-  private notifyComplete(value: any): void {
-    const destination = this.destination;
-
-    destination.next(value);
-    destination.complete();
+  private reactDone(d?: D) {
+    const tgt = this.tgt;
+    tgt.next(d);
+    tgt.done(d);
     this.unsubscribe();
   }
 
-  protected _next(v: T) {
+  protected _next(n?: N) {
     const {predicate, thisArg} = this;
     const index = this.index++;
     try {
-      const result = predicate.call(thisArg || this, value, index, this.source);
-      if (result) {
-        this.notifyComplete(this.yieldIndex ? index : value);
-      }
-    } catch (err) {
-      this.dst.error(err);
+      const result = predicate.call(thisArg || this, n, index, this.source);
+      if (result) this.reactDone(this.yieldIndex ? index : n);
+    } catch (e) {
+      this.tgt.fail(e);
     }
   }
 
-  protected _complete() {
-    this.notifyComplete(this.yieldIndex ? -1 : undefined);
+  protected _done(d?: D) {
+    this.reactDone(this.yieldIndex ? -1 : undefined);
   }
 }
 
-export function findIndex<T>(
-  predicate: (value: T, index: number, source: Observable<T>) => boolean,
-  thisArg?: any
-): Lifter<T, number> {
-  return (source: Observable<T>) =>
-    source.lift(
-      new FindValueOperator(predicate, source, true, thisArg)
-    ) as Observable<any>;
-}
-
-export interface RefCountSubscription {
-  count: number;
-  unsubscribe: () => void;
-  closed: boolean;
-  attemptedToUnsubscribe: boolean;
-}
-
-class GroupDurationSubscriber<K, T> extends Subscriber<T> {
+export class GroupDuration<K, N, F, D> extends Subscriber<N, F, D> {
   constructor(
     private key: K,
-    private group: Subject<T>,
-    private parent: GroupBySubscriber<any, K, T | any>
+    private group: Subject<N, F, D>,
+    private parent: GroupBy<any, K, N | any, F, D>
   ) {
     super(group);
   }
 
-  protected _next(v: T) {
-    this.complete();
+  protected _next(_n?: N) {
+    this.done();
   }
 
   _unsubscribe() {
     const {parent, key} = this;
     this.key = this.parent = null!;
-    if (parent) {
-      parent.removeGroup(key);
+    if (parent) parent.removeGroup(key);
+  }
+}
+
+export class IgnoreElements<N, F, D> extends Subscriber<N, F, D> {
+  protected _next(_?: N) {
+    // Do nothing
+  }
+}
+
+export function isEmpty<N, F, D>(): Lifter<T, boolean> {
+  return (source: qt.Source<N, F, D>) => source.lift(new IsEmptyO());
+}
+
+class IsEmptyO implements qt.Operator<any, boolean> {
+  call(observer: Subscriber<boolean>, source: any): any {
+    return source.subscribe(new IsEmptyR(observer));
+  }
+}
+
+export class IsEmptyR<N extends boolean, F, D> extends Subscriber<N, F, D> {
+  constructor(tgt: Subscriber<N, F, D>) {
+    super(tgt);
+  }
+
+  private reactDone(empty: N) {
+    const tgt = this.tgt;
+    tgt.next(empty);
+    tgt.done();
+  }
+
+  protected _next(_n?: N) {
+    this.reactDone(false as N);
+  }
+
+  protected _done(d?: D) {
+    this.reactDone(true as N);
+  }
+}
+
+export function multicast<N, F, D>(
+  subject: Subject<N, F, D>
+): UnaryFun<Observable<N, F, D>, Connect<N, F, D>>;
+export function multicast<T, O extends SourceInput<any>>(
+  subject: Subject<N, F, D>,
+  selector: (shared: qt.Source<N, F, D>) => O
+): UnaryFun<Observable<N, F, D>, Connect<Sourced<O>>>;
+export function multicast<N, F, D>(
+  subjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>
+): UnaryFun<Observable<N, F, D>, Connect<N, F, D>>;
+export function multicast<T, O extends SourceInput<any>>(
+  SubjectFactory: (this: qt.Source<N, F, D>) => Subject<N, F, D>,
+  selector: (shared: qt.Source<N, F, D>) => O
+): Lifter<T, Sourced<O>>;
+export function multicast<T, R>(
+  subjectOrSubjectFactory: Subject<N, F, D> | (() => Subject<N, F, D>),
+  selector?: (source: qt.Source<N, F, D>) => qt.Source<R>
+): Lifter<T, R> {
+  return function multicastLifter(source: qt.Source<N, F, D>): qt.Source<R> {
+    let subjectFactory: () => Subject<N, F, D>;
+    if (typeof subjectOrSubjectFactory === 'function') {
+      subjectFactory = <() => Subject<N, F, D>>subjectOrSubjectFactory;
+    } else {
+      subjectFactory = function subjectFactory() {
+        return <Subject<N, F, D>>subjectOrSubjectFactory;
+      };
+    }
+
+    if (typeof selector === 'function') {
+      return source.lift(new MulticastO(subjectFactory, selector));
+    }
+
+    const connectable: any = Object.create(
+      source,
+      connectableObservableDescriptor
+    );
+    connectable.source = source;
+    connectable.subjectFactory = subjectFactory;
+
+    return <Connect<R>>connectable;
+  };
+}
+
+export class MulticastO<T, R> implements qt.Operator<T, R> {
+  constructor(
+    private subjectFactory: () => Subject<N, F, D>,
+    private selector: (source: qt.Source<N, F, D>) => qt.Source<R>
+  ) {}
+  call(subscriber: Subscriber<R>, source: any): any {
+    const {selector} = this;
+    const subject = this.subjectFactory();
+    const subscription = selector(subject).subscribe(subscriber);
+    subscription.add(source.subscribe(subject));
+    return subscription;
+  }
+}
+
+export function onErrorResumeNext<N, F, D>(): Lifter<T, T>;
+export function onErrorResumeNext<T, T2>(v: SourceInput<T2>): Lifter<T, T | T2>;
+export function onErrorResumeNext<T, T2, T3>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>
+): Lifter<T, T | T2 | T3>;
+export function onErrorResumeNext<T, T2, T3, T4>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>
+): Lifter<T, T | T2 | T3 | T4>;
+export function onErrorResumeNext<T, T2, T3, T4, T5>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>
+): Lifter<T, T | T2 | T3 | T4 | T5>;
+export function onErrorResumeNext<T, T2, T3, T4, T5, T6>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>,
+  v5: SourceInput<T6>
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6>;
+export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
+  v: SourceInput<T2>,
+  v2: SourceInput<T3>,
+  v3: SourceInput<T4>,
+  v4: SourceInput<T5>,
+  v5: SourceInput<T6>,
+  v6: SourceInput<T7>
+): Lifter<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
+export function onErrorResumeNext<T, R>(
+  ...observables: Array<SourceInput<any>>
+): Lifter<T, T | R>;
+export function onErrorResumeNext<T, R>(
+  array: SourceInput<any>[]
+): Lifter<T, T | R>;
+export function onErrorResumeNext<T, R>(
+  ...nextSources: Array<SourceInput<any> | Array<SourceInput<any>>>
+): Lifter<T, R> {
+  if (nextSources.length === 1 && isArray(nextSources[0])) {
+    nextSources = <Array<Observable<any>>>nextSources[0];
+  }
+
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new OnErrorResumeNextO<T, R>(nextSources));
+}
+
+export function onErrorResumeNextStatic<R>(v: SourceInput<R>): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, T4, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, T4, T5, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T2, T3, T4, T5, T6, R>(
+  v2: SourceInput<T2>,
+  v3: SourceInput<T3>,
+  v4: SourceInput<T4>,
+  v5: SourceInput<T5>,
+  v6: SourceInput<T6>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<R>(
+  ...observables: Array<SourceInput<any> | ((...values: Array<any>) => R)>
+): qt.Source<R>;
+export function onErrorResumeNextStatic<R>(
+  array: SourceInput<any>[]
+): qt.Source<R>;
+export function onErrorResumeNextStatic<T, R>(
+  ...nextSources: Array<
+    SourceInput<any> | Array<SourceInput<any>> | ((...values: Array<any>) => R)
+  >
+): qt.Source<R> {
+  let source: SourceInput<any> | null = null;
+
+  if (nextSources.length === 1 && isArray(nextSources[0])) {
+    nextSources = <Array<SourceInput<any>>>nextSources[0];
+  }
+  source = nextSources.shift()!;
+
+  return from(source, null!).lift(new OnErrorResumeNextO<T, R>(nextSources));
+}
+
+class OnErrorResumeNextO<T, R> implements qt.Operator<T, R> {
+  constructor(private nextSources: Array<SourceInput<any>>) {}
+
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source.subscribe(
+      new OnErrorResumeNextR(subscriber, this.nextSources)
+    );
+  }
+}
+
+export class OnErrorResumeNextR<N, M, F, D> extends Reactor<N, M, F, D> {
+  constructor(
+    protected tgt: Subscriber<N, F, D>,
+    private nextSources: Array<SourceInput<any>>
+  ) {
+    super(tgt);
+  }
+
+  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
+    this.subscribeToNextSource();
+  }
+
+  reactDone(innerSub: Actor<N, any, F, D>): void {
+    this.subscribeToNextSource();
+  }
+
+  protected _fail(_f?: F) {
+    this.subscribeToNextSource();
+    this.unsubscribe();
+  }
+
+  protected _done(_d?: D) {
+    this.subscribeToNextSource();
+    this.unsubscribe();
+  }
+
+  private subscribeToNextSource(): void {
+    const next = this.nextSources.shift();
+    if (!!next) {
+      const innerSubscriber = new Actor(this, undefined, undefined!);
+      const tgt = this.tgt as Subscription;
+      tgt.add(innerSubscriber);
+      const innerSubscription = qu.subscribeToResult(
+        this,
+        next,
+        undefined,
+        undefined,
+        innerSubscriber
+      );
+      if (innerSubscription !== innerSubscriber) {
+        tgt.add(innerSubscription);
+      }
+    } else this.tgt.done(d);
+  }
+}
+
+export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
+  return (source: qt.Source<N, F, D>) => source.lift(new PairwiseO());
+}
+
+class PairwiseO<N, F, D> implements qt.Operator<T, [T, T]> {
+  call(subscriber: Subscriber<[T, T]>, source: any): any {
+    return source.subscribe(new PairwiseR(subscriber));
+  }
+}
+
+class PairwiseR<N, F, D> extends Subscriber<N, F, D> {
+  private prev: T | undefined;
+  private hasPrev = false;
+
+  constructor(tgt: Subscriber<[T, T]>) {
+    super(tgt);
+  }
+
+  _next(value: N): void {
+    let pair: [T, T] | undefined;
+
+    if (this.hasPrev) {
+      pair = [this.prev!, value];
+    } else {
+      this.hasPrev = true;
+    }
+
+    this.prev = value;
+
+    if (pair) {
+      this.tgt.next(pair);
     }
   }
 }
 
-class ActorRefCountSubscription extends Subscription {
-  constructor(private parent: RefCountSubscription) {
-    super();
-    parent.count++;
-  }
+export function partition<N, F, D>(
+  predicate: (value: T, index: number) => boolean,
+  thisArg?: any
+): UnaryFun<Observable<N, F, D>, [Observable<N, F, D>, qt.Source<N, F, D>]> {
+  return (source: qt.Source<N, F, D>) =>
+    [
+      filter(predicate, thisArg)(source),
+      filter(not(predicate, thisArg) as any)(source)
+    ] as [Observable<N, F, D>, qt.Source<N, F, D>];
+}
 
-  unsubscribe() {
-    const parent = this.parent;
-    if (!parent.closed && !this.closed) {
-      super.unsubscribe();
-      parent.count -= 1;
-      if (parent.count === 0 && parent.attemptedToUnsubscribe) {
-        parent.unsubscribe();
+export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;
+export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
+  k1: K1,
+  k2: K2
+): Lifter<T, T[K1][K2]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2]
+>(k1: K1, k2: K2, k3: K3): Lifter<T, T[K1][K2][K3]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3]
+>(k1: K1, k2: K2, k3: K3, k4: K4): Lifter<T, T[K1][K2][K3][K4]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4]
+>(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): Lifter<T, T[K1][K2][K3][K4][K5]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4],
+  K6 extends keyof T[K1][K2][K3][K4][K5]
+>(
+  k1: K1,
+  k2: K2,
+  k3: K3,
+  k4: K4,
+  k5: K5,
+  k6: K6
+): Lifter<T, T[K1][K2][K3][K4][K5][K6]>;
+export function pluck<
+  T,
+  K1 extends keyof T,
+  K2 extends keyof T[K1],
+  K3 extends keyof T[K1][K2],
+  K4 extends keyof T[K1][K2][K3],
+  K5 extends keyof T[K1][K2][K3][K4],
+  K6 extends keyof T[K1][K2][K3][K4][K5]
+>(
+  k1: K1,
+  k2: K2,
+  k3: K3,
+  k4: K4,
+  k5: K5,
+  k6: K6,
+  ...rest: string[]
+): Lifter<T, unknown>;
+export function pluck<N, F, D>(...properties: string[]): Lifter<T, unknown>;
+export function pluck<T, R>(
+  ...properties: Array<string | number | symbol>
+): Lifter<T, R> {
+  const length = properties.length;
+  if (length === 0) {
+    throw new Error('list of properties cannot be empty.');
+  }
+  return map(x => {
+    let currentProp: any = x;
+    for (let i = 0; i < length; i++) {
+      const p = currentProp[properties[i]];
+      if (typeof p !== 'undefined') {
+        currentProp = p;
+      } else {
+        return undefined;
       }
     }
-  }
+    return currentProp;
+  });
 }
 
-export function race<T>(
-  ...observables: (Observable<T> | Observable<T>[])[]
-): MonoOper<T> {
-  return function raceLifter(source: Observable<T>) {
+export function race<N, F, D>(
+  ...observables: (Observable<N, F, D> | qt.Source<N, F, D>[])[]
+): qt.MonoOper<N, F, D> {
+  return function raceLifter(source: qt.Source<N, F, D>) {
     if (observables.length === 1 && isArray(observables[0])) {
-      observables = observables[0] as Observable<T>[];
+      observables = observables[0] as qt.Source<N, F, D>[];
     }
 
     return source.lift.call(
-      raceStatic(source, ...(observables as Observable<T>[])),
+      raceStatic(source, ...(observables as qt.Source<N, F, D>[])),
       undefined
-    ) as Observable<T>;
+    ) as qt.Source<N, F, D>;
   };
 }
 
-export function repeat<T>(count: number = -1): MonoOper<T> {
-  return (source: Observable<T>) => {
-    if (count === 0) {
-      return EMPTY;
-    } else if (count < 0) {
-      return source.lift(new RepeatOperator(-1, source));
-    } else {
-      return source.lift(new RepeatOperator(count - 1, source));
-    }
-  };
-}
-
-class RepeatOperator<T> implements Operator<T, T> {
-  constructor(private count: number, private source: Observable<T>) {}
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new RepeatSubscriber(subscriber, this.count, this.source)
-    );
-  }
-}
-
-class RepeatSubscriber<T> extends Subscriber<T> {
-  constructor(
-    destination: Subscriber<any>,
-    private count: number,
-    private source: Observable<T>
-  ) {
-    super(destination);
-  }
-  complete() {
-    if (!this.stopped) {
-      const {source, count} = this;
-      if (count === 0) {
-        return super.complete();
-      } else if (count > -1) {
-        this.count = count - 1;
-      }
-      source.subscribe(this._recycle());
-    }
-  }
-}
-
-export function repeatWhen<T>(
-  notifier: (notifications: Observable<any>) => Observable<any>
-): MonoOper<T> {
-  return (source: Observable<T>) =>
-    source.lift(new RepeatWhenOperator(notifier));
-}
-
-class RepeatWhenOperator<T> implements Operator<T, T> {
-  constructor(
-    protected notifier: (notifications: Observable<any>) => Observable<any>
-  ) {}
-
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new RepeatWhenSubscriber(subscriber, this.notifier, source)
-    );
-  }
-}
-
-class RepeatWhenSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private notifications: Subject<void> | null = null;
-  private retries: Observable<any> | null = null;
-  private retriesSubscription: Subscription | null | undefined = null;
-  private sourceIsBeingSubscribedTo: boolean = true;
-
-  constructor(
-    destination: Subscriber<R>,
-    private notifier: (notifications: Observable<any>) => Observable<any>,
-    private source: Observable<T>
-  ) {
-    super(destination);
-  }
-
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number,
-    innerSub: ActorSubscriber<T, R>
-  ): void {
-    this.sourceIsBeingSubscribedTo = true;
-    this.source.subscribe(this);
-  }
-
-  notifyComplete(innerSub: ActorSubscriber<T, R>): void {
-    if (this.sourceIsBeingSubscribedTo === false) {
-      return super.complete();
-    }
-  }
-
-  complete() {
-    this.sourceIsBeingSubscribedTo = false;
-
-    if (!this.stopped) {
-      if (!this.retries) {
-        this.subscribeToRetries();
-      }
-      if (!this.retriesSubscription || this.retriesSubscription.closed) {
-        return super.complete();
-      }
-
-      this._recycle();
-      this.notifications!.next();
-    }
-  }
-
-  _unsubscribe() {
-    const {notifications, retriesSubscription} = this;
-    if (notifications) {
-      notifications.unsubscribe();
-      this.notifications = null;
-    }
-    if (retriesSubscription) {
-      retriesSubscription.unsubscribe();
-      this.retriesSubscription = null;
-    }
-    this.retries = null;
-  }
-
-  _recycle(): Subscriber<T> {
-    const {_unsubscribe} = this;
-
-    this._unsubscribe = null!;
-    super._recycle();
-    this._unsubscribe = _unsubscribe;
-
-    return this;
-  }
-
-  private subscribeToRetries() {
-    this.notifications = new Subject();
-    let retries;
-    try {
-      const {notifier} = this;
-      retries = notifier(this.notifications);
-    } catch (e) {
-      return super.complete();
-    }
-    this.retries = retries;
-    this.retriesSubscription = subscribeToResult(this, retries);
-  }
-}
-
-function dispatchNotification<T>(this: Action<any>, state: any) {
-  let {subscriber, period} = state;
-  subscriber.reactNext();
-  this.schedule(state, period);
-}
-
-export function sequenceEqual<T>(
-  compareTo: Observable<T>,
-  comparator?: (a: T, b: T) => boolean
+export function sequenceEqual<N, F, D>(
+  compareTo: qt.Source<N, F, D>,
+  comparator?: (a: T, b: N) => boolean
 ): Lifter<T, boolean> {
-  return (source: Observable<T>) =>
-    source.lift(new SequenceEqualOperator(compareTo, comparator));
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new SequenceEqualO(compareTo, comparator));
 }
 
-export class SequenceEqualOperator<T> implements Operator<T, boolean> {
+export class SequenceEqualO<N, F, D> implements qt.Operator<T, boolean> {
   constructor(
-    private compareTo: Observable<T>,
-    private comparator?: (a: T, b: T) => boolean
+    private compareTo: qt.Source<N, F, D>,
+    private comparator?: (a: T, b: N) => boolean
   ) {}
 
   call(subscriber: Subscriber<boolean>, source: any): any {
     return source.subscribe(
-      new SequenceEqualSubscriber(subscriber, this.compareTo, this.comparator)
+      new SequenceEqualR(subscriber, this.compareTo, this.comparator)
     );
   }
 }
 
-export class SequenceEqualSubscriber<T, R> extends Subscriber<T> {
-  private _a: T[] = [];
-  private _b: T[] = [];
+export class SequenceEqualR<N, M, F, D> extends Subscriber<N, F, D> {
+  private _a = [] as (N | undefined)[];
+  private _b = [] as N[];
   private _oneComplete = false;
 
   constructor(
-    destination: Observer<R>,
-    private compareTo: Observable<T>,
-    private comparator?: (a: T, b: T) => boolean
+    tgt: qt.Observer<M, F, D>,
+    private compareTo: qt.Source<N, F, D>,
+    private comparator?: (a: N, b: N) => boolean
   ) {
-    super(destination);
-    (this.destination as Subscription).add(
-      compareTo.subscribe(
-        new SequenceEqualCompareToSubscriber(destination, this)
-      )
+    super(tgt);
+    (this.tgt as Subscription).add(
+      compareTo.subscribe(new SequenceEqualCompareToSubscriber(tgt, this))
     );
   }
 
-  protected _next(v: T) {
-    if (this._oneComplete && this._b.length === 0) {
-      this.emit(false);
-    } else {
-      this._a.push(value);
+  protected _next(n?: N) {
+    if (this._oneComplete && this._b.length === 0) this.emit(false);
+    else {
+      this._a.push(n);
       this.checkValues();
     }
   }
 
-  public _complete(): void {
-    if (this._oneComplete) {
-      this.emit(this._a.length === 0 && this._b.length === 0);
-    } else {
-      this._oneComplete = true;
-    }
+  public _done(): void {
+    if (this._oneComplete) this.emit(!this._a.length && !this._b.length);
+    else this._oneComplete = true;
     this.unsubscribe();
   }
 
@@ -1053,56 +889,46 @@ export class SequenceEqualSubscriber<T, R> extends Subscriber<T> {
       try {
         areEqual = comparator ? comparator(a, b) : a === b;
       } catch (e) {
-        this.dst.error(e);
+        this.tgt.fail(e);
       }
-      if (!areEqual) {
-        this.emit(false);
-      }
+      if (!areEqual) this.emit(false);
     }
   }
 
-  emit(value: boolean) {
-    const {destination} = this;
-    destination.next(value);
-    destination.complete();
+  emit(n: boolean) {
+    this.tgt.next(n);
+    this.tgt.done();
   }
 
-  nextB(value: T) {
-    if (this._oneComplete && this._a.length === 0) {
-      this.emit(false);
-    } else {
-      this._b.push(value);
+  nextB(n: N) {
+    if (this._oneComplete && !this._a.length) this.emit(false);
+    else {
+      this._b.push(n);
       this.checkValues();
     }
   }
 
   completeB() {
-    if (this._oneComplete) {
-      this.emit(this._a.length === 0 && this._b.length === 0);
-    } else {
-      this._oneComplete = true;
-    }
+    if (this._oneComplete) this.emit(!this._a.length && !this._b.length);
+    else this._oneComplete = true;
   }
 }
 
-class SequenceEqualCompareToSubscriber<T, R> extends Subscriber<T> {
-  constructor(
-    destination: Observer<R>,
-    private parent: SequenceEqualSubscriber<T, R>
-  ) {
-    super(destination);
+class SequenceEqualCompareToSubscriber<T, R> extends Subscriber<N, F, D> {
+  constructor(tgt: Observer<R>, private parent: SequenceEqualSubscriber<T, R>) {
+    super(tgt);
   }
 
-  protected _next(v: T) {
+  protected _next(v: N) {
     this.parent.nextB(value);
   }
 
-  protected _error(e: any) {
+  protected _fail(f?: F) {
     this.parent.error(err);
     this.unsubscribe();
   }
 
-  protected _complete() {
+  protected _done(d?: D) {
     this.parent.completeB();
     this.unsubscribe();
   }
@@ -1112,29 +938,31 @@ function shareSubjectFactory() {
   return new Subject<any>();
 }
 
-export function share<T>(): MonoOper<T> {
-  return (source: Observable<T>) =>
-    refCount()(multicast(shareSubjectFactory)(source)) as Observable<T>;
+export function share<N, F, D>(): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
+    refCount()(multicast(shareSubjectFactory)(source)) as qt.Source<N, F, D>;
 }
 
 export interface ShareReplayConfig {
   bufferSize?: number;
   windowTime?: number;
   refCount: boolean;
-  scheduler?: Scheduler;
+  scheduler?: qt.Scheduler;
 }
 
-export function shareReplay<T>(config: ShareReplayConfig): MonoOper<T>;
-export function shareReplay<T>(
+export function shareReplay<N, F, D>(
+  config: ShareReplayConfig
+): qt.MonoOper<N, F, D>;
+export function shareReplay<N, F, D>(
   bufferSize?: number,
   windowTime?: number,
-  scheduler?: Scheduler
-): MonoOper<T>;
-export function shareReplay<T>(
+  scheduler?: qt.Scheduler
+): qt.MonoOper<N, F, D>;
+export function shareReplay<N, F, D>(
   configOrBufferSize?: ShareReplayConfig | number,
   windowTime?: number,
-  scheduler?: Scheduler
-): MonoOper<T> {
+  scheduler?: qt.Scheduler
+): qt.MonoOper<N, F, D> {
   let config: ShareReplayConfig;
   if (configOrBufferSize && typeof configOrBufferSize === 'object') {
     config = configOrBufferSize as ShareReplayConfig;
@@ -1146,29 +974,29 @@ export function shareReplay<T>(
       scheduler
     };
   }
-  return (source: Observable<T>) => source.lift(shareReplayOperator(config));
+  return (source: qt.Source<N, F, D>) => source.lift(shareReplayO(config));
 }
 
-function shareReplayOperator<T>({
+function shareReplayO<N, F, D>({
   bufferSize = Number.POSITIVE_INFINITY,
   windowTime = Number.POSITIVE_INFINITY,
   refCount: useRefCount,
   scheduler
 }: ShareReplayConfig) {
-  let subject: Replay<T> | undefined;
+  let subject: Replay<N, F, D> | undefined;
   let refCount = 0;
-  let subscription: Subscription | undefined;
+  let subscription: Subscription;
   let hasError = false;
   let isComplete = false;
 
   return function shareReplayOperation(
-    this: Subscriber<T>,
-    source: Observable<T>
+    this: Subscriber<N, F, D>,
+    source: qt.Source<N, F, D>
   ) {
     refCount++;
     if (!subject || hasError) {
       hasError = false;
-      subject = new Replay<T>(bufferSize, windowTime, scheduler);
+      subject = new Replay<N, F, D>(bufferSize, windowTime, scheduler);
       subscription = source.subscribe({
         next(value) {
           subject!.next(value);
@@ -1198,138 +1026,117 @@ function shareReplayOperator<T>({
   };
 }
 
-export function single<T>(
-  predicate?: (value: T, index: number, source: Observable<T>) => boolean
-): MonoOper<T> {
-  return (source: Observable<T>) =>
-    source.lift(new SingleOperator(predicate, source));
+export function single<N, F, D>(
+  predicate?: (value: T, index: number, source: qt.Source<N, F, D>) => boolean
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
+    source.lift(new SingleO(predicate, source));
 }
 
-class SingleOperator<T> implements Operator<T, T> {
+class SingleO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
     private predicate:
-      | ((value: T, index: number, source: Observable<T>) => boolean)
+      | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
       | undefined,
-    private source: Observable<T>
+    private source: qt.Source<N, F, D>
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Closer {
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
-      new SingleSubscriber(subscriber, this.predicate, this.source)
+      new SingleR(subscriber, this.predicate, this.source)
     );
   }
 }
 
-class SingleSubscriber<T> extends Subscriber<T> {
-  private seenValue: boolean = false;
-  private singleValue: T | undefined;
-  private index: number = 0;
+export class SingleR<N, F, D> extends Subscriber<N, F, D> {
+  private seenValue = false;
+  private singleValue?: N;
+  private index = 0;
 
   constructor(
-    destination: Observer<T>,
+    tgt: qt.Observer<N, F, D>,
     private predicate:
-      | ((value: T, index: number, source: Observable<T>) => boolean)
+      | ((n: N | undefined, i: number, source: qt.Source<N, F, D>) => boolean)
       | undefined,
-    private source: Observable<T>
+    private source: qt.Source<N, F, D>
   ) {
-    super(destination);
+    super(tgt);
   }
 
-  private applySingleValue(value: T): void {
-    if (this.seenValue) {
-      this.dst.error('Sequence contains more than one element');
-    } else {
+  private applySingleValue(n?: N) {
+    if (this.seenValue)
+      this.tgt.fail('Sequence contains more than one element');
+    else {
       this.seenValue = true;
-      this.singleValue = value;
+      this.singleValue = n;
     }
   }
 
-  protected _next(v: T) {
-    const index = this.index++;
-
-    if (this.predicate) {
-      this.tryNext(value, index);
-    } else {
-      this.applySingleValue(value);
-    }
+  protected _next(n?: N) {
+    const i = this.index++;
+    if (this.predicate) this.tryNext(n, i);
+    else this.applySingleValue(n);
   }
 
-  private tryNext(value: T, index: number): void {
+  private tryNext(n: N | undefined, i: number) {
     try {
-      if (this.predicate!(value, index, this.source)) {
-        this.applySingleValue(value);
-      }
-    } catch (err) {
-      this.dst.error(err);
+      if (this.predicate!(n, i, this.source)) this.applySingleValue(n);
+    } catch (e) {
+      this.tgt.fail(e);
     }
   }
 
-  protected _complete() {
-    const destination = this.destination;
-
+  protected _done(d?: D) {
+    const tgt = this.tgt;
     if (this.index > 0) {
-      destination.next(this.seenValue ? this.singleValue : undefined);
-      destination.complete();
-    } else {
-      destination.error(new EmptyError());
-    }
+      tgt.next(this.seenValue ? this.singleValue : undefined);
+      tgt.done();
+    } else tgt.fail(new EmptyError());
   }
 }
 
-export function subscribeOn<T>(
-  scheduler: Scheduler,
-  delay: number = 0
-): MonoOper<T> {
-  return function subscribeOnLifter(source: Observable<T>): Observable<T> {
-    return source.lift(new SubscribeOnOperator<T>(scheduler, delay));
+export function tap<N, F, D>(
+  next?: (x: N) => void,
+  error?: (e: any) => void,
+  complete?: () => void
+): qt.MonoOper<N, F, D>;
+export function tap<N, F, D>(observer: Target<N, F, D>): qt.MonoOper<N, F, D>;
+export function tap<N, F, D>(
+  nextOrObserver?: Target<N, F, D> | ((x: N) => void) | null,
+  error?: ((e: any) => void) | null,
+  complete?: (() => void) | null
+): qt.MonoOper<N, F, D> {
+  return function tapLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
+    return source.lift(new TapO(nextOrObserver, error, complete));
   };
 }
 
-class SubscribeOnOperator<T> implements Operator<T, T> {
-  constructor(private scheduler: Scheduler, private delay: number) {}
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return new SubscribeOnObservable<T>(
-      source,
-      this.delay,
-      this.scheduler
-    ).subscribe(subscriber);
-  }
-}
-
-class DoOperator<T> implements Operator<T, T> {
+class TapO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private nextOrObserver?: Target<T> | ((x: T) => void) | null,
+    private nextOrObserver?: Target<N, F, D> | ((x: N) => void) | null,
     private error?: ((e: any) => void) | null,
     private complete?: (() => void) | null
   ) {}
-  call(subscriber: Subscriber<T>, source: any): Closer {
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
-      new TapSubscriber(
-        subscriber,
-        this.nextOrObserver,
-        this.error,
-        this.complete
-      )
+      new TapR(subscriber, this.nextOrObserver, this.error, this.complete)
     );
   }
 }
 
-class TapSubscriber<T> extends Subscriber<T> {
+export class TapR<N, F, D> extends Subscriber<N, F, D> {
   private _context: any;
-
-  private _tapNext: (value: T) => void = noop;
-
+  private _tapNext: (value: N) => void = noop;
   private _tapError: (err: any) => void = noop;
-
   private _tapComplete: () => void = noop;
 
   constructor(
-    destination: Subscriber<T>,
-    observerOrNext?: Target<T> | ((value: T) => void) | null,
-    error?: ((e?: any) => void) | null,
-    complete?: (() => void) | null
+    tgt: Subscriber<N, F, D>,
+    observerOrNext?: Target<N, F, D> | ((value: N) => void) | null,
+    error?: (e?: any) => void,
+    complete?: () => void
   ) {
-    super(destination);
+    super(tgt);
     this._tapError = error || noop;
     this._tapComplete = complete || noop;
     if (isFunction(observerOrNext)) {
@@ -1343,34 +1150,34 @@ class TapSubscriber<T> extends Subscriber<T> {
     }
   }
 
-  _next(value: T) {
+  _next(n?: N) {
     try {
-      this._tapNext.call(this._context, value);
-    } catch (err) {
-      this.dst.error(err);
+      this._tapNext.call(this._context, n);
+    } catch (e) {
+      this.tgt.fail(e);
       return;
     }
-    this.dst.next(value);
+    this.tgt.next(n);
   }
 
-  _error(err: any) {
+  _fail(f?: F) {
     try {
-      this._tapError.call(this._context, err);
-    } catch (err) {
-      this.dst.error(err);
+      this._tapError.call(this._context, f);
+    } catch (e) {
+      this.tgt.fail(e);
       return;
     }
-    this.dst.error(err);
+    this.tgt.fail(f);
   }
 
-  _complete() {
+  _done(d?: D) {
     try {
       this._tapComplete.call(this._context);
-    } catch (err) {
-      this.dst.error(err);
+    } catch (e) {
+      this.tgt.fail(e);
       return;
     }
-    return this.dst.complete();
+    return this.tgt.done(d);
   }
 }
 
@@ -1384,30 +1191,26 @@ export const defaultThrottleConfig: ThrottleConfig = {
   trailing: false
 };
 
-export function throttle<T>(
-  durationSelector: (value: T) => qt.SourceOrPromise<any>,
+export function throttle<N, F, D>(
+  durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>,
   config: ThrottleConfig = defaultThrottleConfig
-): MonoOper<T> {
-  return (source: Observable<T>) =>
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
     source.lift(
-      new ThrottleOperator(
-        durationSelector,
-        !!config.leading,
-        !!config.trailing
-      )
+      new ThrottleO(durationSelector, !!config.leading, !!config.trailing)
     );
 }
 
-class ThrottleOperator<T> implements Operator<T, T> {
+class ThrottleO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private durationSelector: (value: T) => qt.SourceOrPromise<any>,
+    private durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>,
     private leading: boolean,
     private trailing: boolean
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Closer {
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
-      new ThrottleSubscriber(
+      new ThrottleR(
         subscriber,
         this.durationSelector,
         this.leading,
@@ -1417,94 +1220,84 @@ class ThrottleOperator<T> implements Operator<T, T> {
   }
 }
 
-class ThrottleSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private _throttled: Subscription | null | undefined;
-  private _sendValue: T | null = null;
+export class ThrottleR<N, M, F, D> extends Reactor<N, M, F, D> {
+  private _throttled?: Subscription;
+  private _sendValue?: N;
   private _hasValue = false;
 
   constructor(
-    protected destination: Subscriber<T>,
-    private durationSelector: (value: T) => qt.SourceOrPromise<number>,
+    protected tgt: Subscriber<N, F, D>,
+    private durationSelector: (value: N) => qt.SourceOrPromise<number>,
     private _leading: boolean,
     private _trailing: boolean
   ) {
-    super(destination);
+    super(tgt);
   }
 
-  protected _next(v: T) {
+  protected _next(n?: N) {
     this._hasValue = true;
-    this._sendValue = value;
-
+    this._sendValue = n;
     if (!this._throttled) {
-      if (this._leading) {
-        this.send();
-      } else {
-        this.throttle(value);
-      }
+      if (this._leading) this.send();
+      else this.throttle(n);
     }
   }
 
   private send() {
     const {_hasValue, _sendValue} = this;
     if (_hasValue) {
-      this.dst.next(_sendValue!);
+      this.tgt.next(_sendValue!);
       this.throttle(_sendValue!);
     }
     this._hasValue = false;
-    this._sendValue = null;
+    this._sendValue = undefined;
   }
 
-  private throttle(value: T): void {
+  private throttle(value: N): void {
     const duration = this.tryDurationSelector(value);
-    if (!!duration) {
-      this.add((this._throttled = subscribeToResult(this, duration)));
-    }
+    if (!!duration)
+      this.add((this._throttled = qu.subscribeToResult(this, duration)));
   }
 
-  private tryDurationSelector(value: T): qt.SourceOrPromise<any> | null {
+  private tryDurationSelector(value: N): qt.SourceOrPromise<any, F, D> | null {
     try {
       return this.durationSelector(value);
-    } catch (err) {
-      this.dst.error(err);
+    } catch (e) {
+      this.tgt.fail(e);
       return null;
     }
   }
 
   private throttlingDone() {
     const {_throttled, _trailing} = this;
-    if (_throttled) {
-      _throttled.unsubscribe();
-    }
-    this._throttled = null;
-
-    if (_trailing) {
-      this.send();
-    }
+    if (_throttled) _throttled.unsubscribe();
+    this._throttled = undefined;
+    if (_trailing) this.send();
   }
 
   reactNext(
-    outerN: T,
-    innerValue: R,
+    outerN: N,
+    innerValue: M,
     outerX: number,
     innerIndex: number,
-    innerSub: ActorSubscriber<T, R>
+    innerSub: Actor<N, M, F, D>
   ): void {
     this.throttlingDone();
   }
 
-  notifyComplete(): void {
+  reactDone(): void {
     this.throttlingDone();
   }
 }
 
-export function throttleTime<T>(
+export function throttleTime<N, F, D>(
   duration: number,
-  scheduler: Scheduler = async,
+  scheduler: qt.Scheduler = async,
   config: ThrottleConfig = defaultThrottleConfig
-): MonoOper<T> {
-  return (source: Observable<T>) =>
+): qt.MonoOper<N, F, D> {
+  return (source: qt.Source<N, F, D>) =>
     source.lift(
-      new ThrottleTimeOperator(
+      new ThrottleTimeO(
         duration,
         scheduler,
         !!config.leading,
@@ -1513,17 +1306,17 @@ export function throttleTime<T>(
     );
 }
 
-class ThrottleTimeOperator<T> implements Operator<T, T> {
+class ThrottleTimeO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
     private duration: number,
-    private scheduler: Scheduler,
+    private scheduler: qt.Scheduler,
     private leading: boolean,
     private trailing: boolean
   ) {}
 
-  call(subscriber: Subscriber<T>, source: any): Closer {
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
-      new ThrottleTimeSubscriber(
+      new ThrottleTimeR(
         subscriber,
         this.duration,
         this.scheduler,
@@ -1534,58 +1327,53 @@ class ThrottleTimeOperator<T> implements Operator<T, T> {
   }
 }
 
-class ThrottleTimeSubscriber<T> extends Subscriber<T> {
-  private throttled: Subscription | null = null;
-  private _hasTrailingValue: boolean = false;
-  private _trailingValue: T | null = null;
+export class ThrottleTime<N, F, D> extends Subscriber<N, F, D> {
+  private throttled?: Subscription;
+  private _hasTrailingValue = false;
+  private _trailingValue?: N;
 
   constructor(
-    destination: Subscriber<T>,
+    tgt: Subscriber<N, F, D>,
     private duration: number,
-    private scheduler: Scheduler,
+    private scheduler: qt.Scheduler,
     private leading: boolean,
     private trailing: boolean
   ) {
-    super(destination);
+    super(tgt);
   }
 
-  protected _next(value: T) {
+  protected _next(n?: N) {
     if (this.throttled) {
       if (this.trailing) {
-        this._trailingValue = value;
+        this._trailingValue = n;
         this._hasTrailingValue = true;
       }
     } else {
       this.add(
-        (this.throttled = this.scheduler.schedule<DispatchArg<T>>(
+        (this.throttled = this.scheduler.schedule<DispatchArg<N, F, D>>(
           dispatchNext as any,
           this.duration,
           {subscriber: this}
         ))
       );
-      if (this.leading) {
-        this.dst.next(value);
-      } else if (this.trailing) {
-        this._trailingValue = value;
+      if (this.leading) this.tgt.next(n);
+      else if (this.trailing) {
+        this._trailingValue = n;
         this._hasTrailingValue = true;
       }
     }
   }
 
-  protected _complete() {
-    if (this._hasTrailingValue) {
-      this.dst.next(this._trailingValue);
-      this.dst.complete();
-    } else {
-      this.dst.complete();
-    }
+  protected _done(d?: D) {
+    if (this._hasTrailingValue) this.tgt.next(this._trailingValue);
+    this.tgt.done(d);
   }
 
   clearThrottle() {
     const throttled = this.throttled;
     if (throttled) {
       if (this.trailing && this._hasTrailingValue) {
-        this.dst.next(this._trailingValue);
+        this.tgt.next(this._trailingValue);
         this._trailingValue = null;
         this._hasTrailingValue = false;
       }
@@ -1596,216 +1384,16 @@ class ThrottleTimeSubscriber<T> extends Subscriber<T> {
   }
 }
 
-interface DispatchArg<T> {
-  subscriber: ThrottleTimeSubscriber<T>;
+interface DispatchArg<N, F, D> {
+  subscriber: ThrottleTimeSubscriber<N, F, D>;
 }
 
-function dispatchNext<T>(arg: DispatchArg<T>) {
+function dispatchNext<N, F, D>(arg: DispatchArg<N, F, D>) {
   const {subscriber} = arg;
   subscriber.clearThrottle();
 }
 
-export function throwIfEmpty<T>(
-  errorFactory: () => any = defaultErrorFactory
-): MonoOper<T> {
-  return (source: Observable<T>) => {
-    return source.lift(new ThrowIfEmptyOperator(errorFactory));
-  };
-}
-
-class ThrowIfEmptyOperator<T> implements Operator<T, T> {
-  constructor(private errorFactory: () => any) {}
-
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new ThrowIfEmptySubscriber(subscriber, this.errorFactory)
-    );
-  }
-}
-
-class ThrowIfEmptySubscriber<T> extends Subscriber<T> {
-  private hasValue: boolean = false;
-
-  constructor(destination: Subscriber<T>, private errorFactory: () => any) {
-    super(destination);
-  }
-
-  protected _next(v: T) {
-    this.hasValue = true;
-    this.dst.next(value);
-  }
-
-  protected _complete() {
-    if (!this.hasValue) {
-      let err: any;
-      try {
-        err = this.errorFactory();
-      } catch (e) {
-        err = e;
-      }
-      this.dst.error(err);
-    } else {
-      return this.dst.complete();
-    }
-  }
-}
-
-function defaultErrorFactory() {
-  return new EmptyError();
-}
-
-export function timeInterval<T>(
-  scheduler: Scheduler = async
-): Lifter<T, TimeInterval<T>> {
-  return (source: Observable<T>) =>
-    defer(() => {
-      return source.pipe(
-        // TODO(benlesh): correct these typings.
-        scan(
-          ({current}, value) => ({
-            value,
-            current: scheduler.now(),
-            last: current
-          }),
-          {current: scheduler.now(), value: undefined, last: undefined} as any
-        ) as Lifter<T, any>,
-        map<any, TimeInterval<T>>(
-          ({current, last, value}) => new TimeInterval(value, current - last)
-        )
-      );
-    });
-}
-
-export class TimeInterval<T> {
-  constructor(public value: T, public interval: number) {}
-}
-
-export function timeout<T>(
-  due: number | Date,
-  scheduler: Scheduler = async
-): MonoOper<T> {
-  return timeoutWith(due, throwError(new TimeoutError()), scheduler);
-}
-
-export function timeoutWith<T, R>(
-  due: number | Date,
-  withObservable: SourceInput<R>,
-  scheduler?: Scheduler
-): Lifter<T, T | R>;
-export function timeoutWith<T, R>(
-  due: number | Date,
-  withObservable: SourceInput<R>,
-  scheduler: Scheduler = async
-): Lifter<T, T | R> {
-  return (source: Observable<T>) => {
-    let absoluteTimeout = isDate(due);
-    let waitFor = absoluteTimeout
-      ? +due - scheduler.now()
-      : Math.abs(<number>due);
-    return source.lift(
-      new TimeoutWithOperator(
-        waitFor,
-        absoluteTimeout,
-        withObservable,
-        scheduler
-      )
-    );
-  };
-}
-
-class TimeoutWithOperator<T> implements Operator<T, T> {
-  constructor(
-    private waitFor: number,
-    private absoluteTimeout: boolean,
-    private withObservable: SourceInput<any>,
-    private scheduler: Scheduler
-  ) {}
-
-  call(subscriber: Subscriber<T>, source: any): Closer {
-    return source.subscribe(
-      new TimeoutWithSubscriber(
-        subscriber,
-        this.absoluteTimeout,
-        this.waitFor,
-        this.withObservable,
-        this.scheduler
-      )
-    );
-  }
-}
-
-class TimeoutWithSubscriber<T, R> extends ReactorSubscriber<T, R> {
-  private action: Action<TimeoutWithSubscriber<T, R>> | null = null;
-
-  constructor(
-    destination: Subscriber<T>,
-    private absoluteTimeout: boolean,
-    private waitFor: number,
-    private withObservable: SourceInput<any>,
-    private scheduler: Scheduler
-  ) {
-    super(destination);
-    this.scheduleTimeout();
-  }
-
-  private static dispatchTimeout<T, R>(
-    subscriber: TimeoutWithSubscriber<T, R>
-  ): void {
-    const {withObservable} = subscriber;
-    (<any>subscriber)._recycle();
-    subscriber.add(subscribeToResult(subscriber, withObservable));
-  }
-
-  private scheduleTimeout(): void {
-    const {action} = this;
-    if (action) {
-      this.action = <Action<TimeoutWithSubscriber<T, R>>>(
-        action.schedule(this, this.waitFor)
-      );
-    } else {
-      this.add(
-        (this.action = <Action<TimeoutWithSubscriber<T, R>>>(
-          this.scheduler.schedule<TimeoutWithSubscriber<T, R>>(
-            TimeoutWithSubscriber.dispatchTimeout as any,
-            this.waitFor,
-            this
-          )
-        ))
-      );
-    }
-  }
-
-  protected _next(v: T) {
-    if (!this.absoluteTimeout) {
-      this.scheduleTimeout();
-    }
-    super._next(value);
-  }
-
-  _unsubscribe() {
-    this.action = null;
-    this.scheduler = null!;
-    this.withObservable = null!;
-  }
-}
-
-export function time<T>(timeProvider: Stamper = Date): Lifter<T, Stamp<T>> {
-  return map((value: T) => ({value, time: timeProvider.now()}));
-}
-
-function toArrayReducer<T>(arr: T[], item: T, index: number): T[] {
-  if (index === 0) {
-    return [item];
-  }
-  arr.push(item);
-  return arr;
-}
-
-export function toArray<T>(): Lifter<T, T[]> {
-  return reduce(toArrayReducer, [] as T[]);
-}
-
-export function withLatestFrom<T, R>(project: (v1: T) => R): Lifter<T, R>;
+export function withLatestFrom<T, R>(project: (v1: N) => R): Lifter<T, R>;
 export function withLatestFrom<T, O2 extends SourceInput<any>, R>(
   source2: O2,
   project: (v1: T, v2: Sourced<O2>) => R
@@ -1933,39 +1521,39 @@ export function withLatestFrom<T, R>(
 export function withLatestFrom<T, R>(
   ...args: Array<SourceInput<any> | ((...values: Array<any>) => R)>
 ): Lifter<T, R> {
-  return (source: Observable<T>) => {
+  return (source: qt.Source<N, F, D>) => {
     let project: any;
     if (typeof args[args.length - 1] === 'function') {
       project = args.pop();
     }
     const observables = <Observable<any>[]>args;
-    return source.lift(new WithLatestFromOperator(observables, project));
+    return source.lift(new WithLatestFromO(observables, project));
   };
 }
 
-class WithLatestFromOperator<T, R> implements Operator<T, R> {
+class WithLatestFromO<T, R> implements qt.Operator<T, R> {
   constructor(
-    private observables: Observable<any>[],
-    private project?: (...values: any[]) => Observable<R>
+    private observables: qt.Source<any, F, D>[],
+    private project?: (...values: any[]) => qt.Source<R>
   ) {}
 
   call(subscriber: Subscriber<R>, source: any): any {
     return source.subscribe(
-      new WithLatestFromSubscriber(subscriber, this.observables, this.project)
+      new WithLatestFromR(subscriber, this.observables, this.project)
     );
   }
 }
 
-class WithLatestFromSubscriber<T, R> extends ReactorSubscriber<T, R> {
+class WithLatestFromR<T, R> extends Reactor<N, M, F, D> {
   private values: any[];
   private toRespond: number[] = [];
 
   constructor(
-    destination: Subscriber<R>,
-    private observables: Observable<any>[],
-    private project?: (...values: any[]) => Observable<R>
+    tgt: Subscriber<R>,
+    private observables: qt.Source<any, F, D>[],
+    private project?: (...values: any[]) => qt.Source<R>
   ) {
-    super(destination);
+    super(tgt);
     const len = observables.length;
     this.values = new Array(len);
 
@@ -1996,17 +1584,17 @@ class WithLatestFromSubscriber<T, R> extends ReactorSubscriber<T, R> {
     }
   }
 
-  notifyComplete() {
+  reactDone() {
     // noop
   }
 
-  protected _next(value: T) {
+  protected _next(n?: N) {
     if (this.toRespond.length === 0) {
       const args = [value, ...this.values];
       if (this.project) {
         this._tryProject(args);
       } else {
-        this.dst.next(args);
+        this.tgt.next(args);
       }
     }
   }
@@ -2016,9 +1604,74 @@ class WithLatestFromSubscriber<T, R> extends ReactorSubscriber<T, R> {
     try {
       result = this.project!.apply(this, args);
     } catch (err) {
-      this.dst.error(err);
+      this.tgt.error(err);
       return;
     }
-    this.dst.next(result);
+    this.tgt.next(result);
+  }
+}
+
+function dispatchNotification<N, F, D>(this: qt.Action<any>, state: any) {
+  let {subscriber, period} = state;
+  subscriber.reactNext();
+  this.schedule(state, period);
+}
+
+function toArrayReducer<N, F, D>(arr: T[], item: T, index: number): T[] {
+  if (index === 0) {
+    return [item];
+  }
+  arr.push(item);
+  return arr;
+}
+
+export function toArray<N, F, D>(): qt.Lifter<N, N[], F, D> {
+  return reduce(toArrayReducer, [] as T[]);
+}
+
+export interface RefCountSubscription {
+  count: number;
+  unsubscribe: () => void;
+  closed: boolean;
+  attemptedToUnsubscribe: boolean;
+}
+
+class GroupDurationSubscriber<K, T> extends Subscriber<T> {
+  constructor(
+    private key: K,
+    private group: Subject<T>,
+    private parent: GroupBySubscriber<any, K, T | any>
+  ) {
+    super(group);
+  }
+
+  protected _next(v: T) {
+    this.complete();
+  }
+
+  _unsubscribe() {
+    const {parent, key} = this;
+    this.key = this.parent = null!;
+    if (parent) {
+      parent.removeGroup(key);
+    }
+  }
+}
+
+class ActorRefCountSubscription extends Subscription {
+  constructor(private parent: RefCountSubscription) {
+    super();
+    parent.count++;
+  }
+
+  unsubscribe() {
+    const parent = this.parent;
+    if (!parent.closed && !this.closed) {
+      super.unsubscribe();
+      parent.count -= 1;
+      if (parent.count === 0 && parent.attemptedToUnsubscribe) {
+        parent.unsubscribe();
+      }
+    }
   }
 }

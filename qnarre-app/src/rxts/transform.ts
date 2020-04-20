@@ -1,6 +1,6 @@
 import * as qt from './types';
 import * as qu from './utils';
-import * as qr from './subscriber';
+import * as qr from './opers';
 import * as qj from './subject';
 
 export function buffer<N, F, D>(
