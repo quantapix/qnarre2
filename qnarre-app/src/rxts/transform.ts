@@ -1,253 +1,219 @@
 import * as qt from './types';
 import * as qu from './utils';
-import * as qr from './opers';
 import * as qj from './subject';
+import * as qh from './scheduler';
 
-export function buffer<N, F, D>(
-  a: qt.Source<any, F, D>
+export function buffer<N, F = any, D = any>(
+  s: qt.Source<any, F, D>
 ): qt.Lifter<N, (N | undefined)[], F, D> {
-  return (s: qt.Source<N, F, D>) => s.lift(new BufferO<N, F, D>(a));
+  return x => x.lift(new BufferO(s));
 }
 
-export class BufferO<N, F, D>
-  implements qt.Operator<N, (N | undefined)[], F, D> {
-  constructor(private act: qt.Source<any, F, D>) {}
-
+class BufferO<N, F, D> implements qt.Operator<N, (N | undefined)[], F, D> {
+  constructor(private src: qt.Source<any, F, D>) {}
   call(r: qj.Subscriber<(N | undefined)[], F, D>, s: qt.Source<N, F, D>) {
-    return s.subscribe(new BufferR(r, this.act));
+    return s.subscribe(new BufferR(r, this.src));
   }
 }
 
-export class BufferR<N, F, D> extends qj.Reactor<any, N, F, D> {
-  private buf?: (N | undefined)[];
+class BufferR<N, F, D> extends qj.Reactor<any, N, F, D> {
+  private buf = [] as (N | undefined)[];
 
   constructor(
-    public tgt2: qj.Subscriber<(N | undefined)[], F, D>,
-    act: qt.Source<any, F, D>
+    private tgt2: qj.Subscriber<(N | undefined)[], F, D>,
+    s: qt.Source<any, F, D>
   ) {
     super();
-    this.add(qu.subscribeToResult(this, act));
+    this.add(qu.subscribeToResult(this, s));
   }
 
   protected _next(n?: N) {
-    if (!this.buf) this.buf = [];
     this.buf.push(n);
   }
 
   reactNext() {
-    const b = this.buf;
-    this.buf = undefined;
-    this.tgt2.next(b);
+    this.tgt2.next(this.buf);
+    this.buf = [];
   }
 }
 
-export function bufferCount<N, F, D>(
+export function bufferCount<N, F = any, D = any>(
   size: number,
   every?: number
-): qt.Lifter<N, N[], F, D> {
-  return (s: qt.Source<N, F, D>) =>
-    s.lift(new BufferCountO<N, F, D>(size, every));
+): qt.Lifter<N, (N | undefined)[], F, D> {
+  return x => x.lift(new BufferCountO(size, every));
 }
 
-export class BufferCountO<N, F, D> implements qt.Operator<N, N[], F, D> {
+class BufferCountO<N, F, D> implements qt.Operator<N, (N | undefined)[], F, D> {
   private cls: any;
-
   constructor(private size: number, private every?: number) {
     if (!every || size === every) this.cls = BufferCountR;
     else this.cls = BufferSkipCountR;
   }
-
-  call(r: qj.Subscriber<N[], F, D>, s: qt.Source<N, F, D>) {
+  call(r: qj.Subscriber<(N | undefined)[], F, D>, s: qt.Source<N, F, D>) {
     return s.subscribe(new this.cls(r, this.size, this.every));
   }
 }
 
-export class BufferCountR<N, F, D> extends qj.Subscriber<N[], F, D> {
-  private buf?: (N[] | undefined)[];
+class BufferCountR<N, F, D> extends qj.Subscriber<N, F, D> {
+  private buf = [] as (N | undefined)[];
 
-  constructor(tgt: qj.Subscriber<N[], F, D>, private size: number) {
-    super(tgt);
+  constructor(
+    private tgt2: qj.Subscriber<(N | undefined)[], F, D>,
+    private size: number
+  ) {
+    super();
   }
 
-  protected _next(n?: N[]) {
-    const buffer = this.buf;
-    buffer.push(n);
-    if (buffer.length == this.size) {
-      this.tgt.next(buf);
+  protected _next(n?: N) {
+    const b = this.buf;
+    b.push(n);
+    if (b.length == this.size) {
+      this.tgt2.next(b);
       this.buf = [];
     }
   }
 
   protected _done(d?: D) {
-    if (this.buf?.length) this.tgt.next(this.buf);
+    if (this.buf.length) {
+      this.tgt2.next(this.buf);
+      this.buf = [];
+    }
     super._done(d);
   }
 }
 
 export class BufferSkipCountR<N, F, D> extends qj.Subscriber<N, F, D> {
-  private buffers: Array<T[]> = [];
+  private bufs = [] as (N | undefined)[][];
   private count = 0;
 
   constructor(
-    tgt: qj.Subscriber<N[], F, D>,
-    private bufferSize: number,
-    private startBufferEvery: number
+    private tgt2: qj.Subscriber<(N | undefined)[], F, D>,
+    private size: number,
+    private every: number
   ) {
-    super(tgt);
+    super();
   }
 
   protected _next(n?: N) {
-    const {bufferSize, startBufferEvery, buffers, count} = this;
-
     this.count++;
-    if (count % startBufferEvery === 0) {
-      buffers.push([]);
-    }
-
-    for (let i = buffers.length; i--; ) {
-      const buffer = buffers[i];
-      buffer.push(value);
-      if (buffer.length === bufferSize) {
-        buffers.splice(i, 1);
-        this.tgt.next(buffer);
+    const bs = this.bufs;
+    if (this.count % this.every === 0) bs.push([]);
+    for (let i = bs.length; i--; ) {
+      const b = bs[i];
+      b.push(n);
+      if (b.length === this.size) {
+        bs.splice(i, 1);
+        this.tgt2.next(b);
       }
     }
   }
 
   protected _done(d?: D) {
-    const {buffers, tgt} = this;
-
-    while (buffers.length > 0) {
-      let buffer = buffers.shift()!;
-      if (buffer.length > 0) {
-        tgt.next(buffer);
-      }
+    const bs = this.bufs;
+    while (bs.length) {
+      const b = bs.shift();
+      if (b.length) this.tgt2.next(b);
     }
-    super._done();
+    super._done(d);
   }
 }
 
 export function bufferTime<N, F, D>(
-  bufferTimeSpan: number,
-  scheduler?: qt.Scheduler
-): qt.Lifter<N, N[], F, D>;
+  span: number
+): qt.Lifter<N, (N | undefined)[], F, D>;
 export function bufferTime<N, F, D>(
-  bufferTimeSpan: number,
-  bufferCreationInterval: number | null | undefined,
-  scheduler?: qt.Scheduler
-): qt.Lifter<N, N[], F, D>;
+  span: number,
+  h?: qt.Scheduler
+): qt.Lifter<N, (N | undefined)[], F, D>;
 export function bufferTime<N, F, D>(
-  bufferTimeSpan: number,
-  bufferCreationInterval: number | null | undefined,
-  maxBufferSize: number,
-  scheduler?: qt.Scheduler
-): qt.Lifter<N, N[], F, D>;
+  span: number,
+  h?: qt.Scheduler,
+  interval?: number
+): qt.Lifter<N, (N | undefined)[], F, D>;
 export function bufferTime<N, F, D>(
-  bufferTimeSpan: number
-): qt.Lifter<N, N[], F, D> {
-  let length: number = arguments.length;
-  let scheduler: qt.Scheduler = async;
-  if (isScheduler(arguments[arguments.length - 1])) {
-    scheduler = arguments[arguments.length - 1];
-    length--;
-  }
-  let bufferCreationInterval: number | null = null;
-  if (length >= 2) bufferCreationInterval = arguments[1];
-  let maxBufferSize: number = Number.POSITIVE_INFINITY;
-  if (length >= 3) maxBufferSize = arguments[2];
-  return function bufferTimeLifter(source: qt.Source<N, F, D>) {
-    return source.lift(
-      new BufferTimeO<N, F, D>(
-        bufferTimeSpan,
-        bufferCreationInterval,
-        maxBufferSize,
-        scheduler
-      )
-    );
-  };
+  span: number,
+  h: qt.Scheduler = qh.async,
+  interval?: number,
+  max?: number
+): qt.Lifter<N, (N | undefined)[], F, D> {
+  return x => x.lift(new BufferTimeO(span, h, interval, max));
 }
 
-export class BufferTimeO<N, F, D> implements qt.Operator<N, N[], F, D> {
+export class BufferTimeO<N, F, D>
+  implements qt.Operator<N, (N | undefined)[], F, D> {
   constructor(
-    private bufferTimeSpan: number,
-    private bufferCreationInterval: number | null,
-    private maxBufferSize: number,
-    private scheduler: qt.Scheduler
+    private span: number,
+    private h: qt.Scheduler,
+    private interval?: number,
+    private max?: number
   ) {}
-
-  call(subscriber: qj.Subscriber<N[], F, D>, source: any): any {
-    return source.subscribe(
-      new BufferTimeR(
-        subscriber,
-        this.bufferTimeSpan,
-        this.bufferCreationInterval,
-        this.maxBufferSize,
-        this.scheduler
-      )
+  call(r: qj.Subscriber<(N | undefined)[], F, D>, s: qt.Source<N, F, D>): any {
+    return s.subscribe(
+      new BufferTimeR(r, this.h, this.span, this.interval, this.max)
     );
   }
 }
 
 class Context<N> {
-  buffer = [] as N[];
-  closeAction?: qt.Subscription;
+  buf = [] as (N | undefined)[];
+  close?: qt.Subscription;
 }
 
 interface DispatchCreateArg<N, F, D> {
-  bufferTimeSpan: number;
-  bufferCreationInterval: number | null;
-  subscriber: BufferTimeR<N, F, D>;
-  scheduler: qt.Scheduler;
+  span: number;
+  interval?: number;
+  r: BufferTimeR<N, F, D>;
+  h: qt.Scheduler;
 }
 
 interface DispatchCloseArg<N, F, D> {
-  subscriber: BufferTimeR<N, F, D>;
-  context: Context<N>;
+  r: BufferTimeR<N, F, D>;
+  c: Context<N>;
 }
 
 export class BufferTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
-  private contexts: Array<Context<N>> = [];
+  private ctxs = [] as Context<N>[];
   private timespanOnly: boolean;
 
   constructor(
-    tgt: qj.Subscriber<N[], F, D>,
-    private bufferTimeSpan: number,
-    private bufferCreationInterval: number | null,
-    private maxBufferSize: number,
-    private scheduler: qt.Scheduler
+    private tgt2: qj.Subscriber<(N | undefined)[], F, D>,
+    private h: qt.Scheduler,
+    private span: number,
+    private interval?: number,
+    private max = Number.POSITIVE_INFINITY
   ) {
-    super(tgt);
-    const context = this.openContext();
-    this.timespanOnly =
-      bufferCreationInterval == null || bufferCreationInterval < 0;
+    super();
+    const c = this.open();
+    this.timespanOnly = interval == null || interval < 0;
     if (this.timespanOnly) {
-      const timeSpanOnlyState = {subscriber: this, context, bufferTimeSpan};
+      const timeSpanOnlyState = {r: this, c, span};
       this.add(
-        (context.closeAction = scheduler.schedule(
+        (c.close = h.schedule(
           dispatchBufferTimeSpanOnly,
-          bufferTimeSpan,
+          span,
           timeSpanOnlyState
         ))
       );
     } else {
-      const closeState = {subscriber: this, context};
+      const closeState = {r: this, c};
       const creationState: DispatchCreateArg<N, F, D> = {
-        bufferTimeSpan,
-        bufferCreationInterval,
+        span,
+        interval,
         subscriber: this,
-        scheduler
+        h
       };
       this.add(
-        (context.closeAction = scheduler.schedule<DispatchCloseArg<N, F, D>>(
+        (c.close = h.schedule<DispatchCloseArg<N, F, D>>(
           dispatchBufferClose as any,
-          bufferTimeSpan,
+          span,
           closeState
         ))
       );
       this.add(
-        scheduler.schedule<DispatchCreateArg<N, F, D>>(
+        h.schedule<DispatchCreateArg<N, F, D>>(
           dispatchBufferCreation as any,
-          bufferCreationInterval!,
+          interval,
           creationState
         )
       );
@@ -255,67 +221,66 @@ export class BufferTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
   }
 
   protected _next(n?: N) {
-    const contexts = this.contexts;
-    const len = contexts.length;
-    let filledBufferContext: Context<N> | undefined;
+    let filled: Context<N> | undefined;
+    const cs = this.ctxs;
+    const len = cs.length;
     for (let i = 0; i < len; i++) {
-      const context = contexts[i];
-      const buffer = context.buffer;
-      buffer.push(value);
-      if (buffer.length == this.maxBufferSize) filledBufferContext = context;
+      const c = cs[i];
+      const b = c.buf;
+      b.push(n);
+      if (b.length == this.max) filled = c;
     }
-    if (filledBufferContext) this.onBufferFull(filledBufferContext);
+    if (filled) this.onFull(filled);
   }
 
   protected _fail(f?: F) {
-    this.contexts.length = 0;
-    super._fail(err);
+    this.ctxs.length = 0;
+    super._fail(f);
   }
 
   protected _done(d?: D) {
-    const {contexts, tgt} = this;
-    while (contexts.length > 0) {
-      const context = contexts.shift()!;
-      tgt.next(context.buffer);
+    const cs = this.ctxs;
+    while (cs.length > 0) {
+      const c = cs.shift()!;
+      this.tgt2.next(c.buf);
     }
-    super._done();
+    super._done(d);
   }
 
   _unsubscribe() {
-    this.contexts = null!;
+    this.ctxs = [];
   }
 
-  protected onBufferFull(context: Context<N>) {
-    this.closeContext(context);
-    const closeAction = context.closeAction;
+  protected onFull(c: Context<N>) {
+    this.close(c);
+    const closeAction = c.close;
     closeAction!.unsubscribe();
     this.remove(closeAction!);
-
     if (!this.closed && this.timespanOnly) {
-      context = this.openContext();
-      const bufferTimeSpan = this.bufferTimeSpan;
-      const timeSpanOnlyState = {subscriber: this, context, bufferTimeSpan};
+      c = this.open();
+      const span = this.span;
+      const timeSpanOnlyState = {subscriber: this, c, span};
       this.add(
-        (context.closeAction = this.scheduler.schedule(
+        (c.close = this.h.schedule(
           dispatchBufferTimeSpanOnly,
-          bufferTimeSpan,
+          span,
           timeSpanOnlyState
         ))
       );
     }
   }
 
-  openContext(): Context<N> {
-    const context = new Context<N>();
-    this.contexts.push(context);
-    return context;
+  open() {
+    const c = new Context<N>();
+    this.ctxs.push(c);
+    return c;
   }
 
-  closeContext(context: Context<N>) {
-    this.tgt.next(context.buffer);
-    const contexts = this.contexts;
-    const spliceIndex = contexts ? contexts.indexOf(context) : -1;
-    if (spliceIndex >= 0) contexts.splice(contexts.indexOf(context), 1);
+  close(c: Context<N>) {
+    this.tgt2.next(c.buf);
+    const cs = this.ctxs;
+    const i = cs ? cs.indexOf(c) : -1;
+    if (i >= 0) cs.splice(cs.indexOf(c), 1);
   }
 }
 
@@ -325,7 +290,7 @@ function dispatchBufferTimeSpanOnly(this: qt.Action<any>, state: any) {
   if (prevContext) subscriber.closeContext(prevContext);
   if (!subscriber.closed) {
     state.context = subscriber.openContext();
-    state.context.closeAction = this.schedule(state, state.bufferTimeSpan);
+    state.context.closeAction = this.schedule(state, state.span);
   }
 }
 
@@ -333,18 +298,18 @@ function dispatchBufferCreation<N, F, D>(
   this: qt.Action<DispatchCreateArg<N, F, D>>,
   state: DispatchCreateArg<N, F, D>
 ) {
-  const {bufferCreationInterval, bufferTimeSpan, subscriber, scheduler} = state;
+  const {interval, span, subscriber, h} = state;
   const context = subscriber.openContext();
   const action = <Action<DispatchCreateArg<N, F, D>>>this;
   if (!subscriber.closed) {
     subscriber.add(
-      (context.closeAction = scheduler.schedule<DispatchCloseArg<N, F, D>>(
+      (context.closeAction = h.schedule<DispatchCloseArg<N, F, D>>(
         dispatchBufferClose as any,
-        bufferTimeSpan,
+        span,
         {subscriber, context}
       ))
     );
-    action.schedule(state, bufferCreationInterval!);
+    action.schedule(state, interval!);
   }
 }
 

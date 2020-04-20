@@ -137,8 +137,8 @@ export interface Scheduler extends Stamper {
 }
 
 export interface DArg<N> {
-  src: qs.Source<N>;
-  r: qj.Subscriber<N>;
+  src: Source<N>;
+  r: Subscriber<N>;
 }
 
 export interface Params<N, F = any, D = any> {
