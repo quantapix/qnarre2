@@ -4,53 +4,6 @@ import {audit} from 'rxjs/operators';
 describe('xxx', () => {
 
 
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(catchError(() => of(4, 5, 6))); // $ExpectType Observable<number>
-  });
-
-  it('should handle empty (never) appropriately', () => {
-    const o = of(1, 2, 3).pipe(catchError(() => EMPTY)); // $ExpectType Observable<number>
-  });
-
-  it('should handle a throw', () => {
-    const f: () => never = () => {
-      throw new Error('test');
-    };
-    const o = of(1, 2, 3).pipe(catchError(f)); // $ExpectType Observable<number>
-  });
-
-  it('should infer correctly when not returning', () => {
-    const o = of(1, 2, 3).pipe(
-      catchError(() => {
-        throw new Error('your hands in the air');
-      })
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should infer correctly when returning another type', () => {
-    const o = of(1, 2, 3).pipe(catchError(() => of('a', 'b', 'c'))); // $ExpectType Observable<string | number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(catchError()); // $ExpectError
-  });
-
-  it('should enforce that selector returns an Observable', () => {
-    const o = of(1, 2, 3).pipe(catchError(err => {})); // $ExpectError
-  });
-
-  it('should enforce type of caught', () => {
-    const o = of(1, 2, 3).pipe(
-      catchError((err, caught: Observable<string>) => of('a', 'b', 'c'))
-    ); // $ExpectError
-  });
-
-  it('should handle union types', () => {
-    const o = of(1, 2, 3).pipe(
-      catchError(err => (err.message === 'wee' ? of('fun') : of(123)))
-    ); // $ExpectType Observable<string | number>
-  });
-
 
 describe('xxx', () => {
   it('should infer correctly', () => {
@@ -274,76 +227,6 @@ describe('xxx', () => {
   });
 
   it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(multicast(new Subject<number>())); // $ExpectType Observable<number>
-    const p = of(1, 2, 3).pipe(multicast(() => new Subject<number>())); // $ExpectType Observable<number>
-  });
-
-  it('should be possible to use a this with in a SubjectFactory', () => {
-    const o = of(1, 2, 3).pipe(
-      multicast(function (this: Observable<number>) {
-        return new Subject<number>();
-      })
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should be possible to use a selector', () => {
-    const o = of(1, 2, 3).pipe(multicast(new Subject<number>(), p => p)); // $ExpectType Observable<number>
-    const p = of(1, 2, 3).pipe(
-      multicast(new Subject<number>(), p => of('foo'))
-    ); // $ExpectType Observable<string>
-    const q = of(1, 2, 3).pipe(
-      multicast(
-        () => new Subject<number>(),
-        p => p
-      )
-    ); // $ExpectType Observable<number>
-    const r = of(1, 2, 3).pipe(
-      multicast(
-        () => new Subject<number>(),
-        p => of('foo')
-      )
-    ); // $ExpectType Observable<string>
-  });
-
-  it('should support union types', () => {
-    const o = of(1, 2, 3).pipe(
-      multicast(new Subject<number>(), p =>
-        Math.random() > 0.5 ? of(123) : of('foo')
-      )
-    ); // $ExpectType Observable<string | number>
-    const p = of(1, 2, 3).pipe(
-      multicast(
-        () => new Subject<number>(),
-        p => (Math.random() > 0.5 ? of(123) : of('foo'))
-      )
-    ); // $ExpectType Observable<string | number>
-  });
-
-  it('should enforce types', () => {
-    const p = of(1, 2, 3).pipe(multicast()); // $ExpectError
-  });
-
-  it('should enforce Subject type', () => {
-    const o = of(1, 2, 3).pipe(multicast('foo')); // $ExpectError
-    const p = of(1, 2, 3).pipe(multicast(new Subject<string>())); // $ExpectError
-  });
-
-  it('should enforce SubjectFactory type', () => {
-    const p = of(1, 2, 3).pipe(multicast('foo')); // $ExpectError
-    const q = of(1, 2, 3).pipe(multicast(() => new Subject<string>())); // $ExpectError
-  });
-
-  it('should enforce the selector type', () => {
-    const o = of(1, 2, 3).pipe(multicast(() => new Subject<number>(), 5)); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      multicast(
-        () => new Subject<number>(),
-        (p: string) => 5
-      )
-    ); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
     const o = of('apple', 'banana', 'peach').pipe(observeOn(asyncScheduler)); // $ExpectType Observable<string>
   });
 
@@ -506,37 +389,6 @@ describe('xxx', () => {
     const o = of('a', 'b', 'c').pipe(repeat('aa')); // $ExpectError
   });
 
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(retry()); // $ExpectType Observable<number>
-  });
-
-  it('should accept a count parameter', () => {
-    const o = of(1, 2, 3).pipe(retry(47)); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(retry('aa')); // $ExpectError
-  });
-
-  it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(retryWhen(errors => errors)); // $ExpectType Observable<number>
-  });
-
-  it('should infer correctly when the error observable has a different type', () => {
-    const o = of(1, 2, 3).pipe(
-      retryWhen(retryWhen(errors => of('a', 'b', 'c')))
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should enforce types', () => {
-    const o = of(1, 2, 3).pipe(retryWhen()); // $ExpectError
-  });
-
-  it('should enforce types of the notifier', () => {
-    const o = of(1, 2, 3).pipe(retryWhen(() => 8)); // $ExpectError
-  });
-
-
 
   it('should enforce compareTo Observable', () => {
     const a = of(1, 2, 3).pipe(sequenceEqual()); // $ExpectError
@@ -555,52 +407,7 @@ describe('xxx', () => {
       sequenceEqual(of(1), (val1, val2) => val1 === val2)
     ); // $ExpectType Observable<boolean>
   });
-
-  it('should infer correctly', () => {
-    const o = of('foo', 'bar', 'baz').pipe(share()); // $ExpectType Observable<string>
-  });
-
-  it('should enforce types', () => {
-    const o = of('foo', 'bar', 'baz').pipe(share('abc')); // $ExpectError
-  });
-
-  it('should accept an individual bufferSize parameter', () => {
-    const o = of(1, 2, 3).pipe(shareReplay(1)); // $ExpectType Observable<number>
-  });
-
-  it('should accept individual bufferSize and windowTime parameters', () => {
-    const o = of(1, 2, 3).pipe(shareReplay(1, 2)); // $ExpectType Observable<number>
-  });
-
-  it('should accept individual bufferSize, windowTime and scheduler parameters', () => {
-    const o3 = of(1, 2, 3).pipe(shareReplay(1, 2, asyncScheduler)); // $ExpectType Observable<number>
-  });
-
-  it('should accept a bufferSize config parameter', () => {
-    const o = of(1, 2, 3).pipe(shareReplay({bufferSize: 1, refCount: true})); // $ExpectType Observable<number>
-  });
-
-  it('should accept bufferSize and windowTime config parameters', () => {
-    const o = of(1, 2, 3).pipe(
-      shareReplay({bufferSize: 1, windowTime: 2, refCount: true})
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should accept bufferSize, windowTime and scheduler config parameters', () => {
-    const o = of(1, 2, 3).pipe(
-      shareReplay({
-        bufferSize: 1,
-        windowTime: 2,
-        scheduler: asyncScheduler,
-        refCount: true
-      })
-    ); // $ExpectType Observable<number>
-  });
-
-  it('should require a refCount config parameter', () => {
-    const o = of(1, 2, 3).pipe(shareReplay({bufferSize: 1})); // $ExpectError
-  });
-
+  
   it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(subscribeOn(asyncScheduler)); // $ExpectType Observable<string>
   });

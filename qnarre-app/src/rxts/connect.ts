@@ -88,66 +88,6 @@ export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
   };
 })();
 
-export function publish<N, F, D>(): UnaryFun<
-  qt.Source<N, F, D>,
-  Connect<N, F, D>
->;
-export function publish<T, O extends SourceInput<any>>(
-  selector: (shared: qt.Source<N, F, D>) => O
-): Lifter<T, Sourced<O>>;
-export function publish<N, F, D>(
-  selector: qt.MonoOper<N, F, D>
-): qt.MonoOper<N, F, D>;
-export function publish<T, R>(
-  selector?: Lifter<T, R>
-): qt.MonoOper<N, F, D> | Lifter<T, R> {
-  return selector
-    ? multicast(() => new Subject<N, F, D>(), selector)
-    : multicast(new Subject<N, F, D>());
-}
-
-export function publishBehavior<N, F, D>(
-  value: T
-): UnaryFun<qt.Source<N, F, D>, Connect<N, F, D>> {
-  return (source: qt.Source<N, F, D>) =>
-    multicast(new Behavior<N, F, D>(value))(source) as Connect<N, F, D>;
-}
-
-export function publishLast<N, F, D>(): UnaryFun<
-  qt.Source<N, F, D>,
-  Connect<N, F, D>
-> {
-  return (source: qt.Source<N, F, D>) =>
-    multicast(new Async<N, F, D>())(source);
-}
-
-export function publishReplay<N, F, D>(
-  bufferSize?: number,
-  windowTime?: number,
-  scheduler?: qt.Scheduler
-): qt.MonoOper<N, F, D>;
-export function publishReplay<T, O extends SourceInput<any>>(
-  bufferSize?: number,
-  windowTime?: number,
-  selector?: (shared: qt.Source<N, F, D>) => O,
-  scheduler?: qt.Scheduler
-): Lifter<T, Sourced<O>>;
-export function publishReplay<T, R>(
-  bufferSize?: number,
-  windowTime?: number,
-  selectorOrScheduler?: qt.Scheduler | Lifter<T, R>,
-  scheduler?: qt.Scheduler
-): UnaryFun<qt.Source<N, F, D>, Connect<R>> {
-  if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
-    scheduler = selectorOrScheduler;
-  }
-  const selector =
-    typeof selectorOrScheduler === 'function' ? selectorOrScheduler : undefined;
-  const subject = new Replay<N, F, D>(bufferSize, windowTime, scheduler);
-  return (source: qt.Source<N, F, D>) =>
-    multicast(() => subject, selector!)(source) as Connect<R>;
-}
-
 export function refCount<N, F, D>(): qt.MonoOper<N, F, D> {
   return function refCountLifter(source: Connect<N, F, D>): qt.Source<N, F, D> {
     return source.lift(new RefCountO(source));
