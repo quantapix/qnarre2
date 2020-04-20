@@ -677,7 +677,7 @@ describe('Observable', () => {
   });
 });
 
-describe('Observable.create', () => {
+describe('Source.create', () => {
   asDiagram('create(obs => { obs.next(1); })')(
     'should create a cold observable that emits just 1',
     () => {
@@ -725,7 +725,7 @@ describe('Observable.create', () => {
   });
 });
 
-describe('Observable.lift', () => {
+describe('Source.lift', () => {
   class MyCustomObservable<T> extends Observable<T> {
     static from<T>(source: any) {
       const observable = new MyCustomObservable<T>();
@@ -1021,7 +1021,7 @@ describe('Observable.lift', () => {
   });
 });
 
-describe('pipe', () => {
+describe('Source.pipe', () => {
   it('should infer for no arguments', () => {
     const o = of('foo').pipe(); // $ExpectType Observable<string>
   });
@@ -1426,6 +1426,54 @@ describe('pipe', () => {
   });
 });
 
+describe('Source.toPromise', () => {
+  it('should convert an Observable to a promise of its last value', (done: MochaDone) => {
+    of(1, 2, 3)
+      .toPromise(Promise)
+      .then(x => {
+        expect(x).to.equal(3);
+        done();
+      });
+  });
+
+  it('should convert an empty Observable to a promise of undefined', (done: MochaDone) => {
+    EMPTY.toPromise(Promise).then(x => {
+      expect(x).to.be.undefined;
+      done();
+    });
+  });
+
+  it('should handle errors properly', (done: MochaDone) => {
+    throwError('bad')
+      .toPromise(Promise)
+      .then(
+        () => {
+          done(new Error('should not be called'));
+        },
+        (err: any) => {
+          expect(err).to.equal('bad');
+          done();
+        }
+      );
+  });
+
+  it('should allow for global config via config.Promise', (done: MochaDone) => {
+    let wasCalled = false;
+    config.Promise = function MyPromise(callback: Function) {
+      wasCalled = true;
+      return new Promise(callback as any);
+    } as any;
+
+    of(42)
+      .toPromise()
+      .then(x => {
+        expect(wasCalled).to.be.true;
+        expect(x).to.equal(42);
+        done();
+      });
+  });
+});
+
 /**
  * Used to keep the tests uncluttered.
  *
@@ -1455,6 +1503,7 @@ function a<I extends string, O extends string>(
   output: O
 ): Lifter<I, O>;
 function a<I, O extends string>(output: O): Lifter<I, O>;
+
 /**
  * Used to keep the tests uncluttered.
  *

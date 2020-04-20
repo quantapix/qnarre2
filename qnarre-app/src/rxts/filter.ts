@@ -1286,3 +1286,8 @@ export class ThrottleTimeR<N, F, D> extends Subscriber<N, F, D> {
 interface DispatchArg<N, F, D> {
   subscriber: ThrottleTimeR<N, F, D>;
 }
+
+function dispatchNext<N, F, D>(arg: DispatchArg<N, F, D>) {
+  const {subscriber} = arg;
+  subscriber.clearThrottle();
+}

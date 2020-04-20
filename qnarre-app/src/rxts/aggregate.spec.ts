@@ -1417,7 +1417,7 @@ describe('concatAll', () => {
   });
 });
 
-describe('concatMapTo', () => {
+describe('concatWith', () => {
   it('should support rest params', () => {
     const arr = [b$, c$];
     const o = a$.pipe(concatWith(...arr)); // $ExpectType Observable<A | B | C>

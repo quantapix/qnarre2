@@ -421,6 +421,92 @@ class SubscribeOnO<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
+export function tap<N, F, D>(
+  next?: (x: N) => void,
+  error?: (e: any) => void,
+  complete?: () => void
+): qt.MonoOper<N, F, D>;
+export function tap<N, F, D>(observer: Target<N, F, D>): qt.MonoOper<N, F, D>;
+export function tap<N, F, D>(
+  nextOrObserver?: Target<N, F, D> | ((x: N) => void) | null,
+  error?: ((e: any) => void) | null,
+  complete?: (() => void) | null
+): qt.MonoOper<N, F, D> {
+  return function tapLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
+    return source.lift(new TapO(nextOrObserver, error, complete));
+  };
+}
+
+class TapO<N, F, D> implements qt.Operator<N, N, F, D> {
+  constructor(
+    private nextOrObserver?: Target<N, F, D> | ((x: N) => void) | null,
+    private error?: ((e: any) => void) | null,
+    private complete?: (() => void) | null
+  ) {}
+  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(
+      new TapR(subscriber, this.nextOrObserver, this.error, this.complete)
+    );
+  }
+}
+
+export class TapR<N, F, D> extends Subscriber<N, F, D> {
+  private _context: any;
+  private _tapNext: (value: N) => void = noop;
+  private _tapError: (err: any) => void = noop;
+  private _tapComplete: () => void = noop;
+
+  constructor(
+    tgt: Subscriber<N, F, D>,
+    observerOrNext?: Target<N, F, D> | ((value: N) => void) | null,
+    error?: (e?: any) => void,
+    complete?: () => void
+  ) {
+    super(tgt);
+    this._tapError = error || noop;
+    this._tapComplete = complete || noop;
+    if (isFunction(observerOrNext)) {
+      this._context = this;
+      this._tapNext = observerOrNext;
+    } else if (observerOrNext) {
+      this._context = observerOrNext;
+      this._tapNext = observerOrNext.next || noop;
+      this._tapError = observerOrNext.error || noop;
+      this._tapComplete = observerOrNext.complete || noop;
+    }
+  }
+
+  _next(n?: N) {
+    try {
+      this._tapNext.call(this._context, n);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    this.tgt.next(n);
+  }
+
+  _fail(f?: F) {
+    try {
+      this._tapError.call(this._context, f);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    this.tgt.fail(f);
+  }
+
+  _done(d?: D) {
+    try {
+      this._tapComplete.call(this._context);
+    } catch (e) {
+      this.tgt.fail(e);
+      return;
+    }
+    return this.tgt.done(d);
+  }
+}
+
 export function time<N, F, D>(
   timeProvider: Stamper = Date
 ): Lifter<T, Stamp<N, F, D>> {
@@ -552,4 +638,16 @@ export class TimeoutWithR<T, R> extends Reactor<N, M, F, D> {
     this.scheduler = null!;
     this.withObservable = null!;
   }
+}
+
+function toArrayReducer<N, F, D>(arr: T[], item: T, index: number): T[] {
+  if (index === 0) {
+    return [item];
+  }
+  arr.push(item);
+  return arr;
+}
+
+export function toArray<N, F, D>(): qt.Lifter<N, N[], F, D> {
+  return reduce(toArrayReducer, [] as T[]);
 }
