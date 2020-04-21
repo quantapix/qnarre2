@@ -2,7 +2,7 @@ import * as qj from './subject';
 import * as qt from './types';
 import * as qs from './source';
 
-import {SourceInput, InteropSource} from './types';
+import {Input, Interop} from './types';
 
 export interface OutOfRangeError extends Error {}
 
@@ -196,7 +196,7 @@ export function isFunction(x: any): x is Function {
   return typeof x === 'function';
 }
 
-export function isInteropSource(x: any): x is InteropSource<any> {
+export function isInterop(x: any): x is Interop<any> {
   return x && typeof x[Symbol.rxSource] === 'function';
 }
 
@@ -240,94 +240,92 @@ export function not(pred: Function, thisArg: any): Function {
   return notPred;
 }
 
-export function pipe<T>(): qt.UnaryFun<T, T>;
-export function pipe<T, A>(fn1: qt.UnaryFun<T, A>): qt.UnaryFun<T, A>;
+export function pipe<T>(): qt.Mapper<T, T>;
+export function pipe<T, A>(fn1: qt.Mapper<T, A>): qt.Mapper<T, A>;
 export function pipe<T, A, B>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>
-): qt.UnaryFun<T, B>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>
+): qt.Mapper<T, B>;
 export function pipe<T, A, B, C>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>
-): qt.UnaryFun<T, C>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>
+): qt.Mapper<T, C>;
 export function pipe<T, A, B, C, D>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>
-): qt.UnaryFun<T, D>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>
+): qt.Mapper<T, D>;
 export function pipe<T, A, B, C, D, E>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>,
-  fn5: qt.UnaryFun<D, E>
-): qt.UnaryFun<T, E>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>,
+  fn5: qt.Mapper<D, E>
+): qt.Mapper<T, E>;
 export function pipe<T, A, B, C, D, E, F>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>,
-  fn5: qt.UnaryFun<D, E>,
-  fn6: qt.UnaryFun<E, F>
-): qt.UnaryFun<T, F>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>,
+  fn5: qt.Mapper<D, E>,
+  fn6: qt.Mapper<E, F>
+): qt.Mapper<T, F>;
 export function pipe<T, A, B, C, D, E, F, G>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>,
-  fn5: qt.UnaryFun<D, E>,
-  fn6: qt.UnaryFun<E, F>,
-  fn7: qt.UnaryFun<F, G>
-): qt.UnaryFun<T, G>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>,
+  fn5: qt.Mapper<D, E>,
+  fn6: qt.Mapper<E, F>,
+  fn7: qt.Mapper<F, G>
+): qt.Mapper<T, G>;
 export function pipe<T, A, B, C, D, E, F, G, H>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>,
-  fn5: qt.UnaryFun<D, E>,
-  fn6: qt.UnaryFun<E, F>,
-  fn7: qt.UnaryFun<F, G>,
-  fn8: qt.UnaryFun<G, H>
-): qt.UnaryFun<T, H>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>,
+  fn5: qt.Mapper<D, E>,
+  fn6: qt.Mapper<E, F>,
+  fn7: qt.Mapper<F, G>,
+  fn8: qt.Mapper<G, H>
+): qt.Mapper<T, H>;
 export function pipe<T, A, B, C, D, E, F, G, H, I>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>,
-  fn5: qt.UnaryFun<D, E>,
-  fn6: qt.UnaryFun<E, F>,
-  fn7: qt.UnaryFun<F, G>,
-  fn8: qt.UnaryFun<G, H>,
-  fn9: qt.UnaryFun<H, I>
-): qt.UnaryFun<T, I>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>,
+  fn5: qt.Mapper<D, E>,
+  fn6: qt.Mapper<E, F>,
+  fn7: qt.Mapper<F, G>,
+  fn8: qt.Mapper<G, H>,
+  fn9: qt.Mapper<H, I>
+): qt.Mapper<T, I>;
 export function pipe<T, A, B, C, D, E, F, G, H, I>(
-  fn1: qt.UnaryFun<T, A>,
-  fn2: qt.UnaryFun<A, B>,
-  fn3: qt.UnaryFun<B, C>,
-  fn4: qt.UnaryFun<C, D>,
-  fn5: qt.UnaryFun<D, E>,
-  fn6: qt.UnaryFun<E, F>,
-  fn7: qt.UnaryFun<F, G>,
-  fn8: qt.UnaryFun<G, H>,
-  fn9: qt.UnaryFun<H, I>,
-  ...fns: qt.UnaryFun<any, any>[]
-): qt.UnaryFun<T, {}>;
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>,
+  fn4: qt.Mapper<C, D>,
+  fn5: qt.Mapper<D, E>,
+  fn6: qt.Mapper<E, F>,
+  fn7: qt.Mapper<F, G>,
+  fn8: qt.Mapper<G, H>,
+  fn9: qt.Mapper<H, I>,
+  ...fns: qt.Mapper<any, any>[]
+): qt.Mapper<T, {}>;
 
-export function pipe(
-  ...fns: Array<qt.UnaryFun<any, any>>
-): qt.UnaryFun<any, any> {
+export function pipe(...fns: Array<qt.Mapper<any, any>>): qt.Mapper<any, any> {
   return pipeFromArray(fns);
 }
 
 export function pipeFromArray<S, T>(
-  fns: Array<qt.UnaryFun<S, T>>
-): qt.UnaryFun<S, T> {
-  if (fns.length === 0) return identity as qt.UnaryFun<any, any>;
+  fns: Array<qt.Mapper<S, T>>
+): qt.Mapper<S, T> {
+  if (fns.length === 0) return identity as qt.Mapper<any, any>;
   if (fns.length === 1) return fns[0];
   return (x: S): T => {
-    return fns.reduce((p: any, f: qt.UnaryFun<S, T>) => f(p), x as any);
+    return fns.reduce((p: any, f: qt.Mapper<S, T>) => f(p), x as any);
   };
 }
 
@@ -353,7 +351,7 @@ const _root: any = __window || __global || __self;
 })();
 
 export const subscribeTo = <N, F = any, D = any>(
-  r: SourceInput<N, F, D>
+  r: Input<N, F, D>
 ): ((_: qj.Subscriber<N, F, D>) => qj.Subscription | void) => {
   if (!!r && typeof (r as any)[Symbol.rxSource] === 'function') {
     return subscribeToSource(r as any);

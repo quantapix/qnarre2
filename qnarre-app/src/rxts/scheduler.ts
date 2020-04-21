@@ -6,13 +6,13 @@ import * as qt from './types';
 export class Action<N, F = any, D = any> extends qj.Subscription
   implements qt.Action<N, F, D> {
   constructor(
-    public sched: Scheduler,
-    public work: (this: Action<N, F, D>, _?: qt.State<N, F, D>) => void
+    public h: Scheduler,
+    public work: (this: qt.Action<N, F, D>, _?: qt.Step<N, F, D>) => void
   ) {
     super();
   }
 
-  schedule(_?: qt.State<N, F, D>, _delay = 0): qj.Subscription {
+  schedule(_?: qt.Step<N, F, D>, _delay = 0): qt.Subscription {
     return this;
   }
 
@@ -496,7 +496,7 @@ export function scheduleIter<N, F = any, D = any>(
 }
 
 export function scheduleSource<N, F = any, D = any>(
-  i: qt.InteropSource<N>,
+  i: qt.Interop<N>,
   h: qt.Scheduler,
   c: qt.Context<N, F, D>
 ) {
@@ -553,12 +553,12 @@ export function schedulePromise<N, F = any, D = any>(
 }
 
 export function scheduled<N, F = any, D = any>(
-  i: qt.SourceInput<N>,
+  i: qt.Input<N>,
   h: qt.Scheduler,
   c: qt.Context<N, F, D>
 ): qt.Source<N, F, D> {
   if (i) {
-    if (qu.isInteropSource(i)) return scheduleSource(i, h, c);
+    if (qu.isInterop(i)) return scheduleSource(i, h, c);
     if (qu.isPromise(i)) return schedulePromise(i, h, c);
     if (qu.isArrayLike(i)) return scheduleArray(i, h, c);
     if (qu.isIterable(i) || typeof i === 'string') return scheduleIter(i, h, c);

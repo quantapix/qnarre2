@@ -66,7 +66,7 @@ function dispatch<T>(
   state: DispatchState<T>
 ) {
   const {params, subscriber, context} = state;
-  const {cb, args, scheduler} = params;
+  const {cb, args, h} = params;
   let subject = params.subject;
 
   if (!subject) {
@@ -76,7 +76,7 @@ function dispatch<T>(
       const err = innerArgs.shift();
       if (err) {
         this.add(
-          scheduler.schedule<DispatchErrorArg<T>>(dispatchError as any, 0, {
+          h.schedule<DispatchErrorArg<T>>(dispatchError as any, 0, {
             err,
             subject
           })
@@ -84,7 +84,7 @@ function dispatch<T>(
       } else {
         const value = innerArgs.length <= 1 ? innerArgs[0] : innerArgs;
         this.add(
-          scheduler.schedule<DispatchNextArg<T>>(dispatchNext as any, 0, {
+          h.schedule<DispatchNextArg<T>>(dispatchNext as any, 0, {
             value,
             subject
           })
@@ -95,7 +95,7 @@ function dispatch<T>(
       cb.apply(context, [...args, handler]);
     } catch (err) {
       this.add(
-        scheduler.schedule<DispatchErrorArg<T>>(dispatchError as any, 0, {
+        h.schedule<DispatchErrorArg<T>>(dispatchError as any, 0, {
           err,
           subject
         })
@@ -223,40 +223,36 @@ function dispatch<T, S>(
   return this.schedule(state);
 }
 
-export function onErrorResumeNext<R>(v: qt.SourceInput<R>): qs.Source<R>;
+export function onErrorResumeNext<R>(v: qt.Input<R>): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>
 ): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>
 ): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>
 ): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, T6, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>,
-  v6: qt.SourceInput<T6>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>,
+  v6: qt.Input<T6>
 ): qs.Source<R>;
 export function onErrorResumeNext<R>(
-  ...observables: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qs.Source<R>;
-export function onErrorResumeNext<R>(
-  array: qt.SourceInput<any>[]
-): qs.Source<R>;
+export function onErrorResumeNext<R>(array: qt.Input<any>[]): qs.Source<R>;
 export function onErrorResumeNext<T, R>(
   ...sources: Array<
-    | qt.SourceInput<any>
-    | Array<qt.SourceInput<any>>
-    | ((...values: Array<any>) => R)
+    qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)
   >
 ): qs.Source<R> {
   if (sources.length === 0) {

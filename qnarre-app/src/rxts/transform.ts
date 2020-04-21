@@ -521,10 +521,10 @@ export class BufferWhenR<N, F, D> extends qj.Reactor<N, any, F, D> {
   }
 }
 
-export function concatMap<N, O extends qt.SourceInput<any>>(
+export function concatMap<N, O extends qt.Input<any>>(
   project: (n: N, index: number) => O
 ): qt.Lifter<N, qt.Sourced<R>>;
-export function concatMap<N, R, O extends qt.SourceInput<any>>(
+export function concatMap<N, R, O extends qt.Input<any>>(
   project: (n: N, index: number) => O,
   resultSelector?: (
     outerN: T,
@@ -538,10 +538,10 @@ export function concatMap<N, R, O extends qt.SourceInput<any>>(
   return mergeMap(project, 1);
 }
 
-export function concatMapTo<N, O extends qt.SourceInput<any>>(
+export function concatMapTo<N, O extends qt.Input<any>>(
   observable: O
 ): qt.Lifter<N, qt.Sourced<R>>;
-export function concatMapTo<N, R, O extends qt.SourceInput<any>>(
+export function concatMapTo<N, R, O extends qt.Input<any>>(
   innerObservable: O,
   resultSelector?: (
     outerN: T,
@@ -555,7 +555,7 @@ export function concatMapTo<N, R, O extends qt.SourceInput<any>>(
   return concatMap(() => innerObservable);
 }
 
-export function exhaust<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T>;
+export function exhaust<N, F, D>(): qt.Lifter<Input<N, F, D>, T>;
 export function exhaust<R>(): qt.Lifter<any, R>;
 export function exhaust<N, F, D>(): qt.Lifter<any, T> {
   return x => x.lift(new ExhaustO<N, F, D>());
@@ -594,10 +594,10 @@ export class ExhaustR<N, F, D> extends qj.Reactor<N, N, F, D> {
   }
 }
 
-export function exhaustMap<N, O extends qt.SourceInput<any>>(
+export function exhaustMap<N, O extends qt.Input<any>>(
   project: (n: N, index: number) => O
 ): qt.Lifter<N, qt.Sourced<R>>;
-export function exhaustMap<N, R, O extends qt.SourceInput<any>>(
+export function exhaustMap<N, R, O extends qt.Input<any>>(
   project: (n: N, index: number) => O,
   resultSelector?: (
     outerN: T,
@@ -621,7 +621,7 @@ export function exhaustMap<N, R, O extends qt.SourceInput<any>>(
 }
 
 class ExhaustMapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
-  constructor(private project: (n: N, index: number) => qt.SourceInput<R>) {}
+  constructor(private project: (n: N, index: number) => qt.Input<R>) {}
 
   call(r: qj.Subscriber<R>, source: any): any {
     return source.subscribe(new ExhaustMapR(r, this.project));
@@ -635,7 +635,7 @@ export class ExhaustMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
   constructor(
     tgt: qj.Subscriber<R, F, D>,
-    private project: (n: N, index: number) => qt.SourceInput<R>
+    private project: (n: N, index: number) => qt.Input<R>
   ) {
     super(tgt);
   }
@@ -645,7 +645,7 @@ export class ExhaustMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   }
 
   private tryNext(n: N) {
-    let result: qt.SourceInput<R>;
+    let result: qt.Input<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -657,7 +657,7 @@ export class ExhaustMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(result: qt.SourceInput<R>, n: N, index: number) {
+  private _innerSub(result: qt.Input<R>, n: N, index: number) {
     const innerSubscriber = new qj.Actor(this, value, index);
     const tgt = this.tgt as qj.Subscription;
     tgt.add(innerSubscriber);
@@ -694,17 +694,17 @@ export class ExhaustMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 }
 
 export function expand<N, R, F = any, D = any>(
-  project: (n: N, index: number) => qt.SourceInput<R>,
+  project: (n: N, index: number) => qt.Input<R>,
   concurrent?: number,
   scheduler?: qt.Scheduler
 ): qt.Lifter<N, R, F, D>;
 export function expand<N, F, D>(
-  project: (n: N, index: number) => qt.SourceInput<N, F, D>,
+  project: (n: N, index: number) => qt.Input<N, F, D>,
   concurrent?: number,
   scheduler?: qt.Scheduler
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function expand<N, R, F = any, D = any>(
-  project: (n: N, index: number) => qt.SourceInput<R>,
+  project: (n: N, index: number) => qt.Input<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
   scheduler?: qt.Scheduler
 ): qt.Lifter<N, R, F, D> {
@@ -714,7 +714,7 @@ export function expand<N, R, F = any, D = any>(
 
 export class ExpandO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private project: (n: N, index: number) => qt.SourceInput<R>,
+    private project: (n: N, index: number) => qt.Input<R>,
     private concurrent: number,
     private scheduler?: qt.Scheduler
   ) {}
@@ -734,7 +734,7 @@ export class ExpandR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
   constructor(
     tgt: qj.Subscriber<R, F, D>,
-    private project: (n: N, index: number) => qt.SourceInput<R>,
+    private project: (n: N, index: number) => qt.Input<R>,
     private concurrent: number,
     private scheduler?: qt.Scheduler
   ) {
@@ -811,7 +811,7 @@ export class ExpandR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
 interface DispatchArg<N, R, F, D> {
   subscriber: Expand<N, R, F, D>;
-  result: qt.SourceInput<R>;
+  result: qt.Input<R>;
   value: any;
   index: number;
 }
@@ -876,7 +876,7 @@ class GroupByO<N, K, R> implements qt.Operator<N, GroupedSource<K, R>> {
 }
 
 export class GroupByR<N, K, M, F, D> extends qj.Subscriber<N, F, D>
-  implements qt.RefCountSubscription {
+  implements qt.RefCounted {
   private groups?: Map<K, qj.Subject<N | M>>;
   public attempted = false;
   public count = 0;
@@ -963,7 +963,7 @@ export class GroupByR<N, K, M, F, D> extends qj.Subscriber<N, F, D>
 
   unsubscribe() {
     if (!this.closed) {
-      this.attemptedToUnsubscribe = true;
+      this.unsubscribing = true;
       if (!this.count) super.unsubscribe();
     }
   }
@@ -1049,11 +1049,11 @@ export class MapToR<N, R, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export function mergeMap<N, O extends qt.SourceInput<any>>(
+export function mergeMap<N, O extends qt.Input<any>>(
   project: (n: N, index: number) => O,
   concurrent?: number
 ): qt.Lifter<N, qt.Sourced<R>>;
-export function mergeMap<N, R, O extends qt.SourceInput<any>>(
+export function mergeMap<N, R, O extends qt.Input<any>>(
   project: (n: N, index: number) => O,
   resultSelector?:
     | ((
@@ -1084,7 +1084,7 @@ export function mergeMap<N, R, O extends qt.SourceInput<any>>(
 
 export class MergeMapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private project: (n: N, index: number) => qt.SourceInput<R>,
+    private project: (n: N, index: number) => qt.Input<R>,
     private concurrent: number = Number.POSITIVE_INFINITY
   ) {}
 
@@ -1103,7 +1103,7 @@ export class MergeMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
   constructor(
     tgt: qj.Subscriber<R>,
-    private project: (n: N, index: number) => qt.SourceInput<R>,
+    private project: (n: N, index: number) => qt.Input<R>,
     private concurrent = Number.POSITIVE_INFINITY
   ) {
     super(tgt);
@@ -1115,7 +1115,7 @@ export class MergeMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   }
 
   protected _tryNext(n: N) {
-    let result: qt.SourceInput<R>;
+    let result: qt.Input<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -1127,7 +1127,7 @@ export class MergeMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(ish: qt.SourceInput<R>, n: N, index: number) {
+  private _innerSub(ish: qt.Input<R>, n: N, index: number) {
     const innerSubscriber = new ActorSubscriber(this, value, index);
     const tgt = this.tgt as qj.Subscription;
     tgt.add(innerSubscriber);
@@ -1163,11 +1163,11 @@ export class MergeMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   }
 }
 
-export function mergeMapTo<O extends qt.SourceInput<any>>(
+export function mergeMapTo<O extends qt.Input<any>>(
   innerObservable: O,
   concurrent?: number
 ): qt.Lifter<any, qt.Sourced<R>>;
-export function mergeMapTo<N, R, O extends qt.SourceInput<any>>(
+export function mergeMapTo<N, R, O extends qt.Input<any>>(
   innerObservable: O,
   resultSelector?:
     | ((
@@ -1187,7 +1187,7 @@ export function mergeMapTo<N, R, O extends qt.SourceInput<any>>(
 }
 
 export function mergeScan<N, R, F, D>(
-  acc: (acc: R, n: N, index: number) => qt.SourceInput<R>,
+  acc: (acc: R, n: N, index: number) => qt.Input<R>,
   seed: R,
   concurrent: number = Number.POSITIVE_INFINITY
 ): qt.Lifter<N, R, F, D> {
@@ -1196,7 +1196,7 @@ export function mergeScan<N, R, F, D>(
 
 export class MergeScanO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private acc: (acc: R, n: N, index: number) => qt.SourceInput<R>,
+    private acc: (acc: R, n: N, index: number) => qt.Input<R>,
     private seed: R,
     private concurrent: number
   ) {}
@@ -1215,7 +1215,7 @@ export class MergeScanR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
   constructor(
     tgt: qj.Subscriber<R, F, D>,
-    private acc: (acc: R, n: N, index: number) => qt.SourceInput<R>,
+    private acc: (acc: R, n: N, index: number) => qt.Input<R>,
     private acc: R,
     private concurrent: number
   ) {
@@ -1351,7 +1351,7 @@ class PairwiseR<N, F, D> extends qj.Subscriber<N, F, D> {
 export function partition<N, F, D>(
   predicate: (n: N, index: number) => boolean,
   thisArg?: any
-): UnaryFun<qt.Source<N, F, D>, [qt.Source<N, F, D>, qt.Source<N, F, D>]> {
+): Mapper<qt.Source<N, F, D>, [qt.Source<N, F, D>, qt.Source<N, F, D>]> {
   return (source: qt.Source<N, F, D>) =>
     [
       filter(predicate, thisArg)(source),
@@ -1360,7 +1360,7 @@ export function partition<N, F, D>(
 }
 
 export function partition<T>(
-  source: qt.SourceInput<T>,
+  source: qt.Input<T>,
   predicate: (n: N, index: number) => boolean,
   thisArg?: any
 ): [qt.Source<T>, qt.Source<T>] {
@@ -1515,10 +1515,10 @@ export class ScanR<N, R, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export function switchMap<N, O extends qt.SourceInput<any>>(
+export function switchMap<N, O extends qt.Input<any>>(
   project: (n: N, index: number) => O
 ): qt.Lifter<N, qt.Sourced<R>>;
-export function switchMap<N, R, O extends qt.SourceInput<any>>(
+export function switchMap<N, R, O extends qt.Input<any>>(
   project: (n: N, index: number) => O,
   resultSelector?: (
     outerN: T,
@@ -1539,7 +1539,7 @@ export function switchMap<N, R, O extends qt.SourceInput<any>>(
 }
 
 class SwitchMapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
-  constructor(private project: (n: N, index: number) => qt.SourceInput<R>) {}
+  constructor(private project: (n: N, index: number) => qt.Input<R>) {}
   call(r: qj.Subscriber<R>, s: any): any {
     return s.subscribe(new SwitchMapR(r, this.project));
   }
@@ -1551,13 +1551,13 @@ export class SwitchMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
   constructor(
     tgt: qj.Subscriber<R, F, D>,
-    private project: (n: N | undefined, i: number) => qt.SourceInput<R>
+    private project: (n: N | undefined, i: number) => qt.Input<R>
   ) {
     super(tgt);
   }
 
   protected _next(n?: N) {
-    let result: qt.SourceInput<R>;
+    let result: qt.Input<R>;
     const index = this.index++;
     try {
       result = this.project(n, index);
@@ -1568,7 +1568,7 @@ export class SwitchMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
     this._innerSub(result, n, index);
   }
 
-  private _innerSub(result: qt.SourceInput<R>, n: N, index: number) {
+  private _innerSub(result: qt.Input<R>, n: N, index: number) {
     const innerSubscription = this.innerSubscription;
     if (innerSubscription) innerSubscription.unsubscribe();
 
@@ -1609,11 +1609,9 @@ export class SwitchMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   }
 }
 
-export function switchMapTo<R>(
-  observable: qt.SourceInput<R>
-): qt.Lifter<any, R>;
+export function switchMapTo<R>(observable: qt.Input<R>): qt.Lifter<any, R>;
 export function switchMapTo<N, I, R>(
-  innerObservable: qt.SourceInput<I>,
+  innerObservable: qt.Input<I>,
   resultSelector?: (
     outerN: T,
     innerValue: I,
@@ -1626,9 +1624,9 @@ export function switchMapTo<N, I, R>(
     : switchMap(() => innerObservable);
 }
 
-export function switchAll<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T>;
+export function switchAll<N, F, D>(): qt.Lifter<Input<N, F, D>, T>;
 export function switchAll<R>(): qt.Lifter<any, R>;
-export function switchAll<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T> {
+export function switchAll<N, F, D>(): qt.Lifter<Input<N, F, D>, T> {
   return switchMap(identity);
 }
 

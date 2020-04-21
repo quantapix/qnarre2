@@ -4446,7 +4446,7 @@ describe('skipUntil', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      skipUntil(asInteropSource(skip)),
+      skipUntil(asInterop(skip)),
       mergeMap(x => of(x))
     );
 

@@ -88,10 +88,10 @@ export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
   };
 })();
 
-export function refCount<N, F, D>(): qt.MonoOper<N, F, D> {
+export function refCount<N, F, D>(): qt.Shifter<N, F, D> {
   return function refCountLifter(source: Connect<N, F, D>): qt.Source<N, F, D> {
     return source.lift(new RefCountO(source));
-  } as qt.MonoOper<N, F, D>;
+  } as qt.Shifter<N, F, D>;
 }
 
 export class RefCountO<N> implements qt.Operator<N, N> {

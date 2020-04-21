@@ -3,7 +3,7 @@ import * as qu from './utils';
 import * as qj from './subject';
 import * as qh from './scheduler';
 
-export function finalize<N, F, D>(callback: () => void): qt.MonoOper<N, F, D> {
+export function finalize<N, F, D>(callback: () => void): qt.Shifter<N, F, D> {
   return x => source.lift(new FinallyO(callback));
 }
 
@@ -49,47 +49,45 @@ export class IgnoreElements<N, F, D> extends qj.Subscriber<N, F, D> {
 }
 
 export function onErrorResumeNext<N, F, D>(): qt.Lifter<T, T>;
-export function onErrorResumeNext<T, T2>(
-  v: qt.SourceInput<T2>
-): qt.Lifter<T, T | T2>;
+export function onErrorResumeNext<T, T2>(v: qt.Input<T2>): qt.Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
-  v: qt.SourceInput<T2>,
-  v2: qt.SourceInput<T3>
+  v: qt.Input<T2>,
+  v2: qt.Input<T3>
 ): qt.Lifter<T, T | T2 | T3>;
 export function onErrorResumeNext<T, T2, T3, T4>(
-  v: qt.SourceInput<T2>,
-  v2: qt.SourceInput<T3>,
-  v3: qt.SourceInput<T4>
+  v: qt.Input<T2>,
+  v2: qt.Input<T3>,
+  v3: qt.Input<T4>
 ): qt.Lifter<T, T | T2 | T3 | T4>;
 export function onErrorResumeNext<T, T2, T3, T4, T5>(
-  v: qt.SourceInput<T2>,
-  v2: qt.SourceInput<T3>,
-  v3: qt.SourceInput<T4>,
-  v4: qt.SourceInput<T5>
+  v: qt.Input<T2>,
+  v2: qt.Input<T3>,
+  v3: qt.Input<T4>,
+  v4: qt.Input<T5>
 ): qt.Lifter<T, T | T2 | T3 | T4 | T5>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6>(
-  v: qt.SourceInput<T2>,
-  v2: qt.SourceInput<T3>,
-  v3: qt.SourceInput<T4>,
-  v4: qt.SourceInput<T5>,
-  v5: qt.SourceInput<T6>
+  v: qt.Input<T2>,
+  v2: qt.Input<T3>,
+  v3: qt.Input<T4>,
+  v4: qt.Input<T5>,
+  v5: qt.Input<T6>
 ): qt.Lifter<T, T | T2 | T3 | T4 | T5 | T6>;
 export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
-  v: qt.SourceInput<T2>,
-  v2: qt.SourceInput<T3>,
-  v3: qt.SourceInput<T4>,
-  v4: qt.SourceInput<T5>,
-  v5: qt.SourceInput<T6>,
-  v6: qt.SourceInput<T7>
+  v: qt.Input<T2>,
+  v2: qt.Input<T3>,
+  v3: qt.Input<T4>,
+  v4: qt.Input<T5>,
+  v5: qt.Input<T6>,
+  v6: qt.Input<T7>
 ): qt.Lifter<T, T | T2 | T3 | T4 | T5 | T6 | T7>;
 export function onErrorResumeNext<T, R>(
-  ...observables: Array<qt.SourceInput<any>>
+  ...observables: Array<qt.Input<any>>
 ): qt.Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
-  array: qt.SourceInput<any>[]
+  array: qt.Input<any>[]
 ): qt.Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
-  ...nextSources: Array<qt.SourceInput<any> | Array<qt.SourceInput<any>>>
+  ...nextSources: Array<qt.Input<any> | Array<qt.Input<any>>>
 ): qt.Lifter<T, R> {
   if (nextSources.length === 1 && Array.isArray(nextSources[0])) {
     nextSources = <Array<qt.Source<any>>>nextSources[0];
@@ -98,46 +96,44 @@ export function onErrorResumeNext<T, R>(
   return x => source.lift(new OnErrorResumeNextO<T, R>(nextSources));
 }
 
-export function onErrorResumeNextStatic<R>(v: qt.SourceInput<R>): qt.Source<R>;
+export function onErrorResumeNextStatic<R>(v: qt.Input<R>): qt.Source<R>;
 export function onErrorResumeNextStatic<T2, T3, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<T2, T3, T4, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<T2, T3, T4, T5, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<T2, T3, T4, T5, T6, R>(
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>,
-  v6: qt.SourceInput<T6>
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>,
+  v6: qt.Input<T6>
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<R>(
-  ...observables: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<R>(
-  array: qt.SourceInput<any>[]
+  array: qt.Input<any>[]
 ): qt.Source<R>;
 export function onErrorResumeNextStatic<T, R>(
   ...nextSources: Array<
-    | qt.SourceInput<any>
-    | Array<qt.SourceInput<any>>
-    | ((...values: Array<any>) => R)
+    qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)
   >
 ): qt.Source<R> {
-  let source: qt.SourceInput<any> | null = null;
+  let source: qt.Input<any> | null = null;
 
   if (nextSources.length === 1 && Array.isArray(nextSources[0])) {
-    nextSources = <Array<qt.SourceInput<any>>>nextSources[0];
+    nextSources = <Array<qt.Input<any>>>nextSources[0];
   }
   source = nextSources.shift()!;
 
@@ -145,7 +141,7 @@ export function onErrorResumeNextStatic<T, R>(
 }
 
 class OnErrorResumeNextO<T, R> implements qt.Operator<T, R> {
-  constructor(private nextSources: Array<qt.SourceInput<any>>) {}
+  constructor(private nextSources: Array<qt.Input<any>>) {}
 
   call(r: qt.Subscriber<R>, s: any): any {
     return s.subscribe(new OnErrorResumeNextR(r, this.nextSources));
@@ -155,7 +151,7 @@ class OnErrorResumeNextO<T, R> implements qt.Operator<T, R> {
 class OnErrorResumeNextR<N, M, F, D> extends qj.Reactor<N, M, F, D> {
   constructor(
     protected tgt: qt.Subscriber<N, F, D>,
-    private nextSources: Array<qt.SourceInput<any>>
+    private nextSources: Array<qt.Input<any>>
   ) {
     super(tgt);
   }
@@ -198,7 +194,7 @@ class OnErrorResumeNextR<N, M, F, D> extends qj.Reactor<N, M, F, D> {
 
 export function race<N, F, D>(
   ...observables: (qt.Source<N, F, D> | qt.Source<N, F, D>[])[]
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return function raceLifter(source: qt.Source<N, F, D>) {
     if (observables.length === 1 && Array.isArray(observables[0])) {
       observables = observables[0] as qt.Source<N, F, D>[];
@@ -316,14 +312,14 @@ class SequenceEqualCompareToSubscriber<T, R> extends qj.Subscriber<N, F, D> {
 }
 
 export function withLatestFrom<T, R>(project: (v1: N) => R): qt.Lifter<T, R>;
-export function withLatestFrom<T, O2 extends qt.SourceInput<any>, R>(
+export function withLatestFrom<T, O2 extends qt.Input<any>, R>(
   source2: O2,
   project: (v1: T, v2: qt.Sourced<O2>) => R
 ): qt.Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
   R
 >(
   v2: O2,
@@ -332,9 +328,9 @@ export function withLatestFrom<
 ): qt.Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
   R
 >(
   v2: O2,
@@ -349,10 +345,10 @@ export function withLatestFrom<
 ): qt.Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>,
   R
 >(
   v2: O2,
@@ -369,11 +365,11 @@ export function withLatestFrom<
 ): qt.Lifter<T, R>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>,
-  O6 extends qt.SourceInput<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>,
+  O6 extends qt.Input<any>,
   R
 >(
   v2: O2,
@@ -390,19 +386,19 @@ export function withLatestFrom<
     v6: qt.Sourced<O6>
   ) => R
 ): qt.Lifter<T, R>;
-export function withLatestFrom<T, O2 extends qt.SourceInput<any>>(
+export function withLatestFrom<T, O2 extends qt.Input<any>>(
   source2: O2
 ): qt.Lifter<T, [T, qt.Sourced<O2>]>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>
 >(v2: O2, v3: O3): qt.Lifter<T, [T, qt.Sourced<O2>, qt.Sourced<O3>]>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>
 >(
   v2: O2,
   v3: O3,
@@ -410,10 +406,10 @@ export function withLatestFrom<
 ): qt.Lifter<T, [T, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>]>;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>
 >(
   v2: O2,
   v3: O3,
@@ -425,11 +421,11 @@ export function withLatestFrom<
 >;
 export function withLatestFrom<
   T,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>,
-  O6 extends qt.SourceInput<any>
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>,
+  O6 extends qt.Input<any>
 >(
   v2: O2,
   v3: O3,
@@ -448,17 +444,15 @@ export function withLatestFrom<
   ]
 >;
 export function withLatestFrom<T, R>(
-  ...observables: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qt.Lifter<T, R>;
+export function withLatestFrom<T, R>(array: qt.Input<any>[]): qt.Lifter<T, R>;
 export function withLatestFrom<T, R>(
-  array: qt.SourceInput<any>[]
-): qt.Lifter<T, R>;
-export function withLatestFrom<T, R>(
-  array: qt.SourceInput<any>[],
+  array: qt.Input<any>[],
   project: (...values: Array<any>) => R
 ): qt.Lifter<T, R>;
 export function withLatestFrom<T, R>(
-  ...args: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+  ...args: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qt.Lifter<T, R> {
   return x => {
     let project: any;
@@ -541,13 +535,6 @@ function dispatchNotification<N, F, D>(this: qt.Action<any>, state: any) {
   this.schedule(state, period);
 }
 
-export interface RefCountSubscription {
-  count: number;
-  unsubscribe: () => void;
-  closed: boolean;
-  attemptedToUnsubscribe: boolean;
-}
-
 class GroupDurationSubscriber<K, T> extends qj.Subscriber<T> {
   constructor(
     private key: K,
@@ -570,8 +557,8 @@ class GroupDurationSubscriber<K, T> extends qj.Subscriber<T> {
   }
 }
 
-class ActorRefCountSubscription extends qj.Subscription {
-  constructor(private parent: RefCountSubscription) {
+class ActorRefCounted extends qj.Subscription {
+  constructor(private parent: RefCounted) {
     super();
     parent.count++;
   }
@@ -581,7 +568,7 @@ class ActorRefCountSubscription extends qj.Subscription {
     if (!parent.closed && !this.closed) {
       super.unsubscribe();
       parent.count -= 1;
-      if (parent.count === 0 && parent.attemptedToUnsubscribe) {
+      if (parent.count === 0 && parent.unsubscribing) {
         parent.unsubscribe();
       }
     }

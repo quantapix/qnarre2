@@ -193,7 +193,7 @@ describe('catchError', () => {
       // they are wrapped in a safe subscriber. This test ensures that
       // unsubscriptions are chained all the way to the interop subscriber.
 
-      const result = e1.pipe(catchError(() => asInteropSource(e2)));
+      const result = e1.pipe(catchError(() => asInterop(e2)));
 
       expectSource(result, unsub).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -410,8 +410,8 @@ describe('catchError', () => {
       );
   });
 
-  it('should accept selector returns any SourceInput', (done: MochaDone) => {
-    const input$ = createSourceInputs(42);
+  it('should accept selector returns any Input', (done: MochaDone) => {
+    const input$ = createInputs(42);
 
     input$
       .pipe(mergeMap(input => throwError('bad').pipe(catchError(err => input))))

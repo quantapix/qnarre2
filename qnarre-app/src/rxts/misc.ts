@@ -20,7 +20,7 @@ class DelayMessage<N, F, D> {
 export function delay<N, F, D>(
   delay: number | Date,
   scheduler: qt.Scheduler = qh.async
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   const absoluteDelay = qu.isDate(delay);
   const delayFor = absoluteDelay
     ? +delay - scheduler.now()
@@ -112,11 +112,11 @@ export class Delay<N, F, D> extends qj.Subscriber<N, F, D> {
 export function delayWhen<N, F, D>(
   delayDurationSelector: (n: N, index: number) => qt.Source<any, F, D>,
   subscriptionDelay?: qt.Source<any, F, D>
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function delayWhen<N, F, D>(
   delayDurationSelector: (n: N, index: number) => qt.Source<any, F, D>,
   subscriptionDelay?: qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   if (subscriptionDelay) {
     return x =>
       new SubscriptionDelayObservable(x, subscriptionDelay).lift(
@@ -324,7 +324,7 @@ export class ObserveOnMessage {
 export function observeOn<N, F, D>(
   scheduler: qt.Scheduler,
   delay: number = 0
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return function observeOnLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
@@ -384,7 +384,7 @@ export class ObserveOnR<N, F, D> extends qj.Subscriber<N, F, D> {
 export function subscribeOn<N, F, D>(
   scheduler: qt.Scheduler,
   delay: number = 0
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return function subscribeOnLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
@@ -405,15 +405,13 @@ export function tap<N, F, D>(
   next?: (x: N) => void,
   error?: (e: any) => void,
   complete?: () => void
-): qt.MonoOper<N, F, D>;
-export function tap<N, F, D>(
-  observer: qt.Target<N, F, D>
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
+export function tap<N, F, D>(observer: qt.Target<N, F, D>): qt.Shifter<N, F, D>;
 export function tap<N, F, D>(
   nextOrObserver?: qt.Target<N, F, D> | ((x: N) => void) | null,
   error?: ((e: any) => void) | null,
   complete?: (() => void) | null
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return function tapLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
     return x.lift(new TapO(nextOrObserver, error, complete));
   };
@@ -523,18 +521,18 @@ export class TimeInterval<N, F, D> {
 export function timeout<N, F, D>(
   due: number | Date,
   scheduler: qt.Scheduler = qh.async
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return timeoutWith(due, throwError(new TimeoutError()), scheduler);
 }
 
 export function timeoutWith<T, R>(
   due: number | Date,
-  withObservable: qt.SourceInput<R>,
+  withObservable: qt.Input<R>,
   scheduler?: qt.Scheduler
 ): qt.Lifter<T, T | R>;
 export function timeoutWith<T, R>(
   due: number | Date,
-  withObservable: qt.SourceInput<R>,
+  withObservable: qt.Input<R>,
   scheduler: qt.Scheduler = qh.async
 ): qt.Lifter<T, T | R> {
   return x => {
@@ -552,7 +550,7 @@ class TimeoutWithO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
     private waitFor: number,
     private absoluteTimeout: boolean,
-    private withObservable: qt.SourceInput<any>,
+    private withObservable: qt.Input<any>,
     private scheduler: qt.Scheduler
   ) {}
 
@@ -576,7 +574,7 @@ export class TimeoutWithR<T, R> extends qj.Reactor<N, M, F, D> {
     tgt: qt.Subscriber<N, F, D>,
     private absoluteTimeout: boolean,
     private waitFor: number,
-    private withObservable: qt.SourceInput<any>,
+    private withObservable: qt.Input<any>,
     private scheduler: qt.Scheduler
   ) {
     super(tgt);
@@ -632,9 +630,7 @@ export function toArray<N, F, D>(): qt.Lifter<N, N[], F, D> {
 
 export function using<T>(
   resourceFactory: () => qt.Unsubscriber | void,
-  observableFactory: (
-    resource: qt.Unsubscriber | void
-  ) => qt.SourceInput<T> | void
+  observableFactory: (resource: qt.Unsubscriber | void) => qt.Input<T> | void
 ): qs.Source<T> {
   return new qs.Source<T>(subscriber => {
     let resource: qt.Unsubscriber | void;
@@ -644,7 +640,7 @@ export function using<T>(
       subscriber.error(err);
       return undefined;
     }
-    let result: qt.SourceInput<T> | void;
+    let result: qt.Input<T> | void;
     try {
       result = observableFactory(resource);
     } catch (err) {

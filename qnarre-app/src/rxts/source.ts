@@ -249,7 +249,7 @@ export class Grouped<K, T> extends Source<N, F, D> {
   constructor(
     public key: K,
     private groupSubject: Subject<N, F, D>,
-    private refCountSubscription?: RefCountSubscription
+    private refCountSubscription?: RefCounted
   ) {
     super();
   }
@@ -258,7 +258,7 @@ export class Grouped<K, T> extends Source<N, F, D> {
     const subscription = new Subscription();
     const {refCountSubscription, groupSubject} = this;
     if (refCountSubscription && !refCountSubscription.closed) {
-      subscription.add(new ActorRefCountSubscription(refCountSubscription));
+      subscription.add(new ActorRefCounted(refCountSubscription));
     }
     subscription.add(groupSubject.subscribe(subscriber));
     return subscription;

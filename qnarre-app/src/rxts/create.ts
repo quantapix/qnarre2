@@ -483,7 +483,7 @@ export function bindNodeCallback<T>(
 
 export const EMPTY = new qs.Source<never>(subscriber => subscriber.done());
 
-export function defer<R extends qt.SourceInput<any> | void>(
+export function defer<R extends qt.Input<any> | void>(
   observableFactory: () => R
 ): qs.Source<Sourced<R>> {
   return new qs.Source<Sourced<R>>(subscriber => {
@@ -494,7 +494,7 @@ export function defer<R extends qt.SourceInput<any> | void>(
       subscriber.error(err);
       return undefined;
     }
-    const source = input ? from(input as qt.SourceInput<Sourced<R>>) : EMPTY;
+    const source = input ? from(input as qt.Input<Sourced<R>>) : EMPTY;
     return source.subscribe(subscriber);
   });
 }
@@ -503,13 +503,8 @@ export function empty(h?: qh.Scheduler) {
   return scheduler ? emptyScheduled(scheduler) : EMPTY;
 }
 
-export function from<O extends qt.SourceInput<any>>(
-  input: O
-): qs.Source<Sourced<O>>;
-export function from<T>(
-  input: qt.SourceInput<T>,
-  h?: qh.Scheduler
-): qs.Source<T> {
+export function from<O extends qt.Input<any>>(input: O): qs.Source<Sourced<O>>;
+export function from<T>(input: qt.Input<T>, h?: qh.Scheduler): qs.Source<T> {
   if (!scheduler) {
     if (input instanceof Observable) {
       return input;
@@ -707,10 +702,7 @@ export function fromIterable<T>(input: Iterable<T>, h?: qh.Scheduler) {
   }
 }
 
-export function fromObservable<T>(
-  input: qt.InteropSource<T>,
-  h?: qh.Scheduler
-) {
+export function fromObservable<T>(input: qt.Interop<T>, h?: qh.Scheduler) {
   if (!scheduler) {
     return new qs.Source<T>(subscribeToObservable(input));
   } else {
@@ -897,9 +889,7 @@ export function of<T, U, V>(
   value2: U,
   value3: V
 ): qs.Source<T | U | V>;
-export function of<A extends Array<any>>(
-  ...args: A
-): qs.Source<ValueFromArray<A>>;
+export function of<A extends Array<any>>(...args: A): qs.Source<ValueOf<A>>;
 export function of<T>(...args: Array<T | qh.Scheduler>): qs.Source<T> {
   let scheduler = args[args.length - 1] as qh.Scheduler;
   if (isScheduler(scheduler)) {
@@ -1009,7 +999,7 @@ function dispatch(this: qh.Action<TimerState>, state: TimerState) {
 
 /* ** */
 
-export function repeat<N, F, D>(count: number = -1): qt.MonoOper<N, F, D> {
+export function repeat<N, F, D>(count: number = -1): qt.Shifter<N, F, D> {
   return (source: qt.Source<N, F, D>) => {
     if (count === 0) {
       return EMPTY;
@@ -1049,7 +1039,7 @@ export class RepeatR<N, F, D> extends Subscriber<N, F, D> {
 
 export function repeatWhen<N, F, D>(
   notifier: (notifications: qt.Source<any, F, D>) => qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return (source: qt.Source<N, F, D>) => source.lift(new RepeatWhenO(notifier));
 }
 
@@ -1153,7 +1143,7 @@ export class RepeatWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
 
 export function throwIfEmpty<N, F, D>(
   errorFactory: () => any = defaultErrorFactory
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return (source: qt.Source<N, F, D>) => {
     return source.lift(new ThrowIfEmptyO(errorFactory));
   };

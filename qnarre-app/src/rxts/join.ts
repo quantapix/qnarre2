@@ -4,34 +4,34 @@ import * as qs from './source';
 import * as qj from './subject';
 import * as qh from './scheduler';
 
-export function combineLatest<O1 extends qt.SourceInput<any>>(
+export function combineLatest<O1 extends qt.Input<any>>(
   sources: [O1]
 ): qs.Source<[qt.Sourced<O1>]>;
 export function combineLatest<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>
 >(sources: [O1, O2]): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>]>;
 export function combineLatest<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>
 >(
   sources: [O1, O2, O3]
 ): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>]>;
 export function combineLatest<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>
 >(
   sources: [O1, O2, O3, O4]
 ): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>]>;
 export function combineLatest<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>
 >(
   sources: [O1, O2, O3, O4, O5]
 ): qs.Source<
@@ -44,12 +44,12 @@ export function combineLatest<
   ]
 >;
 export function combineLatest<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>,
-  O6 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>,
+  O6 extends qt.Input<any>
 >(
   sources: [O1, O2, O3, O4, O5, O6]
 ): qs.Source<
@@ -62,10 +62,10 @@ export function combineLatest<
     qt.Sourced<O6>
   ]
 >;
-export function combineLatest<O extends qt.SourceInput<any>>(
+export function combineLatest<O extends qt.Input<any>>(
   sources: O[]
 ): qs.Source<qt.Sourced<O>[]>;
-export function combineLatest<O extends qt.SourceInput<any>, R>(
+export function combineLatest<O extends qt.Input<any>, R>(
   ...observables: (O | ((...values: qt.Sourced<O>[]) => R) | qh.Scheduler)[]
 ): qs.Source<R> {
   let resultSelector: ((...values: Array<any>) => R) | undefined = undefined;
@@ -160,9 +160,7 @@ export class CombineLatestR<T, R> extends qj.Reactor<T, R> {
 
 export function combineLatest<T, R>(
   ...observables: Array<
-    | qt.SourceInput<any>
-    | Array<qt.SourceInput<any>>
-    | ((...values: Array<any>) => R)
+    qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)
   >
 ): qt.Lifter<T, R> {
   let project: ((...values: Array<any>) => R) | undefined = undefined;
@@ -179,17 +177,17 @@ export function combineLatest<T, R>(
     ) as qt.Source<R>;
 }
 
-export function combineLatestWith<T, A extends qt.SourceInput<any>[]>(
+export function combineLatestWith<T, A extends qt.Input<any>[]>(
   ...otherSources: A
 ): qt.Lifter<T, Unshift<SourcedTuple<A>, T>> {
   return combineLatest(...otherSources);
 }
 
-export function combineAll<N, F, D>(): qt.Lifter<qt.SourceInput<N, F, D>, T[]>;
+export function combineAll<N, F, D>(): qt.Lifter<qt.Input<N, F, D>, T[]>;
 export function combineAll<N, F, D>(): qt.Lifter<any, T[]>;
 export function combineAll<T, R>(
   project: (...values: T[]) => R
-): qt.Lifter<qt.SourceInput<N, F, D>, R>;
+): qt.Lifter<qt.Input<N, F, D>, R>;
 export function combineAll<R>(
   project: (...values: Array<any>) => R
 ): qt.Lifter<any, R>;
@@ -201,50 +199,39 @@ export function combineAll<T, R>(
 
 export function endWith<T, A extends any[]>(
   ...args: A
-): qt.Lifter<T, T | ValueFromArray<A>>;
+): qt.Lifter<T, T | ValueOf<A>>;
 export function endWith<N, F, D>(
   ...values: Array<T | qt.Scheduler>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => concatStatic(x, of(...values)) as qt.Source<N, F, D>;
 }
 
-export function forkJoin<A>(sources: [qt.SourceInput<A>]): qs.Source<[A]>;
+export function forkJoin<A>(sources: [qt.Input<A>]): qs.Source<[A]>;
 export function forkJoin<A, B>(
-  sources: [qt.SourceInput<A>, qt.SourceInput<B>]
+  sources: [qt.Input<A>, qt.Input<B>]
 ): qs.Source<[A, B]>;
 export function forkJoin<A, B, C>(
-  sources: [qt.SourceInput<A>, qt.SourceInput<B>, qt.SourceInput<C>]
+  sources: [qt.Input<A>, qt.Input<B>, qt.Input<C>]
 ): qs.Source<[A, B, C]>;
 export function forkJoin<A, B, C, D>(
-  sources: [
-    qt.SourceInput<A>,
-    qt.SourceInput<B>,
-    qt.SourceInput<C>,
-    qt.SourceInput<D>
-  ]
+  sources: [qt.Input<A>, qt.Input<B>, qt.Input<C>, qt.Input<D>]
 ): qs.Source<[A, B, C, D]>;
 export function forkJoin<A, B, C, D, E>(
-  sources: [
-    qt.SourceInput<A>,
-    qt.SourceInput<B>,
-    qt.SourceInput<C>,
-    qt.SourceInput<D>,
-    qt.SourceInput<E>
-  ]
+  sources: [qt.Input<A>, qt.Input<B>, qt.Input<C>, qt.Input<D>, qt.Input<E>]
 ): qs.Source<[A, B, C, D, E]>;
 export function forkJoin<A, B, C, D, E, F>(
   sources: [
-    qt.SourceInput<A>,
-    qt.SourceInput<B>,
-    qt.SourceInput<C>,
-    qt.SourceInput<D>,
-    qt.SourceInput<E>,
-    qt.SourceInput<F>
+    qt.Input<A>,
+    qt.Input<B>,
+    qt.Input<C>,
+    qt.Input<D>,
+    qt.Input<E>,
+    qt.Input<F>
   ]
 ): qs.Source<[A, B, C, D, E, F]>;
-export function forkJoin<A extends qt.SourceInput<any>[]>(
+export function forkJoin<A extends qt.Input<any>[]>(
   sources: A
-): qs.Source<qt.SourcedFrom<A>[]>;
+): qs.Source<qt.SourcedOf<A>[]>;
 export function forkJoin(sourcesObject: {}): qs.Source<never>;
 export function forkJoin<T, K extends keyof T>(
   sourcesObject: T
@@ -278,7 +265,7 @@ export function forkJoin(...sources: any[]): qs.Source<any> {
 }
 
 function forkJoinInternal(
-  sources: qt.SourceInput<any>[],
+  sources: qt.Input<any>[],
   keys: string[] | null
 ): qs.Source<any> {
   return new qs.Source(subscriber => {
@@ -327,84 +314,81 @@ function forkJoinInternal(
   });
 }
 
-export function merge<T>(v1: qt.SourceInput<T>): qs.Source<T>;
-export function merge<T>(
-  v1: qt.SourceInput<T>,
-  concurrent?: number
-): qs.Source<T>;
+export function merge<T>(v1: qt.Input<T>): qs.Source<T>;
+export function merge<T>(v1: qt.Input<T>, concurrent?: number): qs.Source<T>;
 export function merge<T, T2>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>
 ): qs.Source<T | T2>;
 export function merge<T, T2>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
   concurrent?: number
 ): qs.Source<T | T2>;
 export function merge<T, T2, T3>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>
 ): qs.Source<T | T2 | T3>;
 export function merge<T, T2, T3>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
   concurrent?: number
 ): qs.Source<T | T2 | T3>;
 export function merge<T, T2, T3, T4>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>
 ): qs.Source<T | T2 | T3 | T4>;
 export function merge<T, T2, T3, T4>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
   concurrent?: number
 ): qs.Source<T | T2 | T3 | T4>;
 export function merge<T, T2, T3, T4, T5>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>
 ): qs.Source<T | T2 | T3 | T4 | T5>;
 export function merge<T, T2, T3, T4, T5>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>,
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>,
   concurrent?: number
 ): qs.Source<T | T2 | T3 | T4 | T5>;
 export function merge<T, T2, T3, T4, T5, T6>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>,
-  v6: qt.SourceInput<T6>
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>,
+  v6: qt.Input<T6>
 ): qs.Source<T | T2 | T3 | T4 | T5 | T6>;
 export function merge<T, T2, T3, T4, T5, T6>(
-  v1: qt.SourceInput<T>,
-  v2: qt.SourceInput<T2>,
-  v3: qt.SourceInput<T3>,
-  v4: qt.SourceInput<T4>,
-  v5: qt.SourceInput<T5>,
-  v6: qt.SourceInput<T6>,
+  v1: qt.Input<T>,
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>,
+  v6: qt.Input<T6>,
   concurrent?: number
 ): qs.Source<T | T2 | T3 | T4 | T5 | T6>;
 export function merge<T>(
-  ...observables: (qt.SourceInput<T> | number)[]
+  ...observables: (qt.Input<T> | number)[]
 ): qs.Source<T>;
 export function merge<T, R>(
-  ...observables: (qt.SourceInput<any> | number)[]
+  ...observables: (qt.Input<any> | number)[]
 ): qs.Source<R>;
 export function merge<T, R>(
-  ...observables: Array<qt.SourceInput<any> | qh.Scheduler | number | undefined>
+  ...observables: Array<qt.Input<any> | qh.Scheduler | number | undefined>
 ): qs.Source<R> {
   let concurrent = Number.POSITIVE_INFINITY;
   let scheduler: qh.Scheduler | undefined = undefined;
@@ -434,34 +418,34 @@ export function merge<T, R>(
 
 export function mergeAll<N, F, D>(
   concurrent: number = Number.POSITIVE_INFINITY
-): qt.Lifter<qt.SourceInput<N, F, D>, T> {
+): qt.Lifter<qt.Input<N, F, D>, T> {
   return mergeMap(identity, concurrent);
 }
 
 export function mergeWith<N, F, D>(): qt.Lifter<T, T>;
-export function mergeWith<T, A extends qt.SourceInput<any>[]>(
+export function mergeWith<T, A extends qt.Input<any>[]>(
   ...otherSources: A
-): qt.Lifter<T, T | qt.SourcedFrom<A>>;
-export function mergeWith<T, A extends qt.SourceInput<any>[]>(
+): qt.Lifter<T, T | qt.SourcedOf<A>>;
+export function mergeWith<T, A extends qt.Input<any>[]>(
   ...otherSources: A
-): qt.Lifter<T, T | qt.SourcedFrom<A>> {
+): qt.Lifter<T, T | qt.SourcedOf<A>> {
   return merge(...otherSources);
 }
 
-export function race<A extends qt.SourceInput<any>[]>(
+export function race<A extends qt.Input<any>[]>(
   observables: A
-): qs.Source<qt.SourcedFrom<A>>;
-export function race<A extends qt.SourceInput<any>[]>(
+): qs.Source<qt.SourcedOf<A>>;
+export function race<A extends qt.Input<any>[]>(
   ...observables: A
-): qs.Source<qt.SourcedFrom<A>>;
+): qs.Source<qt.SourcedOf<A>>;
 export function race<T>(
-  ...observables: (qt.SourceInput<T> | qt.SourceInput<T>[])[]
+  ...observables: (qt.Input<T> | qt.Input<T>[])[]
 ): qs.Source<any> {
   if (observables.length === 1) {
     if (Array.isArray(observables[0])) {
-      observables = observables[0] as qt.SourceInput<T>[];
+      observables = observables[0] as qt.Input<T>[];
     } else {
-      return from(observables[0] as qt.SourceInput<T>);
+      return from(observables[0] as qt.Input<T>);
     }
   }
   return fromArray(observables, undefined).lift(new RaceOperator<T>());
@@ -535,7 +519,7 @@ export class RaceSubscriber<T> extends qj.Reactor<T, T> {
 
 export function startWith<T, A extends any[]>(
   ...values: A
-): qt.Lifter<T, T | ValueFromArray<A>>;
+): qt.Lifter<T, T | ValueOf<A>>;
 export function startWith<T, D>(...values: D[]): qt.Lifter<T, T | D> {
   const scheduler = values[values.length - 1];
   if (qu.isScheduler(scheduler)) {
@@ -546,24 +530,24 @@ export function startWith<T, D>(...values: D[]): qt.Lifter<T, T | D> {
   }
 }
 
+export function zip<O1 extends qt.Input<any>, O2 extends qt.Input<any>>(
+  v1: O1,
+  v2: O2
+): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>]>;
 export function zip<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>
->(v1: O1, v2: O2): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>]>;
-export function zip<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>
 >(
   v1: O1,
   v2: O2,
   v3: O3
 ): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>]>;
 export function zip<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>
 >(
   v1: O1,
   v2: O2,
@@ -571,11 +555,11 @@ export function zip<
   v4: O4
 ): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>]>;
 export function zip<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>
 >(
   v1: O1,
   v2: O2,
@@ -592,12 +576,12 @@ export function zip<
   ]
 >;
 export function zip<
-  O1 extends qt.SourceInput<any>,
-  O2 extends qt.SourceInput<any>,
-  O3 extends qt.SourceInput<any>,
-  O4 extends qt.SourceInput<any>,
-  O5 extends qt.SourceInput<any>,
-  O6 extends qt.SourceInput<any>
+  O1 extends qt.Input<any>,
+  O2 extends qt.Input<any>,
+  O3 extends qt.Input<any>,
+  O4 extends qt.Input<any>,
+  O5 extends qt.Input<any>,
+  O6 extends qt.Input<any>
 >(
   v1: O1,
   v2: O2,
@@ -615,20 +599,20 @@ export function zip<
     qt.Sourced<O6>
   ]
 >;
-export function zip<O extends qt.SourceInput<any>>(
+export function zip<O extends qt.Input<any>>(
   array: O[]
 ): qs.Source<qt.Sourced<O>[]>;
-export function zip<R>(array: qt.SourceInput<any>[]): qs.Source<R>;
-export function zip<O extends qt.SourceInput<any>>(
+export function zip<R>(array: qt.Input<any>[]): qs.Source<R>;
+export function zip<O extends qt.Input<any>>(
   ...observables: O[]
 ): qs.Source<qt.Sourced<O>[]>;
-export function zip<O extends qt.SourceInput<any>, R>(
+export function zip<O extends qt.Input<any>, R>(
   ...observables: Array<O | ((...values: qt.Sourced<O>[]) => R)>
 ): qs.Source<R>;
 export function zip<R>(
-  ...observables: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qs.Source<R>;
-export function zip<O extends qt.SourceInput<any>, R>(
+export function zip<O extends qt.Input<any>, R>(
   ...observables: Array<O | ((...values: qt.Sourced<O>[]) => R)>
 ): qs.Source<qt.Sourced<O>[] | R> {
   const last = observables[observables.length - 1];
@@ -742,11 +726,11 @@ export class ZipR<T, R> extends qj.Subscriber<T> {
   }
 }
 
-export function zipAll<T>(): qt.Lifter<qt.SourceInput<T>, T[]>;
+export function zipAll<T>(): qt.Lifter<qt.Input<T>, T[]>;
 export function zipAll<T>(): qt.Lifter<any, T[]>;
 export function zipAll<T, R>(
   project: (...values: T[]) => R
-): qt.Lifter<qt.SourceInput<T>, R>;
+): qt.Lifter<qt.Input<T>, R>;
 export function zipAll<R>(
   project: (...values: Array<any>) => R
 ): qt.Lifter<any, R>;
@@ -756,12 +740,12 @@ export function zipAll<T, R>(
   return (source: qt.Source<T>) => x.lift(new ZipOperator(project));
 }
 export function zipAll<T, R>(
-  ...observables: Array<qt.SourceInput<any> | ((...values: Array<any>) => R)>
+  ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qt.Lifter<T, R> {
   return x => x.lift.call(zip<R>(x, ...observables), undefined) as qt.Source<R>;
 }
 
-export function zipWith<T, A extends qt.SourceInput<any>[]>(
+export function zipWith<T, A extends qt.Input<any>[]>(
   ...otherInputs: A
 ): qt.Lifter<T, Unshift<SourcedTuple<A>, T>> {
   return zip(...otherInputs);

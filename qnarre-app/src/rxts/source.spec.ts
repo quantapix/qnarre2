@@ -1214,23 +1214,23 @@ describe('Source.pipe', () => {
   });
 
   it('should infer unknown for no arguments', () => {
-    const o = pipe(); // $ExpectType UnaryFun<unknown, unknown>
+    const o = pipe(); // $ExpectType Mapper<unknown, unknown>
   });
 
   it('should infer for 1 argument', () => {
-    const o = pipe(a('0', '1')); // $ExpectType UnaryFun<"0", "1">
+    const o = pipe(a('0', '1')); // $ExpectType Mapper<"0", "1">
   });
 
   it('should infer for 2 arguments', () => {
-    const o = pipe(a('0', '1'), a('1', '2')); // $ExpectType UnaryFun<"0", "2">
+    const o = pipe(a('0', '1'), a('1', '2')); // $ExpectType Mapper<"0", "2">
   });
 
   it('should infer for 3 arguments', () => {
-    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3')); // $ExpectType UnaryFun<"0", "3">
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3')); // $ExpectType Mapper<"0", "3">
   });
 
   it('should infer for 4 arguments', () => {
-    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3'), a('3', '4')); // $ExpectType UnaryFun<"0", "4">
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3'), a('3', '4')); // $ExpectType Mapper<"0", "4">
   });
 
   it('should infer for 5 arguments', () => {
@@ -1240,7 +1240,7 @@ describe('Source.pipe', () => {
       a('2', '3'),
       a('3', '4'),
       a('4', '5')
-    ); // $ExpectType UnaryFun<"0", "5">
+    ); // $ExpectType Mapper<"0", "5">
   });
 
   it('should infer for 6 arguments', () => {
@@ -1251,7 +1251,7 @@ describe('Source.pipe', () => {
       a('3', '4'),
       a('4', '5'),
       a('5', '6')
-    ); // $ExpectType UnaryFun<"0", "6">
+    ); // $ExpectType Mapper<"0", "6">
   });
 
   it('should infer for 7 arguments', () => {
@@ -1263,7 +1263,7 @@ describe('Source.pipe', () => {
       a('4', '5'),
       a('5', '6'),
       a('6', '7')
-    ); // $ExpectType UnaryFun<"0", "7">
+    ); // $ExpectType Mapper<"0", "7">
   });
 
   it('should infer for 8 arguments', () => {
@@ -1276,7 +1276,7 @@ describe('Source.pipe', () => {
       a('5', '6'),
       a('6', '7'),
       a('7', '8')
-    ); // $ExpectType UnaryFun<"0", "8">
+    ); // $ExpectType Mapper<"0", "8">
   });
 
   it('should infer for 9 arguments', () => {
@@ -1290,7 +1290,7 @@ describe('Source.pipe', () => {
       a('6', '7'),
       a('7', '8'),
       a('8', '9')
-    ); // $ExpectType UnaryFun<"0", "9">
+    ); // $ExpectType Mapper<"0", "9">
   });
 
   it('should infer {} for more than 9 arguments', () => {
@@ -1305,11 +1305,11 @@ describe('Source.pipe', () => {
       a('7', '8'),
       a('8', '9'),
       a('9', '10')
-    ); // $ExpectType UnaryFun<"0", {}>
+    ); // $ExpectType Mapper<"0", {}>
   });
 
   it('should require a type assertion for more than 9 arguments', () => {
-    const o: UnaryFun<'0', '10'> = pipe(
+    const o: Mapper<'0', '10'> = pipe(
       a('0', '1'),
       a('1', '2'),
       a('2', '3'),
@@ -1477,9 +1477,9 @@ describe('Source.toPromise', () => {
 /**
  * Used to keep the tests uncluttered.
  *
- * Returns a `UnaryFun` with the
+ * Returns a `Mapper` with the
  * specified literal type parameters.
- * That is, `a('0', '1')` returns `UnaryFun<'0', '1'>`.
+ * That is, `a('0', '1')` returns `Mapper<'0', '1'>`.
  * That means that the `a` function can be used to create consecutive
  * arguments that are either compatible or incompatible.
  *
@@ -1488,13 +1488,13 @@ describe('Source.toPromise', () => {
  * a('0', '1'), a('#', '2') // Error '1' is not compatible with '#'
  * ```
  *
- * @param {string} input The `UnaryFun` input type parameter
- * @param {string} output The `UnaryFun` output type parameter
+ * @param {string} input The `Mapper` input type parameter
+ * @param {string} output The `Mapper` output type parameter
  */
 function a<I extends string, O extends string>(
   input: I,
   output: O
-): UnaryFun<I, O> {
+): Mapper<I, O> {
   return i => output;
 }
 

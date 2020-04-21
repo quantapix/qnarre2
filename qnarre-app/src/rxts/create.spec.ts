@@ -993,11 +993,11 @@ describe('defer', () => {
     const a = defer(() => {}); // $ExpectType Observable<never>
   });
 
-  it('should error if an SourceInput is not returned', () => {
+  it('should error if an Input is not returned', () => {
     const a = defer(() => 42); // $ExpectError
   });
 
-  it('should infer correctly with functions that sometimes do not return an SourceInput', () => {
+  it('should infer correctly with functions that sometimes do not return an Input', () => {
     const a = defer(() => {
       if (Math.random() < 0.5) {
         return of(42);
@@ -1240,7 +1240,7 @@ describe('from', () => {
     expect(r).to.throw();
   });
 
-  type('should return T for InteropSource objects', () => {
+  type('should return T for Interop objects', () => {
     /* tslint:disable:no-unused-variable */
     const o1: Observable<number> = from([] as number[], asapScheduler);
     const o2: Observable<{a: string}> = from(EMPTY);

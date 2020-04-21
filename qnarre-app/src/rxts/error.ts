@@ -3,10 +3,10 @@ import * as qu from './utils';
 import * as qr from './opers';
 import * as qj from './subject';
 
-export function catchError<N, O extends qt.SourceInput<any>>(
+export function catchError<N, O extends qt.Input<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
 ): qt.Lifter<N, T | qt.Sourced<O>>;
-export function catchError<N, O extends qt.SourceInput<any>>(
+export function catchError<N, O extends qt.Input<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
 ): qt.Lifter<N, T | qt.Sourced<O>> {
   return function catchErrorLifter(
@@ -22,10 +22,7 @@ class CatchO<N, R> implements qt.Operator<N, T | R> {
   caught: qt.Source<N, F, D> | undefined;
 
   constructor(
-    private selector: (
-      err: any,
-      caught: qt.Source<N, F, D>
-    ) => qt.SourceInput<N | R>
+    private selector: (err: any, caught: qt.Source<N, F, D>) => qt.Input<N | R>
   ) {}
 
   call(subscriber: qt.Subscriber<R>, source: any): any {
@@ -41,7 +38,7 @@ export class CatchR<O, I, F, D> extends qj.Reactor<N, N | M, F, D> {
     private selector: (
       err: any,
       caught: qt.Source<N, F, D>
-    ) => qt.SourceInput<N | M, F, D>,
+    ) => qt.Input<N | M, F, D>,
     private caught: qt.Source<N, F, D>
   ) {
     super(tgt);
@@ -70,11 +67,11 @@ export interface RetryConfig {
   resetOnSuccess?: boolean;
 }
 
-export function retry<N, F, D>(count?: number): qt.MonoOper<N, F, D>;
-export function retry<N, F, D>(config: RetryConfig): qt.MonoOper<N, F, D>;
+export function retry<N, F, D>(count?: number): qt.Shifter<N, F, D>;
+export function retry<N, F, D>(config: RetryConfig): qt.Shifter<N, F, D>;
 export function retry<N, F, D>(
   configOrCount: number | RetryConfig = -1
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   let config: RetryConfig;
   if (configOrCount && typeof configOrCount === 'object') {
     config = configOrCount as RetryConfig;
@@ -132,7 +129,7 @@ export class RetryR<N, F, D> extends qj.Subscriber<N, F, D> {
 
 export function retryWhen<N, F, D>(
   notifier: (errors: qt.Source<any, F, D>) => qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new RetryWhenO(notifier, source));
 }
 

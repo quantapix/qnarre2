@@ -5,15 +5,15 @@ import * as qh from './scheduler';
 
 export function multicast<N, F, D>(
   subject: qt.Subject<N, F, D>
-): qt.UnaryFun<qt.Source<N, F, D>, Connect<N, F, D>>;
-export function multicast<T, O extends qt.SourceInput<any>>(
+): qt.Mapper<qt.Source<N, F, D>, Connect<N, F, D>>;
+export function multicast<T, O extends qt.Input<any>>(
   subject: qt.Subject<N, F, D>,
   selector: (shared: qt.Source<N, F, D>) => O
-): qt.UnaryFun<qt.Source<N, F, D>, Connect<Sourced<O>>>;
+): qt.Mapper<qt.Source<N, F, D>, Connect<Sourced<O>>>;
 export function multicast<N, F, D>(
   subjectFactory: (this: qt.Source<N, F, D>) => qt.Subject<N, F, D>
-): qt.UnaryFun<qt.Source<N, F, D>, Connect<N, F, D>>;
-export function multicast<T, O extends qt.SourceInput<any>>(
+): qt.Mapper<qt.Source<N, F, D>, Connect<N, F, D>>;
+export function multicast<T, O extends qt.Input<any>>(
   SubjectFactory: (this: qt.Source<N, F, D>) => qt.Subject<N, F, D>,
   selector: (shared: qt.Source<N, F, D>) => O
 ): qt.Lifter<T, Sourced<O>>;
@@ -56,19 +56,19 @@ export class MulticastO<T, R> implements qt.Operator<T, R> {
   }
 }
 
-export function publish<N, F, D>(): qt.UnaryFun<
+export function publish<N, F, D>(): qt.Mapper<
   qt.Source<N, F, D>,
   Connect<N, F, D>
 >;
-export function publish<T, O extends qt.SourceInput<any>>(
+export function publish<T, O extends qt.Input<any>>(
   selector: (shared: qt.Source<N, F, D>) => O
 ): qt.Lifter<T, Sourced<O>>;
 export function publish<N, F, D>(
-  selector: qt.MonoOper<N, F, D>
-): qt.MonoOper<N, F, D>;
+  selector: qt.Shifter<N, F, D>
+): qt.Shifter<N, F, D>;
 export function publish<T, R>(
   selector?: qt.Lifter<T, R>
-): qt.MonoOper<N, F, D> | qt.Lifter<T, R> {
+): qt.Shifter<N, F, D> | qt.Lifter<T, R> {
   return selector
     ? multicast(() => new qt.Subject<N, F, D>(), selector)
     : multicast(new qt.Subject<N, F, D>());
@@ -76,11 +76,11 @@ export function publish<T, R>(
 
 export function publishBehavior<N, F, D>(
   value: T
-): qt.UnaryFun<qt.Source<N, F, D>, Connect<N, F, D>> {
+): qt.Mapper<qt.Source<N, F, D>, Connect<N, F, D>> {
   return x => multicast(new Behavior<N, F, D>(value))(x) as Connect<N, F, D>;
 }
 
-export function publishLast<N, F, D>(): qt.UnaryFun<
+export function publishLast<N, F, D>(): qt.Mapper<
   qt.Source<N, F, D>,
   Connect<N, F, D>
 > {
@@ -91,8 +91,8 @@ export function publishReplay<N, F, D>(
   bufferSize?: number,
   windowTime?: number,
   scheduler?: qt.Scheduler
-): qt.MonoOper<N, F, D>;
-export function publishReplay<T, O extends qt.SourceInput<any>>(
+): qt.Shifter<N, F, D>;
+export function publishReplay<T, O extends qt.Input<any>>(
   bufferSize?: number,
   windowTime?: number,
   selector?: (shared: qt.Source<N, F, D>) => O,
@@ -103,7 +103,7 @@ export function publishReplay<T, R>(
   windowTime?: number,
   selectorOrScheduler?: qt.Scheduler | qt.Lifter<T, R>,
   scheduler?: qt.Scheduler
-): qt.UnaryFun<qt.Source<N, F, D>, Connect<R>> {
+): qt.Mapper<qt.Source<N, F, D>, Connect<R>> {
   if (selectorOrScheduler && typeof selectorOrScheduler !== 'function') {
     scheduler = selectorOrScheduler;
   }
@@ -117,7 +117,7 @@ function shareSubjectFactory() {
   return new qt.Subject<any>();
 }
 
-export function share<N, F, D>(): qt.MonoOper<N, F, D> {
+export function share<N, F, D>(): qt.Shifter<N, F, D> {
   return x =>
     refCount()(multicast(shareSubjectFactory)(x)) as qt.Source<N, F, D>;
 }
@@ -131,17 +131,17 @@ export interface ShareReplayConfig {
 
 export function shareReplay<N, F, D>(
   config: ShareReplayConfig
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function shareReplay<N, F, D>(
   bufferSize?: number,
   windowTime?: number,
   scheduler?: qt.Scheduler
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function shareReplay<N, F, D>(
   configOrBufferSize?: ShareReplayConfig | number,
   windowTime?: number,
   scheduler?: qt.Scheduler
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   let config: ShareReplayConfig;
   if (configOrBufferSize && typeof configOrBufferSize === 'object') {
     config = configOrBufferSize as ShareReplayConfig;

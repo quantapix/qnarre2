@@ -1,7 +1,7 @@
 import * as qs from './source';
 import * as qj from './subject';
 
-export function asInteropSource<T>(s: qs.Source<T>): qs.Source<T> {
+export function asInterop<T>(s: qs.Source<T>): qs.Source<T> {
   return new Proxy(s, {
     get(target: qs.Source<T>, key: string | number | symbol) {
       if (key === 'subscribe') {
@@ -781,7 +781,7 @@ export function lowerCaseO<T>(...args: Array<any>): Observable<T> {
   return <any>o;
 }
 
-export const createSourceInputs = <T>(value: T) =>
+export const createInputs = <T>(value: T) =>
   of(
     of(value),
     scheduled([value], asyncScheduler),
@@ -800,7 +800,7 @@ export const createSourceInputs = <T>(value: T) =>
     {
       [observable]: () => of(value)
     } as any
-  ) as Observable<SourceInput<T>>;
+  ) as Observable<Input<T>>;
 
 export const NO_SUBS: string[] = [];
 

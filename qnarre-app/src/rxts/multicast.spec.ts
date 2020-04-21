@@ -2059,7 +2059,7 @@ describe('publishReplay', () => {
     ); // $ExpectType Observable<string | number>
   });
 
-  it('should accept windowTime, bufferSize, selector  of MonoOper', () => {
+  it('should accept windowTime, bufferSize, selector  of Shifter', () => {
     const a = of(1, 2, 3).pipe(publishReplay(1, 1, x => x)); // $ExpectType Observable<number>
   });
 
@@ -2079,7 +2079,7 @@ describe('publishReplay', () => {
     ); // $ExpectType Observable<string>
   });
 
-  it('should accept windowTime, bufferSize, selector of MonoOper, and scheduler', () => {
+  it('should accept windowTime, bufferSize, selector of Shifter, and scheduler', () => {
     const a = of(1, 2, 3).pipe(publishReplay(1, 1, x => x, asyncScheduler)); // $ExpectType Observable<number>
   });
 

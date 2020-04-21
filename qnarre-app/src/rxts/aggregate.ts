@@ -4,10 +4,10 @@ import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
 
-export function concat<A extends qt.SourceInput<any>[]>(
+export function concat<A extends qt.Input<any>[]>(
   ...observables: A
-): qs.Source<qt.SourcedFrom<A>>;
-export function concat<O extends qt.SourceInput<any>>(
+): qs.Source<qt.SourcedOf<A>>;
+export function concat<O extends qt.Input<any>>(
   ...observables: Array<O | qh.Scheduler>
 ): qs.Source<qt.Sourced<O>> {
   return concatAll<qt.Sourced<O>>()(
@@ -15,24 +15,24 @@ export function concat<O extends qt.SourceInput<any>>(
   );
 }
 
-export function concatAll<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T>;
+export function concatAll<N, F, D>(): qt.Lifter<Input<N, F, D>, T>;
 export function concatAll<R>(): qt.Lifter<any, R>;
-export function concatAll<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T> {
+export function concatAll<N, F, D>(): qt.Lifter<Input<N, F, D>, T> {
   return mergeAll<N, F, D>(1);
 }
 
 export function concatWith<N, F, D>(): qt.Lifter<N, T>;
-export function concatWith<N, A extends qt.SourceInput<any>[]>(
+export function concatWith<N, A extends qt.Input<any>[]>(
   ...otherSources: A
-): qt.Lifter<N, SourcedFrom<A> | N>;
-export function concatWith<N, A extends qt.SourceInput<any>[]>(
+): qt.Lifter<N, SourcedOf<A> | N>;
+export function concatWith<N, A extends qt.Input<any>[]>(
   ...otherSources: A
-): qt.Lifter<N, SourcedFrom<A> | N> {
+): qt.Lifter<N, SourcedOf<A> | N> {
   return (source: qt.Source<N, F, D>) =>
     source.lift.call(
       concatStatic(source, ...otherSources),
       undefined
-    ) as qt.Source<qt.SourcedFrom<A> | N>;
+    ) as qt.Source<qt.SourcedOf<A> | N>;
 }
 
 export function count<N, F, D>(
@@ -95,7 +95,7 @@ export class CountR<N, F, D> extends qj.Subscriber<N, F, D> {
 
 export function max<N, F, D>(
   comparer?: (x: N, y: N) => number
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   const max: (x: N, y: N) => N =
     typeof comparer === 'function'
       ? (x, y) => (comparer(x, y) > 0 ? x : y)
@@ -105,7 +105,7 @@ export function max<N, F, D>(
 
 export function min<N, F, D>(
   comparer?: (x: N, y: N) => number
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   const min: (x: N, y: N) => N =
     typeof comparer === 'function'
       ? (x, y) => (comparer(x, y) < 0 ? x : y)

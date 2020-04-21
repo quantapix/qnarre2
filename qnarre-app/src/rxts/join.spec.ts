@@ -3012,7 +3012,7 @@ describe('forkJoin', () => {
     ]); // $ExpectType Observable<(string | number)[]>
   });
 
-  it('should support the deprecated resultSelector with an Array of SourceInputs', () => {
+  it('should support the deprecated resultSelector with an Array of Inputs', () => {
     const results: Array<number | string> = [];
     forkJoin(
       [of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)],
@@ -3032,7 +3032,7 @@ describe('forkJoin', () => {
     expect(results).to.deep.equal([18, 'done']);
   });
 
-  it('should support the deprecated resultSelector with a spread of SourceInputs', () => {
+  it('should support the deprecated resultSelector with a spread of Inputs', () => {
     const results: Array<number | string> = [];
     forkJoin(
       of(1, 2, 3),
@@ -4985,7 +4985,7 @@ describe('race', () => {
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
-  it('should support a single SourceInput argument', (done: MochaDone) => {
+  it('should support a single Input argument', (done: MochaDone) => {
     const source = race(Promise.resolve(42));
     source.subscribe(
       value => {

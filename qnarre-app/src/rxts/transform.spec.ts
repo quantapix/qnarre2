@@ -3869,7 +3869,7 @@ describe('exhaustMap', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      exhaustMap(value => asInteropSource(observableLookup[value])),
+      exhaustMap(value => asInterop(observableLookup[value])),
       mergeMap(x => of(x))
     );
 
@@ -7044,7 +7044,7 @@ describe('mergeMap', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      mergeMap(value => asInteropSource(observableLookup[value])),
+      mergeMap(value => asInterop(observableLookup[value])),
       mergeMap(x => of(x))
     );
 
@@ -10047,7 +10047,7 @@ describe('switchMap', () => {
 
     const result = e1.pipe(
       mergeMap(x => of(x)),
-      switchMap(value => asInteropSource(observableLookup[value])),
+      switchMap(value => asInterop(observableLookup[value])),
       mergeMap(x => of(x))
     );
 

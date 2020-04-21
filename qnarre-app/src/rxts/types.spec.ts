@@ -16,19 +16,19 @@ describe('Sourced', () => {
   });
 });
 
-describe('SourcedFrom', () => {
+describe('SourcedOf', () => {
   it('should infer from an array of observables', () => {
-    const e = {} as qt.SourcedFrom<
+    const e = {} as qt.SourcedOf<
       [qt.Source<A, any, boolean>, qt.Source<B, any, boolean>]
     >;
     //expect(e).toBeInstanceOf(A | B);
   });
   it('should infer from an array of arrays', () => {
-    const e = {} as qt.SourcedFrom<[A[], B[]]>;
+    const e = {} as qt.SourcedOf<[A[], B[]]>;
     //expect(typeof e).toBe(typeof (A | B));
   });
   it('should infer from an array of promises', () => {
-    const e = {} as qt.SourcedFrom<[Promise<A>, Promise<B>]>;
+    const e = {} as qt.SourcedOf<[Promise<A>, Promise<B>]>;
     //expect(typeof e).toBe(typeof (A | B));
   });
 });

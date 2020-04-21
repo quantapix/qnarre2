@@ -5,7 +5,7 @@ import * as qh from './scheduler';
 
 export function audit<N, R, F, D>(
   d: (_?: R) => qt.SourceOrPromise<N, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return (s: qt.Source<N, F, D>) => s.lift(new AuditO<N, R, F, D>(d));
 }
 
@@ -71,13 +71,13 @@ export class AuditR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 export function auditTime<N, F, D>(
   duration: number,
   s: qt.Scheduler = qh.async
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return audit(() => timer(duration, s));
 }
 
 export function debounce<N, F, D>(
   durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new DebounceO(durationSelector));
 }
 
@@ -155,7 +155,7 @@ export class DebounceR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 export function debounceTime<N, F, D>(
   dueTime: number,
   scheduler: qt.Scheduler = qh.async
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new DebounceTimeO(dueTime, scheduler));
 }
 
@@ -224,7 +224,7 @@ function dispatchNext(subscriber: DebounceTimeR<any>) {
 export function distinct<N, R, F = any, D = any>(
   keySelector?: (n: N) => R,
   flushes?: qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new DistinctO(keySelector, flushes));
 }
 
@@ -287,11 +287,11 @@ export class DistinctR<N, R, F, D> extends qj.Reactor<N, N, F, D> {
 
 export function distinctUntilChanged<N, F = any, D = any>(
   compare?: (x: T, y: N) => boolean
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function distinctUntilChanged<N, R, F = any, D = any>(
   compare?: (x: R, y: R) => boolean,
   keySelector?: (x: N) => R
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new DistinctUntilChangedO<N, R>(compare, keySelector));
 }
 
@@ -351,15 +351,15 @@ class DistinctUntilChangedR<N, R> extends qj.Subscriber<N, F, D> {
 
 export function distinctUntilKeyChanged<N, F, D>(
   key: keyof T
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function distinctUntilKeyChanged<T, K extends keyof T>(
   key: K,
   compare: (x: T[K], y: T[K]) => boolean
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function distinctUntilKeyChanged<T, K extends keyof T>(
   key: K,
   compare?: (x: T[K], y: T[K]) => boolean
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return distinctUntilChanged((x: T, y: N) =>
     compare ? compare(x[key], y[key]) : x[key] === y[key]
   );
@@ -368,7 +368,7 @@ export function distinctUntilKeyChanged<T, K extends keyof T>(
 export function elementAt<N, F, D>(
   index: number,
   defaultValue?: N
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   if (index < 0) {
     throw new qu.OutOfRangeError();
   }
@@ -393,11 +393,11 @@ export function filter<N, F, D>(
 export function filter<N, F, D>(
   predicate: (n: N, index: number) => boolean,
   thisArg?: any
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function filter<N, F, D>(
   predicate: (n: N, index: number) => boolean,
   thisArg?: any
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new FilterO(predicate, thisArg));
 }
 
@@ -508,7 +508,7 @@ export function last<T, D>(
 
 export function sample<N, F, D>(
   notifier: qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new SampleO(notifier));
 }
 
@@ -551,7 +551,7 @@ class SampleR<T, R> extends qj.Reactor<N, R, F, D> {
 export function sampleTime<N, F, D>(
   period: number,
   scheduler: qt.Scheduler = qh.async
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new SampleTimeO(period, scheduler));
 }
 
@@ -596,7 +596,7 @@ export class SampleTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
 
 export function single<N, F, D>(
   predicate?: (n: N, index: number, source: qt.Source<N, F, D>) => boolean
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new SingleO(predicate, source));
 }
 
@@ -660,7 +660,7 @@ export class SingleR<N, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export function skip<N, F, D>(count: number): qt.MonoOper<N, F, D> {
+export function skip<N, F, D>(count: number): qt.Shifter<N, F, D> {
   return x => x.lift(new SkipO(count));
 }
 
@@ -684,7 +684,7 @@ class SkipR<N, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export function skipLast<N, F, D>(count: number): qt.MonoOper<N, F, D> {
+export function skipLast<N, F, D>(count: number): qt.Shifter<N, F, D> {
   return x => x.lift(new SkipLastO(count));
 }
 
@@ -725,7 +725,7 @@ export class SkipLastR<N, F, D> extends qj.Subscriber<N, F, D> {
 
 export function skipUntil<N, F, D>(
   notifier: qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new SkipUntilO(notifier));
 }
 
@@ -741,7 +741,7 @@ export class SkipUntilR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private hasValue = false;
   private innerSubscription?: qj.Subscription;
 
-  constructor(tgt: qj.Subscriber<R, F, D>, notifier: qt.SourceInput<any>) {
+  constructor(tgt: qj.Subscriber<R, F, D>, notifier: qt.Input<any>) {
     super(tgt);
     const innerSubscriber = new qj.Actor(this, undefined, undefined!);
     this.add(innerSubscriber);
@@ -773,7 +773,7 @@ export class SkipUntilR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
 
 export function skipWhile<N, F, D>(
   predicate: (n: N, index: number) => boolean
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new SkipWhileO(predicate));
 }
 
@@ -811,7 +811,7 @@ export class SkipWhileR<N, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export function take<N, F, D>(count: number): qt.MonoOper<N, F, D> {
+export function take<N, F, D>(count: number): qt.Shifter<N, F, D> {
   return (source: qt.Source<N, F, D>) => {
     if (count === 0) {
       return EMPTY;
@@ -851,7 +851,7 @@ export class TakeR<N, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export function takeLast<N, F, D>(count: number): qt.MonoOper<N, F, D> {
+export function takeLast<N, F, D>(count: number): qt.Shifter<N, F, D> {
   return function takeLastLifter(
     source: qt.Source<N, F, D>
   ): qt.Source<N, F, D> {
@@ -909,7 +909,7 @@ export class TakeLastR<N, F, D> extends qj.Subscriber<N, F, D> {
 
 export function takeUntil<N, F, D>(
   notifier: qt.Source<any, F, D>
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x => x.lift(new TakeUntilO(notifier));
 }
 
@@ -955,11 +955,11 @@ export function takeWhile<T, S extends T>(
 export function takeWhile<N, F, D>(
   predicate: (n: N, index: number) => boolean,
   inclusive?: boolean
-): qt.MonoOper<N, F, D>;
+): qt.Shifter<N, F, D>;
 export function takeWhile<N, F, D>(
   predicate: (n: N, index: number) => boolean,
   inclusive = false
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(new TakeWhileO(predicate, inclusive));
 }
@@ -1021,7 +1021,7 @@ export const defaultThrottleConfig: ThrottleConfig = {
 export function throttle<N, F, D>(
   durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>,
   config: ThrottleConfig = defaultThrottleConfig
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
     source.lift(
       new ThrottleO(durationSelector, !!config.leading, !!config.trailing)
@@ -1110,7 +1110,7 @@ export function throttleTime<N, F, D>(
   duration: number,
   scheduler: qt.Scheduler = qh.async,
   config: ThrottleConfig = defaultThrottleConfig
-): qt.MonoOper<N, F, D> {
+): qt.Shifter<N, F, D> {
   return x =>
     x.lift(
       new ThrottleTimeO(

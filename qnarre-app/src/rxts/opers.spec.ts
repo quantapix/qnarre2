@@ -400,10 +400,9 @@ describe('onErrorResumeNext', () => {
     // test ensures that unsubscriptions are chained all the way to the
     // interop subscriber.
 
-    expectSource(
-      source.pipe(onErrorResumeNext(asInteropSource(next))),
-      subs
-    ).toBe(expected);
+    expectSource(source.pipe(onErrorResumeNext(asInterop(next))), subs).toBe(
+      expected
+    );
     expectSubscriptions(next.subscriptions).toBe(nextSubs);
   });
 
