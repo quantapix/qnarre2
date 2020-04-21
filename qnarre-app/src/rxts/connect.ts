@@ -31,7 +31,7 @@ export class Connect<N, F, D> extends qs.Source<N, F, D> {
     if (!s) {
       this.done = false;
       s = this.sub = new qj.Subscription();
-      s.add(this.src.subscribe(new ConnectSubscriber(this.subj, this)));
+      s.add(this.src.subscribe(new ConnectR(this.subj, this)));
       if (s.closed) {
         this.sub = undefined;
         s = qj.Subscription.fake;
@@ -45,20 +45,20 @@ export class Connect<N, F, D> extends qs.Source<N, F, D> {
   }
 }
 
-class ConnectSubscriber<T> extends SubjectSubscriber<T> {
-  constructor(obs: qj.Subject<T>, private con?: Connect<T>) {
+class ConnectR<N> extends qj.RSubject<N> {
+  constructor(obs: qj.Subject<N>, private con?: Connect<N>) {
     super(obs);
   }
 
-  protected _error(e: any) {
+  protected _fail(f?: F) {
     this._unsubscribe();
-    super._error(e);
+    super._fail(f);
   }
 
-  protected _complete() {
+  protected _done(d?: D) {
     this.con!.done = true;
     this._unsubscribe();
-    super._complete();
+    super._done(d);
   }
 
   protected _unsubscribe() {
@@ -94,10 +94,10 @@ export function refCount<N, F, D>(): qt.MonoOper<N, F, D> {
   } as qt.MonoOper<N, F, D>;
 }
 
-export class RefCountO<T> implements qt.Operator<T, T> {
-  constructor(private con: Connect<T>) {}
+export class RefCountO<N> implements qt.Operator<N, N> {
+  constructor(private con: Connect<N>) {}
 
-  call(s: Subscriber<T>, source: any): Closer {
+  call(s: qj.Subscriber<N>, source: any): qt.Closer {
     const c = this.con;
     c.count++;
     const refCounter = new RefCountR(s, c);
@@ -109,11 +109,11 @@ export class RefCountO<T> implements qt.Operator<T, T> {
   }
 }
 
-export class RefCountR<N, F, D> extends Subscriber<N, F, D> {
-  private connection?: Subscription;
+export class RefCountR<N, F, D> extends qj.Subscriber<N, F, D> {
+  private connection?: qj.Subscription;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private connectable?: Connect<N, F, D>
   ) {
     super(tgt);

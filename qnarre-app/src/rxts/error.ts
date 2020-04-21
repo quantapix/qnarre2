@@ -3,41 +3,41 @@ import * as qu from './utils';
 import * as qr from './opers';
 import * as qj from './subject';
 
-export function catchError<T, O extends SourceInput<any>>(
+export function catchError<N, O extends qt.SourceInput<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
-): Lifter<T, T | Sourced<O>>;
-export function catchError<T, O extends SourceInput<any>>(
+): qt.Lifter<N, T | qt.Sourced<O>>;
+export function catchError<N, O extends qt.SourceInput<any>>(
   selector: (err: any, caught: qt.Source<N, F, D>) => O
-): Lifter<T, T | Sourced<O>> {
+): qt.Lifter<N, T | qt.Sourced<O>> {
   return function catchErrorLifter(
     source: qt.Source<N, F, D>
-  ): qt.Source<T | Sourced<O>> {
+  ): qt.Source<N | qt.Sourced<O>> {
     const operator = new CatchO(selector);
     const caught = source.lift(operator);
     return (operator.caught = caught as qt.Source<N, F, D>);
   };
 }
 
-class CatchO<T, R> implements qt.Operator<T, T | R> {
+class CatchO<N, R> implements qt.Operator<N, T | R> {
   caught: qt.Source<N, F, D> | undefined;
 
   constructor(
     private selector: (
       err: any,
       caught: qt.Source<N, F, D>
-    ) => SourceInput<T | R>
+    ) => qt.SourceInput<N | R>
   ) {}
 
-  call(subscriber: Subscriber<R>, source: any): any {
+  call(subscriber: qt.Subscriber<R>, source: any): any {
     return source.subscribe(
       new CatchR(subscriber, this.selector, this.caught!)
     );
   }
 }
 
-export class CatchR<O, I, F, D> extends Reactor<N, N | M, F, D> {
+export class CatchR<O, I, F, D> extends qj.Reactor<N, N | M, F, D> {
   constructor(
-    tgt: Subscriber<any, F, D>,
+    tgt: qt.Subscriber<any, F, D>,
     private selector: (
       err: any,
       caught: qt.Source<N, F, D>
@@ -83,8 +83,7 @@ export function retry<N, F, D>(
       count: configOrCount as number
     };
   }
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new RetryO(config.count, !!config.resetOnSuccess, source));
+  return x => x.lift(new RetryO(config.count, !!config.resetOnSuccess, source));
 }
 
 class RetryO<N, F, D> implements qt.Operator<N, N, F, D> {
@@ -94,18 +93,18 @@ class RetryO<N, F, D> implements qt.Operator<N, N, F, D> {
     private source: qt.Source<N, F, D>
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+  call(subscriber: qt.Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
       new RetryR(subscriber, this.count, this.resetOnSuccess, this.source)
     );
   }
 }
 
-export class RetryR<N, F, D> extends Subscriber<N, F, D> {
+export class RetryR<N, F, D> extends qj.Subscriber<N, F, D> {
   private readonly initialCount: number;
 
   constructor(
-    tgt: Subscriber<any>,
+    tgt: qt.Subscriber<any>,
     private count: number,
     private resetOnSuccess: boolean,
     private source: qt.Source<N, F, D>
@@ -134,8 +133,7 @@ export class RetryR<N, F, D> extends Subscriber<N, F, D> {
 export function retryWhen<N, F, D>(
   notifier: (errors: qt.Source<any, F, D>) => qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new RetryWhenO(notifier, source));
+  return x => x.lift(new RetryWhenO(notifier, source));
 }
 
 class RetryWhenO<N, F, D> implements qt.Operator<N, N, F, D> {
@@ -144,20 +142,20 @@ class RetryWhenO<N, F, D> implements qt.Operator<N, N, F, D> {
     protected source: qt.Source<N, F, D>
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+  call(subscriber: qt.Subscriber<N, F, D>, source: any): qt.Closer {
     return source.subscribe(
       new RetryWhenR(subscriber, this.notifier, this.source)
     );
   }
 }
 
-export class RetryWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
-  private errors?: Subject<any>;
+export class RetryWhenR<N, M, F, D> extends qj.Reactor<N, M, F, D> {
+  private errors?: qj.Subject<any>;
   private retries?: qt.Source<any, F, D>;
-  private retriesSubscription?: Subscription;
+  private retriesSubscription?: qj.Subscription;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
+    tgt: qt.Subscriber<M, F, D>,
     private notifier: (errors: qt.Source<any, F, D>) => qt.Source<any, F, D>,
     private source: qt.Source<N, F, D>
   ) {
@@ -203,13 +201,7 @@ export class RetryWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
     this.retries = undefined;
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ) {
+  reactNext() {
     const {_unsubscribe} = this;
     this._unsubscribe = null!;
     this._recycle();

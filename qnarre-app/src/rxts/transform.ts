@@ -2,6 +2,7 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qj from './subject';
 import * as qh from './scheduler';
+import {F} from './spec/helpers';
 
 export function buffer<N, F = any, D = any>(
   s: qt.Source<any, F, D>
@@ -285,7 +286,7 @@ export class BufferTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
 }
 
 function dispatchBufferTimeSpanOnly(this: qt.Action<any>, state: any) {
-  const subscriber: BufferTime<any> = state.subscriber;
+  const subscriber: BufferTimeR<any> = state.subscriber;
   const prevContext = state.context;
   if (prevContext) subscriber.closeContext(prevContext);
   if (!subscriber.closed) {
@@ -318,47 +319,41 @@ function dispatchBufferClose<N, F, D>(arg: DispatchCloseArg<N, F, D>) {
   subscriber.closeContext(context);
 }
 
-export function bufferToggle<N, M, F, D>(
-  openings: qt.SourceOrPromise<M, F, D>,
+export function bufferToggle<N, R, F, D>(
+  openings: qt.SourceOrPromise<R, F, D>,
   closingSelector: (value: M) => qt.SourceOrPromise<any, F, D>
 ): qt.Lifter<N, N[], F, D> {
-  return function bufferToggleLifter(source: qt.Source<N, F, D>) {
-    return source.lift(new BufferToggleO<N, M>(openings, closingSelector));
-  };
+  return x => x.lift(new BufferToggleO<N, M>(openings, closingSelector));
 }
 
-export class BufferToggleO<N, M, F, D> implements qt.Operator<N, N[]> {
+export class BufferToggleO<N, R, F, D> implements qt.Operator<N, N[]> {
   constructor(
-    private openings: qt.SourceOrPromise<O>,
-    private closingSelector: (value: O) => qt.SourceOrPromise<any, F, D>
+    private openings: qt.SourceOrPromise<R>,
+    private closingSelector: (value: R) => qt.SourceOrPromise<any, F, D>
   ) {}
 
-  call(subscriber: Subscriber<N[], F, D>, source: any): any {
+  call(r: qj.Subscriber<N[], F, D>, source: any): any {
     return source.subscribe(
-      new BufferToggleSubscriber(
-        subscriber,
-        this.openings,
-        this.closingSelector
-      )
+      new BufferToggleR(r, this.openings, this.closingSelector)
     );
   }
 }
 
 interface BufferContext<N> {
   buffer?: N[];
-  subscription?: Subscription;
+  subscription?: qj.Subscription;
 }
 
-export class BufferToggleR<O, I, F, D> extends Reactor<N[], M, F, D> {
+export class BufferToggleR<O, I, F, D> extends qj.Reactor<N[], M, F, D> {
   private contexts = [] as BufferContext<N>[];
 
   constructor(
-    tgt: Subscriber<N[], F, D>,
-    private openings: qt.SourceOrPromise<M, F, D>,
+    tgt: qj.Subscriber<N[], F, D>,
+    private openings: qt.SourceOrPromise<R, F, D>,
     private closingSelector: (value: M) => qt.SourceOrPromise<any, F, D> | void
   ) {
     super(tgt);
-    this.add(subscribeToResult(this, openings));
+    this.add(qu.subscribeToResult(this, openings));
   }
 
   protected _next(n?: N[]) {
@@ -391,7 +386,7 @@ export class BufferToggleR<O, I, F, D> extends Reactor<N[], M, F, D> {
       context.subscription = undefined;
     }
     this.contexts = null!;
-    super._done();
+    super._done(d);
   }
 
   reactNext(
@@ -399,22 +394,22 @@ export class BufferToggleR<O, I, F, D> extends Reactor<N[], M, F, D> {
     innerValue: O,
     outerX: number,
     innerIndex: number,
-    innerSub: Actor<O, I, F, D>
+    innerSub: qj.Actor<O, I, F, D>
   ) {
     outerN ? this.closeBuffer(outerN) : this.openBuffer(innerValue);
   }
 
-  reactDone(innerSub: Actor<O, I, F, D>) {
+  reactDone(innerSub: qj.Actor<O, I, F, D>) {
     this.closeBuffer((<any>innerSub).context);
   }
 
-  private openBuffer(value: N) {
+  private openBuffer(n: N) {
     try {
       const closingSelector = this.closingSelector;
       const closingNotifier = closingSelector.call(this, value);
       if (closingNotifier) this.trySubscribe(closingNotifier);
     } catch (err) {
-      this._fail(err);
+      this._fail(f);
     }
   }
 
@@ -432,7 +427,7 @@ export class BufferToggleR<O, I, F, D> extends Reactor<N[], M, F, D> {
   private trySubscribe(closingNotifier: any) {
     const contexts = this.contexts;
     const buffer: Array<N> = [];
-    const subscription = new Subscription();
+    const subscription = new qj.Subscription();
     const context = {buffer, subscription};
     contexts.push(context);
     const s = qu.subscribeToResult(this, closingNotifier, <any>context);
@@ -448,27 +443,23 @@ export class BufferToggleR<O, I, F, D> extends Reactor<N[], M, F, D> {
 export function bufferWhen<N, F, D>(
   closingSelector: () => qt.Source<any, F, D>
 ): qt.Lifter<N, N[], F, D> {
-  return function (source: qt.Source<N, F, D>) {
-    return source.lift(new BufferWhenO(closingSelector));
-  };
+  return x => x.lift(new BufferWhenO(closingSelector));
 }
 
-class BufferWhenO<N, F, D> implements qt.Operator<T, T[]> {
+class BufferWhenO<N, F, D> implements qt.Operator<N, T[]> {
   constructor(private closingSelector: () => qt.Source<any, F, D>) {}
-  call(subscriber: Subscriber<N[], F, D>, source: any): any {
-    return source.subscribe(
-      new BufferWhenSubscriber(subscriber, this.closingSelector)
-    );
+  call(r: qj.Subscriber<N[], F, D>, source: any): any {
+    return source.subscribe(new BufferWhenR(r, this.closingSelector));
   }
 }
 
-export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
+export class BufferWhenR<N, F, D> extends qj.Reactor<N, any, F, D> {
   private buffer?: N[];
   private subscribing = false;
-  private closingSubscription?: Subscription;
+  private closingSubscription?: qj.Subscription;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private closingSelector: () => qt.Source<any, F, D>
   ) {
     super(tgt);
@@ -482,7 +473,7 @@ export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
   protected _done(d?: D) {
     const buffer = this.buffer;
     if (buffer) this.tgt.next(buffer);
-    super._done();
+    super._done(d);
   }
 
   _unsubscribe() {
@@ -495,12 +486,12 @@ export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Actor<N, any, F, D>
-  ): void {
+    innerSub: qj.Actor<N, any, F, D>
+  ) {
     this.openBuffer();
   }
 
-  reactDone(): void {
+  reactDone() {
     if (this.subscribing) this.done();
     else this.openBuffer();
   }
@@ -521,75 +512,73 @@ export class BufferWhenR<N, F, D> extends Reactor<N, any, F, D> {
     } catch (e) {
       return this.fail(e);
     }
-    closingSubscription = new Subscription();
+    closingSubscription = new qj.Subscription();
     this.closingSubscription = closingSubscription;
     this.add(closingSubscription);
     this.subscribing = true;
-    closingSubscription.add(subscribeToResult(this, closingNotifier));
+    closingSubscription.add(qu.subscribeToResult(this, closingNotifier));
     this.subscribing = false;
   }
 }
 
-export function concatMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function concatMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
+export function concatMap<N, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O
+): qt.Lifter<N, qt.Sourced<R>>;
+export function concatMap<N, R, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O,
   resultSelector?: (
     outerN: T,
-    innerValue: Sourced<O>,
+    innerValue: qt.Sourced<R>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
+): qt.Lifter<N, qt.Sourced<R> | R> {
+  if (typeof resultSelector === 'function')
     return mergeMap(project, resultSelector, 1);
-  }
   return mergeMap(project, 1);
 }
 
-export function concatMapTo<T, O extends SourceInput<any>>(
+export function concatMapTo<N, O extends qt.SourceInput<any>>(
   observable: O
-): Lifter<T, Sourced<O>>;
-export function concatMapTo<T, R, O extends SourceInput<any>>(
+): qt.Lifter<N, qt.Sourced<R>>;
+export function concatMapTo<N, R, O extends qt.SourceInput<any>>(
   innerObservable: O,
   resultSelector?: (
     outerN: T,
-    innerValue: Sourced<O>,
+    innerValue: qt.Sourced<R>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, Sourced<O> | R> {
-  if (typeof resultSelector === 'function') {
+): qt.Lifter<N, qt.Sourced<R> | R> {
+  if (typeof resultSelector === 'function')
     return concatMap(() => innerObservable, resultSelector);
-  }
   return concatMap(() => innerObservable);
 }
 
-export function exhaust<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function exhaust<R>(): Lifter<any, R>;
-export function exhaust<N, F, D>(): Lifter<any, T> {
-  return (source: qt.Source<N, F, D>) => source.lift(new ExhaustO<N, F, D>());
+export function exhaust<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T>;
+export function exhaust<R>(): qt.Lifter<any, R>;
+export function exhaust<N, F, D>(): qt.Lifter<any, T> {
+  return x => x.lift(new ExhaustO<N, F, D>());
 }
 
 class ExhaustO<N, F, D> implements qt.Operator<N, N, F, D> {
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new ExhaustR(subscriber));
+  call(r: qj.Subscriber<N, F, D>, source: any): qt.Closer {
+    return source.subscribe(new ExhaustR(r));
   }
 }
 
-export class ExhaustR<N, F, D> extends Reactor<N, N, F, D> {
+export class ExhaustR<N, F, D> extends qj.Reactor<N, N, F, D> {
   private hasCompleted = false;
   private hasSubscription = false;
 
-  constructor(tgt: Subscriber<N, F, D>) {
+  constructor(tgt: qj.Subscriber<N, F, D>) {
     super(tgt);
   }
 
   protected _next(n?: N) {
     if (!this.hasSubscription) {
       this.hasSubscription = true;
-      this.add(subscribeToResult(this, n));
+      this.add(qu.subscribeToResult(this, n));
     }
   }
 
@@ -598,25 +587,25 @@ export class ExhaustR<N, F, D> extends Reactor<N, N, F, D> {
     if (!this.hasSubscription) this.tgt.done();
   }
 
-  reactDone(innerSub: Subscription) {
+  reactDone(innerSub: qj.Subscription) {
     this.remove(innerSub);
     this.hasSubscription = false;
     if (this.hasCompleted) this.tgt.done();
   }
 }
 
-export function exhaustMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function exhaustMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
+export function exhaustMap<N, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O
+): qt.Lifter<N, qt.Sourced<R>>;
+export function exhaustMap<N, R, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O,
   resultSelector?: (
     outerN: T,
-    innerValue: Sourced<O>,
+    innerValue: qt.Sourced<R>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, Sourced<O> | R> {
+): qt.Lifter<N, qt.Sourced<R> | R> {
   if (resultSelector) {
     // DEPRECATED PATH
     return (source: qt.Source<N, F, D>) =>
@@ -628,25 +617,25 @@ export function exhaustMap<T, R, O extends SourceInput<any>>(
         )
       );
   }
-  return (source: qt.Source<N, F, D>) => source.lift(new ExhaustMapO(project));
+  return x => x.lift(new ExhaustMapO(project));
 }
 
-class ExhaustMapO<T, R> implements qt.Operator<T, R> {
-  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
+class ExhaustMapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
+  constructor(private project: (n: N, index: number) => qt.SourceInput<R>) {}
 
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new ExhaustMapR(subscriber, this.project));
+  call(r: qj.Subscriber<R>, source: any): any {
+    return source.subscribe(new ExhaustMapR(r, this.project));
   }
 }
 
-export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class ExhaustMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private hasSubscription = false;
   private hasCompleted = false;
   private index = 0;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private project: (value: T, index: number) => qt.SourceInput<R>
+    tgt: qj.Subscriber<R, F, D>,
+    private project: (n: N, index: number) => qt.SourceInput<R>
   ) {
     super(tgt);
   }
@@ -655,8 +644,8 @@ export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     if (!this.hasSubscription) this.tryNext(n);
   }
 
-  private tryNext(value: N) {
-    let result: SourceInput<R>;
+  private tryNext(n: N) {
+    let result: qt.SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
@@ -668,11 +657,11 @@ export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(result: SourceInput<R>, value: T, index: number): void {
-    const innerSubscriber = new Actor(this, value, index);
-    const tgt = this.tgt as Subscription;
+  private _innerSub(result: qt.SourceInput<R>, n: N, index: number) {
+    const innerSubscriber = new qj.Actor(this, value, index);
+    const tgt = this.tgt as qj.Subscription;
     tgt.add(innerSubscriber);
-    const s = qu.subscribeToResult<T, R>(
+    const s = qu.subscribeToResult<N, R, F, D>(
       this,
       result,
       undefined,
@@ -688,13 +677,7 @@ export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     this.unsubscribe();
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actorr<N, M, F, D>
-  ): void {
+  reactNext(outerN: N, innerValue: M) {
     this.tgt.next(innerValue);
   }
 
@@ -702,58 +685,56 @@ export class ExhaustMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     this.tgt.fail(f);
   }
 
-  reactDone(innerSub: Subscription) {
-    const tgt = this.tgt as Subscription;
+  reactDone(innerSub: qj.Subscription) {
+    const tgt = this.tgt as qj.Subscription;
     tgt.remove(innerSub);
     this.hasSubscription = false;
     if (this.hasCompleted) this.tgt.done();
   }
 }
 
-export function expand<T, R>(
-  project: (value: T, index: number) => SourceInput<R>,
+export function expand<N, R, F = any, D = any>(
+  project: (n: N, index: number) => qt.SourceInput<R>,
   concurrent?: number,
   scheduler?: qt.Scheduler
-): Lifter<T, R>;
+): qt.Lifter<N, R, F, D>;
 export function expand<N, F, D>(
-  project: (value: T, index: number) => SourceInput<N, F, D>,
+  project: (n: N, index: number) => qt.SourceInput<N, F, D>,
   concurrent?: number,
   scheduler?: qt.Scheduler
 ): qt.MonoOper<N, F, D>;
-export function expand<T, R>(
-  project: (value: T, index: number) => SourceInput<R>,
+export function expand<N, R, F = any, D = any>(
+  project: (n: N, index: number) => qt.SourceInput<R>,
   concurrent: number = Number.POSITIVE_INFINITY,
   scheduler?: qt.Scheduler
-): Lifter<T, R> {
+): qt.Lifter<N, R, F, D> {
   concurrent = (concurrent || 0) < 1 ? Number.POSITIVE_INFINITY : concurrent;
-
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new ExpandO(project, concurrent, scheduler));
+  return x => x.lift(new ExpandO(project, concurrent, scheduler));
 }
 
-export class ExpandO<T, R> implements qt.Operator<T, R> {
+export class ExpandO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private project: (value: T, index: number) => SourceInput<R>,
+    private project: (n: N, index: number) => qt.SourceInput<R>,
     private concurrent: number,
     private scheduler?: qt.Scheduler
   ) {}
 
-  call(subscriber: Subscriber<R>, source: any): any {
+  call(r: qj.Subscriber<R>, source: any): any {
     return source.subscribe(
-      new ExpandR(subscriber, this.project, this.concurrent, this.scheduler)
+      new ExpandR(r, this.project, this.concurrent, this.scheduler)
     );
   }
 }
 
-export class ExpandR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class ExpandR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private index = 0;
   private active = 0;
   private hasCompleted = false;
   private buffer?: any[];
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private project: (value: T, index: number) => SourceInput<R>,
+    tgt: qj.Subscriber<R, F, D>,
+    private project: (n: N, index: number) => qt.SourceInput<R>,
     private concurrent: number,
     private scheduler?: qt.Scheduler
   ) {
@@ -787,7 +768,7 @@ export class ExpandR<N, M, F, D> extends Reactor<N, M, F, D> {
             n,
             index
           };
-          const tgt = this.tgt as Subscription;
+          const tgt = this.tgt as qj.Subscription;
           tgt.add(
             this.scheduler.schedule<DispatchArg<N, M>>(
               Expand.dispatch as any,
@@ -802,32 +783,25 @@ export class ExpandR<N, M, F, D> extends Reactor<N, M, F, D> {
     } else this.buffer!.push(n);
   }
 
-  private subscribeToProjection(result: any, value: N, index: number) {
+  private subscribeToProjection(result: any, n: N, index: number) {
     this.active++;
-    const tgt = this.tgt as Subscription;
-    tgt.add(subscribeToResult<T, R>(this, result, value, index));
+    const tgt = this.tgt as qj.Subscription;
+    tgt.add(qu.subscribeToResult<N, R, F, D>(this, result, value, index));
   }
 
   protected _done(d?: D) {
     this.hasCompleted = true;
     if (this.hasCompleted && this.active === 0) this.tgt.done(d);
-
     this.unsubscribe();
   }
 
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ) {
+  reactNext(outerN: T, innerValue: R) {
     this._next(innerValue);
   }
 
-  reactDone(innerSub: Subscription) {
+  reactDone(innerSub: qj.Subscription) {
     const buffer = this.buffer;
-    const tgt = this.tgt as Subscription;
+    const tgt = this.tgt as qj.Subscription;
     tgt.remove(innerSub);
     this.active--;
     if (buffer && buffer.length > 0) this._next(buffer.shift());
@@ -835,40 +809,40 @@ export class ExpandR<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
-interface DispatchArg<T, R> {
-  subscriber: Expand<T, R>;
+interface DispatchArg<N, R, F, D> {
+  subscriber: Expand<N, R, F, D>;
   result: qt.SourceInput<R>;
   value: any;
   index: number;
 }
 
-export function groupBy<T, K>(
-  keySelector: (value: N) => K
-): Lifter<T, GroupedSource<K, T>>;
-export function groupBy<T, K>(
-  keySelector: (value: N) => K,
+export function groupBy<N, K>(
+  keySelector: (n: N) => K
+): qt.Lifter<N, GroupedSource<K, T>>;
+export function groupBy<N, K>(
+  keySelector: (n: N) => K,
   elementSelector: void,
   durationSelector: (grouped: GroupedSource<K, T>) => qt.Source<any, F, D>
-): Lifter<T, GroupedSource<K, T>>;
-export function groupBy<T, K, R>(
-  keySelector: (value: N) => K,
-  elementSelector?: (value: N) => R,
+): qt.Lifter<N, GroupedSource<K, T>>;
+export function groupBy<N, K, R>(
+  keySelector: (n: N) => K,
+  elementSelector?: (n: N) => R,
   durationSelector?: (grouped: GroupedSource<K, R>) => qt.Source<any, F, D>
-): Lifter<T, GroupedSource<K, R>>;
-export function groupBy<T, K, R>(
-  keySelector: (value: N) => K,
-  elementSelector?: (value: N) => R,
+): qt.Lifter<N, GroupedSource<K, R>>;
+export function groupBy<N, K, R>(
+  keySelector: (n: N) => K,
+  elementSelector?: (n: N) => R,
   durationSelector?: (grouped: GroupedSource<K, R>) => qt.Source<any, F, D>,
-  subjectSelector?: () => Subject<R>
-): Lifter<T, GroupedSource<K, R>>;
-export function groupBy<T, K, R>(
-  keySelector: (value: N) => K,
-  elementSelector?: ((value: N) => R) | void,
+  subjectSelector?: () => qj.Subject<R>
+): qt.Lifter<N, GroupedSource<K, R>>;
+export function groupBy<N, K, R>(
+  keySelector: (n: N) => K,
+  elementSelector?: ((n: N) => R) | void,
   durationSelector?: (grouped: GroupedSource<K, R>) => qt.Source<any, F, D>,
-  subjectSelector?: () => Subject<R>
-): Lifter<T, GroupedSource<K, R>> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(
+  subjectSelector?: () => qj.Subject<R>
+): qt.Lifter<N, GroupedSource<K, R>> {
+  return x =>
+    x.lift(
       new GroupByO(
         keySelector,
         elementSelector,
@@ -878,20 +852,20 @@ export function groupBy<T, K, R>(
     );
 }
 
-class GroupByO<T, K, R> implements qt.Operator<T, GroupedSource<K, R>> {
+class GroupByO<N, K, R> implements qt.Operator<N, GroupedSource<K, R>> {
   constructor(
-    private keySelector: (value: N) => K,
-    private elementSelector?: ((value: N) => R) | void,
+    private keySelector: (n: N) => K,
+    private elementSelector?: ((n: N) => R) | void,
     private durationSelector?: (
       grouped: GroupedSource<K, R>
     ) => qt.Source<any, F, D>,
-    private subjectSelector?: () => Subject<R>
+    private subjectSelector?: () => qj.Subject<R>
   ) {}
 
-  call(subscriber: Subscriber<GroupedSource<K, R>>, source: any): any {
+  call(r: qj.Subscriber<GroupedSource<K, R>>, source: any): any {
     return source.subscribe(
       new GroupByR(
-        subscriber,
+        r,
         this.keySelector,
         this.elementSelector,
         this.durationSelector,
@@ -901,20 +875,20 @@ class GroupByO<T, K, R> implements qt.Operator<T, GroupedSource<K, R>> {
   }
 }
 
-export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
+export class GroupByR<N, K, M, F, D> extends qj.Subscriber<N, F, D>
   implements qt.RefCountSubscription {
-  private groups?: Map<K, Subject<N | M>>;
+  private groups?: Map<K, qj.Subject<N | M>>;
   public attempted = false;
   public count = 0;
 
   constructor(
-    tgt: Subscriber<GroupedSource<K, R>>,
-    private keySelector: (value: N) => K,
-    private elementSelector?: ((value: N) => R) | void,
+    tgt: qj.Subscriber<GroupedSource<K, R>>,
+    private keySelector: (n: N) => K,
+    private elementSelector?: ((n: N) => R) | void,
     private durationSelector?: (
       grouped: GroupedSource<K, R>
     ) => qt.Source<any, F, D>,
-    private subjectSelector?: () => Subject<R>
+    private subjectSelector?: () => qj.Subject<R>
   ) {
     super(tgt);
   }
@@ -930,9 +904,9 @@ export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
     this._group(n, key);
   }
 
-  private _group(value: T, key: K) {
+  private _group(n: N, key: K) {
     let groups = this.groups;
-    if (!groups) groups = this.groups = new Map<K, Subject<T | R>>();
+    if (!groups) groups = this.groups = new Map<K, qj.Subject<T | R>>();
     let group = groups.get(key);
     let element: R;
     if (this.elementSelector) {
@@ -945,7 +919,7 @@ export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
     if (!group) {
       group = (this.subjectSelector
         ? this.subjectSelector()
-        : new Subject<R>()) as Subject<T | R>;
+        : new qj.Subject<R>()) as qj.Subject<T | R>;
       groups.set(key, group);
       const groupedObservable = new GroupedSource(key, group, this);
       this.tgt.next(groupedObservable);
@@ -953,7 +927,7 @@ export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
         let duration: any;
         try {
           duration = this.durationSelector(
-            new GroupedSource<K, R>(key, <Subject<R>>group)
+            new GroupedSource<K, R>(key, <qj.Subject<R>>group)
           );
         } catch (e) {
           this.fail(e);
@@ -968,7 +942,7 @@ export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
   protected _fail(f?: F) {
     const groups = this.groups;
     if (groups) {
-      groups.forEach((group, key) => group.error(f));
+      groups.forEach(g => g.fail(f));
       groups.clear();
     }
     this.tgt.fail(f);
@@ -977,7 +951,7 @@ export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
   protected _done(d?: D) {
     const groups = this.groups;
     if (groups) {
-      groups.forEach(group => group.complete());
+      groups.forEach(group => group.done());
       groups.clear();
     }
     this.tgt.done(d);
@@ -995,10 +969,10 @@ export class GroupByR<N, K, M, F, D> extends Subscriber<N, F, D>
   }
 }
 
-export function map<T, R>(
-  project: (value: T, index: number) => R,
+export function map<N, R, F, D>(
+  project: (n: N, index: number) => R,
   thisArg?: any
-): Lifter<T, R> {
+): qt.Lifter<N, R, F, D> {
   return function mapOperation(source: qt.Source<N, F, D>): qt.Source<R> {
     if (typeof project !== 'function') {
       throw new TypeError(
@@ -1009,24 +983,24 @@ export function map<T, R>(
   };
 }
 
-export class MapO<T, R> implements qt.Operator<T, R> {
+export class MapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private project: (value: T, index: number) => R,
+    private project: (n: N, index: number) => R,
     private thisArg: any
   ) {}
 
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new MapR(subscriber, this.project, this.thisArg));
+  call(r: qj.Subscriber<R>, source: any): any {
+    return source.subscribe(new MapR(r, this.project, this.thisArg));
   }
 }
 
-export class MapR<N, M, F, D> extends Subscriber<N, F, D> {
+export class MapR<N, R, F, D> extends qj.Subscriber<N, F, D> {
   count = 0;
   private thisArg: any;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private project: (value: N, i: number) => M,
+    tgt: qj.Subscriber<R, F, D>,
+    private project: (n: N, i: number) => R,
     thisArg: any
   ) {
     super(tgt);
@@ -1034,7 +1008,7 @@ export class MapR<N, M, F, D> extends Subscriber<N, F, D> {
   }
 
   protected _next(n?: N) {
-    let result: M;
+    let result: R;
     try {
       result = this.project.call(this.thisArg, n, this.count++);
     } catch (e) {
@@ -1045,27 +1019,27 @@ export class MapR<N, M, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export function mapTo<R>(value: R): Lifter<any, R>;
-export function mapTo<R>(value: R): Lifter<any, R> {
-  return (source: qt.Source<any, F, D>) => source.lift(new MapToO(value));
+export function mapTo<R>(value: R): qt.Lifter<any, R>;
+export function mapTo<R>(value: R): qt.Lifter<any, R> {
+  return x => x.lift(new MapToO(value));
 }
 
-class MapToO<T, R> implements qt.Operator<T, R> {
+class MapToO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   value: R;
 
   constructor(value: R) {
     this.value = value;
   }
 
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new MapToR(subscriber, this.value));
+  call(r: qj.Subscriber<R>, source: any): any {
+    return source.subscribe(new MapToR(r, this.value));
   }
 }
 
-export class MapToR<N, M, F, D> extends Subscriber<N, F, D> {
-  value: M;
+export class MapToR<N, R, F, D> extends qj.Subscriber<N, F, D> {
+  value: R;
 
-  constructor(tgt: Subscriber<M, F, D>, value: M) {
+  constructor(tgt: qj.Subscriber<R, F, D>, value: R) {
     super(tgt);
     this.value = value;
   }
@@ -1075,22 +1049,22 @@ export class MapToR<N, M, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export function mergeMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
+export function mergeMap<N, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O,
   concurrent?: number
-): Lifter<T, Sourced<O>>;
-export function mergeMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
+): qt.Lifter<N, qt.Sourced<R>>;
+export function mergeMap<N, R, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O,
   resultSelector?:
     | ((
         outerN: T,
-        innerValue: Sourced<O>,
+        innerValue: qt.Sourced<R>,
         outerX: number,
         innerIndex: number
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, Sourced<O> | R> {
+): qt.Lifter<N, qt.Sourced<R> | R> {
   if (typeof resultSelector === 'function') {
     return (source: qt.Source<N, F, D>) =>
       source.pipe(
@@ -1105,32 +1079,31 @@ export function mergeMap<T, R, O extends SourceInput<any>>(
   } else if (typeof resultSelector === 'number') {
     concurrent = resultSelector;
   }
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new MergeMapO(project, concurrent));
+  return x => x.lift(new MergeMapO(project, concurrent));
 }
 
-export class MergeMapO<T, R> implements qt.Operator<T, R> {
+export class MergeMapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private project: (value: T, index: number) => SourceInput<R>,
+    private project: (n: N, index: number) => qt.SourceInput<R>,
     private concurrent: number = Number.POSITIVE_INFINITY
   ) {}
 
-  call(observer: Subscriber<R>, source: any): any {
+  call(observer: qj.Subscriber<R>, source: any): any {
     return source.subscribe(
       new MergeMapR(observer, this.project, this.concurrent)
     );
   }
 }
 
-export class MergeMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class MergeMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private hasCompleted = false;
-  private buffer: T[] = [];
+  private buffer: N[] = [];
   private active = 0;
   protected index = 0;
 
   constructor(
-    tgt: Subscriber<R>,
-    private project: (value: T, index: number) => SourceInput<R>,
+    tgt: qj.Subscriber<R>,
+    private project: (n: N, index: number) => qt.SourceInput<R>,
     private concurrent = Number.POSITIVE_INFINITY
   ) {
     super(tgt);
@@ -1141,54 +1114,44 @@ export class MergeMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     else this.buffer.push(n);
   }
 
-  protected _tryNext(value: N) {
-    let result: SourceInput<R>;
+  protected _tryNext(n: N) {
+    let result: qt.SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(value, index);
-    } catch (err) {
-      this.tgt.fail(err);
+    } catch (e) {
+      this.tgt.fail(e);
       return;
     }
     this.active++;
     this._innerSub(result, value, index);
   }
 
-  private _innerSub(ish: SourceInput<R>, value: T, index: number): void {
+  private _innerSub(ish: qt.SourceInput<R>, n: N, index: number) {
     const innerSubscriber = new ActorSubscriber(this, value, index);
-    const tgt = this.tgt as Subscription;
+    const tgt = this.tgt as qj.Subscription;
     tgt.add(innerSubscriber);
-    const innerSubscription = qu.subscribeToResult<T, R>(
+    const innerSubscription = qu.subscribeToResult<N, R, F, D>(
       this,
       ish,
       undefined,
       undefined,
       innerSubscriber
     );
-    if (innerSubscription !== innerSubscriber) {
-      tgt.add(innerSubscription);
-    }
+    if (innerSubscription !== innerSubscriber) tgt.add(innerSubscription);
   }
 
   protected _done(d?: D) {
     this.hasCompleted = true;
-    if (this.active === 0 && this.buffer.length === 0) {
-      this.tgt.done(d);
-    }
+    if (this.active === 0 && this.buffer.length === 0) this.tgt.done(d);
     this.unsubscribe();
   }
 
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ): void {
+  reactNext(outerN: T, innerValue: R) {
     this.tgt.next(innerValue);
   }
 
-  reactDone(innerSub: Subscription): void {
+  reactDone(innerSub: qj.Subscription) {
     const buffer = this.buffer;
     this.remove(innerSub);
     this.active--;
@@ -1200,55 +1163,50 @@ export class MergeMapR<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
-export function mergeMapTo<O extends SourceInput<any>>(
+export function mergeMapTo<O extends qt.SourceInput<any>>(
   innerObservable: O,
   concurrent?: number
-): Lifter<any, Sourced<O>>;
-export function mergeMapTo<T, R, O extends SourceInput<any>>(
+): qt.Lifter<any, qt.Sourced<R>>;
+export function mergeMapTo<N, R, O extends qt.SourceInput<any>>(
   innerObservable: O,
   resultSelector?:
     | ((
         outerN: T,
-        innerValue: Sourced<O>,
+        innerValue: qt.Sourced<R>,
         outerX: number,
         innerIndex: number
       ) => R)
     | number,
   concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, Sourced<O> | R> {
+): qt.Lifter<N, qt.Sourced<R> | R> {
   if (typeof resultSelector === 'function') {
     return mergeMap(() => innerObservable, resultSelector, concurrent);
   }
-  if (typeof resultSelector === 'number') {
-    concurrent = resultSelector;
-  }
+  if (typeof resultSelector === 'number') concurrent = resultSelector;
   return mergeMap(() => innerObservable, concurrent);
 }
 
-export function mergeScan<T, R>(
-  accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
+export function mergeScan<N, R, F, D>(
+  acc: (acc: R, n: N, index: number) => qt.SourceInput<R>,
   seed: R,
   concurrent: number = Number.POSITIVE_INFINITY
-): Lifter<T, R> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new MergeScanO(accumulator, seed, concurrent));
+): qt.Lifter<N, R, F, D> {
+  return x => x.lift(new MergeScanO(acc, seed, concurrent));
 }
 
-export class MergeScanO<T, R> implements qt.Operator<T, R> {
+export class MergeScanO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   constructor(
-    private accumulator: (acc: R, value: T, index: number) => SourceInput<R>,
+    private acc: (acc: R, n: N, index: number) => qt.SourceInput<R>,
     private seed: R,
     private concurrent: number
   ) {}
 
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(
-      new MergeScanR(subscriber, this.accumulator, this.seed, this.concurrent)
-    );
+  call(r: qj.Subscriber<R>, s: any) {
+    return s.subscribe(new MergeScanR(r, this.acc, this.seed, this.concurrent));
   }
 }
 
-export class MergeScanR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class MergeScanR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private hasValue = false;
   private hasCompleted = false;
   private buffer: qt.Source<any, F, D>[] = [];
@@ -1256,37 +1214,35 @@ export class MergeScanR<N, M, F, D> extends Reactor<N, M, F, D> {
   protected index = 0;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private accumulator: (acc: M, value: N, index: number) => SourceInput<R>,
-    private acc: M,
+    tgt: qj.Subscriber<R, F, D>,
+    private acc: (acc: R, n: N, index: number) => qt.SourceInput<R>,
+    private acc: R,
     private concurrent: number
   ) {
     super(tgt);
   }
 
-  protected _next(value: any): void {
+  protected _next(value: any) {
     if (this.active < this.concurrent) {
       const index = this.index++;
       const tgt = this.tgt;
       let ish;
       try {
-        const {accumulator} = this;
-        ish = accumulator(this.acc, value, index);
+        const {acc} = this;
+        ish = acc(this.acc, value, index);
       } catch (e) {
         return tgt.fail(e);
       }
       this.active++;
       this._innerSub(ish, value, index);
-    } else {
-      this.buffer.push(value);
-    }
+    } else this.buffer.push(value);
   }
 
-  private _innerSub(ish: any, value: T, index: number): void {
+  private _innerSub(ish: any, n: N, index: number) {
     const innerSubscriber = new ActorSubscriber(this, value, index);
-    const tgt = this.tgt as Subscription;
+    const tgt = this.tgt as qj.Subscription;
     tgt.add(innerSubscriber);
-    const innerSubscription = qu.subscribeToResult<T, R>(
+    const innerSubscription = qu.subscribeToResult<N, R, F, D>(
       this,
       ish,
       undefined,
@@ -1309,22 +1265,16 @@ export class MergeScanR<N, M, F, D> extends Reactor<N, M, F, D> {
     this.unsubscribe();
   }
 
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ): void {
+  reactNext(outerN: N, innerValue: R) {
     const {tgt} = this;
     this.acc = innerValue;
     this.hasValue = true;
     tgt.next(innerValue);
   }
 
-  reactDone(innerSub: Subscription): void {
+  reactDone(innerSub: qj.Subscription) {
     const buffer = this.buffer;
-    const tgt = this.tgt as Subscription;
+    const tgt = this.tgt as qj.Subscription;
     tgt.remove(innerSub);
     this.active--;
     if (buffer.length > 0) {
@@ -1342,112 +1292,104 @@ export function pairs<T>(
   obj: Object,
   h?: qh.Scheduler
 ): qs.Source<[string, T]> {
-  if (!scheduler) {
-    return new qs.Source<[string, T]>(subscriber => {
+  if (!h) {
+    return new qs.Source<[string, T]>(r => {
       const keys = Object.keys(obj);
-      for (let i = 0; i < keys.length && !subscriber.closed; i++) {
+      for (let i = 0; i < keys.length && !r.closed; i++) {
         const key = keys[i];
         if (obj.hasOwnProperty(key)) {
-          subscriber.next([key, (obj as any)[key]]);
+          r.next([key, (obj as any)[key]]);
         }
       }
-      subscriber.done();
+      r.done();
     });
   } else {
-    return new qs.Source<[string, T]>(subscriber => {
+    return new qs.Source<[string, T]>(r => {
       const keys = Object.keys(obj);
       const subscription = new qj.Subscription();
       subscription.add(
-        scheduler.schedule<{
+        h.schedule<{
           keys: string[];
           index: number;
-          subscriber: qj.Subscriber<[string, T]>;
+          r: qj.Subscriber<[string, T]>;
           subscription: qj.Subscription;
           obj: Object;
-        }>(dispatch as any, 0, {keys, index: 0, subscriber, subscription, obj})
+        }>(dispatch as any, 0, {keys, index: 0, r, subscription, obj})
       );
       return subscription;
     });
   }
 }
 
-export function pairwise<N, F, D>(): Lifter<T, [T, T]> {
-  return (source: qt.Source<N, F, D>) => source.lift(new PairwiseO());
+export function pairwise<N, F = any, D = any>(): qt.Lifter<N, [N, N], F, D> {
+  return x => x.lift(new PairwiseO());
 }
 
-class PairwiseO<N, F, D> implements qt.Operator<T, [T, T]> {
-  call(subscriber: Subscriber<[T, T]>, source: any): any {
-    return source.subscribe(new PairwiseR(subscriber));
+class PairwiseO<N, F, D> implements qt.Operator<N, [N, N], F, D> {
+  call(r: qj.Subscriber<[N, N], F, D>, s: any): any {
+    return s.subscribe(new PairwiseR(r));
   }
 }
 
-class PairwiseR<N, F, D> extends Subscriber<N, F, D> {
-  private prev: T | undefined;
+class PairwiseR<N, F, D> extends qj.Subscriber<N, F, D> {
+  private prev: N | undefined;
   private hasPrev = false;
 
-  constructor(tgt: Subscriber<[T, T]>) {
+  constructor(tgt: qj.Subscriber<[N, N]>) {
     super(tgt);
   }
 
-  _next(value: N): void {
-    let pair: [T, T] | undefined;
-
-    if (this.hasPrev) {
-      pair = [this.prev!, value];
-    } else {
-      this.hasPrev = true;
-    }
-
-    this.prev = value;
-
-    if (pair) {
-      this.tgt.next(pair);
-    }
+  _next(n?: N) {
+    let pair: [N, N] | undefined;
+    if (this.hasPrev) pair = [this.prev!, n];
+    else this.hasPrev = true;
+    this.prev = n;
+    if (pair) this.tgt.next(pair);
   }
 }
 
 export function partition<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
+  predicate: (n: N, index: number) => boolean,
   thisArg?: any
-): UnaryFun<Observable<N, F, D>, [Observable<N, F, D>, qt.Source<N, F, D>]> {
+): UnaryFun<qt.Source<N, F, D>, [qt.Source<N, F, D>, qt.Source<N, F, D>]> {
   return (source: qt.Source<N, F, D>) =>
     [
       filter(predicate, thisArg)(source),
       filter(not(predicate, thisArg) as any)(source)
-    ] as [Observable<N, F, D>, qt.Source<N, F, D>];
+    ] as [qt.Source<N, F, D>, qt.Source<N, F, D>];
 }
 
 export function partition<T>(
   source: qt.SourceInput<T>,
-  predicate: (value: T, index: number) => boolean,
+  predicate: (n: N, index: number) => boolean,
   thisArg?: any
-): [Observable<T>, qs.Source<T>] {
+): [qt.Source<T>, qt.Source<T>] {
   return [
-    filter(predicate, thisArg)(new qs.Source<T>(subscribeTo(source))),
+    filter(predicate, thisArg)(new qs.Source<T>(qu.subscribeTo(source))),
     filter(not(predicate, thisArg) as any)(
-      new qs.Source<T>(subscribeTo(source))
+      new qs.Source<T>(qu.subscribeTo(source))
     )
-  ] as [Observable<T>, qs.Source<T>];
+  ] as [qt.Source<T>, qt.Source<T>];
 }
 
-export function pluck<T, K1 extends keyof T>(k1: K1): Lifter<T, T[K1]>;
-export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
+export function pluck<N, K1 extends keyof T>(k1: K1): qt.Lifter<N, T[K1]>;
+export function pluck<N, K1 extends keyof T, K2 extends keyof T[K1]>(
   k1: K1,
   k2: K2
-): Lifter<T, T[K1][K2]>;
+): qt.Lifter<N, T[K1][K2]>;
 export function pluck<
   T,
   K1 extends keyof T,
   K2 extends keyof T[K1],
   K3 extends keyof T[K1][K2]
->(k1: K1, k2: K2, k3: K3): Lifter<T, T[K1][K2][K3]>;
+>(k1: K1, k2: K2, k3: K3): qt.Lifter<N, T[K1][K2][K3]>;
 export function pluck<
   T,
   K1 extends keyof T,
   K2 extends keyof T[K1],
   K3 extends keyof T[K1][K2],
   K4 extends keyof T[K1][K2][K3]
->(k1: K1, k2: K2, k3: K3, k4: K4): Lifter<T, T[K1][K2][K3][K4]>;
+>(k1: K1, k2: K2, k3: K3, k4: K4): qt.Lifter<N, T[K1][K2][K3][K4]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -1455,7 +1397,7 @@ export function pluck<
   K3 extends keyof T[K1][K2],
   K4 extends keyof T[K1][K2][K3],
   K5 extends keyof T[K1][K2][K3][K4]
->(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): Lifter<T, T[K1][K2][K3][K4][K5]>;
+>(k1: K1, k2: K2, k3: K3, k4: K4, k5: K5): qt.Lifter<N, T[K1][K2][K3][K4][K5]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -1471,7 +1413,7 @@ export function pluck<
   k4: K4,
   k5: K5,
   k6: K6
-): Lifter<T, T[K1][K2][K3][K4][K5][K6]>;
+): qt.Lifter<N, T[K1][K2][K3][K4][K5][K6]>;
 export function pluck<
   T,
   K1 extends keyof T,
@@ -1488,15 +1430,13 @@ export function pluck<
   k5: K5,
   k6: K6,
   ...rest: string[]
-): Lifter<T, unknown>;
-export function pluck<N, F, D>(...properties: string[]): Lifter<T, unknown>;
-export function pluck<T, R>(
+): qt.Lifter<N, unknown>;
+export function pluck<N, F, D>(...properties: string[]): qt.Lifter<N, unknown>;
+export function pluck<N, R, F, D>(
   ...properties: Array<string | number | symbol>
-): Lifter<T, R> {
+): qt.Lifter<N, R, F, D> {
   const length = properties.length;
-  if (length === 0) {
-    throw new Error('list of properties cannot be empty.');
-  }
+  if (length === 0) throw new Error('list of properties cannot be empty.');
   return map(x => {
     let currentProp: any = x;
     for (let i = 0; i < length; i++) {
@@ -1512,50 +1452,43 @@ export function pluck<T, R>(
 }
 
 export function scan<V, A = V>(
-  accumulator: (acc: A | V, value: V, index: number) => A
-): Lifter<V, V | A>;
+  acc: (acc: A | V, value: V, index: number) => A
+): qt.Lifter<V, V | A>;
 export function scan<V, A>(
-  accumulator: (acc: A, value: V, index: number) => A,
+  acc: (acc: A, value: V, index: number) => A,
   seed: A
-): Lifter<V, A>;
+): qt.Lifter<V, A>;
 export function scan<V, A, S>(
-  accumulator: (acc: A | S, value: V, index: number) => A,
+  acc: (acc: A | S, value: V, index: number) => A,
   seed: S
-): Lifter<V, A>;
+): qt.Lifter<V, A>;
 export function scan<V, A, S>(
-  accumulator: (acc: V | A | S, value: V, index: number) => A,
+  acc: (acc: V | A | S, value: V, index: number) => A,
   seed?: S
-): Lifter<V, V | A> {
+): qt.Lifter<V, V | A> {
   let hasSeed = false;
-  if (arguments.length >= 2) {
-    hasSeed = true;
-  }
-
-  return function scanLifter(source: qt.Source<V>) {
-    return source.lift(new ScanO(accumulator, seed, hasSeed));
-  };
+  if (arguments.length >= 2) hasSeed = true;
+  return x => x.lift(new ScanO(acc, seed, hasSeed));
 }
 
 class ScanO<V, A, S> implements qt.Operator<V, A> {
   constructor(
-    private accumulator: (acc: V | A | S, value: V, index: number) => A,
+    private acc: (acc: V | A | S, value: V, index: number) => A,
     private seed?: S,
     private hasSeed: boolean = false
   ) {}
 
-  call(subscriber: Subscriber<A>, source: any): qt.Closer {
-    return source.subscribe(
-      new ScanR(subscriber, this.accumulator, this.seed, this.hasSeed)
-    );
+  call(r: qj.Subscriber<A>, s: any): qt.Closer {
+    return s.subscribe(new ScanR(r, this.acc, this.seed, this.hasSeed));
   }
 }
 
-export class ScanR<N, M, F, D> extends Subscriber<N, F, D> {
+export class ScanR<N, R, F, D> extends qj.Subscriber<N, F, D> {
   private index = 0;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private accumulator: (acc: N | M, n: N | undefined, i: number) => M,
+    tgt: qj.Subscriber<R, F, D>,
+    private acc: (acc: N | R, n: N | undefined, i: number) => R,
     private _state: any,
     private _hasState: boolean
   ) {
@@ -1569,9 +1502,9 @@ export class ScanR<N, M, F, D> extends Subscriber<N, F, D> {
       this.tgt.next(n);
     } else {
       const index = this.index++;
-      let result: M;
+      let result: R;
       try {
-        result = this.accumulator(this._state, n, index);
+        result = this.acc(this._state, n, index);
       } catch (e) {
         this.tgt.fail(e);
         return;
@@ -1582,18 +1515,18 @@ export class ScanR<N, M, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export function switchMap<T, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O
-): Lifter<T, Sourced<O>>;
-export function switchMap<T, R, O extends SourceInput<any>>(
-  project: (value: T, index: number) => O,
+export function switchMap<N, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O
+): qt.Lifter<N, qt.Sourced<R>>;
+export function switchMap<N, R, O extends qt.SourceInput<any>>(
+  project: (n: N, index: number) => O,
   resultSelector?: (
     outerN: T,
-    innerValue: Sourced<O>,
+    innerValue: qt.Sourced<R>,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, Sourced<O> | R> {
+): qt.Lifter<N, qt.Sourced<R> | R> {
   if (typeof resultSelector === 'function') {
     return (source: qt.Source<N, F, D>) =>
       source.pipe(
@@ -1602,30 +1535,29 @@ export function switchMap<T, R, O extends SourceInput<any>>(
         )
       );
   }
-  return (source: qt.Source<N, F, D>) => source.lift(new SwitchMapO(project));
+  return x => x.lift(new SwitchMapO(project));
 }
 
-class SwitchMapO<T, R> implements qt.Operator<T, R> {
-  constructor(private project: (value: T, index: number) => SourceInput<R>) {}
-
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new SwitchMapR(subscriber, this.project));
+class SwitchMapO<N, R, F, D> implements qt.Operator<N, R, F, D> {
+  constructor(private project: (n: N, index: number) => qt.SourceInput<R>) {}
+  call(r: qj.Subscriber<R>, s: any): any {
+    return s.subscribe(new SwitchMapR(r, this.project));
   }
 }
 
-export class SwitchMapR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class SwitchMapR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private index = 0;
-  private innerSubscription?: Subscription;
+  private innerSubscription?: qj.Subscription;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private project: (n: N | undefined, i: number) => SourceInput<R>
+    tgt: qj.Subscriber<R, F, D>,
+    private project: (n: N | undefined, i: number) => qt.SourceInput<R>
   ) {
     super(tgt);
   }
 
   protected _next(n?: N) {
-    let result: SourceInput<R>;
+    let result: qt.SourceInput<R>;
     const index = this.index++;
     try {
       result = this.project(n, index);
@@ -1636,13 +1568,12 @@ export class SwitchMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     this._innerSub(result, n, index);
   }
 
-  private _innerSub(result: SourceInput<R>, value: T, index: number) {
+  private _innerSub(result: qt.SourceInput<R>, n: N, index: number) {
     const innerSubscription = this.innerSubscription;
-    if (innerSubscription) {
-      innerSubscription.unsubscribe();
-    }
-    const innerSubscriber = new Actor(this, value, index);
-    const tgt = this.tgt as Subscription;
+    if (innerSubscription) innerSubscription.unsubscribe();
+
+    const innerSubscriber = new qj.Actor(this, value, index);
+    const tgt = this.tgt as qj.Subscription;
     tgt.add(innerSubscriber);
     this.innerSubscription = qu.subscribeToResult(
       this,
@@ -1658,7 +1589,7 @@ export class SwitchMapR<N, M, F, D> extends Reactor<N, M, F, D> {
 
   protected _done(d?: D) {
     const {innerSubscription} = this;
-    if (!innerSubscription || innerSubscription.closed) super._done();
+    if (!innerSubscription || innerSubscription.closed) super._done(d);
     this.unsubscribe();
   }
 
@@ -1666,150 +1597,133 @@ export class SwitchMapR<N, M, F, D> extends Reactor<N, M, F, D> {
     this.innerSubscription = null!;
   }
 
-  reactDone(innerSub: Subscription) {
-    const tgt = this.tgt as Subscription;
+  reactDone(innerSub: qj.Subscription) {
+    const tgt = this.tgt as qj.Subscription;
     tgt.remove(innerSub);
     this.innerSubscription = null!;
-    if (this.stopped) {
-      super._done();
-    }
+    if (this.stopped) super._done();
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ): void {
+  reactNext(outerN: N, innerValue: M) {
     this.tgt.next(innerValue);
   }
 }
 
-export function switchMapTo<R>(observable: SourceInput<R>): Lifter<any, R>;
-export function switchMapTo<T, I, R>(
-  innerObservable: SourceInput<I>,
+export function switchMapTo<R>(
+  observable: qt.SourceInput<R>
+): qt.Lifter<any, R>;
+export function switchMapTo<N, I, R>(
+  innerObservable: qt.SourceInput<I>,
   resultSelector?: (
     outerN: T,
     innerValue: I,
     outerX: number,
     innerIndex: number
   ) => R
-): Lifter<T, I | R> {
+): qt.Lifter<N, I | R> {
   return resultSelector
     ? switchMap(() => innerObservable, resultSelector)
     : switchMap(() => innerObservable);
 }
 
-export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T>;
-export function switchAll<R>(): Lifter<any, R>;
-export function switchAll<N, F, D>(): Lifter<SourceInput<N, F, D>, T> {
+export function switchAll<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T>;
+export function switchAll<R>(): qt.Lifter<any, R>;
+export function switchAll<N, F, D>(): qt.Lifter<SourceInput<N, F, D>, T> {
   return switchMap(identity);
 }
 
-export function window<N, F, D>(
+export function window<N, F = any, D = any>(
   windowBoundaries: qt.Source<any, F, D>
-): Lifter<T, qt.Source<N, F, D>> {
-  return function windowLifter(source: qt.Source<N, F, D>) {
-    return source.lift(new WindowO(windowBoundaries));
-  };
+): qt.Lifter<N, qt.Source<N, F, D>, F, D> {
+  return x => x.lift(new WindowO(windowBoundaries));
 }
 
-class WindowO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+class WindowO<N, F, D> implements qt.Operator<N, qt.Source<N, F, D>> {
   constructor(private windowBoundaries: qt.Source<any, F, D>) {}
 
-  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
-    const windowSubscriber = new WindowR(subscriber);
+  call(r: qj.Subscriber<qt.Source<N, F, D>>, source: any): any {
+    const windowSubscriber = new WindowR(r);
     const sourceSubscription = source.subscribe(windowSubscriber);
     if (!sourceSubscription.closed) {
       windowSubscriber.add(
-        subscribeToResult(windowSubscriber, this.windowBoundaries)
+        qu.subscribeToResult(windowSubscriber, this.windowBoundaries)
       );
     }
     return sourceSubscription;
   }
 }
 
-class WindowR<N, F, D> extends Reactor<T, any> {
-  private window: Subject<N, F, D> = new Subject<N, F, D>();
+class WindowR<N, F, D> extends qj.Reactor<N, any> {
+  private window: qj.Subject<N, F, D> = new qj.Subject<N, F, D>();
 
-  constructor(tgt: Subscriber<Observable<N, F, D>>) {
+  constructor(tgt: qj.Subscriber<qt.Source<N, F, D>>) {
     super(tgt);
     tgt.next(this.window);
   }
 
-  reactNext(
-    outerN: T,
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, any, F, D>
-  ): void {
+  reactNext() {
     this.openWindow();
   }
 
-  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
+  notifyError(error: any) {
     this._fail(error);
   }
 
-  reactDone(innerSub: Actor<N, any, F, D>): void {
+  reactDone() {
     this._done();
   }
 
-  protected _next(v: N) {
-    this.window.next(value);
+  protected _next(n?: N) {
+    this.window.next(n);
   }
 
   protected _fail(f?: F) {
-    this.window.error(err);
-    this.tgt.error(err);
+    this.window.fail(f);
+    this.tgt.fail(f);
   }
 
   protected _done(d?: D) {
-    this.window.complete();
-    this.tgt.complete();
+    this.window.done(d);
+    this.tgt.done(d);
   }
 
   _unsubscribe() {
     this.window = null!;
   }
 
-  private openWindow(): void {
+  private openWindow() {
     const prevWindow = this.window;
     if (prevWindow) {
-      prevWindow.complete();
+      prevWindow.done();
     }
     const tgt = this.tgt;
-    const newWindow = (this.window = new Subject<N, F, D>());
+    const newWindow = (this.window = new qj.Subject<N, F, D>());
     tgt.next(newWindow);
   }
 }
 
-export function windowCount<N, F, D>(
+export function windowCount<N, F = any, D = any>(
   windowSize: number,
   startWindowEvery: number = 0
-): Lifter<T, qt.Source<N, F, D>> {
-  return function windowCountLifter(source: qt.Source<N, F, D>) {
-    return source.lift(new WindowCountO<N, F, D>(windowSize, startWindowEvery));
-  };
+): qt.Lifter<N, qt.Source<N, F, D>, F, D> {
+  return x => x.lift(new WindowCountO<N, F, D>(windowSize, startWindowEvery));
 }
 
-class WindowCountO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+class WindowCountO<N, F, D> implements qt.Operator<N, qt.Source<N, F, D>> {
   constructor(private windowSize: number, private startWindowEvery: number) {}
-
-  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+  call(r: qj.Subscriber<qt.Source<N, F, D>>, source: any): any {
     return source.subscribe(
-      new WindowCountR(subscriber, this.windowSize, this.startWindowEvery)
+      new WindowCountR(r, this.windowSize, this.startWindowEvery)
     );
   }
 }
 
-class WindowCountR<N, F, D> extends Subscriber<N, F, D> {
-  private windows: Subject<N, F, D>[] = [new Subject<N, F, D>()];
+class WindowCountR<N, F, D> extends qj.Subscriber<N, F, D> {
+  private windows: qj.Subject<N, F, D>[] = [new qj.Subject<N, F, D>()];
   private count: number = 0;
 
   constructor(
-    protected tgt: Subscriber<Observable<N, F, D>>,
+    protected tgt: qj.Subscriber<qt.Source<N, F, D>>,
     private windowSize: number,
     private startWindowEvery: number
   ) {
@@ -1824,16 +1738,15 @@ class WindowCountR<N, F, D> extends Subscriber<N, F, D> {
     const windowSize = this.windowSize;
     const windows = this.windows;
     const len = windows.length;
-
     for (let i = 0; i < len && !this.closed; i++) {
-      windows[i].next(value);
+      windows[i].next(n);
     }
     const c = this.count - windowSize + 1;
     if (c >= 0 && c % startWindowEvery === 0 && !this.closed) {
-      windows.shift()!.complete();
+      windows.shift()!.done();
     }
     if (++this.count % startWindowEvery === 0 && !this.closed) {
-      const window = new Subject<N, F, D>();
+      const window = new qj.Subject<N, F, D>();
       windows.push(window);
       tgt.next(window);
     }
@@ -1843,20 +1756,20 @@ class WindowCountR<N, F, D> extends Subscriber<N, F, D> {
     const windows = this.windows;
     if (windows) {
       while (windows.length > 0 && !this.closed) {
-        windows.shift()!.error(err);
+        windows.shift()!.fail(f);
       }
     }
-    this.tgt.error(err);
+    this.tgt.fail(f);
   }
 
   protected _done(d?: D) {
     const windows = this.windows;
     if (windows) {
       while (windows.length > 0 && !this.closed) {
-        windows.shift()!.complete();
+        windows.shift()!.done(d);
       }
     }
-    this.tgt.complete();
+    this.tgt.done(d);
   }
 
   protected _unsubscribe() {
@@ -1865,46 +1778,42 @@ class WindowCountR<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export function windowTime<N, F, D>(
+export function windowTime<N, F = any, D = any>(
   windowTimeSpan: number,
   scheduler?: qt.Scheduler
-): Lifter<T, qt.Source<N, F, D>>;
-export function windowTime<N, F, D>(
+): qt.Lifter<N, qt.Source<N, F, D>, F, D>;
+export function windowTime<N, F = any, D = any>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   scheduler?: qt.Scheduler
-): Lifter<T, qt.Source<N, F, D>>;
-export function windowTime<N, F, D>(
+): qt.Lifter<N, qt.Source<N, F, D>, F, D>;
+export function windowTime<N, F = any, D = any>(
   windowTimeSpan: number,
   windowCreationInterval: number,
   maxWindowSize: number,
   scheduler?: qt.Scheduler
-): Lifter<T, qt.Source<N, F, D>>;
-export function windowTime<N, F, D>(
+): qt.Lifter<N, qt.Source<N, F, D>, F, D>;
+export function windowTime<N, F = any, D = any>(
   windowTimeSpan: number
-): Lifter<T, qt.Source<N, F, D>> {
-  let scheduler: qt.Scheduler = async;
+): qt.Lifter<N, qt.Source<N, F, D>, F, D> {
+  let scheduler: qt.Scheduler = qh.async;
   let windowCreationInterval: number | null = null;
   let maxWindowSize: number = Number.POSITIVE_INFINITY;
-
-  if (isScheduler(arguments[3])) {
+  if (qu.isScheduler(arguments[3])) {
     scheduler = arguments[3];
   }
-
-  if (isScheduler(arguments[2])) {
+  if (qu.isScheduler(arguments[2])) {
     scheduler = arguments[2];
-  } else if (isNumeric(arguments[2])) {
+  } else if (qu.isNumeric(arguments[2])) {
     maxWindowSize = Number(arguments[2]);
   }
-
-  if (isScheduler(arguments[1])) {
+  if (qu.isScheduler(arguments[1])) {
     scheduler = arguments[1];
-  } else if (isNumeric(arguments[1])) {
+  } else if (qu.isNumeric(arguments[1])) {
     windowCreationInterval = Number(arguments[1]);
   }
-
-  return function windowTimeLifter(source: qt.Source<N, F, D>) {
-    return source.lift(
+  return x =>
+    x.lift(
       new WindowTimeO<N, F, D>(
         windowTimeSpan,
         windowCreationInterval,
@@ -1912,10 +1821,9 @@ export function windowTime<N, F, D>(
         scheduler
       )
     );
-  };
 }
 
-class WindowTimeO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+class WindowTimeO<N, F, D> implements qt.Operator<N, qt.Source<N, F, D>> {
   constructor(
     private windowTimeSpan: number,
     private windowCreationInterval: number | null,
@@ -1923,10 +1831,10 @@ class WindowTimeO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
     private scheduler: qt.Scheduler
   ) {}
 
-  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+  call(r: qj.Subscriber<qt.Source<N, F, D>>, source: any): any {
     return source.subscribe(
       new WindowTimeR(
-        subscriber,
+        r,
         this.windowTimeSpan,
         this.windowCreationInterval,
         this.maxWindowSize,
@@ -1951,7 +1859,7 @@ interface TimeSpanOnlyState<N, F, D> {
 
 interface CloseWindowContext<N, F, D> {
   action: qt.Action<CreationState<N, F, D>>;
-  subscription: Subscription;
+  subscription: qj.Subscription;
 }
 
 interface CloseState<N, F, D> {
@@ -1960,22 +1868,22 @@ interface CloseState<N, F, D> {
   context: CloseWindowContext<N, F, D>;
 }
 
-class CountedSubject<N, F, D> extends Subject<N, F, D> {
+class CountedSubject<N, F, D> extends qj.Subject<N, F, D> {
   private _numberOfNextedValues: number = 0;
-  next(value: N): void {
+  next(n?: N) {
     this._numberOfNextedValues++;
-    super.next(value);
+    super.next(n);
   }
   get numberOfNextedValues(): number {
     return this._numberOfNextedValues;
   }
 }
 
-class WindowTimeR<N, F, D> extends Subscriber<N, F, D> {
+class WindowTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
   private windows: CountedSubject<N, F, D>[] = [];
 
   constructor(
-    protected tgt: Subscriber<Observable<N, F, D>>,
+    protected tgt: qj.Subscriber<qt.Source<N, F, D>>,
     windowTimeSpan: number,
     windowCreationInterval: number | null,
     private maxWindowSize: number,
@@ -2026,7 +1934,7 @@ class WindowTimeR<N, F, D> extends Subscriber<N, F, D> {
     }
   }
 
-  protected _next(v: N) {
+  protected _next(n?: N) {
     const windows =
       this.maxWindowSize < Number.POSITIVE_INFINITY
         ? this.windows.slice()
@@ -2035,7 +1943,7 @@ class WindowTimeR<N, F, D> extends Subscriber<N, F, D> {
     for (let i = 0; i < len; i++) {
       const window = windows[i];
       if (!window.closed) {
-        window.next(value);
+        window.next(n);
         if (this.maxWindowSize <= window.numberOfNextedValues) {
           this.closeWindow(window);
         }
@@ -2044,34 +1952,34 @@ class WindowTimeR<N, F, D> extends Subscriber<N, F, D> {
   }
 
   protected _fail(f?: F) {
-    const windows = this.windows;
-    while (windows.length > 0) {
-      windows.shift()!.error(err);
+    const ws = this.windows;
+    while (ws.length) {
+      ws.shift()!.fail(f);
     }
-    this.tgt.error(err);
+    this.tgt.fail(f);
   }
 
   protected _done(d?: D) {
-    const windows = this.windows;
-    while (windows.length > 0) {
-      windows.shift()!.complete();
+    const ws = this.windows;
+    while (ws.length) {
+      ws.shift()!.done();
     }
-    this.tgt.complete();
+    this.tgt.done(d);
   }
 
   public openWindow(): CountedSubject<N, F, D> {
-    const window = new CountedSubject<N, F, D>();
-    this.windows.push(window);
+    const w = new CountedSubject<N, F, D>();
+    this.windows.push(w);
     const tgt = this.tgt;
-    tgt.next(window);
-    return window;
+    tgt.next(w);
+    return w;
   }
 
-  public closeWindow(window: CountedSubject<N, F, D>): void {
-    const index = this.windows.indexOf(window);
-    if (index >= 0) {
-      window.complete();
-      this.windows.splice(index, 1);
+  public closeWindow(w: CountedSubject<N, F, D>) {
+    const i = this.windows.indexOf(w);
+    if (i >= 0) {
+      w.done();
+      this.windows.splice(i, 1);
     }
   }
 }
@@ -2079,11 +1987,9 @@ class WindowTimeR<N, F, D> extends Subscriber<N, F, D> {
 function dispatchWindowTimeSpanOnly<N, F, D>(
   this: qt.Action<TimeSpanOnlyState<N, F, D>>,
   state: TimeSpanOnlyState<N, F, D>
-): void {
+) {
   const {subscriber, windowTimeSpan, window} = state;
-  if (window) {
-    subscriber.closeWindow(window);
-  }
+  if (window) subscriber.closeWindow(window);
   state.window = subscriber.openWindow();
   this.schedule(state, windowTimeSpan);
 }
@@ -2091,7 +1997,7 @@ function dispatchWindowTimeSpanOnly<N, F, D>(
 function dispatchWindowCreation<N, F, D>(
   this: qt.Action<CreationState<N, F, D>>,
   state: CreationState<N, F, D>
-): void {
+) {
   const {windowTimeSpan, subscriber, scheduler, windowCreationInterval} = state;
   const window = subscriber.openWindow();
   const action = this;
@@ -2109,7 +2015,7 @@ function dispatchWindowCreation<N, F, D>(
 function dispatchWindowClose<N, F, D>(
   this: qt.Action<CloseState<N, F, D>>,
   state: CloseState<N, F, D>
-): void {
+) {
   const {subscriber, window, context} = state;
   if (context && context.action && context.subscription) {
     context.action.remove(context.subscription);
@@ -2117,44 +2023,43 @@ function dispatchWindowClose<N, F, D>(
   subscriber.closeWindow(window);
 }
 
-export function windowToggle<T, O>(
-  openings: qt.Source<O>,
-  closingSelector: (openValue: O) => qt.Source<any, F, D>
-): Lifter<T, qt.Source<N, F, D>> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new WindowToggleO<T, O>(openings, closingSelector));
+export function windowToggle<N, R, F = any, D = any>(
+  openings: qt.Source<R>,
+  closingSelector: (openValue: R) => qt.Source<any, F, D>
+): qt.Lifter<N, qt.Source<N, F, D>, F, D> {
+  return x => x.lift(new WindowToggleO<N, R, F, D>(openings, closingSelector));
 }
 
-class WindowToggleO<T, O> implements qt.Operator<T, qt.Source<N, F, D>> {
+class WindowToggleO<N, R, F, D> implements qt.Operator<N, qt.Source<N, F, D>> {
   constructor(
-    private openings: qt.Source<O>,
-    private closingSelector: (openValue: O) => qt.Source<any, F, D>
+    private openings: qt.Source<R>,
+    private closingSelector: (openValue: R) => qt.Source<any, F, D>
   ) {}
 
-  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
+  call(r: qj.Subscriber<qt.Source<N, F, D>>, source: any): any {
     return source.subscribe(
-      new WindowToggleR(subscriber, this.openings, this.closingSelector)
+      new WindowToggleR(r, this.openings, this.closingSelector)
     );
   }
 }
 
 interface WindowContext<N, F, D> {
-  window: Subject<N, F, D>;
-  subscription: Subscription;
+  window: qj.Subject<N, F, D>;
+  subscription: qj.Subscription;
 }
 
-class WindowToggleR<T, O> extends Reactor<T, any> {
+class WindowToggleR<N, R, F, D> extends qj.Reactor<N, any> {
   private contexts: WindowContext<N, F, D>[] = [];
-  private openSubscription?: Subscription;
+  private openSubscription?: qj.Subscription;
 
   constructor(
-    tgt: Subscriber<Observable<N, F, D>>,
-    private openings: qt.Source<O>,
-    private closingSelector: (openValue: O) => qt.Source<any, F, D>
+    tgt: qj.Subscriber<qt.Source<N, F, D>>,
+    private openings: qt.Source<R>,
+    private closingSelector: (openValue: R) => qt.Source<any, F, D>
   ) {
     super(tgt);
     this.add(
-      (this.openSubscription = subscribeToResult(
+      (this.openSubscription = qu.subscribeToResult(
         this,
         openings,
         openings as any
@@ -2167,7 +2072,7 @@ class WindowToggleR<T, O> extends Reactor<T, any> {
     if (contexts) {
       const len = contexts.length;
       for (let i = 0; i < len; i++) {
-        contexts[i].window.next(value);
+        contexts[i].window.next(n);
       }
     }
   }
@@ -2175,19 +2080,16 @@ class WindowToggleR<T, O> extends Reactor<T, any> {
   protected _fail(f?: F) {
     const {contexts} = this;
     this.contexts = null!;
-
     if (contexts) {
       const len = contexts.length;
       let index = -1;
-
       while (++index < len) {
         const context = contexts[index];
-        context.window.error(err);
+        context.window.fail(f);
         context.subscription.unsubscribe();
       }
     }
-
-    super._fail(err);
+    super._fail(f);
   }
 
   protected _done(d?: D) {
@@ -2198,11 +2100,11 @@ class WindowToggleR<T, O> extends Reactor<T, any> {
       let index = -1;
       while (++index < len) {
         const context = contexts[index];
-        context.window.complete();
+        context.window.done();
         context.subscription.unsubscribe();
       }
     }
-    super._done();
+    super._done(d);
   }
 
   _unsubscribe() {
@@ -2219,39 +2121,30 @@ class WindowToggleR<T, O> extends Reactor<T, any> {
     }
   }
 
-  reactNext(
-    outerN: any,
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, any, F, D>
-  ): void {
+  reactNext(outerN: any, innerValue: any) {
     if (outerN === this.openings) {
       let closingNotifier;
       try {
         const {closingSelector} = this;
         closingNotifier = closingSelector(innerValue);
       } catch (e) {
-        return this.error(e);
+        return this.fail(e);
       }
-
-      const window = new Subject<N, F, D>();
-      const subscription = new Subscription();
+      const window = new qj.Subject<N, F, D>();
+      const subscription = new qj.Subscription();
       const context = {window, subscription};
       this.contexts.push(context);
-      const innerSubscription = subscribeToResult(
+      const innerSubscription = qu.subscribeToResult(
         this,
         closingNotifier,
         context as any
       );
-
       if (innerSubscription!.closed) {
         this.closeWindow(this.contexts.length - 1);
       } else {
         (<any>innerSubscription).context = context;
         subscription.add(innerSubscription);
       }
-
       this.tgt.next(window);
     } else {
       this.closeWindow(this.contexts.indexOf(outerN));
@@ -2259,48 +2152,46 @@ class WindowToggleR<T, O> extends Reactor<T, any> {
   }
 
   reactFail(f?: F) {
-    this.error(err);
+    this.fail(f);
   }
 
-  reactDone(inner: Subscription): void {
+  reactDone(inner: qj.Subscription) {
     if (inner !== this.openSubscription) {
       this.closeWindow(this.contexts.indexOf((<any>inner).context));
     }
   }
 
-  private closeWindow(index: number): void {
+  private closeWindow(index: number) {
     if (index === -1) return;
     const {contexts} = this;
     const context = contexts[index];
     const {window, subscription} = context;
     contexts.splice(index, 1);
-    window.complete();
+    window.done();
     subscription.unsubscribe();
   }
 }
 
-export function windowWhen<N, F, D>(
+export function windowWhen<N, F = any, D = any>(
   closingSelector: () => qt.Source<any, F, D>
-): Lifter<T, qt.Source<N, F, D>> {
-  return function windowWhenLifter(source: qt.Source<N, F, D>) {
-    return source.lift(new WindowWhenO<N, F, D>(closingSelector));
-  };
+): qt.Lifter<N, qt.Source<N, F, D>, F, D> {
+  return x => x.lift(new WindowWhenO<N, F, D>(closingSelector));
 }
 
-class WindowWhenO<N, F, D> implements qt.Operator<T, qt.Source<N, F, D>> {
+class WindowWhenO<N, F, D> implements qt.Operator<N, qt.Source<N, F, D>> {
   constructor(private closingSelector: () => qt.Source<any, F, D>) {}
 
-  call(subscriber: Subscriber<Observable<N, F, D>>, source: any): any {
-    return source.subscribe(new WindowWhenR(subscriber, this.closingSelector));
+  call(r: qj.Subscriber<qt.Source<N, F, D>>, source: any): any {
+    return source.subscribe(new WindowWhenR(r, this.closingSelector));
   }
 }
 
-class WindowWhenR<N, F, D> extends Reactor<T, any> {
-  private window: Subject<N, F, D> | undefined;
-  private closingNotification?: Subscription;
+class WindowWhenR<N, F, D> extends qj.Reactor<N, any> {
+  private window: qj.Subject<N, F, D> | undefined;
+  private closingNotification?: qj.Subscription;
 
   constructor(
-    protected tgt: Subscriber<Observable<N, F, D>>,
+    protected tgt: qj.Subscriber<qt.Source<N, F, D>>,
     private closingSelector: () => qt.Source<any, F, D>
   ) {
     super(tgt);
@@ -2312,66 +2203,61 @@ class WindowWhenR<N, F, D> extends Reactor<T, any> {
     innerValue: any,
     outerX: number,
     innerIndex: number,
-    innerSub: Actor<N, any, F, D>
-  ): void {
+    innerSub: qj.Actor<N, any, F, D>
+  ) {
     this.openWindow(innerSub);
   }
 
-  notifyError(error: any, innerSub: Actor<N, any, F, D>): void {
+  notifyError(error: any, innerSub: qj.Actor<N, any, F, D>) {
     this._fail(error);
   }
 
-  reactDone(innerSub: Actor<N, any, F, D>): void {
+  reactDone(innerSub: qj.Actor<N, any, F, D>) {
     this.openWindow(innerSub);
   }
 
-  protected _next(v: N) {
-    this.window!.next(value);
+  protected _next(n?: N) {
+    this.window!.next(n);
   }
 
   protected _fail(f?: F) {
-    this.window!.error(e);
-    this.tgt.error(e);
+    this.window!.fail(f);
+    this.tgt.fail(f);
     this.unsubscribeClosingNotification();
   }
 
   protected _done(d?: D) {
-    this.window!.complete();
-    this.tgt.complete();
+    this.window!.done(d);
+    this.tgt.done(d);
     this.unsubscribeClosingNotification();
   }
 
-  private unsubscribeClosingNotification(): void {
+  private unsubscribeClosingNotification() {
     if (this.closingNotification) {
       this.closingNotification.unsubscribe();
     }
   }
 
-  private openWindow(innerSub: Actor<N, any, F, D> | null = null): void {
+  private openWindow(innerSub: qj.Actor<N, any, F, D> | null = null) {
     if (innerSub) {
       this.remove(innerSub);
       innerSub.unsubscribe();
     }
-
     const prevWindow = this.window;
-    if (prevWindow) {
-      prevWindow.complete();
-    }
-
-    const window = (this.window = new Subject<N, F, D>());
+    if (prevWindow) prevWindow.done();
+    const window = (this.window = new qj.Subject<N, F, D>());
     this.tgt.next(window);
-
     let closingNotifier;
     try {
       const {closingSelector} = this;
       closingNotifier = closingSelector();
     } catch (e) {
-      this.tgt.error(e);
-      this.window.error(e);
+      this.tgt.fail(e);
+      this.window.fail(e);
       return;
     }
     this.add(
-      (this.closingNotification = subscribeToResult(this, closingNotifier))
+      (this.closingNotification = qu.subscribeToResult(this, closingNotifier))
     );
   }
 }

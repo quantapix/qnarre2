@@ -1,23 +1,28 @@
-export function defaultIfEmpty<T, R = T>(defaultValue?: R): Lifter<T, T | R>;
-export function defaultIfEmpty<T, R>(
+import * as qh from './scheduler';
+import * as qj from './subject';
+import * as qs from './source';
+import * as qt from './types';
+import * as qu from './utils';
+
+export function defaultIfEmpty<N, R = N>(defaultValue?: R): qt.Lifter<N, T | R>;
+export function defaultIfEmpty<N, R>(
   defaultValue: R | null = null
-): Lifter<T, T | R> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new DefaultIfEmptyO(defaultValue)) as qt.Source<T | R>;
+): qt.Lifter<N, T | R> {
+  return x => x.lift(new DefaultIfEmptyO(defaultValue)) as qt.Source<N | R>;
 }
 
-class DefaultIfEmptyO<T, R> implements qt.Operator<T, T | R> {
+class DefaultIfEmptyO<N, R> implements qt.Operator<N, T | R> {
   constructor(private defaultValue: R) {}
 
-  call(subscriber: Subscriber<T | R>, source: any): any {
+  call(subscriber: qj.Subscriber<N | R>, source: any): any {
     return source.subscribe(new DefaultIfEmptyR(subscriber, this.defaultValue));
   }
 }
 
-export class DefaultIfEmptyR<N, M, F, D> extends Subscriber<N, F, D> {
+export class DefaultIfEmptyR<N, M, F, D> extends qj.Subscriber<N, F, D> {
   private isEmpty = true;
 
-  constructor(tgt: Subscriber<N | M, F, D>, private defaultValue: M) {
+  constructor(tgt: qj.Subscriber<N | M, F, D>, private defaultValue: M) {
     super(tgt);
   }
 
@@ -33,17 +38,16 @@ export class DefaultIfEmptyR<N, M, F, D> extends Subscriber<N, F, D> {
 }
 
 export function every<N, F, D>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): Lifter<T, boolean> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new EveryO(predicate, thisArg, source));
+): qt.Lifter<N, boolean> {
+  return x => x.lift(new EveryO(predicate, thisArg, source));
 }
 
-class EveryO<N, F, D> implements qt.Operator<T, boolean> {
+class EveryO<N, F, D> implements qt.Operator<N, boolean> {
   constructor(
     private predicate: (
-      value: T,
+      n: N,
       index: number,
       source: qt.Source<N, F, D>
     ) => boolean,
@@ -51,14 +55,14 @@ class EveryO<N, F, D> implements qt.Operator<T, boolean> {
     private source: qt.Source<N, F, D>
   ) {}
 
-  call(observer: Subscriber<boolean>, source: any): any {
+  call(observer: qj.Subscriber<boolean>, source: any): any {
     return source.subscribe(
       new EveryR(observer, this.predicate, this.thisArg, this.source)
     );
   }
 }
 
-export class EveryR<N, F, D> extends Subscriber<N, F, D> {
+export class EveryR<N, F, D> extends qj.Subscriber<N, F, D> {
   private index = 0;
 
   constructor(
@@ -96,37 +100,33 @@ export class EveryR<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export function find<T, S extends T>(
-  predicate: (
-    value: T,
-    index: number,
-    source: qt.Source<N, F, D>
-  ) => value is S,
+export function find<N, S extends N>(
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => value is S,
   thisArg?: any
-): Lifter<T, S | undefined>;
+): qt.Lifter<N, S | undefined>;
 export function find<N, F, D>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): Lifter<T, T | undefined>;
+): qt.Lifter<N, T | undefined>;
 export function find<N, F, D>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): Lifter<T, T | undefined> {
+): qt.Lifter<N, T | undefined> {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate is not a function');
   }
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new FindValueO(predicate, source, false, thisArg)) as qt.Source<
-      T | undefined
+  return x =>
+    x.lift(new FindValueO(predicate, source, false, thisArg)) as qt.Source<
+      N | undefined
     >;
 }
 
 export function findIndex<N, F, D>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
   thisArg?: any
-): Lifter<T, number> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new FindValueO(predicate, source, true, thisArg)) as qt.Source<
+): qt.Lifter<N, number> {
+  return x =>
+    x.lift(new FindValueO(predicate, source, true, thisArg)) as qt.Source<
       any,
       F,
       D
@@ -134,10 +134,10 @@ export function findIndex<N, F, D>(
 }
 
 export class FindValueO<N, F, D>
-  implements qt.Operator<T, T | number | undefined> {
+  implements qt.Operator<N, N | number | undefined> {
   constructor(
     private predicate: (
-      value: T,
+      n: N,
       index: number,
       source: qt.Source<N, F, D>
     ) => boolean,
@@ -146,7 +146,7 @@ export class FindValueO<N, F, D>
     private thisArg?: any
   ) {}
 
-  call(observer: Subscriber<N, F, D>, source: any): any {
+  call(observer: qj.Subscriber<N, F, D>, source: any): any {
     return source.subscribe(
       new FindValueR(
         observer,
@@ -159,11 +159,11 @@ export class FindValueO<N, F, D>
   }
 }
 
-export class FindValueR<N, F, D> extends Subscriber<N, F, D> {
+export class FindValueR<N, F, D> extends qj.Subscriber<N, F, D> {
   private index = 0;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private predicate: (
       value: N,
       index: number,
@@ -199,18 +199,18 @@ export class FindValueR<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export function isEmpty<N, F, D>(): Lifter<T, boolean> {
-  return (source: qt.Source<N, F, D>) => source.lift(new IsEmptyO());
+export function isEmpty<N, F, D>(): qt.Lifter<N, boolean> {
+  return x => x.lift(new IsEmptyO());
 }
 
 class IsEmptyO implements qt.Operator<any, boolean> {
-  call(observer: Subscriber<boolean>, source: any): any {
+  call(observer: qj.Subscriber<boolean>, source: any): any {
     return source.subscribe(new IsEmptyR(observer));
   }
 }
 
-export class IsEmptyR<N extends boolean, F, D> extends Subscriber<N, F, D> {
-  constructor(tgt: Subscriber<N, F, D>) {
+export class IsEmptyR<N extends boolean, F, D> extends qj.Subscriber<N, F, D> {
+  constructor(tgt: qj.Subscriber<N, F, D>) {
     super(tgt);
   }
 
