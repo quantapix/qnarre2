@@ -1,7 +1,7 @@
 import * as qt from './types';
 import * as qu from './utils';
-import * as qr from './opers';
 import * as qj from './subject';
+import * as qh from './scheduler';
 
 export function audit<N, R, F, D>(
   d: (_?: R) => qt.SourceOrPromise<N, F, D>
@@ -17,13 +17,13 @@ class AuditO<N, R, F, D> implements qt.Operator<N, R, F, D> {
   }
 }
 
-export class AuditR<N, R, F, D> extends Reactor<N, R, F, D> {
+export class AuditR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private r?: R;
   private hasR = false;
   private act?: qt.Subscription;
 
   constructor(
-    tgt: Subscriber<R, F, D>,
+    tgt: qj.Subscriber<R, F, D>,
     private duration: (_?: R) => qt.SourceOrPromise<N, F, D>
   ) {
     super(tgt);
@@ -70,36 +70,34 @@ export class AuditR<N, R, F, D> extends Reactor<N, R, F, D> {
 
 export function auditTime<N, F, D>(
   duration: number,
-  s: qt.Scheduler = async
+  s: qt.Scheduler = qh.async
 ): qt.MonoOper<N, F, D> {
   return audit(() => timer(duration, s));
 }
 
 export function debounce<N, F, D>(
-  durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
+  durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new DebounceO(durationSelector));
+  return x => x.lift(new DebounceO(durationSelector));
 }
 
 class DebounceO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
+    private durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>
   ) {}
-
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new DebounceR(subscriber, this.durationSelector));
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new DebounceR(r, this.durationSelector));
   }
 }
 
-export class DebounceR<O, I, F, D> extends Reactor<O, I, F, D> {
+export class DebounceR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private value?: N;
   private hasValue = false;
-  private durationSubscription?: Subscription;
+  private durationSubscription?: qj.Subscription;
 
   constructor(
-    tgt: Subscriber<M, F, D>,
-    private durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>
+    tgt: qj.Subscriber<R, F, D>,
+    private durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>
   ) {
     super(tgt);
   }
@@ -107,7 +105,7 @@ export class DebounceR<O, I, F, D> extends Reactor<O, I, F, D> {
   protected _next(n?: N) {
     try {
       const result = this.durationSelector.call(this, n);
-      if (result) this._tryNext(value, result);
+      if (result) this._tryNext(n, result);
     } catch (e) {
       this.tgt.fail(e);
     }
@@ -115,12 +113,12 @@ export class DebounceR<O, I, F, D> extends Reactor<O, I, F, D> {
 
   protected _done(d?: D) {
     this.emitValue();
-    this.tgt.done();
+    this.tgt.done(d);
   }
 
-  private _tryNext(value: N, duration: qt.SourceOrPromise<any, F, D>) {
+  private _tryNext(n: N, duration: qt.SourceOrPromise<any, F, D>) {
     let s = this.durationSubscription;
-    this.value = value;
+    this.value = n;
     this.hasValue = true;
     if (s) {
       s.unsubscribe();
@@ -130,13 +128,7 @@ export class DebounceR<O, I, F, D> extends Reactor<O, I, F, D> {
     if (s && !s.closed) this.add((this.durationSubscription = s));
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<O, I, F, D>
-  ) {
+  reactNext() {
     this.emitValue();
   }
 
@@ -155,36 +147,32 @@ export class DebounceR<O, I, F, D> extends Reactor<O, I, F, D> {
       }
       this.value = undefined;
       this.hasValue = false;
-      super._next(value!);
+      super._next(value);
     }
   }
 }
 
 export function debounceTime<N, F, D>(
   dueTime: number,
-  scheduler: qt.Scheduler = async
+  scheduler: qt.Scheduler = qh.async
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new DebounceTimeO(dueTime, scheduler));
+  return x => x.lift(new DebounceTimeO(dueTime, scheduler));
 }
 
 class DebounceTimeO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private dueTime: number, private scheduler: qt.Scheduler) {}
-
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new DebounceTimeR(subscriber, this.dueTime, this.scheduler)
-    );
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new DebounceTimeR(r, this.dueTime, this.scheduler));
   }
 }
 
-export class DebounceTimeR<N, F, D> extends Subscriber<N, F, D> {
-  private debouncedSubscription?: Subscription;
+export class DebounceTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
+  private debouncedSubscription?: qj.Subscription;
   private lastValue?: N;
   private hasValue = false;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private dueTime: number,
     private scheduler: qt.Scheduler
   ) {
@@ -206,10 +194,10 @@ export class DebounceTimeR<N, F, D> extends Subscriber<N, F, D> {
 
   protected _done(d?: D) {
     this.debouncedNext();
-    this.tgt.done();
+    this.tgt.done(d);
   }
 
-  debouncedNext(): void {
+  debouncedNext() {
     this.clearDebounce();
     if (this.hasValue) {
       const {lastValue} = this;
@@ -219,7 +207,7 @@ export class DebounceTimeR<N, F, D> extends Subscriber<N, F, D> {
     }
   }
 
-  private clearDebounce(): void {
+  private clearDebounce() {
     const s = this.debouncedSubscription;
     if (s) {
       this.remove(s);
@@ -233,50 +221,41 @@ function dispatchNext(subscriber: DebounceTimeR<any>) {
   subscriber.debouncedNext();
 }
 
-export function distinct<T, K>(
-  keySelector?: (value: N) => K,
+export function distinct<N, R, F = any, D = any>(
+  keySelector?: (n: N) => R,
   flushes?: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new DistinctO(keySelector, flushes));
+  return x => x.lift(new DistinctO(keySelector, flushes));
 }
 
-class DistinctO<T, K> implements qt.Operator<N, N, F, D> {
+class DistinctO<N, R, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private keySelector?: (value: N) => K,
+    private keySelector?: (n: N) => R,
     private flushes?: qt.Source<any, F, D>
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new DistinctR(subscriber, this.keySelector, this.flushes)
-    );
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new DistinctR(r, this.keySelector, this.flushes));
   }
 }
 
-export class DistinctR<N, M, F, D> extends Reactor<N, N, F, D> {
-  private values = new Set<M>();
+export class DistinctR<N, R, F, D> extends qj.Reactor<N, N, F, D> {
+  private values = new Set<R>();
 
   constructor(
-    tgt: Subscriber<N, F, D>,
-    private keySelector?: (value: N) => K,
+    tgt: qj.Subscriber<N, F, D>,
+    private keySelector?: (n: N) => R,
     flushes?: qt.Source<any, F, D>
   ) {
     super(tgt);
     if (flushes) this.add(subscribeToResult(this, flushes));
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: N,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, N, F, D>
-  ) {
+  reactNext() {
     this.values.clear();
   }
 
-  reactFail(f: F | undefined, _: Actor<N, N, F, D>) {
+  reactFail(f?: F) {
     this._fail(f);
   }
 
@@ -285,57 +264,56 @@ export class DistinctR<N, M, F, D> extends Reactor<N, N, F, D> {
     else this._finalizeNext(n, n);
   }
 
-  private _useKeySelector(value: N) {
-    let key: M;
+  private _useKeySelector(n: N) {
+    let key: R;
     const {tgt} = this;
     try {
-      key = this.keySelector!(value);
+      key = this.keySelector!(n);
     } catch (e) {
       tgt.fail(e);
       return;
     }
-    this._finalizeNext(key, value);
+    this._finalizeNext(key, n);
   }
 
-  private _finalizeNext(key: N | M, value: N) {
+  private _finalizeNext(key: N | R, n: N) {
     const {values} = this;
-    if (!values.has(<M>key)) {
-      values.add(<M>key);
-      this.tgt.next(value);
+    if (!values.has(<R>key)) {
+      values.add(<R>key);
+      this.tgt.next(n);
     }
   }
 }
 
-export function distinctUntilChanged<N, F, D>(
+export function distinctUntilChanged<N, F = any, D = any>(
   compare?: (x: T, y: N) => boolean
 ): qt.MonoOper<N, F, D>;
-export function distinctUntilChanged<T, K>(
-  compare?: (x: K, y: K) => boolean,
-  keySelector?: (x: N) => K
+export function distinctUntilChanged<N, R, F = any, D = any>(
+  compare?: (x: R, y: R) => boolean,
+  keySelector?: (x: N) => R
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new DistinctUntilChangedO<T, K>(compare, keySelector));
+  return x => x.lift(new DistinctUntilChangedO<N, R>(compare, keySelector));
 }
 
-class DistinctUntilChangedO<T, K> implements qt.Operator<N, N, F, D> {
+class DistinctUntilChangedO<N, R, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private compare?: (x: K, y: K) => boolean,
-    private keySelector?: (x: N) => K
+    private compare?: (x: R, y: R) => boolean,
+    private keySelector?: (x: N) => R
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new DistinctUntilChangedR(subscriber, this.compare, this.keySelector)
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(
+      new DistinctUntilChangedR(r, this.compare, this.keySelector)
     );
   }
 }
 
-export class DistinctUntilChangedR<T, K> extends Subscriber<N, F, D> {
+class DistinctUntilChangedR<N, R> extends qj.Subscriber<N, F, D> {
   private key: K | undefined;
   private hasKey = false;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     compare?: (x: K, y: K) => boolean,
     private keySelector?: (x: N) => K
   ) {
@@ -392,7 +370,7 @@ export function elementAt<N, F, D>(
   defaultValue?: N
 ): qt.MonoOper<N, F, D> {
   if (index < 0) {
-    throw new OutOfRangeError();
+    throw new qu.OutOfRangeError();
   }
   const hasDefaultValue = arguments.length >= 2;
   return (source: qt.Source<N, F, D>) =>
@@ -401,48 +379,44 @@ export function elementAt<N, F, D>(
       take(1),
       hasDefaultValue
         ? defaultIfEmpty(defaultValue)
-        : throwIfEmpty(() => new OutOfRangeError())
+        : throwIfEmpty(() => new qu.OutOfRangeError())
     );
 }
 
 export function filter<T, S extends T>(
-  predicate: (value: T, index: number) => value is S,
+  predicate: (n: N, index: number) => value is S,
   thisArg?: any
-): Lifter<T, S>;
+): qt.Lifter<T, S>;
 export function filter<N, F, D>(
   predicate: BooleanConstructor
-): Lifter<T | null | undefined, NonNullable<N, F, D>>;
+): qt.Lifter<T | null | undefined, NonNullable<N, F, D>>;
 export function filter<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
+  predicate: (n: N, index: number) => boolean,
   thisArg?: any
 ): qt.MonoOper<N, F, D>;
 export function filter<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
+  predicate: (n: N, index: number) => boolean,
   thisArg?: any
 ): qt.MonoOper<N, F, D> {
-  return function filterLifter(source: qt.Source<N, F, D>): qt.Source<N, F, D> {
-    return source.lift(new FilterO(predicate, thisArg));
-  };
+  return x => x.lift(new FilterO(predicate, thisArg));
 }
 
 class FilterO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private predicate: (value: T, index: number) => boolean,
+    private predicate: (n: N, index: number) => boolean,
     private thisArg?: any
   ) {}
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new FilterR(subscriber, this.predicate, this.thisArg)
-    );
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new FilterR(r, this.predicate, this.thisArg));
   }
 }
 
-export class FilterR<N, F, D> extends Subscriber<N, F, D> {
+export class FilterR<N, F, D> extends qj.Subscriber<N, F, D> {
   count = 0;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
-    private predicate: (value: N, index: number) => boolean,
+    tgt: qj.Subscriber<N, F, D>,
+    private predicate: (n: N, index: number) => boolean,
     private thisArg: any
   ) {
     super(tgt);
@@ -463,25 +437,21 @@ export class FilterR<N, F, D> extends Subscriber<N, F, D> {
 export function first<T, D = T>(
   predicate?: null,
   defaultValue?: D
-): Lifter<T, T | D>;
+): qt.Lifter<T, T | D>;
 export function first<T, S extends T>(
-  predicate: (
-    value: T,
-    index: number,
-    source: qt.Source<N, F, D>
-  ) => value is S,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => value is S,
   defaultValue?: S
-): Lifter<T, S>;
+): qt.Lifter<T, S>;
 export function first<T, D = T>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
   defaultValue?: D
-): Lifter<T, T | D>;
+): qt.Lifter<T, T | D>;
 export function first<T, D>(
   predicate?:
-    | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
+    | ((n: N, index: number, source: qt.Source<N, F, D>) => boolean)
     | null,
   defaultValue?: D
-): Lifter<T, T | D> {
+): qt.Lifter<T, T | D> {
   const hasDefaultValue = arguments.length >= 2;
   return (source: qt.Source<N, F, D>) =>
     source.pipe(
@@ -493,44 +463,38 @@ export function first<T, D>(
     );
 }
 
-export function ignoreElements(): Lifter<any, never> {
-  return function ignoreElementsLifter(source: qt.Source<any, F, D>) {
-    return source.lift(new IgnoreElementsO());
-  };
+export function ignoreElements(): qt.Lifter<any, never> {
+  return x => x.lift(new IgnoreElementsO());
 }
 
 class IgnoreElementsO<T, R> implements qt.Operator<T, R> {
-  call(subscriber: Subscriber<R>, source: any): any {
-    return source.subscribe(new IgnoreElementsR(subscriber));
+  call(r: qj.Subscriber<R>, s: any): any {
+    return s.subscribe(new IgnoreElementsR(r));
   }
 }
 
-class IgnoreElementsR<T> extends Subscriber<T> {
-  protected _next(unused: T): void {}
+class IgnoreElementsR<N> extends qj.Subscriber<N> {
+  protected _next(n?: N) {}
 }
 
 export function last<T, D = T>(
   predicate?: null,
   defaultValue?: D
-): Lifter<T, T | D>;
+): qt.Lifter<T, T | D>;
 export function last<T, S extends T>(
-  predicate: (
-    value: T,
-    index: number,
-    source: qt.Source<N, F, D>
-  ) => value is S,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => value is S,
   defaultValue?: S
-): Lifter<T, S>;
+): qt.Lifter<T, S>;
 export function last<T, D = T>(
-  predicate: (value: T, index: number, source: qt.Source<N, F, D>) => boolean,
+  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
   defaultValue?: D
-): Lifter<T, T | D>;
+): qt.Lifter<T, T | D>;
 export function last<T, D>(
   predicate?:
-    | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
+    | ((n: N, index: number, source: qt.Source<N, F, D>) => boolean)
     | null,
   defaultValue?: D
-): Lifter<T, T | D> {
+): qt.Lifter<T, T | D> {
   const hasDefaultValue = arguments.length >= 2;
   return (source: qt.Source<N, F, D>) =>
     source.pipe(
@@ -545,22 +509,22 @@ export function last<T, D>(
 export function sample<N, F, D>(
   notifier: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new SampleO(notifier));
+  return x => x.lift(new SampleO(notifier));
 }
 
 class SampleO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private notifier: qt.Source<any, F, D>) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    const sampleSubscriber = new SampleR(subscriber);
-    const subscription = source.subscribe(sampleSubscriber);
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    const sampleSubscriber = new SampleR(r);
+    const subscription = s.subscribe(sampleSubscriber);
     subscription.add(subscribeToResult(sampleSubscriber, this.notifier));
     return subscription;
   }
 }
 
-class SampleR<T, R> extends Reactor<N, M, F, D> {
-  private value: T | undefined;
+class SampleR<T, R> extends qj.Reactor<N, R, F, D> {
+  private n: N | undefined;
   private hasValue = false;
 
   protected _next(n?: N) {
@@ -568,17 +532,11 @@ class SampleR<T, R> extends Reactor<N, M, F, D> {
     this.hasValue = true;
   }
 
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number,
-    innerSub: ActorSubscriber<T, R>
-  ): void {
+  reactNext() {
     this.emitValue();
   }
 
-  reactDone(): void {
+  reactDone() {
     this.emitValue();
   }
 
@@ -592,28 +550,25 @@ class SampleR<T, R> extends Reactor<N, M, F, D> {
 
 export function sampleTime<N, F, D>(
   period: number,
-  scheduler: qt.Scheduler = async
+  scheduler: qt.Scheduler = qh.async
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new SampleTimeO(period, scheduler));
+  return x => x.lift(new SampleTimeO(period, scheduler));
 }
 
 class SampleTimeO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private period: number, private scheduler: qt.Scheduler) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new SampleTimeR(subscriber, this.period, this.scheduler)
-    );
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new SampleTimeR(r, this.period, this.scheduler));
   }
 }
 
-export class SampleTimeR<N, F, D> extends Subscriber<N, F, D> {
+export class SampleTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
   lastValue?: N;
   hasValue = false;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private period: number,
     private scheduler: qt.Scheduler
   ) {
@@ -640,28 +595,25 @@ export class SampleTimeR<N, F, D> extends Subscriber<N, F, D> {
 }
 
 export function single<N, F, D>(
-  predicate?: (value: T, index: number, source: qt.Source<N, F, D>) => boolean
+  predicate?: (n: N, index: number, source: qt.Source<N, F, D>) => boolean
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new SingleO(predicate, source));
+  return x => x.lift(new SingleO(predicate, source));
 }
 
 class SingleO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
     private predicate:
-      | ((value: T, index: number, source: qt.Source<N, F, D>) => boolean)
+      | ((n: N, index: number, source: qt.Source<N, F, D>) => boolean)
       | undefined,
     private source: qt.Source<N, F, D>
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new SingleR(subscriber, this.predicate, this.source)
-    );
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new SingleR(r, this.predicate, this.source));
   }
 }
 
-export class SingleR<N, F, D> extends Subscriber<N, F, D> {
+export class SingleR<N, F, D> extends qj.Subscriber<N, F, D> {
   private seenValue = false;
   private singleValue?: N;
   private index = 0;
@@ -709,20 +661,20 @@ export class SingleR<N, F, D> extends Subscriber<N, F, D> {
 }
 
 export function skip<N, F, D>(count: number): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new SkipO(count));
+  return x => x.lift(new SkipO(count));
 }
 
 class SkipO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private total: number) {}
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new SkipR(subscriber, this.total));
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new SkipR(r, this.total));
   }
 }
 
-class SkipR<N, F, D> extends Subscriber<N, F, D> {
+class SkipR<N, F, D> extends qj.Subscriber<N, F, D> {
   count: number = 0;
 
-  constructor(tgt: Subscriber<N, F, D>, private total: number) {
+  constructor(tgt: qj.Subscriber<N, F, D>, private total: number) {
     super(tgt);
   }
   protected _next(x: N) {
@@ -733,29 +685,26 @@ class SkipR<N, F, D> extends Subscriber<N, F, D> {
 }
 
 export function skipLast<N, F, D>(count: number): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new SkipLastO(count));
+  return x => x.lift(new SkipLastO(count));
 }
 
 class SkipLastO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private _skipCount: number) {
     if (this._skipCount < 0) {
-      throw new OutOfRangeError();
+      throw new qu.OutOfRangeError();
     }
   }
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    if (this._skipCount === 0) {
-      return source.subscribe(new Subscriber(subscriber));
-    } else {
-      return source.subscribe(new SkipLastR(subscriber, this._skipCount));
-    }
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    if (this._skipCount === 0) return s.subscribe(new Subscriber(r));
+    else return s.subscribe(new SkipLastR(r, this._skipCount));
   }
 }
 
-export class SkipLastR<N, F, D> extends Subscriber<N, F, D> {
+export class SkipLastR<N, F, D> extends qj.Subscriber<N, F, D> {
   private _ring: (N | undefined)[];
   private _count = 0;
 
-  constructor(tgt: Subscriber<N, F, D>, private _skipCount: number) {
+  constructor(tgt: qj.Subscriber<N, F, D>, private _skipCount: number) {
     super(tgt);
     this._ring = new Array<N | undefined>(_skipCount);
   }
@@ -777,24 +726,24 @@ export class SkipLastR<N, F, D> extends Subscriber<N, F, D> {
 export function skipUntil<N, F, D>(
   notifier: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new SkipUntilO(notifier));
+  return x => x.lift(new SkipUntilO(notifier));
 }
 
 class SkipUntilO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private notifier: qt.Source<any, F, D>) {}
 
-  call(tgt: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new SkipUntilR(tgt, this.notifier));
+  call(tgt: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new SkipUntilR(tgt, this.notifier));
   }
 }
 
-export class SkipUntilR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class SkipUntilR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   private hasValue = false;
-  private innerSubscription?: Subscription;
+  private innerSubscription?: qj.Subscription;
 
-  constructor(tgt: Subscriber<M, F, D>, notifier: SourceInput<any>) {
+  constructor(tgt: qj.Subscriber<R, F, D>, notifier: qt.SourceInput<any>) {
     super(tgt);
-    const innerSubscriber = new Actor(this, undefined, undefined!);
+    const innerSubscriber = new qj.Actor(this, undefined, undefined!);
     this.add(innerSubscriber);
     this.innerSubscription = innerSubscriber;
     const innerSubscription = qu.subscribeToResult(
@@ -814,42 +763,34 @@ export class SkipUntilR<N, M, F, D> extends Reactor<N, M, F, D> {
     if (this.hasValue) super._next(n);
   }
 
-  reactNext(
-    outerN: T,
-    innerValue: R,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ) {
+  reactNext() {
     this.hasValue = true;
     if (this.innerSubscription) this.innerSubscription.unsubscribe();
   }
 
-  reactDone() {
-    /* do nothing */
-  }
+  reactDone() {}
 }
 
 export function skipWhile<N, F, D>(
-  predicate: (value: T, index: number) => boolean
+  predicate: (n: N, index: number) => boolean
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new SkipWhileO(predicate));
+  return x => x.lift(new SkipWhileO(predicate));
 }
 
 class SkipWhileO<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private predicate: (value: T, index: number) => boolean) {}
+  constructor(private predicate: (n: N, index: number) => boolean) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new SkipWhileR(subscriber, this.predicate));
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new SkipWhileR(r, this.predicate));
   }
 }
 
-export class SkipWhileR<N, F, D> extends Subscriber<N, F, D> {
+export class SkipWhileR<N, F, D> extends qj.Subscriber<N, F, D> {
   private skipping = true;
   private index = 0;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private predicate: (n: N | undefined, i: number) => boolean
   ) {
     super(tgt);
@@ -860,12 +801,12 @@ export class SkipWhileR<N, F, D> extends Subscriber<N, F, D> {
     if (!this.skipping) tgt.next(n);
   }
 
-  private tryCallPredicate(value: N) {
+  private tryCallPredicate(n: N) {
     try {
-      const result = this.predicate(value, this.index++);
+      const result = this.predicate(n, this.index++);
       this.skipping = Boolean(result);
-    } catch (err) {
-      this.tgt.fail(err);
+    } catch (e) {
+      this.tgt.fail(e);
     }
   }
 }
@@ -882,20 +823,18 @@ export function take<N, F, D>(count: number): qt.MonoOper<N, F, D> {
 
 class TakeO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private total: number) {
-    if (this.total < 0) {
-      throw new OutOfRangeError();
-    }
+    if (this.total < 0) throw new qu.OutOfRangeError();
   }
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new TakeR(subscriber, this.total));
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new TakeR(r, this.total));
   }
 }
 
-export class TakeR<N, F, D> extends Subscriber<N, F, D> {
+export class TakeR<N, F, D> extends qj.Subscriber<N, F, D> {
   private count = 0;
 
-  constructor(tgt: Subscriber<N, F, D>, private total: number) {
+  constructor(tgt: qj.Subscriber<N, F, D>, private total: number) {
     super(tgt);
   }
 
@@ -926,20 +865,18 @@ export function takeLast<N, F, D>(count: number): qt.MonoOper<N, F, D> {
 
 class TakeLastO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private total: number) {
-    if (this.total < 0) {
-      throw new OutOfRangeError();
-    }
+    if (this.total < 0) throw new qu.OutOfRangeError();
   }
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(new TakeLastR(subscriber, this.total));
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new TakeLastR(r, this.total));
   }
 }
 
-export class TakeLastR<N, F, D> extends Subscriber<N, F, D> {
+export class TakeLastR<N, F, D> extends qj.Subscriber<N, F, D> {
   private ring = [] as N[];
   private count = 0;
 
-  constructor(tgt: Subscriber<N, F, D>, private total: number) {
+  constructor(tgt: qj.Subscriber<N, F, D>, private total: number) {
     super(tgt);
   }
 
@@ -948,11 +885,10 @@ export class TakeLastR<N, F, D> extends Subscriber<N, F, D> {
     const total = this.total;
     const count = this.count++;
 
-    if (ring.length < total) {
-      ring.push(v);
-    } else {
+    if (ring.length < total) ring.push(n);
+    else {
       const index = count % total;
-      ring[index] = v;
+      ring[index] = n;
     }
   }
 
@@ -967,47 +903,41 @@ export class TakeLastR<N, F, D> extends Subscriber<N, F, D> {
         tgt.next(ring[idx]);
       }
     }
-    tgt.done();
+    tgt.done(d);
   }
 }
 
 export function takeUntil<N, F, D>(
   notifier: qt.Source<any, F, D>
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new TakeUntilO(notifier));
+  return x => x.lift(new TakeUntilO(notifier));
 }
 
 class TakeUntilO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(private notifier: qt.Source<any, F, D>) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    const takeUntilSubscriber = new TakeUntilR(subscriber);
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    const takeUntilSubscriber = new TakeUntilR(r);
     const notifierSubscription = subscribeToResult(
       takeUntilSubscriber,
       this.notifier
     );
     if (notifierSubscription && !takeUntilSubscriber.seenValue) {
       takeUntilSubscriber.add(notifierSubscription);
-      return source.subscribe(takeUntilSubscriber);
+      return s.subscribe(takeUntilSubscriber);
     }
     return takeUntilSubscriber;
   }
 }
 
-export class TakeUntilR<N, M, F, D> extends Reactor<N, M, F, D> {
+export class TakeUntilR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
   seenValue = false;
 
-  constructor(tgt: Subscriber<any, F, D>) {
+  constructor(tgt: qj.Subscriber<any, F, D>) {
     super(tgt);
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ): void {
+  reactNext() {
     this.seenValue = true;
     this.done();
   }
@@ -1016,18 +946,18 @@ export class TakeUntilR<N, M, F, D> extends Reactor<N, M, F, D> {
 }
 
 export function takeWhile<T, S extends T>(
-  predicate: (value: T, index: number) => value is S
-): Lifter<T, S>;
+  predicate: (n: N, index: number) => value is S
+): qt.Lifter<T, S>;
 export function takeWhile<T, S extends T>(
-  predicate: (value: T, index: number) => value is S,
+  predicate: (n: N, index: number) => value is S,
   inclusive: false
-): Lifter<T, S>;
+): qt.Lifter<T, S>;
 export function takeWhile<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
+  predicate: (n: N, index: number) => boolean,
   inclusive?: boolean
 ): qt.MonoOper<N, F, D>;
 export function takeWhile<N, F, D>(
-  predicate: (value: T, index: number) => boolean,
+  predicate: (n: N, index: number) => boolean,
   inclusive = false
 ): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
@@ -1036,22 +966,20 @@ export function takeWhile<N, F, D>(
 
 class TakeWhileO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private predicate: (value: T, index: number) => boolean,
+    private predicate: (n: N, index: number) => boolean,
     private inclusive: boolean
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new TakeWhileR(subscriber, this.predicate, this.inclusive)
-    );
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(new TakeWhileR(r, this.predicate, this.inclusive));
   }
 }
 
-export class TakeWhileR<N, F, D> extends Subscriber<N, F, D> {
+export class TakeWhileR<N, F, D> extends qj.Subscriber<N, F, D> {
   private index = 0;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private predicate: (n: N | undefined, i: number) => boolean,
     private inclusive: boolean
   ) {
@@ -1091,7 +1019,7 @@ export const defaultThrottleConfig: ThrottleConfig = {
 };
 
 export function throttle<N, F, D>(
-  durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>,
+  durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>,
   config: ThrottleConfig = defaultThrottleConfig
 ): qt.MonoOper<N, F, D> {
   return (source: qt.Source<N, F, D>) =>
@@ -1102,31 +1030,26 @@ export function throttle<N, F, D>(
 
 class ThrottleO<N, F, D> implements qt.Operator<N, N, F, D> {
   constructor(
-    private durationSelector: (value: N) => qt.SourceOrPromise<any, F, D>,
+    private durationSelector: (n: N) => qt.SourceOrPromise<any, F, D>,
     private leading: boolean,
     private trailing: boolean
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
-      new ThrottleR(
-        subscriber,
-        this.durationSelector,
-        this.leading,
-        this.trailing
-      )
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(
+      new ThrottleR(r, this.durationSelector, this.leading, this.trailing)
     );
   }
 }
 
-export class ThrottleR<N, M, F, D> extends Reactor<N, M, F, D> {
-  private _throttled?: Subscription;
+export class ThrottleR<N, R, F, D> extends qj.Reactor<N, R, F, D> {
+  private _throttled?: qj.Subscription;
   private _sendValue?: N;
   private _hasValue = false;
 
   constructor(
-    protected tgt: Subscriber<N, F, D>,
-    private durationSelector: (value: N) => qt.SourceOrPromise<number>,
+    protected tgt: qj.Subscriber<N, F, D>,
+    private durationSelector: (n: N) => qt.SourceOrPromise<number>,
     private _leading: boolean,
     private _trailing: boolean
   ) {
@@ -1152,15 +1075,15 @@ export class ThrottleR<N, M, F, D> extends Reactor<N, M, F, D> {
     this._sendValue = undefined;
   }
 
-  private throttle(value: N): void {
-    const duration = this.tryDurationSelector(value);
+  private throttle(n: N) {
+    const duration = this.tryDurationSelector(n);
     if (!!duration)
       this.add((this._throttled = qu.subscribeToResult(this, duration)));
   }
 
-  private tryDurationSelector(value: N): qt.SourceOrPromise<any, F, D> | null {
+  private tryDurationSelector(n: N): qt.SourceOrPromise<any, F, D> | null {
     try {
-      return this.durationSelector(value);
+      return this.durationSelector(n);
     } catch (e) {
       this.tgt.fail(e);
       return null;
@@ -1174,28 +1097,22 @@ export class ThrottleR<N, M, F, D> extends Reactor<N, M, F, D> {
     if (_trailing) this.send();
   }
 
-  reactNext(
-    outerN: N,
-    innerValue: M,
-    outerX: number,
-    innerIndex: number,
-    innerSub: Actor<N, M, F, D>
-  ): void {
+  reactNext() {
     this.throttlingDone();
   }
 
-  reactDone(): void {
+  reactDone() {
     this.throttlingDone();
   }
 }
 
 export function throttleTime<N, F, D>(
   duration: number,
-  scheduler: qt.Scheduler = async,
+  scheduler: qt.Scheduler = qh.async,
   config: ThrottleConfig = defaultThrottleConfig
 ): qt.MonoOper<N, F, D> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(
+  return x =>
+    x.lift(
       new ThrottleTimeO(
         duration,
         scheduler,
@@ -1213,10 +1130,10 @@ class ThrottleTimeO<N, F, D> implements qt.Operator<N, N, F, D> {
     private trailing: boolean
   ) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
-    return source.subscribe(
+  call(r: qj.Subscriber<N, F, D>, s: any): qt.Closer {
+    return s.subscribe(
       new ThrottleTimeR(
-        subscriber,
+        r,
         this.duration,
         this.scheduler,
         this.leading,
@@ -1226,13 +1143,13 @@ class ThrottleTimeO<N, F, D> implements qt.Operator<N, N, F, D> {
   }
 }
 
-export class ThrottleTimeR<N, F, D> extends Subscriber<N, F, D> {
-  private throttled?: Subscription;
+export class ThrottleTimeR<N, F, D> extends qj.Subscriber<N, F, D> {
+  private throttled?: qj.Subscription;
   private _hasTrailingValue = false;
   private _trailingValue?: N;
 
   constructor(
-    tgt: Subscriber<N, F, D>,
+    tgt: qj.Subscriber<N, F, D>,
     private duration: number,
     private scheduler: qt.Scheduler,
     private leading: boolean,
