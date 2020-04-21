@@ -181,14 +181,13 @@ export function bindCallback(
   cb: Function,
   h?: qh.Scheduler
 ): (...args: any[]) => qs.Source<any>;
-export function bindCallback<N>(
+export function bindCallback<N, F, D>(
   cb: Function,
-  h?: qh.Scheduler,
-  c?: qt.Context<N>
-): (...args: any[]) => qt.Source<N> {
-  return function (this: any, ...args: any[]): qt.Source<N> {
-    const context = this;
-    let s: qj.Async<N> | undefined;
+  h?: qh.Scheduler<F, D>,
+  c?: qt.Context<N, F, D>
+): (...args: any[]) => qt.Source<N, F, D> {
+  const a = function (this: any, ...args: any[]): qt.Source<N, F, D> {
+    const ctx = this;
     const ps = {
       context,
       subject: undefined,
@@ -197,27 +196,84 @@ export function bindCallback<N>(
     };
     return c!.createSource(r => {
       if (h) {
-        const state: DispatchState<N> = {
-          args,
-          subscriber: r,
-          ps
-        };
-        return h.schedule<DispatchState<N>>(dispatch as any, 0, state);
+        const state = {
+          h,
+          ctx,
+          cb,
+          r,
+          args
+        } as qt.State<N, F, D>;
+        return h.schedule<N>(dispatch as any, state);
       } else {
-        if (!s) {
-          s = new qj.Async<N>();
+        const s = c!.createAsync();
+        const handler = (...ns: any[]) => {
+          const n = ns.length <= 1 ? ns[0] : ns;
+          this.add(
+            h.schedule<N>(qh.next, {s, n})
+          );
+        };
+        try {
+          cb.apply(ctx, [...args, handler]);
+        } catch (e) {
+          s.fail(e);
+        }
+
+        const s = c!.createAsync();
+        const handler = (...ns: any[]) => {
+          s!.next(ns.length <= 1 ? ns[0] : ns);
+          s!.done();
+        };
+        try {
+          cb.apply(ctx, [...args, handler]);
+        } catch (e) {
+          if (qu.canReportError(s)) s.fail(e);
+          else console.warn(e);
+        }
+        return s.subscribe(r);
+      }
+    });
+  };
+
+  const b = function (this: any, ...args: any[]): qs.Source<N, F, D> {
+    const params: ParamsState<T> = {
+      subject: undefined!,
+      args,
+      cb,
+      scheduler: h!,
+      context: this
+    };
+    return c!.createSource(r => {
+      const {context} = params;
+      let {subject} = params;
+      if (!h) {
+        if (!subject) {
+          subject = params.subject = new qj.Async<T>();
           const handler = (...innerArgs: any[]) => {
-            s!.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
-            s!.done();
+            const err = innerArgs.shift();
+            if (err) {
+              subject.error(err);
+              return;
+            }
+            subject.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
+            subject.done();
           };
           try {
             cb.apply(context, [...args, handler]);
-          } catch (e) {
-            if (qu.canReportError(s)) s.fail(e);
-            else console.warn(e);
+          } catch (err) {
+            if (canReportError(subject)) {
+              subject.error(err);
+            } else {
+              console.warn(err);
+            }
           }
         }
-        return s.subscribe(r);
+        return subject.subscribe(r);
+      } else {
+        return h.schedule<DispatchState<T>>(dispatch as any, 0, {
+          params,
+          r,
+          context
+        });
       }
     });
   };

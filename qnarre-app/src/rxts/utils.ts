@@ -231,6 +231,7 @@ export function isScheduler(x: any): x is qt.Scheduler {
 }
 
 export function noop() {}
+
 export function not(pred: Function, thisArg: any): Function {
   function notPred(): any {
     return !(<any>notPred).pred.apply((<any>notPred).thisArg, arguments);

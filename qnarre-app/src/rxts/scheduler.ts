@@ -3,10 +3,19 @@ import * as qj from './subject';
 import * as qu from './utils';
 import * as qt from './types';
 
+export function next<N, F, D>(p: qt.Step<N, F, D>) {
+  p.s.next(p.n);
+  p.s.done(p.d);
+}
+
+export function fail<N, F, D>(p: qt.Step<N, F, D>) {
+  p.s.fail(p.f);
+}
+
 export class Action<N, F = any, D = any> extends qj.Subscription
   implements qt.Action<N, F, D> {
   constructor(
-    public h: Scheduler,
+    public h: Scheduler<F, D>,
     public work: (this: qt.Action<N, F, D>, _?: qt.Step<N, F, D>) => void
   ) {
     super();
@@ -39,28 +48,17 @@ export class Action<N, F = any, D = any> extends qj.Subscription
     }
     this.add(s.subscribe(r));
   }
-
-  next(t: qt.Step<N, F, D>) {
-    t.s.next(t.n);
-    t.s.done(t.d);
-  }
-
-  fail(t: qt.Step<N, F, D>) {
-    t.s.fail(t.f);
-  }
 }
 
-export class Scheduler implements qt.Scheduler {
-  static now: () => number = () => Date.now();
+export class Scheduler<F, D> implements qt.Scheduler<F, D> {
+  constructor(private A: typeof Action, public now = () => Date.now()) {}
 
-  constructor(private A: typeof Action, public now = Scheduler.now) {}
-
-  schedule<S>(
-    work: (this: Action<S>, state?: S) => void,
-    state?: S,
+  schedule<N>(
+    work: (this: qt.Action<N, F, D>, _?: qt.Step<N, F, D>) => void,
+    step?: qt.Step<N, F, D>,
     delay = 0
-  ): qj.Subscription {
-    return new this.A<S>(this, work).schedule(state, delay);
+  ): qt.Subscription {
+    return new this.A(this, work).schedule(step, delay);
   }
 }
 

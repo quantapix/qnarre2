@@ -106,27 +106,6 @@ function dispatch<T>(
   this.add(subject.subscribe(subscriber));
 }
 
-interface DispatchNextArg<T> {
-  subject: qj.Async<T>;
-  value: T;
-}
-
-function dispatchNext<T>(arg: DispatchNextArg<T>) {
-  const {value, subject} = arg;
-  subject.next(value);
-  subject.done();
-}
-
-interface DispatchErrorArg<T> {
-  subject: qj.Async<T>;
-  e: any;
-}
-
-function dispatchError<T>(arg: DispatchErrorArg<T>) {
-  const {err, subject} = arg;
-  subject.error(err);
-}
-
 const NONE = {};
 
 function emptyScheduled(scheduler: qh.Scheduler) {
