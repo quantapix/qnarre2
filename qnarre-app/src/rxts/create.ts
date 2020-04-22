@@ -368,13 +368,13 @@ export function defer<R extends qt.Input<any> | void>(
 
 export function empty(h?: qh.Scheduler) {
   return h
-    ? qx.createSource<never>(r => h.schedule(() => r.done()))
-    : qx.createSource<never>(r => r.done());
+    ? new qs.Source<never>(r => h.schedule<never>(() => r.done()))
+    : new qs.Source<never>(r => r.done());
 }
 
 export function from<T extends qt.Input<T>>(inp: T): qs.Source<qt.Sourced<T>>;
 export function from<N>(inp: qt.Input<N>, h?: qh.Scheduler): qs.Source<N> {
-  if (h) return qh.scheduled(inp, h);
+  if (h) return h.scheduled(inp);
   else {
     //if (inp instanceof qs.Source<N>) return inp;
     return qx.createSource<N>(qu.subscribeTo(inp));
