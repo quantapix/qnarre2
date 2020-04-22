@@ -132,37 +132,27 @@ export interface Stamper {
   now(): number;
 }
 
-export interface DArg<N> {
-  src: Source<N>;
-  r: Subscriber<N>;
-}
-
-export interface Step<N, F, D> {
-  s: Subject<N, F, D>;
+export interface State<N, F, D> {
+  cb: Function;
+  ctx: any;
+  args: any[];
+  r: Subscriber<N, F, D>;
+  s?: Subject<N, F, D>;
   n?: N;
   f?: F;
   d?: D;
 }
 
 export interface Action<N, F, D> extends Subscription {
-  schedule(_?: Step<N, F, D>, delay?: number): Subscription;
+  schedule(_?: State<N, F, D>, delay?: number): Subscription;
 }
 
 export interface Scheduler<F, D> extends Stamper {
   schedule<N>(
-    work: (this: Action<N, F, D>, _?: Step<N, F, D>) => void,
-    step?: Step<N, F, D>,
+    work: (this: Action<N, F, D>, _: State<N, F, D>) => void,
+    state?: State<N, F, D>,
     delay?: number
   ): Subscription;
-}
-
-export interface State<N, F, D> {
-  h: Scheduler<F, D>;
-  s?: Subject<N, F, D>;
-  ctx: any;
-  cb: Function;
-  args: any[];
-  r: Subscriber<N, F, D>;
 }
 
 export abstract class Context<N, F = any, D = any> {

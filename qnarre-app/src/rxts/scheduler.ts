@@ -3,50 +3,26 @@ import * as qj from './subject';
 import * as qu from './utils';
 import * as qt from './types';
 
-export function next<N, F, D>(p: qt.Step<N, F, D>) {
-  p.s.next(p.n);
-  p.s.done(p.d);
+export function nextAndDone<N, F, D>(t: qt.State<N, F, D>) {
+  t.s!.next(t.n);
+  t.s!.done(t.d);
 }
 
-export function fail<N, F, D>(p: qt.Step<N, F, D>) {
-  p.s.fail(p.f);
+export function fail<N, F, D>(t: qt.State<N, F, D>) {
+  t.s!.fail(t.f);
 }
 
 export class Action<N, F = any, D = any> extends qj.Subscription
   implements qt.Action<N, F, D> {
   constructor(
     public h: Scheduler<F, D>,
-    public work: (this: qt.Action<N, F, D>, _?: qt.Step<N, F, D>) => void
+    public work: (this: qt.Action<N, F, D>, _: qt.State<N, F, D>) => void
   ) {
     super();
   }
 
-  schedule(_?: qt.Step<N, F, D>, _delay = 0): qt.Subscription {
+  schedule(_?: qt.State<N, F, D>, _delay = 0): qt.Subscription {
     return this;
-  }
-
-  dispatch(t: qt.State<N, F, D>, c: qt.Context<N, F, D>) {
-    const {args, r, ps} = t;
-    const {cb, ctx, h} = ps;
-    let {s} = ps;
-    if (!s) {
-      s = ps.s = c.createAsync();
-      const handler = (...ns: any[]) => {
-        const value = ns.length <= 1 ? ns[0] : innerArgs;
-        this.add(
-          h.schedule<Nstate<N>>(dispatchNext as any, 0, {
-            value,
-            subject: subject!
-          })
-        );
-      };
-      try {
-        cb.apply(ctx, [...args, handler]);
-      } catch (e) {
-        s.fail(e);
-      }
-    }
-    this.add(s.subscribe(r));
   }
 }
 
@@ -54,11 +30,11 @@ export class Scheduler<F, D> implements qt.Scheduler<F, D> {
   constructor(private A: typeof Action, public now = () => Date.now()) {}
 
   schedule<N>(
-    work: (this: qt.Action<N, F, D>, _?: qt.Step<N, F, D>) => void,
-    step?: qt.Step<N, F, D>,
+    work: (this: qt.Action<N, F, D>, _: qt.State<N, F, D>) => void,
+    state?: qt.State<N, F, D>,
     delay = 0
   ): qt.Subscription {
-    return new this.A(this, work).schedule(step, delay);
+    return new this.A(this, work).schedule(state, delay);
   }
 }
 

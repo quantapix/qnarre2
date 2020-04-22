@@ -4,109 +4,94 @@ import * as qh from './scheduler';
 import * as qs from './source';
 import * as qj from './subject';
 
-export function bindCallback<R1, R2, R3, R4>(
-  cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any) => any,
-  h?: qh.Scheduler
-): () => qs.Source<any[]>;
-export function bindCallback<R1, R2, R3>(
+export function bindCallback<R1, R2, R3, R4, F = any, D = any>(
+  cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler<F, D>
+): () => qs.Source<any[], F, D>;
+export function bindCallback<R1, R2, R3, F = any, D = any>(
   cb: (_: (r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
-): () => qs.Source<[R1, R2, R3]>;
-export function bindCallback<R1, R2>(
+  h?: qh.Scheduler<F, D>
+): () => qs.Source<[R1, R2, R3], F, D>;
+export function bindCallback<R1, R2, F = any, D = any>(
   cb: (_: (r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
-): () => qs.Source<[R1, R2]>;
-export function bindCallback<R1>(
+  h?: qh.Scheduler<F, D>
+): () => qs.Source<[R1, R2], F, D>;
+export function bindCallback<R1, F = any, D = any>(
   cb: (_: (r1: R1) => any) => any,
-  h?: qh.Scheduler
-): () => qs.Source<R1>;
-export function bindCallback(
-  cb: (_: () => any) => any,
-  h?: qh.Scheduler
-): () => qs.Source<void>;
-export function bindCallback<A1, R1, R2, R3, R4>(
-  cb: (
-    a1: A1,
-    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
-  ) => any,
-  h?: qh.Scheduler
-): (a1: A1) => qs.Source<any[]>;
-export function bindCallback<A1, R1, R2, R3>(
+  h?: qh.Scheduler<F, D>
+): () => qs.Source<R1, F, D>;
+
+export function bindCallback<A1, R1, R2, R3, R4, F = any, D = any>(
+  cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler<F, D>
+): (a1: A1) => qs.Source<any[], F, D>;
+export function bindCallback<A1, R1, R2, R3, F = any, D = any>(
   cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1) => qs.Source<[R1, R2, R3]>;
-export function bindCallback<A1, R1, R2>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1) => qs.Source<[R1, R2, R3], F, D>;
+export function bindCallback<A1, R1, R2, F = any, D = any>(
   cb: (a1: A1, _: (r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1) => qs.Source<[R1, R2]>;
-export function bindCallback<A1, R1>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1) => qs.Source<[R1, R2], F, D>;
+export function bindCallback<A1, R1, F = any, D = any>(
   cb: (a1: A1, _: (r1: R1) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1) => qs.Source<R1>;
-export function bindCallback<A1>(
-  cb: (a1: A1, _: () => any) => any,
-  h?: qh.Scheduler
-): (a1: A1) => qs.Source<void>;
-export function bindCallback<A1, A2, R1, R2, R3, R4>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1) => qs.Source<R1, F, D>;
+
+export function bindCallback<A1, A2, R1, R2, R3, R4, F = any, D = any>(
   cb: (
     a1: A1,
     a2: A2,
-    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2) => qs.Source<any[]>;
-export function bindCallback<A1, A2, R1, R2, R3>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2) => qs.Source<any[], F, D>;
+export function bindCallback<A1, A2, R1, R2, R3, F = any, D = any>(
   cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2) => qs.Source<[R1, R2, R3]>;
-export function bindCallback<A1, A2, R1, R2>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2) => qs.Source<[R1, R2, R3], F, D>;
+export function bindCallback<A1, A2, R1, R2, F = any, D = any>(
   cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2) => qs.Source<[R1, R2]>;
-export function bindCallback<A1, A2, R1>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2) => qs.Source<[R1, R2], F, D>;
+export function bindCallback<A1, A2, R1, F = any, D = any>(
   cb: (a1: A1, a2: A2, _: (r1: R1) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2) => qs.Source<R1>;
-export function bindCallback<A1, A2>(
-  cb: (a1: A1, a2: A2, _: () => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2) => qs.Source<void>;
-export function bindCallback<A1, A2, A3, R1, R2, R3, R4>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2) => qs.Source<R1, F, D>;
+
+export function bindCallback<A1, A2, A3, R1, R2, R3, R4, F = any, D = any>(
   cb: (
     a1: A1,
     a2: A2,
     a3: A3,
-    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3) => qs.Source<any[]>;
-export function bindCallback<A1, A2, A3, R1, R2, R3>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3) => qs.Source<any[], F, D>;
+export function bindCallback<A1, A2, A3, R1, R2, R3, F = any, D = any>(
   cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2, R3]>;
-export function bindCallback<A1, A2, A3, R1, R2>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2, R3], F, D>;
+export function bindCallback<A1, A2, A3, R1, R2, F = any, D = any>(
   cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2]>;
-export function bindCallback<A1, A2, A3, R1>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2], F, D>;
+export function bindCallback<A1, A2, A3, R1, F = any, D = any>(
   cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3) => qs.Source<R1>;
-export function bindCallback<A1, A2, A3>(
-  cb: (a1: A1, a2: A2, a3: A3, _: () => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3) => qs.Source<void>;
-export function bindCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3) => qs.Source<R1, F, D>;
+
+export function bindCallback<A1, A2, A3, A4, R1, R2, R3, R4, F = any, D = any>(
   cb: (
     a1: A1,
     a2: A2,
     a3: A3,
     a4: A4,
-    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<any[]>;
-export function bindCallback<A1, A2, A3, A4, R1, R2, R3>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<any[], F, D>;
+export function bindCallback<A1, A2, A3, A4, R1, R2, R3, F = any, D = any>(
   cb: (
     a1: A1,
     a2: A2,
@@ -114,32 +99,41 @@ export function bindCallback<A1, A2, A3, A4, R1, R2, R3>(
     a4: A4,
     _: (r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2, R3]>;
-export function bindCallback<A1, A2, A3, A4, R1, R2>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2, R3], F, D>;
+export function bindCallback<A1, A2, A3, A4, R1, R2, F = any, D = any>(
   cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2]>;
-export function bindCallback<A1, A2, A3, A4, R1>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2], F, D>;
+export function bindCallback<A1, A2, A3, A4, R1, F = any, D = any>(
   cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<R1>;
-export function bindCallback<A1, A2, A3, A4>(
-  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: () => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<void>;
-export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<R1, F, D>;
+
+export function bindCallback<
+  A1,
+  A2,
+  A3,
+  A4,
+  A5,
+  R1,
+  R2,
+  R3,
+  R4,
+  F = any,
+  D = any
+>(
   cb: (
     a1: A1,
     a2: A2,
     a3: A3,
     a4: A4,
     a5: A5,
-    _: (r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<any[]>;
-export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<any[], F, D>;
+export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3, F = any, D = any>(
   cb: (
     a1: A1,
     a2: A2,
@@ -148,9 +142,9 @@ export function bindCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
     a5: A5,
     _: (r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2, R3]>;
-export function bindCallback<A1, A2, A3, A4, A5, R1, R2>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2, R3], F, D>;
+export function bindCallback<A1, A2, A3, A4, A5, R1, R2, F = any, D = any>(
   cb: (
     a1: A1,
     a2: A2,
@@ -159,121 +153,59 @@ export function bindCallback<A1, A2, A3, A4, A5, R1, R2>(
     a5: A5,
     _: (r1: R1, r2: R2) => any
   ) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2]>;
-export function bindCallback<A1, A2, A3, A4, A5, R1>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2], F, D>;
+export function bindCallback<A1, A2, A3, A4, A5, R1, F = any, D = any>(
   cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1) => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<R1>;
-export function bindCallback<A1, A2, A3, A4, A5>(
-  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: () => any) => any,
-  h?: qh.Scheduler
-): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<void>;
-export function bindCallback<A, R>(
-  cb: (...args: Array<A | ((r: R) => any)>) => any,
-  h?: qh.Scheduler
-): (...args: A[]) => qs.Source<R>;
-export function bindCallback<A, R>(
-  cb: (...args: Array<A | ((...rs: R[]) => any)>) => any,
-  h?: qh.Scheduler
-): (...args: A[]) => qs.Source<R[]>;
-export function bindCallback(
-  cb: Function,
-  h?: qh.Scheduler
-): (...args: any[]) => qs.Source<any>;
-export function bindCallback<N, F, D>(
+  h?: qh.Scheduler<F, D>
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<R1, F, D>;
+
+export function bindCallback<A, R, F = any, D = any>(
+  cb: (..._: Array<A | ((r: R) => any)>) => any,
+  h?: qh.Scheduler<F, D>
+): (..._: A[]) => qs.Source<R, F, D>;
+export function bindCallback<A, R, F = any, D = any>(
+  cb: (..._: Array<A | ((..._: R[]) => any)>) => any,
+  h?: qh.Scheduler<F, D>
+): (..._: A[]) => qs.Source<R[], F, D>;
+export function bindCallback<N, F = any, D = any>(
   cb: Function,
   h?: qh.Scheduler<F, D>,
   c?: qt.Context<N, F, D>
-): (...args: any[]) => qt.Source<N, F, D> {
-  const a = function (this: any, ...args: any[]): qt.Source<N, F, D> {
+): (..._: any[]) => qt.Source<N, F, D> {
+  function dispatch(this: qt.Action<N, F, D>, t: qt.State<N, F, D>) {
+    let s = t.s;
+    if (!s) {
+      s = t.s = c!.createAsync();
+      const f = (...ns: any[]) => {
+        const n = ns.length <= 1 ? ns[0] : ns;
+        this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N, F, D>));
+      };
+      try {
+        cb.apply(t.ctx, [...t.args, f]);
+      } catch (e) {
+        s.fail(e);
+      }
+    }
+    this.add(s.subscribe(t.r));
+  }
+  return function (this: any, ...args: any[]): qt.Source<N, F, D> {
     const ctx = this;
-    const ps = {
-      context,
-      subject: undefined,
-      cb,
-      scheduler: h
-    };
     return c!.createSource(r => {
-      if (h) {
-        const state = {
-          h,
-          ctx,
-          cb,
-          r,
-          args
-        } as qt.State<N, F, D>;
-        return h.schedule<N>(dispatch as any, state);
-      } else {
+      if (h) return h.schedule<N>(dispatch, {cb, ctx, args, r});
+      else {
         const s = c!.createAsync();
-        const handler = (...ns: any[]) => {
-          const n = ns.length <= 1 ? ns[0] : ns;
-          this.add(
-            h.schedule<N>(qh.next, {s, n})
-          );
+        const f = (...ns: any[]) => {
+          s.next(ns.length <= 1 ? ns[0] : ns);
+          s.done();
         };
         try {
-          cb.apply(ctx, [...args, handler]);
-        } catch (e) {
-          s.fail(e);
-        }
-
-        const s = c!.createAsync();
-        const handler = (...ns: any[]) => {
-          s!.next(ns.length <= 1 ? ns[0] : ns);
-          s!.done();
-        };
-        try {
-          cb.apply(ctx, [...args, handler]);
+          cb.apply(ctx, [...args, f]);
         } catch (e) {
           if (qu.canReportError(s)) s.fail(e);
           else console.warn(e);
         }
         return s.subscribe(r);
-      }
-    });
-  };
-
-  const b = function (this: any, ...args: any[]): qs.Source<N, F, D> {
-    const params: ParamsState<T> = {
-      subject: undefined!,
-      args,
-      cb,
-      scheduler: h!,
-      context: this
-    };
-    return c!.createSource(r => {
-      const {context} = params;
-      let {subject} = params;
-      if (!h) {
-        if (!subject) {
-          subject = params.subject = new qj.Async<T>();
-          const handler = (...innerArgs: any[]) => {
-            const err = innerArgs.shift();
-            if (err) {
-              subject.error(err);
-              return;
-            }
-            subject.next(innerArgs.length <= 1 ? innerArgs[0] : innerArgs);
-            subject.done();
-          };
-          try {
-            cb.apply(context, [...args, handler]);
-          } catch (err) {
-            if (canReportError(subject)) {
-              subject.error(err);
-            } else {
-              console.warn(err);
-            }
-          }
-        }
-        return subject.subscribe(r);
-      } else {
-        return h.schedule<DispatchState<T>>(dispatch as any, 0, {
-          params,
-          r,
-          context
-        });
       }
     });
   };
@@ -283,46 +215,46 @@ export function bindNodeCallback<R1, R2, R3, R4>(
   cb: (
     _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<R1, R2, R3>(
   cb: (_: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): () => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<R1, R2>(
   cb: (_: (e: any, r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): () => qs.Source<[R1, R2]>;
 export function bindNodeCallback<R1>(
   cb: (_: (e: any, r1: R1) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): () => qs.Source<R1>;
 export function bindNodeCallback(
   cb: (_: (e: any) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): () => qs.Source<void>;
 export function bindNodeCallback<A1, R1, R2, R3, R4>(
   cb: (
     a1: A1,
     _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, R1, R2, R3>(
   cb: (a1: A1, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, R1, R2>(
   cb: (a1: A1, _: (e: any, r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, R1>(
   cb: (a1: A1, _: (e: any, r1: R1) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1) => qs.Source<R1>;
 export function bindNodeCallback<A1>(
   cb: (a1: A1, _: (e: any) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, R1, R2, R3, R4>(
   cb: (
@@ -330,23 +262,23 @@ export function bindNodeCallback<A1, A2, R1, R2, R3, R4>(
     a2: A2,
     _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, R1, R2, R3>(
   cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, R1, R2>(
   cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, R1>(
   cb: (a1: A1, a2: A2, _: (e: any, r1: R1) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2>(
   cb: (a1: A1, a2: A2, _: (e: any) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, A3, R1, R2, R3, R4>(
   cb: (
@@ -355,7 +287,7 @@ export function bindNodeCallback<A1, A2, A3, R1, R2, R3, R4>(
     a3: A3,
     _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, A3, R1, R2, R3>(
   cb: (
@@ -364,19 +296,19 @@ export function bindNodeCallback<A1, A2, A3, R1, R2, R3>(
     a3: A3,
     _: (e: any, r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, R1, R2>(
   cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, R1>(
   cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2, A3>(
   cb: (a1: A1, a2: A2, a3: A3, _: (e: any) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
   cb: (
@@ -386,7 +318,7 @@ export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3, R4>(
     a4: A4,
     _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3>(
   cb: (
@@ -396,7 +328,7 @@ export function bindNodeCallback<A1, A2, A3, A4, R1, R2, R3>(
     a4: A4,
     _: (e: any, r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1, R2>(
   cb: (
@@ -406,15 +338,15 @@ export function bindNodeCallback<A1, A2, A3, A4, R1, R2>(
     a4: A4,
     _: (e: any, r1: R1, r2: R2) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, A4, R1>(
   cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2, A3, A4>(
   cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4) => qs.Source<void>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
   cb: (
@@ -425,7 +357,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
     a5: A5,
     _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ...args: any[]) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
   cb: (
@@ -436,7 +368,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2, R3>(
     a5: A5,
     _: (e: any, r1: R1, r2: R2, r3: R3) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2, R3]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2>(
   cb: (
@@ -447,7 +379,7 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1, R2>(
     a5: A5,
     _: (e: any, r1: R1, r2: R2) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<[R1, R2]>;
 export function bindNodeCallback<A1, A2, A3, A4, A5, R1>(
   cb: (
@@ -458,20 +390,20 @@ export function bindNodeCallback<A1, A2, A3, A4, A5, R1>(
     a5: A5,
     _: (e: any, r1: R1) => any
   ) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<R1>;
 export function bindNodeCallback<A1, A2, A3, A4, A5>(
   cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any) => any) => any,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qs.Source<void>;
 export function bindNodeCallback(
   cb: Function,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<any[]>;
 export function bindNodeCallback<T>(
   cb: Function,
   resultSelector?: Function | qh.Scheduler,
-  h?: qh.Scheduler
+  h?: qh.Scheduler<F, D>
 ): (...args: any[]) => qs.Source<T> {
   if (resultSelector) {
     if (isScheduler(resultSelector)) {
