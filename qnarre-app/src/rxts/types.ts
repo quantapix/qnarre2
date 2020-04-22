@@ -145,15 +145,3 @@ export interface Scheduler extends Stamper {
     delay?: number
   ): Subscription;
 }
-
-export abstract class Context {
-  abstract createSource<N>(_?: (_: Subscriber<N>) => Subscription): Source<N>;
-  abstract createSubscriber<N>(_?: Target<N>): Subscriber<N>;
-  abstract toSubscriber<N>(
-    t?: Target<N> | Fun<N>,
-    fail?: Fun<any>,
-    done?: Fun<void>
-  ): Subscriber<N>;
-  abstract createSubject<N>(o?: Observer<any>, s?: Source<any>): Subject<N>;
-  abstract createAsync<N>(o?: Observer<any>, s?: Source<any>): Subject<N>;
-}

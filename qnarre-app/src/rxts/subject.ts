@@ -1,6 +1,7 @@
 import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
+import * as qx from './context';
 
 export class Subscription implements qt.Subscription {
   static fake = ((s: Subscription) => {
@@ -182,10 +183,7 @@ export function toSubscriber<N>(
 export class Proxy<N> extends Subscriber<N> {
   private ctx?: any;
 
-  constructor(
-    private parent: Subscriber<N> | undefined,
-    private del: qt.Target<N>
-  ) {
+  constructor(private parent: Subscriber<N> | undefined, private del: qt.Target<N>) {
     super();
     if (this.del !== fake) this.ctx = Object.create(this.del);
   }
@@ -322,7 +320,7 @@ export class Subject<N> extends qs.Source<N> implements qt.Subject<N> {
     return super._trySubscribe(s);
   }
 
-  lift<R>(o?: qt.Operator<N, R>): qt.Source<R> {
+  lift<R>(o?: qt.Operator<N, R>) {
     const s = new Subject<R>(this, this);
     s.oper = o;
     return s;
@@ -356,7 +354,7 @@ export class Subject<N> extends qs.Source<N> implements qt.Subject<N> {
   }
 
   asSource() {
-    const s = new Source<N>();
+    const s = qx.createSource<N>();
     s.orig = this;
     return s;
   }

@@ -2,6 +2,7 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qh from './scheduler';
 import * as qs from './source';
+import * as qx from './context';
 //import * as qj from './subject';
 
 export function bindCB<R1, R2, R3, R4>(
@@ -133,11 +134,10 @@ export function bindCB<A, R>(
   h?: qh.Scheduler
 ): (..._: A[]) => qt.Source<R[]>;
 export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.Source<N> {
-  const c = this;
   let s: qt.Subject<N> | undefined;
   function dispatch(this: qt.Action<N>, t: qt.State<N>) {
     if (!s) {
-      s = c.createAsync();
+      s = qx.createAsync();
       const f = (...ns: any[]) => {
         const n = ns.length <= 1 ? ns[0] : ns;
         this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
@@ -152,10 +152,10 @@ export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.S
   }
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
-    return c.createSource(r => {
+    return qx.createSource(r => {
       if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args} as qt.State<N>);
       if (!s) {
-        s = c.createAsync();
+        s = qx.createAsync();
         const f = (...ns: any[]) => {
           s!.next(ns.length <= 1 ? ns[0] : ns);
           s!.done();
@@ -307,11 +307,10 @@ export function bindNodeCB<N>(
   cb: Function,
   h?: qh.Scheduler
 ): (..._: any[]) => qt.Source<N> {
-  const c = this;
   let s: qt.Subject<N> | undefined;
   function dispatch(this: qt.Action<N>, t: qt.State<N>) {
     if (!s) {
-      s = c.createAsync();
+      s = qx.createAsync();
       const f = (...ns: any[]) => {
         const n = ns.length <= 1 ? ns[0] : ns;
         this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
@@ -326,10 +325,10 @@ export function bindNodeCB<N>(
   }
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
-    return c.createSource(r => {
+    return qx.createSource(r => {
       if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args} as qt.State<N>);
       if (!s) {
-        s = c.createAsync();
+        s = qx.createAsync();
         const f = (...ns: any[]) => {
           const e = ns.shift();
           if (e) {
@@ -354,7 +353,7 @@ export function bindNodeCB<N>(
 export function defer<R extends qt.Input<any> | void>(
   fac: () => R
 ): qt.Source<qt.Sourced<R>> {
-  return this.createSource<qt.Sourced<R>>(r => {
+  return qx.createSource<qt.Sourced<R>>(r => {
     let inp: R | void;
     try {
       inp = fac();
@@ -369,8 +368,8 @@ export function defer<R extends qt.Input<any> | void>(
 
 export function empty(h?: qh.Scheduler) {
   return h
-    ? this.createSource<never>(r => h.schedule(() => r.done()))
-    : this.createSource<never>(r => r.done());
+    ? qx.createSource<never>(r => h.schedule(() => r.done()))
+    : qx.createSource<never>(r => r.done());
 }
 
 export function from<T extends qt.Input<T>>(inp: T): qs.Source<qt.Sourced<T>>;
@@ -378,13 +377,13 @@ export function from<N>(inp: qt.Input<N>, h?: qh.Scheduler): qs.Source<N> {
   if (h) return qh.scheduled(inp, h);
   else {
     //if (inp instanceof qs.Source<N>) return inp;
-    return this.createSource<N>(qu.subscribeTo(inp));
+    return qx.createSource<N>(qu.subscribeTo(inp));
   }
 }
 
 export function fromArray<N>(inp: ArrayLike<N>, h?: qh.Scheduler) {
   if (h) return qh.scheduleArray(inp, h);
-  else return this.createSource<N>(qu.subscribeToArray(inp));
+  else return qx.createSource<N>(qu.subscribeToArray(inp));
 }
 
 export interface NodeStyleEventEmitter {
@@ -714,7 +713,7 @@ function dispatch(this: qh.Action<IntervalState>, state: IntervalState) {
 }
 
 interface IntervalState {
-  subscriber: qj.Subscriber<number>;
+  subscriber: qt.Subscriber<number>;
   counter: number;
   period: number;
 }
@@ -725,7 +724,7 @@ export function of(): qs.Source<never>;
 export function of<T>(value: T): qs.Source<T>;
 export function of<T, U>(value1: T, value2: U): qs.Source<T | U>;
 export function of<T, U, V>(value1: T, value2: U, value3: V): qs.Source<T | U | V>;
-export function of<A extends Array<any>>(...args: A): qs.Source<ValueOf<A>>;
+export function of<A extends Array<any>>(...args: A): qs.Source<qt.ValueOf<A>>;
 export function of<T>(...args: Array<T | qh.Scheduler>): qs.Source<T> {
   let scheduler = args[args.length - 1] as qh.Scheduler;
   if (isScheduler(scheduler)) {
@@ -847,13 +846,17 @@ export function repeat<N>(count: number = -1): qt.Shifter<N> {
 
 class RepeatO<N> implements qt.Operator<N, N> {
   constructor(private count: number, private source: qt.Source<N>) {}
-  call(subscriber: Subscriber<N>, source: any): qt.Closer {
+  call(subscriber: qt.Subscriber<N>, source: any): qt.Closer {
     return source.subscribe(new RepeatR(subscriber, this.count, this.source));
   }
 }
 
-export class RepeatR<N> extends Subscriber<N> {
-  constructor(tgt: Subscriber<any>, private count: number, private source: qt.Source<N>) {
+export class RepeatR<N> extends qt.Subscriber<N> {
+  constructor(
+    tgt: qt.Subscriber<any>,
+    private count: number,
+    private source: qt.Source<N>
+  ) {
     super(tgt);
   }
 
@@ -876,7 +879,7 @@ export function repeatWhen<N>(
 class RepeatWhenO<N> implements qt.Operator<N, N> {
   constructor(protected notifier: (notifications: qt.Source<any>) => qt.Source<any>) {}
 
-  call(subscriber: Subscriber<N>, source: any): qt.Closer {
+  call(subscriber: qt.Subscriber<N>, source: any): qt.Closer {
     return source.subscribe(new RepeatWhenR(subscriber, this.notifier, source));
   }
 }
@@ -888,7 +891,7 @@ export class RepeatWhenR<N, M> extends Reactor<N, M> {
   private sourceIsBeingSubscribedTo = true;
 
   constructor(
-    tgt: Subscriber<R>,
+    tgt: qt.Subscriber<R>,
     private notifier: (notifications: qt.Source<any>) => qt.Source<any>,
     private source: qt.Source<N>
   ) {
@@ -941,7 +944,7 @@ export class RepeatWhenR<N, M> extends Reactor<N, M> {
     this.retries = null;
   }
 
-  _recycle(): Subscriber<N> {
+  _recycle(): qt.Subscriber<N> {
     const {_unsubscribe} = this;
 
     this._unsubscribe = null!;
@@ -976,15 +979,15 @@ export function throwIfEmpty<N>(
 class ThrowIfEmptyO<N> implements qt.Operator<N, N> {
   constructor(private errorFactory: () => any) {}
 
-  call(subscriber: Subscriber<N>, source: any): qt.Closer {
+  call(subscriber: qt.Subscriber<N>, source: any): qt.Closer {
     return source.subscribe(new ThrowIfEmptyR(subscriber, this.errorFactory));
   }
 }
 
-export class ThrowIfEmptyR<N> extends Subscriber<N> {
+export class ThrowIfEmptyR<N> extends qt.Subscriber<N> {
   private hasValue = false;
 
-  constructor(tgt: Subscriber<N>, private errorFactory: () => any) {
+  constructor(tgt: qt.Subscriber<N>, private errorFactory: () => any) {
     super(tgt);
   }
 

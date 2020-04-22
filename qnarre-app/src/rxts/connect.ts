@@ -86,22 +86,18 @@ export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
 })();
 
 export function refCount<N>(): qt.Shifter<N> {
-  return function refCountLifter(source: Connect<N>): qt.Source<N> {
-    return source.lift(new RefCountO(source));
-  } as qt.Shifter<N>;
+  return x => x.lift(new RefCountO(x));
 }
 
 export class RefCountO<N> implements qt.Operator<N, N> {
   constructor(private con: Connect<N>) {}
 
-  call(s: qj.Subscriber<N>, source: any): qt.Closer {
+  call(r: qj.Subscriber<N>, source: any): qt.Closer {
     const c = this.con;
     c.count++;
-    const refCounter = new RefCountR(s, c);
+    const refCounter = new RefCountR(r, c);
     const s = source.subscribe(refCounter);
-    if (!refCounter.closed) {
-      (<any>refCounter).connection = c.connect();
-    }
+    if (!refCounter.closed) (<any>refCounter).connection = c.connect();
     return s;
   }
 }
