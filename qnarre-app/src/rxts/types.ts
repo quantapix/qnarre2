@@ -73,8 +73,7 @@ export interface Mapper<N, R> {
   (_: N): R;
 }
 
-export interface Lifter<N, R, F, D>
-  extends Mapper<Source<N, F, D>, Source<R, F, D>> {}
+export interface Lifter<N, R, F, D> extends Mapper<Source<N, F, D>, Source<R, F, D>> {}
 
 export interface Shifter<N, F, D> extends Lifter<N, N, F, D> {}
 
@@ -86,35 +85,19 @@ export type Interop<N, F, D> = {
   [Symbol.rxSource]: () => Source<N, F, D>;
 };
 
-export type SourceOrPromise<N, F, D> =
-  | Source<N, F, D>
-  | Source<never, F, D>
-  | PromiseLike<N>
-  | Interop<N, F, D>;
+export type SourceOrPromise<N, F, D> = Source<N, F, D> | Source<never, F, D> | PromiseLike<N> | Interop<N, F, D>;
 
-export type Input<N, F, D> =
-  | Iterable<N>
-  | ArrayLike<N>
-  | SourceOrPromise<N, F, D>
-  | AsyncIterableIterator<N>;
+export type Input<N, F, D> = Iterable<N> | ArrayLike<N> | SourceOrPromise<N, F, D> | AsyncIterableIterator<N>;
 
 export type Sourced<X> = X extends Input<infer N, any, any> ? N : never;
 
 export type ValueOf<X> = X extends Array<infer T> ? T : never;
 
-export type SourcedOf<X> = X extends Array<Input<infer T, any, any>>
-  ? T
-  : never;
+export type SourcedOf<X> = X extends Array<Input<infer T, any, any>> ? T : never;
 
-export type SourcedTuple<X> = X extends Array<Input<any, any, any>>
-  ? {[K in keyof X]: Sourced<X[K]>}
-  : never;
+export type SourcedTuple<X> = X extends Array<Input<any, any, any>> ? {[K in keyof X]: Sourced<X[K]>} : never;
 
-export type Unshift<X extends any[], Y> = ((y: Y, ...x: X) => any) extends (
-  ..._: infer U
-) => any
-  ? U
-  : never;
+export type Unshift<X extends any[], Y> = ((y: Y, ...x: X) => any) extends (..._: infer U) => any ? U : never;
 
 export type FactoryOrValue<T> = (() => T) | T;
 
@@ -133,10 +116,10 @@ export interface Stamper {
 }
 
 export interface State<N, F, D> {
+  r: Subscriber<N, F, D>;
   cb: Function;
   ctx: any;
   args: any[];
-  r: Subscriber<N, F, D>;
   s?: Subject<N, F, D>;
   n?: N;
   f?: F;
@@ -155,22 +138,10 @@ export interface Scheduler<F, D> extends Stamper {
   ): Subscription;
 }
 
-export abstract class Context<N, F = any, D = any> {
-  abstract createSource<R = N>(
-    _?: (_: Subscriber<R, F, D>) => Subscription
-  ): Source<R, F, D>;
-  abstract createSubscriber(_?: Target<N, F, D>): Subscriber<N, F, D>;
-  abstract toSubscriber(
-    t?: Target<N, F, D> | Ofun<N>,
-    fail?: Ofun<F>,
-    done?: Ofun<D>
-  ): Subscriber<N, F, D>;
-  abstract createSubject<R = N>(
-    o?: Observer<any, F, D>,
-    s?: Source<any, F, D>
-  ): Subject<R, F, D>;
-  abstract createAsync<R = N>(
-    o?: Observer<any, F, D>,
-    s?: Source<any, F, D>
-  ): Subject<R, F, D>;
+export abstract class Context<F, D> {
+  abstract createSource<N>(_?: (_: Subscriber<N, F, D>) => Subscription): Source<N, F, D>;
+  abstract createSubscriber<N>(_?: Target<N, F, D>): Subscriber<N, F, D>;
+  abstract toSubscriber<N>(t?: Target<N, F, D> | Ofun<N>, fail?: Ofun<F>, done?: Ofun<D>): Subscriber<N, F, D>;
+  abstract createSubject<N>(o?: Observer<any, F, D>, s?: Source<any, F, D>): Subject<N, F, D>;
+  abstract createAsync<N>(o?: Observer<any, F, D>, s?: Source<any, F, D>): Subject<N, F, D>;
 }

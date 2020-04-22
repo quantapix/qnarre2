@@ -82,10 +82,7 @@ export class Subscription implements qt.Subscription {
 }
 
 function flatten(es: any[]) {
-  return es.reduce(
-    (a, e) => a.concat(e instanceof qu.UnsubscribeError ? e.errors : e),
-    []
-  );
+  return es.reduce((a, e) => a.concat(e instanceof qu.UnsubscribeError ? e.errors : e), []);
 }
 
 const fake = {
@@ -97,8 +94,7 @@ const fake = {
   done(_?: any) {}
 } as qt.Observer<any, any, any>;
 
-export class Subscriber<N, F = any, D = any> extends Subscription
-  implements qt.Subscriber<N, F, D> {
+export class Subscriber<N, F, D> extends Subscription implements qt.Subscriber<N, F, D> {
   [Symbol.rxSubscriber]() {
     return this;
   }
@@ -184,13 +180,10 @@ export function toSubscriber<N, F, D>(
   return new Subscriber(t);
 }
 
-export class Proxy<N, F = any, D = any> extends Subscriber<N, F, D> {
+export class Proxy<N, F, D> extends Subscriber<N, F, D> {
   private ctx?: any;
 
-  constructor(
-    private parent: Subscriber<N, F, D> | undefined,
-    private del: qt.Target<N, F, D>
-  ) {
+  constructor(private parent: Subscriber<N, F, D> | undefined, private del: qt.Target<N, F, D>) {
     super();
     if (this.del !== fake) this.ctx = Object.create(this.del);
   }
@@ -230,7 +223,7 @@ export class Proxy<N, F = any, D = any> extends Subscriber<N, F, D> {
   }
 }
 
-export class Reactor<N, R, F = any, D = any> extends Subscriber<R, F, D> {
+export class Reactor<N, R, F, D> extends Subscriber<R, F, D> {
   reactNext(_r?: R, n?: N, _ri?: number, _i?: number, _?: Actor<N, R, F, D>) {
     this.tgt.next((n as unknown) as R);
   }
@@ -244,14 +237,10 @@ export class Reactor<N, R, F = any, D = any> extends Subscriber<R, F, D> {
   }
 }
 
-export class Actor<N, R, F = any, D = any> extends Subscriber<N, F, D> {
+export class Actor<N, R, F, D> extends Subscriber<N, F, D> {
   private idx = 0;
 
-  constructor(
-    private del: Reactor<N, R, F, D>,
-    public r?: R,
-    public ri?: number
-  ) {
+  constructor(private del: Reactor<N, R, F, D>, public r?: R, public ri?: number) {
     super();
   }
 
@@ -270,11 +259,8 @@ export class Actor<N, R, F = any, D = any> extends Subscriber<N, F, D> {
   }
 }
 
-export class SSubject<N, F = any, D = any> extends Subscription {
-  constructor(
-    public subj: Subject<N, F, D> | undefined,
-    public tgt: qt.Observer<N, F, D>
-  ) {
+export class SSubject<N, F, D> extends Subscription {
+  constructor(public subj: Subject<N, F, D> | undefined, public tgt: qt.Observer<N, F, D>) {
     super();
   }
 
@@ -290,14 +276,13 @@ export class SSubject<N, F = any, D = any> extends Subscription {
   }
 }
 
-export class RSubject<N, F = any, D = any> extends Subscriber<N, F, D> {
+export class RSubject<N, F, D> extends Subscriber<N, F, D> {
   constructor(tgt: Subject<N, F, D>) {
     super(tgt);
   }
 }
 
-export abstract class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
-  implements qt.Subject<N, F, D> {
+export abstract class Subject<N, F, D> extends qs.Source<N, F, D> implements qt.Subject<N, F, D> {
   [Symbol.rxSubscriber](): RSubject<N, F, D> {
     return new RSubject(this);
   }
@@ -375,7 +360,7 @@ export abstract class Subject<N, F = any, D = any> extends qs.Source<N, F, D>
   }
 }
 
-export abstract class Async<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Async<N, F, D> extends Subject<N, F, D> {
   private ready = false;
   private ended = false;
   private n?: N;
@@ -410,7 +395,7 @@ export abstract class Async<N, F = any, D = any> extends Subject<N, F, D> {
   }
 }
 
-export abstract class Behavior<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Behavior<N, F, D> extends Subject<N, F, D> {
   constructor(public n?: N) {
     super();
   }
@@ -438,16 +423,12 @@ interface Event<N> {
   n?: N;
 }
 
-export abstract class Replay<N, F = any, D = any> extends Subject<N, F, D> {
+export abstract class Replay<N, F, D> extends Subject<N, F, D> {
   private size: number;
   private time: number;
   private events = [] as (N | undefined)[];
 
-  constructor(
-    size = Number.POSITIVE_INFINITY,
-    time = Number.POSITIVE_INFINITY,
-    private stamper: qt.Stamper = Date
-  ) {
+  constructor(size = Number.POSITIVE_INFINITY, time = Number.POSITIVE_INFINITY, private stamper: qt.Stamper = Date) {
     super();
     this.size = size < 1 ? 1 : size;
     this.time = time < 1 ? 1 : time;

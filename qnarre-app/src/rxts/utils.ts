@@ -157,18 +157,12 @@ export function applyMixins(derivedCtor: any, baseCtors: any[]) {
   }
 }
 
-export function canReportError(
-  s: qt.Subscriber<any> | qj.Subject<any>
-): boolean {
+export function canReportError<N, F, D>(s: qt.Subscriber<N, F, D> | qt.Subject<N, F, D>) {
   while (s) {
-    const {closed, destination, stopped} = s as any;
-    if (closed || stopped) {
-      return false;
-    } else if (destination && destination instanceof qj.Subscriber) {
-      s = destination;
-    } else {
-      s = null!;
-    }
+    const {closed, tgt, stopped} = s as any;
+    if (closed || stopped) return false;
+    else if (tgt && tgt instanceof qj.Subscriber) s = tgt;
+    else break;
   }
   return true;
 }
@@ -196,7 +190,7 @@ export function isFunction(x: any): x is Function {
   return typeof x === 'function';
 }
 
-export function isInterop(x: any): x is Interop<any> {
+export function isInterop<N, F, D>(x: any): x is Interop<N, F, D> {
   return x && typeof x[Symbol.rxSource] === 'function';
 }
 
@@ -212,21 +206,15 @@ export function isObject(x: any): x is Object {
   return x !== null && typeof x === 'object';
 }
 
-export function isSource<T>(x: any): x is qs.Source<T> {
-  return (
-    !!x &&
-    (x instanceof qs.Source ||
-      (typeof x.lift === 'function' && typeof x.subscribe === 'function'))
-  );
+export function isSource<N, F, D>(x: any): x is qs.Source<N, F, D> {
+  return !!x && (x instanceof qs.Source || (typeof x.lift === 'function' && typeof x.subscribe === 'function'));
 }
 
 export function isPromise(x: any): x is PromiseLike<any> {
-  return (
-    !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function'
-  );
+  return !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function';
 }
 
-export function isScheduler(x: any): x is qt.Scheduler {
+export function isScheduler<F, D>(x: any): x is qt.Scheduler<F, D> {
   return x && typeof (<any>x).schedule === 'function';
 }
 
@@ -243,15 +231,8 @@ export function not(pred: Function, thisArg: any): Function {
 
 export function pipe<T>(): qt.Mapper<T, T>;
 export function pipe<T, A>(fn1: qt.Mapper<T, A>): qt.Mapper<T, A>;
-export function pipe<T, A, B>(
-  fn1: qt.Mapper<T, A>,
-  fn2: qt.Mapper<A, B>
-): qt.Mapper<T, B>;
-export function pipe<T, A, B, C>(
-  fn1: qt.Mapper<T, A>,
-  fn2: qt.Mapper<A, B>,
-  fn3: qt.Mapper<B, C>
-): qt.Mapper<T, C>;
+export function pipe<T, A, B>(fn1: qt.Mapper<T, A>, fn2: qt.Mapper<A, B>): qt.Mapper<T, B>;
+export function pipe<T, A, B, C>(fn1: qt.Mapper<T, A>, fn2: qt.Mapper<A, B>, fn3: qt.Mapper<B, C>): qt.Mapper<T, C>;
 export function pipe<T, A, B, C, D>(
   fn1: qt.Mapper<T, A>,
   fn2: qt.Mapper<A, B>,
@@ -320,9 +301,7 @@ export function pipe(...fns: Array<qt.Mapper<any, any>>): qt.Mapper<any, any> {
   return pipeFromArray(fns);
 }
 
-export function pipeFromArray<S, T>(
-  fns: Array<qt.Mapper<S, T>>
-): qt.Mapper<S, T> {
+export function pipeFromArray<S, T>(fns: Array<qt.Mapper<S, T>>): qt.Mapper<S, T> {
   if (fns.length === 0) return identity as qt.Mapper<any, any>;
   if (fns.length === 1) return fns[0];
   return (x: S): T => {
@@ -336,24 +315,17 @@ declare var WorkerGlobalScope: any;
 
 const __window = typeof window !== 'undefined' && window;
 const __self =
-  typeof self !== 'undefined' &&
-  typeof WorkerGlobalScope !== 'undefined' &&
-  self instanceof WorkerGlobalScope &&
-  self;
+  typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope && self;
 const __global = typeof global !== 'undefined' && global;
 const _root: any = __window || __global || __self;
 
 (function () {
   if (!_root) {
-    throw new Error(
-      'RxJS could not find any global context (window, self, global)'
-    );
+    throw new Error('RxJS could not find any global context (window, self, global)');
   }
 })();
 
-export const subscribeTo = <N, F = any, D = any>(
-  r: Input<N, F, D>
-): ((_: qj.Subscriber<N, F, D>) => qj.Subscription | void) => {
+export const subscribeTo = <N, F, D>(r: Input<N, F, D>): ((_: qj.Subscriber<N, F, D>) => qj.Subscription) => {
   if (!!r && typeof (r as any)[Symbol.rxSource] === 'function') {
     return subscribeToSource(r as any);
   } else if (isArrayLike(r)) {
@@ -362,49 +334,37 @@ export const subscribeTo = <N, F = any, D = any>(
     return subscribeToPromise(r);
   } else if (!!r && typeof (r as any)[Symbol.iterator] === 'function') {
     return subscribeToIterable(r as any);
-  } else if (
-    Symbol &&
-    Symbol.asyncIterator &&
-    !!r &&
-    typeof (r as any)[Symbol.asyncIterator] === 'function'
-  ) {
+  } else if (Symbol && Symbol.asyncIterator && !!r && typeof (r as any)[Symbol.asyncIterator] === 'function') {
     return subscribeToAsyncIterable(r as any);
   } else {
     const value = isObject(r) ? 'an invalid object' : `'${r}'`;
     const msg =
-      `You provided ${value} where a stream was expected.` +
-      ' You can provide an Source, Promise, Array, or Iterable.';
+      `You provided ${value} where a stream was expected.` + ' You can provide an Source, Promise, Array, or Iterable.';
     throw new TypeError(msg);
   }
 };
 
-export const subscribeToArray = <N, F = any, D = any>(a: ArrayLike<N>) => (
-  s: qt.Subscriber<N, F, D>
-) => {
+export const subscribeToArray = <N, F, D>(a: ArrayLike<N>) => (s: qt.Subscriber<N, F, D>) => {
   for (let i = 0, len = a.length; i < len && !s.closed; i++) {
     s.next(a[i]);
   }
   s.done();
 };
 
-export function subscribeToAsyncIterable<N, F = any, D = any>(
-  a: AsyncIterable<N>
-) {
+export function subscribeToAsyncIterable<N, F, D>(a: AsyncIterable<N>) {
   return (s: qt.Subscriber<N, F, D>) => {
     process(a, s).catch(e => s.fail(e));
   };
 }
 
-async function process<T>(a: AsyncIterable<T>, s: qt.Subscriber<T>) {
+async function process<N, F, D>(a: AsyncIterable<N>, s: qt.Subscriber<N, F, D>) {
   for await (const n of a) {
     s.next(n);
   }
   s.done();
 }
 
-export const subscribeToIterable = <N, F = any, D = any>(it: Iterable<N>) => (
-  s: qj.Subscriber<N, F, D>
-) => {
+export const subscribeToIterable = <N, F, D>(it: Iterable<N>) => (s: qj.Subscriber<N, F, D>) => {
   const i = (it as any)[Symbol.iterator]();
   do {
     const item = i.next();
@@ -423,21 +383,15 @@ export const subscribeToIterable = <N, F = any, D = any>(it: Iterable<N>) => (
   return s;
 };
 
-export const subscribeToSource = <N, F = any, D = any>(o: any) => (
-  s: qj.Subscriber<N, F, D>
-) => {
+export const subscribeToSource = <N, F, D>(o: any) => (s: qj.Subscriber<N, F, D>) => {
   const obs = (o as any)[Symbol.rxSource]();
   if (typeof obs.subscribe !== 'function') {
-    throw new TypeError(
-      'Provided object does not correctly implement Symbol.rxSource'
-    );
+    throw new TypeError('Provided object does not correctly implement Symbol.rxSource');
   }
   return obs.subscribe(s);
 };
 
-export const subscribeToPromise = <N, F = any, D = any>(p: PromiseLike<N>) => (
-  s: qj.Subscriber<N, F, D>
-) => {
+export const subscribeToPromise = <N, F, D>(p: PromiseLike<N>) => (s: qj.Subscriber<N, F, D>) => {
   p.then(
     n => {
       if (!s.closed) {

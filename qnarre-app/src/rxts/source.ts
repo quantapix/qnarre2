@@ -2,8 +2,7 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qj from './subject';
 
-export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
-  implements qt.Source<N, F, D> {
+export abstract class Source<N, F, D> extends qt.Context<F, D> implements qt.Source<N, F, D> {
   [Symbol.rxSource]() {
     return this;
   }
@@ -12,18 +11,16 @@ export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
     return asyncIterFrom(this);
   }
 
-  src?: Source<any, F, D>;
+  orig?: Source<any, F, D>;
   oper?: qt.Operator<any, N, F, D>;
 
-  constructor(
-    s?: (this: Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription
-  ) {
+  constructor(s?: (this: Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription) {
     super();
     if (s) this._subscribe = s;
   }
 
   _subscribe(s: qt.Subscriber<N, F, D>) {
-    return this.src?.subscribe(s);
+    return this.orig?.subscribe(s);
   }
 
   _trySubscribe(s: qt.Subscriber<N, F, D>) {
@@ -38,26 +35,18 @@ export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
 
   lift<R>(o?: qt.Operator<N, R, F, D>) {
     const s = this.createSource<R>();
-    s.src = this;
+    s.orig = this;
     s.oper = o;
     return s;
   }
 
   subscribe(t?: qt.Target<N, F, D>): qt.Subscription;
-  subscribe(
-    next?: qt.Ofun<N>,
-    fail?: qt.Ofun<F>,
-    done?: qt.Ofun<D>
-  ): qt.Subscription;
-  subscribe(
-    t?: qt.Target<N, F, D> | qt.Ofun<N>,
-    fail?: qt.Ofun<F>,
-    done?: qt.Ofun<D>
-  ): qt.Subscription {
+  subscribe(next?: qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>): qt.Subscription;
+  subscribe(t?: qt.Target<N, F, D> | qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>): qt.Subscription {
     const s = this.toSubscriber(t, fail, done);
     const o = this.oper;
-    if (o && this.src) s.add(o.call(s, this.src));
-    else s.add(this.src ? this._subscribe(s) : this._trySubscribe(s));
+    if (o && this.orig) s.add(o.call(s, this.orig));
+    else s.add(this.orig ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
 
@@ -82,15 +71,8 @@ export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
 
   pipe(): Source<N, F, D>;
   pipe<A>(op1: qt.Lifter<N, A, F, D>): Source<A, F, D>;
-  pipe<A, B>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>
-  ): Source<B, F, D>;
-  pipe<A, B, C>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>
-  ): Source<C, F, D>;
+  pipe<A, B>(op1: qt.Lifter<N, A, F, D>, op2: qt.Lifter<A, B, F, D>): Source<B, F, D>;
+  pipe<A, B, C>(op1: qt.Lifter<N, A, F, D>, op2: qt.Lifter<A, B, F, D>, op3: qt.Lifter<B, C, F, D>): Source<C, F, D>;
   pipe<A, B, C, D>(
     op1: qt.Lifter<N, A, F, D>,
     op2: qt.Lifter<A, B, F, D>,
@@ -160,14 +142,8 @@ export abstract class Source<N, F = any, D = any> extends qt.Context<N, F, D>
   }
 
   toPromise<T>(this: Source<T, F, D>): Promise<T | undefined>;
-  toPromise<T>(
-    this: Source<T, F, D>,
-    c: typeof Promise
-  ): Promise<T | undefined>;
-  toPromise<T>(
-    this: Source<T, F, D>,
-    c: PromiseConstructorLike
-  ): Promise<T | undefined>;
+  toPromise<T>(this: Source<T, F, D>, c: typeof Promise): Promise<T | undefined>;
+  toPromise<T>(this: Source<T, F, D>, c: PromiseConstructorLike): Promise<T | undefined>;
   toPromise(c?: PromiseConstructorLike): Promise<N | undefined> {
     c = promiseCtor(c);
     return new c((res, rej) => {
@@ -245,23 +221,17 @@ async function* coroutine<N, F, D>(s: Source<N, F, D>) {
   }
 }
 
-export class Grouped<K, T> extends Source<N, F, D> {
-  constructor(
-    public key: K,
-    private groupSubject: Subject<N, F, D>,
-    private refCountSubscription?: RefCounted
-  ) {
+export class Grouped<K, N, F, D> extends Source<N, F, D> {
+  constructor(public key: K, private group: qt.Subject<N, F, D>, private ref?: qt.RefCounted) {
     super();
   }
 
-  _subscribe(subscriber: Subscriber<N, F, D>) {
-    const subscription = new Subscription();
-    const {refCountSubscription, groupSubject} = this;
-    if (refCountSubscription && !refCountSubscription.closed) {
-      subscription.add(new ActorRefCounted(refCountSubscription));
-    }
-    subscription.add(groupSubject.subscribe(subscriber));
-    return subscription;
+  _subscribe(r: qt.Subscriber<N, F, D>) {
+    const s = new qj.Subscription();
+    const {ref, group} = this;
+    if (ref && !ref.closed) s.add(new ActorRefCounted(ref));
+    s.add(group.subscribe(r));
+    return s;
   }
 }
 
@@ -271,18 +241,13 @@ export enum NotificationKind {
   DONE = 'D'
 }
 
-export class Notification<N, F = any, D = any> {
+export class Notification<N, F, D> {
   hasN: boolean;
 
   constructor(kind: 'N', n?: N);
   constructor(kind: 'F', n: undefined, f?: F);
   constructor(kind: 'D', d?: D);
-  constructor(
-    public kind: 'N' | 'F' | 'D',
-    public n?: N,
-    public f?: F,
-    public d?: D
-  ) {
+  constructor(public kind: 'N' | 'F' | 'D', public n?: N, public f?: F, public d?: D) {
     this.hasN = kind === 'N';
   }
 
@@ -308,11 +273,7 @@ export class Notification<N, F = any, D = any> {
     }
   }
 
-  accept(
-    t?: qt.Target<N, F, D> | qt.Ofun<N>,
-    fail?: qt.Ofun<F>,
-    done?: qt.Ofun<D>
-  ) {
+  accept(t?: qt.Target<N, F, D> | qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>) {
     if (typeof t === 'function') return this.act(t, fail, done);
     return this.observe(t);
   }
@@ -329,27 +290,24 @@ export class Notification<N, F = any, D = any> {
   }
 
   private static doneNote: Notification<any> = new Notification('D');
-  private static undefineNote: Notification<any> = new Notification(
-    'N',
-    undefined
-  );
+  private static undefineNote: Notification<any> = new Notification('N', undefined);
 
-  static createNext<N, F = any, D = any>(n?: N): Notification<N, F, D> {
+  static createNext<N, F, D>(n?: N): Notification<N, F, D> {
     if (n !== undefined) return new Notification('N', n);
     return Notification.undefineNote;
   }
 
-  static createFail<N, F = any, D = any>(f?: F): Notification<N, F, D> {
+  static createFail<N, F, D>(f?: F): Notification<N, F, D> {
     return new Notification('F', undefined, f);
   }
 
-  static createDone<N = any, F = any, D = any>(): Notification<N, F, D> {
+  static createDone<N, F, D>(): Notification<N, F, D> {
     return Notification.doneNote;
   }
 }
 
-export function firstFrom<T>(s$: Source<T>) {
-  return new Promise<T>((res, rej) => {
+export function firstFrom<N, F, D>(s$: Source<N, F, D>) {
+  return new Promise<N>((res, rej) => {
     const subs = new qj.Subscription();
     subs.add(
       s$.subscribe({
@@ -366,10 +324,10 @@ export function firstFrom<T>(s$: Source<T>) {
   });
 }
 
-export function lastFrom<T>(s: Source<T>) {
-  return new Promise<T>((res, rej) => {
+export function lastFrom<N, F, D>(s: Source<N, F, D>) {
+  return new Promise<N>((res, rej) => {
     let hasN = false;
-    let value: T | undefined;
+    let value: N | undefined;
     s.subscribe({
       next: n => {
         value = n;

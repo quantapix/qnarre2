@@ -5,11 +5,7 @@ import * as qj from './subject';
 import * as qh from './scheduler';
 
 export class SubscribeOnObservable<T> extends qs.Source<T> {
-  static create<T>(
-    source: qs.Source<T>,
-    delay: number = 0,
-    scheduler: qh.Scheduler = asap
-  ): qs.Source<T> {
+  static create<T>(source: qs.Source<T>, delay: number = 0, scheduler: qh.Scheduler = asap): qs.Source<T> {
     return new SubscribeOnObservable(source, delay, scheduler);
   }
 
@@ -18,11 +14,7 @@ export class SubscribeOnObservable<T> extends qs.Source<T> {
     return this.add(source.subscribe(subscriber));
   }
 
-  constructor(
-    public source: qs.Source<T>,
-    private delayTime: number = 0,
-    private scheduler: qh.Scheduler = asap
-  ) {
+  constructor(public source: qs.Source<T>, private delayTime: number = 0, private scheduler: qh.Scheduler = asap) {
     super();
     if (!isNumeric(delayTime) || delayTime < 0) {
       this.delayTime = 0;
@@ -36,14 +28,10 @@ export class SubscribeOnObservable<T> extends qs.Source<T> {
     const delay = this.delayTime;
     const source = this.source;
     const scheduler = this.scheduler;
-    return scheduler.schedule<DispatchArg<any>>(
-      SubscribeOnObservable.dispatch as any,
-      delay,
-      {
-        source,
-        subscriber
-      }
-    );
+    return scheduler.schedule<DispatchArg<any>>(SubscribeOnObservable.dispatch as any, delay, {
+      source,
+      subscriber
+    });
   }
 }
 
@@ -61,10 +49,7 @@ interface ParamsState<T> {
   context: any;
 }
 
-function dispatch<T>(
-  this: qh.Action<DispatchState<T>>,
-  state: DispatchState<T>
-) {
+function dispatch<T>(this: qh.Action<DispatchState<T>>, state: DispatchState<T>) {
   const {params, subscriber, context} = state;
   const {cb, args, h} = params;
   let subject = params.subject;
@@ -108,12 +93,6 @@ function dispatch<T>(
 
 const NONE = {};
 
-function emptyScheduled(scheduler: qh.Scheduler) {
-  return new qs.Source<never>(subscriber =>
-    scheduler.schedule(() => subscriber.done())
-  );
-}
-
 function setupSubscription<T>(
   sourceObj: FromEventTarget<T>,
   eventName: string,
@@ -133,17 +112,10 @@ function setupSubscription<T>(
   } else if (isNodeStyleEventEmitter(sourceObj)) {
     const source = sourceObj;
     sourceObj.addListener(eventName, handler as NodeEventHandler);
-    unsubscribe = () =>
-      source.removeListener(eventName, handler as NodeEventHandler);
+    unsubscribe = () => source.removeListener(eventName, handler as NodeEventHandler);
   } else if (sourceObj && (sourceObj as any).length) {
     for (let i = 0, len = (sourceObj as any).length; i < len; i++) {
-      setupSubscription(
-        (sourceObj as any)[i],
-        eventName,
-        handler,
-        subscriber,
-        options
-      );
+      setupSubscription((sourceObj as any)[i], eventName, handler, subscriber, options);
     }
   } else {
     throw new TypeError('Invalid event target');
@@ -151,10 +123,7 @@ function setupSubscription<T>(
 
   subscriber.add(unsubscribe);
 }
-function dispatch<T, S>(
-  this: qh.Action<SchedulerState<T, S>>,
-  state: SchedulerState<T, S>
-) {
+function dispatch<T, S>(this: qh.Action<SchedulerState<T, S>>, state: SchedulerState<T, S>) {
   const {subscriber, condition} = state;
   if (subscriber.closed) {
     return undefined;
@@ -203,15 +172,8 @@ function dispatch<T, S>(
 }
 
 export function onErrorResumeNext<R>(v: qt.Input<R>): qs.Source<R>;
-export function onErrorResumeNext<T2, T3, R>(
-  v2: qt.Input<T2>,
-  v3: qt.Input<T3>
-): qs.Source<R>;
-export function onErrorResumeNext<T2, T3, T4, R>(
-  v2: qt.Input<T2>,
-  v3: qt.Input<T3>,
-  v4: qt.Input<T4>
-): qs.Source<R>;
+export function onErrorResumeNext<T2, T3, R>(v2: qt.Input<T2>, v3: qt.Input<T3>): qs.Source<R>;
+export function onErrorResumeNext<T2, T3, T4, R>(v2: qt.Input<T2>, v3: qt.Input<T3>, v4: qt.Input<T4>): qs.Source<R>;
 export function onErrorResumeNext<T2, T3, T4, T5, R>(
   v2: qt.Input<T2>,
   v3: qt.Input<T3>,
@@ -230,9 +192,7 @@ export function onErrorResumeNext<R>(
 ): qs.Source<R>;
 export function onErrorResumeNext<R>(array: qt.Input<any>[]): qs.Source<R>;
 export function onErrorResumeNext<T, R>(
-  ...sources: Array<
-    qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)
-  >
+  ...sources: Array<qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)>
 ): qs.Source<R> {
   if (sources.length === 0) {
     return EMPTY;
@@ -245,8 +205,7 @@ export function onErrorResumeNext<T, R>(
   }
 
   return new qs.Source(subscriber => {
-    const subNext = () =>
-      subscriber.add(onErrorResumeNext(...remainder).subscribe(subscriber));
+    const subNext = () => subscriber.add(onErrorResumeNext(...remainder).subscribe(subscriber));
 
     return from(first).subscribe({
       next(value) {
@@ -273,9 +232,7 @@ export function dispatch<T>(
     if (index < keys.length) {
       const key = keys[index];
       subscriber.next([key, (obj as any)[key]]);
-      subscription.add(
-        this.schedule({keys, index: index + 1, subscriber, subscription, obj})
-      );
+      subscription.add(this.schedule({keys, index: index + 1, subscriber, subscription, obj}));
     } else {
       subscriber.done();
     }

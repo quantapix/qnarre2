@@ -3,21 +3,8 @@ import * as qj from './subject';
 import * as qu from './utils';
 import * as qt from './types';
 
-export function nextAndDone<N, F, D>(t: qt.State<N, F, D>) {
-  t.s!.next(t.n);
-  t.s!.done(t.d);
-}
-
-export function fail<N, F, D>(t: qt.State<N, F, D>) {
-  t.s!.fail(t.f);
-}
-
-export class Action<N, F = any, D = any> extends qj.Subscription
-  implements qt.Action<N, F, D> {
-  constructor(
-    public h: Scheduler<F, D>,
-    public work: (this: qt.Action<N, F, D>, _: qt.State<N, F, D>) => void
-  ) {
+export class Action<N, F = any, D = any> extends qj.Subscription implements qt.Action<N, F, D> {
+  constructor(public h: Scheduler<F, D>, public work: (this: qt.Action<N, F, D>, _: qt.State<N, F, D>) => void) {
     super();
   }
 
@@ -36,6 +23,15 @@ export class Scheduler<F, D> implements qt.Scheduler<F, D> {
   ): qt.Subscription {
     return new this.A(this, work).schedule(state, delay);
   }
+}
+
+export function nextAndDone<N, F, D>(t: qt.State<N, F, D>) {
+  t.s!.next(t.n);
+  t.s!.done(t.d);
+}
+
+export function fail<N, F, D>(t: qt.State<N, F, D>) {
+  t.s!.fail(t.f);
 }
 
 export class AsyncAction<S> extends Action<S> {
@@ -121,13 +117,8 @@ export class Async extends Scheduler {
     });
   }
 
-  schedule<S>(
-    work: (this: Action<S>, state?: S) => void,
-    state?: S,
-    delay = 0
-  ): qj.Subscription {
-    if (Async.del && Async.del !== this)
-      return Async.del.schedule(work, state, delay);
+  schedule<S>(work: (this: Action<S>, state?: S) => void, state?: S, delay = 0): qj.Subscription {
+    if (Async.del && Async.del !== this) return Async.del.schedule(work, state, delay);
     return super.schedule(work, state, delay);
   }
 
@@ -154,20 +145,14 @@ export class Async extends Scheduler {
 export const async = new Async(AsyncAction);
 
 export class FrameAction<S> extends AsyncAction<S> {
-  constructor(
-    public sched: Frame,
-    public work: (this: Action<S>, state?: S) => void
-  ) {
+  constructor(public sched: Frame, public work: (this: Action<S>, state?: S) => void) {
     super(sched, work);
   }
 
   protected asyncId(s: Frame, id?: any, delay = 0): any {
     if (delay && delay > 0) return super.asyncId(s, id, delay);
     s.acts.push(this);
-    return (
-      s.scheduled ||
-      (s.scheduled = requestAnimationFrame(() => s.flush(undefined)))
-    );
+    return s.scheduled || (s.scheduled = requestAnimationFrame(() => s.flush(undefined)));
   }
 
   protected recycleId(s: Frame, id?: any, delay = 0): any {
@@ -209,20 +194,14 @@ export class Frame extends Async {
 export const frame = new Frame(FrameAction);
 
 export class AsapAction<S> extends AsyncAction<S> {
-  constructor(
-    public sched: Asap,
-    public work: (this: Action<S>, state?: S) => void
-  ) {
+  constructor(public sched: Asap, public work: (this: Action<S>, state?: S) => void) {
     super(sched, work);
   }
 
   protected asyncId(s: Asap, id?: any, delay = 0): any {
     if (delay && delay > 0) return super.asyncId(s, id, delay);
     s.acts.push(this);
-    return (
-      s.scheduled ||
-      (s.scheduled = Immediate.setImmediate(s.flush.bind(s, undefined)))
-    );
+    return s.scheduled || (s.scheduled = Immediate.setImmediate(s.flush.bind(s, undefined)));
   }
 
   protected recycleId(s: Asap, id?: any, delay: number = 0): any {
@@ -264,10 +243,7 @@ export class Asap extends Async {
 export const asap = new Asap(AsapAction);
 
 export class QueueAction<T> extends AsyncAction<T> {
-  constructor(
-    public sched: Queue,
-    public work: (this: Action<T>, state?: T) => void
-  ) {
+  constructor(public sched: Queue, public work: (this: Action<T>, state?: T) => void) {
     super(sched, work);
   }
 
@@ -280,9 +256,7 @@ export class QueueAction<T> extends AsyncAction<T> {
   }
 
   public execute(state: T, delay: number): any {
-    return delay > 0 || this.closed
-      ? super.execute(state, delay)
-      : this._execute(state, delay);
+    return delay > 0 || this.closed ? super.execute(state, delay) : this._execute(state, delay);
   }
 
   protected asyncId(s: Queue, id?: any, delay = 0): any {
@@ -356,10 +330,7 @@ export class Virtual extends Async {
   static frameTimeFactor = 10;
   public frame = 0;
   public index = -1;
-  constructor(
-    Action: typeof AsyncAction = VirtualAction as any,
-    public maxFrames = Number.POSITIVE_INFINITY
-  ) {
+  constructor(Action: typeof AsyncAction = VirtualAction as any, public maxFrames = Number.POSITIVE_INFINITY) {
     super(Action, () => this.frame);
   }
 
@@ -380,11 +351,7 @@ export class Virtual extends Async {
   }
 }
 
-export function scheduleArray<N, F = any, D = any>(
-  i: ArrayLike<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N, F, D>
-) {
+export function scheduleArray<N, F = any, D = any>(i: ArrayLike<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
   return c.createSource(r => {
     const s = new qj.Subscription();
     let j = 0;
@@ -402,11 +369,7 @@ export function scheduleArray<N, F = any, D = any>(
   });
 }
 
-export function scheduleAsyncIter<N, F = any, D = any>(
-  i: AsyncIterable<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N, F, D>
-) {
+export function scheduleAsyncIter<N, F = any, D = any>(i: AsyncIterable<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
   if (!i) throw new Error('Iterable needed');
   return c.createSource(r => {
     const s = new qj.Subscription();
@@ -430,11 +393,7 @@ export function scheduleAsyncIter<N, F = any, D = any>(
   });
 }
 
-export function scheduleIter<N, F = any, D = any>(
-  i: Iterable<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N, F, D>
-) {
+export function scheduleIter<N, F = any, D = any>(i: Iterable<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
   if (!i) throw new Error('Iterable needed');
   return c.createSource(r => {
     const s = new qj.Subscription();
@@ -469,11 +428,7 @@ export function scheduleIter<N, F = any, D = any>(
   });
 }
 
-export function scheduleSource<N, F = any, D = any>(
-  i: qt.Interop<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N, F, D>
-) {
+export function scheduleSource<N, F = any, D = any>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
   return c.createSource(r => {
     const s = new qj.Subscription();
     s.add(
@@ -498,11 +453,7 @@ export function scheduleSource<N, F = any, D = any>(
   });
 }
 
-export function schedulePromise<N, F = any, D = any>(
-  p: PromiseLike<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N, F, D>
-) {
+export function schedulePromise<N, F = any, D = any>(p: PromiseLike<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
   return c.createSource(r => {
     const s = new qj.Subscription();
     s.add(
@@ -536,10 +487,7 @@ export function scheduled<N, F = any, D = any>(
     if (qu.isPromise(i)) return schedulePromise(i, h, c);
     if (qu.isArrayLike(i)) return scheduleArray(i, h, c);
     if (qu.isIterable(i) || typeof i === 'string') return scheduleIter(i, h, c);
-    if (
-      Symbol.asyncIterator &&
-      typeof (i as any)[Symbol.asyncIterator] === 'function'
-    ) {
+    if (Symbol.asyncIterator && typeof (i as any)[Symbol.asyncIterator] === 'function') {
       return scheduleAsyncIter(i as any, h, c);
     }
   }
