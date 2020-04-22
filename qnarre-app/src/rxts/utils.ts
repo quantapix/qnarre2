@@ -188,7 +188,7 @@ export function isFunction(x: any): x is Function {
   return typeof x === 'function';
 }
 
-export function isInterop<N>(x: any): x is Interop<N> {
+export function isInterop<N>(x: any): x is qt.Interop<N> {
   return x && typeof x[Symbol.rxSource] === 'function';
 }
 
@@ -338,7 +338,7 @@ const _root: any = __window || __global || __self;
 })();
 
 export const subscribeTo = <N>(
-  r: Input<N>
+  r: qt.Input<N>
 ): ((_: qj.Subscriber<N>) => qj.Subscription) => {
   if (!!r && typeof (r as any)[Symbol.rxSource] === 'function') {
     return subscribeToSource(r as any);

@@ -1,7 +1,7 @@
-import * as qs from './source';
 import * as qj from './subject';
-import * as qu from './utils';
 import * as qt from './types';
+import * as qu from './utils';
+import * as qx from './context';
 
 export class Action<N> extends qj.Subscription implements qt.Action<N> {
   constructor(
@@ -11,7 +11,7 @@ export class Action<N> extends qj.Subscription implements qt.Action<N> {
     super();
   }
 
-  schedule(_?: qt.State<N>, _delay = 0): qt.Subscription {
+  schedule(_: qt.State<N>, _delay?: number): qt.Subscription {
     return this;
   }
 }
@@ -21,8 +21,8 @@ export class Scheduler implements qt.Scheduler {
 
   schedule<N>(
     work: (this: qt.Action<N>, _: qt.State<N>) => void,
-    state?: qt.State<N>,
-    delay = 0
+    state: qt.State<N>,
+    delay?: number
   ): qt.Subscription {
     return new this.A(this, work).schedule(state, delay);
   }
@@ -37,55 +37,53 @@ export function fail<N>(t: qt.State<N>) {
   t.s!.fail(t.f);
 }
 
-export class AsyncAction<S> extends Action<S> {
+export class AsyncAction<N> extends Action<N> {
   id?: any;
-  state?: S;
+  state?: qt.State<N>;
   delay?: number;
   pending = false;
 
-  constructor(public sched: Async, work: (this: Action<S>, state?: S) => void) {
-    super(sched, work);
+  constructor(h: Async, w: (this: qt.Action<N>, _: qt.State<N>) => void) {
+    super(h, w);
   }
 
-  schedule(state?: S, delay = 0): qj.Subscription {
+  schedule(s: qt.State<N>, d?: number): qj.Subscription {
     if (this.closed) return this;
-    this.state = state;
+    this.state = s;
     const i = this.id;
-    const s = this.sched;
-    if (i) this.id = this.recycleId(s, i, delay);
+    const h = this.h as Async;
+    if (i) this.id = this.recycleId(h, i, d);
     this.pending = true;
-    this.delay = delay;
-    this.id = this.id || this.asyncId(s, this.id, delay);
+    this.delay = d;
+    this.id = this.id || this.asyncId(h, this.id, d);
     return this;
   }
 
-  protected asyncId(s: Async, _?: any, delay = 0): any {
-    return setInterval(s.flush.bind(s, this), delay);
+  protected asyncId(h: Async, _?: any, d?: number): any {
+    return setInterval(h.flush.bind(h, this), d);
   }
 
-  protected recycleId(_: Async, id: any, delay = 0) {
-    if (delay && this.delay === delay && !this.pending) return id;
+  protected recycleId(_: Scheduler, id: any, d?: number) {
+    if (d && this.delay === d && !this.pending) return id;
     clearInterval(id);
   }
 
-  public execute(state: S, delay?: number): any {
+  execute(s: qt.State<N>, d?: number) {
     if (this.closed) return new Error('executing cancelled action');
     this.pending = false;
-    const e = this._execute(state, delay);
+    const e = this._execute(s, d);
     if (e) return e;
-    if (!this.pending && this.id) {
-      this.id = this.recycleId(this.sched, this.id);
-    }
+    if (!this.pending && this.id) this.id = this.recycleId(this.h, this.id);
   }
 
-  protected _execute(state: S, _?: number): any {
+  protected _execute(s: qt.State<N>, _?: number): any {
     let failed = false;
     let e: any = undefined;
     try {
-      this.work(state);
+      this.work(s);
     } catch (e) {
       failed = true;
-      e = (!!e && e) || new Error(e);
+      e = e ? e : new Error(e);
     }
     if (failed) {
       this.unsubscribe();
@@ -94,12 +92,12 @@ export class AsyncAction<S> extends Action<S> {
   }
 
   _unsubscribe() {
-    const s = this.sched;
-    const acts = s.acts;
+    const h = this.h as Async;
+    const acts = h.acts;
     const i = acts.indexOf(this);
     if (i !== -1) acts.splice(i, 1);
     const id = this.id;
-    if (id) this.id = this.recycleId(s, id);
+    if (id) this.id = this.recycleId(h, id);
     this.state = undefined;
     this.delay = undefined;
     this.pending = false;
@@ -113,18 +111,15 @@ export class Async extends Scheduler {
   scheduled?: any;
   acts = [] as AsyncAction<any>[];
 
-  constructor(act: typeof Action, now = Scheduler.now) {
-    super(act, () => {
-      if (Async.del && Async.del !== this) return Async.del.now();
-      else return now();
-    });
+  constructor(act: typeof Action, now?: () => number) {
+    super(act, Async.del ? Async.del.now : now);
   }
 
-  schedule<S>(
-    work: (this: Action<S>, state?: S) => void,
-    state?: S,
-    delay = 0
-  ): qj.Subscription {
+  schedule<N>(
+    work: (this: qt.Action<N>, _: qt.State<N>) => void,
+    state: qt.State<N>,
+    delay?: number
+  ): qt.Subscription {
     if (Async.del && Async.del !== this) return Async.del.schedule(work, state, delay);
     return super.schedule(work, state, delay);
   }
@@ -132,11 +127,11 @@ export class Async extends Scheduler {
   flush(a: AsyncAction<any>) {
     if (this.active) this.acts.push(a);
     else {
-      let e: any;
       this.active = true;
+      let e: any;
       const {acts} = this;
       do {
-        if ((e = a.execute(a.state, a.delay))) break;
+        if ((e = a.execute(a.state!, a.delay))) break;
       } while ((a = acts.shift()!));
       this.active = false;
       if (e) {
@@ -151,126 +146,120 @@ export class Async extends Scheduler {
 
 export const async = new Async(AsyncAction);
 
-export class FrameAction<S> extends AsyncAction<S> {
-  constructor(public sched: Frame, public work: (this: Action<S>, state?: S) => void) {
-    super(sched, work);
+export class FrameAction<N> extends AsyncAction<N> {
+  constructor(h: Frame, w: (this: qt.Action<N>, _: qt.State<N>) => void) {
+    super(h, w);
   }
 
-  protected asyncId(s: Frame, id?: any, delay = 0): any {
-    if (delay && delay > 0) return super.asyncId(s, id, delay);
-    s.acts.push(this);
-    return s.scheduled || (s.scheduled = requestAnimationFrame(() => s.flush(undefined)));
+  protected asyncId(h: Frame, id?: any, d?: number) {
+    if (d && d > 0) return super.asyncId(h, id, d);
+    h.acts.push(this);
+    return h.scheduled || (h.scheduled = requestAnimationFrame(() => h.flush(undefined)));
   }
 
-  protected recycleId(s: Frame, id?: any, delay = 0): any {
-    if ((delay && delay > 0) || (!delay && this.delay! > 0)) {
-      return super.recycleId(s, id, delay);
+  protected recycleId(h: Frame, id?: any, d?: number) {
+    if ((d && d > 0) || (!d && this.delay && this.delay > 0)) {
+      return super.recycleId(h, id, d);
     }
-    if (s.acts.length === 0) {
+    if (h.acts.length === 0) {
       cancelAnimationFrame(id);
-      s.scheduled = undefined;
+      h.scheduled = undefined;
     }
-    return undefined;
+    return;
   }
 }
 
 export class Frame extends Async {
-  public flush(action?: AsyncAction<any>): void {
+  flush(a?: AsyncAction<any>) {
     this.active = true;
     this.scheduled = undefined;
+    let e: any;
+    let i = -1;
     const {acts} = this;
-    let error: any;
-    let index: number = -1;
-    let count: number = acts.length;
-    action = action || acts.shift()!;
+    let lim = acts.length;
+    a = a || acts.shift();
     do {
-      if ((error = action.execute(action.state, action.delay))) {
-        break;
-      }
-    } while (++index < count && (action = acts.shift()));
+      if ((e = a?.execute(a.state!, a.delay))) break;
+    } while (++i < lim && (a = acts.shift()));
     this.active = false;
-    if (error) {
-      while (++index < count && (action = acts.shift())) {
-        action.unsubscribe();
+    if (e) {
+      while (++i < lim && (a = acts.shift())) {
+        a.unsubscribe();
       }
-      throw error;
+      throw e;
     }
   }
 }
 
 export const frame = new Frame(FrameAction);
 
-export class AsapAction<S> extends AsyncAction<S> {
-  constructor(public sched: Asap, public work: (this: Action<S>, state?: S) => void) {
-    super(sched, work);
+export class AsapAction<N> extends AsyncAction<N> {
+  constructor(h: Asap, w: (this: qt.Action<N>, _: qt.State<N>) => void) {
+    super(h, w);
   }
 
-  protected asyncId(s: Asap, id?: any, delay = 0): any {
-    if (delay && delay > 0) return super.asyncId(s, id, delay);
-    s.acts.push(this);
+  protected asyncId(h: Asap, id?: any, d?: number) {
+    if (d && d > 0) return super.asyncId(h, id, d);
+    h.acts.push(this);
     return (
-      s.scheduled || (s.scheduled = Immediate.setImmediate(s.flush.bind(s, undefined)))
+      h.scheduled || (h.scheduled = qu.Immediate.setImmediate(h.flush.bind(h, undefined)))
     );
   }
 
-  protected recycleId(s: Asap, id?: any, delay: number = 0): any {
-    if ((delay && delay > 0) || (delay === null && this.delay! > 0)) {
-      return super.recycleId(s, id, delay);
+  protected recycleId(h: Asap, id?: any, d?: number) {
+    if ((d && d > 0) || (!d && this.delay && this.delay > 0)) {
+      return super.recycleId(h, id, d);
     }
-    if (s.acts.length === 0) {
-      Immediate.clearImmediate(id);
-      s.scheduled = undefined;
+    if (h.acts.length === 0) {
+      qu.Immediate.clearImmediate(id);
+      h.scheduled = undefined;
     }
     return undefined;
   }
 }
 
 export class Asap extends Async {
-  public flush(action?: AsyncAction<any>): void {
+  flush(a?: AsyncAction<any>) {
     this.active = true;
     this.scheduled = undefined;
+    let e: any;
+    let i = -1;
     const {acts} = this;
-    let error: any;
-    let index: number = -1;
-    let count: number = acts.length;
-    action = action || acts.shift()!;
+    let lim = acts.length;
+    a = a || acts.shift();
     do {
-      if ((error = action.execute(action.state, action.delay))) {
-        break;
-      }
-    } while (++index < count && (action = acts.shift()));
+      if ((e = a?.execute(a.state!, a.delay))) break;
+    } while (++i < lim && (a = acts.shift()));
     this.active = false;
-    if (error) {
-      while (++index < count && (action = acts.shift())) {
-        action.unsubscribe();
+    if (e) {
+      while (++i < lim && (a = acts.shift())) {
+        a.unsubscribe();
       }
-      throw error;
+      throw e;
     }
   }
 }
 
 export const asap = new Asap(AsapAction);
 
-export class QueueAction<T> extends AsyncAction<T> {
-  constructor(public sched: Queue, public work: (this: Action<T>, state?: T) => void) {
-    super(sched, work);
+export class QueueAction<N> extends AsyncAction<N> {
+  constructor(h: Queue, w: (this: qt.Action<N>, _: qt.State<N>) => void) {
+    super(h, w);
   }
 
-  public schedule(state?: T, delay: number = 0): qj.Subscription {
-    if (delay > 0) return super.schedule(state, delay);
-    this.delay = delay;
-    this.state = state;
-    this.sched.flush(this);
+  schedule(s: qt.State<N>, d?: number): qj.Subscription {
+    if (d && d > 0) return super.schedule(s, d);
+    this.delay = d;
+    this.state = s;
+    (this.h as Async).flush(this);
     return this;
   }
 
-  public execute(state: T, delay: number): any {
-    return delay > 0 || this.closed
-      ? super.execute(state, delay)
-      : this._execute(state, delay);
+  execute(s: qt.State<N>, d?: number) {
+    return (d && d > 0) || this.closed ? super.execute(s, d) : this._execute(s, d);
   }
 
-  protected asyncId(s: Queue, id?: any, delay = 0): any {
+  protected asyncId(s: Queue, id?: any, delay?: number): any {
     if ((delay && delay > 0) || (delay === null && this.delay! > 0)) {
       return super.asyncId(s, id, delay);
     }
@@ -282,91 +271,81 @@ export class Queue extends Async {}
 
 export const queue = new Queue(QueueAction);
 
-export class VirtualAction<T> extends AsyncAction<T> {
-  protected active: boolean = true;
+export class VirtualAction<N> extends AsyncAction<N> {
+  protected active = true;
 
   constructor(
-    public sched: Virtual,
-    public work: (this: Action<T>, state?: T) => void,
-    protected index: number = (sched.index += 1)
+    h: Virtual,
+    w: (this: qt.Action<N>, _: qt.State<N>) => void,
+    public index = (h.index += 1)
   ) {
-    super(sched, work);
-    this.index = sched.index = index;
+    super(h, w);
+    h.index = index;
   }
 
-  public schedule(state?: T, delay: number = 0): qj.Subscription {
-    if (!this.id) return super.schedule(state, delay);
+  schedule(s: qt.State<N>, d?: number): qj.Subscription {
+    if (!this.id) return super.schedule(s, d);
     this.active = false;
-    const action = new VirtualAction(this.sched, this.work);
-    this.add(action);
-    return action.schedule(state, delay);
+    const a = new VirtualAction(this.h as Virtual, this.work);
+    this.add(a);
+    return a.schedule(s, d);
   }
 
-  protected asyncId(s: Virtual, id?: any, delay: number = 0): any {
-    this.delay = s.frame + delay;
-    const {acts} = s;
+  protected asyncId(h: Virtual, _?: any, d?: number) {
+    this.delay = h.frame + (d ?? 0);
+    const {acts} = h;
     acts.push(this);
-    (acts as Array<VirtualAction<T>>).sort(VirtualAction.sortActions);
+    (acts as VirtualAction<N>[]).sort(cmp);
     return true;
   }
 
-  protected recycleId(_s: Virtual, _?: any, _delay = 0): any {
-    return undefined;
+  protected recycleId(_h: Scheduler, _?: any, _d?: number) {
+    return;
   }
 
-  protected _execute(state: T, delay: number): any {
-    if (this.active === true) {
-      return super._execute(state, delay);
-    }
+  protected _execute(s: qt.State<N>, d?: number) {
+    if (this.active === true) return super._execute(s, d);
   }
+}
 
-  public static sortActions<T>(a: VirtualAction<T>, b: VirtualAction<T>) {
-    if (a.delay === b.delay) {
-      if (a.index === b.index) {
-        return 0;
-      } else if (a.index > b.index) {
-        return 1;
-      } else {
-        return -1;
-      }
-    } else if (a.delay! > b.delay!) {
-      return 1;
-    } else {
-      return -1;
-    }
+function cmp<N>(a: VirtualAction<N>, b: VirtualAction<N>) {
+  if (a.delay === b.delay) {
+    if (a.index === b.index) return 0;
+    if (a.index > b.index) return 1;
+    return -1;
   }
+  if (a.delay! > b.delay!) return 1;
+  return -1;
 }
 
 export class Virtual extends Async {
   static frameTimeFactor = 10;
-  public frame = 0;
-  public index = -1;
-  constructor(
-    Action: typeof AsyncAction = VirtualAction as any,
-    public maxFrames = Number.POSITIVE_INFINITY
-  ) {
-    super(Action, () => this.frame);
+  frame = 0;
+  index = -1;
+
+  constructor(act = VirtualAction, public max = Number.POSITIVE_INFINITY) {
+    super(act, () => this.frame);
   }
 
-  public flush(): void {
-    const {acts, maxFrames} = this;
-    let e: any, action: AsyncAction<any> | undefined;
-    while ((action = acts[0]) && action.delay! <= maxFrames) {
+  flush(a?: AsyncAction<any>) {
+    const {acts, max} = this;
+    let e: any;
+    while ((a = acts[0]) && a.delay! <= max) {
       acts.shift();
-      this.frame = action.delay ?? 0;
-      if ((e = action.execute(action.state, action.delay))) break;
+      this.frame = a.delay ?? 0;
+      if ((e = a.execute(a.state!, a.delay))) break;
     }
     if (e) {
-      while ((action = acts.shift())) {
-        action.unsubscribe();
+      while ((a = acts.shift())) {
+        a.unsubscribe();
       }
       throw e;
     }
   }
 }
 
-export function scheduleArray<N>(i: ArrayLike<N>, h: qt.Scheduler, c: qt.Context<N>) {
-  return c.createSource(r => {
+export function scheduleArray<N>(i: ArrayLike<N>, h: qt.Scheduler) {
+  return qx.createSource(r => {
     const s = new qj.Subscription();
     let j = 0;
     s.add(
@@ -383,13 +362,9 @@ export function scheduleArray<N>(i: ArrayLike<N>, h: qt.Scheduler, c: qt.Context
   });
 }
 
-export function scheduleAsyncIter<N>(
-  i: AsyncIterable<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N>
-) {
+export function scheduleAsyncIter<N>(i: AsyncIterable<N>, h: qt.Scheduler) {
   if (!i) throw new Error('Iterable needed');
-  return c.createSource(r => {
+  return qx.createSource(r => {
     const s = new qj.Subscription();
     s.add(
       h.schedule(() => {
@@ -411,9 +386,9 @@ export function scheduleAsyncIter<N>(
   });
 }
 
-export function scheduleIter<N>(i: Iterable<N>, h: qt.Scheduler, c: qt.Context<N>) {
+export function scheduleIter<N>(i: Iterable<N>, h: qt.Scheduler) {
   if (!i) throw new Error('Iterable needed');
-  return c.createSource(r => {
+  return qx.createSource(r => {
     const s = new qj.Subscription();
     let iter: Iterator<N>;
     s.add(() => {
@@ -446,8 +421,8 @@ export function scheduleIter<N>(i: Iterable<N>, h: qt.Scheduler, c: qt.Context<N
   });
 }
 
-export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Context<N>) {
-  return c.createSource(r => {
+export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler) {
+  return qx.createSource(r => {
     const s = new qj.Subscription();
     s.add(
       h.schedule(() => {
@@ -458,10 +433,10 @@ export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Conte
               s.add(h.schedule(() => r.next(n)));
             },
             fail(e: any) {
-              s.add(h.schedule(() => r.fail(f)));
+              s.add(h.schedule(() => r.fail(e)));
             },
             done() {
-              s.add(h.schedule(() => r.done(d)));
+              s.add(h.schedule(() => r.done()));
             }
           })
         );
@@ -471,8 +446,8 @@ export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Conte
   });
 }
 
-export function schedulePromise<N>(p: PromiseLike<N>, h: qt.Scheduler, c: qt.Context<N>) {
-  return c.createSource(r => {
+export function schedulePromise<N>(p: PromiseLike<N>, h: qt.Scheduler) {
+  return qx.createSource(r => {
     const s = new qj.Subscription();
     s.add(
       h.schedule(() =>
@@ -495,18 +470,14 @@ export function schedulePromise<N>(p: PromiseLike<N>, h: qt.Scheduler, c: qt.Con
   });
 }
 
-export function scheduled<N>(
-  i: qt.Input<N>,
-  h: qt.Scheduler,
-  c: qt.Context<N>
-): qt.Source<N> {
+export function scheduled<N>(i: qt.Input<N>, h: qt.Scheduler): qt.Source<N> {
   if (i) {
-    if (qu.isInterop(i)) return scheduleSource(i, h, c);
-    if (qu.isPromise(i)) return schedulePromise(i, h, c);
-    if (qu.isArrayLike(i)) return scheduleArray(i, h, c);
-    if (qu.isIterable(i) || typeof i === 'string') return scheduleIter(i, h, c);
+    if (qu.isInterop(i)) return scheduleSource(i, h);
+    if (qu.isPromise(i)) return schedulePromise(i, h);
+    if (qu.isArrayLike(i)) return scheduleArray(i, h);
+    if (qu.isIterable(i) || typeof i === 'string') return scheduleIter(i, h);
     if (Symbol.asyncIterator && typeof (i as any)[Symbol.asyncIterator] === 'function') {
-      return scheduleAsyncIter(i as any, h, c);
+      return scheduleAsyncIter(i as any, h);
     }
   }
   throw new TypeError(((i && typeof i) || i) + ' is not observable');
