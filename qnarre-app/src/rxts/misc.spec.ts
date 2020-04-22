@@ -245,33 +245,30 @@ describe('delay', () => {
 });
 
 describe('delayWhen', () => {
-  asDiagram('delayWhen(durationSelector)')(
-    'should delay by duration selector',
-    () => {
-      const e1 = hot('---a---b---c--|');
-      const expected = '-----a------c----(b|)';
-      const subs = '^             !';
-      const selector = [cold('--x--|'), cold('----------(x|)'), cold('-x--|')];
-      const selectorSubs = [
-        '   ^ !            ',
-        '       ^         !',
-        '           ^!     '
-      ];
+  asDiagram('delayWhen(durationSelector)')('should delay by duration selector', () => {
+    const e1 = hot('---a---b---c--|');
+    const expected = '-----a------c----(b|)';
+    const subs = '^             !';
+    const selector = [cold('--x--|'), cold('----------(x|)'), cold('-x--|')];
+    const selectorSubs = [
+      '   ^ !            ',
+      '       ^         !',
+      '           ^!     '
+    ];
 
-      let idx = 0;
-      function durationSelector(x: any) {
-        return selector[idx++];
-      }
-
-      const result = e1.pipe(delayWhen(durationSelector));
-
-      expectSource(result).toBe(expected);
-      expectSubscriptions(e1.subscriptions).toBe(subs);
-      expectSubscriptions(selector[0].subscriptions).toBe(selectorSubs[0]);
-      expectSubscriptions(selector[1].subscriptions).toBe(selectorSubs[1]);
-      expectSubscriptions(selector[2].subscriptions).toBe(selectorSubs[2]);
+    let idx = 0;
+    function durationSelector(x: any) {
+      return selector[idx++];
     }
-  );
+
+    const result = e1.pipe(delayWhen(durationSelector));
+
+    expectSource(result).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(subs);
+    expectSubscriptions(selector[0].subscriptions).toBe(selectorSubs[0]);
+    expectSubscriptions(selector[1].subscriptions).toBe(selectorSubs[1]);
+    expectSubscriptions(selector[2].subscriptions).toBe(selectorSubs[2]);
+  });
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(delayWhen(() => of('a', 'b', 'c'))); // $ExpectType Observable<number>
@@ -285,9 +282,7 @@ describe('delayWhen', () => {
   });
 
   it('should support a subscriptiondelayWhen parameter', () => {
-    const o = of(1, 2, 3).pipe(
-      delayWhen(() => of('a', 'b', 'c'), of(new Date()))
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(delayWhen(() => of('a', 'b', 'c'), of(new Date()))); // $ExpectType Observable<number>
   });
 
   it('should enforce types', () => {
@@ -296,12 +291,8 @@ describe('delayWhen', () => {
 
   it('should enforce types of delayWhenDurationSelector', () => {
     const o = of(1, 2, 3).pipe(delayWhen(of('a', 'b', 'c'))); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      delayWhen((value: string, index) => of('a', 'b', 'c'))
-    ); // $ExpectError
-    const q = of(1, 2, 3).pipe(
-      delayWhen((value, index: string) => of('a', 'b', 'c'))
-    ); // $ExpectError
+    const p = of(1, 2, 3).pipe(delayWhen((value: string, index) => of('a', 'b', 'c'))); // $ExpectError
+    const q = of(1, 2, 3).pipe(delayWhen((value, index: string) => of('a', 'b', 'c'))); // $ExpectError
   });
 
   it('should enforce types of subscriptiondelayWhen', () => {
@@ -561,9 +552,9 @@ describe('dematerialize', () => {
     const result = e1.pipe(
       map((x: string) => {
         if (x === '|') {
-          return Notification.createDone();
+          return Note.createDone();
         } else {
-          return Notification.createNext(x.replace('{', '').replace('}', ''));
+          return Note.createNext(x.replace('{', '').replace('}', ''));
         }
       }),
       dematerialize()
@@ -573,23 +564,23 @@ describe('dematerialize', () => {
   });
 
   it('should infer correctly', () => {
-    const o = of(Notification.createNext('foo')).pipe(dematerialize()); // $ExpectType Observable<string>
+    const o = of(Note.createNext('foo')).pipe(dematerialize()); // $ExpectType Observable<string>
   });
 
   it('should enforce types', () => {
-    const o = of(Notification.createNext('foo')).pipe(dematerialize(() => {})); // $ExpectError
+    const o = of(Note.createNext('foo')).pipe(dematerialize(() => {})); // $ExpectError
   });
 
-  it('should enforce Notification source', () => {
+  it('should enforce Note source', () => {
     const o = of('foo').pipe(dematerialize()); // $ExpectError
   });
 
   it('should dematerialize a happy stream', () => {
     const values = {
-      a: Notification.createNext('w'),
-      b: Notification.createNext('x'),
-      c: Notification.createNext('y'),
-      d: Notification.createDone()
+      a: Note.createNext('w'),
+      b: Note.createNext('x'),
+      c: Note.createNext('y'),
+      d: Note.createDone()
     };
 
     const e1 = hot('--a--b--c--d--|', values);
@@ -602,10 +593,10 @@ describe('dematerialize', () => {
 
   it('should dematerialize a sad stream', () => {
     const values = {
-      a: Notification.createNext('w'),
-      b: Notification.createNext('x'),
-      c: Notification.createNext('y'),
-      d: Notification.createFail('error')
+      a: Note.createNext('w'),
+      b: Note.createNext('x'),
+      c: Note.createNext('y'),
+      d: Note.createFail('error')
     };
 
     const e1 = hot('--a--b--c--d--|', values);
@@ -654,7 +645,7 @@ describe('dematerialize', () => {
 
   it('should dematerialize stream throws', () => {
     const error = 'error';
-    const e1 = hot('(x|)', {x: Notification.createFail(error)});
+    const e1 = hot('(x|)', {x: Note.createFail(error)});
     const e1subs = '(^!)';
     const expected = '#';
 
@@ -664,8 +655,8 @@ describe('dematerialize', () => {
 
   it('should allow unsubscribing early and explicitly', () => {
     const values = {
-      a: Notification.createNext('w'),
-      b: Notification.createNext('x')
+      a: Note.createNext('w'),
+      b: Note.createNext('x')
     };
 
     const e1 = hot('--a--b--c--d--|', values);
@@ -681,8 +672,8 @@ describe('dematerialize', () => {
 
   it('should not break unsubscription chains when unsubscribed explicitly', () => {
     const values = {
-      a: Notification.createNext('w'),
-      b: Notification.createNext('x')
+      a: Note.createNext('w'),
+      b: Note.createNext('x')
     };
 
     const e1 = hot('--a--b--c--d--|', values);
@@ -701,7 +692,7 @@ describe('dematerialize', () => {
   });
 
   it('should dematerialize and completes when stream compltes with complete notification', () => {
-    const e1 = hot('----(a|)', {a: Notification.createDone()});
+    const e1 = hot('----(a|)', {a: Note.createDone()});
     const e1subs = '^   !';
     const expected = '----|';
 
@@ -710,7 +701,7 @@ describe('dematerialize', () => {
   });
 
   it('should dematerialize and completes when stream emits complete notification', () => {
-    const e1 = hot('----a--|', {a: Notification.createDone()});
+    const e1 = hot('----a--|', {a: Note.createDone()});
     const e1subs = '^   !';
     const expected = '----|';
 
@@ -727,7 +718,7 @@ describe('materialize', () => {
 
     const result = e1.pipe(
       materialize(),
-      map((x: Notification<any>) => {
+      map((x: Note<any>) => {
         if (x.kind === 'C') {
           return '|';
         } else {
@@ -740,7 +731,7 @@ describe('materialize', () => {
   });
 
   it('should infer correctly', () => {
-    const o = of('foo').pipe(materialize()); // $ExpectType Observable<Notification<string>>
+    const o = of('foo').pipe(materialize()); // $ExpectType Observable<Note<string>>
   });
 
   it('should enforce types', () => {
@@ -753,10 +744,10 @@ describe('materialize', () => {
     const expected = '--w--x--y--(z|)';
 
     const expectedValue = {
-      w: Notification.createNext('a'),
-      x: Notification.createNext('b'),
-      y: Notification.createNext('c'),
-      z: Notification.createDone()
+      w: Note.createNext('a'),
+      x: Note.createNext('b'),
+      y: Note.createNext('c'),
+      z: Note.createDone()
     };
 
     expectSource(e1.pipe(materialize())).toBe(expected, expectedValue);
@@ -769,10 +760,10 @@ describe('materialize', () => {
     const expected = '--w--x--y--(z|)';
 
     const expectedValue = {
-      w: Notification.createNext('a'),
-      x: Notification.createNext('b'),
-      y: Notification.createNext('c'),
-      z: Notification.createFail('error')
+      w: Note.createNext('a'),
+      x: Note.createNext('b'),
+      y: Note.createNext('c'),
+      z: Note.createFail('error')
     };
 
     expectSource(e1.pipe(materialize())).toBe(expected, expectedValue);
@@ -786,8 +777,8 @@ describe('materialize', () => {
     const expected = '--w--x-     ';
 
     const expectedValue = {
-      w: Notification.createNext('a'),
-      x: Notification.createNext('b')
+      w: Note.createNext('a'),
+      x: Note.createNext('b')
     };
 
     expectSource(e1.pipe(materialize()), unsub).toBe(expected, expectedValue);
@@ -801,14 +792,14 @@ describe('materialize', () => {
     const unsub = '      !     ';
 
     const expectedValue = {
-      w: Notification.createNext('a'),
-      x: Notification.createNext('b')
+      w: Note.createNext('a'),
+      x: Note.createNext('b')
     };
 
     const result = e1.pipe(
       mergeMap((x: string) => of(x)),
       materialize(),
-      mergeMap((x: Notification<any>) => of(x))
+      mergeMap((x: Note<any>) => of(x))
     );
 
     expectSource(result, unsub).toBe(expected, expectedValue);
@@ -839,7 +830,7 @@ describe('materialize', () => {
     const expected = '----(x|)';
 
     expectSource(e1.pipe(materialize())).toBe(expected, {
-      x: Notification.createDone()
+      x: Note.createDone()
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -850,7 +841,7 @@ describe('materialize', () => {
     const expected = '(x|)';
 
     expectSource(e1.pipe(materialize())).toBe(expected, {
-      x: Notification.createDone()
+      x: Note.createDone()
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -861,33 +852,28 @@ describe('materialize', () => {
     const expected = '(x|)';
 
     expectSource(e1.pipe(materialize())).toBe(expected, {
-      x: Notification.createFail('error')
+      x: Note.createFail('error')
     });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
 
 describe('observeOn', () => {
-  asDiagram('observeOn(scheduler)')(
-    'should observe on specified scheduler',
-    () => {
-      const e1 = hot('--a--b--|');
-      const expected = '--a--b--|';
-      const sub = '^       !';
+  asDiagram('observeOn(scheduler)')('should observe on specified scheduler', () => {
+    const e1 = hot('--a--b--|');
+    const expected = '--a--b--|';
+    const sub = '^       !';
 
-      expectSource(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
-      expectSubscriptions(e1.subscriptions).toBe(sub);
-    }
-  );
+    expectSource(e1.pipe(observeOn(rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(sub);
+  });
 
   it('should infer correctly', () => {
     const o = of('apple', 'banana', 'peach').pipe(observeOn(asyncScheduler)); // $ExpectType Observable<string>
   });
 
   it('should support a delay', () => {
-    const o = of('apple', 'banana', 'peach').pipe(
-      observeOn(asyncScheduler, 47)
-    ); // $ExpectType Observable<string>
+    const o = of('apple', 'banana', 'peach').pipe(observeOn(asyncScheduler, 47)); // $ExpectType Observable<string>
   });
 
   it('should enforce types', () => {
@@ -899,9 +885,7 @@ describe('observeOn', () => {
   });
 
   it('should enforce delay type', () => {
-    const p = of('apple', 'banana', 'peach').pipe(
-      observeOn(asyncScheduler, '47')
-    ); // $ExpectError
+    const p = of('apple', 'banana', 'peach').pipe(observeOn(asyncScheduler, '47')); // $ExpectError
   });
 
   it('should observe after specified delay', () => {
@@ -1012,17 +996,14 @@ describe('observeOn', () => {
 });
 
 describe('subscribeOn', () => {
-  asDiagram('subscribeOn(scheduler)')(
-    'should subscribe on specified scheduler',
-    () => {
-      const e1 = hot('--a--b--|');
-      const expected = '--a--b--|';
-      const sub = '^       !';
+  asDiagram('subscribeOn(scheduler)')('should subscribe on specified scheduler', () => {
+    const e1 = hot('--a--b--|');
+    const expected = '--a--b--|';
+    const sub = '^       !';
 
-      expectSource(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
-      expectSubscriptions(e1.subscriptions).toBe(sub);
-    }
-  );
+    expectSource(e1.pipe(subscribeOn(rxTestScheduler))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(sub);
+  });
 
   it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(subscribeOn(asyncScheduler)); // $ExpectType Observable<string>
@@ -1553,19 +1534,16 @@ describe('timeInterval', () => {
 describe('timeout', () => {
   const defaultTimeoutError = new TimeoutError();
 
-  asDiagram('timeout(50)')(
-    'should timeout after a specified timeout period',
-    () => {
-      const e1 = cold('-------a--b--|');
-      const e1subs = '^    !        ';
-      const expected = '-----#        ';
+  asDiagram('timeout(50)')('should timeout after a specified timeout period', () => {
+    const e1 = cold('-------a--b--|');
+    const e1subs = '^    !        ';
+    const expected = '-----#        ';
 
-      const result = e1.pipe(timeout(50, rxTestScheduler));
+    const result = e1.pipe(timeout(50, rxTestScheduler));
 
-      expectSource(result).toBe(expected, null, defaultTimeoutError);
-      expectSubscriptions(e1.subscriptions).toBe(e1subs);
-    }
-  );
+    expectSource(result).toBe(expected, null, defaultTimeoutError);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
 
   it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(timeout(10)); // $ExpectType Observable<string>
@@ -1617,13 +1595,9 @@ describe('timeout', () => {
     const e1subs = '^                !';
     const expected = '--a--b--c--d--e--|';
 
-    const timeoutValue = new Date(
-      rxTestScheduler.now() + (expected.length + 2) * 10
-    );
+    const timeoutValue = new Date(rxTestScheduler.now() + (expected.length + 2) * 10);
 
-    expectSource(e1.pipe(timeout(timeoutValue, rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(timeout(timeoutValue, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1721,9 +1695,7 @@ describe('timeout', () => {
             // because it'll be null by the
             if (!action.closed) {
               // time we get into this function.
-              throw new Error(
-                "TimeoutSubscriber scheduled action wasn't canceled"
-              );
+              throw new Error("TimeoutSubscriber scheduled action wasn't canceled");
             }
           });
           return source.subscribe(timeoutSubscriber);
@@ -1768,19 +1740,13 @@ describe('timeoutWith', () => {
   it('should support a date', () => {
     const o = of('a', 'b', 'c').pipe(timeoutWith(new Date(), of(1, 2, 3))); // $ExpectType Observable<string | number>
     const p = of('a', 'b', 'c').pipe(timeoutWith(new Date(), [1, 2, 3])); // $ExpectType Observable<string | number>
-    const q = of('a', 'b', 'c').pipe(
-      timeoutWith(new Date(), Promise.resolve(5))
-    ); // $ExpectType Observable<string | number>
-    const r = of('a', 'b', 'c').pipe(
-      timeoutWith(new Date(), new Set([1, 2, 3]))
-    ); // $ExpectType Observable<string | number>
+    const q = of('a', 'b', 'c').pipe(timeoutWith(new Date(), Promise.resolve(5))); // $ExpectType Observable<string | number>
+    const r = of('a', 'b', 'c').pipe(timeoutWith(new Date(), new Set([1, 2, 3]))); // $ExpectType Observable<string | number>
     const s = of('a', 'b', 'c').pipe(timeoutWith(new Date(), 'foo')); // $ExpectType Observable<string>
   });
 
   it('should support a scheduler', () => {
-    const o = of('a', 'b', 'c').pipe(
-      timeoutWith(10, of(1, 2, 3), asyncScheduler)
-    ); // $ExpectType Observable<string | number>
+    const o = of('a', 'b', 'c').pipe(timeoutWith(10, of(1, 2, 3), asyncScheduler)); // $ExpectType Observable<string | number>
     const p = of('a', 'b', 'c').pipe(
       timeoutWith(new Date(), of(1, 2, 3), asyncScheduler)
     ); // $ExpectType Observable<string | number>
@@ -2042,9 +2008,7 @@ describe('timeoutWith', () => {
     const e2subs: string[] = [];
     const expected = '---a---#';
 
-    const result = e1.pipe(
-      timeoutWith(new Date(Date.now() + 100), e2, rxTestScheduler)
-    );
+    const result = e1.pipe(timeoutWith(new Date(Date.now() + 100), e2, rxTestScheduler));
 
     expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -2087,9 +2051,7 @@ describe('timeoutWith', () => {
             // because it'll be null by the
             if (!action.closed) {
               // time we get into this function.
-              throw new Error(
-                "TimeoutSubscriber scheduled action wasn't canceled"
-              );
+              throw new Error("TimeoutSubscriber scheduled action wasn't canceled");
             }
           });
           return source.subscribe(timeoutSubscriber);
@@ -2104,23 +2066,20 @@ describe('timeoutWith', () => {
 });
 
 describe('time', () => {
-  asDiagram('time')(
-    'should record the time stamp per each source elements',
-    () => {
-      const e1 = hot('-b-c-----d--e--|');
-      const e1subs = '^              !';
-      const expected = '-w-x-----y--z--|';
-      const expectedValue = {w: 10, x: 30, y: 90, z: 120};
+  asDiagram('time')('should record the time stamp per each source elements', () => {
+    const e1 = hot('-b-c-----d--e--|');
+    const e1subs = '^              !';
+    const expected = '-w-x-----y--z--|';
+    const expectedValue = {w: 10, x: 30, y: 90, z: 120};
 
-      const result = e1.pipe(
-        time(rxTestScheduler),
-        map(x => x.time)
-      );
+    const result = e1.pipe(
+      time(rxTestScheduler),
+      map(x => x.time)
+    );
 
-      expectSource(result).toBe(expected, expectedValue);
-      expectSubscriptions(e1.subscriptions).toBe(e1subs);
-    }
-  );
+    expectSource(result).toBe(expected, expectedValue);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
 
   it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(time()); // $ExpectType Observable<Stamp<string>>
@@ -2263,17 +2222,14 @@ describe('time', () => {
 });
 
 describe('toArray', () => {
-  asDiagram('toArray')(
-    'should reduce the values of an observable into an array',
-    () => {
-      const e1 = hot('---a--b--|');
-      const e1subs = '^        !';
-      const expected = '---------(w|)';
+  asDiagram('toArray')('should reduce the values of an observable into an array', () => {
+    const e1 = hot('---a--b--|');
+    const e1subs = '^        !';
+    const expected = '---------(w|)';
 
-      expectSource(e1.pipe(toArray())).toBe(expected, {w: ['a', 'b']});
-      expectSubscriptions(e1.subscriptions).toBe(e1subs);
-    }
-  );
+    expectSource(e1.pipe(toArray())).toBe(expected, {w: ['a', 'b']});
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(toArray()); // $ExpectType Observable<number[]>

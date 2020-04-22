@@ -10,9 +10,7 @@ export function concat<A extends qt.Input<any>[]>(
 export function concat<O extends qt.Input<any>>(
   ...observables: Array<O | qh.Scheduler>
 ): qs.Source<qt.Sourced<O>> {
-  return concatAll<qt.Sourced<O>>()(
-    of(...observables) as qs.Source<qt.Sourced<O>>
-  );
+  return concatAll<qt.Sourced<O>>()(of(...observables) as qs.Source<qt.Sourced<O>>);
 }
 
 export function concatAll<N, R>(): qt.Lifter<qt.Input<N>, R>;
@@ -28,17 +26,16 @@ export function concatWith<N, A extends qt.Input<any>[]>(
 export function concatWith<N, A extends qt.Input<any>[]>(
   ...otherSources: A
 ): qt.Lifter<N, qt.SourcedOf<A> | N> {
-  return (source: qt.Source<N>) =>
-    source.lift.call(
-      concatStatic(source, ...otherSources),
-      undefined
-    ) as qt.Source<qt.SourcedOf<A> | N>;
+  return x =>
+    x.lift.call(concatStatic(x, ...otherSources), undefined) as qt.Source<
+      qt.SourcedOf<A> | N
+    >;
 }
 
 export function count<N>(
   predicate?: (n: N, index: number, source: qt.Source<N>) => boolean
 ): qt.Lifter<N, number> {
-  return (source: qt.Source<N>) => source.lift(new CountO(predicate, source));
+  return x => x.lift(new CountO(predicate, x));
 }
 
 class CountO<N> implements qt.Operator<N, number> {
@@ -50,9 +47,7 @@ class CountO<N> implements qt.Operator<N, number> {
   ) {}
 
   call(subscriber: qj.Subscriber<number>, source: any): any {
-    return source.subscribe(
-      new CountR(subscriber, this.predicate, this.source)
-    );
+    return source.subscribe(new CountR(subscriber, this.predicate, this.source));
   }
 }
 
@@ -124,14 +119,8 @@ export function reduce<V, A>(
   seed?: any
 ): qt.Lifter<V, V | A> {
   if (arguments.length >= 2) {
-    return function reduceLifterWithSeed(
-      source: qt.Source<V>
-    ): qt.Source<V | A> {
-      return pipe(
-        scan(accumulator, seed),
-        takeLast(1),
-        defaultIfEmpty(seed)
-      )(source);
+    return function reduceLifterWithSeed(source: qt.Source<V>): qt.Source<V | A> {
+      return pipe(scan(accumulator, seed), takeLast(1), defaultIfEmpty(seed))(source);
     };
   }
   return function reduceLifter(source: qt.Source<V>): qt.Source<V | A> {

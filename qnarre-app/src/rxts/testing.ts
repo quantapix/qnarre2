@@ -216,7 +216,7 @@ export class SubscriptionLoggable {
 
 export interface TestMessage {
   frame: number;
-  notification: qs.Notification<any>;
+  notification: qs.Note<any>;
   isGhost?: boolean;
 }
 
@@ -307,19 +307,19 @@ export class TestScheduler extends Virtual {
       value => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: qs.Notification.createNext(value)
+          notification: qs.Note.createNext(value)
         });
       },
       err => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: qs.Notification.createFail(err)
+          notification: qs.Note.createFail(err)
         });
       },
       () => {
         messages.push({
           frame: this.frame - outerFrame,
-          notification: qs.Notification.createDone()
+          notification: qs.Note.createDone()
         });
       }
     );
@@ -353,19 +353,19 @@ export class TestScheduler extends Virtual {
           }
           actual.push({
             frame: this.frame,
-            notification: qs.Notification.createNext(value)
+            notification: qs.Note.createNext(value)
           });
         },
         err => {
           actual.push({
             frame: this.frame,
-            notification: qs.Notification.createFail(err)
+            notification: qs.Note.createFail(err)
           });
         },
         () => {
           actual.push({
             frame: this.frame,
-            notification: qs.Notification.createDone()
+            notification: qs.Note.createDone()
           });
         }
       );
@@ -561,7 +561,7 @@ export class TestScheduler extends Virtual {
       const advanceFrameBy = (count: number) => {
         nextFrame += count * this.frameTimeFactor;
       };
-      let notification: qs.Notification<any> | undefined;
+      let notification: qs.Note<any> | undefined;
       const c = marbles[i];
       switch (c) {
         case ' ':
@@ -582,14 +582,14 @@ export class TestScheduler extends Virtual {
           advanceFrameBy(1);
           break;
         case '|':
-          notification = qs.Notification.createDone();
+          notification = qs.Note.createDone();
           advanceFrameBy(1);
           break;
         case '^':
           advanceFrameBy(1);
           break;
         case '#':
-          notification = qs.Notification.createFail(errorValue || 'error');
+          notification = qs.Note.createFail(errorValue || 'error');
           advanceFrameBy(1);
           break;
         default:
@@ -621,7 +621,7 @@ export class TestScheduler extends Virtual {
               }
             }
           }
-          notification = qs.Notification.createNext(getValue(c));
+          notification = qs.Note.createNext(getValue(c));
           advanceFrameBy(1);
           break;
       }
@@ -682,7 +682,7 @@ function stringify(x: any): string {
     .replace(/\\n/g, '\n');
 }
 
-function deleteErrorNotificationStack(marble: any) {
+function deleteErrorNoteStack(marble: any) {
   const {notification} = marble;
   if (notification) {
     const {kind, error} = notification;
@@ -695,8 +695,8 @@ function deleteErrorNotificationStack(marble: any) {
 
 export function sourceMatcher(actual: any, expected: any) {
   if (Array.isArray(actual) && Array.isArray(expected)) {
-    actual = actual.map(deleteErrorNotificationStack);
-    expected = expected.map(deleteErrorNotificationStack);
+    actual = actual.map(deleteErrorNoteStack);
+    expected = expected.map(deleteErrorNoteStack);
     const passed = _.isEqual(actual, expected);
     if (passed) return;
     let message = '\nExpected \n';

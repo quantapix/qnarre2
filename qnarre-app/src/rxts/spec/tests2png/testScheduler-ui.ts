@@ -110,7 +110,7 @@ module.exports = function (suite: any) {
         .replace(/\\n/g, '\n');
     }
 
-    function deleteErrorNotificationStack(marble: any) {
+    function deleteErrorNoteStack(marble: any) {
       const {notification} = marble;
       if (notification) {
         const {kind, error} = notification;
@@ -123,8 +123,8 @@ module.exports = function (suite: any) {
 
     function sourceMatcher(actual: any, expected: any) {
       if (Array.isArray(actual) && Array.isArray(expected)) {
-        actual = actual.map(deleteErrorNotificationStack);
-        expected = expected.map(deleteErrorNotificationStack);
+        actual = actual.map(deleteErrorNoteStack);
+        expected = expected.map(deleteErrorNoteStack);
         const passed = _.isEqual(actual, expected);
         if (passed) {
           return;
@@ -183,9 +183,7 @@ module.exports = function (suite: any) {
       return test;
     };
 
-    context.xit = context.xspecify = context.it.skip = function (
-      title: string
-    ) {
+    context.xit = context.xspecify = context.it.skip = function (title: string) {
       context.it(title);
     };
 

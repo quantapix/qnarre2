@@ -1329,7 +1329,7 @@ describe('Replay', () => {
 
 class TestObserver implements qt.Observer<number> {
   rs = [] as (number | string | undefined)[];
-  next(n?: number) {
+  next(n: number) {
     this.rs.push(n);
   }
   fail(e?: any) {

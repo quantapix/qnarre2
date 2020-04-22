@@ -5,16 +5,13 @@ import * as qj from './subject';
 import * as qh from './scheduler';
 
 interface DelayState<N> {
-  source: DelaySubscriber<N>;
+  source: DelayR<N>;
   tgt: qt.Target<N>;
   scheduler: qt.Scheduler;
 }
 
 class DelayMessage<N> {
-  constructor(
-    public readonly time: number,
-    public readonly notification: qt.Notification<N>
-  ) {}
+  constructor(public readonly time: number, public readonly notification: qt.Note<N>) {}
 }
 
 export function delay<N>(
@@ -34,7 +31,7 @@ class DelayO<N> implements qt.Operator<N, N> {
   }
 }
 
-export class Delay<N> extends qj.Subscriber<N> {
+export class DelayR<N> extends qj.Subscriber<N> {
   private queue: Array<DelayMessage<N>> = [];
   private active = false;
   private errored = false;
@@ -79,7 +76,7 @@ export class Delay<N> extends qj.Subscriber<N> {
     );
   }
 
-  private scheduleNotification(n: qt.Notification<N>): void {
+  private scheduleNote(n: qt.Note<N>): void {
     if (this.errored === true) return;
     const s = this.scheduler;
     const m = new DelayMessage(s.now() + this.delay, n);
@@ -87,8 +84,8 @@ export class Delay<N> extends qj.Subscriber<N> {
     if (!this.active) this._schedule(s);
   }
 
-  protected _next(n?: N) {
-    this.scheduleNotification(Notification.createNext(n));
+  protected _next(n: N) {
+    this.scheduleNote(Note.createNext(n));
   }
 
   protected _fail(e: any) {
@@ -163,7 +160,7 @@ export class DelayWhenR<N, M> extends qj.Reactor<N, M> {
     this.tryComplete();
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const index = this.index++;
     try {
       const delayNotifier = this.delayDurationSelector(n, index);
@@ -217,7 +214,7 @@ export class SubscriptionDelayR<N> extends qj.Subscriber<N> {
     super();
   }
 
-  protected _next(_n?: N) {
+  protected _next(_n: N) {
     this.subscribeToSource();
   }
 
@@ -226,7 +223,7 @@ export class SubscriptionDelayR<N> extends qj.Subscriber<N> {
     this.parent.fail(e);
   }
 
-  protected _done(_d?: D) {
+  protected _done() {
     this.unsubscribe();
     this.subscribeToSource();
   }
@@ -240,62 +237,60 @@ export class SubscriptionDelayR<N> extends qj.Subscriber<N> {
   }
 }
 
-export function dematerialize<N>(): qt.Lifter<Notification<N>, T> {
+export function dematerialize<N>(): qt.Lifter<Note<N>, T> {
   return x => x.lift(new DeMaterializeO());
 }
 
-class DeMaterializeO<T extends Notification<any>, R> implements qt.Operator<T, R> {
+class DeMaterializeO<T extends Note<any>, R> implements qt.Operator<T, R> {
   call(r: qt.Subscriber<any>, s: any): any {
     return s.subscribe(new DeMaterializeR(r));
   }
 }
 
-export class DeMaterializeR<N extends qt.Notification<any>, F, D> extends qj.Subscriber<
-  N
-> {
+export class DeMaterializeR<N extends qt.Note<any>> extends qj.Subscriber<N> {
   constructor(tgt: qt.Subscriber<any>) {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     n?.observe(this.tgt);
   }
 }
 
-export function materialize<N>(): qt.Lifter<T, Notification<N>> {
+export function materialize<N>(): qt.Lifter<T, Note<N>> {
   return x => x.lift(new MaterializeO());
 }
 
-class MaterializeO<N> implements qt.Operator<T, Notification<N>> {
-  call(r: qt.Subscriber<Notification<N>>, s: any): any {
+class MaterializeO<N> implements qt.Operator<T, Note<N>> {
+  call(r: qt.Subscriber<Note<N>>, s: any): any {
     return s.subscribe(new MaterializeR(r));
   }
 }
 
 export class MaterializeR<N> extends qt.Subscriber<N> {
-  constructor(tgt: qt.Subscriber<Notification<N>>) {
+  constructor(tgt: qt.Subscriber<Note<N>>) {
     super(tgt);
   }
 
-  protected _next(n?: N) {
-    this.tgt.next(Notification.createNext(n));
+  protected _next(n: N) {
+    this.tgt.next(Note.createNext(n));
   }
 
   protected _fail(e: any) {
     const tgt = this.tgt;
-    tgt.next(Notification.createFail(f));
+    tgt.next(Note.createFail(e));
     tgt.done();
   }
 
   protected _done() {
     const tgt = this.tgt;
-    tgt.next(Notification.createDone(d));
+    tgt.next(Note.createDone());
     tgt.done();
   }
 }
 
 export class ObserveOnMessage {
-  constructor(public notification: qt.Notification<any>, public tgt: qt.Target<any>) {}
+  constructor(public notification: qt.Note<any>, public tgt: qt.Target<any>) {}
 }
 
 export function observeOn<N>(scheduler: qt.Scheduler, delay: number = 0): qt.Shifter<N> {
@@ -323,7 +318,7 @@ export class ObserveOnR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  private scheduleMessage(n: Notification<any>) {
+  private scheduleMessage(n: Note<any>) {
     const tgt = this.tgt as qt.Subscription;
     tgt.add(
       this.scheduler.schedule(
@@ -334,17 +329,17 @@ export class ObserveOnR<N> extends qj.Subscriber<N> {
     );
   }
 
-  protected _next(n?: N) {
-    this.scheduleMessage(Notification.createNext(n));
+  protected _next(n: N) {
+    this.scheduleMessage(Note.createNext(n));
   }
 
   protected _fail(e: any) {
-    this.scheduleMessage(Notification.createFail(f));
+    this.scheduleMessage(Note.createFail(e));
     this.unsubscribe();
   }
 
   protected _done() {
-    this.scheduleMessage(Notification.createDone(d));
+    this.scheduleMessage(Note.createDone());
     this.unsubscribe();
   }
 }
@@ -418,7 +413,7 @@ export class TapR<N> extends qt.Subscriber<N> {
     }
   }
 
-  _next(n?: N) {
+  _next(n: N) {
     try {
       this._tapNext.call(this._context, n);
     } catch (e) {
@@ -560,7 +555,7 @@ export class TimeoutWithR<T, R> extends qj.Reactor<N, M> {
     }
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (!this.absoluteTimeout) this.scheduleTimeout();
     super._next(n);
   }

@@ -40,11 +40,7 @@ export class Source<N> implements qt.Source<N> {
   }
 
   subscribe(t?: qt.Target<N>): qt.Subscription;
-  subscribe(
-    next?: qt.Fun<N>,
-    fail?: qt.Fun<any>,
-    done?: qt.Fun<void>
-  ): qt.Subscription;
+  subscribe(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>): qt.Subscription;
   subscribe(
     t?: qt.Target<N> | qt.Fun<N>,
     fail?: qt.Fun<any>,
@@ -154,10 +150,7 @@ export class Source<N> implements qt.Source<N> {
 
   toPromise<T>(this: Source<T>): Promise<T | undefined>;
   toPromise<T>(this: Source<T>, c: typeof Promise): Promise<T | undefined>;
-  toPromise<T>(
-    this: Source<T>,
-    c: PromiseConstructorLike
-  ): Promise<T | undefined>;
+  toPromise<T>(this: Source<T>, c: PromiseConstructorLike): Promise<T | undefined>;
   toPromise(c?: PromiseConstructorLike): Promise<N | undefined> {
     c = promiseCtor(c);
     return new c((res, rej) => {
@@ -236,11 +229,7 @@ async function* coroutine<N>(s: Source<N>) {
 }
 
 export class Grouped<K, N> extends Source<N> {
-  constructor(
-    public key: K,
-    private group: qt.Subject<N>,
-    private ref?: qt.RefCounted
-  ) {
+  constructor(public key: K, private group: qt.Subject<N>, private ref?: qt.RefCounted) {
     super();
   }
 
@@ -253,13 +242,29 @@ export class Grouped<K, N> extends Source<N> {
   }
 }
 
-export enum NotificationKind {
+export enum NoteKind {
   NEXT = 'N',
   FAIL = 'F',
   DONE = 'D'
 }
 
-export class Notification<N> {
+export class Note<N> {
+  static createNext<N>(n?: N): Note<N> {
+    if (n === undefined) return Note.undefNote;
+    return new Note('N', n);
+  }
+
+  static createFail<N>(e: any): Note<N> {
+    return new Note('F', undefined, e);
+  }
+
+  static createDone<N>(): Note<N> {
+    return Note.doneNote;
+  }
+
+  private static doneNote: Note<any> = new Note('D');
+  private static undefNote: Note<any> = new Note('N', undefined);
+
   hasN: boolean;
 
   constructor(kind: 'N', n: N);
@@ -291,11 +296,7 @@ export class Notification<N> {
     }
   }
 
-  accept(
-    t?: qt.Target<N> | qt.Fun<N>,
-    fail?: qt.Fun<any>,
-    done?: qt.Fun<void>
-  ) {
+  accept(t?: qt.Target<N> | qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>) {
     if (typeof t === 'function') return this.act(t, fail, done);
     return this.observe(t);
   }
@@ -309,25 +310,6 @@ export class Notification<N> {
       case 'D':
         return EMPTY;
     }
-  }
-
-  private static doneNote: Notification<any> = new Notification('D');
-  private static undefineNote: Notification<any> = new Notification(
-    'N',
-    undefined
-  );
-
-  static createNext<N>(n?: N): Notification<N> {
-    if (n !== undefined) return new Notification('N', n);
-    return Notification.undefineNote;
-  }
-
-  static createFail<N>(e: any): Notification<N> {
-    return new Notification('F', undefined, e);
-  }
-
-  static createDone<N>(): Notification<N> {
-    return Notification.doneNote;
   }
 }
 

@@ -92,11 +92,7 @@ describe('buffer', () => {
       const a = hot('---^--a--');
       const b = throwError(new Error('too bad'));
       const expected = '#';
-      expectSource(a.pipe(buffer(b))).toBe(
-        expected,
-        null,
-        new Error('too bad')
-      );
+      expectSource(a.pipe(buffer(b))).toBe(expected, null, new Error('too bad'));
     });
   });
 
@@ -105,11 +101,7 @@ describe('buffer', () => {
       const a = throwError(new Error('too bad'));
       const b = hot('---^--a--');
       const expected = '#';
-      expectSource(a.pipe(buffer(b))).toBe(
-        expected,
-        null,
-        new Error('too bad')
-      );
+      expectSource(a.pipe(buffer(b))).toBe(expected, null, new Error('too bad'));
     });
   });
 
@@ -118,11 +110,7 @@ describe('buffer', () => {
       const a = hot('---^-------#', undefined, new Error('too bad'));
       const b = hot('---^--------');
       const expected = '--------#';
-      expectSource(a.pipe(buffer(b))).toBe(
-        expected,
-        null,
-        new Error('too bad')
-      );
+      expectSource(a.pipe(buffer(b))).toBe(expected, null, new Error('too bad'));
     });
   });
 
@@ -131,11 +119,7 @@ describe('buffer', () => {
       const a = hot('---^-------#', undefined, new Error('too bad'));
       const b = hot('---^---a----');
       const expected = '----a---#';
-      expectSource(a.pipe(buffer(b))).toBe(
-        expected,
-        {a: []},
-        new Error('too bad')
-      );
+      expectSource(a.pipe(buffer(b))).toBe(expected, {a: []}, new Error('too bad'));
     });
   });
 
@@ -237,17 +221,9 @@ describe('buffer', () => {
   it('should work with non-empty and empty selector error', () => {
     testScheduler.run(({hot, expectSource}) => {
       const a = hot('--1--2--^--3--4--5---6----7--8--9---0---|');
-      const b = hot(
-        '--------^----------------#',
-        undefined,
-        new Error('too bad')
-      );
+      const b = hot('--------^----------------#', undefined, new Error('too bad'));
       const expected = '     -----------------#';
-      expectSource(a.pipe(buffer(b))).toBe(
-        expected,
-        null,
-        new Error('too bad')
-      );
+      expectSource(a.pipe(buffer(b))).toBe(expected, null, new Error('too bad'));
     });
   });
 
@@ -623,21 +599,14 @@ describe('bufferTime', () => {
 
   it('should emit buffers that have been created at intervals and close after the specified delay', () => {
     testScheduler.run(({hot, time, expectSource}) => {
-      const e1 = hot(
-        '       ---a---b---c----d----e----f----g----h----i----(k|)'
-      );
+      const e1 = hot('       ---a---b---c----d----e----f----g----h----i----(k|)');
       //                     --------------------*--------------------*----  start interval
       //                     ---------------------|                          timespans
       //                                         ---------------------|
       //                                                              -----|
-      const t = time(
-        '       ---------------------|                            '
-      );
-      const interval = time(
-        '--------------------|                             '
-      );
-      const expected =
-        '     ---------------------x-------------------y----(z|)';
+      const t = time('       ---------------------|                            ');
+      const interval = time('--------------------|                             ');
+      const expected = '     ---------------------x-------------------y----(z|)';
       const values = {
         x: ['a', 'b', 'c', 'd', 'e'],
         y: ['e', 'f', 'g', 'h', 'i'],
@@ -956,17 +925,13 @@ describe('bufferToggle', () => {
     }
   );
   it('should infer correctly', () => {
-    const o = of(1, 2, 3).pipe(
-      bufferToggle(of('a', 'b', 'c'), value => of(new Date()))
-    ); // $ExpectType Observable<number[]>
+    const o = of(1, 2, 3).pipe(bufferToggle(of('a', 'b', 'c'), value => of(new Date()))); // $ExpectType Observable<number[]>
   });
 
   it('should support Promises', () => {
     const promise = Promise.resolve('a');
     const o = of(1, 2, 3).pipe(bufferToggle(promise, value => of(new Date()))); // $ExpectType Observable<number[]>
-    const p = of(1, 2, 3).pipe(
-      bufferToggle(of('a', 'b', 'c'), value => promise)
-    ); // $ExpectType Observable<number[]>
+    const p = of(1, 2, 3).pipe(bufferToggle(of('a', 'b', 'c'), value => promise)); // $ExpectType Observable<number[]>
     const q = of(1, 2, 3).pipe(bufferToggle(promise, value => promise)); // $ExpectType Observable<number[]>
   });
 
@@ -1001,8 +966,7 @@ describe('bufferToggle', () => {
         const e3 = cold('              ---------------(j|)');
         //                                           ---------------(j|)
         //                                                          ---------------(j|)
-        const expected =
-          '----------------------------q-------------r-------(s|)';
+        const expected = '----------------------------q-------------r-------(s|)';
 
         const values = {
           q: ['c', 'd', 'e'],
@@ -1089,9 +1053,7 @@ describe('bufferToggle', () => {
       expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       for (let j = 0; j < closings.length; j++) {
-        expectSubscriptions(closings[j].obs.subscriptions).toBe(
-          closings[j].sub
-        );
+        expectSubscriptions(closings[j].obs.subscriptions).toBe(closings[j].sub);
       }
     });
   });
@@ -1615,9 +1577,7 @@ describe('bufferWhen', () => {
       expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(subs);
       for (let j = 0; j < closings.length; j++) {
-        expectSubscriptions(closings[j].obs.subscriptions).toBe(
-          closings[j].sub
-        );
+        expectSubscriptions(closings[j].obs.subscriptions).toBe(closings[j].sub);
       }
     });
   });
@@ -1973,9 +1933,7 @@ describe('concatMap', () => {
       const expected = '--x-x-x-y-y-yz-z-z-|';
       const values = {x: 10, y: 30, z: 50};
 
-      const result = e1.pipe(
-        concatMap(x => e2.pipe(map(i => i * parseInt(x))))
-      );
+      const result = e1.pipe(concatMap(x => e2.pipe(map(i => i * parseInt(x)))));
 
       expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -2031,9 +1989,7 @@ describe('concatMap', () => {
   });
 
   it('should support union-type projections', () => {
-    const o = of(Math.random()).pipe(
-      concatMap(n => (n > 0.5 ? of('life') : of(42)))
-    ); // $ExpectType Observable<string | number>
+    const o = of(Math.random()).pipe(concatMap(n => (n > 0.5 ? of('life') : of(42)))); // $ExpectType Observable<string | number>
   });
 
   it('should enforce types', () => {
@@ -2252,10 +2208,7 @@ describe('concatMap', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
     const e1 = hot('-a---b---c---d----------------------------------|');
     const e1subs = '^                                               !';
-    const inner = cold(
-      '--i-j-k-l-|                                     ',
-      values
-    );
+    const inner = cold('--i-j-k-l-|                                     ', values);
     const innersubs = [
       ' ^         !                                     ',
       '           ^         !                           ',
@@ -2275,10 +2228,7 @@ describe('concatMap', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
     const e1 = hot('-a---b---c---d-----------------------------------');
     const e1subs = '^                                                ';
-    const inner = cold(
-      '--i-j-k-l-|                                     ',
-      values
-    );
+    const inner = cold('--i-j-k-l-|                                     ', values);
     const innersubs = [
       ' ^         !                                     ',
       '           ^         !                           ',
@@ -2355,13 +2305,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, where all inners are finite', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2373,9 +2319,7 @@ describe('concatMap', () => {
     const fsubs = '                                              ^ !      ';
     const g = cold('---1-2|');
     const gsubs = '                                                ^     !';
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g|               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g|               ');
     const e1subs = '^                                      !               ';
     const expected = '---2--3--4--5----6-----2--3-1------2--3-4-5--------1-2|';
     const observableLookup: Record<string, Observable<string>> = {
@@ -2402,13 +2346,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, all inners finite except one', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2420,9 +2360,7 @@ describe('concatMap', () => {
     const fsubs: string[] = [];
     const g = cold('---1-2|');
     const gsubs: string[] = [];
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g|               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g|               ');
     const e1subs = '^                                      !               ';
     const expected = '---2--3--4--5----6-----2--3----------------------------';
     const observableLookup: Record<string, Observable<string>> = {
@@ -2449,13 +2387,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, inners finite, outer does not complete', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2467,9 +2401,7 @@ describe('concatMap', () => {
     const fsubs = '                                              ^ !      ';
     const g = cold('---1-2|');
     const gsubs = '                                                ^     !';
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g---             '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g---             ');
     const e1subs = '^                                                      ';
     const expected = '---2--3--4--5----6-----2--3-1------2--3-4-5--------1-2-';
     const observableLookup: Record<string, Observable<string>> = {
@@ -2496,13 +2428,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, all inners finite, and outer throws', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2514,9 +2442,7 @@ describe('concatMap', () => {
     const fsubs: string[] = [];
     const g = cold('---1-2|');
     const gsubs: string[] = [];
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g#               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g#               ');
     const e1subs = '^                                      !               ';
     const expected = '---2--3--4--5----6-----2--3-1------2--3#               ';
     const observableLookup: Record<string, Observable<string>> = {
@@ -2543,13 +2469,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, all inners complete except one throws', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-#                                   ');
     const csubs = '  ^                !                                   ';
@@ -2561,9 +2483,7 @@ describe('concatMap', () => {
     const fsubs: string[] = [];
     const g = cold('---1-2|');
     const gsubs: string[] = [];
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g|               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g|               ');
     const e1subs = '^                  !                                   ';
     const expected = '---2--3--4--5----6-#                                   ';
     const observableLookup: Record<string, Observable<string>> = {
@@ -2590,13 +2510,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, all inners finite, outer is unsubscribed early', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2608,9 +2524,7 @@ describe('concatMap', () => {
     const fsubs: string[] = [];
     const g = cold('---1-2|');
     const gsubs: string[] = [];
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g|               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g|               ');
     const e1subs = '^                             !                        ';
     const unsub = '                              !                        ';
     const expected = '---2--3--4--5----6-----2--3-1--                        ';
@@ -2638,13 +2552,9 @@ describe('concatMap', () => {
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2656,9 +2566,7 @@ describe('concatMap', () => {
     const fsubs: string[] = [];
     const g = cold('---1-2|');
     const gsubs: string[] = [];
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g|               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g|               ');
     const e1subs = '^                             !                        ';
     const unsub = '                              !                        ';
     const expected = '---2--3--4--5----6-----2--3-1--                        ';
@@ -2690,13 +2598,9 @@ describe('concatMap', () => {
   });
 
   it('should concatMap many complex, all inners finite, project throws', () => {
-    const a = cold(
-      '-#                                                          '
-    );
+    const a = cold('-#                                                          ');
     const asubs: string[] = [];
-    const b = cold(
-      '-#                                                        '
-    );
+    const b = cold('-#                                                        ');
     const bsubs: string[] = [];
     const c = cold('-2--3--4--5----6-|                                   ');
     const csubs = '  ^                !                                   ';
@@ -2708,9 +2612,7 @@ describe('concatMap', () => {
     const fsubs: string[] = [];
     const g = cold('---1-2|');
     const gsubs: string[] = [];
-    const e1 = hot(
-      '-a-b--^-c-----d------e----------------f-----g|               '
-    );
+    const e1 = hot('-a-b--^-c-----d------e----------------f-----g|               ');
     const e1subs = '^                          !                           ';
     const expected = '---2--3--4--5----6-----2--3#                           ';
     const observableLookup: Record<string, Observable<string>> = {
@@ -2825,9 +2727,7 @@ describe('concatMap', () => {
         done();
       },
       () => {
-        done(
-          new Error('Subscriber complete handler not supposed to be called.')
-        );
+        done(new Error('Subscriber complete handler not supposed to be called.'));
       }
     );
   });
@@ -2866,9 +2766,7 @@ describe('concatMap', () => {
         done();
       },
       () => {
-        done(
-          new Error('Subscriber complete handler not supposed to be called.')
-        );
+        done(new Error('Subscriber complete handler not supposed to be called.'));
       }
     );
   });
@@ -2920,15 +2818,11 @@ describe('concatMapTo', () => {
   });
 
   it('should support a resultSelector that takes an inner index', () => {
-    const o = of(1, 2, 3).pipe(
-      concatMapTo(of('foo'), (a, b, innnerIndex) => a)
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(concatMapTo(of('foo'), (a, b, innnerIndex) => a)); // $ExpectType Observable<number>
   });
 
   it('should support a resultSelector that takes an inner and outer index', () => {
-    const o = of(1, 2, 3).pipe(
-      concatMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(concatMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)); // $ExpectType Observable<number>
   });
 
   it('should support an undefined resultSelector', () => {
@@ -3103,10 +2997,7 @@ describe('concatMapTo', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
     const e1 = hot('-a---b---c---d----------------------------------|');
     const e1subs = '^                                               !';
-    const inner = cold(
-      '--i-j-k-l-|                                     ',
-      values
-    );
+    const inner = cold('--i-j-k-l-|                                     ', values);
     const innersubs = [
       ' ^         !                                     ',
       '           ^         !                           ',
@@ -3126,10 +3017,7 @@ describe('concatMapTo', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
     const e1 = hot('-a---b---c---d-----------------------------------');
     const e1subs = '^                                                ';
-    const inner = cold(
-      '--i-j-k-l-|                                     ',
-      values
-    );
+    const inner = cold('--i-j-k-l-|                                     ', values);
     const innersubs = [
       ' ^         !                                     ',
       '           ^         !                           ',
@@ -3283,27 +3171,22 @@ describe('concatMapTo', () => {
         done();
       },
       () => {
-        done(
-          new Error('Subscriber complete handler not supposed to be called.')
-        );
+        done(new Error('Subscriber complete handler not supposed to be called.'));
       }
     );
   });
 });
 
 describe('exhaust', () => {
-  asDiagram('exhaust')(
-    'should handle a hot observable of hot observables',
-    () => {
-      const x = cold('--a---b---c--|               ');
-      const y = cold('---d--e---f---|      ');
-      const z = cold('---g--h---i---|');
-      const e1 = hot('------x-------y-----z-------------|', {x: x, y: y, z: z});
-      const expected = '--------a---b---c------g--h---i---|';
+  asDiagram('exhaust')('should handle a hot observable of hot observables', () => {
+    const x = cold('--a---b---c--|               ');
+    const y = cold('---d--e---f---|      ');
+    const z = cold('---g--h---i---|');
+    const e1 = hot('------x-------y-----z-------------|', {x: x, y: y, z: z});
+    const expected = '--------a---b---c------g--h---i---|';
 
-      expectSource(e1.pipe(exhaust())).toBe(expected);
-    }
-  );
+    expectSource(e1.pipe(exhaust())).toBe(expected);
+  });
   it('should infer correctly', () => {
     const o = of(of(1, 2, 3)).pipe(exhaust()); // $ExpectType Observable<number>
   });
@@ -3524,9 +3407,7 @@ describe('exhaust', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number> = of(source1, source2, source3).pipe(
-      exhaust()
-    );
+    let result: Observable<number> = of(source1, source2, source3).pipe(exhaust());
     /* tslint:enable:no-unused-variable */
   });
 
@@ -3536,8 +3417,19 @@ describe('exhaust', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number> = of(source1, source2, source3).pipe(
-      exhaust()
+    let result: Observable<number> = of(source1, source2, source3).pipe(exhaust());
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    // coerce type to a specific type
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
+      exhaust<string>()
     );
     /* tslint:enable:no-unused-variable */
   });
@@ -3549,26 +3441,9 @@ describe('exhaust', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(exhaust<string>());
-    /* tslint:enable:no-unused-variable */
-  });
-
-  type(() => {
-    // coerce type to a specific type
-    /* tslint:disable:no-unused-variable */
-    const source1 = of(1, 2, 3);
-    const source2 = [1, 2, 3];
-    const source3 = new Promise<number>(d => d(1));
-
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(exhaust<string>());
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
+      exhaust<string>()
+    );
     /* tslint:enable:no-unused-variable */
   });
 });
@@ -3639,9 +3514,7 @@ describe('exhaustMap', () => {
   });
 
   it('should report projections to union types', () => {
-    const o = of(Math.random()).pipe(
-      exhaustMap(n => (n > 0.5 ? of('life') : of(42)))
-    ); // $ExpectType Observable<string | number>
+    const o = of(Math.random()).pipe(exhaustMap(n => (n > 0.5 ? of('life') : of(42)))); // $ExpectType Observable<string | number>
   });
 
   it('should enforce types', () => {
@@ -4102,9 +3975,7 @@ describe('expand', () => {
       const expected = '--a-b-c-d|';
       const values = {a: 1, b: 2, c: 4, d: 8};
 
-      const result = e1.pipe(
-        expand(x => (x === 8 ? EMPTY : e2.pipe(map(c => c * x))))
-      );
+      const result = e1.pipe(expand(x => (x === 8 ? EMPTY : e2.pipe(map(c => c * x)))));
 
       expectSource(result).toBe(expected, values);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -5278,9 +5149,8 @@ describe('groupBy', () => {
       z: TestScheduler.parseMarbles(z, values)
     };
 
-    const fooUnsubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(
-      unsubw
-    ).unsubscribedFrame;
+    const fooUnsubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(unsubw)
+      .unsubscribedFrame;
 
     const source = e1.pipe(
       groupBy((val: string) => val.toLowerCase().trim()),
@@ -5290,7 +5160,7 @@ describe('groupBy', () => {
         const subscription = group
           .pipe(
             materialize(),
-            map((notification: Notification) => {
+            map((notification: Note) => {
               return {frame: rxTestScheduler.frame, notification: notification};
             })
           )
@@ -5358,7 +5228,7 @@ describe('groupBy', () => {
         const subscription = group
           .pipe(
             materialize(),
-            map((notification: Notification) => {
+            map((notification: Note) => {
               return {frame: rxTestScheduler.frame, notification: notification};
             })
           )
@@ -5647,7 +5517,7 @@ describe('groupBy', () => {
         const subscription = group
           .pipe(
             materialize(),
-            map((notification: Notification) => {
+            map((notification: Note) => {
               return {frame: rxTestScheduler.frame, notification: notification};
             })
           )
@@ -5860,9 +5730,8 @@ describe('groupBy', () => {
         z: TestScheduler.parseMarbles(z, reversedValues)
       };
 
-      const fooUnsubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(
-        unsubv
-      ).unsubscribedFrame;
+      const fooUnsubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(unsubv)
+        .unsubscribedFrame;
 
       const source = e1.pipe(
         groupBy(
@@ -5876,7 +5745,7 @@ describe('groupBy', () => {
           const subscription = group
             .pipe(
               materialize(),
-              map((notification: Notification) => {
+              map((notification: Note) => {
                 return {
                   frame: rxTestScheduler.frame,
                   notification: notification
@@ -5959,7 +5828,7 @@ describe('groupBy', () => {
         const subscription = group
           .pipe(
             materialize(),
-            map((notification: Notification) => {
+            map((notification: Note) => {
               return {frame: rxTestScheduler.frame, notification: notification};
             })
           )
@@ -6029,14 +5898,14 @@ describe('groupBy', () => {
         (val: string) => val
       ),
       map((group: any) => {
-        const innerNotifications: any[] = [];
+        const innerNotes: any[] = [];
         const subscriptionFrame = subscriptionFrames[group.key];
 
         rxTestScheduler.schedule(() => {
           group
             .pipe(
               materialize(),
-              map((notification: Notification) => {
+              map((notification: Note) => {
                 return {
                   frame: rxTestScheduler.frame,
                   notification: notification
@@ -6044,11 +5913,11 @@ describe('groupBy', () => {
               })
             )
             .subscribe((value: any) => {
-              innerNotifications.push(value);
+              innerNotes.push(value);
             });
         }, subscriptionFrame - rxTestScheduler.frame);
 
-        return innerNotifications;
+        return innerNotes;
       })
     );
 
@@ -6074,9 +5943,8 @@ describe('groupBy', () => {
       g: TestScheduler.parseMarbles(g, values)
     };
 
-    const innerSubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(
-      innerSub
-    ).subscribedFrame;
+    const innerSubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(innerSub)
+      .subscribedFrame;
 
     const source = e1.pipe(
       groupBy(
@@ -6091,7 +5959,7 @@ describe('groupBy', () => {
           group
             .pipe(
               materialize(),
-              map((notification: Notification) => {
+              map((notification: Note) => {
                 return {
                   frame: rxTestScheduler.frame,
                   notification: notification
@@ -6129,9 +5997,8 @@ describe('groupBy', () => {
       g: TestScheduler.parseMarbles(g, values)
     };
 
-    const innerSubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(
-      innerSub
-    ).subscribedFrame;
+    const innerSubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(innerSub)
+      .subscribedFrame;
 
     const source = e1.pipe(
       groupBy(
@@ -6146,7 +6013,7 @@ describe('groupBy', () => {
           group
             .pipe(
               materialize(),
-              map((notification: Notification) => {
+              map((notification: Note) => {
                 return {
                   frame: rxTestScheduler.frame,
                   notification: notification
@@ -6185,9 +6052,8 @@ describe('groupBy', () => {
       g: TestScheduler.parseMarbles(g, values)
     };
 
-    const innerSubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(
-      innerSub
-    ).subscribedFrame;
+    const innerSubscriptionFrame = TestScheduler.parseMarblesAsSubscriptions(innerSub)
+      .subscribedFrame;
 
     const source = e1.pipe(
       groupBy(
@@ -6202,7 +6068,7 @@ describe('groupBy', () => {
           group
             .pipe(
               materialize(),
-              map((notification: Notification) => {
+              map((notification: Note) => {
                 return {
                   frame: rxTestScheduler.frame,
                   notification: notification
@@ -6286,8 +6152,7 @@ describe('map', () => {
     expectSubscriptions(a.subscriptions).toBe(asubs);
   });
 
-  const isFooBar = (value: string): value is 'foo' | 'bar' =>
-    /^(foo|bar)$/.test(value);
+  const isFooBar = (value: string): value is 'foo' | 'bar' => /^(foo|bar)$/.test(value);
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(map(value => value)); // $ExpectType Observable<number>
@@ -6328,10 +6193,7 @@ describe('map', () => {
   it('should throw an error if not passed a function', () => {
     expect(() => {
       of(1, 2, 3).pipe(map(<any>'potato'));
-    }).to.throw(
-      TypeError,
-      'argument is not a function. Are you looking for `mapTo()`?'
-    );
+    }).to.throw(TypeError, 'argument is not a function. Are you looking for `mapTo()`?');
   });
 
   it('should map multiple values', () => {
@@ -6745,9 +6607,7 @@ describe('mergeMap', () => {
   });
 
   it('should support union-type projections', () => {
-    const o = of(Math.random()).pipe(
-      mergeMap(n => (n > 0.5 ? of('life') : of(42)))
-    ); // $ExpectType Observable<string | number>
+    const o = of(Math.random()).pipe(mergeMap(n => (n > 0.5 ? of('life') : of(42)))); // $ExpectType Observable<string | number>
   });
 
   it('should enforce types', () => {
@@ -6900,9 +6760,7 @@ describe('mergeMap', () => {
         done();
       },
       () => {
-        done(
-          new Error('Subscriber complete handler not supposed to be called.')
-        );
+        done(new Error('Subscriber complete handler not supposed to be called.'));
       }
     );
   });
@@ -6943,9 +6801,7 @@ describe('mergeMap', () => {
         done();
       },
       () => {
-        done(
-          new Error('Subscriber complete handler not supposed to be called.')
-        );
+        done(new Error('Subscriber complete handler not supposed to be called.'));
       }
     );
   });
@@ -6974,10 +6830,7 @@ describe('mergeMap', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
     const e1 = hot('-a-------b-------c-------d-----------------------|');
     const e1subs = '^                                                !';
-    const inner = cold(
-      '----i---j---k---l---|                            ',
-      values
-    );
+    const inner = cold('----i---j---k---l---|                            ', values);
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)k---l-------|';
 
     const result = e1.pipe(mergeMap(value => inner));
@@ -6991,10 +6844,7 @@ describe('mergeMap', () => {
     const e1 = hot('-a-------b-------c-------d-------e---------------f------');
     const unsub = '                                                       !';
     const e1subs = '^                                                      !';
-    const inner = cold(
-      '----i---j---k---l---|                                  ',
-      values
-    );
+    const inner = cold('----i---j---k---l---|                                  ', values);
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)(ki)(lj)k---l---i--';
 
     const source = e1.pipe(mergeMap(value => inner));
@@ -7007,10 +6857,7 @@ describe('mergeMap', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
     const e1 = hot('-a-------b-------c-------d-------e---------------f------');
     const e1subs = '^                                                      !';
-    const inner = cold(
-      '----i---j---k---l---|                                  ',
-      values
-    );
+    const inner = cold('----i---j---k---l---|                                  ', values);
     const expected = '-----i---j---(ki)(lj)(ki)(lj)(ki)(lj)(ki)(lj)k---l---i--';
     const unsub = '                                                       !';
 
@@ -7108,11 +6955,8 @@ describe('mergeMap', () => {
 
   it('should mergeMap to many cold Observable, with parameter concurrency=1', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
-    const e1 = hot(
-      '-a-------b-------c---|                                        '
-    );
-    const e1subs =
-      '^                    !                                        ';
+    const e1 = hot('-a-------b-------c---|                                        ');
+    const e1subs = '^                    !                                        ';
     const inner = cold(
       '----i---j---k---l---|                                        ',
       values
@@ -7122,8 +6966,7 @@ describe('mergeMap', () => {
       '                     ^                   !                    ',
       '                                         ^                   !'
     ];
-    const expected =
-      '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
+    const expected = '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
 
     function project() {
       return inner;
@@ -7159,11 +7002,8 @@ describe('mergeMap', () => {
 
   it('should mergeMap to many hot Observable, with parameter concurrency=1', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
-    const e1 = hot(
-      '-a-------b-------c---|                                        '
-    );
-    const e1subs =
-      '^                    !                                        ';
+    const e1 = hot('-a-------b-------c---|                                        ');
+    const e1subs = '^                    !                                        ';
     const hotA = hot(
       'x----i---j---k---l---|                                        ',
       values
@@ -7176,14 +7016,10 @@ describe('mergeMap', () => {
       'x-xxxx---x-x-x-x-x-xx--x--x-x--x--xxxx-x-----i---j---k---l---|',
       values
     );
-    const asubs =
-      ' ^                   !                                        ';
-    const bsubs =
-      '                     ^                   !                    ';
-    const csubs =
-      '                                         ^                   !';
-    const expected =
-      '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
+    const asubs = ' ^                   !                                        ';
+    const bsubs = '                     ^                   !                    ';
+    const csubs = '                                         ^                   !';
+    const expected = '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
     const inners: Record<string, Observable<string>> = {
       a: hotA,
       b: hotB,
@@ -7233,11 +7069,8 @@ describe('mergeMap', () => {
 
   it('should mergeMap to many cold Observable, with parameter concurrency=1', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
-    const e1 = hot(
-      '-a-------b-------c---|                                        '
-    );
-    const e1subs =
-      '^                    !                                        ';
+    const e1 = hot('-a-------b-------c---|                                        ');
+    const e1subs = '^                    !                                        ';
     const inner = cold(
       '----i---j---k---l---|                                        ',
       values
@@ -7247,8 +7080,7 @@ describe('mergeMap', () => {
       '                     ^                   !                    ',
       '                                         ^                   !'
     ];
-    const expected =
-      '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
+    const expected = '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
 
     function project() {
       return inner;
@@ -7284,11 +7116,8 @@ describe('mergeMap', () => {
 
   it('should mergeMap to many hot Observable, with parameter concurrency=1', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
-    const e1 = hot(
-      '-a-------b-------c---|                                        '
-    );
-    const e1subs =
-      '^                    !                                        ';
+    const e1 = hot('-a-------b-------c---|                                        ');
+    const e1subs = '^                    !                                        ';
     const hotA = hot(
       'x----i---j---k---l---|                                        ',
       values
@@ -7301,14 +7130,10 @@ describe('mergeMap', () => {
       'x-xxxx---x-x-x-x-x-xx--x--x-x--x--xxxx-x-----i---j---k---l---|',
       values
     );
-    const asubs =
-      ' ^                   !                                        ';
-    const bsubs =
-      '                     ^                   !                    ';
-    const csubs =
-      '                                         ^                   !';
-    const expected =
-      '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
+    const asubs = ' ^                   !                                        ';
+    const bsubs = '                     ^                   !                    ';
+    const csubs = '                                         ^                   !';
+    const expected = '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
     const inners: Record<string, Observable<string>> = {
       a: hotA,
       b: hotB,
@@ -7699,9 +7524,7 @@ describe('mergeMap', () => {
 
     of(1)
       .pipe(
-        mergeMap(() =>
-          from(Promise.resolve(2)).pipe(mergeMap(() => Promise.resolve(3)))
-        )
+        mergeMap(() => from(Promise.resolve(2)).pipe(mergeMap(() => Promise.resolve(3))))
       )
       .subscribe({
         next(value) {
@@ -7819,9 +7642,7 @@ describe('mergeMapTo', () => {
   });
 
   it('should support a resultSelector that takes an inner and outer index', () => {
-    const o = of(1, 2, 3).pipe(
-      mergeMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(mergeMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)); // $ExpectType Observable<number>
   });
 
   it('should support a resultSelector and concurrent parameter', () => {
@@ -7948,9 +7769,7 @@ describe('mergeMapTo', () => {
         done();
       },
       () => {
-        done(
-          new Error('Subscriber complete handler not supposed to be called.')
-        );
+        done(new Error('Subscriber complete handler not supposed to be called.'));
       }
     );
   });
@@ -8113,11 +7932,8 @@ describe('mergeMapTo', () => {
 
   it('should mergeMapTo many cold Observable, with parameter concurrency=1, without resultSelector', () => {
     const values = {i: 'foo', j: 'bar', k: 'baz', l: 'qux'};
-    const e1 = hot(
-      '-a-------b-------c---|                                        '
-    );
-    const e1subs =
-      '^                    !                                        ';
+    const e1 = hot('-a-------b-------c---|                                        ');
+    const e1subs = '^                    !                                        ';
     const inner = cold(
       '----i---j---k---l---|                                        ',
       values
@@ -8127,8 +7943,7 @@ describe('mergeMapTo', () => {
       '                     ^                   !                    ',
       '                                         ^                   !'
     ];
-    const expected =
-      '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
+    const expected = '-----i---j---k---l-------i---j---k---l-------i---j---k---l---|';
 
     const result = e1.pipe(mergeMapTo(inner, 1));
 
@@ -8259,9 +8074,7 @@ describe('mergeScan', () => {
   });
 
   it('should support a currency', () => {
-    const o = of(1, 2, 3).pipe(
-      mergeScan((acc, value) => of(acc + value), '', 47)
-    ); // $ExpectType Observable<string>
+    const o = of(1, 2, 3).pipe(mergeScan((acc, value) => of(acc + value), '', 47)); // $ExpectType Observable<string>
   });
 
   it('should enforce types', () => {
@@ -8269,12 +8082,8 @@ describe('mergeScan', () => {
   });
 
   it('should enforce accumulate types', () => {
-    const o = of(1, 2, 3).pipe(
-      mergeScan((acc: string, value) => of(acc + value), 0)
-    ); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      mergeScan((acc, value: string) => of(acc + value), 0)
-    ); // $ExpectError
+    const o = of(1, 2, 3).pipe(mergeScan((acc: string, value) => of(acc + value), 0)); // $ExpectError
+    const p = of(1, 2, 3).pipe(mergeScan((acc, value: string) => of(acc + value), 0)); // $ExpectError
   });
 
   it('should enforce accumulate return type', () => {
@@ -8282,9 +8091,7 @@ describe('mergeScan', () => {
   });
 
   it('should enforce concurrent type', () => {
-    const o = of(1, 2, 3).pipe(
-      mergeScan((acc, value) => of(acc + value), 0, '')
-    ); // $ExpectError
+    const o = of(1, 2, 3).pipe(mergeScan((acc, value) => of(acc + value), 0, '')); // $ExpectError
   });
 
   it('should mergeScan things', () => {
@@ -8301,9 +8108,7 @@ describe('mergeScan', () => {
       z: ['b', 'c', 'd', 'e', 'f', 'g']
     };
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => of(acc.concat(x)), [] as string[]));
 
     expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -8320,9 +8125,7 @@ describe('mergeScan', () => {
       w: ['b', 'c', 'd']
     };
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => of(acc.concat(x)), [] as string[]));
 
     expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -8490,9 +8293,7 @@ describe('mergeScan', () => {
     const e1subs = '^  !';
     const expected = '---#';
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => throwError(new Error('bad!')), [])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => throwError(new Error('bad!')), []));
 
     expectSource(source).toBe(expected, undefined, new Error('bad!'));
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -8533,9 +8334,7 @@ describe('mergeScan', () => {
       u: <string[]>[]
     };
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => of(acc.concat(x)), [] as string[]));
 
     expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -8546,9 +8345,7 @@ describe('mergeScan', () => {
     const e1subs = '^';
     const expected = '-';
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => of(acc.concat(x)), [] as string[]));
 
     expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -8559,9 +8356,7 @@ describe('mergeScan', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => of(acc.concat(x)), [] as string[]));
 
     expectSource(source).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -8580,9 +8375,7 @@ describe('mergeScan', () => {
       z: ['b', 'c', 'd', 'e', 'f', 'g']
     };
 
-    const source = e1.pipe(
-      mergeScan((acc, x) => of(acc.concat(x)), [] as string[])
-    );
+    const source = e1.pipe(mergeScan((acc, x) => of(acc.concat(x)), [] as string[]));
 
     expectSource(source, sub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(sub);
@@ -8816,24 +8609,21 @@ describe('pairs', () => {
 });
 
 describe('pairwise', () => {
-  asDiagram('pairwise')(
-    'should group consecutive emissions as arrays of two',
-    () => {
-      const e1 = hot('--a--b-c----d--e---|');
-      const expected = '-----u-v----w--x---|';
+  asDiagram('pairwise')('should group consecutive emissions as arrays of two', () => {
+    const e1 = hot('--a--b-c----d--e---|');
+    const expected = '-----u-v----w--x---|';
 
-      const values = {
-        u: ['a', 'b'],
-        v: ['b', 'c'],
-        w: ['c', 'd'],
-        x: ['d', 'e']
-      };
+    const values = {
+      u: ['a', 'b'],
+      v: ['b', 'c'],
+      w: ['c', 'd'],
+      x: ['d', 'e']
+    };
 
-      const source = (<any>e1).pipe(pairwise());
+    const source = (<any>e1).pipe(pairwise());
 
-      expectSource(source).toBe(expected, values);
-    }
-  );
+    expectSource(source).toBe(expected, values);
+  });
 
   it('should infer correctly', () => {
     const o = of('apple', 'banana', 'peach').pipe(pairwise()); // $ExpectType Observable<[string, string]>
@@ -8962,10 +8752,7 @@ describe('partition', () => {
     () => {
       const e1 = hot('--1-2---3------4--5---6--|');
       const e1subs = '^                        !';
-      const expected = [
-        '--1-----3---------5------|',
-        '----2----------4------6--|'
-      ];
+      const expected = ['--1-----3---------5------|', '----2----------4------6--|'];
 
       const result = partition(e1, (x: any) => x % 2 === 1);
 
@@ -8995,10 +8782,7 @@ describe('partition', () => {
   it('should partition an observable into two using a predicate', () => {
     const e1 = hot('--a-b---a------d--a---c--|');
     const e1subs = '^                        !';
-    const expected = [
-      '--a-----a---------a------|',
-      '----b----------d------c--|'
-    ];
+    const expected = ['--a-----a---------a------|', '----b----------d------c--|'];
 
     function predicate(x: string) {
       return x === 'a';
@@ -9011,10 +8795,7 @@ describe('partition', () => {
   it('should partition an observable into two using a predicate that takes an index', () => {
     const e1 = hot('--a-b---a------d--e---c--|');
     const e1subs = '^                        !';
-    const expected = [
-      '--a-----a---------e------|',
-      '----b----------d------c--|'
-    ];
+    const expected = ['--a-----a---------e------|', '----b----------d------c--|'];
 
     function predicate(value: string, index: number) {
       return index % 2 === 0;
@@ -9027,10 +8808,7 @@ describe('partition', () => {
   it('should partition an observable into two using a predicate and thisArg', () => {
     const e1 = hot('--a-b---a------d--a---c--|');
     const e1subs = '^                        !';
-    const expected = [
-      '--a-----a---------a------|',
-      '----b----------d------c--|'
-    ];
+    const expected = ['--a-----a---------a------|', '----b----------d------c--|'];
 
     function predicate(this: any, x: string) {
       return x === this.value;
@@ -9253,9 +9031,7 @@ describe('pluck', () => {
   });
 
   it('should support nested object of 4 layer depth', () => {
-    const a = of({a: {b: {c: {name: 'abc'}}}}).pipe(
-      pluck('a', 'b', 'c', 'name')
-    ); // $ExpectType Observable<string>
+    const a = of({a: {b: {c: {name: 'abc'}}}}).pipe(pluck('a', 'b', 'c', 'name')); // $ExpectType Observable<string>
   });
 
   it('should support nested object of 5 layer depth', () => {
@@ -9526,9 +9302,7 @@ describe('scan', () => {
   });
 
   it('should infer correctly for accumulator of type array', () => {
-    const a = of(1, 2, 3).pipe(
-      scan((x: number[], y: number, i: number) => x, [])
-    ); // $ExpectType Observable<number[]>
+    const a = of(1, 2, 3).pipe(scan((x: number[], y: number, i: number) => x, [])); // $ExpectType Observable<number[]>
   });
 
   it('should accept seed parameter of the same type', () => {
@@ -9558,9 +9332,7 @@ describe('scan', () => {
   it('should accept seed parameter of a different type', () => {
     const a = of(1, 2, 3).pipe(scan((x, y, z) => x + '1', '5')); // $ExpectType Observable<string>
     const bv: {[key: string]: string} = {};
-    const b = of(1, 2, 3).pipe(
-      scan((x, y, z) => ({...x, [y]: y.toString()}), bv)
-    ); // $ExpectType Observable<{ [key: string]: string; }>
+    const b = of(1, 2, 3).pipe(scan((x, y, z) => ({...x, [y]: y.toString()}), bv)); // $ExpectType Observable<{ [key: string]: string; }>
   });
 
   it('should act appropriately with no seed', () => {
@@ -9576,11 +9348,7 @@ describe('scan', () => {
   });
 
   it('should infer types properly from arguments', () => {
-    function toArrayReducer(
-      arr: number[],
-      item: number,
-      index: number
-    ): number[] {
+    function toArrayReducer(arr: number[], item: number, index: number): number[] {
       if (index === 0) {
         return [item];
       }
@@ -9625,9 +9393,7 @@ describe('scan', () => {
       z: 'undefined b c d e f g'
     };
 
-    const source = e1.pipe(
-      scan((acc: any, x: string) => acc + ' ' + x, undefined)
-    );
+    const source = e1.pipe(scan((acc: any, x: string) => acc + ' ' + x, undefined));
 
     expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -9876,9 +9642,7 @@ describe('switchMap', () => {
   });
 
   it('should support projecting to union types', () => {
-    const o = of(Math.random()).pipe(
-      switchMap(n => (n > 0.5 ? of(123) : of('test')))
-    ); // $ExpectType Observable<string | number>
+    const o = of(Math.random()).pipe(switchMap(n => (n > 0.5 ? of(123) : of('test')))); // $ExpectType Observable<string | number>
   });
 
   it('should support the deprecated resultSelector', () => {
@@ -10352,15 +10116,11 @@ describe('switchMapTo', () => {
   });
 
   it('should support a resultSelector that takes an inner index', () => {
-    const o = of(1, 2, 3).pipe(
-      switchMapTo(of('foo'), (a, b, innnerIndex) => a)
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo'), (a, b, innnerIndex) => a)); // $ExpectType Observable<number>
   });
 
   it('should support a resultSelector that takes an inner and outer index', () => {
-    const o = of(1, 2, 3).pipe(
-      switchMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(switchMapTo(of('foo'), (a, b, innnerIndex, outerX) => a)); // $ExpectType Observable<number>
   });
 
   it('should support an undefined resultSelector', () => {
@@ -10539,10 +10299,7 @@ describe('switchMapTo', () => {
 
   it('should handle a synchronous switch to the inner observable', () => {
     const x = cold('--a--b--c--d--e--|   ');
-    const xsubs = [
-      '         (^!)                 ',
-      '         ^                !   '
-    ];
+    const xsubs = ['         (^!)                 ', '         ^                !   '];
     const e1 = hot('---------(xx)----------------|');
     const e1subs = '^                            !';
     const expected = '-----------a--b--c--d--e-----|';
@@ -10566,10 +10323,7 @@ describe('switchMapTo', () => {
 
   it('should switch an inner hot observable', () => {
     const x = hot('--p-o-o-p---a--b--c--d-|      ');
-    const xsubs = [
-      '         ^         !          ',
-      '                   ^   !      '
-    ];
+    const xsubs = ['         ^         !          ', '                   ^   !      '];
     const e1 = hot('---------x---------x---------|');
     const e1subs = '^                            !';
     const expected = '------------a--b--c--d-------|';
@@ -10581,10 +10335,7 @@ describe('switchMapTo', () => {
 
   it('should switch to an inner empty', () => {
     const x = cold('|');
-    const xsubs = [
-      '         (^!)                 ',
-      '                   (^!)       '
-    ];
+    const xsubs = ['         (^!)                 ', '                   (^!)       '];
     const e1 = hot('---------x---------x---------|');
     const e1subs = '^                            !';
     const expected = '-----------------------------|';
@@ -10596,10 +10347,7 @@ describe('switchMapTo', () => {
 
   it('should switch to an inner never', () => {
     const x = cold('-');
-    const xsubs = [
-      '         ^         !          ',
-      '                   ^          '
-    ];
+    const xsubs = ['         ^         !          ', '                   ^          '];
     const e1 = hot('---------x---------x---------|');
     const e1subs = '^                            !';
     const expected = '------------------------------';
@@ -10650,17 +10398,14 @@ describe('switchMapTo', () => {
 });
 
 describe('switchAll', () => {
-  asDiagram('switchAll')(
-    'should switch a hot observable of cold observables',
-    () => {
-      const x = cold('--a---b--c---d--|      ');
-      const y = cold('----e---f--g---|');
-      const e1 = hot('--x------y-------|       ', {x: x, y: y});
-      const expected = '----a---b----e---f--g---|';
+  asDiagram('switchAll')('should switch a hot observable of cold observables', () => {
+    const x = cold('--a---b--c---d--|      ');
+    const y = cold('----e---f--g---|');
+    const e1 = hot('--x------y-------|       ', {x: x, y: y});
+    const expected = '----a---b----e---f--g---|';
 
-      expectSource(e1.pipe(switchAll())).toBe(expected);
-    }
-  );
+    expectSource(e1.pipe(switchAll())).toBe(expected);
+  });
   it('should infer correctly', () => {
     const o = of(of(1, 2, 3)).pipe(switchAll()); // $ExpectType Observable<number>
   });
@@ -10902,9 +10647,7 @@ describe('switchAll', () => {
   it('should not leak when child completes before each switch (prevent memory leaks #2355)', () => {
     let iStream: Subject<number>;
     const oStreamControl = new Subject<number>();
-    const oStream = oStreamControl.pipe(
-      map(() => (iStream = new Subject<number>()))
-    );
+    const oStream = oStreamControl.pipe(map(() => (iStream = new Subject<number>())));
     const switcher = oStream.pipe(switchAll());
     const result: number[] = [];
     let sub = switcher.subscribe(x => result.push(x));
@@ -11415,26 +11158,22 @@ describe('windowTime', () => {
   });
 
   it('should close windows after max count is reached', () => {
-    rxTestScheduler.run(
-      ({hot, time, cold, expectSource, expectSubscriptions}) => {
-        const source = hot('--1--2--^--a--b--c--d--e--f--g-----|');
-        const subs = '^--------------------------!';
-        const timeSpan = time('----------|');
-        //  10 frames              0---------1---------2------|
-        const expected = 'x---------y---------z------|';
-        const x = cold('---a--(b|)                  ');
-        const y = cold('--d--(e|)         ');
-        const z = cold('-g-----|');
-        const values = {x, y, z};
+    rxTestScheduler.run(({hot, time, cold, expectSource, expectSubscriptions}) => {
+      const source = hot('--1--2--^--a--b--c--d--e--f--g-----|');
+      const subs = '^--------------------------!';
+      const timeSpan = time('----------|');
+      //  10 frames              0---------1---------2------|
+      const expected = 'x---------y---------z------|';
+      const x = cold('---a--(b|)                  ');
+      const y = cold('--d--(e|)         ');
+      const z = cold('-g-----|');
+      const values = {x, y, z};
 
-        const result = source.pipe(
-          windowTime(timeSpan, null as any, 2, rxTestScheduler)
-        );
+      const result = source.pipe(windowTime(timeSpan, null as any, 2, rxTestScheduler));
 
-        expectSource(result).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should close window after max count is reached with windowCreationInterval', () => {
@@ -11459,51 +11198,45 @@ describe('windowTime', () => {
   });
 
   it('should emit windows given windowTimeSpan', () => {
-    rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectSource}) => {
-        const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
-        const subs = '^--------------------------!';
-        const timeSpan = time('----------|');
-        //  10 frames            0---------1---------2------|
-        const expected = 'x---------y---------z------|';
-        const x = cold('---a--b--c|                 ');
-        const y = cold('--d--e--f-|       ');
-        const z = cold('-g--h--|');
-        const values = {x, y, z};
+    rxTestScheduler.run(({hot, cold, time, expectSubscriptions, expectSource}) => {
+      const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
+      const subs = '^--------------------------!';
+      const timeSpan = time('----------|');
+      //  10 frames            0---------1---------2------|
+      const expected = 'x---------y---------z------|';
+      const x = cold('---a--b--c|                 ');
+      const y = cold('--d--e--f-|       ');
+      const z = cold('-g--h--|');
+      const values = {x, y, z};
 
-        const result = source.pipe(windowTime(timeSpan, rxTestScheduler));
+      const result = source.pipe(windowTime(timeSpan, rxTestScheduler));
 
-        expectSource(result).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should emit windows given windowTimeSpan and windowCreationInterval', () => {
-    rxTestScheduler.run(
-      ({hot, time, cold, expectSubscriptions, expectSource}) => {
-        const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
-        const subs = '^--------------------------!';
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
-        //  10 frames            0---------1---------2------|
-        //  5                     ----|
-        //  5                               ----|
-        //  5                                         ----|
-        const expected = 'x---------y---------z------|';
-        const x = cold('---a-|                      ');
-        const y = cold('--d--(e|)         ');
-        const z = cold('-g--h|  ');
-        const values = {x, y, z};
+    rxTestScheduler.run(({hot, time, cold, expectSubscriptions, expectSource}) => {
+      const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
+      const subs = '^--------------------------!';
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
+      //  10 frames            0---------1---------2------|
+      //  5                     ----|
+      //  5                               ----|
+      //  5                                         ----|
+      const expected = 'x---------y---------z------|';
+      const x = cold('---a-|                      ');
+      const y = cold('--d--(e|)         ');
+      const z = cold('-g--h|  ');
+      const values = {x, y, z};
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
-        expectSource(result).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should return a single empty window if source is empty', () => {
@@ -11516,9 +11249,7 @@ describe('windowTime', () => {
       const timeSpan = time('-----|');
       const interval = time('----------|');
 
-      const result = source.pipe(
-        windowTime(timeSpan, interval, rxTestScheduler)
-      );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
       expectSource(result).toBe(expected, expectedValues);
       expectSubscriptions(source.subscriptions).toBe(subs);
@@ -11535,9 +11266,7 @@ describe('windowTime', () => {
       const timeSpan = time('-----|');
       const interval = time('----------|');
 
-      const result = source.pipe(
-        windowTime(timeSpan, interval, rxTestScheduler)
-      );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
       expectSource(result).toBe(expected, expectedValues);
       expectSubscriptions(source.subscriptions).toBe(subs);
@@ -11545,28 +11274,24 @@ describe('windowTime', () => {
   });
 
   it('should be able to split a never Observable into timely empty windows', () => {
-    rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectSource}) => {
-        const source = hot('^----------');
-        const subs = '^---------!';
-        const expected = 'a--b--c--d-';
-        const timeSpan = time('---|');
-        const interval = time('---|');
-        const a = cold('---|       ');
-        const b = cold('---|    ');
-        const c = cold('---| ');
-        const d = cold('--');
-        const unsub = '----------!';
-        const expectedValues = {a, b, c, d};
+    rxTestScheduler.run(({hot, cold, time, expectSubscriptions, expectSource}) => {
+      const source = hot('^----------');
+      const subs = '^---------!';
+      const expected = 'a--b--c--d-';
+      const timeSpan = time('---|');
+      const interval = time('---|');
+      const a = cold('---|       ');
+      const b = cold('---|    ');
+      const c = cold('---| ');
+      const d = cold('--');
+      const unsub = '----------!';
+      const expectedValues = {a, b, c, d};
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
-        expectSource(result, unsub).toBe(expected, expectedValues);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result, unsub).toBe(expected, expectedValues);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should emit an error-only window if outer is a simple throw-Observable', () => {
@@ -11579,9 +11304,7 @@ describe('windowTime', () => {
       const timeSpan = time('-----|');
       const interval = time('----------|');
 
-      const result = source.pipe(
-        windowTime(timeSpan, interval, rxTestScheduler)
-      );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
       expectSource(result).toBe(expected, expectedValues);
       expectSubscriptions(source.subscriptions).toBe(subs);
@@ -11589,93 +11312,81 @@ describe('windowTime', () => {
   });
 
   it('should handle source Observable which eventually emits an error', () => {
-    rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectSource}) => {
-        const source = hot('--1--2--^--a--b--c--d--e--f--g--h--#');
-        const subs = '^--------------------------!';
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
-        //  10 frames            0---------1---------2------|
-        //  5                     ----|
-        //  5                               ----|
-        //  5                                         ----|
-        const expected = 'x---------y---------z------#';
-        const x = cold('---a-|                      ');
-        const y = cold('--d--(e|)         ');
-        const z = cold('-g--h|  ');
-        const values = {x, y, z};
+    rxTestScheduler.run(({hot, cold, time, expectSubscriptions, expectSource}) => {
+      const source = hot('--1--2--^--a--b--c--d--e--f--g--h--#');
+      const subs = '^--------------------------!';
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
+      //  10 frames            0---------1---------2------|
+      //  5                     ----|
+      //  5                               ----|
+      //  5                                         ----|
+      const expected = 'x---------y---------z------#';
+      const x = cold('---a-|                      ');
+      const y = cold('--d--(e|)         ');
+      const z = cold('-g--h|  ');
+      const values = {x, y, z};
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
-        expectSource(result).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should emit windows given windowTimeSpan and windowCreationInterval, but outer is unsubscribed early', () => {
-    rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectSource}) => {
-        const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
-        const subs = '^----------!                ';
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
-        //  10 frames              0---------1---------2------|
-        //  5                      ----|
-        //  5                                ----|
-        //  5                                          ----|
-        const expected = 'x---------y-                ';
-        const x = cold('---a-|                      ');
-        const y = cold('--                ');
-        const unsub = '-----------!                ';
-        const values = {x, y};
+    rxTestScheduler.run(({hot, cold, time, expectSubscriptions, expectSource}) => {
+      const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
+      const subs = '^----------!                ';
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
+      //  10 frames              0---------1---------2------|
+      //  5                      ----|
+      //  5                                ----|
+      //  5                                          ----|
+      const expected = 'x---------y-                ';
+      const x = cold('---a-|                      ');
+      const y = cold('--                ');
+      const unsub = '-----------!                ';
+      const values = {x, y};
 
-        const result = source.pipe(
-          windowTime(timeSpan, interval, rxTestScheduler)
-        );
+      const result = source.pipe(windowTime(timeSpan, interval, rxTestScheduler));
 
-        expectSource(result, unsub).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(subs);
-      }
-    );
+      expectSource(result, unsub).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(subs);
+    });
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {
-    rxTestScheduler.run(
-      ({hot, cold, time, expectSubscriptions, expectSource}) => {
-        const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
-        const sourcesubs = '^-------------!             ';
-        const timeSpan = time('-----|');
-        const interval = time('----------|');
-        //  10 frames              0---------1---------2------|
-        //  5                      ----|
-        //  5                                ----|
-        //  5                                          ----|
-        const expected = 'x---------y----             ';
-        const x = cold('---a-|                      ');
-        const y = cold('--d--             ');
-        const unsub = '--------------!             ';
-        const values = {x, y};
+    rxTestScheduler.run(({hot, cold, time, expectSubscriptions, expectSource}) => {
+      const source = hot('--1--2--^--a--b--c--d--e--f--g--h--|');
+      const sourcesubs = '^-------------!             ';
+      const timeSpan = time('-----|');
+      const interval = time('----------|');
+      //  10 frames              0---------1---------2------|
+      //  5                      ----|
+      //  5                                ----|
+      //  5                                          ----|
+      const expected = 'x---------y----             ';
+      const x = cold('---a-|                      ');
+      const y = cold('--d--             ');
+      const unsub = '--------------!             ';
+      const values = {x, y};
 
-        const result = source.pipe(
-          mergeMap((x: string) => of(x)),
-          windowTime(timeSpan, interval, rxTestScheduler),
-          mergeMap((x: Observable<string>) => of(x))
-        );
+      const result = source.pipe(
+        mergeMap((x: string) => of(x)),
+        windowTime(timeSpan, interval, rxTestScheduler),
+        mergeMap((x: Observable<string>) => of(x))
+      );
 
-        expectSource(result, unsub).toBe(expected, values);
-        expectSubscriptions(source.subscriptions).toBe(sourcesubs);
-      }
-    );
+      expectSource(result, unsub).toBe(expected, values);
+      expectSubscriptions(source.subscriptions).toBe(sourcesubs);
+    });
   });
 
   it('should not error if maxWindowSize is hit while nexting to other windows.', () => {
     rxTestScheduler.run(({cold, time, expectSource}) => {
-      const source = cold(
-        '                ----a---b---c---d---e---f---g---h---i---j---'
-      );
+      const source = cold('                ----a---b---c---d---e---f---g---h---i---j---');
       const windowTimeSpan = time('        ------------|');
       const windowCreationInterval = time('--------|');
       const maxWindowSize = 4;
@@ -11683,27 +11394,14 @@ describe('windowTime', () => {
       //                                   ------------|
       const b = cold('                             b---c---d---(e|)');
       const c = cold('                                     ----e---f---(g|)');
-      const d = cold(
-        '                                             ----g---h---(i|)'
-      );
-      const e = cold(
-        '                                                     ----i---j--'
-      );
-      const f = cold(
-        '                                                             ---'
-      );
-      const expected =
-        '                   a-------b-------c-------d-------e-------f---';
-      const killSub =
-        '                    ------------------------------------------!';
+      const d = cold('                                             ----g---h---(i|)');
+      const e = cold('                                                     ----i---j--');
+      const f = cold('                                                             ---');
+      const expected = '                   a-------b-------c-------d-------e-------f---';
+      const killSub = '                    ------------------------------------------!';
       const values = {a, b, c, d, e, f};
       const result = source.pipe(
-        windowTime(
-          windowTimeSpan,
-          windowCreationInterval,
-          maxWindowSize,
-          rxTestScheduler
-        )
+        windowTime(windowTimeSpan, windowCreationInterval, maxWindowSize, rxTestScheduler)
       );
       expectSource(result, killSub).toBe(expected, values);
     });

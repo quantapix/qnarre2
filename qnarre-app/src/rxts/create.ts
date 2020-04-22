@@ -988,7 +988,7 @@ export class ThrowIfEmptyR<N> extends Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.hasValue = true;
     this.tgt.next(n);
   }

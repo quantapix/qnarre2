@@ -716,7 +716,7 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
     return this;
   }
 
-  next(n?: N): IteratorResult<T> {
+  next(n: N): IteratorResult<T> {
     const i = this.index++;
     const array = this.array;
     return i < this.length ? {value: array[i], done: false} : {value: null, done: true};

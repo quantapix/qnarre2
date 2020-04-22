@@ -31,7 +31,7 @@ export class GroupDuration<K, N> extends qj.Subscriber<N> {
     super(group);
   }
 
-  protected _next(_n?: N) {
+  protected _next(_n: N) {
     this.done();
   }
 
@@ -165,7 +165,7 @@ class OnErrorResumeNextR<N, M> extends qj.Reactor<N, M> {
     this.unsubscribe();
   }
 
-  protected _done(_d?: D) {
+  protected _done() {
     this.subscribeToNextSource();
     this.unsubscribe();
   }
@@ -236,7 +236,7 @@ export class SequenceEqualR<N, M> extends qj.Subscriber<N> {
     );
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this._oneComplete && this._b.length === 0) this.emit(false);
     else {
       this._a.push(n);
@@ -479,7 +479,7 @@ class WithLatestFromR<T, R> extends qj.Reactor<N, M> {
 
   reactDone() {}
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this.toRespond.length === 0) {
       const args = [n, ...this.values];
       if (this.project) this._tryProject(args);
@@ -499,7 +499,7 @@ class WithLatestFromR<T, R> extends qj.Reactor<N, M> {
   }
 }
 
-function dispatchNotification<N>(this: qt.Action<any>, state: any) {
+function dispatchNote<N>(this: qt.Action<any>, state: any) {
   let {subscriber, period} = state;
   subscriber.reactNext();
   this.schedule(state, period);

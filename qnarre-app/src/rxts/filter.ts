@@ -95,7 +95,7 @@ export class DebounceR<N, R> extends qj.Reactor<N, R> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     try {
       const result = this.durationSelector.call(this, n);
       if (result) this._tryNext(n, result);
@@ -172,7 +172,7 @@ export class DebounceTimeR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.clearDebounce();
     this.lastValue = value;
     this.hasValue = true;
@@ -249,7 +249,7 @@ export class DistinctR<N, R> extends qj.Reactor<N, N> {
     this._fail(e);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this.keySelector) this._useKeySelector(n);
     else this._finalizeNext(n, n);
   }
@@ -311,7 +311,7 @@ class DistinctUntilChangedR<N, R> extends qj.Subscriber<N> {
     return x === y;
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     let key: any;
     try {
       const {keySelector} = this;
@@ -403,7 +403,7 @@ export class FilterR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     let result: any;
     try {
       result = this.predicate.call(this.thisArg, n, this.count++);
@@ -450,7 +450,7 @@ class IgnoreElementsO<T, R> implements qt.Operator<T, R> {
 }
 
 class IgnoreElementsR<N> extends qj.Subscriber<N> {
-  protected _next(n?: N) {}
+  protected _next(n: N) {}
 }
 
 export function last<T, D = T>(predicate?: null, defaultValue?: D): qt.Lifter<T, T | D>;
@@ -496,7 +496,7 @@ class SampleR<T, R> extends qj.Reactor<N, R> {
   private n: N | undefined;
   private hasValue = false;
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.value = value;
     this.hasValue = true;
   }
@@ -543,14 +543,14 @@ export class SampleTimeR<N> extends qj.Subscriber<N> {
   ) {
     super(tgt);
     this.add(
-      scheduler.schedule(dispatchNotification, period, {
+      scheduler.schedule(dispatchNote, period, {
         subscriber: this,
         period
       })
     );
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.lastValue = n;
     this.hasValue = true;
   }
@@ -605,7 +605,7 @@ export class SingleR<N> extends qj.Subscriber<N> {
     }
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const i = this.index++;
     if (this.predicate) this.tryNext(n, i);
     else this.applySingleValue(n);
@@ -677,7 +677,7 @@ export class SkipLastR<N> extends qj.Subscriber<N> {
     this._ring = new Array<N | undefined>(_skipCount);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const skipCount = this._skipCount;
     const count = this._count++;
     if (count < skipCount) this._ring[count] = n;
@@ -725,7 +725,7 @@ export class SkipUntilR<N, R> extends qj.Reactor<N, R> {
     }
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this.hasValue) super._next(n);
   }
 
@@ -759,7 +759,7 @@ export class SkipWhileR<N> extends qj.Subscriber<N> {
   ) {
     super(tgt);
   }
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const tgt = this.tgt;
     if (this.skipping) this.tryCallPredicate(n);
     if (!this.skipping) tgt.next(n);
@@ -802,7 +802,7 @@ export class TakeR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const total = this.total;
     const count = ++this.count;
     if (count <= total) {
@@ -842,7 +842,7 @@ export class TakeLastR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const ring = this.ring;
     const total = this.total;
     const count = this.count++;
@@ -942,7 +942,7 @@ export class TakeWhileR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const tgt = this.tgt;
     let result: boolean;
     try {
@@ -1010,7 +1010,7 @@ export class ThrottleR<N, R> extends qj.Reactor<N, R> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this._hasValue = true;
     this._sendValue = n;
     if (!this._throttled) {
@@ -1098,7 +1098,7 @@ export class ThrottleTimeR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this.throttled) {
       if (this.trailing) {
         this._trailingValue = n;

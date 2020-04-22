@@ -4,11 +4,7 @@ import * as qu from './utils';
 import * as qj from './subject';
 import {a$} from 'helpers';
 
-import {
-  cold,
-  expectSource,
-  expectSubscriptions
-} from './spec/helpers/marble-testing';
+import {cold, expectSource, expectSubscriptions} from './spec/helpers/marble-testing';
 
 declare const asDiagram: any, rxTestScheduler: any;
 
@@ -136,9 +132,7 @@ describe('Observable', () => {
     });
 
     it('should handle a synchronous throw from the next handler', () => {
-      const expected = new Error(
-        'I told, you Bobby Boucher, threes are the debil!'
-      );
+      const expected = new Error('I told, you Bobby Boucher, threes are the debil!');
       const syncObservable = new Observable<number>(observer => {
         observer.next(1);
         observer.next(2);
@@ -169,9 +163,7 @@ describe('Observable', () => {
     });
 
     it('should handle an asynchronous throw from the next handler and tear down', () => {
-      const expected = new Error(
-        'I told, you Bobby Boucher, twos are the debil!'
-      );
+      const expected = new Error('I told, you Bobby Boucher, twos are the debil!');
       const asyncObservable = new Observable<number>(observer => {
         let i = 1;
         const id = setInterval(() => observer.next(i++), 1);
@@ -870,9 +862,7 @@ describe('Source.lift', () => {
     const e2 = cold('--x---y--|');
     const expected = '--a--b---x---y--|';
 
-    const result = MyCustomObservable.from(e1).pipe(
-      concat(e2, rxTestScheduler)
-    );
+    const result = MyCustomObservable.from(e1).pipe(concat(e2, rxTestScheduler));
 
     expect(result instanceof MyCustomObservable).to.be.true;
 
@@ -950,10 +940,7 @@ describe('Source.lift', () => {
         constructor(private childOperator: Operator<T, R>) {}
 
         call(subscriber: Subscriber<R>, source: any): Closer {
-          return this.childOperator.call(
-            new LogSubscriber<R>(subscriber),
-            source
-          );
+          return this.childOperator.call(new LogSubscriber<R>(subscriber), source);
         }
       }
 
@@ -1051,15 +1038,7 @@ describe('Source.pipe', () => {
   });
 
   it('should infer for 7 arguments', () => {
-    const o = of('foo').pipe(
-      a('1'),
-      a('2'),
-      a('3'),
-      a('4'),
-      a('5'),
-      a('6'),
-      a('7')
-    ); // $ExpectType Observable<"7">
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('7')); // $ExpectType Observable<"7">
   });
 
   it('should infer for 8 arguments', () => {
@@ -1140,26 +1119,11 @@ describe('Source.pipe', () => {
   });
 
   it('should enforce types for the 6th argument', () => {
-    const o = of('foo').pipe(
-      a('1'),
-      a('2'),
-      a('3'),
-      a('4'),
-      a('5'),
-      a('#', '6')
-    ); // $ExpectError
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('#', '6')); // $ExpectError
   });
 
   it('should enforce types for the 7th argument', () => {
-    const o = of('foo').pipe(
-      a('1'),
-      a('2'),
-      a('3'),
-      a('4'),
-      a('5'),
-      a('6'),
-      a('#', '7')
-    ); // $ExpectError
+    const o = of('foo').pipe(a('1'), a('2'), a('3'), a('4'), a('5'), a('6'), a('#', '7')); // $ExpectError
   });
 
   it('should enforce types for the 8th argument', () => {
@@ -1234,13 +1198,7 @@ describe('Source.pipe', () => {
   });
 
   it('should infer for 5 arguments', () => {
-    const o = pipe(
-      a('0', '1'),
-      a('1', '2'),
-      a('2', '3'),
-      a('3', '4'),
-      a('4', '5')
-    ); // $ExpectType Mapper<"0", "5">
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3'), a('3', '4'), a('4', '5')); // $ExpectType Mapper<"0", "5">
   });
 
   it('should infer for 6 arguments', () => {
@@ -1336,13 +1294,7 @@ describe('Source.pipe', () => {
   });
 
   it('should enforce types for the 5th argument', () => {
-    const o = pipe(
-      a('0', '1'),
-      a('1', '2'),
-      a('2', '3'),
-      a('3', '4'),
-      a('#', '5')
-    ); // $ExpectError
+    const o = pipe(a('0', '1'), a('1', '2'), a('2', '3'), a('3', '4'), a('#', '5')); // $ExpectError
   });
 
   it('should enforce types for the 6th argument', () => {
@@ -1491,17 +1443,11 @@ describe('Source.toPromise', () => {
  * @param {string} input The `Mapper` input type parameter
  * @param {string} output The `Mapper` output type parameter
  */
-function a<I extends string, O extends string>(
-  input: I,
-  output: O
-): Mapper<I, O> {
+function a<I extends string, O extends string>(input: I, output: O): Mapper<I, O> {
   return i => output;
 }
 
-function a<I extends string, O extends string>(
-  input: I,
-  output: O
-): Lifter<I, O>;
+function a<I extends string, O extends string>(input: I, output: O): Lifter<I, O>;
 function a<I, O extends string>(output: O): Lifter<I, O>;
 
 /**
@@ -1529,28 +1475,25 @@ function a<I, O extends string>(output: O): Lifter<I, O>;
  * @param {string} input The `Lifter` input type parameter
  * @param {string} output The `Lifter` output type parameter
  */
-function a<I, O extends string>(
-  inputOrOutput: I | O,
-  output?: O
-): Lifter<I, O> {
+function a<I, O extends string>(inputOrOutput: I | O, output?: O): Lifter<I, O> {
   return mapTo<I, O>(output === undefined ? (inputOrOutput as O) : output);
 }
 
-describe('Notification', () => {
+describe('Note', () => {
   it('should exist', () => {
-    expect(Notification).exist;
-    expect(Notification).to.be.a('function');
+    expect(Note).exist;
+    expect(Note).to.be.a('function');
   });
 
   it('should not allow convert to observable if given kind is unknown', () => {
-    const n = new Notification('x' as any);
+    const n = new Note('x' as any);
     expect(() => n.toObservable()).to.throw();
   });
 
   describe('createNext', () => {
-    it('should return a Notification', () => {
-      const n = Notification.createNext('test');
-      expect(n instanceof Notification).to.be.true;
+    it('should return a Note', () => {
+      const n = Note.createNext('test');
+      expect(n instanceof Note).to.be.true;
       expect(n.value).to.equal('test');
       expect(n.kind).to.equal('N');
       expect(n.error).to.be.a('undefined');
@@ -1559,9 +1502,9 @@ describe('Notification', () => {
   });
 
   describe('createFail', () => {
-    it('should return a Notification', () => {
-      const n = Notification.createFail('test');
-      expect(n instanceof Notification).to.be.true;
+    it('should return a Note', () => {
+      const n = Note.createFail('test');
+      expect(n instanceof Note).to.be.true;
       expect(n.value).to.be.a('undefined');
       expect(n.kind).to.equal('E');
       expect(n.error).to.equal('test');
@@ -1570,9 +1513,9 @@ describe('Notification', () => {
   });
 
   describe('createDone', () => {
-    it('should return a Notification', () => {
-      const n = Notification.createDone();
-      expect(n instanceof Notification).to.be.true;
+    it('should return a Note', () => {
+      const n = Note.createDone();
+      expect(n instanceof Note).to.be.true;
       expect(n.value).to.be.a('undefined');
       expect(n.kind).to.equal('C');
       expect(n.error).to.be.a('undefined');
@@ -1581,49 +1524,49 @@ describe('Notification', () => {
   });
 
   describe('toObservable', () => {
-    it('should create observable from a next Notification', () => {
+    it('should create observable from a next Note', () => {
       const value = 'a';
-      const next = Notification.createNext(value);
+      const next = Note.createNext(value);
       expectSource(next.toObservable()).toBe('(a|)');
     });
 
-    it('should create observable from a complete Notification', () => {
-      const complete = Notification.createDone();
+    it('should create observable from a complete Note', () => {
+      const complete = Note.createDone();
       expectSource(complete.toObservable()).toBe('|');
     });
 
-    it('should create observable from a error Notification', () => {
-      const error = Notification.createFail('error');
+    it('should create observable from a error Note', () => {
+      const error = Note.createFail('error');
       expectSource(error.toObservable()).toBe('#');
     });
   });
 
   describe('static reference', () => {
-    it('should create new next Notification with value', () => {
+    it('should create new next Note with value', () => {
       const value = 'a';
-      const first = Notification.createNext(value);
-      const second = Notification.createNext(value);
+      const first = Note.createNext(value);
+      const second = Note.createNext(value);
 
       expect(first).not.to.equal(second);
     });
 
-    it('should create new error Notification', () => {
-      const first = Notification.createFail();
-      const second = Notification.createFail();
+    it('should create new error Note', () => {
+      const first = Note.createFail();
+      const second = Note.createFail();
 
       expect(first).not.to.equal(second);
     });
 
-    it('should return static next Notification reference without value', () => {
-      const first = Notification.createNext(undefined);
-      const second = Notification.createNext(undefined);
+    it('should return static next Note reference without value', () => {
+      const first = Note.createNext(undefined);
+      const second = Note.createNext(undefined);
 
       expect(first).to.equal(second);
     });
 
-    it('should return static complete Notification reference', () => {
-      const first = Notification.createDone();
-      const second = Notification.createDone();
+    it('should return static complete Note reference', () => {
+      const first = Note.createDone();
+      const second = Note.createDone();
 
       expect(first).to.equal(second);
     });
@@ -1631,7 +1574,7 @@ describe('Notification', () => {
 
   describe('do', () => {
     it('should invoke on next', () => {
-      const n = Notification.createNext('a');
+      const n = Note.createNext('a');
       let invoked = false;
       n.do(
         (x: string) => {
@@ -1649,7 +1592,7 @@ describe('Notification', () => {
     });
 
     it('should invoke on error', () => {
-      const n = Notification.createFail();
+      const n = Note.createFail();
       let invoked = false;
       n.do(
         (x: any) => {
@@ -1667,7 +1610,7 @@ describe('Notification', () => {
     });
 
     it('should invoke on complete', () => {
-      const n = Notification.createDone();
+      const n = Note.createDone();
       let invoked = false;
       n.do(
         (x: any) => {
@@ -1686,10 +1629,10 @@ describe('Notification', () => {
   });
 
   describe('accept', () => {
-    it('should accept observer for next Notification', () => {
+    it('should accept observer for next Note', () => {
       const value = 'a';
       let observed = false;
-      const n = Notification.createNext(value);
+      const n = Note.createNext(value);
       const observer = Subscriber.create(
         (x?: string) => {
           expect(x).to.equal(value);
@@ -1707,9 +1650,9 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should accept observer for error Notification', () => {
+    it('should accept observer for error Note', () => {
       let observed = false;
-      const n = Notification.createFail<string>();
+      const n = Note.createFail<string>();
       const observer = Subscriber.create(
         (x?: string) => {
           throw 'should not be called';
@@ -1726,9 +1669,9 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should accept observer for complete Notification', () => {
+    it('should accept observer for complete Note', () => {
       let observed = false;
-      const n = Notification.createDone();
+      const n = Note.createDone();
       const observer = Subscriber.create(
         (x?: string) => {
           throw 'should not be called';
@@ -1745,10 +1688,10 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should accept function for next Notification', () => {
+    it('should accept function for next Note', () => {
       const value = 'a';
       let observed = false;
-      const n = Notification.createNext(value);
+      const n = Note.createNext(value);
 
       n.accept(
         (x: string) => {
@@ -1765,10 +1708,10 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should accept function for error Notification', () => {
+    it('should accept function for error Note', () => {
       let observed = false;
       const error = 'error';
-      const n = Notification.createFail(error);
+      const n = Note.createFail(error);
 
       n.accept(
         (x: any) => {
@@ -1785,9 +1728,9 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should accept function for complete Notification', () => {
+    it('should accept function for complete Note', () => {
       let observed = false;
-      const n = Notification.createDone();
+      const n = Note.createDone();
 
       n.accept(
         (x: any) => {
@@ -1805,10 +1748,10 @@ describe('Notification', () => {
   });
 
   describe('observe', () => {
-    it('should observe for next Notification', () => {
+    it('should observe for next Note', () => {
       const value = 'a';
       let observed = false;
-      const n = Notification.createNext(value);
+      const n = Note.createNext(value);
       const observer = Subscriber.create(
         (x?: string) => {
           expect(x).to.equal(value);
@@ -1826,9 +1769,9 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should observe for error Notification', () => {
+    it('should observe for error Note', () => {
       let observed = false;
-      const n = Notification.createFail();
+      const n = Note.createFail();
       const observer = Subscriber.create(
         (x: any) => {
           throw 'should not be called';
@@ -1845,9 +1788,9 @@ describe('Notification', () => {
       expect(observed).to.be.true;
     });
 
-    it('should observe for complete Notification', () => {
+    it('should observe for complete Note', () => {
       let observed = false;
-      const n = Notification.createDone();
+      const n = Note.createDone();
       const observer = Subscriber.create(
         (x: any) => {
           throw 'should not be called';
@@ -1904,9 +1847,7 @@ describe('firstFrom', () => {
 
   it('should work with a synchronous observable', async () => {
     let finalized = false;
-    const source = of('apples', 'bananas').pipe(
-      finalize(() => (finalized = true))
-    );
+    const source = of('apples', 'bananas').pipe(finalize(() => (finalized = true)));
     const result = await firstFrom(source);
     expect(result).to.equal('apples');
     expect(finalized).to.be.true;
@@ -1954,9 +1895,7 @@ describe('lastFrom', () => {
 
   it('should work with a synchronous observable', async () => {
     let finalized = false;
-    const source = of('apples', 'bananas').pipe(
-      finalize(() => (finalized = true))
-    );
+    const source = of('apples', 'bananas').pipe(finalize(() => (finalized = true)));
     const result = await lastFrom(source);
     expect(result).to.equal('bananas');
     expect(finalized).to.be.true;

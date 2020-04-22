@@ -454,7 +454,7 @@ export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Conte
         const x = (i as any)[Symbol.rxSource]() as qt.Source<N>;
         s.add(
           x.subscribe({
-            next(n?: N) {
+            next(n: N) {
               s.add(h.schedule(() => r.next(n)));
             },
             fail(e: any) {

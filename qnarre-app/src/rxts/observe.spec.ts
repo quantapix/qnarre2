@@ -1,7 +1,7 @@
 import {fromIterable} from 'rxjs/internal/observable/fromIterable';
 import {iterator as symbolIterator} from 'rxjs/internal/symbol/iterator';
 import {TestScheduler} from 'rxjs/testing';
-import {Notification, queueScheduler, Subscriber} from 'rxjs';
+import {Note, queueScheduler, Subscriber} from 'rxjs';
 import {observeOn, materialize, take, toArray} from 'rxjs/operators';
 
 declare const expectSource: any;
@@ -34,17 +34,13 @@ describe('fromIterable', () => {
   });
 
   it('should get new iterator for each subscription', () => {
-    const expected = [
-      Notification.createNext(10),
-      Notification.createNext(20),
-      Notification.createDone()
-    ];
+    const expected = [Note.createNext(10), Note.createNext(20), Note.createDone()];
 
     const e1 = fromIterable<number>(new Int32Array([10, 20]), undefined).pipe(
       observeOn(rxTestScheduler)
     );
 
-    let v1, v2: Array<Notification<any>>;
+    let v1, v2: Array<Note<any>>;
     e1.pipe(materialize(), toArray()).subscribe(x => (v1 = x));
     e1.pipe(materialize(), toArray()).subscribe(x => (v2 = x));
 

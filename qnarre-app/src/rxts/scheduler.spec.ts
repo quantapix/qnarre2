@@ -489,9 +489,9 @@ describe('TestScheduler', () => {
         b: 'B'
       });
       expect(result).deep.equal([
-        {frame: 70, notification: Notification.createNext('A')},
-        {frame: 110, notification: Notification.createNext('B')},
-        {frame: 150, notification: Notification.createDone()}
+        {frame: 70, notification: Note.createNext('A')},
+        {frame: 110, notification: Note.createNext('B')},
+        {frame: 150, notification: Note.createDone()}
       ]);
     });
 
@@ -501,9 +501,9 @@ describe('TestScheduler', () => {
         b: 'B'
       });
       expect(result).deep.equal([
-        {frame: 20, notification: Notification.createNext('A')},
-        {frame: 50, notification: Notification.createNext('B')},
-        {frame: 80, notification: Notification.createDone()}
+        {frame: 20, notification: Note.createNext('A')},
+        {frame: 50, notification: Note.createNext('B')},
+        {frame: 80, notification: Note.createDone()}
       ]);
     });
 
@@ -513,9 +513,9 @@ describe('TestScheduler', () => {
         b: 'B'
       });
       expect(result).deep.equal([
-        {frame: 40, notification: Notification.createNext('A')},
-        {frame: 80, notification: Notification.createNext('B')},
-        {frame: 120, notification: Notification.createDone()}
+        {frame: 40, notification: Note.createNext('A')},
+        {frame: 80, notification: Note.createNext('B')},
+        {frame: 120, notification: Note.createDone()}
       ]);
     });
 
@@ -526,27 +526,27 @@ describe('TestScheduler', () => {
         'omg error!'
       );
       expect(result).deep.equal([
-        {frame: 70, notification: Notification.createNext('A')},
-        {frame: 110, notification: Notification.createNext('B')},
-        {frame: 150, notification: Notification.createFail('omg error!')}
+        {frame: 70, notification: Note.createNext('A')},
+        {frame: 110, notification: Note.createNext('B')},
+        {frame: 150, notification: Note.createFail('omg error!')}
       ]);
     });
 
     it('should default in the letter for the value if no value hash was passed', () => {
       const result = TestScheduler.parseMarbles('--a--b--c--');
       expect(result).deep.equal([
-        {frame: 20, notification: Notification.createNext('a')},
-        {frame: 50, notification: Notification.createNext('b')},
-        {frame: 80, notification: Notification.createNext('c')}
+        {frame: 20, notification: Note.createNext('a')},
+        {frame: 50, notification: Note.createNext('b')},
+        {frame: 80, notification: Note.createNext('c')}
       ]);
     });
 
     it('should handle grouped values', () => {
       const result = TestScheduler.parseMarbles('---(abc)---');
       expect(result).deep.equal([
-        {frame: 30, notification: Notification.createNext('a')},
-        {frame: 30, notification: Notification.createNext('b')},
-        {frame: 30, notification: Notification.createNext('c')}
+        {frame: 30, notification: Note.createNext('a')},
+        {frame: 30, notification: Note.createNext('b')},
+        {frame: 30, notification: Note.createNext('c')}
       ]);
     });
 
@@ -560,10 +560,10 @@ describe('TestScheduler', () => {
         runMode
       );
       expect(result).deep.equal([
-        {frame: 10, notification: Notification.createNext('A')},
-        {frame: 30, notification: Notification.createNext('B')},
-        {frame: 50, notification: Notification.createNext('C')},
-        {frame: 60, notification: Notification.createDone()}
+        {frame: 10, notification: Note.createNext('A')},
+        {frame: 30, notification: Note.createNext('B')},
+        {frame: 50, notification: Note.createNext('C')},
+        {frame: 60, notification: Note.createDone()}
       ]);
     });
 
@@ -577,18 +577,18 @@ describe('TestScheduler', () => {
         runMode
       );
       expect(result).deep.equal([
-        {frame: 10.2, notification: Notification.createNext('A')},
+        {frame: 10.2, notification: Note.createNext('A')},
         {
           frame: 10.2 + 10 + 1.2 * 1000,
-          notification: Notification.createNext('B')
+          notification: Note.createNext('B')
         },
         {
           frame: 10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60,
-          notification: Notification.createNext('C')
+          notification: Note.createNext('C')
         },
         {
           frame: 10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60 + 10,
-          notification: Notification.createDone()
+          notification: Note.createDone()
         }
       ]);
     });

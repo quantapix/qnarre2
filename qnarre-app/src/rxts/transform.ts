@@ -23,7 +23,7 @@ class BufferR<N> extends qj.Reactor<any, N> {
     this.add(qu.subscribeToResult(this, s));
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.buf.push(n);
   }
 
@@ -58,7 +58,7 @@ class BufferCountR<N> extends qj.Subscriber<N> {
     super();
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const b = this.buf;
     b.push(n);
     if (b.length == this.size) {
@@ -88,7 +88,7 @@ export class BufferSkipCountR<N> extends qj.Subscriber<N> {
     super();
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.count++;
     const bs = this.bufs;
     if (this.count % this.every === 0) bs.push([]);
@@ -204,7 +204,7 @@ export class BufferTimeR<N> extends qj.Subscriber<N> {
     }
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     let filled: Context<N> | undefined;
     const cs = this.ctxs;
     const len = cs.length;
@@ -333,7 +333,7 @@ export class BufferToggleR<O, I> extends qj.Reactor<N[], M> {
     this.add(qu.subscribeToResult(this, openings));
   }
 
-  protected _next(n?: N[]) {
+  protected _next(n: N[]) {
     const contexts = this.contexts;
     const len = contexts.length;
     for (let i = 0; i < len; i++) {
@@ -438,7 +438,7 @@ export class BufferWhenR<N> extends qj.Reactor<N, any> {
     this.openBuffer();
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.buffer!.push(value);
   }
 
@@ -546,7 +546,7 @@ export class ExhaustR<N> extends qj.Reactor<N, N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (!this.hasSubscription) {
       this.hasSubscription = true;
       this.add(qu.subscribeToResult(this, n));
@@ -609,7 +609,7 @@ export class ExhaustMapR<N, R> extends qj.Reactor<N, R> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (!this.hasSubscription) this.tryNext(n);
   }
 
@@ -716,7 +716,7 @@ export class ExpandR<N, R> extends qj.Reactor<N, R> {
     subscriber.subscribeToProjection(result, value, index);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const tgt = this.tgt;
     if (tgt.closed) {
       this._done();
@@ -846,7 +846,7 @@ export class GroupByR<N, K, M> extends qj.Subscriber<N> implements qt.RefCounted
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     let key: K;
     try {
       key = this.keySelector(n);
@@ -955,7 +955,7 @@ export class MapR<N, R> extends qj.Subscriber<N> {
     this.thisArg = thisArg || this;
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     let result: R;
     try {
       result = this.project.call(this.thisArg, n, this.count++);
@@ -992,7 +992,7 @@ export class MapToR<N, R> extends qj.Subscriber<N> {
     this.value = value;
   }
 
-  protected _next(_n?: N) {
+  protected _next(_n: N) {
     this.tgt.next(this.value);
   }
 }
@@ -1050,7 +1050,7 @@ export class MergeMapR<N, R> extends qj.Reactor<N, R> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this.active < this.concurrent) this._tryNext(n);
     else this.buffer.push(n);
   }
@@ -1272,7 +1272,7 @@ class PairwiseR<N> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  _next(n?: N) {
+  _next(n: N) {
     let pair: [N, N] | undefined;
     if (this.hasPrev) pair = [this.prev!, n];
     else this.hasPrev = true;
@@ -1426,7 +1426,7 @@ export class ScanR<N, R> extends qj.Subscriber<N> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (!this._hasState) {
       this._state = n;
       this._hasState = true;
@@ -1487,7 +1487,7 @@ export class SwitchMapR<N, R> extends qj.Reactor<N, R> {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     let result: qt.Input<R>;
     const index = this.index++;
     try {
@@ -1593,7 +1593,7 @@ class WindowR<N> extends qj.Reactor<N, any> {
     this._done();
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.window.next(n);
   }
 
@@ -1649,7 +1649,7 @@ class WindowCountR<N> extends qj.Subscriber<N> {
     tgt.next(this.windows[0]);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const startWindowEvery =
       this.startWindowEvery > 0 ? this.startWindowEvery : this.windowSize;
     const tgt = this.tgt;
@@ -1781,7 +1781,7 @@ interface CloseState<N> {
 
 class CountedSubject<N> extends qj.Subject<N> {
   private _numberOfNextedValues: number = 0;
-  next(n?: N) {
+  next(n: N) {
     this._numberOfNextedValues++;
     super.next(n);
   }
@@ -1845,7 +1845,7 @@ class WindowTimeR<N> extends qj.Subscriber<N> {
     }
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const windows =
       this.maxWindowSize < Number.POSITIVE_INFINITY ? this.windows.slice() : this.windows;
     const len = windows.length;
@@ -1967,7 +1967,7 @@ class WindowToggleR<N, R> extends qj.Reactor<N, any> {
     );
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     const {contexts} = this;
     if (contexts) {
       const len = contexts.length;
@@ -2088,7 +2088,7 @@ class WindowWhenO<N> implements qt.Operator<N, qt.Source<N>> {
 
 class WindowWhenR<N> extends qj.Reactor<N, any> {
   private window: qj.Subject<N> | undefined;
-  private closingNotification?: qj.Subscription;
+  private closingNote?: qj.Subscription;
 
   constructor(
     protected tgt: qj.Subscriber<qt.Source<N>>,
@@ -2116,25 +2116,25 @@ class WindowWhenR<N> extends qj.Reactor<N, any> {
     this.openWindow(innerSub);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.window!.next(n);
   }
 
   protected _fail(e: any) {
     this.window!.fail(e);
     this.tgt.fail(e);
-    this.unsubscribeClosingNotification();
+    this.unsubscribeClosingNote();
   }
 
   protected _done() {
     this.window!.done();
     this.tgt.done();
-    this.unsubscribeClosingNotification();
+    this.unsubscribeClosingNote();
   }
 
-  private unsubscribeClosingNotification() {
-    if (this.closingNotification) {
-      this.closingNotification.unsubscribe();
+  private unsubscribeClosingNote() {
+    if (this.closingNote) {
+      this.closingNote.unsubscribe();
     }
   }
 
@@ -2156,6 +2156,6 @@ class WindowWhenR<N> extends qj.Reactor<N, any> {
       this.window.fail(e);
       return;
     }
-    this.add((this.closingNotification = qu.subscribeToResult(this, closingNotifier)));
+    this.add((this.closingNote = qu.subscribeToResult(this, closingNotifier)));
   }
 }
