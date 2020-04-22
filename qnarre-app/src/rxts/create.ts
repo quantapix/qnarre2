@@ -135,7 +135,7 @@ export function bindCB<A, R>(
 ): (..._: A[]) => qt.Source<R[]>;
 export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.Source<N> {
   let s: qt.Subject<N> | undefined;
-  function dispatch(this: qt.Action<N>, t: qt.State<N>) {
+  function dispatch(this: qt.Action<N>, t?: qt.State<N>) {
     if (!s) {
       s = qx.createAsync();
       const f = (...ns: any[]) => {
@@ -143,12 +143,12 @@ export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.S
         this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
       };
       try {
-        cb.apply(t.ctx, [...t.args, f]);
+        cb.apply(t!.ctx, [...t!.args, f]);
       } catch (e) {
         s!.fail(e);
       }
     }
-    this.add(s.subscribe(t.r));
+    this.add(s.subscribe(t!.r));
   }
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
@@ -308,7 +308,7 @@ export function bindNodeCB<N>(
   h?: qh.Scheduler
 ): (..._: any[]) => qt.Source<N> {
   let s: qt.Subject<N> | undefined;
-  function dispatch(this: qt.Action<N>, t: qt.State<N>) {
+  function dispatch(this: qt.Action<N>, t?: qt.State<N>) {
     if (!s) {
       s = qx.createAsync();
       const f = (...ns: any[]) => {
@@ -316,12 +316,12 @@ export function bindNodeCB<N>(
         this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
       };
       try {
-        cb.apply(t.ctx, [...t.args, f]);
+        cb.apply(t!.ctx, [...t!.args, f]);
       } catch (e) {
         s!.fail(e);
       }
     }
-    this.add(s.subscribe(t.r));
+    this.add(s.subscribe(t!.r));
   }
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
@@ -350,18 +350,18 @@ export function bindNodeCB<N>(
   };
 }
 
-export function defer<R extends qt.Input<any> | void>(
-  fac: () => R
-): qt.Source<qt.Sourced<R>> {
-  return qx.createSource<qt.Sourced<R>>(r => {
-    let inp: R | void;
+export function defer<X extends qt.Input<any> | void>(
+  fac: () => X
+): qt.Source<qt.Sourced<X>> {
+  return new qs.Source<qt.Sourced<X>>(r => {
+    let inp: X | void;
     try {
       inp = fac();
     } catch (e) {
       r.fail(e);
       return;
     }
-    const s = inp ? from(inp as qt.Input<qt.Sourced<R>>) : EMPTY;
+    const s = inp ? from(inp as qt.Input<qt.Sourced<X>>) : EMPTY;
     return s.subscribe(r);
   });
 }
@@ -372,12 +372,12 @@ export function empty(h?: qh.Scheduler) {
     : new qs.Source<never>(r => r.done());
 }
 
-export function from<T extends qt.Input<T>>(inp: T): qs.Source<qt.Sourced<T>>;
+export function from<X extends qt.Input<any>>(inp: X): qs.Source<qt.Sourced<X>>;
 export function from<N>(inp: qt.Input<N>, h?: qh.Scheduler): qs.Source<N> {
   if (h) return h.scheduled(inp);
   else {
-    //if (inp instanceof qs.Source<N>) return inp;
-    return qx.createSource<N>(qu.subscribeTo(inp));
+    if (qu.isSource<N>(inp)) return inp;
+    return new qs.Source<N>(qu.subscribeTo(inp));
   }
 }
 

@@ -140,7 +140,7 @@ export interface Action<N> extends Subscription {
 
 export interface Scheduler extends Stamper {
   schedule<N>(
-    work: (this: Action<N>, _: State<N>) => void,
+    work: (this: Action<N>, _?: State<N>) => void,
     state?: State<N>,
     delay?: number
   ): Subscription;
