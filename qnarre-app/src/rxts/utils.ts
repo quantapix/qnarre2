@@ -177,31 +177,40 @@ export function identity<T>(x: T): T {
   return x;
 }
 
-export const isArrayLike = <T>(x: any): x is ArrayLike<T> =>
-  x && typeof x.length === 'number' && typeof x !== 'function';
-
 export function isDate(x: any): x is Date {
   return x instanceof Date && !isNaN(+x);
 }
 
+export function isObject(x: any): x is Object {
+  return !!x && typeof x === 'object';
+}
+
 export function isFunction(x: any): x is Function {
-  return typeof x === 'function';
-}
-
-export function isInterop<N>(x: any): x is qt.Interop<N> {
-  return x && typeof x[Symbol.rxSource] === 'function';
-}
-
-export function isIterable(x: any): x is Iterable<any> {
-  return x && typeof x[Symbol.iterator] === 'function';
+  return !!x && typeof x === 'function';
 }
 
 export function isNumeric(x: any): x is number | string {
   return !Array.isArray(x) && x - parseFloat(x) + 1 >= 0;
 }
 
-export function isObject(x: any): x is Object {
-  return x !== null && typeof x === 'object';
+export function isArrayLike<N>(x: any): x is ArrayLike<N> {
+  return !!x && typeof x !== 'function' && typeof x.length === 'number';
+}
+
+export function isIter<N>(x: any): x is Iterable<N> {
+  return !!x && typeof x[Symbol.iterator] === 'function';
+}
+
+export function isAsyncIter<N>(x: any): x is AsyncIterable<N> {
+  return !!x && typeof x[Symbol.asyncIterator] === 'function';
+}
+
+export function isInterop<N>(x: any): x is qt.Interop<N> {
+  return !!x && typeof x[Symbol.rxSource] === 'function';
+}
+
+export function isPromise<N>(x: any): x is PromiseLike<N> {
+  return !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function';
 }
 
 export function isSource<N>(x: any): x is qs.Source<N> {
@@ -212,12 +221,8 @@ export function isSource<N>(x: any): x is qs.Source<N> {
   );
 }
 
-export function isPromise(x: any): x is PromiseLike<any> {
-  return !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function';
-}
-
 export function isScheduler(x: any): x is qt.Scheduler {
-  return x && typeof (<any>x).schedule === 'function';
+  return !!x && typeof x.schedule === 'function';
 }
 
 export function noop() {}
@@ -364,24 +369,13 @@ export const subscribeTo = <N>(
   }
 };
 
-export const subscribeToArray = <N>(a: ArrayLike<N>) => (s: qt.Subscriber<N>) => {
-  for (let i = 0, len = a.length; i < len && !s.closed; i++) {
-    s.next(a[i]);
-  }
-  s.done();
-};
-
-export function subscribeToAsyncIterable<N>(a: AsyncIterable<N>) {
+export function subscribeToArray<N>(a: ArrayLike<N>) {
   return (s: qt.Subscriber<N>) => {
-    process(a, s).catch(e => s.fail(e));
+    for (let i = 0, len = a.length; i < len && !s.closed; i++) {
+      s.next(a[i]);
+    }
+    s.done();
   };
-}
-
-async function process<N>(a: AsyncIterable<N>, s: qt.Subscriber<N>) {
-  for await (const n of a) {
-    s.next(n);
-  }
-  s.done();
 }
 
 export const subscribeToIterable = <N>(it: Iterable<N>) => (s: qj.Subscriber<N>) => {
@@ -402,6 +396,19 @@ export const subscribeToIterable = <N>(it: Iterable<N>) => (s: qj.Subscriber<N>)
   }
   return s;
 };
+
+export function subscribeToAsyncIterable<N>(i: AsyncIterable<N>) {
+  return (s: qt.Subscriber<N>) => {
+    process(i, s).catch(e => s.fail(e));
+  };
+}
+
+async function process<N>(i: AsyncIterable<N>, s: qt.Subscriber<N>) {
+  for await (const n of i) {
+    s.next(n);
+  }
+  s.done();
+}
 
 export const subscribeToSource = <N>(o: any) => (s: qj.Subscriber<N>) => {
   const obs = (o as any)[Symbol.rxSource]();

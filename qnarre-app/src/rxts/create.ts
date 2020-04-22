@@ -382,8 +382,8 @@ export function from<N>(inp: qt.Input<N>, h?: qh.Scheduler): qs.Source<N> {
 }
 
 export function fromArray<N>(inp: ArrayLike<N>, h?: qh.Scheduler) {
-  if (h) return qh.scheduleArray(inp, h);
-  else return qx.createSource<N>(qu.subscribeToArray(inp));
+  if (h) return h.scheduleArray(inp);
+  return new qs.Source<N>(qu.subscribeToArray(inp));
 }
 
 export interface NodeStyleEventEmitter {
@@ -721,18 +721,17 @@ interface IntervalState {
 export const NEVER = new qs.Source<never>(noop);
 
 export function of(): qs.Source<never>;
-export function of<T>(value: T): qs.Source<T>;
-export function of<T, U>(value1: T, value2: U): qs.Source<T | U>;
-export function of<T, U, V>(value1: T, value2: U, value3: V): qs.Source<T | U | V>;
-export function of<A extends Array<any>>(...args: A): qs.Source<qt.ValueOf<A>>;
-export function of<T>(...args: Array<T | qh.Scheduler>): qs.Source<T> {
-  let scheduler = args[args.length - 1] as qh.Scheduler;
-  if (isScheduler(scheduler)) {
+export function of<N>(_: N): qs.Source<N>;
+export function of<N, M>(_1: N, _2: M): qs.Source<N | M>;
+export function of<N, M, O>(_1: N, _2: M, _3: O): qs.Source<N | M | O>;
+export function of<A extends Array<any>>(..._: A): qs.Source<qt.ValueOf<A>>;
+export function of<N>(...args: Array<N | qh.Scheduler>): qs.Source<N> {
+  let h = args[args.length - 1] as qh.Scheduler;
+  if (qu.isScheduler(h)) {
     args.pop();
-    return scheduleArray(args as T[], scheduler);
-  } else {
-    return fromArray(args as T[]);
+    return h.scheduleArray(args as N[]);
   }
+  return fromArray(args as N[]);
 }
 
 export function range(

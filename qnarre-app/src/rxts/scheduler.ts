@@ -1,7 +1,7 @@
 import * as qj from './subject';
 import * as qt from './types';
 import * as qu from './utils';
-import * as qx from './context';
+import * as qs from './source';
 
 export class Action<N> extends qj.Subscription implements qt.Action<N> {
   constructor(
@@ -11,20 +11,8 @@ export class Action<N> extends qj.Subscription implements qt.Action<N> {
     super();
   }
 
-  schedule(_: qt.State<N>, _delay?: number): qt.Subscription {
+  schedule(_?: qt.State<N>, _delay?: number): qt.Subscription {
     return this;
-  }
-}
-
-export class Scheduler implements qt.Scheduler {
-  constructor(private A: typeof Action, public now = () => Date.now()) {}
-
-  schedule<N>(
-    work: (this: qt.Action<N>, _: qt.State<N>) => void,
-    state: qt.State<N>,
-    delay?: number
-  ): qt.Subscription {
-    return new this.A(this, work).schedule(state, delay);
   }
 }
 
@@ -37,6 +25,150 @@ export function fail<N>(t: qt.State<N>) {
   t.s!.fail(t.f);
 }
 
+export class Scheduler implements qt.Scheduler {
+  constructor(private A: typeof Action, public now = () => Date.now()) {}
+
+  schedule<N>(
+    work: (this: qt.Action<N>, _: qt.State<N>) => void,
+    state?: qt.State<N>,
+    delay?: number
+  ): qt.Subscription {
+    return new this.A(this, work).schedule(state, delay);
+  }
+
+  scheduleArray<N>(a: ArrayLike<N>) {
+    return new qs.Source<N>(r => {
+      const s = new qj.Subscription();
+      let i = 0;
+      s.add(
+        this.schedule<N>(function () {
+          if (i === a.length) r.done();
+          else {
+            r.next(a[i++]);
+            if (!r.closed) s.add(this.schedule());
+          }
+        })
+      );
+      return s;
+    });
+  }
+
+  scheduleIter<N>(b: Iterable<N>) {
+    return new qs.Source<N>(r => {
+      const s = new qj.Subscription();
+      let i: Iterator<N>;
+      s.add(() => {
+        if (i && typeof i.return === 'function') i.return();
+      });
+      s.add(
+        this.schedule<N>(() => {
+          i = b[Symbol.iterator]();
+          s.add(
+            this.schedule<N>(function () {
+              if (!r.closed) {
+                let y: IteratorResult<N>;
+                try {
+                  y = i.next();
+                } catch (e) {
+                  r.fail(e);
+                  return;
+                }
+                if (y.done) r.done();
+                else {
+                  r.next(y.value);
+                  this.schedule();
+                }
+              }
+            })
+          );
+        })
+      );
+      return s;
+    });
+  }
+
+  scheduleAsyncIter<N>(b: AsyncIterable<N>) {
+    return new qs.Source<N>(r => {
+      const s = new qj.Subscription();
+      s.add(
+        this.schedule<N>(() => {
+          s.add(
+            this.schedule<N>(function () {
+              b[Symbol.asyncIterator]()
+                .next()
+                .then(y => {
+                  if (y.done) r.done();
+                  else {
+                    r.next(y.value);
+                    this.schedule();
+                  }
+                });
+            })
+          );
+        })
+      );
+      return s;
+    });
+  }
+
+  scheduleSource<N>(i: qt.Interop<N>) {
+    return new qs.Source<N>(r => {
+      const s = new qj.Subscription();
+      s.add(
+        this.schedule<N>(() => {
+          s.add(
+            i[Symbol.rxSource]().subscribe({
+              next: (n: N) => s.add(this.schedule(() => r.next(n))),
+              fail: (e: any) => s.add(this.schedule(() => r.fail(e))),
+              done: () => s.add(this.schedule(() => r.done()))
+            })
+          );
+        })
+      );
+      return s;
+    });
+  }
+
+  schedulePromise<N>(p: PromiseLike<N>) {
+    return new qs.Source<N>(r => {
+      const s = new qj.Subscription();
+      s.add(
+        this.schedule<N>(() =>
+          p.then(
+            n => {
+              s.add(
+                this.schedule<N>(() => {
+                  r.next(n);
+                  s.add(
+                    this.schedule<N>(() => r.done())
+                  );
+                })
+              );
+            },
+            f => {
+              s.add(
+                this.schedule<N>(() => r.fail(f))
+              );
+            }
+          )
+        )
+      );
+      return s;
+    });
+  }
+
+  scheduled<N>(i: qt.Input<N>) {
+    if (i) {
+      if (qu.isInterop<N>(i)) return this.scheduleSource<N>(i);
+      if (qu.isPromise<N>(i)) return this.schedulePromise<N>(i);
+      if (qu.isArrayLike<N>(i)) return this.scheduleArray<N>(i);
+      if (qu.isIter<N>(i) || typeof i === 'string') return this.scheduleIter<N>(i);
+      if (qu.isAsyncIter<N>(i)) return this.scheduleAsyncIter<N>(i as any);
+    }
+    throw new TypeError(((i && typeof i) || i) + ' is not observable');
+  }
+}
+
 export class AsyncAction<N> extends Action<N> {
   id?: any;
   state?: qt.State<N>;
@@ -47,7 +179,7 @@ export class AsyncAction<N> extends Action<N> {
     super(h, w);
   }
 
-  schedule(s: qt.State<N>, d?: number): qj.Subscription {
+  schedule(s?: qt.State<N>, d?: number): qj.Subscription {
     if (this.closed) return this;
     this.state = s;
     const i = this.id;
@@ -108,7 +240,7 @@ export class Async extends Scheduler {
   static del?: Scheduler;
 
   active = false;
-  scheduled?: any;
+  busy?: any;
   acts = [] as AsyncAction<any>[];
 
   constructor(act: typeof Action, now?: () => number) {
@@ -154,7 +286,7 @@ export class FrameAction<N> extends AsyncAction<N> {
   protected asyncId(h: Frame, id?: any, d?: number) {
     if (d && d > 0) return super.asyncId(h, id, d);
     h.acts.push(this);
-    return h.scheduled || (h.scheduled = requestAnimationFrame(() => h.flush(undefined)));
+    return h.busy || (h.busy = requestAnimationFrame(() => h.flush(undefined)));
   }
 
   protected recycleId(h: Frame, id?: any, d?: number) {
@@ -163,7 +295,7 @@ export class FrameAction<N> extends AsyncAction<N> {
     }
     if (h.acts.length === 0) {
       cancelAnimationFrame(id);
-      h.scheduled = undefined;
+      h.busy = undefined;
     }
     return;
   }
@@ -172,7 +304,7 @@ export class FrameAction<N> extends AsyncAction<N> {
 export class Frame extends Async {
   flush(a?: AsyncAction<any>) {
     this.active = true;
-    this.scheduled = undefined;
+    this.busy = undefined;
     let e: any;
     let i = -1;
     const {acts} = this;
@@ -201,9 +333,7 @@ export class AsapAction<N> extends AsyncAction<N> {
   protected asyncId(h: Asap, id?: any, d?: number) {
     if (d && d > 0) return super.asyncId(h, id, d);
     h.acts.push(this);
-    return (
-      h.scheduled || (h.scheduled = qu.Immediate.setImmediate(h.flush.bind(h, undefined)))
-    );
+    return h.busy || (h.busy = qu.Immediate.setImmediate(h.flush.bind(h, undefined)));
   }
 
   protected recycleId(h: Asap, id?: any, d?: number) {
@@ -212,7 +342,7 @@ export class AsapAction<N> extends AsyncAction<N> {
     }
     if (h.acts.length === 0) {
       qu.Immediate.clearImmediate(id);
-      h.scheduled = undefined;
+      h.busy = undefined;
     }
     return undefined;
   }
@@ -221,7 +351,7 @@ export class AsapAction<N> extends AsyncAction<N> {
 export class Asap extends Async {
   flush(a?: AsyncAction<any>) {
     this.active = true;
-    this.scheduled = undefined;
+    this.busy = undefined;
     let e: any;
     let i = -1;
     const {acts} = this;
@@ -247,7 +377,7 @@ export class QueueAction<N> extends AsyncAction<N> {
     super(h, w);
   }
 
-  schedule(s: qt.State<N>, d?: number): qj.Subscription {
+  schedule(s?: qt.State<N>, d?: number): qj.Subscription {
     if (d && d > 0) return super.schedule(s, d);
     this.delay = d;
     this.state = s;
@@ -283,7 +413,7 @@ export class VirtualAction<N> extends AsyncAction<N> {
     h.index = index;
   }
 
-  schedule(s: qt.State<N>, d?: number): qj.Subscription {
+  schedule(s?: qt.State<N>, d?: number): qj.Subscription {
     if (!this.id) return super.schedule(s, d);
     this.active = false;
     const a = new VirtualAction(this.h as Virtual, this.work);
@@ -342,143 +472,4 @@ export class Virtual extends Async {
       throw e;
     }
   }
-}
-
-export function scheduleArray<N>(i: ArrayLike<N>, h: qt.Scheduler) {
-  return qx.createSource(r => {
-    const s = new qj.Subscription();
-    let j = 0;
-    s.add(
-      h.schedule(function () {
-        if (j === i.length) {
-          r.done();
-          return;
-        }
-        r.next(i[j++]);
-        if (!r.closed) s.add(this.schedule());
-      })
-    );
-    return s;
-  });
-}
-
-export function scheduleAsyncIter<N>(i: AsyncIterable<N>, h: qt.Scheduler) {
-  if (!i) throw new Error('Iterable needed');
-  return qx.createSource(r => {
-    const s = new qj.Subscription();
-    s.add(
-      h.schedule(() => {
-        const iter = i[Symbol.asyncIterator]();
-        s.add(
-          h.schedule(function () {
-            iter.next().then(res => {
-              if (res.done) r.done();
-              else {
-                r.next(res.value);
-                this.schedule();
-              }
-            });
-          })
-        );
-      })
-    );
-    return s;
-  });
-}
-
-export function scheduleIter<N>(i: Iterable<N>, h: qt.Scheduler) {
-  if (!i) throw new Error('Iterable needed');
-  return qx.createSource(r => {
-    const s = new qj.Subscription();
-    let iter: Iterator<N>;
-    s.add(() => {
-      if (iter && typeof iter.return === 'function') iter.return();
-    });
-    s.add(
-      h.schedule(() => {
-        iter = (i as any)[Symbol.iterator]();
-        s.add(
-          h.schedule(function () {
-            if (r.closed) return;
-            let n: N;
-            let done: boolean | undefined;
-            try {
-              const res = iter.next();
-              n = res.value;
-              done = res.done;
-            } catch (e) {
-              r.fail(e);
-              return;
-            }
-            if (done) r.done();
-            else r.next(n);
-            this.schedule();
-          })
-        );
-      })
-    );
-    return s;
-  });
-}
-
-export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler) {
-  return qx.createSource(r => {
-    const s = new qj.Subscription();
-    s.add(
-      h.schedule(() => {
-        const x = (i as any)[Symbol.rxSource]() as qt.Source<N>;
-        s.add(
-          x.subscribe({
-            next(n: N) {
-              s.add(h.schedule(() => r.next(n)));
-            },
-            fail(e: any) {
-              s.add(h.schedule(() => r.fail(e)));
-            },
-            done() {
-              s.add(h.schedule(() => r.done()));
-            }
-          })
-        );
-      })
-    );
-    return s;
-  });
-}
-
-export function schedulePromise<N>(p: PromiseLike<N>, h: qt.Scheduler) {
-  return qx.createSource(r => {
-    const s = new qj.Subscription();
-    s.add(
-      h.schedule(() =>
-        p.then(
-          n => {
-            s.add(
-              h.schedule(() => {
-                r.next(n);
-                s.add(h.schedule(() => r.done()));
-              })
-            );
-          },
-          f => {
-            s.add(h.schedule(() => r.fail(f)));
-          }
-        )
-      )
-    );
-    return s;
-  });
-}
-
-export function scheduled<N>(i: qt.Input<N>, h: qt.Scheduler): qt.Source<N> {
-  if (i) {
-    if (qu.isInterop(i)) return scheduleSource(i, h);
-    if (qu.isPromise(i)) return schedulePromise(i, h);
-    if (qu.isArrayLike(i)) return scheduleArray(i, h);
-    if (qu.isIterable(i) || typeof i === 'string') return scheduleIter(i, h);
-    if (Symbol.asyncIterator && typeof (i as any)[Symbol.asyncIterator] === 'function') {
-      return scheduleAsyncIter(i as any, h);
-    }
-  }
-  throw new TypeError(((i && typeof i) || i) + ' is not observable');
 }
