@@ -111,7 +111,7 @@ describe('Scheduler.animationFrame', () => {
 
   it('should execute the rest of the scheduled actions if the first action is canceled', (done: MochaDone) => {
     let actionHappened = false;
-    let secondSubscription: Subscription | null = null;
+    let secondSubscription: Subscription = null;
 
     const firstSubscription = animationFrame.schedule(() => {
       actionHappened = true;
@@ -178,9 +178,7 @@ describe('Scheduler.asap', () => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     // callThrough is missing from the declarations installed by the typings tool in stable
-    const stubSetInterval = (<any>(
-      sinon.stub(global, 'setInterval')
-    )).callThrough();
+    const stubSetInterval = (<any>sinon.stub(global, 'setInterval')).callThrough();
     const period = 50;
     const state = {index: 0, period};
     type State = typeof state;
@@ -207,9 +205,7 @@ describe('Scheduler.asap', () => {
     const sandbox = sinon.createSandbox();
     const fakeTimer = sandbox.useFakeTimers();
     // callThrough is missing from the declarations installed by the typings tool in stable
-    const stubSetInterval = (<any>(
-      sinon.stub(global, 'setInterval')
-    )).callThrough();
+    const stubSetInterval = (<any>sinon.stub(global, 'setInterval')).callThrough();
     const period = 50;
     const state = {index: 0, period};
     type State = typeof state;
@@ -298,7 +294,7 @@ describe('Scheduler.asap', () => {
 
   it('should execute the rest of the scheduled actions if the first action is canceled', (done: MochaDone) => {
     let actionHappened = false;
-    let secondSubscription: Subscription | null = null;
+    let secondSubscription: Subscription = null;
 
     const firstSubscription = asap.schedule(() => {
       actionHappened = true;
@@ -634,9 +630,7 @@ describe('TestScheduler', () => {
         runMode
       );
       expect(result.subscribedFrame).to.equal(10.2);
-      expect(result.unsubscribedFrame).to.equal(
-        10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60
-      );
+      expect(result.unsubscribedFrame).to.equal(10.2 + 10 + 1.2 * 1000 + 10 + 1000 * 60);
     });
   });
 
@@ -850,38 +844,34 @@ describe('TestScheduler', () => {
       it('should support time progression syntax', () => {
         const testScheduler = new TestScheduler(assertDeepEquals);
 
-        testScheduler.run(
-          ({cold, hot, flush, expectSource, expectSubscriptions}) => {
-            const output = cold('10.2ms a 1.2s b 1m c|');
-            const expected = '   10.2ms a 1.2s b 1m c|';
+        testScheduler.run(({cold, hot, flush, expectSource, expectSubscriptions}) => {
+          const output = cold('10.2ms a 1.2s b 1m c|');
+          const expected = '   10.2ms a 1.2s b 1m c|';
 
-            expectSource(output).toBe(expected);
-          }
-        );
+          expectSource(output).toBe(expected);
+        });
       });
     });
 
     it('should provide the correct helpers', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
-      testScheduler.run(
-        ({cold, hot, flush, expectSource, expectSubscriptions}) => {
-          expect(cold).to.be.a('function');
-          expect(hot).to.be.a('function');
-          expect(flush).to.be.a('function');
-          expect(expectSource).to.be.a('function');
-          expect(expectSubscriptions).to.be.a('function');
+      testScheduler.run(({cold, hot, flush, expectSource, expectSubscriptions}) => {
+        expect(cold).to.be.a('function');
+        expect(hot).to.be.a('function');
+        expect(flush).to.be.a('function');
+        expect(expectSource).to.be.a('function');
+        expect(expectSubscriptions).to.be.a('function');
 
-          const obs1 = cold('-a-c-e|');
-          const obs2 = hot(' ^-b-d-f|');
-          const output = merge(obs1, obs2);
-          const expected = ' -abcdef|';
+        const obs1 = cold('-a-c-e|');
+        const obs2 = hot(' ^-b-d-f|');
+        const output = merge(obs1, obs2);
+        const expected = ' -abcdef|';
 
-          expectSource(output).toBe(expected);
-          expectSubscriptions(obs1.subscriptions).toBe('^-----!');
-          expectSubscriptions(obs2.subscriptions).toBe('^------!');
-        }
-      );
+        expectSource(output).toBe(expected);
+        expectSubscriptions(obs1.subscriptions).toBe('^-----!');
+        expectSubscriptions(obs2.subscriptions).toBe('^------!');
+      });
     });
 
     it('should have each frame represent a single virtual millisecond', () => {
@@ -919,9 +909,7 @@ describe('TestScheduler', () => {
         expect(actual).deep.equal(expected);
       });
       testScheduler.run(({cold, expectSource}) => {
-        const output = cold('-a-b-c|').pipe(
-          concatMap(d => of(d).pipe(delay(10)))
-        );
+        const output = cold('-a-b-c|').pipe(concatMap(d => of(d).pipe(delay(10))));
         const expected = '   -- 9ms a 9ms b 9ms (c|)';
         expectSource(output).toBe(expected);
 
@@ -937,9 +925,7 @@ describe('TestScheduler', () => {
       const testScheduler = new TestScheduler(assertDeepEquals);
 
       testScheduler.run(({cold, expectSource, flush}) => {
-        const output = cold('-a-b-c|').pipe(
-          concatMap(d => of(d).pipe(delay(10)))
-        );
+        const output = cold('-a-b-c|').pipe(concatMap(d => of(d).pipe(delay(10))));
         const expected = '   -- 9ms a 9ms b 9ms (c|)';
         expectSource(output).toBe(expected);
 
@@ -1104,20 +1090,12 @@ describe('Virtual', () => {
   it('should execute only those virtual actions that fall into the maxFrames timespan', function () {
     const MAX_FRAMES = 50;
     const v = new Virtual(VirtualAction, MAX_FRAMES);
-    const messages: string[] = [
-      'first message',
-      'second message',
-      'third message'
-    ];
+    const messages: string[] = ['first message', 'second message', 'third message'];
 
     const actualMessages: string[] = [];
 
     messages.forEach((message, index) => {
-      v.schedule(
-        state => actualMessages.push(state!),
-        index * MAX_FRAMES,
-        message
-      );
+      v.schedule(state => actualMessages.push(state!), index * MAX_FRAMES, message);
     });
 
     v.flush();
@@ -1129,20 +1107,12 @@ describe('Virtual', () => {
   it('should pick up actions execution where it left off after reaching previous maxFrames limit', function () {
     const MAX_FRAMES = 50;
     const v = new Virtual(VirtualAction, MAX_FRAMES);
-    const messages: string[] = [
-      'first message',
-      'second message',
-      'third message'
-    ];
+    const messages: string[] = ['first message', 'second message', 'third message'];
 
     const actualMessages: string[] = [];
 
     messages.forEach((message, index) => {
-      v.schedule(
-        state => actualMessages.push(state!),
-        index * MAX_FRAMES,
-        message
-      );
+      v.schedule(state => actualMessages.push(state!), index * MAX_FRAMES, message);
     });
 
     v.flush();

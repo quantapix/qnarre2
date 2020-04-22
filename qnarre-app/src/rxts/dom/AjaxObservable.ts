@@ -37,11 +37,7 @@ function getXMLHttpRequest(): XMLHttpRequest {
   } else {
     let progId: string;
     try {
-      const progIds = [
-        'Msxml2.XMLHTTP',
-        'Microsoft.XMLHTTP',
-        'Msxml2.XMLHTTP.4.0'
-      ];
+      const progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'];
       for (let i = 0; i < 3; i++) {
         try {
           progId = progIds[i];
@@ -81,10 +77,7 @@ export function ajaxPost(
   return new AjaxObservable<AjaxResponse>({method: 'POST', url, body, headers});
 }
 
-export function ajaxDelete(
-  url: string,
-  headers?: Object
-): Observable<AjaxResponse> {
+export function ajaxDelete(url: string, headers?: Object): Observable<AjaxResponse> {
   return new AjaxObservable<AjaxResponse>({method: 'DELETE', url, headers});
 }
 
@@ -283,9 +276,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
     switch (contentType) {
       case 'application/x-www-form-urlencoded':
         return Object.keys(body)
-          .map(
-            key => `${encodeURIComponent(key)}=${encodeURIComponent(body[key])}`
-          )
+          .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(body[key])}`)
           .join('&');
       case 'application/json':
         return JSON.stringify(body);
@@ -346,7 +337,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
         }
         (<any>xhrProgress).progressSubscriber = progressSubscriber;
       }
-      let xhrError: (e: any) => void;
+      let xhrError: qt.Fun<any>;
       xhrError = function (this: XMLHttpRequest, e: ErrorEvent) {
         const {progressSubscriber, subscriber, request} = <any>xhrError;
         if (progressSubscriber) {
@@ -420,12 +411,7 @@ export class AjaxSubscriber<T> extends Subscriber<Event> {
 
   unsubscribe() {
     const {done, xhr} = this;
-    if (
-      !done &&
-      xhr &&
-      xhr.readyState !== 4 &&
-      typeof xhr.abort === 'function'
-    ) {
+    if (!done && xhr && xhr.readyState !== 4 && typeof xhr.abort === 'function') {
       xhr.abort();
     }
     super.unsubscribe();
@@ -544,11 +530,7 @@ export interface AjaxTimeoutErrorCtor {
 }
 
 const AjaxTimeoutErrorImpl = (() => {
-  function AjaxTimeoutErrorImpl(
-    this: any,
-    xhr: XMLHttpRequest,
-    request: AjaxRequest
-  ) {
+  function AjaxTimeoutErrorImpl(this: any, xhr: XMLHttpRequest, request: AjaxRequest) {
     AjaxError.call(this, 'ajax timeout', xhr, request);
     this.name = 'AjaxTimeoutError';
     return this;

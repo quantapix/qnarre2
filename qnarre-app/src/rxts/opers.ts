@@ -3,30 +3,30 @@ import * as qu from './utils';
 import * as qj from './subject';
 import * as qh from './scheduler';
 
-export function finalize<N, F, D>(callback: () => void): qt.Shifter<N, F, D> {
+export function finalize<N>(callback: qt.Fun<void>): qt.Shifter<N> {
   return x => source.lift(new FinallyO(callback));
 }
 
-class FinallyO<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private callback: () => void) {}
+class FinallyO<N> implements qt.Operator<N, N> {
+  constructor(private callback: qt.Fun<void>) {}
 
-  call(r: qt.Subscriber<N, F, D>, s: any): qt.Closer {
+  call(r: qt.Subscriber<N>, s: any): qt.Closer {
     return s.subscribe(new FinallyR(r, this.callback));
   }
 }
 
-class FinallyR<N, F, D> extends qj.Subscriber<N, F, D> {
-  constructor(tgt: qt.Subscriber<N, F, D>, callback: () => void) {
+class FinallyR<N> extends qj.Subscriber<N> {
+  constructor(tgt: qt.Subscriber<N>, callback: qt.Fun<void>) {
     super(tgt);
     this.add(new qt.Subscription(callback));
   }
 }
 
-export class GroupDuration<K, N, F, D> extends qj.Subscriber<N, F, D> {
+export class GroupDuration<K, N> extends qj.Subscriber<N> {
   constructor(
     private key: K,
-    private group: qt.Subject<N, F, D>,
-    private parent: GroupBy<any, K, N | any, F, D>
+    private group: qt.Subject<N>,
+    private parent: GroupBy<any, K, N | any>
   ) {
     super(group);
   }
@@ -42,13 +42,13 @@ export class GroupDuration<K, N, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-export class IgnoreElements<N, F, D> extends qj.Subscriber<N, F, D> {
+export class IgnoreElements<N> extends qj.Subscriber<N> {
   protected _next(_?: N) {
     // Do nothing
   }
 }
 
-export function onErrorResumeNext<N, F, D>(): qt.Lifter<T, T>;
+export function onErrorResumeNext<N>(): qt.Lifter<T, T>;
 export function onErrorResumeNext<T, T2>(v: qt.Input<T2>): qt.Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
   v: qt.Input<T2>,
@@ -83,9 +83,7 @@ export function onErrorResumeNext<T, T2, T3, T4, T5, T6, T7>(
 export function onErrorResumeNext<T, R>(
   ...observables: Array<qt.Input<any>>
 ): qt.Lifter<T, T | R>;
-export function onErrorResumeNext<T, R>(
-  array: qt.Input<any>[]
-): qt.Lifter<T, T | R>;
+export function onErrorResumeNext<T, R>(array: qt.Input<any>[]): qt.Lifter<T, T | R>;
 export function onErrorResumeNext<T, R>(
   ...nextSources: Array<qt.Input<any> | Array<qt.Input<any>>>
 ): qt.Lifter<T, R> {
@@ -122,15 +120,13 @@ export function onErrorResumeNextStatic<T2, T3, T4, T5, T6, R>(
 export function onErrorResumeNextStatic<R>(
   ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
 ): qt.Source<R>;
-export function onErrorResumeNextStatic<R>(
-  array: qt.Input<any>[]
-): qt.Source<R>;
+export function onErrorResumeNextStatic<R>(array: qt.Input<any>[]): qt.Source<R>;
 export function onErrorResumeNextStatic<T, R>(
   ...nextSources: Array<
     qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)
   >
 ): qt.Source<R> {
-  let source: qt.Input<any> | null = null;
+  let source: qt.Input<any> = null;
 
   if (nextSources.length === 1 && Array.isArray(nextSources[0])) {
     nextSources = <Array<qt.Input<any>>>nextSources[0];
@@ -148,19 +144,19 @@ class OnErrorResumeNextO<T, R> implements qt.Operator<T, R> {
   }
 }
 
-class OnErrorResumeNextR<N, M, F, D> extends qj.Reactor<N, M, F, D> {
+class OnErrorResumeNextR<N, M> extends qj.Reactor<N, M> {
   constructor(
-    protected tgt: qt.Subscriber<N, F, D>,
+    protected tgt: qt.Subscriber<N>,
     private nextSources: Array<qt.Input<any>>
   ) {
     super(tgt);
   }
 
-  reactFail(error: any, innerSub: Actor<N, any, F, D>) {
+  reactFail(error: any, innerSub: Actor<N, any>) {
     this.subscribeToNextSource();
   }
 
-  reactDone(innerSub: Actor<N, any, F, D>) {
+  reactDone(innerSub: Actor<N, any>) {
     this.subscribeToNextSource();
   }
 
@@ -188,34 +184,34 @@ class OnErrorResumeNextR<N, M, F, D> extends qj.Reactor<N, M, F, D> {
         innerSubscriber
       );
       if (innerSubscription !== innerSubscriber) tgt.add(innerSubscription);
-    } else this.tgt.done(d);
+    } else this.tgt.done();
   }
 }
 
-export function race<N, F, D>(
-  ...observables: (qt.Source<N, F, D> | qt.Source<N, F, D>[])[]
-): qt.Shifter<N, F, D> {
-  return function raceLifter(source: qt.Source<N, F, D>) {
+export function race<N>(
+  ...observables: (qt.Source<N> | qt.Source<N>[])[]
+): qt.Shifter<N> {
+  return function raceLifter(source: qt.Source<N>) {
     if (observables.length === 1 && Array.isArray(observables[0])) {
-      observables = observables[0] as qt.Source<N, F, D>[];
+      observables = observables[0] as qt.Source<N>[];
     }
     return source.lift.call(
-      raceStatic(source, ...(observables as qt.Source<N, F, D>[])),
+      raceStatic(source, ...(observables as qt.Source<N>[])),
       undefined
-    ) as qt.Source<N, F, D>;
+    ) as qt.Source<N>;
   };
 }
 
-export function sequenceEqual<N, F, D>(
-  compareTo: qt.Source<N, F, D>,
+export function sequenceEqual<N>(
+  compareTo: qt.Source<N>,
   comparator?: (a: T, b: N) => boolean
 ): qt.Lifter<T, boolean> {
   return x => source.lift(new SequenceEqualO(compareTo, comparator));
 }
 
-export class SequenceEqualO<N, F, D> implements qt.Operator<T, boolean> {
+export class SequenceEqualO<N> implements qt.Operator<T, boolean> {
   constructor(
-    private compareTo: qt.Source<N, F, D>,
+    private compareTo: qt.Source<N>,
     private comparator?: (a: T, b: N) => boolean
   ) {}
 
@@ -224,14 +220,14 @@ export class SequenceEqualO<N, F, D> implements qt.Operator<T, boolean> {
   }
 }
 
-export class SequenceEqualR<N, M, F, D> extends qj.Subscriber<N, F, D> {
+export class SequenceEqualR<N, M> extends qj.Subscriber<N> {
   private _a = [] as (N | undefined)[];
   private _b = [] as N[];
   private _oneComplete = false;
 
   constructor(
-    tgt: qt.Observer<M, F, D>,
-    private compareTo: qt.Source<N, F, D>,
+    tgt: qt.Observer<M>,
+    private compareTo: qt.Source<N>,
     private comparator?: (a: N, b: N) => boolean
   ) {
     super(tgt);
@@ -288,11 +284,8 @@ export class SequenceEqualR<N, M, F, D> extends qj.Subscriber<N, F, D> {
   }
 }
 
-class SequenceEqualCompareToSubscriber<T, R> extends qj.Subscriber<N, F, D> {
-  constructor(
-    tgt: qt.Observer<R>,
-    private parent: SequenceEqualSubscriber<T, R>
-  ) {
+class SequenceEqualCompareToSubscriber<T, R> extends qj.Subscriber<N> {
+  constructor(tgt: qt.Observer<R>, private parent: SequenceEqualSubscriber<T, R>) {
     super(tgt);
   }
 
@@ -300,12 +293,12 @@ class SequenceEqualCompareToSubscriber<T, R> extends qj.Subscriber<N, F, D> {
     this.parent.nextB(value);
   }
 
-  protected _fail(f?: F) {
+  protected _fail(e: any) {
     this.parent.fail(e);
     this.unsubscribe();
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     this.parent.completeB();
     this.unsubscribe();
   }
@@ -316,12 +309,7 @@ export function withLatestFrom<T, O2 extends qt.Input<any>, R>(
   source2: O2,
   project: (v1: T, v2: qt.Sourced<O2>) => R
 ): qt.Lifter<T, R>;
-export function withLatestFrom<
-  T,
-  O2 extends qt.Input<any>,
-  O3 extends qt.Input<any>,
-  R
->(
+export function withLatestFrom<T, O2 extends qt.Input<any>, O3 extends qt.Input<any>, R>(
   v2: O2,
   v3: O3,
   project: (v1: T, v2: qt.Sourced<O2>, v3: qt.Sourced<O3>) => R
@@ -336,12 +324,7 @@ export function withLatestFrom<
   v2: O2,
   v3: O3,
   v4: O4,
-  project: (
-    v1: T,
-    v2: qt.Sourced<O2>,
-    v3: qt.Sourced<O3>,
-    v4: qt.Sourced<O4>
-  ) => R
+  project: (v1: T, v2: qt.Sourced<O2>, v3: qt.Sourced<O3>, v4: qt.Sourced<O4>) => R
 ): qt.Lifter<T, R>;
 export function withLatestFrom<
   T,
@@ -389,11 +372,10 @@ export function withLatestFrom<
 export function withLatestFrom<T, O2 extends qt.Input<any>>(
   source2: O2
 ): qt.Lifter<T, [T, qt.Sourced<O2>]>;
-export function withLatestFrom<
-  T,
-  O2 extends qt.Input<any>,
-  O3 extends qt.Input<any>
->(v2: O2, v3: O3): qt.Lifter<T, [T, qt.Sourced<O2>, qt.Sourced<O3>]>;
+export function withLatestFrom<T, O2 extends qt.Input<any>, O3 extends qt.Input<any>>(
+  v2: O2,
+  v3: O3
+): qt.Lifter<T, [T, qt.Sourced<O2>, qt.Sourced<O3>]>;
 export function withLatestFrom<
   T,
   O2 extends qt.Input<any>,
@@ -415,10 +397,7 @@ export function withLatestFrom<
   v3: O3,
   v4: O4,
   v5: O5
-): qt.Lifter<
-  T,
-  [T, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>, qt.Sourced<O5>]
->;
+): qt.Lifter<T, [T, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>, qt.Sourced<O5>]>;
 export function withLatestFrom<
   T,
   O2 extends qt.Input<any>,
@@ -434,14 +413,7 @@ export function withLatestFrom<
   v6: O6
 ): qt.Lifter<
   T,
-  [
-    T,
-    qt.Sourced<O2>,
-    qt.Sourced<O3>,
-    qt.Sourced<O4>,
-    qt.Sourced<O5>,
-    qt.Sourced<O6>
-  ]
+  [T, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>, qt.Sourced<O5>, qt.Sourced<O6>]
 >;
 export function withLatestFrom<T, R>(
   ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
@@ -464,7 +436,7 @@ export function withLatestFrom<T, R>(
 
 class WithLatestFromO<T, R> implements qt.Operator<T, R> {
   constructor(
-    private observables: qt.Source<any, F, D>[],
+    private observables: qt.Source<any>[],
     private project?: (...values: any[]) => qt.Source<R>
   ) {}
 
@@ -473,13 +445,13 @@ class WithLatestFromO<T, R> implements qt.Operator<T, R> {
   }
 }
 
-class WithLatestFromR<T, R> extends qj.Reactor<N, M, F, D> {
+class WithLatestFromR<T, R> extends qj.Reactor<N, M> {
   private values: any[];
   private toRespond: number[] = [];
 
   constructor(
     tgt: qt.Subscriber<R>,
-    private observables: qt.Source<any, F, D>[],
+    private observables: qt.Source<any>[],
     private project?: (...values: any[]) => qt.Source<R>
   ) {
     super(tgt);
@@ -492,9 +464,7 @@ class WithLatestFromR<T, R> extends qj.Reactor<N, M, F, D> {
 
     for (let i = 0; i < len; i++) {
       let observable = observables[i];
-      this.add(
-        qu.subscribeToResult<T, R>(this, observable, <any>observable, i)
-      );
+      this.add(qu.subscribeToResult<T, R>(this, observable, <any>observable, i));
     }
   }
 
@@ -529,7 +499,7 @@ class WithLatestFromR<T, R> extends qj.Reactor<N, M, F, D> {
   }
 }
 
-function dispatchNotification<N, F, D>(this: qt.Action<any>, state: any) {
+function dispatchNotification<N>(this: qt.Action<any>, state: any) {
   let {subscriber, period} = state;
   subscriber.reactNext();
   this.schedule(state, period);

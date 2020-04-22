@@ -211,16 +211,8 @@ describe('SubscribeOnObservable', () => {
   });
 
   it('should create observable via staic create function', () => {
-    const s = new SubscribeOnObservable(
-      null as any,
-      null as any,
-      rxTestScheduler
-    );
-    const r = SubscribeOnObservable.create(
-      null as any,
-      null as any,
-      rxTestScheduler
-    );
+    const s = new SubscribeOnObservable(null as any, null as any, rxTestScheduler);
+    const r = SubscribeOnObservable.create(null as any, null as any, rxTestScheduler);
 
     expect(s).to.deep.equal(r);
   });
@@ -333,14 +325,8 @@ describe('from (fromPromise)', () => {
     class CustomPromise<T> implements PromiseLike<T> {
       constructor(private promise: PromiseLike<T>) {}
       then<TResult1 = T, TResult2 = T>(
-        onFulfilled?:
-          | ((value: T) => TResult1 | PromiseLike<TResult1>)
-          | undefined
-          | null,
-        onRejected?:
-          | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-          | undefined
-          | null
+        onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined,
+        onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined
       ): PromiseLike<TResult1 | TResult2> {
         return new CustomPromise(this.promise.then(onFulfilled, onRejected));
       }
@@ -423,11 +409,7 @@ describe('from (fromPromise)', () => {
     const throwSpy = sinon.spy();
     const completeSpy = sinon.spy();
     const promise = Promise.resolve(42);
-    const subscription = from(promise).subscribe(
-      nextSpy,
-      throwSpy,
-      completeSpy
-    );
+    const subscription = from(promise).subscribe(nextSpy, throwSpy, completeSpy);
     subscription.unsubscribe();
 
     setTimeout(() => {

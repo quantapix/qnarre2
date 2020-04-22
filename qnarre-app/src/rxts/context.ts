@@ -3,19 +3,19 @@ import * as qu from './utils';
 import * as qj from './subject';
 import * as qs from './source';
 
-function createSource<N, F, D>(s?: (_: qt.Subscriber<N, F, D>) => qt.Subscription): qt.Source<N, F, D> {
-  return new Source<N, F, D>(s);
+function createSource<N>(s?: (_: qt.Subscriber<N>) => qt.Subscription): qt.Source<N> {
+  return new Source<N>(s);
 }
 
-function createSubject<N, F, D>(o: qt.Observer<any, F, D>, s: qs.Source<any, F, D>) {
+function createSubject<N>(o: qt.Observer<any>, s: qs.Source<any>) {
   return new Subject<N>(o, s);
 }
 
-function createAsync<N, F, D>(o: qt.Observer<any, F, D>, s: qt.Source<any, F, D>) {
+function createAsync<N>(o: qt.Observer<any>, s: qt.Source<any>) {
   return new Subject<N>(o, s);
 }
 
-export class Source<N, F = any, D = any> extends qs.Source<N, F, D> implements qt.Context<F, D> {
+export class Source<N> extends qs.Source<N> implements qt.Context {
   createSource = createSource;
   createSubscriber = qj.createSubscriber;
   toSubscriber = qj.toSubscriber;
@@ -23,7 +23,7 @@ export class Source<N, F = any, D = any> extends qs.Source<N, F, D> implements q
   createAsync = createAsync;
 }
 
-export class Subject<N, F = any, D = any> extends qj.Subject<N, F, D> implements qt.Context<F, D> {
+export class Subject<N> extends qj.Subject<N> implements qt.Context {
   createSource = createSource;
   createSubscriber = qj.createSubscriber;
   toSubscriber = qj.toSubscriber;

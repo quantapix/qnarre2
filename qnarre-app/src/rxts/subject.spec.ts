@@ -124,9 +124,9 @@ describe('Subscriber', () => {
   });
   it('should wrap unsafe observers in a proxy', () => {
     const o = {
-      next: {} as () => void,
-      fail: {} as () => void,
-      done: {} as () => void
+      next: {} as qt.Fun<void>,
+      fail: {} as qt.Fun<void>,
+      done: {} as qt.Fun<void>
     };
     const s = new qj.Subscriber(o);
     expect((s as any).tgt).not.toBe(o);
@@ -163,7 +163,7 @@ describe('Subscriber', () => {
     expect(d).toBeFalse;
   });
   it('should not be closed when other with same observer is done', () => {
-    const o = {next: {} as () => void};
+    const o = {next: {} as qt.Fun<void>};
     const s1 = new qj.Subscriber(o);
     const s2 = new qj.Subscriber(o);
     s2.done();
@@ -947,19 +947,13 @@ describe('Behavior', () => {
       b.done();
     }
     const tpl = '-1-2-3----4------5-6---7--8----9--|';
-    const subscriber1 = hot('      (a|)                         ').pipe(
-      mergeMapTo(b)
-    );
+    const subscriber1 = hot('      (a|)                         ').pipe(mergeMapTo(b));
     const uns1 = '                     !             ';
     const e1 = '      3---4------5-6--             ';
-    const subscriber2 = hot('            (b|)                   ').pipe(
-      mergeMapTo(b)
-    );
+    const subscriber2 = hot('            (b|)                   ').pipe(mergeMapTo(b));
     const uns2 = '                         !         ';
     const e2 = '            4----5-6---7--         ';
-    const subscriber3 = hot('                           (c|)    ').pipe(
-      mergeMapTo(b)
-    );
+    const subscriber3 = hot('                           (c|)    ').pipe(mergeMapTo(b));
     const e3 = '                           8---9--|';
     expectSource(
       hot(tpl).pipe(
@@ -1137,27 +1131,17 @@ describe('Replay', () => {
         s.done();
       }
       const tpl = '-1-2-3----4------5-6---7--8----9--|';
-      const subscriber1 = hot('      (a|)                         ').pipe(
-        mergeMapTo(s)
-      );
+      const subscriber1 = hot('      (a|)                         ').pipe(mergeMapTo(s));
       const uns1 = '                     !             ';
       const e1 = '      (23)4------5-6--             ';
-      const subscriber2 = hot('            (b|)                   ').pipe(
-        mergeMapTo(s)
-      );
+      const subscriber2 = hot('            (b|)                   ').pipe(mergeMapTo(s));
       const uns2 = '                         !         ';
       const e2 = '            (34)-5-6---7--         ';
-      const subscriber3 = hot('                           (c|)    ').pipe(
-        mergeMapTo(s)
-      );
+      const subscriber3 = hot('                           (c|)    ').pipe(mergeMapTo(s));
       const e3 = '                           (78)9--|';
       expectSource(
         hot(tpl).pipe(
-          tap(
-            feedNextIntoSubject,
-            feedErrorIntoSubject,
-            feedCompleteIntoSubject
-          )
+          tap(feedNextIntoSubject, feedErrorIntoSubject, feedCompleteIntoSubject)
         )
       ).toBe(tpl);
       expectSource(subscriber1, uns1).toBe(e1);
@@ -1180,11 +1164,7 @@ describe('Replay', () => {
       const e1 = '               (34|)';
       expectSource(
         hot(tpl).pipe(
-          tap(
-            feedNextIntoSubject,
-            feedErrorIntoSubject,
-            feedCompleteIntoSubject
-          )
+          tap(feedNextIntoSubject, feedErrorIntoSubject, feedCompleteIntoSubject)
         )
       ).toBe(tpl);
       expectSource(subscriber1).toBe(e1);
@@ -1254,11 +1234,7 @@ describe('Replay', () => {
 
   describe('with windowTime=40', () => {
     it('should replay previous values since 40 time units ago when subscribed', () => {
-      const s = new qj.Replay<string>(
-        Number.POSITIVE_INFINITY,
-        40,
-        rxTestScheduler
-      );
+      const s = new qj.Replay<string>(Number.POSITIVE_INFINITY, 40, rxTestScheduler);
       function feedNextIntoSubject(x: string) {
         s.next(x);
       }
@@ -1269,27 +1245,17 @@ describe('Replay', () => {
         s.done();
       }
       const tpl = '-1-2-3----4------5-6----7-8----9--|';
-      const subscriber1 = hot('      (a|)                         ').pipe(
-        mergeMapTo(s)
-      );
+      const subscriber1 = hot('      (a|)                         ').pipe(mergeMapTo(s));
       const uns1 = '                     !             ';
       const e1 = '      (23)4------5-6--             ';
-      const subscriber2 = hot('            (b|)                   ').pipe(
-        mergeMapTo(s)
-      );
+      const subscriber2 = hot('            (b|)                   ').pipe(mergeMapTo(s));
       const uns2 = '                         !         ';
       const e2 = '            4----5-6----7-         ';
-      const subscriber3 = hot('                           (c|)    ').pipe(
-        mergeMapTo(s)
-      );
+      const subscriber3 = hot('                           (c|)    ').pipe(mergeMapTo(s));
       const e3 = '                           (78)9--|';
       expectSource(
         hot(tpl).pipe(
-          tap(
-            feedNextIntoSubject,
-            feedErrorIntoSubject,
-            feedCompleteIntoSubject
-          )
+          tap(feedNextIntoSubject, feedErrorIntoSubject, feedCompleteIntoSubject)
         )
       ).toBe(tpl);
       expectSource(subscriber1, uns1).toBe(e1);
@@ -1297,11 +1263,7 @@ describe('Replay', () => {
       expectSource(subscriber3).toBe(e3);
     });
     it('should replay last values since 40 time units ago when subscribed', () => {
-      const s = new qj.Replay<string>(
-        Number.POSITIVE_INFINITY,
-        40,
-        rxTestScheduler
-      );
+      const s = new qj.Replay<string>(Number.POSITIVE_INFINITY, 40, rxTestScheduler);
       function feedNextIntoSubject(x: string) {
         s.next(x);
       }
@@ -1316,11 +1278,7 @@ describe('Replay', () => {
       const e1 = '             (4|)';
       expectSource(
         hot(tpl).pipe(
-          tap(
-            feedNextIntoSubject,
-            feedErrorIntoSubject,
-            feedCompleteIntoSubject
-          )
+          tap(feedNextIntoSubject, feedErrorIntoSubject, feedCompleteIntoSubject)
         )
       ).toBe(tpl);
       expectSource(subscriber1).toBe(e1);
@@ -1341,11 +1299,7 @@ describe('Replay', () => {
       const e1 = '    (34) |';
       expectSource(
         hot(tpl).pipe(
-          tap(
-            feedNextIntoSubject,
-            feedErrorIntoSubject,
-            feedCompleteIntoSubject
-          )
+          tap(feedNextIntoSubject, feedErrorIntoSubject, feedCompleteIntoSubject)
         )
       ).toBe(tpl);
       expectSource(subscriber1).toBe(e1);

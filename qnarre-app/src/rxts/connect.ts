@@ -3,20 +3,17 @@ import * as qu from './utils';
 import * as qs from './source';
 import * as qj from './subject';
 
-export class Connect<N, F, D> extends qs.Source<N, F, D> {
+export class Connect<N> extends qs.Source<N> {
   sub?: qj.Subscription;
-  _subj?: qt.Subject<N, F, D>;
+  _subj?: qt.Subject<N>;
   done = false;
   count = 0;
 
-  constructor(
-    public src: qs.Source<N, F, D>,
-    protected fac: () => qt.Subject<N, F, D>
-  ) {
+  constructor(public src: qs.Source<N>, protected fac: () => qt.Subject<N>) {
     super();
   }
 
-  _subscribe(s: qt.Subscriber<N, F, D>) {
+  _subscribe(s: qt.Subscriber<N>) {
     return this.subj.subscribe(s);
   }
 
@@ -41,7 +38,7 @@ export class Connect<N, F, D> extends qs.Source<N, F, D> {
   }
 
   refCount() {
-    return higherOrderRefCount()(this) as qs.Source<N, F, D>;
+    return higherOrderRefCount()(this) as qs.Source<N>;
   }
 }
 
@@ -50,15 +47,15 @@ class ConnectR<N> extends qj.RSubject<N> {
     super(obs);
   }
 
-  protected _fail(f?: F) {
+  protected _fail(e: any) {
     this._unsubscribe();
-    super._fail(f);
+    super._fail(e);
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     this.con!.done = true;
     this._unsubscribe();
-    super._done(d);
+    super._done();
   }
 
   protected _unsubscribe() {
@@ -88,10 +85,10 @@ export const connectableObservableDescriptor: PropertyDescriptorMap = (() => {
   };
 })();
 
-export function refCount<N, F, D>(): qt.Shifter<N, F, D> {
-  return function refCountLifter(source: Connect<N, F, D>): qt.Source<N, F, D> {
+export function refCount<N>(): qt.Shifter<N> {
+  return function refCountLifter(source: Connect<N>): qt.Source<N> {
     return source.lift(new RefCountO(source));
-  } as qt.Shifter<N, F, D>;
+  } as qt.Shifter<N>;
 }
 
 export class RefCountO<N> implements qt.Operator<N, N> {
@@ -109,13 +106,10 @@ export class RefCountO<N> implements qt.Operator<N, N> {
   }
 }
 
-export class RefCountR<N, F, D> extends qj.Subscriber<N, F, D> {
+export class RefCountR<N> extends qj.Subscriber<N> {
   private connection?: qj.Subscription;
 
-  constructor(
-    tgt: qj.Subscriber<N, F, D>,
-    private connectable?: Connect<N, F, D>
-  ) {
+  constructor(tgt: qj.Subscriber<N>, private connectable?: Connect<N>) {
     super(tgt);
   }
 

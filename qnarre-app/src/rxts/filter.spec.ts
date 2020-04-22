@@ -470,21 +470,18 @@ describe('auditTime', () => {
     testScheduler = new TestScheduler(sourceMatcher);
   });
 
-  asDiagram('auditTime(5)')(
-    'should emit the last value in each time window',
-    () => {
-      testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
-        const e1 = hot('  -a-x-y----b---x-cx---|');
-        const subs = '    ^--------------------!';
-        const expected = '------y--------x-----|';
+  asDiagram('auditTime(5)')('should emit the last value in each time window', () => {
+    testScheduler.run(({hot, expectSource, expectSubscriptions}) => {
+      const e1 = hot('  -a-x-y----b---x-cx---|');
+      const subs = '    ^--------------------!';
+      const expected = '------y--------x-----|';
 
-        const result = e1.pipe(auditTime(5, testScheduler));
+      const result = e1.pipe(auditTime(5, testScheduler));
 
-        expectSource(result).toBe(expected);
-        expectSubscriptions(e1.subscriptions).toBe(subs);
-      });
-    }
-  );
+      expectSource(result).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(subs);
+    });
+  });
   it('should infer correctly', () => {
     const o = of('a', 'b', 'c').pipe(auditTime(47)); // $ExpectType Observable<string>
   });
@@ -657,18 +654,15 @@ describe('debounce', () => {
     return () => timer(x, rxTestScheduler);
   }
 
-  asDiagram('debounce')(
-    'should debounce values by a specified cold Observable',
-    () => {
-      const e1 = hot('-a--bc--d---|');
-      const e2 = cold('--|          ');
-      const expected = '---a---c--d-|';
+  asDiagram('debounce')('should debounce values by a specified cold Observable', () => {
+    const e1 = hot('-a--bc--d---|');
+    const e2 = cold('--|          ');
+    const expected = '---a---c--d-|';
 
-      const result = e1.pipe(debounce(() => e2));
+    const result = e1.pipe(debounce(() => e2));
 
-      expectSource(result).toBe(expected);
-    }
-  );
+    expectSource(result).toBe(expected);
+  });
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(debounce(() => timer(47))); // $ExpectType Observable<number>
   });
@@ -940,12 +934,7 @@ describe('debounce', () => {
     const e1 = hot('--------a--------b--------c---------d#');
     const e1subs = '^                                    !';
     const expected = '---------a---------b---------c-------#';
-    const selector = [
-      cold('-x-y-'),
-      cold('--x-y-'),
-      cold('---x-y-'),
-      cold('----x-y-')
-    ];
+    const selector = [cold('-x-y-'), cold('--x-y-'), cold('---x-y-'), cold('----x-y-')];
     const selectorSubs = [
       '        ^!                            ',
       '                 ^ !                  ',
@@ -1155,15 +1144,12 @@ describe('debounce', () => {
 });
 
 describe('debounceTime', () => {
-  asDiagram('debounceTime(20)')(
-    'should debounce values by 20 time units',
-    () => {
-      const e1 = hot('-a--bc--d---|');
-      const expected = '---a---c--d-|';
+  asDiagram('debounceTime(20)')('should debounce values by 20 time units', () => {
+    const e1 = hot('-a--bc--d---|');
+    const expected = '---a---c--d-|';
 
-      expectSource(e1.pipe(debounceTime(20, rxTestScheduler))).toBe(expected);
-    }
-  );
+    expectSource(e1.pipe(debounceTime(20, rxTestScheduler))).toBe(expected);
+  });
 
   it('should delay all element by the specified time', () => {
     const e1 = hot('-a--------b------c----|');
@@ -1538,9 +1524,7 @@ describe('distinct', () => {
     const unsub = '           !         ';
     const expected = '--a--b------';
 
-    expectSource((<any>e1).pipe(distinct(null as any, e2)), unsub).toBe(
-      expected
-    );
+    expectSource((<any>e1).pipe(distinct(null as any, e2)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
@@ -1577,9 +1561,7 @@ describe('distinctUntilChanged', () => {
   });
 
   it('should accept a compare', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged((p1, p2) => p1.name === p2.name)
-    ); // $ExpectType Observable<Person>
+    const o = of(sample).pipe(distinctUntilChanged((p1, p2) => p1.name === p2.name)); // $ExpectType Observable<Person>
   });
 
   it('should accept a keySelector', () => {
@@ -1596,12 +1578,8 @@ describe('distinctUntilChanged', () => {
   });
 
   it('should enforce types of compare', () => {
-    const o = of(sample).pipe(
-      distinctUntilChanged((p1, p2) => p1.foo === p2.name)
-    ); // $ExpectError
-    const p = of(sample).pipe(
-      distinctUntilChanged((p1, p2) => p1.name === p2.foo)
-    ); // $ExpectError
+    const o = of(sample).pipe(distinctUntilChanged((p1, p2) => p1.foo === p2.name)); // $ExpectError
+    const p = of(sample).pipe(distinctUntilChanged((p1, p2) => p1.name === p2.foo)); // $ExpectError
   });
 
   it('should enforce types of keySelector', () => {
@@ -1842,9 +1820,12 @@ describe('distinctUntilChanged', () => {
     const comparator = (x: number, y: number) => y % 2 === 1;
     const keySelector = (x: number) => x % 2;
 
-    expectSource(
-      e1.pipe(distinctUntilChanged(comparator, keySelector))
-    ).toBe(expected, {a: 1, b: 2, d: 4, f: 6});
+    expectSource(e1.pipe(distinctUntilChanged(comparator, keySelector))).toBe(expected, {
+      a: 1,
+      b: 2,
+      d: 4,
+      f: 6
+    });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1859,9 +1840,7 @@ describe('distinctUntilChanged', () => {
       return x;
     };
 
-    expectSource(e1.pipe(distinctUntilChanged(null as any, keySelector))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(distinctUntilChanged(null as any, keySelector))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 });
@@ -1869,18 +1848,15 @@ describe('distinctUntilChanged', () => {
 const sample = {name: 'foobar', num: 42};
 
 describe('distinctUntilKeyChanged', () => {
-  asDiagram("distinctUntilKeyChanged('k')")(
-    'should distinguish between values',
-    () => {
-      const values = {a: {k: 1}, b: {k: 2}, c: {k: 3}};
-      const e1 = hot('-a--b-b----a-c-|', values);
-      const expected = '-a--b------a-c-|';
+  asDiagram("distinctUntilKeyChanged('k')")('should distinguish between values', () => {
+    const values = {a: {k: 1}, b: {k: 2}, c: {k: 3}};
+    const e1 = hot('-a--b-b----a-c-|', values);
+    const expected = '-a--b------a-c-|';
 
-      const result = (<any>e1).pipe(distinctUntilKeyChanged('k'));
+    const result = (<any>e1).pipe(distinctUntilKeyChanged('k'));
 
-      expectSource(result).toBe(expected, values);
-    }
-  );
+    expectSource(result).toBe(expected, values);
+  });
   it('should infer correctly', () => {
     const o = of(sample).pipe(distinctUntilKeyChanged('name')); // $ExpectType Observable<{ name: string; num: number; }>
   });
@@ -1915,10 +1891,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^                   !';
     const expected = '--a--------b-----a--|';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1928,10 +1901,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^                  ';
     const expected = '--a--------b-----a-';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1947,10 +1917,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^                !';
     const expected = '--a--b-----d--e--|';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -1966,10 +1933,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^                !';
     const expected = '--a--------------|';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2015,10 +1979,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^    !';
     const expected = '--a--|';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2027,10 +1988,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1 = of(values.a);
     const expected = '(a|)';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
   });
 
   it('should raises error if source raises error', () => {
@@ -2039,10 +1997,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^       !';
     const expected = '--a-----#';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2067,10 +2022,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^                !';
     const expected = '--a--b--c--d--e--|';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2122,10 +2074,7 @@ describe('distinctUntilKeyChanged', () => {
     const e1subs = '^                   !';
     const expected = '--a-----------------|';
 
-    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(
-      expected,
-      values
-    );
+    expectSource((<any>e1).pipe(distinctUntilKeyChanged('val'))).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2208,17 +2157,14 @@ describe('distinctUntilKeyChanged', () => {
 });
 
 describe('elementAt', () => {
-  asDiagram('elementAt(2)')(
-    'should return last element by zero-based index',
-    () => {
-      const source = hot('--a--b--c-d---|');
-      const subs = '^       !      ';
-      const expected = '--------(c|)   ';
+  asDiagram('elementAt(2)')('should return last element by zero-based index', () => {
+    const source = hot('--a--b--c-d---|');
+    const subs = '^       !      ';
+    const expected = '--------(c|)   ';
 
-      expectSource((<any>source).pipe(elementAt(2))).toBe(expected);
-      expectSubscriptions(source.subscriptions).toBe(subs);
-    }
-  );
+    expectSource((<any>source).pipe(elementAt(2))).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
 
   it('should infer correctly', () => {
     const o = of('foo').pipe(elementAt(47)); // $ExpectType Observable<string>
@@ -2398,21 +2344,15 @@ describe('filter', () => {
   });
 
   it('should support a user-defined type guard', () => {
-    const o = of(1, 2, 3).pipe(
-      filter((value: number): value is 1 => value < 3)
-    ); // $ExpectType Observable<1>
+    const o = of(1, 2, 3).pipe(filter((value: number): value is 1 => value < 3)); // $ExpectType Observable<1>
   });
 
   it('should support a user-defined type guard with an index', () => {
-    const o = of(1, 2, 3).pipe(
-      filter((value: number, index): value is 1 => index < 3)
-    ); // $ExpectType Observable<1>
+    const o = of(1, 2, 3).pipe(filter((value: number, index): value is 1 => index < 3)); // $ExpectType Observable<1>
   });
 
   it('should support a user-defined type guard and an argument', () => {
-    const o = of(1, 2, 3).pipe(
-      filter((value: number): value is 1 => value < 3, 'hola')
-    ); // $ExpectType Observable<1>
+    const o = of(1, 2, 3).pipe(filter((value: number): value is 1 => value < 3, 'hola')); // $ExpectType Observable<1>
   });
 
   it('should enforce types', () => {
@@ -2425,12 +2365,8 @@ describe('filter', () => {
   });
 
   it('should enforce user-defined type guard types', () => {
-    const o = of(1, 2, 3).pipe(
-      filter((value: string): value is '1' => value < '3')
-    ); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      filter((value: number, index): value is 1 => index < '3')
-    ); // $ExpectError
+    const o = of(1, 2, 3).pipe(filter((value: string): value is '1' => value < '3')); // $ExpectError
+    const p = of(1, 2, 3).pipe(filter((value: number, index): value is 1 => index < '3')); // $ExpectError
   });
 
   it('should support Boolean as a predicate', () => {
@@ -2441,7 +2377,7 @@ describe('filter', () => {
 
   it('should support inference from a return type with Boolean as a predicate', () => {
     interface I {
-      a: string | null;
+      a: string;
     }
 
     const i$: Observable<I> = of();
@@ -2453,7 +2389,7 @@ describe('filter', () => {
 
   it('should support inference from a generic return type of the predicate', () => {
     function isDefined<T>() {
-      return (value: T | undefined | null): value is T => {
+      return (value: T | undefined): value is T => {
         return value !== undefined && value !== null;
       };
     }
@@ -2777,16 +2713,13 @@ describe('filter', () => {
       const xs: Observable<string | number> = from([1, 'aaa', 3, 'bb']);
 
       // This type guard will narrow a `string | number` to a string in the examples below
-      const isString = (x: string | number): x is string =>
-        typeof x === 'string';
+      const isString = (x: string | number): x is string => typeof x === 'string';
 
       xs.pipe(filter(isString)).subscribe(s => s.length); // s is string
 
       // In contrast, this type of regular boolean predicate still maintains the original type
       xs.pipe(filter(x => typeof x === 'number')).subscribe(x => x); // x is still string | number
-      xs.pipe(filter((x, i) => typeof x === 'number' && x > i)).subscribe(
-        x => x
-      ); // x is still string | number
+      xs.pipe(filter((x, i) => typeof x === 'number' && x > i)).subscribe(x => x); // x is still string | number
     }
   });
 
@@ -2813,8 +2746,7 @@ describe('first', () => {
     }
   );
 
-  const isFooBar = (value: string): value is 'foo' | 'bar' =>
-    /^(foo|bar)$/.test(value);
+  const isFooBar = (value: string): value is 'foo' | 'bar' => /^(foo|bar)$/.test(value);
 
   it('should support an undefined predicate with no default', () => {
     const o = of('foo').pipe(first(undefined)); // $ExpectType Observable<string>
@@ -2967,9 +2899,7 @@ describe('first', () => {
 
     const duration = rxTestScheduler.createTime('--|');
 
-    expectSource(source.pipe(first(), delay(duration, rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource(source.pipe(first(), delay(duration, rxTestScheduler))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -2996,11 +2926,7 @@ describe('first', () => {
     const expected = '---------------#';
     const sub = '^              !';
 
-    expectSource(e1.pipe(first(x => x === 's'))).toBe(
-      expected,
-      null,
-      new EmptyError()
-    );
+    expectSource(e1.pipe(first(x => x === 's'))).toBe(expected, null, new EmptyError());
     expectSubscriptions(e1.subscriptions).toBe(sub);
   });
 
@@ -3100,8 +3026,7 @@ describe('first', () => {
       const xs: Observable<string | number> = from([1, 'aaa', 3, 'bb']);
 
       // This type guard will narrow a `string | number` to a string in the examples below
-      const isString = (x: string | number): x is string =>
-        typeof x === 'string';
+      const isString = (x: string | number): x is string => typeof x === 'string';
 
       // missing predicate preserves the type
       xs.pipe(first()).subscribe(x => x); // x is still string | number
@@ -3122,17 +3047,14 @@ describe('first', () => {
 });
 
 describe('ignoreElements', () => {
-  asDiagram('ignoreElements')(
-    'should ignore all the elements of the source',
-    () => {
-      const source = hot('--a--b--c--d--|');
-      const subs = '^             !';
-      const expected = '--------------|';
+  asDiagram('ignoreElements')('should ignore all the elements of the source', () => {
+    const source = hot('--a--b--c--d--|');
+    const subs = '^             !';
+    const expected = '--------------|';
 
-      expectSource(source.pipe(ignoreElements())).toBe(expected);
-      expectSubscriptions(source.subscriptions).toBe(subs);
-    }
-  );
+    expectSource(source.pipe(ignoreElements())).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(subs);
+  });
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(ignoreElements()); // $ExpectType Observable<never>
   });
@@ -3430,8 +3352,7 @@ describe('last', () => {
       const xs: Observable<string | number> = from([1, 'aaa', 3, 'bb']);
 
       // This type guard will narrow a `string | number` to a string in the examples below
-      const isString = (x: string | number): x is string =>
-        typeof x === 'string';
+      const isString = (x: string | number): x is string => typeof x === 'string';
 
       // missing predicate preserves the type
       xs.pipe(last()).subscribe(x => x); // x is still string | number
@@ -3745,9 +3666,7 @@ describe('sampleTime', () => {
     const expected = '-----------c-----            ';
     // timer              -----------!----------!---------
 
-    expectSource(e1.pipe(sampleTime(110, rxTestScheduler)), unsub).toBe(
-      expected
-    );
+    expectSource(e1.pipe(sampleTime(110, rxTestScheduler)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -3965,11 +3884,7 @@ describe('single', () => {
       return value === 'a';
     };
 
-    expectSource(e1.pipe(single(predicate))).toBe(
-      expected,
-      null,
-      new EmptyError()
-    );
+    expectSource(e1.pipe(single(predicate))).toBe(expected, null, new EmptyError());
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -4325,20 +4240,17 @@ describe('skipLast', () => {
 });
 
 describe('skipUntil', () => {
-  asDiagram('skipUntil')(
-    'should skip values until another observable notifies',
-    () => {
-      const e1 = hot('--a--b--c--d--e----|');
-      const e1subs = '^                  !';
-      const skip = hot('---------x------|   ');
-      const skipSubs = '^        !          ';
-      const expected = '-----------d--e----|';
+  asDiagram('skipUntil')('should skip values until another observable notifies', () => {
+    const e1 = hot('--a--b--c--d--e----|');
+    const e1subs = '^                  !';
+    const skip = hot('---------x------|   ');
+    const skipSubs = '^        !          ';
+    const expected = '-----------d--e----|';
 
-      expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
-      expectSubscriptions(e1.subscriptions).toBe(e1subs);
-      expectSubscriptions(skip.subscriptions).toBe(skipSubs);
-    }
-  );
+    expectSource(e1.pipe(skipUntil(skip))).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(skip.subscriptions).toBe(skipSubs);
+  });
   it('should infer correctly', () => {
     const o = of('foo', 'bar', 'baz').pipe(skipUntil(of(4, 'RxJS', 7))); // $ExpectType Observable<string>
   });
@@ -4650,9 +4562,7 @@ describe('skipWhile', () => {
   });
 
   it('should support a predicate with an index', () => {
-    const o = of('foo', 'bar', 'baz').pipe(
-      skipWhile((value, index) => index < 3)
-    ); // $ExpectType Observable<string>
+    const o = of('foo', 'bar', 'baz').pipe(skipWhile((value, index) => index < 3)); // $ExpectType Observable<string>
   });
 
   it('should enforce types', () => {
@@ -4661,9 +4571,7 @@ describe('skipWhile', () => {
 
   it('should enforce predicate types', () => {
     const o = of('foo', 'bar', 'baz').pipe(skipWhile(value => value < 3)); // $ExpectError
-    const p = of('foo', 'bar', 'baz').pipe(
-      skipWhile((value, index) => index < '3')
-    ); // $ExpectError
+    const p = of('foo', 'bar', 'baz').pipe(skipWhile((value, index) => index < '3')); // $ExpectError
   });
 
   it('should enforce predicate return type', () => {
@@ -4867,19 +4775,16 @@ describe('take', () => {
     testScheduler = new TestScheduler(sourceMatcher);
   });
 
-  asDiagram('take(2)')(
-    'should take two values of an observable with many values',
-    () => {
-      testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
-        const e1 = cold(' --a-----b----c---d--|');
-        const e1subs = '  ^-------!------------';
-        const expected = '--a-----(b|)         ';
+  asDiagram('take(2)')('should take two values of an observable with many values', () => {
+    testScheduler.run(({cold, expectSource, expectSubscriptions}) => {
+      const e1 = cold(' --a-----b----c---d--|');
+      const e1subs = '  ^-------!------------';
+      const expected = '--a-----(b|)         ';
 
-        expectSource(e1.pipe(take(2))).toBe(expected);
-        expectSubscriptions(e1.subscriptions).toBe(e1subs);
-      });
-    }
-  );
+      expectSource(e1.pipe(take(2))).toBe(expected);
+      expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    });
+  });
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(take(7)); // $ExpectType Observable<number>
@@ -5722,16 +5627,13 @@ describe('takeWhile', () => {
       const xs: Observable<string | number> = from([1, 'aaa', 3, 'bb']);
 
       // This type guard will narrow a `string | number` to a string in the examples below
-      const isString = (x: string | number): x is string =>
-        typeof x === 'string';
+      const isString = (x: string | number): x is string => typeof x === 'string';
 
       xs.pipe(takeWhile(isString)).subscribe(s => s.length); // s is string
 
       // In contrast, this type of regular boolean predicate still maintains the original type
       xs.pipe(takeWhile(x => typeof x === 'number')).subscribe(x => x); // x is still string | number
-      xs.pipe(takeWhile((x, i) => typeof x === 'number' && x > i)).subscribe(
-        x => x
-      ); // x is still string | number
+      xs.pipe(takeWhile((x, i) => typeof x === 'number' && x > i)).subscribe(x => x); // x is still string | number
     }
   });
 });
@@ -5783,9 +5685,7 @@ describe('throttle', () => {
 
   it('should enforce config types', () => {
     const o = of(1, 2, 3).pipe(throttle(() => timer(47), {x: 1})); // $ExpectError
-    const p = of(1, 2, 3).pipe(
-      throttle(() => timer(47), {leading: 1, trailing: 1})
-    ); // $ExpectError
+    const p = of(1, 2, 3).pipe(throttle(() => timer(47), {leading: 1, trailing: 1})); // $ExpectError
     const q = of(1, 2, 3).pipe(throttle(() => timer(47), null)); // $ExpectError
   });
 
@@ -6171,9 +6071,7 @@ describe('throttle', () => {
         ];
         const expected = '-a---y----b---x---x---x---|';
 
-        const result = e1.pipe(
-          throttle(() => e2, {leading: true, trailing: true})
-        );
+        const result = e1.pipe(throttle(() => e2, {leading: true, trailing: true}));
 
         expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -6188,9 +6086,7 @@ describe('throttle', () => {
       const n1Subs = ['  ^                  !'];
       const exp = '--x------------------|';
 
-      const result = s1.pipe(
-        throttle(() => n1, {leading: true, trailing: true})
-      );
+      const result = s1.pipe(throttle(() => n1, {leading: true, trailing: true}));
       expectSource(result).toBe(exp);
       expectSubscriptions(s1.subscriptions).toBe(s1Subs);
       expectSubscriptions(n1.subscriptions).toBe(n1Subs);
@@ -6214,9 +6110,7 @@ describe('throttle', () => {
         ];
         const expected = '-a---y----b---x---x---x---|';
 
-        const result = e1.pipe(
-          throttle(() => e2, {leading: true, trailing: true})
-        );
+        const result = e1.pipe(throttle(() => e2, {leading: true, trailing: true}));
 
         expectSource(result).toBe(expected);
         expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -6231,9 +6125,7 @@ describe('throttle', () => {
       const n1Subs = ['  ^                  !'];
       const exp = '--x------------------|';
 
-      const result = s1.pipe(
-        throttle(() => n1, {leading: true, trailing: true})
-      );
+      const result = s1.pipe(throttle(() => n1, {leading: true, trailing: true}));
       expectSource(result).toBe(exp);
       expectSubscriptions(s1.subscriptions).toBe(s1Subs);
       expectSubscriptions(n1.subscriptions).toBe(n1Subs);
@@ -6388,9 +6280,7 @@ describe('throttleTime', () => {
     const subs = '^                              !';
     const expected = '-a-------------d----------------';
 
-    expectSource(e1.pipe(throttleTime(50, rxTestScheduler)), unsub).toBe(
-      expected
-    );
+    expectSource(e1.pipe(throttleTime(50, rxTestScheduler)), unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 

@@ -2,7 +2,7 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qj from './subject';
 
-export abstract class Source<N, F, D> extends qt.Context<F, D> implements qt.Source<N, F, D> {
+export class Source<N> implements qt.Source<N> {
   [Symbol.rxSource]() {
     return this;
   }
@@ -11,19 +11,18 @@ export abstract class Source<N, F, D> extends qt.Context<F, D> implements qt.Sou
     return asyncIterFrom(this);
   }
 
-  orig?: Source<any, F, D>;
-  oper?: qt.Operator<any, N, F, D>;
+  orig?: Source<any>;
+  oper?: qt.Operator<any, N>;
 
-  constructor(s?: (this: Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription) {
-    super();
+  constructor(s?: (this: Source<N>, _: qt.Subscriber<N>) => qt.Subscription) {
     if (s) this._subscribe = s;
   }
 
-  _subscribe(s: qt.Subscriber<N, F, D>) {
+  _subscribe(s: qt.Subscriber<N>) {
     return this.orig?.subscribe(s);
   }
 
-  _trySubscribe(s: qt.Subscriber<N, F, D>) {
+  _trySubscribe(s: qt.Subscriber<N>) {
     try {
       return this._subscribe(s);
     } catch (e) {
@@ -33,29 +32,37 @@ export abstract class Source<N, F, D> extends qt.Context<F, D> implements qt.Sou
     return;
   }
 
-  lift<R>(o?: qt.Operator<N, R, F, D>) {
-    const s = this.createSource<R>();
+  lift<R>(o?: qt.Operator<N, R>) {
+    const s = new Source<R>();
     s.orig = this;
     s.oper = o;
     return s;
   }
 
-  subscribe(t?: qt.Target<N, F, D>): qt.Subscription;
-  subscribe(next?: qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>): qt.Subscription;
-  subscribe(t?: qt.Target<N, F, D> | qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>): qt.Subscription {
-    const s = this.toSubscriber(t, fail, done);
+  subscribe(t?: qt.Target<N>): qt.Subscription;
+  subscribe(
+    next?: qt.Fun<N>,
+    fail?: qt.Fun<any>,
+    done?: qt.Fun<void>
+  ): qt.Subscription;
+  subscribe(
+    t?: qt.Target<N> | qt.Fun<N>,
+    fail?: qt.Fun<any>,
+    done?: qt.Fun<void>
+  ): qt.Subscription {
+    const s = qj.toSubscriber(t, fail, done);
     const o = this.oper;
     if (o && this.orig) s.add(o.call(s, this.orig));
     else s.add(this.orig ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
 
-  forEach(next?: qt.Ofun<N>, c?: PromiseConstructorLike) {
+  forEach(next?: qt.Fun<N>, c?: PromiseConstructorLike) {
     c = promiseCtor(c);
-    return new c<D>((res, rej) => {
+    return new c<void>((res, rej) => {
       let s: qt.Subscription;
       s = this.subscribe(
-        (n?: N) => {
+        (n: N) => {
           try {
             next?.(n);
           } catch (e) {
@@ -66,92 +73,99 @@ export abstract class Source<N, F, D> extends qt.Context<F, D> implements qt.Sou
         rej,
         res
       );
-    }) as Promise<D>;
+    }) as Promise<void>;
   }
 
-  pipe(): Source<N, F, D>;
-  pipe<A>(op1: qt.Lifter<N, A, F, D>): Source<A, F, D>;
-  pipe<A, B>(op1: qt.Lifter<N, A, F, D>, op2: qt.Lifter<A, B, F, D>): Source<B, F, D>;
-  pipe<A, B, C>(op1: qt.Lifter<N, A, F, D>, op2: qt.Lifter<A, B, F, D>, op3: qt.Lifter<B, C, F, D>): Source<C, F, D>;
+  pipe(): Source<N>;
+  pipe<A>(op1: qt.Lifter<N, A>): Source<A>;
+  pipe<A, B>(op1: qt.Lifter<N, A>, op2: qt.Lifter<A, B>): Source<B>;
+  pipe<A, B, C>(
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>
+  ): Source<C>;
   pipe<A, B, C, D>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>
-  ): Source<D, F, D>;
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>
+  ): Source<D>;
   pipe<A, B, C, D, E>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>,
-    op5: qt.Lifter<D, E, F, D>
-  ): Source<E, F, D>;
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>,
+    op5: qt.Lifter<D, E>
+  ): Source<E>;
   pipe<A, B, C, D, E, F>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>,
-    op5: qt.Lifter<D, E, F, D>,
-    op6: qt.Lifter<E, F, F, D>
-  ): Source<F, F, D>;
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>,
+    op5: qt.Lifter<D, E>,
+    op6: qt.Lifter<E, F>
+  ): Source<F>;
   pipe<A, B, C, D, E, F, G>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>,
-    op5: qt.Lifter<D, E, F, D>,
-    op6: qt.Lifter<E, F, F, D>,
-    op7: qt.Lifter<F, G, F, D>
-  ): Source<G, F, D>;
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>,
+    op5: qt.Lifter<D, E>,
+    op6: qt.Lifter<E, F>,
+    op7: qt.Lifter<F, G>
+  ): Source<G>;
   pipe<A, B, C, D, E, F, G, H>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>,
-    op5: qt.Lifter<D, E, F, D>,
-    op6: qt.Lifter<E, F, F, D>,
-    op7: qt.Lifter<F, G, F, D>,
-    op8: qt.Lifter<G, H, F, D>
-  ): Source<H, F, D>;
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>,
+    op5: qt.Lifter<D, E>,
+    op6: qt.Lifter<E, F>,
+    op7: qt.Lifter<F, G>,
+    op8: qt.Lifter<G, H>
+  ): Source<H>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>,
-    op5: qt.Lifter<D, E, F, D>,
-    op6: qt.Lifter<E, F, F, D>,
-    op7: qt.Lifter<F, G, F, D>,
-    op8: qt.Lifter<G, H, F, D>,
-    op9: qt.Lifter<H, I, F, D>
-  ): Source<I, F, D>;
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>,
+    op5: qt.Lifter<D, E>,
+    op6: qt.Lifter<E, F>,
+    op7: qt.Lifter<F, G>,
+    op8: qt.Lifter<G, H>,
+    op9: qt.Lifter<H, I>
+  ): Source<I>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.Lifter<N, A, F, D>,
-    op2: qt.Lifter<A, B, F, D>,
-    op3: qt.Lifter<B, C, F, D>,
-    op4: qt.Lifter<C, D, F, D>,
-    op5: qt.Lifter<D, E, F, D>,
-    op6: qt.Lifter<E, F, F, D>,
-    op7: qt.Lifter<F, G, F, D>,
-    op8: qt.Lifter<G, H, F, D>,
-    op9: qt.Lifter<H, I, F, D>,
-    ...ops: qt.Lifter<any, any, F, D>[]
-  ): Source<unknown, F, D>;
-  pipe(...ops: qt.Lifter<any, any, F, D>[]): Source<any, F, D> {
+    op1: qt.Lifter<N, A>,
+    op2: qt.Lifter<A, B>,
+    op3: qt.Lifter<B, C>,
+    op4: qt.Lifter<C, D>,
+    op5: qt.Lifter<D, E>,
+    op6: qt.Lifter<E, F>,
+    op7: qt.Lifter<F, G>,
+    op8: qt.Lifter<G, H>,
+    op9: qt.Lifter<H, I>,
+    ...ops: qt.Lifter<any, any>[]
+  ): Source<unknown>;
+  pipe(...ops: qt.Lifter<any, any>[]): Source<any> {
     if (ops.length === 0) return this;
     return qu.pipeFromArray(ops)(this) as this;
   }
 
-  toPromise<T>(this: Source<T, F, D>): Promise<T | undefined>;
-  toPromise<T>(this: Source<T, F, D>, c: typeof Promise): Promise<T | undefined>;
-  toPromise<T>(this: Source<T, F, D>, c: PromiseConstructorLike): Promise<T | undefined>;
+  toPromise<T>(this: Source<T>): Promise<T | undefined>;
+  toPromise<T>(this: Source<T>, c: typeof Promise): Promise<T | undefined>;
+  toPromise<T>(
+    this: Source<T>,
+    c: PromiseConstructorLike
+  ): Promise<T | undefined>;
   toPromise(c?: PromiseConstructorLike): Promise<N | undefined> {
     c = promiseCtor(c);
     return new c((res, rej) => {
       let value: N | undefined;
       this.subscribe(
-        (n?: N) => (value = n),
-        (f?: F) => rej(f),
-        (_?: D) => res(value)
+        (n: N) => (value = n),
+        (e: any) => rej(e),
+        () => res(value)
       );
     }) as Promise<N | undefined>;
   }
@@ -163,38 +177,38 @@ function promiseCtor(c?: PromiseConstructorLike) {
   return c;
 }
 
-function asyncIterFrom<N, F, D>(s: Source<N, F, D>) {
+function asyncIterFrom<N>(s: Source<N>) {
   return coroutine(s);
 }
 
-class Deferred<N, F> {
-  resolve?: (_?: N | PromiseLike<N>) => void;
-  reject?: (_?: F) => void;
+class Deferred<N> {
+  resolve?: qt.Fun<N | PromiseLike<N>>;
+  reject?: qt.Fun<any>;
   promise = new Promise<N>((res, rej) => {
     this.resolve = res;
     this.reject = rej;
   });
 }
 
-async function* coroutine<N, F, D>(s: Source<N, F, D>) {
-  const ds = [] as Deferred<IteratorResult<N | undefined>, F>[];
-  const ns = [] as (N | undefined)[];
+async function* coroutine<N>(s: Source<N>) {
+  const ds = [] as Deferred<IteratorResult<N>>[];
+  const ns = [] as N[];
   let done = false;
   let failed = false;
-  let err: F | undefined;
+  let err: any;
   const ss = s.subscribe({
-    next: (n?: N) => {
+    next: (n: N) => {
       if (ds.length > 0) ds.shift()!.resolve?.({value: n, done: false});
       else ns.push(n);
     },
-    fail: (f?: F) => {
+    fail: (e: any) => {
       failed = true;
-      err = f;
+      err = e;
       while (ds.length > 0) {
-        ds.shift()!.reject?.(f);
+        ds.shift()!.reject?.(e);
       }
     },
-    done: (_?: D) => {
+    done: () => {
       done = true;
       while (ds.length > 0) {
         ds.shift()!.resolve?.({value: undefined, done: true});
@@ -207,7 +221,7 @@ async function* coroutine<N, F, D>(s: Source<N, F, D>) {
       else if (done) return;
       else if (failed) throw err;
       else {
-        const d = new Deferred<IteratorResult<N | undefined>, F>();
+        const d = new Deferred<IteratorResult<N>>();
         ds.push(d);
         const r = await d.promise;
         if (r.done) return;
@@ -221,12 +235,16 @@ async function* coroutine<N, F, D>(s: Source<N, F, D>) {
   }
 }
 
-export class Grouped<K, N, F, D> extends Source<N, F, D> {
-  constructor(public key: K, private group: qt.Subject<N, F, D>, private ref?: qt.RefCounted) {
+export class Grouped<K, N> extends Source<N> {
+  constructor(
+    public key: K,
+    private group: qt.Subject<N>,
+    private ref?: qt.RefCounted
+  ) {
     super();
   }
 
-  _subscribe(r: qt.Subscriber<N, F, D>) {
+  _subscribe(r: qt.Subscriber<N>) {
     const s = new qj.Subscription();
     const {ref, group} = this;
     if (ref && !ref.closed) s.add(new ActorRefCounted(ref));
@@ -241,44 +259,48 @@ export enum NotificationKind {
   DONE = 'D'
 }
 
-export class Notification<N, F, D> {
+export class Notification<N> {
   hasN: boolean;
 
-  constructor(kind: 'N', n?: N);
-  constructor(kind: 'F', n: undefined, f?: F);
-  constructor(kind: 'D', d?: D);
-  constructor(public kind: 'N' | 'F' | 'D', public n?: N, public f?: F, public d?: D) {
+  constructor(kind: 'N', n: N);
+  constructor(kind: 'F', n: undefined, e: any);
+  constructor(kind: 'D');
+  constructor(public kind: 'N' | 'F' | 'D', public n?: N, public e?: any) {
     this.hasN = kind === 'N';
   }
 
-  observe(t?: qt.Target<N, F, D>) {
+  observe(t?: qt.Target<N>) {
     switch (this.kind) {
       case 'N':
-        return t?.next && t.next(this.n);
+        return t?.next && t.next(this.n!);
       case 'F':
-        return t?.fail && t.fail(this.f);
+        return t?.fail && t.fail(this.e);
       case 'D':
-        return t?.done && t.done(this.d);
+        return t?.done && t.done();
     }
   }
 
-  act(next?: qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>) {
+  act(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>) {
     switch (this.kind) {
       case 'N':
-        return next && next(this.n);
+        return next && next(this.n!);
       case 'F':
-        return fail && fail(this.f);
+        return fail && fail(this.e);
       case 'D':
-        return done && done(this.d);
+        return done && done();
     }
   }
 
-  accept(t?: qt.Target<N, F, D> | qt.Ofun<N>, fail?: qt.Ofun<F>, done?: qt.Ofun<D>) {
+  accept(
+    t?: qt.Target<N> | qt.Fun<N>,
+    fail?: qt.Fun<any>,
+    done?: qt.Fun<void>
+  ) {
     if (typeof t === 'function') return this.act(t, fail, done);
     return this.observe(t);
   }
 
-  toSource(): Source<N, F, D> {
+  toSource(): Source<N> {
     switch (this.kind) {
       case 'N':
         return of(this.n);
@@ -290,23 +312,26 @@ export class Notification<N, F, D> {
   }
 
   private static doneNote: Notification<any> = new Notification('D');
-  private static undefineNote: Notification<any> = new Notification('N', undefined);
+  private static undefineNote: Notification<any> = new Notification(
+    'N',
+    undefined
+  );
 
-  static createNext<N, F, D>(n?: N): Notification<N, F, D> {
+  static createNext<N>(n?: N): Notification<N> {
     if (n !== undefined) return new Notification('N', n);
     return Notification.undefineNote;
   }
 
-  static createFail<N, F, D>(f?: F): Notification<N, F, D> {
-    return new Notification('F', undefined, f);
+  static createFail<N>(e: any): Notification<N> {
+    return new Notification('F', undefined, e);
   }
 
-  static createDone<N, F, D>(): Notification<N, F, D> {
+  static createDone<N>(): Notification<N> {
     return Notification.doneNote;
   }
 }
 
-export function firstFrom<N, F, D>(s$: Source<N, F, D>) {
+export function firstFrom<N>(s$: Source<N>) {
   return new Promise<N>((res, rej) => {
     const subs = new qj.Subscription();
     subs.add(
@@ -324,7 +349,7 @@ export function firstFrom<N, F, D>(s$: Source<N, F, D>) {
   });
 }
 
-export function lastFrom<N, F, D>(s: Source<N, F, D>) {
+export function lastFrom<N>(s: Source<N>) {
   return new Promise<N>((res, rej) => {
     let hasN = false;
     let value: N | undefined;

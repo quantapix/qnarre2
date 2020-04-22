@@ -24,9 +24,7 @@ export function asInteropSubject<T>(subject: qj.Subject<T>): qj.Subject<T> {
   return asInteropSubscriber(subject as any) as any;
 }
 
-export function asInteropSubscriber<T>(
-  subscriber: qj.Subscriber<T>
-): qj.Subscriber<T> {
+export function asInteropSubscriber<T>(subscriber: qj.Subscriber<T>): qj.Subscriber<T> {
   return new Proxy(subscriber, {
     get(target: qj.Subscriber<T>, key: string | number | symbol) {
       if (key === symbolSubscriber) {
@@ -35,9 +33,7 @@ export function asInteropSubscriber<T>(
       return Reflect.get(target, key);
     },
     getPrototypeOf(target: qj.Subscriber<T>) {
-      const {[symbolSubscriber]: symbol, ...rest} = Object.getPrototypeOf(
-        target
-      );
+      const {[symbolSubscriber]: symbol, ...rest} = Object.getPrototypeOf(target);
       return rest;
     }
   });
@@ -56,21 +52,13 @@ declare const global: any;
 
 export const emptySubs = [] as any[];
 
-export function cold(
-  marbles: string,
-  values?: void,
-  error?: any
-): ColdSource<string>;
+export function cold(marbles: string, values?: void, error?: any): ColdSource<string>;
 export function cold<V>(
   marbles: string,
   values?: {[k: string]: V},
   error?: any
 ): ColdSource<V>;
-export function cold(
-  marbles: string,
-  values?: any,
-  error?: any
-): ColdSource<any> {
+export function cold(marbles: string, values?: any, error?: any): ColdSource<any> {
   if (!global.rxTestScheduler) throw 'cold() in async test';
   return global.rxTestScheduler.createColdSource.apply(global.rxTestScheduler, [
     marbles,
@@ -79,8 +67,7 @@ export function cold(
   ]);
 }
 
-export class ColdSource<N> extends qs.Source<N>
-  implements SubscriptionLoggable {
+export class ColdSource<N> extends qs.Source<N> implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
   // @ts-ignore: Property has no initializer and is not definitely assigned
@@ -123,11 +110,7 @@ export class ColdSource<N> extends qs.Source<N>
 }
 applyMixins(ColdSource, [SubscriptionLoggable]);
 
-export function hot(
-  marbles: string,
-  values?: void,
-  error?: any
-): HotSource<string>;
+export function hot(marbles: string, values?: void, error?: any): HotSource<string>;
 export function hot<V>(
   marbles: string,
   values?: {[k: string]: V},
@@ -146,8 +129,7 @@ export function hot<V>(
   ]);
 }
 
-export class HotSource<N> extends qj.Subject<N>
-  implements SubscriptionLoggable {
+export class HotSource<N> extends qj.Subject<N> implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
   // @ts-ignore: Property has no initializer and is not definitely assigned
@@ -190,32 +172,19 @@ export class HotSource<N> extends qj.Subject<N>
 }
 applyMixins(HotSource, [SubscriptionLoggable]);
 
-export function expectSource(
-  s: qs.Source<any>,
-  marbles?: string
-): {toBe: sourceToBe} {
+export function expectSource(s: qs.Source<any>, marbles?: string): {toBe: sourceToBe} {
   if (!global.rxTestScheduler) throw 'expectSource() in async test';
-  return global.rxTestScheduler.expectSource.apply(global.rxTestScheduler, [
-    s,
-    marbles
-  ]);
+  return global.rxTestScheduler.expectSource.apply(global.rxTestScheduler, [s, marbles]);
 }
 
-export function expectSubscriptions(
-  logs: SubscriptionLog[]
-): {toBe: subscriptLogToBe} {
+export function expectSubscriptions(logs: SubscriptionLog[]): {toBe: subscriptLogToBe} {
   if (!global.rxTestScheduler) throw 'expectSubscriptions() in async test';
-  return global.rxTestScheduler.expectSubscriptions.apply(
-    global.rxTestScheduler,
-    [logs]
-  );
+  return global.rxTestScheduler.expectSubscriptions.apply(global.rxTestScheduler, [logs]);
 }
 
 export function time(marbles: string): number {
   if (!global.rxTestScheduler) throw 'time() in async test';
-  return global.rxTestScheduler.createTime.apply(global.rxTestScheduler, [
-    marbles
-  ]);
+  return global.rxTestScheduler.createTime.apply(global.rxTestScheduler, [marbles]);
 }
 
 export class SubscriptionLog {
@@ -268,11 +237,7 @@ interface FlushableTest {
   expected?: any[];
 }
 
-export type observableToBeFn = (
-  marbles: string,
-  values?: any,
-  errorValue?: any
-) => void;
+export type observableToBeFn = (marbles: string, values?: any, errorValue?: any) => void;
 export type subscriptionLogsToBeFn = (marbles: string | string[]) => void;
 
 export class TestScheduler extends Virtual {
@@ -281,18 +246,14 @@ export class TestScheduler extends Virtual {
   public readonly coldSources: ColdSource<any>[] = [];
   private flushTests: FlushableTest[] = [];
   private runMode = false;
-  constructor(
-    public assertDeepEqual: (actual: any, expected: any) => boolean | void
-  ) {
+  constructor(public assertDeepEqual: (actual: any, expected: any) => boolean | void) {
     super(VirtualAction, defaultMaxFrame);
   }
 
   createTime(marbles: string): number {
     const indexOf = marbles.trim().indexOf('|');
     if (indexOf === -1) {
-      throw new Error(
-        'marble diagram for time should have a completion marker "|"'
-      );
+      throw new Error('marble diagram for time should have a completion marker "|"');
     }
     return indexOf * TestScheduler.frameTimeFactor;
   }
@@ -340,10 +301,7 @@ export class TestScheduler extends Virtual {
     return subject;
   }
 
-  private materializeActorSource(
-    s: qs.Source<any>,
-    outerFrame: number
-  ): TestMessage[] {
+  private materializeActorSource(s: qs.Source<any>, outerFrame: number): TestMessage[] {
     const messages: TestMessage[] = [];
     s.subscribe(
       value => {
@@ -370,7 +328,7 @@ export class TestScheduler extends Virtual {
 
   expectSource(
     s: qs.Source<any>,
-    subscriptionMarbles: string | null = null
+    subscriptionMarbles: string = null
   ): {toBe: sourceToBeFn} {
     const actual: TestMessage[] = [];
     const flushTest: FlushableTest = {actual, ready: false};
@@ -445,8 +403,7 @@ export class TestScheduler extends Virtual {
     const {runMode} = this;
     return {
       toBe(marbles: string | string[]) {
-        const marblesArray: string[] =
-          typeof marbles === 'string' ? [marbles] : marbles;
+        const marblesArray: string[] = typeof marbles === 'string' ? [marbles] : marbles;
         flushTest.ready = true;
         flushTest.expected = marblesArray.map(marbles =>
           TestScheduler.parseMarblesAsSubscriptions(marbles, runMode)
@@ -472,10 +429,7 @@ export class TestScheduler extends Virtual {
     });
   }
 
-  static parseMarblesAsSubscriptions(
-    marbles: string | null,
-    runMode = false
-  ): SubscriptionLog {
+  static parseMarblesAsSubscriptions(marbles: string, runMode = false): SubscriptionLog {
     if (typeof marbles !== 'string') {
       return new SubscriptionLog(Number.POSITIVE_INFINITY);
     }
@@ -583,8 +537,7 @@ export class TestScheduler extends Virtual {
   ): TestMessage[] {
     if (marbles.indexOf('!') !== -1) {
       throw new Error(
-        'conventional marble diagrams cannot have the ' +
-          'unsubscription marker "!"'
+        'conventional marble diagrams cannot have the ' + 'unsubscription marker "!"'
       );
     }
     const len = marbles.length;
@@ -826,13 +779,11 @@ export function stubRAF(): RAFTestTools {
 
   const handlers: any[] = [];
 
-  (requestAnimationFrame as any) = sinon
-    .stub()
-    .callsFake((handler: Function) => {
-      const id = _id++;
-      handlers.push({id, handler});
-      return id;
-    });
+  (requestAnimationFrame as any) = sinon.stub().callsFake((handler: Function) => {
+    const id = _id++;
+    handlers.push({id, handler});
+    return id;
+  });
   (cancelAnimationFrame as any) = sinon.stub().callsFake((id: number) => {
     const index = handlers.findIndex(x => x.id === id);
     if (index >= 0) {

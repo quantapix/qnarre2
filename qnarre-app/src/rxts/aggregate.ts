@@ -15,39 +15,38 @@ export function concat<O extends qt.Input<any>>(
   );
 }
 
-export function concatAll<N, F, D>(): qt.Lifter<Input<N, F, D>, T>;
+export function concatAll<N, R>(): qt.Lifter<qt.Input<N>, R>;
 export function concatAll<R>(): qt.Lifter<any, R>;
-export function concatAll<N, F, D>(): qt.Lifter<Input<N, F, D>, T> {
-  return mergeAll<N, F, D>(1);
+export function concatAll<N, R>(): qt.Lifter<qt.Input<N>, R> {
+  return mergeAll<N>(1);
 }
 
-export function concatWith<N, F, D>(): qt.Lifter<N, T>;
+export function concatWith<N, R>(): qt.Lifter<N, R>;
 export function concatWith<N, A extends qt.Input<any>[]>(
   ...otherSources: A
-): qt.Lifter<N, SourcedOf<A> | N>;
+): qt.Lifter<N, qt.SourcedOf<A> | N>;
 export function concatWith<N, A extends qt.Input<any>[]>(
   ...otherSources: A
-): qt.Lifter<N, SourcedOf<A> | N> {
-  return (source: qt.Source<N, F, D>) =>
+): qt.Lifter<N, qt.SourcedOf<A> | N> {
+  return (source: qt.Source<N>) =>
     source.lift.call(
       concatStatic(source, ...otherSources),
       undefined
     ) as qt.Source<qt.SourcedOf<A> | N>;
 }
 
-export function count<N, F, D>(
-  predicate?: (n: N, index: number, source: qt.Source<N, F, D>) => boolean
+export function count<N>(
+  predicate?: (n: N, index: number, source: qt.Source<N>) => boolean
 ): qt.Lifter<N, number> {
-  return (source: qt.Source<N, F, D>) =>
-    source.lift(new CountO(predicate, source));
+  return (source: qt.Source<N>) => source.lift(new CountO(predicate, source));
 }
 
-class CountO<N, F, D> implements qt.Operator<N, number> {
+class CountO<N> implements qt.Operator<N, number> {
   constructor(
     private predicate:
-      | ((n: N, index: number, source: qt.Source<N, F, D>) => boolean)
+      | ((n: N, index: number, source: qt.Source<N>) => boolean)
       | undefined,
-    private source: qt.Source<N, F, D>
+    private source: qt.Source<N>
   ) {}
 
   call(subscriber: qj.Subscriber<number>, source: any): any {
@@ -57,21 +56,21 @@ class CountO<N, F, D> implements qt.Operator<N, number> {
   }
 }
 
-export class CountR<N, F, D> extends qj.Subscriber<N, F, D> {
+export class CountR<N> extends qj.Subscriber<N> {
   private count = 0;
   private index = 0;
 
   constructor(
-    tgt: qt.Observer<number, F, D>,
+    tgt: qt.Observer<number>,
     private predicate:
-      | ((n: N, index: number, source: qt.Source<N, F, D>) => boolean)
+      | ((n: N, index: number, source: qt.Source<N>) => boolean)
       | undefined,
-    private source: qt.Source<N, F, D>
+    private source: qt.Source<N>
   ) {
     super(tgt);
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     if (this.predicate) this._tryPredicate(n);
     else this.count++;
   }
@@ -87,15 +86,13 @@ export class CountR<N, F, D> extends qj.Subscriber<N, F, D> {
     if (result) this.count++;
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     this.tgt.next(this.count);
     this.tgt.done();
   }
 }
 
-export function max<N, F, D>(
-  comparer?: (x: N, y: N) => number
-): qt.Shifter<N, F, D> {
+export function max<N>(comparer?: (x: N, y: N) => number): qt.Shifter<N> {
   const max: (x: N, y: N) => N =
     typeof comparer === 'function'
       ? (x, y) => (comparer(x, y) > 0 ? x : y)
@@ -103,9 +100,7 @@ export function max<N, F, D>(
   return reduce(max);
 }
 
-export function min<N, F, D>(
-  comparer?: (x: N, y: N) => number
-): qt.Shifter<N, F, D> {
+export function min<N>(comparer?: (x: N, y: N) => number): qt.Shifter<N> {
   const min: (x: N, y: N) => N =
     typeof comparer === 'function'
       ? (x, y) => (comparer(x, y) < 0 ? x : y)

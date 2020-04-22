@@ -3,34 +3,37 @@ import * as qj from './subject';
 import * as qu from './utils';
 import * as qt from './types';
 
-export class Action<N, F = any, D = any> extends qj.Subscription implements qt.Action<N, F, D> {
-  constructor(public h: Scheduler<F, D>, public work: (this: qt.Action<N, F, D>, _: qt.State<N, F, D>) => void) {
+export class Action<N> extends qj.Subscription implements qt.Action<N> {
+  constructor(
+    public h: Scheduler,
+    public work: (this: qt.Action<N>, _: qt.State<N>) => void
+  ) {
     super();
   }
 
-  schedule(_?: qt.State<N, F, D>, _delay = 0): qt.Subscription {
+  schedule(_?: qt.State<N>, _delay = 0): qt.Subscription {
     return this;
   }
 }
 
-export class Scheduler<F, D> implements qt.Scheduler<F, D> {
+export class Scheduler implements qt.Scheduler {
   constructor(private A: typeof Action, public now = () => Date.now()) {}
 
   schedule<N>(
-    work: (this: qt.Action<N, F, D>, _: qt.State<N, F, D>) => void,
-    state?: qt.State<N, F, D>,
+    work: (this: qt.Action<N>, _: qt.State<N>) => void,
+    state?: qt.State<N>,
     delay = 0
   ): qt.Subscription {
     return new this.A(this, work).schedule(state, delay);
   }
 }
 
-export function nextAndDone<N, F, D>(t: qt.State<N, F, D>) {
+export function nextAndDone<N>(t: qt.State<N>) {
   t.s!.next(t.n);
-  t.s!.done(t.d);
+  t.s!.done();
 }
 
-export function fail<N, F, D>(t: qt.State<N, F, D>) {
+export function fail<N>(t: qt.State<N>) {
   t.s!.fail(t.f);
 }
 
@@ -117,7 +120,11 @@ export class Async extends Scheduler {
     });
   }
 
-  schedule<S>(work: (this: Action<S>, state?: S) => void, state?: S, delay = 0): qj.Subscription {
+  schedule<S>(
+    work: (this: Action<S>, state?: S) => void,
+    state?: S,
+    delay = 0
+  ): qj.Subscription {
     if (Async.del && Async.del !== this) return Async.del.schedule(work, state, delay);
     return super.schedule(work, state, delay);
   }
@@ -201,7 +208,9 @@ export class AsapAction<S> extends AsyncAction<S> {
   protected asyncId(s: Asap, id?: any, delay = 0): any {
     if (delay && delay > 0) return super.asyncId(s, id, delay);
     s.acts.push(this);
-    return s.scheduled || (s.scheduled = Immediate.setImmediate(s.flush.bind(s, undefined)));
+    return (
+      s.scheduled || (s.scheduled = Immediate.setImmediate(s.flush.bind(s, undefined)))
+    );
   }
 
   protected recycleId(s: Asap, id?: any, delay: number = 0): any {
@@ -256,7 +265,9 @@ export class QueueAction<T> extends AsyncAction<T> {
   }
 
   public execute(state: T, delay: number): any {
-    return delay > 0 || this.closed ? super.execute(state, delay) : this._execute(state, delay);
+    return delay > 0 || this.closed
+      ? super.execute(state, delay)
+      : this._execute(state, delay);
   }
 
   protected asyncId(s: Queue, id?: any, delay = 0): any {
@@ -330,7 +341,10 @@ export class Virtual extends Async {
   static frameTimeFactor = 10;
   public frame = 0;
   public index = -1;
-  constructor(Action: typeof AsyncAction = VirtualAction as any, public maxFrames = Number.POSITIVE_INFINITY) {
+  constructor(
+    Action: typeof AsyncAction = VirtualAction as any,
+    public maxFrames = Number.POSITIVE_INFINITY
+  ) {
     super(Action, () => this.frame);
   }
 
@@ -351,7 +365,7 @@ export class Virtual extends Async {
   }
 }
 
-export function scheduleArray<N, F = any, D = any>(i: ArrayLike<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
+export function scheduleArray<N>(i: ArrayLike<N>, h: qt.Scheduler, c: qt.Context<N>) {
   return c.createSource(r => {
     const s = new qj.Subscription();
     let j = 0;
@@ -369,7 +383,11 @@ export function scheduleArray<N, F = any, D = any>(i: ArrayLike<N>, h: qt.Schedu
   });
 }
 
-export function scheduleAsyncIter<N, F = any, D = any>(i: AsyncIterable<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
+export function scheduleAsyncIter<N>(
+  i: AsyncIterable<N>,
+  h: qt.Scheduler,
+  c: qt.Context<N>
+) {
   if (!i) throw new Error('Iterable needed');
   return c.createSource(r => {
     const s = new qj.Subscription();
@@ -393,7 +411,7 @@ export function scheduleAsyncIter<N, F = any, D = any>(i: AsyncIterable<N>, h: q
   });
 }
 
-export function scheduleIter<N, F = any, D = any>(i: Iterable<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
+export function scheduleIter<N>(i: Iterable<N>, h: qt.Scheduler, c: qt.Context<N>) {
   if (!i) throw new Error('Iterable needed');
   return c.createSource(r => {
     const s = new qj.Subscription();
@@ -428,21 +446,21 @@ export function scheduleIter<N, F = any, D = any>(i: Iterable<N>, h: qt.Schedule
   });
 }
 
-export function scheduleSource<N, F = any, D = any>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
+export function scheduleSource<N>(i: qt.Interop<N>, h: qt.Scheduler, c: qt.Context<N>) {
   return c.createSource(r => {
     const s = new qj.Subscription();
     s.add(
       h.schedule(() => {
-        const x = (i as any)[Symbol.rxSource]() as qt.Source<N, F, D>;
+        const x = (i as any)[Symbol.rxSource]() as qt.Source<N>;
         s.add(
           x.subscribe({
             next(n?: N) {
               s.add(h.schedule(() => r.next(n)));
             },
-            fail(f?: F) {
+            fail(e: any) {
               s.add(h.schedule(() => r.fail(f)));
             },
-            done(d?: D) {
+            done() {
               s.add(h.schedule(() => r.done(d)));
             }
           })
@@ -453,7 +471,7 @@ export function scheduleSource<N, F = any, D = any>(i: qt.Interop<N>, h: qt.Sche
   });
 }
 
-export function schedulePromise<N, F = any, D = any>(p: PromiseLike<N>, h: qt.Scheduler, c: qt.Context<N, F, D>) {
+export function schedulePromise<N>(p: PromiseLike<N>, h: qt.Scheduler, c: qt.Context<N>) {
   return c.createSource(r => {
     const s = new qj.Subscription();
     s.add(
@@ -477,11 +495,11 @@ export function schedulePromise<N, F = any, D = any>(p: PromiseLike<N>, h: qt.Sc
   });
 }
 
-export function scheduled<N, F = any, D = any>(
+export function scheduled<N>(
   i: qt.Input<N>,
   h: qt.Scheduler,
-  c: qt.Context<N, F, D>
-): qt.Source<N, F, D> {
+  c: qt.Context<N>
+): qt.Source<N> {
   if (i) {
     if (qu.isInterop(i)) return scheduleSource(i, h, c);
     if (qu.isPromise(i)) return schedulePromise(i, h, c);

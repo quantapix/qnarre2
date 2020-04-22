@@ -4,330 +4,387 @@ import * as qh from './scheduler';
 import * as qs from './source';
 //import * as qj from './subject';
 
-export abstract class Context<F, D> extends qt.Context<F, D> {
-  bindCB<R1, R2, R3, R4>(
-    cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): () => qt.Source<any[], F, D>;
-  bindCB<R1, R2, R3>(
-    cb: (_: (r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): () => qt.Source<[R1, R2, R3], F, D>;
-  bindCB<R1, R2>(cb: (_: (r1: R1, r2: R2) => any) => any, h?: qh.Scheduler<F, D>): () => qt.Source<[R1, R2], F, D>;
-  bindCB<R1>(cb: (_: (r1: R1) => any) => any, h?: qh.Scheduler<F, D>): () => qt.Source<R1, F, D>;
+export function bindCB<R1, R2, R3, R4>(
+  cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<any[]>;
+export function bindCB<R1, R2, R3>(
+  cb: (_: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<[R1, R2, R3]>;
+export function bindCB<R1, R2>(
+  cb: (_: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<[R1, R2]>;
+export function bindCB<R1>(
+  cb: (_: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<R1>;
 
-  bindCB<A1, R1, R2, R3, R4>(
-    cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1) => qt.Source<any[], F, D>;
-  bindCB<A1, R1, R2, R3>(
-    cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1) => qt.Source<[R1, R2, R3], F, D>;
-  bindCB<A1, R1, R2>(
-    cb: (a1: A1, _: (r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1) => qt.Source<[R1, R2], F, D>;
-  bindCB<A1, R1>(cb: (a1: A1, _: (r1: R1) => any) => any, h?: qh.Scheduler<F, D>): (a1: A1) => qt.Source<R1, F, D>;
+export function bindCB<A1, R1, R2, R3, R4>(
+  cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<any[]>;
+export function bindCB<A1, R1, R2, R3>(
+  cb: (a1: A1, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<[R1, R2, R3]>;
+export function bindCB<A1, R1, R2>(
+  cb: (a1: A1, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<[R1, R2]>;
+export function bindCB<A1, R1>(
+  cb: (a1: A1, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<R1>;
 
-  bindCB<A1, A2, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<any[], F, D>;
-  bindCB<A1, A2, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<[R1, R2, R3], F, D>;
-  bindCB<A1, A2, R1, R2>(
-    cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<[R1, R2], F, D>;
-  bindCB<A1, A2, R1>(
-    cb: (a1: A1, a2: A2, _: (r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<R1, F, D>;
+export function bindCB<A1, A2, R1, R2, R3, R4>(
+  cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<any[]>;
+export function bindCB<A1, A2, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<[R1, R2, R3]>;
+export function bindCB<A1, A2, R1, R2>(
+  cb: (a1: A1, a2: A2, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<[R1, R2]>;
+export function bindCB<A1, A2, R1>(
+  cb: (a1: A1, a2: A2, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<R1>;
 
-  bindCB<A1, A2, A3, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<any[], F, D>;
-  bindCB<A1, A2, A3, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2, R3], F, D>;
-  bindCB<A1, A2, A3, R1, R2>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2], F, D>;
-  bindCB<A1, A2, A3, R1>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<R1, F, D>;
+export function bindCB<A1, A2, A3, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<any[]>;
+export function bindCB<A1, A2, A3, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2, R3]>;
+export function bindCB<A1, A2, A3, R1, R2>(
+  cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2]>;
+export function bindCB<A1, A2, A3, R1>(
+  cb: (a1: A1, a2: A2, a3: A3, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<R1>;
 
-  bindCB<A1, A2, A3, A4, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<any[], F, D>;
-  bindCB<A1, A2, A3, A4, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2, R3], F, D>;
-  bindCB<A1, A2, A3, A4, R1, R2>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2], F, D>;
-  bindCB<A1, A2, A3, A4, R1>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<R1, F, D>;
+export function bindCB<A1, A2, A3, A4, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<any[]>;
+export function bindCB<A1, A2, A3, A4, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2, R3]>;
+export function bindCB<A1, A2, A3, A4, R1, R2>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2]>;
+export function bindCB<A1, A2, A3, A4, R1>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<R1>;
 
-  bindCB<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<any[], F, D>;
-  bindCB<A1, A2, A3, A4, A5, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2, R3], F, D>;
-  bindCB<A1, A2, A3, A4, A5, R1, R2>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2], F, D>;
-  bindCB<A1, A2, A3, A4, A5, R1>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<R1, F, D>;
+export function bindCB<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<any[]>;
+export function bindCB<A1, A2, A3, A4, A5, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2, R3]>;
+export function bindCB<A1, A2, A3, A4, A5, R1, R2>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2]>;
+export function bindCB<A1, A2, A3, A4, A5, R1>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<R1>;
 
-  bindCB<A, R>(
-    cb: (..._: Array<A | ((r: R) => any)>) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: A[]) => qt.Source<R, F, D>;
-  bindCB<A, R>(
-    cb: (..._: Array<A | ((..._: R[]) => any)>) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: A[]) => qt.Source<R[], F, D>;
-  bindCB<N>(cb: Function, h?: qh.Scheduler<F, D>): (..._: any[]) => qt.Source<N, F, D> {
-    const c = this;
-    let s: qt.Subject<N, F, D> | undefined;
-    function dispatch(this: qt.Action<N, F, D>, t: qt.State<N, F, D>) {
-      if (!s) {
-        s = c.createAsync();
-        const f = (...ns: any[]) => {
-          const n = ns.length <= 1 ? ns[0] : ns;
-          this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N, F, D>));
-        };
-        try {
-          cb.apply(t.ctx, [...t.args, f]);
-        } catch (e) {
-          s!.fail(e);
-        }
-      }
-      this.add(s.subscribe(t.r));
-    }
-    return function (this: any, ...args: any[]): qt.Source<N, F, D> {
-      const ctx = this;
-      return c.createSource(r => {
-        if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args});
-        if (!s) {
-          s = c.createAsync();
-          const f = (...ns: any[]) => {
-            s!.next(ns.length <= 1 ? ns[0] : ns);
-            s!.done();
-          };
-          try {
-            cb.apply(ctx, [...args, f]);
-          } catch (e) {
-            if (qu.canReportError(s)) s.fail(e);
-            else console.warn(e);
-          }
-        }
-        return s.subscribe(r);
-      });
-    };
-  }
-
-  bindNodeCB<R1, R2, R3, R4>(
-    cb: (_: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: any[]) => qt.Source<any[], F, D>;
-  bindNodeCB<R1, R2, R3>(
-    cb: (_: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): () => qt.Source<[R1, R2, R3], F, D>;
-  bindNodeCB<R1, R2>(
-    cb: (_: (e: any, r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): () => qt.Source<[R1, R2], F, D>;
-  bindNodeCB<R1>(cb: (_: (e: any, r1: R1) => any) => any, h?: qh.Scheduler<F, D>): () => qt.Source<R1, F, D>;
-
-  bindNodeCB<A1, R1, R2, R3, R4>(
-    cb: (a1: A1, _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: any[]) => qt.Source<any[], F, D>;
-  bindNodeCB<A1, R1, R2, R3>(
-    cb: (a1: A1, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1) => qt.Source<[R1, R2, R3], F, D>;
-  bindNodeCB<A1, R1, R2>(
-    cb: (a1: A1, _: (e: any, r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1) => qt.Source<[R1, R2], F, D>;
-  bindNodeCB<A1, R1>(
-    cb: (a1: A1, _: (e: any, r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1) => qt.Source<R1, F, D>;
-
-  bindNodeCB<A1, A2, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: any[]) => qt.Source<any[], F, D>;
-  bindNodeCB<A1, A2, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<[R1, R2, R3], F, D>;
-  bindNodeCB<A1, A2, R1, R2>(
-    cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<[R1, R2], F, D>;
-  bindNodeCB<A1, A2, R1>(
-    cb: (a1: A1, a2: A2, _: (e: any, r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2) => qt.Source<R1, F, D>;
-
-  bindNodeCB<A1, A2, A3, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: any[]) => qt.Source<any[], F, D>;
-  bindNodeCB<A1, A2, A3, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2, R3], F, D>;
-  bindNodeCB<A1, A2, A3, R1, R2>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2], F, D>;
-  bindNodeCB<A1, A2, A3, R1>(
-    cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3) => qt.Source<R1, F, D>;
-
-  bindNodeCB<A1, A2, A3, A4, R1, R2, R3, R4>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: any[]) => qt.Source<any[], F, D>;
-  bindNodeCB<A1, A2, A3, A4, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2, R3], F, D>;
-  bindNodeCB<A1, A2, A3, A4, R1, R2>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2], F, D>;
-  bindNodeCB<A1, A2, A3, A4, R1>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<R1, F, D>;
-
-  bindNodeCB<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
-    cb: (
-      a1: A1,
-      a2: A2,
-      a3: A3,
-      a4: A4,
-      a5: A5,
-      _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
-    ) => any,
-    h?: qh.Scheduler<F, D>
-  ): (..._: any[]) => qt.Source<any[], F, D>;
-  bindNodeCB<A1, A2, A3, A4, A5, R1, R2, R3>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2, R3], F, D>;
-  bindNodeCB<A1, A2, A3, A4, A5, R1, R2>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any, r1: R1, r2: R2) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2], F, D>;
-  bindNodeCB<A1, A2, A3, A4, A5, R1>(
-    cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any, r1: R1) => any) => any,
-    h?: qh.Scheduler<F, D>
-  ): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<R1, F, D>;
-
-  bindNodeCB<N>(cb: Function, h?: qh.Scheduler<F, D>): (..._: any[]) => qt.Source<N, F, D> {
-    const c = this;
-    let s: qt.Subject<N, F, D> | undefined;
-    function dispatch(this: qt.Action<N, F, D>, t: qt.State<N, F, D>) {
-      if (!s) {
-        s = c.createAsync();
-        const f = (...ns: any[]) => {
-          const n = ns.length <= 1 ? ns[0] : ns;
-          this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N, F, D>));
-        };
-        try {
-          cb.apply(t.ctx, [...t.args, f]);
-        } catch (e) {
-          s!.fail(e);
-        }
-      }
-      this.add(s.subscribe(t.r));
-    }
-    return function (this: any, ...args: any[]): qt.Source<N, F, D> {
-      const ctx = this;
-      return c.createSource(r => {
-        if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args});
-        if (!s) {
-          s = c.createAsync();
-          const f = (...ns: any[]) => {
-            const e = ns.shift();
-            if (e) {
-              s!.fail(e);
-              return;
-            }
-            s!.next(ns.length <= 1 ? ns[0] : ns);
-            s!.done();
-          };
-          try {
-            cb.apply(ctx, [...args, f]);
-          } catch (e) {
-            if (qu.canReportError(s)) s.fail(e);
-            else console.warn(e);
-          }
-        }
-        return s.subscribe(r);
-      });
-    };
-  }
-
-  defer<R extends qt.Input<any, F, D> | void>(fac: () => R): qt.Source<qt.Sourced<R>, F, D> {
-    return this.createSource<qt.Sourced<R>>(r => {
-      let inp: R | void;
+export function bindCB<A, R>(
+  cb: (..._: Array<A | ((r: R) => any)>) => any,
+  h?: qh.Scheduler
+): (..._: A[]) => qt.Source<R>;
+export function bindCB<A, R>(
+  cb: (..._: Array<A | ((..._: R[]) => any)>) => any,
+  h?: qh.Scheduler
+): (..._: A[]) => qt.Source<R[]>;
+export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.Source<N> {
+  const c = this;
+  let s: qt.Subject<N> | undefined;
+  function dispatch(this: qt.Action<N>, t: qt.State<N>) {
+    if (!s) {
+      s = c.createAsync();
+      const f = (...ns: any[]) => {
+        const n = ns.length <= 1 ? ns[0] : ns;
+        this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
+      };
       try {
-        inp = fac();
+        cb.apply(t.ctx, [...t.args, f]);
       } catch (e) {
-        r.fail(e);
-        return;
+        s!.fail(e);
       }
-      const s = inp ? from(inp as qt.Input<qt.Sourced<R>, F, D>) : EMPTY;
+    }
+    this.add(s.subscribe(t.r));
+  }
+  return function (this: any, ...args: any[]): qt.Source<N> {
+    const ctx = this;
+    return c.createSource(r => {
+      if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args} as qt.State<N>);
+      if (!s) {
+        s = c.createAsync();
+        const f = (...ns: any[]) => {
+          s!.next(ns.length <= 1 ? ns[0] : ns);
+          s!.done();
+        };
+        try {
+          cb.apply(ctx, [...args, f]);
+        } catch (e) {
+          if (qu.canReportError(s)) s.fail(e);
+          else console.warn(e);
+        }
+      }
       return s.subscribe(r);
     });
-  }
+  };
+}
 
-  empty(h?: qh.Scheduler<F, D>) {
-    return h ? this.createSource<never>(r => h.schedule(() => r.done())) : this.createSource<never>(r => r.done());
-  }
+export function bindNodeCB<R1, R2, R3, R4>(
+  cb: (_: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<any[]>;
+export function bindNodeCB<R1, R2, R3>(
+  cb: (_: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<[R1, R2, R3]>;
+export function bindNodeCB<R1, R2>(
+  cb: (_: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<[R1, R2]>;
+export function bindNodeCB<R1>(
+  cb: (_: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): () => qt.Source<R1>;
 
-  from<T extends qt.Input<T, F, D>>(inp: T): qs.Source<qt.Sourced<T>, F, D>;
-  from<N>(inp: qt.Input<N, F, D>, h?: qh.Scheduler<F, D>): qs.Source<N, F, D> {
-    if (h) return qh.scheduled(inp, h);
-    else {
-      //if (inp instanceof qs.Source<N, F, D>) return inp;
-      return this.createSource<N>(qu.subscribeTo(inp));
+export function bindNodeCB<A1, R1, R2, R3, R4>(
+  cb: (a1: A1, _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<any[]>;
+export function bindNodeCB<A1, R1, R2, R3>(
+  cb: (a1: A1, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<[R1, R2, R3]>;
+export function bindNodeCB<A1, R1, R2>(
+  cb: (a1: A1, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<[R1, R2]>;
+export function bindNodeCB<A1, R1>(
+  cb: (a1: A1, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1) => qt.Source<R1>;
+
+export function bindNodeCB<A1, A2, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<any[]>;
+export function bindNodeCB<A1, A2, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<[R1, R2, R3]>;
+export function bindNodeCB<A1, A2, R1, R2>(
+  cb: (a1: A1, a2: A2, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<[R1, R2]>;
+export function bindNodeCB<A1, A2, R1>(
+  cb: (a1: A1, a2: A2, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2) => qt.Source<R1>;
+
+export function bindNodeCB<A1, A2, A3, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<any[]>;
+export function bindNodeCB<A1, A2, A3, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2, R3]>;
+export function bindNodeCB<A1, A2, A3, R1, R2>(
+  cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<[R1, R2]>;
+export function bindNodeCB<A1, A2, A3, R1>(
+  cb: (a1: A1, a2: A2, a3: A3, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3) => qt.Source<R1>;
+
+export function bindNodeCB<A1, A2, A3, A4, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<any[]>;
+export function bindNodeCB<A1, A2, A3, A4, R1, R2, R3>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1, r2: R2, r3: R3) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2, R3]>;
+export function bindNodeCB<A1, A2, A3, A4, R1, R2>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<[R1, R2]>;
+export function bindNodeCB<A1, A2, A3, A4, R1>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4) => qt.Source<R1>;
+
+export function bindNodeCB<A1, A2, A3, A4, A5, R1, R2, R3, R4>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (e: any, r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any
+  ) => any,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<any[]>;
+export function bindNodeCB<A1, A2, A3, A4, A5, R1, R2, R3>(
+  cb: (
+    a1: A1,
+    a2: A2,
+    a3: A3,
+    a4: A4,
+    a5: A5,
+    _: (e: any, r1: R1, r2: R2, r3: R3) => any
+  ) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2, R3]>;
+export function bindNodeCB<A1, A2, A3, A4, A5, R1, R2>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any, r1: R1, r2: R2) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<[R1, R2]>;
+export function bindNodeCB<A1, A2, A3, A4, A5, R1>(
+  cb: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, _: (e: any, r1: R1) => any) => any,
+  h?: qh.Scheduler
+): (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => qt.Source<R1>;
+
+export function bindNodeCB<N>(
+  cb: Function,
+  h?: qh.Scheduler
+): (..._: any[]) => qt.Source<N> {
+  const c = this;
+  let s: qt.Subject<N> | undefined;
+  function dispatch(this: qt.Action<N>, t: qt.State<N>) {
+    if (!s) {
+      s = c.createAsync();
+      const f = (...ns: any[]) => {
+        const n = ns.length <= 1 ? ns[0] : ns;
+        this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
+      };
+      try {
+        cb.apply(t.ctx, [...t.args, f]);
+      } catch (e) {
+        s!.fail(e);
+      }
     }
+    this.add(s.subscribe(t.r));
   }
+  return function (this: any, ...args: any[]): qt.Source<N> {
+    const ctx = this;
+    return c.createSource(r => {
+      if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args} as qt.State<N>);
+      if (!s) {
+        s = c.createAsync();
+        const f = (...ns: any[]) => {
+          const e = ns.shift();
+          if (e) {
+            s!.fail(e);
+            return;
+          }
+          s!.next(ns.length <= 1 ? ns[0] : ns);
+          s!.done();
+        };
+        try {
+          cb.apply(ctx, [...args, f]);
+        } catch (e) {
+          if (qu.canReportError(s)) s.fail(e);
+          else console.warn(e);
+        }
+      }
+      return s.subscribe(r);
+    });
+  };
+}
 
-  fromArray<N>(inp: ArrayLike<N>, h?: qh.Scheduler) {
-    if (h) return qh.scheduleArray(inp, h);
-    else return this.createSource<N>(qu.subscribeToArray(inp));
+export function defer<R extends qt.Input<any> | void>(
+  fac: () => R
+): qt.Source<qt.Sourced<R>> {
+  return this.createSource<qt.Sourced<R>>(r => {
+    let inp: R | void;
+    try {
+      inp = fac();
+    } catch (e) {
+      r.fail(e);
+      return;
+    }
+    const s = inp ? from(inp as qt.Input<qt.Sourced<R>>) : EMPTY;
+    return s.subscribe(r);
+  });
+}
+
+export function empty(h?: qh.Scheduler) {
+  return h
+    ? this.createSource<never>(r => h.schedule(() => r.done()))
+    : this.createSource<never>(r => r.done());
+}
+
+export function from<T extends qt.Input<T>>(inp: T): qs.Source<qt.Sourced<T>>;
+export function from<N>(inp: qt.Input<N>, h?: qh.Scheduler): qs.Source<N> {
+  if (h) return qh.scheduled(inp, h);
+  else {
+    //if (inp instanceof qs.Source<N>) return inp;
+    return this.createSource<N>(qu.subscribeTo(inp));
   }
+}
+
+export function fromArray<N>(inp: ArrayLike<N>, h?: qh.Scheduler) {
+  if (h) return qh.scheduleArray(inp, h);
+  else return this.createSource<N>(qu.subscribeToArray(inp));
 }
 
 export interface NodeStyleEventEmitter {
@@ -348,8 +405,16 @@ export interface JQueryStyleEventEmitter {
 }
 
 export interface HasEventTargetAddRemove<E> {
-  addEventListener(t: string, l: ((_: E) => void) | null, os?: boolean | AddEventListenerOptions): void;
-  removeEventListener(t: string, l?: ((_: E) => void) | null, os?: EventListenerOptions | boolean): void;
+  addEventListener(
+    t: string,
+    l: (_: E) => void,
+    os?: boolean | AddEventListenerOptions
+  ): void;
+  removeEventListener(
+    t: string,
+    l?: (_: E) => void,
+    os?: EventListenerOptions | boolean
+  ): void;
 }
 
 export type EventTargetLike<T> =
@@ -388,7 +453,11 @@ export function fromEvent<T>(
     options = undefined;
   }
   if (resultSelector) {
-    return fromEvent<T>(target, eventName, options as EventListenerOptions | undefined).pipe(
+    return fromEvent<T>(
+      target,
+      eventName,
+      options as EventListenerOptions | undefined
+    ).pipe(
       map(args => (isArray(args) ? resultSelector!(...args) : resultSelector!(args)))
     );
   }
@@ -400,21 +469,35 @@ export function fromEvent<T>(
         subscriber.next(e);
       }
     }
-    setupSubscription(target, eventName, handler, subscriber, options as EventListenerOptions);
+    setupSubscription(
+      target,
+      eventName,
+      handler,
+      subscriber,
+      options as EventListenerOptions
+    );
   });
 }
 
 function isNodeStyleEventEmitter(sourceObj: any): sourceObj is NodeStyleEventEmitter {
-  return sourceObj && typeof sourceObj.addListener === 'function' && typeof sourceObj.removeListener === 'function';
+  return (
+    sourceObj &&
+    typeof sourceObj.addListener === 'function' &&
+    typeof sourceObj.removeListener === 'function'
+  );
 }
 
 function isJQueryStyleEventEmitter(sourceObj: any): sourceObj is JQueryStyleEventEmitter {
-  return sourceObj && typeof sourceObj.on === 'function' && typeof sourceObj.off === 'function';
+  return (
+    sourceObj && typeof sourceObj.on === 'function' && typeof sourceObj.off === 'function'
+  );
 }
 
 function isEventTarget(sourceObj: any): sourceObj is HasEventTargetAddRemove<any> {
   return (
-    sourceObj && typeof sourceObj.addEventListener === 'function' && typeof sourceObj.removeEventListener === 'function'
+    sourceObj &&
+    typeof sourceObj.addEventListener === 'function' &&
+    typeof sourceObj.removeEventListener === 'function'
   );
 }
 
@@ -534,7 +617,10 @@ export function generate<T, S>(
     iterate = options.iterate;
     resultSelector = options.resultSelector || (identity as ResultFunc<S, T>);
     scheduler = options.scheduler;
-  } else if (resultSelectorOrScheduler === undefined || isScheduler(resultSelectorOrScheduler)) {
+  } else if (
+    resultSelectorOrScheduler === undefined ||
+    isScheduler(resultSelectorOrScheduler)
+  ) {
     initialState = initialStateOrOptions as S;
     resultSelector = identity as ResultFunc<S, T>;
     scheduler = resultSelectorOrScheduler as qh.Scheduler;
@@ -650,7 +736,11 @@ export function of<T>(...args: Array<T | qh.Scheduler>): qs.Source<T> {
   }
 }
 
-export function range(start: number = 0, count?: number, h?: qh.Scheduler): qs.Source<number> {
+export function range(
+  start: number = 0,
+  count?: number,
+  h?: qh.Scheduler
+): qs.Source<number> {
   return new qs.Source<number>(subscriber => {
     if (count === undefined) {
       count = start;
@@ -715,7 +805,9 @@ export function throwError(error: any, h?: qh.Scheduler): qs.Source<never> {
   if (!scheduler) {
     return new qs.Source(subscriber => subscriber.error(error));
   } else {
-    return new qs.Source(subscriber => scheduler.schedule(dispatch as any, 0, {error, subscriber}));
+    return new qs.Source(subscriber =>
+      scheduler.schedule(dispatch as any, 0, {error, subscriber})
+    );
   }
 }
 
@@ -741,8 +833,8 @@ function dispatch(this: qh.Action<TimerState>, state: TimerState) {
 
 /* ** */
 
-export function repeat<N, F, D>(count: number = -1): qt.Shifter<N, F, D> {
-  return (source: qt.Source<N, F, D>) => {
+export function repeat<N>(count: number = -1): qt.Shifter<N> {
+  return (source: qt.Source<N>) => {
     if (count === 0) {
       return EMPTY;
     } else if (count < 0) {
@@ -753,62 +845,68 @@ export function repeat<N, F, D>(count: number = -1): qt.Shifter<N, F, D> {
   };
 }
 
-class RepeatO<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(private count: number, private source: qt.Source<N, F, D>) {}
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+class RepeatO<N> implements qt.Operator<N, N> {
+  constructor(private count: number, private source: qt.Source<N>) {}
+  call(subscriber: Subscriber<N>, source: any): qt.Closer {
     return source.subscribe(new RepeatR(subscriber, this.count, this.source));
   }
 }
 
-export class RepeatR<N, F, D> extends Subscriber<N, F, D> {
-  constructor(tgt: Subscriber<any>, private count: number, private source: qt.Source<N, F, D>) {
+export class RepeatR<N> extends Subscriber<N> {
+  constructor(tgt: Subscriber<any>, private count: number, private source: qt.Source<N>) {
     super(tgt);
   }
 
-  done(d?: D) {
+  done() {
     if (!this.stopped) {
       const {source, count} = this;
-      if (count === 0) return super.done(d);
+      if (count === 0) return super.done();
       else if (count > -1) this.count = count - 1;
       source.subscribe(this._recycle());
     }
   }
 }
 
-export function repeatWhen<N, F, D>(
-  notifier: (notifications: qt.Source<any, F, D>) => qt.Source<any, F, D>
-): qt.Shifter<N, F, D> {
-  return (source: qt.Source<N, F, D>) => source.lift(new RepeatWhenO(notifier));
+export function repeatWhen<N>(
+  notifier: (notifications: qt.Source<any>) => qt.Source<any>
+): qt.Shifter<N> {
+  return (source: qt.Source<N>) => source.lift(new RepeatWhenO(notifier));
 }
 
-class RepeatWhenO<N, F, D> implements qt.Operator<N, N, F, D> {
-  constructor(protected notifier: (notifications: qt.Source<any, F, D>) => qt.Source<any, F, D>) {}
+class RepeatWhenO<N> implements qt.Operator<N, N> {
+  constructor(protected notifier: (notifications: qt.Source<any>) => qt.Source<any>) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+  call(subscriber: Subscriber<N>, source: any): qt.Closer {
     return source.subscribe(new RepeatWhenR(subscriber, this.notifier, source));
   }
 }
 
-export class RepeatWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
-  private notifications: Subject<void> | null = null;
-  private retries: qt.Source<any, F, D> | null = null;
-  private retriesSubscription: Subscription | null | undefined = null;
+export class RepeatWhenR<N, M> extends Reactor<N, M> {
+  private notifications: Subject<void> = null;
+  private retries: qt.Source<any> = null;
+  private retriesSubscription: Subscription | undefined = null;
   private sourceIsBeingSubscribedTo = true;
 
   constructor(
     tgt: Subscriber<R>,
-    private notifier: (notifications: qt.Source<any, F, D>) => qt.Source<any, F, D>,
-    private source: qt.Source<N, F, D>
+    private notifier: (notifications: qt.Source<any>) => qt.Source<any>,
+    private source: qt.Source<N>
   ) {
     super(tgt);
   }
 
-  reactNext(outerN: T, innerValue: R, outerX: number, innerIndex: number, innerSub: Actor<N, M, F, D>): void {
+  reactNext(
+    outerN: T,
+    innerValue: R,
+    outerX: number,
+    innerIndex: number,
+    innerSub: Actor<N, M>
+  ): void {
     this.sourceIsBeingSubscribedTo = true;
     this.source.subscribe(this);
   }
 
-  reactDone(innerSub: Actor<N, M, F, D>): void {
+  reactDone(innerSub: Actor<N, M>): void {
     if (this.sourceIsBeingSubscribedTo === false) {
       return super.complete();
     }
@@ -843,7 +941,7 @@ export class RepeatWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
     this.retries = null;
   }
 
-  _recycle(): Subscriber<N, F, D> {
+  _recycle(): Subscriber<N> {
     const {_unsubscribe} = this;
 
     this._unsubscribe = null!;
@@ -867,24 +965,26 @@ export class RepeatWhenR<N, M, F, D> extends Reactor<N, M, F, D> {
   }
 }
 
-export function throwIfEmpty<N, F, D>(errorFactory: () => any = defaultErrorFactory): qt.Shifter<N, F, D> {
-  return (source: qt.Source<N, F, D>) => {
+export function throwIfEmpty<N>(
+  errorFactory: () => any = defaultErrorFactory
+): qt.Shifter<N> {
+  return (source: qt.Source<N>) => {
     return source.lift(new ThrowIfEmptyO(errorFactory));
   };
 }
 
-class ThrowIfEmptyO<N, F, D> implements qt.Operator<N, N, F, D> {
+class ThrowIfEmptyO<N> implements qt.Operator<N, N> {
   constructor(private errorFactory: () => any) {}
 
-  call(subscriber: Subscriber<N, F, D>, source: any): qt.Closer {
+  call(subscriber: Subscriber<N>, source: any): qt.Closer {
     return source.subscribe(new ThrowIfEmptyR(subscriber, this.errorFactory));
   }
 }
 
-export class ThrowIfEmptyR<N, F, D> extends Subscriber<N, F, D> {
+export class ThrowIfEmptyR<N> extends Subscriber<N> {
   private hasValue = false;
 
-  constructor(tgt: Subscriber<N, F, D>, private errorFactory: () => any) {
+  constructor(tgt: Subscriber<N>, private errorFactory: () => any) {
     super(tgt);
   }
 
@@ -893,7 +993,7 @@ export class ThrowIfEmptyR<N, F, D> extends Subscriber<N, F, D> {
     this.tgt.next(n);
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     if (!this.hasValue) {
       let err: any;
       try {
@@ -902,7 +1002,7 @@ export class ThrowIfEmptyR<N, F, D> extends Subscriber<N, F, D> {
         err = e;
       }
       this.tgt.fail(err);
-    } else return this.tgt.done(d);
+    } else return this.tgt.done();
   }
 }
 

@@ -76,7 +76,7 @@ function makeFilename(operatorLabel: string) {
   return /^(\w+)/.exec(operatorLabel)![1] + '.png';
 }
 
-type glitFn = (description: string, fn: () => void) => any;
+type glitFn = (description: string, fn: qt.Fun<void>) => any;
 type specFn = () => any;
 
 global.asDiagram = function asDiagram(operatorLabel: string, glit: glitFn) {
@@ -84,9 +84,7 @@ global.asDiagram = function asDiagram(operatorLabel: string, glit: glitFn) {
     if (specFn.length === 0) {
       glit(description, function () {
         let outputStreams: TestStream[] = [];
-        global.rxTestScheduler = new TestScheduler(function (
-          actual: TestMessage[]
-        ) {
+        global.rxTestScheduler = new TestScheduler(function (actual: TestMessage[]) {
           if (
             Array.isArray(actual) &&
             actual.length > 0 &&
@@ -114,9 +112,7 @@ global.asDiagram = function asDiagram(operatorLabel: string, glit: glitFn) {
         console.log('Painted ' + filename);
       });
     } else {
-      throw new Error(
-        'cannot generate PNG marble diagram for async test ' + description
-      );
+      throw new Error('cannot generate PNG marble diagram for async test ' + description);
     }
   };
 };

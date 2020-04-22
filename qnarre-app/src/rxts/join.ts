@@ -7,17 +7,14 @@ import * as qh from './scheduler';
 export function combineLatest<O1 extends qt.Input<any>>(
   sources: [O1]
 ): qs.Source<[qt.Sourced<O1>]>;
-export function combineLatest<
-  O1 extends qt.Input<any>,
-  O2 extends qt.Input<any>
->(sources: [O1, O2]): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>]>;
+export function combineLatest<O1 extends qt.Input<any>, O2 extends qt.Input<any>>(
+  sources: [O1, O2]
+): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>]>;
 export function combineLatest<
   O1 extends qt.Input<any>,
   O2 extends qt.Input<any>,
   O3 extends qt.Input<any>
->(
-  sources: [O1, O2, O3]
-): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>]>;
+>(sources: [O1, O2, O3]): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>]>;
 export function combineLatest<
   O1 extends qt.Input<any>,
   O2 extends qt.Input<any>,
@@ -35,13 +32,7 @@ export function combineLatest<
 >(
   sources: [O1, O2, O3, O4, O5]
 ): qs.Source<
-  [
-    qt.Sourced<O1>,
-    qt.Sourced<O2>,
-    qt.Sourced<O3>,
-    qt.Sourced<O4>,
-    qt.Sourced<O5>
-  ]
+  [qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>, qt.Sourced<O5>]
 >;
 export function combineLatest<
   O1 extends qt.Input<any>,
@@ -171,10 +162,7 @@ export function combineLatest<T, R>(
     observables = (<any>observables[0]).slice();
   }
   return x =>
-    x.lift.call(
-      from([x, ...observables]),
-      new CombineLatestO(project)
-    ) as qt.Source<R>;
+    x.lift.call(from([x, ...observables]), new CombineLatestO(project)) as qt.Source<R>;
 }
 
 export function combineLatestWith<T, A extends qt.Input<any>[]>(
@@ -183,33 +171,25 @@ export function combineLatestWith<T, A extends qt.Input<any>[]>(
   return combineLatest(...otherSources);
 }
 
-export function combineAll<N, F, D>(): qt.Lifter<qt.Input<N, F, D>, T[]>;
-export function combineAll<N, F, D>(): qt.Lifter<any, T[]>;
+export function combineAll<N>(): qt.Lifter<qt.Input<N>, T[]>;
+export function combineAll<N>(): qt.Lifter<any, T[]>;
 export function combineAll<T, R>(
   project: (...values: T[]) => R
-): qt.Lifter<qt.Input<N, F, D>, R>;
-export function combineAll<R>(
-  project: (...values: Array<any>) => R
-): qt.Lifter<any, R>;
+): qt.Lifter<qt.Input<N>, R>;
+export function combineAll<R>(project: (...values: Array<any>) => R): qt.Lifter<any, R>;
 export function combineAll<T, R>(
   project?: (...values: Array<any>) => R
 ): qt.Lifter<T, R> {
   return x => x.lift(new CombineLatestO(project));
 }
 
-export function endWith<T, A extends any[]>(
-  ...args: A
-): qt.Lifter<T, T | ValueOf<A>>;
-export function endWith<N, F, D>(
-  ...values: Array<T | qt.Scheduler>
-): qt.Shifter<N, F, D> {
-  return x => concatStatic(x, of(...values)) as qt.Source<N, F, D>;
+export function endWith<T, A extends any[]>(...args: A): qt.Lifter<T, T | ValueOf<A>>;
+export function endWith<N>(...values: Array<T | qt.Scheduler>): qt.Shifter<N> {
+  return x => concatStatic(x, of(...values)) as qt.Source<N>;
 }
 
 export function forkJoin<A>(sources: [qt.Input<A>]): qs.Source<[A]>;
-export function forkJoin<A, B>(
-  sources: [qt.Input<A>, qt.Input<B>]
-): qs.Source<[A, B]>;
+export function forkJoin<A, B>(sources: [qt.Input<A>, qt.Input<B>]): qs.Source<[A, B]>;
 export function forkJoin<A, B, C>(
   sources: [qt.Input<A>, qt.Input<B>, qt.Input<C>]
 ): qs.Source<[A, B, C]>;
@@ -220,14 +200,7 @@ export function forkJoin<A, B, C, D, E>(
   sources: [qt.Input<A>, qt.Input<B>, qt.Input<C>, qt.Input<D>, qt.Input<E>]
 ): qs.Source<[A, B, C, D, E]>;
 export function forkJoin<A, B, C, D, E, F>(
-  sources: [
-    qt.Input<A>,
-    qt.Input<B>,
-    qt.Input<C>,
-    qt.Input<D>,
-    qt.Input<E>,
-    qt.Input<F>
-  ]
+  sources: [qt.Input<A>, qt.Input<B>, qt.Input<C>, qt.Input<D>, qt.Input<E>, qt.Input<F>]
 ): qs.Source<[A, B, C, D, E, F]>;
 export function forkJoin<A extends qt.Input<any>[]>(
   sources: A
@@ -242,10 +215,7 @@ export function forkJoin(...sources: any[]): qs.Source<any> {
     if (Array.isArray(first)) {
       return forkJoinInternal(first, null);
     }
-    if (
-      qu.isObject(first) &&
-      Object.getPrototypeOf(first) === Object.prototype
-    ) {
+    if (qu.isObject(first) && Object.getPrototypeOf(first) === Object.prototype) {
       const keys = Object.keys(first);
       return forkJoinInternal(
         keys.map(key => first[key]),
@@ -255,8 +225,7 @@ export function forkJoin(...sources: any[]): qs.Source<any> {
   }
   if (typeof sources[sources.length - 1] === 'function') {
     const resultSelector = sources.pop() as Function;
-    sources =
-      sources.length === 1 && Array.isArray(sources[0]) ? sources[0] : sources;
+    sources = sources.length === 1 && Array.isArray(sources[0]) ? sources[0] : sources;
     return forkJoinInternal(sources, null).pipe(
       map((args: any[]) => resultSelector(...args))
     );
@@ -264,10 +233,7 @@ export function forkJoin(...sources: any[]): qs.Source<any> {
   return forkJoinInternal(sources, null);
 }
 
-function forkJoinInternal(
-  sources: qt.Input<any>[],
-  keys: string[] | null
-): qs.Source<any> {
+function forkJoinInternal(sources: qt.Input<any>[], keys: string[]): qs.Source<any> {
   return new qs.Source(subscriber => {
     const len = sources.length;
     if (len === 0) {
@@ -297,9 +263,7 @@ function forkJoinInternal(
                 subscriber.next(
                   keys
                     ? keys.reduce(
-                        (result, key, i) => (
-                          ((result as any)[key] = values[i]), result
-                        ),
+                        (result, key, i) => (((result as any)[key] = values[i]), result),
                         {}
                       )
                     : values
@@ -316,10 +280,7 @@ function forkJoinInternal(
 
 export function merge<T>(v1: qt.Input<T>): qs.Source<T>;
 export function merge<T>(v1: qt.Input<T>, concurrent?: number): qs.Source<T>;
-export function merge<T, T2>(
-  v1: qt.Input<T>,
-  v2: qt.Input<T2>
-): qs.Source<T | T2>;
+export function merge<T, T2>(v1: qt.Input<T>, v2: qt.Input<T2>): qs.Source<T | T2>;
 export function merge<T, T2>(
   v1: qt.Input<T>,
   v2: qt.Input<T2>,
@@ -381,12 +342,8 @@ export function merge<T, T2, T3, T4, T5, T6>(
   v6: qt.Input<T6>,
   concurrent?: number
 ): qs.Source<T | T2 | T3 | T4 | T5 | T6>;
-export function merge<T>(
-  ...observables: (qt.Input<T> | number)[]
-): qs.Source<T>;
-export function merge<T, R>(
-  ...observables: (qt.Input<any> | number)[]
-): qs.Source<R>;
+export function merge<T>(...observables: (qt.Input<T> | number)[]): qs.Source<T>;
+export function merge<T, R>(...observables: (qt.Input<any> | number)[]): qs.Source<R>;
 export function merge<T, R>(
   ...observables: Array<qt.Input<any> | qh.Scheduler | number | undefined>
 ): qs.Source<R> {
@@ -405,24 +362,20 @@ export function merge<T, R>(
     concurrent = <number>observables.pop();
   }
 
-  if (
-    !scheduler &&
-    observables.length === 1 &&
-    observables[0] instanceof qt.Source
-  ) {
+  if (!scheduler && observables.length === 1 && observables[0] instanceof qt.Source) {
     return <qt.Source<R>>observables[0];
   }
 
   return mergeAll<R>(concurrent)(fromArray<any>(observables, scheduler));
 }
 
-export function mergeAll<N, F, D>(
+export function mergeAll<N>(
   concurrent: number = Number.POSITIVE_INFINITY
-): qt.Lifter<qt.Input<N, F, D>, T> {
+): qt.Lifter<qt.Input<N>, T> {
   return mergeMap(identity, concurrent);
 }
 
-export function mergeWith<N, F, D>(): qt.Lifter<T, T>;
+export function mergeWith<N>(): qt.Lifter<T, T>;
 export function mergeWith<T, A extends qt.Input<any>[]>(
   ...otherSources: A
 ): qt.Lifter<T, T | qt.SourcedOf<A>>;
@@ -438,9 +391,7 @@ export function race<A extends qt.Input<any>[]>(
 export function race<A extends qt.Input<any>[]>(
   ...observables: A
 ): qs.Source<qt.SourcedOf<A>>;
-export function race<T>(
-  ...observables: (qt.Input<T> | qt.Input<T>[])[]
-): qs.Source<any> {
+export function race<T>(...observables: (qt.Input<T> | qt.Input<T>[])[]): qs.Source<any> {
   if (observables.length === 1) {
     if (Array.isArray(observables[0])) {
       observables = observables[0] as qt.Input<T>[];
@@ -478,12 +429,7 @@ export class RaceSubscriber<T> extends qj.Reactor<T, T> {
     else {
       for (let i = 0; i < len && !this.hasFirst; i++) {
         let observable = observables[i];
-        let subscription = qu.subscribeToResult(
-          this,
-          observable,
-          observable as any,
-          i
-        );
+        let subscription = qu.subscribeToResult(this, observable, observable as any, i);
         if (this.subscriptions) this.subscriptions.push(subscription!);
         this.add(subscription);
       }
@@ -517,9 +463,7 @@ export class RaceSubscriber<T> extends qj.Reactor<T, T> {
   }
 }
 
-export function startWith<T, A extends any[]>(
-  ...values: A
-): qt.Lifter<T, T | ValueOf<A>>;
+export function startWith<T, A extends any[]>(...values: A): qt.Lifter<T, T | ValueOf<A>>;
 export function startWith<T, D>(...values: D[]): qt.Lifter<T, T | D> {
   const scheduler = values[values.length - 1];
   if (qu.isScheduler(scheduler)) {
@@ -538,11 +482,7 @@ export function zip<
   O1 extends qt.Input<any>,
   O2 extends qt.Input<any>,
   O3 extends qt.Input<any>
->(
-  v1: O1,
-  v2: O2,
-  v3: O3
-): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>]>;
+>(v1: O1, v2: O2, v3: O3): qs.Source<[qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>]>;
 export function zip<
   O1 extends qt.Input<any>,
   O2 extends qt.Input<any>,
@@ -567,13 +507,7 @@ export function zip<
   v4: O4,
   v5: O5
 ): qs.Source<
-  [
-    qt.Sourced<O1>,
-    qt.Sourced<O2>,
-    qt.Sourced<O3>,
-    qt.Sourced<O4>,
-    qt.Sourced<O5>
-  ]
+  [qt.Sourced<O1>, qt.Sourced<O2>, qt.Sourced<O3>, qt.Sourced<O4>, qt.Sourced<O5>]
 >;
 export function zip<
   O1 extends qt.Input<any>,
@@ -599,9 +533,7 @@ export function zip<
     qt.Sourced<O6>
   ]
 >;
-export function zip<O extends qt.Input<any>>(
-  array: O[]
-): qs.Source<qt.Sourced<O>[]>;
+export function zip<O extends qt.Input<any>>(array: O[]): qs.Source<qt.Sourced<O>[]>;
 export function zip<R>(array: qt.Input<any>[]): qs.Source<R>;
 export function zip<O extends qt.Input<any>>(
   ...observables: O[]
@@ -693,8 +625,7 @@ export class ZipR<T, R> extends qj.Subscriber<T> {
     const destination = this.destination;
     for (let i = 0; i < len; i++) {
       let iterator = iterators[i];
-      if (typeof iterator.hasValue === 'function' && !iterator.hasValue())
-        return;
+      if (typeof iterator.hasValue === 'function' && !iterator.hasValue()) return;
     }
 
     let shouldComplete = false;
@@ -728,15 +659,9 @@ export class ZipR<T, R> extends qj.Subscriber<T> {
 
 export function zipAll<T>(): qt.Lifter<qt.Input<T>, T[]>;
 export function zipAll<T>(): qt.Lifter<any, T[]>;
-export function zipAll<T, R>(
-  project: (...values: T[]) => R
-): qt.Lifter<qt.Input<T>, R>;
-export function zipAll<R>(
-  project: (...values: Array<any>) => R
-): qt.Lifter<any, R>;
-export function zipAll<T, R>(
-  project?: (...values: Array<any>) => R
-): qt.Lifter<T, R> {
+export function zipAll<T, R>(project: (...values: T[]) => R): qt.Lifter<qt.Input<T>, R>;
+export function zipAll<R>(project: (...values: Array<any>) => R): qt.Lifter<any, R>;
+export function zipAll<T, R>(project?: (...values: Array<any>) => R): qt.Lifter<T, R> {
   return (source: qt.Source<T>) => x.lift(new ZipOperator(project));
 }
 export function zipAll<T, R>(
@@ -794,9 +719,7 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
   next(n?: N): IteratorResult<T> {
     const i = this.index++;
     const array = this.array;
-    return i < this.length
-      ? {value: array[i], done: false}
-      : {value: null, done: true};
+    return i < this.length ? {value: array[i], done: false} : {value: null, done: true};
   }
 
   hasValue() {
@@ -808,8 +731,7 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
   }
 }
 
-class ZipBufferIterator<T, R> extends qj.Reactor<T, R>
-  implements LookAheadIterator<T> {
+class ZipBufferIterator<T, R> extends qj.Reactor<T, R> implements LookAheadIterator<T> {
   stillUnsubscribed = true;
   buffer: T[] = [];
   isComplete = false;

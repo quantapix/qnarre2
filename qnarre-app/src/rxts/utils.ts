@@ -2,8 +2,6 @@ import * as qj from './subject';
 import * as qt from './types';
 import * as qs from './source';
 
-import {Input, Interop} from './types';
-
 export interface OutOfRangeError extends Error {}
 
 export interface OutOfRangeErrorCtor {
@@ -59,7 +57,7 @@ function findAndClearHandle(handle: number): boolean {
 }
 
 export const Immediate = {
-  setImmediate(cb: () => void): number {
+  setImmediate(cb: qt.Fun<void>): number {
     const handle = nextHandle++;
     activeHandles[handle] = true;
     if (!resolved) resolved = Promise.resolve();
@@ -157,7 +155,7 @@ export function applyMixins(derivedCtor: any, baseCtors: any[]) {
   }
 }
 
-export function canReportError<N, F, D>(s: qt.Subscriber<N, F, D> | qt.Subject<N, F, D>) {
+export function canReportError<N>(s: qt.Subscriber<N> | qt.Subject<N>) {
   while (s) {
     const {closed, tgt, stopped} = s as any;
     if (closed || stopped) return false;
@@ -190,7 +188,7 @@ export function isFunction(x: any): x is Function {
   return typeof x === 'function';
 }
 
-export function isInterop<N, F, D>(x: any): x is Interop<N, F, D> {
+export function isInterop<N>(x: any): x is Interop<N> {
   return x && typeof x[Symbol.rxSource] === 'function';
 }
 
@@ -206,15 +204,19 @@ export function isObject(x: any): x is Object {
   return x !== null && typeof x === 'object';
 }
 
-export function isSource<N, F, D>(x: any): x is qs.Source<N, F, D> {
-  return !!x && (x instanceof qs.Source || (typeof x.lift === 'function' && typeof x.subscribe === 'function'));
+export function isSource<N>(x: any): x is qs.Source<N> {
+  return (
+    !!x &&
+    (x instanceof qs.Source ||
+      (typeof x.lift === 'function' && typeof x.subscribe === 'function'))
+  );
 }
 
 export function isPromise(x: any): x is PromiseLike<any> {
   return !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function';
 }
 
-export function isScheduler<F, D>(x: any): x is qt.Scheduler<F, D> {
+export function isScheduler(x: any): x is qt.Scheduler {
   return x && typeof (<any>x).schedule === 'function';
 }
 
@@ -231,8 +233,15 @@ export function not(pred: Function, thisArg: any): Function {
 
 export function pipe<T>(): qt.Mapper<T, T>;
 export function pipe<T, A>(fn1: qt.Mapper<T, A>): qt.Mapper<T, A>;
-export function pipe<T, A, B>(fn1: qt.Mapper<T, A>, fn2: qt.Mapper<A, B>): qt.Mapper<T, B>;
-export function pipe<T, A, B, C>(fn1: qt.Mapper<T, A>, fn2: qt.Mapper<A, B>, fn3: qt.Mapper<B, C>): qt.Mapper<T, C>;
+export function pipe<T, A, B>(
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>
+): qt.Mapper<T, B>;
+export function pipe<T, A, B, C>(
+  fn1: qt.Mapper<T, A>,
+  fn2: qt.Mapper<A, B>,
+  fn3: qt.Mapper<B, C>
+): qt.Mapper<T, C>;
 export function pipe<T, A, B, C, D>(
   fn1: qt.Mapper<T, A>,
   fn2: qt.Mapper<A, B>,
@@ -315,7 +324,10 @@ declare var WorkerGlobalScope: any;
 
 const __window = typeof window !== 'undefined' && window;
 const __self =
-  typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope && self;
+  typeof self !== 'undefined' &&
+  typeof WorkerGlobalScope !== 'undefined' &&
+  self instanceof WorkerGlobalScope &&
+  self;
 const __global = typeof global !== 'undefined' && global;
 const _root: any = __window || __global || __self;
 
@@ -325,7 +337,9 @@ const _root: any = __window || __global || __self;
   }
 })();
 
-export const subscribeTo = <N, F, D>(r: Input<N, F, D>): ((_: qj.Subscriber<N, F, D>) => qj.Subscription) => {
+export const subscribeTo = <N>(
+  r: Input<N>
+): ((_: qj.Subscriber<N>) => qj.Subscription) => {
   if (!!r && typeof (r as any)[Symbol.rxSource] === 'function') {
     return subscribeToSource(r as any);
   } else if (isArrayLike(r)) {
@@ -334,37 +348,43 @@ export const subscribeTo = <N, F, D>(r: Input<N, F, D>): ((_: qj.Subscriber<N, F
     return subscribeToPromise(r);
   } else if (!!r && typeof (r as any)[Symbol.iterator] === 'function') {
     return subscribeToIterable(r as any);
-  } else if (Symbol && Symbol.asyncIterator && !!r && typeof (r as any)[Symbol.asyncIterator] === 'function') {
+  } else if (
+    Symbol &&
+    Symbol.asyncIterator &&
+    !!r &&
+    typeof (r as any)[Symbol.asyncIterator] === 'function'
+  ) {
     return subscribeToAsyncIterable(r as any);
   } else {
     const value = isObject(r) ? 'an invalid object' : `'${r}'`;
     const msg =
-      `You provided ${value} where a stream was expected.` + ' You can provide an Source, Promise, Array, or Iterable.';
+      `You provided ${value} where a stream was expected.` +
+      ' You can provide an Source, Promise, Array, or Iterable.';
     throw new TypeError(msg);
   }
 };
 
-export const subscribeToArray = <N, F, D>(a: ArrayLike<N>) => (s: qt.Subscriber<N, F, D>) => {
+export const subscribeToArray = <N>(a: ArrayLike<N>) => (s: qt.Subscriber<N>) => {
   for (let i = 0, len = a.length; i < len && !s.closed; i++) {
     s.next(a[i]);
   }
   s.done();
 };
 
-export function subscribeToAsyncIterable<N, F, D>(a: AsyncIterable<N>) {
-  return (s: qt.Subscriber<N, F, D>) => {
+export function subscribeToAsyncIterable<N>(a: AsyncIterable<N>) {
+  return (s: qt.Subscriber<N>) => {
     process(a, s).catch(e => s.fail(e));
   };
 }
 
-async function process<N, F, D>(a: AsyncIterable<N>, s: qt.Subscriber<N, F, D>) {
+async function process<N>(a: AsyncIterable<N>, s: qt.Subscriber<N>) {
   for await (const n of a) {
     s.next(n);
   }
   s.done();
 }
 
-export const subscribeToIterable = <N, F, D>(it: Iterable<N>) => (s: qj.Subscriber<N, F, D>) => {
+export const subscribeToIterable = <N>(it: Iterable<N>) => (s: qj.Subscriber<N>) => {
   const i = (it as any)[Symbol.iterator]();
   do {
     const item = i.next();
@@ -383,7 +403,7 @@ export const subscribeToIterable = <N, F, D>(it: Iterable<N>) => (s: qj.Subscrib
   return s;
 };
 
-export const subscribeToSource = <N, F, D>(o: any) => (s: qj.Subscriber<N, F, D>) => {
+export const subscribeToSource = <N>(o: any) => (s: qj.Subscriber<N>) => {
   const obs = (o as any)[Symbol.rxSource]();
   if (typeof obs.subscribe !== 'function') {
     throw new TypeError('Provided object does not correctly implement Symbol.rxSource');
@@ -391,7 +411,7 @@ export const subscribeToSource = <N, F, D>(o: any) => (s: qj.Subscriber<N, F, D>
   return obs.subscribe(s);
 };
 
-export const subscribeToPromise = <N, F, D>(p: PromiseLike<N>) => (s: qj.Subscriber<N, F, D>) => {
+export const subscribeToPromise = <N>(p: PromiseLike<N>) => (s: qj.Subscriber<N>) => {
   p.then(
     n => {
       if (!s.closed) {
@@ -404,25 +424,25 @@ export const subscribeToPromise = <N, F, D>(p: PromiseLike<N>) => (s: qj.Subscri
   return s;
 };
 
-export function subscribeToResult<N, R, F, D>(
-  r: qj.Reactor<N, R, F, D>,
+export function subscribeToResult<N, R>(
+  r: qj.Reactor<N, R>,
   result: any,
   rn: undefined,
   ri: undefined,
-  a: qj.Actor<N, R, F, D>
+  a: qj.Actor<N, R>
 ): qt.Subscription | undefined;
-export function subscribeToResult<N, R, F, D>(
-  r: qj.Reactor<N, R, F, D>,
+export function subscribeToResult<N, R>(
+  r: qj.Reactor<N, R>,
   result: any,
   rn?: R,
   ri?: number
 ): qt.Subscription | undefined;
-export function subscribeToResult<N, R, F, D>(
-  r: qj.Reactor<N, R, F, D>,
+export function subscribeToResult<N, R>(
+  r: qj.Reactor<N, R>,
   result: any,
   rn?: R,
   ri?: number,
-  a: qj.Subscriber<N, F, D> = new qj.Actor(r, rn, ri)
+  a: qj.Subscriber<N> = new qj.Actor(r, rn, ri)
 ): qt.Subscription | undefined {
   if (a.closed) return;
   if (result instanceof qs.Source) return result.subscribe(a);

@@ -5,9 +5,7 @@ import * as qt from './types';
 import * as qu from './utils';
 
 export function defaultIfEmpty<N, R = N>(defaultValue?: R): qt.Lifter<N, T | R>;
-export function defaultIfEmpty<N, R>(
-  defaultValue: R | null = null
-): qt.Lifter<N, T | R> {
+export function defaultIfEmpty<N, R>(defaultValue: R = null): qt.Lifter<N, T | R> {
   return x => x.lift(new DefaultIfEmptyO(defaultValue)) as qt.Source<N | R>;
 }
 
@@ -19,10 +17,10 @@ class DefaultIfEmptyO<N, R> implements qt.Operator<N, T | R> {
   }
 }
 
-export class DefaultIfEmptyR<N, M, F, D> extends qj.Subscriber<N, F, D> {
+export class DefaultIfEmptyR<N, M> extends qj.Subscriber<N> {
   private isEmpty = true;
 
-  constructor(tgt: qj.Subscriber<N | M, F, D>, private defaultValue: M) {
+  constructor(tgt: qj.Subscriber<N | M>, private defaultValue: M) {
     super(tgt);
   }
 
@@ -31,28 +29,24 @@ export class DefaultIfEmptyR<N, M, F, D> extends qj.Subscriber<N, F, D> {
     this.tgt.next(n);
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     if (this.isEmpty) this.tgt.next(this.defaultValue);
     this.tgt.done();
   }
 }
 
-export function every<N, F, D>(
-  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
+export function every<N>(
+  predicate: (n: N, index: number, source: qt.Source<N>) => boolean,
   thisArg?: any
 ): qt.Lifter<N, boolean> {
   return x => x.lift(new EveryO(predicate, thisArg, source));
 }
 
-class EveryO<N, F, D> implements qt.Operator<N, boolean> {
+class EveryO<N> implements qt.Operator<N, boolean> {
   constructor(
-    private predicate: (
-      n: N,
-      index: number,
-      source: qt.Source<N, F, D>
-    ) => boolean,
+    private predicate: (n: N, index: number, source: qt.Source<N>) => boolean,
     private thisArg: any,
-    private source: qt.Source<N, F, D>
+    private source: qt.Source<N>
   ) {}
 
   call(observer: qj.Subscriber<boolean>, source: any): any {
@@ -62,18 +56,14 @@ class EveryO<N, F, D> implements qt.Operator<N, boolean> {
   }
 }
 
-export class EveryR<N, F, D> extends qj.Subscriber<N, F, D> {
+export class EveryR<N> extends qj.Subscriber<N> {
   private index = 0;
 
   constructor(
-    tgt: qt.Observer<boolean, F, D>,
-    private predicate: (
-      value: N,
-      index: number,
-      source: qt.Source<N, F, D>
-    ) => boolean,
+    tgt: qt.Observer<boolean>,
+    private predicate: (value: N, index: number, source: qt.Source<N>) => boolean,
     private thisArg: any,
-    private source: qt.Source<N, F, D>
+    private source: qt.Source<N>
   ) {
     super(tgt);
     this.thisArg = thisArg || this;
@@ -95,81 +85,60 @@ export class EveryR<N, F, D> extends qj.Subscriber<N, F, D> {
     if (!result) this.reactDone(false);
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     this.reactDone(true);
   }
 }
 
 export function find<N, S extends N>(
-  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => value is S,
+  predicate: (n: N, index: number, source: qt.Source<N>) => value is S,
   thisArg?: any
 ): qt.Lifter<N, S | undefined>;
-export function find<N, F, D>(
-  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
+export function find<N>(
+  predicate: (n: N, index: number, source: qt.Source<N>) => boolean,
   thisArg?: any
 ): qt.Lifter<N, T | undefined>;
-export function find<N, F, D>(
-  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
+export function find<N>(
+  predicate: (n: N, index: number, source: qt.Source<N>) => boolean,
   thisArg?: any
 ): qt.Lifter<N, T | undefined> {
   if (typeof predicate !== 'function') {
     throw new TypeError('predicate is not a function');
   }
   return x =>
-    x.lift(new FindValueO(predicate, source, false, thisArg)) as qt.Source<
-      N | undefined
-    >;
+    x.lift(new FindValueO(predicate, source, false, thisArg)) as qt.Source<N | undefined>;
 }
 
-export function findIndex<N, F, D>(
-  predicate: (n: N, index: number, source: qt.Source<N, F, D>) => boolean,
+export function findIndex<N>(
+  predicate: (n: N, index: number, source: qt.Source<N>) => boolean,
   thisArg?: any
 ): qt.Lifter<N, number> {
   return x =>
-    x.lift(new FindValueO(predicate, source, true, thisArg)) as qt.Source<
-      any,
-      F,
-      D
-    >;
+    x.lift(new FindValueO(predicate, source, true, thisArg)) as qt.Source<any, F, D>;
 }
 
-export class FindValueO<N, F, D>
-  implements qt.Operator<N, N | number | undefined> {
+export class FindValueO<N> implements qt.Operator<N, N | number | undefined> {
   constructor(
-    private predicate: (
-      n: N,
-      index: number,
-      source: qt.Source<N, F, D>
-    ) => boolean,
-    private source: qt.Source<N, F, D>,
+    private predicate: (n: N, index: number, source: qt.Source<N>) => boolean,
+    private source: qt.Source<N>,
     private yieldIndex: boolean,
     private thisArg?: any
   ) {}
 
-  call(observer: qj.Subscriber<N, F, D>, source: any): any {
+  call(observer: qj.Subscriber<N>, source: any): any {
     return source.subscribe(
-      new FindValueR(
-        observer,
-        this.predicate,
-        this.source,
-        this.yieldIndex,
-        this.thisArg
-      )
+      new FindValueR(observer, this.predicate, this.source, this.yieldIndex, this.thisArg)
     );
   }
 }
 
-export class FindValueR<N, F, D> extends qj.Subscriber<N, F, D> {
+export class FindValueR<N> extends qj.Subscriber<N> {
   private index = 0;
 
   constructor(
-    tgt: qj.Subscriber<N, F, D>,
-    private predicate: (
-      value: N,
-      index: number,
-      source: qt.Source<N, F, D>
-    ) => boolean,
-    private source: qt.Source<N, F, D>,
+    tgt: qj.Subscriber<N>,
+    private predicate: (value: N, index: number, source: qt.Source<N>) => boolean,
+    private source: qt.Source<N>,
     private yieldIndex: boolean,
     private thisArg?: any
   ) {
@@ -179,7 +148,7 @@ export class FindValueR<N, F, D> extends qj.Subscriber<N, F, D> {
   private reactDone(d?: D) {
     const tgt = this.tgt;
     tgt.next(d);
-    tgt.done(d);
+    tgt.done();
     this.unsubscribe();
   }
 
@@ -194,12 +163,12 @@ export class FindValueR<N, F, D> extends qj.Subscriber<N, F, D> {
     }
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     this.reactDone(this.yieldIndex ? -1 : undefined);
   }
 }
 
-export function isEmpty<N, F, D>(): qt.Lifter<N, boolean> {
+export function isEmpty<N>(): qt.Lifter<N, boolean> {
   return x => x.lift(new IsEmptyO());
 }
 
@@ -209,8 +178,8 @@ class IsEmptyO implements qt.Operator<any, boolean> {
   }
 }
 
-export class IsEmptyR<N extends boolean, F, D> extends qj.Subscriber<N, F, D> {
-  constructor(tgt: qj.Subscriber<N, F, D>) {
+export class IsEmptyR<N extends boolean> extends qj.Subscriber<N> {
+  constructor(tgt: qj.Subscriber<N>) {
     super(tgt);
   }
 
@@ -224,7 +193,7 @@ export class IsEmptyR<N extends boolean, F, D> extends qj.Subscriber<N, F, D> {
     this.reactDone(false as N);
   }
 
-  protected _done(d?: D) {
+  protected _done() {
     this.reactDone(true as N);
   }
 }

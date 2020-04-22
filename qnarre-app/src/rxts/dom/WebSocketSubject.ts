@@ -156,7 +156,7 @@ export class WebSocketSubject<T> extends Anonymous<T> {
   // @ts-ignore: Property has no initializer and is not definitely assigned
   _output: Subject<T>;
 
-  private _socket: WebSocket | null = null;
+  private _socket: WebSocket = null;
 
   constructor(
     urlConfigOrSource: string | WebSocketSubjectConfig<T> | Observable<T>,
@@ -266,11 +266,9 @@ export class WebSocketSubject<T> extends Anonymous<T> {
     const {WebSocketCtor, protocol, url, binaryType} = this._config;
     const observer = this._output;
 
-    let socket: WebSocket | null = null;
+    let socket: WebSocket = null;
     try {
-      socket = protocol
-        ? new WebSocketCtor!(url, protocol)
-        : new WebSocketCtor!(url);
+      socket = protocol ? new WebSocketCtor!(url, protocol) : new WebSocketCtor!(url);
       this._socket = socket;
       if (binaryType) {
         this._socket.binaryType = binaryType;
@@ -320,9 +318,7 @@ export class WebSocketSubject<T> extends Anonymous<T> {
           if (e && e.code) {
             socket!.close(e.code, e.reason);
           } else {
-            observer.error(
-              new TypeError(WEBSOCKETSUBJECT_INVALID_ERROR_OBJECT)
-            );
+            observer.error(new TypeError(WEBSOCKETSUBJECT_INVALID_ERROR_OBJECT));
           }
           this._resetState();
         },

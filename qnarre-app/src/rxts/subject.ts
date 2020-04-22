@@ -12,7 +12,7 @@ export class Subscription implements qt.Subscription {
   protected parents?: Subscription[] | Subscription;
   private children?: qt.Subscription[];
 
-  constructor(private close?: qt.Cfun) {}
+  constructor(private close?: qt.Fun<void>) {}
 
   add(c?: qt.Closer) {
     if (!c) return Subscription.fake;
@@ -82,51 +82,54 @@ export class Subscription implements qt.Subscription {
 }
 
 function flatten(es: any[]) {
-  return es.reduce((a, e) => a.concat(e instanceof qu.UnsubscribeError ? e.errors : e), []);
+  return es.reduce(
+    (a, e) => a.concat(e instanceof qu.UnsubscribeError ? e.errors : e),
+    []
+  );
 }
 
 const fake = {
   closed: true,
-  next(_?: any) {},
-  fail(e?: any) {
+  next(_: any) {},
+  fail(e: any) {
     qu.delayedThrow(e);
   },
-  done(_?: any) {}
-} as qt.Observer<any, any, any>;
+  done() {}
+} as qt.Observer<any>;
 
-export class Subscriber<N, F, D> extends Subscription implements qt.Subscriber<N, F, D> {
+export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
   [Symbol.rxSubscriber]() {
     return this;
   }
   protected stopped = false;
-  protected tgt: Subscriber<N, F, D> | qt.Observer<N, F, D>;
+  protected tgt: Subscriber<N> | qt.Observer<N>;
 
-  constructor(tgt?: qt.Target<N, F, D>) {
+  constructor(tgt?: qt.Target<N>) {
     super();
     if (!tgt) this.tgt = fake;
     else {
       if (tgt instanceof Subscriber) {
         this.tgt = tgt;
         tgt.add(this);
-      } else this.tgt = new Proxy<N, F, D>(this, tgt);
+      } else this.tgt = new Proxy<N>(this, tgt);
     }
   }
 
-  next(n?: N) {
+  next(n: N) {
     if (!this.stopped) this._next(n);
   }
 
-  fail(f?: F) {
+  fail(e: any) {
     if (!this.stopped) {
       this.stopped = true;
-      this._fail(f);
+      this._fail(e);
     }
   }
 
-  done(d?: D) {
+  done() {
     if (!this.stopped) {
       this.stopped = true;
-      this._done(d);
+      this._done();
     }
   }
 
@@ -137,17 +140,17 @@ export class Subscriber<N, F, D> extends Subscription implements qt.Subscriber<N
     }
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.tgt.next(n);
   }
 
-  protected _fail(f?: F) {
-    this.tgt.fail(f);
+  protected _fail(e: any) {
+    this.tgt.fail(e);
     this.unsubscribe();
   }
 
-  protected _done(d?: D) {
-    this.tgt.done(d);
+  protected _done() {
+    this.tgt.done();
     this.unsubscribe();
   }
 
@@ -161,48 +164,47 @@ export class Subscriber<N, F, D> extends Subscription implements qt.Subscriber<N
   }
 }
 
-export function createSubscriber<N, F, D>(tgt?: qt.Target<N, F, D>) {
-  return new Subscriber<N, F, D>(tgt);
-}
-
-export function toSubscriber<N, F, D>(
-  t?: qt.Target<N, F, D> | qt.Ofun<N>,
-  fail?: qt.Ofun<F>,
-  done?: qt.Ofun<D>
-): Subscriber<N, F, D> {
+export function toSubscriber<N>(
+  t?: qt.Target<N> | qt.Fun<N>,
+  fail?: qt.Fun<any>,
+  done?: qt.Fun<void>
+): Subscriber<N> {
   if (t instanceof Subscriber) return t;
   if (typeof t === 'function') t = {next: t, fail, done};
   else {
-    const s = t ? (t as Subscriber<N, F, D>)[Symbol.rxSubscriber] : undefined;
+    const s = t ? (t as Subscriber<N>)[Symbol.rxSubscriber] : undefined;
     if (s) return s();
   }
   if (!t && !fail && !done) return new Subscriber(fake);
   return new Subscriber(t);
 }
 
-export class Proxy<N, F, D> extends Subscriber<N, F, D> {
+export class Proxy<N> extends Subscriber<N> {
   private ctx?: any;
 
-  constructor(private parent: Subscriber<N, F, D> | undefined, private del: qt.Target<N, F, D>) {
+  constructor(
+    private parent: Subscriber<N> | undefined,
+    private del: qt.Target<N>
+  ) {
     super();
     if (this.del !== fake) this.ctx = Object.create(this.del);
   }
 
-  next(n?: N) {
+  next(n: N) {
     if (!this.stopped) this._call(this.del.next, n);
   }
 
-  fail(f?: F) {
+  fail(e: any) {
     if (!this.stopped) {
-      if (this.del.fail) this._call(this.del.fail, f);
-      else qu.delayedThrow(f);
+      if (this.del.fail) this._call(this.del.fail, e);
+      else qu.delayedThrow(e);
       this.unsubscribe();
     }
   }
 
-  done(d?: D) {
+  done() {
     if (!this.stopped) {
-      this._call(this.del.done, d);
+      this._call(this.del.done);
       this.unsubscribe();
     }
   }
@@ -213,7 +215,7 @@ export class Proxy<N, F, D> extends Subscriber<N, F, D> {
     p?.unsubscribe();
   }
 
-  private _call(f?: Function, x?: N | F | D) {
+  private _call(f?: Function, x?: N | any) {
     try {
       f?.call(this.ctx, x);
     } catch (e) {
@@ -223,44 +225,44 @@ export class Proxy<N, F, D> extends Subscriber<N, F, D> {
   }
 }
 
-export class Reactor<N, R, F, D> extends Subscriber<R, F, D> {
-  reactNext(_r?: R, n?: N, _ri?: number, _i?: number, _?: Actor<N, R, F, D>) {
+export class Reactor<N, R> extends Subscriber<R> {
+  reactNext(_r: R, n: N, _ri?: number, _i?: number, _?: Actor<N, R>) {
     this.tgt.next((n as unknown) as R);
   }
 
-  reactFail(f?: F, _?: Actor<N, R, F, D>) {
-    this.tgt.fail(f);
+  reactFail(e: any, _?: Actor<N, R>) {
+    this.tgt.fail(e);
   }
 
-  reactDone(d?: D, _?: Actor<N, R, F, D>) {
-    this.tgt.done(d);
+  reactDone(_?: Actor<N, R>) {
+    this.tgt.done();
   }
 }
 
-export class Actor<N, R, F, D> extends Subscriber<N, F, D> {
+export class Actor<N, R> extends Subscriber<N> {
   private idx = 0;
 
-  constructor(private del: Reactor<N, R, F, D>, public r?: R, public ri?: number) {
+  constructor(private del: Reactor<N, R>, public r: R, public ri?: number) {
     super();
   }
 
-  protected _next(n?: N) {
+  protected _next(n: N) {
     this.del.reactNext(this.r, n, this.ri, this.idx++, this);
   }
 
-  protected _fail(f?: F) {
-    this.del.reactFail(f, this);
+  protected _fail(e: any) {
+    this.del.reactFail(e, this);
     this.unsubscribe();
   }
 
-  protected _done(d?: D) {
-    this.del.reactDone(d, this);
+  protected _done() {
+    this.del.reactDone(this);
     this.unsubscribe();
   }
 }
 
-export class SSubject<N, F, D> extends Subscription {
-  constructor(public subj: Subject<N, F, D> | undefined, public tgt: qt.Observer<N, F, D>) {
+export class SSubject<N> extends Subscription {
+  constructor(public subj: Subject<N> | undefined, public tgt: qt.Observer<N>) {
     super();
   }
 
@@ -276,32 +278,32 @@ export class SSubject<N, F, D> extends Subscription {
   }
 }
 
-export class RSubject<N, F, D> extends Subscriber<N, F, D> {
-  constructor(tgt: Subject<N, F, D>) {
+export class RSubject<N> extends Subscriber<N> {
+  constructor(tgt: Subject<N>) {
     super(tgt);
   }
 }
 
-export abstract class Subject<N, F, D> extends qs.Source<N, F, D> implements qt.Subject<N, F, D> {
-  [Symbol.rxSubscriber](): RSubject<N, F, D> {
+export class Subject<N> extends qs.Source<N> implements qt.Subject<N> {
+  [Symbol.rxSubscriber](): RSubject<N> {
     return new RSubject(this);
   }
   closed = false;
   stopped = false;
   failed = false;
-  thrown?: F;
-  tgts = [] as qt.Observer<N, F, D>[];
+  thrown?: any;
+  tgts = [] as qt.Observer<N>[];
 
   constructor(
-    t?: qt.Observer<N, F, D>,
-    public src?: qs.Source<N, F, D>,
-    s?: (this: qs.Source<N, F, D>, _: qt.Subscriber<N, F, D>) => qt.Subscription
+    t?: qt.Observer<N>,
+    public src?: qs.Source<N>,
+    s?: (this: qs.Source<N>, _: qt.Subscriber<N>) => qt.Subscription
   ) {
     super(s);
     if (t) this.tgts.push(t);
   }
 
-  _subscribe(s: qt.Subscriber<N, F, D>): qt.Subscription {
+  _subscribe(s: qt.Subscriber<N>): qt.Subscription {
     if (this.src) return this.src.subscribe(s);
     if (this.closed) throw new qu.UnsubscribedError();
     if (this.failed) {
@@ -315,35 +317,35 @@ export abstract class Subject<N, F, D> extends qs.Source<N, F, D> implements qt.
     return new SSubject(this, s);
   }
 
-  _trySubscribe(s: qt.Subscriber<N, F, D>) {
+  _trySubscribe(s: qt.Subscriber<N>) {
     if (this.closed) throw new qu.UnsubscribedError();
     return super._trySubscribe(s);
   }
 
-  lift<R>(o?: qt.Operator<N, R, F, D>): qt.Source<R, F, D> {
-    const s = this.createSubject<R>(this, this);
+  lift<R>(o?: qt.Operator<N, R>): qt.Source<R> {
+    const s = new Subject<R>(this, this);
     s.oper = o;
     return s;
   }
 
-  next(n?: N) {
+  next(n: N) {
     if (this.closed) throw new qu.UnsubscribedError();
     if (!this.stopped) this.tgts.slice().forEach(s => s.next(n));
   }
 
-  fail(f?: F) {
+  fail(e: any) {
     if (this.closed) throw new qu.UnsubscribedError();
     this.failed = true;
-    this.thrown = f;
+    this.thrown = e;
     this.stopped = true;
-    this.tgts.slice().forEach(s => s.fail(f));
+    this.tgts.slice().forEach(s => s.fail(e));
     this.tgts = [];
   }
 
-  done(d?: D) {
+  done() {
     if (this.closed) throw new qu.UnsubscribedError();
     this.stopped = true;
-    this.tgts.slice().forEach(s => s.done(d));
+    this.tgts.slice().forEach(s => s.done());
     this.tgts = [];
   }
 
@@ -354,53 +356,53 @@ export abstract class Subject<N, F, D> extends qs.Source<N, F, D> implements qt.
   }
 
   asSource() {
-    const s = this.createSource<N>();
-    s.src = this;
+    const s = new Source<N>();
+    s.orig = this;
     return s;
   }
 }
 
-export abstract class Async<N, F, D> extends Subject<N, F, D> {
+export class Async<N> extends Subject<N> {
   private ready = false;
   private ended = false;
   private n?: N;
 
-  _subscribe(s: qt.Subscriber<N, F, D>) {
+  _subscribe(s: qt.Subscriber<N>) {
     if (this.failed) {
       s.fail(this.thrown);
       return Subscription.fake;
     } else if (this.ready && this.ended) {
-      s.next(this.n);
+      s.next(this.n!);
       s.done();
       return Subscription.fake;
     }
     return super._subscribe(s);
   }
 
-  next(n?: N) {
+  next(n: N) {
     if (!this.ended) {
       this.n = n;
       this.ready = true;
     }
   }
 
-  fail(f?: F) {
-    if (!this.ended) super.fail(f);
+  fail(e: any) {
+    if (!this.ended) super.fail(e);
   }
 
-  done(d?: D) {
+  done() {
     this.ended = true;
-    if (this.ready) super.next(this.n);
-    super.done(d);
+    if (this.ready) super.next(this.n!);
+    super.done();
   }
 }
 
-export abstract class Behavior<N, F, D> extends Subject<N, F, D> {
-  constructor(public n?: N) {
+export class Behavior<N> extends Subject<N> {
+  constructor(public n: N) {
     super();
   }
 
-  _subscribe(s: qt.Subscriber<N, F, D>) {
+  _subscribe(s: qt.Subscriber<N>) {
     const t = super._subscribe(s);
     if (!t.closed) s.next(this.n);
     return t;
@@ -412,7 +414,7 @@ export abstract class Behavior<N, F, D> extends Subject<N, F, D> {
     return this.n;
   }
 
-  next(n?: N) {
+  next(n: N) {
     this.n = n;
     super.next(n);
   }
@@ -420,22 +422,26 @@ export abstract class Behavior<N, F, D> extends Subject<N, F, D> {
 
 interface Event<N> {
   time: number;
-  n?: N;
+  n: N;
 }
 
-export abstract class Replay<N, F, D> extends Subject<N, F, D> {
+export abstract class Replay<N> extends Subject<N> {
   private size: number;
   private time: number;
-  private events = [] as (N | undefined)[];
+  private events = [] as N[];
 
-  constructor(size = Number.POSITIVE_INFINITY, time = Number.POSITIVE_INFINITY, private stamper: qt.Stamper = Date) {
+  constructor(
+    size = Number.POSITIVE_INFINITY,
+    time = Number.POSITIVE_INFINITY,
+    private stamper: qt.Stamper = Date
+  ) {
     super();
     this.size = size < 1 ? 1 : size;
     this.time = time < 1 ? 1 : time;
     if (time !== Number.POSITIVE_INFINITY) this.next = this.nextFiltered;
   }
 
-  _subscribe(s: qt.Subscriber<N, F, D>): Subscription {
+  _subscribe(s: qt.Subscriber<N>): Subscription {
     if (this.closed) throw new qu.UnsubscribedError();
     let t: Subscription;
     if (this.stopped || this.failed) t = Subscription.fake;
@@ -457,14 +463,14 @@ export abstract class Replay<N, F, D> extends Subject<N, F, D> {
     return t;
   }
 
-  next(n?: N) {
+  next(n: N) {
     const es = this.events;
     es.push(n);
     if (es.length > this.size) es.shift();
     super.next(n);
   }
 
-  private nextFiltered(n?: N) {
+  private nextFiltered(n: N) {
     this.filterEvents({time: this.stamper.now(), n});
     super.next(n);
   }
