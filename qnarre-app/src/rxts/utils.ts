@@ -54,6 +54,24 @@ export function isScheduler(x: any): x is qt.Scheduler {
   return !!x && typeof x.schedule === 'function';
 }
 
+export function isNodeEventEmitter(o: any): o is qt.NodeEventEmitter {
+  return (
+    o && typeof o.addListener === 'function' && typeof o.removeListener === 'function'
+  );
+}
+
+export function isJQueryEventEmitter(o: any): o is qt.JQueryEventEmitter {
+  return o && typeof o.on === 'function' && typeof o.off === 'function';
+}
+
+export function isEventTarget(o: any): o is qt.HasAddRemove<any> {
+  return (
+    o &&
+    typeof o.addEventListener === 'function' &&
+    typeof o.removeEventListener === 'function'
+  );
+}
+
 export function noop() {}
 
 export function not(pred: Function, thisArg: any): Function {

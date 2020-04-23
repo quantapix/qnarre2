@@ -711,11 +711,6 @@ export class ExpandR<N, R> extends qj.Reactor<N, R> {
     if (concurrent < Number.POSITIVE_INFINITY) this.buffer = [];
   }
 
-  private static dispatch<N, M>(arg: DispatchArg<N, M>) {
-    const {subscriber, result, value, index} = arg;
-    subscriber.subscribeToProjection(result, value, index);
-  }
-
   protected _next(n: N) {
     const tgt = this.tgt;
     if (tgt.closed) {
@@ -723,6 +718,10 @@ export class ExpandR<N, R> extends qj.Reactor<N, R> {
       return;
     }
     const index = this.index++;
+    function dispatch(arg: DispatchArg<N, M>) {
+      const {subscriber, result, value, index} = arg;
+      subscriber.subscribeToProjection(result, value, index);
+    }
     if (this.active < this.concurrent) {
       tgt.next(n);
       try {
@@ -738,9 +737,7 @@ export class ExpandR<N, R> extends qj.Reactor<N, R> {
             index
           };
           const tgt = this.tgt as qj.Subscription;
-          tgt.add(
-            this.scheduler.schedule<DispatchArg<N, M>>(Expand.dispatch as any, 0, state)
-          );
+          tgt.add(this.scheduler.schedule<DispatchArg<N, M>>(dispatch as any, state));
         }
       } catch (e) {
         tgt.fail(e);
@@ -1225,6 +1222,29 @@ export class MergeScanR<N, R> extends qj.Reactor<N, R> {
 }
 
 export function pairs<T>(obj: Object, h?: qh.Scheduler): qs.Source<[string, T]> {
+  function dispatch(
+    this: qh.Action<any>,
+    state: {
+      keys: string[];
+      index: number;
+      subscriber: qj.Subscriber<[string, T]>;
+      subscription: qj.Subscription;
+      obj: Object;
+    }
+  ) {
+    const {keys, index, subscriber, subscription, obj} = state;
+    if (!subscriber.closed) {
+      if (index < keys.length) {
+        const key = keys[index];
+        subscriber.next([key, (obj as any)[key]]);
+        subscription.add(
+          this.schedule({keys, index: index + 1, subscriber, subscription, obj})
+        );
+      } else {
+        subscriber.done();
+      }
+    }
+  }
   if (!h) {
     return new qs.Source<[string, T]>(r => {
       const keys = Object.keys(obj);
@@ -1247,7 +1267,7 @@ export function pairs<T>(obj: Object, h?: qh.Scheduler): qs.Source<[string, T]> 
           r: qj.Subscriber<[string, T]>;
           subscription: qj.Subscription;
           obj: Object;
-        }>(dispatch as any, 0, {keys, index: 0, r, subscription, obj})
+        }>(dispatch as any, {keys, index: 0, r, subscription, obj})
       );
       return subscription;
     });

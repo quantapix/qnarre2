@@ -499,12 +499,6 @@ class WithLatestFromR<T, R> extends qj.Reactor<N, M> {
   }
 }
 
-function dispatchNote<N>(this: qt.Action<any>, state: any) {
-  let {subscriber, period} = state;
-  subscriber.reactNext();
-  this.schedule(state, period);
-}
-
 class GroupDurationSubscriber<K, T> extends qj.Subscriber<T> {
   constructor(
     private key: K,

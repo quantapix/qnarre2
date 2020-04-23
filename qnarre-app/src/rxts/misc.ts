@@ -36,26 +36,6 @@ export class DelayR<N> extends qj.Subscriber<N> {
   private active = false;
   private errored = false;
 
-  private static dispatch<N>(this: qt.Action<DelayState<N>>, state: DelayState<N>): void {
-    const source = state.source;
-    const q = source.queue;
-    const scheduler = state.scheduler;
-    const tgt = state.tgt;
-    while (q.length > 0 && q[0].time - scheduler.now() <= 0) {
-      q.shift()!.notification.observe(tgt);
-    }
-    if (q.length > 0) {
-      const delay = Math.max(0, q[0].time - scheduler.now());
-      this.schedule(state, delay);
-    } else if (source.stopped) {
-      source.tgt.done();
-      source.active = false;
-    } else {
-      this.unsubscribe();
-      source.active = false;
-    }
-  }
-
   constructor(
     tgt: qt.Subscriber<N>,
     private delay: number,
@@ -67,12 +47,35 @@ export class DelayR<N> extends qj.Subscriber<N> {
   private _schedule(s: qt.Scheduler): void {
     this.active = true;
     const tgt = this.tgt as qt.Subscription;
+    function dispatch(this: qt.Action<DelayState<N>>, state: DelayState<N>) {
+      const source = state.source;
+      const q = source.queue;
+      const scheduler = state.scheduler;
+      const tgt = state.tgt;
+      while (q.length > 0 && q[0].time - scheduler.now() <= 0) {
+        q.shift()!.notification.observe(tgt);
+      }
+      if (q.length > 0) {
+        const delay = Math.max(0, q[0].time - scheduler.now());
+        this.schedule(state, delay);
+      } else if (source.stopped) {
+        source.tgt.done();
+        source.active = false;
+      } else {
+        this.unsubscribe();
+        source.active = false;
+      }
+    }
     tgt.add(
-      s.schedule<DelayState<N>>(Delay.dispatch as any, this.delay, {
-        source: this,
-        tgt: this.tgt,
-        scheduler: s
-      })
+      s.schedule<DelayState<N>>(
+        dispatch as any,
+        {
+          source: this,
+          tgt: this.tgt,
+          scheduler: s
+        },
+        this.delay
+      )
     );
   }
 
@@ -308,23 +311,22 @@ export class ObserveOnO<N> implements qt.Operator<N, N> {
 }
 
 export class ObserveOnR<N> extends qj.Subscriber<N> {
-  static dispatch(this: qt.Action<ObserveOnMessage>, arg: ObserveOnMessage) {
-    const {notification, tgt} = arg;
-    notification.observe(tgt);
-    this.unsubscribe();
-  }
-
   constructor(tgt: qt.Subscriber<N>, private scheduler: qt.Scheduler, private delay = 0) {
     super(tgt);
   }
 
   private scheduleMessage(n: Note<any>) {
     const tgt = this.tgt as qt.Subscription;
+    function dispatch(this: qt.Action<ObserveOnMessage>, arg: ObserveOnMessage) {
+      const {notification, tgt} = arg;
+      notification.observe(tgt);
+      this.unsubscribe();
+    }
     tgt.add(
       this.scheduler.schedule(
-        ObserveOn.dispatch as any,
-        this.delay,
-        new ObserveOnMessage(n, this.tgt)
+        dispatch as any,
+        new ObserveOnMessage(n, this.tgt),
+        this.delay
       )
     );
   }
@@ -480,16 +482,16 @@ export function timeout<N>(
   return timeoutWith(due, throwError(new TimeoutError()), scheduler);
 }
 
-export function timeoutWith<T, R>(
+export function timeoutWith<N, R>(
   due: number | Date,
   withObservable: qt.Input<R>,
   scheduler?: qt.Scheduler
-): qt.Lifter<T, T | R>;
-export function timeoutWith<T, R>(
+): qt.Lifter<N, N | R>;
+export function timeoutWith<N, R>(
   due: number | Date,
   withObservable: qt.Input<R>,
   scheduler: qt.Scheduler = qh.async
-): qt.Lifter<T, T | R> {
+): qt.Lifter<N, N | R> {
   return x => {
     let absoluteTimeout = isDate(due);
     let waitFor = absoluteTimeout ? +due - scheduler.now() : Math.abs(<number>due);
@@ -518,38 +520,33 @@ class TimeoutWithO<N> implements qt.Operator<N, N> {
   }
 }
 
-export class TimeoutWithR<T, R> extends qj.Reactor<N, M> {
-  private action: qt.Action<TimeoutWith<T, R>> = null;
+export class TimeoutWithR<N, R> extends qj.Reactor<N, R> {
+  private action?: qt.Action<TimeoutWithR<N, R>>;
 
   constructor(
     tgt: qt.Subscriber<N>,
     private absoluteTimeout: boolean,
     private waitFor: number,
     private withObservable: qt.Input<any>,
-    private scheduler: qt.Scheduler
+    private h: qt.Scheduler
   ) {
     super(tgt);
     this.scheduleTimeout();
   }
 
-  private static dispatchTimeout<T, R>(subscriber: TimeoutWith<T, R>): void {
-    const {withObservable} = subscriber;
-    (<any>subscriber)._recycle();
-    subscriber.add(subscribeToResult(r, withObservable));
-  }
-
   private scheduleTimeout() {
     const {action} = this;
     if (action) {
-      this.action = <Action<TimeoutWith<T, R>>>action.schedule(this, this.waitFor);
+      this.action = <Action<TimeoutWithR<N, R>>>action.schedule(this, this.waitFor);
     } else {
+      function dispatch(r: TimeoutWithR<N, R>) {
+        const {withObservable} = r;
+        (<any>r)._recycle();
+        r.add(qu.subscribeToResult(r, withObservable));
+      }
       this.add(
-        (this.action = <Action<TimeoutWith<T, R>>>(
-          this.scheduler.schedule<TimeoutWith<T, R>>(
-            TimeoutWith.dispatchTimeout as any,
-            this.waitFor,
-            this
-          )
+        (this.action = <Action<TimeoutWithR<N, R>>>(
+          this.h.schedule<TimeoutWithR<N, R>>(dispatch as any, this, this.waitFor)
         ))
       );
     }
@@ -561,13 +558,12 @@ export class TimeoutWithR<T, R> extends qj.Reactor<N, M> {
   }
 
   _unsubscribe() {
-    this.action = null;
-    this.scheduler = null!;
+    this.action = undefined;
     this.withObservable = null!;
   }
 }
 
-function toArrayReducer<N>(arr: T[], item: T, index: number): T[] {
+function toArrayReducer<N>(arr: N[], item: N, index: number): N[] {
   if (index === 0) return [item];
   arr.push(item);
   return arr;
@@ -581,28 +577,26 @@ export function using<T>(
   resourceFactory: () => qt.Unsubscriber | void,
   observableFactory: (resource: qt.Unsubscriber | void) => qt.Input<T> | void
 ): qs.Source<T> {
-  return new qs.Source<T>(subscriber => {
+  return new qs.Source<T>(r => {
     let resource: qt.Unsubscriber | void;
     try {
       resource = resourceFactory();
-    } catch (err) {
-      subscriber.error(err);
-      return undefined;
+    } catch (e) {
+      r.fail(e);
+      return;
     }
     let result: qt.Input<T> | void;
     try {
       result = observableFactory(resource);
-    } catch (err) {
-      subscriber.error(err);
-      return undefined;
+    } catch (e) {
+      r.fail(e);
+      return;
     }
     const source = result ? from(result) : EMPTY;
     const subscription = source.subscribe(r);
     return () => {
       subscription.unsubscribe();
-      if (resource) {
-        resource.unsubscribe();
-      }
+      if (resource) resource.unsubscribe();
     };
   });
 }

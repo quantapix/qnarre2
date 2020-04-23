@@ -83,6 +83,8 @@ export class CombineLatestO<T, R> implements qt.Operator<T, R> {
   }
 }
 
+const NONE = {};
+
 export class CombineLatestR<T, R> extends qj.Reactor<T, R> {
   private active: number = 0;
   private values: any[] = [];

@@ -150,7 +150,12 @@ describe('bindCB', () => {
       cb(a, b, c);
     };
 
-    const fa3cb4 = (e: E, f: F, g: G, cb: (res1: A, res2: B, res3: C, res4: D) => any) => {
+    const fa3cb4 = (
+      e: E,
+      f: F,
+      g: G,
+      cb: (res1: A, res2: B, res3: C, res4: D) => any
+    ) => {
       cb(a, b, c, d);
     };
 
@@ -192,7 +197,13 @@ describe('bindCB', () => {
       cb(a, b, c);
     };
 
-    const fa4cb4 = (e: E, f: F, g: G, a: A, cb: (res1: A, res2: B, res3: C, res4: D) => any) => {
+    const fa4cb4 = (
+      e: E,
+      f: F,
+      g: G,
+      a: A,
+      cb: (res1: A, res2: B, res3: C, res4: D) => any
+    ) => {
       cb(a, b, c, d);
     };
 
@@ -230,11 +241,25 @@ describe('bindCB', () => {
       cb(a, b);
     };
 
-    const fa5cb3 = (e: E, f: F, g: G, a: A, b: B, cb: (res1: A, res2: B, res3: C) => any) => {
+    const fa5cb3 = (
+      e: E,
+      f: F,
+      g: G,
+      a: A,
+      b: B,
+      cb: (res1: A, res2: B, res3: C) => any
+    ) => {
       cb(a, b, c);
     };
 
-    const fa5cb4 = (e: E, f: F, g: G, a: A, b: B, cb: (res1: A, res2: B, res3: C, res4: D) => any) => {
+    const fa5cb4 = (
+      e: E,
+      f: F,
+      g: G,
+      a: A,
+      b: B,
+      cb: (res1: A, res2: B, res3: C, res4: D) => any
+    ) => {
       cb(a, b, c, d);
     };
 
@@ -471,7 +496,10 @@ describe('bindCB', () => {
     });
 
     it('should pass multiple inner arguments as an array', () => {
-      function callback(datum: number, cb: (a: number, b: number, c: number, d: number) => void) {
+      function callback(
+        datum: number,
+        cb: (a: number, b: number, c: number, d: number) => void
+      ) {
         cb(datum, 1, 2, 3);
       }
       const boundCallback = bindCB(callback, rxTestScheduler);
@@ -691,7 +719,11 @@ describe('bindNodeCB', () => {
           cb(null, datum);
         });
       }
-      const subscription = bindNodeCB(callback)(42).subscribe(nextSpy, throwSpy, completeSpy);
+      const subscription = bindNodeCB(callback)(42).subscribe(
+        nextSpy,
+        throwSpy,
+        completeSpy
+      );
       subscription.unsubscribe();
 
       setTimeout(() => {
@@ -820,7 +852,10 @@ describe('bindNodeCB', () => {
   });
 
   it('should pass multiple inner arguments as an array', () => {
-    function callback(datum: number, cb: (err: any, a: number, b: number, c: number, d: number) => void) {
+    function callback(
+      datum: number,
+      cb: (err: any, a: number, b: number, c: number, d: number) => void
+    ) {
       cb(null, datum, 1, 2, 3);
     }
     const boundCallback = bindNodeCB(callback, rxTestScheduler);
@@ -896,11 +931,14 @@ describe('bindNodeCB', () => {
 });
 
 describe('defer', () => {
-  asDiagram('defer(() => Observable.of(a, b, c))')('should defer the creation of a simple Observable', () => {
-    const expected = '-a--b--c--|';
-    const e1 = defer(() => cold('-a--b--c--|'));
-    expectSource(e1).toBe(expected);
-  });
+  asDiagram('defer(() => Observable.of(a, b, c))')(
+    'should defer the creation of a simple Observable',
+    () => {
+      const expected = '-a--b--c--|';
+      const e1 = defer(() => cold('-a--b--c--|'));
+      expectSource(e1).toBe(expected);
+    }
+  );
   it('should enforce function parameter', () => {
     const a = defer(); // $ExpectError
   });
@@ -1316,18 +1354,23 @@ describe('from', () => {
 });
 
 describe('fromEvent', () => {
-  asDiagram("fromEvent(element, 'click')")('should create an observable of click on the element', () => {
-    const target = {
-      addEventListener: (eventType: any, listener: any) => {
-        timer(50, 20, rxTestScheduler).pipe(mapTo('ev'), take(2), concat(NEVER)).subscribe(listener);
-      },
-      removeEventListener: (): void => void 0,
-      dispatchEvent: (): void => void 0
-    };
-    const e1 = fromEvent(target as any, 'click');
-    const expected = '-----x-x---';
-    expectSource(e1).toBe(expected, {x: 'ev'});
-  });
+  asDiagram("fromEvent(element, 'click')")(
+    'should create an observable of click on the element',
+    () => {
+      const target = {
+        addEventListener: (eventType: any, listener: any) => {
+          timer(50, 20, rxTestScheduler)
+            .pipe(mapTo('ev'), take(2), concat(NEVER))
+            .subscribe(listener);
+        },
+        removeEventListener: (): void => void 0,
+        dispatchEvent: (): void => void 0
+      };
+      const e1 = fromEvent(target as any, 'click');
+      const expected = '-----x-x---';
+      expectSource(e1).toBe(expected, {x: 'ev'});
+    }
+  );
 
   it('should setup an event observable on objects with "on" and "off" ', () => {
     let onEventName;
@@ -1365,11 +1408,19 @@ describe('fromEvent', () => {
     let offHandler;
 
     const obj = {
-      addEventListener: (a: string, b: EventListenerOrEventListenerObject, useCapture?: boolean) => {
+      addEventListener: (
+        a: string,
+        b: EventListenerOrEventListenerObject,
+        useCapture?: boolean
+      ) => {
         onEventName = a;
         onHandler = b;
       },
-      removeEventListener: (a: string, b: EventListenerOrEventListenerObject, useCapture?: boolean) => {
+      removeEventListener: (
+        a: string,
+        b: EventListenerOrEventListenerObject,
+        useCapture?: boolean
+      ) => {
         offEventName = a;
         offHandler = b;
       }
@@ -1487,7 +1538,9 @@ describe('fromEvent', () => {
 
     fromEvent(obj as any, 'click').subscribe({
       error(err: any) {
-        expect(err).to.exist.and.be.instanceof(Error).and.have.property('message', 'Invalid event target');
+        expect(err)
+          .to.exist.and.be.instanceof(Error)
+          .and.have.property('message', 'Invalid event target');
       }
     });
   });
@@ -1501,7 +1554,11 @@ describe('fromEvent', () => {
       addEventListener: (a: string, b: EventListenerOrEventListenerObject, c?: any) => {
         onOptions = c;
       },
-      removeEventListener: (a: string, b: EventListenerOrEventListenerObject, c?: any) => {
+      removeEventListener: (
+        a: string,
+        b: EventListenerOrEventListenerObject,
+        c?: any
+      ) => {
         offOptions = c;
       }
     };
@@ -1722,14 +1779,14 @@ describe('fromEvent', () => {
 
   type('should support node style event emitters interfaces', () => {
     /* tslint:disable:no-unused-variable */
-    let a: NodeStyleEventEmitter;
+    let a: NodeEventEmitter;
     let b: Observable<any> = fromEvent(a!, 'mock');
     /* tslint:enable:no-unused-variable */
   });
 
   type('should support node compatible event emitters interfaces', () => {
     /* tslint:disable:no-unused-variable */
-    let a: NodeCompatibleEventEmitter;
+    let a: CompatEventEmitter;
     let b: Observable<any> = fromEvent(a!, 'mock');
     /* tslint:enable:no-unused-variable */
   });
@@ -1751,7 +1808,11 @@ describe('fromEvent', () => {
       context: any;
     }
     interface ReactNativeEventEmitterListener {
-      addListener(eventType: string, listener: (...args: any[]) => any, context?: any): EmitterSubscription;
+      addListener(
+        eventType: string,
+        listener: (...args: any[]) => any,
+        context?: any
+      ): EmitterSubscription;
     }
     interface ReactNativeEventEmitter extends ReactNativeEventEmitterListener {
       removeListener(eventType: string, listener: (...args: any[]) => any): void;
@@ -1763,14 +1824,19 @@ describe('fromEvent', () => {
 });
 
 describe('fromEventPattern', () => {
-  asDiagram('fromEventPattern(addHandler, removeHandler)')('should create an observable from the handler API', () => {
-    function addHandler(h: any) {
-      timer(50, 20, rxTestScheduler).pipe(mapTo('ev'), take(2), concat(NEVER)).subscribe(h);
+  asDiagram('fromEventPattern(addHandler, removeHandler)')(
+    'should create an observable from the handler API',
+    () => {
+      function addHandler(h: any) {
+        timer(50, 20, rxTestScheduler)
+          .pipe(mapTo('ev'), take(2), concat(NEVER))
+          .subscribe(h);
+      }
+      const e1 = fromEventPattern(addHandler);
+      const expected = '-----x-x---';
+      expectSource(e1).toBe(expected, {x: 'ev'});
     }
-    const e1 = fromEventPattern(addHandler);
-    const expected = '-----x-x---';
-    expectSource(e1).toBe(expected, {x: 'ev'});
-  });
+  );
 
   it('should call addHandler on subscription', () => {
     const addHandler = sinon.spy();
@@ -1892,38 +1958,47 @@ describe('fromEventPattern', () => {
 });
 
 describe('generate', () => {
-  asDiagram('generate(1, x => false, x => x + 1)')('should complete if condition does not meet', () => {
-    const source = generate(
-      1,
-      x => false,
-      x => x + 1
-    );
-    const expected = '|';
+  asDiagram('generate(1, x => false, x => x + 1)')(
+    'should complete if condition does not meet',
+    () => {
+      const source = generate(
+        1,
+        x => false,
+        x => x + 1
+      );
+      const expected = '|';
 
-    expectSource(source).toBe(expected);
-  });
+      expectSource(source).toBe(expected);
+    }
+  );
 
-  asDiagram('generate(1, x => x == 1, x => x + 1)')('should produce first value immediately', () => {
-    const source = generate(
-      1,
-      x => x == 1,
-      x => x + 1
-    );
-    const expected = '(1|)';
+  asDiagram('generate(1, x => x == 1, x => x + 1)')(
+    'should produce first value immediately',
+    () => {
+      const source = generate(
+        1,
+        x => x == 1,
+        x => x + 1
+      );
+      const expected = '(1|)';
 
-    expectSource(source).toBe(expected, {'1': 1});
-  });
+      expectSource(source).toBe(expected, {'1': 1});
+    }
+  );
 
-  asDiagram('generate(1, x => x < 3, x => x + 1)')('should produce all values synchronously', () => {
-    const source = generate(
-      1,
-      x => x < 3,
-      x => x + 1
-    );
-    const expected = '(12|)';
+  asDiagram('generate(1, x => x < 3, x => x + 1)')(
+    'should produce all values synchronously',
+    () => {
+      const source = generate(
+        1,
+        x => x < 3,
+        x => x + 1
+      );
+      const expected = '(12|)';
 
-    expectSource(source).toBe(expected, {'1': 1, '2': 2});
-  });
+      expectSource(source).toBe(expected, {'1': 1, '2': 2});
+    }
+  );
 
   it('should use result selector', () => {
     const source = generate(
@@ -2237,7 +2312,8 @@ describe('interval', () => {
   });
 
   it('should set up an interval', () => {
-    const expected = '----------0---------1---------2---------3---------4---------5---------6-----';
+    const expected =
+      '----------0---------1---------2---------3---------4---------5---------6-----';
     expectSource(interval(100, rxTestScheduler)).toBe(expected, [0, 1, 2, 3, 4, 5, 6]);
   });
 
@@ -2547,7 +2623,11 @@ describe('of', () => {
   });
 
   it('should handle many Observable as the given values', () => {
-    const source = of(of('a', 'b', 'c', rxTestScheduler), of('d', 'e', 'f', rxTestScheduler), rxTestScheduler);
+    const source = of(
+      of('a', 'b', 'c', rxTestScheduler),
+      of('d', 'e', 'f', rxTestScheduler),
+      rxTestScheduler
+    );
 
     const result = source.pipe(concatAll());
     expectSource(result).toBe('(abcdef|)');
@@ -2591,7 +2671,9 @@ describe('range', () => {
   });
 
   it('should work for two subscribers', () => {
-    const e1 = range(1, 5).pipe(concatMap((x, i) => of(x).pipe(delay(i === 0 ? 0 : 20, rxTestScheduler))));
+    const e1 = range(1, 5).pipe(
+      concatMap((x, i) => of(x).pipe(delay(i === 0 ? 0 : 20, rxTestScheduler)))
+    );
     const expected = 'a-b-c-d-(e|)';
     const values = {
       a: 1,
@@ -2635,7 +2717,9 @@ describe('range', () => {
   });
 
   it('should accept only one argument where count is argument and start is zero', () => {
-    const e1 = range(5).pipe(concatMap((x, i) => of(x).pipe(delay(i === 0 ? 0 : 20, rxTestScheduler))));
+    const e1 = range(5).pipe(
+      concatMap((x, i) => of(x).pipe(delay(i === 0 ? 0 : 20, rxTestScheduler)))
+    );
     const expected = 'a-b-c-d-(e|)';
     const values = {
       a: 0,
@@ -2695,11 +2779,14 @@ describe('RangeObservable', () => {
 });
 
 describe('throwError', () => {
-  asDiagram('throw(e)')('should create a cold observable that just emits an error', () => {
-    const expected = '#';
-    const e1 = throwError('error');
-    expectSource(e1).toBe(expected);
-  });
+  asDiagram('throw(e)')(
+    'should create a cold observable that just emits an error',
+    () => {
+      const expected = '#';
+      const e1 = throwError('error');
+      expectSource(e1).toBe(expected);
+    }
+  );
   it('should accept any type and return never observable', () => {
     const a = throwError(1); // $ExpectType Observable<never>
     const b = throwError('a'); // $ExpectType Observable<never>
@@ -2732,20 +2819,23 @@ describe('throwError', () => {
 });
 
 describe('timer', () => {
-  asDiagram('timer(3000, 1000)')('should create an observable emitting periodically', () => {
-    const e1 = timer(60, 20, rxTestScheduler).pipe(
-      take(4), // make it actually finite, so it can be rendered
-      concat(NEVER) // but pretend it's infinite by not completing
-    );
-    const expected = '------a-b-c-d-';
-    const values = {
-      a: 0,
-      b: 1,
-      c: 2,
-      d: 3
-    };
-    expectSource(e1).toBe(expected, values);
-  });
+  asDiagram('timer(3000, 1000)')(
+    'should create an observable emitting periodically',
+    () => {
+      const e1 = timer(60, 20, rxTestScheduler).pipe(
+        take(4), // make it actually finite, so it can be rendered
+        concat(NEVER) // but pretend it's infinite by not completing
+      );
+      const expected = '------a-b-c-d-';
+      const values = {
+        a: 0,
+        b: 1,
+        c: 2,
+        d: 3
+      };
+      expectSource(e1).toBe(expected, values);
+    }
+  );
 
   it('should infer correctly with 1 parameter of number type', () => {
     const a = timer(1); // $ExpectType Observable<number>
@@ -2838,17 +2928,21 @@ describe('timer', () => {
     expectSource(source).toBe(expected, values);
   });
 
-  it('should still target the same date if a date is provided even for the ' + 'second subscription', () => {
-    const offset = time('----|    ');
-    const t1 = cold('a|       ');
-    const t2 = cold('--a|     ');
-    const expected = '----(aa|)';
+  it(
+    'should still target the same date if a date is provided even for the ' +
+      'second subscription',
+    () => {
+      const offset = time('----|    ');
+      const t1 = cold('a|       ');
+      const t2 = cold('--a|     ');
+      const expected = '----(aa|)';
 
-    const dueTime = new Date(rxTestScheduler.now() + offset);
-    const source = timer(dueTime, null as any, rxTestScheduler);
+      const dueTime = new Date(rxTestScheduler.now() + offset);
+      const source = timer(dueTime, null as any, rxTestScheduler);
 
-    const testSource = merge(t1, t2).pipe(mergeMap(() => source));
+      const testSource = merge(t1, t2).pipe(mergeMap(() => source));
 
-    expectSource(testSource).toBe(expected, {a: 0});
-  });
+      expectSource(testSource).toBe(expected, {a: 0});
+    }
+  );
 });

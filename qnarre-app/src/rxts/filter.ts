@@ -176,9 +176,12 @@ export class DebounceTimeR<N> extends qj.Subscriber<N> {
     this.clearDebounce();
     this.lastValue = value;
     this.hasValue = true;
+    function dispatch(subscriber: DebounceTimeR<any>) {
+      subscriber.debouncedNext();
+    }
     this.add(
       (this.debouncedSubscription = this.scheduler.schedule(
-        dispatchNext as any,
+        dispatch,
         this.dueTime,
         this
       ))
@@ -210,9 +213,6 @@ export class DebounceTimeR<N> extends qj.Subscriber<N> {
   }
 }
 
-function dispatchNext(subscriber: DebounceTimeR<any>) {
-  subscriber.debouncedNext();
-}
 
 export function distinct<N, R>(
   keySelector?: (n: N) => R,
@@ -517,48 +517,50 @@ class SampleR<T, R> extends qj.Reactor<N, R> {
   }
 }
 
-export function sampleTime<N>(
-  period: number,
-  scheduler: qt.Scheduler = qh.async
-): qt.Shifter<N> {
-  return x => x.lift(new SampleTimeO(period, scheduler));
+export function sampleTime<N>(period: number, h: qt.Scheduler = qh.async): qt.Shifter<N> {
+  return x => x.lift(new SampleTimeO(period, h));
 }
 
 class SampleTimeO<N> implements qt.Operator<N, N> {
-  constructor(private period: number, private scheduler: qt.Scheduler) {}
+  constructor(private period: number, private h: qt.Scheduler) {}
 
   call(r: qj.Subscriber<N>, s: any): qt.Closer {
-    return s.subscribe(new SampleTimeR(r, this.period, this.scheduler));
+    return s.subscribe(new SampleTimeR(r, this.period, this.h));
   }
 }
 
 export class SampleTimeR<N> extends qj.Subscriber<N> {
-  lastValue?: N;
-  hasValue = false;
+  hasN = false;
+  n?: N;
 
-  constructor(
-    tgt: qj.Subscriber<N>,
-    private period: number,
-    private scheduler: qt.Scheduler
-  ) {
+  constructor(tgt: qj.Subscriber<N>, period: number, h: qt.Scheduler) {
     super(tgt);
+    function dispatch(this: qt.Action<any>, state: any) {
+      let {r, period} = state;
+      r.reactNext();
+      this.schedule(state, period);
+    }
     this.add(
-      scheduler.schedule(dispatchNote, period, {
-        subscriber: this,
+      h.schedule(
+        dispatch,
+        {
+          r: this as qt.Subscriber<N>,
+          period
+        } as qt.State<N>,
         period
-      })
+      )
     );
   }
 
   protected _next(n: N) {
-    this.lastValue = n;
-    this.hasValue = true;
+    this.n = n;
+    this.hasN = true;
   }
 
   reactNext() {
-    if (this.hasValue) {
-      this.hasValue = false;
-      this.tgt.next(this.lastValue);
+    if (this.hasN) {
+      this.hasN = false;
+      this.tgt.next(this.n!);
     }
   }
 }
@@ -1083,6 +1085,12 @@ class ThrottleTimeO<N> implements qt.Operator<N, N> {
   }
 }
 
+
+interface ThrottleTimeState<N> {
+  r: ThrottleTimeR<N>;
+}
+
+
 export class ThrottleTimeR<N> extends qj.Subscriber<N> {
   private throttled?: qj.Subscription;
   private _hasTrailingValue = false;
@@ -1099,6 +1107,10 @@ export class ThrottleTimeR<N> extends qj.Subscriber<N> {
   }
 
   protected _next(n: N) {
+    function dispatch(s: ThrottleTimeState<N>) {
+      const {r} = s;
+      r.clearThrottle();
+    }
     if (this.throttled) {
       if (this.trailing) {
         this._trailingValue = n;
@@ -1106,10 +1118,10 @@ export class ThrottleTimeR<N> extends qj.Subscriber<N> {
       }
     } else {
       this.add(
-        (this.throttled = this.scheduler.schedule<DispatchArg<N>>(
-          dispatchNext as any,
-          this.duration,
-          {subscriber: this}
+        (this.throttled = this.scheduler.schedule<ThrottleTimeState<N>>(
+          dispatch as any,
+          {r: this}
+          this.duration
         ))
       );
       if (this.leading) this.tgt.next(n);
@@ -1138,13 +1150,4 @@ export class ThrottleTimeR<N> extends qj.Subscriber<N> {
       this.throttled = null!;
     }
   }
-}
-
-interface DispatchArg<N> {
-  subscriber: ThrottleTimeR<N>;
-}
-
-function dispatchNext<N>(arg: DispatchArg<N>) {
-  const {subscriber} = arg;
-  subscriber.clearThrottle();
 }

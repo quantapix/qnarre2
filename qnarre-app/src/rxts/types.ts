@@ -145,3 +145,39 @@ export interface Scheduler extends Stamper {
     delay?: number
   ): Subscription;
 }
+
+export type NodeEventHandler = (..._: any[]) => void;
+
+export interface NodeEventEmitter {
+  addListener: (n: string | symbol, h: NodeEventHandler) => this;
+  removeListener: (n: string | symbol, h: NodeEventHandler) => this;
+}
+
+export interface CompatEventEmitter {
+  addListener: (n: string, h: NodeEventHandler) => void | {};
+  removeListener: (n: string, h: NodeEventHandler) => void | {};
+}
+
+export interface JQueryEventEmitter {
+  on: (n: string, h: Function) => void;
+  off: (n: string, h: Function) => void;
+}
+
+export interface ListenerOptions {
+  capture?: boolean;
+  passive?: boolean;
+  once?: boolean;
+}
+
+export interface HasAddRemove<E> {
+  addEventListener(t: string, l: (_: E) => void, _?: ListenerOptions | boolean): void;
+  removeEventListener(t: string, l?: (_: E) => void, _?: ListenerOptions | boolean): void;
+}
+
+export type EventTargetLike<T> =
+  | HasAddRemove<T>
+  | NodeEventEmitter
+  | CompatEventEmitter
+  | JQueryEventEmitter;
+
+export type FromEventTarget<T> = EventTargetLike<T> | ArrayLike<EventTargetLike<T>>;
