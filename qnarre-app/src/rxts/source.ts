@@ -73,79 +73,75 @@ export class Source<N> implements qt.Source<N> {
   }
 
   pipe(): Source<N>;
-  pipe<A>(op1: qt.Lifter<N, A>): Source<A>;
-  pipe<A, B>(op1: qt.Lifter<N, A>, op2: qt.Lifter<A, B>): Source<B>;
-  pipe<A, B, C>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>
-  ): Source<C>;
+  pipe<A>(_1: qt.Lifter<N, A>): Source<A>;
+  pipe<A, B>(_1: qt.Lifter<N, A>, _2: qt.Lifter<A, B>): Source<B>;
+  pipe<A, B, C>(_1: qt.Lifter<N, A>, _2: qt.Lifter<A, B>, _3: qt.Lifter<B, C>): Source<C>;
   pipe<A, B, C, D>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>
   ): Source<D>;
   pipe<A, B, C, D, E>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>,
-    op5: qt.Lifter<D, E>
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>,
+    _5: qt.Lifter<D, E>
   ): Source<E>;
   pipe<A, B, C, D, E, F>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>,
-    op5: qt.Lifter<D, E>,
-    op6: qt.Lifter<E, F>
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>,
+    _5: qt.Lifter<D, E>,
+    _6: qt.Lifter<E, F>
   ): Source<F>;
   pipe<A, B, C, D, E, F, G>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>,
-    op5: qt.Lifter<D, E>,
-    op6: qt.Lifter<E, F>,
-    op7: qt.Lifter<F, G>
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>,
+    _5: qt.Lifter<D, E>,
+    _6: qt.Lifter<E, F>,
+    _7: qt.Lifter<F, G>
   ): Source<G>;
   pipe<A, B, C, D, E, F, G, H>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>,
-    op5: qt.Lifter<D, E>,
-    op6: qt.Lifter<E, F>,
-    op7: qt.Lifter<F, G>,
-    op8: qt.Lifter<G, H>
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>,
+    _5: qt.Lifter<D, E>,
+    _6: qt.Lifter<E, F>,
+    _7: qt.Lifter<F, G>,
+    _8: qt.Lifter<G, H>
   ): Source<H>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>,
-    op5: qt.Lifter<D, E>,
-    op6: qt.Lifter<E, F>,
-    op7: qt.Lifter<F, G>,
-    op8: qt.Lifter<G, H>,
-    op9: qt.Lifter<H, I>
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>,
+    _5: qt.Lifter<D, E>,
+    _6: qt.Lifter<E, F>,
+    _7: qt.Lifter<F, G>,
+    _8: qt.Lifter<G, H>,
+    _9: qt.Lifter<H, I>
   ): Source<I>;
   pipe<A, B, C, D, E, F, G, H, I>(
-    op1: qt.Lifter<N, A>,
-    op2: qt.Lifter<A, B>,
-    op3: qt.Lifter<B, C>,
-    op4: qt.Lifter<C, D>,
-    op5: qt.Lifter<D, E>,
-    op6: qt.Lifter<E, F>,
-    op7: qt.Lifter<F, G>,
-    op8: qt.Lifter<G, H>,
-    op9: qt.Lifter<H, I>,
-    ...ops: qt.Lifter<any, any>[]
+    _1: qt.Lifter<N, A>,
+    _2: qt.Lifter<A, B>,
+    _3: qt.Lifter<B, C>,
+    _4: qt.Lifter<C, D>,
+    _5: qt.Lifter<D, E>,
+    _6: qt.Lifter<E, F>,
+    _7: qt.Lifter<F, G>,
+    _8: qt.Lifter<G, H>,
+    _9: qt.Lifter<H, I>,
+    ..._: qt.Lifter<any, any>[]
   ): Source<unknown>;
-  pipe(...ops: qt.Lifter<any, any>[]): Source<any> {
-    if (ops.length === 0) return this;
-    return qu.pipeFromArray(ops)(this) as this;
+  pipe(...os: qt.Lifter<any, any>[]): Source<any> {
+    if (os.length === 0) return this;
+    return qu.pipeFromArray(os)(this) as this;
   }
 
   toPromise<T>(this: Source<T>): Promise<T | undefined>;

@@ -1,4 +1,4 @@
-import {fromIterable} from 'rxjs/internal/observable/fromIterable';
+import {fromIter} from 'rxjs/internal/observable/fromIter';
 import {iterator as symbolIterator} from 'rxjs/internal/symbol/iterator';
 import {TestScheduler} from 'rxjs/testing';
 import {Note, queueScheduler, Subscriber} from 'rxjs';
@@ -7,19 +7,19 @@ import {observeOn, materialize, take, toArray} from 'rxjs/operators';
 declare const expectSource: any;
 declare const rxTestScheduler: TestScheduler;
 
-describe('fromIterable', () => {
+describe('fromIter', () => {
   it('should not accept null (or truthy-equivalent to null) iterator', () => {
     expect(() => {
-      fromIterable(null as any, undefined);
+      fromIter(null as any, undefined);
     }).to.throw(Error, 'Iterable cannot be null');
     expect(() => {
-      fromIterable(void 0 as any, undefined);
+      fromIter(void 0 as any, undefined);
     }).to.throw(Error, 'Iterable cannot be null');
   });
 
   it('should emit members of an array iterator', done => {
     const expected = [10, 20, 30, 40];
-    fromIterable([10, 20, 30, 40], undefined).subscribe(
+    fromIter([10, 20, 30, 40], undefined).subscribe(
       x => {
         expect(x).to.equal(expected.shift());
       },
@@ -36,7 +36,7 @@ describe('fromIterable', () => {
   it('should get new iterator for each subscription', () => {
     const expected = [Note.createNext(10), Note.createNext(20), Note.createDone()];
 
-    const e1 = fromIterable<number>(new Int32Array([10, 20]), undefined).pipe(
+    const e1 = fromIter<number>(new Int32Array([10, 20]), undefined).pipe(
       observeOn(rxTestScheduler)
     );
 
@@ -68,7 +68,7 @@ describe('fromIterable', () => {
 
     const results: any[] = [];
 
-    fromIterable(iterable as any, undefined)
+    fromIter(iterable as any, undefined)
       .pipe(take(3))
       .subscribe(
         x => results.push(x),
@@ -99,7 +99,7 @@ describe('fromIterable', () => {
 
     const results: any[] = [];
 
-    fromIterable(iterable as any, queueScheduler)
+    fromIter(iterable as any, queueScheduler)
       .pipe(take(3))
       .subscribe(
         x => results.push(x),
@@ -112,7 +112,7 @@ describe('fromIterable', () => {
   });
 
   it('should emit members of an array iterator on a particular scheduler', () => {
-    const source = fromIterable([10, 20, 30, 40], rxTestScheduler);
+    const source = fromIter([10, 20, 30, 40], rxTestScheduler);
 
     const values = {a: 10, b: 20, c: 30, d: 40};
 
@@ -125,7 +125,7 @@ describe('fromIterable', () => {
     done => {
       const expected = [10, 20, 30, 40];
 
-      const source = fromIterable([10, 20, 30, 40], queueScheduler);
+      const source = fromIter([10, 20, 30, 40], queueScheduler);
 
       const subscriber = Subscriber.create(
         x => {
@@ -149,7 +149,7 @@ describe('fromIterable', () => {
 
   it('should emit characters of a string iterator', done => {
     const expected = ['f', 'o', 'o'];
-    fromIterable('foo', undefined).subscribe(
+    fromIter('foo', undefined).subscribe(
       x => {
         expect(x).to.equal(expected.shift());
       },
@@ -182,7 +182,7 @@ describe('fromIterable', () => {
       }
     );
 
-    fromIterable([10, 20, 30, 40, 50, 60], undefined).subscribe(subscriber);
+    fromIter([10, 20, 30, 40, 50, 60], undefined).subscribe(subscriber);
   });
 });
 

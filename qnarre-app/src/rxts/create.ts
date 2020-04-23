@@ -447,7 +447,7 @@ export function fromEvent<T>(
   options?: EventListenerOptions | ((...args: any[]) => T),
   resultSelector?: (...args: any[]) => T
 ): qs.Source<T> {
-  if (isFunction(options)) {
+  if (qu.isFunction(options)) {
     resultSelector = options;
     options = undefined;
   }
@@ -457,7 +457,9 @@ export function fromEvent<T>(
       eventName,
       options as EventListenerOptions | undefined
     ).pipe(
-      map(args => (isArray(args) ? resultSelector!(...args) : resultSelector!(args)))
+      map(args =>
+        Array.isArray(args) ? resultSelector!(...args) : resultSelector!(args)
+      )
     );
   }
   return new qs.Source<T>(subscriber => {
@@ -512,7 +514,7 @@ export function fromEventPattern<T>(
   if (resultSelector) {
     // DEPRECATED PATH
     return fromEventPattern<T>(addHandler, removeHandler).pipe(
-      map(args => (isArray(args) ? resultSelector(...args) : resultSelector(args)))
+      map(args => (Array.isArray(args) ? resultSelector(...args) : resultSelector(args)))
     );
   }
   return new qs.Source<T | T[]>(subscriber => {
@@ -520,44 +522,32 @@ export function fromEventPattern<T>(
     let retValue: any;
     try {
       retValue = addHandler(handler);
-    } catch (err) {
-      subscriber.error(err);
-      return undefined;
+    } catch (e) {
+      subscriber.fail(e);
+      return;
     }
 
-    if (!isFunction(removeHandler)) {
-      return undefined;
+    if (!qu.isFunction(removeHandler)) {
+      return;
     }
 
     return () => removeHandler(handler, retValue);
   });
 }
 
-export function fromIterable<T>(input: Iterable<T>, h?: qh.Scheduler) {
-  if (!input) {
-    throw new Error('Iterable cannot be null');
-  }
-  if (!scheduler) {
-    return new qs.Source<T>(subscribeToIterable(input));
-  } else {
-    return scheduleIterable(input, scheduler);
-  }
+export function fromIter<N>(b: Iterable<N>, h?: qh.Scheduler) {
+  if (!h) return new qs.Source<N>(qu.subscribeToIter<N>(b));
+  return h.scheduleIter<N>(b);
 }
 
-export function fromObservable<T>(input: qt.Interop<T>, h?: qh.Scheduler) {
-  if (!scheduler) {
-    return new qs.Source<T>(subscribeToObservable(input));
-  } else {
-    return scheduleSource(input, scheduler);
-  }
+export function fromSource<N>(i: qt.Interop<N>, h?: qh.Scheduler) {
+  if (!h) return new qs.Source<N>(qu.subscribeToSource<N>(i));
+  return h.scheduleSource<N>(i);
 }
 
-export function fromPromise<T>(input: PromiseLike<T>, h?: qh.Scheduler) {
-  if (!scheduler) {
-    return new qs.Source<T>(subscribeToPromise(input));
-  } else {
-    return schedulePromise(input, scheduler);
-  }
+export function fromPromise<N>(p: PromiseLike<N>, h?: qh.Scheduler) {
+  if (!h) return new qs.Source<N>(qu.subscribeToPromise<N>(p));
+  return h.schedulePromise<N>(p);
 }
 
 export type ConditionFunc<S> = (state: S) => boolean;
@@ -567,7 +557,7 @@ export type ResultFunc<S, T> = (state: S) => T;
 interface SchedulerState<T, S> {
   needIterate?: boolean;
   state: S;
-  subscriber: qj.Subscriber<T>;
+  subscriber: qt.Subscriber<T>;
   condition?: ConditionFunc<S>;
   iterate: IterateFunc<S>;
   resultSelector: ResultFunc<S, T>;
@@ -608,30 +598,28 @@ export function generate<T, S>(
 ): qs.Source<T> {
   let resultSelector: ResultFunc<S, T>;
   let initialState: S;
-
   if (arguments.length == 1) {
     const options = initialStateOrOptions as GenerateOptions<T, S>;
     initialState = options.initialState;
     condition = options.condition;
     iterate = options.iterate;
     resultSelector = options.resultSelector || (identity as ResultFunc<S, T>);
-    scheduler = options.scheduler;
+    h = options.h;
   } else if (
     resultSelectorOrScheduler === undefined ||
-    isScheduler(resultSelectorOrScheduler)
+    qu.isScheduler(resultSelectorOrScheduler)
   ) {
     initialState = initialStateOrOptions as S;
     resultSelector = identity as ResultFunc<S, T>;
-    scheduler = resultSelectorOrScheduler as qh.Scheduler;
+    h = resultSelectorOrScheduler as qh.Scheduler;
   } else {
     initialState = initialStateOrOptions as S;
     resultSelector = resultSelectorOrScheduler as ResultFunc<S, T>;
   }
-
   return new qs.Source<T>(subscriber => {
     let state = initialState;
-    if (scheduler) {
-      return scheduler.schedule<SchedulerState<T, S>>(dispatch as any, 0, {
+    if (h) {
+      return h.schedule<SchedulerState<T, S>>(dispatch as any, {
         subscriber,
         iterate: iterate!,
         condition,
@@ -639,15 +627,14 @@ export function generate<T, S>(
         state
       });
     }
-
     do {
       if (condition) {
         let conditionResult: boolean;
         try {
           conditionResult = condition(state);
-        } catch (err) {
-          subscriber.error(err);
-          return undefined;
+        } catch (e) {
+          subscriber.fail(e);
+          return;
         }
         if (!conditionResult) {
           subscriber.done();
@@ -657,9 +644,9 @@ export function generate<T, S>(
       let value: T;
       try {
         value = resultSelector(state);
-      } catch (err) {
-        subscriber.error(err);
-        return undefined;
+      } catch (e) {
+        subscriber.fail(e);
+        return;
       }
       subscriber.next(value);
       if (subscriber.closed) {
@@ -667,13 +654,12 @@ export function generate<T, S>(
       }
       try {
         state = iterate!(state);
-      } catch (err) {
-        subscriber.error(err);
-        return undefined;
+      } catch (e) {
+        subscriber.fail(e);
+        return;
       }
     } while (true);
-
-    return undefined;
+    return;
   });
 }
 
@@ -685,24 +671,22 @@ export function iif<T = never, F = never>(
   return defer(() => (condition() ? trueResult : falseResult));
 }
 
-export function interval(period = 0, scheduler: qh.Scheduler = async): qs.Source<number> {
-  if (!isNumeric(period) || period < 0) {
-    period = 0;
-  }
-
-  if (!scheduler || typeof scheduler.schedule !== 'function') {
-    scheduler = async;
-  }
-
-  return new qs.Source<number>(subscriber => {
-    subscriber.add(
-      scheduler.schedule(dispatch as any, period, {
-        subscriber,
-        counter: 0,
+export function interval(period = 0, h: qh.Scheduler = qh.async): qs.Source<number> {
+  if (!qu.isNumeric(period) || period < 0) period = 0;
+  if (!h || typeof h.schedule !== 'function') h = qh.async;
+  return new qs.Source<number>(r => {
+    r.add(
+      h.schedule(
+        dispatch as any,
+        {
+          r,
+          counter: 0,
+          period
+        },
         period
-      })
+      )
     );
-    return subscriber;
+    return r;
   });
 }
 
@@ -718,7 +702,7 @@ interface IntervalState {
   period: number;
 }
 
-export const NEVER = new qs.Source<never>(noop);
+export const NEVER = new qs.Source<never>(qu.noop);
 
 export function of(): qs.Source<never>;
 export function of<N>(_: N): qs.Source<N>;
@@ -727,7 +711,7 @@ export function of<N, M, O>(_1: N, _2: M, _3: O): qs.Source<N | M | O>;
 export function of<A extends Array<any>>(..._: A): qs.Source<qt.ValueOf<A>>;
 export function of<N>(...args: Array<N | qh.Scheduler>): qs.Source<N> {
   let h = args[args.length - 1] as qh.Scheduler;
-  if (qu.isScheduler(h)) {
+  if (qu.qu.isScheduler(h)) {
     args.pop();
     return h.scheduleArray(args as N[]);
   }
@@ -739,36 +723,31 @@ export function range(
   count?: number,
   h?: qh.Scheduler
 ): qs.Source<number> {
-  return new qs.Source<number>(subscriber => {
+  return new qs.Source<number>(r => {
     if (count === undefined) {
       count = start;
       start = 0;
     }
-
     let index = 0;
     let current = start;
-
-    if (scheduler) {
-      return scheduler.schedule(dispatch, 0, {
+    if (h) {
+      return h.schedule(dispatch, 0, {
         index,
         count,
         start,
-        subscriber
+        r
       });
     } else {
       do {
         if (index++ >= count) {
-          subscriber.done();
+          r.done();
           break;
         }
-        subscriber.next(current++);
-        if (subscriber.closed) {
-          break;
-        }
+        r.next(current++);
+        if (r.closed) break;
       } while (true);
     }
-
-    return undefined;
+    return;
   });
 }
 
@@ -778,35 +757,23 @@ export function timer(
   h?: qh.Scheduler
 ): qs.Source<number> {
   let period = -1;
-  if (isNumeric(periodOrScheduler)) {
+  if (qu.isNumeric(periodOrScheduler)) {
     period = (Number(periodOrScheduler) < 1 && 1) || Number(periodOrScheduler);
-  } else if (isScheduler(periodOrScheduler)) {
-    scheduler = periodOrScheduler as any;
-  }
-
-  if (!isScheduler(scheduler)) {
-    scheduler = async;
-  }
-
-  return new qs.Source(subscriber => {
-    const due = isNumeric(dueTime) ? (dueTime as number) : +dueTime - scheduler!.now();
-
-    return scheduler!.schedule(dispatch as any, due, {
+  } else if (qu.isScheduler(periodOrScheduler)) h = periodOrScheduler as any;
+  if (!qu.isScheduler(h)) h = qh.async;
+  return new qs.Source(r => {
+    const due = qu.isNumeric(dueTime) ? (dueTime as number) : +dueTime - h!.now();
+    return h!.schedule(dispatch as any, due, {
       index: 0,
       period,
-      subscriber
+      r
     });
   });
 }
 
 export function throwError(error: any, h?: qh.Scheduler): qs.Source<never> {
-  if (!scheduler) {
-    return new qs.Source(subscriber => subscriber.error(error));
-  } else {
-    return new qs.Source(subscriber =>
-      scheduler.schedule(dispatch as any, 0, {error, subscriber})
-    );
-  }
+  if (!h) return new qs.Source(r => r.fail(error));
+  return new qs.Source(r => h.schedule(dispatch as any, {error, r}));
 }
 
 interface TimerState {
@@ -818,13 +785,8 @@ interface TimerState {
 function dispatch(this: qh.Action<TimerState>, state: TimerState) {
   const {index, period, subscriber} = state;
   subscriber.next(index);
-
-  if (subscriber.closed) {
-    return;
-  } else if (period === -1) {
-    return subscriber.done();
-  }
-
+  if (subscriber.closed) return;
+  if (period === -1) return subscriber.done();
   state.index = index + 1;
   this.schedule(state, period);
 }
@@ -832,14 +794,10 @@ function dispatch(this: qh.Action<TimerState>, state: TimerState) {
 /* ** */
 
 export function repeat<N>(count: number = -1): qt.Shifter<N> {
-  return (source: qt.Source<N>) => {
-    if (count === 0) {
-      return EMPTY;
-    } else if (count < 0) {
-      return source.lift(new RepeatOperator(-1, source));
-    } else {
-      return source.lift(new RepeatO(count - 1, source));
-    }
+  return x => {
+    if (count === 0) return EMPTY;
+    if (count < 0) return x.lift(new RepeatOperator(-1, x));
+    return x.lift(new RepeatO(count - 1, x));
   };
 }
 
