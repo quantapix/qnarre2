@@ -120,24 +120,29 @@ export interface Stamper {
   now(): number;
 }
 
-export interface State<N> {
-  r: Subscriber<N>;
-  cb: Function;
+export interface State {
   ctx: any;
+  cb: Function;
   args: any[];
+}
+
+export interface Nstate<N> extends State {
+  r: Subscriber<N>;
   s?: Subject<N>;
   n: N;
   f: any;
 }
 
-export interface Action<N> extends Subscription {
-  schedule(_?: State<N>, delay?: number): Subscription;
+export type Nof<X> = X extends Nstate<infer N> ? N : never;
+
+export interface Action<S extends State> extends Subscription {
+  schedule(_?: S, delay?: number): Subscription;
 }
 
 export interface Scheduler extends Stamper {
-  schedule<N>(
-    work: (this: Action<N>, _?: State<N>) => void,
-    state?: State<N>,
+  schedule<S extends State>(
+    work: (this: Action<S>, _?: S) => void,
+    state?: S,
     delay?: number
   ): Subscription;
 }

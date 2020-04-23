@@ -3,45 +3,40 @@ import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
 
-export class Action<N> extends qr.Subscription implements qt.Action<N> {
-  constructor(
-    public h: Scheduler,
-    public work: (this: Action<N>, _?: qt.State<N>) => void
-  ) {
+export class Action<S extends qt.State> extends qr.Subscription implements qt.Action<S> {
+  constructor(public h: Scheduler, public work: (this: Action<S>, _?: S) => void) {
     super();
   }
-
-  schedule(_?: qt.State<N>, _delay?: number): qt.Subscription {
+  schedule(_?: S, _delay?: number): qt.Subscription {
     return this;
   }
 }
 
-export function nextAndDone<N>(t?: qt.State<N>) {
+export function nextAndDone<S extends qt.State>(t?: qt.Nstate<qt.Nof<S>>) {
   t?.s?.next(t.n);
   t?.s?.done();
 }
 
-export function fail<N>(t?: qt.State<N>) {
+export function fail<S extends qt.State>(t?: qt.Nstate<qt.Nof<S>>) {
   t?.s?.fail(t.f);
 }
 
 export class Scheduler implements qt.Scheduler {
   constructor(private A: typeof Action, public now = () => Date.now()) {}
-
-  schedule<N>(
-    work: (this: Action<N>, _?: qt.State<N>) => void,
-    state?: qt.State<N>,
+  schedule<S extends qt.State>(
+    work: (this: Action<S>, _?: S) => void,
+    state?: S,
     delay?: number
   ): qt.Subscription {
     return new this.A(this, work).schedule(state, delay);
   }
 
-  scheduleArray<N>(a: ArrayLike<N>) {
+  scheduleArray<S extends qt.State, N = qt.Nof<S>>(a: ArrayLike<N>) {
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       let i = 0;
       s.add(
-        this.schedule<N>(function () {
+        this.schedule<S>(function () {
           if (i === a.length) r.done();
           else {
             r.next(a[i++]);
@@ -53,7 +48,7 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduleIter<N>(b: Iterable<N>) {
+  scheduleIter<S extends qt.State, N = qt.Nof<S>>(b: Iterable<N>) {
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       let i: Iterator<N>;
@@ -61,10 +56,10 @@ export class Scheduler implements qt.Scheduler {
         if (i && typeof i.return === 'function') i.return();
       });
       s.add(
-        this.schedule<N>(() => {
+        this.schedule<S>(() => {
           i = b[Symbol.iterator]();
           s.add(
-            this.schedule<N>(function () {
+            this.schedule<S>(function () {
               if (!r.closed) {
                 let y: IteratorResult<N>;
                 try {
@@ -87,13 +82,13 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduleAsyncIter<N>(b: AsyncIterable<N>) {
+  scheduleAsyncIter<S extends qt.State, N = qt.Nof<S>>(b: AsyncIterable<N>) {
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       s.add(
-        this.schedule<N>(() => {
+        this.schedule<S>(() => {
           s.add(
-            this.schedule<N>(function () {
+            this.schedule<S>(function () {
               b[Symbol.asyncIterator]()
                 .next()
                 .then(y => {
@@ -111,11 +106,11 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduleSource<N>(i: qt.Interop<N>) {
+  scheduleSource<S extends qt.State, N = qt.Nof<S>>(i: qt.Interop<N>) {
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       s.add(
-        this.schedule<N>(() => {
+        this.schedule<S>(() => {
           s.add(
             i[Symbol.rxSource]().subscribe({
               next: (n: N) => s.add(this.schedule(() => r.next(n))),
@@ -129,25 +124,25 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  schedulePromise<N>(p: PromiseLike<N>) {
+  schedulePromise<S extends qt.State, N = qt.Nof<S>>(p: PromiseLike<N>) {
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       s.add(
-        this.schedule<N>(() =>
+        this.schedule<S>(() =>
           p.then(
             n => {
               s.add(
-                this.schedule<N>(() => {
+                this.schedule<S>(() => {
                   r.next(n);
                   s.add(
-                    this.schedule<N>(() => r.done())
+                    this.schedule<S>(() => r.done())
                   );
                 })
               );
             },
             f => {
               s.add(
-                this.schedule<N>(() => r.fail(f))
+                this.schedule<S>(() => r.fail(f))
               );
             }
           )
@@ -157,27 +152,27 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduled<N>(i: qt.Input<N>) {
-    if (qt.isInterop<N>(i)) return this.scheduleSource<N>(i);
-    if (qt.isArrayLike<N>(i)) return this.scheduleArray<N>(i);
-    if (qt.isPromise<N>(i)) return this.schedulePromise<N>(i);
-    if (qt.isIter<N>(i) || typeof i === 'string') return this.scheduleIter<N>(i);
-    if (qt.isAsyncIter<N>(i)) return this.scheduleAsyncIter<N>(i as any);
+  scheduled<S extends qt.State, N = qt.Nof<S>>(i: qt.Input<N>) {
+    if (qt.isInterop<N>(i)) return this.scheduleSource(i);
+    if (qt.isArrayLike<N>(i)) return this.scheduleArray(i);
+    if (qt.isPromise<N>(i)) return this.schedulePromise(i);
+    if (qt.isIter<N>(i) || typeof i === 'string') return this.scheduleIter(i);
+    if (qt.isAsyncIter<N>(i)) return this.scheduleAsyncIter(i);
     throw new TypeError(((i && typeof i) || i) + ' not source input');
   }
 }
 
-export class AsyncAction<N> extends Action<N> {
+export class AsyncAction<S extends qt.State> extends Action<S> {
   id?: any;
-  state?: qt.State<N>;
+  state?: S;
   delay?: number;
   pending = false;
 
-  constructor(h: Async, w: (this: Action<N>, _?: qt.State<N>) => void) {
+  constructor(h: Async, w: (this: Action<S>, _?: S) => void) {
     super(h, w);
   }
 
-  schedule(s?: qt.State<N>, d?: number): qt.Subscription {
+  schedule(s?: S, d?: number): qt.Subscription {
     if (this.closed) return this;
     this.state = s;
     const i = this.id;
@@ -198,7 +193,7 @@ export class AsyncAction<N> extends Action<N> {
     clearInterval(id);
   }
 
-  execute(s?: qt.State<N>, d?: number) {
+  execute(s?: S, d?: number) {
     if (this.closed) return new Error('executing cancelled action');
     this.pending = false;
     const e = this._execute(s, d);
@@ -206,7 +201,7 @@ export class AsyncAction<N> extends Action<N> {
     if (!this.pending && this.id) this.id = this.recycleId(this.h, this.id);
   }
 
-  protected _execute(s?: qt.State<N>, _?: number): any {
+  protected _execute(s?: S, _?: number): any {
     try {
       this.work(s);
     } catch (e) {
@@ -239,9 +234,9 @@ export class Async extends Scheduler {
     super(A, Async.del ? Async.del.now : now);
   }
 
-  schedule<N>(
-    work: (this: Action<N>, _?: qt.State<N>) => void,
-    state?: qt.State<N>,
+  schedule<S extends qt.State>(
+    work: (this: Action<S>, _?: S) => void,
+    state?: S,
     delay?: number
   ): qt.Subscription {
     if (Async.del && Async.del !== this) return Async.del.schedule(work, state, delay);
@@ -270,8 +265,8 @@ export class Async extends Scheduler {
 
 export const async = new Async(AsyncAction);
 
-export class FrameAction<N> extends AsyncAction<N> {
-  constructor(h: Frame, w: (this: Action<N>, _?: qt.State<N>) => void) {
+export class FrameAction<S extends qt.State> extends AsyncAction<S> {
+  constructor(h: Frame, w: (this: Action<S>, _?: S) => void) {
     super(h, w);
   }
 
@@ -317,8 +312,8 @@ export class Frame extends Async {
 
 export const frame = new Frame(FrameAction);
 
-export class AsapAction<N> extends AsyncAction<N> {
-  constructor(h: Asap, w: (this: Action<N>, _?: qt.State<N>) => void) {
+export class AsapAction<S extends qt.State> extends AsyncAction<S> {
+  constructor(h: Asap, w: (this: Action<S>, _?: S) => void) {
     super(h, w);
   }
 
@@ -364,12 +359,12 @@ export class Asap extends Async {
 
 export const asap = new Asap(AsapAction);
 
-export class QueueAction<N> extends AsyncAction<N> {
-  constructor(h: Queue, w: (this: Action<N>, _?: qt.State<N>) => void) {
+export class QueueAction<S extends qt.State> extends AsyncAction<S> {
+  constructor(h: Queue, w: (this: Action<S>, _?: S) => void) {
     super(h, w);
   }
 
-  schedule(s?: qt.State<N>, d?: number): qt.Subscription {
+  schedule(s?: S, d?: number): qt.Subscription {
     if (d && d > 0) return super.schedule(s, d);
     this.delay = d;
     this.state = s;
@@ -377,7 +372,7 @@ export class QueueAction<N> extends AsyncAction<N> {
     return this;
   }
 
-  execute(s?: qt.State<N>, d?: number) {
+  execute(s?: S, d?: number) {
     return (d && d > 0) || this.closed ? super.execute(s, d) : this._execute(s, d);
   }
 
@@ -393,19 +388,19 @@ export class Queue extends Async {}
 
 export const queue = new Queue(QueueAction);
 
-export class VirtualAction<N> extends AsyncAction<N> {
+export class VirtualAction<S extends qt.State> extends AsyncAction<S> {
   protected active = true;
 
   constructor(
     h: Virtual,
-    w: (this: Action<N>, _?: qt.State<N>) => void,
+    w: (this: Action<S>, _?: S) => void,
     public index = (h.index += 1)
   ) {
     super(h, w);
     h.index = index;
   }
 
-  schedule(s?: qt.State<N>, d?: number): qt.Subscription {
+  schedule(s?: S, d?: number): qt.Subscription {
     if (!this.id) return super.schedule(s, d);
     this.active = false;
     const a = new VirtualAction(this.h as Virtual, this.work);
@@ -417,7 +412,7 @@ export class VirtualAction<N> extends AsyncAction<N> {
     this.delay = h.frame + (d ?? 0);
     const {acts} = h;
     acts.push(this);
-    (acts as VirtualAction<N>[]).sort(cmp);
+    (acts as VirtualAction<S>[]).sort(cmp);
     return true;
   }
 
@@ -425,12 +420,12 @@ export class VirtualAction<N> extends AsyncAction<N> {
     return;
   }
 
-  protected _execute(s?: qt.State<N>, d?: number) {
+  protected _execute(s?: S, d?: number) {
     if (this.active) return super._execute(s, d);
   }
 }
 
-function cmp<N>(a: VirtualAction<N>, b: VirtualAction<N>) {
+function cmp<S extends qt.State>(a: VirtualAction<S>, b: VirtualAction<S>) {
   if (a.delay === b.delay) {
     if (a.index === b.index) return 0;
     if (a.index > b.index) return 1;

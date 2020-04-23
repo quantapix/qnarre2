@@ -6,6 +6,8 @@ import * as qx from './context';
 import * as qr from './subscriber';
 //import * as qj from './subject';
 
+type Nof<X> = qt.Nof<X>;
+
 export function bindCB<R1, R2, R3, R4>(
   cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
   h?: qh.Scheduler
@@ -135,13 +137,14 @@ export function bindCB<A, R>(
   h?: qh.Scheduler
 ): (..._: A[]) => qt.Source<R[]>;
 export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.Source<N> {
+  type S = qt.Nstate<N>;
   let s: qt.Subject<N> | undefined;
-  function dispatch(this: qt.Action<N>, t?: qt.State<N>) {
+  function dispatch(this: qt.Action<S>, t?: S) {
     if (!s) {
       s = qx.createAsync();
       const f = (...ns: any[]) => {
         const n = ns.length <= 1 ? ns[0] : ns;
-        this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
+        this.add(h!.schedule(qh.nextAndDone, {s, n}));
       };
       try {
         cb.apply(t!.ctx, [...t!.args, f]);
@@ -154,7 +157,7 @@ export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.S
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
     return qx.createSource(r => {
-      if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args} as qt.State<N>);
+      if (h) return h.schedule<S>(dispatch, {r, cb, ctx, args} as S);
       if (!s) {
         s = qx.createAsync();
         const f = (...ns: any[]) => {
@@ -308,13 +311,14 @@ export function bindNodeCB<N>(
   cb: Function,
   h?: qh.Scheduler
 ): (..._: any[]) => qt.Source<N> {
+  type S = qt.Nstate<N>;
   let s: qt.Subject<N> | undefined;
-  function dispatch(this: qt.Action<N>, t?: qt.State<N>) {
+  function dispatch(this: qt.Action<S>, t?: S) {
     if (!s) {
       s = qx.createAsync();
       const f = (...ns: any[]) => {
         const n = ns.length <= 1 ? ns[0] : ns;
-        this.add(h!.schedule(qh.nextAndDone, {s, n} as qt.State<N>));
+        this.add(h!.schedule(qh.nextAndDone, {s, n}));
       };
       try {
         cb.apply(t!.ctx, [...t!.args, f]);
@@ -327,7 +331,7 @@ export function bindNodeCB<N>(
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
     return qx.createSource(r => {
-      if (h) return h.schedule<N>(dispatch, {r, cb, ctx, args} as qt.State<N>);
+      if (h) return h.schedule<S>(dispatch, {r, cb, ctx, args} as S);
       if (!s) {
         s = qx.createAsync();
         const f = (...ns: any[]) => {
@@ -614,31 +618,21 @@ export function iif<T = never, F = never>(
   return defer(() => (condition() ? trueResult : falseResult));
 }
 
-interface IntervalState extends qt.State<number> {
+interface Interval extends qt.State<number> {
   period: number;
   count: number;
 }
 
-export function interval(period = 0, h: qh.Scheduler = qh.async): qs.Source<number> {
+export function interval(period = 0, h: qh.Scheduler = qh.async) {
   if (period < 0) period = 0;
   if (!qt.isScheduler(h)) h = qh.async;
-  function dispatch(this: qh.Action<number>, state?: qt.State<number>) {
-    const {r, count, period} = state;
+  function dispatch(this: qh.Action<Interval>, s?: Interval) {
+    const {r, count, period} = s!;
     r.next(count);
-    this.schedule({r, counter: count + 1, period}, period);
+    this.schedule({r, count: count + 1, period} as Interval, period);
   }
-  return new qs.Source<number>(r => {
-    r.add(
-      h.schedule(
-        dispatch,
-        {
-          r,
-          counter: 0,
-          period
-        },
-        period
-      )
-    );
+  return new qs.Source<qt.Nof<Interval>>(r => {
+    r.add(h.schedule(dispatch, {r, count: 0, period} as Interval, period));
     return r;
   });
 }
