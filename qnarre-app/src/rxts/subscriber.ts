@@ -253,7 +253,7 @@ export function toSubscriber<N>(
     const s = t ? (t as Subscriber<N>)[Symbol.rxSubscriber] : undefined;
     if (s) return s();
   }
-  if (!t && !fail && !done) return new Subscriber(fake);
+  if (!t && !fail && !done) return new Subscriber<N>(fake);
   return new Subscriber(t);
 }
 
@@ -319,11 +319,11 @@ export function subscribeToPromise<N>(p: PromiseLike<N>) {
   };
 }
 
-export function subscribeTo<N>(i: qt.Input<N>): (_: Subscriber<N>) => qt.Subscription {
+export function subscribeTo<N>(i: qt.Input<N>) {
   if (qt.isInterop<N>(i)) return subscribeToSource(i);
   if (qt.isArrayLike<N>(i)) return subscribeToArray(i);
   if (qt.isPromise<N>(i)) return subscribeToPromise(i);
-  if (qt.isIter<N>(i)) return subscribeToIter(r as any);
+  if (qt.isIter<N>(i)) return subscribeToIter(i);
   if (qt.isAsyncIter<N>(i)) return subscribeToAsyncIter(i);
   throw new TypeError(((i && typeof i) || i) + ' not source input');
 }

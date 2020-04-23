@@ -86,11 +86,7 @@ export type Interop<N> = {
 
 export type SourceOrPromise<N> = Source<N> | Source<never> | PromiseLike<N> | Interop<N>;
 
-export type Input<N> =
-  | Iterable<N>
-  | ArrayLike<N>
-  | SourceOrPromise<N>
-  | AsyncIterableIterator<N>;
+export type Input<N> = ArrayLike<N> | Iterable<N> | AsyncIterable<N> | SourceOrPromise<N>;
 
 export type Sourced<X> = X extends Input<infer N> ? N : never;
 

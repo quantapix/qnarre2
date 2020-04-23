@@ -376,33 +376,33 @@ export function empty(h?: qh.Scheduler) {
       });
 }
 
-export function from<X extends qt.Input<any>>(x: X): qt.Source<qt.Sourced<X>>;
-export function from<N>(i: qt.Input<N>, h?: qh.Scheduler): qt.Source<N> {
+//export function from<X extends qt.Input<any>>(x: X): qt.Source<qt.Sourced<X>>;
+export function from<N>(i: qt.Input<N>, h?: qh.Scheduler) {
   if (h) return h.scheduled(i);
   else {
-    if (qt.isSource<N>(i)) return i;
+    if (qt.isSource<N>(i)) return i as qs.Source<N>;
     return new qs.Source<N>(qr.subscribeTo(i));
   }
 }
 
 export function fromArray<N>(a: ArrayLike<N>, h?: qh.Scheduler) {
   if (h) return h.scheduleArray(a);
-  return new qs.Source<N>(qr.subscribeToArray<N>(a));
+  return new qs.Source<N>(qr.subscribeToArray(a));
 }
 
 export function fromIter<N>(b: Iterable<N>, h?: qh.Scheduler) {
   if (h) return h.scheduleIter<N>(b);
-  return new qs.Source<N>(qr.subscribeToIter<N>(b));
+  return new qs.Source<N>(qr.subscribeToIter(b));
 }
 
 export function fromSource<N>(i: qt.Interop<N>, h?: qh.Scheduler) {
   if (h) return h.scheduleSource<N>(i);
-  return new qs.Source<N>(qr.subscribeToSource<N>(i));
+  return new qs.Source<N>(qr.subscribeToSource(i));
 }
 
 export function fromPromise<N>(p: PromiseLike<N>, h?: qh.Scheduler) {
   if (h) return h.schedulePromise<N>(p);
-  return new qs.Source<N>(qr.subscribeToPromise<N>(p));
+  return new qs.Source<N>(qr.subscribeToPromise(p));
 }
 
 function setupSubscription<T>(
@@ -614,16 +614,15 @@ export function iif<T = never, F = never>(
   return defer(() => (condition() ? trueResult : falseResult));
 }
 
-interface IntervalState {
-  r: qt.Subscriber<number>;
-  count: number;
+interface IntervalState extends qt.State<number> {
   period: number;
+  count: number;
 }
 
 export function interval(period = 0, h: qh.Scheduler = qh.async): qs.Source<number> {
-  if (!qt.isNumeric(period) || period < 0) period = 0;
-  if (!h || typeof h.schedule !== 'function') h = qh.async;
-  function dispatch(this: qh.Action<IntervalState>, state: IntervalState) {
+  if (period < 0) period = 0;
+  if (!qt.isScheduler(h)) h = qh.async;
+  function dispatch(this: qh.Action<number>, state?: qt.State<number>) {
     const {r, count, period} = state;
     r.next(count);
     this.schedule({r, counter: count + 1, period}, period);
@@ -631,7 +630,7 @@ export function interval(period = 0, h: qh.Scheduler = qh.async): qs.Source<numb
   return new qs.Source<number>(r => {
     r.add(
       h.schedule(
-        dispatch as any,
+        dispatch,
         {
           r,
           counter: 0,

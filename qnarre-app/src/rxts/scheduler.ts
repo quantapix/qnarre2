@@ -6,7 +6,7 @@ import * as qu from './utils';
 export class Action<N> extends qr.Subscription implements qt.Action<N> {
   constructor(
     public h: Scheduler,
-    public work: (this: qt.Action<N>, _?: qt.State<N>) => void
+    public work: (this: Action<N>, _?: qt.State<N>) => void
   ) {
     super();
   }
@@ -29,7 +29,7 @@ export class Scheduler implements qt.Scheduler {
   constructor(private A: typeof Action, public now = () => Date.now()) {}
 
   schedule<N>(
-    work: (this: qt.Action<N>, _?: qt.State<N>) => void,
+    work: (this: Action<N>, _?: qt.State<N>) => void,
     state?: qt.State<N>,
     delay?: number
   ): qt.Subscription {
@@ -173,7 +173,7 @@ export class AsyncAction<N> extends Action<N> {
   delay?: number;
   pending = false;
 
-  constructor(h: Async, w: (this: qt.Action<N>, _?: qt.State<N>) => void) {
+  constructor(h: Async, w: (this: Action<N>, _?: qt.State<N>) => void) {
     super(h, w);
   }
 
@@ -240,7 +240,7 @@ export class Async extends Scheduler {
   }
 
   schedule<N>(
-    work: (this: qt.Action<N>, _?: qt.State<N>) => void,
+    work: (this: Action<N>, _?: qt.State<N>) => void,
     state?: qt.State<N>,
     delay?: number
   ): qt.Subscription {
@@ -271,7 +271,7 @@ export class Async extends Scheduler {
 export const async = new Async(AsyncAction);
 
 export class FrameAction<N> extends AsyncAction<N> {
-  constructor(h: Frame, w: (this: qt.Action<N>, _?: qt.State<N>) => void) {
+  constructor(h: Frame, w: (this: Action<N>, _?: qt.State<N>) => void) {
     super(h, w);
   }
 
@@ -318,7 +318,7 @@ export class Frame extends Async {
 export const frame = new Frame(FrameAction);
 
 export class AsapAction<N> extends AsyncAction<N> {
-  constructor(h: Asap, w: (this: qt.Action<N>, _?: qt.State<N>) => void) {
+  constructor(h: Asap, w: (this: Action<N>, _?: qt.State<N>) => void) {
     super(h, w);
   }
 
@@ -365,7 +365,7 @@ export class Asap extends Async {
 export const asap = new Asap(AsapAction);
 
 export class QueueAction<N> extends AsyncAction<N> {
-  constructor(h: Queue, w: (this: qt.Action<N>, _?: qt.State<N>) => void) {
+  constructor(h: Queue, w: (this: Action<N>, _?: qt.State<N>) => void) {
     super(h, w);
   }
 
@@ -398,7 +398,7 @@ export class VirtualAction<N> extends AsyncAction<N> {
 
   constructor(
     h: Virtual,
-    w: (this: qt.Action<N>, _?: qt.State<N>) => void,
+    w: (this: Action<N>, _?: qt.State<N>) => void,
     public index = (h.index += 1)
   ) {
     super(h, w);
