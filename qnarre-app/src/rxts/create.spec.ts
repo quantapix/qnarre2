@@ -302,7 +302,7 @@ describe('bindCB', () => {
         }
       );
 
-      expect(results).to.deep.equal(['undefined', 'done']);
+      expect(results).toEqual(['undefined', 'done']);
     });
 
     it('should still support deprecated resultSelector', () => {
@@ -323,7 +323,7 @@ describe('bindCB', () => {
         }
       });
 
-      expect(results).to.deep.equal([43, 'done']);
+      expect(results).toEqual([43, 'done']);
     });
 
     it('should still support deprecated resultSelector if its void', () => {
@@ -344,7 +344,7 @@ describe('bindCB', () => {
         }
       });
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should emit one value from a callback', () => {
@@ -364,7 +364,7 @@ describe('bindCB', () => {
         }
       );
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should set callback function context to context of returned function', () => {
@@ -381,7 +381,7 @@ describe('bindCB', () => {
         () => results.push('done')
       );
 
-      expect(results).to.deep.equal([5, 'done']);
+      expect(results).toEqual([5, 'done']);
     });
 
     it('should not emit, throw or complete if immediately unsubscribed', (done: MochaDone) => {
@@ -429,7 +429,7 @@ describe('bindCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal(['undefined', 'done']);
+      expect(results).toEqual(['undefined', 'done']);
     });
 
     it('should emit one value from a callback', () => {
@@ -451,7 +451,7 @@ describe('bindCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should set callback function context to context of returned function', () => {
@@ -470,7 +470,7 @@ describe('bindCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal([5, 'done']);
+      expect(results).toEqual([5, 'done']);
     });
 
     it('should error if callback throws', () => {
@@ -517,7 +517,7 @@ describe('bindCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal([[42, 1, 2, 3], 'done']);
+      expect(results).toEqual([[42, 1, 2, 3], 'done']);
     });
 
     it('should cache value for next subscription and not call callbackFunc again', () => {
@@ -555,8 +555,8 @@ describe('bindCB', () => {
       rxTestScheduler.flush();
 
       expect(calls).to.equal(1);
-      expect(results1).to.deep.equal([42, 'done']);
-      expect(results2).to.deep.equal([42, 'done']);
+      expect(results1).toEqual([42, 'done']);
+      expect(results2).toEqual([42, 'done']);
     });
 
     it('should not even call the callbackFn if immediately unsubscribed', () => {
@@ -623,7 +623,7 @@ describe('bindNodeCB', () => {
         }
       );
 
-      expect(results).to.deep.equal(['undefined', 'done']);
+      expect(results).toEqual(['undefined', 'done']);
     });
 
     it('should support the deprecated resultSelector', () => {
@@ -644,7 +644,7 @@ describe('bindNodeCB', () => {
         }
       );
 
-      expect(results).to.deep.equal([43, 'done']);
+      expect(results).toEqual([43, 'done']);
     });
 
     it('should emit one value from a callback', () => {
@@ -664,7 +664,7 @@ describe('bindNodeCB', () => {
         }
       );
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should set context of callback to context of boundCallback', () => {
@@ -680,7 +680,7 @@ describe('bindNodeCB', () => {
         () => results.push('done')
       );
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should raise error from callback', () => {
@@ -705,7 +705,7 @@ describe('bindNodeCB', () => {
         }
       );
 
-      expect(results).to.deep.equal([error]);
+      expect(results).toEqual([error]);
     });
 
     it('should not emit, throw or complete if immediately unsubscribed', (done: MochaDone) => {
@@ -758,7 +758,7 @@ describe('bindNodeCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal(['undefined', 'done']);
+      expect(results).toEqual(['undefined', 'done']);
     });
 
     it('should emit one value from a callback', () => {
@@ -780,7 +780,7 @@ describe('bindNodeCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should set context of callback to context of boundCallback', () => {
@@ -798,7 +798,7 @@ describe('bindNodeCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal([42, 'done']);
+      expect(results).toEqual([42, 'done']);
     });
 
     it('should error if callback throws', () => {
@@ -847,7 +847,7 @@ describe('bindNodeCB', () => {
 
       rxTestScheduler.flush();
 
-      expect(results).to.deep.equal([error]);
+      expect(results).toEqual([error]);
     });
   });
 
@@ -873,7 +873,7 @@ describe('bindNodeCB', () => {
 
     rxTestScheduler.flush();
 
-    expect(results).to.deep.equal([[42, 1, 2, 3], 'done']);
+    expect(results).toEqual([[42, 1, 2, 3], 'done']);
   });
 
   it('should cache value for next subscription and not call callbackFunc again', () => {
@@ -911,8 +911,8 @@ describe('bindNodeCB', () => {
     rxTestScheduler.flush();
 
     expect(calls).to.equal(1);
-    expect(results1).to.deep.equal([42, 'done']);
-    expect(results2).to.deep.equal([42, 'done']);
+    expect(results1).toEqual([42, 'done']);
+    expect(results2).toEqual([42, 'done']);
   });
 
   it('should not swallow post-callback errors', () => {
@@ -1389,9 +1389,7 @@ describe('fromEvent', () => {
       }
     };
 
-    const subscription = fromEvent(obj, 'click').subscribe(() => {
-      //noop
-    });
+    const subscription = fromEvent(obj, 'click').subscribe(() => {});
 
     subscription.unsubscribe();
 
@@ -1426,9 +1424,7 @@ describe('fromEvent', () => {
       }
     };
 
-    const subscription = fromEvent(<any>obj, 'click').subscribe(() => {
-      //noop
-    });
+    const subscription = fromEvent(<any>obj, 'click').subscribe(() => {});
 
     subscription.unsubscribe();
 
@@ -1457,9 +1453,7 @@ describe('fromEvent', () => {
       }
     };
 
-    const subscription = fromEvent(obj, 'click').subscribe(() => {
-      //noop
-    });
+    const subscription = fromEvent(obj, 'click').subscribe(() => {});
 
     subscription.unsubscribe();
 
@@ -1487,9 +1481,7 @@ describe('fromEvent', () => {
       }
     };
 
-    const subscription = fromEvent(obj, 'click').subscribe(() => {
-      //noop
-    });
+    const subscription = fromEvent(obj, 'click').subscribe(() => {});
 
     subscription.unsubscribe();
 
@@ -1517,9 +1509,7 @@ describe('fromEvent', () => {
       length: 1
     };
 
-    const subscription = fromEvent(obj, 'click').subscribe(() => {
-      //noop
-    });
+    const subscription = fromEvent(obj, 'click').subscribe(() => {});
 
     subscription.unsubscribe();
 
@@ -1531,9 +1521,7 @@ describe('fromEvent', () => {
 
   it('should error on invalid event targets', () => {
     const obj = {
-      addListener: () => {
-        //noop
-      }
+      addListener: () => {}
     };
 
     fromEvent(obj as any, 'click').subscribe({
@@ -1563,9 +1551,11 @@ describe('fromEvent', () => {
       }
     };
 
-    const subscription = fromEvent(<any>obj, 'click', expectedOptions).subscribe(() => {
-      //noop
-    });
+    const subscription = fromEvent(
+      <any>obj,
+      'click',
+      expectedOptions
+    ).subscribe(() => {});
 
     subscription.unsubscribe();
 
@@ -1579,9 +1569,7 @@ describe('fromEvent', () => {
       on: (name: string, handler: Function) => {
         send = handler;
       },
-      off: () => {
-        //noop
-      }
+      off: () => {}
     };
 
     fromEvent(obj, 'click')
@@ -1607,9 +1595,7 @@ describe('fromEvent', () => {
       on: (name: string, handler: Function) => {
         send = handler;
       },
-      off: () => {
-        //noop
-      }
+      off: () => {}
     };
 
     function selector(x: string) {
@@ -1639,14 +1625,10 @@ describe('fromEvent', () => {
       on: (name: string, handler: Function) => {
         send = handler;
       },
-      off: () => {
-        //noop
-      }
+      off: () => {}
     };
 
-    function selector() {
-      //noop
-    }
+    function selector() {}
 
     fromEvent(obj, 'click', selector)
       .pipe(take(1))
@@ -1671,9 +1653,7 @@ describe('fromEvent', () => {
       on: (name: string, handler: Function) => {
         send = handler;
       },
-      off: () => {
-        //noop
-      }
+      off: () => {}
     };
 
     function selector() {
@@ -1703,9 +1683,7 @@ describe('fromEvent', () => {
       on: (name: string, handler: Function) => {
         send = handler;
       },
-      off: () => {
-        //noop
-      }
+      off: () => {}
     };
 
     function selector(x: number, y: number, z: number) {
@@ -1716,7 +1694,7 @@ describe('fromEvent', () => {
       .pipe(take(1))
       .subscribe(
         (e: any) => {
-          expect(e).to.deep.equal([1, 2, 3]);
+          expect(e).toEqual([1, 2, 3]);
         },
         (err: any) => {
           done(new Error('should not be called'));
@@ -1735,16 +1713,14 @@ describe('fromEvent', () => {
       on: (name: string, handler: Function) => {
         send = handler;
       },
-      off: () => {
-        //noop
-      }
+      off: () => {}
     };
 
     fromEvent(obj, 'click')
       .pipe(take(1))
       .subscribe(
         (e: any) => {
-          expect(e).to.deep.equal([1, 2, 3]);
+          expect(e).toEqual([1, 2, 3]);
         },
         (err: any) => {
           done(new Error('should not be called'));
@@ -1761,12 +1737,8 @@ describe('fromEvent', () => {
     // NOTE: Can not test with Object.create(null) or `class Foo extends null`
     // due to TypeScript bug. https://github.com/Microsoft/TypeScript/issues/1108
     class NullProtoEventTarget {
-      on() {
-        /*noop*/
-      }
-      off() {
-        /*noop*/
-      }
+      on() {}
+      off() {}
     }
     NullProtoEventTarget.prototype.toString = null!;
     const obj: NullProtoEventTarget = new NullProtoEventTarget();
@@ -2338,7 +2310,7 @@ describe('interval', () => {
         values.push(x);
         if (x === 6) {
           subscription.unsubscribe();
-          expect(values).to.deep.equal(expected);
+          expect(values).toEqual(expected);
           done();
         }
       },
@@ -2691,7 +2663,7 @@ describe('range', () => {
     range(12, 4).subscribe(function (x) {
       results.push(x);
     });
-    expect(results).to.deep.equal([12, 13, 14, 15]);
+    expect(results).toEqual([12, 13, 14, 15]);
   });
 
   it('should accept a scheduler', (done: MochaDone) => {

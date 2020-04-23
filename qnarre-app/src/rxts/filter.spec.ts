@@ -1123,7 +1123,7 @@ describe('debounce', () => {
     });
     source.next(1);
 
-    expect(results).to.deep.equal([1, 2]);
+    expect(results).toEqual([1, 2]);
   });
 
   type('should support selectors of the same type', () => {
@@ -1302,7 +1302,7 @@ describe('debounceTime', () => {
     source.next(1);
     scheduler.flush();
 
-    expect(results).to.deep.equal([1, 2]);
+    expect(results).toEqual([1, 2]);
   });
 });
 
@@ -2845,7 +2845,7 @@ describe('first', () => {
 
     subject.next(0);
 
-    expect(results).to.deep.equal([0]);
+    expect(results).toEqual([0]);
   });
 
   it('should propagate error from the source observable', () => {
@@ -3417,7 +3417,7 @@ describe('sample', () => {
     item$.next(2);
     item$.next(3);
 
-    expect(results).to.deep.equal([1, 2, 3]);
+    expect(results).toEqual([1, 2, 3]);
   });
 
   it('should sample nothing if source has nexted after all notifications, but notifier does not complete', () => {
@@ -3916,7 +3916,7 @@ describe('single', () => {
       e1.pipe(
         single(predicate),
         tap(null, null, () => {
-          expect(indices).to.deep.equal([0, 1, 2]);
+          expect(indices).toEqual([0, 1, 2]);
         })
       )
     ).toBe(expected);
@@ -4282,7 +4282,7 @@ describe('skipUntil', () => {
         err => {
           throw err;
         },
-        () => expect(values).to.deep.equal(['a', 'b'])
+        () => expect(values).toEqual(['a', 'b'])
       );
   });
 
@@ -4534,10 +4534,8 @@ describe('skipUntil', () => {
     );
     of(null)
       .pipe(skipUntil(synchronousNotifer))
-      .subscribe(() => {
-        /* noop */
-      });
-    expect(sideEffects).to.deep.equal([1]);
+      .subscribe(() => {});
+    expect(sideEffects).toEqual([1]);
   });
 });
 

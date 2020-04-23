@@ -4,9 +4,9 @@ describe('multicast', () => {
     () => {
       const source = cold('--1-2---3-4--5-|');
       const sourceSubs = '^              !';
-      const multicasted = source.pipe(
-        multicast(() => new Subject<string>())
-      ) as Connect<string>;
+      const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+        string
+      >;
       const expected = '--1-2---3-4--5-|';
 
       expectSource(multicasted).toBe(expected);
@@ -31,9 +31,7 @@ describe('multicast', () => {
 
   it('should be possible to use a selector', () => {
     const o = of(1, 2, 3).pipe(multicast(new Subject<number>(), p => p)); // $ExpectType Observable<number>
-    const p = of(1, 2, 3).pipe(
-      multicast(new Subject<number>(), p => of('foo'))
-    ); // $ExpectType Observable<string>
+    const p = of(1, 2, 3).pipe(multicast(new Subject<number>(), p => of('foo'))); // $ExpectType Observable<string>
     const q = of(1, 2, 3).pipe(
       multicast(
         () => new Subject<number>(),
@@ -50,9 +48,7 @@ describe('multicast', () => {
 
   it('should support union types', () => {
     const o = of(1, 2, 3).pipe(
-      multicast(new Subject<number>(), p =>
-        Math.random() > 0.5 ? of(123) : of('foo')
-      )
+      multicast(new Subject<number>(), p => (Math.random() > 0.5 ? of(123) : of('foo')))
     ); // $ExpectType Observable<string | number>
     const p = of(1, 2, 3).pipe(
       multicast(
@@ -89,9 +85,9 @@ describe('multicast', () => {
   it('should accept Subjects', done => {
     const expected = [1, 2, 3, 4];
 
-    const connectable = of(1, 2, 3, 4).pipe(
-      multicast(new Subject<number>())
-    ) as Connect<number>;
+    const connectable = of(1, 2, 3, 4).pipe(multicast(new Subject<number>())) as Connect<
+      number
+    >;
 
     connectable.subscribe(
       x => {
@@ -112,12 +108,8 @@ describe('multicast', () => {
     const expected = [1, 2, 3, 4];
 
     const source = new Subject<number>();
-    const connectable = source.pipe(
-      multicast(new Subject<number>())
-    ) as Connect<number>;
-    const replayed = connectable.pipe(
-      multicast(new Replay<number>())
-    ) as Connect<number>;
+    const connectable = source.pipe(multicast(new Subject<number>())) as Connect<number>;
+    const replayed = connectable.pipe(multicast(new Replay<number>())) as Connect<number>;
 
     connectable.connect();
     replayed.connect();
@@ -170,8 +162,7 @@ describe('multicast', () => {
     const multicasted = source.pipe(
       multicast(
         () => new Subject<string>(),
-        x =>
-          zip(x, x, (a: any, b: any) => (parseInt(a) + parseInt(b)).toString())
+        x => zip(x, x, (a: any, b: any) => (parseInt(a) + parseInt(b)).toString())
       )
     );
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
@@ -189,16 +180,11 @@ describe('multicast', () => {
 
   it('should accept a multicast selector and connect to a cold source for each subscriber', () => {
     const source = cold('-1-2-3----4-|');
-    const sourceSubs = [
-      '^           !',
-      '    ^           !',
-      '        ^           !'
-    ];
+    const sourceSubs = ['^           !', '    ^           !', '        ^           !'];
     const multicasted = source.pipe(
       multicast(
         () => new Subject<string>(),
-        x =>
-          zip(x, x, (a: any, b: any) => (parseInt(a) + parseInt(b)).toString())
+        x => zip(x, x, (a: any, b: any) => (parseInt(a) + parseInt(b)).toString())
       )
     );
     const expected1 = '-2-4-6----8-|';
@@ -216,11 +202,7 @@ describe('multicast', () => {
 
   it("should accept a multicast selector and respect the subject's messaging semantics", () => {
     const source = cold('-1-2-3----4-|');
-    const sourceSubs = [
-      '^           !',
-      '    ^           !',
-      '        ^           !'
-    ];
+    const sourceSubs = ['^           !', '    ^           !', '        ^           !'];
     const multicasted = source.pipe(
       multicast(
         () => new Replay<string>(1),
@@ -253,9 +235,9 @@ describe('multicast', () => {
   it('should multicast the same values to multiple observers', () => {
     const source = cold('-1-2-3----4-|');
     const sourceSubs = '^           !';
-    const multicasted = source.pipe(
-      multicast(() => new Subject<string>())
-    ) as Connect<string>;
+    const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+      string
+    >;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
     const expected1 = '-1-2-3----4-|';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
@@ -274,9 +256,9 @@ describe('multicast', () => {
   it('should multicast an error from the source to multiple observers', () => {
     const source = cold('-1-2-3----4-#');
     const sourceSubs = '^           !';
-    const multicasted = source.pipe(
-      multicast(() => new Subject<string>())
-    ) as Connect<string>;
+    const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+      string
+    >;
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
     const expected1 = '-1-2-3----4-#';
     const subscriber2 = hot('    b|       ').pipe(mergeMapTo(multicasted));
@@ -298,9 +280,9 @@ describe('multicast', () => {
     () => {
       const source = cold('-1-2-3----4-|');
       const sourceSubs = '^        !   ';
-      const multicasted = source.pipe(
-        multicast(() => new Subject<string>())
-      ) as Connect<string>;
+      const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+        string
+      >;
       const unsub = '         u   ';
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(multicasted));
       const expected1 = '-1-2-3----   ';
@@ -364,9 +346,9 @@ describe('multicast', () => {
   it('should multicast an empty source', () => {
     const source = cold('|');
     const sourceSubs = '(^!)';
-    const multicasted = source.pipe(
-      multicast(() => new Subject<string>())
-    ) as Connect<string>;
+    const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+      string
+    >;
     const expected = '|';
 
     expectSource(multicasted).toBe(expected);
@@ -378,9 +360,9 @@ describe('multicast', () => {
   it('should multicast a never source', () => {
     const source = cold('-');
     const sourceSubs = '^';
-    const multicasted = source.pipe(
-      multicast(() => new Subject<string>())
-    ) as Connect<string>;
+    const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+      string
+    >;
     const expected = '-';
 
     expectSource(multicasted).toBe(expected);
@@ -392,9 +374,9 @@ describe('multicast', () => {
   it('should multicast a throw source', () => {
     const source = cold('#');
     const sourceSubs = '(^!)';
-    const multicasted = source.pipe(
-      multicast(() => new Subject<string>())
-    ) as Connect<string>;
+    const multicasted = source.pipe(multicast(() => new Subject<string>())) as Connect<
+      string
+    >;
     const expected = '#';
 
     expectSource(multicasted).toBe(expected);
@@ -766,13 +748,13 @@ describe('multicast', () => {
       results2.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([1, 2, 3, 4]);
-    expect(results2).to.deep.equal([1, 2, 3, 4]);
+    expect(results1).toEqual([1, 2, 3, 4]);
+    expect(results2).toEqual([1, 2, 3, 4]);
     expect(subscriptions).to.equal(1);
     done();
   });
@@ -782,9 +764,7 @@ describe('multicast', () => {
     const expected = [1, 2, 3, 4];
     let i = 0;
 
-    const source = from([1, 2, 3, 4]).pipe(multicast(subject)) as Connect<
-      number
-    >;
+    const source = from([1, 2, 3, 4]).pipe(multicast(subject)) as Connect<number>;
 
     source.subscribe(x => {
       expect(x).to.equal(expected[i++]);
@@ -826,61 +806,52 @@ describe('multicast', () => {
       source.connect();
     });
 
-    it(
-      'should not throw UnsubscribedError when used in ' + 'a switchMap',
-      done => {
-        const source = of(1, 2, 3).pipe(
-          multicast(() => new Subject<number>()),
-          refCount()
+    it('should not throw UnsubscribedError when used in ' + 'a switchMap', done => {
+      const source = of(1, 2, 3).pipe(
+        multicast(() => new Subject<number>()),
+        refCount()
+      );
+
+      const expected = ['a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3'];
+
+      of('a', 'b', 'c')
+        .pipe(switchMap(letter => source.pipe(map(n => String(letter + n)))))
+        .subscribe(
+          x => {
+            expect(x).to.equal(expected.shift());
+          },
+          x => {
+            done(new Error('should not be called'));
+          },
+          () => {
+            expect(expected.length).to.equal(0);
+            done();
+          }
         );
-
-        const expected = ['a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3'];
-
-        of('a', 'b', 'c')
-          .pipe(switchMap(letter => source.pipe(map(n => String(letter + n)))))
-          .subscribe(
-            x => {
-              expect(x).to.equal(expected.shift());
-            },
-            x => {
-              done(new Error('should not be called'));
-            },
-            () => {
-              expect(expected.length).to.equal(0);
-              done();
-            }
-          );
-      }
-    );
+    });
   });
 
   describe('when given a subject', () => {
-    it(
-      'should not throw UnsubscribedError when used in ' + 'a switchMap',
-      done => {
-        const source = of(1, 2, 3).pipe(
-          multicast(new Subject<number>()),
-          refCount()
+    it('should not throw UnsubscribedError when used in ' + 'a switchMap', done => {
+      const source = of(1, 2, 3).pipe(multicast(new Subject<number>()), refCount());
+
+      const expected = ['a1', 'a2', 'a3'];
+
+      of('a', 'b', 'c')
+        .pipe(switchMap(letter => source.pipe(map(n => String(letter + n)))))
+        .subscribe(
+          x => {
+            expect(x).to.equal(expected.shift());
+          },
+          x => {
+            done(new Error('should not be called'));
+          },
+          () => {
+            expect(expected.length).to.equal(0);
+            done();
+          }
         );
-
-        const expected = ['a1', 'a2', 'a3'];
-
-        of('a', 'b', 'c')
-          .pipe(switchMap(letter => source.pipe(map(n => String(letter + n)))))
-          .subscribe(
-            x => {
-              expect(x).to.equal(expected.shift());
-            },
-            x => {
-              done(new Error('should not be called'));
-            },
-            () => {
-              expect(expected.length).to.equal(0);
-              done();
-            }
-          );
-      }
-    );
+    });
   });
 
   describe('typings', () => {
@@ -921,26 +892,21 @@ describe('multicast', () => {
       /* tslint:disable:no-unused-variable */
       const source = of(1, 2, 3);
       // TODO: https://github.com/ReactiveX/rxjs/issues/2972
-      const result: Connect<number> = multicast(() => new Subject<number>())(
-        source
-      );
+      const result: Connect<number> = multicast(() => new Subject<number>())(source);
       /* tslint:enable:no-unused-variable */
     });
 
-    type(
-      'should infer the type for the pipeable operator with a selector',
-      () => {
-        /* tslint:disable:no-unused-variable */
-        const source = of(1, 2, 3);
-        const result: Observable<number> = source.pipe(
-          multicast(
-            () => new Subject<number>(),
-            s => s.pipe(map(x => x))
-          )
-        );
-        /* tslint:enable:no-unused-variable */
-      }
-    );
+    type('should infer the type for the pipeable operator with a selector', () => {
+      /* tslint:disable:no-unused-variable */
+      const source = of(1, 2, 3);
+      const result: Observable<number> = source.pipe(
+        multicast(
+          () => new Subject<number>(),
+          s => s.pipe(map(x => x))
+        )
+      );
+      /* tslint:enable:no-unused-variable */
+    });
 
     type(
       'should infer the type for the pipeable operator with a type-changing selector',
@@ -1036,9 +1002,7 @@ describe('publish', () => {
     const source = hot('-1-2-3----4-|');
     const sourceSubs = ['^           !', '    ^       !', '        ^   !'];
     const published = source.pipe(
-      publish(x =>
-        x.pipe(zip(x, (a, b) => (parseInt(a) + parseInt(b)).toString()))
-      )
+      publish(x => x.pipe(zip(x, (a, b) => (parseInt(a) + parseInt(b)).toString())))
     );
     const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
     const expected1 = '-2-4-6----8-|';
@@ -1227,13 +1191,13 @@ describe('publish', () => {
       results1.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([1, 2, 3, 4]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([1, 2, 3, 4]);
+    expect(results2).toEqual([]);
     expect(subscriptions).to.equal(1);
 
     connectable.subscribe(
@@ -1244,7 +1208,7 @@ describe('publish', () => {
         done(new Error('should not be called'));
       },
       () => {
-        expect(results2).to.deep.equal([]);
+        expect(results2).toEqual([]);
         done();
       }
     );
@@ -1310,13 +1274,13 @@ describe('publish', () => {
       results2.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([1, 2, 3, 4]);
-    expect(results2).to.deep.equal([1, 2, 3, 4]);
+    expect(results1).toEqual([1, 2, 3, 4]);
+    expect(results2).toEqual([1, 2, 3, 4]);
     expect(subscriptions).to.equal(1);
     done();
   });
@@ -1326,9 +1290,7 @@ describe('publish', () => {
   });
   type('should infer the type with a selector', () => {
     const source = of(1, 2, 3);
-    const result: Observable<number> = source.pipe(
-      publish(s => s.pipe(map(x => x)))
-    );
+    const result: Observable<number> = source.pipe(publish(s => s.pipe(map(x => x))));
   });
   type('should infer the type with a type-changing selector', () => {
     const source = of(1, 2, 3);
@@ -1340,15 +1302,10 @@ describe('publish', () => {
     const source = of(1, 2, 3);
     const result: Connect<number> = publish<number>()(source);
   });
-  type(
-    'should infer the type for the pipeable operator with a selector',
-    () => {
-      const source = of(1, 2, 3);
-      const result: Observable<number> = source.pipe(
-        publish(s => s.pipe(map(x => x)))
-      );
-    }
-  );
+  type('should infer the type for the pipeable operator with a selector', () => {
+    const source = of(1, 2, 3);
+    const result: Observable<number> = source.pipe(publish(s => s.pipe(map(x => x))));
+  });
   type(
     'should infer the type for the pipeable operator with a type-changing selector',
     () => {
@@ -1361,20 +1318,17 @@ describe('publish', () => {
 });
 
 describe('publishBehavior', () => {
-  asDiagram('publishBehavior(0)')(
-    'should mirror a simple source Observable',
-    () => {
-      const source = cold('--1-2---3-4--5-|');
-      const sourceSubs = '^              !';
-      const published = source.pipe(publishBehavior('0')) as Connect<string>;
-      const expected = '0-1-2---3-4--5-|';
+  asDiagram('publishBehavior(0)')('should mirror a simple source Observable', () => {
+    const source = cold('--1-2---3-4--5-|');
+    const sourceSubs = '^              !';
+    const published = source.pipe(publishBehavior('0')) as Connect<string>;
+    const expected = '0-1-2---3-4--5-|';
 
-      expectSource(published).toBe(expected);
-      expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+    expectSource(published).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
-      published.connect();
-    }
-  );
+    published.connect();
+  });
 
   it('should enforce parameter', () => {
     const a = of(1, 2, 3).pipe(publishBehavior()); // $ExpectError
@@ -1565,11 +1519,7 @@ describe('publishBehavior', () => {
     it('should NOT be repeatable', () => {
       const source = cold('-1-2-3----4-|');
       const sourceSubs = '^           !';
-      const published = source.pipe(
-        publishBehavior('0'),
-        refCount(),
-        repeat(3)
-      );
+      const published = source.pipe(publishBehavior('0'), refCount(), repeat(3));
       const subscriber1 = hot('a|           ').pipe(mergeMapTo(published));
       const expected1 = '01-2-3----4-|';
       const subscriber2 = hot('    b|       ').pipe(mergeMapTo(published));
@@ -1604,13 +1554,13 @@ describe('publishBehavior', () => {
       results1.push(x);
     });
 
-    expect(results1).to.deep.equal([0]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([0]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([0, 1, 2, 3, 4]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([0, 1, 2, 3, 4]);
+    expect(results2).toEqual([]);
     expect(subscriptions).to.equal(1);
 
     connectable.subscribe(
@@ -1621,7 +1571,7 @@ describe('publishBehavior', () => {
         done(new Error('should not be called'));
       },
       () => {
-        expect(results2).to.deep.equal([]);
+        expect(results2).toEqual([]);
         done();
       }
     );
@@ -1682,18 +1632,18 @@ describe('publishBehavior', () => {
       results1.push(x);
     });
 
-    expect(results1).to.deep.equal([0]);
+    expect(results1).toEqual([0]);
 
     connectable.connect();
 
-    expect(results2).to.deep.equal([]);
+    expect(results2).toEqual([]);
 
     connectable.subscribe(x => {
       results2.push(x);
     });
 
-    expect(results1).to.deep.equal([0, 1, 2, 3, 4]);
-    expect(results2).to.deep.equal([4]);
+    expect(results1).toEqual([0, 1, 2, 3, 4]);
+    expect(results2).toEqual([4]);
     expect(subscriptions).to.equal(1);
     done();
   });
@@ -1717,15 +1667,13 @@ describe('publishBehavior', () => {
       results.push(x);
     });
 
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
     done();
   });
 
   type('should infer the type', () => {
     const source = of(1, 2, 3);
-    const result: Connect<number> = source.pipe(publishBehavior(0)) as Connect<
-      number
-    >;
+    const result: Connect<number> = source.pipe(publishBehavior(0)) as Connect<number>;
   });
 
   type('should infer the type for the pipeable operator', () => {
@@ -1993,22 +1941,20 @@ describe('publishLast', () => {
       results2.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([4]);
-    expect(results2).to.deep.equal([4]);
+    expect(results1).toEqual([4]);
+    expect(results2).toEqual([4]);
     expect(subscriptions).to.equal(1);
     done();
   });
 
   type('should infer the type', () => {
     const source = of(1, 2, 3);
-    const result: Connect<number> = source.pipe(publishLast()) as Connect<
-      number
-    >;
+    const result: Connect<number> = source.pipe(publishLast()) as Connect<number>;
   });
 
   type('should infer the type for the pipeable operator', () => {
@@ -2019,20 +1965,17 @@ describe('publishLast', () => {
 });
 
 describe('publishReplay', () => {
-  asDiagram('publishReplay(1)')(
-    'should mirror a simple source Observable',
-    () => {
-      const source = cold('--1-2---3-4--5-|');
-      const sourceSubs = '^              !';
-      const published = source.pipe(publishReplay(1)) as Connect<string>;
-      const expected = '--1-2---3-4--5-|';
+  asDiagram('publishReplay(1)')('should mirror a simple source Observable', () => {
+    const source = cold('--1-2---3-4--5-|');
+    const sourceSubs = '^              !';
+    const published = source.pipe(publishReplay(1)) as Connect<string>;
+    const expected = '--1-2---3-4--5-|';
 
-      expectSource(published).toBe(expected);
-      expectSubscriptions(source.subscriptions).toBe(sourceSubs);
+    expectSource(published).toBe(expected);
+    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
 
-      published.connect();
-    }
-  );
+    published.connect();
+  });
   it('should accept empty parameter', () => {
     const a = of(1, 2, 3).pipe(publishReplay()); // $ExpectType Observable<number>
   });
@@ -2074,9 +2017,7 @@ describe('publishReplay', () => {
     ); // $ExpectType Observable<string | number>
   });
   it('should accept windowTime, bufferSize, selector of Lifter, and scheduler', () => {
-    const a = of(1, 2, 3).pipe(
-      publishReplay(1, 1, x => of('a'), asyncScheduler)
-    ); // $ExpectType Observable<string>
+    const a = of(1, 2, 3).pipe(publishReplay(1, 1, x => of('a'), asyncScheduler)); // $ExpectType Observable<string>
   });
 
   it('should accept windowTime, bufferSize, selector of Shifter, and scheduler', () => {
@@ -2084,9 +2025,7 @@ describe('publishReplay', () => {
   });
 
   it('should enforce type on selector', () => {
-    const a = of(1, 2, 3).pipe(
-      publishReplay(1, 1, (x: Observable<string>) => x)
-    ); // $ExpectError
+    const a = of(1, 2, 3).pipe(publishReplay(1, 1, (x: Observable<string>) => x)); // $ExpectError
   });
 
   it('should return a Connect-ish', () => {
@@ -2323,13 +2262,13 @@ describe('publishReplay', () => {
       results2.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([1, 2, 3, 4]);
-    expect(results2).to.deep.equal([1, 2, 3, 4]);
+    expect(results1).toEqual([1, 2, 3, 4]);
+    expect(results2).toEqual([1, 2, 3, 4]);
     expect(subscriptions).to.equal(1);
     done();
   });
@@ -2354,8 +2293,8 @@ describe('publishReplay', () => {
       results1.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
@@ -2363,8 +2302,8 @@ describe('publishReplay', () => {
       results2.push(x);
     });
 
-    expect(results1).to.deep.equal([1, 2, 3, 4]);
-    expect(results2).to.deep.equal([3, 4]);
+    expect(results1).toEqual([1, 2, 3, 4]);
+    expect(results2).toEqual([3, 4]);
     expect(subscriptions).to.equal(1);
     done();
   });
@@ -2391,14 +2330,14 @@ describe('publishReplay', () => {
         results1.push(x);
       });
 
-      expect(results1).to.deep.equal([]);
-      expect(results2).to.deep.equal([]);
+      expect(results1).toEqual([]);
+      expect(results2).toEqual([]);
 
       connectable.connect().unsubscribe();
       subscription1.unsubscribe();
 
-      expect(results1).to.deep.equal([1, 2, 3, 4]);
-      expect(results2).to.deep.equal([]);
+      expect(results1).toEqual([1, 2, 3, 4]);
+      expect(results2).toEqual([]);
       expect(subscriptions).to.equal(1);
 
       const subscription2 = connectable.subscribe(x => {
@@ -2408,8 +2347,8 @@ describe('publishReplay', () => {
       connectable.connect().unsubscribe();
       subscription2.unsubscribe();
 
-      expect(results1).to.deep.equal([1, 2, 3, 4]);
-      expect(results2).to.deep.equal([3, 4, 1, 2, 3, 4]);
+      expect(results1).toEqual([1, 2, 3, 4]);
+      expect(results2).toEqual([3, 4, 1, 2, 3, 4]);
       expect(subscriptions).to.equal(2);
     }
   );
@@ -2434,13 +2373,13 @@ describe('publishReplay', () => {
       results1.push(x);
     });
 
-    expect(results1).to.deep.equal([]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([]);
+    expect(results2).toEqual([]);
 
     connectable.connect();
 
-    expect(results1).to.deep.equal([1, 2, 3, 4]);
-    expect(results2).to.deep.equal([]);
+    expect(results1).toEqual([1, 2, 3, 4]);
+    expect(results2).toEqual([]);
     expect(subscriptions).to.equal(1);
 
     connectable.subscribe(
@@ -2451,7 +2390,7 @@ describe('publishReplay', () => {
         done(new Error('should not be called'));
       },
       () => {
-        expect(results2).to.deep.equal([3, 4]);
+        expect(results2).toEqual([3, 4]);
         done();
       }
     );
@@ -2500,9 +2439,7 @@ describe('publishReplay', () => {
       observable.pipe(map(v => 2 * +v));
     const source = cold('--1-2---3-4---|');
     const sourceSubs = '^             !';
-    const published = source.pipe(
-      publishReplay(1, Number.POSITIVE_INFINITY, selector)
-    );
+    const published = source.pipe(publishReplay(1, Number.POSITIVE_INFINITY, selector));
     const expected = '--a-b---c-d---|';
 
     expectSource(published).toBe(expected, values);
@@ -2515,9 +2452,7 @@ describe('publishReplay', () => {
       throw error;
     };
     const source = cold('--1-2---3-4---|');
-    const published = source.pipe(
-      publishReplay(1, Number.POSITIVE_INFINITY, selector)
-    );
+    const published = source.pipe(publishReplay(1, Number.POSITIVE_INFINITY, selector));
 
     // The exception is thrown outside Rx chain (not as an error notification).
     expect(() => published.subscribe()).to.throw(error);
@@ -2530,9 +2465,7 @@ describe('publishReplay', () => {
       observable.pipe(mergeMapTo(innerObservable));
     const source = cold('--1--2---3---|');
     const sourceSubs = '^          !';
-    const published = source.pipe(
-      publishReplay(1, Number.POSITIVE_INFINITY, selector)
-    );
+    const published = source.pipe(publishReplay(1, Number.POSITIVE_INFINITY, selector));
     const expected = '----5-65-6-#';
 
     expectSource(published).toBe(expected, undefined, error);
@@ -2543,9 +2476,7 @@ describe('publishReplay', () => {
     const selector = () => EMPTY;
     const source = cold('--1--2---3---|');
     const sourceSubs = '(^!)';
-    const published = source.pipe(
-      publishReplay(1, Number.POSITIVE_INFINITY, selector)
-    );
+    const published = source.pipe(publishReplay(1, Number.POSITIVE_INFINITY, selector));
     const expected = '|';
 
     expectSource(published).toBe(expected);
@@ -2556,9 +2487,7 @@ describe('publishReplay', () => {
     const selector = () => NEVER;
     const source = cold('-');
     const sourceSubs = '^';
-    const published = source.pipe(
-      publishReplay(1, Number.POSITIVE_INFINITY, selector)
-    );
+    const published = source.pipe(publishReplay(1, Number.POSITIVE_INFINITY, selector));
     const expected = '-';
 
     expectSource(published).toBe(expected);
@@ -2570,9 +2499,7 @@ describe('publishReplay', () => {
     const selector = () => throwError(error);
     const source = cold('--1--2---3---|');
     const sourceSubs = '(^!)';
-    const published = source.pipe(
-      publishReplay(1, Number.POSITIVE_INFINITY, selector)
-    );
+    const published = source.pipe(publishReplay(1, Number.POSITIVE_INFINITY, selector));
     const expected = '#';
 
     expectSource(published).toBe(expected, undefined, error);
@@ -2581,9 +2508,7 @@ describe('publishReplay', () => {
 
   type('should infer the type', () => {
     const source = of(1, 2, 3);
-    const result: Connect<number> = source.pipe(publishReplay(1)) as Connect<
-      number
-    >;
+    const result: Connect<number> = source.pipe(publishReplay(1)) as Connect<number>;
   });
 
   type('should infer the type with a selector', () => {
@@ -2608,15 +2533,12 @@ describe('publishReplay', () => {
   //
   // });
 
-  type(
-    'should infer the type for the pipeable operator with a selector',
-    () => {
-      const source = of(1, 2, 3);
-      const result: Observable<number> = source.pipe(
-        publishReplay(1, undefined, s => s.pipe(map(x => x)))
-      );
-    }
-  );
+  type('should infer the type for the pipeable operator with a selector', () => {
+    const source = of(1, 2, 3);
+    const result: Observable<number> = source.pipe(
+      publishReplay(1, undefined, s => s.pipe(map(x => x)))
+    );
+  });
 
   type(
     'should infer the type for the pipeable operator with a type-changing selector',
@@ -3138,17 +3060,11 @@ describe('shareReplay', () => {
     const source = cold('-1-2-----3-#               ');
     const shared = source.pipe(shareReplay(2));
     const sourceSubs1 = '^          !               ';
-    const subscriber1 = hot('a|                         ').pipe(
-      mergeMapTo(shared)
-    );
+    const subscriber1 = hot('a|                         ').pipe(mergeMapTo(shared));
     const expected1 = '-1-2-----3-#               ';
-    const subscriber2 = hot('    b|                     ').pipe(
-      mergeMapTo(shared)
-    );
+    const subscriber2 = hot('    b|                     ').pipe(mergeMapTo(shared));
     const expected2 = '    (12)-3-#               ';
-    const subscriber3 = hot('               (c|)        ').pipe(
-      mergeMapTo(shared)
-    );
+    const subscriber3 = hot('               (c|)        ').pipe(mergeMapTo(shared));
     const expected3 = '               -1-2-----3-#';
     const sourceSubs2 = '               ^          !';
 
@@ -3189,10 +3105,8 @@ describe('shareReplay', () => {
 
     of(1).pipe(shareReplay(1, undefined, rxTestScheduler)).subscribe();
     spy.restore();
-    expect(
-      spy,
-      'Replay should not call scheduler.now() when no windowTime is given'
-    ).to.be.not.called;
+    expect(spy, 'Replay should not call scheduler.now() when no windowTime is given').to
+      .be.not.called;
   });
 
   it('should not restart due to unsubscriptions if refCount is false', () => {

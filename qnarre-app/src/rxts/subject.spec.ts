@@ -860,9 +860,7 @@ describe('Behavior', () => {
     const s = new qj.Behavior('flibberty');
     try {
       (s as any).value = 'jibbets';
-    } catch (e) {
-      //noop
-    }
+    } catch (e) {}
     expect(s.getN()).toBe('flibberty');
     expect(s.n).toBe('flibberty');
   });

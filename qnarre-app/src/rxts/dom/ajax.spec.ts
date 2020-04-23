@@ -144,7 +144,7 @@ describe('ajax', () => {
     const request = MockXMLHttpRequest.mostRecent;
 
     expect(request.url).to.equal('/talk-to-me-goose');
-    expect(request.requestHeaders).to.deep.equal({
+    expect(request.requestHeaders).toEqual({
       'Content-Type': 'kenny/loggins',
       'Fly-Into-The': 'Dangah Zone!',
       'Take-A-Ride-Into-The': 'Danger ZoooOoone!'
@@ -160,7 +160,7 @@ describe('ajax', () => {
 
     const request = MockXMLHttpRequest.mostRecent;
 
-    expect(request.requestHeaders).to.deep.equal({
+    expect(request.requestHeaders).toEqual({
       'X-Requested-With': 'XMLHttpRequest'
     });
   });
@@ -263,7 +263,7 @@ describe('ajax', () => {
     });
 
     expect(result!.xhr).exist;
-    expect(result!.response).to.deep.equal(JSON.stringify({foo: 'bar'}));
+    expect(result!.response).toEqual(JSON.stringify({foo: 'bar'}));
     expect(complete).to.be.true;
   });
 
@@ -366,7 +366,7 @@ describe('ajax', () => {
     });
 
     expect(result!.xhr).exist;
-    expect(result!.response).to.deep.equal('Wee! I am text!');
+    expect(result!.response).toEqual('Wee! I am text!');
     expect(complete).to.be.true;
   });
 
@@ -585,8 +585,8 @@ describe('ajax', () => {
       ajax(obj).subscribe();
 
       expect(MockXMLHttpRequest.mostRecent.url).to.equal('/flibbertyJibbet');
-      expect(MockXMLHttpRequest.mostRecent.data).to.deep.equal(body);
-      expect(MockXMLHttpRequest.mostRecent.requestHeaders).to.deep.equal({});
+      expect(MockXMLHttpRequest.mostRecent.data).toEqual(body);
+      expect(MockXMLHttpRequest.mostRecent.requestHeaders).toEqual({});
     });
 
     it('should not fail when FormData is undefined', () => {
@@ -622,9 +622,7 @@ describe('ajax', () => {
       ajax(obj).subscribe();
 
       expect(MockXMLHttpRequest.mostRecent.url).to.equal('/flibbertyJibbet');
-      expect(MockXMLHttpRequest.mostRecent.data).to.equal(
-        '%F0%9F%8C%9F=%F0%9F%9A%80'
-      );
+      expect(MockXMLHttpRequest.mostRecent.data).to.equal('%F0%9F%8C%9F=%F0%9F%9A%80');
     });
 
     it('should send by JSON', () => {
@@ -724,7 +722,7 @@ describe('ajax', () => {
         responseText: JSON.stringify(expected)
       });
 
-      expect(result).to.deep.equal(expected);
+      expect(result).toEqual(expected);
       expect(complete).to.be.true;
     });
 
@@ -753,7 +751,7 @@ describe('ajax', () => {
         responseText: expected
       });
 
-      expect(result).to.deep.equal(expected);
+      expect(result).toEqual(expected);
       expect(complete).to.be.true;
     });
 
@@ -782,7 +780,7 @@ describe('ajax', () => {
         responseText: JSON.stringify(expected)
       });
 
-      expect(result).to.deep.equal(expected);
+      expect(result).toEqual(expected);
       expect(complete).to.be.true;
     });
   });
@@ -807,7 +805,7 @@ describe('ajax', () => {
 
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('/flibbertyJibbet');
-      expect(request.requestHeaders).to.deep.equal({
+      expect(request.requestHeaders).toEqual({
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       });
 
@@ -818,7 +816,7 @@ describe('ajax', () => {
       });
 
       expect(request.data).to.equal('foo=bar&hi=there%20you');
-      expect(result!.response).to.deep.equal(expected);
+      expect(result!.response).toEqual(expected);
       expect(complete).to.be.true;
     });
 
@@ -843,7 +841,7 @@ describe('ajax', () => {
 
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('/flibbertyJibbet');
-      expect(request.requestHeaders).to.deep.equal({
+      expect(request.requestHeaders).toEqual({
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       });
 
@@ -856,7 +854,7 @@ describe('ajax', () => {
       expect(request.data).to.equal(
         'test=https%3A%2F%2Fgoogle.com%2Fsearch%3Fq%3DencodeURI%2Bvs%2BencodeURIComponent'
       );
-      expect(result!.response).to.deep.equal(expected);
+      expect(result!.response).toEqual(expected);
       expect(complete).to.be.true;
     });
 
@@ -879,7 +877,7 @@ describe('ajax', () => {
 
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('/flibbertyJibbet');
-      expect(request.requestHeaders).to.deep.equal({
+      expect(request.requestHeaders).toEqual({
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       });
 
@@ -915,7 +913,7 @@ describe('ajax', () => {
 
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('/flibbertyJibbet');
-      expect(request.requestHeaders).to.deep.equal({
+      expect(request.requestHeaders).toEqual({
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
       });
 
@@ -933,12 +931,8 @@ describe('ajax', () => {
       const spy = sinon.spy();
       const progressSubscriber = <any>{
         next: spy,
-        error: () => {
-          // noop
-        },
-        complete: () => {
-          // noop
-        }
+        error: () => {},
+        complete: () => {}
       };
 
       ajax({
@@ -964,12 +958,8 @@ describe('ajax', () => {
       const spy = sinon.spy();
       const progressSubscriber = <any>{
         next: spy,
-        error: () => {
-          // noop
-        },
-        complete: () => {
-          // noop
-        }
+        error: () => {},
+        complete: () => {}
       };
 
       root.XMLHttpRequest = MockXMLHttpRequestInternetExplorer;
@@ -1056,9 +1046,7 @@ describe('ajax', () => {
     try {
       request.ontimeout(<any>'ontimeout');
     } catch (e) {
-      expect(e.message).to.equal(
-        new AjaxTimeoutError(<any>request, ajaxRequest).message
-      );
+      expect(e.message).to.equal(new AjaxTimeoutError(<any>request, ajaxRequest).message);
     }
     delete root.XMLHttpRequest.prototype.ontimeout;
   });
@@ -1083,15 +1071,9 @@ describe('ajax', () => {
     ajax({
       url: '/flibbertyJibbet',
       progressSubscriber: <any>{
-        next: () => {
-          // noop
-        },
-        error: () => {
-          // noop
-        },
-        complete: () => {
-          // noop
-        }
+        next: () => {},
+        error: () => {},
+        complete: () => {}
       }
     }).subscribe();
 
@@ -1312,9 +1294,7 @@ class MockXMLHttpRequest {
     this.status = response.status || 200;
     this.responseText = response.responseText;
     const responseType =
-      response.responseType !== undefined
-        ? response.responseType
-        : this.responseType;
+      response.responseType !== undefined ? response.responseType : this.responseType;
     if (!('response' in response)) {
       switch (responseType) {
         case 'json':

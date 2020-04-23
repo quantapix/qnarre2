@@ -1,10 +1,4 @@
-import {
-  hot,
-  cold,
-  emptySubs,
-  expectSource,
-  expectSubscriptions
-} from './testing';
+import {hot, cold, emptySubs, expectSource, expectSubscriptions} from './testing';
 
 declare function asDiagram(arg: string): Function;
 
@@ -64,12 +58,9 @@ describe('concat static', () => {
     const unsub = '               !';
 
     const innerWrapped = inner.pipe(mergeMap(x => of(x)));
-    const result = concat(
-      innerWrapped,
-      innerWrapped,
-      innerWrapped,
-      innerWrapped
-    ).pipe(mergeMap(x => of(x)));
+    const result = concat(innerWrapped, innerWrapped, innerWrapped, innerWrapped).pipe(
+      mergeMap(x => of(x))
+    );
 
     expectSource(result, unsub).toBe(expected);
     expectSubscriptions(inner.subscriptions).toBe(innersubs);
@@ -447,9 +438,7 @@ describe('concat', () => {
   });
 
   it('should support six arguments', () => {
-    const o = of(1, 2, 3).pipe(
-      concat(of(1), of(2), of(3), of(4), of(5), of(6))
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(concat(of(1), of(2), of(3), of(4), of(5), of(6))); // $ExpectType Observable<number>
   });
 
   it('should support six or more arguments', () => {
@@ -508,7 +497,7 @@ describe('concat', () => {
       },
       () => {
         results.push('Completed');
-        expect(results).to.deep.equal(['Next: 1', 'Next: 2', 'Completed']);
+        expect(results).toEqual(['Next: 1', 'Next: 2', 'Completed']);
         done();
       }
     );
@@ -895,7 +884,7 @@ describe('concatAll', () => {
         done(new Error('should not be called'));
       },
       () => {
-        expect(res).to.deep.equal([0, 1, 2, 3]);
+        expect(res).toEqual([0, 1, 2, 3]);
         done();
       }
     );
@@ -1368,9 +1357,7 @@ describe('concatAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number> = of(source1, source2, source3).pipe(
-      concatAll()
-    );
+    let result: Observable<number> = of(source1, source2, source3).pipe(concatAll());
     /* tslint:enable:no-unused-variable */
   });
 
@@ -1380,8 +1367,19 @@ describe('concatAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number> = of(source1, source2, source3).pipe(
-      concatAll()
+    let result: Observable<number> = of(source1, source2, source3).pipe(concatAll());
+    /* tslint:enable:no-unused-variable */
+  });
+
+  type(() => {
+    // coerce type to a specific type
+    /* tslint:disable:no-unused-variable */
+    const source1 = of(1, 2, 3);
+    const source2 = [1, 2, 3];
+    const source3 = new Promise<number>(d => d(1));
+
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
+      concatAll<string>()
     );
     /* tslint:enable:no-unused-variable */
   });
@@ -1393,26 +1391,9 @@ describe('concatAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(concatAll<string>());
-    /* tslint:enable:no-unused-variable */
-  });
-
-  type(() => {
-    // coerce type to a specific type
-    /* tslint:disable:no-unused-variable */
-    const source1 = of(1, 2, 3);
-    const source2 = [1, 2, 3];
-    const source3 = new Promise<number>(d => d(1));
-
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(concatAll<string>());
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
+      concatAll<string>()
+    );
     /* tslint:enable:no-unused-variable */
   });
 });
@@ -1449,9 +1430,7 @@ describe('concatWith', () => {
   });
 
   it('should support six arguments', () => {
-    const o = of(1, 2, 3).pipe(
-      concatWith(of(1), of(2), of(3), of(4), of(5), of(6))
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(concatWith(of(1), of(2), of(3), of(4), of(5), of(6))); // $ExpectType Observable<number>
   });
 
   it('should support six or more arguments', () => {
@@ -1473,9 +1452,7 @@ describe('concatWith', () => {
   });
 
   it('should infer correctly with multiple types', () => {
-    const o = of(1, 2, 3).pipe(
-      concatWith(of('foo'), Promise.resolve([1]), of(6))
-    ); // $ExpectType Observable<string | number | number[]>
+    const o = of(1, 2, 3).pipe(concatWith(of('foo'), Promise.resolve([1]), of(6))); // $ExpectType Observable<string | number | number[]>
   });
 
   it('should enforce types', () => {
@@ -1520,29 +1497,11 @@ describe('concat operator', () => {
   });
 
   it('should accept more than 6 params', () => {
-    const o = concat(
-      of(1),
-      of(2),
-      of(3),
-      of(4),
-      of(5),
-      of(6),
-      of(7),
-      of(8),
-      of(9)
-    ); // $ExpectType Observable<number>
+    const o = concat(of(1), of(2), of(3), of(4), of(5), of(6), of(7), of(8), of(9)); // $ExpectType Observable<number>
   });
 
   it('should return Observable<unknown> for more than 6 different types of params', () => {
-    const o = concat(
-      of(1),
-      of('a'),
-      of(2),
-      of(true),
-      of(3),
-      of([1, 2, 3]),
-      of(4)
-    ); // $ExpectType Observable<string | number | boolean | number[]>
+    const o = concat(of(1), of('a'), of(2), of(true), of(3), of([1, 2, 3]), of(4)); // $ExpectType Observable<string | number | boolean | number[]>
   });
 
   it('should accept scheduler after params', () => {
@@ -1614,7 +1573,7 @@ describe('concat operator', () => {
       },
       () => {
         results.push('Completed');
-        expect(results).to.deep.equal(['Next: 1', 'Next: 2', 'Completed']);
+        expect(results).toEqual(['Next: 1', 'Next: 2', 'Completed']);
         done();
       }
     );
@@ -1932,9 +1891,7 @@ describe('count', () => {
   });
 
   it('should infer source observable type in parameter', () => {
-    const o = of(1, 2, 3).pipe(
-      count((x, i, source: Observable<string>) => x === 3)
-    ); // $ExpectError
+    const o = of(1, 2, 3).pipe(count((x, i, source: Observable<string>) => x === 3)); // $ExpectError
   });
 
   it('should enforce value type of source type', () => {
@@ -2769,9 +2726,7 @@ describe('reduce', () => {
   });
 
   it('should infer correctly for accumulator of type array', () => {
-    const a = of(1, 2, 3).pipe(
-      reduce((x: number[], y: number, i: number) => x, [])
-    ); // $ExpectType Observable<number[]>
+    const a = of(1, 2, 3).pipe(reduce((x: number[], y: number, i: number) => x, [])); // $ExpectType Observable<number[]>
   });
 
   it('should accept seed parameter of the same type', () => {
@@ -2801,9 +2756,7 @@ describe('reduce', () => {
   it('should accept seed parameter of a different type', () => {
     const a = of(1, 2, 3).pipe(reduce((x, y, z) => x + '1', '5')); // $ExpectType Observable<string>
     const bv: {[key: string]: string} = {};
-    const b = of(1, 2, 3).pipe(
-      reduce((x, y, z) => ({...x, [y]: y.toString()}), bv)
-    ); // $ExpectType Observable<{ [key: string]: string; }>
+    const b = of(1, 2, 3).pipe(reduce((x, y, z) => ({...x, [y]: y.toString()}), bv)); // $ExpectType Observable<{ [key: string]: string; }>
   });
 
   it('should act appropriately with no seed', () => {
@@ -2819,11 +2772,7 @@ describe('reduce', () => {
   });
 
   it('should infer types properly from arguments', () => {
-    function toArrayReducer(
-      arr: number[],
-      item: number,
-      index: number
-    ): number[] {
+    function toArrayReducer(arr: number[], item: number, index: number): number[] {
       if (index === 0) {
         return [item];
       }
@@ -2859,9 +2808,7 @@ describe('reduce', () => {
       x: 'undefined b c d e f g'
     };
 
-    const source = e1.pipe(
-      reduce((acc: any, x: string) => acc + ' ' + x, undefined)
-    );
+    const source = e1.pipe(reduce((acc: any, x: string) => acc + ' ' + x, undefined));
 
     expectSource(source).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
@@ -2924,10 +2871,9 @@ describe('reduce', () => {
       return o + x;
     };
 
-    expectSource(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(
-      expected,
-      {x: expectedValue}
-    );
+    expectSource(e1.pipe(reduce(reduceFunction, expectedValue))).toBe(expected, {
+      x: expectedValue
+    });
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 

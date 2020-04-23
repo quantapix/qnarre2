@@ -5,8 +5,7 @@ declare const type: Function;
 
 describe('refCount', () => {
   asDiagram('refCount')(
-    'should turn a multicasted Observable an automatically ' +
-      '(dis)connecting hot one',
+    'should turn a multicasted Observable an automatically ' + '(dis)connecting hot one',
     () => {
       const source = cold('--1-2---3-4--5-|');
       const sourceSubs = '^              !';
@@ -58,12 +57,8 @@ describe('refCount', () => {
 
     const refCounted = connectable.pipe(refCount());
 
-    const sub1 = refCounted.subscribe(() => {
-      //noop
-    });
-    const sub2 = refCounted.subscribe(() => {
-      //noop
-    });
+    const sub1 = refCounted.subscribe(() => {});
+    const sub2 = refCounted.subscribe(() => {});
     const sub3 = refCounted.subscribe((x: any) => {
       expect((connectable as any)._refCount).to.equal(1);
     });

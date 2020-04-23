@@ -1012,7 +1012,7 @@ describe('Virtual', () => {
 
     v.flush();
 
-    expect(invoked).to.deep.equal([1, 2, 3, 4, 5]);
+    expect(invoked).toEqual([1, 2, 3, 4, 5]);
   });
 
   it('should schedule things in order when flushed if each this is scheduled at random', () => {
@@ -1030,7 +1030,7 @@ describe('Virtual', () => {
 
     v.flush();
 
-    expect(invoked).to.deep.equal([1, 3, 5, 2, 6, 4]);
+    expect(invoked).toEqual([1, 3, 5, 2, 6, 4]);
   });
 
   it('should schedule things in order when there are negative delays', () => {
@@ -1048,7 +1048,7 @@ describe('Virtual', () => {
 
     v.flush();
 
-    expect(invoked).to.deep.equal([6, 4, 1, 3, 5, 2]);
+    expect(invoked).toEqual([6, 4, 1, 3, 5, 2]);
   });
 
   it('should support recursive scheduling', () => {
@@ -1084,7 +1084,7 @@ describe('Virtual', () => {
     action.schedule('second message', 10);
     v.flush();
 
-    expect(messages).to.deep.equal(['second message']);
+    expect(messages).toEqual(['second message']);
   });
 
   it('should execute only those virtual actions that fall into the maxFrames timespan', function () {
@@ -1100,8 +1100,8 @@ describe('Virtual', () => {
 
     v.flush();
 
-    expect(actualMessages).to.deep.equal(['first message', 'second message']);
-    expect(v.actions.map(a => a.state)).to.deep.equal(['third message']);
+    expect(actualMessages).toEqual(['first message', 'second message']);
+    expect(v.actions.map(a => a.state)).toEqual(['third message']);
   });
 
   it('should pick up actions execution where it left off after reaching previous maxFrames limit', function () {
@@ -1119,7 +1119,7 @@ describe('Virtual', () => {
     v.maxFrames = 2 * MAX_FRAMES;
     v.flush();
 
-    expect(actualMessages).to.deep.equal(messages);
+    expect(actualMessages).toEqual(messages);
   });
 });
 
@@ -1170,16 +1170,16 @@ describe('scheduled', () => {
       }
     });
 
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
 
     // Promises force async, so we can't schedule synchronously, no matter what.
     testScheduler.flush();
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
 
     Promise.resolve().then(() => {
       // NOW it should work, as the other promise should have resolved.
       testScheduler.flush();
-      expect(results).to.deep.equal(['x', 'done']);
+      expect(results).toEqual(['x', 'done']);
       done();
     });
   });

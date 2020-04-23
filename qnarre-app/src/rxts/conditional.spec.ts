@@ -182,7 +182,7 @@ describe('every', () => {
     of(1)
       .pipe(
         every(function (this: any, value: number, index: number) {
-          expect(this).to.deep.equal(thisArg);
+          expect(this).toEqual(thisArg);
           return true;
         }, thisArg)
       )
@@ -195,7 +195,7 @@ describe('every', () => {
     of(1, 2, 3, 4)
       .pipe(
         every(function (this: any, value: number, index: number) {
-          expect(this).to.deep.equal(thisArg);
+          expect(this).toEqual(thisArg);
           return true;
         }, thisArg)
       )
@@ -211,7 +211,7 @@ describe('every', () => {
     })
       .pipe(
         every(function (this: any, value: number, index: number) {
-          expect(this).to.deep.equal(thisArg);
+          expect(this).toEqual(thisArg);
           return true;
         }, thisArg)
       )
@@ -684,8 +684,7 @@ describe('find', () => {
       const xs: Observable<string | number> = from([1, 'aaa', 3, 'bb']);
 
       // This type guard will narrow a `string | number` to a string in the examples below
-      const isString = (x: string | number): x is string =>
-        typeof x === 'string';
+      const isString = (x: string | number): x is string => typeof x === 'string';
 
       xs.pipe(find(isString)).subscribe(s => s!.length); // s is string
 
@@ -726,15 +725,11 @@ describe('findIndex', () => {
   });
 
   it('should support a predicate that takes an index ', () => {
-    const o = of('foo', 'bar', 'baz').pipe(
-      findIndex((p, index) => index === 3)
-    ); // $ExpectType Observable<number>
+    const o = of('foo', 'bar', 'baz').pipe(findIndex((p, index) => index === 3)); // $ExpectType Observable<number>
   });
 
   it('should support a predicate that takes a source ', () => {
-    const o = of('foo', 'bar', 'baz').pipe(
-      findIndex((p, index, source) => p === 'foo')
-    ); // $ExpectType Observable<number>
+    const o = of('foo', 'bar', 'baz').pipe(findIndex((p, index, source) => p === 'foo')); // $ExpectType Observable<number>
   });
 
   it('should support an argument ', () => {
@@ -747,9 +742,7 @@ describe('findIndex', () => {
 
   it('should enforce predicate types', () => {
     const o = of('foo', 'bar', 'baz').pipe(findIndex((p: number) => p === 3)); // $ExpectError
-    const p = of('foo', 'bar', 'baz').pipe(
-      findIndex((p, index: string) => p === 3)
-    ); // $ExpectError
+    const p = of('foo', 'bar', 'baz').pipe(findIndex((p, index: string) => p === 3)); // $ExpectError
     const q = of('foo', 'bar', 'baz').pipe(
       findIndex((p, index, source: Observable<number>) => p === 3)
     ); // $ExpectError

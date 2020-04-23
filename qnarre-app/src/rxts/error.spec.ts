@@ -5,20 +5,17 @@ describe('catchError', () => {
     testScheduler = new TestScheduler(sourceMatcher);
   });
 
-  asDiagram('catch')(
-    'should catch error and replace with a cold Observable',
-    () => {
-      testScheduler.run(({hot, cold, expectSource}) => {
-        const e1 = hot('  --a--b--#       ');
-        const e2 = cold('         -1-2-3-|');
-        const expected = '--a--b---1-2-3-|';
+  asDiagram('catch')('should catch error and replace with a cold Observable', () => {
+    testScheduler.run(({hot, cold, expectSource}) => {
+      const e1 = hot('  --a--b--#       ');
+      const e2 = cold('         -1-2-3-|');
+      const expected = '--a--b---1-2-3-|';
 
-        const result = e1.pipe(catchError((err: any) => e2));
+      const result = e1.pipe(catchError((err: any) => e2));
 
-        expectSource(result).toBe(expected);
-      });
-    }
-  );
+      expectSource(result).toBe(expected);
+    });
+  });
 
   it('should infer correctly', () => {
     const o = of(1, 2, 3).pipe(catchError(() => of(4, 5, 6))); // $ExpectType Observable<number>
@@ -223,11 +220,9 @@ describe('catchError', () => {
         catchError(() => synchronousObservable),
         takeWhile(x => x != 2) // unsubscribe at the second side-effect
       )
-      .subscribe(() => {
-        /* noop */
-      });
+      .subscribe(() => {});
 
-    expect(sideEffects).to.deep.equal([1, 2]);
+    expect(sideEffects).toEqual([1, 2]);
   });
 
   it('should catch error and replace it with a hot Observable', () => {
@@ -398,9 +393,7 @@ describe('catchError', () => {
         })
       )
       .subscribe(
-        () => {
-          //noop
-        },
+        () => {},
         (err: any) => {
           done(new Error('should not be called'));
         },
@@ -510,7 +503,7 @@ describe('catchError', () => {
       value => values.push(value),
       err => done(err),
       () => {
-        expect(values).to.deep.equal(['delayed']);
+        expect(values).toEqual(['delayed']);
         done();
       }
     );
@@ -879,9 +872,7 @@ describe('retryWhen', () => {
   });
 
   it('should infer correctly when the error observable has a different type', () => {
-    const o = of(1, 2, 3).pipe(
-      retryWhen(retryWhen(errors => of('a', 'b', 'c')))
-    ); // $ExpectType Observable<number>
+    const o = of(1, 2, 3).pipe(retryWhen(retryWhen(errors => of('a', 'b', 'c')))); // $ExpectType Observable<number>
   });
 
   it('should enforce types', () => {

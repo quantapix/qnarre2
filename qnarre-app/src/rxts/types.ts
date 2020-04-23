@@ -181,3 +181,77 @@ export type EventTargetLike<T> =
   | JQueryEventEmitter;
 
 export type FromEventTarget<T> = EventTargetLike<T> | ArrayLike<EventTargetLike<T>>;
+
+export function identity<N>(x: N): N {
+  return x;
+}
+
+export function isDate(x: any): x is Date {
+  return x instanceof Date && !isNaN(+x);
+}
+
+export function isObject(x: any): x is Object {
+  return !!x && typeof x === 'object';
+}
+
+export function isFunction(x: any): x is Function {
+  return !!x && typeof x === 'function';
+}
+
+export function isNumeric(x: any): x is number | string {
+  return !Array.isArray(x) && x - parseFloat(x) + 1 >= 0;
+}
+
+export function isArrayLike<N>(x: any): x is ArrayLike<N> {
+  return !!x && typeof x !== 'function' && typeof x.length === 'number';
+}
+
+export function isIter<N>(x: any): x is Iterable<N> {
+  return !!x && typeof x[Symbol.iterator] === 'function';
+}
+
+export function isAsyncIter<N>(x: any): x is AsyncIterable<N> {
+  return !!x && typeof x[Symbol.asyncIterator] === 'function';
+}
+
+export function isInterop<N>(x: any): x is Interop<N> {
+  return !!x && typeof x[Symbol.rxSource] === 'function';
+}
+
+export function isPromise<N>(x: any): x is PromiseLike<N> {
+  return !!x && typeof x.subscribe !== 'function' && typeof x.then === 'function';
+}
+
+export function isSource<N>(x: any): x is Source<N> {
+  return !!x && typeof x.lift === 'function' && typeof x.subscribe === 'function';
+}
+
+export function isScheduler(x: any): x is Scheduler {
+  return !!x && typeof x.schedule === 'function';
+}
+
+export function isNodeEventEmitter(o: any): o is NodeEventEmitter {
+  return (
+    o && typeof o.addListener === 'function' && typeof o.removeListener === 'function'
+  );
+}
+
+export function isJQueryEventEmitter(o: any): o is JQueryEventEmitter {
+  return o && typeof o.on === 'function' && typeof o.off === 'function';
+}
+
+export function isEventTarget(o: any): o is HasAddRemove<any> {
+  return (
+    o &&
+    typeof o.addEventListener === 'function' &&
+    typeof o.removeEventListener === 'function'
+  );
+}
+
+export function noop() {}
+
+export function not(pred: Function, ctx: any): Function {
+  return function (): any {
+    return !pred.apply(ctx, arguments);
+  };
+}

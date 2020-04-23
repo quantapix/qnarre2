@@ -18,7 +18,7 @@ export function delay<N>(
   delay: number | Date,
   scheduler: qt.Scheduler = qh.async
 ): qt.Shifter<N> {
-  const absoluteDelay = qu.isDate(delay);
+  const absoluteDelay = qt.isDate(delay);
   const delayFor = absoluteDelay ? +delay - scheduler.now() : Math.abs(<number>delay);
   return x => x.lift(new DelayO(delayFor, scheduler));
 }

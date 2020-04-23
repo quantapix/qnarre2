@@ -217,7 +217,7 @@ describe('delay', () => {
             counts.push(subscriber._subscriptions.length);
           },
           complete() {
-            expect(counts).to.deep.equal([1, 1]);
+            expect(counts).toEqual([1, 1]);
           }
         })
       );
@@ -530,7 +530,7 @@ describe('delayWhen', () => {
     expectSource(
       result.pipe(
         tap(null, null, () => {
-          expect(indices).to.deep.equal([0, 1, 2]);
+          expect(indices).toEqual([0, 1, 2]);
         })
       )
     ).toBe(expected);
@@ -988,7 +988,7 @@ describe('observeOn', () => {
           const actionSubscription = subscription._subscriptions[0];
           expect(actionSubscription.state.notification.kind).to.equal('C');
           // After completion, the entire _subscriptions list is nulled out anyhow, so we can't test much further than this.
-          expect(results).to.deep.equal([1, 2, 3]);
+          expect(results).toEqual([1, 2, 3]);
           done();
         }
       );
@@ -1098,11 +1098,7 @@ describe('tap', () => {
       const e1subs = '^          !';
       const expected = '--1--2--3--|';
 
-      const result = e1.pipe(
-        tap(() => {
-          //noop
-        })
-      );
+      const result = e1.pipe(tap(() => {}));
       expectSource(result).toBe(expected);
       expectSubscriptions(e1.subscriptions).toBe(e1subs);
     }
@@ -1168,7 +1164,7 @@ describe('tap', () => {
             done(new Error('should not be called'));
           },
           complete: () => {
-            expect(results).to.deep.equal(expected);
+            expect(results).toEqual(expected);
             done();
           }
         })
@@ -1189,7 +1185,7 @@ describe('tap', () => {
         done(new Error('should not be called'));
       },
       complete: () => {
-        expect(results).to.deep.equal(expected);
+        expect(results).toEqual(expected);
         done();
       }
     });
@@ -1307,11 +1303,7 @@ describe('tap', () => {
     const e1subs = '^      !    ';
     const expected = '--1--2--    ';
 
-    const result = e1.pipe(
-      tap(() => {
-        //noop
-      })
-    );
+    const result = e1.pipe(tap(() => {}));
     expectSource(result, unsub).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -1324,9 +1316,7 @@ describe('tap', () => {
 
     const result = e1.pipe(
       mergeMap((x: any) => of(x)),
-      tap(() => {
-        //noop
-      }),
+      tap(() => {}),
       mergeMap((x: any) => of(x))
     );
 
@@ -1339,11 +1329,7 @@ describe('tap', () => {
     const e1subs = '^          !';
     const expected = '--1--2--3--|';
 
-    const result = e1.pipe(
-      tap(() => {
-        //noop
-      })
-    );
+    const result = e1.pipe(tap(() => {}));
     expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
@@ -1353,11 +1339,7 @@ describe('tap', () => {
     const e1subs = '^          !';
     const expected = '--1--2--3--#';
 
-    const result = e1.pipe(
-      tap(() => {
-        //noop
-      })
-    );
+    const result = e1.pipe(tap(() => {}));
     expectSource(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });

@@ -123,7 +123,7 @@ describe('Observable', () => {
           },
           err => {
             expect(err).to.be.an('error', 'NO THREES!');
-            expect(results).to.deep.equal([1, 2]);
+            expect(results).toEqual([1, 2]);
           }
         )
         .then(() => {
@@ -157,7 +157,7 @@ describe('Observable', () => {
             results.push(err);
             // Since the consuming code can no longer interfere with the synchronous
             // producer, the remaining results are nexted.
-            expect(results).to.deep.equal([1, 2, 3, 4, expected]);
+            expect(results).toEqual([1, 2, 3, 4, expected]);
           }
         );
     });
@@ -188,7 +188,7 @@ describe('Observable', () => {
           },
           err => {
             results.push(err);
-            expect(results).to.deep.equal([1, 2, expected]);
+            expect(results).toEqual([1, 2, expected]);
           }
         );
     });
@@ -328,9 +328,7 @@ describe('Observable', () => {
         };
       });
 
-      const sub = source.subscribe(() => {
-        //noop
-      });
+      const sub = source.subscribe(() => {});
       expect(sub instanceof Subscription).to.be.true;
       expect(unsubscribeCalled).to.be.false;
       expect(sub.unsubscribe).to.be.a('function');
@@ -682,9 +680,7 @@ describe('Source.create', () => {
   );
 
   it('should create an Observable', () => {
-    const result = Observable.create(() => {
-      //noop
-    });
+    const result = Observable.create(() => {});
     expect(result instanceof Observable).to.be.true;
   });
 
@@ -697,9 +693,7 @@ describe('Source.create', () => {
     });
 
     expect(called).to.be.false;
-    result.subscribe(() => {
-      //noop
-    });
+    result.subscribe(() => {});
     expect(called).to.be.true;
   });
 
@@ -978,7 +972,7 @@ describe('Source.lift', () => {
           done(new Error('should not be called'));
         },
         () => {
-          expect(log).to.deep.equal([
+          expect(log).toEqual([
             'next 10', // map
             'next 20', // map
             'next 20', // filter
@@ -1910,7 +1904,7 @@ if (Symbol && Symbol.asyncIterator) {
       for await (const value of source) {
         results.push(value);
       }
-      expect(results).to.deep.equal([1, 2, 3]);
+      expect(results).toEqual([1, 2, 3]);
     });
 
     it('should throw if the observable errors', async () => {
@@ -1933,7 +1927,7 @@ if (Symbol && Symbol.asyncIterator) {
       for await (const value of source) {
         results.push(value);
       }
-      expect(results).to.deep.equal([0, 1, 2]);
+      expect(results).toEqual([0, 1, 2]);
     });
 
     it('should do something clever if the loop exits', async () => {
@@ -1953,7 +1947,7 @@ if (Symbol && Symbol.asyncIterator) {
       } catch (err) {
         // ignore
       }
-      expect(results).to.deep.equal([0, 1]);
+      expect(results).toEqual([0, 1]);
       expect(finalized).to.be.true;
     });
   });

@@ -46,18 +46,18 @@ describe('animationFrame', () => {
 
     expect(DateStub).to.have.been.calledOnce;
 
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
 
     raf.tick();
     expect(DateStub).to.have.been.calledTwice;
-    expect(results).to.deep.equal([1]);
+    expect(results).toEqual([1]);
 
     raf.tick();
     expect(DateStub).to.have.been.calledThrice;
-    expect(results).to.deep.equal([1, 2]);
+    expect(results).toEqual([1, 2]);
 
     raf.tick();
-    expect(results).to.deep.equal([1, 2, 3]);
+    expect(results).toEqual([1, 2, 3]);
 
     // Stop the animation loop
     subs.unsubscribe();
@@ -82,20 +82,20 @@ describe('animationFrame', () => {
 
     expect(DateStub).not.to.have.been.called;
     expect(timeProvider.now).to.have.been.calledOnce;
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
 
     raf.tick();
     expect(DateStub).not.to.have.been.called;
     expect(timeProvider.now).to.have.been.calledTwice;
-    expect(results).to.deep.equal([100]);
+    expect(results).toEqual([100]);
 
     raf.tick();
     expect(DateStub).not.to.have.been.called;
     expect(timeProvider.now).to.have.been.calledThrice;
-    expect(results).to.deep.equal([100, 110]);
+    expect(results).toEqual([100, 110]);
 
     raf.tick();
-    expect(results).to.deep.equal([100, 110, 200]);
+    expect(results).toEqual([100, 110, 200]);
 
     // Stop the animation loop
     subs.unsubscribe();
@@ -115,19 +115,19 @@ describe('animationFrame', () => {
     expect(DateStub).to.have.been.calledOnce;
     expect(requestAnimationFrame).to.have.been.calledOnce;
 
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
 
     raf.tick();
     expect(DateStub).to.have.been.calledTwice;
     expect(requestAnimationFrame).to.have.been.calledTwice;
-    expect(results).to.deep.equal([1]);
+    expect(results).toEqual([1]);
 
     raf.tick();
     expect(DateStub).to.have.been.calledThrice;
     // It shouldn't reschedule, because there are no more subscribers
     // for the animation loop.
     expect(requestAnimationFrame).to.have.been.calledTwice;
-    expect(results).to.deep.equal([1, 2, 'done']);
+    expect(results).toEqual([1, 2, 'done']);
 
     // Since there should be no more subscribers listening on the loop
     // the latest animation frame should be cancelled.
@@ -149,27 +149,27 @@ describe('animationFrame', () => {
     expect(DateStub).to.have.been.calledOnce;
     expect(requestAnimationFrame).to.have.been.calledOnce;
 
-    expect(results).to.deep.equal([]);
+    expect(results).toEqual([]);
 
     raf.tick();
     expect(DateStub).to.have.been.calledTwice;
     expect(requestAnimationFrame).to.have.been.calledTwice;
-    expect(results).to.deep.equal([1]);
+    expect(results).toEqual([1]);
 
     raf.tick();
     expect(DateStub).to.have.been.calledThrice;
     expect(requestAnimationFrame).to.have.been.calledThrice;
-    expect(results).to.deep.equal([1, 2]);
+    expect(results).toEqual([1, 2]);
     expect(cancelAnimationFrame).not.to.have.been.called;
 
     // Complete the observable via `takeUntil`.
     subject.next();
     expect(cancelAnimationFrame).to.have.been.calledOnce;
-    expect(results).to.deep.equal([1, 2, 'done']);
+    expect(results).toEqual([1, 2, 'done']);
 
     raf.tick();
     expect(DateStub).to.have.been.calledThrice;
     expect(requestAnimationFrame).to.have.been.calledThrice;
-    expect(results).to.deep.equal([1, 2, 'done']);
+    expect(results).toEqual([1, 2, 'done']);
   });
 });

@@ -28,7 +28,7 @@ describe('Immediate', () => {
     Promise.resolve().then(() => results.push(4));
 
     setTimeout(() => {
-      expect(results).to.deep.equal([1, 2, 3, 4, 5]);
+      expect(results).toEqual([1, 2, 3, 4, 5]);
       done();
     });
   });
@@ -43,7 +43,7 @@ describe('Immediate', () => {
     Promise.resolve().then(() => results.push(4));
 
     setTimeout(() => {
-      expect(results).to.deep.equal([1, 2, 4, 5]);
+      expect(results).toEqual([1, 2, 4, 5]);
       done();
     });
   });
@@ -115,7 +115,7 @@ describe('UnsubscribeError', () => {
       subscription.unsubscribe();
     } catch (err) {
       expect(err instanceof UnsubscribeError).to.equal(true);
-      expect(err.errors).to.deep.equal([err1, err2]);
+      expect(err.errors).toEqual([err1, err2]);
       expect(err.name).to.equal('UnsubscribeError');
     }
   });
@@ -155,12 +155,8 @@ describe('isSource', () => {
 
   it('should return true for an observable that comes from another RxJS 5+ library', () => {
     const o: any = {
-      lift() {
-        /* noop */
-      },
-      subscribe() {
-        /* noop */
-      }
+      lift() {},
+      subscribe() {}
     };
 
     expect(isSource(o)).to.be.true;
@@ -168,9 +164,7 @@ describe('isSource', () => {
 
   it('should NOT return true for any old subscribable', () => {
     const o: any = {
-      subscribe() {
-        /* noop */
-      }
+      subscribe() {}
     };
 
     expect(isSource(o)).to.be.false;
@@ -254,9 +248,7 @@ describe('subscribeToResult', () => {
   it('should synchronously complete when subscribed to scalarObservable', () => {
     const result = of(42);
     let expected: number;
-    const subscriber = new ReactorSubscriber<number, number>(
-      x => (expected = x)
-    );
+    const subscriber = new ReactorSubscriber<number, number>(x => (expected = x));
 
     const subscription = subscribeToResult(subscriber, result);
 
@@ -306,9 +298,7 @@ describe('subscribeToResult', () => {
     const result = [1, 2, 3];
     const expected: number[] = [];
 
-    const subscriber = new ReactorSubscriber<number, number>(x =>
-      expected.push(x)
-    );
+    const subscriber = new ReactorSubscriber<number, number>(x => expected.push(x));
 
     subscribeToResult(subscriber, result);
 
@@ -319,9 +309,7 @@ describe('subscribeToResult', () => {
     const result = {0: 0, 1: 1, 2: 2, length: 3};
     const expected: number[] = [];
 
-    const subscriber = new ReactorSubscriber<number, number>(x =>
-      expected.push(x)
-    );
+    const subscriber = new ReactorSubscriber<number, number>(x => expected.push(x));
 
     subscribeToResult(subscriber, result);
 
@@ -417,9 +405,7 @@ describe('subscribeToResult', () => {
         }
       );
 
-      expect(() =>
-        subscribeToResult(subscriber, observableSymbolObject)
-      ).to.throw(
+      expect(() => subscribeToResult(subscriber, observableSymbolObject)).to.throw(
         TypeError,
         'Provided object does not correctly implement Symbol.rxSource'
       );

@@ -1,9 +1,9 @@
-import * as qj from './subject';
+import * as qr from './subscriber';
+import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
-import * as qs from './source';
 
-export class Action<N> extends qj.Subscription implements qt.Action<N> {
+export class Action<N> extends qr.Subscription implements qt.Action<N> {
   constructor(
     public h: Scheduler,
     public work: (this: qt.Action<N>, _?: qt.State<N>) => void
@@ -38,7 +38,7 @@ export class Scheduler implements qt.Scheduler {
 
   scheduleArray<N>(a: ArrayLike<N>) {
     return new qs.Source<N>(r => {
-      const s = new qj.Subscription();
+      const s = new qr.Subscription();
       let i = 0;
       s.add(
         this.schedule<N>(function () {
@@ -55,7 +55,7 @@ export class Scheduler implements qt.Scheduler {
 
   scheduleIter<N>(b: Iterable<N>) {
     return new qs.Source<N>(r => {
-      const s = new qj.Subscription();
+      const s = new qr.Subscription();
       let i: Iterator<N>;
       s.add(() => {
         if (i && typeof i.return === 'function') i.return();
@@ -89,7 +89,7 @@ export class Scheduler implements qt.Scheduler {
 
   scheduleAsyncIter<N>(b: AsyncIterable<N>) {
     return new qs.Source<N>(r => {
-      const s = new qj.Subscription();
+      const s = new qr.Subscription();
       s.add(
         this.schedule<N>(() => {
           s.add(
@@ -113,7 +113,7 @@ export class Scheduler implements qt.Scheduler {
 
   scheduleSource<N>(i: qt.Interop<N>) {
     return new qs.Source<N>(r => {
-      const s = new qj.Subscription();
+      const s = new qr.Subscription();
       s.add(
         this.schedule<N>(() => {
           s.add(
@@ -131,7 +131,7 @@ export class Scheduler implements qt.Scheduler {
 
   schedulePromise<N>(p: PromiseLike<N>) {
     return new qs.Source<N>(r => {
-      const s = new qj.Subscription();
+      const s = new qr.Subscription();
       s.add(
         this.schedule<N>(() =>
           p.then(
@@ -158,14 +158,12 @@ export class Scheduler implements qt.Scheduler {
   }
 
   scheduled<N>(i: qt.Input<N>) {
-    if (i) {
-      if (qu.isInterop<N>(i)) return this.scheduleSource<N>(i);
-      if (qu.isPromise<N>(i)) return this.schedulePromise<N>(i);
-      if (qu.isArrayLike<N>(i)) return this.scheduleArray<N>(i);
-      if (qu.isIter<N>(i) || typeof i === 'string') return this.scheduleIter<N>(i);
-      if (qu.isAsyncIter<N>(i)) return this.scheduleAsyncIter<N>(i as any);
-    }
-    throw new TypeError(((i && typeof i) || i) + ' is not observable');
+    if (qt.isInterop<N>(i)) return this.scheduleSource<N>(i);
+    if (qt.isArrayLike<N>(i)) return this.scheduleArray<N>(i);
+    if (qt.isPromise<N>(i)) return this.schedulePromise<N>(i);
+    if (qt.isIter<N>(i) || typeof i === 'string') return this.scheduleIter<N>(i);
+    if (qt.isAsyncIter<N>(i)) return this.scheduleAsyncIter<N>(i as any);
+    throw new TypeError(((i && typeof i) || i) + ' not source input');
   }
 }
 
@@ -179,7 +177,7 @@ export class AsyncAction<N> extends Action<N> {
     super(h, w);
   }
 
-  schedule(s?: qt.State<N>, d?: number): qj.Subscription {
+  schedule(s?: qt.State<N>, d?: number): qt.Subscription {
     if (this.closed) return this;
     this.state = s;
     const i = this.id;
@@ -371,7 +369,7 @@ export class QueueAction<N> extends AsyncAction<N> {
     super(h, w);
   }
 
-  schedule(s?: qt.State<N>, d?: number): qj.Subscription {
+  schedule(s?: qt.State<N>, d?: number): qt.Subscription {
     if (d && d > 0) return super.schedule(s, d);
     this.delay = d;
     this.state = s;
@@ -407,7 +405,7 @@ export class VirtualAction<N> extends AsyncAction<N> {
     h.index = index;
   }
 
-  schedule(s?: qt.State<N>, d?: number): qj.Subscription {
+  schedule(s?: qt.State<N>, d?: number): qt.Subscription {
     if (!this.id) return super.schedule(s, d);
     this.active = false;
     const a = new VirtualAction(this.h as Virtual, this.work);

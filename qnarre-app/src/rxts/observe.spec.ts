@@ -45,8 +45,8 @@ describe('fromIter', () => {
     e1.pipe(materialize(), toArray()).subscribe(x => (v2 = x));
 
     rxTestScheduler.flush();
-    expect(v1).to.deep.equal(expected);
-    expect(v2!).to.deep.equal(expected);
+    expect(v1).toEqual(expected);
+    expect(v2!).toEqual(expected);
   });
 
   it('should finalize generators if the subscription ends', () => {
@@ -76,7 +76,7 @@ describe('fromIter', () => {
         () => results.push('GOOSE!')
       );
 
-    expect(results).to.deep.equal(['duck', 'duck', 'duck', 'GOOSE!']);
+    expect(results).toEqual(['duck', 'duck', 'duck', 'GOOSE!']);
     expect(iterator.finalized).to.be.true;
   });
 
@@ -107,7 +107,7 @@ describe('fromIter', () => {
         () => results.push('GOOSE!')
       );
 
-    expect(results).to.deep.equal(['duck', 'duck', 'duck', 'GOOSE!']);
+    expect(results).toEqual(['duck', 'duck', 'duck', 'GOOSE!']);
     expect(iterator.finalized).to.be.true;
   });
 
@@ -203,14 +203,14 @@ describe('SubscribeOnObservable', () => {
 
     const scheduler = (<any>new SubscribeOnObservable(e1, 0, obj)).scheduler;
 
-    expect(scheduler).to.deep.equal(asapScheduler);
+    expect(scheduler).toEqual(asapScheduler);
   });
 
   it('should create observable via staic create function', () => {
     const s = new SubscribeOnObservable(null as any, null as any, rxTestScheduler);
     const r = SubscribeOnObservable.create(null as any, null as any, rxTestScheduler);
 
-    expect(s).to.deep.equal(r);
+    expect(s).toEqual(r);
   });
 
   it('should subscribe after specified delay', () => {

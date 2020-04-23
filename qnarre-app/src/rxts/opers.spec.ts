@@ -73,9 +73,7 @@ describe('finalize', () => {
       }
     }
 
-    of(1, 2, 3)
-      .pipe(finalize(checkFinally), finalize(checkFinally), share())
-      .subscribe();
+    of(1, 2, 3).pipe(finalize(checkFinally), finalize(checkFinally), share()).subscribe();
   });
 
   it('should handle empty', () => {
@@ -196,9 +194,7 @@ describe('onErrorResumeNext', () => {
   });
 
   it('should accept promises', () => {
-    const o = of('apple', 'banana', 'peach').pipe(
-      onErrorResumeNext(Promise.resolve(5))
-    ); // $ExpectType Observable<string | number>
+    const o = of('apple', 'banana', 'peach').pipe(onErrorResumeNext(Promise.resolve(5))); // $ExpectType Observable<string | number>
   });
 
   it('should accept iterables', () => {
@@ -210,9 +206,7 @@ describe('onErrorResumeNext', () => {
   });
 
   it('should accept two inputs', () => {
-    const o = of('apple', 'banana', 'peach').pipe(
-      onErrorResumeNext(of(1), of(2))
-    ); // $ExpectType Observable<string | number>
+    const o = of('apple', 'banana', 'peach').pipe(onErrorResumeNext(of(1), of(2))); // $ExpectType Observable<string | number>
   });
 
   it('should accept three inputs', () => {
@@ -294,9 +288,7 @@ describe('onErrorResumeNext', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
-      expected
-    );
+    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -308,9 +300,7 @@ describe('onErrorResumeNext', () => {
     const subs = '^       !';
     const expected = '--a--b----c--d----e----f--g--|';
 
-    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
-      expected
-    );
+    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -322,9 +312,7 @@ describe('onErrorResumeNext', () => {
     const subs = '(^!)';
     const expected = '--c--d----e----f--g--|';
 
-    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(
-      expected
-    );
+    expectSource(source.pipe(onErrorResumeNext(next1, next2, next3))).toBe(expected);
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
@@ -380,11 +368,9 @@ describe('onErrorResumeNext', () => {
         onErrorResumeNext(synchronousObservable),
         takeWhile(x => x != 2) // unsubscribe at the second side-effect
       )
-      .subscribe(() => {
-        /* noop */
-      });
+      .subscribe(() => {});
 
-    expect(sideEffects).to.deep.equal([1, 2]);
+    expect(sideEffects).toEqual([1, 2]);
   });
 
   it('should unsubscribe from an interop observble upon explicit unsubscription', () => {
@@ -400,9 +386,7 @@ describe('onErrorResumeNext', () => {
     // test ensures that unsubscriptions are chained all the way to the
     // interop subscriber.
 
-    expectSource(source.pipe(onErrorResumeNext(asInterop(next))), subs).toBe(
-      expected
-    );
+    expectSource(source.pipe(onErrorResumeNext(asInterop(next))), subs).toBe(expected);
     expectSubscriptions(next.subscriptions).toBe(nextSubs);
   });
 
@@ -432,16 +416,12 @@ describe('race', () => {
 
   it('should allow observables', () => {
     const o = of('a', 'b', 'c').pipe(race(of('x', 'y', 'z'))); // $ExpectType Observable<string>
-    const p = of('a', 'b', 'c').pipe(
-      race(of('x', 'y', 'z'), of('t', 'i', 'm'))
-    ); // $ExpectType Observable<string>
+    const p = of('a', 'b', 'c').pipe(race(of('x', 'y', 'z'), of('t', 'i', 'm'))); // $ExpectType Observable<string>
   });
 
   it('should allow an array of observables', () => {
     const o = of('a', 'b', 'c').pipe(race([of('x', 'y', 'z')])); // $ExpectType Observable<string>
-    const p = of('a', 'b', 'c').pipe(
-      race([of('x', 'y', 'z'), of('t', 'i', 'm')])
-    ); // $ExpectType Observable<string>
+    const p = of('a', 'b', 'c').pipe(race([of('x', 'y', 'z'), of('t', 'i', 'm')])); // $ExpectType Observable<string>
   });
 
   it('should be possible to provide a return type', () => {
@@ -690,9 +670,7 @@ describe('race', () => {
   it('should unsubscribe from immediately emitting observable on unsubscription', () => {
     const onNext = sinon.spy();
     const onUnsubscribe = sinon.spy();
-    const e1 = <Observable<never>>(
-      NEVER.pipe(startWith('a'), finalize(onUnsubscribe))
-    ); // Wins the race
+    const e1 = <Observable<never>>NEVER.pipe(startWith('a'), finalize(onUnsubscribe)); // Wins the race
     const e2 = NEVER; // Loses the race
 
     const subscription = e1.pipe(race(e2)).subscribe(onNext);
@@ -1060,7 +1038,7 @@ describe('repeatWhen', () => {
           done(new Error('should not be called'));
         },
         () => {
-          expect(nexted).to.deep.equal([1, 2]);
+          expect(nexted).toEqual([1, 2]);
           done();
         }
       );
@@ -1090,7 +1068,7 @@ describe('repeatWhen', () => {
       .pipe(repeatWhen((notifications: any) => EMPTY))
       .subscribe(undefined, err => errors.push(err));
     Observable.prototype.subscribe = originalSubscribe;
-    expect(errors).to.deep.equal([]);
+    expect(errors).toEqual([]);
   });
 
   it('should not error when applying a non-empty synchronous notifier', () => {
@@ -1117,7 +1095,7 @@ describe('repeatWhen', () => {
       .pipe(repeatWhen((notifications: any) => of(1)))
       .subscribe(undefined, err => errors.push(err));
     Observable.prototype.subscribe = originalSubscribe;
-    expect(errors).to.deep.equal([]);
+    expect(errors).toEqual([]);
   });
 
   it('should apply an empty notifier on an empty source', () => {
@@ -1433,9 +1411,7 @@ describe('sequenceEqual', () => {
   });
 
   it('should infer correcly given comparor parameter', () => {
-    const a = of(1, 2, 3).pipe(
-      sequenceEqual(of(1), (val1, val2) => val1 === val2)
-    ); // $ExpectType Observable<boolean>
+    const a = of(1, 2, 3).pipe(sequenceEqual(of(1), (val1, val2) => val1 === val2)); // $ExpectType Observable<boolean>
   });
 
   it('should return false for two sync observables that are unequal in length', () => {
@@ -1617,11 +1593,7 @@ describe('sequenceEqual', () => {
       z: {value: 'derp', weCouldBe: 'dancin, yeah'}
     };
 
-    expectSource(source).toBe(
-      expected,
-      _.assign(booleans, values),
-      new Error('shazbot')
-    );
+    expectSource(source).toBe(expected, _.assign(booleans, values), new Error('shazbot'));
     expectSubscriptions(s1.subscriptions).toBe(s1subs);
     expectSubscriptions(s2.subscriptions).toBe(s2subs);
   });
@@ -1633,9 +1605,7 @@ describe('sequenceEqual', () => {
     const s2subs = '^                        !';
     const expected = '-------------------------(T|)';
 
-    const source = s1.pipe(
-      sequenceEqual(s2, (a: any, b: any) => a.value === b.value)
-    );
+    const source = s1.pipe(sequenceEqual(s2, (a: any, b: any) => a.value === b.value));
 
     const values: {[key: string]: any} = {
       a: null,
@@ -1806,9 +1776,7 @@ describe('throwIfEmpty', () => {
       const source = cold('----a---b---c---|');
       const sub1 = '^               !';
       const expected = '----a---b---c---|';
-      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
-        expected
-      );
+      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe([sub1]);
     });
 
@@ -1816,9 +1784,7 @@ describe('throwIfEmpty', () => {
       const source = cold('-');
       const sub1 = '^';
       const expected = '-';
-      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(
-        expected
-      );
+      expectSource(source.pipe(throwIfEmpty(() => new Error('test')))).toBe(expected);
       expectSubscriptions(source.subscriptions).toBe([sub1]);
     });
 
@@ -1960,25 +1926,22 @@ describe('throwIfEmpty', () => {
 });
 
 describe('withLatestFrom', () => {
-  asDiagram('withLatestFrom')(
-    'should combine events from cold observables',
-    () => {
-      const e1 = cold('-a--b-----c-d-e-|');
-      const e2 = cold('--1--2-3-4---|   ');
-      const expected = '----B-----C-D-E-|';
+  asDiagram('withLatestFrom')('should combine events from cold observables', () => {
+    const e1 = cold('-a--b-----c-d-e-|');
+    const e2 = cold('--1--2-3-4---|   ');
+    const expected = '----B-----C-D-E-|';
 
-      const result = e1.pipe(
-        withLatestFrom(e2, (a: string, b: string) => String(a) + String(b))
-      );
+    const result = e1.pipe(
+      withLatestFrom(e2, (a: string, b: string) => String(a) + String(b))
+    );
 
-      expectSource(result).toBe(expected, {
-        B: 'b1',
-        C: 'c4',
-        D: 'd4',
-        E: 'e4'
-      });
-    }
-  );
+    expectSource(result).toBe(expected, {
+      B: 'b1',
+      C: 'c4',
+      D: 'd4',
+      E: 'e4'
+    });
+  });
   describe('without project parameter', () => {
     it('should infer correctly with 1 param', () => {
       const a = of(1, 2, 3);
@@ -2075,9 +2038,7 @@ describe('withLatestFrom', () => {
       const d = of('g', 'h', 'i');
       const e = of('j', 'k', 'l');
       const f = of('m', 'n', 'o');
-      const res = a.pipe(
-        withLatestFrom(b, c, d, e, f, (a, b, c, d, e, f) => b + c)
-      ); // $ExpectType Observable<string>
+      const res = a.pipe(withLatestFrom(b, c, d, e, f, (a, b, c, d, e, f) => b + c)); // $ExpectType Observable<string>
     });
   });
 
@@ -2321,7 +2282,7 @@ describe('withLatestFrom', () => {
       .pipe(delay(1), withLatestFrom(Promise.resolve(2), Promise.resolve(3)))
       .subscribe(
         (x: any) => {
-          expect(x).to.deep.equal([1, 2, 3]);
+          expect(x).toEqual([1, 2, 3]);
         },
         null,
         done
@@ -2332,7 +2293,7 @@ describe('withLatestFrom', () => {
     of(1)
       .pipe(delay(1), withLatestFrom([2, 3, 4], [4, 5, 6]))
       .subscribe((x: any) => {
-        expect(x).to.deep.equal([1, 4, 6]);
+        expect(x).toEqual([1, 4, 6]);
       });
   });
 
@@ -2340,7 +2301,7 @@ describe('withLatestFrom', () => {
     of(1)
       .pipe(delay(1), withLatestFrom(lowerCaseO(2, 3, 4), lowerCaseO(4, 5, 6)))
       .subscribe((x: any) => {
-        expect(x).to.deep.equal([1, 4, 6]);
+        expect(x).toEqual([1, 4, 6]);
       });
   });
 });

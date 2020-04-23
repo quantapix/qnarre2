@@ -758,7 +758,7 @@ export const createInputs = <T>(value: T) =>
 export const NO_SUBS: string[] = [];
 
 export function assertDeepEquals(actual: any, expected: any) {
-  expect(actual).to.deep.equal(expected);
+  expect(actual).toEqual(expected);
 }
 
 global.__root__ = root;

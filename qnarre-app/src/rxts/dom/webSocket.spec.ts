@@ -1,7 +1,7 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import * as sinon from 'sinon';
-import { webSocket } from 'rxjs/webSocket';
-import { map, retry, take, repeat, takeWhile } from 'rxjs/operators';
+import {webSocket} from 'rxjs/webSocket';
+import {map, retry, take, repeat, takeWhile} from 'rxjs/operators';
 
 declare const __root__: any;
 
@@ -55,14 +55,11 @@ describe('webSocket', () => {
       const subject = webSocket<string>('ws://mysocket');
       const results: any[] = [];
 
-      subject.pipe(
-        map(x => x + '!'),
-      )
-      .subscribe(x => results.push(x));
+      subject.pipe(map(x => x + '!')).subscribe(x => results.push(x));
 
       MockWebSocket.lastSocket.triggerMessage(JSON.stringify('ngconf 2018 bug'));
 
-      expect(results).to.deep.equal(['ngconf 2018 bug!']);
+      expect(results).toEqual(['ngconf 2018 bug!']);
     });
 
     it('receive multiple messages', () => {
@@ -82,7 +79,7 @@ describe('webSocket', () => {
         socket.triggerMessage(JSON.stringify(x));
       });
 
-      expect(results).to.deep.equal(expected);
+      expect(results).toEqual(expected);
 
       subject.unsubscribe();
     });
@@ -180,7 +177,7 @@ describe('webSocket', () => {
       sinon.spy(socket, 'close');
       expect(socket.close).not.have.been.called;
 
-      subject.error({ code: 1337, reason: 'Too bad, so sad :('});
+      subject.error({code: 1337, reason: 'Too bad, so sad :('});
       expect(socket.close).have.been.calledWith(1337, 'Too bad, so sad :(');
 
       subject.unsubscribe();
@@ -200,7 +197,9 @@ describe('webSocket', () => {
       socket2.open();
 
       expect(socket2).not.to.equal(socket1);
-      expect(socket2.lastMessageSent).to.equal(JSON.stringify('a mariner yer not. yarrr.'));
+      expect(socket2.lastMessageSent).to.equal(
+        JSON.stringify('a mariner yer not. yarrr.')
+      );
 
       subject.unsubscribe();
     });
@@ -210,7 +209,7 @@ describe('webSocket', () => {
       subject.subscribe();
       const socket1 = MockWebSocket.lastSocket;
       socket1.open();
-      subject.error({ code: 1337 });
+      subject.error({code: 1337});
 
       subject.next('yo-ho! yo-ho!');
       subject.subscribe();
@@ -225,7 +224,7 @@ describe('webSocket', () => {
 
     it('should have a default resultSelector that parses message data as JSON', () => {
       let result;
-      const expected = { mork: 'shazbot!' };
+      const expected = {mork: 'shazbot!'};
       const subject = webSocket<string>('ws://mysocket');
 
       subject.subscribe((x: any) => {
@@ -236,14 +235,13 @@ describe('webSocket', () => {
       socket.open();
       socket.triggerMessage(JSON.stringify(expected));
 
-      expect(result).to.deep.equal(expected);
+      expect(result).toEqual(expected);
 
       subject.unsubscribe();
     });
   });
 
   describe('with a config object', () => {
-
     beforeEach(() => {
       setupMockWebSocket();
     });
@@ -254,7 +252,7 @@ describe('webSocket', () => {
 
     it('should send and receive messages', () => {
       let messageReceived = false;
-      const subject = webSocket<string>({ url: 'ws://mysocket' });
+      const subject = webSocket<string>({url: 'ws://mysocket'});
 
       subject.next('ping');
 
@@ -323,7 +321,7 @@ describe('webSocket', () => {
         socket.triggerMessage(x);
       });
 
-      expect(results).to.deep.equal(['ahoy!', 'yarr!', 'shove off!']);
+      expect(results).toEqual(['ahoy!', 'yarr!', 'shove off!']);
 
       subject.unsubscribe();
     });
@@ -336,11 +334,14 @@ describe('webSocket', () => {
         }
       });
 
-      subject.subscribe((x: any) => {
-        expect(x).to.equal('this should not happen');
-      }, (err: any) => {
-        expect(err).to.be.an('error', 'I am a bad error');
-      });
+      subject.subscribe(
+        (x: any) => {
+          expect(x).to.equal('this should not happen');
+        },
+        (err: any) => {
+          expect(err).to.be.an('error', 'I am a bad error');
+        }
+      );
 
       const socket = MockWebSocket.lastSocket;
       socket.open();
@@ -374,14 +375,14 @@ describe('webSocket', () => {
       socket = MockWebSocket.lastSocket;
       socket.open();
 
-      subject.error({ code: 1337 });
+      subject.error({code: 1337});
       expect(calls).to.equal(2);
 
       subject.unsubscribe();
     });
 
     it('should accept a closeObserver', () => {
-      const expected = [{ wasClean: true }, { wasClean: false }];
+      const expected = [{wasClean: true}, {wasClean: false}];
       const closes = [] as any[];
       const subject = webSocket<string>(<any>{
         url: 'ws://mysocket',
@@ -425,18 +426,20 @@ describe('webSocket', () => {
         }
       });
 
-      subject.subscribe((x: any) => {
-        expect(x).to.equal('this should not happen');
-      }, (err: any) => {
-        expect(err).to.be.an('error', 'connection refused');
-      });
+      subject.subscribe(
+        (x: any) => {
+          expect(x).to.equal('this should not happen');
+        },
+        (err: any) => {
+          expect(err).to.be.an('error', 'connection refused');
+        }
+      );
 
       subject.unsubscribe();
     });
   });
 
   describe('multiplex', () => {
-
     beforeEach(() => {
       setupMockWebSocket();
     });
@@ -447,45 +450,47 @@ describe('webSocket', () => {
 
     it('should be retryable', () => {
       const results = [] as string[];
-      const subject = webSocket<{ name: string, value: string }>('ws://websocket');
+      const subject = webSocket<{name: string; value: string}>('ws://websocket');
       const source = subject.multiplex(
-        () => ({ sub: 'foo' }),
-        () => ({ unsub: 'foo' }),
+        () => ({sub: 'foo'}),
+        () => ({unsub: 'foo'}),
         value => value.name === 'foo'
       );
 
-      source.pipe(
-        retry(1),
-        map(x => x.value),
-        take(2),
-      ).subscribe(x => {
-        results.push(x);
-      });
+      source
+        .pipe(
+          retry(1),
+          map(x => x.value),
+          take(2)
+        )
+        .subscribe(x => {
+          results.push(x);
+        });
 
       const socket = MockWebSocket.lastSocket;
       socket.open();
 
-      expect(socket.lastMessageSent).to.deep.equal(JSON.stringify({ sub: 'foo' }));
-      socket.triggerClose({ wasClean: false }); // Bad connection
+      expect(socket.lastMessageSent).toEqual(JSON.stringify({sub: 'foo'}));
+      socket.triggerClose({wasClean: false}); // Bad connection
 
       const socket2 = MockWebSocket.lastSocket;
       expect(socket2).not.to.equal(socket);
 
       socket2.open();
-      expect(socket2.lastMessageSent).to.deep.equal(JSON.stringify({ sub: 'foo' }));
+      expect(socket2.lastMessageSent).toEqual(JSON.stringify({sub: 'foo'}));
 
-      socket2.triggerMessage(JSON.stringify({ name: 'foo', value: 'test' }));
-      socket2.triggerMessage(JSON.stringify({ name: 'foo', value: 'this' }));
+      socket2.triggerMessage(JSON.stringify({name: 'foo', value: 'test'}));
+      socket2.triggerMessage(JSON.stringify({name: 'foo', value: 'this'}));
 
-      expect(results).to.deep.equal(['test', 'this']);
+      expect(results).toEqual(['test', 'this']);
     });
 
     it('should be repeatable', () => {
       const results = [] as string[];
-      const subject = webSocket<{ name: string, value: string }>('ws://websocket');
+      const subject = webSocket<{name: string; value: string}>('ws://websocket');
       const source = subject.multiplex(
-        () => ({ sub: 'foo' }),
-        () => ({ unsub: 'foo' }),
+        () => ({sub: 'foo'}),
+        () => ({unsub: 'foo'}),
         value => value.name === 'foo'
       );
 
@@ -501,29 +506,35 @@ describe('webSocket', () => {
       const socket = MockWebSocket.lastSocket;
       socket.open();
 
-      expect(socket.lastMessageSent).to.deep.equal(JSON.stringify({ sub: 'foo' }), 'first multiplexed sub');
-      socket.triggerMessage(JSON.stringify({ name: 'foo', value: 'test' }));
-      socket.triggerMessage(JSON.stringify({ name: 'foo', value: 'this' }));
-      socket.triggerClose({ wasClean: true });
+      expect(socket.lastMessageSent).toEqual(
+        JSON.stringify({sub: 'foo'}),
+        'first multiplexed sub'
+      );
+      socket.triggerMessage(JSON.stringify({name: 'foo', value: 'test'}));
+      socket.triggerMessage(JSON.stringify({name: 'foo', value: 'this'}));
+      socket.triggerClose({wasClean: true});
 
       const socket2 = MockWebSocket.lastSocket;
       expect(socket2).not.to.equal(socket, 'a new socket was not created');
 
       socket2.open();
-      expect(socket2.lastMessageSent).to.deep.equal(JSON.stringify({ sub: 'foo' }), 'second multiplexed sub');
-      socket2.triggerMessage(JSON.stringify({ name: 'foo', value: 'test' }));
-      socket2.triggerMessage(JSON.stringify({ name: 'foo', value: 'this' }));
-      socket2.triggerClose({ wasClean: true });
+      expect(socket2.lastMessageSent).toEqual(
+        JSON.stringify({sub: 'foo'}),
+        'second multiplexed sub'
+      );
+      socket2.triggerMessage(JSON.stringify({name: 'foo', value: 'test'}));
+      socket2.triggerMessage(JSON.stringify({name: 'foo', value: 'this'}));
+      socket2.triggerClose({wasClean: true});
 
-      expect(results).to.deep.equal(['test', 'this', 'test', 'this'], 'results were not equal');
+      expect(results).toEqual(['test', 'this', 'test', 'this'], 'results were not equal');
     });
 
     it('should multiplex over the webSocket', () => {
-      const results = [] as Array<{ value: number, name: string }>;
-      const subject = webSocket<{ value: number, name: string }>('ws://websocket');
+      const results = [] as Array<{value: number; name: string}>;
+      const subject = webSocket<{value: number; name: string}>('ws://websocket');
       const source = subject.multiplex(
-        () => ({ sub: 'foo'}),
-        () => ({ unsub: 'foo' }),
+        () => ({sub: 'foo'}),
+        () => ({unsub: 'foo'}),
         value => value.name === 'foo'
       );
 
@@ -533,22 +544,24 @@ describe('webSocket', () => {
       const socket = MockWebSocket.lastSocket;
       socket.open();
 
-      expect(socket.lastMessageSent).to.deep.equal(JSON.stringify({ sub: 'foo' }));
+      expect(socket.lastMessageSent).toEqual(JSON.stringify({sub: 'foo'}));
 
-      [1, 2, 3, 4, 5].map((x: number) => {
-        return {
-          name: x % 3 === 0 ? 'bar' : 'foo',
-          value: x
-        };
-      }).forEach((x: any) => {
-        socket.triggerMessage(JSON.stringify(x));
-      });
+      [1, 2, 3, 4, 5]
+        .map((x: number) => {
+          return {
+            name: x % 3 === 0 ? 'bar' : 'foo',
+            value: x
+          };
+        })
+        .forEach((x: any) => {
+          socket.triggerMessage(JSON.stringify(x));
+        });
 
-      expect(results).to.deep.equal([1, 2, 4, 5]);
+      expect(results).toEqual([1, 2, 4, 5]);
 
       sinon.spy(socket, 'close');
       sub.unsubscribe();
-      expect(socket.lastMessageSent).to.deep.equal(JSON.stringify({ unsub: 'foo' }));
+      expect(socket.lastMessageSent).toEqual(JSON.stringify({unsub: 'foo'}));
 
       expect(socket.close).have.been.called;
       (<any>socket.close).restore();
@@ -557,34 +570,30 @@ describe('webSocket', () => {
     it('should keep the same socket for multiple multiplex subscriptions', () => {
       const socketSubject = webSocket<string>({url: 'ws://mysocket'});
       const results = [] as string[];
-      const socketMessages = [
-        {id: 'A'},
-        {id: 'B'},
-        {id: 'A'},
-        {id: 'B'},
-        {id: 'B'},
-      ];
+      const socketMessages = [{id: 'A'}, {id: 'B'}, {id: 'A'}, {id: 'B'}, {id: 'B'}];
 
-      const sub1 = socketSubject.multiplex(
-        () => 'no-op',
-        () => results.push('A unsub'),
-        (req: any) => req.id === 'A'
-      ).pipe(
-        takeWhile((req: any) => !req.complete)
-      )
-      .subscribe(
-        () => results.push('A next'),
-        (e) => results.push('A error ' + e),
-        () => results.push('A complete')
-      );
+      const sub1 = socketSubject
+        .multiplex(
+          () => 'no-op',
+          () => results.push('A unsub'),
+          (req: any) => req.id === 'A'
+        )
+        .pipe(takeWhile((req: any) => !req.complete))
+        .subscribe(
+          () => results.push('A next'),
+          e => results.push('A error ' + e),
+          () => results.push('A complete')
+        );
 
-      socketSubject.multiplex(
-        () => 'no-op',
-        () => results.push('B unsub'),
-        (req: any) => req.id === 'B')
+      socketSubject
+        .multiplex(
+          () => 'no-op',
+          () => results.push('B unsub'),
+          (req: any) => req.id === 'B'
+        )
         .subscribe(
           () => results.push('B next'),
-          (e) => results.push('B error ' + e),
+          e => results.push('B error ' + e),
           () => results.push('B complete')
         );
 
@@ -598,75 +607,78 @@ describe('webSocket', () => {
         }
         socket.triggerMessage(JSON.stringify(msg));
       });
-      socket.triggerClose({ wasClean: true });
+      socket.triggerClose({wasClean: true});
 
-      expect(results).to.deep.equal([
+      expect(results).toEqual([
         'A next',
         'A unsub',
         'B next',
         'B next',
         'B next',
         'B complete',
-        'B unsub',
+        'B unsub'
       ]);
     });
 
     it('should not close the socket until all subscriptions complete', () => {
-      const socketSubject = webSocket<{ id: string, complete: boolean }>({url: 'ws://mysocket'});
+      const socketSubject = webSocket<{id: string; complete: boolean}>({
+        url: 'ws://mysocket'
+      });
       const results = [] as string[];
       const socketMessages = [
         {id: 'A'},
         {id: 'B'},
         {id: 'A', complete: true},
         {id: 'B'},
-        {id: 'B', complete: true},
+        {id: 'B', complete: true}
       ];
 
-      socketSubject.multiplex(
-        () => 'no-op',
-        () => results.push('A unsub'),
-        req => req.id === 'A'
-      ).pipe(
-        takeWhile(req => !req.complete)
-      ).subscribe(
-        () => results.push('A next'),
-        (e) => results.push('A error ' + e),
-        () => results.push('A complete')
-      );
+      socketSubject
+        .multiplex(
+          () => 'no-op',
+          () => results.push('A unsub'),
+          req => req.id === 'A'
+        )
+        .pipe(takeWhile(req => !req.complete))
+        .subscribe(
+          () => results.push('A next'),
+          e => results.push('A error ' + e),
+          () => results.push('A complete')
+        );
 
-      socketSubject.multiplex(
-        () => 'no-op',
-        () => results.push('B unsub'),
-        req => req.id === 'B'
-      ).pipe(
-        takeWhile(req => !req.complete)
-      ).subscribe(
-        () => results.push('B next'),
-        (e) => results.push('B error ' + e),
-        () => results.push('B complete')
-      );
+      socketSubject
+        .multiplex(
+          () => 'no-op',
+          () => results.push('B unsub'),
+          req => req.id === 'B'
+        )
+        .pipe(takeWhile(req => !req.complete))
+        .subscribe(
+          () => results.push('B next'),
+          e => results.push('B error ' + e),
+          () => results.push('B complete')
+        );
 
       // Setup socket and send messages
       let socket = MockWebSocket.lastSocket;
       socket.open();
-      socketMessages.forEach((msg) => {
+      socketMessages.forEach(msg => {
         socket.triggerMessage(JSON.stringify(msg));
       });
 
-      expect(results).to.deep.equal([
+      expect(results).toEqual([
         'A next',
         'B next',
         'A complete',
         'A unsub',
         'B next',
         'B complete',
-        'B unsub',
+        'B unsub'
       ]);
     });
   });
 
   describe('node constructor', () => {
-
     it('should send and receive messages', () => {
       let messageReceived = false;
       const subject = webSocket<string>(<any>{
@@ -696,16 +708,13 @@ describe('webSocket', () => {
     });
 
     it('should handle constructor errors if no WebSocketCtor', () => {
-
       expect(() => {
         const subject = webSocket<string>(<any>{
           url: 'ws://mysocket'
         });
       }).to.throw('no WebSocket constructor can be found');
-
     });
   });
-
 });
 
 class MockWebSocket {
@@ -751,7 +760,7 @@ class MockWebSocket {
       data: data,
       origin: 'mockorigin',
       ports: undefined as any,
-      source: __root__,
+      source: __root__
     };
 
     this.trigger('message', messageEvent);
@@ -767,7 +776,7 @@ class MockWebSocket {
       this.readyState = 2;
       this.closeCode = code;
       this.closeReason = reason;
-      this.triggerClose({ wasClean: true });
+      this.triggerClose({wasClean: true});
     }
   }
 

@@ -19,7 +19,7 @@ export class SubscribeOnObservable<T> extends qs.Source<T> {
     private h: qh.Scheduler = qh.asap
   ) {
     super();
-    if (!qu.isNumeric(delayTime) || delayTime < 0) this.delayTime = 0;
+    if (!qt.isNumeric(delayTime) || delayTime < 0) this.delayTime = 0;
     if (!h || typeof h.schedule !== 'function') this.h = qh.asap;
   }
 

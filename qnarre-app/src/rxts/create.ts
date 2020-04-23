@@ -3,6 +3,7 @@ import * as qu from './utils';
 import * as qh from './scheduler';
 import * as qs from './source';
 import * as qx from './context';
+import * as qr from './subscriber';
 //import * as qj from './subject';
 
 export function bindCB<R1, R2, R3, R4>(
@@ -369,36 +370,39 @@ export function defer<X extends qt.Input<any> | void>(
 export function empty(h?: qh.Scheduler) {
   return h
     ? new qs.Source<never>(r => h.schedule<never>(() => r.done()))
-    : new qs.Source<never>(r => r.done());
+    : new qs.Source<never>(r => {
+        r.done();
+        return r;
+      });
 }
 
-export function from<X extends qt.Input<any>>(x: X): qs.Source<qt.Sourced<X>>;
-export function from<N>(i: qt.Input<N>, h?: qh.Scheduler): qs.Source<N> {
+export function from<X extends qt.Input<any>>(x: X): qt.Source<qt.Sourced<X>>;
+export function from<N>(i: qt.Input<N>, h?: qh.Scheduler): qt.Source<N> {
   if (h) return h.scheduled(i);
   else {
-    if (qu.isSource<N>(i)) return i;
-    return new qs.Source<N>(qu.subscribeTo(i));
+    if (qt.isSource<N>(i)) return i;
+    return new qs.Source<N>(qr.subscribeTo(i));
   }
 }
 
 export function fromArray<N>(a: ArrayLike<N>, h?: qh.Scheduler) {
   if (h) return h.scheduleArray(a);
-  return new qs.Source<N>(qu.subscribeToArray<N>(a));
+  return new qs.Source<N>(qr.subscribeToArray<N>(a));
 }
 
 export function fromIter<N>(b: Iterable<N>, h?: qh.Scheduler) {
   if (h) return h.scheduleIter<N>(b);
-  return new qs.Source<N>(qu.subscribeToIter<N>(b));
+  return new qs.Source<N>(qr.subscribeToIter<N>(b));
 }
 
 export function fromSource<N>(i: qt.Interop<N>, h?: qh.Scheduler) {
   if (h) return h.scheduleSource<N>(i);
-  return new qs.Source<N>(qu.subscribeToSource<N>(i));
+  return new qs.Source<N>(qr.subscribeToSource<N>(i));
 }
 
 export function fromPromise<N>(p: PromiseLike<N>, h?: qh.Scheduler) {
   if (h) return h.schedulePromise<N>(p);
-  return new qs.Source<N>(qu.subscribeToPromise<N>(p));
+  return new qs.Source<N>(qr.subscribeToPromise<N>(p));
 }
 
 function setupSubscription<T>(
@@ -409,15 +413,15 @@ function setupSubscription<T>(
   os?: qt.ListenerOptions
 ) {
   let unsub: qt.Fun<void> | undefined;
-  if (qu.isEventTarget(t)) {
+  if (qt.isEventTarget(t)) {
     const s = t;
     t.addEventListener(event, handler, os);
     unsub = () => s.removeEventListener(event, handler, os);
-  } else if (qu.isJQueryEventEmitter(t)) {
+  } else if (qt.isJQueryEventEmitter(t)) {
     const s = t;
     t.on(event, handler);
     unsub = () => s.off(event, handler);
-  } else if (qu.isNodeEventEmitter(t)) {
+  } else if (qt.isNodeEventEmitter(t)) {
     const s = t;
     t.addListener(event, handler as qt.NodeEventHandler);
     unsub = () => s.removeListener(event, handler as qt.NodeEventHandler);
@@ -441,6 +445,7 @@ export function fromEvent<N>(
       else r.next(e);
     }
     setupSubscription(t, event, handler, r, os as qt.ListenerOptions);
+    return r;
   });
 }
 
@@ -457,7 +462,7 @@ export function fromEventPattern<N>(
       r.fail(e);
       return;
     }
-    if (!qu.isFunction(removeHandler)) return;
+    if (!qt.isFunction(removeHandler)) return;
     return () => removeHandler(handler, v);
   });
 }
@@ -511,7 +516,7 @@ export function generate<N, S>(
     i = os.i;
     rf = os.rf || (identity as ResultFun<S, N>);
     h = os.h;
-  } else if (!rf || qu.isScheduler(rf)) {
+  } else if (!rf || qt.isScheduler(rf)) {
     init = init as S;
     h = rf as qh.Scheduler;
     rf = identity as ResultFun<S, N>;
@@ -616,7 +621,7 @@ interface IntervalState {
 }
 
 export function interval(period = 0, h: qh.Scheduler = qh.async): qs.Source<number> {
-  if (!qu.isNumeric(period) || period < 0) period = 0;
+  if (!qt.isNumeric(period) || period < 0) period = 0;
   if (!h || typeof h.schedule !== 'function') h = qh.async;
   function dispatch(this: qh.Action<IntervalState>, state: IntervalState) {
     const {r, count, period} = state;
@@ -648,7 +653,7 @@ export function of<N, M, O>(_1: N, _2: M, _3: O): qs.Source<N | M | O>;
 export function of<A extends Array<any>>(..._: A): qs.Source<qt.ValueOf<A>>;
 export function of<N>(...args: Array<N | qh.Scheduler>): qs.Source<N> {
   let h = args[args.length - 1] as qh.Scheduler;
-  if (qu.isScheduler(h)) {
+  if (qt.isScheduler(h)) {
     args.pop();
     return h.scheduleArray(args as N[]);
   }
@@ -712,10 +717,10 @@ export function timer(
   h?: qh.Scheduler
 ): qs.Source<number> {
   let period = -1;
-  if (qu.isNumeric(periodOrScheduler)) {
+  if (qt.isNumeric(periodOrScheduler)) {
     period = (Number(periodOrScheduler) < 1 && 1) || Number(periodOrScheduler);
-  } else if (qu.isScheduler(periodOrScheduler)) h = periodOrScheduler as any;
-  if (!qu.isScheduler(h)) h = qh.async;
+  } else if (qt.isScheduler(periodOrScheduler)) h = periodOrScheduler as any;
+  if (!qt.isScheduler(h)) h = qh.async;
   function dispatch(this: qh.Action<TimerState>, state: TimerState) {
     const {index, period, r} = state;
     r.next(index);
@@ -725,7 +730,7 @@ export function timer(
     this.schedule(state, period);
   }
   return new qs.Source(r => {
-    const due = qu.isNumeric(dueTime) ? (dueTime as number) : +dueTime - h!.now();
+    const due = qt.isNumeric(dueTime) ? (dueTime as number) : +dueTime - h!.now();
     return h!.schedule(dispatch as any, due, {
       index: 0,
       period,
@@ -877,7 +882,7 @@ export class RepeatWhenR<N, M> extends Reactor<N, M> {
       return super.complete();
     }
     this.retries = retries;
-    this.retriesSubscription = qu.subscribeToResult(this, retries);
+    this.retriesSubscription = qr.subscribeToResult(this, retries);
   }
 }
 

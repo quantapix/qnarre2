@@ -1735,17 +1735,17 @@ export function windowTime<N>(windowTimeSpan: number): qt.Lifter<N, qt.Source<N>
   let scheduler: qt.Scheduler = qh.async;
   let windowCreationInterval: number = null;
   let maxWindowSize: number = Number.POSITIVE_INFINITY;
-  if (qu.isScheduler(arguments[3])) {
+  if (qt.isScheduler(arguments[3])) {
     scheduler = arguments[3];
   }
-  if (qu.isScheduler(arguments[2])) {
+  if (qt.isScheduler(arguments[2])) {
     scheduler = arguments[2];
-  } else if (qu.isNumeric(arguments[2])) {
+  } else if (qt.isNumeric(arguments[2])) {
     maxWindowSize = Number(arguments[2]);
   }
-  if (qu.isScheduler(arguments[1])) {
+  if (qt.isScheduler(arguments[1])) {
     scheduler = arguments[1];
-  } else if (qu.isNumeric(arguments[1])) {
+  } else if (qt.isNumeric(arguments[1])) {
     windowCreationInterval = Number(arguments[1]);
   }
   return x =>

@@ -20,11 +20,7 @@ describe('static combineLatest', () => {
     const secondSource = hot('--d--e--f--g--|');
     const expected = '----uv--wx-y--z----|';
 
-    const combined = combineLatest(
-      firstSource,
-      secondSource,
-      (a, b) => '' + a + b
-    );
+    const combined = combineLatest(firstSource, secondSource, (a, b) => '' + a + b);
 
     expectSource(combined).toBe(expected, {
       u: 'ad',
@@ -142,10 +138,7 @@ describe('static combineLatest', () => {
   });
 
   it('should accept 4 params and a result selector', () => {
-    const o = combineLatest(
-      [a$, b$, c$, d$],
-      (a: A, b: B, c: C, d: D) => new A()
-    ); // $ExpectType Observable<A>
+    const o = combineLatest([a$, b$, c$, d$], (a: A, b: B, c: C, d: D) => new A()); // $ExpectType Observable<A>
   });
 
   it('should accept 5 params and a result selector', () => {
@@ -165,17 +158,8 @@ describe('static combineLatest', () => {
   it('should accept 7 or more params and a result selector', () => {
     const o = combineLatest(
       [a$, b$, c$, d$, e$, f$, g$, g$, g$],
-      (
-        a: any,
-        b: any,
-        c: any,
-        d: any,
-        e: any,
-        f: any,
-        g1: any,
-        g2: any,
-        g3: any
-      ) => new A()
+      (a: any, b: any, c: any, d: any, e: any, f: any, g1: any, g2: any, g3: any) =>
+        new A()
     ); // $ExpectType Observable<A>
   });
 
@@ -195,7 +179,7 @@ describe('static combineLatest', () => {
     //type definition need to be updated
     combineLatest(a, b, queueScheduler).subscribe(
       vals => {
-        expect(vals).to.deep.equal(r.shift());
+        expect(vals).toEqual(r.shift());
       },
       x => {
         done(new Error('should not be called'));
@@ -608,11 +592,7 @@ describe('static combineLatest', () => {
 
     const result = combineLatest(left, right, (x, y) => x + y);
 
-    expectSource(result).toBe(
-      expected,
-      {x: 'cd', y: 'ce', z: 'cf'},
-      'dun dun dun'
-    );
+    expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'}, 'dun dun dun');
     expectSubscriptions(left.subscriptions).toBe(leftSubs);
     expectSubscriptions(right.subscriptions).toBe(rightSubs);
   });
@@ -677,31 +657,26 @@ describe('combineLatest', () => {
     testScheduler = new TestScheduler(sourceMatcher);
   });
 
-  asDiagram('combineLatest')(
-    'should combine events from two cold observables',
-    () => {
-      testScheduler.run(({cold, expectSource}) => {
-        const e1 = cold(' -a--b-----c-d-e-|');
-        const e2 = cold(' --1--2-3-4---|   ');
-        const expected = '--A-BC-D-EF-G-H-|';
+  asDiagram('combineLatest')('should combine events from two cold observables', () => {
+    testScheduler.run(({cold, expectSource}) => {
+      const e1 = cold(' -a--b-----c-d-e-|');
+      const e2 = cold(' --1--2-3-4---|   ');
+      const expected = '--A-BC-D-EF-G-H-|';
 
-        const result = e1.pipe(
-          combineLatest(e2, (a, b) => String(a) + String(b))
-        );
+      const result = e1.pipe(combineLatest(e2, (a, b) => String(a) + String(b)));
 
-        expectSource(result).toBe(expected, {
-          A: 'a1',
-          B: 'b1',
-          C: 'b2',
-          D: 'b3',
-          E: 'b4',
-          F: 'c4',
-          G: 'd4',
-          H: 'e4'
-        });
+      expectSource(result).toBe(expected, {
+        A: 'a1',
+        B: 'b1',
+        C: 'b2',
+        D: 'b3',
+        E: 'b4',
+        F: 'c4',
+        G: 'd4',
+        H: 'e4'
       });
-    }
-  );
+    });
+  });
   describe('without project parameter', () => {
     it('should infer correctly with 1 param', () => {
       const a = of(1, 2, 3);
@@ -798,9 +773,7 @@ describe('combineLatest', () => {
       const d = of('g', 'h', 'i');
       const e = of('j', 'k', 'l');
       const f = of('m', 'n', 'o');
-      const res = a.pipe(
-        combineLatest(b, c, d, e, f, (a, b, c, d, e, f) => b + c)
-      ); // $ExpectType Observable<string>
+      const res = a.pipe(combineLatest(b, c, d, e, f, (a, b, c, d, e, f) => b + c)); // $ExpectType Observable<string>
     });
 
     // TODO: Fix this when the both combineLatest operator and combineLatest creator function has been fix
@@ -1270,11 +1243,7 @@ describe('combineLatest', () => {
 
       const result = left.pipe(combineLatest(right, (x, y) => x + y));
 
-      expectSource(result).toBe(
-        expected,
-        {x: 'cd', y: 'ce', z: 'cf'},
-        'dun dun dun'
-      );
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'}, 'dun dun dun');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
@@ -1637,10 +1606,7 @@ describe('combineLatestWith', () => {
       const expected = '   -----wxyz-|';
 
       const result = e1.pipe(
-        combineLatestWith(
-          [e2, e3],
-          (x: string, y: string, z: string) => x + y + z
-        )
+        combineLatestWith([e2, e3], (x: string, y: string, z: string) => x + y + z)
       );
 
       expectSource(result).toBe(expected, {
@@ -1976,11 +1942,7 @@ describe('combineLatestWith', () => {
         map(([x, y]) => x + y)
       );
 
-      expectSource(result).toBe(
-        expected,
-        {x: 'cd', y: 'ce', z: 'cf'},
-        'dun dun dun'
-      );
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'}, 'dun dun dun');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
@@ -2067,9 +2029,7 @@ describe('combineAll', () => {
   });
 
   it('should infer correctly with the projector', () => {
-    const o = of([1, 2, 3]).pipe(
-      combineAll((values: number) => ['x', 'y', 'z'])
-    ); // $ExpectType Observable<string[]>
+    const o = of([1, 2, 3]).pipe(combineAll((values: number) => ['x', 'y', 'z'])); // $ExpectType Observable<string[]>
   });
 
   it('is possible to make the projector have an `any` type', () => {
@@ -2083,9 +2043,7 @@ describe('combineAll', () => {
   });
 
   it('should enforce type of the projector', () => {
-    const o = of([1, 2, 3]).pipe(
-      combineAll((values: string) => ['x', 'y', 'z'])
-    ); // $ExpectError
+    const o = of([1, 2, 3]).pipe(combineAll((values: string) => ['x', 'y', 'z'])); // $ExpectError
     const p = of([1, 2, 3]).pipe(
       combineAll<number[]>(values => ['x', 'y', 'z'])
     ); // $ExpectError
@@ -2565,11 +2523,7 @@ describe('combineAll', () => {
 
       const result = of(left, right).pipe(combineAll((x, y) => x + y));
 
-      expectSource(result).toBe(
-        expected,
-        {x: 'cd', y: 'ce', z: 'cf'},
-        'dun dun dun'
-      );
+      expectSource(result).toBe(expected, {x: 'cd', y: 'ce', z: 'cf'}, 'dun dun dun');
       expectSubscriptions(left.subscriptions).toBe(leftSubs);
       expectSubscriptions(right.subscriptions).toBe(rightSubs);
     });
@@ -2609,7 +2563,7 @@ describe('combineAll', () => {
       .pipe(combineAll())
       .subscribe(
         vals => {
-          expect(vals).to.deep.equal(expected.shift());
+          expect(vals).toEqual(expected.shift());
         },
         null,
         () => {
@@ -2636,7 +2590,7 @@ describe('combineAll', () => {
       .pipe(combineAll())
       .subscribe(
         vals => {
-          expect(vals).to.deep.equal(r.shift());
+          expect(vals).toEqual(r.shift());
         },
         null,
         () => {
@@ -2652,9 +2606,7 @@ describe('combineAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number[]> = of(source1, source2, source3).pipe(
-      combineAll()
-    );
+    let result: Observable<number[]> = of(source1, source2, source3).pipe(combineAll());
     /* tslint:enable:no-unused-variable */
   });
 
@@ -2676,9 +2628,7 @@ describe('combineAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number[]> = of(source1, source2, source3).pipe(
-      combineAll()
-    );
+    let result: Observable<number[]> = of(source1, source2, source3).pipe(combineAll());
     /* tslint:enable:no-unused-variable */
   });
 
@@ -2701,11 +2651,9 @@ describe('combineAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string[]> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(combineAll<string>());
+    let result: Observable<string[]> = of(<any>source1, <any>source2, <any>source3).pipe(
+      combineAll<string>()
+    );
     /* tslint:enable:no-unused-variable */
   });
 
@@ -2716,11 +2664,7 @@ describe('combineAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
       combineAll<string>((...args) => args.reduce((acc, x) => acc + x, 0))
     );
     /* tslint:enable:no-unused-variable */
@@ -2733,11 +2677,9 @@ describe('combineAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string[]> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(combineAll<string>());
+    let result: Observable<string[]> = of(<any>source1, <any>source2, <any>source3).pipe(
+      combineAll<string>()
+    );
     /* tslint:enable:no-unused-variable */
   });
 
@@ -2748,11 +2690,7 @@ describe('combineAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
       combineAll<string>((...args) => args.reduce((acc, x) => acc + x, 0))
     );
     /* tslint:enable:no-unused-variable */
@@ -2863,10 +2801,7 @@ describe('endWith', () => {
     const e1subs = '^ !';
     const expected = '--#';
 
-    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(
-      expected,
-      defaultStartValue
-    );
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected, defaultStartValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2875,10 +2810,7 @@ describe('endWith', () => {
     const e1subs = '(^!)';
     const expected = '#';
 
-    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(
-      expected,
-      defaultStartValue
-    );
+    expectSource(e1.pipe(endWith(defaultStartValue))).toBe(expected, defaultStartValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2924,9 +2856,7 @@ describe('endWith', () => {
     const e1subs = '^    !';
     const expected = '--a--(x|)';
 
-    expectSource(e1.pipe(endWith(defaultStartValue, rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(endWith(defaultStartValue, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -2963,20 +2893,11 @@ describe('forkJoin', () => {
   });
 
   it('should infer correctly for array of 3 observables', () => {
-    const res = forkJoin([
-      of(1, 2, 3),
-      of('a', 'b', 'c'),
-      of(true, true, false)
-    ]); // $ExpectType Observable<[number, string, boolean]>
+    const res = forkJoin([of(1, 2, 3), of('a', 'b', 'c'), of(true, true, false)]); // $ExpectType Observable<[number, string, boolean]>
   });
 
   it('should infer correctly for array of 4 observables', () => {
-    const res = forkJoin([
-      of(1, 2, 3),
-      of('a', 'b', 'c'),
-      of(1, 2, 3),
-      of(1, 2, 3)
-    ]); // $ExpectType Observable<[number, string, number, number]>
+    const res = forkJoin([of(1, 2, 3), of('a', 'b', 'c'), of(1, 2, 3), of(1, 2, 3)]); // $ExpectType Observable<[number, string, number, number]>
   });
 
   it('should infer correctly for array of 5 observables', () => {
@@ -3029,7 +2950,7 @@ describe('forkJoin', () => {
       }
     });
 
-    expect(results).to.deep.equal([18, 'done']);
+    expect(results).toEqual([18, 'done']);
   });
 
   it('should support the deprecated resultSelector with a spread of Inputs', () => {
@@ -3051,7 +2972,7 @@ describe('forkJoin', () => {
       }
     });
 
-    expect(results).to.deep.equal([18, 'done']);
+    expect(results).toEqual([18, 'done']);
   });
 
   it('should accept single observable', () => {
@@ -3082,11 +3003,7 @@ describe('forkJoin', () => {
 
   describe('forkJoin([input1, input2, input3])', () => {
     it('should join the last values of the provided observables into an array', () => {
-      const e1 = forkJoin([
-        hot('--a--b--c--d--|'),
-        hot('(b|)'),
-        hot('--1--2--3--|')
-      ]);
+      const e1 = forkJoin([hot('--a--b--c--d--|'), hot('(b|)'), hot('--1--2--3--|')]);
       const expected = '--------------(x|)';
 
       expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
@@ -3133,17 +3050,13 @@ describe('forkJoin', () => {
       const e1 = forkJoin([of(1), Promise.resolve(2)]);
 
       e1.subscribe({
-        next: x => expect(x).to.deep.equal([1, 2]),
+        next: x => expect(x).toEqual([1, 2]),
         complete: done
       });
     });
 
     it('should accept array of observables', () => {
-      const e1 = forkJoin([
-        hot('--a--b--c--d--|'),
-        hot('(b|)'),
-        hot('--1--2--3--|')
-      ]);
+      const e1 = forkJoin([hot('--a--b--c--d--|'), hot('(b|)'), hot('--1--2--3--|')]);
       const expected = '--------------(x|)';
 
       expectSource(e1).toBe(expected, {x: ['d', 'b', '3']});
@@ -3161,11 +3074,7 @@ describe('forkJoin', () => {
     });
 
     it('should complete early if any of source is empty and completes before than others', () => {
-      const e1 = forkJoin([
-        hot('--a--b--c--d--|'),
-        hot('(b|)'),
-        hot('---------|')
-      ]);
+      const e1 = forkJoin([hot('--a--b--c--d--|'), hot('(b|)'), hot('---------|')]);
       const expected = '---------|';
 
       expectSource(e1).toBe(expected);
@@ -3328,7 +3237,7 @@ describe('forkJoin', () => {
       });
 
       e1.subscribe({
-        next: x => expect(x).to.deep.equal({foo: 1, bar: 2}),
+        next: x => expect(x).toEqual({foo: 1, bar: 2}),
         complete: done
       });
     });
@@ -3498,7 +3407,7 @@ describe('forkJoin', () => {
       e1.subscribe({
         next: x => values.push(x),
         complete: () => {
-          expect(values).to.deep.equal([[1]]);
+          expect(values).toEqual([[1]]);
           done();
         }
       });
@@ -4229,17 +4138,14 @@ describe('mergeWith', () => {
 });
 
 describe('mergeAll', () => {
-  asDiagram('mergeAll')(
-    'should merge a hot observable of cold observables',
-    () => {
-      const x = cold('--a---b--c---d--|      ');
-      const y = cold('----e---f--g---|');
-      const e1 = hot('--x------y-------|       ', {x: x, y: y});
-      const expected = '----a---b--c-e-d-f--g---|';
+  asDiagram('mergeAll')('should merge a hot observable of cold observables', () => {
+    const x = cold('--a---b--c---d--|      ');
+    const y = cold('----e---f--g---|');
+    const e1 = hot('--x------y-------|       ', {x: x, y: y});
+    const expected = '----a---b--c-e-d-f--g---|';
 
-      expectSource(e1.pipe(mergeAll())).toBe(expected);
-    }
-  );
+    expectSource(e1.pipe(mergeAll())).toBe(expected);
+  });
 
   it('should infer correctly', () => {
     const o = of(of(1, 2, 3)).pipe(mergeAll()); // $ExpectType Observable<number>
@@ -4656,7 +4562,7 @@ describe('mergeAll', () => {
         done(new Error('should not be called'));
       },
       () => {
-        expect(res).to.deep.equal(expected);
+        expect(res).toEqual(expected);
         done();
       }
     );
@@ -4720,7 +4626,7 @@ describe('mergeAll', () => {
         () => results.push('GOOSE!')
       );
 
-    expect(results).to.deep.equal(['duck', 'duck', 'duck', 'GOOSE!']);
+    expect(results).toEqual(['duck', 'duck', 'duck', 'GOOSE!']);
     expect(iterable.finalized).to.be.true;
   });
 
@@ -5097,10 +5003,7 @@ describe('startWith', () => {
     const e1subs = '^ !';
     const expected = 'x-#';
 
-    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(
-      expected,
-      defaultStartValue
-    );
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected, defaultStartValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5109,10 +5012,7 @@ describe('startWith', () => {
     const e1subs = '(^!)';
     const expected = '(x#)';
 
-    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(
-      expected,
-      defaultStartValue
-    );
+    expectSource(e1.pipe(startWith(defaultStartValue))).toBe(expected, defaultStartValue);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5160,9 +5060,7 @@ describe('startWith', () => {
     const e1subs = '^    !';
     const expected = 'x-a--|';
 
-    expectSource(e1.pipe(startWith(defaultStartValue, rxTestScheduler))).toBe(
-      expected
-    );
+    expectSource(e1.pipe(startWith(defaultStartValue, rxTestScheduler))).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 
@@ -5248,9 +5146,7 @@ describe('zip', () => {
     const o = of(1); // $ExpectType Observable<number>
     const z = [of(2)]; // $ExpectType Observable<number>[]
     const a = o.pipe(
-      zip<number, number, string[]>(z, (...r: any[]) =>
-        r.map(v => v.toString())
-      )
+      zip<number, number, string[]>(z, (...r: any[]) => r.map(v => v.toString()))
     ); // $ExpectType Observable<string[]>
   });
   it('should combine a source with a second', () => {
@@ -5481,11 +5377,7 @@ describe('zip', () => {
           return x + y;
         }
       };
-      expectSource(zip(a, b, selector)).toBe(
-        expected,
-        {x: '14'},
-        new Error('too bad')
-      );
+      expectSource(zip(a, b, selector)).toBe(expected, {x: '14'}, new Error('too bad'));
       expectSubscriptions(a.subscriptions).toBe(asubs);
     });
   });
@@ -5497,10 +5389,11 @@ describe('zip', () => {
     const bsubs = '^';
     const expected = '---x---y---z';
 
-    expectSource(zip(a, b, (e1: string, e2: string) => e1 + e2)).toBe(
-      expected,
-      {x: '14', y: '25', z: '36'}
-    );
+    expectSource(zip(a, b, (e1: string, e2: string) => e1 + e2)).toBe(expected, {
+      x: '14',
+      y: '25',
+      z: '36'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5529,11 +5422,7 @@ describe('zip', () => {
     const c = hot('---1-^---3---6-|  ');
     const expected = '----x---y-|  ';
 
-    const observable = zip(a, b, c, (r0: string, r1: string, r2: string) => [
-      r0,
-      r1,
-      r2
-    ]);
+    const observable = zip(a, b, c, (r0: string, r1: string, r2: string) => [r0, r1, r2]);
     expectSource(observable).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
@@ -5550,11 +5439,7 @@ describe('zip', () => {
     const c = hot('---1-^---3---6-|  ');
     const expected = '----x---y-|  ';
 
-    const observable = zip(a, b, c, (r0: string, r1: string, r2: string) => [
-      r0,
-      r1,
-      r2
-    ]);
+    const observable = zip(a, b, c, (r0: string, r1: string, r2: string) => [r0, r1, r2]);
     expectSource(observable).toBe(expected, {
       x: ['1', '2', '3'],
       y: ['4', '5', '6']
@@ -5570,10 +5455,13 @@ describe('zip', () => {
     const bsubs = '^                 !    ';
     const expected = '---a--b--c--d--e--|    ';
 
-    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(
-      expected,
-      {a: '12', b: '34', c: '56', d: '78', e: '90'}
-    );
+    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(expected, {
+      a: '12',
+      b: '34',
+      c: '56',
+      d: '78',
+      e: '90'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5585,10 +5473,13 @@ describe('zip', () => {
     const bsubs = '^                 !    ';
     const expected = '---a--b--c--d--e--|    ';
 
-    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(
-      expected,
-      {a: '21', b: '43', c: '65', d: '87', e: '09'}
-    );
+    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(expected, {
+      a: '21',
+      b: '43',
+      c: '65',
+      d: '87',
+      e: '09'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5600,10 +5491,13 @@ describe('zip', () => {
     const bsubs = '^                ! ';
     const expected = '---a--b--c--d--e-| ';
 
-    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(
-      expected,
-      {a: '12', b: '34', c: '56', d: '78', e: '90'}
-    );
+    expectSource(zip(a, b, (r1: string, r2: string) => r1 + r2)).toBe(expected, {
+      a: '12',
+      b: '34',
+      c: '56',
+      d: '78',
+      e: '90'
+    });
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -5856,7 +5750,7 @@ describe('zip', () => {
 
     zip(a, b).subscribe(
       (vals: Array<number>) => {
-        expect(vals).to.deep.equal(r[i++]);
+        expect(vals).toEqual(r[i++]);
       },
       null,
       done
@@ -5875,12 +5769,7 @@ describe('zip', () => {
     let b: Observable<string>;
     let c: Promise<boolean>;
     let d: Observable<string[]>;
-    let o1: Observable<[number, string, boolean, string[]]> = zip(
-      a!,
-      b!,
-      c!,
-      d!
-    );
+    let o1: Observable<[number, string, boolean, string[]]> = zip(a!, b!, c!, d!);
   });
 
   type('should support arrays of promises', () => {
@@ -5907,19 +5796,16 @@ describe('zip', () => {
 });
 
 describe('zipAll', () => {
-  asDiagram('zipAll')(
-    'should combine paired events from two observables',
-    () => {
-      const x = cold('-a-----b-|');
-      const y = cold('--1-2-----');
-      const outer = hot('-x----y--------|         ', {x: x, y: y});
-      const expected = '-----------------A----B-|';
+  asDiagram('zipAll')('should combine paired events from two observables', () => {
+    const x = cold('-a-----b-|');
+    const y = cold('--1-2-----');
+    const outer = hot('-x----y--------|         ', {x: x, y: y});
+    const expected = '-----------------A----B-|';
 
-      const result = outer.pipe(zipAll((a, b) => String(a) + String(b)));
+    const result = outer.pipe(zipAll((a, b) => String(a) + String(b)));
 
-      expectSource(result).toBe(expected, {A: 'a1', B: 'b2'});
-    }
-  );
+    expectSource(result).toBe(expected, {A: 'a1', B: 'b2'});
+  });
   it('should infer correctly', () => {
     const o = of(of(1, 2, 3)).pipe(zipAll()); // $ExpectType Observable<number[]>
   });
@@ -6622,11 +6508,7 @@ describe('zipAll', () => {
     const bsubs = '^       !';
     const expected = '-----x--#';
 
-    expectSource(of(a, b).pipe(zipAll())).toBe(
-      expected,
-      {x: [1, 2]},
-      'too bad'
-    );
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected, {x: [1, 2]}, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6638,11 +6520,7 @@ describe('zipAll', () => {
     const bsubs = '^       !';
     const expected = '-----x--#';
 
-    expectSource(of(a, b).pipe(zipAll())).toBe(
-      expected,
-      {x: [2, 1]},
-      'too bad'
-    );
+    expectSource(of(a, b).pipe(zipAll())).toBe(expected, {x: [2, 1]}, 'too bad');
     expectSubscriptions(a.subscriptions).toBe(asubs);
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
@@ -6673,7 +6551,7 @@ describe('zipAll', () => {
 
     result.subscribe(
       vals => {
-        expect(vals).to.deep.equal(r[i++]);
+        expect(vals).toEqual(r[i++]);
       },
       null,
       done
@@ -6694,7 +6572,7 @@ describe('zipAll', () => {
 
     result.subscribe(
       vals => {
-        expect(vals).to.deep.equal(r[i++]);
+        expect(vals).toEqual(r[i++]);
       },
       null,
       done
@@ -6734,9 +6612,7 @@ describe('zipAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number[]> = of(source1, source2, source3).pipe(
-      zipAll()
-    );
+    let result: Observable<number[]> = of(source1, source2, source3).pipe(zipAll());
     /* tslint:enable:no-unused-variable */
   });
 
@@ -6758,9 +6634,7 @@ describe('zipAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<number[]> = of(source1, source2, source3).pipe(
-      zipAll()
-    );
+    let result: Observable<number[]> = of(source1, source2, source3).pipe(zipAll());
     /* tslint:enable:no-unused-variable */
   });
 
@@ -6783,11 +6657,9 @@ describe('zipAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string[]> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(zipAll<string>());
+    let result: Observable<string[]> = of(<any>source1, <any>source2, <any>source3).pipe(
+      zipAll<string>()
+    );
     /* tslint:enable:no-unused-variable */
   });
 
@@ -6798,11 +6670,7 @@ describe('zipAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
       zipAll<string>((...args) => args.reduce((acc, x) => acc + x, 0))
     );
     /* tslint:enable:no-unused-variable */
@@ -6815,11 +6683,9 @@ describe('zipAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string[]> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(zipAll<string>());
+    let result: Observable<string[]> = of(<any>source1, <any>source2, <any>source3).pipe(
+      zipAll<string>()
+    );
     /* tslint:enable:no-unused-variable */
   });
 
@@ -6830,11 +6696,7 @@ describe('zipAll', () => {
     const source2 = [1, 2, 3];
     const source3 = new Promise<number>(d => d(1));
 
-    let result: Observable<string> = of(
-      <any>source1,
-      <any>source2,
-      <any>source3
-    ).pipe(
+    let result: Observable<string> = of(<any>source1, <any>source2, <any>source3).pipe(
       zipAll<string>((...args) => args.reduce((acc, x) => acc + x, 0))
     );
     /* tslint:enable:no-unused-variable */
@@ -7421,7 +7283,7 @@ describe('zipWith', () => {
 
     a.pipe(zipWith(b)).subscribe(
       function (vals) {
-        expect(vals).to.deep.equal(r[i++]);
+        expect(vals).toEqual(r[i++]);
       },
       null,
       done

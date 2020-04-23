@@ -352,7 +352,7 @@ describe('bufferCount', () => {
     item$.next(2);
     item$.next(3);
 
-    expect(results).to.deep.equal([
+    expect(results).toEqual([
       [1, 2, 3],
       [2, 3, 4]
     ]);
@@ -1364,7 +1364,7 @@ describe('bufferToggle', () => {
       )
     ).subscribe(
       x => {
-        expect(x).to.deep.equal(expected.shift());
+        expect(x).toEqual(expected.shift());
       },
       x => {
         done(new Error('should not be called'));
@@ -1428,7 +1428,7 @@ describe('bufferToggle', () => {
       )
     ).subscribe(
       x => {
-        expect(x).to.deep.equal(expected.shift());
+        expect(x).toEqual(expected.shift());
       },
       () => {
         done(new Error('should not be called'));
@@ -2018,7 +2018,7 @@ describe('concatMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 1, 0, 0],
             [1, 2, 0, 1],
             [1, 3, 0, 2],
@@ -2046,7 +2046,7 @@ describe('concatMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([1, 2, 3, 2, 3, 4, 3, 4, 5]);
+          expect(results).toEqual([1, 2, 3, 2, 3, 4, 3, 4, 5]);
         }
       });
   });
@@ -2708,7 +2708,7 @@ describe('concatMap', () => {
         done(new Error('Subscriber error handler not supposed to be called.'));
       },
       () => {
-        expect(results).to.deep.equal([42, 42, 42, 42]);
+        expect(results).toEqual([42, 42, 42, 42]);
         done();
       }
     );
@@ -2723,7 +2723,7 @@ describe('concatMap', () => {
         done(new Error('Subscriber next handler not supposed to be called.'));
       },
       err => {
-        expect(err).to.deep.equal(42);
+        expect(err).toEqual(42);
         done();
       },
       () => {
@@ -2746,7 +2746,7 @@ describe('concatMap', () => {
         done(new Error('Subscriber error handler not supposed to be called.'));
       },
       () => {
-        expect(results).to.deep.equal([4, 4, 4, 4]);
+        expect(results).toEqual([4, 4, 4, 4]);
         done();
       }
     );
@@ -2762,7 +2762,7 @@ describe('concatMap', () => {
         done(new Error('Subscriber next handler not supposed to be called.'));
       },
       err => {
-        expect(err).to.deep.equal('4-0');
+        expect(err).toEqual('4-0');
         done();
       },
       () => {
@@ -2856,7 +2856,7 @@ describe('concatMapTo', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 4, 0, 0],
             [1, 5, 0, 1],
             [1, 6, 0, 2],
@@ -2884,7 +2884,7 @@ describe('concatMapTo', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([4, 5, 6, 4, 5, 6, 4, 5, 6]);
+          expect(results).toEqual([4, 5, 6, 4, 5, 6, 4, 5, 6]);
         }
       });
   });
@@ -3153,7 +3153,7 @@ describe('concatMapTo', () => {
         done(new Error('Subscriber error handler not supposed to be called.'));
       },
       () => {
-        expect(results).to.deep.equal([42, 42, 42, 42]);
+        expect(results).toEqual([42, 42, 42, 42]);
         done();
       }
     );
@@ -3543,7 +3543,7 @@ describe('exhaustMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 1, 0, 0],
             [1, 2, 0, 1],
             [1, 3, 0, 2],
@@ -3571,7 +3571,7 @@ describe('exhaustMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([1, 2, 3, 2, 3, 4, 3, 4, 5]);
+          expect(results).toEqual([1, 2, 3, 2, 3, 4, 3, 4, 5]);
         }
       });
   });
@@ -3775,11 +3775,9 @@ describe('exhaustMap', () => {
         exhaustMap(() => synchronousObservable),
         takeWhile(x => x != 2) // unsubscribe at the second side-effect
       )
-      .subscribe(() => {
-        /* noop */
-      });
+      .subscribe(() => {});
 
-    expect(sideEffects).to.deep.equal([1, 2]);
+    expect(sideEffects).toEqual([1, 2]);
   });
 
   it('should switch inner cold observables, inner never completes', () => {
@@ -4628,7 +4626,7 @@ describe('groupBy', () => {
           expect(g.key).to.equal(expectedGroup.key);
 
           g.subscribe((x: any) => {
-            expect(x).to.deep.equal(expectedGroup.values.shift());
+            expect(x).toEqual(expectedGroup.values.shift());
           });
         },
         null,
@@ -4655,7 +4653,7 @@ describe('groupBy', () => {
           expect(g.key).to.equal(expectedGroup.key);
 
           g.subscribe((x: any) => {
-            expect(x).to.deep.equal(expectedGroup.values.shift());
+            expect(x).toEqual(expectedGroup.values.shift());
           });
         },
         null,
@@ -4691,7 +4689,7 @@ describe('groupBy', () => {
         resultingGroups.push(group);
       });
 
-    expect(resultingGroups).to.deep.equal(expectedGroups);
+    expect(resultingGroups).toEqual(expectedGroups);
   });
 
   it('should group values with a subject selector', (done: MochaDone) => {
@@ -4718,7 +4716,7 @@ describe('groupBy', () => {
           expect(g.key).to.equal(expectedGroup.key);
 
           g.subscribe((x: any) => {
-            expect(x).to.deep.equal(expectedGroup.values.shift());
+            expect(x).toEqual(expectedGroup.values.shift());
           });
         },
         null,
@@ -5286,9 +5284,7 @@ describe('groupBy', () => {
           expectSource(group).toBe(expected);
         }, 260);
       },
-      () => {
-        //noop
-      }
+      () => {}
     );
     expectSubscriptions(e1.subscriptions).toBe(subs);
   });
@@ -6123,7 +6119,7 @@ describe('groupBy', () => {
         expect(g.key).to.equal(expectedGroup.key);
 
         g.subscribe((x: any) => {
-          expect(x).to.deep.equal(expectedGroup.values.shift());
+          expect(x).toEqual(expectedGroup.values.shift());
         });
       },
       x => {
@@ -6654,7 +6650,7 @@ describe('mergeMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 1, 0, 0],
             [1, 2, 0, 1],
             [1, 3, 0, 2],
@@ -6682,7 +6678,7 @@ describe('mergeMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([1, 2, 3, 2, 3, 4, 3, 4, 5]);
+          expect(results).toEqual([1, 2, 3, 2, 3, 4, 3, 4, 5]);
         }
       });
   });
@@ -6700,7 +6696,7 @@ describe('mergeMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([1, 2, 3, 2, 3, 4, 3, 4, 5]);
+          expect(results).toEqual([1, 2, 3, 2, 3, 4, 3, 4, 5]);
         }
       });
   });
@@ -6739,7 +6735,7 @@ describe('mergeMap', () => {
         done(new Error('Subscriber error handler not supposed to be called.'));
       },
       () => {
-        expect(results).to.deep.equal([42, 42, 42, 42]);
+        expect(results).toEqual([42, 42, 42, 42]);
         done();
       }
     );
@@ -6780,7 +6776,7 @@ describe('mergeMap', () => {
         done(new Error('Subscriber error handler not supposed to be called.'));
       },
       () => {
-        expect(results).to.deep.equal([4, 4, 4, 4]);
+        expect(results).toEqual([4, 4, 4, 4]);
         done();
       }
     );
@@ -7511,7 +7507,7 @@ describe('mergeMap', () => {
       });
 
     setTimeout(() => {
-      expect(results).to.deep.equal([3, 'done']);
+      expect(results).toEqual([3, 'done']);
       done();
     }, 0);
   });
@@ -7536,7 +7532,7 @@ describe('mergeMap', () => {
       });
 
     setTimeout(() => {
-      expect(results).to.deep.equal([3, 'done']);
+      expect(results).toEqual([3, 'done']);
       done();
     }, 0);
   });
@@ -7561,7 +7557,7 @@ describe('mergeMap', () => {
     });
 
     setTimeout(() => {
-      expect(results).to.deep.equal([0, 'done']);
+      expect(results).toEqual([0, 'done']);
       done();
     }, 0);
   });
@@ -7684,7 +7680,7 @@ describe('mergeMapTo', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 4, 0, 0],
             [1, 5, 0, 1],
             [1, 6, 0, 2],
@@ -7712,7 +7708,7 @@ describe('mergeMapTo', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([4, 5, 6, 4, 5, 6, 4, 5, 6]);
+          expect(results).toEqual([4, 5, 6, 4, 5, 6, 4, 5, 6]);
         }
       });
   });
@@ -7751,7 +7747,7 @@ describe('mergeMapTo', () => {
         done(new Error('Subscriber error handler not supposed to be called.'));
       },
       () => {
-        expect(results).to.deep.equal([42, 42, 42, 42]);
+        expect(results).toEqual([42, 42, 42, 42]);
         done();
       }
     );
@@ -8258,11 +8254,9 @@ describe('mergeScan', () => {
         mergeScan(() => synchronousObservable, 0),
         takeWhile(x => x != 2) // unsubscribe at the second side-effect
       )
-      .subscribe(() => {
-        /* noop */
-      });
+      .subscribe(() => {});
 
-    expect(sideEffects).to.deep.equal([1, 2]);
+    expect(sideEffects).toEqual([1, 2]);
   });
 
   it('should handle errors in the projection function', () => {
@@ -8560,7 +8554,7 @@ describe('mergeScan', () => {
       }, 0)
     ).subscribe();
 
-    expect(recorded).to.deep.equal([0, 1, 2, 3]);
+    expect(recorded).toEqual([0, 1, 2, 3]);
   });
 });
 
@@ -8588,7 +8582,7 @@ describe('pairs', () => {
 
     pairs({a: 1, b: 2, c: 3}).subscribe(
       x => {
-        expect(x).to.deep.equal(expected.shift());
+        expect(x).toEqual(expected.shift());
       },
       x => {
         done(new Error('should not be called'));
@@ -8732,7 +8726,7 @@ describe('pairwise', () => {
     subject.next('a');
     subject.next('b');
 
-    expect(results).to.deep.equal([
+    expect(results).toEqual([
       ['a', 'b'],
       ['b', 'c'],
       ['c', 'c']
@@ -8991,7 +8985,7 @@ describe('partition', () => {
     partition(
       of(1),
       function (this: any, value: number) {
-        expect(this).to.deep.equal(thisArg);
+        expect(this).toEqual(thisArg);
         return true;
       },
       thisArg
@@ -9663,7 +9657,7 @@ describe('switchMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 1, 0, 0],
             [1, 2, 0, 1],
             [1, 3, 0, 2],
@@ -9691,7 +9685,7 @@ describe('switchMap', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([1, 2, 3, 2, 3, 4, 3, 4, 5]);
+          expect(results).toEqual([1, 2, 3, 2, 3, 4, 3, 4, 5]);
         }
       });
   });
@@ -9713,7 +9707,7 @@ describe('switchMap', () => {
       )
       .subscribe();
 
-    expect(unsubbed).to.deep.equal(['a', 'b']);
+    expect(unsubbed).toEqual(['a', 'b']);
   });
 
   it('should switch inner cold observables', () => {
@@ -9843,11 +9837,9 @@ describe('switchMap', () => {
         switchMap(() => synchronousObservable),
         takeWhile(x => x != 2) // unsubscribe at the second side-effect
       )
-      .subscribe(() => {
-        /* noop */
-      });
+      .subscribe(() => {});
 
-    expect(sideEffects).to.deep.equal([1, 2]);
+    expect(sideEffects).toEqual([1, 2]);
   });
 
   it('should switch inner cold observables, inner never completes', () => {
@@ -10149,7 +10141,7 @@ describe('switchMapTo', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([
+          expect(results).toEqual([
             [1, 4, 0, 0],
             [1, 5, 0, 1],
             [1, 6, 0, 2],
@@ -10177,7 +10169,7 @@ describe('switchMapTo', () => {
           throw err;
         },
         complete() {
-          expect(results).to.deep.equal([4, 5, 6, 4, 5, 6, 4, 5, 6]);
+          expect(results).toEqual([4, 5, 6, 4, 5, 6, 4, 5, 6]);
         }
       });
   });
@@ -10448,7 +10440,7 @@ describe('switchAll', () => {
       )
       .subscribe();
 
-    expect(unsubbed).to.deep.equal(['a', 'b']);
+    expect(unsubbed).toEqual(['a', 'b']);
   });
 
   it('should switch to each inner Observable', done => {

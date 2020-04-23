@@ -61,7 +61,7 @@ export function combineLatest<O extends qt.Input<any>, R>(
 ): qs.Source<R> {
   let resultSelector: ((...values: Array<any>) => R) | undefined = undefined;
   let scheduler: qh.Scheduler | undefined = undefined;
-  if (qu.isScheduler(observables[observables.length - 1])) {
+  if (qt.isScheduler(observables[observables.length - 1])) {
     scheduler = observables.pop() as qh.Scheduler;
   }
   if (typeof observables[observables.length - 1] === 'function') {
@@ -217,7 +217,7 @@ export function forkJoin(...sources: any[]): qs.Source<any> {
     if (Array.isArray(first)) {
       return forkJoinInternal(first, null);
     }
-    if (qu.isObject(first) && Object.getPrototypeOf(first) === Object.prototype) {
+    if (qt.isObject(first) && Object.getPrototypeOf(first) === Object.prototype) {
       const keys = Object.keys(first);
       return forkJoinInternal(
         keys.map(key => first[key]),
@@ -352,7 +352,7 @@ export function merge<T, R>(
   let concurrent = Number.POSITIVE_INFINITY;
   let scheduler: qh.Scheduler | undefined = undefined;
   let last: any = observables[observables.length - 1];
-  if (qu.isScheduler(last)) {
+  if (qt.isScheduler(last)) {
     scheduler = <Scheduler>observables.pop();
     if (
       observables.length > 1 &&
@@ -468,7 +468,7 @@ export class RaceSubscriber<T> extends qj.Reactor<T, T> {
 export function startWith<T, A extends any[]>(...values: A): qt.Lifter<T, T | ValueOf<A>>;
 export function startWith<T, D>(...values: D[]): qt.Lifter<T, T | D> {
   const scheduler = values[values.length - 1];
-  if (qu.isScheduler(scheduler)) {
+  if (qt.isScheduler(scheduler)) {
     values.pop();
     return x => concatStatic(values, x, scheduler);
   } else {
