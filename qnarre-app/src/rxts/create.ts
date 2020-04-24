@@ -140,9 +140,13 @@ export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.S
   function dispatch(this: qt.Action<S>, t?: S) {
     if (!s) {
       s = qx.createAsync();
+      const w = (t?: S) => {
+        t?.s?.next(t.n);
+        t?.s?.done();
+      };
       const f = (...ns: any[]) => {
         const n = ns.length <= 1 ? ns[0] : ns;
-        this.add(h!.schedule(qh.nextAndDone, {s, n}));
+        this.add(h!.schedule(w, {s, n} as S));
       };
       try {
         cb.apply(t!.ctx, [...t!.args, f]);
@@ -314,9 +318,13 @@ export function bindNodeCB<N>(
   function dispatch(this: qt.Action<S>, t?: S) {
     if (!s) {
       s = qx.createAsync();
+      const w = (t?: S) => {
+        t?.s?.next(t.n);
+        t?.s?.done();
+      };
       const f = (...ns: any[]) => {
         const n = ns.length <= 1 ? ns[0] : ns;
-        this.add(h!.schedule(qh.nextAndDone, {s, n}));
+        this.add(h!.schedule(w, {s, n} as S));
       };
       try {
         cb.apply(t!.ctx, [...t!.args, f]);
@@ -356,7 +364,8 @@ export function bindNodeCB<N>(
 export function defer<X extends qt.Input<any> | void>(
   fac: () => X
 ): qt.Source<qt.Sourced<X>> {
-  return new qs.Source<qt.Sourced<X>>(r => {
+  type N = qt.Sourced<X>;
+  return new qs.Source<N>(r => {
     let inp: X | void;
     try {
       inp = fac();
@@ -364,18 +373,17 @@ export function defer<X extends qt.Input<any> | void>(
       r.fail(e);
       return;
     }
-    const s = inp ? from(inp as qt.Input<qt.Sourced<X>>) : EMPTY;
+    const s = inp ? from(inp as qt.Input<N>) : EMPTY;
     return s.subscribe(r);
   });
 }
 
+export const EMPTY = new qs.Source<never>(r => r.done());
+
 export function empty(h?: qh.Scheduler) {
   return h
     ? new qs.Source<never>(r => h.schedule<never>(() => r.done()))
-    : new qs.Source<never>(r => {
-        r.done();
-        return r;
-      });
+    : EMPTY;
 }
 
 //export function from<X extends qt.Input<any>>(x: X): qt.Source<qt.Sourced<X>>;
@@ -447,25 +455,23 @@ export function fromEvent<N>(
       else r.next(e);
     }
     setupSubscription(t, event, handler, r, os as qt.ListenerOptions);
-    return r;
   });
 }
 
 export function fromEventPattern<N>(
-  addHandler: (_: qt.NodeEventHandler) => any,
-  removeHandler?: (_: qt.NodeEventHandler, _signal?: any) => void
+  add: (_: qt.NodeEventHandler) => any,
+  del?: (_: qt.NodeEventHandler, _signal?: any) => void
 ): qs.Source<N | N[]> {
   return new qs.Source<N | N[]>(r => {
     const handler = (...e: N[]) => r.next(e.length === 1 ? e[0] : e);
     let v: any;
     try {
-      v = addHandler(handler);
+      v = add(handler);
     } catch (e) {
       r.fail(e);
       return;
     }
-    if (!qt.isFunction(removeHandler)) return;
-    return () => removeHandler(handler, v);
+    if (qt.isFunction(del)) r.add(() => del(handler, v));
   });
 }
 
@@ -633,11 +639,10 @@ export function interval(period = 0, h: qh.Scheduler = qh.async) {
   }
   return new qs.Source<qt.Nof<Interval>>(r => {
     r.add(h.schedule(dispatch, {r, count: 0, period} as Interval, period));
-    return r;
   });
 }
 
-export const NEVER = new qs.Source<never>(qu.noop);
+export const NEVER = new qs.Source<never>(qt.noop);
 
 export function of(): qs.Source<never>;
 export function of<N>(_: N): qs.Source<N>;
@@ -688,7 +693,7 @@ export function range(start = 0, count?: number, h?: qh.Scheduler): qs.Source<nu
       r.next(i++);
       if (r.closed) break;
     } while (true);
-    return r;
+    return;
   });
 }
 

@@ -40,13 +40,13 @@ export interface Dobs<N> extends Closed {
 
 export type Target<N> = Nobs<N> | Fobs<N> | Dobs<N>;
 
-export interface Unsubscriber {
+export interface Unsubscriber extends Closed {
   unsubscribe(): void;
 }
 
 export type Closer = Unsubscriber | Fun<void> | void;
 
-export interface Subscription extends Closed, Unsubscriber {
+export interface Subscription extends Unsubscriber {
   add(c?: Closer): Subscription;
 }
 

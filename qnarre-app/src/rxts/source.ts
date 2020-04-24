@@ -1,6 +1,6 @@
+import * as qr from './subscriber';
 import * as qt from './types';
 import * as qu from './utils';
-import * as qj from './subject';
 
 export class Source<N> implements qt.Source<N> {
   [Symbol.rxSource]() {
@@ -14,12 +14,12 @@ export class Source<N> implements qt.Source<N> {
   orig?: Source<any>;
   oper?: qt.Operator<any, N>;
 
-  constructor(s?: (this: Source<N>, _: qt.Subscriber<N>) => qt.Subscription) {
+  constructor(s?: (this: Source<N>, _: qt.Subscriber<N>) => qt.Closer) {
     if (s) this._subscribe = s;
   }
 
-  _subscribe(s: qt.Subscriber<N>) {
-    return this.orig?.subscribe(s);
+  _subscribe(s: qt.Subscriber<N>): qt.Closer {
+    return this.orig!.subscribe(s);
   }
 
   _trySubscribe(s: qt.Subscriber<N>) {
@@ -29,7 +29,6 @@ export class Source<N> implements qt.Source<N> {
       if (qu.canReportError(s)) s.fail(e);
       else console.warn(e);
     }
-    return;
   }
 
   lift<R>(o?: qt.Operator<N, R>) {
@@ -46,9 +45,9 @@ export class Source<N> implements qt.Source<N> {
     fail?: qt.Fun<any>,
     done?: qt.Fun<void>
   ): qt.Subscription {
-    const s = qj.toSubscriber(t, fail, done);
+    const s = qr.toSubscriber(t, fail, done);
     const o = this.oper;
-    if (o && this.orig) s.add(o.call(s, this.orig));
+    if (o) s.add(o.call(s, this.orig!));
     else s.add(this.orig ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
@@ -230,7 +229,7 @@ export class Grouped<K, N> extends Source<N> {
   }
 
   _subscribe(r: qt.Subscriber<N>) {
-    const s = new qj.Subscription();
+    const s = new qr.Subscription();
     const {ref, group} = this;
     if (ref && !ref.closed) s.add(new ActorRefCounted(ref));
     s.add(group.subscribe(r));
@@ -311,7 +310,7 @@ export class Note<N> {
 
 export function firstFrom<N>(s$: Source<N>) {
   return new Promise<N>((res, rej) => {
-    const subs = new qj.Subscription();
+    const subs = new qr.Subscription();
     subs.add(
       s$.subscribe({
         next: n => {

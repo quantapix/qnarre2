@@ -3,6 +3,8 @@ import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
 
+type Nof<S> = qt.Nof<S>;
+
 export class Action<S extends qt.State> extends qr.Subscription implements qt.Action<S> {
   constructor(public h: Scheduler, public work: (this: Action<S>, _?: S) => void) {
     super();
@@ -31,7 +33,8 @@ export class Scheduler implements qt.Scheduler {
     return new this.A(this, work).schedule(state, delay);
   }
 
-  scheduleArray<S extends qt.State, N = qt.Nof<S>>(a: ArrayLike<N>) {
+  scheduleArray<S extends qt.State>(a: ArrayLike<Nof<S>>) {
+    type N = Nof<S>;
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       let i = 0;
@@ -48,7 +51,8 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduleIter<S extends qt.State, N = qt.Nof<S>>(b: Iterable<N>) {
+  scheduleIter<S extends qt.State>(b: Iterable<Nof<S>>) {
+    type N = Nof<S>;
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       let i: Iterator<N>;
@@ -82,7 +86,8 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduleAsyncIter<S extends qt.State, N = qt.Nof<S>>(b: AsyncIterable<N>) {
+  scheduleAsyncIter<S extends qt.State>(b: AsyncIterable<Nof<S>>) {
+    type N = Nof<S>;
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       s.add(
@@ -106,7 +111,8 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduleSource<S extends qt.State, N = qt.Nof<S>>(i: qt.Interop<N>) {
+  scheduleSource<S extends qt.State>(i: qt.Interop<Nof<S>>) {
+    type N = Nof<S>;
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       s.add(
@@ -124,7 +130,8 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  schedulePromise<S extends qt.State, N = qt.Nof<S>>(p: PromiseLike<N>) {
+  schedulePromise<S extends qt.State>(p: PromiseLike<Nof<S>>) {
+    type N = Nof<S>;
     return new qs.Source<N>(r => {
       const s = new qr.Subscription();
       s.add(
@@ -152,7 +159,8 @@ export class Scheduler implements qt.Scheduler {
     });
   }
 
-  scheduled<S extends qt.State, N = qt.Nof<S>>(i: qt.Input<N>) {
+  scheduled<S extends qt.State>(i: qt.Input<Nof<S>>) {
+    type N = Nof<S>;
     if (qt.isInterop<N>(i)) return this.scheduleSource(i);
     if (qt.isArrayLike<N>(i)) return this.scheduleArray(i);
     if (qt.isPromise<N>(i)) return this.schedulePromise(i);
