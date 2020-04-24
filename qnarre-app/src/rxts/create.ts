@@ -6,8 +6,6 @@ import * as qx from './context';
 import * as qr from './subscriber';
 //import * as qj from './subject';
 
-type Nof<X> = qt.Nof<X>;
-
 export function bindCB<R1, R2, R3, R4>(
   cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
   h?: qh.Scheduler
@@ -382,7 +380,7 @@ export function empty(h?: qh.Scheduler) {
 
 //export function from<X extends qt.Input<any>>(x: X): qt.Source<qt.Sourced<X>>;
 export function from<N>(i: qt.Input<N>, h?: qh.Scheduler) {
-  if (h) return h.scheduled(i);
+  if (h) return h.scheduled<qt.Nstate<N>>(i);
   else {
     if (qt.isSource<N>(i)) return i as qs.Source<N>;
     return new qs.Source<N>(qr.subscribeTo(i));
@@ -390,22 +388,22 @@ export function from<N>(i: qt.Input<N>, h?: qh.Scheduler) {
 }
 
 export function fromArray<N>(a: ArrayLike<N>, h?: qh.Scheduler) {
-  if (h) return h.scheduleArray(a);
+  if (h) return h.scheduleArray<qt.Nstate<N>>(a);
   return new qs.Source<N>(qr.subscribeToArray(a));
 }
 
 export function fromIter<N>(b: Iterable<N>, h?: qh.Scheduler) {
-  if (h) return h.scheduleIter<N>(b);
+  if (h) return h.scheduleIter<qt.Nstate<N>>(b);
   return new qs.Source<N>(qr.subscribeToIter(b));
 }
 
 export function fromSource<N>(i: qt.Interop<N>, h?: qh.Scheduler) {
-  if (h) return h.scheduleSource<N>(i);
+  if (h) return h.scheduleSource<qt.Nstate<N>>(i);
   return new qs.Source<N>(qr.subscribeToSource(i));
 }
 
 export function fromPromise<N>(p: PromiseLike<N>, h?: qh.Scheduler) {
-  if (h) return h.schedulePromise<N>(p);
+  if (h) return h.schedulePromise<qt.Nstate<N>>(p);
   return new qs.Source<N>(qr.subscribeToPromise(p));
 }
 
@@ -618,7 +616,7 @@ export function iif<T = never, F = never>(
   return defer(() => (condition() ? trueResult : falseResult));
 }
 
-interface Interval extends qt.State<number> {
+interface Interval extends qt.Nstate<number> {
   period: number;
   count: number;
 }
@@ -629,7 +627,9 @@ export function interval(period = 0, h: qh.Scheduler = qh.async) {
   function dispatch(this: qh.Action<Interval>, s?: Interval) {
     const {r, count, period} = s!;
     r.next(count);
-    this.schedule({r, count: count + 1, period} as Interval, period);
+    if (r.closed) return;
+    s!.count = count + 1;
+    this.schedule(s!, period);
   }
   return new qs.Source<qt.Nof<Interval>>(r => {
     r.add(h.schedule(dispatch, {r, count: 0, period} as Interval, period));
@@ -648,87 +648,68 @@ export function of<N>(...args: Array<N | qh.Scheduler>): qs.Source<N> {
   let h = args[args.length - 1] as qh.Scheduler;
   if (qt.isScheduler(h)) {
     args.pop();
-    return h.scheduleArray(args as N[]);
+    return h.scheduleArray<qt.Nstate<N>>(args as N[]);
   }
   return fromArray(args as N[]);
 }
 
-export function range(
-  start: number = 0,
-  count?: number,
-  h?: qh.Scheduler
-): qs.Source<number> {
-  function dispatch(this: qh.Action<any>, state?: any) {
-    const {start, index, count, r} = state;
+interface Range extends qt.Nstate<number> {
+  count: number;
+  index: number;
+  start: number;
+}
+
+export function range(start = 0, count?: number, h?: qh.Scheduler): qs.Source<number> {
+  function dispatch(this: qh.Action<Range>, s?: Range) {
+    const {r, count, index, start} = s!;
     if (index >= count) {
       r.done();
       return;
     }
     r.next(start);
     if (r.closed) return;
-    state.index = index + 1;
-    state.start = start + 1;
-    this.schedule(state);
+    s!.index = index + 1;
+    s!.start = start + 1;
+    this.schedule(s!);
   }
-  return new qs.Source<number>(r => {
+  return new qs.Source<qt.Nof<Range>>(r => {
     if (count === undefined) {
       count = start;
       start = 0;
     }
     let index = 0;
-    let current = start;
-    if (h) {
-      return h.schedule(dispatch, 0, {
-        index,
-        count,
-        start,
-        r
-      });
-    } else {
-      do {
-        if (index++ >= count) {
-          r.done();
-          break;
-        }
-        r.next(current++);
-        if (r.closed) break;
-      } while (true);
-    }
-    return;
+    let i = start;
+    if (h) return h.schedule(dispatch, {r, count, index, start} as Range);
+    do {
+      if (index++ >= count) {
+        r.done();
+        break;
+      }
+      r.next(i++);
+      if (r.closed) break;
+    } while (true);
+    return r;
   });
 }
 
-interface TimerState {
+interface Timer extends qt.Nstate<number> {
   index: number;
   period: number;
-  r: qt.Subscriber<number>;
 }
 
-export function timer(
-  dueTime: number | Date = 0,
-  periodOrScheduler?: number | qh.Scheduler,
-  h?: qh.Scheduler
-): qs.Source<number> {
-  let period = -1;
-  if (qt.isNumeric(periodOrScheduler)) {
-    period = (Number(periodOrScheduler) < 1 && 1) || Number(periodOrScheduler);
-  } else if (qt.isScheduler(periodOrScheduler)) h = periodOrScheduler as any;
+export function timer(due: number | Date = 0, period = -1, h?: qh.Scheduler) {
   if (!qt.isScheduler(h)) h = qh.async;
-  function dispatch(this: qh.Action<TimerState>, state: TimerState) {
-    const {index, period, r} = state;
+  function dispatch(this: qh.Action<Timer>, s?: Timer) {
+    const {r, index, period} = s!;
     r.next(index);
     if (r.closed) return;
     if (period === -1) return r.done();
-    state.index = index + 1;
-    this.schedule(state, period);
+    s!.index = index + 1;
+    this.schedule(s!, period);
   }
-  return new qs.Source(r => {
-    const due = qt.isNumeric(dueTime) ? (dueTime as number) : +dueTime - h!.now();
-    return h!.schedule(dispatch as any, due, {
-      index: 0,
-      period,
-      r
-    });
+  return new qs.Source<qt.Nof<Range>>(r => {
+    const d = qt.isNumeric(due) ? (due as number) : +due - h!.now();
+    return h!.schedule(dispatch, {r, index: 0, period} as Timer, d);
   });
 }
 
