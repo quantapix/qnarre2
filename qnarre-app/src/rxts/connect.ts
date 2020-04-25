@@ -2,9 +2,10 @@ import * as qt from './types';
 import * as qu from './utils';
 import * as qs from './source';
 import * as qj from './subject';
+import * as qr from './subscriber';
 
 export class Connect<N> extends qs.Source<N> {
-  sub?: qj.Subscription;
+  sub?: qr.Subscription;
   _subj?: qt.Subject<N>;
   done = false;
   count = 0;
@@ -23,15 +24,15 @@ export class Connect<N> extends qs.Source<N> {
     return this._subj!;
   }
 
-  connect(): qj.Subscription {
+  connect(): qr.Subscription {
     let s = this.sub;
     if (!s) {
       this.done = false;
-      s = this.sub = new qj.Subscription();
+      s = this.sub = new qr.Subscription();
       s.add(this.src.subscribe(new ConnectR(this.subj, this)));
       if (s.closed) {
         this.sub = undefined;
-        s = qj.Subscription.fake;
+        s = qr.Subscription.fake;
       }
     }
     return s;
@@ -42,7 +43,7 @@ export class Connect<N> extends qs.Source<N> {
   }
 }
 
-class ConnectR<N> extends qj.RSubject<N> {
+class ConnectR<N> extends qj.Subscriber<N> {
   constructor(obs: qj.Subject<N>, private con?: Connect<N>) {
     super(obs);
   }
@@ -92,7 +93,7 @@ export function refCount<N>(): qt.Shifter<N> {
 export class RefCountO<N> implements qt.Operator<N, N> {
   constructor(private con: Connect<N>) {}
 
-  call(r: qj.Subscriber<N>, source: any): qt.Closer {
+  call(r: qr.Subscriber<N>, source: any): qt.Closer {
     const c = this.con;
     c.count++;
     const refCounter = new RefCountR(r, c);
@@ -102,10 +103,10 @@ export class RefCountO<N> implements qt.Operator<N, N> {
   }
 }
 
-export class RefCountR<N> extends qj.Subscriber<N> {
-  private connection?: qj.Subscription;
+export class RefCountR<N> extends qr.Subscriber<N> {
+  private connection?: qr.Subscription;
 
-  constructor(tgt: qj.Subscriber<N>, private connectable?: Connect<N>) {
+  constructor(tgt: qr.Subscriber<N>, private connectable?: Connect<N>) {
     super(tgt);
   }
 

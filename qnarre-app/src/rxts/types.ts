@@ -58,8 +58,6 @@ export interface RefCounted extends Subscription {
 export interface Subscriber<N> extends Observer<N>, Subscription {}
 
 export interface Source<N> {
-  orig?: Source<any>;
-  oper?: Operator<any, N>;
   subscribe(_?: Target<N>): Subscription;
   lift<R>(_?: Operator<N, R>): Source<R>;
 }

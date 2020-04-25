@@ -7,9 +7,9 @@ export class Subscription implements qt.Subscription {
     return s;
   })(new Subscription());
 
-  closed = false;
-  protected parents?: Subscription[] | Subscription;
-  private children?: qt.Subscription[];
+  closed?: boolean;
+  parents?: Subscription[] | Subscription;
+  private subs?: qt.Subscription[];
 
   constructor(private close?: qt.Fun<void>) {}
 
@@ -28,7 +28,7 @@ export class Subscription implements qt.Subscription {
           return s;
         } else if (!(c instanceof Subscription)) {
           s = new Subscription();
-          s.children = [c as qt.Subscription];
+          s.subs = [c as qt.Subscription];
         }
         break;
       default:
@@ -42,13 +42,13 @@ export class Subscription implements qt.Subscription {
       if (s.parents === this) return s;
       s.parents = [s.parents, this];
     }
-    if (this.children) this.children.push(s);
-    else this.children = [s];
+    if (this.subs) this.subs.push(s);
+    else this.subs = [s];
     return s;
   }
 
   remove(s: qt.Subscription) {
-    const ss = this.children;
+    const ss = this.subs;
     if (ss) {
       const i = ss.indexOf(s);
       if (i !== -1) ss.splice(i, 1);
@@ -67,15 +67,15 @@ export class Subscription implements qt.Subscription {
       if (e instanceof qu.UnsubscribeError) es = es.concat(flatten(e.errors));
       else es.push(e);
     }
-    this.children?.forEach(c => {
+    this.subs?.forEach(s => {
       try {
-        c.unsubscribe();
+        s.unsubscribe();
       } catch (e) {
         if (e instanceof qu.UnsubscribeError) es = es.concat(flatten(e.errors));
         else es.push(e);
       }
     });
-    this.parents = this.children = undefined;
+    this.parents = this.subs = undefined;
     if (es.length) throw new qu.UnsubscribeError(es);
   }
 }
@@ -100,17 +100,19 @@ export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
   [Symbol.rxSubscriber]() {
     return this;
   }
-  protected stopped = false;
-  protected tgt: Subscriber<N> | qt.Observer<N>;
+  stopped?: boolean;
+  tgt: Subscriber<N> | qt.Observer<N>;
 
-  constructor(tgt?: qt.Target<N>) {
+  constructor(t?: qt.Target<N>) {
     super();
-    if (!tgt) this.tgt = fake;
+    if (!t) this.tgt = fake;
     else {
-      if (tgt instanceof Subscriber) {
-        this.tgt = tgt;
-        tgt.add(this);
-      } else this.tgt = new Proxy<N>(this, tgt);
+      if (t instanceof Subscriber) {
+        this.tgt = t;
+        t.add(this);
+      } else {
+        this.tgt = new Proxy<N>(this, t);
+      }
     }
   }
 
@@ -157,7 +159,7 @@ export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
     const ps = this.parents;
     this.parents = undefined;
     this.unsubscribe();
-    this.closed = this.stopped = false;
+    this.closed = this.stopped = undefined;
     this.parents = ps;
     return this;
   }
@@ -166,18 +168,18 @@ export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
 export class Proxy<N> extends Subscriber<N> {
   private ctx?: any;
 
-  constructor(private parent: Subscriber<N> | undefined, private del: qt.Target<N>) {
+  constructor(private parent: Subscriber<N> | undefined, private tgt2: qt.Target<N>) {
     super();
-    if (this.del !== fake) this.ctx = Object.create(this.del);
+    if (this.tgt2 !== fake) this.ctx = Object.create(this.tgt2);
   }
 
   next(n: N) {
-    if (!this.stopped) this._call(this.del.next, n);
+    if (!this.stopped) this._call(this.tgt2.next, n);
   }
 
   fail(e: any) {
     if (!this.stopped) {
-      if (this.del.fail) this._call(this.del.fail, e);
+      if (this.tgt2.fail) this._call(this.tgt2.fail, e);
       else qu.delayedThrow(e);
       this.unsubscribe();
     }
@@ -185,7 +187,7 @@ export class Proxy<N> extends Subscriber<N> {
 
   done() {
     if (!this.stopped) {
-      this._call(this.del.done);
+      this._call(this.tgt2.done);
       this.unsubscribe();
     }
   }

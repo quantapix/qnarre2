@@ -174,7 +174,7 @@ export class AsyncAction<S extends qt.State> extends Action<S> {
   id?: any;
   state?: S;
   delay?: number;
-  pending = false;
+  pending?: boolean;
 
   constructor(h: Async, w: (this: Action<S>, _?: S) => void) {
     super(h, w);
@@ -234,7 +234,7 @@ export class AsyncAction<S extends qt.State> extends Action<S> {
 export class Async extends Scheduler {
   static del?: Scheduler;
 
-  active = false;
+  active?: boolean;
   busy?: any;
   acts = [] as AsyncAction<any>[];
 
@@ -397,7 +397,7 @@ export class Queue extends Async {}
 export const queue = new Queue(QueueAction);
 
 export class VirtualAction<S extends qt.State> extends AsyncAction<S> {
-  protected active = true;
+  active = true;
 
   constructor(
     h: Virtual,

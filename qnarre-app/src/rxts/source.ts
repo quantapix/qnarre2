@@ -6,34 +6,32 @@ export class Source<N> implements qt.Source<N> {
   [Symbol.rxSource]() {
     return this;
   }
-
   [Symbol.asyncIterator](): AsyncIterableIterator<N | undefined> {
     return asyncIterFrom(this);
   }
-
-  orig?: Source<any>;
+  root?: Source<any>;
   oper?: qt.Operator<any, N>;
 
   constructor(s?: (this: Source<N>, _: qt.Subscriber<N>) => qt.Closer) {
     if (s) this._subscribe = s;
   }
 
-  _subscribe(s: qt.Subscriber<N>): qt.Closer {
-    return this.orig!.subscribe(s);
+  _subscribe(r: qt.Subscriber<N>): qt.Closer {
+    return this.root?.subscribe(r);
   }
 
-  _trySubscribe(s: qt.Subscriber<N>) {
+  _trySubscribe(r: qt.Subscriber<N>) {
     try {
-      return this._subscribe(s);
+      return this._subscribe(r);
     } catch (e) {
-      if (qu.canReportError(s)) s.fail(e);
+      if (qu.canReportError(r)) r.fail(e);
       else console.warn(e);
     }
   }
 
   lift<R>(o?: qt.Operator<N, R>) {
     const s = new Source<R>();
-    s.orig = this;
+    s.root = this;
     s.oper = o;
     return s;
   }
@@ -47,8 +45,8 @@ export class Source<N> implements qt.Source<N> {
   ): qt.Subscription {
     const s = qr.toSubscriber(t, fail, done);
     const o = this.oper;
-    if (o) s.add(o.call(s, this.orig!));
-    else s.add(this.orig ? this._subscribe(s) : this._trySubscribe(s));
+    if (o) s.add(o.call(s, this.root!));
+    else s.add(this.root ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
 
