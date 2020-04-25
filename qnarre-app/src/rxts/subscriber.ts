@@ -206,39 +206,39 @@ export class Proxy<N> extends Subscriber<N> {
   }
 }
 
-export class Reactor<N, R> extends Subscriber<R> {
-  reactNext(_r: R, n: N, _ri?: number, _i?: number, _?: Actor<N, R>) {
-    this.tgt.next((n as unknown) as R);
-  }
-
-  reactFail(e: any, _?: Actor<N, R>) {
-    this.tgt.fail(e);
-  }
-
-  reactDone(_?: Actor<N, R>) {
-    this.tgt.done();
-  }
-}
-
 export class Actor<N, R> extends Subscriber<N> {
   private idx = 0;
 
-  constructor(private del: Reactor<N, R>, public r: R, public ri?: number) {
+  constructor(private react: Reactor<N, R>, public r: R, public ri?: number) {
     super();
   }
 
   protected _next(n: N) {
-    this.del.reactNext(this.r, n, this.ri, this.idx++, this);
+    this.react.reactNext(this.r, n, this.ri, this.idx++, this);
   }
 
   protected _fail(e: any) {
-    this.del.reactFail(e, this);
+    this.react.reactFail(e, this);
     this.unsubscribe();
   }
 
   protected _done() {
-    this.del.reactDone(this);
+    this.react.reactDone(this);
     this.unsubscribe();
+  }
+}
+
+export class Reactor<A, N> extends Subscriber<N> {
+  reactNext(_n: N, a: A, _ni?: number, _i?: number, _?: Actor<A, N>) {
+    this.tgt.next((a as unknown) as N);
+  }
+
+  reactFail(e: any, _?: Actor<A, N>) {
+    this.tgt.fail(e);
+  }
+
+  reactDone(_?: Actor<A, N>) {
+    this.tgt.done();
   }
 }
 
