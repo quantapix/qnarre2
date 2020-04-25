@@ -9,7 +9,7 @@ export class Source<N> implements qt.Source<N> {
   [Symbol.asyncIterator](): AsyncIterableIterator<N | undefined> {
     return asyncIterFrom(this);
   }
-  root?: Source<any>;
+  base?: Source<any>;
   oper?: qt.Operator<any, N>;
 
   constructor(s?: (this: Source<N>, _: qt.Subscriber<N>) => qt.Closer) {
@@ -17,7 +17,7 @@ export class Source<N> implements qt.Source<N> {
   }
 
   _subscribe(r: qt.Subscriber<N>): qt.Closer {
-    return this.root?.subscribe(r);
+    return this.base?.subscribe(r);
   }
 
   _trySubscribe(r: qt.Subscriber<N>) {
@@ -31,7 +31,7 @@ export class Source<N> implements qt.Source<N> {
 
   lift<R>(o?: qt.Operator<N, R>) {
     const s = new Source<R>();
-    s.root = this;
+    s.base = this;
     s.oper = o;
     return s;
   }
@@ -45,13 +45,61 @@ export class Source<N> implements qt.Source<N> {
   ): qt.Subscription {
     const s = qr.toSubscriber(t, fail, done);
     const o = this.oper;
-    if (o) s.add(o.call(s, this.root!));
-    else s.add(this.root ? this._subscribe(s) : this._trySubscribe(s));
+    if (o) s.add(o.call(s, this.base!));
+    else s.add(this.base ? this._subscribe(s) : this._trySubscribe(s));
     return s;
   }
 
+  toPromise(): Promise<N | undefined>;
+  toPromise(c: typeof Promise): Promise<N | undefined>;
+  toPromise(c?: PromiseConstructorLike): Promise<N | undefined> {
+    c = c ?? Promise;
+    return new c((res, rej) => {
+      let cache: N | undefined;
+      this.subscribe(
+        (n: N) => (cache = n),
+        (e: any) => rej(e),
+        () => res(cache)
+      );
+    }) as Promise<N | undefined>;
+  }
+
+  first() {
+    return new Promise<N>((res, rej) => {
+      const s = new qr.Subscription();
+      s.add(
+        this.subscribe(
+          n => {
+            res(n);
+            s.unsubscribe();
+          },
+          rej,
+          () => rej(new qu.EmptyError())
+        )
+      );
+    });
+  }
+
+  last() {
+    return new Promise<N>((res, rej) => {
+      let hasN = false;
+      let cache: N | undefined;
+      this.subscribe(
+        n => {
+          cache = n;
+          hasN = true;
+        },
+        rej,
+        () => {
+          if (hasN) res(cache);
+          else rej(new qu.EmptyError());
+        }
+      );
+    });
+  }
+
   forEach(next?: qt.Fun<N>, c?: PromiseConstructorLike) {
-    c = promiseCtor(c);
+    c = c ?? Promise;
     return new c<void>((res, rej) => {
       let s: qt.Subscription;
       s = this.subscribe(
@@ -140,39 +188,21 @@ export class Source<N> implements qt.Source<N> {
     if (os.length === 0) return this;
     return qu.pipeFromArray(os)(this) as this;
   }
-
-  toPromise<T>(this: Source<T>): Promise<T | undefined>;
-  toPromise<T>(this: Source<T>, c: typeof Promise): Promise<T | undefined>;
-  toPromise<T>(this: Source<T>, c: PromiseConstructorLike): Promise<T | undefined>;
-  toPromise(c?: PromiseConstructorLike): Promise<N | undefined> {
-    c = promiseCtor(c);
-    return new c((res, rej) => {
-      let value: N | undefined;
-      this.subscribe(
-        (n: N) => (value = n),
-        (e: any) => rej(e),
-        () => res(value)
-      );
-    }) as Promise<N | undefined>;
-  }
 }
 
-function promiseCtor(c?: PromiseConstructorLike) {
-  if (!c) c = Promise;
-  if (!c) throw new Error('no Promise impl found');
-  return c;
-}
+export const EMPTY = new Source<never>(r => r.done());
+export const NEVER = new Source<never>(qt.noop);
 
 function asyncIterFrom<N>(s: Source<N>) {
   return coroutine(s);
 }
 
 class Deferred<N> {
-  resolve?: qt.Fun<N | PromiseLike<N>>;
-  reject?: qt.Fun<any>;
-  promise = new Promise<N>((res, rej) => {
-    this.resolve = res;
-    this.reject = rej;
+  res?: qt.Fun<N | PromiseLike<N>>;
+  rej?: qt.Fun<any>;
+  p = new Promise<N>((res, rej) => {
+    this.res = res;
+    this.rej = rej;
   });
 }
 
@@ -184,20 +214,20 @@ async function* coroutine<N>(s: Source<N>) {
   let err: any;
   const ss = s.subscribe({
     next: (n: N) => {
-      if (ds.length > 0) ds.shift()!.resolve?.({value: n, done: false});
+      if (ds.length > 0) ds.shift()!.res?.({value: n, done: false});
       else ns.push(n);
     },
     fail: (e: any) => {
       failed = true;
       err = e;
       while (ds.length > 0) {
-        ds.shift()!.reject?.(e);
+        ds.shift()!.rej?.(e);
       }
     },
     done: () => {
       done = true;
       while (ds.length > 0) {
-        ds.shift()!.resolve?.({value: undefined, done: true});
+        ds.shift()!.res?.({value: undefined, done: true});
       }
     }
   });
@@ -209,7 +239,7 @@ async function* coroutine<N>(s: Source<N>) {
       else {
         const d = new Deferred<IteratorResult<N>>();
         ds.push(d);
-        const r = await d.promise;
+        const r = await d.p;
         if (r.done) return;
         else yield r.value;
       }
@@ -222,15 +252,15 @@ async function* coroutine<N>(s: Source<N>) {
 }
 
 export class Grouped<K, N> extends Source<N> {
-  constructor(public key: K, private group: qt.Subject<N>, private ref?: qt.RefCounted) {
+  constructor(public key: K, private g: qt.Subject<N>, private c?: qt.RefCounted) {
     super();
   }
 
   _subscribe(r: qt.Subscriber<N>) {
     const s = new qr.Subscription();
-    const {ref, group} = this;
-    if (ref && !ref.closed) s.add(new ActorRefCounted(ref));
-    s.add(group.subscribe(r));
+    const c = this.c;
+    if (c && !c.closed) s.add(new qr.RefCounted(c));
+    s.add(this.g.subscribe(r));
     return s;
   }
 }
@@ -242,23 +272,7 @@ export enum NoteKind {
 }
 
 export class Note<N> {
-  static createNext<N>(n?: N): Note<N> {
-    if (n === undefined) return Note.undefNote;
-    return new Note('N', n);
-  }
-
-  static createFail<N>(e: any): Note<N> {
-    return new Note('F', undefined, e);
-  }
-
-  static createDone<N>(): Note<N> {
-    return Note.doneNote;
-  }
-
-  private static doneNote: Note<any> = new Note('D');
-  private static undefNote: Note<any> = new Note('N', undefined);
-
-  hasN: boolean;
+  hasN?: boolean;
 
   constructor(kind: 'N', n: N);
   constructor(kind: 'F', n: undefined, e: any);
@@ -270,22 +284,22 @@ export class Note<N> {
   observe(t?: qt.Target<N>) {
     switch (this.kind) {
       case 'N':
-        return t?.next && t.next(this.n!);
+        return t?.next?.(this.n!);
       case 'F':
-        return t?.fail && t.fail(this.e);
+        return t?.fail?.(this.e);
       case 'D':
-        return t?.done && t.done();
+        return t?.done?.();
     }
   }
 
   act(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>) {
     switch (this.kind) {
       case 'N':
-        return next && next(this.n!);
+        return next?.(this.n!);
       case 'F':
-        return fail && fail(this.e);
+        return fail?.(this.e);
       case 'D':
-        return done && done();
+        return done?.();
     }
   }
 
@@ -306,41 +320,19 @@ export class Note<N> {
   }
 }
 
-export function firstFrom<N>(s$: Source<N>) {
-  return new Promise<N>((res, rej) => {
-    const subs = new qr.Subscription();
-    subs.add(
-      s$.subscribe({
-        next: n => {
-          res(n);
-          subs.unsubscribe();
-        },
-        fail: rej,
-        done: () => {
-          rej(new qu.EmptyError());
-        }
-      })
-    );
-  });
+const undef = new Note<any>('N', undefined);
+
+export function nextNote<N>(n?: N): Note<N> {
+  if (n === undefined) return undef;
+  return new Note('N', n);
 }
 
-export function lastFrom<N>(s: Source<N>) {
-  return new Promise<N>((res, rej) => {
-    let hasN = false;
-    let value: N | undefined;
-    s.subscribe({
-      next: n => {
-        value = n;
-        hasN = true;
-      },
-      fail: rej,
-      done: () => {
-        if (hasN) {
-          res(value);
-        } else {
-          rej(new qu.EmptyError());
-        }
-      }
-    });
-  });
+export function failNote<N>(e: any): Note<N> {
+  return new Note('F', undefined, e);
+}
+
+const done = new Note<any>('D');
+
+export function doneNote<N>(): Note<N> {
+  return done;
 }

@@ -1,10 +1,9 @@
+import * as qh from './scheduler';
+import * as qj from './subject';
+import * as qr from './subscriber';
+import * as qs from './source';
 import * as qt from './types';
 import * as qu from './utils';
-import * as qh from './scheduler';
-import * as qs from './source';
-import * as qx from './context';
-import * as qr from './subscriber';
-//import * as qj from './subject';
 
 export function bindCB<R1, R2, R3, R4>(
   cb: (_: (r1: R1, r2: R2, r3: R3, r4: R4, ..._: any[]) => any) => any,
@@ -139,7 +138,7 @@ export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.S
   let s: qt.Subject<N> | undefined;
   function dispatch(this: qt.Action<S>, t?: S) {
     if (!s) {
-      s = qx.createAsync();
+      s = new qj.Async<N>();
       const w = (t?: S) => {
         t?.s?.next(t.n);
         t?.s?.done();
@@ -158,10 +157,10 @@ export function bindCB<N>(cb: Function, h?: qh.Scheduler): (..._: any[]) => qt.S
   }
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
-    return qx.createSource(r => {
-      if (h) return h.schedule<S>(dispatch, {r, cb, ctx, args} as S);
+    return new qs.Source<N>(r => {
+      if (h) return h.schedule(dispatch, {r, cb, ctx, args} as S);
       if (!s) {
-        s = qx.createAsync();
+        s = new qj.Async<N>();
         const f = (...ns: any[]) => {
           s!.next(ns.length <= 1 ? ns[0] : ns);
           s!.done();
@@ -317,7 +316,7 @@ export function bindNodeCB<N>(
   let s: qt.Subject<N> | undefined;
   function dispatch(this: qt.Action<S>, t?: S) {
     if (!s) {
-      s = qx.createAsync();
+      s = new qj.Async<N>();
       const w = (t?: S) => {
         t?.s?.next(t.n);
         t?.s?.done();
@@ -336,10 +335,10 @@ export function bindNodeCB<N>(
   }
   return function (this: any, ...args: any[]): qt.Source<N> {
     const ctx = this;
-    return qx.createSource(r => {
-      if (h) return h.schedule<S>(dispatch, {r, cb, ctx, args} as S);
+    return new qs.Source<N>(r => {
+      if (h) return h.schedule(dispatch, {r, cb, ctx, args} as S);
       if (!s) {
-        s = qx.createAsync();
+        s = new qj.Async<N>();
         const f = (...ns: any[]) => {
           const e = ns.shift();
           if (e) {
@@ -373,17 +372,15 @@ export function defer<X extends qt.Input<any> | void>(
       r.fail(e);
       return;
     }
-    const s = inp ? from(inp as qt.Input<N>) : EMPTY;
+    const s = inp ? from(inp as qt.Input<N>) : qs.EMPTY;
     return s.subscribe(r);
   });
 }
 
-export const EMPTY = new qs.Source<never>(r => r.done());
-
 export function empty(h?: qh.Scheduler) {
   return h
     ? new qs.Source<never>(r => h.schedule<never>(() => r.done()))
-    : EMPTY;
+    : qs.EMPTY;
 }
 
 //export function from<X extends qt.Input<any>>(x: X): qt.Source<qt.Sourced<X>>;
@@ -571,7 +568,7 @@ export function generate<N, S>(
   return new qs.Source<N>(r => {
     let s = init as S;
     if (h) {
-      return h.schedule<Gen<N, S>>(dispatch, {
+      return h.schedule(dispatch, {
         r,
         step,
         check,
@@ -615,8 +612,8 @@ export function generate<N, S>(
 
 export function iif<T = never, F = never>(
   c: () => boolean,
-  t: qt.SourceOrPromise<T> = EMPTY,
-  f: qt.SourceOrPromise<F> = EMPTY
+  t: qt.SourceOrPromise<T> = qs.EMPTY,
+  f: qt.SourceOrPromise<F> = qs.EMPTY
 ) {
   return defer<qt.Input<T | F>>(() => (c() ? t : f));
 }
@@ -640,8 +637,6 @@ export function interval(period = 0, h: qh.Scheduler = qh.async) {
     r.add(h.schedule(dispatch, {r, count: 0, period} as Interval, period));
   });
 }
-
-export const NEVER = new qs.Source<never>(qt.noop);
 
 export function of(): qs.Source<never>;
 export function of<N>(_: N): qs.Source<N>;
@@ -717,51 +712,47 @@ export function timer(due: number | Date = 0, period = -1, h?: qh.Scheduler) {
   });
 }
 
-interface ThrowState {
-  error: any;
-  r: qt.Subscriber<any>;
+interface ThrowError extends qt.Nstate<any> {
+  err: any;
 }
 
-export function throwError(error: any, h?: qh.Scheduler): qs.Source<never> {
-  function dispatch({error, r}: ThrowState) {
-    r.fail(error);
+export function throwError(err: any, h?: qh.Scheduler): qs.Source<never> {
+  function dispatch(s?: ThrowError) {
+    const {r, err} = s!;
+    r.fail(err);
   }
-  if (h) return new qs.Source(r => h.schedule(dispatch as any, {error, r}));
-  return new qs.Source(r => r.fail(error));
+  if (h) return new qs.Source(r => h.schedule(dispatch, {err, r} as ThrowError));
+  return new qs.Source(r => r.fail(err));
 }
 
 /* ** */
 
-export function repeat<N>(count: number = -1): qt.Shifter<N> {
+export function repeat<N>(count = -1): qt.Shifter<N> {
   return x => {
-    if (count === 0) return EMPTY;
+    if (count === 0) return qs.EMPTY;
     if (count < 0) return x.lift(new RepeatO<N>(-1, x));
     return x.lift(new RepeatO(count - 1, x));
   };
 }
 
 class RepeatO<N> implements qt.Operator<N, N> {
-  constructor(private count: number, private source: qt.Source<N>) {}
-  call(r: qt.Subscriber<N>, s: any): qt.Closer {
-    return s.subscribe(new RepeatR(r, this.count, this.source));
+  constructor(private count: number, private src: qt.Source<N>) {}
+  call(r: qt.Subscriber<N>, s: qt.Source<N>) {
+    return s.subscribe(new RepeatR(r, this.count, this.src));
   }
 }
 
 export class RepeatR<N> extends qr.Subscriber<N> {
-  constructor(
-    tgt: qt.Subscriber<any>,
-    private count: number,
-    private source: qt.Source<N>
-  ) {
-    super(tgt);
+  constructor(t: qt.Subscriber<N>, private count: number, private src: qt.Source<N>) {
+    super(t);
   }
 
   done() {
     if (!this.stopped) {
-      const {source, count} = this;
-      if (count === 0) return super.done();
-      else if (count > -1) this.count = count - 1;
-      source.subscribe(this._recycle());
+      const c = this.count;
+      if (c === 0) return super.done();
+      else if (c > -1) this.count = c - 1;
+      this.src.subscribe(this._recycle());
     }
   }
 }
@@ -769,12 +760,12 @@ export class RepeatR<N> extends qr.Subscriber<N> {
 export function repeatWhen<N>(
   notifier: (notes: qt.Source<any>) => qt.Source<any>
 ): qt.Shifter<N> {
-  return (source: qt.Source<N>) => source.lift(new RepeatWhenO(notifier));
+  return x => x.lift(new RepeatWhenO(notifier));
 }
 
 class RepeatWhenO<N> implements qt.Operator<N, N> {
   constructor(protected notifier: (notes: qt.Source<any>) => qt.Source<any>) {}
-  call(r: qt.Subscriber<N>, s: any): qt.Closer {
+  call(r: qt.Subscriber<N>, s: qt.Source<N>) {
     return s.subscribe(new RepeatWhenR(r, this.notifier, s));
   }
 }
@@ -786,20 +777,20 @@ export class RepeatWhenR<N, R> extends qr.Reactor<N, R> {
   private busy = true;
 
   constructor(
-    tgt: qt.Subscriber<R>,
+    t: qt.Subscriber<R>,
     private notifier: (notes: qt.Source<any>) => qt.Source<any>,
-    private source: qt.Source<N>
+    private src: qt.Source<N>
   ) {
-    super(tgt);
+    super(t);
   }
 
   reactNext() {
     this.busy = true;
-    this.source.subscribe(this);
+    this.src.subscribe(this);
   }
 
   reactDone() {
-    if (this.busy === false) return super.done();
+    if (!this.busy) return super.done();
   }
 
   done() {
@@ -812,7 +803,7 @@ export class RepeatWhenR<N, R> extends qr.Reactor<N, R> {
     }
   }
 
-  _unsubscribe() {
+  unsubscribe() {
     const {notes, s} = this;
     if (notes) {
       notes.unsubscribe();
@@ -825,16 +816,16 @@ export class RepeatWhenR<N, R> extends qr.Reactor<N, R> {
     this.retries = undefined;
   }
 
-  _recycle(): qt.Subscriber<N> {
-    const {_unsubscribe} = this;
-    this._unsubscribe = undefined;
+  _recycle() {
+    const u = this.unsubscribe;
+    this.unsubscribe = undefined;
     super._recycle();
-    this._unsubscribe = _unsubscribe;
+    this.unsubscribe = u;
     return this;
   }
 
   private subscribeToRetries() {
-    this.notes = new qs.Subject();
+    this.notes = new qj.Subject();
     let rs;
     try {
       const {notifier} = this;
@@ -855,16 +846,16 @@ export function throwIfEmpty<N>(
 
 class ThrowIfEmptyO<N> implements qt.Operator<N, N> {
   constructor(private fac: () => any) {}
-  call(r: qt.Subscriber<N>, s: any): qt.Closer {
+  call(r: qt.Subscriber<N>, s: qt.Source<N>) {
     return s.subscribe(new ThrowIfEmptyR(r, this.fac));
   }
 }
 
 export class ThrowIfEmptyR<N> extends qr.Subscriber<N> {
-  private hasN = false;
+  private hasN?: boolean;
 
-  constructor(tgt: qt.Subscriber<N>, private fac: () => any) {
-    super(tgt);
+  constructor(t: qt.Subscriber<N>, private fac: () => any) {
+    super(t);
   }
 
   protected _next(n: N) {

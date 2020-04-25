@@ -102,7 +102,7 @@ export type Unshift<X extends any[], Y> = ((y: Y, ...x: X) => any) extends (
   ? U
   : never;
 
-export type FactoryOrValue<T> = (() => T) | T;
+export type FacOrVal<T> = (() => T) | T;
 
 export interface Stamp<T> {
   time: number;

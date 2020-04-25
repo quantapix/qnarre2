@@ -65,7 +65,7 @@ export class Subject<N> extends qs.Source<N> implements qt.Subject<N> {
   }
 
   lift<R>(o?: qt.Operator<N, R>) {
-    const s = new Simple<R>(this, this);
+    const s = new Lifted<R>(this, this);
     s.oper = o;
     return s;
   }
@@ -99,12 +99,12 @@ export class Subject<N> extends qs.Source<N> implements qt.Subject<N> {
 
   asSource() {
     const s = new qs.Source<N>();
-    s.root = this;
+    s.base = this;
     return s;
   }
 }
 
-class Simple<N> extends Subject<N> {
+class Lifted<N> extends Subject<N> {
   constructor(private tgt?: qt.Observer<N>, s?: qs.Source<N>) {
     super();
     this.root = s;

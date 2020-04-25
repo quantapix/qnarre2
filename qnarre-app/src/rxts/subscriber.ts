@@ -96,6 +96,22 @@ const fake = {
   done() {}
 } as qt.Observer<any>;
 
+export class RefCounted extends Subscription {
+  constructor(private parent: qt.RefCounted) {
+    super();
+    parent.count++;
+  }
+
+  unsubscribe() {
+    const p = this.parent;
+    if (!p.closed && !this.closed) {
+      super.unsubscribe();
+      p.count -= 1;
+      if (p.count === 0 && p.unsubscribing) p.unsubscribe();
+    }
+  }
+}
+
 export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
   [Symbol.rxSubscriber]() {
     return this;

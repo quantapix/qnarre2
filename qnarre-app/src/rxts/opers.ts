@@ -520,21 +520,3 @@ class GroupDurationSubscriber<K, T> extends qj.Subscriber<T> {
     }
   }
 }
-
-class ActorRefCounted extends qj.Subscription {
-  constructor(private parent: RefCounted) {
-    super();
-    parent.count++;
-  }
-
-  unsubscribe() {
-    const parent = this.parent;
-    if (!parent.closed && !this.closed) {
-      super.unsubscribe();
-      parent.count -= 1;
-      if (parent.count === 0 && parent.unsubscribing) {
-        parent.unsubscribe();
-      }
-    }
-  }
-}
