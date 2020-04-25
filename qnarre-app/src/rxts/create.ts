@@ -419,7 +419,7 @@ function setupSubscription<T>(
   r: qt.Subscriber<T>,
   os?: qt.ListenerOptions
 ) {
-  let unsub: qt.Fun<void> | undefined;
+  let unsub: qt.Fvoid | undefined;
   if (qt.isEventTarget(t)) {
     const s = t;
     t.addEventListener(event, handler, os);

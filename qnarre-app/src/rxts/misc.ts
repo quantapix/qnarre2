@@ -365,13 +365,13 @@ class SubscribeOnO<N> implements qt.Operator<N, N> {
 export function tap<N>(
   next?: qt.Fun<N>,
   fail?: qt.Fun<any>,
-  done?: qt.Fun<void>
+  done?: qt.Fvoid
 ): qt.Shifter<N>;
 export function tap<N>(observer: qt.Target<N>): qt.Shifter<N>;
 export function tap<N>(
   nextOrObserver?: qt.Target<N> | qt.Fun<N>,
   fail?: qt.Fun<any>,
-  done?: qt.Fun<void>
+  done?: qt.Fvoid
 ): qt.Shifter<N> {
   return function tapLifter(source: qt.Source<N>): qt.Source<N> {
     return x.lift(new TapO(nextOrObserver, error, complete));
@@ -382,7 +382,7 @@ class TapO<N> implements qt.Operator<N, N> {
   constructor(
     private nextOrObserver?: qt.Target<N> | qt.Fun<N>,
     private fail?: qt.Fun<any>,
-    private done?: qt.Fun<void>
+    private done?: qt.Fvoid
   ) {}
   call(r: qt.Subscriber<N>, s: any): qt.Closer {
     return s.subscribe(new TapR(r, this.nextOrObserver, this.error, this.complete));
@@ -393,13 +393,13 @@ export class TapR<N> extends qt.Subscriber<N> {
   private _context: any;
   private _tapNext: (value: N) => void = noop;
   private _tapError: (err: any) => void = noop;
-  private _tapComplete: qt.Fun<void> = noop;
+  private _tapComplete: qt.Fvoid = noop;
 
   constructor(
     tgt: qt.Subscriber<N>,
     observerOrNext?: qt.Target<N> | ((value: N) => void),
     fail?: (e?: any) => void,
-    done?: qt.Fun<void>
+    done?: qt.Fvoid
   ) {
     super(tgt);
     this._tapError = error || noop;

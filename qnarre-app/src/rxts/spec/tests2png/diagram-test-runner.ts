@@ -76,7 +76,7 @@ function makeFilename(operatorLabel: string) {
   return /^(\w+)/.exec(operatorLabel)![1] + '.png';
 }
 
-type glitFn = (description: string, fn: qt.Fun<void>) => any;
+type glitFn = (description: string, fn: qt.Fvoid) => any;
 type specFn = () => any;
 
 global.asDiagram = function asDiagram(operatorLabel: string, glit: glitFn) {

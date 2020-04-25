@@ -11,7 +11,11 @@ export class Subscription implements qt.Subscription {
   parents?: Subscription[] | Subscription;
   private subs?: qt.Subscription[];
 
-  constructor(private close?: qt.Fun<void>) {}
+  constructor(u?: qt.Fvoid) {
+    if (u) this._unsubscribe = u;
+  }
+
+  _unsubscribe() {}
 
   add(c?: qt.Closer) {
     if (!c) return Subscription.fake;
@@ -62,7 +66,7 @@ export class Subscription implements qt.Subscription {
     else this.parents?.remove(this);
     let es = [] as any[];
     try {
-      this.close?.call(this);
+      this._unsubscribe.call(this);
     } catch (e) {
       if (e instanceof qu.UnsubscribeError) es = es.concat(flatten(e.errors));
       else es.push(e);
@@ -208,19 +212,19 @@ export class Proxy<N> extends Subscriber<N> {
     }
   }
 
-  unsubscribe() {
-    const p = this.parent;
-    this.ctx = this.parent = undefined;
-    p?.unsubscribe();
-  }
-
-  private _call(f?: Function, x?: N | any) {
+  _call(f?: Function, x?: N | any) {
     try {
       f?.call(this.ctx, x);
     } catch (e) {
       this.unsubscribe();
       qu.delayedThrow(e);
     }
+  }
+
+  _unsubscribe() {
+    const p = this.parent;
+    this.ctx = this.parent = undefined;
+    p?.unsubscribe();
   }
 }
 
@@ -263,7 +267,7 @@ export class Reactor<A, N> extends Subscriber<N> {
 export function toSubscriber<N>(
   t?: qt.Target<N> | qt.Fun<N>,
   fail?: qt.Fun<any>,
-  done?: qt.Fun<void>
+  done?: qt.Fvoid
 ): Subscriber<N> {
   if (t instanceof Subscriber) return t;
   if (typeof t === 'function') t = {next: t, fail, done};

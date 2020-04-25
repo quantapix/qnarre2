@@ -12,30 +12,31 @@ export interface Closed {
   readonly closed?: boolean;
 }
 
+export type Fvoid = () => void;
 export type Fun<T> = (_: T) => void;
 
 export interface Observer<N> extends Closed {
   next: Fun<N>;
   fail: Fun<any>;
-  done: Fun<void>;
+  done: Fvoid;
 }
 
 export interface Nobs<N> extends Closed {
   next: Fun<N>;
   fail?: Fun<any>;
-  done?: Fun<void>;
+  done?: Fvoid;
 }
 
 export interface Fobs<N> extends Closed {
   next?: Fun<N>;
   fail: Fun<any>;
-  done?: Fun<void>;
+  done?: Fvoid;
 }
 
 export interface Dobs<N> extends Closed {
   next?: Fun<N>;
   fail?: Fun<any>;
-  done: Fun<void>;
+  done: Fvoid;
 }
 
 export type Target<N> = Nobs<N> | Fobs<N> | Dobs<N>;
@@ -44,7 +45,7 @@ export interface Unsubscriber extends Closed {
   unsubscribe(): void;
 }
 
-export type Closer = Unsubscriber | Fun<void> | void;
+export type Closer = Unsubscriber | Fvoid | void;
 
 export interface Subscription extends Unsubscriber {
   add(c?: Closer): Subscription;

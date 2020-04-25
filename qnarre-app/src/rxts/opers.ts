@@ -3,12 +3,12 @@ import * as qu from './utils';
 import * as qj from './subject';
 import * as qh from './scheduler';
 
-export function finalize<N>(callback: qt.Fun<void>): qt.Shifter<N> {
+export function finalize<N>(callback: qt.Fvoid): qt.Shifter<N> {
   return x => source.lift(new FinallyO(callback));
 }
 
 class FinallyO<N> implements qt.Operator<N, N> {
-  constructor(private callback: qt.Fun<void>) {}
+  constructor(private callback: qt.Fvoid) {}
 
   call(r: qt.Subscriber<N>, s: any): qt.Closer {
     return s.subscribe(new FinallyR(r, this.callback));
@@ -16,7 +16,7 @@ class FinallyO<N> implements qt.Operator<N, N> {
 }
 
 class FinallyR<N> extends qj.Subscriber<N> {
-  constructor(tgt: qt.Subscriber<N>, callback: qt.Fun<void>) {
+  constructor(tgt: qt.Subscriber<N>, callback: qt.Fvoid) {
     super(tgt);
     this.add(new qt.Subscription(callback));
   }

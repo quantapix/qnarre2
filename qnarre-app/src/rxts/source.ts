@@ -37,11 +37,11 @@ export class Source<N> implements qt.Source<N> {
   }
 
   subscribe(t?: qt.Target<N>): qt.Subscription;
-  subscribe(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>): qt.Subscription;
+  subscribe(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fvoid): qt.Subscription;
   subscribe(
     t?: qt.Target<N> | qt.Fun<N>,
     fail?: qt.Fun<any>,
-    done?: qt.Fun<void>
+    done?: qt.Fvoid
   ): qt.Subscription {
     const s = qr.toSubscriber(t, fail, done);
     const o = this.oper;
@@ -292,7 +292,7 @@ export class Note<N> {
     }
   }
 
-  act(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>) {
+  act(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fvoid) {
     switch (this.kind) {
       case 'N':
         return next?.(this.n!);
@@ -303,7 +303,7 @@ export class Note<N> {
     }
   }
 
-  accept(t?: qt.Target<N> | qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fun<void>) {
+  accept(t?: qt.Target<N> | qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fvoid) {
     if (typeof t === 'function') return this.act(t, fail, done);
     return this.observe(t);
   }

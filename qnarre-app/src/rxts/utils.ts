@@ -137,7 +137,7 @@ function findAndClearHandle(handle: number): boolean {
 }
 
 export const Immediate = {
-  setImmediate(cb: qt.Fun<void>): number {
+  setImmediate(cb: qt.Fvoid): number {
     const handle = nextHandle++;
     activeHandles[handle] = true;
     if (!resolved) resolved = Promise.resolve();

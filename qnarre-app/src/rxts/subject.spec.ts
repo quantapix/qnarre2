@@ -124,9 +124,9 @@ describe('Subscriber', () => {
   });
   it('should wrap unsafe observers in a proxy', () => {
     const o = {
-      next: {} as qt.Fun<void>,
-      fail: {} as qt.Fun<void>,
-      done: {} as qt.Fun<void>
+      next: {} as qt.Fvoid,
+      fail: {} as qt.Fvoid,
+      done: {} as qt.Fvoid
     };
     const s = new qj.Subscriber(o);
     expect((s as any).tgt).not.toBe(o);
@@ -163,7 +163,7 @@ describe('Subscriber', () => {
     expect(d).toBeFalse;
   });
   it('should not be closed when other with same observer is done', () => {
-    const o = {next: {} as qt.Fun<void>};
+    const o = {next: {} as qt.Fvoid};
     const s1 = new qj.Subscriber(o);
     const s2 = new qj.Subscriber(o);
     s2.done();

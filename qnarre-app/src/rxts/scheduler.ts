@@ -14,15 +14,6 @@ export class Action<S extends qt.State> extends qr.Subscription implements qt.Ac
   }
 }
 
-export function nextAndDone<S extends qt.State>(t?: qt.Nstate<qt.Nof<S>>) {
-  t?.s?.next(t.n);
-  t?.s?.done();
-}
-
-export function fail<S extends qt.State>(t?: qt.Nstate<qt.Nof<S>>) {
-  t?.s?.fail(t.f);
-}
-
 export class Scheduler implements qt.Scheduler {
   constructor(private A: typeof Action, public now = () => Date.now()) {}
   schedule<S extends qt.State>(
