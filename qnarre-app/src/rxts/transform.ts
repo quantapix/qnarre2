@@ -21,7 +21,7 @@ class BufferR<N> extends qr.Reactor<any, N> {
 
   constructor(private _tgt: qr.Subscriber<N[]>, close: qt.Source<any>) {
     super();
-    this.add(qr.subscribeToResult(this, close));
+    this.add(this.subscribeTo(close));
   }
 
   protected _next(n: N) {
@@ -289,7 +289,7 @@ class BufferToggleR<N, O> extends qr.Reactor<O, N> {
     private close: (_: O) => qt.SourceOrPromise<any> | void
   ) {
     super();
-    this.add(qr.subscribeToResult(this, open));
+    this.add(this.subscribeTo(open));
   }
 
   protected _next(n: N) {
@@ -357,7 +357,7 @@ class BufferToggleR<N, O> extends qr.Reactor<O, N> {
     const close = new qr.Subscription();
     const b = {ns, close} as Buffer<N>;
     this.bufs.push(b);
-    const s = qr.subscribeToResult(this, closer, b as any);
+    const s = this.subscribeTo(closer, b as any);
     if (!s || s.closed) this.closeBuf(b);
     else {
       (s as any).buffer = b;
@@ -430,7 +430,7 @@ class BufferWhenR<N> extends qr.Reactor<N, any> {
     this.closing = s = new qr.Subscription();
     this.add(s);
     this.busy = true;
-    s.add(qr.subscribeToResult(this, closer));
+    s.add(this.subscribeTo(closer));
     this.busy = false;
   }
 }
@@ -469,7 +469,7 @@ class ExhaustR<N> extends qr.Reactor<N, N> {
   protected _next(n: N) {
     if (!this.busy) {
       this.busy = true;
-      this.add(qr.subscribeToResult(this, n));
+      this.add(this.subscribeTo(n));
     }
   }
 
@@ -552,7 +552,7 @@ class ExhaustMapR<N, R> extends qr.Reactor<R, N> {
   private _innerSub(res: qt.Input<R>, n: N, i: number) {
     const a = new qr.Actor(this, n, i);
     this._tgt.add(a);
-    const s = qr.subscribeToResult<R, N>(this, res, undefined, undefined, a);
+    const s = this.subscribeTo(res, undefined, undefined, a);
     if (s !== a) this._tgt.add(s);
   }
 }
@@ -648,7 +648,7 @@ class ExpandR<N, R> extends qr.Reactor<R, N> {
 
   private subscribeToProjection(res: any, n: N, i: number) {
     this.active++;
-    this._tgt.add(qr.subscribeToResult<R, N>(this, res, n, i));
+    this._tgt.add(this.subscribeTo(res, n, i));
   }
 }
 
@@ -1846,7 +1846,7 @@ class WindowToggleR<N, R> extends qr.Reactor<N, any> {
     private closing: (openValue: R) => qt.Source<any>
   ) {
     super(t);
-    this.add((this.openSubscription = qr.subscribeToResult(this, open, open as any)));
+    this.add((this.openSubscription = this.subscribeTo(open, open as any)));
   }
 
   _next(n: N) {
@@ -2035,6 +2035,6 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
       this.window.fail(e);
       return;
     }
-    this.add((this.closingNote = qr.subscribeToResult(this, closingNotifier)));
+    this.add((this.closingNote = this.subscribeTo(closingNotifier)));
   }
 }

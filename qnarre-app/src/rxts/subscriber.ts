@@ -228,42 +228,6 @@ export class Proxy<N> extends Subscriber<N> {
   }
 }
 
-export class Actor<N, R> extends Subscriber<N> {
-  private ni = 0;
-
-  constructor(private react: Reactor<N, R>, public r: R, public ri?: number) {
-    super();
-  }
-
-  protected _next(n: N) {
-    this.react.reactNext(this.r, n, this.ri, this.ni++, this);
-  }
-
-  protected _fail(e: any) {
-    this.react.reactFail(e, this);
-    this.unsubscribe();
-  }
-
-  protected _done() {
-    this.react.reactDone(this);
-    this.unsubscribe();
-  }
-}
-
-export class Reactor<A, N> extends Subscriber<N> {
-  reactNext(_n: N, a: A, _ni?: number, _i?: number, _?: Actor<A, N>) {
-    this.tgt.next((a as unknown) as N);
-  }
-
-  reactFail(e: any, _?: Actor<A, N>) {
-    this.tgt.fail(e);
-  }
-
-  reactDone(_?: Actor<A, N>) {
-    this.tgt.done();
-  }
-}
-
 export function toSubscriber<N>(
   t?: qt.Target<N> | qt.Fun<N>,
   fail?: qt.Fun<any>,
@@ -350,27 +314,51 @@ export function subscribeTo<N>(i: qt.Input<N>) {
   throw new TypeError(((i && typeof i) || i) + ' not source input');
 }
 
-export function subscribeToResult<A, N>(
-  r: Reactor<A, N>,
-  res: any,
-  n: undefined,
-  i: undefined,
-  a: Actor<A, N>
-): qt.Subscription | undefined;
-export function subscribeToResult<A, N>(
-  r: Reactor<A, N>,
-  res: any,
-  n?: N,
-  i?: number
-): qt.Subscription | undefined;
-export function subscribeToResult<A, N>(
-  r: Reactor<A, N>,
-  res: any,
-  n?: N,
-  i?: number,
-  a: Subscriber<A> = new Actor<A, N>(r, n!, i)
-): qt.Subscription | undefined {
-  if (a.closed) return;
-  if (qt.isSource<A>(res)) return res.subscribe(a);
-  return subscribeTo<A>(res)(a) as qt.Subscription;
+export class Actor<N, R> extends Subscriber<N> {
+  private ni = 0;
+
+  constructor(private react: Reactor<N, R>, public r: R, public ri?: number) {
+    super();
+  }
+
+  protected _next(n: N) {
+    this.react.reactNext(this.r, n, this.ri, this.ni++, this);
+  }
+
+  protected _fail(e: any) {
+    this.react.reactFail(e, this);
+    this.unsubscribe();
+  }
+
+  protected _done() {
+    this.react.reactDone(this);
+    this.unsubscribe();
+  }
+}
+
+export class Reactor<A, N> extends Subscriber<N> {
+  reactNext(_n: N, a: A, _ni?: number, _i?: number, _?: Actor<A, N>) {
+    this.tgt.next((a as unknown) as N);
+  }
+
+  reactFail(e: any, _?: Actor<A, N>) {
+    this.tgt.fail(e);
+  }
+
+  reactDone(_?: Actor<A, N>) {
+    this.tgt.done();
+  }
+
+  subscribeTo(src: any, n?: N, i?: number, a?: Actor<A, N>): qt.Subscription | undefined;
+  subscribeTo(src: any, n?: N, i?: number): qt.Subscription | undefined;
+  subscribeTo(
+    src: any,
+    n?: N,
+    i?: number,
+    a: Subscriber<A> = new Actor<A, N>(this, n!, i)
+  ): qt.Subscription | undefined {
+    if (a.closed) return;
+    if (qt.isSource<A>(src)) return src.subscribe(a);
+    return subscribeTo<A>(src)(a) as qt.Subscription;
+  }
 }
