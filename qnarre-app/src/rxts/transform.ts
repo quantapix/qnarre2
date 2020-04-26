@@ -16,7 +16,7 @@ class BufferO<N> implements qt.Operator<N, N[]> {
   }
 }
 
-class BufferR<N> extends qr.Reactor<any, N> {
+class BufferR<N> extends qr.Reactor<N, any> {
   private buf = [] as N[];
 
   constructor(private _tgt: qr.Subscriber<N[]>, close: qt.Source<any>) {
@@ -280,7 +280,7 @@ class BufferToggleO<N, O> implements qt.Operator<N, N[]> {
   }
 }
 
-class BufferToggleR<N, O> extends qr.Reactor<O, N> {
+class BufferToggleR<N, O> extends qr.Reactor<N, O> {
   private bufs = [] as Buffer<N>[];
 
   constructor(
@@ -373,33 +373,33 @@ export function bufferWhen<N>(close: () => qt.Source<any>): qt.Lifter<N, N[]> {
 
 class BufferWhenO<N> implements qt.Operator<N, N[]> {
   constructor(private close: () => qt.Source<any>) {}
-  call(r: qr.Subscriber<N[]>, s: qt.Source<N>): any {
+  call(r: qr.Subscriber<N[]>, s: qt.Source<N>) {
     return s.subscribe(new BufferWhenR(r, this.close));
   }
 }
 
 class BufferWhenR<N> extends qr.Reactor<N, any> {
-  private buf?: N[];
   private busy?: boolean;
+  private buf = [] as N[];
   private closing?: qr.Subscription;
 
-  constructor(t: qr.Subscriber<N>, private close: () => qt.Source<any>) {
-    super(t);
+  constructor(private _tgt: qr.Subscriber<N[]>, private close: () => qt.Source<any>) {
+    super();
     this.openBuf();
   }
 
   protected _next(n: N) {
-    this.buf!.push(n);
+    this.buf.push(n);
   }
 
   protected _done() {
     const b = this.buf;
-    if (b) this.tgt.next(b);
+    if (b) this._tgt.next(b);
     super._done();
   }
 
   _unsubscribe() {
-    this.buf = undefined;
+    this.buf = [];
     this.busy = false;
   }
 
@@ -419,7 +419,7 @@ class BufferWhenR<N> extends qr.Reactor<N, any> {
       s.unsubscribe();
     }
     const b = this.buf;
-    if (b) this.tgt.next(b);
+    if (b.length) this._tgt.next(b);
     this.buf = [];
     let closer;
     try {
@@ -500,10 +500,10 @@ class ExhaustMapO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-class ExhaustMapR<N, R> extends qr.Reactor<R, N> {
+class ExhaustMapR<N, R> extends qr.Reactor<N, R> {
   private ready?: boolean;
   private busy?: boolean;
-  private index = 0;
+  private i = 0;
 
   constructor(
     private _tgt: qr.Subscriber<R>,
@@ -518,7 +518,7 @@ class ExhaustMapR<N, R> extends qr.Reactor<R, N> {
 
   protected _done() {
     this.ready = true;
-    if (!this.busy) this.tgt.done();
+    if (!this.busy) this._tgt.done();
     this.unsubscribe();
   }
 
@@ -538,21 +538,17 @@ class ExhaustMapR<N, R> extends qr.Reactor<R, N> {
 
   private tryNext(n: N) {
     let r: qt.Input<R>;
-    const i = this.index++;
+    const i = this.i++;
     try {
       r = this.project(n, i);
     } catch (e) {
-      this.tgt.fail(e);
+      this._tgt.fail(e);
       return;
     }
     this.busy = true;
-    this._innerSub(r, n, i);
-  }
-
-  private _innerSub(res: qt.Input<R>, n: N, i: number) {
     const a = new qr.Actor(this, n, i);
     this._tgt.add(a);
-    const s = this.subscribeTo(res, undefined, undefined, a);
+    const s = this.subscribeTo(r, undefined, undefined, a);
     if (s !== a) this._tgt.add(s);
   }
 }
@@ -582,7 +578,7 @@ class ExpandO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-class ExpandR<N, R> extends qr.Reactor<R, N> {
+class ExpandR<N, R> extends qr.Reactor<N, R> {
   private index = 0;
   private active = 0;
   private ready?: boolean;
@@ -612,7 +608,7 @@ class ExpandR<N, R> extends qr.Reactor<R, N> {
     }
     function dispatch(s?: Expand<N, R>) {
       const {r, res, n, i} = s!;
-      (r as ExpandR<N, R>).subscribeToProjection(res, n, i);
+      (r as ExpandR<N, R>).subscribeToProj(res, n, i);
     }
     if (this.active < this.max) {
       t.next(n);
@@ -621,7 +617,7 @@ class ExpandR<N, R> extends qr.Reactor<R, N> {
         if (this.h) {
           const s = {r: this as qt.Subscriber<N>, res, n, i} as Expand<N, R>;
           t.add(this.h.schedule<Expand<N, R>>(dispatch, s));
-        } else this.subscribeToProjection(res, n, i);
+        } else this.subscribeToProj(res, n, i);
       } catch (e) {
         t.fail(e);
       }
@@ -646,7 +642,7 @@ class ExpandR<N, R> extends qr.Reactor<R, N> {
     if (this.ready && this.active === 0) this._tgt.done();
   }
 
-  private subscribeToProjection(res: any, n: N, i: number) {
+  private subscribeToProj(res: any, n: N, i: number) {
     this.active++;
     this._tgt.add(this.subscribeTo(res, n, i));
   }
@@ -835,12 +831,7 @@ export function mapTo<R>(value: R): qt.Lifter<any, R> {
 }
 
 class MapToO<N, R> implements qt.Operator<N, R> {
-  value: R;
-
-  constructor(value: R) {
-    this.value = value;
-  }
-
+  constructor(public value: R) {}
   call(r: qr.Subscriber<R>, s: qt.Source<N>) {
     return s.subscribe(new MapToR(r, this.value));
   }
@@ -848,14 +839,13 @@ class MapToO<N, R> implements qt.Operator<N, R> {
 
 class MapToR<N, R> extends qr.Subscriber<N> {
   value: R;
-
-  constructor(t: qr.Subscriber<R>, value: R) {
-    super(t);
+  constructor(private _tgt: qr.Subscriber<R>, value: R) {
+    super();
     this.value = value;
   }
 
   protected _next(_n: N) {
-    this.tgt.next(this.value);
+    this._tgt.next(this.value);
   }
 }
 
@@ -934,8 +924,7 @@ class MergeMapR<N, R> extends qr.Reactor<N, R> {
     const innerSubscriber = new ActorSubscriber(this, value, index);
     const tgt = this.tgt as qr.Subscription;
     tgt.add(innerSubscriber);
-    const innerSubscription = qr.subscribeToResult<N, R>(
-      this,
+    const innerSubscription = this.subscribeTo(
       ish,
       undefined,
       undefined,
@@ -1039,8 +1028,7 @@ class MergeScanR<N, R> extends qr.Reactor<N, R> {
     const innerSubscriber = new ActorSubscriber(this, value, index);
     const tgt = this.tgt as qr.Subscription;
     tgt.add(innerSubscriber);
-    const innerSubscription = qr.subscribeToResult<N, R>(
-      this,
+    const innerSubscription = this.subscribeTo(
       ish,
       undefined,
       undefined,
