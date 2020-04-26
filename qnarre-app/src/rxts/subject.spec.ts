@@ -130,7 +130,7 @@ describe('Subscriber', () => {
     };
     const s = new qj.Subscriber(o);
     expect((s as any).tgt).not.toBe(o);
-    expect((s as any).tgt).toBeInstanceOf(qj.Proxy);
+    expect((s as any).tgt).toBeInstanceOf(qj.Safe);
   });
   it('should ignore fails after unsubscribe', () => {
     let t = 0;

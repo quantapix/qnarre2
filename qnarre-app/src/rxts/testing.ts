@@ -2,7 +2,7 @@ import * as qs from './source';
 import * as qj from './subject';
 
 export function asInterop<T>(s: qs.Source<T>): qs.Source<T> {
-  return new Proxy(s, {
+  return new Safe(s, {
     get(target: qs.Source<T>, key: string | number | symbol) {
       if (key === 'subscribe') {
         const {subscribe} = target;
@@ -25,7 +25,7 @@ export function asInteropSubject<T>(subject: qj.Subject<T>): qj.Subject<T> {
 }
 
 export function asInteropSubscriber<T>(subscriber: qj.Subscriber<T>): qj.Subscriber<T> {
-  return new Proxy(subscriber, {
+  return new Safe(subscriber, {
     get(target: qj.Subscriber<T>, key: string | number | symbol) {
       if (key === symbolSubscriber) {
         return undefined;

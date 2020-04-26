@@ -91,15 +91,6 @@ function flatten(es: any[]) {
   );
 }
 
-const fake = {
-  closed: true,
-  next(_: any) {},
-  fail(e: any) {
-    qu.delayedThrow(e);
-  },
-  done() {}
-} as qt.Observer<any>;
-
 export class RefCounted extends Subscription {
   constructor(private parent: qt.RefCounted) {
     super();
@@ -116,14 +107,23 @@ export class RefCounted extends Subscription {
   }
 }
 
+const fake = {
+  closed: true,
+  next(_: any) {},
+  fail(e: any) {
+    qu.delayedThrow(e);
+  },
+  done() {}
+} as qt.Observer<any>;
+
 export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
   [Symbol.rxSubscriber]() {
     return this;
   }
   stopped?: boolean;
-  tgt: Subscriber<N> | qt.Observer<N>;
+  tgt: Subscriber<any> | qt.Observer<any>;
 
-  constructor(t?: qt.Target<N>) {
+  constructor(t?: qt.Target<any> | qt.Fun<any>) {
     super();
     if (!t) this.tgt = fake;
     else {
@@ -131,7 +131,7 @@ export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
         this.tgt = t;
         t.add(this);
       } else {
-        this.tgt = new Proxy<N>(this, t);
+        this.tgt = new Safe<N>(this, t);
       }
     }
   }
@@ -185,21 +185,36 @@ export class Subscriber<N> extends Subscription implements qt.Subscriber<N> {
   }
 }
 
-export class Proxy<N> extends Subscriber<N> {
+export class Safe<N> extends Subscriber<N> {
   private ctx?: any;
 
-  constructor(private parent: Subscriber<N> | undefined, private tgt2: qt.Target<N>) {
+  constructor(
+    private parent: Subscriber<N> | undefined,
+    t?: qt.Target<any> | qt.Fun<any>
+  ) {
     super();
-    if (this.tgt2 !== fake) this.ctx = Object.create(this.tgt2);
+    if (qt.isFunction(t)) {
+      this._next = t;
+    } else if (t) {
+      this._next = t.next ?? this._next;
+      this._fail = t.fail as qt.Fun<any>;
+      this._done = t.done ?? this.done;
+      if (t !== fake) {
+        const c = Object.create(t);
+        if (qt.isFunction(c.unsubscribe)) this.add(c.unsubscribe.bind(c));
+        c.unsubscribe = this.unsubscribe.bind(this);
+        this.ctx = c;
+      }
+    }
   }
 
   next(n: N) {
-    if (!this.stopped) this._call(this.tgt2.next, n);
+    if (!this.stopped) this._call(this._next, n);
   }
 
   fail(e: any) {
     if (!this.stopped) {
-      if (this.tgt2.fail) this._call(this.tgt2.fail, e);
+      if (this._fail) this._call(this._fail, e);
       else qu.delayedThrow(e);
       this.unsubscribe();
     }
@@ -207,7 +222,7 @@ export class Proxy<N> extends Subscriber<N> {
 
   done() {
     if (!this.stopped) {
-      this._call(this.tgt2.done);
+      this._call(this._done);
       this.unsubscribe();
     }
   }
