@@ -74,7 +74,7 @@ class BufferCountR<N> extends qr.Subscriber<N> {
   }
 }
 
-export class BufferSkipR<N> extends qr.Subscriber<N> {
+class BufferSkipR<N> extends qr.Subscriber<N> {
   private bufs = [] as N[][];
   private count = 0;
 
@@ -124,7 +124,7 @@ export function bufferTime<N>(
   return x => x.lift(new BufferTimeO(span, h, interval, max));
 }
 
-export class BufferTimeO<N> implements qt.Operator<N, N[]> {
+class BufferTimeO<N> implements qt.Operator<N, N[]> {
   constructor(
     private span: number,
     private h: qt.Scheduler,
@@ -153,7 +153,7 @@ function spanOnly<N>(this: qt.Action<SpanOnly<N>>, s?: SpanOnly<N>) {
   }
 }
 
-export class BufferTimeR<N> extends qr.Subscriber<N> {
+class BufferTimeR<N> extends qr.Subscriber<N> {
   private bufs = [] as Buffer<N>[];
   private spanOnly: boolean;
 
@@ -270,7 +270,7 @@ export function bufferToggle<N, R>(
   return x => x.lift(new BufferToggleO<N, R>(opens, closing));
 }
 
-export class BufferToggleO<N, R> implements qt.Operator<N, N[]> {
+class BufferToggleO<N, R> implements qt.Operator<N, N[]> {
   constructor(
     private opens: qt.SourceOrPromise<R>,
     private closing: (_: R) => qt.SourceOrPromise<any>
@@ -280,7 +280,7 @@ export class BufferToggleO<N, R> implements qt.Operator<N, N[]> {
   }
 }
 
-export class BufferToggleR<N, T> extends qr.Reactor<T, N> {
+class BufferToggleR<N, T> extends qr.Reactor<T, N> {
   private bufs = [] as Buffer<N>[];
 
   constructor(
@@ -378,7 +378,7 @@ class BufferWhenO<N> implements qt.Operator<N, N[]> {
   }
 }
 
-export class BufferWhenR<N> extends qr.Reactor<N, any> {
+class BufferWhenR<N> extends qr.Reactor<N, any> {
   private buffer?: N[];
   private subscribing = false;
   private closingSubscription?: qr.Subscription;
@@ -482,7 +482,7 @@ class ExhaustO<N> implements qt.Operator<N, N> {
   }
 }
 
-export class ExhaustR<N> extends qr.Reactor<N, N> {
+class ExhaustR<N> extends qr.Reactor<N, N> {
   private hasCompleted = false;
   private hasSubscription = false;
 
@@ -540,7 +540,7 @@ class ExhaustMapO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-export class ExhaustMapR<N, R> extends qr.Reactor<N, R> {
+class ExhaustMapR<N, R> extends qr.Reactor<N, R> {
   private hasSubscription = false;
   private hasCompleted = false;
   private index = 0;
@@ -624,7 +624,7 @@ export function expand<N, R>(
   return x => x.lift(new ExpandO(project, concurrent, scheduler));
 }
 
-export class ExpandO<N, R> implements qt.Operator<N, R> {
+class ExpandO<N, R> implements qt.Operator<N, R> {
   constructor(
     private project: (n: N, index: number) => qt.Input<R>,
     private concurrent: number,
@@ -635,7 +635,7 @@ export class ExpandO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-export class ExpandR<N, R> extends qr.Reactor<N, R> {
+class ExpandR<N, R> extends qr.Reactor<N, R> {
   private index = 0;
   private active = 0;
   private hasCompleted = false;
@@ -765,7 +765,7 @@ class GroupByO<N, K, R> implements qt.Operator<N, qs.Grouped<K, R>> {
   }
 }
 
-export class GroupByR<N, K, M> extends qr.Subscriber<N> implements qt.RefCounted {
+class GroupByR<N, K, M> extends qr.Subscriber<N> implements qt.RefCounted {
   private groups?: Map<K, qj.Subject<N | M>>;
   public attempted = false;
   public count = 0;
@@ -863,14 +863,14 @@ export function map<N, R>(
   return x => x.lift(new MapO(project, thisArg));
 }
 
-export class MapO<N, R> implements qt.Operator<N, R> {
+class MapO<N, R> implements qt.Operator<N, R> {
   constructor(private project: (n: N, index: number) => R, private thisArg: any) {}
   call(r: qr.Subscriber<R>, s: qt.Source<N>): any {
     return s.subscribe(new MapR(r, this.project, this.thisArg));
   }
 }
 
-export class MapR<N, R> extends qr.Subscriber<N> {
+class MapR<N, R> extends qr.Subscriber<N> {
   count = 0;
   private thisArg: any;
 
@@ -912,7 +912,7 @@ class MapToO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-export class MapToR<N, R> extends qr.Subscriber<N> {
+class MapToR<N, R> extends qr.Subscriber<N> {
   value: R;
 
   constructor(t: qr.Subscriber<R>, value: R) {
@@ -953,7 +953,7 @@ export function mergeMap<N, R, O extends qt.Input<any>>(
   return x => x.lift(new MergeMapO(project, concurrent));
 }
 
-export class MergeMapO<N, R> implements qt.Operator<N, R> {
+class MergeMapO<N, R> implements qt.Operator<N, R> {
   constructor(
     private project: (n: N, index: number) => qt.Input<R>,
     private concurrent: number = Number.POSITIVE_INFINITY
@@ -964,7 +964,7 @@ export class MergeMapO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-export class MergeMapR<N, R> extends qr.Reactor<N, R> {
+class MergeMapR<N, R> extends qr.Reactor<N, R> {
   private hasCompleted = false;
   private buffer: N[] = [];
   private active = 0;
@@ -1058,7 +1058,7 @@ export function mergeScan<N, R>(
   return x => x.lift(new MergeScanO(acc, seed, concurrent));
 }
 
-export class MergeScanO<N, R> implements qt.Operator<N, R> {
+class MergeScanO<N, R> implements qt.Operator<N, R> {
   constructor(
     private acc: (acc: R, n: N, index: number) => qt.Input<R>,
     private seed: R,
@@ -1069,7 +1069,7 @@ export class MergeScanO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-export class MergeScanR<N, R> extends qr.Reactor<N, R> {
+class MergeScanR<N, R> extends qr.Reactor<N, R> {
   private hasValue = false;
   private hasCompleted = false;
   private buffer: qt.Source<any>[] = [];
@@ -1364,7 +1364,7 @@ class ScanO<V, A, S> implements qt.Operator<V, A> {
   }
 }
 
-export class ScanR<N, R> extends qr.Subscriber<N> {
+class ScanR<N, R> extends qr.Subscriber<N> {
   private index = 0;
 
   constructor(
@@ -1426,7 +1426,7 @@ class SwitchMapO<N, R> implements qt.Operator<N, R> {
   }
 }
 
-export class SwitchMapR<N, R> extends qr.Reactor<N, R> {
+class SwitchMapR<N, R> extends qr.Reactor<N, R> {
   private index = 0;
   private innerSubscription?: qr.Subscription;
 
