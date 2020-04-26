@@ -5,23 +5,23 @@ import * as qh from './scheduler';
 import * as qr from './subscriber';
 import * as qs from './source';
 
-export function buffer<N>(s: qt.Source<any>): qt.Lifter<N, N[]> {
-  return x => x.lift(new BufferO(s));
+export function buffer<N>(mark: qt.Source<any>): qt.Lifter<N, N[]> {
+  return x => x.lift(new BufferO(mark));
 }
 
 class BufferO<N> implements qt.Operator<N, N[]> {
-  constructor(private src: qt.Source<any>) {}
+  constructor(private mark: qt.Source<any>) {}
   call(r: qr.Subscriber<N[]>, s: qt.Source<N>) {
-    return s.subscribe(new BufferR(r, this.src));
+    return s.subscribe(new BufferR(r, this.mark));
   }
 }
 
 class BufferR<N> extends qr.Reactor<any, N> {
   private buf = [] as N[];
 
-  constructor(private tgt2: qr.Subscriber<N[]>, s: qt.Source<any>) {
+  constructor(private _tgt: qr.Subscriber<N[]>, mark: qt.Source<any>) {
     super();
-    this.add(qr.subscribeToResult(this, s));
+    this.add(qr.subscribeToResult(this, mark));
   }
 
   protected _next(n: N) {
@@ -29,7 +29,7 @@ class BufferR<N> extends qr.Reactor<any, N> {
   }
 
   reactNext() {
-    this.tgt2.next(this.buf);
+    this._tgt.next(this.buf);
     this.buf = [];
   }
 }
@@ -42,7 +42,7 @@ class BufferCountO<N> implements qt.Operator<N, N[]> {
   private cls: any;
   constructor(private size: number, private every?: number) {
     if (!every || size === every) this.cls = BufferCountR;
-    else this.cls = BufferSkipCountR;
+    else this.cls = BufferSkipR;
   }
   call(r: qr.Subscriber<N[]>, s: qt.Source<N>) {
     return s.subscribe(new this.cls(r, this.size, this.every));
@@ -52,7 +52,7 @@ class BufferCountO<N> implements qt.Operator<N, N[]> {
 class BufferCountR<N> extends qr.Subscriber<N> {
   private buf = [] as N[];
 
-  constructor(private tgt2: qr.Subscriber<N[]>, private size: number) {
+  constructor(private _tgt: qr.Subscriber<N[]>, private size: number) {
     super();
   }
 
@@ -60,26 +60,26 @@ class BufferCountR<N> extends qr.Subscriber<N> {
     const b = this.buf;
     b.push(n);
     if (b.length == this.size) {
-      this.tgt2.next(b);
+      this._tgt.next(b);
       this.buf = [];
     }
   }
 
   protected _done() {
     if (this.buf.length) {
-      this.tgt2.next(this.buf);
+      this._tgt.next(this.buf);
       this.buf = [];
     }
     super._done();
   }
 }
 
-export class BufferSkipCountR<N> extends qr.Subscriber<N> {
+export class BufferSkipR<N> extends qr.Subscriber<N> {
   private bufs = [] as N[][];
   private count = 0;
 
   constructor(
-    private tgt2: qr.Subscriber<N[]>,
+    private _tgt: qr.Subscriber<N[]>,
     private size: number,
     private every: number
   ) {
@@ -95,7 +95,7 @@ export class BufferSkipCountR<N> extends qr.Subscriber<N> {
       b.push(n);
       if (b.length === this.size) {
         bs.splice(i, 1);
-        this.tgt2.next(b);
+        this._tgt.next(b);
       }
     }
   }
@@ -104,24 +104,17 @@ export class BufferSkipCountR<N> extends qr.Subscriber<N> {
     const bs = this.bufs;
     while (bs.length) {
       const b = bs.shift();
-      if (b.length) this.tgt2.next(b);
+      if (b.length) this._tgt.next(b);
     }
     super._done();
   }
 }
 
 interface Buffer<N> {
-  buf?: N[];
+  ns: N[];
   close?: qt.Subscription;
 }
 
-export function bufferTime<N>(span: number): qt.Lifter<N, N[]>;
-export function bufferTime<N>(span: number, h?: qt.Scheduler): qt.Lifter<N, N[]>;
-export function bufferTime<N>(
-  span: number,
-  h?: qt.Scheduler,
-  interval?: number
-): qt.Lifter<N, N[]>;
 export function bufferTime<N>(
   span: number,
   h: qt.Scheduler = qh.async,
@@ -143,138 +136,130 @@ export class BufferTimeO<N> implements qt.Operator<N, N[]> {
   }
 }
 
-interface DispatchCreateArg<N> {
+interface SpanOnly<N> extends qt.Nstate<N> {
+  buf: Buffer<N>;
   span: number;
-  interval?: number;
-  r: BufferTimeR<N>;
-  h: qt.Scheduler;
 }
 
-interface DispatchCloseArg<N> {
-  r: BufferTimeR<N>;
-  c: Context<N>;
+function spanOnly<N>(this: qt.Action<SpanOnly<N>>, s?: SpanOnly<N>) {
+  if (s) {
+    const r = s.r as BufferTimeR<N>;
+    const b = s.buf;
+    if (b) r.closeBuf(b);
+    if (!r.closed) {
+      s.buf = r.openBuf();
+      s.buf.close = this.schedule(s, s.span);
+    }
+  }
 }
 
 export class BufferTimeR<N> extends qr.Subscriber<N> {
-  private ctxs = [] as Context<N>[];
-  private timespanOnly: boolean;
+  private bufs = [] as Buffer<N>[];
+  private spanOnly: boolean;
 
   constructor(
-    private tgt2: qr.Subscriber<N[]>,
+    private _tgt: qr.Subscriber<N[]>,
     private h: qt.Scheduler,
     private span: number,
-    private interval?: number,
+    interval?: number,
     private max = Number.POSITIVE_INFINITY
   ) {
     super();
-    const c = this.open();
-    this.timespanOnly = interval === undefined || interval < 0;
-    if (this.timespanOnly) {
-      const s = {r: this, c, span};
-      this.add((c.close = h.schedule(dispatchBufferTimeSpanOnly, s, span)));
+    const b = this.openBuf();
+    this.spanOnly = interval === undefined || interval < 0;
+    if (this.spanOnly) {
+      const s = {r: this as qt.Subscriber<N>, buf: b, span} as SpanOnly<N>;
+      this.add((b.close = h.schedule<SpanOnly<N>>(spanOnly, s, span)));
     } else {
-      interface Close extends qt.Nstate<N> {}
-      function close(arg: DispatchCloseArg<N>) {
-        const {r, context} = arg;
-        r.closeContext(context);
+      interface Close extends qt.Nstate<N> {
+        buf: Buffer<N>;
       }
-      const s1 = {r: this, c};
-      this.add((c.close = h.schedule<DispatchCloseArg<N>>(close, s1, span)));
-      const s2: DispatchCreateArg<N> = {
-        span,
-        interval,
-        r: this,
-        h
-      };
-      function create(
-        this: qt.Action<DispatchCreateArg<N>>,
-        state: DispatchCreateArg<N>
-      ) {
-        const {interval, span, subscriber, h} = state;
-        const context = subscriber.openContext();
-        const action = <Action<DispatchCreateArg<N>>>this;
-        if (!subscriber.closed) {
-          subscriber.add(
-            (context.closeAction = h.schedule<DispatchCloseArg<N>>(
-              dispatchBufferClose as any,
-              span,
-              {subscriber, context}
-            ))
-          );
-          action.schedule(state, interval!);
+      function close(s?: Close) {
+        const {r, buf} = s!;
+        (r as BufferTimeR<N>).closeBuf(buf);
+      }
+      const s1 = {r: this as qt.Subscriber<N>, buf: b} as Close;
+      this.add((b.close = h.schedule<Close>(close, s1, span)));
+      interface Create extends qt.Nstate<N> {
+        span: number;
+        interval?: number;
+        h: qt.Scheduler;
+      }
+      function create(this: qt.Action<Create>, s?: Create) {
+        const {r, h, span, interval} = s!;
+        const b = (r as BufferTimeR<N>).openBuf();
+        if (!r.closed) {
+          r.add((b.close = h.schedule<Close>(close, {r, buf: b} as Close, span)));
+          this.schedule(s, interval!);
         }
       }
-      this.add(h.schedule<DispatchCreateArg<N>>(create, s2, interval));
+      const s2 = {
+        span,
+        interval,
+        r: this as qt.Subscriber<N>,
+        h
+      } as Create;
+      this.add(h.schedule<Create>(create, s2, interval));
     }
   }
 
   protected _next(n: N) {
-    let filled: Context<N> | undefined;
-    const cs = this.ctxs;
-    const len = cs.length;
+    let full: Buffer<N> | undefined;
+    const bs = this.bufs;
+    const len = bs.length;
     for (let i = 0; i < len; i++) {
-      const c = cs[i];
-      const b = c.buf;
-      b.push(n);
-      if (b.length == this.max) filled = c;
+      const b = bs[i];
+      const ns = b.ns;
+      ns.push(n);
+      if (ns.length == this.max) full = b;
     }
-    if (filled) this.onFull(filled);
+    if (full) this.onFull(full);
   }
 
   protected _fail(e: any) {
-    this.ctxs.length = 0;
+    this.bufs.length = 0;
     super._fail(e);
   }
 
   protected _done() {
-    const cs = this.ctxs;
-    while (cs.length > 0) {
-      const c = cs.shift()!;
-      this.tgt2.next(c.buf);
+    const bs = this.bufs;
+    while (bs.length) {
+      const b = bs.shift()!;
+      this._tgt.next(b.ns);
     }
     super._done();
   }
 
   _unsubscribe() {
-    this.ctxs = [];
+    this.bufs = [];
   }
 
-  protected onFull(c: Context<N>) {
-    this.close(c);
-    const closeAction = c.close;
-    closeAction!.unsubscribe();
-    this.remove(closeAction!);
-    if (!this.closed && this.timespanOnly) {
-      c = this.open();
+  onFull(b: Buffer<N>) {
+    this.closeBuf(b);
+    const s = b.close;
+    if (s) {
+      s.unsubscribe();
+      this.remove(s);
+    }
+    if (!this.closed && this.spanOnly) {
+      b = this.openBuf();
       const span = this.span;
-      const timeSpanOnlyState = {subscriber: this, c, span};
-      this.add(
-        (c.close = this.h.schedule(dispatchBufferTimeSpanOnly, span, timeSpanOnlyState))
-      );
+      const s = {r: this as qt.Subscriber<N>, buf: b, span} as SpanOnly<N>;
+      this.add((b.close = this.h.schedule<SpanOnly<N>>(spanOnly, s, span)));
     }
   }
 
-  open() {
-    const c = new Context<N>();
-    this.ctxs.push(c);
-    return c;
+  openBuf() {
+    const b = {ns: []} as Buffer<N>;
+    this.bufs.push(b);
+    return b;
   }
 
-  close(c: Context<N>) {
-    this.tgt2.next(c.buf);
-    const cs = this.ctxs;
-    const i = cs ? cs.indexOf(c) : -1;
-    if (i >= 0) cs.splice(cs.indexOf(c), 1);
-  }
-}
-
-function dispatchBufferTimeSpanOnly(this: qt.Action<any>, state: any) {
-  const subscriber: BufferTimeR<any> = state.subscriber;
-  const prevContext = state.context;
-  if (prevContext) subscriber.closeContext(prevContext);
-  if (!subscriber.closed) {
-    state.context = subscriber.openContext();
-    state.context.closeAction = this.schedule(state, state.span);
+  closeBuf(b: Buffer<N>) {
+    this._tgt.next(b.ns);
+    const bs = this.bufs;
+    const i = bs ? bs.indexOf(b) : -1;
+    if (i >= 0) bs.splice(bs.indexOf(b), 1);
   }
 }
 
@@ -299,7 +284,7 @@ export class BufferToggleR<N, T> extends qr.Reactor<T, N> {
   private bufs = [] as Buffer<N>[];
 
   constructor(
-    private tgt2: qr.Subscriber<N[]>,
+    private _tgt: qr.Subscriber<N[]>,
     opens: qt.SourceOrPromise<T>,
     private closing: (_: T) => qt.SourceOrPromise<any> | void
   ) {
@@ -330,7 +315,7 @@ export class BufferToggleR<N, T> extends qr.Reactor<T, N> {
     const bs = this.bufs;
     while (bs.length > 0) {
       const b = bs.shift()!;
-      if (b.buf) this.tgt2.next(b.buf);
+      if (b.buf) this._tgt.next(b.buf);
       b.close?.unsubscribe();
       b.buf = b.close = undefined;
     }
@@ -359,7 +344,7 @@ export class BufferToggleR<N, T> extends qr.Reactor<T, N> {
   private closeBuffer(b: Buffer<N>) {
     const bs = this.bufs;
     if (bs && b) {
-      this.tgt2.next(b.buf!);
+      this._tgt.next(b.buf!);
       bs.splice(bs.indexOf(b), 1);
       this.remove(b.close!);
       b.close!.unsubscribe();

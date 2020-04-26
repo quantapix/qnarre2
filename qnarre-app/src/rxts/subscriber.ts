@@ -229,14 +229,14 @@ export class Proxy<N> extends Subscriber<N> {
 }
 
 export class Actor<N, R> extends Subscriber<N> {
-  private idx = 0;
+  private ni = 0;
 
   constructor(private react: Reactor<N, R>, public r: R, public ri?: number) {
     super();
   }
 
   protected _next(n: N) {
-    this.react.reactNext(this.r, n, this.ri, this.idx++, this);
+    this.react.reactNext(this.r, n, this.ri, this.ni++, this);
   }
 
   protected _fail(e: any) {
@@ -350,27 +350,27 @@ export function subscribeTo<N>(i: qt.Input<N>) {
   throw new TypeError(((i && typeof i) || i) + ' not source input');
 }
 
-export function subscribeToResult<N, R>(
-  r: Reactor<N, R>,
-  result: any,
-  rn: undefined,
-  ri: undefined,
-  a: Actor<N, R>
+export function subscribeToResult<A, N>(
+  r: Reactor<A, N>,
+  res: any,
+  n: undefined,
+  i: undefined,
+  a: Actor<A, N>
 ): qt.Subscription | undefined;
-export function subscribeToResult<N, R>(
-  r: Reactor<N, R>,
-  result: any,
-  rn?: R,
-  ri?: number
+export function subscribeToResult<A, N>(
+  r: Reactor<A, N>,
+  res: any,
+  n?: N,
+  i?: number
 ): qt.Subscription | undefined;
-export function subscribeToResult<N, R>(
-  r: Reactor<N, R>,
-  result: any,
-  rn?: R,
-  ri?: number,
-  a: Subscriber<N> = new Actor<N, R>(r, rn!, ri)
+export function subscribeToResult<A, N>(
+  r: Reactor<A, N>,
+  res: any,
+  n?: N,
+  i?: number,
+  a: Subscriber<A> = new Actor<A, N>(r, n!, i)
 ): qt.Subscription | undefined {
   if (a.closed) return;
-  if (qt.isSource<N>(result)) return result.subscribe(a);
-  return subscribeTo<N>(result)(a) as qt.Subscription;
+  if (qt.isSource<A>(res)) return res.subscribe(a);
+  return subscribeTo<A>(res)(a) as qt.Subscription;
 }
