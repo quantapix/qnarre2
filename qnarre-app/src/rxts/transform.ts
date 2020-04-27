@@ -1623,7 +1623,7 @@ class WindowToggleR<N, R> extends qr.Reactor<N, any> {
   constructor(
     t: qr.Subscriber<qt.Source<N>>,
     private open: qt.Source<R>,
-    private closing: (openValue: R) => qt.Source<any>
+    private close: (_: R) => qt.Source<any>
   ) {
     super(t);
     this.add((this.openSubscription = this.subscribeTo(open, open as any)));
@@ -1687,8 +1687,8 @@ class WindowToggleR<N, R> extends qr.Reactor<N, any> {
     if (outerN === this.open) {
       let closingNotifier;
       try {
-        const {closing} = this;
-        closingNotifier = closing(innerValue);
+        const {close} = this;
+        closingNotifier = close(innerValue);
       } catch (e) {
         return this.fail(e);
       }
@@ -1730,14 +1730,14 @@ class WindowToggleR<N, R> extends qr.Reactor<N, any> {
   }
 }
 
-export function windowWhen<N>(closing: () => qt.Source<any>): qt.Lifter<N, qt.Source<N>> {
-  return x => x.lift(new WindowWhenO<N>(closing));
+export function windowWhen<N>(close: () => qt.Source<any>): qt.Lifter<N, qt.Source<N>> {
+  return x => x.lift(new WindowWhenO<N>(close));
 }
 
 class WindowWhenO<N> implements qt.Operator<N, qt.Source<N>> {
-  constructor(private closing: () => qt.Source<any>) {}
+  constructor(private close: () => qt.Source<any>) {}
   call(r: qr.Subscriber<qt.Source<N>>, s: qt.Source<N>) {
-    return s.subscribe(new WindowWhenR(r, this.closing));
+    return s.subscribe(new WindowWhenR(r, this.close));
   }
 }
 
@@ -1746,10 +1746,10 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
   private closingNote?: qr.Subscription;
 
   constructor(
-    protected tgt: qr.Subscriber<qt.Source<N>>,
-    private closing: () => qt.Source<any>
+    protected t: qr.Subscriber<qt.Source<N>>,
+    private close: () => qt.Source<any>
   ) {
-    super(tgt);
+    super(t);
     this.openWin();
   }
 
@@ -1788,9 +1788,7 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
   }
 
   private unsubscribeClosingNote() {
-    if (this.closingNote) {
-      this.closingNote.unsubscribe();
-    }
+    if (this.closingNote) this.closingNote.unsubscribe();
   }
 
   private openWin(innerSub: qr.Actor<N, any> = null) {
@@ -1804,8 +1802,8 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
     this.tgt.next(window);
     let closingNotifier;
     try {
-      const {closing} = this;
-      closingNotifier = closing();
+      const {close} = this;
+      closingNotifier = close();
     } catch (e) {
       this.tgt.fail(e);
       this.window.fail(e);
