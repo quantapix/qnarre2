@@ -91,18 +91,23 @@ function flatten(es: any[]) {
   );
 }
 
-export class RefCounted extends Subscription {
-  constructor(private parent: qt.RefCounted) {
+export class RefCounted extends Subscription implements qt.RefCounted {
+  unsubscribing?: boolean;
+  count = 0;
+
+  constructor(private parent?: qt.RefCounted) {
     super();
-    parent.count++;
+    if (parent) parent.count++;
   }
 
   unsubscribe() {
-    const p = this.parent;
-    if (!p.closed && !this.closed) {
-      super.unsubscribe();
-      p.count -= 1;
-      if (p.count === 0 && p.unsubscribing) p.unsubscribe();
+    if (!this.closed) {
+      const p = this.parent;
+      if (p && !p.closed) {
+        super.unsubscribe();
+        p.count -= 1;
+        if (!p.count && p.unsubscribing) p.unsubscribe();
+      }
     }
   }
 }

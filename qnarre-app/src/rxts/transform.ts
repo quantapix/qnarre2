@@ -648,128 +648,68 @@ class ExpandR<N, R> extends qr.Reactor<N, R> {
   }
 }
 
-export function groupBy<N, K>(keySelector: (n: N) => K): qt.Lifter<N, qs.Grouped<K, T>>;
-export function groupBy<N, K>(
-  keySelector: (n: N) => K,
-  elementSelector: void,
-  durationSelector: (grouped: qs.Grouped<K, T>) => qt.Source<any>
-): qt.Lifter<N, qs.Grouped<K, T>>;
-export function groupBy<N, K, R>(
-  keySelector: (n: N) => K,
-  elementSelector?: (n: N) => R,
-  durationSelector?: (grouped: qs.Grouped<K, R>) => qt.Source<any>
-): qt.Lifter<N, qs.Grouped<K, R>>;
-export function groupBy<N, K, R>(
-  keySelector: (n: N) => K,
-  elementSelector?: (n: N) => R,
-  durationSelector?: (grouped: qs.Grouped<K, R>) => qt.Source<any>,
-  subjectSelector?: () => qj.Subject<R>
-): qt.Lifter<N, qs.Grouped<K, R>>;
-export function groupBy<N, K, R>(
-  keySelector: (n: N) => K,
-  elementSelector?: ((n: N) => R) | void,
-  durationSelector?: (grouped: qs.Grouped<K, R>) => qt.Source<any>,
-  subjectSelector?: () => qj.Subject<R>
-): qt.Lifter<N, qs.Grouped<K, R>> {
-  return x =>
-    x.lift(new GroupByO(keySelector, elementSelector, durationSelector, subjectSelector));
+export function groupBy<N, K, R = N>(
+  key: (_: N) => K,
+  elem?: (_: N) => R,
+  duration?: (_: qs.Grouped<R, K>) => qt.Source<any>,
+  subj?: () => qj.Subject<R>
+): qt.Lifter<N, qs.Grouped<R, K>> {
+  return x => x.lift(new GroupByO(key, elem, duration, subj));
 }
 
-class GroupByO<N, K, R> implements qt.Operator<N, qs.Grouped<K, R>> {
+class GroupByO<N, K, R> implements qt.Operator<N, qs.Grouped<R, K>> {
   constructor(
-    private keySelector: (n: N) => K,
-    private elementSelector?: ((n: N) => R) | void,
-    private durationSelector?: (grouped: qs.Grouped<K, R>) => qt.Source<any>,
-    private subjectSelector?: () => qj.Subject<R>
+    private key: (_: N) => K,
+    private elem?: (_: N) => R,
+    private duration?: (_: qs.Grouped<R, K>) => qt.Source<any>,
+    private subj?: () => qj.Subject<R>
   ) {}
-  call(r: qr.Subscriber<qs.Grouped<K, R>>, s: qt.Source<N>): any {
-    return s.subscribe(
-      new GroupByR(
-        r,
-        this.keySelector,
-        this.elementSelector,
-        this.durationSelector,
-        this.subjectSelector
-      )
-    );
+  call(r: qr.Subscriber<qs.Grouped<R, K>>, s: qt.Source<N>) {
+    return s.subscribe(new GroupByR(r, this.key, this.elem, this.duration, this.subj));
   }
 }
 
-class GroupByR<N, K, M> extends qr.Subscriber<N> implements qt.RefCounted {
-  private groups?: Map<K, qj.Subject<N | M>>;
-  public attempted = false;
-  public count = 0;
+class GroupByR<N, K, R> extends qr.Subscriber<N> implements qt.RefCounted {
+  private groups?: Map<K, qj.Subject<N | R>>;
+  unsubscribing?: boolean;
+  attempted?: boolean;
+  count = 0;
 
   constructor(
-    t: qr.Subscriber<qs.Grouped<K, R>>,
-    private keySelector: (n: N) => K,
-    private elementSelector?: ((n: N) => R) | void,
-    private durationSelector?: (grouped: qs.Grouped<K, R>) => qt.Source<any>,
-    private subjectSelector?: () => qj.Subject<R>
+    t: qr.Subscriber<qs.Grouped<R, K>>,
+    private key: (_: N) => K,
+    private elem?: (_: N) => R,
+    private duration?: (_: qs.Grouped<R, K>) => qt.Source<any>,
+    private subj?: () => qj.Subject<R>
   ) {
     super(t);
   }
 
   protected _next(n: N) {
-    let key: K;
+    let k: K;
     try {
-      key = this.keySelector(n);
+      k = this.key(n);
     } catch (e) {
       this.fail(e);
       return;
     }
-    this._group(n, key);
-  }
-
-  private _group(n: N, key: K) {
-    let groups = this.groups;
-    if (!groups) groups = this.groups = new Map<K, qj.Subject<T | R>>();
-    let group = groups.get(key);
-    let element: R;
-    if (this.elementSelector) {
-      try {
-        element = this.elementSelector(n);
-      } catch (e) {
-        this.fail(e);
-      }
-    } else element = n as any;
-    if (!group) {
-      group = (this.subjectSelector
-        ? this.subjectSelector()
-        : new qj.Subject<R>()) as qj.Subject<T | R>;
-      groups.set(key, group);
-      const groupedObservable = new qs.Grouped(key, group, this);
-      this.tgt.next(groupedObservable);
-      if (this.durationSelector) {
-        let duration: any;
-        try {
-          duration = this.durationSelector(
-            new qs.Grouped<K, R>(key, <qj.Subject<R>>group)
-          );
-        } catch (e) {
-          this.fail(e);
-          return;
-        }
-        this.add(duration.subscribe(new GroupDuration(key, group, this)));
-      }
-    }
-    if (!group.closed) group.next(element!);
+    this.openGroup(n, k);
   }
 
   protected _fail(e: any) {
-    const groups = this.groups;
-    if (groups) {
-      groups.forEach(g => g.fail(f));
-      groups.clear();
+    const gs = this.groups;
+    if (gs) {
+      gs.forEach(g => g.fail(e));
+      gs.clear();
     }
     this.tgt.fail(e);
   }
 
   protected _done() {
-    const groups = this.groups;
-    if (groups) {
-      groups.forEach(group => group.done());
-      groups.clear();
+    const gs = this.groups;
+    if (gs) {
+      gs.forEach(g => g.done());
+      gs.clear();
     }
     this.tgt.done();
   }
@@ -782,6 +722,59 @@ class GroupByR<N, K, M> extends qr.Subscriber<N> implements qt.RefCounted {
     if (!this.closed) {
       this.unsubscribing = true;
       if (!this.count) super.unsubscribe();
+    }
+  }
+
+  private openGroup(n: N, key: K) {
+    let e: R = n as any;
+    if (this.elem) {
+      try {
+        e = this.elem(n);
+      } catch (e) {
+        this.fail(e);
+      }
+    }
+    let gs = this.groups;
+    if (!gs) gs = this.groups = new Map<K, qj.Subject<N | R>>();
+    let g = gs.get(key);
+    if (!g) {
+      g = (this.subj ? this.subj() : new qj.Subject<R>()) as qj.Subject<N | R>;
+      gs.set(key, g);
+      const s = new qs.Grouped(key, g, this);
+      this.tgt.next(s);
+      if (this.duration) {
+        let d: qt.Source<any>;
+        try {
+          d = this.duration(new qs.Grouped(key, g as qj.Subject<R>));
+        } catch (e) {
+          this.fail(e);
+          return;
+        }
+        this.add(d.subscribe(new GroupDurationR(key, g, this)));
+      }
+    }
+    if (!g.closed) g.next(e);
+  }
+}
+
+export class GroupDurationR<N, K> extends qj.Subscriber<N> {
+  constructor(
+    private key: K,
+    g: qj.Subject<N>,
+    private parent?: GroupByR<any, K, N | any>
+  ) {
+    super(g);
+  }
+
+  protected _next(_n: N) {
+    this.done();
+  }
+
+  _unsubscribe() {
+    const p = this.parent;
+    if (p) {
+      this.parent = undefined;
+      p.removeGroup(this.key);
     }
   }
 }
@@ -1441,19 +1434,8 @@ class WindowTimeO<N> implements qt.Operator<N, qt.Source<N>> {
   }
 }
 
-class Counted<N> extends qj.Subject<N> {
-  private _nCount = 0;
-  next(n: N) {
-    this._nCount++;
-    super.next(n);
-  }
-  get nCount() {
-    return this._nCount;
-  }
-}
-
 class WindowTimeR<N> extends qr.Subscriber<N> {
-  private wins = [] as Counted<N>[];
+  private wins = [] as qj.Counted<N>[];
 
   constructor(
     t: qr.Subscriber<qt.Source<N>>,
@@ -1475,7 +1457,7 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
         s?: qt.Subscription;
       }
       interface Close extends qt.Nstate<N> {
-        w: Counted<N>;
+        w: qj.Counted<N>;
         p?: Pair;
       }
       function close(s?: Close) {
@@ -1499,7 +1481,7 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
       this.add(h.schedule<Create>(create, s2, interval));
     } else {
       interface SpanOnly extends qt.Nstate<N> {
-        w: Counted<N>;
+        w: qj.Counted<N>;
         span: number;
       }
       function spanOnly(this: qt.Action<SpanOnly>, s?: SpanOnly) {
@@ -1520,7 +1502,7 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
       const w = ws[i];
       if (!w.closed) {
         w.next(n);
-        if (this.max <= w.nCount) this.closeWin(w);
+        if (this.max <= w.count) this.closeWin(w);
       }
     }
   }
@@ -1541,14 +1523,14 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
     this.tgt.done();
   }
 
-  public openWin(): Counted<N> {
-    const w = new Counted<N>();
+  public openWin() {
+    const w = new qj.Counted<N>();
     this.wins.push(w);
     this.tgt.next(w);
     return w;
   }
 
-  public closeWin(w: Counted<N>) {
+  public closeWin(w: qj.Counted<N>) {
     const i = this.wins.indexOf(w);
     if (i >= 0) {
       w.done();

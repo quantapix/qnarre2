@@ -22,26 +22,6 @@ class FinallyR<N> extends qj.Subscriber<N> {
   }
 }
 
-export class GroupDuration<K, N> extends qj.Subscriber<N> {
-  constructor(
-    private key: K,
-    private group: qt.Subject<N>,
-    private parent: GroupBy<any, K, N | any>
-  ) {
-    super(group);
-  }
-
-  protected _next(_n: N) {
-    this.done();
-  }
-
-  _unsubscribe() {
-    const {parent, key} = this;
-    this.key = this.parent = null!;
-    if (parent) parent.removeGroup(key);
-  }
-}
-
 export class IgnoreElements<N> extends qj.Subscriber<N> {
   protected _next(_?: N) {
     // Do nothing
@@ -496,27 +476,5 @@ class WithLatestFromR<T, R> extends qj.Reactor<N, M> {
       return;
     }
     this.tgt.next(result);
-  }
-}
-
-class GroupDurationSubscriber<K, T> extends qj.Subscriber<T> {
-  constructor(
-    private key: K,
-    private group: qt.Subject<T>,
-    private parent: GroupBySubscriber<any, K, T | any>
-  ) {
-    super(group);
-  }
-
-  protected _next(v: T) {
-    this.done();
-  }
-
-  _unsubscribe() {
-    const {parent, key} = this;
-    this.key = this.parent = null!;
-    if (parent) {
-      parent.removeGroup(key);
-    }
   }
 }

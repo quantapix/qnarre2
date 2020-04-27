@@ -251,14 +251,14 @@ async function* coroutine<N>(s: Source<N>) {
   }
 }
 
-export class Grouped<K, N> extends Source<N> {
-  constructor(public key: K, private g: qt.Subject<N>, private c?: qt.RefCounted) {
+export class Grouped<N, K> extends Source<N> {
+  constructor(public key: K, private g: qt.Subject<N>, private counter?: qt.RefCounted) {
     super();
   }
 
   _subscribe(r: qt.Subscriber<N>) {
     const s = new qr.Subscription();
-    const c = this.c;
+    const c = this.counter;
     if (c && !c.closed) s.add(new qr.RefCounted(c));
     s.add(this.g.subscribe(r));
     return s;

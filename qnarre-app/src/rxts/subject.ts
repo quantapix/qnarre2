@@ -128,6 +128,19 @@ class Lifted<N> extends Subject<N> {
   }
 }
 
+export class Counted<N> extends Subject<N> {
+  private _count = 0;
+
+  next(n: N) {
+    this._count++;
+    super.next(n);
+  }
+
+  get count() {
+    return this._count;
+  }
+}
+
 export class Async<N> extends Subject<N> {
   private ready?: boolean;
   private ended?: boolean;
