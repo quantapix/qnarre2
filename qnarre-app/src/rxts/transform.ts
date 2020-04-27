@@ -1481,43 +1481,19 @@ class WindowTimeO<N> implements qt.Operator<N, qt.Source<N>> {
   }
 }
 
-interface CreationState<N> {
-  span: number;
-  interval: number;
-  subscriber: WindowTimeR<N>;
-  h: qt.Scheduler;
-}
-
-interface TimeSpanOnlyState<N> {
-  window: CountedSubject<N>;
-  span: number;
-  subscriber: WindowTimeR<N>;
-}
-
-interface CloseWindowContext<N> {
-  action: qt.Action<CreationState<N>>;
-  subscription: qr.Subscription;
-}
-
-interface CloseState<N> {
-  subscriber: WindowTimeR<N>;
-  window: CountedSubject<N>;
-  context: CloseWindowContext<N>;
-}
-
-class CountedSubject<N> extends qj.Subject<N> {
-  private _numberOfNextedValues: number = 0;
+class Counted<N> extends qj.Subject<N> {
+  private _nCount = 0;
   next(n: N) {
-    this._numberOfNextedValues++;
+    this._nCount++;
     super.next(n);
   }
-  get numberOfNextedValues(): number {
-    return this._numberOfNextedValues;
+  get nCount() {
+    return this._nCount;
   }
 }
 
 class WindowTimeR<N> extends qr.Subscriber<N> {
-  private wins = [] as CountedSubject<N>[];
+  private wins = [] as Counted<N>[];
 
   constructor(
     t: qr.Subscriber<qt.Source<N>>,
@@ -1527,41 +1503,54 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
     private max = Number.POSITIVE_INFINITY
   ) {
     super(t);
-
-    const window = this.openWin();
+    const w = this.openWin();
     if (interval && interval >= 0) {
-      const closeState: CloseState<N> = {
-        subscriber: this,
-        window,
-        context: null!
-      };
-      const creationState: CreationState<N> = {
-        span,
-        interval,
-        subscriber: this,
-        h
-      };
-      this.add(h.schedule<CloseState<N>>(dispatchWindowClose as any, span, closeState));
-      this.add(
-        h.schedule<CreationState<N>>(
-          dispatchWindowCreation as any,
-          interval,
-          creationState
-        )
-      );
+      interface Create extends qt.Nstate<N> {
+        span: number;
+        interval?: number;
+        h: qt.Scheduler;
+      }
+      interface Pair {
+        a: qh.Action<Create>;
+        s?: qt.Subscription;
+      }
+      interface Close extends qt.Nstate<N> {
+        w: Counted<N>;
+        p?: Pair;
+      }
+      function close(s?: Close) {
+        const {r, w, p} = s!;
+        if (p?.a && p.s) p.a.remove(p.s);
+        (r as WindowTimeR<N>).closeWin(w);
+      }
+      const s1 = {r: this as qt.Subscriber<N>, w} as Close;
+      this.add(h.schedule<Close>(close, s1, span));
+      function create(this: qt.Action<Create>, s?: Create) {
+        const {r, span, interval, h} = s!;
+        const w = (r as WindowTimeR<N>).openWin();
+        const a = this;
+        let p = {a} as Pair;
+        const t = {r, w, p} as Close;
+        p.s = h.schedule<Close>(close, t, span);
+        a.add(p.s);
+        a.schedule(s, interval);
+      }
+      const s2 = {r: this as qt.Subscriber<N>, span, interval, h} as Create;
+      this.add(h.schedule<Create>(create, s2, interval));
     } else {
-      const timeSpanOnlyState: TimeSpanOnlyState<N> = {
-        subscriber: this,
-        window,
-        span
-      };
-      this.add(
-        h.schedule<TimeSpanOnlyState<N>>(
-          dispatchWindowTimeSpanOnly as any,
-          span,
-          timeSpanOnlyState
-        )
-      );
+      interface SpanOnly extends qt.Nstate<N> {
+        w: Counted<N>;
+        span: number;
+      }
+      function spanOnly(this: qt.Action<SpanOnly>, s?: SpanOnly) {
+        const {w, span} = s!;
+        const r = s!.r as WindowTimeR<N>;
+        if (w) r.closeWin(w);
+        s!.w = r.openWin();
+        this.schedule(s, span);
+      }
+      const s = {r: this as qt.Subscriber<N>, w, span} as SpanOnly;
+      this.add(h.schedule<SpanOnly>(spanOnly, s, span));
     }
   }
 
@@ -1571,7 +1560,7 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
       const w = ws[i];
       if (!w.closed) {
         w.next(n);
-        if (this.max <= w.numberOfNextedValues) this.closeWin(w);
+        if (this.max <= w.nCount) this.closeWin(w);
       }
     }
   }
@@ -1592,14 +1581,14 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
     this.tgt.done();
   }
 
-  public openWin(): CountedSubject<N> {
-    const w = new CountedSubject<N>();
+  public openWin(): Counted<N> {
+    const w = new Counted<N>();
     this.wins.push(w);
     this.tgt.next(w);
     return w;
   }
 
-  public closeWin(w: CountedSubject<N>) {
+  public closeWin(w: Counted<N>) {
     const i = this.wins.indexOf(w);
     if (i >= 0) {
       w.done();
@@ -1608,57 +1597,17 @@ class WindowTimeR<N> extends qr.Subscriber<N> {
   }
 }
 
-function dispatchWindowTimeSpanOnly<N>(
-  this: qt.Action<TimeSpanOnlyState<N>>,
-  state: TimeSpanOnlyState<N>
-) {
-  const {subscriber, span, window} = state;
-  if (window) subscriber.closeWin(window);
-  state.window = subscriber.openWin();
-  this.schedule(state, span);
-}
-
-function dispatchWindowCreation<N>(
-  this: qt.Action<CreationState<N>>,
-  state: CreationState<N>
-) {
-  const {span, subscriber, h, interval} = state;
-  const window = subscriber.openWin();
-  const action = this;
-  let context: CloseWindowContext<N> = {action, subscription: null!};
-  const timeSpanState: CloseState<N> = {subscriber, window, context};
-  context.subscription = h.schedule<CloseState<N>>(
-    dispatchWindowClose as any,
-    span,
-    timeSpanState
-  );
-  action.add(context.subscription);
-  action.schedule(state, interval);
-}
-
-function dispatchWindowClose<N>(this: qt.Action<CloseState<N>>, state: CloseState<N>) {
-  const {subscriber, window, context} = state;
-  if (context && context.action && context.subscription) {
-    context.action.remove(context.subscription);
-  }
-  subscriber.closeWin(window);
-}
-
 export function windowToggle<N, R>(
   open: qt.Source<R>,
-  closing: (openValue: R) => qt.Source<any>
+  close: (_: R) => qt.Source<any>
 ): qt.Lifter<N, qt.Source<N>> {
-  return x => x.lift(new WindowToggleO<N, R>(open, closing));
+  return x => x.lift(new WindowToggleO<N, R>(open, close));
 }
 
 class WindowToggleO<N, R> implements qt.Operator<N, qt.Source<N>> {
-  constructor(
-    private open: qt.Source<R>,
-    private closing: (openValue: R) => qt.Source<any>
-  ) {}
-
+  constructor(private open: qt.Source<R>, private close: (_: R) => qt.Source<any>) {}
   call(r: qr.Subscriber<qt.Source<N>>, s: qt.Source<N>) {
-    return s.subscribe(new WindowToggleR(r, this.open, this.closing));
+    return s.subscribe(new WindowToggleR(r, this.open, this.close));
   }
 }
 
@@ -1747,34 +1696,30 @@ class WindowToggleR<N, R> extends qr.Reactor<N, any> {
       const subscription = new qr.Subscription();
       const context = {window, subscription};
       this.contexts.push(context);
-      const innerSubscription = qr.subscribeToResult(
-        this,
-        closingNotifier,
-        context as any
-      );
+      const innerSubscription = this.subscribeTo(closingNotifier, context as any);
       if (innerSubscription!.closed) {
-        this.closeWindow(this.contexts.length - 1);
+        this.closeWin(this.contexts.length - 1);
       } else {
         (<any>innerSubscription).context = context;
         subscription.add(innerSubscription);
       }
       this.tgt.next(window);
     } else {
-      this.closeWindow(this.contexts.indexOf(outerN));
+      this.closeWin(this.contexts.indexOf(outerN));
     }
   }
 
-  reactFail(f?: F) {
+  reactFail(e: any) {
     this.fail(e);
   }
 
   reactDone(inner: qr.Subscription) {
     if (inner !== this.openSubscription) {
-      this.closeWindow(this.contexts.indexOf((<any>inner).context));
+      this.closeWin(this.contexts.indexOf((<any>inner).context));
     }
   }
 
-  private closeWindow(index: number) {
+  private closeWin(index: number) {
     if (index === -1) return;
     const {contexts} = this;
     const context = contexts[index];
@@ -1805,7 +1750,7 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
     private closing: () => qt.Source<any>
   ) {
     super(tgt);
-    this.openWindow();
+    this.openWin();
   }
 
   reactNext(
@@ -1815,7 +1760,7 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
     innerIndex: number,
     innerSub: qr.Actor<N, any>
   ) {
-    this.openWindow(innerSub);
+    this.openWin(innerSub);
   }
 
   notifyError(error: any, innerSub: qr.Actor<N, any>) {
@@ -1823,7 +1768,7 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
   }
 
   reactDone(innerSub: qr.Actor<N, any>) {
-    this.openWindow(innerSub);
+    this.openWin(innerSub);
   }
 
   protected _next(n: N) {
@@ -1848,7 +1793,7 @@ class WindowWhenR<N> extends qr.Reactor<N, any> {
     }
   }
 
-  private openWindow(innerSub: qr.Actor<N, any> = null) {
+  private openWin(innerSub: qr.Actor<N, any> = null) {
     if (innerSub) {
       this.remove(innerSub);
       innerSub.unsubscribe();
