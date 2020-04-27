@@ -3,96 +3,115 @@ import * as qu from './utils';
 import * as qs from './source';
 import * as qj from './subject';
 import * as qh from './scheduler';
+import * as qr from './subscriber';
 
-interface DelayState<N> {
-  source: DelayR<N>;
-  tgt: qt.Target<N>;
-  scheduler: qt.Scheduler;
+export enum NoteKind {
+  NEXT = 'N',
+  FAIL = 'F',
+  DONE = 'D'
 }
 
-class DelayMessage<N> {
-  constructor(public readonly time: number, public readonly notification: qt.Note<N>) {}
+export class Note<N> {
+  hasN?: boolean;
+
+  constructor(kind: 'N', n: N);
+  constructor(kind: 'F', n: undefined, e: any);
+  constructor(kind: 'D');
+  constructor(public kind: 'N' | 'F' | 'D', public n?: N, public e?: any) {
+    this.hasN = kind === 'N';
+  }
+
+  observe(t?: qt.Target<N>) {
+    switch (this.kind) {
+      case 'N':
+        return t?.next?.(this.n!);
+      case 'F':
+        return t?.fail?.(this.e);
+      case 'D':
+        return t?.done?.();
+    }
+  }
+
+  act(next?: qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fvoid) {
+    switch (this.kind) {
+      case 'N':
+        return next?.(this.n!);
+      case 'F':
+        return fail?.(this.e);
+      case 'D':
+        return done?.();
+    }
+  }
+
+  accept(t?: qt.Target<N> | qt.Fun<N>, fail?: qt.Fun<any>, done?: qt.Fvoid) {
+    if (typeof t === 'function') return this.act(t, fail, done);
+    return this.observe(t);
+  }
+
+  toSource(): qt.Source<N> {
+    switch (this.kind) {
+      case 'N':
+        return of(this.n);
+      case 'F':
+        return throwError(this.f);
+      case 'D':
+        return qs.EMPTY;
+    }
+  }
+}
+
+const undef = new Note<any>('N', undefined);
+
+export function nextNote<N>(n?: N): Note<N> {
+  if (n === undefined) return undef;
+  return new Note('N', n);
+}
+
+export function failNote<N>(e: any): Note<N> {
+  return new Note('F', undefined, e);
+}
+
+const done = new Note<any>('D');
+
+export function doneNote<N>(): Note<N> {
+  return done;
+}
+
+class Message<N> {
+  constructor(public readonly time: number, public readonly note: Note<N>) {}
 }
 
 export function delay<N>(
   delay: number | Date,
-  scheduler: qt.Scheduler = qh.async
+  h: qt.Scheduler = qh.async
 ): qt.Shifter<N> {
-  const absoluteDelay = qt.isDate(delay);
-  const delayFor = absoluteDelay ? +delay - scheduler.now() : Math.abs(<number>delay);
-  return x => x.lift(new DelayO(delayFor, scheduler));
+  const abs = qt.isDate(delay);
+  const d = abs ? +delay - h.now() : Math.abs(delay as number);
+  return x => x.lift(new DelayO(d, h));
 }
 
 class DelayO<N> implements qt.Operator<N, N> {
-  constructor(private delay: number, private scheduler: qt.Scheduler) {}
-
-  call(r: qt.Subscriber<N>, s: any): qt.Closer {
-    return s.subscribe(new DelayR(r, this.delay, this.scheduler));
+  constructor(private delay: number, private h: qt.Scheduler) {}
+  call(r: qt.Subscriber<N>, s: qt.Source<N>) {
+    return s.subscribe(new DelayR(r, this.delay, this.h));
   }
 }
 
-export class DelayR<N> extends qj.Subscriber<N> {
-  private queue: Array<DelayMessage<N>> = [];
-  private active = false;
-  private errored = false;
+export class DelayR<N> extends qr.Subscriber<N> {
+  private queue = [] as Message<N>[];
+  private active?: boolean;
+  private failed?: boolean;
 
-  constructor(
-    tgt: qt.Subscriber<N>,
-    private delay: number,
-    private scheduler: qt.Scheduler
-  ) {
-    super(tgt);
-  }
-
-  private _schedule(s: qt.Scheduler): void {
-    this.active = true;
-    const tgt = this.tgt as qt.Subscription;
-    function dispatch(this: qt.Action<DelayState<N>>, state: DelayState<N>) {
-      const source = state.source;
-      const q = source.queue;
-      const scheduler = state.scheduler;
-      const tgt = state.tgt;
-      while (q.length > 0 && q[0].time - scheduler.now() <= 0) {
-        q.shift()!.notification.observe(tgt);
-      }
-      if (q.length > 0) {
-        const delay = Math.max(0, q[0].time - scheduler.now());
-        this.schedule(state, delay);
-      } else if (source.stopped) {
-        source.tgt.done();
-        source.active = false;
-      } else {
-        this.unsubscribe();
-        source.active = false;
-      }
-    }
-    tgt.add(
-      s.schedule<DelayState<N>>(
-        dispatch as any,
-        {
-          source: this,
-          tgt: this.tgt,
-          scheduler: s
-        },
-        this.delay
-      )
-    );
-  }
-
-  private scheduleNote(n: qt.Note<N>): void {
-    if (this.errored === true) return;
-    const s = this.scheduler;
-    const m = new DelayMessage(s.now() + this.delay, n);
-    this.queue.push(m);
-    if (!this.active) this._schedule(s);
+  constructor(t: qt.Subscriber<N>, private delay: number, private h: qt.Scheduler) {
+    super(t);
   }
 
   protected _next(n: N) {
-    this.scheduleNote(Note.createNext(n));
+    this.scheduleNote(nextNote(n));
   }
 
   protected _fail(e: any) {
-    this.errored = true;
+    this.failed = true;
     this.queue = [];
     this.tgt.fail(e);
     this.unsubscribe();
@@ -102,72 +121,88 @@ export class DelayR<N> extends qj.Subscriber<N> {
     if (this.queue.length === 0) this.tgt.done();
     this.unsubscribe();
   }
+
+  private scheduleNote(n: Note<N>) {
+    if (this.failed) return;
+    const s = this.h;
+    const m = new Message(s.now() + this.delay, n);
+    this.queue.push(m);
+    if (!this.active) this._schedule(s);
+  }
+
+  private _schedule(h: qt.Scheduler): void {
+    this.active = true;
+    const tgt = this.tgt as qt.Subscription;
+    interface Delay extends qt.Nstate<N> {
+      tgt: qt.Target<N>;
+      h: qt.Scheduler;
+    }
+    function work(this: qt.Action<Delay>, s?: Delay) {
+      const {tgt, h} = s!;
+      const r = s!.r as DelayR<N>;
+      const q = r.queue;
+      while (q.length > 0 && q[0].time - h.now() <= 0) {
+        q.shift()!.note.observe(tgt);
+      }
+      if (q.length > 0) {
+        const delay = Math.max(0, q[0].time - h.now());
+        this.schedule(s, delay);
+      } else if (r.stopped) {
+        r.tgt.done();
+        r.active = false;
+      } else {
+        this.unsubscribe();
+        r.active = false;
+      }
+    }
+    tgt.add(
+      h.schedule<Delay>(
+        work,
+        {r: this as qt.Subscriber<N>, tgt: this.tgt, h} as Delay,
+        this.delay
+      )
+    );
+  }
 }
 
 export function delayWhen<N>(
-  delayDurationSelector: (n: N, index: number) => qt.Source<any>,
-  subscriptionDelay?: qt.Source<any>
+  duration: (n: N, i: number) => qt.Source<any>,
+  delay?: qt.Source<any>
 ): qt.Shifter<N>;
 export function delayWhen<N>(
-  delayDurationSelector: (n: N, index: number) => qt.Source<any>,
-  subscriptionDelay?: qt.Source<any>
+  duration: (n: N, index: number) => qt.Source<any>,
+  delay?: qt.Source<any>
 ): qt.Shifter<N> {
-  if (subscriptionDelay) {
-    return x =>
-      new SubscriptionDelayObservable(x, subscriptionDelay).lift(
-        new DelayWhenO(delayDurationSelector)
-      );
+  if (delay) {
+    return x => new SubDelay(x, delay).lift(new DelayWhenO(duration));
   }
-  return x => x.lift(new DelayWhenO(delayDurationSelector));
+  return x => x.lift(new DelayWhenO(duration));
 }
 
 class DelayWhenO<N> implements qt.Operator<N, N> {
-  constructor(private delayDurationSelector: (n: N, index: number) => qt.Source<any>) {}
-
-  call(r: qt.Subscriber<N>, s: any): qt.Closer {
-    return s.subscribe(new DelayWhenR(r, this.delayDurationSelector));
+  constructor(private duration: (n: N, i: number) => qt.Source<any>) {}
+  call(r: qt.Subscriber<N>, s: qt.Source<N>) {
+    return s.subscribe(new DelayWhenR(r, this.duration));
   }
 }
 
-export class DelayWhenR<N, M> extends qj.Reactor<N, M> {
-  private completed = false;
-  private delayNotifierSubscriptions = [] as qt.Subscription[];
-  private index = 0;
+export class DelayWhenR<N, R> extends qr.Reactor<N, R> {
+  private completed?: boolean;
+  private delays = [] as qt.Subscription[];
+  private i = 0;
 
   constructor(
-    tgt: qt.Subscriber<N>,
-    private delayDurationSelector: (value: N, index: number) => qt.Source<any>
+    t: qt.Subscriber<N>,
+    private duration: (n: N, i: number) => qt.Source<any>
   ) {
-    super(tgt);
-  }
-
-  reactNext(
-    outerN: N,
-    innerValue: any,
-    outerX: number,
-    innerIndex: number,
-    innerSub: qj.Actor<N, M>
-  ) {
-    this.tgt.next(outerN);
-    this.removeSubscription(innerSub);
-    this.tryComplete();
-  }
-
-  reactFail(f?: F) {
-    this._fail(e);
-  }
-
-  reactDone(innerSub: qj.Actor<N, M>) {
-    const value = this.removeSubscription(innerSub);
-    if (value) this.tgt.next(value);
-    this.tryComplete();
+    super(t);
   }
 
   protected _next(n: N) {
-    const index = this.index++;
+    const i = this.i++;
     try {
-      const delayNotifier = this.delayDurationSelector(n, index);
-      if (delayNotifier) this.tryDelay(delayNotifier, n);
+      const s = this.duration(n, i);
+      if (s) this.tryDelay(s, n);
     } catch (e) {
       this.tgt.fail(e);
     }
@@ -179,46 +214,61 @@ export class DelayWhenR<N, M> extends qj.Reactor<N, M> {
     this.unsubscribe();
   }
 
-  private removeSubscription(s: qj.Actor<N, M>): NavigationEvent {
-    s.unsubscribe();
-    const i = this.delayNotifierSubscriptions.indexOf(s);
-    if (i !== -1) this.delayNotifierSubscriptions.splice(i, 1);
-    return s.outerN;
+  reactNext(n: N, _r: any, _ni?: number, _ri?: number, s?: qr.Actor<R, N>) {
+    this.tgt.next(n);
+    this.removeSubscription(s);
+    this.tryComplete();
   }
 
-  private tryDelay(delayNotifier: qt.Source<any>, value: N) {
-    const s = qu.subscribeToResult(this, delayNotifier, value);
+  reactFail(e: any) {
+    this._fail(e);
+  }
+
+  reactDone(innerSub: qr.Actor<R, N>) {
+    const v = this.removeSubscription(innerSub);
+    if (v) this.tgt.next(v);
+    this.tryComplete();
+  }
+
+  private removeSubscription(s: qr.Actor<R, N>): NavigationEvent {
+    s.unsubscribe();
+    const i = this.delays.indexOf(s);
+    if (i !== -1) this.delays.splice(i, 1);
+    return s.r;
+  }
+
+  private tryDelay(delay: qt.Source<any>, n: N) {
+    const s = this.subscribeTo(delay, n);
     if (s && !s.closed) {
-      const tgt = this.tgt as qt.Subscription;
-      tgt.add(s);
-      this.delayNotifierSubscriptions.push(s);
+      const t = this.tgt as qt.Subscription;
+      t.add(s);
+      this.delays.push(s);
     }
   }
 
   private tryComplete() {
-    if (this.completed && this.delayNotifierSubscriptions.length === 0) this.tgt.done();
+    if (this.completed && !this.delays.length) this.tgt.done();
   }
 }
 
-class SubscriptionDelayObservable<N> extends qs.Source<N> {
-  constructor(public source: qt.Source<N>, private subscriptionDelay: qt.Source<any>) {
+class SubDelay<N> extends qs.Source<N> {
+  constructor(public s: qt.Source<N>, private delay: qt.Source<any>) {
     super();
   }
-
-  _subscribe(subscriber: qt.Subscriber<N>) {
-    this.subscriptionDelay.subscribe(new SubscriptionDelayR(r, this.source));
+  _subscribe(r: qt.Subscriber<N>) {
+    this.delay.subscribe(new SubDelayR(r, this.s));
   }
 }
 
-export class SubscriptionDelayR<N> extends qj.Subscriber<N> {
-  private sourceSubscribed = false;
+class SubDelayR<N> extends qr.Subscriber<N> {
+  private active?: boolean;
 
-  constructor(private parent: qt.Subscriber<N>, private source: qt.Source<N>) {
+  constructor(private parent: qt.Subscriber<N>, private s: qt.Source<N>) {
     super();
   }
 
   protected _next(_n: N) {
-    this.subscribeToSource();
+    this.openSource();
   }
 
   protected _fail(e: any) {
@@ -228,91 +278,88 @@ export class SubscriptionDelayR<N> extends qj.Subscriber<N> {
 
   protected _done() {
     this.unsubscribe();
-    this.subscribeToSource();
+    this.openSource();
   }
 
-  private subscribeToSource() {
-    if (!this.sourceSubscribed) {
-      this.sourceSubscribed = true;
+  private openSource() {
+    if (!this.active) {
+      this.active = true;
       this.unsubscribe();
-      this.source.subscribe(this.parent);
+      this.s.subscribe(this.parent);
     }
   }
 }
 
-export function dematerialize<N>(): qt.Lifter<Note<N>, T> {
+export function dematerialize<N>(): qt.Lifter<Note<N>, N> {
   return x => x.lift(new DeMaterializeO());
 }
 
-class DeMaterializeO<T extends Note<any>, R> implements qt.Operator<T, R> {
-  call(r: qt.Subscriber<any>, s: any): any {
+class DeMaterializeO<N extends Note<any>, R> implements qt.Operator<N, R> {
+  call(r: qt.Subscriber<any>, s: qt.Source<N>) {
     return s.subscribe(new DeMaterializeR(r));
   }
 }
 
-export class DeMaterializeR<N extends qt.Note<any>> extends qj.Subscriber<N> {
-  constructor(tgt: qt.Subscriber<any>) {
-    super(tgt);
+export class DeMaterializeR<N extends Note<any>> extends qr.Subscriber<N> {
+  constructor(t: qt.Subscriber<any>) {
+    super(t);
   }
 
   protected _next(n: N) {
-    n?.observe(this.tgt);
+    n.observe(this.tgt);
   }
 }
 
-export function materialize<N>(): qt.Lifter<T, Note<N>> {
+export function materialize<N>(): qt.Lifter<N, Note<N>> {
   return x => x.lift(new MaterializeO());
 }
 
-class MaterializeO<N> implements qt.Operator<T, Note<N>> {
-  call(r: qt.Subscriber<Note<N>>, s: any): any {
+class MaterializeO<N> implements qt.Operator<N, Note<N>> {
+  call(r: qt.Subscriber<Note<N>>, s: qt.Source<N>): any {
     return s.subscribe(new MaterializeR(r));
   }
 }
 
-export class MaterializeR<N> extends qt.Subscriber<N> {
-  constructor(tgt: qt.Subscriber<Note<N>>) {
-    super(tgt);
+export class MaterializeR<N> extends qr.Subscriber<N> {
+  constructor(t: qt.Subscriber<Note<N>>) {
+    super(t);
   }
 
   protected _next(n: N) {
-    this.tgt.next(Note.createNext(n));
+    this.tgt.next(nextNote(n));
   }
 
   protected _fail(e: any) {
-    const tgt = this.tgt;
-    tgt.next(Note.createFail(e));
-    tgt.done();
+    const t = this.tgt;
+    t.next(failNote(e));
+    t.done();
   }
 
   protected _done() {
-    const tgt = this.tgt;
-    tgt.next(Note.createDone());
-    tgt.done();
+    const t = this.tgt;
+    t.next(doneNote());
+    t.done();
   }
 }
 
 export class ObserveOnMessage {
-  constructor(public notification: qt.Note<any>, public tgt: qt.Target<any>) {}
+  constructor(public note: Note<any>, public tgt: qt.Target<any>) {}
 }
 
-export function observeOn<N>(scheduler: qt.Scheduler, delay: number = 0): qt.Shifter<N> {
-  return function observeOnLifter(source: qt.Source<N>): qt.Source<N> {
-    return x.lift(new ObserveOnO(scheduler, delay));
-  };
+export function observeOn<N>(h: qt.Scheduler, delay?: number): qt.Shifter<N> {
+  return x => x.lift(new ObserveOnO(h, delay));
 }
 
 export class ObserveOnO<N> implements qt.Operator<N, N> {
-  constructor(private scheduler: qt.Scheduler, private delay: number = 0) {}
-
-  call(r: qt.Subscriber<N>, s: any): qt.Closer {
-    return s.subscribe(new ObserveOnR(r, this.scheduler, this.delay));
+  constructor(private h: qt.Scheduler, private delay?: number) {}
+  call(r: qt.Subscriber<N>, s: qt.Source<N>) {
+    return s.subscribe(new ObserveOnR(r, this.h, this.delay));
   }
 }
 
-export class ObserveOnR<N> extends qj.Subscriber<N> {
-  constructor(tgt: qt.Subscriber<N>, private scheduler: qt.Scheduler, private delay = 0) {
-    super(tgt);
+export class ObserveOnR<N> extends qr.Subscriber<N> {
+  constructor(t: qt.Subscriber<N>, private h: qt.Scheduler, private delay = 0) {
+    super(t);
   }
 
   private scheduleMessage(n: Note<any>) {
@@ -323,42 +370,35 @@ export class ObserveOnR<N> extends qj.Subscriber<N> {
       this.unsubscribe();
     }
     tgt.add(
-      this.scheduler.schedule(
-        dispatch as any,
-        new ObserveOnMessage(n, this.tgt),
-        this.delay
-      )
+      this.h.schedule(dispatch as any, new ObserveOnMessage(n, this.tgt), this.delay)
     );
   }
 
   protected _next(n: N) {
-    this.scheduleMessage(Note.createNext(n));
+    this.scheduleMessage(nextNote(n));
   }
 
   protected _fail(e: any) {
-    this.scheduleMessage(Note.createFail(e));
+    this.scheduleMessage(failNote(e));
     this.unsubscribe();
   }
 
   protected _done() {
-    this.scheduleMessage(Note.createDone());
+    this.scheduleMessage(doneNote());
     this.unsubscribe();
   }
 }
 
-export function subscribeOn<N>(
-  scheduler: qt.Scheduler,
-  delay: number = 0
-): qt.Shifter<N> {
+export function subscribeOn<N>(h: qt.Scheduler, delay: number = 0): qt.Shifter<N> {
   return function subscribeOnLifter(source: qt.Source<N>): qt.Source<N> {
-    return x.lift(new SubscribeOnO<N>(scheduler, delay));
+    return x.lift(new SubscribeOnO<N>(h, delay));
   };
 }
 
 class SubscribeOnO<N> implements qt.Operator<N, N> {
-  constructor(private scheduler: qt.Scheduler, private delay: number) {}
+  constructor(private h: qt.Scheduler, private delay: number) {}
   call(r: qt.Subscriber<N>, s: any): qt.Closer {
-    return new SubscribeOnO<N>(s, this.delay, this.scheduler).subscribe(r);
+    return new SubscribeOnO<N>(s, this.delay, this.h).subscribe(r);
   }
 }
 
@@ -451,7 +491,7 @@ export function time<N>(timeProvider: Stamper = Date): qt.Lifter<T, Stamp<N>> {
 }
 
 export function timeInterval<N>(
-  scheduler: qt.Scheduler = qh.async
+  h: qt.Scheduler = qh.async
 ): qt.Lifter<T, TimeInterval<N>> {
   return x =>
     defer(() => {
@@ -459,10 +499,10 @@ export function timeInterval<N>(
         scan(
           ({current}, value) => ({
             value,
-            current: scheduler.now(),
+            current: h.now(),
             last: current
           }),
-          {current: scheduler.now(), value: undefined, last: undefined} as any
+          {current: h.now(), value: undefined, last: undefined} as any
         ) as qt.Lifter<T, any>,
         map<any, TimeInterval<N>>(
           ({current, last, value}) => new TimeInterval(value, current - last)
@@ -477,25 +517,25 @@ export class TimeInterval<N> {
 
 export function timeout<N>(
   due: number | Date,
-  scheduler: qt.Scheduler = qh.async
+  h: qt.Scheduler = qh.async
 ): qt.Shifter<N> {
-  return timeoutWith(due, throwError(new TimeoutError()), scheduler);
+  return timeoutWith(due, throwError(new TimeoutError()), h);
 }
 
 export function timeoutWith<N, R>(
   due: number | Date,
   withObservable: qt.Input<R>,
-  scheduler?: qt.Scheduler
+  h?: qt.Scheduler
 ): qt.Lifter<N, N | R>;
 export function timeoutWith<N, R>(
   due: number | Date,
   withObservable: qt.Input<R>,
-  scheduler: qt.Scheduler = qh.async
+  h: qt.Scheduler = qh.async
 ): qt.Lifter<N, N | R> {
   return x => {
     let absoluteTimeout = isDate(due);
-    let waitFor = absoluteTimeout ? +due - scheduler.now() : Math.abs(<number>due);
-    return x.lift(new TimeoutWithO(waitFor, absoluteTimeout, withObservable, scheduler));
+    let waitFor = absoluteTimeout ? +due - h.now() : Math.abs(<number>due);
+    return x.lift(new TimeoutWithO(waitFor, absoluteTimeout, withObservable, h));
   };
 }
 
@@ -504,23 +544,17 @@ class TimeoutWithO<N> implements qt.Operator<N, N> {
     private waitFor: number,
     private absoluteTimeout: boolean,
     private withObservable: qt.Input<any>,
-    private scheduler: qt.Scheduler
+    private h: qt.Scheduler
   ) {}
 
   call(r: qt.Subscriber<N>, s: any): qt.Closer {
     return s.subscribe(
-      new TimeoutWithR(
-        r,
-        this.absoluteTimeout,
-        this.waitFor,
-        this.withObservable,
-        this.scheduler
-      )
+      new TimeoutWithR(r, this.absoluteTimeout, this.waitFor, this.withObservable, this.h)
     );
   }
 }
 
-export class TimeoutWithR<N, R> extends qj.Reactor<N, R> {
+export class TimeoutWithR<N, R> extends qr.Reactor<N, R> {
   private action?: qt.Action<TimeoutWithR<N, R>>;
 
   constructor(

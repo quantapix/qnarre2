@@ -1006,57 +1006,39 @@ class MergeScanR<N, R> extends qr.Reactor<N, R> {
   }
 }
 
-export function pairs<T>(obj: Object, h?: qh.Scheduler): qs.Source<[string, T]> {
-  function dispatch(
-    this: qh.Action<any>,
-    state: {
-      keys: string[];
-      index: number;
-      subscriber: qr.Subscriber<[string, T]>;
-      subscription: qr.Subscription;
-      obj: Object;
+export function pairs<N>(o: Object, h?: qh.Scheduler): qs.Source<[string, N]> {
+  if (h) {
+    interface Pairs extends qt.Nstate<[string, N]> {
+      ks: string[];
+      i: number;
+      t: qr.Subscription;
+      o: Object;
     }
-  ) {
-    const {keys, index, subscriber, subscription, obj} = state;
-    if (!subscriber.closed) {
-      if (index < keys.length) {
-        const key = keys[index];
-        subscriber.next([key, (obj as any)[key]]);
-        subscription.add(
-          this.schedule({keys, index: index + 1, subscriber, subscription, obj})
-        );
-      } else {
-        subscriber.done();
+    function pairs(this: qh.Action<Pairs>, s?: Pairs) {
+      const {ks, i, r, t, o} = s!;
+      if (!r.closed) {
+        if (i < ks.length) {
+          const k = ks[i];
+          r.next([k, (o as any)[k]]);
+          t.add(this.schedule({ks, i: i + 1, r, t, o} as Pairs));
+        } else r.done();
       }
     }
-  }
-  if (!h) {
-    return new qs.Source<[string, T]>(r => {
-      const keys = Object.keys(obj);
-      for (let i = 0; i < keys.length && !r.closed; i++) {
-        const key = keys[i];
-        if (obj.hasOwnProperty(key)) {
-          r.next([key, (obj as any)[key]]);
-        }
-      }
-      r.done();
-    });
-  } else {
-    return new qs.Source<[string, T]>(r => {
-      const keys = Object.keys(obj);
-      const subscription = new qr.Subscription();
-      subscription.add(
-        h.schedule<{
-          keys: string[];
-          index: number;
-          r: qr.Subscriber<[string, T]>;
-          subscription: qr.Subscription;
-          obj: Object;
-        }>(dispatch as any, {keys, index: 0, r, subscription, obj})
-      );
-      return subscription;
+    return new qs.Source<[string, N]>(r => {
+      const ks = Object.keys(o);
+      const t = new qr.Subscription();
+      t.add(h.schedule(pairs, {ks, i: 0, r, t, o} as Pairs));
+      return t;
     });
   }
+  return new qs.Source<[string, N]>(r => {
+    const ks = Object.keys(o);
+    for (let i = 0; i < ks.length && !r.closed; i++) {
+      const k = ks[i];
+      if (o.hasOwnProperty(k)) r.next([k, (o as any)[k]]);
+    }
+    r.done();
+  });
 }
 
 export function pairwise<N>(): qt.Lifter<N, [N, N]> {
@@ -1087,7 +1069,7 @@ class PairwiseR<N> extends qr.Subscriber<N> {
 }
 
 export function partition<N>(
-  pred: (n: N, index: number) => boolean,
+  pred: (n: N, i: number) => boolean,
   thisArg?: any
 ): qt.Mapper<qt.Source<N>, [qt.Source<N>, qt.Source<N>]> {
   return x =>
@@ -1097,14 +1079,14 @@ export function partition<N>(
     ];
 }
 
-export function partition<N>(
-  source: qt.Input<N>,
-  pred: (n: N, index: number) => boolean,
+export function partition2<N>(
+  s: qt.Input<N>,
+  pred: (n: N, i: number) => boolean,
   thisArg?: any
 ): [qt.Source<N>, qt.Source<N>] {
   return [
-    filter(pred, thisArg)(new qs.Source<N>(qr.subscribeTo(source))),
-    filter(qt.not(pred, thisArg) as any)(new qs.Source<N>(qr.subscribeTo(source)))
+    filter(pred, thisArg)(new qs.Source<N>(qr.subscribeTo(s))),
+    filter(qt.not(pred, thisArg) as any)(new qs.Source<N>(qr.subscribeTo(s)))
   ] as [qt.Source<N>, qt.Source<N>];
 }
 
