@@ -2,8 +2,8 @@ import {Component, Input, OnInit} from '@angular/core';
 
 @Component({
   selector: 'qnr-graph-app',
-  templateUrl: './comp.html',
-  styleUrls: ['./comp.scss']
+  templateUrl: './component.html',
+  styleUrls: ['./component.scss']
 })
 export class AppComp implements OnInit {
   $ = {} as {loader: any};

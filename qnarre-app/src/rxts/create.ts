@@ -818,7 +818,7 @@ export class RepeatWhenR<N, R> extends qr.Reactor<N, R> {
 
   _recycle() {
     const u = this.unsubscribe;
-    this.unsubscribe = undefined;
+    this.unsubscribe = qt.noop;
     super._recycle();
     this.unsubscribe = u;
     return this;
@@ -834,7 +834,7 @@ export class RepeatWhenR<N, R> extends qr.Reactor<N, R> {
       return super.done();
     }
     this.retries = rs;
-    this.s = qr.subscribeToResult(this, rs);
+    this.s = this.subscribeTo(rs);
   }
 }
 
