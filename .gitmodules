@@ -7,3 +7,18 @@
 [submodule "dev-libs/TypeScript"]
 	path = dev-libs/TypeScript
 	url = https://github.com/microsoft/TypeScript.git
+[submodule "dev-libs/spaCy"]
+	path = dev-libs/spaCy
+	url = https://github.com/explosion/spaCy.git
+[submodule "dev-libs/angular"]
+	path = dev-libs/angular
+	url = https://github.com/angular/angular.git
+[submodule "dev-libs/tfjs"]
+	path = dev-libs/tfjs
+	url = https://github.com/tensorflow/tfjs.git
+[submodule "dev-libs/tfjs-examples"]
+	path = dev-libs/tfjs-examples
+	url = https://github.com/tensorflow/tfjs-examples.git
+[submodule "dev-libs/tensorboard"]
+	path = dev-libs/tensorboard
+	url = https://github.com/tensorflow/tensorboard.git
