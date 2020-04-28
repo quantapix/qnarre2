@@ -43,6 +43,7 @@
     "@angular/language-service": "next",
     "@ngtools/webpack": "next",
     "@tensorflow/tfjs": "",
+    "@tensorflow/tfjs-node-gpu": "^1.7.3",
     "@types/assert": "",
     "@types/d3": "",
     "@types/jasmine": "",
