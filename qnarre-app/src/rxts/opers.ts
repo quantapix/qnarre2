@@ -28,6 +28,52 @@ export class IgnoreElements<N> extends qj.Subscriber<N> {
   }
 }
 
+export function onErrorResumeNext<R>(v: qt.Input<R>): qs.Source<R>;
+export function onErrorResumeNext<T2, T3, R>(
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>
+): qs.Source<R>;
+export function onErrorResumeNext<T2, T3, T4, R>(
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>
+): qs.Source<R>;
+export function onErrorResumeNext<T2, T3, T4, T5, R>(
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>
+): qs.Source<R>;
+export function onErrorResumeNext<T2, T3, T4, T5, T6, R>(
+  v2: qt.Input<T2>,
+  v3: qt.Input<T3>,
+  v4: qt.Input<T4>,
+  v5: qt.Input<T5>,
+  v6: qt.Input<T6>
+): qs.Source<R>;
+export function onErrorResumeNext<R>(
+  ...observables: Array<qt.Input<any> | ((...values: Array<any>) => R)>
+): qs.Source<R>;
+export function onErrorResumeNext<R>(array: qt.Input<any>[]): qs.Source<R>;
+export function onErrorResumeNext<T, R>(
+  ...sources: Array<qt.Input<any> | Array<qt.Input<any>> | ((...values: Array<any>) => R)>
+): qs.Source<R> {
+  if (sources.length === 0) return EMPTY;
+  const [first, ...remainder] = sources;
+  if (sources.length === 1 && isArray(first)) return onErrorResumeNext(...first);
+  return new qs.Source(subscriber => {
+    const subNext = () =>
+      subscriber.add(onErrorResumeNext(...remainder).subscribe(subscriber));
+    return from(first).subscribe({
+      next(value) {
+        subscriber.next(value);
+      },
+      error: subNext,
+      complete: subNext
+    });
+  });
+}
+
 export function onErrorResumeNext<N>(): qt.Lifter<T, T>;
 export function onErrorResumeNext<T, T2>(v: qt.Input<T2>): qt.Lifter<T, T | T2>;
 export function onErrorResumeNext<T, T2, T3>(
