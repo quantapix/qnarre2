@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- block statements
-# :Created:   gio 08 feb 2018 02:25:23 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 from .base import JSStatement
 
 
@@ -44,8 +36,9 @@ class JSForIterableStatement(JSBlock):
     operator = ' of '
 
     def emit(self, target, source, body):
-        yield self.line(['for (var ', self.part(target), self.operator,
-                         source, ') {'])
+        yield self.line(
+            ['for (var ',
+             self.part(target), self.operator, source, ') {'])
         yield from self.lines(body, indent=True, delim=True)
         yield self.line('}')
 

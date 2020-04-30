@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- Aggregated statements
-# :Created:   gio 08 feb 2018 02:53:30 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 import itertools
 
 from .base import JSNode
@@ -14,7 +6,6 @@ from .statements import JSImport, JSVarStatement
 
 
 class JSStatements(JSNode):
-
     def __iadd__(self, other):
         self.transformed_args.extend(other.transformed_args)
         return self

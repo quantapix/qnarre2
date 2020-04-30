@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- base node
-# :Created:   mer 07 feb 2018 16:17:02 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 import inspect
 
 from ..processor.util import Line, Part
@@ -13,13 +5,10 @@ from ..processor.util import Line, Part
 
 class TargetNode:
     """This is the common ancestor of all the JS AST nodes."""
-
     """The associated Python AST node"""
     py_node = None
-
     """The Transformer instance which is managing this one"""
     transformer = None
-
     """The final arguments passed to the emit method defined on the
     subclasses"""
     transformed_args = None
@@ -68,7 +57,7 @@ class TargetNode:
 
     def lines(self, items, *, indent=False, delim=False, name=None):
         if not isinstance(items, (tuple, list)):
-            items = (items,)
+            items = (items, )
         for i in self._chain(items):
             yield self.line(i, indent=indent, delim=delim, name=name)
 

@@ -1,21 +1,12 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- expressions
-# :Created:   gio 08 feb 2018 02:46:38 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 import re
 
 from .base import JSNode
 from .operators import JSLeftSideUnaryOp
 from ..processor.util import delimited, delimited_multi_line
-from . util import _check_keywords
+from .util import _check_keywords
 
 
 class JSExpression(JSNode):
-
     def emit(self, expr):
         yield self.part('(', expr, ')')
 
@@ -102,7 +93,6 @@ class JSName(JSNode):
 
 
 class JSTaggedTemplate(JSNode):
-
     def emit(self, value, func):
         text = list(delimited_multi_line(self, value, '`'))
         func = list(func.serialize())
@@ -110,7 +100,6 @@ class JSTaggedTemplate(JSNode):
 
 
 class JSTemplateLiteral(JSNode):
-
     def emit(self, value):
         yield from delimited_multi_line(self, value, '`')
 

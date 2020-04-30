@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- js ast
-# :Created:   mer 07 feb 2018 16:14:21 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 from .base import TargetNode
 from .blocks import (
     JSForIterableStatement,
@@ -122,5 +114,4 @@ from .classes import (
 )
 
 from .bodies import (
-    JSStatements,
-)
+    JSStatements, )

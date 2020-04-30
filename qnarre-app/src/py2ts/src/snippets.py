@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- code to aid transformation, it gets converted
-# :Created:  mar 01 mar 2016 01:42:26 CET
-# :Author:   Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
-
 def _in(left, right):
     from __globals__ import Array, typeof
 
@@ -31,8 +23,10 @@ def set_decorators(cls, props):
 
     for p in dict(props):
         decos = props[p]
+
         def reducer(val, deco):
             return deco(val, cls, p)
+
         deco = decos.reduce(reducer, cls.prototype[p])
         if not isinstance(deco, (Function, Map, WeakMap)) and \
             isinstance(deco, Object) and (('value' in deco) or
@@ -46,6 +40,7 @@ def set_decorators(cls, props):
 def set_class_decorators(cls, decos):
     def reducer(val, deco):
         return deco(val, cls)
+
     return decos.reduce(reducer, cls)
 
 

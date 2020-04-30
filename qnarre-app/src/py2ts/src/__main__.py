@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- commandline interface
-# :Created:  mar 01 mar 2016 19:33:21 CET
-# :Author:   Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
 import argparse
 from collections import deque
 import logging
@@ -23,49 +16,74 @@ class UnsupportedPythonError(Exception):
 
 
 parser = argparse.ArgumentParser(
-    description="A Python 3.5+ to ES6 JavaScript compiler",
-    prog='pj'
-)
-parser.add_argument('files', metavar='file', type=str, nargs='*',
+    description="A Python 3.5+ to ES6 JavaScript compiler", prog='pj')
+parser.add_argument('files',
+                    metavar='file',
+                    type=str,
+                    nargs='*',
                     help="Python source file(s) or directory(ies) "
                     "to convert. When it is a directory it will be "
                     "converted recursively")
-parser.add_argument('--disable-es6', dest='es6', action='store_false',
+parser.add_argument('--disable-es6',
+                    dest='es6',
+                    action='store_false',
                     default=True,
                     help="Disable ES6 features during conversion"
                     " (Ignored if --es5 is specified)")
-parser.add_argument('--disable-stage3', dest='stage3', action='store_false',
+parser.add_argument('--disable-stage3',
+                    dest='stage3',
+                    action='store_false',
                     default=True,
                     help="Disable ES7 stage3 features during conversion")
-parser.add_argument('-5', '--es5', dest='es5', action='store_true',
+parser.add_argument('-5',
+                    '--es5',
+                    dest='es5',
+                    action='store_true',
                     help="Also transpile to ES5 using BabelJS.")
-parser.add_argument('--transform-runtime', action='store_true', dest='truntime',
+parser.add_argument('--transform-runtime',
+                    action='store_true',
+                    dest='truntime',
                     help="Add transform runtime as plugin during transpile")
-parser.add_argument('-o', '--output', type=str,
+parser.add_argument('-o',
+                    '--output',
+                    type=str,
                     help="Output file/directory where to save the generated "
                     "code")
-parser.add_argument('-d', '--debug', action='store_true',
+parser.add_argument('-d',
+                    '--debug',
+                    action='store_true',
                     help="Enable error reporting")
-parser.add_argument('--pdb', action='store_true',
+parser.add_argument('--pdb',
+                    action='store_true',
                     help="Enter post-mortem debug when an error occurs")
-parser.add_argument('-s', '--string', type=str,
-                    help="Convert a string, useful for small snippets. If the string"
-                    " is '-' will be read from the standard input.")
-parser.add_argument('-e', '--eval', action='store_true',
-                    help="Evaluate the string supplied with the -s  using the"
-                    " embedded interpreter and return the last result. This will "
-                    "convert the input string with all the extensions enabled "
-                    "(comparable to adding the '-5' option) and so it will take"
-                    " some time because of BabelJS load times.")
-parser.add_argument('--dump-ast', action='store_true',
+parser.add_argument(
+    '-s',
+    '--string',
+    type=str,
+    help="Convert a string, useful for small snippets. If the string"
+    " is '-' will be read from the standard input.")
+parser.add_argument(
+    '-e',
+    '--eval',
+    action='store_true',
+    help="Evaluate the string supplied with the -s  using the"
+    " embedded interpreter and return the last result. This will "
+    "convert the input string with all the extensions enabled "
+    "(comparable to adding the '-5' option) and so it will take"
+    " some time because of BabelJS load times.")
+parser.add_argument('--dump-ast',
+                    action='store_true',
                     help="Dump the Python AST. You need to have the package"
                     " metapensiero.pj[test] installed")
-parser.add_argument('--inline-map', action='store_true',
-                    help="Save the source-map inline instead of in an additional"
-                    " file, useful when transpiling with BabelJS externally "
-                    "but without access to the cli. Ignored "
-                    "when transpiling.")
-parser.add_argument('--source-name', help="When using '-s' together with"
+parser.add_argument(
+    '--inline-map',
+    action='store_true',
+    help="Save the source-map inline instead of in an additional"
+    " file, useful when transpiling with BabelJS externally "
+    "but without access to the cli. Ignored "
+    "when transpiling.")
+parser.add_argument('--source-name',
+                    help="When using '-s' together with"
                     " '--inline-map' this option is necessary to produce a"
                     " valid sourcemap which needs a name for the source file")
 
@@ -84,32 +102,45 @@ class Reporter:
         print(*args, **kwargs)
 
 
-def transform(src_fname, dst_fname=None, transpile=False, enable_es6=False,
-              enable_stage3=False, **kw):
+def transform(src_fname,
+              dst_fname=None,
+              transpile=False,
+              enable_es6=False,
+              enable_stage3=False,
+              **kw):
     kw.pop('source_name', None)
     if transpile:
         kw.pop('inline_map', None)
-        api.transpile_py_file(src_fname, dst_fname,
+        api.transpile_py_file(src_fname,
+                              dst_fname,
                               enable_stage3=enable_stage3,
                               **kw)
     else:
         kw.pop('truntime', None)
-        api.translate_file(src_fname, dst_fname, enable_es6=enable_es6,
-                           enable_stage3=enable_stage3, **kw)
+        api.translate_file(src_fname,
+                           dst_fname,
+                           enable_es6=enable_es6,
+                           enable_stage3=enable_stage3,
+                           **kw)
 
 
-def transform_string(input, transpile=False, enable_es6=False,
-                     enable_stage3=False, **kw):
+def transform_string(input,
+                     transpile=False,
+                     enable_es6=False,
+                     enable_stage3=False,
+                     **kw):
     inline_map = kw.get('inline_map', False)
     source_name = kw.get('source_name', None)
     if inline_map and source_name is None:
         raise ValueError("A source name is needed, please specify it using "
                          "the '--source-name option.")
     if transpile:
-        res, src_map = api.transpile_pys(input, enable_stage3=enable_stage3,
+        res, src_map = api.transpile_pys(input,
+                                         enable_stage3=enable_stage3,
                                          src_filename=source_name)
     else:
-        res, src_map = api.translates(input, enable_es6=enable_es6,
+        res, src_map = api.translates(input,
+                                      enable_es6=enable_es6,
                                       enable_stage3=enable_stage3,
                                       src_filename=source_name)
     if kw.get('inline_map', False):
@@ -158,8 +189,7 @@ def main(args=None, fout=None, ferr=None):
             es6 = args.es6
             stage3 = args.stage3
         try:
-            res = transform_string(input, es5, es6, stage3,
-                                   **freeargs)
+            res = transform_string(input, es5, es6, stage3, **freeargs)
             if args.eval:
                 res = api.evaljs(res, load_es6_polyfill=True)
             rep.print(res)
@@ -194,8 +224,9 @@ def main(args=None, fout=None, ferr=None):
                 if src.is_dir():
                     if dst and src != dst:
                         if dst.exists() and not dst.is_dir():
-                            rep.print_err("Source is a directory but output exists "
-                                          "and it isn't")
+                            rep.print_err(
+                                "Source is a directory but output exists "
+                                "and it isn't")
                             result = 1
                             break
                         if not dst.exists():
@@ -219,14 +250,10 @@ def main(args=None, fout=None, ferr=None):
                                 continue
                             elif spath.suffix == '.py':
                                 try:
-                                    transform(
-                                        str(spath),
-                                        str(ddir) if ddir else None,
-                                        args.es5,
-                                        args.es6,
-                                        args.stage3,
-                                        **freeargs
-                                    )
+                                    transform(str(spath),
+                                              str(ddir) if ddir else None,
+                                              args.es5, args.es6, args.stage3,
+                                              **freeargs)
                                     rep.print("Compiled file %s" % spath)
                                 except Exception as e:
                                     e.src_fname = spath
