@@ -4,6 +4,8 @@ bazel-out
 node_modules
 /tmp
 
+.qpy
+
 chrome-profiler-events*.json
 speed-measure-plugin*.json
 # IDE - VSCode
