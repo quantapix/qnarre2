@@ -1,41 +1,8 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) Waldemar Kornewald, Alberto Berti
-# All rights reserved.
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#     1. Redistributions of source code must retain the above copyright notice,
-#        this list of conditions and the following disclaimer.
-#
-#     2. Redistributions in binary form must reproduce the above copyright
-#        notice, this list of conditions and the following disclaimer in the
-#        documentation and/or other materials provided with the distribution.
-#
-#     3. Neither the name of the copyright holder nor the names of its
-#        contributors may be used to endorse or promote products
-#        derived from this software without specific prior written
-#        permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
 from base64 import b64encode
 from bisect import bisect_right
 from collections import namedtuple
 import json
 import re
-
 
 # A single base 64 digit can contain 6 bits of data. For the base 64
 # variable length quantities we use in the source map spec, the first
@@ -143,29 +110,37 @@ def strip(content):
 
 # namedtuples have a nice repr and they support comparison (useful for
 # bisect search)
-class Token(namedtuple('TokenBase', 'dst_line dst_col src src_line src_col '
-                       'name mapping')):
+class Token(
+        namedtuple('TokenBase', 'dst_line dst_col src src_line src_col '
+                   'name mapping')):
     __slots__ = ()
 
-    def __new__(cls, dst_line=0, dst_col=0, src='', src_line=0, src_col=0,
-                name=None, mapping=None):
-        return super(Token, cls).__new__(cls, dst_line, dst_col,
-                                         src, src_line, src_col, name, mapping)
+    def __new__(cls,
+                dst_line=0,
+                dst_col=0,
+                src='',
+                src_line=0,
+                src_col=0,
+                name=None,
+                mapping=None):
+        return super(Token, cls).__new__(cls, dst_line, dst_col, src, src_line,
+                                         src_col, name, mapping)
 
 
 def shift_tokens(tokens, dst_line=0, dst_col=0, src_line=0, src_col=0):
-    return [t._replace(dst_line=t.dst_line + dst_line,
-                       dst_col=t.dst_col + dst_col,
-                       src_line=t.src_line + src_line,
-                       src_col=t.src_col + src_col)
-            for t in tokens]
+    return [
+        t._replace(dst_line=t.dst_line + dst_line,
+                   dst_col=t.dst_col + dst_col,
+                   src_line=t.src_line + src_line,
+                   src_col=t.src_col + src_col) for t in tokens
+    ]
 
 
 TOKEN_SPEC = (
     ('LINECOMMENT', r'//'),
     ('COMMENTSTART', r'/\*'),
     ('COMMENTEND', r'\*/'),
-    ('DELIM',   r'[{}\[\]();]'),
+    ('DELIM', r'[{}\[\]();]'),
 )
 token_re = re.compile('|'.join('(?P<%s>%s)' % pair for pair in TOKEN_SPEC),
                       re.UNICODE | re.MULTILINE | re.DOTALL)
@@ -200,7 +175,10 @@ def identity_map(content, src):
 
 
 class SourceMap:
-    def __init__(self, tokens=(), sources_content=None, raw=None,
+    def __init__(self,
+                 tokens=(),
+                 sources_content=None,
+                 raw=None,
                  ignore_errors=False):
         self.tokens = []
         if sources_content is None:
@@ -231,7 +209,7 @@ class SourceMap:
             smap = source
         else:
             # According to the spec a souce map may be prepended with
-            # ")]}'" to cause a JavaScript error. In that case ignore the
+            # ")]}'" to cause a TypeScript error. In that case ignore the
             # entire first line.
             if source[:4] == ")]}'":
                 source = source.split('\n', 1)[1]
@@ -257,20 +235,21 @@ class SourceMap:
                 dst_col += fields[0]
                 if dst_col < 0:
                     raise SourceMapDecodeError(
-                        'Segment {} has negative dst_col'.format(segment, fields))
+                        'Segment {} has negative dst_col {}'.format(
+                            segment, fields))
 
                 src = None
                 name = None
                 if len(fields) not in (1, 4, 5):
                     raise SourceMapDecodeError(
-                        'Invalid segment {}, parsed as {}'.format(segment, fields))
+                        'Invalid segment {}, parsed as {}'.format(
+                            segment, fields))
                 if len(fields) > 1:
                     src_id += fields[1]
                     if not 0 <= src_id < len(sources):
                         raise SourceMapDecodeError(
                             'Segment {} references source {} which '
-                            'does not exist'.format(
-                                segment, src_id))
+                            'does not exist'.format(segment, src_id))
                     src = sources[src_id]
                     src_line += fields[2]
                     if src_line < 0:
@@ -286,20 +265,22 @@ class SourceMap:
                     if not 0 <= name_id < len(names):
                         raise SourceMapDecodeError(
                             'Segment {} references name {} which '
-                            'does not exist'.format(
-                                segment, name_id))
+                            'does not exist'.format(segment, name_id))
                     name = names[name_id]
 
-                tokens.append(Token(dst_line, dst_col, src, src_line, src_col,
-                                    name))
+                tokens.append(
+                    Token(dst_line, dst_col, src, src_line, src_col, name))
 
-        sources_content = {src: content
-                           for src, content in zip(
-                                   sources, smap.get('sourcesContent',
-                                                     (None,) * len(sources)))
-                           if content is not None}
-        return cls(tokens, sources_content, raw=smap,
-                         ignore_errors=ignore_errors)
+        sources_content = {
+            src: content
+            for src, content in zip(
+                sources, smap.get('sourcesContent', (None, ) * len(sources)))
+            if content is not None
+        }
+        return cls(tokens,
+                   sources_content,
+                   raw=smap,
+                   ignore_errors=ignore_errors)
 
     def encode(self):
         """Encode the given sourcemap object into a mapping that contains all
@@ -342,16 +323,18 @@ class SourceMap:
                 prev_src_line = token.src_line
                 prev_src_col = token.src_col
             segments.append(''.join(map(encode_vlq, vlq)))
-        data = {'version': 3,
-                'mappings': ';'.join(map(','.join, mappings)),
-                'sources': sorted(sources, key=lambda x: sources[x]),
-                'names': sorted(names, key=lambda x: names[x])}
-        data['sourcesContent'] = list(map(self.sources_content.get,
-                                          data['sources']))
+        data = {
+            'version': 3,
+            'mappings': ';'.join(map(','.join, mappings)),
+            'sources': sorted(sources, key=lambda x: sources[x]),
+            'names': sorted(names, key=lambda x: names[x])
+        }
+        data['sourcesContent'] = list(
+            map(self.sources_content.get, data['sources']))
         return data
 
     def stringify(self, inline_comment=False):
-        """Encode a SourceMap and return a string of its JSON dump, optionally
+        """Encode a SourceMap and return a string of its TSON dump, optionally
         encoding it with base64.
 
         :param sourcemap: the sourcemap

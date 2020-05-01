@@ -11,7 +11,6 @@ from metapensiero.pj.api import eval_object, eval_object_es6, translate_object
 
 
 def test_bitwise_xor():
-
     def xor():
         return [0 ^ 0, 0 ^ 1, 1 ^ 0, 1 ^ 1]
 
@@ -19,7 +18,6 @@ def test_bitwise_xor():
 
 
 def test_bitwise_and():
-
     def _and():
         return [0 & 0, 0 & 1, 1 & 0, 1 & 1]
 
@@ -27,7 +25,6 @@ def test_bitwise_and():
 
 
 def test_bitwise_or():
-
     def _or():
         return [0 | 0, 0 | 1, 1 | 0, 1 | 1]
 
@@ -35,7 +32,6 @@ def test_bitwise_or():
 
 
 def test_bitwise_not():
-
     def _not():
         return [~(-2), ~(-1), ~(0), ~(1), ~(2)]
 
@@ -43,7 +39,6 @@ def test_bitwise_not():
 
 
 def test_rshift():
-
     def rshift():
         return [64 >> 2, 65 >> 2, -16 >> 3]
 
@@ -51,7 +46,6 @@ def test_rshift():
 
 
 def test_multiple_assignment_and_sum():
-
     def sum():
         x = y = 2
         return x + y
@@ -60,13 +54,8 @@ def test_multiple_assignment_and_sum():
 
 
 def test_list_in():
-
     def list_in():
-        return [
-            1 in [10, 11],
-            'foo' in 'barfoobar',
-            11 in [10, 11]
-        ]
+        return [1 in [10, 11], 'foo' in 'barfoobar', 11 in [10, 11]]
 
     assert list_in() == eval_object(list_in, 'list_in();')
     expected = (
@@ -87,13 +76,11 @@ def test_list_in():
         'function list_in() {\n'
         '    return [_pj._in(1, [10, 11]), _pj._in("foo", "barfoobar"), _pj._in(11, '
         '[10, 11])];\n'
-        '}\n'
-    )
+        '}\n')
     assert translate_object(list_in)[0] == expected
 
 
 def test_if_else_elif():
-
     def test_if():
 
         if 3 < 3:
@@ -108,7 +95,6 @@ def test_if_else_elif():
 
 
 def test_while_and_aug_assignment():
-
     def _while():
         x = 0
         i = 10
@@ -127,15 +113,13 @@ def test_while_and_aug_assignment():
 
 @pytest.mark.xfail
 def test_list_comprehension():
-
     def _list():
-        return  [x + 1 for x in [1, 2, 3, 100]]
+        return [x + 1 for x in [1, 2, 3, 100]]
 
     assert _list() == eval_object(_list, '_list();')
 
 
 def test_dict_member_deletion():
-
     def deletion():
         d = {'foo': 1, 'bar': 2}
         del d['bar']
@@ -145,7 +129,6 @@ def test_dict_member_deletion():
 
 
 def test_func_simple_arg():
-
     def f(x):
         return x + 1000
 
@@ -153,7 +136,6 @@ def test_func_simple_arg():
 
 
 def test_for_range_simple():
-
     def dofor():
         x = 0
         for i in range(5):
@@ -164,7 +146,6 @@ def test_for_range_simple():
 
 
 def test_for_range_less_simpler():
-
     def dofor():
         x = 0
         for i in range(3, 5):
@@ -175,7 +156,6 @@ def test_for_range_less_simpler():
 
 
 def test_for_range_step():
-
     def dofor():
         x = 0
         for i in range(0, 10, 2):
@@ -186,7 +166,6 @@ def test_for_range_step():
 
 
 def test_for_items_in_dict():
-
     def dofor():
         x = ''
         d = {'foo': 'FOO', 'bar': 'BAR'}
@@ -199,7 +178,6 @@ def test_for_items_in_dict():
 
 
 def test_for_items_in_array():
-
     def dofor():
         x = 0
         for t in [1, 2, 3, 100]:
@@ -210,20 +188,18 @@ def test_for_items_in_array():
 
 
 def test_class_simple():
-
     def test_class():
         class Foo:
             def __init__(self):
                 self.msg = 'foo'
+
         return Foo().msg
 
     assert test_class() == eval_object_es6(test_class, 'test_class();')
 
 
 def test_class_inherit():
-
     def test_class():
-
         class Animal:
             def __init__(self, name):
                 self.name = name
@@ -232,6 +208,7 @@ def test_class_inherit():
             def __init__(self, name, catchphrase):
                 super().__init__(name)
                 self.catchphrase = catchphrase
+
             def caption(self):
                 return self.name + " sez '" + self.catchphrase + "'"
 
@@ -241,21 +218,23 @@ def test_class_inherit():
 
 
 def test_class_super():
-
     def test_class():
-
         class Animal:
             def __init__(self, name):
                 self.name = name
+
         class TalkingAnimal(Animal):
             def __init__(self, name, catchphrase):
                 super().__init__(name)
                 self.catchphrase = catchphrase
+
             def caption(self):
                 return self.name + " sez '" + self.catchphrase + "'"
+
         class Kitteh(TalkingAnimal):
             def __init__(self, name):
                 super().__init__(name, 'OH HAI')
+
             def caption(self):
                 return 'OMG AWESOMECUTE: ' + super().caption()
 
@@ -265,9 +244,7 @@ def test_class_super():
 
 
 def test_class_assigns():
-
     def test_class_js():
-
         class Animal:
 
             is_big = False
@@ -286,7 +263,6 @@ def test_class_assigns():
         return res
 
     def test_class():
-
         class Animal:
 
             is_big = False
@@ -304,19 +280,18 @@ def test_class_assigns():
 
         return res
 
-    assert test_class()  == eval_object_es6(test_class_js, 'test_class_js();')
+    assert test_class() == eval_object_es6(test_class_js, 'test_class_js();')
+
 
 def test_method_decorators():
-
     def test_deco():
-
         def currency(func, cls, name):
             def wrapper(self, tax):
                 return '€ ' + str(func.bind(self)(tax))
+
             return wrapper
 
         class Product:
-
             def __init__(self, price):
                 self.price = price
 
@@ -328,14 +303,13 @@ def test_method_decorators():
         return foo.euro_price_with_tax(22)
 
     def test_deco_py():
-
         def currency(func):
             def wrapper(self, tax):
                 return '€ ' + str(func(self, tax))
+
             return wrapper
 
         class Product:
-
             def __init__(self, price):
                 self.price = price
 
@@ -345,13 +319,10 @@ def test_method_decorators():
 
         foo = Product(80)
         return foo.euro_price_with_tax(22)
-
-
-    assert test_deco_py()  == eval_object_es6(test_deco, 'test_deco();')
+    assert test_deco_py() == eval_object_es6(test_deco, 'test_deco();')
 
 
 def test_class_decorators():
-
     def test_class_deco():
 
         counter = 0
@@ -362,12 +333,12 @@ def test_class_decorators():
                 counter += 1
                 res.push(counter)
                 return cls.prototype.constructor.call(self, *args)
+
             wrapper.prototype = cls.prototype
             return wrapper
 
         @deco
         class DecoTest:
-
             def __init__(self, res):
                 self.res = res
 
@@ -380,13 +351,12 @@ def test_class_decorators():
 
         return res, isinstance(c, DecoTest), c.foo() == 'bar'
 
-    assert [[1, 2, 3], True, True]  == eval_object_es6(test_class_deco, 'test_class_deco();')
+    assert [[1, 2, 3], True, True] == eval_object_es6(test_class_deco,
+                                                      'test_class_deco();')
 
 
 def test_type():
-
     def test_type_js():
-
         class Foo:
             pass
 
@@ -397,7 +367,6 @@ def test_type():
         return res
 
     def test_type_py():
-
         class Foo:
             pass
 
@@ -407,16 +376,15 @@ def test_type():
         res = type(a) is type(b) and type(b) is Foo
         return res
 
-    assert test_type_py()  == eval_object_es6(test_type_js, 'test_type_js();')
+    assert test_type_py() == eval_object_es6(test_type_js, 'test_type_js();')
 
 
 def test_for_of():
-
     def test_forof_js():
 
         from __globals__ import iterable, Set
 
-        a = [1,2,3,4,5]
+        a = [1, 2, 3, 4, 5]
 
         b = Set(['a', 'b'])
 
@@ -432,18 +400,16 @@ def test_for_of():
 
         return a_v, b_k
 
-    assert [[1,2,3,4,5], ['a', 'b']] == eval_object_es6(test_forof_js, 'test_forof_js();')
+    assert [[1, 2, 3, 4, 5],
+            ['a', 'b']] == eval_object_es6(test_forof_js, 'test_forof_js();')
+
 
 def test_for_inherited():
-
     def test_for_inh():
-
         def Foo():
             pass
 
-        Foo.prototype = {
-            'bar': 1
-        }
+        Foo.prototype = {'bar': 1}
 
         def Zoo():
             pass
@@ -460,22 +426,23 @@ def test_for_inherited():
         z_proto_local = []
         z_proto_all = []
 
-
         for k in dict(z, True):
-            z_all.push(k);
+            z_all.push(k)
 
         for k in dict(type(z)):
-            z_proto_local.push(k);
+            z_proto_local.push(k)
 
         for k in dict(type(z), True):
-            z_proto_all.push(k);
+            z_proto_all.push(k)
 
         return z_local, z_all, z_proto_local, z_proto_all
 
-    assert [[], ['bar2', 'bar'], ['bar2'], ['bar2', 'bar']] == eval_object_es6(test_for_inh, 'test_for_inh();')
+    assert [[], ['bar2', 'bar'], ['bar2'],
+            ['bar2', 'bar']] == eval_object_es6(test_for_inh,
+                                                'test_for_inh();')
+
 
 def test_try_except_simple():
-
     def test_try():
         value = 0
         try:
@@ -493,7 +460,6 @@ def test_try_except_simple():
 
 
 def test_try_except_complex():
-
     def test_try():
         value = 0
 
@@ -520,8 +486,8 @@ def test_try_except_complex():
     assert test_try() == 32
     assert test_try() == eval_object_es6(test_try, 'test_try();')
 
-def test_call_rest():
 
+def test_call_rest():
     def test_rest():
 
         a = [1, 2, 3, 4, 5]
@@ -541,10 +507,8 @@ def test_call_rest():
 
 
 def test_call_kw():
-
     def test_kw():
-
-        def kw(a=1,*, b=3, c=5):
+        def kw(a=1, *, b=3, c=5):
             return a + b + c
 
         return kw()
@@ -553,8 +517,7 @@ def test_call_kw():
     assert test_kw() == eval_object_es6(test_kw, 'test_kw();')
 
     def test_kw2(a, c):
-
-        def kw(a=1,*, b=3, c=5):
+        def kw(a=1, *, b=3, c=5):
             return a + b + c
 
         return kw(a, c=c)
@@ -563,9 +526,8 @@ def test_call_kw():
     assert test_kw2(1, 1) == eval_object_es6(test_kw2, 'test_kw2(1, 1);')
 
     def test_kw3(foo, bar):
-
-        def kw(foo, **kwargs):
-            return foo + kwargs['bar']
+        def kw(foo, **kw):
+            return foo + kw['bar']
 
         return kw(foo, bar=bar)
 
@@ -574,29 +536,20 @@ def test_call_kw():
 
 
 def test_slices():
-
     def test():
 
         foo = 'fooFoo'
-        a = [
-            foo[1],
-            foo[-3:],
-            foo[2:-1],
-            foo[:5]
-        ]
+        a = [foo[1], foo[-3:], foo[2:-1], foo[:5]]
         return a
 
-    assert test() == ['o', 'Foo', 'oFo', 'fooFo'] == eval_object(test, 'test();')
+    assert test() == ['o', 'Foo', 'oFo', 'fooFo'] == eval_object(
+        test, 'test();')
 
 
 def test_dict_update():
-
     def test_js_du():
 
-        a = {
-            'first': 1,
-            'second': 'b'
-        }
+        a = {'first': 1, 'second': 'b'}
 
         b = {
             'second': 'c',
@@ -609,10 +562,7 @@ def test_dict_update():
 
     def test():
 
-        a = {
-            'first': 1,
-            'second': 'b'
-        }
+        a = {'first': 1, 'second': 'b'}
 
         b = {
             'second': 'c',
@@ -627,24 +577,17 @@ def test_dict_update():
 
 
 def test_dict_copy():
-
     def test_js_dc():
 
-        a = {
-            'first': 1,
-            'second': 'b'
-        }
+        a = {'first': 1, 'second': 'b'}
 
-        b  = dict(a).copy()
+        b = dict(a).copy()
 
         return b['first'], b['second']
 
     def test():
 
-        a = {
-            'first': 1,
-            'second': 'b'
-        }
+        a = {'first': 1, 'second': 'b'}
 
         b = a.copy()
 
@@ -654,13 +597,12 @@ def test_dict_copy():
 
 
 def test_in_map():
-
     def js_in_map():
         from __globals__ import Map
 
-        m = Map();
-        o = {};
-        oo = {};
+        m = Map()
+        o = {}
+        oo = {}
         m.set(o, 'test')
         return o in m, oo in o, m.get(o)
 
@@ -668,9 +610,7 @@ def test_in_map():
 
 
 def test_yield():
-
     def test_y(r):
-
         def gen():
             for i in range(r):
                 yield i
@@ -681,9 +621,7 @@ def test_yield():
 
 
 def test_yield_from():
-
     def test_yf(r):
-
         def gen():
             yield from gen2()
 
@@ -697,11 +635,8 @@ def test_yield_from():
 
 
 def test_yield_method():
-
     def test_ym(r):
-
         class Demo:
-
             def gen(self, r):
                 for i in range(r):
                     yield i
@@ -714,19 +649,16 @@ def test_yield_method():
 
 
 def test_yield_in_method():
-
     def test_yim(r):
-
         class Demo:
-
             def __init__(self, r):
                 self.r = r
 
             def foo(self):
-
                 def gen():
                     for i in range(self.r):
                         yield i
+
                 return [*gen()]
 
         d = Demo(r)
@@ -737,7 +669,6 @@ def test_yield_in_method():
 
 
 def test_assert():
-
     def test_ass():
 
         try:
@@ -746,13 +677,14 @@ def test_assert():
             return e
         return True
 
-    assert {'message': 'Error raised', 'name': 'PJAssertionError'} == eval_object(test_ass, 'test_ass();')
+    assert {
+        'message': 'Error raised',
+        'name': 'PJAssertionError'
+    } == eval_object(test_ass, 'test_ass();')
 
 
 def test_classmethod():
-
     def test_cm():
-
         class CMTest:
 
             prop = 1
@@ -767,10 +699,10 @@ def test_classmethod():
 
 
 def test_in_weakset():
-
     def test_in_ws():
 
         w = WeakSet()
+
         def prova():
             pass
 
@@ -781,7 +713,6 @@ def test_in_weakset():
 
 
 def test_integer():
-
     def test_int():
         return int('5') + int('6')
 
@@ -789,7 +720,6 @@ def test_integer():
 
 
 def test_float_conversion():
-
     def test_float():
         return float('7.5') + float('7.1')
 

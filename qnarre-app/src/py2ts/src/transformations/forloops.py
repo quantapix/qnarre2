@@ -9,23 +9,23 @@
 import ast
 
 from ..js_ast import (
-    JSAssignmentExpression,
-    JSAttribute,
-    JSAugAssignStatement,
-    JSBinOp,
-    JSCall,
-    JSExpressionStatement,
-    JSForStatement,
-    JSForeachStatement,
-    JSForofStatement,
-    JSIfStatement,
-    JSName,
-    JSNum,
-    JSOpAdd,
-    JSOpLt,
-    JSStatements,
-    JSSubscript,
-    JSVarStatement,
+    TSAssignmentExpression,
+    TSAttribute,
+    TSAugAssignStatement,
+    TSBinOp,
+    TSCall,
+    TSExpressionStatement,
+    TSForStatement,
+    TSForeachStatement,
+    TSForofStatement,
+    TSIfStatement,
+    TSName,
+    TSNum,
+    TSOpAdd,
+    TSOpLt,
+    TSStatements,
+    TSSubscript,
+    TSVarStatement,
 )
 
 
@@ -40,22 +40,20 @@ def For_range(t, x):
       }
 
     """
-    if (isinstance(x.target, ast.Name) and
-        isinstance(x.iter, ast.Call) and
-        isinstance(x.iter.func, ast.Name) and
-        x.iter.func.id == 'range' and
-        1 <= len(x.iter.args) < 4) and (not x.orelse):
+    if (isinstance(x.target, ast.Name) and isinstance(x.iter, ast.Call)
+            and isinstance(x.iter.func, ast.Name) and x.iter.func.id == 'range'
+            and 1 <= len(x.iter.args) < 4) and (not x.orelse):
 
         name = x.target
         body = x.body
         if len(x.iter.args) == 1:
-            start = JSNum(0)
+            start = TSNum(0)
             bound = x.iter.args[0]
-            step = JSNum(1)
+            step = TSNum(1)
         elif len(x.iter.args) == 2:
             start = x.iter.args[0]
             bound = x.iter.args[1]
-            step = JSNum(1)
+            step = TSNum(1)
         else:
             start = x.iter.args[0]
             bound = x.iter.args[1]
@@ -63,15 +61,10 @@ def For_range(t, x):
 
         bound_name = t.new_name()
 
-        return JSForStatement(
-            JSVarStatement(
-                [name.id, bound_name],
-                [start, bound]),
-            JSBinOp(JSName(name.id), JSOpLt(), JSName(bound_name)),
-            JSAugAssignStatement(
-                JSName(name.id), JSOpAdd(), step),
-            body
-        )
+        return TSForStatement(
+            TSVarStatement([name.id, bound_name], [start, bound]),
+            TSBinOp(TSName(name.id), TSOpLt(), TSName(bound_name)),
+            TSAugAssignStatement(TSName(name.id), TSOpAdd(), step), body)
 
 
 def For_dict(t, x):
@@ -88,10 +81,9 @@ def For_dict(t, x):
           }
       }
     """
-    if (isinstance(x.iter, ast.Call) and
-        isinstance(x.iter.func, ast.Name) and
-        x.iter.func.id == 'dict' and
-        len(x.iter.args) <= 2) and (not x.orelse):
+    if (isinstance(x.iter, ast.Call) and isinstance(x.iter.func, ast.Name)
+            and x.iter.func.id == 'dict'
+            and len(x.iter.args) <= 2) and (not x.orelse):
 
         t.unsupported(x, not isinstance(x.target, ast.Name),
                       "Target must be a name")
@@ -103,30 +95,19 @@ def For_dict(t, x):
         dict_ = t.new_name()
 
         # if not ``dict(foo, True)`` filter out inherited values
-        if not (len(x.iter.args) == 2 and
-            isinstance(x.iter.args[1], ast.NameConstant) and
-            x.iter.args[1].value):
+        if not (len(x.iter.args) == 2 and isinstance(
+                x.iter.args[1], ast.NameConstant) and x.iter.args[1].value):
             body = [
-                    JSIfStatement(
-                        JSCall(
-                            JSAttribute(JSName(dict_), 'hasOwnProperty'),
-                            [JSName(name.id)]
-                        ),
-                        body, None
-                    )
-                ]
+                TSIfStatement(
+                    TSCall(TSAttribute(TSName(dict_), 'hasOwnProperty'),
+                           [TSName(name.id)]), body, None)
+            ]
         # set the incoming py_node for the sourcemap
-        loop = JSForeachStatement(
-            name.id,
-            JSName(dict_),
-            body
-        )
+        loop = TSForeachStatement(name.id, TSName(dict_), body)
         loop.py_node = x
 
-        return JSStatements(
-            JSVarStatement([dict_], [expr], unmovable=True),
-            loop
-        )
+        return TSStatements(TSVarStatement([dict_], [expr], unmovable=True),
+                            loop)
 
 
 def For_iterable(t, x):
@@ -141,10 +122,9 @@ def For_iterable(t, x):
           ...
       }
     """
-    if (isinstance(x.iter, ast.Call) and
-        isinstance(x.iter.func, ast.Name) and
-        x.iter.func.id == 'iterable' and
-        len(x.iter.args) == 1) and (not x.orelse):
+    if (isinstance(x.iter, ast.Call) and isinstance(x.iter.func, ast.Name)
+            and x.iter.func.id == 'iterable'
+            and len(x.iter.args) == 1) and (not x.orelse):
         t.es6_guard(x, 'for...of statement requires ES6')
 
         expr = x.iter.args[0]
@@ -152,7 +132,7 @@ def For_iterable(t, x):
         target = x.target
 
         # set the incoming py_node for the sourcemap
-        return JSForofStatement(
+        return TSForofStatement(
             target,
             expr,
             body,
@@ -180,7 +160,8 @@ def For_default(t, x):
 
     """
 
-    t.unsupported(x, not isinstance(x.target, ast.Name), "Target must be a name,"
+    t.unsupported(x, not isinstance(x.target, ast.Name),
+                  "Target must be a name,"
                   " Are you sure is only one?")
 
     name = x.target
@@ -191,30 +172,18 @@ def For_default(t, x):
     length = t.new_name()
     ix = t.new_name()
 
-    return JSForStatement(
-        JSVarStatement(
+    return TSForStatement(
+        TSVarStatement(
             [name.id, ix, arr, length],
-            [None, JSNum(0), expr,
-             JSAttribute(JSName(arr), 'length')],
-            unmovable=True
-        ),
-        JSBinOp(
-            JSName(ix),
-            JSOpLt(),
-            JSName(length)),
-        JSExpressionStatement(
-            JSAugAssignStatement(
-                JSName(ix),
-                JSOpAdd(),
-                JSNum(1))),
-        [
-            JSExpressionStatement(
-                JSAssignmentExpression(
-                    JSName(name.id),
-                    JSSubscript(
-                        JSName(arr),
-                        JSName(ix))))
-        ] + body)
+            [None, TSNum(0), expr,
+             TSAttribute(TSName(arr), 'length')],
+            unmovable=True), TSBinOp(TSName(ix), TSOpLt(), TSName(length)),
+        TSExpressionStatement(
+            TSAugAssignStatement(TSName(ix), TSOpAdd(), TSNum(1))), [
+                TSExpressionStatement(
+                    TSAssignmentExpression(
+                        TSName(name.id), TSSubscript(TSName(arr), TSName(ix))))
+            ] + body)
 
 
 For = [For_range, For_dict, For_iterable, For_default]

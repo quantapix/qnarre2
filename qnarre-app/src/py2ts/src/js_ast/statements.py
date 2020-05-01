@@ -1,9 +1,9 @@
-from .base import JSStatement
+from .base import TSStatement
 from .util import _check_keywords
 from ..processor.util import delimited
 
 
-class JSVarDeclarer(JSStatement):
+class TSVarDeclarer(TSStatement):
     def with_kind(self, kind, keys, values):
         for key in keys:
             _check_keywords(self, key)
@@ -21,22 +21,22 @@ class JSVarDeclarer(JSStatement):
         yield self.part(*arr)
 
 
-class JSVarStatement(JSVarDeclarer):
+class TSVarStatement(TSVarDeclarer):
     def emit(self, keys, values, unmovable=False):
         yield from self.with_kind('var', keys, values)
 
 
-class JSLetStatement(JSVarDeclarer):
+class TSLetStatement(TSVarDeclarer):
     def emit(self, keys, values, unmovable=True):
         yield from self.with_kind('let', keys, values)
 
 
-class JSAugAssignStatement(JSStatement):
+class TSAugAssignStatement(TSStatement):
     def emit(self, target, op, value):
         yield self.part(target, ' ', op, '= ', value, name=str(target))
 
 
-class JSReturnStatement(JSStatement):
+class TSReturnStatement(TSStatement):
     def emit(self, value):
         if value:
             result = self.line(['return ', value], delim=True)
@@ -45,51 +45,51 @@ class JSReturnStatement(JSStatement):
         yield result
 
 
-class JSBreakStatement(JSStatement):
+class TSBreakStatement(TSStatement):
     def emit(self):
         yield self.part('break')
 
 
-class JSContinueStatement(JSStatement):
+class TSContinueStatement(TSStatement):
     def emit(self):
         yield self.part('continue')
 
 
-class JSDeleteStatement(JSStatement):
+class TSDeleteStatement(TSStatement):
     def emit(self, value):
         yield self.line(['delete ', value], delim=True)
 
 
-class JSThrowStatement(JSStatement):
+class TSThrowStatement(TSStatement):
     def emit(self, obj):
         yield self.line(['throw ', obj], delim=True)
 
 
-class JSYield(JSStatement):
+class TSYield(TSStatement):
     def emit(self, expr):
         yield self.part('yield ', expr)
 
 
-class JSYieldStar(JSStatement):
+class TSYieldStar(TSStatement):
     def emit(self, expr):
         yield self.part('yield* ', expr)
 
 
-class JSAwait(JSStatement):
+class TSAwait(TSStatement):
     def emit(self, value):
         yield self.part('await ', value)
 
 
-class JSImport(JSStatement):
+class TSImport(TSStatement):
     pass
 
 
-class JSDependImport(JSImport):
+class TSDependImport(TSImport):
     def emit(self, module):
         yield self.line(['System.import(', "'", module, "'", ')'], delim=True)
 
 
-class JSNamedImport(JSImport):
+class TSNamedImport(TSImport):
     def emit(self, module, names):
         js_names = []
         for name, alias in sorted(names):
@@ -103,28 +103,28 @@ class JSNamedImport(JSImport):
             delim=True)
 
 
-class JSStarImport(JSImport):
+class TSStarImport(TSImport):
     def emit(self, module, name):
         yield self.line(['import * as ', name, " from '", module, "'"],
                         delim=True)
 
 
-class JSDefaultImport(JSImport):
+class TSDefaultImport(TSImport):
     def emit(self, module, alias):
         yield self.line(['import ', alias, " from '", module, "'"], delim=True)
 
 
-class JSExport(JSStatement):
+class TSExport(TSStatement):
     def emit(self, names):
         yield self.line(['export ', '{', *delimited(', ', names), '}'],
                         delim=True)
 
 
-class JSExportDefault(JSExport):
+class TSExportDefault(TSExport):
     def emit(self, name):
         yield self.line(['export default ', name], delim=True)
 
 
-class JSExpressionStatement(JSStatement):
+class TSExpressionStatement(TSStatement):
     def emit(self, value):
         yield self.part(value)

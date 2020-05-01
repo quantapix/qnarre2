@@ -1,137 +1,137 @@
-from .base import JSNode
+from .base import TSNode
 
 
-class JSOperator(JSNode):
+class TSOperator(TSNode):
     pass
 
 
-class JSLeftSideUnaryOp(JSOperator):
+class TSLeftSideUnaryOp(TSOperator):
     pass
 
 
-class JSOpIn(JSOperator):
+class TSOpIn(TSOperator):
     def emit(self):
         yield self.part('in')
 
 
-class JSOpAnd(JSOperator):
+class TSOpAnd(TSOperator):
     def emit(self):
         yield self.part('&&')
 
 
-class JSOpOr(JSOperator):
+class TSOpOr(TSOperator):
     def emit(self):
         yield self.part('||')
 
 
-class JSOpNot(JSLeftSideUnaryOp):
+class TSOpNot(TSLeftSideUnaryOp):
     def emit(self):
         yield self.part('!')
 
 
-class JSOpInstanceof(JSOperator):
+class TSOpInstanceof(TSOperator):
     def emit(self):
         yield self.part('instanceof')
 
 
-class JSOpTypeof(JSLeftSideUnaryOp):
+class TSOpTypeof(TSLeftSideUnaryOp):
     def emit(self):
         yield self.part('typeof')
 
 
-class JSOpAdd(JSOperator):
+class TSOpAdd(TSOperator):
     def emit(self):
         yield self.part('+')
 
 
-class JSOpSub(JSOperator):
+class TSOpSub(TSOperator):
     def emit(self):
         yield self.part('-')
 
 
-class JSOpMult(JSOperator):
+class TSOpMult(TSOperator):
     def emit(self):
         yield self.part('*')
 
 
-class JSOpDiv(JSOperator):
+class TSOpDiv(TSOperator):
     def emit(self):
         yield self.part('/')
 
 
-class JSOpMod(JSOperator):
+class TSOpMod(TSOperator):
     def emit(self):
         yield self.part('%')
 
 
-class JSOpRShift(JSOperator):
+class TSOpRShift(TSOperator):
     def emit(self):
         yield self.part('>>')
 
 
-class JSOpLShift(JSOperator):
+class TSOpLShift(TSOperator):
     def emit(self):
         yield self.part('<<')
 
 
-class JSOpBitXor(JSOperator):
+class TSOpBitXor(TSOperator):
     def emit(self):
         yield self.part('^')
 
 
-class JSOpBitAnd(JSOperator):
+class TSOpBitAnd(TSOperator):
     def emit(self):
         yield self.part('&')
 
 
-class JSOpBitOr(JSOperator):
+class TSOpBitOr(TSOperator):
     def emit(self):
         yield self.part('|')
 
 
-class JSOpInvert(JSLeftSideUnaryOp):
+class TSOpInvert(TSLeftSideUnaryOp):
     def emit(self):
         yield self.part('~')
 
 
-class JSOpUSub(JSLeftSideUnaryOp):
+class TSOpUSub(TSLeftSideUnaryOp):
     def emit(self):
         yield self.part('-')
 
 
-class JSOpStrongEq(JSOperator):
+class TSOpStrongEq(TSOperator):
     def emit(self):
         yield self.part('===')
 
 
-class JSOpStrongNotEq(JSOperator):
+class TSOpStrongNotEq(TSOperator):
     def emit(self):
         yield self.part('!==')
 
 
-class JSOpLt(JSOperator):
+class TSOpLt(TSOperator):
     def emit(self):
         yield self.part('<')
 
 
-class JSOpLtE(JSOperator):
+class TSOpLtE(TSOperator):
     def emit(self):
         yield self.part('<=')
 
 
-class JSOpGt(JSOperator):
+class TSOpGt(TSOperator):
     def emit(self):
         yield self.part('>')
 
 
-class JSOpGtE(JSOperator):
+class TSOpGtE(TSOperator):
     def emit(self):
         yield self.part('>=')
 
 
-JSIs = JSOpStrongEq
+TSIs = TSOpStrongEq
 
 
-class JSRest(JSOperator):
+class TSRest(TSOperator):
     def emit(self, value):
         yield self.part('...', value)

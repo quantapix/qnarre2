@@ -1,71 +1,71 @@
 import re
 
-from .base import JSNode
-from .operators import JSLeftSideUnaryOp
+from .base import TSNode
+from .operators import TSLeftSideUnaryOp
 from ..processor.util import delimited, delimited_multi_line
 from .util import _check_keywords
 
 
-class JSExpression(JSNode):
+class TSExpression(TSNode):
     def emit(self, expr):
         yield self.part('(', expr, ')')
 
 
-class JSAssignmentExpression(JSNode):
+class TSAssignmentExpression(TSNode):
     def emit(self, left, right):
         yield self.part(left, ' = ', right)
 
 
-class JSIfExp(JSNode):
+class TSIfExp(TSNode):
     def emit(self, test, body, orelse):
         yield self.part('(', test, ' ? ', body, ' : ', orelse, ')')
 
 
-class JSCall(JSNode):
+class TSCall(TSNode):
 
     operator = ''
 
-    def emit(self, func, args, kwargs=None, operator=None):
+    def emit(self, func, args, kw=None, operator=None):
         operator = operator or self.operator
-        kwargs = kwargs or []
+        kw = kw or []
         arr = [operator, func, '(']
         fargs = args.copy()
-        if kwargs:
-            fargs.append(kwargs)
+        if kw:
+            fargs.append(kw)
         delimited(', ', fargs, dest=arr)
         arr.append(')')
         yield self.part(*arr)
 
 
-class JSNewCall(JSCall):
+class TSNewCall(TSCall):
 
     operator = 'new '
 
 
-class JSAttribute(JSNode):
+class TSAttribute(TSNode):
     def emit(self, obj, s):
         assert re.search(r'^[a-zA-Z$_][a-zA-Z$_0-9]*$', s)
         _check_keywords(self, s)
         yield self.part(obj, '.', s, name=True)
 
 
-class JSSubscript(JSNode):
+class TSSubscript(TSNode):
     def emit(self, obj, key):
         yield self.part(self.part(obj, name=True), '[',
                         self.part(key, name=True), ']')
 
 
-class JSKeySubscript(JSNode):
+class TSKeySubscript(TSNode):
     def emit(self, key):
         yield self.part('[', self.part(key), ']')
 
 
-class JSBinOp(JSNode):
+class TSBinOp(TSNode):
     def emit(self, left, op, right):
         yield self.part('(', left, ' ', op, ' ', right, ')')
 
 
-class JSMultipleArgsOp(JSNode):
+class TSMultipleArgsOp(TSNode):
     def emit(self, binop, conj, *args):
         assert len(args) > 1
         parts = []
@@ -80,35 +80,35 @@ class JSMultipleArgsOp(JSNode):
         yield self.part('(', *parts, ')')
 
 
-class JSUnaryOp(JSNode):
+class TSUnaryOp(TSNode):
     def emit(self, op, right):
-        assert isinstance(op, JSLeftSideUnaryOp)
+        assert isinstance(op, TSLeftSideUnaryOp)
         yield self.part('(', op, ' ', right, ')')
 
 
-class JSName(JSNode):
+class TSName(TSNode):
     def emit(self, name):
         _check_keywords(self, name)
         yield self.part(name, name=True)
 
 
-class JSTaggedTemplate(JSNode):
+class TSTaggedTemplate(TSNode):
     def emit(self, value, func):
         text = list(delimited_multi_line(self, value, '`'))
         func = list(func.serialize())
         yield self.part(*func, *text)
 
 
-class JSTemplateLiteral(JSNode):
+class TSTemplateLiteral(TSNode):
     def emit(self, value):
         yield from delimited_multi_line(self, value, '`')
 
 
-class JSSuper(JSNode):
+class TSSuper(TSNode):
     def emit(self):
         yield self.part('super')
 
 
-class JSThis(JSNode):
+class TSThis(TSNode):
     def emit(self):
         yield self.part('this')

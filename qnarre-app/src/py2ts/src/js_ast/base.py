@@ -3,19 +3,14 @@ import inspect
 from ..processor.util import Line, Part
 
 
-class TargetNode:
-    """This is the common ancestor of all the JS AST nodes."""
-    """The associated Python AST node"""
+class Target:
     py_node = None
-    """The Transformer instance which is managing this one"""
     transformer = None
-    """The final arguments passed to the emit method defined on the
-    subclasses"""
     transformed_args = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kw):
         self.args = args
-        self.options = kwargs
+        self.kw = kw
 
     def __str__(self):
         return ''.join(str(x) for x in self.serialize())
@@ -29,7 +24,7 @@ class TargetNode:
 
     def _expand(self, items):
         for i in items:
-            if isinstance(i, TargetNode):
+            if isinstance(i, Target):
                 yield from i.serialize()
             else:
                 yield i
@@ -38,8 +33,8 @@ class TargetNode:
         pass
 
     @classmethod
-    def final(cls, *transformed_args, **options):
-        tn = cls(**options)
+    def final(cls, *transformed_args, **kw):
+        tn = cls(**kw)
         tn.transformed_args = transformed_args
         return tn
 
@@ -69,13 +64,13 @@ class TargetNode:
         return result
 
     def serialize(self):
-        for a in self.emit(*self.transformed_args, **self.options):
+        for a in self.emit(*self.transformed_args, **self.kw):
             yield from a.serialize()
 
 
-class JSNode(TargetNode):
+class TSNode(Target):
     pass
 
 
-class JSStatement(JSNode):
+class TSStatement(TSNode):
     pass

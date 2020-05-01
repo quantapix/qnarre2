@@ -10,7 +10,7 @@ import dukpy
 
 from .processor.transforming import Transformer
 from .processor.util import Block
-from .js_ast import JSStatements
+from .js_ast import TSStatements
 from . import transformations
 
 log = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ def translates(src_text,
     that will be inserted into the output source map. The `src_offset` is the
     ``(line_offset, col_offset)`` tuple of the fragment and it's used to
     relocate the map segments. `map_filename` is the intended file name for
-    the output map file that will be added as pragma comment to the output JS.
+    the output map file that will be added as pragma comment to the output TS.
 
     Setting `body_only` to a true value will change the evaluation behavior to
     translate only the body of the first statement.
@@ -151,7 +151,7 @@ def translates(src_text,
     else:
         dedented = src_text
     t = Transformer(transformations,
-                    JSStatements,
+                    TSStatements,
                     es6=enable_es6,
                     stage3=enable_stage3)
     pyast = ast.parse(dedented)
@@ -295,8 +295,8 @@ def transpile_py_file(src_filename,
         map.write(json.dumps(es5_src_map))
 
 
-def evaljs(js_text, load_es6_polyfill=False, **kwargs):
-    """Evaluate JS code, like ``dukpy.evaljs()``, optionally loading the es6
+def evaljs(js_text, load_es6_polyfill=False, **kw):
+    """Evaluate TS code, like ``dukpy.evaljs()``, optionally loading the es6
     polyfill before the actual code.
     """
     if isinstance(js_text, (str, bytes, bytearray)):
@@ -307,26 +307,22 @@ def evaljs(js_text, load_es6_polyfill=False, **kwargs):
         with open(BABEL_POLYFILL, 'r', encoding='utf-8') as babel_poly:
             js_text = (['global = this; this.console = {log: print};\n'] +
                        [babel_poly.read()] + js_text)
-    return dukpy.evaljs(js_text, **kwargs)
+    return dukpy.evaljs(js_text, **kw)
 
 
-def eval_object(py_obj,
-                append=None,
-                body_only=False,
-                ret_code=False,
-                **kwargs):
+def eval_object(py_obj, append=None, body_only=False, ret_code=False, **kw):
     js_text, _ = translate_object(py_obj, body_only)
     if append:
         js_text += append
-    res = dukpy.evaljs(js_text, **kwargs)
+    res = dukpy.evaljs(js_text, **kw)
     if ret_code:
         res = (res, js_text)
     return res
 
 
-def evals(py_text, body_only=False, ret_code=False, **kwargs):
+def evals(py_text, body_only=False, ret_code=False, **kw):
     js_text, _ = translates(py_text, body_only=body_only)
-    res = dukpy.evaljs(js_text, **kwargs)
+    res = dukpy.evaljs(js_text, **kw)
     if ret_code:
         res = (res, js_text)
     return res
@@ -337,13 +333,13 @@ def eval_object_es6(py_obj,
                     body_only=False,
                     ret_code=False,
                     enable_stage3=False,
-                    **kwargs):
+                    **kw):
     es5_text, _ = transpile_object(py_obj,
                                    body_only,
                                    enable_stage3=enable_stage3)
     if append:
         es5_text += '\n' + append
-    res = evaljs(es5_text, load_es6_polyfill=True, **kwargs)
+    res = evaljs(es5_text, load_es6_polyfill=True, **kw)
     if ret_code:
         res = (res, es5_text)
     return res
@@ -353,38 +349,38 @@ def evals_es6(py_text,
               body_only=False,
               ret_code=False,
               enable_stage3=False,
-              **kwargs):
+              **kw):
     es5_text, _ = transpile_pys(py_text,
                                 body_only=body_only,
                                 enable_stage3=enable_stage3)
-    res = evaljs(es5_text, load_es6_polyfill=True, **kwargs)
+    res = evaljs(es5_text, load_es6_polyfill=True, **kw)
     if ret_code:
         res = (res, es5_text)
     return res
 
 
-BABEL_JS_CTX = None
+BABEL_TS_CTX = None
 
 
-def babel_compile(source, reuse_js_ctx=True, **kwargs):
+def babel_compile(source, reuse_js_ctx=True, **kw):
     """Compile the given `source` from ES6 to ES5 usin Babeljs."""
-    global BABEL_JS_CTX
-    presets = kwargs.get('presets')
+    global BABEL_TS_CTX
+    presets = kw.get('presets')
     if not presets:
-        kwargs['presets'] = ["es2015"]
+        kw['presets'] = ["es2015"]
     trans_code = (
         'var bres, res;'
         'bres = Babel.transform(dukpy.es6code, dukpy.babel_options);',
         'res = {map: bres.map, code: bres.code};')
-    if reuse_js_ctx and BABEL_JS_CTX:
-        result = BABEL_JS_CTX.evaljs(trans_code,
+    if reuse_js_ctx and BABEL_TS_CTX:
+        result = BABEL_TS_CTX.evaljs(trans_code,
                                      es6code=source,
-                                     babel_options=kwargs)
+                                     babel_options=kw)
     else:
         with open(BABEL_COMPILER, 'r', encoding='utf-8') as babel_js:
             if reuse_js_ctx:
-                BABEL_JS_CTX = dukpy.JSInterpreter()
-                eval_fn = BABEL_JS_CTX.evaljs
+                BABEL_TS_CTX = dukpy.TSInterpreter()
+                eval_fn = BABEL_TS_CTX.evaljs
             else:
                 eval_fn = dukpy.evaljs
             result = eval_fn(
@@ -392,5 +388,5 @@ def babel_compile(source, reuse_js_ctx=True, **kwargs):
                  'bres = Babel.transform(dukpy.es6code, dukpy.babel_options);',
                  'res = {map: bres.map, code: bres.code};'),
                 es6code=source,
-                babel_options=kwargs)
+                babel_options=kw)
     return result

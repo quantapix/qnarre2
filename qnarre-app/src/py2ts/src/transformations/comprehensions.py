@@ -9,24 +9,25 @@
 import ast
 
 from ..js_ast import (
-    JSAttribute,
-    JSAugAssignStatement,
-    JSBinOp,
-    JSCall,
-    JSExpressionStatement,
-    JSForStatement,
-    JSFunction,
-    JSIfStatement,
-    JSList,
-    JSName,
-    JSNum,
-    JSOpAdd,
-    JSOpLt,
-    JSReturnStatement,
-    JSSubscript,
-    JSThis,
-    JSVarStatement,
+    TSAttribute,
+    TSAugAssignStatement,
+    TSBinOp,
+    TSCall,
+    TSExpressionStatement,
+    TSForStatement,
+    TSFunction,
+    TSIfStatement,
+    TSList,
+    TSName,
+    TSNum,
+    TSOpAdd,
+    TSOpLt,
+    TSReturnStatement,
+    TSSubscript,
+    TSThis,
+    TSVarStatement,
 )
+
 
 #### ListComp
 # Transform
@@ -55,22 +56,15 @@ def ListComp(t, x):
 
     # Let's contruct the result from the inside out:
     #<pre>__new.push(EXPR);</pre>
-    push = JSExpressionStatement(
-            JSCall(
-                JSAttribute(
-                    JSName(__new),
-                    'push'),
-                [EXPR]))
+    push = TSExpressionStatement(
+        TSCall(TSAttribute(TSName(__new), 'push'), [EXPR]))
 
     # If needed, we'll wrap that with:
     #<pre>if (CONDITION) {
     #    <i>...push...</i>
     #}</pre>
     if CONDITION:
-        pushIfNeeded = JSIfStatement(
-                CONDITION,
-                push,
-                None)
+        pushIfNeeded = TSIfStatement(CONDITION, push, None)
     else:
         pushIfNeeded = push
 
@@ -82,21 +76,15 @@ def ListComp(t, x):
     #    var NAME = __old[__i];
     #    <i>...pushIfNeeded...</i>
     #}</pre>
-    forloop = JSForStatement(
-                    JSVarStatement(
-                        [__i, __bound],
-                        [0, JSAttribute(
-                                JSName(__old),
-                                'length')]),
-                    JSBinOp(JSName(__i), JSOpLt(), JSName(__bound)),
-                    JSAugAssignStatement(JSName(__i), JSOpAdd(), JSNum(1)),
-                    [
-                        JSVarStatement(
-                            [NAME.id],
-                            [JSSubscript(
-                                JSName(__old),
-                                JSName(__i))]),
-                        pushIfNeeded])
+    forloop = TSForStatement(
+        TSVarStatement([__i, __bound],
+                       [0, TSAttribute(TSName(__old), 'length')]),
+        TSBinOp(TSName(__i), TSOpLt(), TSName(__bound)),
+        TSAugAssignStatement(TSName(__i), TSOpAdd(), TSNum(1)), [
+            TSVarStatement([NAME.id],
+                           [TSSubscript(TSName(__old), TSName(__i))]),
+            pushIfNeeded
+        ])
 
     # Wrap with:
     #<pre>function() {
@@ -104,23 +92,13 @@ def ListComp(t, x):
     #    <i>...forloop...</i>
     #    return __new;
     #}
-    func = JSFunction(
-        None,
-        [],
-        [
-            JSVarStatement(
-                [__new, __old],
-                [JSList([]), LIST]),
-            forloop,
-            JSReturnStatement(
-                JSName(__new))])
+    func = TSFunction(None, [], [
+        TSVarStatement([__new, __old], [TSList([]), LIST]), forloop,
+        TSReturnStatement(TSName(__new))
+    ])
 
     # And finally:
     #<pre>((<i>...func...</i>).call(this))</pre>
-    invoked = JSCall(
-            JSAttribute(
-                func,
-                'call'),
-            [JSThis()])
+    invoked = TSCall(TSAttribute(func, 'call'), [TSThis()])
 
     return invoked

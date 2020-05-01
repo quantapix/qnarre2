@@ -16,7 +16,7 @@ class UnsupportedPythonError(Exception):
 
 
 parser = argparse.ArgumentParser(
-    description="A Python 3.5+ to ES6 JavaScript compiler", prog='pj')
+    description="A Python 3.5+ to ES6 TypeScript compiler", prog='pj')
 parser.add_argument('files',
                     metavar='file',
                     type=str,
@@ -39,7 +39,7 @@ parser.add_argument('-5',
                     '--es5',
                     dest='es5',
                     action='store_true',
-                    help="Also transpile to ES5 using BabelJS.")
+                    help="Also transpile to ES5 using BabelTS.")
 parser.add_argument('--transform-runtime',
                     action='store_true',
                     dest='truntime',
@@ -70,7 +70,7 @@ parser.add_argument(
     " embedded interpreter and return the last result. This will "
     "convert the input string with all the extensions enabled "
     "(comparable to adding the '-5' option) and so it will take"
-    " some time because of BabelJS load times.")
+    " some time because of BabelTS load times.")
 parser.add_argument('--dump-ast',
                     action='store_true',
                     help="Dump the Python AST. You need to have the package"
@@ -79,7 +79,7 @@ parser.add_argument(
     '--inline-map',
     action='store_true',
     help="Save the source-map inline instead of in an additional"
-    " file, useful when transpiling with BabelJS externally "
+    " file, useful when transpiling with BabelTS externally "
     "but without access to the cli. Ignored "
     "when transpiling.")
 parser.add_argument('--source-name',
@@ -93,13 +93,13 @@ class Reporter:
         self.fout = fout or sys.stdout
         self.ferr = ferr or sys.stderr
 
-    def print_err(self, *args, **kwargs):
-        kwargs['file'] = self.ferr
-        print(*args, **kwargs)
+    def print_err(self, *args, **kw):
+        kw['file'] = self.ferr
+        print(*args, **kw)
 
-    def print(self, *args, **kwargs):
-        kwargs['file'] = self.fout
-        print(*args, **kwargs)
+    def print(self, *args, **kw):
+        kw['file'] = self.fout
+        print(*args, **kw)
 
 
 def transform(src_fname,
@@ -150,7 +150,7 @@ def transform_string(input,
 
 def check_interpreter_supported():
     if sys.version_info < (3, 5):
-        raise UnsupportedPythonError('JavaScripthon needs at least'
+        raise UnsupportedPythonError('TypeScripthon needs at least'
                                      ' Python 3.5 to run')
 
 

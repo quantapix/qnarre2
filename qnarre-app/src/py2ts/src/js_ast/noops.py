@@ -1,13 +1,13 @@
-from .base import JSNode
+from .base import TSNode
 from ..processor.util import delimited_multi_line
 
 
-class JSPass(JSNode):
+class TSPass(TSNode):
     def emit(self):
         return []
 
 
-class JSCommentBlock(JSNode):
+class TSCommentBlock(TSNode):
     def emit(self, text):
         assert text.find('*/') == -1
         yield from self.lines(

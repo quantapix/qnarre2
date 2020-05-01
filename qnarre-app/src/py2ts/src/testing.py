@@ -3,7 +3,7 @@ import inspect
 import textwrap
 
 from . import transformations
-from .js_ast import JSStatements
+from .js_ast import TSStatements
 from .processor.transforming import Transformer
 
 
@@ -27,12 +27,12 @@ def ast_dump_object(obj, first_stmt_only=False):
 
 
 def ast_object_to_js(obj, es6=False):
-    """Convert a Python object to JS using pj, optionally transforming
+    """Convert a Python object to TS using pj, optionally transforming
     with ES6 features enabled.
     """
     src = inspect.getsource(obj)
     node = ast.parse(textwrap.dedent(src))
-    t = Transformer(transformations, JSStatements, es6=es6)
+    t = Transformer(transformations, TSStatements, es6=es6)
     return t.transform_code(node)
 
 

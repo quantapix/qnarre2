@@ -1,8 +1,8 @@
-from .blocks import JSBlock
-from .functions import JSFunction
+from .blocks import TSBlock
+from .functions import TSFunction
 
 
-class JSClass(JSBlock):
+class TSClass(TSBlock):
     def emit(self, name, super_, methods):
         line = ['class ', name]
         if super_ is not None:
@@ -13,45 +13,44 @@ class JSClass(JSBlock):
         yield self.line('}')
 
 
-class JSClassMember(JSFunction):
-    def with_kind(self, kind, args, body, acc=None, kwargs=None, static=False):
+class TSClassMember(TSFunction):
+    def with_kind(self, kind, args, body, acc=None, kw=None, static=False):
         if static:
             line = ['static ', kind]
         else:
             line = [kind]
-        line += self.fargs(args, acc, kwargs)
+        line += self.fargs(args, acc, kw)
         line += ['{']
         yield self.line(line)
         yield from self.lines(body, indent=True, delim=True)
         yield self.line('}')
 
 
-class JSClassConstructor(JSClassMember):
-    def emit(self, args, body, acc=None, kwargs=None):
-        yield from self.with_kind('constructor', args, body, acc, kwargs)
+class TSClassConstructor(TSClassMember):
+    def emit(self, args, body, acc=None, kw=None):
+        yield from self.with_kind('constructor', args, body, acc, kw)
 
 
-class JSMethod(JSClassMember):
-    def emit(self, name, args, body, acc=None, kwargs=None, static=False):
-        yield from self.with_kind(name, args, body, acc, kwargs, static)
+class TSMethod(TSClassMember):
+    def emit(self, name, args, body, acc=None, kw=None, static=False):
+        yield from self.with_kind(name, args, body, acc, kw, static)
 
 
-class JSAsyncMethod(JSClassMember):
-    def emit(self, name, args, body, acc=None, kwargs=None, static=False):
-        yield from self.with_kind('async ' + name, args, body, acc, kwargs,
-                                  static)
+class TSAsyncMethod(TSClassMember):
+    def emit(self, name, args, body, acc=None, kw=None, static=False):
+        yield from self.with_kind('async ' + name, args, body, acc, kw, static)
 
 
-class JSGenMethod(JSClassMember):
-    def emit(self, name, args, body, acc=None, kwargs=None, static=False):
-        yield from self.with_kind('* ' + name, args, body, acc, kwargs, static)
+class TSGenMethod(TSClassMember):
+    def emit(self, name, args, body, acc=None, kw=None, static=False):
+        yield from self.with_kind('* ' + name, args, body, acc, kw, static)
 
 
-class JSGetter(JSClassMember):
+class TSGetter(TSClassMember):
     def emit(self, name, body, static=False):
         yield from self.with_kind('get ' + name, [], body, static=static)
 
 
-class JSSetter(JSClassMember):
+class TSSetter(TSClassMember):
     def emit(self, name, arg, body, static=False):
         yield from self.with_kind('set ' + name, [arg], body, static=static)

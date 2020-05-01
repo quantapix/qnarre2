@@ -1,29 +1,29 @@
-from .blocks import JSBlock
+from .blocks import TSBlock
 from ..processor.util import delimited
 
 
-class JSFunction(JSBlock):
+class TSFunction(TSBlock):
 
     begin = 'function '
     bet_args_n_body = ''
 
-    def fargs(self, args, acc=None, kwargs=None):
+    def fargs(self, args, acc=None, kw=None):
         result = []
         result.append('(')
         js_args = args.copy()
-        if kwargs:
-            js_args.append(self.part('{', *delimited(', ', kwargs), '}={}'))
+        if kw:
+            js_args.append(self.part('{', *delimited(', ', kw), '}={}'))
         if acc:
             js_args.append(acc)
         delimited(', ', js_args, dest=result)
         result.append(') ')
         return result
 
-    def emit(self, name, args, body, acc=None, kwargs=None):
+    def emit(self, name, args, body, acc=None, kw=None):
         line = [self.begin]
         if name is not None:
             line.append(name)
-        line += self.fargs(args, acc, kwargs)
+        line += self.fargs(args, acc, kw)
         line += self.bet_args_n_body
         line += ['{']
         yield self.line(line, name=str(name))
@@ -31,28 +31,28 @@ class JSFunction(JSBlock):
         yield self.line('}')
 
 
-class JSAsyncFunction(JSFunction):
+class TSAsyncFunction(TSFunction):
 
     begin = 'async function '
 
 
-class JSGenFunction(JSFunction):
+class TSGenFunction(TSFunction):
 
     begin = 'function* '
 
 
-class JSArrowFunction(JSFunction):
+class TSArrowFunction(TSFunction):
 
     begin = ''
     bet_args_n_body = '=> '
 
-    def emit(self, name, args, body, acc=None, kwargs=None):
+    def emit(self, name, args, body, acc=None, kw=None):
         if name:
             # TODO: split this into an assignment + arrow function
             line = [name, ' = ']
         else:
             line = []
-        line += self.fargs(args, acc, kwargs)
+        line += self.fargs(args, acc, kw)
         line += self.bet_args_n_body
         line += ['{']
         yield self.line(line)

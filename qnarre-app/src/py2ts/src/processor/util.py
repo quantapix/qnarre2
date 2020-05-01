@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- transformation utilities
-# :Created:  ven 26 feb 2016 15:17:49 CET
-# :Authors:  Andrew Schaaf <andrew@andrewschaaf.com>,
-#            Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
 import ast
 import inspect
 import re
@@ -182,12 +174,14 @@ def rfilter(r, it, invert=False):
 
 
 class OutputSrc:
-
     def __init__(self, node, name=None):
         self.node = node
         self.src_name = name
 
-    def _gen_mapping(self, text, src_line=None, src_offset=None,
+    def _gen_mapping(self,
+                     text,
+                     src_line=None,
+                     src_offset=None,
                      dst_offset=None):
         """Generate a single mapping. `dst_line` is absent from signature
         because the part hasn't this information, but is present in the
@@ -222,15 +216,13 @@ class OutputSrc:
                                     ast.ClassDef)) and py_node.decorator_list:
                 result = (py_node.decorator_list[-1].lineno + 1, offset)
             else:
-                result = (getattr(py_node, 'lineno', None),
-                          offset)
+                result = (getattr(py_node, 'lineno', None), offset)
         else:
             result = (None, None)
         return result
 
 
 class Line(OutputSrc):
-
     def __init__(self, node, item, indent=False, delim=False, name=None):
         super().__init__(node, name)
         self.indent = int(indent)
@@ -267,12 +259,11 @@ class Line(OutputSrc):
                 yield m
 
     def __repr__(self):
-        return '<%s indent: %d, "%s">' % (self.__class__.__name__,
-                                          self.indent, str(self))
+        return '<%s indent: %d, "%s">' % (self.__class__.__name__, self.indent,
+                                          str(self))
 
 
 class Part(OutputSrc):
-
     def __init__(self, node, *items, name=None):
         super().__init__(node, name)
         self.items = []
@@ -338,8 +329,7 @@ class Part(OutputSrc):
             yield m
 
     def __repr__(self):
-        return '<%s, "%s">' % (self.__class__.__name__,
-                               str(self))
+        return '<%s, "%s">' % (self.__class__.__name__, str(self))
 
 
 def linecounter(iterable, start=1):
@@ -350,7 +340,6 @@ def linecounter(iterable, start=1):
 
 
 class Block(OutputSrc):
-
     def __init__(self, node):
         super().__init__(None)
         self.lines = list(node.serialize())
@@ -370,7 +359,10 @@ class Block(OutputSrc):
     def read(self):
         return ''.join(str(l) for l in self.lines)
 
-    def sourcemap(self, source, src_filename, src_offset=None,
+    def sourcemap(self,
+                  source,
+                  src_filename,
+                  src_offset=None,
                   dst_offset=None):
         Token = sourcemaps.Token
         tokens = []
@@ -379,9 +371,7 @@ class Block(OutputSrc):
                           m['src_line'] - 1, m['src_offset'], m['name'], m)
             tokens.append(token)
 
-        src_map = sourcemaps.SourceMap(
-            sources_content={src_filename: source}
-        )
+        src_map = sourcemaps.SourceMap(sources_content={src_filename: source})
         for t in tokens:
             src_map.add_token(t)
         return src_map

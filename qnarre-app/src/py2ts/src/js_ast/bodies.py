@@ -1,11 +1,11 @@
 import itertools
 
-from .base import JSNode
-from .noops import JSCommentBlock
-from .statements import JSImport, JSVarStatement
+from .base import TSNode
+from .noops import TSCommentBlock
+from .statements import TSImport, TSVarStatement
 
 
-class JSStatements(JSNode):
+class TSStatements(TSNode):
     def __iadd__(self, other):
         self.transformed_args.extend(other.transformed_args)
         return self
@@ -16,7 +16,7 @@ class JSStatements(JSNode):
 
     def squash(self, args):
         for a in args:
-            if isinstance(a, JSStatements):
+            if isinstance(a, TSStatements):
                 yield from a.transformed_args
             else:
                 yield a
@@ -28,9 +28,9 @@ class JSStatements(JSNode):
         vars_ = []
         others = []
         for a in args:
-            if isinstance(a, JSImport):
+            if isinstance(a, TSImport):
                 imports.append(a)
-            elif isinstance(a, JSVarStatement) and \
+            elif isinstance(a, TSVarStatement) and \
                  not a.options.get('unmovable', False):
                 vars_.append(a)
             else:
@@ -41,7 +41,7 @@ class JSStatements(JSNode):
         # if the others start with some comments, put those at the top
         start_trigger = False
         for s in others:
-            if isinstance(s, JSCommentBlock) and not start_trigger:
+            if isinstance(s, TSCommentBlock) and not start_trigger:
                 others_first.append(s)
             else:
                 others_after.append(s)

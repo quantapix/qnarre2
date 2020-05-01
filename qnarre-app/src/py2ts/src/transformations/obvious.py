@@ -13,133 +13,135 @@ from functools import reduce
 from . import _normalize_name, _normalize_dict_keys
 
 from ..js_ast import (
-    JSAssignmentExpression,
-    JSArrowFunction,
-    JSAttribute,
-    JSAugAssignStatement,
-    JSAwait,
-    JSBinOp,
-    JSBreakStatement,
-    JSCall,
-    JSContinueStatement,
-    JSDeleteStatement,
-    JSDict,
-    JSExport,
-    JSExpressionStatement,
-    JSFalse,
-    JSIfExp,
-    JSIfStatement,
-    JSList,
-    JSName,
-    JSNull,
-    JSNum,
-    JSOpAdd,
-    JSOpAnd,
-    JSOpBitAnd,
-    JSOpBitOr,
-    JSOpBitXor,
-    JSOpDiv,
-    JSOpGt,
-    JSOpGtE,
-    JSOpIn,
-    JSOpInvert,
-    JSOpLShift,
-    JSOpLt,
-    JSOpLtE,
-    JSOpMod,
-    JSOpMult,
-    JSOpNot,
-    JSOpOr,
-    JSOpRShift,
-    JSOpSub,
-    JSOpUSub,
-    JSPass,
-    JSRest,
-    JSReturnStatement,
-    JSStatements,
-    JSStr,
-    JSSubscript,
-    JSTemplateLiteral,
-    JSTrue,
-    JSUnaryOp,
-    JSWhileStatement,
-    JSYield,
-    JSYieldStar,
+    TSAssignmentExpression,
+    TSArrowFunction,
+    TSAttribute,
+    TSAugAssignStatement,
+    TSAwait,
+    TSBinOp,
+    TSBreakStatement,
+    TSCall,
+    TSContinueStatement,
+    TSDeleteStatement,
+    TSDict,
+    TSExport,
+    TSExpressionStatement,
+    TSFalse,
+    TSIfExp,
+    TSIfStatement,
+    TSList,
+    TSName,
+    TSNull,
+    TSNum,
+    TSOpAdd,
+    TSOpAnd,
+    TSOpBitAnd,
+    TSOpBitOr,
+    TSOpBitXor,
+    TSOpDiv,
+    TSOpGt,
+    TSOpGtE,
+    TSOpIn,
+    TSOpInvert,
+    TSOpLShift,
+    TSOpLt,
+    TSOpLtE,
+    TSOpMod,
+    TSOpMult,
+    TSOpNot,
+    TSOpOr,
+    TSOpRShift,
+    TSOpSub,
+    TSOpUSub,
+    TSPass,
+    TSRest,
+    TSReturnStatement,
+    TSStatements,
+    TSStr,
+    TSSubscript,
+    TSTemplateLiteral,
+    TSTrue,
+    TSUnaryOp,
+    TSWhileStatement,
+    TSYield,
+    TSYieldStar,
 )
-
 
 #### Statements
 
 
 def Assign_default(t, x):
-    y = JSAssignmentExpression(x.targets[-1], x.value)
+    y = TSAssignmentExpression(x.targets[-1], x.value)
     for i in range(len(x.targets) - 1):
-        y = JSAssignmentExpression(x.targets[-(2 + i)], y)
-    return JSExpressionStatement(y)
+        y = TSAssignmentExpression(x.targets[-(2 + i)], y)
+    return TSExpressionStatement(y)
 
 
 # Python 3.6+ typehints are accepted and ignored
 def AnnAssign(t, x):
-    return JSExpressionStatement(JSAssignmentExpression(x.target, x.value))
+    return TSExpressionStatement(TSAssignmentExpression(x.target, x.value))
+
 
 def Assign_all(t, x):
     if len(x.targets) == 1 and isinstance(x.targets[0], ast.Name) and \
        x.targets[0].id == '__all__':
         t.es6_guard(x, "'__all__' assignment requires ES6")
-        t.unsupported(x, not isinstance(x.value, (ast.Tuple, ast.List)),
-                      "Please define a '__default__' member for default"
-                      " export.")
+        t.unsupported(
+            x, not isinstance(x.value, (ast.Tuple, ast.List)),
+            "Please define a '__default__' member for default"
+            " export.")
         elements = x.value.elts
-        return JSExport([el.s for el in elements
-                         if not t.unsupported(el, not isinstance(el, ast.Str),
-                         'Must be a string literal.')])
+        return TSExport([
+            el.s for el in elements if not t.unsupported(
+                el, not isinstance(el, ast.Str), 'Must be a string literal.')
+        ])
 
 
 def AugAssign(t, x):
-    return JSAugAssignStatement(x.target, x.op, x.value)
+    return TSAugAssignStatement(x.target, x.op, x.value)
 
 
 def If(t, x):
-    return JSIfStatement(x.test, x.body, x.orelse)
+    return TSIfStatement(x.test, x.body, x.orelse)
 
 
 def While(t, x):
     assert not x.orelse
-    return JSWhileStatement(x.test, x.body)
+    return TSWhileStatement(x.test, x.body)
 
 
 def Break(t, x):
-    return JSBreakStatement()
+    return TSBreakStatement()
 
 
 def Continue(t, x):
-    return JSContinueStatement()
+    return TSContinueStatement()
 
 
 def Pass(t, x):
-    return JSPass()
+    return TSPass()
 
 
 def Return(t, x):
     # x.value is None for blank return statements
-    return JSReturnStatement(x.value)
+    return TSReturnStatement(x.value)
 
 
 def Delete(t, x):
     js = []
     for t in x.targets:
-        jd = JSDeleteStatement(t)
+        jd = TSDeleteStatement(t)
         if len(x.targets) == 1:
             jd.py_node = x
         else:
             jd.py_node = t
         js.append(jd)
-    return JSStatements(*js)
+    return TSStatements(*js)
 
 
 def Await(t, x):
     t.stage3_guard(x, "Async stuff requires 'stage3' to be enabled")
-    return JSAwait(x.value)
+    return TSAwait(x.value)
 
 
 #### Expressions
@@ -147,32 +149,31 @@ def Await(t, x):
 
 def Expr_default(t, x):
     # See [pj.transformations.special](special.py) for special cases
-    return JSExpressionStatement(x.value)
+    return TSExpressionStatement(x.value)
 
 
 def List(t, x):
-    return JSList(x.elts)
+    return TSList(x.elts)
 
 
 def Tuple(t, x):
-    return JSList(x.elts)
+    return TSList(x.elts)
 
 
 def Dict(t, x):
-    return JSDict(_normalize_dict_keys(t, x.keys), x.values)
+    return TSDict(_normalize_dict_keys(t, x.keys), x.values)
 
 
 def Lambda(t, x):
-    assert not any(getattr(x.args, k) for k in [
-            'vararg', 'kwonlyargs', 'kwarg', 'defaults', 'kw_defaults'])
-    return JSArrowFunction(
-                None,
-                [arg.arg for arg in x.args.args],
-                [JSReturnStatement(x.body)])
+    assert not any(
+        getattr(x.args, k)
+        for k in ['vararg', 'kwonlyargs', 'kwarg', 'defaults', 'kw_defaults'])
+    return TSArrowFunction(None, [arg.arg for arg in x.args.args],
+                           [TSReturnStatement(x.body)])
 
 
 def IfExp(t, x):
-    return JSIfExp(x.test, x.body, x.orelse)
+    return TSIfExp(x.test, x.body, x.orelse)
 
 
 def Call_default(t, x, operator=None):
@@ -181,43 +182,40 @@ def Call_default(t, x, operator=None):
     kwvalues = []
     if x.keywords:
         for kw in x.keywords:
-            t.unsupported(x, kw.arg is None, "'**kwargs' syntax isn't "
+            t.unsupported(x, kw.arg is None, "'**kw' syntax isn't "
                           "supported")
             kwkeys.append(kw.arg)
             kwvalues.append(kw.value)
-        kwargs = JSDict(_normalize_dict_keys(t, kwkeys), kwvalues)
+        kw = TSDict(_normalize_dict_keys(t, kwkeys), kwvalues)
     else:
-        kwargs = None
-    return JSCall(x.func, x.args, kwargs, operator)
+        kw = None
+    return TSCall(x.func, x.args, kw, operator)
 
 
 def Attribute_default(t, x):
-    return JSAttribute(x.value, _normalize_name(str(x.attr)))
+    return TSAttribute(x.value, _normalize_name(str(x.attr)))
 
 
 def Subscript_default(t, x):
     assert isinstance(x.slice, ast.Index)
     v = x.slice.value
     if isinstance(v, ast.UnaryOp) and isinstance(v.op, ast.USub):
-        return JSSubscript(
-            JSCall(JSAttribute(x.value, 'slice'), [v]),
-            JSNum(0))
-    return JSSubscript(x.value, v)
+        return TSSubscript(TSCall(TSAttribute(x.value, 'slice'), [v]),
+                           TSNum(0))
+    return TSSubscript(x.value, v)
 
 
 def UnaryOp(t, x):
-    return JSUnaryOp(x.op, x.operand)
+    return TSUnaryOp(x.op, x.operand)
 
 
 def BinOp_default(t, x):
     # See [pj.transformations.special](special.py) for special cases
-    return JSBinOp(x.left, x.op, x.right)
+    return TSBinOp(x.left, x.op, x.right)
 
 
 def BoolOp(t, x):
-    return reduce(
-                lambda left, right: JSBinOp(left, x.op, right),
-                x.values)
+    return reduce(lambda left, right: TSBinOp(left, x.op, right), x.values)
 
 
 def Compare_default(t, x):
@@ -227,19 +225,19 @@ def Compare_default(t, x):
     exps = [x.left] + x.comparators
     bools = []
     for i in range(len(x.ops)):
-        bools.append(JSBinOp(exps[i], x.ops[i], exps[i + 1]))
-    return reduce(lambda x, y: JSBinOp(x, JSOpAnd(), y), bools)
+        bools.append(TSBinOp(exps[i], x.ops[i], exps[i + 1]))
+    return reduce(lambda x, y: TSBinOp(x, TSOpAnd(), y), bools)
 
 
 #### Atoms
 
 
 def Num(t, x):
-    return JSNum(x.n)
+    return TSNum(x.n)
 
 
 def Str(t, x):
-    return JSStr(x.s)
+    return TSStr(x.s)
 
 
 def JoinedStr(t, x):
@@ -255,29 +253,29 @@ def JoinedStr(t, x):
             t.unsupported(x, value.format_spec is not None,
                           "f-string format spec isn't supported")
             chunks.append('${%s}' % t._transform_node(value.value))
-    return JSTemplateLiteral(''.join(chunks))
+    return TSTemplateLiteral(''.join(chunks))
 
 
 def Name_default(t, x):
     # {True,False,None} are Names
     cls = {
-        'True': JSTrue,
-        'False': JSFalse,
-        'None': JSNull,
+        'True': TSTrue,
+        'False': TSFalse,
+        'None': TSNull,
     }.get(x.id)
     if cls:
         return cls()
     else:
         n = x.id
         n = _normalize_name(n)
-        return JSName(n)
+        return TSName(n)
 
 
 def NameConstant(t, x):
     cls = {
-        True: JSTrue,
-        False: JSFalse,
-        None: JSNull,
+        True: TSTrue,
+        False: TSFalse,
+        None: TSNull,
     }[x.value]
     return cls()
 
@@ -299,79 +297,79 @@ def Constant(t, x):
 
 
 def Yield(t, x):
-    return JSYield(x.value)
+    return TSYield(x.value)
 
 
 def YieldFrom(t, x):
-    return JSYieldStar(x.value)
+    return TSYieldStar(x.value)
 
 
 #### Ops
 
 
 def In(t, x):
-    return JSOpIn()
+    return TSOpIn()
 
 
 def Add(t, x):
-    return JSOpAdd()
+    return TSOpAdd()
 
 
 def Sub(t, x):
-    return JSOpSub()
+    return TSOpSub()
 
 
 def USub(t, x):
     "Handles tokens like '-1'"
-    return JSOpUSub()
+    return TSOpUSub()
 
 
 def Mult(t, x):
-    return JSOpMult()
+    return TSOpMult()
 
 
 def Div(t, x):
-    return JSOpDiv()
+    return TSOpDiv()
 
 
 def Mod(t, x):
-    return JSOpMod()
+    return TSOpMod()
 
 
 def RShift(t, x):
-    return JSOpRShift()
+    return TSOpRShift()
 
 
 def LShift(t, x):
-    return JSOpLShift()
+    return TSOpLShift()
 
 
 def BitXor(t, x):
-    return JSOpBitXor()
+    return TSOpBitXor()
 
 
 def BitAnd(t, x):
-    return JSOpBitAnd()
+    return TSOpBitAnd()
 
 
 def BitOr(t, x):
-    return JSOpBitOr()
+    return TSOpBitOr()
 
 
 def Invert(t, x):
-    return JSOpInvert()
+    return TSOpInvert()
 
 
 def And(t, x):
-    return JSOpAnd()
+    return TSOpAnd()
 
 
 def Or(t, x):
-    return JSOpOr()
+    return TSOpOr()
 
 
 def Not(t, x):
-    return JSOpNot()
+    return TSOpNot()
 
 
 # == and != are in special.py
@@ -379,20 +377,20 @@ def Not(t, x):
 
 
 def Lt(t, x):
-    return JSOpLt()
+    return TSOpLt()
 
 
 def LtE(t, x):
-    return JSOpLtE()
+    return TSOpLtE()
 
 
 def Gt(t, x):
-    return JSOpGt()
+    return TSOpGt()
 
 
 def GtE(t, x):
-    return JSOpGtE()
+    return TSOpGtE()
 
 
 def Starred(t, x):
-    return JSRest(x.value)
+    return TSRest(x.value)

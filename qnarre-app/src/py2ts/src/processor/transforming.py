@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- transformation processor
-# :Created:  ven 26 feb 2016 15:17:49 CET
-# :Authors:  Andrew Schaaf <andrew@andrewschaaf.com>,
-#            Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
 import ast
 import collections
 import contextlib
@@ -14,7 +6,7 @@ import sys
 import string
 import textwrap
 
-from ..js_ast import TargetNode
+from ..js_ast import Target
 
 from .exceptions import TransformationError, UnsupportedSyntaxError
 from .util import (rfilter, parent_of, obj_source, body_local_names,
@@ -43,13 +35,17 @@ class Transformer:
     enable_let = False
     enable_stage3 = False
     disable_srcmap = False
-
     """Used in subtransformation to remap a node on a Transformer instance
     to the AST produced by a substransform."""
     remap_to = None
 
-    def __init__(self, py_ast_module, statements_class, snippets=True,
-                 es6=False, stage3=False, remap_to=None):
+    def __init__(self,
+                 py_ast_module,
+                 statements_class,
+                 snippets=True,
+                 es6=False,
+                 stage3=False,
+                 remap_to=None):
         self.transformations = load_transformations(py_ast_module)
         self.statements_class = statements_class
         self.enable_snippets = snippets
@@ -69,16 +65,16 @@ class Transformer:
     def ctx(self):
         return self._context
 
-    def _push_ctx(self, **kwargs):
-        self._context = self._context.new_child(kwargs)
+    def _push_ctx(self, **kw):
+        self._context = self._context.new_child(kw)
 
     def _pop_ctx(self):
         self._context = self._context.parents
 
     @contextlib.contextmanager
-    def context_for(self, py_node, **kwargs):
+    def context_for(self, py_node, **kw):
         if isinstance(py_node, ast.stmt):
-            self._push_ctx(**kwargs)
+            self._push_ctx(**kw)
             yield
             self._pop_ctx()
         else:
@@ -96,8 +92,8 @@ class Transformer:
         return new
 
     def transform_code(self, ast_tree):
-        """Convert the given Python AST dump into JavaScript AST."""
-        from ..js_ast import JSVarStatement
+        """Convert the given Python AST dump into TypeScript AST."""
+        from ..js_ast import TSVarStatement
 
         top = ast.parse(ast_tree)
         body = top.body
@@ -113,8 +109,7 @@ class Transformer:
         local_vars = list(local_vars - self._globals)
         if len(local_vars) > 0:
             local_vars.sort()
-            vars = JSVarStatement(local_vars,
-                                  [None] * len(local_vars))
+            vars = TSVarStatement(local_vars, [None] * len(local_vars))
             self._finalize_target_node(vars)
             result.transformed_args.insert(0, vars)
 
@@ -179,7 +174,7 @@ class Transformer:
         self.snippets.add(func)
 
     def _transform_node(self, in_node):
-        """Transform a Python AST node to a JS AST node."""
+        """Transform a Python AST node to a TS AST node."""
 
         if isinstance(in_node, list) or isinstance(in_node, tuple):
             res = [self._transform_node(child) for child in in_node]
@@ -202,7 +197,7 @@ class Transformer:
                     raise TransformationError(
                         in_node, "No transformation for the node")
 
-        elif isinstance(in_node, TargetNode):
+        elif isinstance(in_node, Target):
             self._finalize_target_node(in_node)
             res = in_node
         else:
@@ -284,6 +279,7 @@ class Transformer:
 
 #### Helpers
 
+
 def python_ast_names():
     #LATER: do this properly
     return rfilter(r'[A-Z][a-zA-Z]+', dir(ast))
@@ -295,9 +291,8 @@ def load_transformations(py_ast_module):
     # }
     d = {}
     ast_names = list(python_ast_names())
-    filenames = rfilter(
-        r'^[^.]+\.py$',
-        os.listdir(parent_of(py_ast_module.__file__)))
+    filenames = rfilter(r'^[^.]+\.py$',
+                        os.listdir(parent_of(py_ast_module.__file__)))
     for filename in filenames:
         if filename != '__init__.py':
             mod_name = 'metapensiero.pj.transformations.%s' % \

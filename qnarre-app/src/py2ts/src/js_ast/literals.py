@@ -1,15 +1,15 @@
 import json
 
-from .base import JSNode
+from .base import TSNode
 from ..processor.util import delimited, delimited_multi_line
 
 
-class JSLiteral(JSNode):
+class TSLiteral(TSNode):
     def emit(self, text):
         yield from self.lines(delimited_multi_line(self, text, '', '', False))
 
 
-class JSDict(JSLiteral):
+class TSDict(TSLiteral):
     def emit(self, keys, values):
         arr = ['{']
         for i in range(len(keys)):
@@ -22,7 +22,7 @@ class JSDict(JSLiteral):
         yield self.part(*arr)
 
 
-class JSList(JSLiteral):
+class TSList(TSLiteral):
     def emit(self, elts):
         arr = ['[']
         delimited(', ', elts, dest=arr)
@@ -30,26 +30,26 @@ class JSList(JSLiteral):
         yield self.part(*arr)
 
 
-class JSFalse(JSLiteral):
+class TSFalse(TSLiteral):
     def emit(self):
         yield self.part('false')
 
 
-class JSNull(JSLiteral):
+class TSNull(TSLiteral):
     def emit(self):
         yield self.part('null')
 
 
-class JSNum(JSLiteral):
+class TSNum(TSLiteral):
     def emit(self, x):
         yield self.part(str(x))
 
 
-class JSStr(JSLiteral):
+class TSStr(TSLiteral):
     def emit(self, s):
         yield self.part(json.dumps(s))
 
 
-class JSTrue(JSLiteral):
+class TSTrue(TSLiteral):
     def emit(self):
         yield self.part('true')

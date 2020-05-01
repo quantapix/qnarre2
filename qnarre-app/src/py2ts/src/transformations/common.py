@@ -1,22 +1,15 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- common transformation functions
-# :Authors:  Andrew Schaaf <andrew@andrewschaaf.com>,
-#            Alberto Berti <alberto@metapensiero.it>
-#            Devan Lai <devan.lai@gmail.com>
-# :License:  GNU General Public License version 3 or later
-#
 
 import ast
 from ..js_ast import (
-    JSBinOp,
-    JSMultipleArgsOp,
-    JSName,
-    JSOpInstanceof,
-    JSOpOr,
-    JSOpStrongEq,
-    JSOpTypeof,
-    JSStr,
-    JSUnaryOp,
+    TSBinOp,
+    TSMultipleArgsOp,
+    TSName,
+    TSOpInstanceof,
+    TSOpOr,
+    TSOpStrongEq,
+    TSOpTypeof,
+    TSStr,
+    TSUnaryOp,
 )
 
 
@@ -28,22 +21,22 @@ def _build_call_isinstance(tgt, cls_or_seq):
     if isinstance(cls_or_seq, (ast.Tuple, ast.List, ast.Set)):
         classes = cls_or_seq.elts
         args = tuple((tgt, c) for c in classes)
-        return JSMultipleArgsOp(JSOpInstanceof(), JSOpOr(), *args)
+        return TSMultipleArgsOp(TSOpInstanceof(), TSOpOr(), *args)
     else:
         cls = cls_or_seq
         if isinstance(cls, ast.Name) and cls.id == 'str':
-            return JSMultipleArgsOp(
-                (JSOpStrongEq(), JSOpInstanceof()),
-                JSOpOr(),
-                (JSUnaryOp(JSOpTypeof(), tgt), JSStr('string')),
-                (tgt, JSName('String'))
+            return TSMultipleArgsOp(
+                (TSOpStrongEq(), TSOpInstanceof()),
+                TSOpOr(),
+                (TSUnaryOp(TSOpTypeof(), tgt), TSStr('string')),
+                (tgt, TSName('String'))
             )
         elif isinstance(cls, ast.Name) and cls.id in ['int', 'float']:
-            return JSMultipleArgsOp(
-                (JSOpStrongEq(), JSOpInstanceof()),
-                JSOpOr(),
-                (JSUnaryOp(JSOpTypeof(), tgt), JSStr('number')),
-                (tgt, JSName('Number'))
+            return TSMultipleArgsOp(
+                (TSOpStrongEq(), TSOpInstanceof()),
+                TSOpOr(),
+                (TSUnaryOp(TSOpTypeof(), tgt), TSStr('number')),
+                (tgt, TSName('Number'))
             )
         else:
-            return JSBinOp(tgt, JSOpInstanceof(), cls)
+            return TSBinOp(tgt, TSOpInstanceof(), cls)

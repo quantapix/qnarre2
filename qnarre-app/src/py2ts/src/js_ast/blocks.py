@@ -1,11 +1,11 @@
-from .base import JSStatement
+from .base import TSStatement
 
 
-class JSBlock(JSStatement):
+class TSBlock(TSStatement):
     pass
 
 
-class JSIfStatement(JSBlock):
+class TSIfStatement(TSBlock):
     def emit(self, test, body, orelse):
         yield self.line(['if (', test, ') {'])
         yield from self.lines(body, indent=True, delim=True)
@@ -17,21 +17,21 @@ class JSIfStatement(JSBlock):
             yield self.line('}')
 
 
-class JSWhileStatement(JSBlock):
+class TSWhileStatement(TSBlock):
     def emit(self, test, body):
         yield self.line(['while (', test, ') {'])
         yield from self.lines(body, indent=True, delim=True)
         yield self.line('}')
 
 
-class JSForStatement(JSBlock):
+class TSForStatement(TSBlock):
     def emit(self, left, test, right, body):
         yield self.line(['for (', left, '; ', test, '; ', right, ') {'])
         yield from self.lines(body, indent=True, delim=True)
         yield self.line('}')
 
 
-class JSForIterableStatement(JSBlock):
+class TSForIterableStatement(TSBlock):
 
     operator = ' of '
 
@@ -43,16 +43,16 @@ class JSForIterableStatement(JSBlock):
         yield self.line('}')
 
 
-class JSForeachStatement(JSForIterableStatement):
+class TSForeachStatement(TSForIterableStatement):
 
     operator = ' in '
 
 
-class JSForofStatement(JSForIterableStatement):
+class TSForofStatement(TSForIterableStatement):
     pass
 
 
-class JSTryCatchFinallyStatement(JSBlock):
+class TSTryCatchFinallyStatement(TSBlock):
     def emit(self, try_body, target, catch_body, finally_body):
         assert catch_body or finally_body
         yield self.line('try {')

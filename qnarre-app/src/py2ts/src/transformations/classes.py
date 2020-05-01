@@ -1,39 +1,32 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- class transformations
-# :Created:  ven 26 feb 2016 15:17:49 CET
-# :Authors:  Andrew Schaaf <andrew@andrewschaaf.com>,
-#            Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
 import ast
 
 from macropy.core.quotes import macros, ast_literal, ast_list, name, q
 from macropy.experimental.pattern import (macros, _matching, switch,
-    ClassMatcher, LiteralMatcher, ListMatcher)
+                                          ClassMatcher, LiteralMatcher,
+                                          ListMatcher)
 
 from ..compat import assign_types
 from ..processor.util import controlled_ast_walk, get_assign_targets
 from ..js_ast import (
-    JSAttribute,
-    JSBinOp,
-    JSCall,
-    JSClass,
-    JSDict,
-    JSExpressionStatement,
-    JSList,
-    JSMultipleArgsOp,
-    JSName,
-    JSOpInstanceof,
-    JSOpOr,
-    JSOpStrongEq,
-    JSOpTypeof,
-    JSSubscript,
-    JSStatements,
-    JSStr,
-    JSSuper,
-    JSThis,
-    JSUnaryOp,
+    TSAttribute,
+    TSBinOp,
+    TSCall,
+    TSClass,
+    TSDict,
+    TSExpressionStatement,
+    TSList,
+    TSMultipleArgsOp,
+    TSName,
+    TSOpInstanceof,
+    TSOpOr,
+    TSOpStrongEq,
+    TSOpTypeof,
+    TSSubscript,
+    TSStatements,
+    TSStr,
+    TSSuper,
+    TSThis,
+    TSUnaryOp,
 )
 
 from .common import _build_call_isinstance
@@ -76,7 +69,8 @@ def _class_guards(t, x):
                                          + assign_types) or \
                               _isdoc(node) or isinstance(node, ast.Pass)),
                       "Class' body members must be functions or assignments")
-        t.unsupported(x, isinstance(node, ast.Assign) and len(node.targets) > 1,
+        t.unsupported(x,
+                      isinstance(node, ast.Assign) and len(node.targets) > 1,
                       "Assignments must have only one target")
     if len(x.bases) > 0:
         assert len(x.bases) == 1
@@ -120,8 +114,10 @@ def ClassDef_exception(t, x):
         super_name = None
 
     # strip docs from body
-    fn_body = [e for e in body if isinstance(e, (ast.FunctionDef,
-                                                 ast.AsyncFunctionDef))]
+    fn_body = [
+        e for e in body
+        if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
 
     # all the other kind of members which are assigned stuff
     assigns = [e for e in body if isinstance(e, assign_types)]
@@ -149,8 +145,10 @@ def ClassDef_default(t, x):
         superclass = None
 
     # strip docs from body
-    fn_body = [e for e in body if isinstance(e, (ast.FunctionDef,
-                                                 ast.AsyncFunctionDef))]
+    fn_body = [
+        e for e in body
+        if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
 
     # all the other kind of members which are assigned stuff
     assigns = [e for e in body if isinstance(e, assign_types)]
@@ -159,7 +157,8 @@ def ClassDef_default(t, x):
     # silly check for methods
     for node in fn_body:
         arg_names = [arg.arg for arg in node.args.args]
-        t.unsupported(node, len(arg_names) == 0 or arg_names[0] != 'self',
+        t.unsupported(node,
+                      len(arg_names) == 0 or arg_names[0] != 'self',
                       "First arg on method must be 'self'")
 
     # TODO: better express this... find if the constructor has to be the first
@@ -187,7 +186,7 @@ def ClassDef_default(t, x):
             (isinstance(fn.decorator_list[0], ast.Attribute) and
              fn.decorator_list[0].attr == 'setter')):
 
-            decos[fn.name] = (JSStr(fn.name), fn.decorator_list)
+            decos[fn.name] = (TSStr(fn.name), fn.decorator_list)
             fn.decorator_list = []  # remove so that the function transformer
             # will not complain
 
@@ -195,8 +194,8 @@ def ClassDef_default(t, x):
     if _isdoc(body[0]):
         fn_body = [body[0]] + fn_body
 
-    # assign incoming pynode to the JSClass for the sourcemap
-    cls = JSClass(JSName(name), superclass, fn_body)
+    # assign incoming pynode to the TSClass for the sourcemap
+    cls = TSClass(TSName(name), superclass, fn_body)
     cls.py_node = x
 
     stmts = [cls]
@@ -213,20 +212,20 @@ def ClassDef_default(t, x):
             sort_key = '~'
         return sort_key, rendered_key, value
 
-    assigns = tuple(zip(*sorted(map(_from_assign_to_dict_item, assigns),
-                                key=lambda e: e[0])))
+    assigns = tuple(
+        zip(*sorted(map(_from_assign_to_dict_item, assigns),
+                    key=lambda e: e[0])))
 
     # render assignments as properties at runtime
     if assigns:
         from ..snippets import set_properties
         t.add_snippet(set_properties)
-        assigns = JSExpressionStatement(
-            JSCall(
-                JSAttribute(JSName('_pj'), 'set_properties'),
-                (JSName(name),
-                 JSDict(_normalize_dict_keys(t, assigns[1]), assigns[2])),
-            )
-        )
+        assigns = TSExpressionStatement(
+            TSCall(
+                TSAttribute(TSName('_pj'), 'set_properties'),
+                (TSName(name),
+                 TSDict(_normalize_dict_keys(t, assigns[1]), assigns[2])),
+            ))
         stmts.append(assigns)
 
     # calculate method decorators at runtime
@@ -238,14 +237,12 @@ def ClassDef_default(t, x):
         for k, v in sorted(decos.items(), key=lambda i: i[0]):
             rendered_key, dlist = v
             keys.append(rendered_key)
-            values.append(JSList(dlist))
-        decos = JSExpressionStatement(
-            JSCall(
-                JSAttribute(JSName('_pj'), 'set_decorators'),
-                (JSName(name),
-                 JSDict(_normalize_dict_keys(t, keys), values)),
-            )
-        )
+            values.append(TSList(dlist))
+        decos = TSExpressionStatement(
+            TSCall(
+                TSAttribute(TSName('_pj'), 'set_decorators'),
+                (TSName(name), TSDict(_normalize_dict_keys(t, keys), values)),
+            ))
         stmts.append(decos)
 
     # there is any decorator list on the class
@@ -253,11 +250,11 @@ def ClassDef_default(t, x):
         from ..snippets import set_class_decorators
         t.add_snippet(set_class_decorators)
         with q as cls_decos:
-            name[name] = _pj.set_class_decorators(
-                name[name], ast_list[x.decorator_list])
+            name[name] = _pj.set_class_decorators(name[name],
+                                                  ast_list[x.decorator_list])
 
-        stmts.append(JSExpressionStatement(cls_decos[0]))
-    return JSStatements(*stmts)
+        stmts.append(TSExpressionStatement(cls_decos[0]))
+    return TSStatements(*stmts)
 
 
 ClassDef = [ClassDef_exception, ClassDef_default]
@@ -274,7 +271,7 @@ def Call_super(t, x):
            len(sup_args) == 0:
             # if in class constructor, this becomes ``super(x, y)``
             if method.name == '__init__':
-                result = JSCall(JSSuper(), x.args)
+                result = TSCall(TSSuper(), x.args)
             else:
                 sup_method = x.func.attr
                 if isinstance(method, ast.AsyncFunctionDef):
@@ -284,20 +281,17 @@ def Call_super(t, x):
                     # O.getPrototypeOf(O.getPrototypeOf(this)).method.call(this,
                     # x, y)
                     sup_cls = t.parent_of(method).bases[0]
-                    result = JSCall(
-                        JSAttribute(
-                            JSAttribute(
-                                JSAttribute(JSName(sup_cls),
-                                                   'prototype'),
-                                _normalize_name(sup_method)),
-                            'call'),
-                        [JSThis()] + x.args)
+                    result = TSCall(
+                        TSAttribute(
+                            TSAttribute(
+                                TSAttribute(TSName(sup_cls), 'prototype'),
+                                _normalize_name(sup_method)), 'call'),
+                        [TSThis()] + x.args)
                 else:
-                # this becomes super.method(x, y)
-                    result = JSCall(
-                        JSAttribute(JSSuper(), _normalize_name(sup_method)),
-                        x.args
-                    )
+                    # this becomes super.method(x, y)
+                    result = TSCall(
+                        TSAttribute(TSSuper(), _normalize_name(sup_method)),
+                        x.args)
             return result
 
 
@@ -323,12 +317,13 @@ def Attribute_super(t, x):
         if method and isinstance(t.parent_of(method), ast.ClassDef) and \
            len(sup_args) == 0:
             if method.name == '__init__':
-                t.unsupported(x, True, "'super().attr' cannot be used in "
-                              "constructors")
+                t.unsupported(
+                    x, True, "'super().attr' cannot be used in "
+                    "constructors")
             else:
                 sup_method = x.attr
                 # this becomes super.method
-                result = JSAttribute(JSSuper(), _normalize_name(sup_method))
+                result = TSAttribute(TSSuper(), _normalize_name(sup_method))
             return result
 
 
@@ -354,12 +349,13 @@ def Subscript_super(t, x):
         if method and isinstance(t.parent_of(method), ast.ClassDef) and \
            len(sup_args) == 0:
             if method.name == '__init__':
-                t.unsupported(x, True, "'super()[expr]' cannot be used in "
-                              "constructors")
+                t.unsupported(
+                    x, True, "'super()[expr]' cannot be used in "
+                    "constructors")
             else:
                 sup_method = x.slice.value
                 # this becomes super[expr]
-                result = JSSubscript(JSSuper(), _normalize_name(sup_method))
+                result = TSSubscript(TSSuper(), _normalize_name(sup_method))
             return result
 
 
@@ -404,4 +400,4 @@ def Call_issubclass(t, x):
                 if prev is not None:
                     cur = q[ast_literal[prev] or ast_literal[cur]]
                 prev = cur
-            return JSExpressionStatement(cur)
+            return TSExpressionStatement(cur)
