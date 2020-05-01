@@ -4,10 +4,11 @@ import re
 import textwrap
 import os.path
 
-from ..compat import is_py36, assign_types
 from . import sourcemaps
 
 IGNORED_NAMES = ('__all__', '__default__')
+
+assign_types = (ast.Assign, ast.AnnAssign)
 
 
 def delimited(delimiter, arr, dest=None, at_end=False):
@@ -104,7 +105,7 @@ def body_local_names(body):
 def get_assign_targets(py_node):
     if isinstance(py_node, ast.Assign):
         return py_node.targets
-    elif is_py36 and isinstance(py_node, ast.AnnAssign):
+    elif isinstance(py_node, ast.AnnAssign):
         return [py_node.target]
     else:
         raise TypeError('Unsupported assign node type: {}'.format(

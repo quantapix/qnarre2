@@ -10,7 +10,7 @@ import dukpy
 
 from .processor.transforming import Transformer
 from .processor.util import Block
-from .js_ast import TSStatements
+from .ast import TSStatements
 from . import transformations
 
 log = logging.getLogger(__name__)

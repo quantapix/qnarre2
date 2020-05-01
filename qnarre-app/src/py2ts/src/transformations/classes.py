@@ -5,7 +5,6 @@ from macropy.experimental.pattern import (macros, _matching, switch,
                                           ClassMatcher, LiteralMatcher,
                                           ListMatcher)
 
-from ..compat import assign_types
 from ..processor.util import controlled_ast_walk, get_assign_targets
 from ..js_ast import (
     TSAttribute,
@@ -32,6 +31,8 @@ from ..js_ast import (
 from .common import _build_call_isinstance
 
 from . import _normalize_name, _normalize_dict_keys
+
+assign_types = (ast.Assign, ast.AnnAssign)
 
 EXC_TEMPLATE = """\
 class %(name)s(Error):

@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- special transformations
-# :Created:  ven 26 feb 2016 15:17:49 CET
-# :Authors:  Andrew Schaaf <andrew@andrewschaaf.com>,
-#            Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
 import ast
 from unicodedata import lookup
 import re
