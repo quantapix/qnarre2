@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- literals
-# :Created:   mer 07 feb 2018 17:50:03 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 import json
 
 from .base import JSNode

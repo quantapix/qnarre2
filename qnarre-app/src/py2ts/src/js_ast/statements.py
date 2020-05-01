@@ -1,18 +1,9 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- statements
-# :Created:   gio 08 feb 2018 01:47:43 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 from .base import JSStatement
 from .util import _check_keywords
 from ..processor.util import delimited
 
 
 class JSVarDeclarer(JSStatement):
-
     def with_kind(self, kind, keys, values):
         for key in keys:
             _check_keywords(self, key)
@@ -75,19 +66,16 @@ class JSThrowStatement(JSStatement):
 
 
 class JSYield(JSStatement):
-
     def emit(self, expr):
         yield self.part('yield ', expr)
 
 
 class JSYieldStar(JSStatement):
-
     def emit(self, expr):
         yield self.part('yield* ', expr)
 
 
 class JSAwait(JSStatement):
-
     def emit(self, value):
         yield self.part('await ', value)
 
@@ -110,8 +98,9 @@ class JSNamedImport(JSImport):
             else:
                 js_names.append(self.part(name))
 
-        yield self.line(['import {', *delimited(', ', js_names),
-                         "} from '", module, "'"], delim=True)
+        yield self.line(
+            ['import {', *delimited(', ', js_names), "} from '", module, "'"],
+            delim=True)
 
 
 class JSStarImport(JSImport):

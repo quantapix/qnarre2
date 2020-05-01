@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:   metapensiero.pj -- functions
-# :Created:   gio 08 feb 2018 02:29:14 CET
-# :Author:    Alberto Berti <alberto@metapensiero.it>
-# :License:   GNU General Public License version 3 or later
-# :Copyright: © 2018 Alberto Berti
-#
-
 from .blocks import JSBlock
 from ..processor.util import delimited
 

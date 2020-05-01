@@ -35,8 +35,7 @@ class TargetNode:
                 yield i
 
     def emit(self):
-        """This is the main output definition method. Is reimplemented by the
-        subclasses."""
+        pass
 
     @classmethod
     def final(cls, *transformed_args, **options):
