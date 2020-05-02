@@ -61,7 +61,6 @@ def _isdoc(el):
 
 
 def _class_guards(t, x):
-    t.es6_guard(x, "'class' statement requires ES6")
     t.unsupported(x, len(x.bases) > 1, "Multiple inheritance is not supported")
     body = x.body
     for node in body:

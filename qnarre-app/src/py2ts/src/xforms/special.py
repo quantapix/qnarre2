@@ -2,7 +2,7 @@ import ast
 from unicodedata import lookup
 import re
 
-from ..js_ast import (
+from ..ts import (
     TSAssignmentExpression,
     TSAttribute,
     TSBinOp,
@@ -154,7 +154,6 @@ def Call_new(t, x):
 def Call_import(t, x):
     if (isinstance(x.func, ast.Name) and x.func.id == '__import__'):
         assert len(x.args) == 1 and isinstance(x.args[0], ast.Str)
-        t.es6_guard(x, "'__import__()' call requires ES6")
         return TSDependImport(x.args[0].s)
 
 
@@ -187,7 +186,6 @@ def Call_dict_update(t, x):
        isinstance(x.func.value, ast.Call) and  \
        isinstance(x.func.value.func, ast.Name) and \
        x.func.value.func.id == 'dict' and len(x.func.value.args) == 1:
-        t.es6_guard(x, "dict.update() requires ES6")
         return TSCall(TSAttribute(TSName('Object'), 'assign'),
                       [x.func.value.args[0]] + x.args)
 
@@ -213,7 +211,6 @@ def Call_dict_copy(t, x):
        isinstance(x.func.value, ast.Call) and  \
        isinstance(x.func.value.func, ast.Name) and \
        x.func.value.func.id == 'dict' and len(x.func.value.args) == 1:
-        t.es6_guard(x, "dict.copy() requires ES6")
         return TSCall(TSAttribute(TSName('Object'), 'assign'),
                       (TSDict([], []), x.func.value.args[0]))
 
@@ -223,7 +220,6 @@ def Call_template(t, x):
        len(x.args) > 0:
         assert len(x.args) == 1
         assert isinstance(x.args[0], ast.Str)
-        t.es6_guard(x, "template literals require ES6")
         return TSTemplateLiteral(x.args[0].s)
 
 
@@ -232,7 +228,6 @@ def Call_tagged_template(t, x):
        len(x.args) > 0 and t.parent_of(x) is not ast.Attribute:
         assert 3 > len(x.args) >= 1
         assert isinstance(x.args[0], ast.Str)
-        t.es6_guard(x, "tagged templates require ES6")
         if len(x.args) == 2:
             tag = x.args[1]
         else:
@@ -278,18 +273,12 @@ def Call_TS(t, x):
 def Call_int(t, x):
     # maybe this needs a special keywords mangling for optional "base" param
     if isinstance(x.func, ast.Name) and x.func.id == 'int':
-        if t.enable_es6:
-            return TSCall(TSAttribute('Number', 'parseInt'), x.args)
-        else:
-            return TSCall(TSName('parseInt'), x.args)
+        return TSCall(TSAttribute('Number', 'parseInt'), x.args)
 
 
 def Call_float(t, x):
     if isinstance(x.func, ast.Name) and x.func.id == 'float':
-        if t.enable_es6:
-            return TSCall(TSAttribute('Number', 'parseFloat'), x.args)
-        else:
-            return TSCall(TSName('parseFloat'), x.args)
+        return TSCall(TSAttribute('Number', 'parseFloat'), x.args)
 
 
 Call = [
@@ -387,7 +376,6 @@ def _replace_identifiers_with_symbols(dotted_str):
 
 
 def Import(t, x):
-    t.es6_guard(x, "'import' statement requires ES6")
     names = []
     for n in x.names:
         names.append(n.asname or n.name)
@@ -415,7 +403,6 @@ def ImportFrom(t, x):
         t.add_globals(*names)
         result = TSPass()
     else:
-        t.es6_guard(x, "'import from' statement requires ES6")
         t.add_globals(*names)
         result = TSPass()
         if x.module:
@@ -461,13 +448,9 @@ def Compare_in(t, x):
     if not isinstance(x.ops[0], (ast.NotIn, ast.In)):
         return
     if t.enable_snippets:
-        from ..snippets import _in, in_es6
-        if t.enable_es6:
-            t.add_snippet(in_es6)
-            sname = 'in_es6'
-        else:
-            t.add_snippet(_in)
-            sname = '_in'
+        from ..snippets import in_es6
+        t.add_snippet(in_es6)
+        sname = 'in_es6'
         result = TSCall(TSAttribute('_pj', sname), [x.left, x.comparators[0]])
         if isinstance(x.ops[0], ast.NotIn):
             result = TSUnaryOp(TSOpNot(), result)
@@ -534,7 +517,6 @@ def Assert(t, x):
 def Assign_default_(t, x):
     if len(x.targets) == 1 and isinstance(x.targets[0], ast.Name) and \
        x.targets[0].id == '__default__':
-        t.es6_guard(x, "'__default__' assignment requires ES6")
         t.unsupported(x.value, isinstance(x.value, (ast.Tuple, ast.List)),
                       "Only one symbol can be exported using '__default__'.")
         if isinstance(x.value, ast.Str):

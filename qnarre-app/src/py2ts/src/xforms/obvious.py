@@ -77,7 +77,6 @@ def AnnAssign(t, x):
 def Assign_all(t, x):
     if len(x.targets) == 1 and isinstance(x.targets[0], ast.Name) and \
        x.targets[0].id == '__all__':
-        t.es6_guard(x, "'__all__' assignment requires ES6")
         t.unsupported(
             x, not isinstance(x.value, (ast.Tuple, ast.List)),
             "Please define a '__default__' member for default"
@@ -132,7 +131,6 @@ def Delete(t, x):
 
 
 def Await(t, x):
-    t.stage3_guard(x, "Async stuff requires 'stage3' to be enabled")
     return TSAwait(x.value)
 
 
@@ -233,7 +231,6 @@ def Str(t, x):
 
 
 def JoinedStr(t, x):
-    t.es6_guard(x, "f-strings require ES6")
     chunks = []
     for value in x.values:
         if isinstance(value, ast.Str):

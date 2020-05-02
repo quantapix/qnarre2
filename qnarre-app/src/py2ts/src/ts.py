@@ -758,10 +758,8 @@ _KEYWORDS_ES6 = _KEYWORDS - set(['delete'])
 def _check_keywords(target_node, name):
     trans = target_node.transformer
     if trans is not None:
-        trans.unsupported(
-            target_node.ast,
-            (name in _KEYWORDS_ES6 if trans.enable_es6 else name in _KEYWORDS),
-            "Name '%s' is reserved in TypeScript." % name)
+        trans.unsupported(target_node.ast, (name in _KEYWORDS_ES6),
+                          "Name '%s' is reserved in TypeScript." % name)
     else:
         if name in _KEYWORDS:
             raise ValueError("Name %s is reserved in TypeScript." % name)

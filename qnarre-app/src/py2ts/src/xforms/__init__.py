@@ -28,18 +28,6 @@ def _normalize_dict_keys(transformer, keys):
         elif isinstance(key, TSStr):
             key = ast.Str(key.args[0])
         if not isinstance(key, ast.Str):
-            if transformer.enable_es6:
-                key = TSKeySubscript(key)
-            else:
-                if isinstance(key, ast.AST):
-                    py_node = key
-                elif isinstance(key, Target) and key.py_node is not None:
-                    py_node = key.py_node
-                else:
-                    raise ValueError('Value of type %r cannot '
-                                     'be use as key' % type(key))
-                transformer.unsupported(
-                    py_node, True, 'Value of type %r cannot '
-                    'be use as key' % type(key))
+            key = TSKeySubscript(key)
         res.append(key)
     return res

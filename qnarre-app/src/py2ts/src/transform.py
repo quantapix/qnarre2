@@ -5,12 +5,10 @@ import os
 import sys
 import string
 import textwrap
+import inspect
+import re
 
-from ..js_ast import Target
-
-from .exceptions import TransformationError, UnsupportedSyntaxError
-from .util import (rfilter, parent_of, obj_source, body_local_names,
-                   walk_under_code_boundary)
+from .ts import Target
 
 SNIPPETS_TEMPLATE = """\
 def _pj_snippets(container):
@@ -31,9 +29,7 @@ VAR_TEMPLATE = "_pj_%s"
 class Transformer:
 
     enable_snippets = True
-    enable_es6 = False
     enable_let = False
-    enable_stage3 = False
     disable_srcmap = False
     """Used in subtransformation to remap a node on a Transformer instance
     to the AST produced by a substransform."""
@@ -43,14 +39,10 @@ class Transformer:
                  py_ast_module,
                  statements_class,
                  snippets=True,
-                 es6=False,
-                 stage3=False,
                  remap_to=None):
         self.transformations = load_transformations(py_ast_module)
         self.statements_class = statements_class
         self.enable_snippets = snippets
-        self.enable_es6 = es6
-        self.enable_stage3 = stage3
         self.remap_to = remap_to
         self._init_structs()
 
@@ -92,38 +84,28 @@ class Transformer:
         return new
 
     def transform_code(self, ast_tree):
-        """Convert the given Python AST dump into TypeScript AST."""
-        from ..js_ast import TSVarStatement
-
+        from .ts import TSVarStatement
         top = ast.parse(ast_tree)
         body = top.body
         self._args_stack.clear()
-
         self.node_parent_map = build_node_parent_map(top)
-
         local_vars = body_local_names(body)
         self.ctx['vars'] = local_vars
         result = self.statements_class(*body)
         self._finalize_target_node(result)
-
         local_vars = list(local_vars - self._globals)
         if len(local_vars) > 0:
             local_vars.sort()
             vars = TSVarStatement(local_vars, [None] * len(local_vars))
             self._finalize_target_node(vars)
             result.transformed_args.insert(0, vars)
-
         self.node_parent_map = None
-
         return result
 
     def parent_of(self, node):
-        """Return the parent of the given node."""
         return self.node_parent_map.get(node)
 
     def parents(self, node, stop_at=None):
-        """Return all the parents possibly up an instance of `stop_at`
-        class."""
         parent = self.node_parent_map.get(node)
         while parent:
             yield parent
@@ -132,9 +114,6 @@ class Transformer:
             parent = self.node_parent_map.get(parent)
 
     def find_parent(self, node, *classes):
-        """Retrieve the first parent of the given AST `node` that is an
-        instance of the given `classes`.
-        """
         parent = self.parent_of(node)
         if parent is not None:
             if isinstance(parent, classes):
@@ -143,9 +122,6 @@ class Transformer:
                 return self.find_parent(parent, *classes)
 
     def find_child(self, node, cls):
-        """Find any child of `node` that is an instance of `cls`. The walk
-        will not go down into other code blocks.
-        """
         if not isinstance(node, (tuple, list, set)):
             node = (node)
         for n in node:
@@ -154,13 +130,10 @@ class Transformer:
                     yield c
 
     def has_child(self, node, cls):
-        """Return true if `node` has any child that is an instance of
-        `cls`."""
         wanted = tuple(self.find_child(node, cls))
         return len(wanted) > 0
 
     def new_name(self):
-        """Generate a new name to use in statements."""
         ix = self.ctx.setdefault('gen_name_ix', -1)
         ix += 1
         self.ctx['gen_name_ix'] = ix
@@ -170,22 +143,13 @@ class Transformer:
         return VAR_TEMPLATE % string.ascii_letters[ix]
 
     def add_snippet(self, func):
-        """Add a function to the snippets."""
         self.snippets.add(func)
 
     def _transform_node(self, in_node):
-        """Transform a Python AST node to a TS AST node."""
-
         if isinstance(in_node, list) or isinstance(in_node, tuple):
             res = [self._transform_node(child) for child in in_node]
-
         elif isinstance(in_node, ast.AST):
-            # prepare a context for the transformation if it's a
-            # statement; it's used for example by try...catch stmts to
-            # give hints to raise
             with self.context_for(in_node):
-                # transformations can come in tuples or lists, take the
-                # first one
                 for transformation in self.transformations.get(
                         in_node.__class__.__name__, []):
                     out_node = transformation(self, in_node)
@@ -196,12 +160,10 @@ class Transformer:
                 else:
                     raise TransformationError(
                         in_node, "No transformation for the node")
-
         elif isinstance(in_node, Target):
             self._finalize_target_node(in_node)
             res = in_node
         else:
-            # e.g. an integer
             res = in_node
         return res
 
@@ -236,32 +198,18 @@ class Transformer:
     def add_globals(self, *items):
         self._globals |= set(items)
 
-    def _guard(self, test, node, desc):
-        if not test:
-            raise TransformationError(node, desc)
-
-    def es6_guard(self, node, desc):
-        """Raise an exception if es6 isn't enabled."""
-        self._guard(self.enable_es6, node, desc)
-
     def next_args(self):
         return self._args_stack[-1]
 
     def unsupported(self, py_node, cond, desc):
-        """Raise an exception if `cond` is ``True``."""
         if cond:
             raise UnsupportedSyntaxError(py_node, desc)
         return False
 
     def warn(self, py_node, msg):
-        """Append the given message to the warnings."""
         self._warnings.append((py_node, msg))
 
     def subtransform(self, obj, remap_to=None):
-        """Transform a piece of code, either a python object or a string. This
-        is done in a new ``Transformer`` with a configuration similar
-        to the calling instance.
-        """
         if isinstance(obj, str):
             src = textwrap.dedent(obj)
         else:
@@ -272,16 +220,8 @@ class Transformer:
         t.enable_snippets = False
         return t.transform_code(src)
 
-    def stage3_guard(self, node, desc):
-        """Raise an exception if stage3 isn't enabled."""
-        self._guard(self.enable_stage3, node, desc)
-
-
-#### Helpers
-
 
 def python_ast_names():
-    #LATER: do this properly
     return rfilter(r'[A-Z][a-zA-Z]+', dir(ast))
 
 
@@ -326,3 +266,288 @@ def build_node_parent_map(top):
     _process_node(top)
 
     return node_parent_map
+
+
+assign_types = (ast.Assign, ast.AnnAssign)
+
+
+class ProcessorError(Exception):
+    def __str__(self):
+        py_node = self.args[0]
+        if isinstance(py_node, (ast.expr, ast.stmt)):
+            lineno = str(py_node.lineno)
+            col_offset = str(py_node.col_offset)
+        else:
+            lineno = 'n. a.'
+            col_offset = 'n. a.'
+        return "Node type '%s': Line: %s, column: %s" % (
+            type(py_node).__name__, lineno, col_offset)
+
+
+class TransformationError(ProcessorError):
+    def __str__(self):
+        error = super().__str__()
+        if len(self.args) > 1:
+            error += ". %s" % self.args[1]
+        return error
+
+
+class UnsupportedSyntaxError(TransformationError):
+    pass
+
+
+def delimited(delimiter, arr, dest=None, at_end=False):
+    """Similar to ``str.join()``, but returns an array with an option to
+    append the delimiter at the end.
+    """
+    if dest is None:
+        dest = []
+    if arr:
+        dest.append(arr[0])
+    for i in range(1, len(arr)):
+        dest.append(delimiter)
+        dest.append(arr[i])
+    if at_end:
+        dest.append(delimiter)
+    return dest
+
+
+def delimited_multi_line(node, text, begin=None, end=None, add_space=False):
+    """Used to deal with single and multi line literals."""
+    begin = begin or ''
+    end = end or ''
+    if begin and not end:
+        end = begin
+    sp = ' ' if add_space else ''
+    lines = text.splitlines()
+    if len(lines) > 1:
+        yield node.line(node.part(begin, lines[0].strip()))
+        for l in lines[1:-1]:
+            yield node.line(l.strip())
+        yield node.line(node.part(lines[-1].strip(), end))
+    else:
+        yield node.part(begin, sp, text, sp, end)
+
+
+def parent_of(path):
+    return os.path.split(os.path.normpath(path))[0]
+
+
+def body_top_names(body):
+    names = set()
+    for x in body:
+        names |= node_names(x)
+    return names
+
+
+def controlled_ast_walk(node):
+    """Walk AST just like ``ast.walk()``, but expect ``True`` on every
+    branch to descend on sub-branches.
+    """
+    if isinstance(node, list):
+        l = node.copy()
+    elif isinstance(node, tuple):
+        l = list(node)
+    else:
+        l = [node]
+    while len(l) > 0:
+        popped = l.pop()
+        check_children = (yield popped)
+        if check_children:
+            for n in ast.iter_child_nodes(popped):
+                l.append(n)
+
+
+CODE_BLOCK_STMTS = (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)
+
+
+def walk_under_code_boundary(node):
+    it = controlled_ast_walk(node)
+    traverse = None
+    try:
+        while True:
+            subn = it.send(traverse)
+            yield subn
+            if isinstance(subn, CODE_BLOCK_STMTS):
+                traverse = False  # continue traversing sub names
+            else:
+                traverse = True
+    except StopIteration:
+        pass
+
+
+def body_local_names(body):
+    """Find the names assigned to in the provided `body`. It doesn't descend
+    into function or class subelements."""
+    names = set()
+    for stmt in body:
+        for subn in walk_under_code_boundary(stmt):
+            if not isinstance(subn, CODE_BLOCK_STMTS):
+                names |= node_names(subn)
+    return names
+
+
+def get_assign_targets(py_node):
+    if isinstance(py_node, ast.Assign):
+        return py_node.targets
+    elif isinstance(py_node, ast.AnnAssign):
+        return [py_node.target]
+    else:
+        raise TypeError('Unsupported assign node type: {}'.format(
+            py_node.__class__.__name__))
+
+
+IGNORED_NAMES = ('__all__', '__default__')
+
+
+def node_names(py_node):
+    """Extract 'names' from a Python node. Names are all those interesting
+    for the enclosing scope.
+
+    Return a set containing them. The nodes considered are the Assign and the
+    ones that defines namespaces, the function and class definitions.
+
+    The assignment can be something like:
+
+    .. code:: python
+      a = b # 'a' is the target
+      a = b = c # 'a' and 'b' are the targets
+      a1, a2 = b = c # ('a1', 'a2') and 'b' are the targets
+
+    """
+    names = set()
+    if isinstance(py_node, assign_types):
+        for el in get_assign_targets(py_node):
+            if isinstance(el, ast.Name) and el.id not in \
+               IGNORED_NAMES:
+                names.add(el.id)
+            elif isinstance(el, ast.Tuple):
+                for elt in el.elts:
+                    if isinstance(elt, ast.Name) and elt.id not in \
+                       IGNORED_NAMES:
+                        names.add(elt.id)
+    elif isinstance(py_node, (ast.FunctionDef, ast.ClassDef)):
+        names.add(py_node.name)
+    return names
+
+
+def rfilter(r, it, invert=False):
+    """
+    >>> list(rfilter(r'^.o+$', ['foo', 'bar']))
+    ['foo']
+
+    >>> list(rfilter(r'^.o+$', ['foo', 'bar'], invert=True))
+    ['bar']
+
+    """
+    # Supports Python 2 and 3
+    if isinstance(r, str):
+        r = re.compile(r)
+    try:
+        if isinstance(r, unicode):
+            r = re.compile
+    except NameError:
+        pass
+
+    for x in it:
+        m = r.search(x)
+        ok = False
+        if m:
+            ok = True
+        if invert:
+            if not ok:
+                yield x
+        else:
+            if ok:
+                yield x
+
+
+class OutputSrc:
+    def __init__(self, node, name=None):
+        self.node = node
+        self.src_name = name
+
+
+class Line(OutputSrc):
+    def __init__(self, node, item, indent=False, delim=False, name=None):
+        super().__init__(node, name)
+        self.indent = int(indent)
+        self.delim = delim
+        if isinstance(item, (tuple, list)):
+            item = Part(node, *item)
+        self.item = item
+
+    def __str__(self):
+        line = str(self.item)
+        if self.delim:
+            line += ';'
+        if self.indent and line.strip():
+            line = (' ' * 4 * self.indent) + line
+        line += '\n'
+        return line
+
+    def serialize(self):
+        yield self
+
+    def src_mappings(self):
+        if self.node.transformer.disable_srcmap:
+            return
+        src_line, src_offset = self._pos_in_src()
+        offset = self.indent * 4
+        if isinstance(self.item, str):
+            if src_line:
+                yield self._gen_mapping(self.item, src_line, src_offset,
+                                        offset)
+        else:
+            assert isinstance(self.item, Part)
+            for m in self.item.src_mappings():
+                m['dst_offset'] += offset
+                yield m
+
+    def __repr__(self):
+        return '<%s indent: %d, "%s">' % (self.__class__.__name__, self.indent,
+                                          str(self))
+
+
+class Part(OutputSrc):
+    def __init__(self, node, *items, name=None):
+        super().__init__(node, name)
+        self.items = []
+        for i in items:
+            if isinstance(i, (str, Part)):
+                self.items.append(i)
+            elif inspect.isgenerator(i):
+                self.items.extend(i)
+            else:
+                self.items.append(str(i))
+
+    def __str__(self):
+        return ''.join(str(i) for i in self.items)
+
+    def serialize(self):
+        yield self
+
+    def __repr__(self):
+        return '<%s, "%s">' % (self.__class__.__name__, str(self))
+
+
+def linecounter(iterable, start=1):
+    count = start
+    for line in iterable:
+        yield count, line
+        count += len(re.findall('\n', str(line)))
+
+
+class Block(OutputSrc):
+    def __init__(self, node):
+        super().__init__(None)
+        self.lines = list(node.serialize())
+
+    def read(self):
+        return ''.join(str(l) for l in self.lines)
+
+
+def obj_source(obj):
+    src = inspect.getsource(obj)
+    src = textwrap.dedent(src)
+    return src

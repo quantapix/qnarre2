@@ -62,12 +62,6 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
                   len(x.decorator_list) > 1, "No more than one decorator"
                   " is supported")
 
-    if x.args.vararg or x.args.kwonlyargs or x.args.defaults or \
-       x.args.kw_defaults or x.args.kwarg:
-        t.es6_guard(
-            x, "Arguments definitions other than plain params require "
-            "ES6 to be enabled")
-
     t.unsupported(
         x, x.args.kwarg and x.args.kwonlyargs,
         "Keyword arguments together with keyword args accumulator"
@@ -206,5 +200,4 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
 
 
 def AsyncFunctionDef(t, x):
-    t.stage3_guard(x, "Async stuff requires 'stage3' to be enabled")
     return FunctionDef(t, x, TSAsyncFunction, TSAsyncMethod)

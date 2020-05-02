@@ -1,10 +1,3 @@
-def _in(left, right):
-    from __globals__ import Array, typeof
-
-    if isinstance(right, Array) or typeof(right) == 'string':
-        return right.indexOf(left) > -1
-    else:
-        return left in right
 
 
 def in_es6(left, right):

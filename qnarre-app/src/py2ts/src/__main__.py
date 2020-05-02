@@ -73,7 +73,7 @@ def _file_name(src, dst=None):
 def translate_file(src, dst=None):
     dst = _file_name(src, dst)
     src = open(src).readlines()
-    js_text, src_map = translates(src, True)
+    js_text, src_map = translate(src, True)
     with open(dst, 'w') as dst:
         dst.write(js_text)
 
@@ -85,10 +85,10 @@ def translate_object(py_obj):
     if len(prefix) > 1:
         src = src[len(prefix) + 1:]
     lines = inspect.getsourcelines(py_obj)
-    return translates(lines)
+    return translate(lines)
 
 
-def translates(src, dedent=True):
+def translate(src, dedent=True):
     if isinstance(src, (tuple, list)):
         src = ''.join(src)
     if dedent:
@@ -108,20 +108,6 @@ def translates(src, dedent=True):
 
 def transform(src, dst=None):
     translate_file(src, dst)
-
-
-def transform_string(input,
-                     transpile=False,
-                     enable_es6=False,
-                     enable_stage3=False,
-                     **kw):
-    inline_map = kw.get('inline_map', False)
-    source_name = kw.get('source_name', None)
-    if inline_map and source_name is None:
-        raise ValueError("A source name is needed, please specify it using "
-                         "the '--source-name option.")
-    res = translates(input)
-    return res
 
 
 def main(args=None, fout=None, ferr=None):
