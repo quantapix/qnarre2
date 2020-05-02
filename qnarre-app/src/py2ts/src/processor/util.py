@@ -4,11 +4,34 @@ import re
 import textwrap
 import os.path
 
-from . import sourcemaps
-
 IGNORED_NAMES = ('__all__', '__default__')
 
 assign_types = (ast.Assign, ast.AnnAssign)
+
+
+class ProcessorError(Exception):
+    def __str__(self):
+        py_node = self.args[0]
+        if isinstance(py_node, (ast.expr, ast.stmt)):
+            lineno = str(py_node.lineno)
+            col_offset = str(py_node.col_offset)
+        else:
+            lineno = 'n. a.'
+            col_offset = 'n. a.'
+        return "Node type '%s': Line: %s, column: %s" % (
+            type(py_node).__name__, lineno, col_offset)
+
+
+class TransformationError(ProcessorError):
+    def __str__(self):
+        error = super().__str__()
+        if len(self.args) > 1:
+            error += ". %s" % self.args[1]
+        return error
+
+
+class UnsupportedSyntaxError(TransformationError):
+    pass
 
 
 def delimited(delimiter, arr, dest=None, at_end=False):
@@ -359,23 +382,6 @@ class Block(OutputSrc):
 
     def read(self):
         return ''.join(str(l) for l in self.lines)
-
-    def sourcemap(self,
-                  source,
-                  src_filename,
-                  src_offset=None,
-                  dst_offset=None):
-        Token = sourcemaps.Token
-        tokens = []
-        for m in self.src_mappings(src_offset, dst_offset):
-            token = Token(m['dst_line'] - 1, m['dst_offset'], src_filename,
-                          m['src_line'] - 1, m['src_offset'], m['name'], m)
-            tokens.append(token)
-
-        src_map = sourcemaps.SourceMap(sources_content={src_filename: source})
-        for t in tokens:
-            src_map.add_token(t)
-        return src_map
 
 
 def obj_source(obj):

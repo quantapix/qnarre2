@@ -194,8 +194,6 @@ def ClassDef_default(t, x):
     # keep class doc if present
     if _isdoc(body[0]):
         fn_body = [body[0]] + fn_body
-
-    # assign incoming pynode to the TSClass for the sourcemap
     cls = TSClass(TSName(name), superclass, fn_body)
     cls.py_node = x
 

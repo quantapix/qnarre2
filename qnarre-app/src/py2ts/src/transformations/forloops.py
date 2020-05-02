@@ -94,7 +94,6 @@ def For_dict(t, x):
                     TSCall(TSAttribute(TSName(dict_), 'hasOwnProperty'),
                            [TSName(name.id)]), body, None)
             ]
-        # set the incoming py_node for the sourcemap
         loop = TSForeachStatement(name.id, TSName(dict_), body)
         loop.py_node = x
 
@@ -122,8 +121,6 @@ def For_iterable(t, x):
         expr = x.iter.args[0]
         body = x.body
         target = x.target
-
-        # set the incoming py_node for the sourcemap
         return TSForofStatement(
             target,
             expr,

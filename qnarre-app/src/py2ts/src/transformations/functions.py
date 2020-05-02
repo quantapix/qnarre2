@@ -185,12 +185,10 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
     # x is a function
     else:
         if is_in_method and fwrapper is None:
-            # set the incoming py_node for the sourcemap
             fdef = TSArrowFunction(name, args, body, acc, kw)
             fdef.py_node = x
             result = TSStatements(TSVarStatement([str(name)], [None]), fdef)
         elif is_in_method and fwrapper in [TSGenFunction, TSAsyncFunction]:
-            # set the incoming py_node for the sourcemap
             fdef = fwrapper(name, args, body, acc, kw)
             fdef.py_node = x
             # arrow functions cannot be generators, render them as normal

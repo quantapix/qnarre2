@@ -70,28 +70,28 @@ class Target:
             yield from a.serialize()
 
 
-class TSNode(Target):
+class Node(Target):
     pass
 
 
-class TSPass(TSNode):
+class Pass(Node):
     def emit(self):
         return []
 
 
-class TSCommentBlock(TSNode):
+class CommentBlock(Node):
     def emit(self, text):
         assert text.find('*/') == -1
         yield from self.lines(
             delimited_multi_line(self, text, '/*', '*/', True))
 
 
-class TSLiteral(TSNode):
+class Literal(Node):
     def emit(self, text):
         yield from self.lines(delimited_multi_line(self, text, '', '', False))
 
 
-class TSDict(TSLiteral):
+class Dict(Literal):
     def emit(self, keys, values):
         arr = ['{']
         for i in range(len(keys)):
@@ -104,7 +104,7 @@ class TSDict(TSLiteral):
         yield self.part(*arr)
 
 
-class TSList(TSLiteral):
+class List(Literal):
     def emit(self, elts):
         arr = ['[']
         delimited(', ', elts, dest=arr)
@@ -112,47 +112,47 @@ class TSList(TSLiteral):
         yield self.part(*arr)
 
 
-class TSFalse(TSLiteral):
+class LFalse(Literal):
     def emit(self):
         yield self.part('false')
 
 
-class TSNull(TSLiteral):
+class Null(Literal):
     def emit(self):
         yield self.part('null')
 
 
-class TSNum(TSLiteral):
+class Num(Literal):
     def emit(self, x):
         yield self.part(str(x))
 
 
-class TSStr(TSLiteral):
+class Str(Literal):
     def emit(self, s):
         yield self.part(json.dumps(s))
 
 
-class TSTrue(TSLiteral):
+class LTrue(Literal):
     def emit(self):
         yield self.part('true')
 
 
-class TSExpression(TSNode):
+class Expression(Node):
     def emit(self, expr):
         yield self.part('(', expr, ')')
 
 
-class TSAssignmentExpression(TSNode):
+class AssignmentExpression(Node):
     def emit(self, left, right):
         yield self.part(left, ' = ', right)
 
 
-class TSIfExp(TSNode):
+class IfExp(Node):
     def emit(self, test, body, orelse):
         yield self.part('(', test, ' ? ', body, ' : ', orelse, ')')
 
 
-class TSCall(TSNode):
+class Call(Node):
 
     operator = ''
 
@@ -168,177 +168,177 @@ class TSCall(TSNode):
         yield self.part(*arr)
 
 
-class TSNewCall(TSCall):
+class NewCall(Call):
 
     operator = 'new '
 
 
-class TSAttribute(TSNode):
+class Attribute(Node):
     def emit(self, obj, s):
         assert re.search(r'^[a-zA-Z$_][a-zA-Z$_0-9]*$', s)
         _check_keywords(self, s)
         yield self.part(obj, '.', s, name=True)
 
 
-class TSSubscript(TSNode):
+class Subscript(Node):
     def emit(self, obj, key):
         yield self.part(self.part(obj, name=True), '[',
                         self.part(key, name=True), ']')
 
 
-class TSKeySubscript(TSNode):
+class KeySubscript(Node):
     def emit(self, key):
         yield self.part('[', self.part(key), ']')
 
 
-class TSOperator(TSNode):
+class Operator(Node):
     pass
 
 
-class TSLeftSideUnaryOp(TSOperator):
+class LeftSideUnaryOp(Operator):
     pass
 
 
-class TSOpIn(TSOperator):
+class OpIn(Operator):
     def emit(self):
         yield self.part('in')
 
 
-class TSOpAnd(TSOperator):
+class OpAnd(Operator):
     def emit(self):
         yield self.part('&&')
 
 
-class TSOpOr(TSOperator):
+class OpOr(Operator):
     def emit(self):
         yield self.part('||')
 
 
-class TSOpNot(TSLeftSideUnaryOp):
+class OpNot(LeftSideUnaryOp):
     def emit(self):
         yield self.part('!')
 
 
-class TSOpInstanceof(TSOperator):
+class OpInstanceof(Operator):
     def emit(self):
         yield self.part('instanceof')
 
 
-class TSOpTypeof(TSLeftSideUnaryOp):
+class OpTypeof(LeftSideUnaryOp):
     def emit(self):
         yield self.part('typeof')
 
 
-class TSOpAdd(TSOperator):
+class OpAdd(Operator):
     def emit(self):
         yield self.part('+')
 
 
-class TSOpSub(TSOperator):
+class OpSub(Operator):
     def emit(self):
         yield self.part('-')
 
 
-class TSOpMult(TSOperator):
+class OpMult(Operator):
     def emit(self):
         yield self.part('*')
 
 
-class TSOpDiv(TSOperator):
+class OpDiv(Operator):
     def emit(self):
         yield self.part('/')
 
 
-class TSOpMod(TSOperator):
+class OpMod(Operator):
     def emit(self):
         yield self.part('%')
 
 
-class TSOpRShift(TSOperator):
+class OpRShift(Operator):
     def emit(self):
         yield self.part('>>')
 
 
-class TSOpLShift(TSOperator):
+class OpLShift(Operator):
     def emit(self):
         yield self.part('<<')
 
 
-class TSOpBitXor(TSOperator):
+class OpBitXor(Operator):
     def emit(self):
         yield self.part('^')
 
 
-class TSOpBitAnd(TSOperator):
+class OpBitAnd(Operator):
     def emit(self):
         yield self.part('&')
 
 
-class TSOpBitOr(TSOperator):
+class OpBitOr(Operator):
     def emit(self):
         yield self.part('|')
 
 
-class TSOpInvert(TSLeftSideUnaryOp):
+class OpInvert(LeftSideUnaryOp):
     def emit(self):
         yield self.part('~')
 
 
-class TSOpUSub(TSLeftSideUnaryOp):
+class OpUSub(LeftSideUnaryOp):
     def emit(self):
         yield self.part('-')
 
 
-class TSOpStrongEq(TSOperator):
+class OpStrongEq(Operator):
     def emit(self):
         yield self.part('===')
 
 
-class TSOpStrongNotEq(TSOperator):
+class OpStrongNotEq(Operator):
     def emit(self):
         yield self.part('!==')
 
 
-class TSOpLt(TSOperator):
+class OpLt(Operator):
     def emit(self):
         yield self.part('<')
 
 
-class TSOpLtE(TSOperator):
+class OpLtE(Operator):
     def emit(self):
         yield self.part('<=')
 
 
-class TSOpGt(TSOperator):
+class OpGt(Operator):
     def emit(self):
         yield self.part('>')
 
 
-class TSOpGtE(TSOperator):
+class OpGtE(Operator):
     def emit(self):
         yield self.part('>=')
 
 
-TSIs = TSOpStrongEq
+Is = OpStrongEq
 
 
-class TSRest(TSOperator):
+class Rest(Operator):
     def emit(self, value):
         yield self.part('...', value)
 
 
-class TSUnaryOp(TSNode):
+class UnaryOp(Node):
     def emit(self, op, right):
-        assert isinstance(op, TSLeftSideUnaryOp)
+        assert isinstance(op, LeftSideUnaryOp)
         yield self.part('(', op, ' ', right, ')')
 
 
-class TSBinOp(TSNode):
+class BinOp(Node):
     def emit(self, left, op, right):
         yield self.part('(', left, ' ', op, ' ', right, ')')
 
 
-class TSMultipleArgsOp(TSNode):
+class MultipleArgsOp(Node):
     def emit(self, binop, conj, *args):
         assert len(args) > 1
         parts = []
@@ -353,39 +353,39 @@ class TSMultipleArgsOp(TSNode):
         yield self.part('(', *parts, ')')
 
 
-class TSName(TSNode):
+class Name(Node):
     def emit(self, name):
         _check_keywords(self, name)
         yield self.part(name, name=True)
 
 
-class TSTaggedTemplate(TSNode):
+class TaggedTemplate(Node):
     def emit(self, value, func):
         text = list(delimited_multi_line(self, value, '`'))
         func = list(func.serialize())
         yield self.part(*func, *text)
 
 
-class TSTemplateLiteral(TSNode):
+class TemplateLiteral(Node):
     def emit(self, value):
         yield from delimited_multi_line(self, value, '`')
 
 
-class TSSuper(TSNode):
+class Super(Node):
     def emit(self):
         yield self.part('super')
 
 
-class TSThis(TSNode):
+class This(Node):
     def emit(self):
         yield self.part('this')
 
 
-class TSStatement(TSNode):
+class Statement(Node):
     pass
 
 
-class TSStatements(TSNode):
+class Statements(Node):
     def __iadd__(self, other):
         self.transformed_args.extend(other.transformed_args)
         return self
@@ -396,7 +396,7 @@ class TSStatements(TSNode):
 
     def squash(self, args):
         for a in args:
-            if isinstance(a, TSStatements):
+            if isinstance(a, Statements):
                 yield from a.transformed_args
             else:
                 yield a
@@ -408,10 +408,10 @@ class TSStatements(TSNode):
         vars_ = []
         others = []
         for a in args:
-            if isinstance(a, TSImport):
+            if isinstance(a, Import):
                 imports.append(a)
-            elif isinstance(a, TSVarStatement) and not a.options.get(
-                    'unmovable', False):
+            elif isinstance(
+                    a, VarStatement) and not a.options.get('unmovable', False):
                 vars_.append(a)
             else:
                 others.append(a)
@@ -421,7 +421,7 @@ class TSStatements(TSNode):
         # if the others start with some comments, put those at the top
         start_trigger = False
         for s in others:
-            if isinstance(s, TSCommentBlock) and not start_trigger:
+            if isinstance(s, CommentBlock) and not start_trigger:
                 others_first.append(s)
             else:
                 others_after.append(s)
@@ -434,7 +434,7 @@ class TSStatements(TSNode):
             yield from self.lines(a.serialize(), delim=True)
 
 
-class TSVarDeclarer(TSStatement):
+class VarDeclarer(Statement):
     def with_kind(self, kind, keys, values):
         for key in keys:
             _check_keywords(self, key)
@@ -452,22 +452,22 @@ class TSVarDeclarer(TSStatement):
         yield self.part(*arr)
 
 
-class TSVarStatement(TSVarDeclarer):
+class VarStatement(VarDeclarer):
     def emit(self, keys, values, unmovable=False):
         yield from self.with_kind('var', keys, values)
 
 
-class TSLetStatement(TSVarDeclarer):
+class LetStatement(VarDeclarer):
     def emit(self, keys, values, unmovable=True):
         yield from self.with_kind('let', keys, values)
 
 
-class TSAugAssignStatement(TSStatement):
+class AugAssignStatement(Statement):
     def emit(self, target, op, value):
         yield self.part(target, ' ', op, '= ', value, name=str(target))
 
 
-class TSReturnStatement(TSStatement):
+class ReturnStatement(Statement):
     def emit(self, value):
         if value:
             result = self.line(['return ', value], delim=True)
@@ -476,51 +476,51 @@ class TSReturnStatement(TSStatement):
         yield result
 
 
-class TSBreakStatement(TSStatement):
+class BreakStatement(Statement):
     def emit(self):
         yield self.part('break')
 
 
-class TSContinueStatement(TSStatement):
+class ContinueStatement(Statement):
     def emit(self):
         yield self.part('continue')
 
 
-class TSDeleteStatement(TSStatement):
+class DeleteStatement(Statement):
     def emit(self, value):
         yield self.line(['delete ', value], delim=True)
 
 
-class TSThrowStatement(TSStatement):
+class ThrowStatement(Statement):
     def emit(self, obj):
         yield self.line(['throw ', obj], delim=True)
 
 
-class TSYield(TSStatement):
+class Yield(Statement):
     def emit(self, expr):
         yield self.part('yield ', expr)
 
 
-class TSYieldStar(TSStatement):
+class YieldStar(Statement):
     def emit(self, expr):
         yield self.part('yield* ', expr)
 
 
-class TSAwait(TSStatement):
+class Await(Statement):
     def emit(self, value):
         yield self.part('await ', value)
 
 
-class TSImport(TSStatement):
+class Import(Statement):
     pass
 
 
-class TSDependImport(TSImport):
+class DependImport(Import):
     def emit(self, module):
         yield self.line(['System.import(', "'", module, "'", ')'], delim=True)
 
 
-class TSNamedImport(TSImport):
+class NamedImport(Import):
     def emit(self, module, names):
         js_names = []
         for name, alias in sorted(names):
@@ -534,38 +534,38 @@ class TSNamedImport(TSImport):
             delim=True)
 
 
-class TSStarImport(TSImport):
+class StarImport(Import):
     def emit(self, module, name):
         yield self.line(['import * as ', name, " from '", module, "'"],
                         delim=True)
 
 
-class TSDefaultImport(TSImport):
+class DefaultImport(Import):
     def emit(self, module, alias):
         yield self.line(['import ', alias, " from '", module, "'"], delim=True)
 
 
-class TSExport(TSStatement):
+class Export(Statement):
     def emit(self, names):
         yield self.line(['export ', '{', *delimited(', ', names), '}'],
                         delim=True)
 
 
-class TSExportDefault(TSExport):
+class ExportDefault(Export):
     def emit(self, name):
         yield self.line(['export default ', name], delim=True)
 
 
-class TSExpressionStatement(TSStatement):
+class ExpressionStatement(Statement):
     def emit(self, value):
         yield self.part(value)
 
 
-class TSBlock(TSStatement):
+class Block(Statement):
     pass
 
 
-class TSIfStatement(TSBlock):
+class IfStatement(Block):
     def emit(self, test, body, orelse):
         yield self.line(['if (', test, ') {'])
         yield from self.lines(body, indent=True, delim=True)
@@ -577,21 +577,21 @@ class TSIfStatement(TSBlock):
             yield self.line('}')
 
 
-class TSWhileStatement(TSBlock):
+class WhileStatement(Block):
     def emit(self, test, body):
         yield self.line(['while (', test, ') {'])
         yield from self.lines(body, indent=True, delim=True)
         yield self.line('}')
 
 
-class TSForStatement(TSBlock):
+class ForStatement(Block):
     def emit(self, left, test, right, body):
         yield self.line(['for (', left, '; ', test, '; ', right, ') {'])
         yield from self.lines(body, indent=True, delim=True)
         yield self.line('}')
 
 
-class TSForIterableStatement(TSBlock):
+class ForIterableStatement(Block):
 
     operator = ' of '
 
@@ -603,16 +603,16 @@ class TSForIterableStatement(TSBlock):
         yield self.line('}')
 
 
-class TSForeachStatement(TSForIterableStatement):
+class ForeachStatement(ForIterableStatement):
 
     operator = ' in '
 
 
-class TSForofStatement(TSForIterableStatement):
+class ForofStatement(ForIterableStatement):
     pass
 
 
-class TSTryCatchFinallyStatement(TSBlock):
+class TryCatchFinallyStatement(Block):
     def emit(self, try_body, target, catch_body, finally_body):
         assert catch_body or finally_body
         yield self.line('try {')
@@ -626,7 +626,7 @@ class TSTryCatchFinallyStatement(TSBlock):
         yield self.line('}')
 
 
-class TSFunction(TSBlock):
+class Function(Block):
 
     begin = 'function '
     bet_args_n_body = ''
@@ -655,17 +655,17 @@ class TSFunction(TSBlock):
         yield self.line('}')
 
 
-class TSAsyncFunction(TSFunction):
+class AsyncFunction(Function):
 
     begin = 'async function '
 
 
-class TSGenFunction(TSFunction):
+class GenFunction(Function):
 
     begin = 'function* '
 
 
-class TSArrowFunction(TSFunction):
+class ArrowFunction(Function):
 
     begin = ''
     bet_args_n_body = '=> '
@@ -687,7 +687,7 @@ class TSArrowFunction(TSFunction):
             yield self.part('}')
 
 
-class TSClass(TSBlock):
+class Class(Block):
     def emit(self, name, super_, methods):
         line = ['class ', name]
         if super_ is not None:
@@ -698,7 +698,7 @@ class TSClass(TSBlock):
         yield self.line('}')
 
 
-class TSClassMember(TSFunction):
+class ClassMember(Function):
     def with_kind(self, kind, args, body, acc=None, kw=None, static=False):
         if static:
             line = ['static ', kind]
@@ -711,37 +711,37 @@ class TSClassMember(TSFunction):
         yield self.line('}')
 
 
-class TSClassConstructor(TSClassMember):
+class ClassConstructor(ClassMember):
     def emit(self, args, body, acc=None, kw=None):
         yield from self.with_kind('constructor', args, body, acc, kw)
 
 
-class TSMethod(TSClassMember):
+class Method(ClassMember):
     def emit(self, name, args, body, acc=None, kw=None, static=False):
         yield from self.with_kind(name, args, body, acc, kw, static)
 
 
-class TSAsyncMethod(TSClassMember):
+class AsyncMethod(ClassMember):
     def emit(self, name, args, body, acc=None, kw=None, static=False):
         yield from self.with_kind('async ' + name, args, body, acc, kw, static)
 
 
-class TSGenMethod(TSClassMember):
+class GenMethod(ClassMember):
     def emit(self, name, args, body, acc=None, kw=None, static=False):
         yield from self.with_kind('* ' + name, args, body, acc, kw, static)
 
 
-class TSGetter(TSClassMember):
+class Getter(ClassMember):
     def emit(self, name, body, static=False):
         yield from self.with_kind('get ' + name, [], body, static=static)
 
 
-class TSSetter(TSClassMember):
+class Setter(ClassMember):
     def emit(self, name, arg, body, static=False):
         yield from self.with_kind('set ' + name, [arg], body, static=static)
 
 
-TS_KEYWORDS = set([
+_KEYWORDS = set([
     'break', 'case', 'catch', 'continue', 'default', 'delete', 'do', 'else',
     'finally', 'for', 'function', 'if', 'in', 'instanceof', 'new', 'return',
     'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with',
@@ -752,16 +752,16 @@ TS_KEYWORDS = set([
     'transient', 'volatile'
 ])
 
-TS_KEYWORDS_ES6 = TS_KEYWORDS - set(['delete'])
+_KEYWORDS_ES6 = _KEYWORDS - set(['delete'])
 
 
 def _check_keywords(target_node, name):
     trans = target_node.transformer
     if trans is not None:
-        trans.unsupported(target_node.ast,
-                          (name in TS_KEYWORDS_ES6
-                           if trans.enable_es6 else name in TS_KEYWORDS),
-                          "Name '%s' is reserved in TypeScript." % name)
+        trans.unsupported(
+            target_node.ast,
+            (name in _KEYWORDS_ES6 if trans.enable_es6 else name in _KEYWORDS),
+            "Name '%s' is reserved in TypeScript." % name)
     else:
-        if name in TS_KEYWORDS:
+        if name in _KEYWORDS:
             raise ValueError("Name %s is reserved in TypeScript." % name)

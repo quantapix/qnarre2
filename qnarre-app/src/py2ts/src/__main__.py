@@ -3,8 +3,15 @@ from collections import deque
 import logging
 from pathlib import Path
 import sys
+import ast
+import os
+import textwrap
 
-from . import api
+from .processor.transforming import Transformer
+from .processor.util import Block
+from .ts import Statements
+from . import transformations
+import inspect
 
 log = logging.getLogger(__name__)
 
@@ -24,68 +31,15 @@ parser.add_argument('files',
                     help="Python source file(s) or directory(ies) "
                     "to convert. When it is a directory it will be "
                     "converted recursively")
-parser.add_argument('--disable-es6',
-                    dest='es6',
-                    action='store_false',
-                    default=True,
-                    help="Disable ES6 features during conversion"
-                    " (Ignored if --es5 is specified)")
-parser.add_argument('--disable-stage3',
-                    dest='stage3',
-                    action='store_false',
-                    default=True,
-                    help="Disable ES7 stage3 features during conversion")
-parser.add_argument('-5',
-                    '--es5',
-                    dest='es5',
-                    action='store_true',
-                    help="Also transpile to ES5 using BabelTS.")
-parser.add_argument('--transform-runtime',
-                    action='store_true',
-                    dest='truntime',
-                    help="Add transform runtime as plugin during transpile")
 parser.add_argument('-o',
                     '--output',
                     type=str,
                     help="Output file/directory where to save the generated "
                     "code")
-parser.add_argument('-d',
-                    '--debug',
-                    action='store_true',
-                    help="Enable error reporting")
-parser.add_argument('--pdb',
-                    action='store_true',
-                    help="Enter post-mortem debug when an error occurs")
-parser.add_argument(
-    '-s',
-    '--string',
-    type=str,
-    help="Convert a string, useful for small snippets. If the string"
-    " is '-' will be read from the standard input.")
-parser.add_argument(
-    '-e',
-    '--eval',
-    action='store_true',
-    help="Evaluate the string supplied with the -s  using the"
-    " embedded interpreter and return the last result. This will "
-    "convert the input string with all the extensions enabled "
-    "(comparable to adding the '-5' option) and so it will take"
-    " some time because of BabelTS load times.")
 parser.add_argument('--dump-ast',
                     action='store_true',
                     help="Dump the Python AST. You need to have the package"
                     " metapensiero.pj[test] installed")
-parser.add_argument(
-    '--inline-map',
-    action='store_true',
-    help="Save the source-map inline instead of in an additional"
-    " file, useful when transpiling with BabelTS externally "
-    "but without access to the cli. Ignored "
-    "when transpiling.")
-parser.add_argument('--source-name',
-                    help="When using '-s' together with"
-                    " '--inline-map' this option is necessary to produce a"
-                    " valid sourcemap which needs a name for the source file")
 
 
 class Reporter:
@@ -102,26 +56,58 @@ class Reporter:
         print(*args, **kw)
 
 
-def transform(src_fname,
-              dst_fname=None,
-              transpile=False,
-              enable_es6=False,
-              enable_stage3=False,
-              **kw):
-    kw.pop('source_name', None)
-    if transpile:
-        kw.pop('inline_map', None)
-        api.transpile_py_file(src_fname,
-                              dst_fname,
-                              enable_stage3=enable_stage3,
-                              **kw)
+def _file_name(src, dst=None):
+    src = os.path.abspath(src)
+    if dst and not os.path.isdir(dst):
+        dst = os.path.abspath(dst)
     else:
-        kw.pop('truntime', None)
-        api.translate_file(src_fname,
-                           dst_fname,
-                           enable_es6=enable_es6,
-                           enable_stage3=enable_stage3,
-                           **kw)
+        if dst and os.path.isdir(dst):
+            dst_dir = os.path.abspath(dst)
+        else:
+            dst_dir = os.path.dirname(src)
+        name = os.path.basename(os.path.splitext(src)[0])
+        dst = os.path.join(dst_dir, name + '.js')
+    return dst
+
+
+def translate_file(src, dst=None):
+    dst = _file_name(src, dst)
+    src = open(src).readlines()
+    js_text, src_map = translates(src, True)
+    with open(dst, 'w') as dst:
+        dst.write(js_text)
+
+
+def translate_object(py_obj):
+    cwd = os.getcwd()
+    src = os.path.abspath(inspect.getsourcefile(py_obj))
+    prefix = os.path.commonpath((cwd, src))
+    if len(prefix) > 1:
+        src = src[len(prefix) + 1:]
+    lines = inspect.getsourcelines(py_obj)
+    return translates(lines)
+
+
+def translates(src, dedent=True):
+    if isinstance(src, (tuple, list)):
+        src = ''.join(src)
+    if dedent:
+        dedented = textwrap.dedent(src)
+    else:
+        dedented = src
+    t = Transformer(transformations, Statements)
+    py = ast.parse(dedented)
+    ts = t.transform_code(py)
+    if t.snippets:
+        snipast = t.transform_snippets()
+        snipast += ts
+        ts = snipast
+    b = Block(ts)
+    return b.read()
+
+
+def transform(src, dst=None):
+    translate_file(src, dst)
 
 
 def transform_string(input,
@@ -134,84 +120,27 @@ def transform_string(input,
     if inline_map and source_name is None:
         raise ValueError("A source name is needed, please specify it using "
                          "the '--source-name option.")
-    if transpile:
-        res, src_map = api.transpile_pys(input,
-                                         enable_stage3=enable_stage3,
-                                         src_filename=source_name)
-    else:
-        res, src_map = api.translates(input,
-                                      enable_es6=enable_es6,
-                                      enable_stage3=enable_stage3,
-                                      src_filename=source_name)
-    if kw.get('inline_map', False):
-        res += src_map.stringify(inline_comment=True)
+    res = translates(input)
     return res
-
-
-def check_interpreter_supported():
-    if sys.version_info < (3, 5):
-        raise UnsupportedPythonError('TypeScripthon needs at least'
-                                     ' Python 3.5 to run')
 
 
 def main(args=None, fout=None, ferr=None):
     result = 0
     rep = Reporter(fout, ferr)
     args = parser.parse_args(args)
-    freeargs = {
-        'truntime': args.truntime,
-        'inline_map': args.inline_map,
-        'source_name': args.source_name
-    }
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        logging.getLogger().setLevel(logging.DEBUG)
-        log.debug('Log started')
-    if not (args.files or args.string):
+    if not (args.files):
         rep.print_err("Error: You have to supply either a string with -s or a "
                       "filename")
         result = 3
     if args.eval and not args.string:
         rep.print_err("Error: You have to supply a string with -s when using "
                       "evaluation")
-    elif args.string:
-        check_interpreter_supported()
-        input = args.string
-        if input == '-':
-            input = sys.stdin.read()
-        if args.dump_ast:
-            from .testing import ast_dumps
-            rep.print(ast_dumps(input)[1])
-        if args.eval:
-            es6 = es5 = stage3 = True
-        else:
-            es5 = args.es5
-            es6 = args.es6
-            stage3 = args.stage3
-        try:
-            res = transform_string(input, es5, es6, stage3, **freeargs)
-            if args.eval:
-                res = api.evaljs(res, load_es6_polyfill=True)
-            rep.print(res)
-        except Exception as e:
-            if args.pdb:
-                import pdb
-                pdb.post_mortem(e.__traceback__)
-            elif args.debug:
-                raise
-            else:
-                error = "%s: %s" % (e.__class__.__name__, e)
-                rep.print_err("An error occurred while compiling source "
-                              "from string")
-                rep.print_err(error)
-            result = 1
     elif args.output and len(args.files) > 1:
         rep.print_err("Error: only one source file is allowed when "
                       "--output is specified.")
         result = 2
     else:
         try:
-            check_interpreter_supported()
             for fname in args.files:
                 src = Path(fname)
                 if not src.exists():
@@ -251,35 +180,26 @@ def main(args=None, fout=None, ferr=None):
                             elif spath.suffix == '.py':
                                 try:
                                     transform(str(spath),
-                                              str(ddir) if ddir else None,
-                                              args.es5, args.es6, args.stage3,
-                                              **freeargs)
+                                              str(ddir) if ddir else None)
                                     rep.print("Compiled file %s" % spath)
                                 except Exception as e:
                                     e.src_fname = spath
                                     raise
                 else:
                     try:
-                        transform(fname, args.output, args.es5, args.es6,
-                                  args.stage3, **freeargs)
+                        transform(fname, args.output)
                         rep.print("Compiled file %s" % fname)
                     except Exception as e:
                         e.src_fname = fname
                         raise
         except Exception as e:
-            if args.pdb:
-                import pdb
-                pdb.post_mortem(e.__traceback__)
-            elif args.debug:
-                raise
+            src_fname = getattr(e, 'src_fname', None)
+            error = "%s: %s" % (e.__class__.__name__, e)
+            if src_fname:
+                rep.print_err("An error occurred while compiling source "
+                              "file '%s'" % src_fname)
             else:
-                src_fname = getattr(e, 'src_fname', None)
-                error = "%s: %s" % (e.__class__.__name__, e)
-                if src_fname:
-                    rep.print_err("An error occurred while compiling source "
-                                  "file '%s'" % src_fname)
-                else:
-                    rep.print_err("An error occurred during processing.")
+                rep.print_err("An error occurred during processing.")
                 rep.print_err(error)
             result = 1
     sys.exit(result)
