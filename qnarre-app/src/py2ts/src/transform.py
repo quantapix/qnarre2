@@ -30,7 +30,6 @@ class Transformer:
 
     enable_snippets = True
     enable_let = False
-    disable_srcmap = False
     """Used in subtransformation to remap a node on a Transformer instance
     to the AST produced by a substransform."""
     remap_to = None
@@ -192,7 +191,6 @@ class Transformer:
         t = self.new_from(self)
         t.snippets = None
         t.enable_snippets = False
-        t.disable_srcmap = True
         return t.transform_code(trans_src)
 
     def add_globals(self, *items):
@@ -345,17 +343,17 @@ def controlled_ast_walk(node):
     branch to descend on sub-branches.
     """
     if isinstance(node, list):
-        l = node.copy()
+        ls = node.copy()
     elif isinstance(node, tuple):
-        l = list(node)
+        ls = list(node)
     else:
-        l = [node]
-    while len(l) > 0:
-        popped = l.pop()
+        ls = [node]
+    while len(ls) > 0:
+        popped = ls.pop()
         check_children = (yield popped)
         if check_children:
             for n in ast.iter_child_nodes(popped):
-                l.append(n)
+                ls.append(n)
 
 
 CODE_BLOCK_STMTS = (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)
@@ -462,15 +460,17 @@ def rfilter(r, it, invert=False):
                 yield x
 
 
-class OutputSrc:
-    def __init__(self, node, name=None):
+class Output:
+    def __init__(self, node):
         self.node = node
-        self.src_name = name
+
+    def serialize(self):
+        yield self
 
 
-class Line(OutputSrc):
-    def __init__(self, node, item, indent=False, delim=False, name=None):
-        super().__init__(node, name)
+class Line(Output):
+    def __init__(self, node, item, indent=False, delim=False):
+        super().__init__(node)
         self.indent = int(indent)
         self.delim = delim
         if isinstance(item, (tuple, list)):
@@ -486,32 +486,14 @@ class Line(OutputSrc):
         line += '\n'
         return line
 
-    def serialize(self):
-        yield self
-
-    def src_mappings(self):
-        if self.node.transformer.disable_srcmap:
-            return
-        src_line, src_offset = self._pos_in_src()
-        offset = self.indent * 4
-        if isinstance(self.item, str):
-            if src_line:
-                yield self._gen_mapping(self.item, src_line, src_offset,
-                                        offset)
-        else:
-            assert isinstance(self.item, Part)
-            for m in self.item.src_mappings():
-                m['dst_offset'] += offset
-                yield m
-
     def __repr__(self):
         return '<%s indent: %d, "%s">' % (self.__class__.__name__, self.indent,
                                           str(self))
 
 
-class Part(OutputSrc):
-    def __init__(self, node, *items, name=None):
-        super().__init__(node, name)
+class Part(Output):
+    def __init__(self, node, *items):
+        super().__init__(node)
         self.items = []
         for i in items:
             if isinstance(i, (str, Part)):
@@ -524,21 +506,11 @@ class Part(OutputSrc):
     def __str__(self):
         return ''.join(str(i) for i in self.items)
 
-    def serialize(self):
-        yield self
-
     def __repr__(self):
         return '<%s, "%s">' % (self.__class__.__name__, str(self))
 
 
-def linecounter(iterable, start=1):
-    count = start
-    for line in iterable:
-        yield count, line
-        count += len(re.findall('\n', str(line)))
-
-
-class Block(OutputSrc):
+class Block(Output):
     def __init__(self, node):
         super().__init__(None)
         self.lines = list(node.serialize())

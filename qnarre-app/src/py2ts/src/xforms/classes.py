@@ -104,7 +104,6 @@ def ClassDef_exception(t, x):
         return this.name + ': ' + this.message;
     }
     """
-    # detect if the body is empty
     _class_guards(t, x)
     name = x.name
     body = x.body
@@ -112,72 +111,40 @@ def ClassDef_exception(t, x):
         super_name = x.bases[0].id
     else:
         super_name = None
-
-    # strip docs from body
     fn_body = [
         e for e in body
         if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
-
-    # all the other kind of members which are assigned stuff
     assigns = [e for e in body if isinstance(e, assign_types)]
-
-    # is this a simple definition of a subclass of Exception?
-    if len(fn_body) > 0 or len(assigns) > 0 or super_name not in \
-       ('Exception', 'Error'):
-        return
     res = t.subtransform(EXC_TEMPLATE_ES5 % dict(name=name), remap_to=x)
     return res
 
 
 def ClassDef_default(t, x):
     """Convert a class to an ES6 class."""
-
-    # check if translatable
     _class_guards(t, x)
-
     name = x.name
     body = x.body
-
     if len(x.bases) > 0:
         superclass = x.bases[0]
     else:
         superclass = None
-
-    # strip docs from body
     fn_body = [
         e for e in body
         if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
-
-    # all the other kind of members which are assigned stuff
     assigns = [e for e in body if isinstance(e, assign_types)]
-
-    # Each FunctionDef must have self as its first arg
-    # silly check for methods
     for node in fn_body:
         arg_names = [arg.arg for arg in node.args.args]
         t.unsupported(node,
                       len(arg_names) == 0 or arg_names[0] != 'self',
                       "First arg on method must be 'self'")
-
-    # TODO: better express this... find if the constructor has to be the first
-    # as per ES6 doc
     if len(fn_body) > 0 and fn_body[0].name == '__init__':
         init = body[0]
-        # __init__ should not contain a return statement
-        # silly check
         for stmt in controlled_ast_walk(init):
             assert not isinstance(stmt, ast.Return)
-
-    # manage decorators. some are managed at class translation time and
-    # converted to equal ES6 syntax while the generic ones will be calculated
-    # at runtime
     decos = {}
     for fn in fn_body:
-        # make sure the function hasn't any decorator managed by the function
-        # transformer. This includes property, property, classmethod,
-        # staticmethod and property.setter:
         if fn.decorator_list and not \
            ((len(fn.decorator_list) == 1 and
             isinstance(fn.decorator_list[0], ast.Name) and
@@ -185,20 +152,14 @@ def ClassDef_default(t, x):
                                         'staticmethod']) or
             (isinstance(fn.decorator_list[0], ast.Attribute) and
              fn.decorator_list[0].attr == 'setter')):
-
             decos[fn.name] = (TSStr(fn.name), fn.decorator_list)
-            fn.decorator_list = []  # remove so that the function transformer
-            # will not complain
-
-    # keep class doc if present
+            fn.decorator_list = []
     if _isdoc(body[0]):
         fn_body = [body[0]] + fn_body
     cls = TSClass(TSName(name), superclass, fn_body)
     cls.py_node = x
-
     stmts = [cls]
 
-    # prepare assignments mapping as js ast
     def _from_assign_to_dict_item(e):
         key = get_assign_targets(e)[0]
         value = e.value
@@ -213,8 +174,6 @@ def ClassDef_default(t, x):
     assigns = tuple(
         zip(*sorted(map(_from_assign_to_dict_item, assigns),
                     key=lambda e: e[0])))
-
-    # render assignments as properties at runtime
     if assigns:
         from ..snippets import set_properties
         t.add_snippet(set_properties)
@@ -225,8 +184,6 @@ def ClassDef_default(t, x):
                  TSDict(_normalize_dict_keys(t, assigns[1]), assigns[2])),
             ))
         stmts.append(assigns)
-
-    # calculate method decorators at runtime
     if decos:
         from ..snippets import set_decorators
         t.add_snippet(set_decorators)
@@ -242,15 +199,12 @@ def ClassDef_default(t, x):
                 (TSName(name), TSDict(_normalize_dict_keys(t, keys), values)),
             ))
         stmts.append(decos)
-
-    # there is any decorator list on the class
     if x.decorator_list:
         from ..snippets import set_class_decorators
         t.add_snippet(set_class_decorators)
         with q as cls_decos:
             name[name] = _pj.set_class_decorators(name[name],
                                                   ast_list[x.decorator_list])
-
         stmts.append(TSExpressionStatement(cls_decos[0]))
     return TSStatements(*stmts)
 
