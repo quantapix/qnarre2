@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- test fixtures
-# :Created:  lun 22 feb 2016 12:16:42 CET
-# :Authors:  Alberto Berti <alberto@metapensiero.it>,
-#            Lele Gaifax <lele@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
 
 from glob import glob
 from os.path import dirname, exists, isabs, isdir, join, split, splitext
