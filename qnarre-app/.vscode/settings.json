@@ -12,5 +12,11 @@
   "prettier.packageManager": "yarn",
   "python.linting.pylintEnabled": false,
   "python.linting.flake8Enabled": true,
-  "python.jediEnabled": false
+  "python.jediEnabled": false,
+  "python.testing.pytestArgs": [
+    "src/py2ts/tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.nosetestsEnabled": false,
+  "python.testing.pytestEnabled": true
 }

@@ -2,10 +2,11 @@ import re
 import ast
 from functools import reduce
 from unicodedata import lookup
-from macropy.core.quotes import macros, ast_literal, ast_list, q
+from macropy.core.quotes import ast_literal, ast_list, q
 from macropy.experimental.pattern import switch
 
-from .. import ts
+from . import ts
+from . import transform as xf
 
 
 def Assign_default(t, x):
@@ -20,8 +21,8 @@ def AnnAssign(t, x):
 
 
 def Assign_all(t, x):
-    if len(x.targets) == 1 and isinstance(x.targets[0], ast.Name) and \
-       x.targets[0].id == '__all__':
+    if len(x.targets) == 1 and isinstance(
+            x.targets[0], ast.Name) and x.targets[0].id == '__all__':
         t.unsupported(
             x, not isinstance(x.value, (ast.Tuple, ast.List)),
             "Please define a '__default__' member for default"
@@ -375,9 +376,8 @@ def Call_new(t, x):
             return x.id
         elif isinstance(x, ast.Attribute):
             return str(x.attr)
-        elif isinstance(x, ast.Subscript):
-            if isinstance(x.slice, ast.Index):
-                return str(x.slice.value)
+        elif isinstance(x, ast.Subscript) and isinstance(x.slice, ast.Index):
+            return str(x.slice.value)
 
     NAME_STRING = getNameString(x.func)
 
@@ -425,10 +425,12 @@ def Call_dict_update(t, x):
                       keywords=[]))
 
     """
-    if isinstance(x.func, ast.Attribute) and x.func.attr == 'update' and \
-       isinstance(x.func.value, ast.Call) and  \
-       isinstance(x.func.value.func, ast.Name) and \
-       x.func.value.func.id == 'dict' and len(x.func.value.args) == 1:
+    if isinstance(x.func,
+                  ast.Attribute) and x.func.attr == 'update' and isinstance(
+                      x.func.value, ast.Call) and isinstance(
+                          x.func.value.func,
+                          ast.Name) and x.func.value.func.id == 'dict' and len(
+                              x.func.value.args) == 1:
         return ts.Call(ts.Attribute(ts.Name('Object'), 'assign'),
                        [x.func.value.args[0]] + x.args)
 
@@ -450,25 +452,27 @@ def Call_dict_copy(t, x):
                                                 keywords=[])),
                       keywords=[]))
     """
-    if isinstance(x.func, ast.Attribute) and x.func.attr == 'copy' and \
-       isinstance(x.func.value, ast.Call) and  \
-       isinstance(x.func.value.func, ast.Name) and \
-       x.func.value.func.id == 'dict' and len(x.func.value.args) == 1:
+    if isinstance(x.func,
+                  ast.Attribute) and x.func.attr == 'copy' and isinstance(
+                      x.func.value, ast.Call) and isinstance(
+                          x.func.value.func,
+                          ast.Name) and x.func.value.func.id == 'dict' and len(
+                              x.func.value.args) == 1:
         return ts.Call(ts.Attribute(ts.Name('Object'), 'assign'),
                        (ts.Dict([], []), x.func.value.args[0]))
 
 
 def Call_template(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'tmpl') and \
-       len(x.args) > 0:
+    if (isinstance(x.func, ast.Name)
+            and x.func.id == 'tmpl') and len(x.args) > 0:
         assert len(x.args) == 1
         assert isinstance(x.args[0], ast.Str)
         return ts.TemplateLiteral(x.args[0].s)
 
 
 def Call_tagged_template(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == '__') and \
-       len(x.args) > 0 and t.parent_of(x) is not ast.Attribute:
+    if (isinstance(x.func, ast.Name) and x.func.id == '__') and len(
+            x.args) > 0 and t.parent_of(x) is not ast.Attribute:
         assert 3 > len(x.args) >= 1
         assert isinstance(x.args[0], ast.Str)
         if len(x.args) == 2:
@@ -480,15 +484,15 @@ def Call_tagged_template(t, x):
 
 def Call_hasattr(t, x):
     """Translate ``hasattr(foo, bar)`` to ``bar in foo``."""
-    if (isinstance(x.func, ast.Name) and x.func.id == 'hasattr') and \
-       len(x.args) == 2:
+    if (isinstance(x.func, ast.Name) and x.func.id == 'hasattr') and len(
+            x.args) == 2:
         return ts.BinOp(x.args[1], ts.OpIn(), x.args[0])
 
 
 def Call_getattr(t, x):
     """Translate ``getattr(foo, bar, default)`` to ``foo[bar] || default``."""
-    if (isinstance(x.func, ast.Name) and x.func.id == 'getattr') and \
-       2 <= len(x.args) < 4:
+    if (isinstance(x.func, ast.Name)
+            and x.func.id == 'getattr') and 2 <= len(x.args) < 4:
         if len(x.args) == 2:
             res = ts.Subscript(x.args[0], x.args[1])
         else:
@@ -499,16 +503,16 @@ def Call_getattr(t, x):
 
 def Call_setattr(t, x):
     """Translate ``setattr(foo, bar, value)`` to ``foo[bar] = value``."""
-    if (isinstance(x.func, ast.Name) and x.func.id == 'setattr') and \
-       len(x.args) == 3:
+    if (isinstance(x.func, ast.Name) and x.func.id == 'setattr') and len(
+            x.args) == 3:
         return ts.ExpressionStatement(
             ts.AssignmentExpression(ts.Subscript(x.args[0], x.args[1]),
                                     x.args[2]))
 
 
 def Call_TS(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'ts.') and \
-       len(x.args) == 1:
+    if (isinstance(x.func, ast.Name) and x.func.id == 'ts.') and len(
+            x.args) == 1:
         assert isinstance(x.args[0], ast.Str)
         return ts.Literal(x.args[0].s)
 
@@ -522,6 +526,58 @@ def Call_int(t, x):
 def Call_float(t, x):
     if isinstance(x.func, ast.Name) and x.func.id == 'float':
         return ts.Call(ts.Attribute('Number', 'parseFloat'), x.args)
+
+
+def Call_isinstance(t, x):
+    if (isinstance(x.func, ast.Name) and x.func.id == 'isinstance'):
+        assert len(x.args) == 2
+        return _build_call_isinstance(x.args[0], x.args[1])
+
+
+def Call_issubclass(t, x):
+    with switch(x):
+        if ast.Call(func=ast.Name(id='issubclass'), args=[t, x]):
+            tproto = q[ast_literal[t].prototype]
+            if isinstance(x, (ast.Tuple, ast.List, ast.Set)):
+                classes = x.elts
+            else:
+                classes = [x]
+            prev = None
+            for c in classes:
+                cur = q[ast_literal[c].prototype.isPrototypeOf(
+                    ast_literal[tproto])]
+                if prev is not None:
+                    cur = q[ast_literal[prev] or ast_literal[cur]]
+                prev = cur
+            return ts.ExpressionStatement(cur)
+
+
+def Call_super(t, x):
+    if isinstance(x.func, ast.Attribute) and isinstance(
+            x.func.value, ast.Call) and isinstance(
+                x.func.value.func,
+                ast.Name) and x.func.value.func.id == 'super':
+        sup_args = x.func.value.args
+        method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
+        if method and isinstance(t.parent_of(method),
+                                 ast.ClassDef) and len(sup_args) == 0:
+            if method.name == '__init__':
+                result = ts.Call(ts.Super(), x.args)
+            else:
+                sup_method = x.func.attr
+                if isinstance(method, ast.AsyncFunctionDef):
+                    sup_cls = t.parent_of(method).bases[0]
+                    result = ts.Call(
+                        ts.Attribute(
+                            ts.Attribute(
+                                ts.Attribute(ts.Name(sup_cls), 'prototype'),
+                                _normalize_name(sup_method)), 'call'),
+                        [ts.This()] + x.args)
+                else:
+                    result = ts.Call(
+                        ts.Attribute(ts.Super(), _normalize_name(sup_method)),
+                        x.args)
+            return result
 
 
 Call = [
@@ -555,19 +611,10 @@ _shortcuts = {'at': '@'}
 
 
 def _notable_replacer_gen():
-    """This is used together with 'GEN_PREFIX_RE' to replace unicode
-    symbol names in module prefixes. Some names are shortcut using the
-    ``_shortcuts`` map. It's designed to replace matches olny if they
-    are located at the beginning of the string and if they are
-    subsequent to one another. It returns a function to be used with a
-    regular expression object ``sub()`` method.
-    """
     last_match_end = None
 
     def replace_notable_name(match):
         nonlocal last_match_end
-        # try to replace only if the match is positioned at the start
-        # or is following another match
         if ((last_match_end is None and match.start() == 0)
                 or (isinstance(last_match_end, int)
                     and last_match_end == match.start())):
@@ -587,19 +634,6 @@ def _notable_replacer_gen():
 
 
 def _replace_identifiers_with_symbols(dotted_str):
-    """Replaces two kinds of identifiers with characters. This is used to
-    express characters that are used in ts. module paths in Python's
-    ``import`` statements.
-
-    1. The first replaces ``__`` (a "dunder") with ``@`` if it's at
-       the beginning and with ``-`` if it's in the middle of two
-       words;
-    2. the second replaces notable names ending with an underscore
-       like ``tilde_`` with the corresponding character (only at the
-       beginning).
-
-    Returns a string with the mangled dotted path
-    """
     dotted_str = AT_PREFIX_RE.sub(r'@\1', dotted_str)
     dotted_str = INSIDE_DUNDER_RE.sub(r'\1-\2', dotted_str)
 
@@ -675,7 +709,7 @@ def Compare_in(t, x):
     if not isinstance(x.ops[0], (ast.NotIn, ast.In)):
         return
     if t.snippets:
-        from ..snippets import in_es6
+        from .snippets import in_es6
         t.add_snippet(in_es6)
         sname = 'in_es6'
         result = ts.Call(ts.Attribute('_pj', sname),
@@ -705,28 +739,49 @@ def Subscript_slice(t, x):
         return ts.Call(ts.Attribute(x.value, 'slice'), args)
 
 
+def Subscript_super(t, x):
+    if isinstance(x.value, ast.Call) and isinstance(
+            x.value.func, ast.Name) and x.value.func.id == 'super':
+        sup_args = x.value.args
+        method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
+        if method and isinstance(t.parent_of(method),
+                                 ast.ClassDef) and len(sup_args) == 0:
+            if method.name == '__init__':
+                t.unsupported(
+                    x, True, "'super()[expr]' cannot be used in "
+                    "constructors")
+            else:
+                sup_method = x.slice.value
+                # this becomes super[expr]
+                result = ts.Subscript(ts.Super(), _normalize_name(sup_method))
+            return result
+
+
 Subscript = [Subscript_slice, Subscript_super, Subscript_default]
 
 
+def Attribute_super(t, x):
+    if isinstance(x.value, ast.Call) and len(x.value.args) == 0 and isinstance(
+            x.value.func, ast.Name) and x.value.func.id == 'super':
+        sup_args = x.value.args
+        method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
+        if method and isinstance(t.parent_of(method),
+                                 ast.ClassDef) and len(sup_args) == 0:
+            if method.name == '__init__':
+                t.unsupported(
+                    x, True, "'super().attr' cannot be used in "
+                    "constructors")
+            else:
+                sup_method = x.attr
+                # this becomes super.method
+                result = ts.Attribute(ts.Super(), _normalize_name(sup_method))
+            return result
+
+
 def Attribute_list_append(t, x):
-    """Convert ``list(foo).append(bar)`` to ``foo.push(bar)``.
-
-    AST dump::
-
-      Expr(value=Call(args=[Name(ctx=Load(),
-                                 id='bar')],
-                      func=Attribute(attr='append',
-                                     ctx=Load(),
-                                     value=Call(args=[Name(ctx=Load(),
-                                                           id='foo')],
-                                                func=Name(ctx=Load(),
-                                                          id='list'),
-                                                keywords=[])),
-                      keywords=[]))
-    """
-    if x.attr == 'append' and isinstance(x.value, ast.Call) and \
-       isinstance(x.value.func, ast.Name) and x.value.func.id == 'list' and \
-       len(x.value.args) == 1:
+    if x.attr == 'append' and isinstance(x.value, ast.Call) and isinstance(
+            x.value.func, ast.Name) and x.value.func.id == 'list' and len(
+                x.value.args) == 1:
         return ts.Attribute(x.value.args[0], 'push')
 
 
@@ -736,15 +791,15 @@ Attribute = [Attribute_super, Attribute_list_append, Attribute_default]
 def Assert(t, x):
     """Convert ``assert`` statement to just a snippet function call."""
     if t.snippets:
-        from ..snippets import _assert
+        from .snippets import _assert
         t.add_snippet(_assert)
         return ts.Call(ts.Attribute('_pj', '_assert'),
                        [x.test, x.msg or ts.Null()])
 
 
 def Assign_default_(t, x):
-    if len(x.targets) == 1 and isinstance(x.targets[0], ast.Name) and \
-       x.targets[0].id == '__default__':
+    if len(x.targets) == 1 and isinstance(
+            x.targets[0], ast.Name) and x.targets[0].id == '__default__':
         t.unsupported(x.value, isinstance(x.value, (ast.Tuple, ast.List)),
                       "Only one symbol can be exported using '__default__'.")
         if isinstance(x.value, ast.Str):
@@ -939,11 +994,8 @@ def Try(t, x):
                 # Rename the exception to match the handler
                 rename = ts.VarStatement([h.name], [ename])
                 body = [rename] + h.body
-
-            # if it's  the last except and it's a catchall
-            # threat 'except Exception:' as a catchall
-            if (ix == 0 and h.type is None or
-                (isinstance(h.type, ast.Name) and h.type.id == 'Exception')):
+            if ix == 0 and h.type is None or (isinstance(h.type, ast.Name)
+                                              and h.type.id == 'Exception'):
                 prev_except = ts.Statements(*body)
                 continue
             else:
@@ -964,9 +1016,7 @@ def Try(t, x):
 def Raise(t, x):
     if x.exc is None:
         ename = t.ctx.get('ename')
-        t.unsupported(
-            x, not ename, "'raise' has no argument but failed obtaining"
-            " implicit exception")
+        t.unsupported(x, not ename, "'raise' has no argument")
         res = ts.ThrowStatement(ts.Name(ename))
     elif isinstance(x.exc, ast.Call) and isinstance(
             x.exc.func, ast.Name) and len(
@@ -1001,9 +1051,9 @@ def ListComp(t, x):
     push = ts.ExpressionStatement(
         ts.Call(ts.Attribute(ts.Name(__new), 'push'), [EXPR]))
     if CONDITION:
-        pushIfNeeded = ts.IfStatement(CONDITION, push, None)
+        push_if = ts.IfStatement(CONDITION, push, None)
     else:
-        pushIfNeeded = push
+        push_if = push
     forloop = ts.ForStatement(
         ts.VarStatement([__i, __bound],
                         [0, ts.Attribute(ts.Name(__old), 'length')]),
@@ -1011,7 +1061,7 @@ def ListComp(t, x):
         ts.AugAssignStatement(ts.Name(__i), ts.OpAdd(), ts.Num(1)), [
             ts.VarStatement([NAME.id],
                             [ts.Subscript(ts.Name(__old), ts.Name(__i))]),
-            pushIfNeeded
+            push_if
         ])
     func = ts.Function(None, [], [
         ts.VarStatement([__new, __old], [ts.List([]), LIST]), forloop,
@@ -1031,11 +1081,11 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
     is_in_method = not x.name.startswith('fn_') and all(
         lambda p: isinstance(p, (ast.FunctionDef, ast.AsyncFunctionDef, ast.
                                  ClassDef))
-        for p in t.parents(x, stop_at=ast.ClassDef)) and isinstance(
+        for _ in t.parents(x, stop_at=ast.ClassDef)) and isinstance(
             tuple(t.parents(x, stop_at=ast.ClassDef))[-1], ast.ClassDef)
 
     is_generator = reduce(lambda prev, cur: _isyield(cur) or prev,
-                          cross_walk(x.body), False)
+                          xf.cross_walk(x.body), False)
 
     t.unsupported(x, not is_method and x.decorator_list,
                   "Function decorators are"
@@ -1101,7 +1151,7 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
         upper_vars = t.ctx['vars']
     else:
         upper_vars = set()
-    local_vars = list((set(local_names(body)) - set(arg_names)) -
+    local_vars = list((set(xf.local_names(body)) - set(arg_names)) -
                       set(kw_names) - upper_vars)
     t.ctx['vars'] = upper_vars | set(local_vars)
     if len(local_vars) > 0:
@@ -1227,49 +1277,6 @@ def _class_guards(t, x):
     assert not x.keywords, "class '{}', args cannot be keywords".format(x.name)
 
 
-def ClassDef_exception(t, x):
-    """Convert a class like::
-
-      class MyError(Exception):
-          pass
-
-    into something like::
-
-      class MyError extends Error {
-          constructor(message) {
-              this.name = 'MyError';
-              this.message = message || 'Error';
-          }
-      }
-
-    The real implementation avoids ES6 classes because as of now
-    (2016-03-20) subclassing from Error fails the instanceof test and
-    so i would break catch bodies, as for how they are transformed
-    right now.
-
-    N.B. A toString() like this is supposed to be implemented by the
-    Error object:
-
-    function toString() {
-        return this.name + ': ' + this.message;
-    }
-    """
-    _class_guards(t, x)
-    name = x.name
-    body = x.body
-    if len(x.bases) > 0 and isinstance(x.bases[0], ast.Name):
-        super_name = x.bases[0].id
-    else:
-        super_name = None
-    fn_body = [
-        e for e in body
-        if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
-    ]
-    assigns = [e for e in body if isinstance(e, assign_types)]
-    res = t.subtransform(EXC_TEMPLATE_ES5 % dict(name=name), remap=x)
-    return res
-
-
 def ClassDef_default(t, x):
     """Convert a class to an ES6 class."""
     _class_guards(t, x)
@@ -1291,17 +1298,16 @@ def ClassDef_default(t, x):
                       "First arg on method must be 'self'")
     if len(fn_body) > 0 and fn_body[0].name == '__init__':
         init = body[0]
-        for stmt in ast_walk(init):
+        for stmt in xf.ast_walk(init):
             assert not isinstance(stmt, ast.Return)
     decos = {}
     for fn in fn_body:
-        if fn.decorator_list and not \
-           ((len(fn.decorator_list) == 1 and
-            isinstance(fn.decorator_list[0], ast.Name) and
-            fn.decorator_list[0].id in ['property', 'classmethod',
-                                        'staticmethod']) or
-            (isinstance(fn.decorator_list[0], ast.Attribute) and
-             fn.decorator_list[0].attr == 'setter')):
+        if fn.decorator_list and not (
+            (len(fn.decorator_list) == 1 and isinstance(
+                fn.decorator_list[0], ast.Name) and fn.decorator_list[0].id
+             in ['property', 'classmethod', 'staticmethod']) or
+            (isinstance(fn.decorator_list[0], ast.Attribute)
+             and fn.decorator_list[0].attr == 'setter')):
             decos[fn.name] = (ts.Str(fn.name), fn.decorator_list)
             fn.decorator_list = []
     if _isdoc(body[0]):
@@ -1311,7 +1317,7 @@ def ClassDef_default(t, x):
     stmts = [cls]
 
     def _from_assign_to_dict_item(e):
-        key = assign_targets(e)[0]
+        key = xf.assign_targets(e)[0]
         value = e.value
         if isinstance(key, ast.Name):
             rendered_key = ast.Str(_normalize_name(key.id))
@@ -1325,7 +1331,7 @@ def ClassDef_default(t, x):
         zip(*sorted(map(_from_assign_to_dict_item, assigns),
                     key=lambda e: e[0])))
     if assigns:
-        from ..snippets import set_properties
+        from .snippets import set_properties
         t.add_snippet(set_properties)
         assigns = ts.ExpressionStatement(
             ts.Call(
@@ -1335,7 +1341,7 @@ def ClassDef_default(t, x):
             ))
         stmts.append(assigns)
     if decos:
-        from ..snippets import set_decorators
+        from .snippets import set_decorators
         t.add_snippet(set_decorators)
         keys = []
         values = []
@@ -1351,139 +1357,16 @@ def ClassDef_default(t, x):
             ))
         stmts.append(decos)
     if x.decorator_list:
-        from ..snippets import set_class_decorators
+        from .snippets import set_class_decorators
         t.add_snippet(set_class_decorators)
         with q as cls_decos:
-            name[name] = _pj.set_class_decorators(name[name],
-                                                  ast_list[x.decorator_list])
+            name[name] = set_class_decorators(name[name],
+                                              ast_list[x.decorator_list])
         stmts.append(ts.ExpressionStatement(cls_decos[0]))
     return ts.Statements(*stmts)
 
 
-ClassDef = [ClassDef_exception, ClassDef_default]
-
-
-def Call_super(t, x):
-    if isinstance(x.func, ast.Attribute) and isinstance(x.func.value, ast.Call) \
-         and isinstance(x.func.value.func, ast.Name) and \
-         x.func.value.func.id == 'super':
-        sup_args = x.func.value.args
-        # Are we in a FuncDef and is it a method and super() has no args?
-        method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method), ast.ClassDef) and \
-           len(sup_args) == 0:
-            # if in class constructor, this becomes ``super(x, y)``
-            if method.name == '__init__':
-                result = ts.Call(ts.Super(), x.args)
-            else:
-                sup_method = x.func.attr
-                if isinstance(method, ast.AsyncFunctionDef):
-                    sup_cls = t.parent_of(method).bases[0]
-                    result = ts.Call(
-                        ts.Attribute(
-                            ts.Attribute(
-                                ts.Attribute(ts.Name(sup_cls), 'prototype'),
-                                _normalize_name(sup_method)), 'call'),
-                        [ts.This()] + x.args)
-                else:
-                    result = ts.Call(
-                        ts.Attribute(ts.Super(), _normalize_name(sup_method)),
-                        x.args)
-            return result
-
-
-def Attribute_super(t, x):
-    if isinstance(x.value, ast.Call) and len(x.value.args) == 0 and isinstance(
-            x.value.func, ast.Name) and x.value.func.id == 'super':
-        sup_args = x.value.args
-        method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method),
-                                 ast.ClassDef) and len(sup_args) == 0:
-            if method.name == '__init__':
-                t.unsupported(
-                    x, True, "'super().attr' cannot be used in "
-                    "constructors")
-            else:
-                sup_method = x.attr
-                # this becomes super.method
-                result = ts.Attribute(ts.Super(), _normalize_name(sup_method))
-            return result
-
-
-def Subscript_super(t, x):
-    """Same as per attribute: translate ``super()[foo]`` into ``super[foo]``.
-
-    AST is::
-
-         Subscript(ctx=Load(),
-                   slice=Index(value=Name(ctx=Load(),
-                                          id='foo')),
-                   value=Call(args=[],
-                              func=Name(ctx=Load(),
-                                        id='super'),
-                              keywords=[]))
-
-    """
-    if isinstance(x.value, ast.Call) and isinstance(x.value.func, ast.Name) and \
-       x.value.func.id == 'super':
-        sup_args = x.value.args
-        # Are we in a FuncDef and is it a method and super() has no args?
-        method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method), ast.ClassDef) and \
-           len(sup_args) == 0:
-            if method.name == '__init__':
-                t.unsupported(
-                    x, True, "'super()[expr]' cannot be used in "
-                    "constructors")
-            else:
-                sup_method = x.slice.value
-                # this becomes super[expr]
-                result = ts.Subscript(ts.Super(), _normalize_name(sup_method))
-            return result
-
-
-def Call_isinstance(t, x):
-    """Translate ``isinstance(foo, Bar)`` to ``foo instanceof Bar`` and
-    ``isinstance(Foo, (Bar, Zoo))`` to ``foo instanceof Bar || foo instanceof
-    Zoo``.
-
-    AST dump of the latter::
-
-      Call(args=[Name(ctx=Load(),
-                      id='foo'),
-                 Tuple(ctx=Load(),
-                       elts=[Name(ctx=Load(),
-                                  id='Bar'),
-                             Name(ctx=Load(),
-                                  id='Zoo')])],
-           func=Name(ctx=Load(),
-                     id='isinstance'),
-           keywords=[])
-
-    """
-    if (isinstance(x.func, ast.Name) and x.func.id == 'isinstance'):
-        assert len(x.args) == 2
-        return _build_call_isinstance(x.args[0], x.args[1])
-
-
-def Call_issubclass(target, classes):
-    """Translate ``issubclass(Foo, Bar)`` to ``Foo.prototype instanceof Bar``.
-    """
-    with switch(x):
-        if ast.Call(func=ast.Name(id='issubclass'), args=[target, classes]):
-            tproto = q[ast_literal[target].prototype]
-            if isinstance(classes, (ast.Tuple, ast.List, ast.Set)):
-                classes = classes.elts
-            else:
-                classes = [classes]
-            prev = None
-            for c in classes:
-                cur = q[ast_literal[c].prototype.isPrototypeOf(
-                    ast_literal[tproto])]
-                if prev is not None:
-                    cur = q[ast_literal[prev] or ast_literal[cur]]
-                prev = cur
-            return ts.ExpressionStatement(cur)
+ClassDef = [ClassDef_default]
 
 
 def _normalize_name(n):

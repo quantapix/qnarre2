@@ -1,12 +1,10 @@
 
+import sys
+import pytest
 from glob import glob
 from os.path import dirname, exists, isabs, isdir, join, split, splitext
-import sys
 
-import pytest
-
-from metapensiero.pj.testing import (ast_object, ast_dump_object,
-                                     ast_object_to_js)
+from ..testing import ast_object, ast_dump_object, ast_object_to_js
 
 
 @pytest.fixture
