@@ -1,19 +1,16 @@
+import ast
 
 
 def in_es6(left, right):
-    from __globals__ import Array, typeof, Map, Set, WeakMap, WeakSet
-
-    if isinstance(right, Array) or typeof(right) == 'string':
+    if isinstance(right, ast.Array) or typeof(right) == 'string':
         return right.indexOf(left) > -1
-    elif isinstance(right, (Map, Set, WeakMap, WeakSet)):
+    elif isinstance(right, (ast.Map, ast.Set, ast.WeakMap, ast.WeakSet)):
         return right.has(left)
     else:
         return left in right
 
 
 def set_decorators(cls, props):
-    from __globals__ import Function, Map, WeakMap, Object
-
     for p in dict(props):
         decos = props[p]
 
@@ -21,9 +18,8 @@ def set_decorators(cls, props):
             return deco(val, cls, p)
 
         deco = decos.reduce(reducer, cls.prototype[p])
-        if not isinstance(deco, (Function, Map, WeakMap)) and \
-            isinstance(deco, Object) and (('value' in deco) or
-                                          ('get' in deco)):
+        if not isinstance(deco, (Function, Map, WeakMap)) and isinstance(
+                deco, Object) and (('value' in deco) or ('get' in deco)):
             del cls.prototype[p]
             Object.defineProperty(cls.prototype, p, deco)
         else:
@@ -38,14 +34,11 @@ def set_class_decorators(cls, decos):
 
 
 def set_properties(cls, props):
-    from __globals__ import Function, Map, WeakMap, Object
-
     for p in dict(props):
         value = props[p]
-        if not isinstance(value, (Map, WeakMap)) and isinstance(value, Object) \
-           and 'get' in value and isinstance(value.get, Function):
-            # the following condition raises a TypeError in dukpy, why?
-            # ('set' in value and isinstance(value.set, Function)):
+        if not isinstance(value, (Map, WeakMap)) and isinstance(
+                value, Object) and 'get' in value and isinstance(
+                    value.get, Function):
             desc = value
         else:
             desc = {
@@ -58,8 +51,6 @@ def set_properties(cls, props):
 
 
 def _assert(comp, msg):
-    from __globals__ import Error, Object, typeof
-
     def PJAssertionError(self, message):
         self.name = 'PJAssertionError'
         self.message = message or 'Custom error PJAssertionError'

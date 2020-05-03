@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-# :Project:  metapensiero.pj -- py evaluation tests
-# :Created:  dom 28 feb 2016 16:27:40 CET
-# :Author:   Alberto Berti <alberto@metapensiero.it>
-# :License:  GNU General Public License version 3 or later
-#
-
 import pytest
 
 from metapensiero.pj.api import eval_object, eval_object_es6, translate_object
@@ -319,6 +312,7 @@ def test_method_decorators():
 
         foo = Product(80)
         return foo.euro_price_with_tax(22)
+
     assert test_deco_py() == eval_object_es6(test_deco, 'test_deco();')
 
 
