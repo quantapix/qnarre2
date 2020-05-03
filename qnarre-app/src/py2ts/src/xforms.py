@@ -2,10 +2,8 @@ import re
 import ast
 from functools import reduce
 from unicodedata import lookup
-from macropy.core.quotes import macros, ast_literal, ast_list, name, q
-from macropy.experimental.pattern import (macros, _matching, switch,
-                                          ClassMatcher, LiteralMatcher,
-                                          ListMatcher)
+from macropy.core.quotes import macros, ast_literal, ast_list, q
+from macropy.experimental.pattern import switch
 
 from .. import ts
 
@@ -1119,7 +1117,6 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
     if is_method:
         cls_member_opts = {}
         if x.decorator_list:
-            # decorator should be "property" or "<name>.setter" or "classmethod"
             fdeco = x.decorator_list[0]
             if isinstance(fdeco, ast.Name) and fdeco.id == 'property':
                 deco = ts.Getter
@@ -1161,7 +1158,6 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
                                       **cls_member_opts)
             else:
                 result = mwrapper(name, args, body, acc, kw, **cls_member_opts)
-    # x is a function
     else:
         if is_in_method and fwrapper is None:
             fdef = ts.ArrowFunction(name, args, body, acc, kw)
@@ -1170,8 +1166,6 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
         elif is_in_method and fwrapper in [ts.GenFunction, ts.AsyncFunction]:
             fdef = fwrapper(name, args, body, acc, kw)
             fdef.py_node = x
-            # arrow functions cannot be generators, render them as normal
-            # function and add a bind(self)
             result = ts.Statements(
                 fdef,
                 ts.ExpressionStatement(
@@ -1384,11 +1378,6 @@ def Call_super(t, x):
             else:
                 sup_method = x.func.attr
                 if isinstance(method, ast.AsyncFunctionDef):
-                    # temporary fix for babel's bug
-                    # https://github.com/babel/babel/issues/3930
-                    # converts to
-                    # O.getPrototypeOf(O.getPrototypeOf(this)).method.call(this,
-                    # x, y)
                     sup_cls = t.parent_of(method).bases[0]
                     result = ts.Call(
                         ts.Attribute(
@@ -1397,7 +1386,6 @@ def Call_super(t, x):
                                 _normalize_name(sup_method)), 'call'),
                         [ts.This()] + x.args)
                 else:
-                    # this becomes super.method(x, y)
                     result = ts.Call(
                         ts.Attribute(ts.Super(), _normalize_name(sup_method)),
                         x.args)
@@ -1405,26 +1393,12 @@ def Call_super(t, x):
 
 
 def Attribute_super(t, x):
-    """Translate ``super().foo`` into ``super.foo` if the method isn't a constructor,
-    where it's invalid.
-
-    AST is::
-
-      Attribute(attr='foo',
-                ctx=Load(),
-                value=Call(args=[],
-                           func=Name(ctx=Load(),
-                                     id='super'),
-                           keywords=[]))
-
-    """
-    if isinstance(x.value, ast.Call) and len(x.value.args) == 0 and \
-       isinstance(x.value.func, ast.Name) and x.value.func.id == 'super':
+    if isinstance(x.value, ast.Call) and len(x.value.args) == 0 and isinstance(
+            x.value.func, ast.Name) and x.value.func.id == 'super':
         sup_args = x.value.args
-        # Are we in a FuncDef and is it a method and super() has no args?
         method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method), ast.ClassDef) and \
-           len(sup_args) == 0:
+        if method and isinstance(t.parent_of(method),
+                                 ast.ClassDef) and len(sup_args) == 0:
             if method.name == '__init__':
                 t.unsupported(
                     x, True, "'super().attr' cannot be used in "
@@ -1492,7 +1466,7 @@ def Call_isinstance(t, x):
         return _build_call_isinstance(x.args[0], x.args[1])
 
 
-def Call_issubclass(t, x):
+def Call_issubclass(target, classes):
     """Translate ``issubclass(Foo, Bar)`` to ``Foo.prototype instanceof Bar``.
     """
     with switch(x):
