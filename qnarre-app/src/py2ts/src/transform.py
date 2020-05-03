@@ -85,7 +85,7 @@ class Transformer:
         i += 1
         self.ctx['gen_name_i'] = i
         if i > len(string.ascii_letters):
-            raise TransformationError("Failed to gen name")
+            raise XformError("Failed to gen name")
         return VAR_TEMPLATE % string.ascii_letters[i]
 
     def xform_tree(self, tree):
@@ -130,7 +130,7 @@ class Transformer:
                         r = o
                         break
                 else:
-                    raise TransformationError(n, "No xform for node")
+                    raise XformError(n, "No xform for node")
         elif isinstance(n, ts.Target):
             self.prep_target(n)
             r = n
@@ -166,7 +166,7 @@ class Transformer:
 
     def unsupported(self, n, cond, msg):
         if cond:
-            raise UnsupportedSyntaxError(n, msg)
+            raise UnsupportedError(n, msg)
         return False
 
     def subtransform(self, o, remap=None):
@@ -192,7 +192,7 @@ class ProcessorError(Exception):
         return f"Node type '{type(n).__name__}': Line: {ln}, column: {co}"
 
 
-class TransformationError(ProcessorError):
+class XformError(ProcessorError):
     def __str__(self):
         e = super().__str__()
         if len(self.args) > 1:
@@ -200,7 +200,7 @@ class TransformationError(ProcessorError):
         return e
 
 
-class UnsupportedSyntaxError(TransformationError):
+class UnsupportedError(XformError):
     pass
 
 
