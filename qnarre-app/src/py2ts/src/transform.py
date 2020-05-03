@@ -1,5 +1,5 @@
 import ast
-import collections
+import collections as co
 import contextlib
 import os
 import sys
@@ -20,7 +20,7 @@ class Transformer:
 
     def reset(self):
         self.snippets = set()
-        self._ctx = collections.ChainMap()
+        self._ctx = co.ChainMap()
         self._globs = set()
         self._stack = []
         self._warns = []
@@ -40,8 +40,8 @@ class Transformer:
         return self._ctx
 
     @contextlib.contextmanager
-    def context_for(self, py, **kw):
-        if isinstance(py, ast.stmt):
+    def context_for(self, n, **kw):
+        if isinstance(n, ast.stmt):
             self._ctx = self._ctx.new_child(kw)
             yield
             self._ctx = self._ctx.parents
@@ -96,26 +96,26 @@ class Transformer:
         ns = local_names(body)
         self.ctx['vars'] = ns
         r = ts.Statements(*body)
-        self._finalize_target_node(r)
+        self.prep_target(r)
         ns = list(ns - self._globs)
         if len(ns) > 0:
             ns.sort()
             vars = ts.VarStatement(ns, [None] * len(ns))
-            self._finalize_target_node(vars)
+            self.prep_target(vars)
             r.xargs.insert(0, vars)
         self.pmap = None
         return r
 
-    def _finalize_target_node(self, t, py_node=None):
-        t.py_node = self.remap or py_node or t.py_node
+    def prep_target(self, t, py=None):
+        t.py = self.remap or py or t.py
         t.xform = self
         if t.xargs is None:
-            t.xargs = targs = []
-            args = collections.deque(t.args)
+            t.xargs = xs = []
+            args = co.deque(t.args)
             self._stack.append(args)
             while args:
-                arg = args.popleft()
-                targs.append(self.xform_node(arg))
+                a = args.popleft()
+                xs.append(self.xform_node(a))
             self._stack.pop()
 
     def xform_node(self, n):
@@ -126,13 +126,13 @@ class Transformer:
                 for t in self.xforms.get(n.__class__.__name__, []):
                     o = t(self, n)
                     if o is not None:
-                        self._finalize_target_node(o, py_node=n)
+                        self.prep_target(o, py=n)
                         r = o
                         break
                 else:
                     raise TransformationError(n, "No xform for node")
         elif isinstance(n, ts.Target):
-            self._finalize_target_node(n)
+            self.prep_target(n)
             r = n
         else:
             r = n
@@ -142,18 +142,18 @@ class Transformer:
         self.snippets.add(s)
 
     def xform_snippets(self):
-        snippets = tuple(sorted(self.snippets, key=lambda e: e.__name__))
-        srcs = [source_for(s) for s in snippets]
-        src = textwrap.indent('\n'.join(srcs), ' ' * 4)
-        names = [s.__name__ for s in snippets]
-        assign_src = '\n'.join([ASSIGN_TEMPLATE % {'name': n} for n in names])
-        trans_src = SNIPPETS_TEMPLATE % {
-            'snippets': src,
-            'assignments': assign_src
+        ss = tuple(sorted(self.snippets, key=lambda e: e.__name__))
+        srcs = [source_for(s) for s in ss]
+        ns = [s.__name__ for s in ss]
+        tree = SNIPPETS_TEMPLATE % {
+            'snips': textwrap.indent('\n'.join(srcs), ' ' * 4),
+            'assigns': '\n'.join([ASSIGN_TEMPLATE % {
+                'name': n
+            } for n in ns])
         }
-        t = self.new_from(self)
+        t = self.create_from(self)
         t.snippets = None
-        return t.xform_tree(trans_src)
+        return t.xform_tree(tree)
 
     def add_globs(self, *gs):
         self._globs |= set(gs)
@@ -169,12 +169,12 @@ class Transformer:
             raise UnsupportedSyntaxError(n, msg)
         return False
 
-    def subtransform(self, obj, remap=None):
-        if isinstance(obj, str):
-            src = textwrap.dedent(obj)
+    def subtransform(self, o, remap=None):
+        if isinstance(o, str):
+            src = textwrap.dedent(o)
         else:
-            src = source_for(obj)
-        t = self.new_from(self)
+            src = source_for(o)
+        t = self.create_from(self)
         t.remap = remap
         t.snippets = None
         return t.xform_tree(src)
@@ -205,13 +205,13 @@ class UnsupportedSyntaxError(TransformationError):
 
 
 SNIPPETS_TEMPLATE = """\
-def _pj_snippets(container):
+def _pt_snippets(container):
 %(snippets)s
 %(assignments)s
     return container
 
-_pj = {}
-_pj_snippets(_pj)
+_pt = {}
+_pt_snippets(_pt)
 
 """
 

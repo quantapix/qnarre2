@@ -13,12 +13,12 @@ class Output:
 
 
 class Line(Output):
-    def __init__(self, node, item, indent=False, delim=False):
-        super().__init__(node)
+    def __init__(self, n, item, indent=False, delim=False):
+        super().__init__(n)
         self.indent = int(indent)
         self.delim = delim
         if isinstance(item, (tuple, list)):
-            item = Part(node, *item)
+            item = Part(n, *item)
         self.item = item
 
     def __str__(self):
@@ -36,8 +36,8 @@ class Line(Output):
 
 
 class Part(Output):
-    def __init__(self, node, *items):
-        super().__init__(node)
+    def __init__(self, n, *items):
+        super().__init__(n)
         self.items = []
         for i in items:
             if isinstance(i, (str, Part)):
@@ -55,16 +55,16 @@ class Part(Output):
 
 
 class Code(Output):
-    def __init__(self, node):
+    def __init__(self, n):
         super().__init__(None)
-        self.lines = list(node.serialize())
+        self.lines = list(n.serialize())
 
     def read(self):
         return ''.join(str(l) for l in self.lines)
 
 
 class Target:
-    ast = None
+    py = None
     xform = None
     xargs = None
 
@@ -75,48 +75,48 @@ class Target:
     def __str__(self):
         return ''.join(str(x) for x in self.serialize())
 
-    def _chain(self, items):
-        for i in self._expand(items):
-            if inspect.isgenerator(i):
-                yield from i
+    def _chain(self, xs):
+        for x in self._expand(xs):
+            if inspect.isgenerator(x):
+                yield from x
             else:
-                yield i
+                yield x
 
-    def _expand(self, items):
-        for i in items:
-            if isinstance(i, Target):
-                yield from i.serialize()
+    def _expand(self, xs):
+        for x in xs:
+            if isinstance(x, Target):
+                yield from x.serialize()
             else:
-                yield i
+                yield x
 
     def emit(self):
         pass  # ...
 
     @classmethod
-    def final(cls, *xargs, **kw):
-        tn = cls(**kw)
-        tn.xargs = xargs
-        return tn
+    def final(cls, *args, **kw):
+        t = cls(**kw)
+        t.xargs = args
+        return t
 
-    def line(self, item, indent=False, delim=False, name=None):
-        if isinstance(item, Line):
-            item.indent += int(indent)
-            return item
-        elif isinstance(item, (tuple, list)):
-            item = tuple(self._chain(item))
-            return Line(self, item, indent, delim, name)
-        return Line(self, item, indent, delim, name)
+    def line(self, x, indent=False, delim=False, name=None):
+        if isinstance(x, Line):
+            x.indent += int(indent)
+            return x
+        elif isinstance(x, (tuple, list)):
+            x = tuple(self._chain(x))
+            return Line(self, x, indent, delim, name)
+        return Line(self, x, indent, delim, name)
 
-    def lines(self, items, *, indent=False, delim=False, name=None):
-        if not isinstance(items, (tuple, list)):
-            items = (items, )
-        for i in self._chain(items):
-            yield self.line(i, indent=indent, delim=delim, name=name)
+    def lines(self, xs, *, indent=False, delim=False, name=None):
+        if not isinstance(xs, (tuple, list)):
+            xs = (xs, )
+        for x in self._chain(xs):
+            yield self.line(x, indent=indent, delim=delim, name=name)
 
-    def part(self, *items, name=None):
-        it = tuple(self._expand(items))
+    def part(self, *xs, name=None):
+        it = tuple(self._expand(xs))
         if len(it) == 1 and isinstance(it[0], Line):
-            result = it[0].item
+            result = it[0].x
         else:
             result = Part(self, *it, name=name)
         return result
@@ -126,17 +126,17 @@ class Target:
             yield from a.serialize()
 
 
-def delimited(delim, arr, dest=None, at_end=False):
-    if dest is None:
-        dest = []
-    if arr:
-        dest.append(arr[0])
-    for i in range(1, len(arr)):
-        dest.append(delim)
-        dest.append(arr[i])
+def delimited(delim, xs, r=None, at_end=False):
+    if r is None:
+        r = []
+    if xs:
+        r.append(xs[0])
+    for i in range(1, len(xs)):
+        r.append(delim)
+        r.append(xs[i])
     if at_end:
-        dest.append(delim)
-    return dest
+        r.append(delim)
+    return r
 
 
 def delimited_multi(node, text, begin=None, end=None, add_space=False):
@@ -190,10 +190,10 @@ class Dict(Literal):
 
 class List(Literal):
     def emit(self, elts):
-        arr = ['[']
-        delimited(', ', elts, dest=arr)
-        arr.append(']')
-        yield self.part(*arr)
+        r = ['[']
+        delimited(', ', elts, r=r)
+        r.append(']')
+        yield self.part(*r)
 
 
 class LFalse(Literal):
@@ -243,13 +243,13 @@ class Call(Node):
     def emit(self, func, args, kw=None, operator=None):
         operator = operator or self.operator
         kw = kw or []
-        arr = [operator, func, '(']
+        r = [operator, func, '(']
         fargs = args.copy()
         if kw:
             fargs.append(kw)
-        delimited(', ', fargs, dest=arr)
-        arr.append(')')
-        yield self.part(*arr)
+        delimited(', ', fargs, r=r)
+        r.append(')')
+        yield self.part(*r)
 
 
 class NewCall(Call):
@@ -543,17 +543,17 @@ class LetStatement(VarDeclarer):
 
 
 class AugAssignStatement(Statement):
-    def emit(self, target, op, value):
-        yield self.part(target, ' ', op, '= ', value, name=str(target))
+    def emit(self, t, op, v):
+        yield self.part(t, ' ', op, '= ', v, name=str(t))
 
 
 class ReturnStatement(Statement):
-    def emit(self, value):
-        if value:
-            result = self.line(['return ', value], delim=True)
+    def emit(self, v):
+        if v:
+            r = self.line(['return ', v], delim=True)
         else:
-            result = self.line('return', delim=True)
-        yield result
+            r = self.line('return', delim=True)
+        yield r
 
 
 class BreakStatement(Statement):
@@ -712,16 +712,15 @@ class Function(Block):
     bet_args_n_body = ''
 
     def fargs(self, args, acc=None, kw=None):
-        result = []
-        result.append('(')
+        r = ['(']
         js_args = args.copy()
         if kw:
             js_args.append(self.part('{', *delimited(', ', kw), '}={}'))
         if acc:
             js_args.append(acc)
-        delimited(', ', js_args, dest=result)
-        result.append(') ')
-        return result
+        delimited(', ', js_args, r=r)
+        r.append(') ')
+        return r
 
     def emit(self, name, args, body, acc=None, kw=None):
         line = [self.begin]
@@ -836,7 +835,7 @@ KEYWORDS = set([
 def check_keywords(t, n):
     x = t.xform
     if x is not None:
-        x.unsupported(t.ast, (n in KEYWORDS - set(['delete'])),
+        x.unsupported(t.py, (n in KEYWORDS - set(['delete'])),
                       f"Name '{n}' is reserved in TypeScript")
     else:
         if n in KEYWORDS:
