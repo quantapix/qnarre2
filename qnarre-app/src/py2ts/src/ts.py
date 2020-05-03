@@ -3,14 +3,70 @@ import json
 import inspect
 import itertools
 
-from .processor.util import Line, Part
-from .processor.util import delimited, delimited_multi_line
+
+class Output:
+    def __init__(self, node):
+        self.node = node
+
+    def serialize(self):
+        yield self
+
+
+class Line(Output):
+    def __init__(self, node, item, indent=False, delim=False):
+        super().__init__(node)
+        self.indent = int(indent)
+        self.delim = delim
+        if isinstance(item, (tuple, list)):
+            item = Part(node, *item)
+        self.item = item
+
+    def __str__(self):
+        line = str(self.item)
+        if self.delim:
+            line += ';'
+        if self.indent and line.strip():
+            line = (' ' * 4 * self.indent) + line
+        line += '\n'
+        return line
+
+    def __repr__(self):
+        return '<%s indent: %d, "%s">' % (self.__class__.__name__, self.indent,
+                                          str(self))
+
+
+class Part(Output):
+    def __init__(self, node, *items):
+        super().__init__(node)
+        self.items = []
+        for i in items:
+            if isinstance(i, (str, Part)):
+                self.items.append(i)
+            elif inspect.isgenerator(i):
+                self.items.extend(i)
+            else:
+                self.items.append(str(i))
+
+    def __str__(self):
+        return ''.join(str(i) for i in self.items)
+
+    def __repr__(self):
+        return '<%s, "%s">' % (self.__class__.__name__, str(self))
+
+
+class Code(Output):
+    def __init__(self, node):
+        super().__init__(None)
+        self.lines = list(node.serialize())
+
+    def read(self):
+        return ''.join(str(l) for l in self.lines)
 
 
 class Target:
     ast = None
-    transformer = None
-    transformed_args = None
+    xform = None
+    xargs = None
 
     def __init__(self, *args, **kw):
         self.args = args
@@ -37,9 +93,9 @@ class Target:
         pass  # ...
 
     @classmethod
-    def final(cls, *transformed_args, **kw):
+    def final(cls, *xargs, **kw):
         tn = cls(**kw)
-        tn.transformed_args = transformed_args
+        tn.xargs = xargs
         return tn
 
     def line(self, item, indent=False, delim=False, name=None):
@@ -66,8 +122,37 @@ class Target:
         return result
 
     def serialize(self):
-        for a in self.emit(*self.transformed_args, **self.kw):
+        for a in self.emit(*self.xargs, **self.kw):
             yield from a.serialize()
+
+
+def delimited(delim, arr, dest=None, at_end=False):
+    if dest is None:
+        dest = []
+    if arr:
+        dest.append(arr[0])
+    for i in range(1, len(arr)):
+        dest.append(delim)
+        dest.append(arr[i])
+    if at_end:
+        dest.append(delim)
+    return dest
+
+
+def delimited_multi(node, text, begin=None, end=None, add_space=False):
+    begin = begin or ''
+    end = end or ''
+    if begin and not end:
+        end = begin
+    sp = ' ' if add_space else ''
+    lines = text.splitlines()
+    if len(lines) > 1:
+        yield node.line(node.part(begin, lines[0].strip()))
+        for l in lines[1:-1]:
+            yield node.line(l.strip())
+        yield node.line(node.part(lines[-1].strip(), end))
+    else:
+        yield node.part(begin, sp, text, sp, end)
 
 
 class Node(Target):
@@ -82,13 +167,12 @@ class Pass(Node):
 class CommentBlock(Node):
     def emit(self, text):
         assert text.find('*/') == -1
-        yield from self.lines(
-            delimited_multi_line(self, text, '/*', '*/', True))
+        yield from self.lines(delimited_multi(self, text, '/*', '*/', True))
 
 
 class Literal(Node):
     def emit(self, text):
-        yield from self.lines(delimited_multi_line(self, text, '', '', False))
+        yield from self.lines(delimited_multi(self, text, '', '', False))
 
 
 class Dict(Literal):
@@ -176,7 +260,7 @@ class NewCall(Call):
 class Attribute(Node):
     def emit(self, obj, s):
         assert re.search(r'^[a-zA-Z$_][a-zA-Z$_0-9]*$', s)
-        _check_keywords(self, s)
+        check_keywords(self, s)
         yield self.part(obj, '.', s, name=True)
 
 
@@ -355,20 +439,20 @@ class MultipleArgsOp(Node):
 
 class Name(Node):
     def emit(self, name):
-        _check_keywords(self, name)
+        check_keywords(self, name)
         yield self.part(name, name=True)
 
 
 class TaggedTemplate(Node):
     def emit(self, value, func):
-        text = list(delimited_multi_line(self, value, '`'))
+        text = list(delimited_multi(self, value, '`'))
         func = list(func.serialize())
         yield self.part(*func, *text)
 
 
 class TemplateLiteral(Node):
     def emit(self, value):
-        yield from delimited_multi_line(self, value, '`')
+        yield from delimited_multi(self, value, '`')
 
 
 class Super(Node):
@@ -387,7 +471,7 @@ class Statement(Node):
 
 class Statements(Node):
     def __iadd__(self, other):
-        self.transformed_args.extend(other.transformed_args)
+        self.xargs.extend(other.xargs)
         return self
 
     def emit(self, statements):
@@ -397,12 +481,11 @@ class Statements(Node):
     def squash(self, args):
         for a in args:
             if isinstance(a, Statements):
-                yield from a.transformed_args
+                yield from a.xargs
             else:
                 yield a
 
     def reordered_args(self, args):
-        """Reorder the args to keep the imports and vars always at the top."""
         args = list(self.squash(args))
         imports = []
         vars_ = []
@@ -415,10 +498,8 @@ class Statements(Node):
                 vars_.append(a)
             else:
                 others.append(a)
-
         others_first = []
         others_after = []
-        # if the others start with some comments, put those at the top
         start_trigger = False
         for s in others:
             if isinstance(s, CommentBlock) and not start_trigger:
@@ -426,18 +507,17 @@ class Statements(Node):
             else:
                 others_after.append(s)
                 start_trigger = True
-
         return itertools.chain(others_first, imports, vars_, others_after)
 
     def serialize(self):
-        for a in self.emit(self.reordered_args(self.transformed_args)):
+        for a in self.emit(self.reordered_args(self.xargs)):
             yield from self.lines(a.serialize(), delim=True)
 
 
 class VarDeclarer(Statement):
     def with_kind(self, kind, keys, values):
         for key in keys:
-            _check_keywords(self, key)
+            check_keywords(self, key)
         assert len(keys) > 0
         assert len(keys) == len(values)
 
@@ -741,7 +821,7 @@ class Setter(ClassMember):
         yield from self.with_kind('set ' + name, [arg], body, static=static)
 
 
-_KEYWORDS = set([
+KEYWORDS = set([
     'break', 'case', 'catch', 'continue', 'default', 'delete', 'do', 'else',
     'finally', 'for', 'function', 'if', 'in', 'instanceof', 'new', 'return',
     'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with',
@@ -752,14 +832,12 @@ _KEYWORDS = set([
     'transient', 'volatile'
 ])
 
-_KEYWORDS_ES6 = _KEYWORDS - set(['delete'])
 
-
-def _check_keywords(target_node, name):
-    trans = target_node.transformer
-    if trans is not None:
-        trans.unsupported(target_node.ast, (name in _KEYWORDS_ES6),
-                          "Name '%s' is reserved in TypeScript." % name)
+def check_keywords(t, n):
+    x = t.xform
+    if x is not None:
+        x.unsupported(t.ast, (n in KEYWORDS - set(['delete'])),
+                      f"Name '{n}' is reserved in TypeScript")
     else:
-        if name in _KEYWORDS:
-            raise ValueError("Name %s is reserved in TypeScript." % name)
+        if n in KEYWORDS:
+            raise ValueError(f"Name '{n}' is reserved in TypeScript")

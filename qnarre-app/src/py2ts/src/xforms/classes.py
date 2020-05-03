@@ -5,7 +5,7 @@ from macropy.experimental.pattern import (macros, _matching, switch,
                                           ClassMatcher, LiteralMatcher,
                                           ListMatcher)
 
-from ..processor.util import controlled_ast_walk, get_assign_targets
+from ..processor.util import ast_walk, assign_targets
 from ..js_ast import (
     TSAttribute,
     TSBinOp,
@@ -116,7 +116,7 @@ def ClassDef_exception(t, x):
         if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
     assigns = [e for e in body if isinstance(e, assign_types)]
-    res = t.subtransform(EXC_TEMPLATE_ES5 % dict(name=name), remap_to=x)
+    res = t.subtransform(EXC_TEMPLATE_ES5 % dict(name=name), remap=x)
     return res
 
 
@@ -141,7 +141,7 @@ def ClassDef_default(t, x):
                       "First arg on method must be 'self'")
     if len(fn_body) > 0 and fn_body[0].name == '__init__':
         init = body[0]
-        for stmt in controlled_ast_walk(init):
+        for stmt in ast_walk(init):
             assert not isinstance(stmt, ast.Return)
     decos = {}
     for fn in fn_body:
@@ -161,7 +161,7 @@ def ClassDef_default(t, x):
     stmts = [cls]
 
     def _from_assign_to_dict_item(e):
-        key = get_assign_targets(e)[0]
+        key = assign_targets(e)[0]
         value = e.value
         if isinstance(key, ast.Name):
             rendered_key = ast.Str(_normalize_name(key.id))

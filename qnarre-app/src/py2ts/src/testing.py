@@ -33,7 +33,7 @@ def ast_object_to_js(obj, es6=False):
     src = inspect.getsource(obj)
     node = ast.parse(textwrap.dedent(src))
     t = Transformer(transformations, TSStatements, es6=es6)
-    return t.transform_code(node)
+    return t.xform_tree(node)
 
 
 def ast_dump_file(fname):

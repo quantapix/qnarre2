@@ -20,14 +20,14 @@ def _normalize_name(n):
     return n
 
 
-def _normalize_dict_keys(transformer, keys):
-    res = []
-    for key in keys:
-        if isinstance(key, str):
-            key = ast.Str(key)
-        elif isinstance(key, TSStr):
-            key = ast.Str(key.args[0])
-        if not isinstance(key, ast.Str):
-            key = TSKeySubscript(key)
-        res.append(key)
-    return res
+def _normalize_dict_keys(_, ks):
+    r = []
+    for k in ks:
+        if isinstance(k, str):
+            k = ast.Str(k)
+        elif isinstance(k, TSStr):
+            k = ast.Str(k.args[0])
+        if not isinstance(k, ast.Str):
+            k = TSKeySubscript(k)
+        r.append(k)
+    return r

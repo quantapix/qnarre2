@@ -31,7 +31,7 @@ from ..js_ast import (
     TSThis,
     TSVarStatement,
 )
-from ..processor.util import body_local_names, walk_under_code_boundary
+from ..processor.util import body_local_names, cross_walk
 
 from . import _normalize_name
 
@@ -52,7 +52,7 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
                                       ast.ClassDef) # Make sure a class is there
 
     is_generator = reduce(lambda prev, cur: _isyield(cur) or prev,
-                          walk_under_code_boundary(x.body), False)
+                          cross_walk(x.body), False)
 
     t.unsupported(x, not is_method and x.decorator_list,
                   "Function decorators are"
@@ -118,7 +118,7 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
         upper_vars = t.ctx['vars']
     else:
         upper_vars = set()
-    local_vars = list((set(body_local_names(body)) - set(arg_names)) -
+    local_vars = list((set(local_names(body)) - set(arg_names)) -
                       set(kw_names) - upper_vars)
     t.ctx['vars'] = upper_vars | set(local_vars)
     if len(local_vars) > 0:

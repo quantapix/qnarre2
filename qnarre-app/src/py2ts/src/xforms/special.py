@@ -447,7 +447,7 @@ def ImportFrom(t, x):
 def Compare_in(t, x):
     if not isinstance(x.ops[0], (ast.NotIn, ast.In)):
         return
-    if t.enable_snippets:
+    if t.snippets:
         from ..snippets import in_es6
         t.add_snippet(in_es6)
         sname = 'in_es6'
@@ -507,7 +507,7 @@ Attribute = [Attribute_super, Attribute_list_append, Attribute_default]
 
 def Assert(t, x):
     """Convert ``assert`` statement to just a snippet function call."""
-    if t.enable_snippets:
+    if t.snippets:
         from ..snippets import _assert
         t.add_snippet(_assert)
         return TSCall(TSAttribute('_pj', '_assert'),
