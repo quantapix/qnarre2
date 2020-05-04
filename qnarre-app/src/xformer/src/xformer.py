@@ -156,23 +156,21 @@ class Xformer(ast.NodeVisitor):
             self.write(" = ")
         self.traverse(n.value)
 
-    def visit_AugAssign(self, node):
+    def visit_AugAssign(self, n):
         self.fill()
-        self.traverse(node.target)
-        self.write(" " + self.binop[node.op.__class__.__name__] + "= ")
-        self.traverse(node.value)
+        self.traverse(n.target)
+        self.write(" " + self.binop[n.op.__class__.__name__] + "= ")
+        self.traverse(n.value)
 
-    def visit_AnnAssign(self, node):
+    def visit_AnnAssign(self, n):
         self.fill()
-        with self.delimit_if(
-            "(", ")", not node.simple and isinstance(node.target, ast.Name)
-        ):
-            self.traverse(node.target)
+        with self.delimit_if("(", ")", not n.simple and isinstance(n.target, ast.Name)):
+            self.traverse(n.target)
         self.write(": ")
-        self.traverse(node.annotation)
-        if node.value:
+        self.traverse(n.annotation)
+        if n.value:
             self.write(" = ")
-            self.traverse(node.value)
+            self.traverse(n.value)
 
     def visit_Return(self, n):
         self.fill("return")
@@ -248,8 +246,8 @@ class Xformer(ast.NodeVisitor):
         self.fill("try")
         with self.block():
             self.traverse(node.body)
-        for ex in node.handlers:
-            self.traverse(ex)
+        for e in node.handlers:
+            self.traverse(e)
         if node.orelse:
             self.fill("else")
             with self.block():
@@ -259,61 +257,60 @@ class Xformer(ast.NodeVisitor):
             with self.block():
                 self.traverse(node.finalbody)
 
-    def visit_ExceptHandler(self, node):
-        self.fill("except")
-        if node.type:
-            self.write(" ")
-            self.traverse(node.type)
-        if node.name:
+    def visit_ExceptHandler(self, n):
+        self.fill(("except", "catch"))
+        if n.type:
+            with self.delimit((" ", "("), (None, ")")):
+                self.traverse(n.type)
+        if n.name:
             self.write(" as ")
-            self.write(node.name)
+            self.write(n.name)
         with self.block():
-            self.traverse(node.body)
+            self.traverse(n.body)
 
-    def visit_ClassDef(self, node):
+    def visit_ClassDef(self, n):
         self.maybe_newline()
-        for deco in node.decorator_list:
+        for deco in n.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        self.fill("class " + node.name)
-        with self.delimit("(", ")"):
+        self.fill("class " + n.name)
+        with self.delimit(("(", " extends "), (")", None)):
             comma = False
-            for e in node.bases:
+            for e in n.bases:
                 if comma:
                     self.write(", ")
                 else:
                     comma = True
                 self.traverse(e)
-            for e in node.keywords:
+            for e in n.keywords:
                 if comma:
                     self.write(", ")
                 else:
                     comma = True
                 self.traverse(e)
-
         with self.block():
-            self._write_doc_and_traverse(node)
+            self._write_doc_and_traverse(n)
 
-    def visit_FunctionDef(self, node):
-        self._function_helper(node, "def")
+    def visit_FunctionDef(self, n):
+        self._function_helper(n, ("def", "function"))
 
-    def visit_AsyncFunctionDef(self, node):
-        self._function_helper(node, "async def")
+    def visit_AsyncFunctionDef(self, n):
+        self._function_helper(n, ("async def", "async function"))
 
-    def _function_helper(self, node, fill_suffix):
+    def _function_helper(self, n, t):
         self.maybe_newline()
-        for deco in node.decorator_list:
+        for deco in n.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        def_str = fill_suffix + " " + node.name
-        self.fill(def_str)
+        py, ts = t if isinstance(t, tuple) else (t, t)
+        self.fill((f"{py} {n.name}", f"{ts} {n.name}"))
         with self.delimit("(", ")"):
-            self.traverse(node.args)
-        if node.returns:
-            self.write(" -> ")
-            self.traverse(node.returns)
+            self.traverse(n.args)
+        if n.returns:
+            self.write((" -> ", ": "))
+            self.traverse(n.returns)
         with self.block():
-            self._write_doc_and_traverse(node)
+            self._write_doc_and_traverse(n)
 
     def visit_For(self, n):
         self._for_helper("for ", n)
@@ -415,8 +412,8 @@ class Xformer(ast.NodeVisitor):
             meth(node.format_spec, write)
         write("}")
 
-    def visit_Name(self, node):
-        self.write(node.id)
+    def visit_Name(self, n):
+        self.write(n.id)
 
     def _write_doc(self, n):
         self.fill()
@@ -428,23 +425,23 @@ class Xformer(ast.NodeVisitor):
             v = v.replace('"', '\\"', -1)
         self.write((f'"""{v}"""', None))
 
-    def _write_constant(self, value):
-        if isinstance(value, (float, complex)):
-            self.write(repr(value).replace("inf", _INFSTR))
+    def _write_constant(self, v):
+        if isinstance(v, (float, complex)):
+            self.write(repr(v).replace("inf", _INFSTR))
         else:
-            self.write(repr(value))
+            self.write(repr(v))
 
-    def visit_Constant(self, node):
-        value = node.value
-        if isinstance(value, tuple):
+    def visit_Constant(self, n):
+        v = n.value
+        if isinstance(v, tuple):
             with self.delimit("(", ")"):
-                self.items_view(self._write_constant, value)
-        elif value is ...:
+                self.items_view(self._write_constant, v)
+        elif v is ...:
             self.write("...")
         else:
-            if node.kind == "u":
+            if n.kind == "u":
                 self.write("u")
-            self._write_constant(node.value)
+            self._write_constant(n.value)
 
     def visit_List(self, n):
         with self.delimit("[", "]"):
@@ -494,9 +491,9 @@ class Xformer(ast.NodeVisitor):
         with self.require_parens(Precedence.TEST, node):
             self.set_preced(Precedence.TEST.next(), node.body, node.test)
             self.traverse(node.body)
-            self.write(" if ")
+            self.write((" if ", " ? "))
             self.traverse(node.test)
-            self.write(" else ")
+            self.write((" else ", " : "))
             self.set_preced(Precedence.TEST, node.orelse)
             self.traverse(node.orelse)
 
@@ -633,43 +630,76 @@ class Xformer(ast.NodeVisitor):
             s = f" {o} "
             self.interleave(lambda: self.write(s), increasing_level_traverse, n.values)
 
-    def visit_Attribute(self, node):
-        self.set_preced(Precedence.ATOM, node.value)
-        self.traverse(node.value)
+    def visit_Attribute(self, n):
+        self.set_preced(Precedence.ATOM, n.value)
+        self.traverse(n.value)
         # Special case: 3.__abs__() is a syntax error, so if node.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
-        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, int):
+        if isinstance(n.value, ast.Constant) and isinstance(n.value.value, int):
             self.write(" ")
         self.write(".")
-        self.write(node.attr)
+        self.write(n.attr)
 
-    def visit_Call(self, node):
-        self.set_preced(Precedence.ATOM, node.func)
-        self.traverse(node.func)
+    def _call_helper(self, n):
+        if isinstance(n.func, ast.Name):
+            if n.func.id == "print":
+                return ast.Attribute(ast.Name("console"), "log")
+            if n.func.id == "len" and len(n.args) == 1:
+                return ast.Attribute(n.args[0], "length")
+            if n.func.id == "str" and len(n.args) == 1:
+                return ast.Attribute(ast.Name(n.args[0]), "toString")
+
+    def _call_new(self, x):
+        def getNameString(x):
+            if isinstance(x, ast.Name):
+                return x.id
+            elif isinstance(x, ast.Attribute):
+                return str(x.attr)
+            elif isinstance(x, ast.Subscript) and isinstance(x.slice, ast.Index):
+                return str(x.slice.value)
+
+        NAME_STRING = getNameString(x.func)
+
+        if NAME_STRING and re.search(r"^[A-Z]", NAME_STRING):
+            # TODO: generalize args mangling and apply here
+            # assert not any([x.keywords, x.starargs, x.kw])
+            subj = x
+        elif isinstance(x.func, ast.Name) and x.func.id == "new":
+            subj = x.args[0]
+        else:
+            subj = None
+        if subj:
+            return Call_default(t, subj, operator="new ")
+
+    def visit_Call(self, n):
+        self.set_preced(Precedence.ATOM, n.func)
+        self.traverse(n.func)
+        # len -> length, str -> toString, print -> console.log
+        # isinstance(n.func, ast.Name) and x.func.id == "print"
         with self.delimit("(", ")"):
             comma = False
-            for e in node.args:
+            for e in n.args:
                 if comma:
                     self.write(", ")
                 else:
                     comma = True
                 self.traverse(e)
-            for e in node.keywords:
+            for e in n.keywords:
                 if comma:
                     self.write(", ")
                 else:
                     comma = True
                 self.traverse(e)
 
-    def visit_Subscript(self, node):
-        self.set_preced(Precedence.ATOM, node.value)
-        self.traverse(node.value)
+    def visit_Subscript(self, n):
+        self.set_preced(Precedence.ATOM, n.value)
+        self.traverse(n.value)
         with self.delimit("[", "]"):
-            if isinstance(node.slice, ast.Tuple) and node.slice.elts:
-                self.items_view(self.traverse, node.slice.elts)
+            if isinstance(n.slice, ast.Tuple) and n.slice.elts:
+                self.items_view(self.traverse, n.slice.elts)
             else:
-                self.traverse(node.slice)
+                self.traverse(n.slice)
 
     def visit_Starred(self, node):
         self.write("*")

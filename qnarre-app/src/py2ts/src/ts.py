@@ -45,11 +45,6 @@ class Expression(Node):
         yield self.part("(", expr, ")")
 
 
-class AssignmentExpression(Node):
-    def emit(self, left, right):
-        yield self.part(left, " = ", right)
-
-
 class IfExp(Node):
     def emit(self, test, body, orelse):
         yield self.part("(", test, " ? ", body, " : ", orelse, ")")
@@ -283,10 +278,6 @@ class This(Node):
         yield self.part("this")
 
 
-class Statement(Node):
-    pass
-
-
 class Statements(Node):
     def __iadd__(self, other):
         self.xargs.extend(other.xargs)
@@ -359,15 +350,6 @@ class LetStatement(VarDeclarer):
         yield from self.with_kind("let", keys, values)
 
 
-class AugAssignStatement(Statement):
-    def emit(self, t, op, v):
-        yield self.part(t, " ", op, "= ", v, name=str(t))
-
-
-class Import(Statement):
-    pass
-
-
 class DependImport(Import):
     def emit(self, module):
         yield self.line(["System.import(", "'", module, "'", ")"], delim=True)
@@ -408,63 +390,6 @@ class ExportDefault(Export):
         yield self.line(["export default ", name], delim=True)
 
 
-class ExpressionStatement(Statement):
-    def emit(self, value):
-        yield self.part(value)
-
-
-class TryCatchFinallyStatement(Block):
-    def emit(self, try_body, target, catch_body, finally_body):
-        assert catch_body or finally_body
-        yield self.line("try {")
-        yield from self.lines(try_body, indent=True, delim=True)
-        if catch_body:
-            yield self.line(["} catch(", target, ") {"])
-            yield from self.lines(catch_body, indent=True, delim=True)
-        if finally_body:
-            yield self.line(["} finally {"])
-            yield from self.lines(finally_body, indent=True, delim=True)
-        yield self.line("}")
-
-
-class Function(Block):
-
-    begin = "function "
-    bet_args_n_body = ""
-
-    def fargs(self, args, acc=None, kw=None):
-        r = ["("]
-        js_args = args.copy()
-        if kw:
-            js_args.append(self.part("{", *delimited(", ", kw), "}={}"))
-        if acc:
-            js_args.append(acc)
-        delimited(", ", js_args, r=r)
-        r.append(") ")
-        return r
-
-    def emit(self, name, args, body, acc=None, kw=None):
-        line = [self.begin]
-        if name is not None:
-            line.append(name)
-        line += self.fargs(args, acc, kw)
-        line += self.bet_args_n_body
-        line += ["{"]
-        yield self.line(line, name=str(name))
-        yield from self.lines(body, indent=True, delim=True)
-        yield self.line("}")
-
-
-class AsyncFunction(Function):
-
-    begin = "async function "
-
-
-class GenFunction(Function):
-
-    begin = "function* "
-
-
 class ArrowFunction(Function):
 
     begin = ""
@@ -485,17 +410,6 @@ class ArrowFunction(Function):
             yield self.line("}", delim=True)
         else:
             yield self.part("}")
-
-
-class Class(Block):
-    def emit(self, name, super_, methods):
-        line = ["class ", name]
-        if super_ is not None:
-            line += [" extends ", super_]
-        line += [" {"]
-        yield self.line(line)
-        yield from self.lines(methods, indent=True, delim=True)
-        yield self.line("}")
 
 
 class ClassMember(Function):
