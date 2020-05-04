@@ -10,8 +10,8 @@ class Xformer(ast.NodeVisitor):
         self._py = []
         self._ts = []
         self._buf = []
-        self._preceds = {}
         self._indent = 0
+        self._preceds = {}
 
     def interleave(self, inter, f, seq):
         seq = iter(seq)
@@ -27,7 +27,7 @@ class Xformer(ast.NodeVisitor):
     def items_view(self, traverser, xs):
         if len(xs) == 1:
             traverser(xs[0])
-            self.write(",", "")
+            self.write((",", None))
         else:
             self.interleave(lambda: self.write(", "), traverser, xs)
 
@@ -35,13 +35,17 @@ class Xformer(ast.NodeVisitor):
         if self._py:
             self.write("\n")
 
-    def fill(self, py="", ts=None):
+    def fill(self, t=""):
         self.maybe_newline()
-        self.write("    " * self._indent + py, py if ts is None else ts)
+        py, ts = t if isinstance(t, tuple) else (t, t)
+        self.write(("    " * self._indent + py, ts))
 
-    def write(self, py, ts=None):
-        self._py.append(py)
-        self._ts.append(py if ts is None else ts)
+    def write(self, t):
+        py, ts = t if isinstance(t, tuple) else (t, t)
+        if py:
+            self._py.append(py)
+        if ts:
+            self._ts.append(ts)
 
     def buffer_writer(self, text):
         self._buf.append(text)
@@ -54,23 +58,22 @@ class Xformer(ast.NodeVisitor):
 
     @contextmanager
     def block(self):
-        self.write(":", " {")
-        self._indent += 1
-        yield
-        self._indent -= 1
-        self.write("", "} ")
+        with self.delimit((None, " {"), (None, "} ")):
+            self.write((":", None))
+            self._indent += 1
+            yield
+            self._indent -= 1
 
     @contextmanager
-    def delimit(self, pys, pye, tss=None, tse=None):
-        self.write(pys, pys if tss is None else tss)
+    def delimit(self, b, e):
+        self.write(b if isinstance(b, tuple) else (b, b))
         yield
-        self.write(pye, pye if tse is None else tse)
+        self.write(e if isinstance(e, tuple) else (e, e))
 
-    def delimit_if(self, start, end, condition):
-        if condition:
-            return self.delimit(start, end)
-        else:
-            return nullcontext()
+    def delimit_if(self, b, e, cond):
+        if cond:
+            return self.delimit(b, e)
+        return nullcontext()
 
     def require_parens(self, p, n):
         return self.delimit_if("(", ")", self.get_preced(n) > p)
@@ -82,20 +85,16 @@ class Xformer(ast.NodeVisitor):
         for n in ns:
             self._preceds[n] = p
 
-    def get_raw_doc(self, node):
-        if (
-            not isinstance(
-                node, (ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef, ast.Module)
-            )
-            or len(node.body) < 1
-        ):
+    def get_raw_doc(self, n):
+        must = (ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef, ast.Module)
+        if not isinstance(n, must) or len(n.body) < 1:
             return None
-        node = node.body[0]
-        if not isinstance(node, ast.Expr):
+        n = n.body[0]
+        if not isinstance(n, ast.Expr):
             return None
-        node = node.value
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            return node
+        n = n.value
+        if isinstance(n, ast.Constant) and isinstance(n.value, str):
+            return n
 
     def traverse(self, n):
         if isinstance(n, list):
@@ -135,7 +134,7 @@ class Xformer(ast.NodeVisitor):
         with self.require_parens(Precedence.TUPLE, n):
             self.set_preced(Precedence.ATOM, n.target, n.value)
             self.traverse(n.target)
-            self.write(" := ", " = ")
+            self.write((" := ", " = "))
             self.traverse(n.value)
 
     def visit_Import(self, n):
@@ -182,7 +181,7 @@ class Xformer(ast.NodeVisitor):
             self.traverse(n.value)
 
     def visit_Pass(self, n):
-        self.fill("pass", "")
+        self.fill(("pass", None))
 
     def visit_Break(self, n):
         self.fill("break")
@@ -191,7 +190,7 @@ class Xformer(ast.NodeVisitor):
         self.fill("continue")
 
     def visit_Delete(self, n):
-        self.fill("del ", "delete ")
+        self.fill(("del ", "delete "))
         self.interleave(lambda: self.write(", "), self.traverse, n.targets)
 
     def visit_Assert(self, n):
@@ -227,22 +226,22 @@ class Xformer(ast.NodeVisitor):
 
     def visit_YieldFrom(self, n):
         with self.require_parens(Precedence.YIELD, n):
-            self.write("yield from ", "yield* ")
+            self.write(("yield from ", "yield* "))
             if not n.value:
-                raise ValueError("Node can't be used without a value attribute.")
+                raise ValueError("Node without value attribute.")
             self.set_preced(Precedence.ATOM, n.value)
             self.traverse(n.value)
 
     def visit_Raise(self, n):
-        self.fill("raise", "throw")
+        self.fill(("raise", "throw"))
         if not n.exc:
             if n.cause:
-                raise ValueError("Node can't use cause without an exception.")
+                raise ValueError("Node cause without exception.")
             return
         self.write(" ")
         self.traverse(n.exc)
         if n.cause:
-            self.write(" from ", "")
+            self.write((" from ", None))
             self.traverse(n.cause)
 
     def visit_Try(self, node):
@@ -317,17 +316,17 @@ class Xformer(ast.NodeVisitor):
             self._write_doc_and_traverse(node)
 
     def visit_For(self, n):
-        self._for_helper("for ", "for (let ", n)
+        self._for_helper("for ", n)
 
     def visit_AsyncFor(self, n):
-        self._for_helper("async for ", "for (let ", n)
+        self._for_helper(("async for ", "for "), n)
 
-    def _for_helper(self, py, ts, n):
-        self.fill(py, ts)
-        self.traverse(n.target)
-        self.write(" in ", " of ")
-        self.traverse(n.iter)
-        self.write("", ")")
+    def _for_helper(self, t, n):
+        self.fill(t)
+        with self.delimit((None, "("), (None, ")")):
+            self.traverse(n.target)
+            self.write(" in ", " of ")
+            self.traverse(n.iter)
         with self.block():
             self.traverse(n.body)
         if n.orelse:
@@ -336,16 +335,16 @@ class Xformer(ast.NodeVisitor):
                 self.traverse(n.orelse)
 
     def visit_If(self, n):
-        self.fill("if ", "if (")
-        self.traverse(n.test)
-        self.write("", ")")
+        self.fill("if ")
+        with self.delimit((None, "("), (None, ")")):
+            self.traverse(n.test)
         with self.block():
             self.traverse(n.body)
         while n.orelse and len(n.orelse) == 1 and isinstance(n.orelse[0], ast.If):
             n = n.orelse[0]
-            self.fill("elif ", "else if (")
-            self.traverse(n.test)
-            self.write("", ")")
+            self.fill(("elif ", "else if "))
+            with self.delimit((None, "("), (None, ")")):
+                self.traverse(n.test)
             with self.block():
                 self.traverse(n.body)
         if n.orelse:
@@ -354,9 +353,9 @@ class Xformer(ast.NodeVisitor):
                 self.traverse(n.orelse)
 
     def visit_While(self, n):
-        self.fill("while ", "while (")
-        self.traverse(n.test)
-        self.write("", ")")
+        self.fill("while ")
+        with self.delimit((None, "("), (None, ")")):
+            self.traverse(n.test)
         with self.block():
             self.traverse(n.body)
         if n.orelse:
@@ -431,7 +430,6 @@ class Xformer(ast.NodeVisitor):
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
-            # Substitute overflowing decimal literal for AST infinities.
             self.write(repr(value).replace("inf", _INFSTR))
         else:
             self.write(repr(value))
@@ -452,31 +450,31 @@ class Xformer(ast.NodeVisitor):
         with self.delimit("[", "]"):
             self.interleave(lambda: self.write(", "), self.traverse, n.elts)
 
-    def visit_ListComp(self, node):
+    def visit_ListComp(self, n):
         with self.delimit("[", "]"):
-            self.traverse(node.elt)
-            for gen in node.generators:
-                self.traverse(gen)
+            self.traverse(n.elt)
+            for g in n.generators:
+                self.traverse(g)
 
-    def visit_GeneratorExp(self, node):
+    def visit_GeneratorExp(self, n):
         with self.delimit("(", ")"):
-            self.traverse(node.elt)
-            for gen in node.generators:
-                self.traverse(gen)
+            self.traverse(n.elt)
+            for g in n.generators:
+                self.traverse(g)
 
-    def visit_SetComp(self, node):
+    def visit_SetComp(self, n):
         with self.delimit("{", "}"):
-            self.traverse(node.elt)
-            for gen in node.generators:
-                self.traverse(gen)
+            self.traverse(n.elt)
+            for g in n.generators:
+                self.traverse(g)
 
-    def visit_DictComp(self, node):
+    def visit_DictComp(self, n):
         with self.delimit("{", "}"):
-            self.traverse(node.key)
+            self.traverse(n.key)
             self.write(": ")
-            self.traverse(node.value)
-            for gen in node.generators:
-                self.traverse(gen)
+            self.traverse(n.value)
+            for g in n.generators:
+                self.traverse(g)
 
     def visit_comprehension(self, node):
         if node.is_async:
@@ -502,11 +500,11 @@ class Xformer(ast.NodeVisitor):
             self.set_preced(Precedence.TEST, node.orelse)
             self.traverse(node.orelse)
 
-    def visit_Set(self, node):
-        if not node.elts:
+    def visit_Set(self, n):
+        if not n.elts:
             raise ValueError("Set node should have at least one item")
         with self.delimit("{", "}"):
-            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+            self.interleave(lambda: self.write(", "), self.traverse, n.elts)
 
     def visit_Dict(self, n):
         def write_pair(k, v):
@@ -538,14 +536,14 @@ class Xformer(ast.NodeVisitor):
         "-": Precedence.FACTOR,
     }
 
-    def visit_UnaryOp(self, node):
-        operator = self.unop[node.op.__class__.__name__]
-        operator_precedence = self.unop_precedence[operator]
-        with self.require_parens(operator_precedence, node):
-            self.write(operator)
+    def visit_UnaryOp(self, n):
+        o = self.unop[n.op.__class__.__name__]
+        p = self.unop_precedence[o]
+        with self.require_parens(p, n):
+            self.write(o)
             self.write(" ")
-            self.set_preced(operator_precedence, node.operand)
-            self.traverse(node.operand)
+            self.set_preced(p, n.operand)
+            self.traverse(n.operand)
 
     binop = {
         "Add": "+",
@@ -581,22 +579,21 @@ class Xformer(ast.NodeVisitor):
 
     binop_rassoc = frozenset(("**",))
 
-    def visit_BinOp(self, node):
-        operator = self.binop[node.op.__class__.__name__]
-        operator_precedence = self.binop_precedence[operator]
-        with self.require_parens(operator_precedence, node):
-            if operator in self.binop_rassoc:
-                left_precedence = operator_precedence.next()
-                right_precedence = operator_precedence
+    def visit_BinOp(self, n):
+        o = self.binop[n.op.__class__.__name__]
+        p = self.binop_precedence[o]
+        with self.require_parens(p, n):
+            if o in self.binop_rassoc:
+                left = p.next()
+                right = p
             else:
-                left_precedence = operator_precedence
-                right_precedence = operator_precedence.next()
-
-            self.set_preced(left_precedence, node.left)
-            self.traverse(node.left)
-            self.write(f" {operator} ")
-            self.set_preced(right_precedence, node.right)
-            self.traverse(node.right)
+                left = p
+                right = p.next()
+            self.set_preced(left, n.left)
+            self.traverse(n.left)
+            self.write(f" {o} ")
+            self.set_preced(right, n.right)
+            self.traverse(n.right)
 
     cmpops = {
         "Eq": "==",
@@ -622,21 +619,19 @@ class Xformer(ast.NodeVisitor):
     boolops = {"And": "and", "Or": "or"}
     boolop_precedence = {"and": Precedence.AND, "or": Precedence.OR}
 
-    def visit_BoolOp(self, node):
-        operator = self.boolops[node.op.__class__.__name__]
-        operator_precedence = self.boolop_precedence[operator]
+    def visit_BoolOp(self, n):
+        o = self.boolops[n.op.__class__.__name__]
+        p = self.boolop_precedence[o]
 
         def increasing_level_traverse(node):
-            nonlocal operator_precedence
-            operator_precedence = operator_precedence.next()
-            self.set_preced(operator_precedence, node)
+            nonlocal p
+            p = p.next()
+            self.set_preced(p, node)
             self.traverse(node)
 
-        with self.require_parens(operator_precedence, node):
-            s = f" {operator} "
-            self.interleave(
-                lambda: self.write(s), increasing_level_traverse, node.values
-            )
+        with self.require_parens(p, n):
+            s = f" {o} "
+            self.interleave(lambda: self.write(s), increasing_level_traverse, n.values)
 
     def visit_Attribute(self, node):
         self.set_preced(Precedence.ATOM, node.value)
@@ -681,18 +676,18 @@ class Xformer(ast.NodeVisitor):
         self.set_preced(Precedence.EXPR, node.value)
         self.traverse(node.value)
 
-    def visit_Ellipsis(self, node):
+    def visit_Ellipsis(self, n):
         self.write("...")
 
-    def visit_Slice(self, node):
-        if node.lower:
-            self.traverse(node.lower)
+    def visit_Slice(self, n):
+        if n.lower:
+            self.traverse(n.lower)
         self.write(":")
-        if node.upper:
-            self.traverse(node.upper)
-        if node.step:
+        if n.upper:
+            self.traverse(n.upper)
+        if n.step:
             self.write(":")
-            self.traverse(node.step)
+            self.traverse(n.step)
 
     def visit_arg(self, node):
         self.write(node.arg)
@@ -702,7 +697,6 @@ class Xformer(ast.NodeVisitor):
 
     def visit_arguments(self, node):
         first = True
-        # normal arguments
         all_args = node.posonlyargs + node.args
         defaults = [None] * (len(all_args) - len(node.defaults)) + node.defaults
         for index, elements in enumerate(zip(all_args, defaults), 1):
@@ -717,8 +711,6 @@ class Xformer(ast.NodeVisitor):
                 self.traverse(d)
             if index == len(node.posonlyargs):
                 self.write(", /")
-
-        # varargs, or bare '*' if no varargs but keyword-only arguments present
         if node.vararg or node.kwonlyargs:
             if first:
                 first = False
@@ -730,8 +722,6 @@ class Xformer(ast.NodeVisitor):
                 if node.vararg.annotation:
                     self.write(": ")
                     self.traverse(node.vararg.annotation)
-
-        # keyword-only arguments
         if node.kwonlyargs:
             for a, d in zip(node.kwonlyargs, node.kw_defaults):
                 self.write(", ")
@@ -739,8 +729,6 @@ class Xformer(ast.NodeVisitor):
                 if d:
                     self.write("=")
                     self.traverse(d)
-
-        # kwargs
         if node.kwarg:
             if first:
                 first = False

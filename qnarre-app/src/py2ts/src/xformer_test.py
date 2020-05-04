@@ -2,7 +2,7 @@ import ast
 import dis
 import os
 import sys
-import unittest
+import pytest
 import warnings
 import weakref
 from textwrap import dedent
@@ -243,7 +243,7 @@ eval_tests = [
 # excepthandler, arguments, keywords, alias
 
 
-class AST_Tests(unittest.TestCase):
+class AST_Tests:
     def _is_ast_node(self, name, node):
         if not isinstance(node, type):
             return False
@@ -271,15 +271,15 @@ class AST_Tests(unittest.TestCase):
 
     def test_AST_objects(self):
         x = ast.AST()
-        self.assertEqual(x._fields, ())
+        assert x._fields == ()
         x.foobar = 42
-        self.assertEqual(x.foobar, 42)
-        self.assertEqual(x.__dict__["foobar"], 42)
+        assert x.foobar == 42
+        assert x.__dict__["foobar"] == 42
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             x.vararg
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
@@ -293,7 +293,7 @@ class AST_Tests(unittest.TestCase):
         ref = weakref.ref(a.x)
         del a
         support.gc_collect()
-        self.assertIsNone(ref())
+        assert ref() is None
 
     def test_snippets(self):
         for input, output, kind in (
@@ -304,7 +304,7 @@ class AST_Tests(unittest.TestCase):
             for i, o in zip(input, output):
                 with self.subTest(action="parsing", input=i):
                     ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
-                    self.assertEqual(to_tuple(ast_tree), o)
+                    assert to_tuple(ast_tree) == o
                     self._assertTrueorder(ast_tree, (0, 0))
                 with self.subTest(action="compiling", input=i, kind=kind):
                     compile(ast_tree, "?", kind)
@@ -318,13 +318,13 @@ class AST_Tests(unittest.TestCase):
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
-        self.assertIsNone(slc.upper)
-        self.assertIsNone(slc.lower)
-        self.assertIsNone(slc.step)
+        assert slc.upper is None
+        assert slc.lower is None
+        assert slc.step is None
 
     def test_from_import(self):
         im = ast.parse("from . import y").body[0]
-        self.assertIsNone(im.module)
+        assert im.module is None
 
     def test_non_interned_future_from_ast(self):
         mod = ast.parse("from __future__ import division")
@@ -333,12 +333,12 @@ class AST_Tests(unittest.TestCase):
         compile(mod, "<test>", "exec")
 
     def test_base_classes(self):
-        self.assertTrue(issubclass(ast.For, ast.stmt))
-        self.assertTrue(issubclass(ast.Name, ast.expr))
-        self.assertTrue(issubclass(ast.stmt, ast.AST))
-        self.assertTrue(issubclass(ast.expr, ast.AST))
-        self.assertTrue(issubclass(ast.comprehension, ast.AST))
-        self.assertTrue(issubclass(ast.Gt, ast.AST))
+        assert issubclass(ast.For, ast.stmt) is True
+        assert issubclass(ast.Name, ast.expr) is True
+        assert issubclass(ast.stmt, ast.AST) is True
+        assert issubclass(ast.expr, ast.AST) is True
+        assert issubclass(ast.comprehension, ast.AST) is True
+        assert issubclass(ast.Gt, ast.AST) is True
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
@@ -349,147 +349,144 @@ class AST_Tests(unittest.TestCase):
                     continue
                 x = item()
                 if isinstance(x, ast.AST):
-                    self.assertEqual(type(x._fields), tuple)
+                    assert type(x._fields) == tuple
 
     def test_arguments(self):
         x = ast.arguments()
-        self.assertEqual(
-            x._fields,
-            (
-                "posonlyargs",
-                "args",
-                "vararg",
-                "kwonlyargs",
-                "kw_defaults",
-                "kwarg",
-                "defaults",
-            ),
+        assert x._fields == (
+            "posonlyargs",
+            "args",
+            "vararg",
+            "kwonlyargs",
+            "kw_defaults",
+            "kwarg",
+            "defaults",
         )
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             x.args
-        self.assertIsNone(x.vararg)
+        assert x.vararg is None
 
         x = ast.arguments(*range(1, 8))
-        self.assertEqual(x.args, 2)
-        self.assertEqual(x.vararg, 3)
+        assert x.args == 2
+        assert x.vararg == 3
 
     def test_field_attr_writable(self):
         x = ast.Num()
         # We can assign to _fields
         x._fields = 666
-        self.assertEqual(x._fields, 666)
+        assert x._fields == 666
 
     def test_classattrs(self):
         x = ast.Num()
-        self.assertEqual(x._fields, ("value", "kind"))
+        assert x._fields == ("value", "kind")
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             x.value
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             x.n
 
-        x = ast.Num(42)
-        self.assertEqual(x.value, 42)
-        self.assertEqual(x.n, 42)
+        x = ast.Constant(42)
+        assert x.value == 42
+        assert x.n == 42
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             x.lineno
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             x.foobar
 
         x = ast.Num(lineno=2)
-        self.assertEqual(x.lineno, 2)
+        assert x.lineno == 2
 
         x = ast.Num(42, lineno=0)
-        self.assertEqual(x.lineno, 0)
-        self.assertEqual(x._fields, ("value", "kind"))
-        self.assertEqual(x.value, 42)
-        self.assertEqual(x.n, 42)
+        assert x.lineno, 0
+        assert x._fields == ("value", "kind")
+        assert x.value == 42
+        assert x.n == 42
 
-        self.assertRaises(TypeError, ast.Num, 1, None, 2)
-        self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
+        pytest.raises(TypeError, ast.Num, 1, None, 2)
+        pytest.raises(TypeError, ast.Num, 1, None, 2, lineno=0)
 
-        self.assertEqual(ast.Num(42).n, 42)
-        self.assertEqual(ast.Num(4.25).n, 4.25)
-        self.assertEqual(ast.Num(4.25j).n, 4.25j)
-        self.assertEqual(ast.Str("42").s, "42")
-        self.assertEqual(ast.Bytes(b"42").s, b"42")
+        assert ast.Num(42).n == 42
+        assert ast.Num(4.25).n == 4.25
+        assert ast.Num(4.25j).n == 4.25j
+        assert ast.Str("42").s == "42"
+        assert ast.Bytes(b"42").s == b"42"
         self.assertIs(ast.NameConstant(True).value, True)
         self.assertIs(ast.NameConstant(False).value, False)
         self.assertIs(ast.NameConstant(None).value, None)
 
-        self.assertEqual(ast.Constant(42).value, 42)
-        self.assertEqual(ast.Constant(4.25).value, 4.25)
-        self.assertEqual(ast.Constant(4.25j).value, 4.25j)
-        self.assertEqual(ast.Constant("42").value, "42")
-        self.assertEqual(ast.Constant(b"42").value, b"42")
+        assert ast.Constant(42).value == 42
+        assert ast.Constant(4.25).value == 4.25
+        assert ast.Constant(4.25j).value == 4.25j
+        assert ast.Constant("42").value == "42"
+        assert ast.Constant(b"42").value == b"42"
         self.assertIs(ast.Constant(True).value, True)
         self.assertIs(ast.Constant(False).value, False)
         self.assertIs(ast.Constant(None).value, None)
         self.assertIs(ast.Constant(...).value, ...)
 
     def test_realtype(self):
-        self.assertEqual(type(ast.Num(42)), ast.Constant)
-        self.assertEqual(type(ast.Num(4.25)), ast.Constant)
-        self.assertEqual(type(ast.Num(4.25j)), ast.Constant)
-        self.assertEqual(type(ast.Str("42")), ast.Constant)
-        self.assertEqual(type(ast.Bytes(b"42")), ast.Constant)
-        self.assertEqual(type(ast.NameConstant(True)), ast.Constant)
-        self.assertEqual(type(ast.NameConstant(False)), ast.Constant)
-        self.assertEqual(type(ast.NameConstant(None)), ast.Constant)
-        self.assertEqual(type(ast.Ellipsis()), ast.Constant)
+        assert type(ast.Num(42)) == ast.Constant
+        assert type(ast.Num(4.25)) == ast.Constant
+        assert type(ast.Num(4.25j)) == ast.Constant
+        assert type(ast.Str("42")) == ast.Constant
+        assert type(ast.Bytes(b"42")) == ast.Constant
+        assert type(ast.NameConstant(True)) == ast.Constant
+        assert type(ast.NameConstant(False)) == ast.Constant
+        assert type(ast.NameConstant(None)) == ast.Constant
+        assert type(ast.Ellipsis()) == ast.Constant
 
     def test_isinstance(self):
-        self.assertTrue(isinstance(ast.Num(42), ast.Num))
-        self.assertTrue(isinstance(ast.Num(4.2), ast.Num))
-        self.assertTrue(isinstance(ast.Num(4.2j), ast.Num))
-        self.assertTrue(isinstance(ast.Str("42"), ast.Str))
-        self.assertTrue(isinstance(ast.Bytes(b"42"), ast.Bytes))
-        self.assertTrue(isinstance(ast.NameConstant(True), ast.NameConstant))
-        self.assertTrue(isinstance(ast.NameConstant(False), ast.NameConstant))
-        self.assertTrue(isinstance(ast.NameConstant(None), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Ellipsis(), ast.Ellipsis))
+        assert isinstance(ast.Num(42), ast.Num) is True
+        assert isinstance(ast.Num(4.2), ast.Num) is True
+        assert isinstance(ast.Num(4.2j), ast.Num) is True
+        assert isinstance(ast.Str("42"), ast.Str) is True
+        assert isinstance(ast.Bytes(b"42"), ast.Bytes) is True
+        assert isinstance(ast.NameConstant(True), ast.NameConstant) is True
+        assert isinstance(ast.NameConstant(False), ast.NameConstant) is True
+        assert isinstance(ast.NameConstant(None), ast.NameConstant) is True
+        assert isinstance(ast.Ellipsis(), ast.Ellipsis) is True
 
-        self.assertTrue(isinstance(ast.Constant(42), ast.Num))
-        self.assertTrue(isinstance(ast.Constant(4.2), ast.Num))
-        self.assertTrue(isinstance(ast.Constant(4.2j), ast.Num))
-        self.assertTrue(isinstance(ast.Constant("42"), ast.Str))
-        self.assertTrue(isinstance(ast.Constant(b"42"), ast.Bytes))
-        self.assertTrue(isinstance(ast.Constant(True), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Constant(False), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Constant(None), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Constant(...), ast.Ellipsis))
+        assert isinstance(ast.Constant(42), ast.Num) is True
+        assert isinstance(ast.Constant(4.2), ast.Num) is True
+        assert isinstance(ast.Constant(4.2j), ast.Num) is True
+        assert isinstance(ast.Constant("42"), ast.Str) is True
+        assert isinstance(ast.Constant(b"42"), ast.Bytes) is True
+        assert isinstance(ast.Constant(True), ast.NameConstant) is True
+        assert isinstance(ast.Constant(False), ast.NameConstant) is True
+        assert isinstance(ast.Constant(None), ast.NameConstant) is True
+        assert isinstance(ast.Constant(...), ast.Ellipsis) is True
 
-        self.assertFalse(isinstance(ast.Str("42"), ast.Num))
-        self.assertFalse(isinstance(ast.Num(42), ast.Str))
-        self.assertFalse(isinstance(ast.Str("42"), ast.Bytes))
-        self.assertFalse(isinstance(ast.Num(42), ast.NameConstant))
-        self.assertFalse(isinstance(ast.Num(42), ast.Ellipsis))
-        self.assertFalse(isinstance(ast.NameConstant(True), ast.Num))
-        self.assertFalse(isinstance(ast.NameConstant(False), ast.Num))
+        assert not (isinstance(ast.Str("42"), ast.Num))
+        assert not (isinstance(ast.Num(42), ast.Str))
+        assert not (isinstance(ast.Str("42"), ast.Bytes))
+        assert not (isinstance(ast.Num(42), ast.NameConstant))
+        assert not (isinstance(ast.Num(42), ast.Ellipsis))
+        assert not (isinstance(ast.NameConstant(True), ast.Num))
+        assert not (isinstance(ast.NameConstant(False), ast.Num))
 
-        self.assertFalse(isinstance(ast.Constant("42"), ast.Num))
-        self.assertFalse(isinstance(ast.Constant(42), ast.Str))
-        self.assertFalse(isinstance(ast.Constant("42"), ast.Bytes))
-        self.assertFalse(isinstance(ast.Constant(42), ast.NameConstant))
-        self.assertFalse(isinstance(ast.Constant(42), ast.Ellipsis))
-        self.assertFalse(isinstance(ast.Constant(True), ast.Num))
-        self.assertFalse(isinstance(ast.Constant(False), ast.Num))
+        assert not (isinstance(ast.Constant("42"), ast.Num))
+        assert not (isinstance(ast.Constant(42), ast.Str))
+        assert not (isinstance(ast.Constant("42"), ast.Bytes))
+        assert not (isinstance(ast.Constant(42), ast.NameConstant))
+        assert not (isinstance(ast.Constant(42), ast.Ellipsis))
+        assert not (isinstance(ast.Constant(True), ast.Num))
+        assert not (isinstance(ast.Constant(False), ast.Num))
 
-        self.assertFalse(isinstance(ast.Constant(), ast.Num))
-        self.assertFalse(isinstance(ast.Constant(), ast.Str))
-        self.assertFalse(isinstance(ast.Constant(), ast.Bytes))
-        self.assertFalse(isinstance(ast.Constant(), ast.NameConstant))
-        self.assertFalse(isinstance(ast.Constant(), ast.Ellipsis))
+        assert not (isinstance(ast.Constant(), ast.Num))
+        assert not (isinstance(ast.Constant(), ast.Str))
+        assert not (isinstance(ast.Constant(), ast.Bytes))
+        assert not (isinstance(ast.Constant(), ast.NameConstant))
+        assert not (isinstance(ast.Constant(), ast.Ellipsis))
 
         class S(str):
             pass
 
-        self.assertTrue(isinstance(ast.Constant(S("42")), ast.Str))
-        self.assertFalse(isinstance(ast.Constant(S("42")), ast.Num))
+        assert isinstance(ast.Constant(S("42")), ast.Str) is True
+        assert not (isinstance(ast.Constant(S("42")), ast.Num))
 
     def test_subclasses(self):
         class N(ast.Num):
@@ -501,70 +498,70 @@ class AST_Tests(unittest.TestCase):
             pass
 
         n = N(42)
-        self.assertEqual(n.n, 42)
-        self.assertEqual(n.z, "spam")
-        self.assertEqual(type(n), N)
-        self.assertTrue(isinstance(n, N))
-        self.assertTrue(isinstance(n, ast.Num))
-        self.assertFalse(isinstance(n, N2))
-        self.assertFalse(isinstance(ast.Num(42), N))
+        assert n.n == 42
+        assert n.z == "spam"
+        assert type(n) == N
+        assert isinstance(n, N) is True
+        assert isinstance(n, ast.Num) is True
+        assert not (isinstance(n, N2))
+        assert not (isinstance(ast.Num(42), N))
         n = N(n=42)
-        self.assertEqual(n.n, 42)
-        self.assertEqual(type(n), N)
+        assert n.n == 42
+        assert type(n) == N
 
     def test_module(self):
         body = [ast.Num(42)]
         x = ast.Module(body, [])
-        self.assertEqual(x.body, body)
+        assert x.body == body
 
     def test_nodeclasses(self):
         # Zero arguments constructor explicitly allowed
         x = ast.BinOp()
-        self.assertEqual(x._fields, ("left", "op", "right"))
+        assert x._fields == ("left", "op", "right")
 
         # Random attribute allowed too
         x.foobarbaz = 5
-        self.assertEqual(x.foobarbaz, 5)
+        assert x.foobarbaz == 5
 
         n1 = ast.Num(1)
         n3 = ast.Num(3)
         addop = ast.Add()
         x = ast.BinOp(n1, addop, n3)
-        self.assertEqual(x.left, n1)
-        self.assertEqual(x.op, addop)
-        self.assertEqual(x.right, n3)
+        assert x.left == n1
+        assert x.op == addop
+        assert x.right == n3
 
         x = ast.BinOp(1, 2, 3)
-        self.assertEqual(x.left, 1)
-        self.assertEqual(x.op, 2)
-        self.assertEqual(x.right, 3)
+        assert x.left == 1
+        assert x.op == 2
+        assert x.right == 3
 
         x = ast.BinOp(1, 2, 3, lineno=0)
-        self.assertEqual(x.left, 1)
-        self.assertEqual(x.op, 2)
-        self.assertEqual(x.right, 3)
-        self.assertEqual(x.lineno, 0)
+        assert x.left == 1
+        assert x.op == 2
+        assert x.right == 3
+        assert x.lineno == 0
 
         # node raises exception when given too many arguments
-        self.assertRaises(TypeError, ast.BinOp, 1, 2, 3, 4)
+        pytest.raises(TypeError, ast.BinOp, 1, 2, 3, 4)
         # node raises exception when given too many arguments
-        self.assertRaises(TypeError, ast.BinOp, 1, 2, 3, 4, lineno=0)
+        pytest.raises(TypeError, ast.BinOp, 1, 2, 3, 4, lineno=0)
 
         # can set attributes through kwargs too
         x = ast.BinOp(left=1, op=2, right=3, lineno=0)
-        self.assertEqual(x.left, 1)
-        self.assertEqual(x.op, 2)
-        self.assertEqual(x.right, 3)
-        self.assertEqual(x.lineno, 0)
+        assert x.left == 1
+        assert x.op == 2
+        assert x.right == 3
+        assert x.lineno == 0
 
         # Random kwargs also allowed
         x = ast.BinOp(1, 2, 3, foobarbaz=42)
-        self.assertEqual(x.foobarbaz, 42)
+        assert x.foobarbaz == 42
 
     def test_no_fields(self):
         # this used to fail because Sub._fields was None
         x = ast.Sub()
-        self.assertEqual(x._fields, ())
+        assert x._fields == ()
 
     def test_pickling(self):
         import pickle
@@ -581,19 +578,19 @@ class AST_Tests(unittest.TestCase):
             for protocol in protocols:
                 for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
                     ast2 = mod.loads(mod.dumps(ast, protocol))
-                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
+                    assert to_tuple(ast2) == to_tuple(ast)
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
-        with self.assertRaises(TypeError) as cm:
+        with pytest.raises(TypeError) as cm:
             compile(m, "<test>", "exec")
         self.assertIn("but got <ast.expr", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
         ast.fix_missing_locations(m)
-        with self.assertRaises(TypeError) as cm:
+        with pytest.raises(TypeError) as cm:
             compile(m, "<test>", "exec")
         self.assertIn("identifier must be of type str", str(cm.exception))
 
@@ -608,7 +605,7 @@ class AST_Tests(unittest.TestCase):
         # Issue 16546: yield from value is not optional.
         empty_yield_from = ast.parse("def f():\n yield from g()")
         empty_yield_from.body[0].body[0].value.value = None
-        with self.assertRaises(ValueError) as cm:
+        with pytest.raises(ValueError) as cm:
             compile(empty_yield_from, "<test>", "exec")
         self.assertIn("field value is required", str(cm.exception))
 
@@ -622,90 +619,91 @@ class AST_Tests(unittest.TestCase):
             return None
 
         with support.swap_attr(unicodedata, "normalize", bad_normalize):
-            self.assertRaises(TypeError, ast.parse, "\u03D5")
+            pytest.raises(TypeError, ast.parse, "\u03D5")
 
     def test_issue18374_binop_col_offset(self):
         tree = ast.parse("4+5+6+7")
         parent_binop = tree.body[0].value
         child_binop = parent_binop.left
         grandchild_binop = child_binop.left
-        self.assertEqual(parent_binop.col_offset, 0)
-        self.assertEqual(parent_binop.end_col_offset, 7)
-        self.assertEqual(child_binop.col_offset, 0)
-        self.assertEqual(child_binop.end_col_offset, 5)
-        self.assertEqual(grandchild_binop.col_offset, 0)
-        self.assertEqual(grandchild_binop.end_col_offset, 3)
+        assert parent_binop.col_offset == 0
+        assert parent_binop.end_col_offset == 7
+        assert child_binop.col_offset == 0
+        assert child_binop.end_col_offset == 5
+        assert grandchild_binop.col_offset == 0
+        assert grandchild_binop.end_col_offset == 3
 
         tree = ast.parse("4+5-\\\n 6-7")
         parent_binop = tree.body[0].value
         child_binop = parent_binop.left
         grandchild_binop = child_binop.left
-        self.assertEqual(parent_binop.col_offset, 0)
-        self.assertEqual(parent_binop.lineno, 1)
-        self.assertEqual(parent_binop.end_col_offset, 4)
-        self.assertEqual(parent_binop.end_lineno, 2)
+        assert parent_binop.col_offset == 0
+        assert parent_binop.lineno == 1
+        assert parent_binop.end_col_offset == 4
+        assert parent_binop.end_lineno == 2
 
-        self.assertEqual(child_binop.col_offset, 0)
-        self.assertEqual(child_binop.lineno, 1)
-        self.assertEqual(child_binop.end_col_offset, 2)
-        self.assertEqual(child_binop.end_lineno, 2)
+        assert child_binop.col_offset == 0
+        assert child_binop.lineno == 1
+        assert child_binop.end_col_offset == 2
+        assert child_binop.end_lineno == 2
 
-        self.assertEqual(grandchild_binop.col_offset, 0)
-        self.assertEqual(grandchild_binop.lineno, 1)
-        self.assertEqual(grandchild_binop.end_col_offset, 3)
-        self.assertEqual(grandchild_binop.end_lineno, 1)
+        assert grandchild_binop.col_offset == 0
+        assert grandchild_binop.lineno == 1
+        assert grandchild_binop.end_col_offset == 3
+        assert grandchild_binop.end_lineno == 1
 
     def test_issue39579_dotted_name_end_col_offset(self):
         tree = ast.parse("@a.b.c\ndef f(): pass")
         attr_b = tree.body[0].decorator_list[0].value
-        self.assertEqual(attr_b.end_col_offset, 4)
+        assert attr_b.end_col_offset == 4
 
     def test_ast_asdl_signature(self):
-        self.assertEqual(
-            ast.withitem.__doc__, "withitem(expr context_expr, expr? optional_vars)"
+        assert (
+            ast.withitem.__doc__ == "withitem(expr context_expr, expr? optional_vars)"
         )
-        self.assertEqual(ast.GtE.__doc__, "GtE")
-        self.assertEqual(ast.Name.__doc__, "Name(identifier id, expr_context ctx)")
-        self.assertEqual(
-            ast.cmpop.__doc__,
-            "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn",
+
+        assert ast.GtE.__doc__ == "GtE"
+        assert ast.Name.__doc__ == "Name(identifier id, expr_context ctx)"
+        assert (
+            ast.cmpop.__doc__
+            == "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn"
         )
+
         expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
 
-class ASTHelpers_Test(unittest.TestCase):
+class ASTHelpers_Test:
     maxDiff = None
 
     def test_parse(self):
         a = ast.parse("foo(1 + 1)")
         b = compile("foo(1 + 1)", "<unknown>", "exec", ast.PyCF_ONLY_AST)
-        self.assertEqual(ast.dump(a), ast.dump(b))
+        assert ast.dump(a) == ast.dump(b)
 
     def test_parse_in_error(self):
         try:
             1 / 0
         except Exception:
-            with self.assertRaises(SyntaxError) as e:
+            with pytest.raises(SyntaxError) as e:
                 ast.literal_eval(r"'\U'")
             self.assertIsNotNone(e.exception.__context__)
 
     def test_dump(self):
         node = ast.parse('spam(eggs, "and cheese")')
-        self.assertEqual(
-            ast.dump(node),
+        assert ast.dump(node) == (
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
             "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
-            "keywords=[]))], type_ignores=[])",
+            "keywords=[]))], type_ignores=[])"
         )
-        self.assertEqual(
-            ast.dump(node, annotate_fields=False),
+
+        assert ast.dump(node, annotate_fields=False) == (
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese')], []))], [])",
+            "Constant('and cheese')], []))], [])"
         )
-        self.assertEqual(
-            ast.dump(node, include_attributes=True),
+
+        assert ast.dump(node, include_attributes=True) == (
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
@@ -717,9 +715,9 @@ class ASTHelpers_Test(unittest.TestCase):
 
     def test_dump_indent(self):
         node = ast.parse('spam(eggs, "and cheese")')
-        self.assertEqual(
-            ast.dump(node, indent=3),
-            """\
+        assert (
+            ast.dump(node, indent=3)
+            == """\
 Module(
    body=[
       Expr(
@@ -729,11 +727,12 @@ Module(
                Name(id='eggs', ctx=Load()),
                Constant(value='and cheese')],
             keywords=[]))],
-   type_ignores=[])""",
+   type_ignores=[])"""
         )
-        self.assertEqual(
-            ast.dump(node, annotate_fields=False, indent="\t"),
-            """\
+
+        assert (
+            ast.dump(node, annotate_fields=False, indent="\t")
+            == """\
 Module(
 \t[
 \t\tExpr(
@@ -743,11 +742,12 @@ Module(
 \t\t\t\t\tName('eggs', Load()),
 \t\t\t\t\tConstant('and cheese')],
 \t\t\t\t[]))],
-\t[])""",
+\t[])"""
         )
-        self.assertEqual(
-            ast.dump(node, include_attributes=True, indent=3),
-            """\
+
+        assert (
+            ast.dump(node, include_attributes=True, indent=3)
+            == """\
 Module(
    body=[
       Expr(
@@ -782,39 +782,33 @@ Module(
          col_offset=0,
          end_lineno=1,
          end_col_offset=24)],
-   type_ignores=[])""",
+   type_ignores=[])"""
         )
 
     def test_dump_incomplete(self):
         node = ast.Raise(lineno=3, col_offset=4)
-        self.assertEqual(ast.dump(node), "Raise()")
-        self.assertEqual(
-            ast.dump(node, include_attributes=True), "Raise(lineno=3, col_offset=4)"
+        assert ast.dump(node) == "Raise()"
+        assert (
+            ast.dump(node, include_attributes=True) == "Raise(lineno=3, col_offset=4)"
         )
+
         node = ast.Raise(exc=ast.Name(id="e", ctx=ast.Load()), lineno=3, col_offset=4)
-        self.assertEqual(ast.dump(node), "Raise(exc=Name(id='e', ctx=Load()))")
-        self.assertEqual(
-            ast.dump(node, annotate_fields=False), "Raise(Name('e', Load()))"
-        )
-        self.assertEqual(
-            ast.dump(node, include_attributes=True),
+        assert ast.dump(node), "Raise(exc=Name(id='e', ctx=Load()))"
+        assert ast.dump(node, annotate_fields=False) == ("Raise(Name('e', Load()))")
+        assert ast.dump(node, include_attributes=True) == (
             "Raise(exc=Name(id='e', ctx=Load()), lineno=3, col_offset=4)",
         )
-        self.assertEqual(
-            ast.dump(node, annotate_fields=False, include_attributes=True),
+        assert ast.dump(node, annotate_fields=False, include_attributes=True) == (
             "Raise(Name('e', Load()), lineno=3, col_offset=4)",
         )
         node = ast.Raise(cause=ast.Name(id="e", ctx=ast.Load()))
-        self.assertEqual(ast.dump(node), "Raise(cause=Name(id='e', ctx=Load()))")
-        self.assertEqual(
-            ast.dump(node, annotate_fields=False), "Raise(cause=Name('e', Load()))"
-        )
+        assert ast.dump(node) == "Raise(cause=Name(id='e', ctx=Load()))"
+        assert ast.dump(node, annotate_fields=False) == "Raise(cause=Name('e', Load()))"
 
     def test_copy_location(self):
         src = ast.parse("1 + 1", mode="eval")
         src.body.right = ast.copy_location(ast.Num(2), src.body.right)
-        self.assertEqual(
-            ast.dump(src, include_attributes=True),
+        assert ast.dump(src, include_attributes=True) == (
             "Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, "
             "end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, "
             "lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, "
@@ -826,10 +820,9 @@ Module(
         src.body.append(
             ast.Expr(ast.Call(ast.Name("spam", ast.Load()), [ast.Str("eggs")], []))
         )
-        self.assertEqual(src, ast.fix_missing_locations(src))
+        assert src == ast.fix_missing_locations(src)
         self.maxDiff = None
-        self.assertEqual(
-            ast.dump(src, include_attributes=True),
+        assert ast.dump(src, include_attributes=True) == (
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
             "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
@@ -845,9 +838,8 @@ Module(
 
     def test_increment_lineno(self):
         src = ast.parse("1 + 1", mode="eval")
-        self.assertEqual(ast.increment_lineno(src, n=3), src)
-        self.assertEqual(
-            ast.dump(src, include_attributes=True),
+        assert ast.increment_lineno(src, n=3) == src
+        assert ast.dump(src, include_attributes=True) == (
             "Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, "
             "end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, "
             "lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, "
@@ -855,9 +847,8 @@ Module(
         )
         # issue10869: do not increment lineno of root twice
         src = ast.parse("1 + 1", mode="eval")
-        self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
-        self.assertEqual(
-            ast.dump(src, include_attributes=True),
+        assert ast.increment_lineno(src.body, n=3) == src.body
+        assert ast.dump(src, include_attributes=True) == (
             "Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, "
             "end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, "
             "lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, "
@@ -867,57 +858,56 @@ Module(
     def test_iter_fields(self):
         node = ast.parse("foo()", mode="eval")
         d = dict(ast.iter_fields(node.body))
-        self.assertEqual(d.pop("func").id, "foo")
-        self.assertEqual(d, {"keywords": [], "args": []})
+        assert d.pop("func").id == "foo"
+        assert d == {"keywords": [], "args": []}
 
     def test_iter_child_nodes(self):
         node = ast.parse("spam(23, 42, eggs='leek')", mode="eval")
-        self.assertEqual(len(list(ast.iter_child_nodes(node.body))), 4)
+        assert len(list(ast.iter_child_nodes(node.body))) == 4
         iterator = ast.iter_child_nodes(node.body)
-        self.assertEqual(next(iterator).id, "spam")
-        self.assertEqual(next(iterator).value, 23)
-        self.assertEqual(next(iterator).value, 42)
-        self.assertEqual(
-            ast.dump(next(iterator)),
+        assert next(iterator).id == "spam"
+        assert next(iterator).value == 23
+        assert next(iterator).value == 42
+        assert ast.dump(next(iterator)) == (
             "keyword(arg='eggs', value=Constant(value='leek'))",
         )
 
     def test_get_docstring(self):
         node = ast.parse('"""line one\n  line two"""')
-        self.assertEqual(ast.get_docstring(node), "line one\nline two")
+        assert ast.get_docstring(node) == "line one\nline two"
 
         node = ast.parse('class foo:\n  """line one\n  line two"""')
-        self.assertEqual(ast.get_docstring(node.body[0]), "line one\nline two")
+        assert ast.get_docstring(node.body[0]) == "line one\nline two"
 
         node = ast.parse('def foo():\n  """line one\n  line two"""')
-        self.assertEqual(ast.get_docstring(node.body[0]), "line one\nline two")
+        assert ast.get_docstring(node.body[0]) == "line one\nline two"
 
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
-        self.assertEqual(ast.get_docstring(node.body[0]), "spam\nham")
+        assert ast.get_docstring(node.body[0]) == "spam\nham"
 
     def test_get_docstring_none(self):
-        self.assertIsNone(ast.get_docstring(ast.parse("")))
+        assert ast.get_docstring(ast.parse("")) is None
         node = ast.parse('x = "not docstring"')
-        self.assertIsNone(ast.get_docstring(node))
+        assert ast.get_docstring(node) is None
         node = ast.parse("def foo():\n  pass")
-        self.assertIsNone(ast.get_docstring(node))
+        assert ast.get_docstring(node) is None
 
         node = ast.parse("class foo:\n  pass")
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
         node = ast.parse('class foo:\n  x = "not docstring"')
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
         node = ast.parse("class foo:\n  def bar(self): pass")
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
 
         node = ast.parse("def foo():\n  pass")
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
         node = ast.parse('def foo():\n  x = "not docstring"')
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
 
         node = ast.parse("async def foo():\n  pass")
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
         node = ast.parse('async def foo():\n  x = "not docstring"')
-        self.assertIsNone(ast.get_docstring(node.body[0]))
+        assert ast.get_docstring(node.body[0]) is None
 
     def test_multi_line_docstring_col_offset_and_lineno_issue16806(self):
         node = ast.parse(
@@ -927,74 +917,74 @@ Module(
             '  """line one\n  line two"""\n'
             '"""line one\nline two"""\n\n'
         )
-        self.assertEqual(node.body[0].col_offset, 0)
-        self.assertEqual(node.body[0].lineno, 1)
-        self.assertEqual(node.body[1].body[0].col_offset, 2)
-        self.assertEqual(node.body[1].body[0].lineno, 5)
-        self.assertEqual(node.body[1].body[1].body[0].col_offset, 4)
-        self.assertEqual(node.body[1].body[1].body[0].lineno, 9)
-        self.assertEqual(node.body[1].body[2].col_offset, 2)
-        self.assertEqual(node.body[1].body[2].lineno, 11)
-        self.assertEqual(node.body[2].col_offset, 0)
-        self.assertEqual(node.body[2].lineno, 13)
+        assert node.body[0].col_offset == 0
+        assert node.body[0].lineno == 1
+        assert node.body[1].body[0].col_offset == 2
+        assert node.body[1].body[0].lineno == 5
+        assert node.body[1].body[1].body[0].col_offset == 4
+        assert node.body[1].body[1].body[0].lineno == 9
+        assert node.body[1].body[2].col_offset == 2
+        assert node.body[1].body[2].lineno == 11
+        assert node.body[2].col_offset == 0
+        assert node.body[2].lineno == 13
 
     def test_elif_stmt_start_position(self):
         node = ast.parse("if a:\n    pass\nelif b:\n    pass\n")
         elif_stmt = node.body[0].orelse[0]
-        self.assertEqual(elif_stmt.lineno, 3)
-        self.assertEqual(elif_stmt.col_offset, 0)
+        assert elif_stmt.lineno == 3
+        assert elif_stmt.col_offset == 0
 
     def test_elif_stmt_start_position_with_else(self):
         node = ast.parse("if a:\n    pass\nelif b:\n    pass\nelse:\n    pass\n")
         elif_stmt = node.body[0].orelse[0]
-        self.assertEqual(elif_stmt.lineno, 3)
-        self.assertEqual(elif_stmt.col_offset, 0)
+        assert elif_stmt.lineno == 3
+        assert elif_stmt.col_offset == 0
 
     def test_starred_expr_end_position_within_call(self):
         node = ast.parse("f(*[0, 1])")
         starred_expr = node.body[0].value.args[0]
-        self.assertEqual(starred_expr.end_lineno, 1)
-        self.assertEqual(starred_expr.end_col_offset, 9)
+        assert starred_expr.end_lineno == 1
+        assert starred_expr.end_col_offset == 9
 
     def test_literal_eval(self):
-        self.assertEqual(ast.literal_eval("[1, 2, 3]"), [1, 2, 3])
-        self.assertEqual(ast.literal_eval('{"foo": 42}'), {"foo": 42})
-        self.assertEqual(ast.literal_eval("(True, False, None)"), (True, False, None))
-        self.assertEqual(ast.literal_eval("{1, 2, 3}"), {1, 2, 3})
-        self.assertEqual(ast.literal_eval('b"hi"'), b"hi")
-        self.assertEqual(ast.literal_eval("set()"), set())
-        self.assertRaises(ValueError, ast.literal_eval, "foo()")
-        self.assertEqual(ast.literal_eval("6"), 6)
-        self.assertEqual(ast.literal_eval("+6"), 6)
-        self.assertEqual(ast.literal_eval("-6"), -6)
-        self.assertEqual(ast.literal_eval("3.25"), 3.25)
-        self.assertEqual(ast.literal_eval("+3.25"), 3.25)
-        self.assertEqual(ast.literal_eval("-3.25"), -3.25)
-        self.assertEqual(repr(ast.literal_eval("-0.0")), "-0.0")
-        self.assertRaises(ValueError, ast.literal_eval, "++6")
-        self.assertRaises(ValueError, ast.literal_eval, "+True")
-        self.assertRaises(ValueError, ast.literal_eval, "2+3")
+        assert ast.literal_eval("[1, 2, 3]") == [1, 2, 3]
+        assert ast.literal_eval('{"foo": 42}') == {"foo": 42}
+        assert ast.literal_eval("(True, False, None)") == (True, False, None)
+        assert ast.literal_eval("{1, 2, 3}") == {1, 2, 3}
+        assert ast.literal_eval('b"hi"') == b"hi"
+        assert ast.literal_eval("set()") == set()
+        pytest.raises(ValueError, ast.literal_eval, "foo()")
+        assert ast.literal_eval("6") == 6
+        assert ast.literal_eval("+6") == 6
+        assert ast.literal_eval("-6") == -6
+        assert ast.literal_eval("3.25") == 3.25
+        assert ast.literal_eval("+3.25") == 3.25
+        assert ast.literal_eval("-3.25") == -3.25
+        assert repr(ast.literal_eval("-0.0")) == "-0.0"
+        pytest.raises(ValueError, ast.literal_eval, "++6")
+        pytest.raises(ValueError, ast.literal_eval, "+True")
+        pytest.raises(ValueError, ast.literal_eval, "2+3")
 
     def test_literal_eval_complex(self):
         # Issue #4907
-        self.assertEqual(ast.literal_eval("6j"), 6j)
-        self.assertEqual(ast.literal_eval("-6j"), -6j)
-        self.assertEqual(ast.literal_eval("6.75j"), 6.75j)
-        self.assertEqual(ast.literal_eval("-6.75j"), -6.75j)
-        self.assertEqual(ast.literal_eval("3+6j"), 3 + 6j)
-        self.assertEqual(ast.literal_eval("-3+6j"), -3 + 6j)
-        self.assertEqual(ast.literal_eval("3-6j"), 3 - 6j)
-        self.assertEqual(ast.literal_eval("-3-6j"), -3 - 6j)
-        self.assertEqual(ast.literal_eval("3.25+6.75j"), 3.25 + 6.75j)
-        self.assertEqual(ast.literal_eval("-3.25+6.75j"), -3.25 + 6.75j)
-        self.assertEqual(ast.literal_eval("3.25-6.75j"), 3.25 - 6.75j)
-        self.assertEqual(ast.literal_eval("-3.25-6.75j"), -3.25 - 6.75j)
-        self.assertEqual(ast.literal_eval("(3+6j)"), 3 + 6j)
-        self.assertRaises(ValueError, ast.literal_eval, "-6j+3")
-        self.assertRaises(ValueError, ast.literal_eval, "-6j+3j")
-        self.assertRaises(ValueError, ast.literal_eval, "3+-6j")
-        self.assertRaises(ValueError, ast.literal_eval, "3+(0+6j)")
-        self.assertRaises(ValueError, ast.literal_eval, "-(3+6j)")
+        assert ast.literal_eval("6j") == 6j
+        assert ast.literal_eval("-6j") == -6j
+        assert ast.literal_eval("6.75j") == 6.75j
+        assert ast.literal_eval("-6.75j") == -6.75j
+        assert ast.literal_eval("3+6j") == 3 + 6j
+        assert ast.literal_eval("-3+6j") == -3 + 6j
+        assert ast.literal_eval("3-6j") == 3 - 6j
+        assert ast.literal_eval("-3-6j") == -3 - 6j
+        assert ast.literal_eval("3.25+6.75j") == 3.25 + 6.75j
+        assert ast.literal_eval("-3.25+6.75j") == -3.25 + 6.75j
+        assert ast.literal_eval("3.25-6.75j") == 3.25 - 6.75j
+        assert ast.literal_eval("-3.25-6.75j") == -3.25 - 6.75j
+        assert ast.literal_eval("(3+6j)") == 3 + 6j
+        pytest.raises(ValueError, ast.literal_eval, "-6j+3")
+        pytest.raises(ValueError, ast.literal_eval, "-6j+3j")
+        pytest.raises(ValueError, ast.literal_eval, "3+-6j")
+        pytest.raises(ValueError, ast.literal_eval, "3+(0+6j)")
+        pytest.raises(ValueError, ast.literal_eval, "-(3+6j)")
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
@@ -1008,7 +998,7 @@ Module(
             )
         ]
         mod = ast.Module(body, [])
-        with self.assertRaises(ValueError) as cm:
+        with pytest.raises(ValueError) as cm:
             compile(mod, "test", "exec")
         self.assertIn("invalid integer value: None", str(cm.exception))
 
@@ -1029,14 +1019,14 @@ Module(
         self.assertIn("sleep", ns)
 
 
-class ASTValidatorTests(unittest.TestCase):
+class ASTValidatorTests:
     def mod(self, mod, msg=None, mode="exec", *, exc=ValueError):
         mod.lineno = mod.col_offset = 0
         ast.fix_missing_locations(mod)
         if msg is None:
             compile(mod, "<test>", mode)
         else:
-            with self.assertRaises(exc) as cm:
+            with pytest.raises(exc) as cm:
                 compile(mod, "<test>", mode)
             self.assertIn(msg, str(cm.exception))
 
@@ -1453,7 +1443,7 @@ class ASTValidatorTests(unittest.TestCase):
                 compile(mod, fn, "exec")
 
 
-class ConstantTests(unittest.TestCase):
+class ConstantTests:
     """Tests on the ast.Constant node type."""
 
     def compile_constant(self, value):
@@ -1471,9 +1461,9 @@ class ConstantTests(unittest.TestCase):
         return ns["x"]
 
     def test_validation(self):
-        with self.assertRaises(TypeError) as cm:
+        with pytest.raises(TypeError) as cm:
             self.compile_constant([1, 2, 3])
-        self.assertEqual(str(cm.exception), "got an invalid type in Constant: list")
+        assert str(cm.exception) == "got an invalid type in Constant: list"
 
     def test_singletons(self):
         for const in (None, False, True, Ellipsis, b"", frozenset()):
@@ -1501,7 +1491,7 @@ class ConstantTests(unittest.TestCase):
         for value in values:
             with self.subTest(value=value):
                 result = self.compile_constant(value)
-                self.assertEqual(result, value)
+                assert result == value
 
     def test_assign_to_constant(self):
         tree = ast.parse("x = 1")
@@ -1511,16 +1501,16 @@ class ConstantTests(unittest.TestCase):
         ast.copy_location(new_target, target)
         tree.body[0].targets[0] = new_target
 
-        with self.assertRaises(ValueError) as cm:
+        with pytest.raises(ValueError) as cm:
             compile(tree, "string", "exec")
-        self.assertEqual(
-            str(cm.exception),
-            "expression which can't be assigned " "to in Store context",
+        assert (
+            str(cm.exception) == "expression which can't be assigned "
+            "to in Store context"
         )
 
     def test_get_docstring(self):
         tree = ast.parse("'docstring'\nx = 1")
-        self.assertEqual(ast.get_docstring(tree), "docstring")
+        assert ast.get_docstring(tree) == "docstring"
 
     def get_load_const(self, tree):
         # Compile to bytecode, disassemble and get parameter of LOAD_CONST
@@ -1541,7 +1531,7 @@ class ConstantTests(unittest.TestCase):
         consts.extend((Ellipsis, None))
 
         tree = ast.parse(code)
-        self.assertEqual(self.get_load_const(tree), consts)
+        assert self.get_load_const(tree) == consts
 
         # Replace expression nodes with constants
         for assign, const in zip(tree.body, consts):
@@ -1550,7 +1540,7 @@ class ConstantTests(unittest.TestCase):
             ast.copy_location(new_node, assign.value)
             assign.value = new_node
 
-        self.assertEqual(self.get_load_const(tree), consts)
+        assert self.get_load_const(tree) == consts
 
     def test_literal_eval(self):
         tree = ast.parse("1 + 2")
@@ -1564,27 +1554,27 @@ class ConstantTests(unittest.TestCase):
         ast.copy_location(new_right, binop.right)
         binop.right = new_right
 
-        self.assertEqual(ast.literal_eval(binop), 10 + 20j)
+        assert ast.literal_eval(binop) == 10 + 20j
 
     def test_string_kind(self):
         c = ast.parse('"x"', mode="eval").body
-        self.assertEqual(c.value, "x")
-        self.assertEqual(c.kind, None)
+        assert c.value == "x"
+        assert c.kind == None
 
         c = ast.parse('u"x"', mode="eval").body
-        self.assertEqual(c.value, "x")
-        self.assertEqual(c.kind, "u")
+        assert c.value == "x"
+        assert c.kind == "u"
 
         c = ast.parse('r"x"', mode="eval").body
-        self.assertEqual(c.value, "x")
-        self.assertEqual(c.kind, None)
+        assert c.value == "x"
+        assert c.kind == None
 
         c = ast.parse('b"x"', mode="eval").body
-        self.assertEqual(c.value, b"x")
-        self.assertEqual(c.kind, None)
+        assert c.value == b"x"
+        assert c.kind == None
 
 
-class EndPositionTests(unittest.TestCase):
+class EndPositionTests:
     """Tests for end position of AST nodes.
 
     Testing end positions of nodes requires a bit of extra care
@@ -1592,11 +1582,11 @@ class EndPositionTests(unittest.TestCase):
     """
 
     def _check_end_pos(self, ast_node, end_lineno, end_col_offset):
-        self.assertEqual(ast_node.end_lineno, end_lineno)
-        self.assertEqual(ast_node.end_col_offset, end_col_offset)
+        assert ast_node.end_lineno == end_lineno
+        assert ast_node.end_col_offset == end_col_offset
 
     def _check_content(self, source, ast_node, content):
-        self.assertEqual(ast.get_source_segment(source, ast_node), content)
+        assert ast.get_source_segment(source, ast_node) == content
 
     def _parse_value(self, s):
         # Use duck-typing to support both single expression
@@ -1833,11 +1823,11 @@ class EndPositionTests(unittest.TestCase):
     def test_redundant_parenthesis(self):
         s = "( ( ( a + b ) ) )"
         v = ast.parse(s).body[0].value
-        self.assertEqual(type(v).__name__, "BinOp")
+        assert type(v).__name__ == "BinOp"
         self._check_content(s, v, "a + b")
         s2 = "await " + s
         v = ast.parse(s2).body[0].value.value
-        self.assertEqual(type(v).__name__, "BinOp")
+        assert type(v).__name__ == "BinOp"
         self._check_content(s2, v, "a + b")
 
     def test_trailers_with_redundant_parenthesis(self):
@@ -1850,11 +1840,11 @@ class EndPositionTests(unittest.TestCase):
         for s, t in tests:
             with self.subTest(s):
                 v = ast.parse(s).body[0].value
-                self.assertEqual(type(v).__name__, t)
+                assert type(v).__name__ == t
                 self._check_content(s, v, s)
                 s2 = "await " + s
                 v = ast.parse(s2).body[0].value.value
-                self.assertEqual(type(v).__name__, t)
+                assert type(v).__name__ == t
                 self._check_content(s2, v, s)
 
     def test_displays(self):
@@ -1910,7 +1900,7 @@ class EndPositionTests(unittest.TestCase):
         """
         ).strip()
         binop = self._parse_value(s_orig)
-        self.assertEqual(ast.get_source_segment(s_orig, binop.left), s_tuple)
+        assert ast.get_source_segment(s_orig, binop.left) == s_tuple
 
     def test_source_segment_padded(self):
         s_orig = dedent(
@@ -1922,9 +1912,7 @@ class EndPositionTests(unittest.TestCase):
         ).strip()
         s_method = "    def fun(self) -> None:\n" '        "ЖЖЖЖЖ"'
         cdef = ast.parse(s_orig).body[0]
-        self.assertEqual(
-            ast.get_source_segment(s_orig, cdef.body[0], padded=True), s_method
-        )
+        assert ast.get_source_segment(s_orig, cdef.body[0], padded=True) == s_method
 
     def test_source_segment_endings(self):
         s = "v = 1\r\nw = 1\nx = 1\n\ry = 1\rz = 1\r\n"
@@ -1946,10 +1934,10 @@ class EndPositionTests(unittest.TestCase):
         s_method = "  \t\f  def fun(self) -> None:\n" "  \t\f      pass"
 
         cdef = ast.parse(s).body[0]
-        self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
+        assert ast.get_source_segment(s, cdef.body[0], padded=True) == s_method
 
 
-class NodeVisitorTests(unittest.TestCase):
+class NodeVisitorTests:
     def test_old_constant_nodes(self):
         class Visitor(ast.NodeVisitor):
             def visit_Num(self, node):
@@ -1986,32 +1974,27 @@ class NodeVisitorTests(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wlog:
             warnings.filterwarnings("always", "", DeprecationWarning)
             visitor.visit(mod)
-        self.assertEqual(
-            log,
-            [
-                (1, "Num", 42),
-                (2, "Num", 4.25),
-                (3, "Num", 4.25j),
-                (4, "Str", "string"),
-                (5, "Bytes", b"bytes"),
-                (6, "NameConstant", True),
-                (7, "NameConstant", None),
-                (8, "Ellipsis", ...),
-            ],
-        )
-        self.assertEqual(
-            [str(w.message) for w in wlog],
-            [
-                "visit_Num is deprecated; add visit_Constant",
-                "visit_Num is deprecated; add visit_Constant",
-                "visit_Num is deprecated; add visit_Constant",
-                "visit_Str is deprecated; add visit_Constant",
-                "visit_Bytes is deprecated; add visit_Constant",
-                "visit_NameConstant is deprecated; add visit_Constant",
-                "visit_NameConstant is deprecated; add visit_Constant",
-                "visit_Ellipsis is deprecated; add visit_Constant",
-            ],
-        )
+        assert log == [
+            (1, "Num", 42),
+            (2, "Num", 4.25),
+            (3, "Num", 4.25j),
+            (4, "Str", "string"),
+            (5, "Bytes", b"bytes"),
+            (6, "NameConstant", True),
+            (7, "NameConstant", None),
+            (8, "Ellipsis", ...),
+        ]
+
+        assert [str(w.message) for w in wlog] == [
+            "visit_Num is deprecated; add visit_Constant",
+            "visit_Num is deprecated; add visit_Constant",
+            "visit_Num is deprecated; add visit_Constant",
+            "visit_Str is deprecated; add visit_Constant",
+            "visit_Bytes is deprecated; add visit_Constant",
+            "visit_NameConstant is deprecated; add visit_Constant",
+            "visit_NameConstant is deprecated; add visit_Constant",
+            "visit_Ellipsis is deprecated; add visit_Constant",
+        ]
 
 
 def main():
@@ -2030,7 +2013,7 @@ def main():
             print("]")
         print("main()")
         raise SystemExit
-    unittest.main()
+    # unittest.main()
 
 
 #### EVERYTHING BELOW IS GENERATED BY python Lib/test/test_ast.py -g  #####
