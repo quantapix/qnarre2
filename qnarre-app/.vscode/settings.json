@@ -9,8 +9,8 @@
   ],
   "AREPL.pythonPath": "",
   "prettier.packageManager": "yarn",
-  "python.linting.pylintEnabled": false,
-  "python.linting.flake8Enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": false,
   "python.jediEnabled": false,
   "python.testing.pytestArgs": [
     "src/py2ts"

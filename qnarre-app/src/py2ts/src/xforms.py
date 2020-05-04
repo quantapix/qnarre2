@@ -21,46 +21,30 @@ def AnnAssign(t, x):
 
 
 def Assign_all(t, x):
-    if len(x.targets) == 1 and isinstance(
-            x.targets[0], ast.Name) and x.targets[0].id == '__all__':
+    if (
+        len(x.targets) == 1
+        and isinstance(x.targets[0], ast.Name)
+        and x.targets[0].id == "__all__"
+    ):
         t.unsupported(
-            x, not isinstance(x.value, (ast.Tuple, ast.List)),
-            "Please define a '__default__' member for default"
-            " export.")
+            x,
+            not isinstance(x.value, (ast.Tuple, ast.List)),
+            "Please define a '__default__' member for default" " export.",
+        )
         elements = x.value.elts
-        return ts.Export([
-            el.s for el in elements if not t.unsupported(
-                el, not isinstance(el, ast.Str), 'Must be a string literal.')
-        ])
+        return ts.Export(
+            [
+                el.s
+                for el in elements
+                if not t.unsupported(
+                    el, not isinstance(el, ast.Str), "Must be a string literal."
+                )
+            ]
+        )
 
 
 def AugAssign(t, x):
     return ts.AugAssignStatement(x.target, x.op, x.value)
-
-
-def If(t, x):
-    return ts.IfStatement(x.test, x.body, x.orelse)
-
-
-def While(t, x):
-    assert not x.orelse
-    return ts.WhileStatement(x.test, x.body)
-
-
-def Break(t, x):
-    return ts.BreakStatement()
-
-
-def Continue(t, x):
-    return ts.ContinueStatement()
-
-
-def Pass(t, x):
-    return ts.Pass()
-
-
-def Return(t, x):
-    return ts.ReturnStatement(x.value)
 
 
 def Delete(t, x):
@@ -75,20 +59,8 @@ def Delete(t, x):
     return ts.Statements(*js)
 
 
-def Await(t, x):
-    return ts.Await(x.value)
-
-
 def Expr_default(t, x):
     return ts.ExpressionStatement(x.value)
-
-
-def List(t, x):
-    return ts.List(x.elts)
-
-
-def Tuple(t, x):
-    return ts.List(x.elts)
 
 
 def Dict(t, x):
@@ -98,9 +70,11 @@ def Dict(t, x):
 def Lambda(t, x):
     assert not any(
         getattr(x.args, k)
-        for k in ['vararg', 'kwonlyargs', 'kwarg', 'defaults', 'kw_defaults'])
-    return ts.ArrowFunction(None, [arg.arg for arg in x.args.args],
-                            [ts.ReturnStatement(x.body)])
+        for k in ["vararg", "kwonlyargs", "kwarg", "defaults", "kw_defaults"]
+    )
+    return ts.ArrowFunction(
+        None, [arg.arg for arg in x.args.args], [ts.ReturnStatement(x.body)]
+    )
 
 
 def IfExp(t, x):
@@ -112,8 +86,7 @@ def Call_default(t, x, operator=None):
     kwvalues = []
     if x.keywords:
         for kw in x.keywords:
-            t.unsupported(x, kw.arg is None, "'**kw' syntax isn't "
-                          "supported")
+            t.unsupported(x, kw.arg is None, "'**kw' syntax isn't " "supported")
             kwkeys.append(kw.arg)
             kwvalues.append(kw.value)
         kw = ts.Dict(_normalize_dict_keys(t, kwkeys), kwvalues)
@@ -130,8 +103,7 @@ def Subscript_default(t, x):
     assert isinstance(x.slice, ast.Index)
     v = x.slice.value
     if isinstance(v, ast.UnaryOp) and isinstance(v.op, ast.USub):
-        return ts.Subscript(ts.Call(ts.Attribute(x.value, 'slice'), [v]),
-                            ts.Num(0))
+        return ts.Subscript(ts.Call(ts.Attribute(x.value, "slice"), [v]), ts.Num(0))
     return ts.Subscript(x.value, v)
 
 
@@ -173,21 +145,19 @@ def JoinedStr(t, x):
             chunks.append(value.s)
         else:
             assert isinstance(value, ast.FormattedValue)
-            t.unsupported(x, value.conversion != -1,
-                          "f-string conversion spec isn't supported")
-            t.unsupported(x, value.format_spec is not None,
-                          "f-string format spec isn't supported")
-            chunks.append('${%s}' % t._transform_node(value.value))
-    return ts.TemplateLiteral(''.join(chunks))
+            t.unsupported(
+                x, value.conversion != -1, "f-string conversion spec isn't supported"
+            )
+            t.unsupported(
+                x, value.format_spec is not None, "f-string format spec isn't supported"
+            )
+            chunks.append("${%s}" % t._transform_node(value.value))
+    return ts.TemplateLiteral("".join(chunks))
 
 
 def Name_default(t, x):
     # {True,False,None} are Names
-    cls = {
-        'True': ts.LTrue,
-        'False': ts.LFalse,
-        'None': ts.Null,
-    }.get(x.id)
+    cls = {"True": ts.LTrue, "False": ts.LFalse, "None": ts.Null,}.get(x.id)
     if cls:
         return cls()
     else:
@@ -197,11 +167,7 @@ def Name_default(t, x):
 
 
 def NameConstant(t, x):
-    cls = {
-        True: ts.LTrue,
-        False: ts.LFalse,
-        None: ts.Null,
-    }[x.value]
+    cls = {True: ts.LTrue, False: ts.LFalse, None: ts.Null,}[x.value]
     return cls()
 
 
@@ -213,15 +179,7 @@ def Constant(t, x):
     elif isinstance(x.value, str):
         return Str(t, x)
     else:
-        raise ValueError('Unknown data type received.')
-
-
-def Yield(t, x):
-    return ts.Yield(x.value)
-
-
-def YieldFrom(t, x):
-    return ts.YieldStar(x.value)
+        raise ValueError("Unknown data type received.")
 
 
 def In(t, x):
@@ -319,14 +277,14 @@ Expr = [Expr_docstring, Expr_default]
 
 def BinOp_pow(t, x):
     if isinstance(x.op, ast.Pow):
-        return ts.Call(ts.Attribute(ts.Name('Math'), 'pow'), [x.left, x.right])
+        return ts.Call(ts.Attribute(ts.Name("Math"), "pow"), [x.left, x.right])
 
 
 BinOp = [BinOp_pow, BinOp_default]
 
 
 def Name_self(t, x):
-    if x.id == 'self':
+    if x.id == "self":
         return ts.This()
 
 
@@ -334,43 +292,46 @@ Name = [Name_self, Name_default]
 
 
 def Call_typeof(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'typeof'):
+    if isinstance(x.func, ast.Name) and x.func.id == "typeof":
         assert len(x.args) == 1
         return ts.UnaryOp(ts.OpTypeof(), x.args[0])
 
 
 def Call_callable(t, x):
     """Translate ``callable(foo)`` to ``foo instanceof Function``."""
-    if (isinstance(x.func, ast.Name) and x.func.id == 'callable'):
+    if isinstance(x.func, ast.Name) and x.func.id == "callable":
         assert len(x.args) == 1
         return ts.BinOp(
-            ts.BinOp(x.args[0], ts.OpInstanceof(), ts.Name('Function')),
+            ts.BinOp(x.args[0], ts.OpInstanceof(), ts.Name("Function")),
             ts.OpOr(),
-            ts.BinOp(ts.UnaryOp(ts.OpTypeof(), x.args[0]), ts.OpStrongEq(),
-                     ts.Str('function')))
+            ts.BinOp(
+                ts.UnaryOp(ts.OpTypeof(), x.args[0]),
+                ts.OpStrongEq(),
+                ts.Str("function"),
+            ),
+        )
 
 
 def Call_print(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'print'):
-        return ts.Call(ts.Attribute(ts.Name('console'), 'log'), x.args)
+    if isinstance(x.func, ast.Name) and x.func.id == "print":
+        return ts.Call(ts.Attribute(ts.Name("console"), "log"), x.args)
 
 
 def Call_len(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'len'
-            and len(x.args) == 1):
-        return ts.Attribute(x.args[0], 'length')
+    if isinstance(x.func, ast.Name) and x.func.id == "len" and len(x.args) == 1:
+        return ts.Attribute(x.args[0], "length")
 
 
 def Call_str(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'str'
-            and len(x.args) == 1):
-        return ts.Call(ts.Attribute(ts.Name(x.args[0]), 'toString'), [])
+    if isinstance(x.func, ast.Name) and x.func.id == "str" and len(x.args) == 1:
+        return ts.Call(ts.Attribute(ts.Name(x.args[0]), "toString"), [])
 
 
 def Call_new(t, x):
     """Translate ``Foo(...)`` to ``new Foo(...)`` if function name starts
     with a capital letter.
     """
+
     def getNameString(x):
         if isinstance(x, ast.Name):
             return x.id
@@ -381,29 +342,28 @@ def Call_new(t, x):
 
     NAME_STRING = getNameString(x.func)
 
-    if (NAME_STRING and re.search(r'^[A-Z]', NAME_STRING)):
+    if NAME_STRING and re.search(r"^[A-Z]", NAME_STRING):
         # TODO: generalize args mangling and apply here
         # assert not any([x.keywords, x.starargs, x.kw])
         subj = x
-    elif isinstance(x.func, ast.Name) and x.func.id == 'new':
+    elif isinstance(x.func, ast.Name) and x.func.id == "new":
         subj = x.args[0]
     else:
         subj = None
     if subj:
-        return Call_default(t, subj, operator='new ')
+        return Call_default(t, subj, operator="new ")
 
 
 def Call_import(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == '__import__'):
+    if isinstance(x.func, ast.Name) and x.func.id == "__import__":
         assert len(x.args) == 1 and isinstance(x.args[0], ast.Str)
         return ts.DependImport(x.args[0].s)
 
 
 def Call_type(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'type'):
+    if isinstance(x.func, ast.Name) and x.func.id == "type":
         assert len(x.args) == 1
-        return ts.Call(ts.Attribute(ts.Name('Object'), 'getPrototypeOf'),
-                       x.args)
+        return ts.Call(ts.Attribute(ts.Name("Object"), "getPrototypeOf"), x.args)
 
 
 def Call_dict_update(t, x):
@@ -425,14 +385,17 @@ def Call_dict_update(t, x):
                       keywords=[]))
 
     """
-    if isinstance(x.func,
-                  ast.Attribute) and x.func.attr == 'update' and isinstance(
-                      x.func.value, ast.Call) and isinstance(
-                          x.func.value.func,
-                          ast.Name) and x.func.value.func.id == 'dict' and len(
-                              x.func.value.args) == 1:
-        return ts.Call(ts.Attribute(ts.Name('Object'), 'assign'),
-                       [x.func.value.args[0]] + x.args)
+    if (
+        isinstance(x.func, ast.Attribute)
+        and x.func.attr == "update"
+        and isinstance(x.func.value, ast.Call)
+        and isinstance(x.func.value.func, ast.Name)
+        and x.func.value.func.id == "dict"
+        and len(x.func.value.args) == 1
+    ):
+        return ts.Call(
+            ts.Attribute(ts.Name("Object"), "assign"), [x.func.value.args[0]] + x.args
+        )
 
 
 def Call_dict_copy(t, x):
@@ -452,91 +415,94 @@ def Call_dict_copy(t, x):
                                                 keywords=[])),
                       keywords=[]))
     """
-    if isinstance(x.func,
-                  ast.Attribute) and x.func.attr == 'copy' and isinstance(
-                      x.func.value, ast.Call) and isinstance(
-                          x.func.value.func,
-                          ast.Name) and x.func.value.func.id == 'dict' and len(
-                              x.func.value.args) == 1:
-        return ts.Call(ts.Attribute(ts.Name('Object'), 'assign'),
-                       (ts.Dict([], []), x.func.value.args[0]))
+    if (
+        isinstance(x.func, ast.Attribute)
+        and x.func.attr == "copy"
+        and isinstance(x.func.value, ast.Call)
+        and isinstance(x.func.value.func, ast.Name)
+        and x.func.value.func.id == "dict"
+        and len(x.func.value.args) == 1
+    ):
+        return ts.Call(
+            ts.Attribute(ts.Name("Object"), "assign"),
+            (ts.Dict([], []), x.func.value.args[0]),
+        )
 
 
 def Call_template(t, x):
-    if (isinstance(x.func, ast.Name)
-            and x.func.id == 'tmpl') and len(x.args) > 0:
+    if (isinstance(x.func, ast.Name) and x.func.id == "tmpl") and len(x.args) > 0:
         assert len(x.args) == 1
         assert isinstance(x.args[0], ast.Str)
         return ts.TemplateLiteral(x.args[0].s)
 
 
 def Call_tagged_template(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == '__') and len(
-            x.args) > 0 and t.parent_of(x) is not ast.Attribute:
+    if (
+        (isinstance(x.func, ast.Name) and x.func.id == "__")
+        and len(x.args) > 0
+        and t.parent_of(x) is not ast.Attribute
+    ):
         assert 3 > len(x.args) >= 1
         assert isinstance(x.args[0], ast.Str)
         if len(x.args) == 2:
             tag = x.args[1]
         else:
-            tag = ts.Name('__')
+            tag = ts.Name("__")
         return ts.TaggedTemplate(x.args[0].s, tag)
 
 
 def Call_hasattr(t, x):
     """Translate ``hasattr(foo, bar)`` to ``bar in foo``."""
-    if (isinstance(x.func, ast.Name) and x.func.id == 'hasattr') and len(
-            x.args) == 2:
+    if (isinstance(x.func, ast.Name) and x.func.id == "hasattr") and len(x.args) == 2:
         return ts.BinOp(x.args[1], ts.OpIn(), x.args[0])
 
 
 def Call_getattr(t, x):
     """Translate ``getattr(foo, bar, default)`` to ``foo[bar] || default``."""
-    if (isinstance(x.func, ast.Name)
-            and x.func.id == 'getattr') and 2 <= len(x.args) < 4:
+    if (isinstance(x.func, ast.Name) and x.func.id == "getattr") and 2 <= len(
+        x.args
+    ) < 4:
         if len(x.args) == 2:
             res = ts.Subscript(x.args[0], x.args[1])
         else:
-            res = ts.BinOp(ts.Subscript(x.args[0], x.args[1]), ts.OpOr(),
-                           x.args[2])
+            res = ts.BinOp(ts.Subscript(x.args[0], x.args[1]), ts.OpOr(), x.args[2])
         return res
 
 
 def Call_setattr(t, x):
     """Translate ``setattr(foo, bar, value)`` to ``foo[bar] = value``."""
-    if (isinstance(x.func, ast.Name) and x.func.id == 'setattr') and len(
-            x.args) == 3:
+    if (isinstance(x.func, ast.Name) and x.func.id == "setattr") and len(x.args) == 3:
         return ts.ExpressionStatement(
-            ts.AssignmentExpression(ts.Subscript(x.args[0], x.args[1]),
-                                    x.args[2]))
+            ts.AssignmentExpression(ts.Subscript(x.args[0], x.args[1]), x.args[2])
+        )
 
 
 def Call_TS(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'ts.') and len(
-            x.args) == 1:
+    if (isinstance(x.func, ast.Name) and x.func.id == "ts.") and len(x.args) == 1:
         assert isinstance(x.args[0], ast.Str)
         return ts.Literal(x.args[0].s)
 
 
 def Call_int(t, x):
     # maybe this needs a special keywords mangling for optional "base" param
-    if isinstance(x.func, ast.Name) and x.func.id == 'int':
-        return ts.Call(ts.Attribute('Number', 'parseInt'), x.args)
+    if isinstance(x.func, ast.Name) and x.func.id == "int":
+        return ts.Call(ts.Attribute("Number", "parseInt"), x.args)
 
 
 def Call_float(t, x):
-    if isinstance(x.func, ast.Name) and x.func.id == 'float':
-        return ts.Call(ts.Attribute('Number', 'parseFloat'), x.args)
+    if isinstance(x.func, ast.Name) and x.func.id == "float":
+        return ts.Call(ts.Attribute("Number", "parseFloat"), x.args)
 
 
 def Call_isinstance(t, x):
-    if (isinstance(x.func, ast.Name) and x.func.id == 'isinstance'):
+    if isinstance(x.func, ast.Name) and x.func.id == "isinstance":
         assert len(x.args) == 2
         return _build_call_isinstance(x.args[0], x.args[1])
 
 
 def Call_issubclass(t, x):
     with switch(x):
-        if ast.Call(func=ast.Name(id='issubclass'), args=[t, x]):
+        if ast.Call(func=ast.Name(id="issubclass"), args=[t, x]):
             tproto = q[ast_literal[t].prototype]
             if isinstance(x, (ast.Tuple, ast.List, ast.Set)):
                 classes = x.elts
@@ -544,8 +510,7 @@ def Call_issubclass(t, x):
                 classes = [x]
             prev = None
             for c in classes:
-                cur = q[ast_literal[c].prototype.isPrototypeOf(
-                    ast_literal[tproto])]
+                cur = q[ast_literal[c].prototype.isPrototypeOf(ast_literal[tproto])]
                 if prev is not None:
                     cur = q[ast_literal[prev] or ast_literal[cur]]
                 prev = cur
@@ -553,15 +518,20 @@ def Call_issubclass(t, x):
 
 
 def Call_super(t, x):
-    if isinstance(x.func, ast.Attribute) and isinstance(
-            x.func.value, ast.Call) and isinstance(
-                x.func.value.func,
-                ast.Name) and x.func.value.func.id == 'super':
+    if (
+        isinstance(x.func, ast.Attribute)
+        and isinstance(x.func.value, ast.Call)
+        and isinstance(x.func.value.func, ast.Name)
+        and x.func.value.func.id == "super"
+    ):
         sup_args = x.func.value.args
         method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method),
-                                 ast.ClassDef) and len(sup_args) == 0:
-            if method.name == '__init__':
+        if (
+            method
+            and isinstance(t.parent_of(method), ast.ClassDef)
+            and len(sup_args) == 0
+        ):
+            if method.name == "__init__":
                 result = ts.Call(ts.Super(), x.args)
             else:
                 sup_method = x.func.attr
@@ -570,22 +540,43 @@ def Call_super(t, x):
                     result = ts.Call(
                         ts.Attribute(
                             ts.Attribute(
-                                ts.Attribute(ts.Name(sup_cls), 'prototype'),
-                                _normalize_name(sup_method)), 'call'),
-                        [ts.This()] + x.args)
+                                ts.Attribute(ts.Name(sup_cls), "prototype"),
+                                _normalize_name(sup_method),
+                            ),
+                            "call",
+                        ),
+                        [ts.This()] + x.args,
+                    )
                 else:
                     result = ts.Call(
-                        ts.Attribute(ts.Super(), _normalize_name(sup_method)),
-                        x.args)
+                        ts.Attribute(ts.Super(), _normalize_name(sup_method)), x.args
+                    )
             return result
 
 
 Call = [
-    Call_typeof, Call_callable, Call_isinstance, Call_print, Call_len, Call_TS,
-    Call_new, Call_super, Call_import, Call_str, Call_type, Call_dict_update,
-    Call_dict_copy, Call_tagged_template, Call_template, Call_hasattr,
-    Call_getattr, Call_setattr, Call_issubclass, Call_int, Call_float,
-    Call_default
+    Call_typeof,
+    Call_callable,
+    Call_isinstance,
+    Call_print,
+    Call_len,
+    Call_TS,
+    Call_new,
+    Call_super,
+    Call_import,
+    Call_str,
+    Call_type,
+    Call_dict_update,
+    Call_dict_copy,
+    Call_tagged_template,
+    Call_template,
+    Call_hasattr,
+    Call_getattr,
+    Call_setattr,
+    Call_issubclass,
+    Call_int,
+    Call_float,
+    Call_default,
 ]
 
 
@@ -602,12 +593,12 @@ def NotEq(t, x):
 
 IsNot = NotEq
 
-AT_PREFIX_RE = re.compile(r'^__([a-zA-Z0-9])')
-INSIDE_DUNDER_RE = re.compile(r'([a-zA-Z0-9])__([a-zA-Z0-9])')
+AT_PREFIX_RE = re.compile(r"^__([a-zA-Z0-9])")
+INSIDE_DUNDER_RE = re.compile(r"([a-zA-Z0-9])__([a-zA-Z0-9])")
 
-GEN_PREFIX_RE = re.compile(r'((?:[a-zA-Z][a-z]+)+)_')
-SINGLE_WORD_RE = re.compile(r'([A-Z][a-z]+)')
-_shortcuts = {'at': '@'}
+GEN_PREFIX_RE = re.compile(r"((?:[a-zA-Z][a-z]+)+)_")
+SINGLE_WORD_RE = re.compile(r"([A-Z][a-z]+)")
+_shortcuts = {"at": "@"}
 
 
 def _notable_replacer_gen():
@@ -615,16 +606,16 @@ def _notable_replacer_gen():
 
     def replace_notable_name(match):
         nonlocal last_match_end
-        if ((last_match_end is None and match.start() == 0)
-                or (isinstance(last_match_end, int)
-                    and last_match_end == match.start())):
+        if (last_match_end is None and match.start() == 0) or (
+            isinstance(last_match_end, int) and last_match_end == match.start()
+        ):
             last_match_end = match.end()
             prefix = match.group(1)
             low_prefix = prefix.lower()
             if low_prefix in _shortcuts:
                 return _shortcuts[low_prefix]
             try:
-                prefix = SINGLE_WORD_RE.sub(r' \1', prefix).strip()
+                prefix = SINGLE_WORD_RE.sub(r" \1", prefix).strip()
                 return lookup(prefix)
             except KeyError:
                 pass
@@ -634,8 +625,8 @@ def _notable_replacer_gen():
 
 
 def _replace_identifiers_with_symbols(dotted_str):
-    dotted_str = AT_PREFIX_RE.sub(r'@\1', dotted_str)
-    dotted_str = INSIDE_DUNDER_RE.sub(r'\1-\2', dotted_str)
+    dotted_str = AT_PREFIX_RE.sub(r"@\1", dotted_str)
+    dotted_str = INSIDE_DUNDER_RE.sub(r"\1-\2", dotted_str)
 
     dotted_str = GEN_PREFIX_RE.sub(_notable_replacer_gen(), dotted_str)
 
@@ -652,10 +643,12 @@ def Import(t, x):
         old_name = n.name
         n.name = _replace_identifiers_with_symbols(n.name)
         t.unsupported(
-            x, (old_name != n.name) and not n.asname,
+            x,
+            (old_name != n.name) and not n.asname,
             "Invalid module name: {!r}: use 'as' to give "
-            "it a new name.".format(n.name))
-        path_module = '/'.join(n.name.split('.'))
+            "it a new name.".format(n.name),
+        )
+        path_module = "/".join(n.name.split("."))
         result.append(ts.StarImport(path_module, n.asname or n.name))
     return ts.Statements(*result)
 
@@ -664,7 +657,7 @@ def ImportFrom(t, x):
     names = []
     for n in x.names:
         names.append(n.asname or n.name)
-    if x.module == '__globals__':
+    if x.module == "__globals__":
         assert x.level == 0
         # assume a fake import to import js stuff from root object
         t.add_globals(*names)
@@ -673,29 +666,35 @@ def ImportFrom(t, x):
         t.add_globals(*names)
         if x.module:
             mod = tuple(
-                _normalize_name(frag) for frag in
-                _replace_identifiers_with_symbols(x.module).split('.'))
-            path_module = '/'.join(mod)
+                _normalize_name(frag)
+                for frag in _replace_identifiers_with_symbols(x.module).split(".")
+            )
+            path_module = "/".join(mod)
             if x.level == 1:
-                path_module = './' + path_module
+                path_module = "./" + path_module
             elif x.level > 1:
-                path_module = '../' * (x.level - 1) + path_module
-            if len(x.names) == 1 and x.names[0].name == '__default__':
-                t.unsupported(x, x.names[0].asname is None,
-                              "Default import must declare an 'as' clause.")
+                path_module = "../" * (x.level - 1) + path_module
+            if len(x.names) == 1 and x.names[0].name == "__default__":
+                t.unsupported(
+                    x,
+                    x.names[0].asname is None,
+                    "Default import must declare an 'as' clause.",
+                )
                 result = ts.DefaultImport(path_module, x.names[0].asname)
             else:
-                result = ts.NamedImport(path_module,
-                                        [(n.name, n.asname) for n in x.names])
+                result = ts.NamedImport(
+                    path_module, [(n.name, n.asname) for n in x.names]
+                )
         else:
             assert x.level > 0
             result = []
             for n in x.names:
                 if x.level == 1:
-                    imp = ts.StarImport('./' + n.name, n.asname or n.name)
+                    imp = ts.StarImport("./" + n.name, n.asname or n.name)
                 else:
-                    imp = ts.StarImport('../' * (x.level - 1) + n.name,
-                                        n.asname or n.name)
+                    imp = ts.StarImport(
+                        "../" * (x.level - 1) + n.name, n.asname or n.name
+                    )
                 if len(x.names) == 1:
                     imp.py_node = x
                 else:
@@ -710,10 +709,10 @@ def Compare_in(t, x):
         return
     if t.snippets:
         from .snippets import in_es6
+
         t.add_snippet(in_es6)
-        sname = 'in_es6'
-        result = ts.Call(ts.Attribute('_pj', sname),
-                         [x.left, x.comparators[0]])
+        sname = "in_es6"
+        result = ts.Call(ts.Attribute("_pj", sname), [x.left, x.comparators[0]])
         if isinstance(x.ops[0], ast.NotIn):
             result = ts.UnaryOp(ts.OpNot(), result)
         return result
@@ -726,8 +725,7 @@ def Subscript_slice(t, x):
 
     if isinstance(x.slice, ast.Slice):
         slice = x.slice
-        t.unsupported(x, slice.step and slice.step != 1,
-                      "Slice step is unsupported")
+        t.unsupported(x, slice.step and slice.step != 1, "Slice step is unsupported")
         args = []
         if slice.lower:
             args.append(slice.lower)
@@ -736,20 +734,26 @@ def Subscript_slice(t, x):
         if slice.upper:
             args.append(slice.upper)
 
-        return ts.Call(ts.Attribute(x.value, 'slice'), args)
+        return ts.Call(ts.Attribute(x.value, "slice"), args)
 
 
 def Subscript_super(t, x):
-    if isinstance(x.value, ast.Call) and isinstance(
-            x.value.func, ast.Name) and x.value.func.id == 'super':
+    if (
+        isinstance(x.value, ast.Call)
+        and isinstance(x.value.func, ast.Name)
+        and x.value.func.id == "super"
+    ):
         sup_args = x.value.args
         method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method),
-                                 ast.ClassDef) and len(sup_args) == 0:
-            if method.name == '__init__':
+        if (
+            method
+            and isinstance(t.parent_of(method), ast.ClassDef)
+            and len(sup_args) == 0
+        ):
+            if method.name == "__init__":
                 t.unsupported(
-                    x, True, "'super()[expr]' cannot be used in "
-                    "constructors")
+                    x, True, "'super()[expr]' cannot be used in " "constructors"
+                )
             else:
                 sup_method = x.slice.value
                 # this becomes super[expr]
@@ -761,16 +765,23 @@ Subscript = [Subscript_slice, Subscript_super, Subscript_default]
 
 
 def Attribute_super(t, x):
-    if isinstance(x.value, ast.Call) and len(x.value.args) == 0 and isinstance(
-            x.value.func, ast.Name) and x.value.func.id == 'super':
+    if (
+        isinstance(x.value, ast.Call)
+        and len(x.value.args) == 0
+        and isinstance(x.value.func, ast.Name)
+        and x.value.func.id == "super"
+    ):
         sup_args = x.value.args
         method = t.find_parent(x, ast.FunctionDef, ast.AsyncFunctionDef)
-        if method and isinstance(t.parent_of(method),
-                                 ast.ClassDef) and len(sup_args) == 0:
-            if method.name == '__init__':
+        if (
+            method
+            and isinstance(t.parent_of(method), ast.ClassDef)
+            and len(sup_args) == 0
+        ):
+            if method.name == "__init__":
                 t.unsupported(
-                    x, True, "'super().attr' cannot be used in "
-                    "constructors")
+                    x, True, "'super().attr' cannot be used in " "constructors"
+                )
             else:
                 sup_method = x.attr
                 # this becomes super.method
@@ -779,10 +790,14 @@ def Attribute_super(t, x):
 
 
 def Attribute_list_append(t, x):
-    if x.attr == 'append' and isinstance(x.value, ast.Call) and isinstance(
-            x.value.func, ast.Name) and x.value.func.id == 'list' and len(
-                x.value.args) == 1:
-        return ts.Attribute(x.value.args[0], 'push')
+    if (
+        x.attr == "append"
+        and isinstance(x.value, ast.Call)
+        and isinstance(x.value.func, ast.Name)
+        and x.value.func.id == "list"
+        and len(x.value.args) == 1
+    ):
+        return ts.Attribute(x.value.args[0], "push")
 
 
 Attribute = [Attribute_super, Attribute_list_append, Attribute_default]
@@ -792,16 +807,22 @@ def Assert(t, x):
     """Convert ``assert`` statement to just a snippet function call."""
     if t.snippets:
         from .snippets import _assert
+
         t.add_snippet(_assert)
-        return ts.Call(ts.Attribute('_pj', '_assert'),
-                       [x.test, x.msg or ts.Null()])
+        return ts.Call(ts.Attribute("_pj", "_assert"), [x.test, x.msg or ts.Null()])
 
 
 def Assign_default_(t, x):
-    if len(x.targets) == 1 and isinstance(
-            x.targets[0], ast.Name) and x.targets[0].id == '__default__':
-        t.unsupported(x.value, isinstance(x.value, (ast.Tuple, ast.List)),
-                      "Only one symbol can be exported using '__default__'.")
+    if (
+        len(x.targets) == 1
+        and isinstance(x.targets[0], ast.Name)
+        and x.targets[0].id == "__default__"
+    ):
+        t.unsupported(
+            x.value,
+            isinstance(x.value, (ast.Tuple, ast.List)),
+            "Only one symbol can be exported using '__default__'.",
+        )
         if isinstance(x.value, ast.Str):
             return ts.ExportDefault(x.value.s)
         else:
@@ -822,9 +843,13 @@ def For_range(t, x):
       }
 
     """
-    if (isinstance(x.target, ast.Name) and isinstance(x.iter, ast.Call)
-            and isinstance(x.iter.func, ast.Name) and x.iter.func.id == 'range'
-            and 1 <= len(x.iter.args) < 4) and (not x.orelse):
+    if (
+        isinstance(x.target, ast.Name)
+        and isinstance(x.iter, ast.Call)
+        and isinstance(x.iter.func, ast.Name)
+        and x.iter.func.id == "range"
+        and 1 <= len(x.iter.args) < 4
+    ) and (not x.orelse):
 
         name = x.target
         body = x.body
@@ -846,7 +871,9 @@ def For_range(t, x):
         return ts.ForStatement(
             ts.VarStatement([name.id, bound_name], [start, bound]),
             ts.BinOp(ts.Name(name.id), ts.OpLt(), ts.Name(bound_name)),
-            ts.AugAssignStatement(ts.Name(name.id), ts.OpAdd(), step), body)
+            ts.AugAssignStatement(ts.Name(name.id), ts.OpAdd(), step),
+            body,
+        )
 
 
 def For_dict(t, x):
@@ -863,12 +890,14 @@ def For_dict(t, x):
           }
       }
     """
-    if (isinstance(x.iter, ast.Call) and isinstance(x.iter.func, ast.Name)
-            and x.iter.func.id == 'dict'
-            and len(x.iter.args) <= 2) and (not x.orelse):
+    if (
+        isinstance(x.iter, ast.Call)
+        and isinstance(x.iter.func, ast.Name)
+        and x.iter.func.id == "dict"
+        and len(x.iter.args) <= 2
+    ) and (not x.orelse):
 
-        t.unsupported(x, not isinstance(x.target, ast.Name),
-                      "Target must be a name")
+        t.unsupported(x, not isinstance(x.target, ast.Name), "Target must be a name")
 
         name = x.target
         expr = x.iter.args[0]
@@ -877,18 +906,25 @@ def For_dict(t, x):
         dict_ = t.new_name()
 
         # if not ``dict(foo, True)`` filter out inherited values
-        if not (len(x.iter.args) == 2 and isinstance(
-                x.iter.args[1], ast.NameConstant) and x.iter.args[1].value):
+        if not (
+            len(x.iter.args) == 2
+            and isinstance(x.iter.args[1], ast.NameConstant)
+            and x.iter.args[1].value
+        ):
             body = [
                 ts.IfStatement(
-                    ts.Call(ts.Attribute(ts.Name(dict_), 'hasOwnProperty'),
-                            [ts.Name(name.id)]), body, None)
+                    ts.Call(
+                        ts.Attribute(ts.Name(dict_), "hasOwnProperty"),
+                        [ts.Name(name.id)],
+                    ),
+                    body,
+                    None,
+                )
             ]
         loop = ts.ForeachStatement(name.id, ts.Name(dict_), body)
         loop.py_node = x
 
-        return ts.Statements(ts.VarStatement([dict_], [expr], unmovable=True),
-                             loop)
+        return ts.Statements(ts.VarStatement([dict_], [expr], unmovable=True), loop)
 
 
 def For_iterable(t, x):
@@ -903,17 +939,16 @@ def For_iterable(t, x):
           ...
       }
     """
-    if (isinstance(x.iter, ast.Call) and isinstance(x.iter.func, ast.Name)
-            and x.iter.func.id == 'iterable'
-            and len(x.iter.args) == 1) and (not x.orelse):
+    if (
+        isinstance(x.iter, ast.Call)
+        and isinstance(x.iter.func, ast.Name)
+        and x.iter.func.id == "iterable"
+        and len(x.iter.args) == 1
+    ) and (not x.orelse):
         expr = x.iter.args[0]
         body = x.body
         target = x.target
-        return ts.ForofStatement(
-            target,
-            expr,
-            body,
-        )
+        return ts.ForofStatement(target, expr, body,)
 
 
 def For_default(t, x):
@@ -937,9 +972,11 @@ def For_default(t, x):
 
     """
 
-    t.unsupported(x, not isinstance(x.target, ast.Name),
-                  "Target must be a name,"
-                  " Are you sure is only one?")
+    t.unsupported(
+        x,
+        not isinstance(x.target, ast.Name),
+        "Target must be a name," " Are you sure is only one?",
+    )
 
     name = x.target
     expr = x.iter
@@ -952,39 +989,47 @@ def For_default(t, x):
     return ts.ForStatement(
         ts.VarStatement(
             [name.id, ix, arr, length],
-            [None, ts.Num(0), expr,
-             ts.Attribute(ts.Name(arr), 'length')],
-            unmovable=True), ts.BinOp(ts.Name(ix), ts.OpLt(), ts.Name(length)),
+            [None, ts.Num(0), expr, ts.Attribute(ts.Name(arr), "length")],
+            unmovable=True,
+        ),
+        ts.BinOp(ts.Name(ix), ts.OpLt(), ts.Name(length)),
         ts.ExpressionStatement(
-            ts.AugAssignStatement(ts.Name(ix), ts.OpAdd(), ts.Num(1))),
+            ts.AugAssignStatement(ts.Name(ix), ts.OpAdd(), ts.Num(1))
+        ),
         [
             ts.ExpressionStatement(
                 ts.AssignmentExpression(
-                    ts.Name(name.id), ts.Subscript(ts.Name(arr), ts.Name(ix))))
-        ] + body)
+                    ts.Name(name.id), ts.Subscript(ts.Name(arr), ts.Name(ix))
+                )
+            )
+        ]
+        + body,
+    )
 
 
 For = [For_range, For_dict, For_iterable, For_default]
 
 
 def Try(t, x):
-    t.unsupported(x, x.orelse,
-                  "'else' block of 'try' statement isn't supported")
+    t.unsupported(x, x.orelse, "'else' block of 'try' statement isn't supported")
     known_exc_types = (ast.Name, ast.Attribute, ast.Tuple, ast.List)
     ename = None
     if x.handlers:
         for h in x.handlers:
             if h.type is not None and not isinstance(h.type, known_exc_types):
                 t.warn(
-                    x, "Exception type expression might not evaluate to a "
-                    "valid type or sequence of types.")
+                    x,
+                    "Exception type expression might not evaluate to a "
+                    "valid type or sequence of types.",
+                )
             ename = h.name
-        ename = ename or 'e'
-        if t.has_child(x.handlers, ast.Raise) and t.has_child(
-                x.finalbody, ast.Return):
+        ename = ename or "e"
+        if t.has_child(x.handlers, ast.Raise) and t.has_child(x.finalbody, ast.Return):
             t.warn(
-                x, "The re-raise in 'except' body may be masked by the "
-                "return in 'final' body.")
+                x,
+                "The re-raise in 'except' body may be masked by the "
+                "return in 'final' body.",
+            )
         rhandlers = x.handlers.copy()
         rhandlers.reverse()
         prev_except = stmt = None
@@ -994,20 +1039,22 @@ def Try(t, x):
                 # Rename the exception to match the handler
                 rename = ts.VarStatement([h.name], [ename])
                 body = [rename] + h.body
-            if ix == 0 and h.type is None or (isinstance(h.type, ast.Name)
-                                              and h.type.id == 'Exception'):
+            if (
+                ix == 0
+                and h.type is None
+                or (isinstance(h.type, ast.Name) and h.type.id == "Exception")
+            ):
                 prev_except = ts.Statements(*body)
                 continue
             else:
                 if ix == 0:
                     prev_except = ts.ThrowStatement(ts.Name(ename))
                 stmt = ts.IfStatement(
-                    _build_call_isinstance(ts.Name(ename), h.type), body,
-                    prev_except)
+                    _build_call_isinstance(ts.Name(ename), h.type), body, prev_except
+                )
             prev_except = stmt
-        t.ctx['ename'] = ename
-        result = ts.TryCatchFinallyStatement(x.body, ename, prev_except,
-                                             x.finalbody)
+        t.ctx["ename"] = ename
+        result = ts.TryCatchFinallyStatement(x.body, ename, prev_except, x.finalbody)
     else:
         result = ts.TryCatchFinallyStatement(x.body, None, None, x.finalbody)
     return result
@@ -1015,13 +1062,16 @@ def Try(t, x):
 
 def Raise(t, x):
     if x.exc is None:
-        ename = t.ctx.get('ename')
+        ename = t.ctx.get("ename")
         t.unsupported(x, not ename, "'raise' has no argument")
         res = ts.ThrowStatement(ts.Name(ename))
-    elif isinstance(x.exc, ast.Call) and isinstance(
-            x.exc.func, ast.Name) and len(
-                x.exc.args) == 1 and x.exc.func.id == 'Exception':
-        res = ts.ThrowStatement(ts.NewCall(ts.Name('Error'), x.exc.args))
+    elif (
+        isinstance(x.exc, ast.Call)
+        and isinstance(x.exc.func, ast.Name)
+        and len(x.exc.args) == 1
+        and x.exc.func.id == "Exception"
+    ):
+        res = ts.ThrowStatement(ts.NewCall(ts.Name("Error"), x.exc.args))
     else:
         res = ts.ThrowStatement(x.exc)
 
@@ -1048,26 +1098,30 @@ def ListComp(t, x):
     __i = t.new_name()
     __bound = t.new_name()
 
-    push = ts.ExpressionStatement(
-        ts.Call(ts.Attribute(ts.Name(__new), 'push'), [EXPR]))
+    push = ts.ExpressionStatement(ts.Call(ts.Attribute(ts.Name(__new), "push"), [EXPR]))
     if CONDITION:
         push_if = ts.IfStatement(CONDITION, push, None)
     else:
         push_if = push
     forloop = ts.ForStatement(
-        ts.VarStatement([__i, __bound],
-                        [0, ts.Attribute(ts.Name(__old), 'length')]),
+        ts.VarStatement([__i, __bound], [0, ts.Attribute(ts.Name(__old), "length")]),
         ts.BinOp(ts.Name(__i), ts.OpLt(), ts.Name(__bound)),
-        ts.AugAssignStatement(ts.Name(__i), ts.OpAdd(), ts.Num(1)), [
-            ts.VarStatement([NAME.id],
-                            [ts.Subscript(ts.Name(__old), ts.Name(__i))]),
-            push_if
-        ])
-    func = ts.Function(None, [], [
-        ts.VarStatement([__new, __old], [ts.List([]), LIST]), forloop,
-        ts.ReturnStatement(ts.Name(__new))
-    ])
-    invoked = ts.Call(ts.Attribute(func, 'call'), [ts.This()])
+        ts.AugAssignStatement(ts.Name(__i), ts.OpAdd(), ts.Num(1)),
+        [
+            ts.VarStatement([NAME.id], [ts.Subscript(ts.Name(__old), ts.Name(__i))]),
+            push_if,
+        ],
+    )
+    func = ts.Function(
+        None,
+        [],
+        [
+            ts.VarStatement([__new, __old], [ts.List([]), LIST]),
+            forloop,
+            ts.ReturnStatement(ts.Name(__new)),
+        ],
+    )
+    invoked = ts.Call(ts.Attribute(func, "call"), [ts.This()])
     return invoked
 
 
@@ -1078,38 +1132,48 @@ def _isyield(el):
 def FunctionDef(t, x, fwrapper=None, mwrapper=None):
 
     is_method = isinstance(t.parent_of(x), ast.ClassDef)
-    is_in_method = not x.name.startswith('fn_') and all(
-        lambda p: isinstance(p, (ast.FunctionDef, ast.AsyncFunctionDef, ast.
-                                 ClassDef))
-        for _ in t.parents(x, stop_at=ast.ClassDef)) and isinstance(
-            tuple(t.parents(x, stop_at=ast.ClassDef))[-1], ast.ClassDef)
+    is_in_method = (
+        not x.name.startswith("fn_")
+        and all(
+            lambda p: isinstance(
+                p, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            )
+            for _ in t.parents(x, stop_at=ast.ClassDef)
+        )
+        and isinstance(tuple(t.parents(x, stop_at=ast.ClassDef))[-1], ast.ClassDef)
+    )
 
-    is_generator = reduce(lambda prev, cur: _isyield(cur) or prev,
-                          xf.cross_walk(x.body), False)
-
-    t.unsupported(x, not is_method and x.decorator_list,
-                  "Function decorators are"
-                  " unsupported yet")
-
-    t.unsupported(x,
-                  len(x.decorator_list) > 1, "No more than one decorator"
-                  " is supported")
+    is_generator = reduce(
+        lambda prev, cur: _isyield(cur) or prev, xf.cross_walk(x.body), False
+    )
 
     t.unsupported(
-        x, x.args.kwarg and x.args.kwonlyargs,
-        "Keyword arguments together with keyword args accumulator"
-        " are unsupported")
+        x,
+        not is_method and x.decorator_list,
+        "Function decorators are" " unsupported yet",
+    )
 
     t.unsupported(
-        x, x.args.vararg and (x.args.kwonlyargs or x.args.kwarg),
-        "Having both param accumulator and keyword args is "
-        "unsupported")
+        x, len(x.decorator_list) > 1, "No more than one decorator" " is supported"
+    )
+
+    t.unsupported(
+        x,
+        x.args.kwarg and x.args.kwonlyargs,
+        "Keyword arguments together with keyword args accumulator" " are unsupported",
+    )
+
+    t.unsupported(
+        x,
+        x.args.vararg and (x.args.kwonlyargs or x.args.kwarg),
+        "Having both param accumulator and keyword args is " "unsupported",
+    )
 
     name = _normalize_name(x.name)
     body = x.body
     # get positional arg names and trim self if present
     arg_names = [arg.arg for arg in x.args.args]
-    if is_method or (len(arg_names) > 0 and arg_names[0] == 'self'):
+    if is_method or (len(arg_names) > 0 and arg_names[0] == "self"):
         arg_names = arg_names[1:]
 
     acc = ts.Rest(x.args.vararg.arg) if x.args.vararg else None
@@ -1147,17 +1211,19 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
             args.append(ts.AssignmentExpression(k, v))
 
     # local function vars
-    if 'vars' in t.ctx:
-        upper_vars = t.ctx['vars']
+    if "vars" in t.ctx:
+        upper_vars = t.ctx["vars"]
     else:
         upper_vars = set()
-    local_vars = list((set(xf.local_names(body)) - set(arg_names)) -
-                      set(kw_names) - upper_vars)
-    t.ctx['vars'] = upper_vars | set(local_vars)
+    local_vars = list(
+        (set(xf.local_names(body)) - set(arg_names)) - set(kw_names) - upper_vars
+    )
+    t.ctx["vars"] = upper_vars | set(local_vars)
     if len(local_vars) > 0:
         local_vars.sort()
         body = ts.Statements(
-            ts.VarStatement(local_vars, [None] * len(local_vars)), *body)
+            ts.VarStatement(local_vars, [None] * len(local_vars)), *body
+        )
 
     if is_generator:
         fwrapper = ts.GenFunction
@@ -1168,20 +1234,23 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
         cls_member_opts = {}
         if x.decorator_list:
             fdeco = x.decorator_list[0]
-            if isinstance(fdeco, ast.Name) and fdeco.id == 'property':
+            if isinstance(fdeco, ast.Name) and fdeco.id == "property":
                 deco = ts.Getter
-            elif (isinstance(fdeco, ast.Attribute) and fdeco.attr == 'setter'
-                  and isinstance(fdeco.value, ast.Name)):
+            elif (
+                isinstance(fdeco, ast.Attribute)
+                and fdeco.attr == "setter"
+                and isinstance(fdeco.value, ast.Name)
+            ):
                 deco = ts.Setter
-            elif isinstance(fdeco, ast.Name) and fdeco.id == 'classmethod':
+            elif isinstance(fdeco, ast.Name) and fdeco.id == "classmethod":
                 deco = None
-                cls_member_opts['static'] = True
+                cls_member_opts["static"] = True
             else:
                 t.unsupported(x, True, "Unsupported method decorator")
         else:
             deco = None
 
-        if name == '__init__':
+        if name == "__init__":
             result = ts.ClassConstructor(args, body, acc, kw)
         else:
             mwrapper = mwrapper or deco or ts.Method
@@ -1191,21 +1260,21 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
                 t.unsupported(x, len(args) == 0, "Missing argument in setter")
                 result = mwrapper(name, args[0], body, **cls_member_opts)
             elif mwrapper is ts.Method:
-                if name == '__len__':
-                    result = ts.Getter('length', body, **cls_member_opts)
-                elif name == '__str__':
-                    result = ts.Method('toString', [], body, **cls_member_opts)
-                elif name == '__get__':
-                    result = ts.Method('get', [], body, **cls_member_opts)
-                elif name == '__set__':
-                    result = ts.Method('set', [], body, **cls_member_opts)
-                elif name == '__instancecheck__':
-                    cls_member_opts['static'] = True
-                    result = ts.Method('[Symbol.hasInstance]', args, body,
-                                       **cls_member_opts)
+                if name == "__len__":
+                    result = ts.Getter("length", body, **cls_member_opts)
+                elif name == "__str__":
+                    result = ts.Method("toString", [], body, **cls_member_opts)
+                elif name == "__get__":
+                    result = ts.Method("get", [], body, **cls_member_opts)
+                elif name == "__set__":
+                    result = ts.Method("set", [], body, **cls_member_opts)
+                elif name == "__instancecheck__":
+                    cls_member_opts["static"] = True
+                    result = ts.Method(
+                        "[Symbol.hasInstance]", args, body, **cls_member_opts
+                    )
                 else:
-                    result = mwrapper(name, args, body, acc, kw,
-                                      **cls_member_opts)
+                    result = mwrapper(name, args, body, acc, kw, **cls_member_opts)
             else:
                 result = mwrapper(name, args, body, acc, kw, **cls_member_opts)
     else:
@@ -1220,8 +1289,10 @@ def FunctionDef(t, x, fwrapper=None, mwrapper=None):
                 fdef,
                 ts.ExpressionStatement(
                     ts.AssignmentExpression(
-                        ts.Name(name),
-                        ts.Call(ts.Attribute(name, 'bind'), [ts.This()]))))
+                        ts.Name(name), ts.Call(ts.Attribute(name, "bind"), [ts.This()])
+                    )
+                ),
+            )
         else:
             fwrapper = fwrapper or ts.Function
             result = fwrapper(name, args, body, acc, kw)
@@ -1265,13 +1336,19 @@ def _class_guards(t, x):
     body = x.body
     for node in body:
         t.unsupported(
-            x, not (isinstance(
-                node, (ast.FunctionDef, ast.AsyncFunctionDef) + assign_types)
-                    or _isdoc(node) or isinstance(node, ast.Pass)),
-            "Class' body members must be functions or assignments")
-        t.unsupported(x,
-                      isinstance(node, ast.Assign) and len(node.targets) > 1,
-                      "Assignments must have only one target")
+            x,
+            not (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef) + assign_types)
+                or _isdoc(node)
+                or isinstance(node, ast.Pass)
+            ),
+            "Class' body members must be functions or assignments",
+        )
+        t.unsupported(
+            x,
+            isinstance(node, ast.Assign) and len(node.targets) > 1,
+            "Assignments must have only one target",
+        )
     if len(x.bases) > 0:
         assert len(x.bases) == 1
     assert not x.keywords, "class '{}', args cannot be keywords".format(x.name)
@@ -1287,27 +1364,34 @@ def ClassDef_default(t, x):
     else:
         superclass = None
     fn_body = [
-        e for e in body
-        if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
+        e for e in body if isinstance(e, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
     assigns = [e for e in body if isinstance(e, assign_types)]
     for node in fn_body:
         arg_names = [arg.arg for arg in node.args.args]
-        t.unsupported(node,
-                      len(arg_names) == 0 or arg_names[0] != 'self',
-                      "First arg on method must be 'self'")
-    if len(fn_body) > 0 and fn_body[0].name == '__init__':
+        t.unsupported(
+            node,
+            len(arg_names) == 0 or arg_names[0] != "self",
+            "First arg on method must be 'self'",
+        )
+    if len(fn_body) > 0 and fn_body[0].name == "__init__":
         init = body[0]
         for stmt in xf.ast_walk(init):
             assert not isinstance(stmt, ast.Return)
     decos = {}
     for fn in fn_body:
         if fn.decorator_list and not (
-            (len(fn.decorator_list) == 1 and isinstance(
-                fn.decorator_list[0], ast.Name) and fn.decorator_list[0].id
-             in ['property', 'classmethod', 'staticmethod']) or
-            (isinstance(fn.decorator_list[0], ast.Attribute)
-             and fn.decorator_list[0].attr == 'setter')):
+            (
+                len(fn.decorator_list) == 1
+                and isinstance(fn.decorator_list[0], ast.Name)
+                and fn.decorator_list[0].id
+                in ["property", "classmethod", "staticmethod"]
+            )
+            or (
+                isinstance(fn.decorator_list[0], ast.Attribute)
+                and fn.decorator_list[0].attr == "setter"
+            )
+        ):
             decos[fn.name] = (ts.Str(fn.name), fn.decorator_list)
             fn.decorator_list = []
     if _isdoc(body[0]):
@@ -1324,24 +1408,29 @@ def ClassDef_default(t, x):
             sort_key = key.id
         else:
             rendered_key = key
-            sort_key = '~'
+            sort_key = "~"
         return sort_key, rendered_key, value
 
     assigns = tuple(
-        zip(*sorted(map(_from_assign_to_dict_item, assigns),
-                    key=lambda e: e[0])))
+        zip(*sorted(map(_from_assign_to_dict_item, assigns), key=lambda e: e[0]))
+    )
     if assigns:
         from .snippets import set_properties
+
         t.add_snippet(set_properties)
         assigns = ts.ExpressionStatement(
             ts.Call(
-                ts.Attribute(ts.Name('_pj'), 'set_properties'),
-                (ts.Name(name),
-                 ts.Dict(_normalize_dict_keys(t, assigns[1]), assigns[2])),
-            ))
+                ts.Attribute(ts.Name("_pj"), "set_properties"),
+                (
+                    ts.Name(name),
+                    ts.Dict(_normalize_dict_keys(t, assigns[1]), assigns[2]),
+                ),
+            )
+        )
         stmts.append(assigns)
     if decos:
         from .snippets import set_decorators
+
         t.add_snippet(set_decorators)
         keys = []
         values = []
@@ -1351,17 +1440,17 @@ def ClassDef_default(t, x):
             values.append(ts.List(dlist))
         decos = ts.ExpressionStatement(
             ts.Call(
-                ts.Attribute(ts.Name('_pj'), 'set_decorators'),
-                (ts.Name(name), ts.Dict(_normalize_dict_keys(t, keys),
-                                        values)),
-            ))
+                ts.Attribute(ts.Name("_pj"), "set_decorators"),
+                (ts.Name(name), ts.Dict(_normalize_dict_keys(t, keys), values)),
+            )
+        )
         stmts.append(decos)
     if x.decorator_list:
         from .snippets import set_class_decorators
+
         t.add_snippet(set_class_decorators)
         with q as cls_decos:
-            name[name] = set_class_decorators(name[name],
-                                              ast_list[x.decorator_list])
+            name[name] = set_class_decorators(name[name], ast_list[x.decorator_list])
         stmts.append(ts.ExpressionStatement(cls_decos[0]))
     return ts.Statements(*stmts)
 
@@ -1370,11 +1459,11 @@ ClassDef = [ClassDef_default]
 
 
 def _normalize_name(n):
-    if n.startswith('d_'):
-        n = n.replace('d_', '$')
-    elif n.startswith('dd_'):
-        n = n.replace('dd_', '$$')
-    elif not n.startswith('_') and n.endswith('_'):
+    if n.startswith("d_"):
+        n = n.replace("d_", "$")
+    elif n.startswith("dd_"):
+        n = n.replace("dd_", "$$")
+    elif not n.startswith("_") and n.endswith("_"):
         n = n[:-1]
     return n
 
@@ -1403,15 +1492,19 @@ def _build_call_isinstance(tgt, cls_or_seq):
         return ts.MultipleArgsOp(ts.OpInstanceof(), ts.OpOr(), *args)
     else:
         cls = cls_or_seq
-        if isinstance(cls, ast.Name) and cls.id == 'str':
+        if isinstance(cls, ast.Name) and cls.id == "str":
             return ts.MultipleArgsOp(
-                (ts.OpStrongEq(), ts.OpInstanceof()), ts.OpOr(),
-                (ts.UnaryOp(ts.OpTypeof(), tgt), ts.Str('string')),
-                (tgt, ts.Name('String')))
-        elif isinstance(cls, ast.Name) and cls.id in ['int', 'float']:
+                (ts.OpStrongEq(), ts.OpInstanceof()),
+                ts.OpOr(),
+                (ts.UnaryOp(ts.OpTypeof(), tgt), ts.Str("string")),
+                (tgt, ts.Name("String")),
+            )
+        elif isinstance(cls, ast.Name) and cls.id in ["int", "float"]:
             return ts.MultipleArgsOp(
-                (ts.OpStrongEq(), ts.OpInstanceof()), ts.OpOr(),
-                (ts.UnaryOp(ts.OpTypeof(), tgt), ts.Str('number')),
-                (tgt, ts.Name('Number')))
+                (ts.OpStrongEq(), ts.OpInstanceof()),
+                ts.OpOr(),
+                (ts.UnaryOp(ts.OpTypeof(), tgt), ts.Str("number")),
+                (tgt, ts.Name("Number")),
+            )
         else:
             return ts.BinOp(tgt, ts.OpInstanceof(), cls)
