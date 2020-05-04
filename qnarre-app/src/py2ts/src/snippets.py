@@ -18,10 +18,11 @@ def set_decorators(cls, props):
             return deco(val, cls, p)
 
         deco = decos.reduce(reducer, cls.prototype[p])
-        if not isinstance(deco,
-                          (ast.Function, ast.Map, ast.WeakMap)) and isinstance(
-                              deco, ast.Object) and (('value' in deco) or
-                                                     ('get' in deco)):
+        if (
+            not isinstance(deco, (ast.Function, ast.Map, ast.WeakMap))
+            and isinstance(deco, ast.Object)
+            and (("value" in deco) or ("get" in deco))
+        ):
             del cls.prototype[p]
             ast.Object.defineProperty(cls.prototype, p, deco)
         else:
@@ -38,15 +39,18 @@ def set_class_decorators(cls, decos):
 def set_properties(cls, props):
     for p in dict(props):
         value = props[p]
-        if not isinstance(value, (ast.Map, ast.WeakMap)) and isinstance(
-                value, ast.Object) and 'get' in value and isinstance(
-                    value.get, ast.Function):
+        if (
+            not isinstance(value, (ast.Map, ast.WeakMap))
+            and isinstance(value, ast.Object)
+            and "get" in value
+            and isinstance(value.get, ast.Function)
+        ):
             desc = value
         else:
             desc = {
-                'value': value,
-                'enumerable': False,
-                'configurable': True,
-                'writable': True
+                "value": value,
+                "enumerable": False,
+                "configurable": True,
+                "writable": True,
             }
         ast.Object.defineProperty(cls.prototype, p, desc)

@@ -31,7 +31,7 @@ class Transformer:
         t.xforms = other.xforms
         t.reset()
         for k, v in vars(other).items():
-            if k.startswith('enable_'):
+            if k.startswith("enable_"):
                 setattr(t, k, v)
         return t
 
@@ -70,7 +70,7 @@ class Transformer:
     def find_child(self, n, cls):
         ns = n
         if not isinstance(n, (tuple, list, set)):
-            ns = (n)
+            ns = n
         for n in ns:
             for c in cross_walk(n):
                 if isinstance(c, cls):
@@ -81,9 +81,9 @@ class Transformer:
         return len(cs) > 0
 
     def new_name(self):
-        i = self.ctx.setdefault('gen_name_i', -1)
+        i = self.ctx.setdefault("gen_name_i", -1)
         i += 1
-        self.ctx['gen_name_i'] = i
+        self.ctx["gen_name_i"] = i
         if i > len(string.ascii_letters):
             raise XformError("Failed to gen name")
         return VAR_TEMPLATE % string.ascii_letters[i]
@@ -94,7 +94,7 @@ class Transformer:
         self._stack.clear()
         self.pmap = build_pmap(mod)
         ns = local_names(body)
-        self.ctx['vars'] = ns
+        self.ctx["vars"] = ns
         r = ts.Statements(*body)
         self.prep_target(r)
         ns = list(ns - self._globs)
@@ -146,10 +146,8 @@ class Transformer:
         srcs = [source_for(s) for s in ss]
         ns = [s.__name__ for s in ss]
         tree = SNIPPETS_TEMPLATE % {
-            'snips': textwrap.indent('\n'.join(srcs), ' ' * 4),
-            'assigns': '\n'.join([ASSIGN_TEMPLATE % {
-                'name': n
-            } for n in ns])
+            "snips": textwrap.indent("\n".join(srcs), " " * 4),
+            "assigns": "\n".join([ASSIGN_TEMPLATE % {"name": n} for n in ns]),
         }
         t = self.create_from(self)
         t.snippets = None
@@ -187,8 +185,8 @@ class ProcessorError(Exception):
             ln = str(n.lineno)
             co = str(n.col_offset)
         else:
-            ln = 'n. a.'
-            co = 'n. a.'
+            ln = "n. a."
+            co = "n. a."
         return f"Node type '{type(n).__name__}': Line: {ln}, column: {co}"
 
 
@@ -196,7 +194,7 @@ class XformError(ProcessorError):
     def __str__(self):
         e = super().__str__()
         if len(self.args) > 1:
-            e += f'. {self.args[1]}'
+            e += f". {self.args[1]}"
         return e
 
 
@@ -244,16 +242,15 @@ def load_xforms():
                 if ok:
                     yield x
 
-    ns = list(filter(r'[A-Z][a-zA-Z]+', dir(ast)))
+    ns = list(filter(r"[A-Z][a-zA-Z]+", dir(ast)))
 
     def parent_of(p):
         return os.path.split(os.path.normpath(p))[0]
 
-    fs = filter(r'^[^.]+\.py$', os.listdir(parent_of(xforms.__file__)))
+    fs = filter(r"^[^.]+\.py$", os.listdir(parent_of(xforms.__file__)))
     for f in fs:
-        if f != '__init__.py':
-            mod_name = 'metapensiero.pj.xforms.%s' % \
-                       f.split('.')[0]
+        if f != "__init__.py":
+            mod_name = "metapensiero.pj.xforms.%s" % f.split(".")[0]
             __import__(mod_name)
             mod = sys.modules[mod_name]
             for n in dir(mod):
@@ -271,10 +268,10 @@ def assign_targets(n):
         return n.targets
     elif isinstance(n, ast.AnnAssign):
         return [n.target]
-    raise TypeError(f'Unsupported assign type: {n.__class__.__name__}')
+    raise TypeError(f"Unsupported assign type: {n.__class__.__name__}")
 
 
-IGNORED = ('__all__', '__default__')
+IGNORED = ("__all__", "__default__")
 
 
 def node_names(n):
@@ -301,7 +298,7 @@ def ast_walk(n):
         ns = [n]
     while len(ns) > 0:
         r = ns.pop()
-        check = (yield r)
+        check = yield r
         if check:
             for n in ast.iter_child_nodes(r):
                 ns.append(n)

@@ -22,3 +22,9 @@
 [submodule "dev-libs/tensorboard"]
 	path = dev-libs/tensorboard
 	url = https://github.com/tensorflow/tensorboard.git
+[submodule "dev-libs/transformers"]
+	path = dev-libs/transformers
+	url = https://github.com/huggingface/transformers.git
+[submodule "dev-libs/tokenizers"]
+	path = dev-libs/tokenizers
+	url = https://github.com/huggingface/tokenizers.git

@@ -32,7 +32,7 @@ def ast_dump_file(name):
         return ast_dumps(f.read(), name=name)
 
 
-def ast_dumps(input, name='', first=False):
+def ast_dumps(input, name="", first=False):
     n = ast.parse(input, filename=name)
     if first:
         n = n.body[0]

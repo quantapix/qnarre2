@@ -1,8 +1,8 @@
-
-import sys
+# import sys
 import pytest
-from glob import glob
-from os.path import dirname, exists, isabs, isdir, join, split, splitext
+
+# import glob
+# from os.path import dirname, exists, isabs, isdir, join, split, splitext
 
 from ..testing import ast_object, ast_dump_object, ast_object_to_js
 
@@ -25,62 +25,61 @@ def astjs():
 def load_python_code(filename):
     options = {}
     script = []
-    with open(filename, encoding='utf-8') as f:
+    with open(filename, encoding="utf-8") as f:
         for line in f.readlines():
             if script:
                 script.append(line)
             else:
-                if line.startswith('##'):
+                if line.startswith("##"):
                     try:
-                        option, expr = line.strip().lstrip('# ').split(':', 1)
+                        option, expr = line.strip().lstrip("# ").split(":", 1)
                     except Exception:
-                        raise ValueError('Bad header, expected "## value:'
-                                         ' expression",'
-                                         ' got: %s' % line.rstrip())
+                        raise ValueError(
+                            'Bad header, expected "## value:'
+                            ' expression",'
+                            " got: %s" % line.rstrip()
+                        )
                     option = option.strip()
                     expr = expr.strip()
-                    value = eval(expr, {'python_version': sys.version_info})
-                    if option == 'requires':
+                    value = eval(expr, {"python_version": sys.version_info})
+                    if option == "requires":
                         if not value:
-                            return None, None, 'Requires %s' % expr
+                            return None, None, "Requires %s" % expr
                     else:
                         options[option] = value
                 else:
                     script.append(line)
-    py_src = ''.join(script)
-    py_code = compile(py_src, filename, 'exec')
+    py_src = "".join(script)
+    py_code = compile(py_src, filename, "exec")
     return py_code, py_src, options
 
 
 def load_tests_from_directory(dir, ext=None):
-    ext = ext or '.out'
+    ext = ext or ".out"
     if not isabs(dir):
         dir = join(dirname(__file__), dir)
     if not isdir(dir):
-        raise RuntimeError('%s does not exist or is not a directory' % dir)
-    for pyfile in sorted(glob(join(dir, '*.py'))):
+        raise RuntimeError("%s does not exist or is not a directory" % dir)
+    for pyfile in sorted(glob(join(dir, "*.py"))):
         py_code, py_src, options = load_python_code(pyfile)
         if py_code is None:
             name = split(pyfile)[1]
-            yield pytest.param(name, None, None, None, None, id=name,
-                               marks=pytest.mark.skip)
+            yield pytest.param(
+                name, None, None, None, None, id=name, marks=pytest.mark.skip
+            )
             continue
-
         cmpfile = splitext(pyfile)[0] + ext
         if exists(cmpfile):
-            with open(cmpfile, encoding='utf-8') as f:
+            with open(cmpfile, encoding="utf-8") as f:
                 expected = f.read()
-            # The first item is to make it easier to spot the right test
-            # in verbose mode
             yield split(pyfile)[1], py_code, py_src, options, expected
         else:
-            raise RuntimeError('%s has no correspondent %s' % (
-                pyfile, cmpfile))
+            raise RuntimeError("%s has no correspondent %s" % (pyfile, cmpfile))
 
 
 def pytest_generate_tests(metafunc):
-    if metafunc.cls is not None and metafunc.cls.__name__.endswith('FS'):
-        ext = getattr(metafunc.cls, 'EXT', None)
+    if metafunc.cls is not None and metafunc.cls.__name__.endswith("FS"):
+        ext = getattr(metafunc.cls, "EXT", None)
         if isinstance(ext, dict):
             ext = ext[metafunc.function.__name__]
         moddir = splitext(metafunc.module.__file__)[0]
@@ -95,5 +94,5 @@ def pytest_generate_tests(metafunc):
             else:
                 raise ValueError("Wrong param value")
         metafunc.parametrize(
-            ('name', 'py_code', 'py_src', 'options', 'expected'), argvalues,
-            ids=ids)
+            ("name", "py_code", "py_src", "options", "expected"), argvalues, ids=ids
+        )
