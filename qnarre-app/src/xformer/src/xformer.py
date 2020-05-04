@@ -325,7 +325,7 @@ class Xformer(ast.NodeVisitor):
         self.fill(t)
         with self.delimit((None, "("), (None, ")")):
             self.traverse(n.target)
-            self.write(" in ", " of ")
+            self.write((" in ", " of "))
             self.traverse(n.iter)
         with self.block():
             self.traverse(n.body)
@@ -426,7 +426,7 @@ class Xformer(ast.NodeVisitor):
         v = v.replace('"""', '"""')
         if v[-1] == '"':
             v = v.replace('"', '\\"', -1)
-        self.write(f'"""{v}"""', "")
+        self.write((f'"""{v}"""', None))
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
@@ -525,7 +525,7 @@ class Xformer(ast.NodeVisitor):
             self.interleave(lambda: self.write(", "), write_item, zip(n.keys, n.values))
 
     def visit_Tuple(self, n):
-        with self.delimit("(", ")", "[", "]"):
+        with self.delimit(("(", "["), (")", "]")):
             self.items_view(self.traverse, n.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
