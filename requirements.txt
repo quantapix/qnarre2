@@ -1,0 +1,11 @@
+numpy
+requests
+pytest
+pytest-timeout
+mock
+flake8
+black
+pycodestyle
+pyflakes
+pyparsing
+
