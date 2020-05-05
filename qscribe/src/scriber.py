@@ -6,7 +6,7 @@ from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto
 
 
-class Xformer(ast.NodeVisitor):
+class Scriber(ast.NodeVisitor):
     def __init__(self):
         self._py = []
         self._ts = []
@@ -826,7 +826,7 @@ class Precedence(IntEnum):
 
 
 def unparse(ast_obj):
-    unparser = Xformer()
+    unparser = Scriber()
     return unparser.visit(ast_obj)
 
 

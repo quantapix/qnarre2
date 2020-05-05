@@ -8,10 +8,7 @@
     "<class 'function'>"
   ],
   "AREPL.pythonPath": "",
-  "prettier.packageManager": "yarn",
   "python.linting.pylintEnabled": true,
-  "python.linting.flake8Enabled": false,
-  "python.jediEnabled": false,
   "python.testing.pytestArgs": [
     "src"
   ],

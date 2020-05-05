@@ -5,6 +5,8 @@ node_modules
 /tmp
 
 .qpy
+__pyCache__
+.pytest_cache
 
 chrome-profiler-events*.json
 speed-measure-plugin*.json
