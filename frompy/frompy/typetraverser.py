@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 from frompy.types import (
     Type, SyntheticTypeVisitor, AnyType, UninhabitedType, NoneType, ErasedType, DeletedType,

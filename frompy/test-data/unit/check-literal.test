@@ -2205,7 +2205,7 @@ reveal_type(tup2[::idx2])     # N: Revealed type is 'Tuple[__main__.A, __main__.
 
 [case testLiteralIntelligentIndexingTypedDict]
 from typing_extensions import Literal
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 class Unrelated: pass
 u: Unrelated
@@ -2244,7 +2244,7 @@ del d[c_key]                  # E: TypedDict "Outer" has no key 'c'
 [case testLiteralIntelligentIndexingUsingFinal]
 from typing import Tuple, NamedTuple
 from typing_extensions import Literal, Final
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 int_key_good: Final = 0
 int_key_bad: Final = 3
@@ -2312,7 +2312,7 @@ tup2[idx_bad]                   # E: Tuple index out of range
 
 [case testLiteralIntelligentIndexingTypedDictUnions]
 from typing_extensions import Literal, Final
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 class A: pass
 class B: pass
@@ -2399,12 +2399,12 @@ reveal_type(unicode_dict.get(normal_key))   # N: Revealed type is 'builtins.int'
 reveal_type(unicode_dict.get(unicode_key))  # N: Revealed type is 'builtins.int'
 
 [file normal_mod.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 NormalDict = TypedDict('NormalDict', {'key': int})
 
 [file unicode_mod.py]
 from __future__ import unicode_literals
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 UnicodeDict = TypedDict(b'UnicodeDict', {'key': int})
 
 [builtins fixtures/dict.pyi]
@@ -2413,7 +2413,7 @@ UnicodeDict = TypedDict(b'UnicodeDict', {'key': int})
 [case testLiteralIntelligentIndexingMultiTypedDict]
 from typing import Union
 from typing_extensions import Literal
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 class A: pass
 class B: pass

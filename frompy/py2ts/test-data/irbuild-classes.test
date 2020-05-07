@@ -310,7 +310,7 @@ L0:
 
 [case testSubclass_toplevel]
 from typing import TypeVar, Generic
-from mypy_extensions import trait
+from frompy.extensions import trait
 T = TypeVar('T')
 class C:
     pass
@@ -595,7 +595,7 @@ L5:
     return r6
 
 [case testIsInstanceFewSubclassesTrait]
-from mypy_extensions import trait
+from frompy.extensions import trait
 class B: pass
 @trait
 class R: pass
@@ -764,7 +764,7 @@ L0:
     return r2
 
 [case testSuper2]
-from mypy_extensions import trait
+from frompy.extensions import trait
 @trait
 class T:
     def foo(self) -> None: pass

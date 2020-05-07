@@ -3,7 +3,7 @@
 from abc import abstractmethod
 from typing import TypeVar, Generic
 from typing_extensions import TYPE_CHECKING
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 if TYPE_CHECKING:
     # break import cycle only needed for mypy

@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 from typing import Callable, List, Optional, Set, Tuple, Iterator, TypeVar, Iterable
 from typing_extensions import Final
-from mypy_extensions import DefaultNamedArg
+from frompy.extensions import DefaultNamedArg
 
 from frompy.messages import MessageBuilder, quote_type_string, format_type_bare
 from frompy.options import Options

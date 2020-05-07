@@ -1,5 +1,5 @@
 [case testTraitBasic1]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class A:
     line: int
@@ -53,7 +53,7 @@ bar
 bar
 
 [case testTraitBasic2]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class A:
     line: int
@@ -142,7 +142,7 @@ bar 13
 1337
 
 [case testTrait3]
-from mypy_extensions import trait
+from frompy.extensions import trait
 from typing import Generic, TypeVar
 
 @trait
@@ -176,7 +176,7 @@ class D(S3[bool]):
 import native
 
 [case testTrait4]
-from mypy_extensions import trait
+from frompy.extensions import trait
 from typing import Generic, TypeVar
 
 T = TypeVar('T')
@@ -211,7 +211,7 @@ class Whatever(Plugin):
     pass
 
 [file other_c.py]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 @trait
 class Base:
@@ -225,7 +225,7 @@ class Plugin(Base):
 from native import *
 
 [case testDiamond]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 @trait
 class Base:
@@ -256,7 +256,7 @@ I am a Base
 I am a Trait
 
 [case testTraitAttrsSubTrait]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class A:
     a: int
@@ -307,7 +307,7 @@ assert get_y(c2) == 2
 [out]
 
 [case testTraitAttrsTriangle]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class A:
     a: int
@@ -341,7 +341,7 @@ assert take_t(c) == take_c(c) == 11
 [out]
 
 [case testTraitAttrsTree]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class A:
     a: int

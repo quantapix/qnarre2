@@ -7,7 +7,7 @@ from typing import (
     Any, TypeVar, List, Tuple, cast, Set, Dict, Union, Optional, Callable, Sequence, Iterator
 )
 from typing_extensions import DefaultDict, Final, TYPE_CHECKING
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 import frompy.strconv
 from frompy.util import short_type

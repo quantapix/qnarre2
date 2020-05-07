@@ -2796,7 +2796,7 @@ class Wrapper(Generic[T]):
 
 [case testOverloadTypedDictDifferentRequiredKeysMeansDictsAreDisjoint]
 from typing import overload
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 A = TypedDict('A', {'x': int, 'y': int})
 B = TypedDict('B', {'x': int, 'y': str})
@@ -2810,7 +2810,7 @@ def f(x): pass
 
 [case testOverloadedTypedDictPartiallyOverlappingRequiredKeys]
 from typing import overload, Union
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 A = TypedDict('A', {'x': int, 'y': Union[int, str]})
 B = TypedDict('B', {'x': int, 'y': Union[str, float]})
@@ -2830,7 +2830,7 @@ def g(x): pass
 
 [case testOverloadedTypedDictFullyNonTotalDictsAreAlwaysPartiallyOverlapping]
 from typing import overload
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 A = TypedDict('A', {'x': int, 'y': str}, total=False)
 B = TypedDict('B', {'a': bool}, total=False)
@@ -2851,7 +2851,7 @@ def g(x): pass
 
 [case testOverloadedTotalAndNonTotalTypedDictsCanPartiallyOverlap]
 from typing import overload, Union
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 A = TypedDict('A', {'x': int, 'y': str})
 B = TypedDict('B', {'x': Union[int, str], 'y': str, 'z': int}, total=False)
@@ -2872,7 +2872,7 @@ def f2(x): pass
 
 [case testOverloadedTypedDictsWithSomeOptionalKeysArePartiallyOverlapping]
 from typing import overload, Union
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 class A(TypedDict):
     x: int

@@ -1666,7 +1666,7 @@ class A:
 
 [case testCallableWithNamedArg]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 
 def a(f: Callable[[Arg(int, 'x')], int]):
     f(x=4)
@@ -1677,7 +1677,7 @@ def a(f: Callable[[Arg(int, 'x')], int]):
 
 [case testCallableWithOptionalArg]
 from typing import Callable
-from mypy_extensions import DefaultArg
+from frompy.extensions import DefaultArg
 
 def a(f: Callable[[DefaultArg(int, 'x')], int]):
     f(x=4)
@@ -1689,7 +1689,7 @@ def a(f: Callable[[DefaultArg(int, 'x')], int]):
 
 [case testCallableWithNamedArgFromExpr]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 
 F = Callable[[Arg(int, 'x')], int]
 
@@ -1702,7 +1702,7 @@ def a(f: F):
 
 [case testCallableWithOptionalArgFromExpr]
 from typing import Callable
-from mypy_extensions import DefaultArg
+from frompy.extensions import DefaultArg
 
 F = Callable[[DefaultArg(int, 'x')], int]
 def a(f: F):
@@ -1730,7 +1730,7 @@ F = Callable[[Arg(int, 'x')], int]  # E: Invalid argument constructor "__main__.
 [case testCallableParsingFromExpr]
 
 from typing import Callable, List
-from mypy_extensions import Arg, VarArg, KwArg
+from frompy.extensions import Arg, VarArg, KwArg
 import frompy_extensions
 
 def WrongArg(x, y): return y
@@ -1757,7 +1757,7 @@ R = Callable[[Arg(int, 'x', name='y')], int]  # E: Invalid type alias: expressio
 
 [case testCallableParsing]
 from typing import Callable
-from mypy_extensions import Arg, VarArg, KwArg
+from frompy.extensions import Arg, VarArg, KwArg
 
 def WrongArg(x, y): return y
 
@@ -1774,7 +1774,7 @@ def k(f: Callable[[Arg(int, type=int)], int]): pass # E: "Arg" gets multiple val
 
 [case testCallableTypeAnalysis]
 from typing import Callable
-from mypy_extensions import Arg, VarArg as VARG, KwArg
+from frompy.extensions import Arg, VarArg as VARG, KwArg
 import frompy_extensions as ext
 
 def WrongArg(x, y): return y
@@ -1797,19 +1797,19 @@ e(f1)  # E: Argument 1 to "e" has incompatible type "Callable[[VarArg(Any)], int
 
 [case testCallableWrongTypeType]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 def b(f: Callable[[Arg(1, 'x')], int]): pass # E: Invalid type: try using Literal[1] instead?
 [builtins fixtures/dict.pyi]
 
 [case testCallableTooManyVarArg]
 from typing import Callable
-from mypy_extensions import VarArg
+from frompy.extensions import VarArg
 def c(f: Callable[[VarArg(int, 'x')], int]): pass # E: VarArg arguments should not have names
 [builtins fixtures/dict.pyi]
 
 [case testCallableFastParseGood]
 from typing import Callable
-from mypy_extensions import VarArg, Arg, KwArg
+from frompy.extensions import VarArg, Arg, KwArg
 def d(f: Callable[[VarArg(int)], int]): pass # ok
 def e(f: Callable[[VarArg(), KwArg()], int]): pass # ok
 def g(f: Callable[[Arg(name='x', type=int)], int]): pass # ok
@@ -1818,13 +1818,13 @@ def i(f: Callable[[Arg(name=None, type=int)], int]): pass # ok
 
 [case testCallableFastParseBadArgArgName]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 def h(f: Callable[[Arg(gnome='x', type=int)], int]): pass # E: Unexpected argument "gnome" for argument constructor
 [builtins fixtures/dict.pyi]
 
 [case testCallableKindsOrdering]
 from typing import Callable, Any
-from mypy_extensions import Arg, VarArg, KwArg, DefaultArg, NamedArg
+from frompy.extensions import Arg, VarArg, KwArg, DefaultArg, NamedArg
 
 def f(f: Callable[[VarArg(), int], int]): pass # E: Required positional args may not appear after default, named or var args
 def g(f: Callable[[VarArg(), VarArg()], int]): pass # E: Var args may not appear after named or var args
@@ -1836,7 +1836,7 @@ def k(f: Callable[[KwArg(), NamedArg(Any, 'x')], int]): pass # E: A **kwargs arg
 
 [case testCallableDuplicateNames]
 from typing import Callable
-from mypy_extensions import Arg, VarArg, KwArg, DefaultArg
+from frompy.extensions import Arg, VarArg, KwArg, DefaultArg
 
 def f(f: Callable[[Arg(int, 'x'), int, Arg(int, 'x')], int]): pass # E: Duplicate argument 'x' in Callable
 
@@ -1845,7 +1845,7 @@ def f(f: Callable[[Arg(int, 'x'), int, Arg(int, 'x')], int]): pass # E: Duplicat
 
 [case testCallableWithKeywordOnlyArg]
 from typing import Callable
-from mypy_extensions import NamedArg
+from frompy.extensions import NamedArg
 
 def a(f: Callable[[NamedArg(int, 'x')], int]):
     f(x=4)
@@ -1857,7 +1857,7 @@ def a(f: Callable[[NamedArg(int, 'x')], int]):
 
 [case testCallableWithKeywordOnlyOptionalArg]
 from typing import Callable
-from mypy_extensions import DefaultNamedArg
+from frompy.extensions import DefaultNamedArg
 
 def a(f: Callable[[DefaultNamedArg(int, 'x')], int]):
     f(x=4)
@@ -1869,7 +1869,7 @@ def a(f: Callable[[DefaultNamedArg(int, 'x')], int]):
 
 [case testCallableWithKwargs]
 from typing import Callable
-from mypy_extensions import KwArg
+from frompy.extensions import KwArg
 
 def a(f: Callable[[KwArg(int)], int]):
     f(x=4)
@@ -1883,7 +1883,7 @@ def a(f: Callable[[KwArg(int)], int]):
 
 [case testCallableWithVarArg]
 from typing import Callable
-from mypy_extensions import VarArg
+from frompy.extensions import VarArg
 
 def a(f: Callable[[VarArg(int)], int]):
     f(x=4)  # E: Unexpected keyword argument "x"
@@ -1895,7 +1895,7 @@ def a(f: Callable[[VarArg(int)], int]):
 
 [case testCallableArgKindSubtyping]
 from typing import Callable
-from mypy_extensions import Arg, DefaultArg
+from frompy.extensions import Arg, DefaultArg
 
 int_str_fun = None # type: Callable[[int, str], str]
 int_opt_str_fun = None # type: Callable[[int, DefaultArg(str, None)], str]

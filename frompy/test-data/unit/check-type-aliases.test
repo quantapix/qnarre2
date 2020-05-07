@@ -509,7 +509,7 @@ A = D
 
 [case testFlexibleAlias1]
 from typing import TypeVar, List, Tuple
-from mypy_extensions import FlexibleAlias
+from frompy.extensions import FlexibleAlias
 
 T = TypeVar('T')
 U = TypeVar('U')
@@ -556,7 +556,7 @@ reveal_type(w)  # N: Revealed type is 'builtins.int'
 [case testFlexibleAlias2]
 # flags: --always-true=BOGUS
 from typing import TypeVar, Any
-from mypy_extensions import FlexibleAlias
+from frompy.extensions import FlexibleAlias
 
 T = TypeVar('T')
 
@@ -579,7 +579,7 @@ def foo(x: Bogus[int]) -> None:
 [case testFlexibleAlias3]
 # flags: --always-false=BOGUS
 from typing import TypeVar, Any
-from mypy_extensions import FlexibleAlias
+from frompy.extensions import FlexibleAlias
 
 T = TypeVar('T')
 

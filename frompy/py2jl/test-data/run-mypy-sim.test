@@ -1,6 +1,6 @@
 -- Some test code that tries to simulate important/interesting parts of mypy itself!
 [case testSimulateMypy]
-from mypy_extensions import trait
+from frompy.extensions import trait
 from typing import List, TypeVar, cast, Generic
 from abc import abstractmethod
 import other_strconv as strconv
@@ -76,7 +76,7 @@ def lol(x: Statement) -> int:
     return x.line
 
 [file other_visitor.py]
-from mypy_extensions import trait
+from frompy.extensions import trait
 from typing import TypeVar, cast, Generic
 from abc import abstractmethod
 import native as nodes

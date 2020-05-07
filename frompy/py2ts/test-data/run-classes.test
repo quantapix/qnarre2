@@ -703,7 +703,7 @@ d = D()
 assert d.f() == 22
 
 [case testSuper]
-from mypy_extensions import trait
+from frompy.extensions import trait
 from typing import List
 
 class A:
@@ -1140,7 +1140,7 @@ assert Nothing2.X == 10
 assert Nothing3.X == 10
 
 [case testPickling]
-from mypy_extensions import trait
+from frompy.extensions import trait
 from typing import Any, TypeVar, Generic
 
 def dec(x: Any) -> Any:
@@ -1263,7 +1263,7 @@ test(D, -2)
 
 [case testInterpretedInherit]
 from typing import TypeVar, Any, overload
-from mypy_extensions import py2ts_attr, trait
+from frompy.extensions import py2ts_attr, trait
 
 T = TypeVar('T')
 def dec(x: T) -> T: return x

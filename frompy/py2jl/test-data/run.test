@@ -1942,7 +1942,7 @@ else:
     assert False, "Expected ZeroDivisionError"
 
 [case testSubclassAttributeAccess]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class A:
     v = 0
@@ -3099,7 +3099,7 @@ three 3
 
 [case testProperty]
 from typing import Callable
-from mypy_extensions import trait
+from frompy.extensions import trait
 class Temperature:
     @property
     def celsius(self) -> float:
@@ -3273,7 +3273,7 @@ Represents a sequence of values. Updates itself by next, which is a new value.
 
 [case testPropertySetters]
 
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 class Foo():
     def __init__(self) -> None:

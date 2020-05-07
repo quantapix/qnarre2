@@ -133,12 +133,12 @@ import mod1
 
 [file mod1.py]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 def func1() -> Callable[[Arg(int, 'x')], int]: pass
 
 [file mod1.py.2]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 def func1() -> Callable[[Arg(int, 'x')], int]: ...
 
 
@@ -1857,7 +1857,7 @@ main:1: error: Module 'ntcrash' has no attribute 'nope'
 [case testIncrementalTypedDictInMethod]
 from tdcrash import nope
 [file tdcrash.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class C:
     def f(self) -> None:
         A = TypedDict('A', {'x': int, 'y': int})
@@ -1870,7 +1870,7 @@ main:1: error: Module 'tdcrash' has no attribute 'nope'
 [case testIncrementalTypedDictInMethod2]
 from tdcrash import nope
 [file tdcrash.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class C:
     class D:
         def f(self) -> None:
@@ -1884,7 +1884,7 @@ main:1: error: Module 'tdcrash' has no attribute 'nope'
 [case testIncrementalTypedDictInMethod3]
 from tdcrash import nope
 [file tdcrash.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class C:
     def a(self):
         class D:
@@ -1899,7 +1899,7 @@ main:1: error: Module 'tdcrash' has no attribute 'nope'
 [case testIncrementalNewTypeInMethod]
 from ntcrash import nope
 [file ntcrash.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import NewType, NamedTuple
 class C:
     def f(self) -> None:
@@ -2052,7 +2052,7 @@ reveal_type(b.x)
 y: b.A
 reveal_type(y)
 [file b.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 A = TypedDict('A', {'x': int, 'y': str})
 x: A
 [builtins fixtures/dict.pyi]
@@ -2497,7 +2497,7 @@ x = NT(N(1))
 
 [case testNewTypeFromForwardTypedDictIncremental]
 from typing import NewType, Tuple, Dict
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 NT = NewType('NT', N) # type: ignore
 class N(TypedDict):
@@ -4108,7 +4108,7 @@ from d import k
 [case testCachedBadProtocolNote]
 import b
 [file a.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 [file b.py]
 from typing import Iterable
@@ -4584,7 +4584,7 @@ from typing import NamedTuple
 from other import B
 A = NamedTuple('A', [('x', B)])  # type: ignore
 [file other.pyi]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from lib import A
 B = TypedDict('B', {'x': A})
 [builtins fixtures/dict.pyi]

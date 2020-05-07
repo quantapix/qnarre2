@@ -1271,12 +1271,12 @@ MypyFile:1<1>(
 [case testMergeTypedDict_symtable]
 import target
 [file target.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class A: pass
 D = TypedDict('D', {'a': A})
 d: D
 [file target.py.next]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class A: pass
 D = TypedDict('D', {'a': A, 'b': int})
 d: D

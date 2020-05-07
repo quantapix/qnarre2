@@ -164,7 +164,7 @@ Trait types enable a form of multiple inheritance for native classes.
 A native class can inherit any number of traits.  Trait types are
 defined as classes using the ``mypy_extensions.trait`` decorator::
 
-    from mypy_extensions import trait
+    from frompy.extensions import trait
 
     @trait
     class MyTrait:

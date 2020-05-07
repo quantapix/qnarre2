@@ -3559,11 +3559,11 @@ f(a.x)
 [builtins fixtures/dict.pyi]
 import a
 [file a.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 p = Point(dict(x=42, y=1337))
 [file a.py.2]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 p = Point(dict(x=42, y=1337)) # dummy change
 [out]
@@ -3572,11 +3572,11 @@ p = Point(dict(x=42, y=1337)) # dummy change
 [case testTypedDictUpdate]
 import b
 [file a.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 p = Point(dict(x=42, y=1337))
 [file a.py.2]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': str})
 p = Point(dict(x=42, y='lurr'))
 [file b.py]
@@ -3591,13 +3591,13 @@ b.py:3: error: Unsupported operand types for + ("int" and "str")
 [case testTypedDictUpdate2]
 import b
 [file a.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class Point(TypedDict):
     x: int
     y: int
 p = Point(dict(x=42, y=1337))
 [file a.py.2]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class Point(TypedDict):
     x: int
     y: str
@@ -4423,11 +4423,11 @@ def foo(x: Callable[..., int]) -> None: pass
 import a
 [file a.py]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 def a(f: Callable[[Arg(int, 'x')], int]) -> None: pass
 [file a.py.2]
 from typing import Callable
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 def a(f: Callable[[Arg(int, 'x')], int]) -> None: pass
 [builtins fixtures/dict.pyi]
 [out]

@@ -188,7 +188,7 @@ plugins=<ROOT>/test-data/unit/plugins/attrhook2.py
 [case testTypeAnalyzeHookPlugin]
 # flags: --config-file tmp/mypy.ini
 from typing import Callable
-from mypy_extensions import DefaultArg
+from frompy.extensions import DefaultArg
 from m import Signal
 s: Signal[[int, DefaultArg(str, 'x')]] = Signal()
 reveal_type(s) # N: Revealed type is 'm.Signal[def (builtins.int, x: builtins.str =)]'
@@ -441,7 +441,7 @@ plugins=<ROOT>/test-data/unit/plugins/method_sig_hook.py
 
 [case testMethodSignatureHookNamesFullyQualified]
 # flags: --config-file tmp/mypy.ini
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import NamedTuple
 
 class FullyQualifiedTestClass:

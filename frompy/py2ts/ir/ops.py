@@ -18,7 +18,7 @@ from typing import (
 from collections import OrderedDict
 
 from typing_extensions import Final, Type, TYPE_CHECKING
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 from frompy.nodes import SymbolNode
 

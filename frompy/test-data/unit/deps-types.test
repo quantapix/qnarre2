@@ -874,7 +874,7 @@ class I: pass
 <mod> -> a
 
 [case testAliasDepsTypedDict]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from mod import I
 A = I
 class P(TypedDict):
@@ -892,7 +892,7 @@ class I: pass
 
 [case testAliasDepsTypedDictFunctional]
 # __dump_all__
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 import a
 P = TypedDict('P', {'x': a.A})
 [file a.py]

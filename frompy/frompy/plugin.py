@@ -121,7 +121,7 @@ semantic analyzer is enabled (it's always true in mypy 0.730 and later).
 
 from abc import abstractmethod
 from typing import Any, Callable, List, Tuple, Optional, NamedTuple, TypeVar, Dict
-from mypy_extensions import trait, mypyc_attr
+from frompy.extensions import trait, mypyc_attr
 
 from frompy.nodes import (
     Expression, Context, ClassDef, SymbolTableNode, MypyFile, CallExpr

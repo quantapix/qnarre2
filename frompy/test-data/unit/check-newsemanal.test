@@ -229,7 +229,7 @@ class C(B):
 [targets b, a, b, a, __main__]
 
 [case testNewAnalyzerTypedDictClass]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 import a
 class T1(TypedDict):
     x: A
@@ -237,7 +237,7 @@ class A: pass
 reveal_type(T1(x=A())) # E
 
 [file a.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from b import TD1 as TD2, TD3
 class T2(TD3):
     x: int
@@ -254,7 +254,7 @@ main:6: note: Revealed type is 'TypedDict('__main__.T1', {'x': __main__.A})'
 
 
 [case testNewAnalyzerTypedDictClassInheritance]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 class T2(T1):
     y: int
@@ -1688,7 +1688,7 @@ tmp/a.py:11: error: Type argument "builtins.str" of "C" must be a subtype of "bu
 
 [case testNewAnalyzerTypeArgBoundCheckDifferentNodes]
 from typing import TypeVar, Generic, NamedTuple, NewType, Union, Any, cast, overload
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 T = TypeVar('T', bound=int)
 class C(Generic[T]): pass

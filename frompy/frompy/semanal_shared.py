@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 from typing import Optional, List, Callable
 from typing_extensions import Final
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 from frompy.nodes import (
     Context, SymbolTableNode, MypyFile, ImportedName, FuncDef, Node, TypeInfo, Expression, GDEF,

@@ -4416,7 +4416,7 @@ reveal_type(n) # N: Revealed type is 'Tuple[Any, fallback=__main__.N]'
 [builtins fixtures/tuple.pyi]
 
 [case testCrashOnSelfRecursiveTypedDictVar]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 A = TypedDict('A', {'a': 'A'})  # type: ignore
 a: A
@@ -4438,7 +4438,7 @@ lst = [n, m]
 
 [case testCorrectJoinOfSelfRecursiveTypedDicts]
 
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 class N(TypedDict):
     x: N # E: Cannot resolve name "N" (possible cyclic definition)
@@ -4466,7 +4466,7 @@ def parse_ast(name_dict: NameDict) -> None:
 [typing fixtures/typing-medium.pyi]
 
 [case testCrashInForwardRefToTypedDictWithIsinstance]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import Dict
 
 NameDict = Dict[str, 'NameInfo']
@@ -4542,7 +4542,7 @@ x = NT(N(1))
 [case testNewTypeFromForwardTypedDict]
 
 from typing import NewType, Tuple
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 NT = NewType('NT', N) # E: Argument 2 to NewType(...) must be subclassable (got "N")
 class N(TypedDict):
@@ -4563,7 +4563,7 @@ class Process(NamedTuple):
 [out]
 
 [case testCorrectItemTypeInForwardRefToTypedDict]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 proc: Process
 reveal_type(proc['state'])  # N: Revealed type is 'builtins.int'
 
@@ -4590,7 +4590,7 @@ reveal_type(x.one.attr)  # N: Revealed type is 'builtins.str'
 [out]
 
 [case testCrashOnDoubleForwardTypedDict]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 x: A
 class A(TypedDict):
@@ -4620,7 +4620,7 @@ def foo(node: Node) -> int:
 [out]
 
 [case testCrashOnForwardUnionOfTypedDicts]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import Union
 
 NodeType = Union['Foo', 'Bar']
@@ -4700,7 +4700,7 @@ def f(x: ForwardUnion) -> None:
 
 [case testCrashInvalidArgsSyntheticClassSyntax]
 from typing import List, NamedTuple
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class TD(TypedDict):
     x: List[int, str] # E: "list" expects 1 type argument, but 2 given
 class NM(NamedTuple):
@@ -4714,7 +4714,7 @@ NM(x=[])
 
 [case testCrashInvalidArgsSyntheticClassSyntaxReveals]
 from typing import List, NamedTuple
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class TD(TypedDict):
     x: List[int, str] # E: "list" expects 1 type argument, but 2 given
 class NM(NamedTuple):
@@ -4733,7 +4733,7 @@ reveal_type(y1) # N: Revealed type is 'Tuple[builtins.list[Any], fallback=__main
 
 [case testCrashInvalidArgsSyntheticFunctionSyntax]
 from typing import List, NewType, NamedTuple
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 TD = TypedDict('TD', {'x': List[int, str]}) # E: "list" expects 1 type argument, but 2 given
 NM = NamedTuple('NM', [('x', List[int, str])]) # E: "list" expects 1 type argument, but 2 given
 NT = NewType('NT', List[int, str]) # E: "list" expects 1 type argument, but 2 given
@@ -4747,7 +4747,7 @@ NT([])
 
 [case testCrashForwardSyntheticClassSyntax]
 from typing import NamedTuple
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class A1(NamedTuple):
     b: 'B'
     x: int
@@ -4765,7 +4765,7 @@ reveal_type(y['b']) # N: Revealed type is '__main__.B'
 
 [case testCrashForwardSyntheticFunctionSyntax]
 from typing import NamedTuple
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 A1 = NamedTuple('A1', [('b', 'B'), ('x', int)])
 A2 = TypedDict('A2', {'b': 'B', 'x': int})
 class B:

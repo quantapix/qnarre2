@@ -615,11 +615,11 @@ __main__.E
 __main__.F
 
 [case testTypedDict]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 p = Point(dict(x=42, y=1337))
 [file next.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': str})
 p = Point(dict(x=42, y='lurr'))
 [builtins fixtures/dict.pyi]
@@ -628,13 +628,13 @@ __main__.Point
 __main__.p
 
 [case testTypedDict2]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class Point(TypedDict):
     x: int
     y: int
 p = Point(dict(x=42, y=1337))
 [file next.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class Point(TypedDict):
     x: int
     y: str
@@ -645,11 +645,11 @@ __main__.Point
 __main__.p
 
 [case testTypedDict3]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 p = Point(dict(x=42, y=1337))
 [file next.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int})
 p = Point(dict(x=42))
 [builtins fixtures/dict.pyi]
@@ -658,11 +658,11 @@ __main__.Point
 __main__.p
 
 [case testTypedDict4]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 p = Point(dict(x=42, y=1337))
 [file next.py]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int}, total=False)
 p = Point(dict(x=42, y=1337))
 [builtins fixtures/dict.pyi]
@@ -1459,12 +1459,12 @@ __main__.x
 
 [case testUnionOfCallables]
 from typing import Callable, Union
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 x: Union[Callable[[Arg(int, 'x')], None],
          Callable[[int], None]]
 [file next.py]
 from typing import Callable, Union
-from mypy_extensions import Arg
+from frompy.extensions import Arg
 x: Union[Callable[[Arg(int, 'y')], None],
          Callable[[int], None]]
 [builtins fixtures/tuple.pyi]

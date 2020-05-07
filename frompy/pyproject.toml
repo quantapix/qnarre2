@@ -21,12 +21,13 @@ exclude = '''
 [tool.flake8]
 max-line-length = 88
 max-complexity = 18
-select = B,C,E,F,W,T4,B9
-extend-ignore = E203
-per-file-ignores =
+select = 'B,C,E,F,W,T4,B9'
+extend-ignore = 'E203'
+per-file-ignores = '''
   *.pyi: E301, E302, E305, E501, E701, E741, F401, F403, F405, F811, F822
-exclude = .py*,@*,.git
-mypy_config = mypy.ini
+'''
+exclude = '.py*,@*,.git'
+mypy_config = 'mypy.ini'
 
 [tool.isort]
 multi_line_output = 3

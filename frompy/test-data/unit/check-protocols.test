@@ -1707,7 +1707,7 @@ apply_str(Add5(), 'a') # E: Argument 1 to "apply_str" has incompatible type "Add
 [builtins fixtures/isinstancelist.pyi]
 
 [case testMoreComplexCallableStructuralSubtyping]
-from mypy_extensions import Arg, VarArg
+from frompy.extensions import Arg, VarArg
 from typing import Protocol, Callable
 
 def call_soon(cb: Callable[[Arg(int, 'x'), VarArg(str)], int]): pass

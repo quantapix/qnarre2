@@ -389,7 +389,7 @@ class Deriv1(Base1, Base2):
     pass
 
 [file other.py]
-from mypy_extensions import trait
+from frompy.extensions import trait
 
 @trait
 class Base1:

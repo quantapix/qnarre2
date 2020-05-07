@@ -2,7 +2,7 @@
 
 -- TODO: Implement support for this syntax.
 --[case testCanCreateTypedDictTypeWithKeywordArguments]
---from mypy_extensions import TypedDict
+--from frompy.extensions import TypedDict
 --Point = TypedDict('Point', x=int, y=int)
 --[builtins fixtures/dict.pyi]
 --[out]
@@ -14,7 +14,7 @@
 
 -- TODO: Implement support for this syntax.
 --[case testCanCreateTypedDictTypeWithDictCall]
---from mypy_extensions import TypedDict
+--from frompy.extensions import TypedDict
 --Point = TypedDict('Point', dict(x=int, y=int))
 --[builtins fixtures/dict.pyi]
 --[out]
@@ -25,7 +25,7 @@
 --    TypedDictExpr:2(Point)))
 
 [case testCanCreateTypedDictTypeWithDictLiteral]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 [builtins fixtures/dict.pyi]
 [out]
@@ -36,7 +36,7 @@ MypyFile:1(
     TypedDictExpr:2(Point)))
 
 [case testTypedDictWithDocString]
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class A(TypedDict):
     """foo"""
     x: str

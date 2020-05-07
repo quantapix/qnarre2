@@ -100,7 +100,7 @@ def f(x: int) -> int:
 [file test.py]
 from typing import List, Any
 from typing_extensions import Final
-from mypy_extensions import trait, mypyc_attr
+from frompy.extensions import trait, mypyc_attr
 
 def busted(b: bool) -> None:
     for i in range(1, 10, 0):  # E: range() step can't be zero

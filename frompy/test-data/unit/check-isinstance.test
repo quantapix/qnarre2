@@ -2070,7 +2070,7 @@ else:
 [case testNarrowTypeAfterInTypedDict]
 # flags: --strict-optional
 from typing import Optional
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 class TD(TypedDict):
     a: int
     b: str

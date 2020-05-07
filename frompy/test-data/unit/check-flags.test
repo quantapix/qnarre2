@@ -279,7 +279,7 @@ def f() -> int:
 
 [case testNoReturnDisallowsReturn]
 # flags: --warn-no-return
-from mypy_extensions import NoReturn
+from frompy.extensions import NoReturn
 
 def f() -> NoReturn:
   if bool():
@@ -290,7 +290,7 @@ def f() -> NoReturn:
 
 [case testNoReturnWithoutImplicitReturn]
 # flags: --warn-no-return
-from mypy_extensions import NoReturn
+from frompy.extensions import NoReturn
 
 def no_return() -> NoReturn: pass
 def f() -> NoReturn:
@@ -299,7 +299,7 @@ def f() -> NoReturn:
 
 [case testNoReturnDisallowsImplicitReturn]
 # flags: --warn-no-return
-from mypy_extensions import NoReturn
+from frompy.extensions import NoReturn
 
 def f() -> NoReturn:  # E: Implicit return in function which does not return
   non_trivial_function = 1
@@ -307,7 +307,7 @@ def f() -> NoReturn:  # E: Implicit return in function which does not return
 
 [case testNoReturnNoWarnNoReturn]
 # flags: --warn-no-return
-from mypy_extensions import NoReturn
+from frompy.extensions import NoReturn
 
 def no_return() -> NoReturn: pass
 def f() -> int:
@@ -319,7 +319,7 @@ def f() -> int:
 
 [case testNoReturnInExpr]
 # flags: --warn-no-return
-from mypy_extensions import NoReturn
+from frompy.extensions import NoReturn
 
 def no_return() -> NoReturn: pass
 def f() -> int:
@@ -329,7 +329,7 @@ reveal_type(f() or no_return())  # N: Revealed type is 'builtins.int'
 
 [case testNoReturnVariable]
 # flags: --warn-no-return
-from mypy_extensions import NoReturn
+from frompy.extensions import NoReturn
 
 x = 0  # type: NoReturn  # E: Incompatible types in assignment (expression has type "int", variable has type "NoReturn")
 [builtins fixtures/dict.pyi]
@@ -733,7 +733,7 @@ main:6: error: A type on this line becomes "Any" due to an unfollowed import
 
 [case testDisallowUnimportedAnyTypedDictSimple]
 # flags: --ignore-missing-imports --disallow-any-unimported
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from x import Unchecked
 
 M = TypedDict('M', {'x': str, 'y': Unchecked})  # E: Type of a TypedDict key becomes "Any" due to an unfollowed import
@@ -744,7 +744,7 @@ def f(m: M) -> M: pass  # no error
 [case testDisallowUnimportedAnyTypedDictGeneric]
 # flags: --ignore-missing-imports --disallow-any-unimported
 
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import List
 from x import Unchecked
 
@@ -988,7 +988,7 @@ def k(s: E) -> None: pass
 
 [case testDisallowAnyExprTypedDict]
 # flags: --disallow-any-expr
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 Movie = TypedDict('Movie', {'name': str, 'year': int})
 
@@ -1090,7 +1090,7 @@ n: N
 [case testCheckDisallowAnyGenericsTypedDict]
 # flags: --disallow-any-generics
 from typing import Dict, Any, Optional
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 
 VarsDict = Dict[str, Any]
 HostsDict = Dict[str, Optional[VarsDict]]
@@ -1378,7 +1378,7 @@ Bar = NewType('Bar', List[Any])  # E: Explicit "Any" is not allowed
 
 [case testDisallowAnyExplicitTypedDictSimple]
 # flags: --disallow-any-explicit
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import Any
 
 M = TypedDict('M', {'x': str, 'y': Any})  # E: Explicit "Any" is not allowed
@@ -1388,7 +1388,7 @@ def f(m: M) -> None: pass  # no error
 
 [case testDisallowAnyExplicitTypedDictGeneric]
 # flags: --disallow-any-explicit
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 from typing import Any, List
 
 M = TypedDict('M', {'x': str, 'y': List[Any]})  # E: Explicit "Any" is not allowed

@@ -1753,7 +1753,7 @@ class M(N): pass
 
 [case testForwardRefsInWithStatementImplicit]
 from typing import ContextManager, Any
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 cm: ContextManager[N]
 
 with cm as g:
@@ -1766,7 +1766,7 @@ N = TypedDict('N', {'x': int})
 
 [case testForwardRefsInWithStatement]
 from typing import ContextManager, Any
-from mypy_extensions import TypedDict
+from frompy.extensions import TypedDict
 cm: ContextManager[Any]
 
 with cm as g:  # type: N

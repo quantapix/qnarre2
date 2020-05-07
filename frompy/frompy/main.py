@@ -1,5 +1,3 @@
-"""Mypy type checker command line tool."""
-
 import argparse
 from gettext import gettext
 import os
@@ -58,14 +56,11 @@ def main(script_path: Optional[str],
     sys.setrecursionlimit(2 ** 14)
     if args is None:
         args = sys.argv[1:]
-
     fscache = FileSystemCache()
     sources, options = process_options(args, stdout=stdout, stderr=stderr,
                                        fscache=fscache)
-
     messages = []
     formatter = util.FancyFormatter(stdout, stderr, options.show_error_codes)
-
     def flush_errors(new_messages: List[str], serious: bool) -> None:
         if options.pretty:
             new_messages = formatter.fit_in_terminal(new_messages)
@@ -79,13 +74,10 @@ def main(script_path: Optional[str],
             f.flush()
         except BrokenPipeError:
             sys.exit(2)
-
     serious = False
     blockers = False
     res = None
     try:
-        # Keep a dummy reference (res) for memory profiling below, as otherwise
-        # the result could be freed.
         res = build.build(sources, options, None, flush_errors, fscache, stdout, stderr)
     except CompileError as e:
         blockers = True
@@ -102,11 +94,9 @@ def main(script_path: Optional[str],
         py_version = '{}_{}'.format(options.python_version[0], options.python_version[1])
         util.write_junit_xml(t1 - t0, serious, messages, options.junit_xml,
                              py_version, options.platform)
-
     if MEM_PROFILE:
         from frompy.memprofile import print_memory_profile
         print_memory_profile()
-
     code = 0
     if messages:
         code = 2 if blockers else 1
@@ -127,12 +117,10 @@ def main(script_path: Optional[str],
         util.hard_exit(code)
     elif code:
         sys.exit(code)
-
     # HACK: keep res alive so that mypyc won't free it before the hard_exit
     list([res])
 
 
-# Make the help output a little less jarring.
 class AugmentedHelpFormatter(argparse.RawDescriptionHelpFormatter):
     def __init__(self, prog: str) -> None:
         super().__init__(prog=prog, max_help_position=28)
@@ -204,17 +192,6 @@ def _python_executable_from_version(python_version: Tuple[int, int]) -> str:
 
 def infer_python_executable(options: Options,
                             special_opts: argparse.Namespace) -> None:
-    """Infer the Python executable from the given version.
-
-    This function mutates options based on special_opts to infer the correct Python executable
-    to use.
-    """
-    # TODO: (ethanhs) Look at folding these checks and the site packages subprocess calls into
-    # one subprocess call for speed.
-
-    # Use the command line specified executable, or fall back to one set in the
-    # config file. If an executable is not specified, infer it from the version
-    # (unless no_executable is set)
     python_executable = special_opts.python_executable or options.python_executable
 
     if python_executable is None:
@@ -229,30 +206,9 @@ HEADER = """%(prog)s [-h] [-v] [-V] [more options; see below]
 
 DESCRIPTION = """
 Mypy is a program that will type check your Python code.
-
-Pass in any files or folders you want to type check. Mypy will
-recursively traverse any provided folders to find .py files:
-
-    $ mypy my_program.py my_src_folder
-
-For more information on getting started, see:
-
-- http://mypy.readthedocs.io/en/latest/getting_started.html
-
-For more details on both running mypy and using the flags below, see:
-
-- http://mypy.readthedocs.io/en/latest/running_mypy.html
-- http://mypy.readthedocs.io/en/latest/command_line.html
-
-You can also use a config file to configure mypy instead of using
-command line flags. For more details, see:
-
-- http://mypy.readthedocs.io/en/latest/config_file.html
 """  # type: Final
 
-FOOTER = """Environment variables:
-  Define MYPYPATH for additional module search path entries.
-  Define MYPY_CACHE_DIR to override configuration cache_dir path."""  # type: Final
+FOOTER = """Environment variables: MYPYPATH, MYPY_CACHE_DIR."""  # type: Final
 
 
 class CapturableArgumentParser(argparse.ArgumentParser):
