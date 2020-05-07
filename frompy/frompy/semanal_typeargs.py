@@ -7,9 +7,15 @@ operations, including subtype checks.
 
 from typing import List, Optional, Set
 
-from frompy.nodes import TypeInfo, Context, MypyFile, FuncItem, ClassDef, Block
+from frompy.nodes import TypeInfo, Context, FrompyFile, FuncItem, ClassDef, Block
 from frompy.types import (
-    Type, Instance, TypeVarType, AnyType, get_proper_types, TypeAliasType, get_proper_type
+    Type,
+    Instance,
+    TypeVarType,
+    AnyType,
+    get_proper_types,
+    TypeAliasType,
+    get_proper_type,
 )
 from frompy.mixedtraverser import MixedTraverserVisitor
 from frompy.subtypes import is_subtype
@@ -22,7 +28,9 @@ from frompy import message_registry, errorcodes as codes
 
 
 class TypeArgumentAnalyzer(MixedTraverserVisitor):
-    def __init__(self, errors: Errors, options: Options, is_typeshed_file: bool) -> None:
+    def __init__(
+        self, errors: Errors, options: Options, is_typeshed_file: bool
+    ) -> None:
         self.errors = errors
         self.options = options
         self.is_typeshed_file = is_typeshed_file
@@ -33,7 +41,7 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
         # infinite recursion on types like A = Union[int, List[A]].
         self.seen_aliases = set()  # type: Set[TypeAliasType]
 
-    def visit_mypy_file(self, o: MypyFile) -> None:
+    def visit_mypy_file(self, o: FrompyFile) -> None:
         self.errors.set_file(o.path, o.fullname, scope=self.scope)
         self.scope.enter_file(o.fullname)
         super().visit_mypy_file(o)
@@ -72,36 +80,58 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
                 if isinstance(arg, TypeVarType):
                     arg_values = arg.values
                     if not arg_values:
-                        self.fail('Type variable "{}" not valid as type '
-                                  'argument value for "{}"'.format(
-                                      arg.name, info.name), t, code=codes.TYPE_VAR)
+                        self.fail(
+                            'Type variable "{}" not valid as type '
+                            'argument value for "{}"'.format(arg.name, info.name),
+                            t,
+                            code=codes.TYPE_VAR,
+                        )
                         continue
                 else:
                     arg_values = [arg]
-                self.check_type_var_values(info, arg_values, tvar.name, tvar.values, i + 1, t)
+                self.check_type_var_values(
+                    info, arg_values, tvar.name, tvar.values, i + 1, t
+                )
             if not is_subtype(arg, tvar.upper_bound):
-                self.fail('Type argument "{}" of "{}" must be '
-                          'a subtype of "{}"'.format(
-                              arg, info.name, tvar.upper_bound), t, code=codes.TYPE_VAR)
+                self.fail(
+                    'Type argument "{}" of "{}" must be '
+                    'a subtype of "{}"'.format(arg, info.name, tvar.upper_bound),
+                    t,
+                    code=codes.TYPE_VAR,
+                )
         super().visit_instance(t)
 
-    def check_type_var_values(self, type: TypeInfo, actuals: List[Type], arg_name: str,
-                              valids: List[Type], arg_number: int, context: Context) -> None:
+    def check_type_var_values(
+        self,
+        type: TypeInfo,
+        actuals: List[Type],
+        arg_name: str,
+        valids: List[Type],
+        arg_number: int,
+        context: Context,
+    ) -> None:
         for actual in get_proper_types(actuals):
-            if (not isinstance(actual, AnyType) and
-                    not any(is_same_type(actual, value)
-                            for value in valids)):
+            if not isinstance(actual, AnyType) and not any(
+                is_same_type(actual, value) for value in valids
+            ):
                 if len(actuals) > 1 or not isinstance(actual, Instance):
-                    self.fail('Invalid type argument value for "{}"'.format(
-                        type.name), context, code=codes.TYPE_VAR)
+                    self.fail(
+                        'Invalid type argument value for "{}"'.format(type.name),
+                        context,
+                        code=codes.TYPE_VAR,
+                    )
                 else:
                     class_name = '"{}"'.format(type.name)
                     actual_type_name = '"{}"'.format(actual.type.name)
                     self.fail(
                         message_registry.INCOMPATIBLE_TYPEVAR_VALUE.format(
-                            arg_name, class_name, actual_type_name),
+                            arg_name, class_name, actual_type_name
+                        ),
                         context,
-                        code=codes.TYPE_VAR)
+                        code=codes.TYPE_VAR,
+                    )
 
-    def fail(self, msg: str, context: Context, *, code: Optional[ErrorCode] = None) -> None:
+    def fail(
+        self, msg: str, context: Context, *, code: Optional[ErrorCode] = None
+    ) -> None:
         self.errors.report(context.get_line(), context.get_column(), msg, code=code)

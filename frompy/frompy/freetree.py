@@ -1,7 +1,7 @@
 """Generic node traverser visitor"""
 
 from frompy.traverser import TraverserVisitor
-from frompy.nodes import Block, MypyFile
+from frompy.nodes import Block, FrompyFile
 
 
 class TreeFreer(TraverserVisitor):
@@ -10,7 +10,7 @@ class TreeFreer(TraverserVisitor):
         block.body.clear()
 
 
-def free_tree(tree: MypyFile) -> None:
+def free_tree(tree: FrompyFile) -> None:
     """Free all the ASTs associated with a module.
 
     This needs to be done recursively, since symbol tables contain

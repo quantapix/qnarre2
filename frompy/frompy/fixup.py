@@ -4,14 +4,37 @@ from typing import Any, Dict, Optional
 from typing_extensions import Final
 
 from frompy.nodes import (
-    MypyFile, SymbolNode, SymbolTable, SymbolTableNode,
-    TypeInfo, FuncDef, OverloadedFuncDef, Decorator, Var,
-    TypeVarExpr, ClassDef, Block, TypeAlias,
+    FrompyFile,
+    SymbolNode,
+    SymbolTable,
+    SymbolTableNode,
+    TypeInfo,
+    FuncDef,
+    OverloadedFuncDef,
+    Decorator,
+    Var,
+    TypeVarExpr,
+    ClassDef,
+    Block,
+    TypeAlias,
 )
 from frompy.types import (
-    CallableType, Instance, Overloaded, TupleType, TypedDictType,
-    TypeVarType, UnboundType, UnionType, TypeVisitor, LiteralType,
-    TypeType, NOT_READY, TypeAliasType, AnyType, TypeOfAny)
+    CallableType,
+    Instance,
+    Overloaded,
+    TupleType,
+    TypedDictType,
+    TypeVarType,
+    UnboundType,
+    UnionType,
+    TypeVisitor,
+    LiteralType,
+    TypeType,
+    NOT_READY,
+    TypeAliasType,
+    AnyType,
+    TypeOfAny,
+)
 from frompy.visitor import NodeVisitor
 from frompy.lookup import lookup_fully_qualified
 
@@ -19,8 +42,9 @@ from frompy.lookup import lookup_fully_qualified
 # N.B: we do a allow_missing fixup when fixing up a fine-grained
 # incremental cache load (since there may be cross-refs into deleted
 # modules)
-def fixup_module(tree: MypyFile, modules: Dict[str, MypyFile],
-                 allow_missing: bool) -> None:
+def fixup_module(
+    tree: FrompyFile, modules: Dict[str, FrompyFile], allow_missing: bool
+) -> None:
     node_fixer = NodeFixer(modules, allow_missing)
     node_fixer.visit_symbol_table(tree.names, tree.fullname)
 
@@ -29,7 +53,7 @@ def fixup_module(tree: MypyFile, modules: Dict[str, MypyFile],
 class NodeFixer(NodeVisitor[None]):
     current_info = None  # type: Optional[TypeInfo]
 
-    def __init__(self, modules: Dict[str, MypyFile], allow_missing: bool) -> None:
+    def __init__(self, modules: Dict[str, FrompyFile], allow_missing: bool) -> None:
         self.modules = modules
         self.allow_missing = allow_missing
         self.type_fixer = TypeFixer(self.modules, allow_missing)
@@ -57,8 +81,10 @@ class NodeFixer(NodeVisitor[None]):
             if info.metaclass_type:
                 info.metaclass_type.accept(self.type_fixer)
             if info._mro_refs:
-                info.mro = [lookup_qualified_typeinfo(self.modules, name, self.allow_missing)
-                            for name in info._mro_refs]
+                info.mro = [
+                    lookup_qualified_typeinfo(self.modules, name, self.allow_missing)
+                    for name in info._mro_refs
+                ]
                 info._mro_refs = None
         finally:
             self.current_info = save_info
@@ -73,10 +99,14 @@ class NodeFixer(NodeVisitor[None]):
                 if cross_ref in self.modules:
                     value.node = self.modules[cross_ref]
                 else:
-                    stnode = lookup_qualified_stnode(self.modules, cross_ref,
-                                                     self.allow_missing)
+                    stnode = lookup_qualified_stnode(
+                        self.modules, cross_ref, self.allow_missing
+                    )
                     if stnode is not None:
-                        assert stnode.node is not None, (table_fullname + "." + key, cross_ref)
+                        assert stnode.node is not None, (
+                            table_fullname + "." + key,
+                            cross_ref,
+                        )
                         value.node = stnode.node
                     elif not self.allow_missing:
                         assert False, "Could not find cross-ref %s" % (cross_ref,)
@@ -90,7 +120,7 @@ class NodeFixer(NodeVisitor[None]):
                 elif value.node is not None:
                     value.node.accept(self)
                 else:
-                    assert False, 'Unexpected empty node %r: %s' % (key, value)
+                    assert False, "Unexpected empty node %r: %s" % (key, value)
 
     def visit_func_def(self, func: FuncDef) -> None:
         if self.current_info is not None:
@@ -140,7 +170,7 @@ class NodeFixer(NodeVisitor[None]):
 
 
 class TypeFixer(TypeVisitor[None]):
-    def __init__(self, modules: Dict[str, MypyFile], allow_missing: bool) -> None:
+    def __init__(self, modules: Dict[str, FrompyFile], allow_missing: bool) -> None:
         self.modules = modules
         self.allow_missing = allow_missing
 
@@ -150,7 +180,9 @@ class TypeFixer(TypeVisitor[None]):
         if type_ref is None:
             return  # We've already been here.
         inst.type_ref = None
-        inst.type = lookup_qualified_typeinfo(self.modules, type_ref, self.allow_missing)
+        inst.type = lookup_qualified_typeinfo(
+            self.modules, type_ref, self.allow_missing
+        )
         # TODO: Is this needed or redundant?
         # Also fix up the bases, just in case.
         for base in inst.type.bases:
@@ -224,11 +256,15 @@ class TypeFixer(TypeVisitor[None]):
                 it.accept(self)
         if tdt.fallback is not None:
             if tdt.fallback.type_ref is not None:
-                if lookup_qualified(self.modules, tdt.fallback.type_ref,
-                                    self.allow_missing) is None:
+                if (
+                    lookup_qualified(
+                        self.modules, tdt.fallback.type_ref, self.allow_missing
+                    )
+                    is None
+                ):
                     # We reject fake TypeInfos for TypedDict fallbacks because
                     # the latter are used in type checking and must be valid.
-                    tdt.fallback.type_ref = 'typing._TypedDict'
+                    tdt.fallback.type_ref = "typing._TypedDict"
             tdt.fallback.accept(self)
 
     def visit_literal_type(self, lt: LiteralType) -> None:
@@ -257,36 +293,43 @@ class TypeFixer(TypeVisitor[None]):
         t.item.accept(self)
 
 
-def lookup_qualified_typeinfo(modules: Dict[str, MypyFile], name: str,
-                              allow_missing: bool) -> TypeInfo:
+def lookup_qualified_typeinfo(
+    modules: Dict[str, FrompyFile], name: str, allow_missing: bool
+) -> TypeInfo:
     node = lookup_qualified(modules, name, allow_missing)
     if isinstance(node, TypeInfo):
         return node
     else:
         # Looks like a missing TypeInfo during an initial daemon load, put something there
-        assert allow_missing, "Should never get here in normal mode," \
-                              " got {}:{} instead of TypeInfo".format(type(node).__name__,
-                                                                      node.fullname if node
-                                                                      else '')
+        assert allow_missing, (
+            "Should never get here in normal mode,"
+            " got {}:{} instead of TypeInfo".format(
+                type(node).__name__, node.fullname if node else ""
+            )
+        )
         return missing_info(modules)
 
 
-def lookup_qualified_alias(modules: Dict[str, MypyFile], name: str,
-                           allow_missing: bool) -> TypeAlias:
+def lookup_qualified_alias(
+    modules: Dict[str, FrompyFile], name: str, allow_missing: bool
+) -> TypeAlias:
     node = lookup_qualified(modules, name, allow_missing)
     if isinstance(node, TypeAlias):
         return node
     else:
         # Looks like a missing TypeAlias during an initial daemon load, put something there
-        assert allow_missing, "Should never get here in normal mode," \
-                              " got {}:{} instead of TypeAlias".format(type(node).__name__,
-                                                                       node.fullname if node
-                                                                       else '')
+        assert allow_missing, (
+            "Should never get here in normal mode,"
+            " got {}:{} instead of TypeAlias".format(
+                type(node).__name__, node.fullname if node else ""
+            )
+        )
         return missing_alias()
 
 
-def lookup_qualified(modules: Dict[str, MypyFile], name: str,
-                     allow_missing: bool) -> Optional[SymbolNode]:
+def lookup_qualified(
+    modules: Dict[str, FrompyFile], name: str, allow_missing: bool
+) -> Optional[SymbolNode]:
     stnode = lookup_qualified_stnode(modules, name, allow_missing)
     if stnode is None:
         return None
@@ -294,21 +337,24 @@ def lookup_qualified(modules: Dict[str, MypyFile], name: str,
         return stnode.node
 
 
-def lookup_qualified_stnode(modules: Dict[str, MypyFile], name: str,
-                            allow_missing: bool) -> Optional[SymbolTableNode]:
+def lookup_qualified_stnode(
+    modules: Dict[str, FrompyFile], name: str, allow_missing: bool
+) -> Optional[SymbolTableNode]:
     return lookup_fully_qualified(name, modules, raise_on_missing=not allow_missing)
 
 
-_SUGGESTION = "<missing {}: *should* have gone away during fine-grained update>"  # type: Final
+_SUGGESTION = (
+    "<missing {}: *should* have gone away during fine-grained update>"
+)  # type: Final
 
 
-def missing_info(modules: Dict[str, MypyFile]) -> TypeInfo:
-    suggestion = _SUGGESTION.format('info')
+def missing_info(modules: Dict[str, FrompyFile]) -> TypeInfo:
+    suggestion = _SUGGESTION.format("info")
     dummy_def = ClassDef(suggestion, Block([]))
     dummy_def.fullname = suggestion
 
     info = TypeInfo(SymbolTable(), dummy_def, "<missing>")
-    obj_type = lookup_qualified(modules, 'builtins.object', False)
+    obj_type = lookup_qualified(modules, "builtins.object", False)
     assert isinstance(obj_type, TypeInfo)
     info.bases = [Instance(obj_type, [])]
     info.mro = [info, obj_type]
@@ -316,6 +362,6 @@ def missing_info(modules: Dict[str, MypyFile]) -> TypeInfo:
 
 
 def missing_alias() -> TypeAlias:
-    suggestion = _SUGGESTION.format('alias')
-    return TypeAlias(AnyType(TypeOfAny.special_form), suggestion,
-                     line=-1, column=-1)
+    suggestion = _SUGGESTION.format("alias")
+    return TypeAlias(AnyType(TypeOfAny.special_form), suggestion, line=-1, column=-1)
+

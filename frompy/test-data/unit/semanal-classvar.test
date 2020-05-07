@@ -3,7 +3,7 @@ from typing import ClassVar
 class A:
     x = 1  # type: ClassVar[int]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [ClassVar])
   ClassDef:2(
     A
@@ -45,7 +45,7 @@ from typing import ClassVar
 class A:
     x = 1  # type: ClassVar
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [ClassVar])
   ClassDef:2(
     A

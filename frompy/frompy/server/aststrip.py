@@ -35,10 +35,30 @@ import contextlib
 from typing import Union, Iterator, Optional, Dict, Tuple
 
 from frompy.nodes import (
-    FuncDef, NameExpr, MemberExpr, RefExpr, MypyFile, ClassDef, AssignmentStmt,
-    ImportFrom, CallExpr, Decorator, OverloadedFuncDef, Node, TupleExpr, ListExpr,
-    SuperExpr, IndexExpr, ImportAll, ForStmt, Block, CLASSDEF_NO_INFO, TypeInfo,
-    StarExpr, Var, SymbolTableNode
+    FuncDef,
+    NameExpr,
+    MemberExpr,
+    RefExpr,
+    FrompyFile,
+    ClassDef,
+    AssignmentStmt,
+    ImportFrom,
+    CallExpr,
+    Decorator,
+    OverloadedFuncDef,
+    Node,
+    TupleExpr,
+    ListExpr,
+    SuperExpr,
+    IndexExpr,
+    ImportAll,
+    ForStmt,
+    Block,
+    CLASSDEF_NO_INFO,
+    TypeInfo,
+    StarExpr,
+    Var,
+    SymbolTableNode,
 )
 from frompy.traverser import TraverserVisitor
 from frompy.types import CallableType
@@ -48,8 +68,9 @@ from frompy.typestate import TypeState
 SavedAttributes = Dict[Tuple[ClassDef, str], SymbolTableNode]
 
 
-def strip_target(node: Union[MypyFile, FuncDef, OverloadedFuncDef],
-                 saved_attrs: SavedAttributes) -> None:
+def strip_target(
+    node: Union[FrompyFile, FuncDef, OverloadedFuncDef], saved_attrs: SavedAttributes
+) -> None:
     """Reset a fine-grained incremental target to state before semantic analysis.
 
     All TypeInfos are killed. Therefore we need to preserve the variables
@@ -62,7 +83,7 @@ def strip_target(node: Union[MypyFile, FuncDef, OverloadedFuncDef],
             classes afterwards if stripping a class body (this dict is mutated)
     """
     visitor = NodeStripVisitor(saved_attrs)
-    if isinstance(node, MypyFile):
+    if isinstance(node, FrompyFile):
         visitor.strip_file_top_level(node)
     else:
         node.accept(visitor)
@@ -82,7 +103,7 @@ class NodeStripVisitor(TraverserVisitor):
         # must be added back before semantically analyzing any methods.
         self.saved_class_attrs = saved_class_attrs
 
-    def strip_file_top_level(self, file_node: MypyFile) -> None:
+    def strip_file_top_level(self, file_node: FrompyFile) -> None:
         """Strip a module top-level (don't recursive into functions)."""
         self.recurse_into_functions = False
         file_node.plugin_deps.clear()
@@ -90,7 +111,7 @@ class NodeStripVisitor(TraverserVisitor):
         for name in file_node.names.copy():
             # TODO: this is a hot fix, we should delete all names,
             # see https://github.com/python/mypy/issues/6422.
-            if '@' not in name:
+            if "@" not in name:
                 del file_node.names[name]
 
     def visit_block(self, b: Block) -> None:
@@ -112,8 +133,9 @@ class NodeStripVisitor(TraverserVisitor):
         node.type_vars = []
         node.base_type_exprs.extend(node.removed_base_type_exprs)
         node.removed_base_type_exprs = []
-        node.defs.body = [s for s in node.defs.body
-                          if s not in to_delete]  # type: ignore[comparison-overlap]
+        node.defs.body = [
+            s for s in node.defs.body if s not in to_delete
+        ]  # type: ignore[comparison-overlap]
         with self.enter_class(node.info):
             super().visit_class_def(node)
         TypeState.reset_subtype_caches_for(node.info)

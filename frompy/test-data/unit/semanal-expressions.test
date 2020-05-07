@@ -1,7 +1,7 @@
 [case testLiterals]
 (1, 'x', 1.1, 1.1j)
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     TupleExpr:1(
       IntExpr(1)
@@ -13,7 +13,7 @@ MypyFile:1(
 x = 1
 x.y
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -26,7 +26,7 @@ MypyFile:1(
 x = y = 1
 x[y]
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -44,7 +44,7 @@ x | y
 x is not y
 x == y
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -78,7 +78,7 @@ x = 1
 +x
 not x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -105,7 +105,7 @@ x[y:z:x]
 x[:]
 x[:y]
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -136,7 +136,7 @@ MypyFile:1(
 x = y = 1
 x, y
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -151,7 +151,7 @@ MypyFile:1(
 x = y = 1
 ([], [x, y])
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -168,7 +168,7 @@ MypyFile:1(
 x = y = 1
 { x : y, y : x }
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -185,7 +185,7 @@ MypyFile:1(
 a = 0
 ([x + 1 for x in a])
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -203,7 +203,7 @@ MypyFile:1(
 def f(a) -> None:
     [x for x in a]
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -221,7 +221,7 @@ MypyFile:1(
 a = 0
 b = [x for x in a if x]
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -238,7 +238,7 @@ MypyFile:1(
 a = 0
 ({x + 1 for x in a})
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -256,7 +256,7 @@ MypyFile:1(
 a = 0
 b = {x for x in a if x}
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -273,7 +273,7 @@ MypyFile:1(
 a = 0
 ({x: x + 1 for x in a})
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -291,7 +291,7 @@ MypyFile:1(
 a = 0
 b = {x: x + 1 for x in a if x}
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -311,7 +311,7 @@ MypyFile:1(
 a = 0
 (x for x in a)
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -325,7 +325,7 @@ MypyFile:1(
 a = 0
 (x for x, (y, z) in a)
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(a* [__main__.a])
     IntExpr(0))
@@ -343,7 +343,7 @@ MypyFile:1(
 x = 0
 lambda: x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(0))
@@ -356,7 +356,7 @@ MypyFile:1(
 [case testLambdaWithArguments]
 lambda x, y: x + y
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     LambdaExpr:1(
       Args(
@@ -372,7 +372,7 @@ MypyFile:1(
 [case testConditionalExpression]
 int if None else str
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     ConditionalExpr:1(
       Condition(
@@ -384,7 +384,7 @@ MypyFile:1(
 dict(a=1, b=str())
 [builtins fixtures/dict.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     DictExpr:1(
       StrExpr(a)

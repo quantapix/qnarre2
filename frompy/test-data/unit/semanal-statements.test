@@ -2,7 +2,7 @@
 def f(x): return x
 def g(): return
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -18,7 +18,7 @@ MypyFile:1(
 [case testRaise]
 raise object()
 [out]
-MypyFile:1(
+FrompyFile:1(
   RaiseStmt:1(
     CallExpr:1(
       NameExpr(object [builtins.object])
@@ -27,7 +27,7 @@ MypyFile:1(
 [case testYield]
 def f(): yield f
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Generator
@@ -39,7 +39,7 @@ MypyFile:1(
 [case testAssert]
 assert object
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssertStmt:1(
     NameExpr(object [builtins.object])))
 
@@ -48,7 +48,7 @@ x = y = 1
 x += y
 y |= x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -68,7 +68,7 @@ x = y = 1
 while x:
   y
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -84,7 +84,7 @@ MypyFile:1(
 for x in object:
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   ForStmt:1(
     NameExpr(x* [__main__.x])
     NameExpr(object [builtins.object])
@@ -97,7 +97,7 @@ def f():
   for x in f:
     x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -112,7 +112,7 @@ MypyFile:1(
 for x, y in []:
   x, y
 [out]
-MypyFile:1(
+FrompyFile:1(
   ForStmt:1(
     TupleExpr:1(
       NameExpr(x* [__main__.x])
@@ -129,7 +129,7 @@ for x in []:
   pass
 x
 [out]
-MypyFile:1(
+FrompyFile:1(
   ForStmt:1(
     NameExpr(x* [__main__.x])
     ListExpr:1()
@@ -144,7 +144,7 @@ def f():
     pass
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -163,7 +163,7 @@ for x in None:
 for x in None:
     pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ForStmt:2(
     NameExpr(x'* [__main__.x'])
     NameExpr(None [builtins.None])
@@ -183,7 +183,7 @@ def f():
     for x in None:
         pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:2(
     f
     Block:2(
@@ -208,7 +208,7 @@ while 1:
 else:
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   ForStmt:1(
     NameExpr(x* [__main__.x])
     ListExpr:1()
@@ -231,7 +231,7 @@ while 1:
 for x in []:
   break
 [out]
-MypyFile:1(
+FrompyFile:1(
   WhileStmt:1(
     IntExpr(1)
     Block:1(
@@ -248,7 +248,7 @@ while 1:
 for x in []:
   continue
 [out]
-MypyFile:1(
+FrompyFile:1(
   WhileStmt:1(
     IntExpr(1)
     Block:1(
@@ -270,7 +270,7 @@ elif x:
 else:
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -302,7 +302,7 @@ MypyFile:1(
 if object:
   object
 [out]
-MypyFile:1(
+FrompyFile:1(
   IfStmt:1(
     If(
       NameExpr(object [builtins.object]))
@@ -319,7 +319,7 @@ x2, y2 = 1
 [x3, y3] = 1
 (x4, y4) = 1
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -360,7 +360,7 @@ MypyFile:1(
 *x, (y, *z) = 1
 *(x, q), r = 1
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:2(
     TupleExpr:2(
       StarExpr:2(
@@ -390,7 +390,7 @@ MypyFile:1(
 x, y = 1
 x, y = 2
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:2(
     TupleExpr:2(
       NameExpr(x'* [__main__.x'])
@@ -406,7 +406,7 @@ MypyFile:1(
 (x) = 1
 ([y]) = 2
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -420,7 +420,7 @@ def f():
   (x) = 1
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -434,7 +434,7 @@ MypyFile:1(
 x = 1
 y, x = 1
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -448,7 +448,7 @@ MypyFile:1(
 x = 1
 y, (x, z) = 1
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -466,7 +466,7 @@ if x:
     y, [x, z] = 1
     [p, [x, r]] = 1
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -493,7 +493,7 @@ MypyFile:1(
 x = y = 1
 del x[y]
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -508,7 +508,7 @@ MypyFile:1(
 x = 1
 del x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -519,7 +519,7 @@ MypyFile:1(
 def f(x):
     del x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -532,7 +532,7 @@ MypyFile:1(
 def f(x, y):
     del x, y[0]
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -565,7 +565,7 @@ except:
 finally:
   c
 [out]
-MypyFile:1(
+FrompyFile:1(
   ClassDef:1(
     c
     PassStmt:1())
@@ -597,7 +597,7 @@ except:
 else:
   object
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       PassStmt:2())
@@ -613,7 +613,7 @@ try:
 finally:
   pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       PassStmt:2())
@@ -627,7 +627,7 @@ try:
 except (c, object) as e:
   e
 [out]
-MypyFile:1(
+FrompyFile:1(
   ClassDef:1(
     c
     PassStmt:1())
@@ -645,14 +645,14 @@ MypyFile:1(
 [case testRaiseWithoutExpr]
 raise
 [out]
-MypyFile:1(
+FrompyFile:1(
   RaiseStmt:1())
 
 [case testWith]
 with object:
   object
 [out]
-MypyFile:1(
+FrompyFile:1(
   WithStmt:1(
     Expr(
       NameExpr(object [builtins.object]))
@@ -664,7 +664,7 @@ MypyFile:1(
 with object as x:
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   WithStmt:1(
     Expr(
       NameExpr(object [builtins.object]))
@@ -679,7 +679,7 @@ def f():
   with f as x:
     x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -698,7 +698,7 @@ with object, object:
 with object as a, object as b:
   pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   WithStmt:1(
     Expr(
       NameExpr(object [builtins.object]))
@@ -724,7 +724,7 @@ while object:
   if x:
     x = x
 [out]
-MypyFile:1(
+FrompyFile:1(
   WhileStmt:1(
     NameExpr(object [builtins.object])
     Block:1(
@@ -746,7 +746,7 @@ except object as o:
   x = None
   o = x
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       PassStmt:2())
@@ -766,7 +766,7 @@ try:
 except object as o:
   o = object()
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       PassStmt:2())
@@ -790,7 +790,7 @@ except Err as f:
 class Err(BaseException): pass
 [builtins fixtures/exception.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       PassStmt:2())
@@ -822,7 +822,7 @@ MypyFile:1(
 o = None
 x, o = o, o
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:2(
     NameExpr(o'* [__main__.o'])
     NameExpr(None [builtins.None]))
@@ -840,7 +840,7 @@ def decorate(f): pass
 def g():
     g()
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     decorate
     Args(
@@ -865,7 +865,7 @@ def f() -> None:
     except object as o:
         pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     def ()
@@ -887,7 +887,7 @@ def f() -> None:
     except object as o:
         pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     def ()
@@ -911,7 +911,7 @@ def main():
     with f(0) as a, f(a) as b:
         x = a, b
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -951,7 +951,7 @@ f(x)
 x = ''
 f(x)
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:2(
     f
     Args(
@@ -983,7 +983,7 @@ f(x)
 x = ''
 f(x)
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:2(
     f
     Args(
@@ -1014,7 +1014,7 @@ def f(a):
     a = ''
     f(a)
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:2(
     f
     Args(
@@ -1042,7 +1042,7 @@ class A:
     x = 1
 x = ''
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:2(
     NameExpr(x* [__main__.x])
     IntExpr(0))

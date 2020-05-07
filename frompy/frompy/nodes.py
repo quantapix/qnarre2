@@ -22,8 +22,6 @@ import frompy.strconv
 from frompy.util import short_type
 from frompy.visitor import NodeVisitor, StatementVisitor, ExpressionVisitor
 
-from frompy.bogus_type import Bogus
-
 
 class Context:
     """Base type for objects that are valid as error message locations."""
@@ -212,12 +210,9 @@ class SymbolNode(Node):
     def name(self) -> str:
         pass
 
-    # fullname can often be None even though the type system
-    # disagrees. We mark this with Bogus to let mypyc know not to
-    # worry about it.
     @property
     @abstractmethod
-    def fullname(self) -> Bogus[str]:
+    def fullname(self) -> str:
         pass
 
     @abstractmethod
@@ -237,11 +232,11 @@ class SymbolNode(Node):
 Definition = Tuple[str, "SymbolTableNode", Optional["TypeInfo"]]
 
 
-class MypyFile(SymbolNode):
+class FrompyFile(SymbolNode):
     """The abstract syntax tree of a single source file."""
 
     # Fully qualified module name
-    _fullname = None  # type: Bogus[str]
+    _fullname = None  # type: str
     # Path to the file (empty string if not known)
     path = ""
     # Top-level definitions and statements
@@ -299,7 +294,7 @@ class MypyFile(SymbolNode):
         return "" if not self._fullname else self._fullname.split(".")[-1]
 
     @property
-    def fullname(self) -> Bogus[str]:
+    def fullname(self) -> str:
         return self._fullname
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
@@ -312,7 +307,7 @@ class MypyFile(SymbolNode):
 
     def serialize(self) -> JsonDict:
         return {
-            ".class": "MypyFile",
+            ".class": "FrompyFile",
             "_fullname": self._fullname,
             "names": self.names.serialize(self._fullname),
             "is_stub": self.is_stub,
@@ -321,9 +316,9 @@ class MypyFile(SymbolNode):
         }
 
     @classmethod
-    def deserialize(cls, data: JsonDict) -> "MypyFile":
-        assert data[".class"] == "MypyFile", data
-        tree = MypyFile([], [])
+    def deserialize(cls, data: JsonDict) -> "FrompyFile":
+        assert data[".class"] == "FrompyFile", data
+        tree = FrompyFile([], [])
         tree._fullname = data["_fullname"]
         tree.names = SymbolTable.deserialize(data["names"])
         tree.is_stub = data["is_stub"]
@@ -376,10 +371,10 @@ class ImportFrom(ImportBase):
     names = None  # type: List[Tuple[str, Optional[str]]]  # Tuples (name, as name)
 
     def __init__(
-        self, id: str, relative: int, names: List[Tuple[str, Optional[str]]]
+        self, i: str, relative: int, names: List[Tuple[str, Optional[str]]]
     ) -> None:
         super().__init__()
-        self.id = id
+        self.id = i
         self.names = names
         self.relative = relative
 
@@ -395,9 +390,9 @@ class ImportAll(ImportBase):
     # NOTE: Only filled and used by old semantic analyzer.
     imported_names = None  # type: List[str]
 
-    def __init__(self, id: str, relative: int) -> None:
+    def __init__(self, i: str, relative: int) -> None:
         super().__init__()
-        self.id = id
+        self.id = i
         self.relative = relative
         self.imported_names = []
 
@@ -484,7 +479,7 @@ class FuncBase(Node):
         self.is_final = False
         # Name with module prefix
         # TODO: Type should be Optional[str]
-        self._fullname = cast(Bogus[str], None)
+        self._fullname = cast(str, None)
 
     @property
     @abstractmethod
@@ -492,7 +487,7 @@ class FuncBase(Node):
         pass
 
     @property
-    def fullname(self) -> Bogus[str]:
+    def fullname(self) -> str:
         return self._fullname
 
 
@@ -792,7 +787,7 @@ class Decorator(SymbolNode, Statement):
         return self.func.name
 
     @property
-    def fullname(self) -> Bogus[str]:
+    def fullname(self) -> str:
         return self.func.fullname
 
     @property
@@ -876,15 +871,15 @@ class Var(SymbolNode):
         "from_module_getattr",
     )
 
-    def __init__(self, name: str, type: "Optional[frompy.types.Type]" = None) -> None:
+    def __init__(self, name: str, typ: "Optional[frompy.types.Type]" = None) -> None:
         super().__init__()
         self._name = name  # Name without module prefix
         # TODO: Should be Optional[str]
-        self._fullname = cast("Bogus[str]", None)  # Name with module prefix
+        self._fullname = cast("str", None)  # Name with module prefix
         # TODO: Should be Optional[TypeInfo]
         self.info = VAR_NO_INFO
         self.type = (
-            type
+            typ
         )  # type: Optional[frompy.types.Type] # Declared or inferred type, or None
         # Is this the first argument to an ordinary method (usually "self")?
         self.is_self = False
@@ -926,7 +921,7 @@ class Var(SymbolNode):
         return self._name
 
     @property
-    def fullname(self) -> Bogus[str]:
+    def fullname(self) -> str:
         return self._fullname
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
@@ -950,12 +945,12 @@ class Var(SymbolNode):
     def deserialize(cls, data: JsonDict) -> "Var":
         assert data[".class"] == "Var"
         name = data["name"]
-        type = (
+        typ = (
             None
             if data["type"] is None
             else frompy.types.deserialize_type(data["type"])
         )
-        v = Var(name, type)
+        v = Var(name, typ)
         v.is_ready = False  # Override True default set in __init__
         v._fullname = data["fullname"]
         set_flags(v, data["flags"])
@@ -967,7 +962,7 @@ class ClassDef(Statement):
     """Class definition"""
 
     name = None  # type: str       # Name of the class without module prefix
-    fullname = None  # type: Bogus[str]   # Fully qualified name of the class
+    fullname = None  # type: str   # Fully qualified name of the class
     defs = None  # type: Block
     type_vars = None  # type: List[frompy.types.TypeVarDef]
     # Base class expressions (not semantically analyzed -- can be arbitrary expressions)
@@ -1018,7 +1013,7 @@ class ClassDef(Statement):
         }
 
     @classmethod
-    def deserialize(self, data: JsonDict) -> "ClassDef":
+    def deserialize(cls, data: JsonDict) -> "ClassDef":
         assert data[".class"] == "ClassDef"
         res = ClassDef(
             data["name"],
@@ -1122,14 +1117,14 @@ class AssignmentStmt(Statement):
         self,
         lvalues: List[Lvalue],
         rvalue: Expression,
-        type: "Optional[frompy.types.Type]" = None,
+        typ: "Optional[frompy.types.Type]" = None,
         new_syntax: bool = False,
     ) -> None:
         super().__init__()
         self.lvalues = lvalues
         self.rvalue = rvalue
-        self.type = type
-        self.unanalyzed_type = type
+        self.type = typ
+        self.unanalyzed_type = typ
         self.new_syntax = new_syntax
 
     def accept(self, visitor: StatementVisitor[T]) -> T:
@@ -1302,7 +1297,7 @@ class TryStmt(Statement):
     def __init__(
         self,
         body: Block,
-        vars: List["Optional[NameExpr]"],
+        vs: List["Optional[NameExpr]"],
         types: List[Optional[Expression]],
         handlers: List[Block],
         else_body: Optional[Block],
@@ -1310,7 +1305,7 @@ class TryStmt(Statement):
     ) -> None:
         super().__init__()
         self.body = body
-        self.vars = vars
+        self.vars = vs
         self.types = types
         self.handlers = handlers
         self.else_body = else_body
@@ -1376,15 +1371,12 @@ class ExecStmt(Statement):
     locals = None  # type: Optional[Expression]
 
     def __init__(
-        self,
-        expr: Expression,
-        globals: Optional[Expression],
-        locals: Optional[Expression],
+        self, expr: Expression, gs: Optional[Expression], ls: Optional[Expression],
     ) -> None:
         super().__init__()
         self.expr = expr
-        self.globals = globals
-        self.locals = locals
+        self.globals = gs
+        self.locals = ls
 
     def accept(self, visitor: StatementVisitor[T]) -> T:
         return visitor.visit_exec_stmt(self)
@@ -2341,9 +2333,9 @@ class PromoteExpr(Expression):
 
     type = None  # type: frompy.types.Type
 
-    def __init__(self, type: "frompy.types.Type") -> None:
+    def __init__(self, typ: "frompy.types.Type") -> None:
         super().__init__()
-        self.type = type
+        self.type = typ
 
     def accept(self, visitor: ExpressionVisitor[T]) -> T:
         return visitor.visit__promote_expr(self)
@@ -2435,7 +2427,7 @@ class TypeInfo(SymbolNode):
     the appropriate number of arguments.
     """
 
-    _fullname = None  # type: Bogus[str]          # Fully qualified name
+    _fullname = None  # type: str          # Fully qualified name
     # Fully qualified name for the module this type was defined in. This
     # information is also in the fullname, but is harder to extract in the
     # case of nested class definitions.
@@ -2585,7 +2577,7 @@ class TypeInfo(SymbolNode):
         return self.defn.name
 
     @property
-    def fullname(self) -> Bogus[str]:
+    def fullname(self) -> str:
         return self._fullname
 
     def is_generic(self) -> bool:
@@ -2844,6 +2836,7 @@ class FakeInfo(TypeInfo):
     # so that it can be conveniently tested against in the same way that it
     # would be if things were properly optional.
     def __init__(self, msg: str) -> None:
+        # super().__init__()
         self.msg = msg
 
     def __getattribute__(self, attr: str) -> None:
@@ -3122,7 +3115,7 @@ class SymbolTableNode:
 
     Attributes:
         node: AST node of definition. Among others, this can be one of
-            FuncDef, Var, TypeInfo, TypeVarExpr or MypyFile -- or None
+            FuncDef, Var, TypeInfo, TypeVarExpr or FrompyFile -- or None
             for cross_ref that hasn't been fixed up yet.
         kind: Kind of node. Possible values:
                - LDEF: local definition
@@ -3135,7 +3128,7 @@ class SymbolTableNode:
             classes.
         module_hidden: If True, the name will be never exported (needed for
             stub files)
-        cross_ref: For deserialized MypyFile nodes, the referenced module
+        cross_ref: For deserialized FrompyFile nodes, the referenced module
             name; for other nodes, optionally the name of the referenced object.
         implicit: Was this defined by assignment to self attribute?
         plugin_generated: Was this symbol generated by a plugin?
@@ -3240,7 +3233,7 @@ class SymbolTableNode:
             data["implicit"] = True
         if self.plugin_generated:
             data["plugin_generated"] = True
-        if isinstance(self.node, MypyFile):
+        if isinstance(self.node, FrompyFile):
             data["cross_ref"] = self.node.fullname
         else:
             assert self.node is not None, "%s:%s" % (prefix, name)

@@ -4,7 +4,7 @@
 
 [case testEmptyFile]
 [out]
-MypyFile:1()
+FrompyFile:1()
 
 [case testStringLiterals]
 'bar'
@@ -13,7 +13,7 @@ ur'foo'
 u'''bar'''
 b'foo'
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     StrExpr(bar))
   ExpressionStmt:2(
@@ -30,7 +30,7 @@ print 1
 print 2, 3
 print (4, 5)
 [out]
-MypyFile:1(
+FrompyFile:1(
   PrintStmt:1(
     IntExpr(1)
     Newline)
@@ -47,14 +47,14 @@ MypyFile:1(
 [case testPrintWithNoArgs]
 print
 [out]
-MypyFile:1(
+FrompyFile:1(
   PrintStmt:1(
     Newline))
 
 [case testPrintWithTarget]
 print >>foo
 [out]
-MypyFile:1(
+FrompyFile:1(
   PrintStmt:1(
     Target(
       NameExpr(foo))
@@ -63,7 +63,7 @@ MypyFile:1(
 [case testPrintWithTargetAndArgs]
 print >>foo, x
 [out]
-MypyFile:1(
+FrompyFile:1(
   PrintStmt:1(
     NameExpr(x)
     Target(
@@ -73,7 +73,7 @@ MypyFile:1(
 [case testPrintWithTargetAndArgsAndTrailingComma]
 print >>foo, x, y,
 [out]
-MypyFile:1(
+FrompyFile:1(
   PrintStmt:1(
     NameExpr(x)
     NameExpr(y)
@@ -85,7 +85,7 @@ print 1,
 print 2, 3,
 print (4, 5),
 [out]
-MypyFile:1(
+FrompyFile:1(
   PrintStmt:1(
     IntExpr(1))
   PrintStmt:2(
@@ -101,7 +101,7 @@ MypyFile:1(
 01
 0377
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     IntExpr(0))
   ExpressionStmt:2(
@@ -115,7 +115,7 @@ MypyFile:1(
 012L
 0x123l
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     IntExpr(0))
   ExpressionStmt:2(
@@ -131,7 +131,7 @@ try:
 except Exception, e:
     y
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       ExpressionStmt:2(
@@ -148,7 +148,7 @@ try:
 except (KeyError, IndexError):
     y
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       ExpressionStmt:2(
@@ -163,14 +163,14 @@ MypyFile:1(
 [case testExecStatement]
 exec a
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExecStmt:1(
     NameExpr(a)))
 
 [case testExecStatementWithIn]
 exec a in globals()
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExecStmt:1(
     NameExpr(a)
     CallExpr:1(
@@ -180,7 +180,7 @@ MypyFile:1(
 [case testExecStatementWithInAnd2Expressions]
 exec a in x, y
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExecStmt:1(
     NameExpr(a)
     NameExpr(x)
@@ -194,7 +194,7 @@ x = ... # E: invalid syntax
 u'foo' 'bar'
 'bar' u'foo'
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     UnicodeExpr(foobar))
   ExpressionStmt:2(
@@ -203,7 +203,7 @@ MypyFile:1(
 [case testLegacyInequality]
 1 <> 2
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     ComparisonExpr:1(
       !=
@@ -213,7 +213,7 @@ MypyFile:1(
 [case testListComprehensionInPython2]
 ([ 0 for x in 1, 2 if 3 ])
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     ListComprehension:1(
       GeneratorExpr:1(
@@ -227,7 +227,7 @@ MypyFile:1(
 [case testTupleArgListInPython2]
 def f(x, (y, z)): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -244,7 +244,7 @@ MypyFile:1(
 [case testTupleArgListWithTwoTupleArgsInPython2]
 def f((x, y), (z, zz)): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -266,7 +266,7 @@ MypyFile:1(
 [case testTupleArgListWithInitializerInPython2]
 def f((y, z) = (1, 2)): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -286,7 +286,7 @@ MypyFile:1(
 [case testLambdaTupleArgListInPython2]
 lambda (x, y): z
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     LambdaExpr:1(
       Args(
@@ -303,7 +303,7 @@ MypyFile:1(
 [case testLambdaSingletonTupleArgListInPython2]
 lambda (x,): z
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     LambdaExpr:1(
       Args(
@@ -319,7 +319,7 @@ MypyFile:1(
 [case testLambdaNoTupleArgListInPython2]
 lambda (x): z
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     LambdaExpr:1(
       Args(
@@ -356,7 +356,7 @@ main:1: error: invalid syntax
 [case testParenthesizedArgumentInPython2]
 def f(x, (y)): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -377,7 +377,7 @@ main:3: error: Duplicate argument 'x' in function definition
 [case testBackquotesInPython2]
 `1 + 2`
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     BackquoteExpr:1(
       OpExpr:1(
@@ -388,7 +388,7 @@ MypyFile:1(
 [case testBackquoteSpecialCasesInPython2]
 `1, 2`
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     BackquoteExpr:1(
       TupleExpr:1(
@@ -400,7 +400,7 @@ class A:
     def f(self):
         super(A, self).x
 [out]
-MypyFile:1(
+FrompyFile:1(
   ClassDef:1(
     A
     FuncDef:2(
@@ -424,7 +424,7 @@ def f(x, y=0):
     # type: (List[int], str) -> None
     pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x)
     IntExpr(1)
@@ -448,7 +448,7 @@ def f(x,  # type: List[int]
     # type: (...) -> None
     pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -469,7 +469,7 @@ elif z:
 else:
     b
 [out]
-MypyFile:1(
+FrompyFile:1(
   IfStmt:1(
     If(
       NameExpr(x))
@@ -493,7 +493,7 @@ while x:
 else:
     z
 [out]
-MypyFile:1(
+FrompyFile:1(
   WhileStmt:1(
     NameExpr(x)
     Block:1(
@@ -509,7 +509,7 @@ for x, y in z:
 else:
     b
 [out]
-MypyFile:1(
+FrompyFile:1(
   ForStmt:1(
     TupleExpr:1(
       NameExpr(x)
@@ -526,7 +526,7 @@ MypyFile:1(
 with x as y:
     z
 [out]
-MypyFile:1(
+FrompyFile:1(
   WithStmt:1(
     Expr(
       NameExpr(x))
@@ -546,7 +546,7 @@ x.y
 {x: y}
 x < y > z
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     IndexExpr:1(
       NameExpr(x)
@@ -589,7 +589,7 @@ x[y:]
 x[y:z]
 x[::y]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     IndexExpr:1(
       NameExpr(x)
@@ -615,7 +615,7 @@ def f(*x): # type: (*int) -> None
     pass
 f(x, *y)
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     def (*x: int?) -> None?
@@ -636,7 +636,7 @@ def f(**x): # type: (**int) -> None
     pass
 f(x, **y)
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     def (**x: int?) -> None?
@@ -655,7 +655,7 @@ MypyFile:1(
 [case testBoolOpInPython2]
 x and y or z
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     OpExpr:1(
       or
@@ -671,7 +671,7 @@ import m
 import n as nn
 from aa import *
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(x, [y, z : zz])
   Import:2(m)
   Import:3(n : nn)
@@ -683,7 +683,7 @@ try:
 finally:
     y
 [out]
-MypyFile:1(
+FrompyFile:1(
   TryStmt:1(
     Block:1(
       ExpressionStmt:2(
@@ -696,7 +696,7 @@ MypyFile:1(
 raise
 raise x
 [out]
-MypyFile:1(
+FrompyFile:1(
   RaiseStmt:1()
   RaiseStmt:2(
     NameExpr(x)))
@@ -705,7 +705,7 @@ MypyFile:1(
 x = y
 x, (y, z) = aa
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x)
     NameExpr(y))
@@ -721,7 +721,7 @@ MypyFile:1(
 x += y
 x *= 2
 [out]
-MypyFile:1(
+FrompyFile:1(
   OperatorAssignmentStmt:1(
     +
     NameExpr(x)
@@ -735,7 +735,7 @@ MypyFile:1(
 del x
 del x.y, x[y]
 [out]
-MypyFile:1(
+FrompyFile:1(
   DelStmt:1(
     NameExpr(x))
   DelStmt:2(
@@ -752,7 +752,7 @@ MypyFile:1(
 class C:
     pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ClassDef:2(
     C
     Decorators(
@@ -766,7 +766,7 @@ MypyFile:1(
 def f():
     pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   Decorator:1(
     Var(f)
     CallExpr:1(
@@ -787,7 +787,7 @@ def g():
 def g():
     pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   OverloadedFuncDef:1(
     Decorator:1(
       Var(g)

@@ -31,10 +31,10 @@ def f() -> int:
 def f() -> int:
     pass
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   FuncDef:1<2>(
     f
@@ -42,10 +42,10 @@ MypyFile:1<1>(
     Block:1<4>(
       PassStmt:2<5>())))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   FuncDef:1<2>(
     f
@@ -64,10 +64,10 @@ class A:
     def f(self, x: int) -> str:
         pass
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<2>(
     A
@@ -80,10 +80,10 @@ MypyFile:1<1>(
       Block:2<7>(
         PassStmt:3<8>()))))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<9>(
     A
@@ -137,10 +137,10 @@ class A:
         1
         return B()
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<2>(
     A
@@ -158,10 +158,10 @@ MypyFile:1<1>(
     B
     PassStmt:4<10>()))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<11>(
     B
@@ -192,10 +192,10 @@ class A:
     def f(self) -> None:
         self.f()
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<2>(
     A
@@ -212,10 +212,10 @@ MypyFile:1<1>(
               f)
             Args()))))))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<10>(
     A
@@ -245,10 +245,10 @@ class A:
         self.x = 1
         self.x
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<2>(
     A
@@ -268,10 +268,10 @@ MypyFile:1<1>(
             NameExpr(self [l<9>])
             x))))))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<12>(
     A
@@ -334,12 +334,12 @@ def f() -> int:
     pass
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     f: FuncDef<1>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     f: FuncDef<1>
 
@@ -353,13 +353,13 @@ class A: pass
 class C: pass
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     B: TypeInfo<2>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     C: TypeInfo<3>
@@ -375,10 +375,10 @@ class B: pass
 A()
 B()
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<2>(
     A
@@ -388,10 +388,10 @@ MypyFile:1<1>(
       NameExpr(A [target.A<6>])
       Args())))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ClassDef:1<7>(
     A
@@ -501,10 +501,10 @@ def f() -> int: pass
 [file target.py.next]
 def g() -> int: pass
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   FuncDef:1<2>(
     f
@@ -512,10 +512,10 @@ MypyFile:1<1>(
     Block:1<4>(
       PassStmt:1<5>())))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   FuncDef:1<6>(
     g
@@ -531,12 +531,12 @@ def f() -> int: pass
 def g() -> int: pass
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     f: FuncDef<1>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     g: FuncDef<2>
 
@@ -588,20 +588,20 @@ x = 1
 [file target.py.next]
 x = 2
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   AssignmentStmt:1<2>(
     NameExpr(x [target.x<3>])
     IntExpr(1)
     builtins.int<4>))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   AssignmentStmt:1<5>(
     NameExpr(x [target.x<3>])
@@ -850,10 +850,10 @@ def f(x: str) -> str: pass
 
 def f(x): pass
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ImportFrom:1(typing, [overload])
   ClassDef:2<2>(
@@ -888,10 +888,10 @@ MypyFile:1<1>(
         Block:7<17>(
           PassStmt:7<18>())))))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ImportFrom:1(typing, [overload])
   ClassDef:3<19>(
@@ -942,13 +942,13 @@ T = TypeVar('T', bound=int)
 
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     T: TypeVarExpr<1>
     TypeVar: Var<2>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     T: TypeVarExpr<1>
     TypeVar: Var<2>
@@ -970,7 +970,7 @@ X = A[str]
 
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     Generic: Var<2>
@@ -979,7 +979,7 @@ target:
     X: TypeAlias<5>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     Generic: Var<2>
@@ -1155,7 +1155,7 @@ def f(x: List[Tuple[int]]) -> Iterator[None]:
 [builtins fixtures/list.pyi]
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     Iterator: TypeInfo<1>
     List: TypeAlias<2>
@@ -1164,7 +1164,7 @@ target:
     f: Decorator<5>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     Iterator: TypeInfo<1>
     List: TypeAlias<2>
@@ -1192,10 +1192,10 @@ else:
     def f(x: B, y: int) -> None: pass
 [builtins fixtures/ops.pyi]
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   Import:1(sys)
   ClassDef:2<2>(
@@ -1229,10 +1229,10 @@ MypyFile:1<1>(
         Block:7<16>(
           PassStmt:7<17>())))))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   Import:1(sys)
   ClassDef:2<18>(
@@ -1283,7 +1283,7 @@ d: D
 [builtins fixtures/dict.pyi]
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     D: TypeInfo<2>
@@ -1291,7 +1291,7 @@ target:
     d: Var<4>(TypedDict('target.D', {'a': target.A<1>}))
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     D: TypeInfo<2>
@@ -1313,7 +1313,7 @@ C = NewType('C', B)
 D = NewType('D', int)
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     B: TypeInfo<2>
@@ -1321,7 +1321,7 @@ target:
     NewType: Var<4>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     A: TypeInfo<1>
     B: TypeInfo<2>
@@ -1343,13 +1343,13 @@ def g(o: object) -> None:
 [builtins fixtures/callable.pyi]
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     <callable subtype of object>: TypeInfo<1>
     g: FuncDef<2>
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     <callable subtype of object>: TypeInfo<1>
     g: FuncDef<2>
@@ -1405,14 +1405,14 @@ class Thing:
 thing = cast(Thing, Thing())
 [out]
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     Thing: TypeInfo<1>
     cast: Var<2>
     thing: Var<3>(target.Thing<1>)
 ==>
 __main__:
-    target: MypyFile<0>
+    target: FrompyFile<0>
 target:
     Thing: TypeInfo<1>
     cast: Var<2>
@@ -1459,10 +1459,10 @@ def foo(x: Literal['3']) -> Literal['b']: pass
 bar: Literal[5] = 5
 [builtins fixtures/tuple.pyi]
 [out]
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ImportFrom:1(typing_extensions, [Literal])
   FuncDef:2<2>(
@@ -1477,10 +1477,10 @@ MypyFile:1<1>(
     IntExpr(4)
     Literal[4]))
 ==>
-MypyFile:1<0>(
+FrompyFile:1<0>(
   tmp/main
   Import:1(target))
-MypyFile:1<1>(
+FrompyFile:1<1>(
   tmp/target.py
   ImportFrom:1(typing_extensions, [Literal])
   FuncDef:2<2>(

@@ -124,7 +124,12 @@ from typing import Any, Callable, List, Tuple, Optional, NamedTuple, TypeVar, Di
 from frompy.extensions import trait, mypyc_attr
 
 from frompy.nodes import (
-    Expression, Context, ClassDef, SymbolTableNode, MypyFile, CallExpr
+    Expression,
+    Context,
+    ClassDef,
+    SymbolTableNode,
+    FrompyFile,
+    CallExpr,
 )
 from frompy.tvar_scope import TypeVarScope
 from frompy.types import Type, Instance, CallableType, TypeList, UnboundType, ProperType
@@ -164,19 +169,22 @@ class TypeAnalyzerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def analyze_callable_args(self, arglist: TypeList) -> Optional[Tuple[List[Type],
-                                                                         List[int],
-                                                                         List[Optional[str]]]]:
+    def analyze_callable_args(
+        self, arglist: TypeList
+    ) -> Optional[Tuple[List[Type], List[int], List[Optional[str]]]]:
         """Find types, kinds, and names of arguments from extended callable syntax."""
         raise NotImplementedError
 
 
 # A context for a hook that semantically analyzes an unbound type.
 AnalyzeTypeContext = NamedTuple(
-    'AnalyzeTypeContext', [
-        ('type', UnboundType),  # Type to analyze
-        ('context', Context),   # Relevant location context (e.g. for error messages)
-        ('api', TypeAnalyzerPluginInterface)])
+    "AnalyzeTypeContext",
+    [
+        ("type", UnboundType),  # Type to analyze
+        ("context", Context),  # Relevant location context (e.g. for error messages)
+        ("api", TypeAnalyzerPluginInterface),
+    ],
+)
 
 
 @mypyc_attr(allow_interpreted_subclasses=True)
@@ -241,14 +249,16 @@ class SemanticAnalyzerPluginInterface:
     # TODO: clean-up lookup functions.
     """
 
-    modules = None  # type: Dict[str, MypyFile]
+    modules = None  # type: Dict[str, FrompyFile]
     # Options for current file.
     options = None  # type: Options
     cur_mod_id = None  # type: str
     msg = None  # type: MessageBuilder
 
     @abstractmethod
-    def named_type(self, qualified_name: str, args: Optional[List[Type]] = None) -> Instance:
+    def named_type(
+        self, qualified_name: str, args: Optional[List[Type]] = None
+    ) -> Instance:
         """Construct an instance of a builtin type with given type arguments."""
         raise NotImplementedError
 
@@ -258,18 +268,29 @@ class SemanticAnalyzerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def fail(self, msg: str, ctx: Context, serious: bool = False, *,
-             blocker: bool = False, code: Optional[ErrorCode] = None) -> None:
+    def fail(
+        self,
+        msg: str,
+        ctx: Context,
+        serious: bool = False,
+        *,
+        blocker: bool = False,
+        code: Optional[ErrorCode] = None,
+    ) -> None:
         """Emit an error message at given location."""
         raise NotImplementedError
 
     @abstractmethod
-    def anal_type(self, t: Type, *,
-                  tvar_scope: Optional[TypeVarScope] = None,
-                  allow_tuple_literal: bool = False,
-                  allow_unbound_tvars: bool = False,
-                  report_invalid_types: bool = True,
-                  third_pass: bool = False) -> Optional[Type]:
+    def anal_type(
+        self,
+        t: Type,
+        *,
+        tvar_scope: Optional[TypeVarScope] = None,
+        allow_tuple_literal: bool = False,
+        allow_unbound_tvars: bool = False,
+        report_invalid_types: bool = True,
+        third_pass: bool = False,
+    ) -> Optional[Type]:
         """Analyze an unbound type.
 
         Return None if some part of the type is not ready yet. In this
@@ -305,8 +326,9 @@ class SemanticAnalyzerPluginInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def lookup_qualified(self, name: str, ctx: Context,
-                         suppress_errors: bool = False) -> Optional[SymbolTableNode]:
+    def lookup_qualified(
+        self, name: str, ctx: Context, suppress_errors: bool = False
+    ) -> Optional[SymbolTableNode]:
         """Lookup symbol using a name in current scope.
 
         This follows Python local->non-local->global->builtins rules.
@@ -359,11 +381,16 @@ class SemanticAnalyzerPluginInterface:
 # A context for querying for configuration data about a module for
 # cache invalidation purposes.
 ReportConfigContext = NamedTuple(
-    'DynamicClassDefContext', [
-        ('id', str),        # Module name
-        ('path', str),      # Module file path
-        ('is_check', bool)  # Is this invocation for checking whether the config matches
-    ])
+    "DynamicClassDefContext",
+    [
+        ("id", str),  # Module name
+        ("path", str),  # Module file path
+        (
+            "is_check",
+            bool,
+        ),  # Is this invocation for checking whether the config matches
+    ],
+)
 
 # A context for a function hook that infers the return type of a function with
 # a special signature.
@@ -371,77 +398,108 @@ ReportConfigContext = NamedTuple(
 # A no-op callback would just return the inferred return type, but a useful
 # callback at least sometimes can infer a more precise type.
 FunctionContext = NamedTuple(
-    'FunctionContext', [
-        ('arg_types', List[List[Type]]),   # List of actual caller types for each formal argument
-        ('arg_kinds', List[List[int]]),    # Ditto for argument kinds, see nodes.ARG_* constants
+    "FunctionContext",
+    [
+        (
+            "arg_types",
+            List[List[Type]],
+        ),  # List of actual caller types for each formal argument
+        (
+            "arg_kinds",
+            List[List[int]],
+        ),  # Ditto for argument kinds, see nodes.ARG_* constants
         # Names of formal parameters from the callee definition,
         # these will be sufficient in most cases.
-        ('callee_arg_names', List[Optional[str]]),
+        ("callee_arg_names", List[Optional[str]]),
         # Names of actual arguments in the call expression. For example,
         # in a situation like this:
         #     def func(**kwargs) -> None:
         #         pass
         #     func(kw1=1, kw2=2)
         # callee_arg_names will be ['kwargs'] and arg_names will be [['kw1', 'kw2']].
-        ('arg_names', List[List[Optional[str]]]),
-        ('default_return_type', Type),     # Return type inferred from signature
-        ('args', List[List[Expression]]),  # Actual expressions for each formal argument
-        ('context', Context),              # Relevant location context (e.g. for error messages)
-        ('api', CheckerPluginInterface)])
+        ("arg_names", List[List[Optional[str]]]),
+        ("default_return_type", Type),  # Return type inferred from signature
+        ("args", List[List[Expression]]),  # Actual expressions for each formal argument
+        ("context", Context),  # Relevant location context (e.g. for error messages)
+        ("api", CheckerPluginInterface),
+    ],
+)
 
 # A context for a method signature hook that infers a better signature for a
 # method.  Note that argument types aren't available yet.  If you need them,
 # you have to use a method hook instead.
 # TODO: document ProperType in the plugin changelog/update issue.
 MethodSigContext = NamedTuple(
-    'MethodSigContext', [
-        ('type', ProperType),                       # Base object type for method call
-        ('args', List[List[Expression]]),     # Actual expressions for each formal argument
-        ('default_signature', CallableType),  # Original signature of the method
-        ('context', Context),                 # Relevant location context (e.g. for error messages)
-        ('api', CheckerPluginInterface)])
+    "MethodSigContext",
+    [
+        ("type", ProperType),  # Base object type for method call
+        ("args", List[List[Expression]]),  # Actual expressions for each formal argument
+        ("default_signature", CallableType),  # Original signature of the method
+        ("context", Context),  # Relevant location context (e.g. for error messages)
+        ("api", CheckerPluginInterface),
+    ],
+)
 
 # A context for a method hook that infers the return type of a method with a
 # special signature.
 #
 # This is very similar to FunctionContext (only differences are documented).
 MethodContext = NamedTuple(
-    'MethodContext', [
-        ('type', ProperType),                    # Base object type for method call
-        ('arg_types', List[List[Type]]),   # List of actual caller types for each formal argument
+    "MethodContext",
+    [
+        ("type", ProperType),  # Base object type for method call
+        (
+            "arg_types",
+            List[List[Type]],
+        ),  # List of actual caller types for each formal argument
         # see FunctionContext for details about names and kinds
-        ('arg_kinds', List[List[int]]),
-        ('callee_arg_names', List[Optional[str]]),
-        ('arg_names', List[List[Optional[str]]]),
-        ('default_return_type', Type),     # Return type inferred by mypy
-        ('args', List[List[Expression]]),  # Lists of actual expressions for every formal argument
-        ('context', Context),
-        ('api', CheckerPluginInterface)])
+        ("arg_kinds", List[List[int]]),
+        ("callee_arg_names", List[Optional[str]]),
+        ("arg_names", List[List[Optional[str]]]),
+        ("default_return_type", Type),  # Return type inferred by mypy
+        (
+            "args",
+            List[List[Expression]],
+        ),  # Lists of actual expressions for every formal argument
+        ("context", Context),
+        ("api", CheckerPluginInterface),
+    ],
+)
 
 # A context for an attribute type hook that infers the type of an attribute.
 AttributeContext = NamedTuple(
-    'AttributeContext', [
-        ('type', ProperType),               # Type of object with attribute
-        ('default_attr_type', Type),  # Original attribute type
-        ('context', Context),         # Relevant location context (e.g. for error messages)
-        ('api', CheckerPluginInterface)])
+    "AttributeContext",
+    [
+        ("type", ProperType),  # Type of object with attribute
+        ("default_attr_type", Type),  # Original attribute type
+        ("context", Context),  # Relevant location context (e.g. for error messages)
+        ("api", CheckerPluginInterface),
+    ],
+)
 
 # A context for a class hook that modifies the class definition.
 ClassDefContext = NamedTuple(
-    'ClassDefContext', [
-        ('cls', ClassDef),       # The class definition
-        ('reason', Expression),  # The expression being applied (decorator, metaclass, base class)
-        ('api', SemanticAnalyzerPluginInterface)
-    ])
+    "ClassDefContext",
+    [
+        ("cls", ClassDef),  # The class definition
+        (
+            "reason",
+            Expression,
+        ),  # The expression being applied (decorator, metaclass, base class)
+        ("api", SemanticAnalyzerPluginInterface),
+    ],
+)
 
 # A context for dynamic class definitions like
 # Base = declarative_base()
 DynamicClassDefContext = NamedTuple(
-    'DynamicClassDefContext', [
-        ('call', CallExpr),      # The r.h.s. of dynamic class definition
-        ('name', str),           # The name this class is being assigned to
-        ('api', SemanticAnalyzerPluginInterface)
-    ])
+    "DynamicClassDefContext",
+    [
+        ("call", CallExpr),  # The r.h.s. of dynamic class definition
+        ("name", str),  # The name this class is being assigned to
+        ("api", SemanticAnalyzerPluginInterface),
+    ],
+)
 
 
 @mypyc_attr(allow_interpreted_subclasses=True)
@@ -465,9 +523,9 @@ class Plugin(CommonPluginApi):
         # This can't be set in __init__ because it is executed too soon in build.py.
         # Therefore, build.py *must* set it later before graph processing starts
         # by calling set_modules().
-        self._modules = None  # type: Optional[Dict[str, MypyFile]]
+        self._modules = None  # type: Optional[Dict[str, FrompyFile]]
 
-    def set_modules(self, modules: Dict[str, MypyFile]) -> None:
+    def set_modules(self, modules: Dict[str, FrompyFile]) -> None:
         self._modules = modules
 
     def lookup_fully_qualified(self, fullname: str) -> Optional[SymbolTableNode]:
@@ -497,7 +555,7 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_additional_deps(self, file: MypyFile) -> List[Tuple[int, str, int]]:
+    def get_additional_deps(self, file: FrompyFile) -> List[Tuple[int, str, int]]:
         """Customize dependencies for a module.
 
         This hook allows adding in new dependencies for a module. It
@@ -514,8 +572,9 @@ class Plugin(CommonPluginApi):
         """
         return []
 
-    def get_type_analyze_hook(self, fullname: str
-                              ) -> Optional[Callable[[AnalyzeTypeContext], Type]]:
+    def get_type_analyze_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[AnalyzeTypeContext], Type]]:
         """Customize behaviour of the type analyzer for given full names.
 
         This method is called during the semantic analysis pass whenever mypy sees an
@@ -533,8 +592,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_function_hook(self, fullname: str
-                          ) -> Optional[Callable[[FunctionContext], Type]]:
+    def get_function_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[FunctionContext], Type]]:
         """Adjust the return type of a function call.
 
         This method is called after type checking a call. Plugin may adjust the return
@@ -550,8 +610,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_method_signature_hook(self, fullname: str
-                                  ) -> Optional[Callable[[MethodSigContext], CallableType]]:
+    def get_method_signature_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[MethodSigContext], CallableType]]:
         """Adjust the signature of a method.
 
         This method is called before type checking a method call. Plugin
@@ -579,8 +640,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_method_hook(self, fullname: str
-                        ) -> Optional[Callable[[MethodContext], Type]]:
+    def get_method_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[MethodContext], Type]]:
         """Adjust return type of a method call.
 
         This is the same as get_function_hook(), but is called with the
@@ -588,8 +650,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_attribute_hook(self, fullname: str
-                           ) -> Optional[Callable[[AttributeContext], Type]]:
+    def get_attribute_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[AttributeContext], Type]]:
         """Adjust type of a class attribute.
 
         This method is called with attribute full name using the class where the attribute was
@@ -620,8 +683,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_class_decorator_hook(self, fullname: str
-                                 ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_class_decorator_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         """Update class definition for given class decorators.
 
         The plugin can modify a TypeInfo _in place_ (for example add some generated
@@ -632,8 +696,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_metaclass_hook(self, fullname: str
-                           ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_metaclass_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         """Update class definition for given declared metaclasses.
 
         Same as get_class_decorator_hook() but for metaclasses. Note:
@@ -644,8 +709,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_base_class_hook(self, fullname: str
-                            ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_base_class_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         """Update class definition for given base classes.
 
         Same as get_class_decorator_hook() but for base classes. Base classes
@@ -654,8 +720,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_customize_class_mro_hook(self, fullname: str
-                                     ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_customize_class_mro_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         """Customize MRO for given classes.
 
         The plugin can modify the class MRO _in place_. This method is called
@@ -663,8 +730,9 @@ class Plugin(CommonPluginApi):
         """
         return None
 
-    def get_dynamic_class_hook(self, fullname: str
-                               ) -> Optional[Callable[[DynamicClassDefContext], None]]:
+    def get_dynamic_class_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[DynamicClassDefContext], None]]:
         """Semantically analyze a dynamic class definition.
 
         This plugin hook allows one to semantically analyze dynamic class definitions like:
@@ -680,7 +748,7 @@ class Plugin(CommonPluginApi):
         return None
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ChainedPlugin(Plugin):
@@ -703,7 +771,7 @@ class ChainedPlugin(Plugin):
         super().__init__(options)
         self._plugins = plugins
 
-    def set_modules(self, modules: Dict[str, MypyFile]) -> None:
+    def set_modules(self, modules: Dict[str, FrompyFile]) -> None:
         for plugin in self._plugins:
             plugin.set_modules(modules)
 
@@ -711,50 +779,64 @@ class ChainedPlugin(Plugin):
         config_data = [plugin.report_config_data(ctx) for plugin in self._plugins]
         return config_data if any(x is not None for x in config_data) else None
 
-    def get_additional_deps(self, file: MypyFile) -> List[Tuple[int, str, int]]:
+    def get_additional_deps(self, file: FrompyFile) -> List[Tuple[int, str, int]]:
         deps = []
         for plugin in self._plugins:
             deps.extend(plugin.get_additional_deps(file))
         return deps
 
-    def get_type_analyze_hook(self, fullname: str
-                              ) -> Optional[Callable[[AnalyzeTypeContext], Type]]:
+    def get_type_analyze_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[AnalyzeTypeContext], Type]]:
         return self._find_hook(lambda plugin: plugin.get_type_analyze_hook(fullname))
 
-    def get_function_hook(self, fullname: str
-                          ) -> Optional[Callable[[FunctionContext], Type]]:
+    def get_function_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[FunctionContext], Type]]:
         return self._find_hook(lambda plugin: plugin.get_function_hook(fullname))
 
-    def get_method_signature_hook(self, fullname: str
-                                  ) -> Optional[Callable[[MethodSigContext], CallableType]]:
-        return self._find_hook(lambda plugin: plugin.get_method_signature_hook(fullname))
+    def get_method_signature_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[MethodSigContext], CallableType]]:
+        return self._find_hook(
+            lambda plugin: plugin.get_method_signature_hook(fullname)
+        )
 
-    def get_method_hook(self, fullname: str
-                        ) -> Optional[Callable[[MethodContext], Type]]:
+    def get_method_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[MethodContext], Type]]:
         return self._find_hook(lambda plugin: plugin.get_method_hook(fullname))
 
-    def get_attribute_hook(self, fullname: str
-                           ) -> Optional[Callable[[AttributeContext], Type]]:
+    def get_attribute_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[AttributeContext], Type]]:
         return self._find_hook(lambda plugin: plugin.get_attribute_hook(fullname))
 
-    def get_class_decorator_hook(self, fullname: str
-                                 ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_class_decorator_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         return self._find_hook(lambda plugin: plugin.get_class_decorator_hook(fullname))
 
-    def get_metaclass_hook(self, fullname: str
-                           ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_metaclass_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         return self._find_hook(lambda plugin: plugin.get_metaclass_hook(fullname))
 
-    def get_base_class_hook(self, fullname: str
-                            ) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_base_class_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         return self._find_hook(lambda plugin: plugin.get_base_class_hook(fullname))
 
-    def get_customize_class_mro_hook(self, fullname: str
-                                     ) -> Optional[Callable[[ClassDefContext], None]]:
-        return self._find_hook(lambda plugin: plugin.get_customize_class_mro_hook(fullname))
+    def get_customize_class_mro_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
+        return self._find_hook(
+            lambda plugin: plugin.get_customize_class_mro_hook(fullname)
+        )
 
-    def get_dynamic_class_hook(self, fullname: str
-                               ) -> Optional[Callable[[DynamicClassDefContext], None]]:
+    def get_dynamic_class_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[DynamicClassDefContext], None]]:
         return self._find_hook(lambda plugin: plugin.get_dynamic_class_hook(fullname))
 
     def _find_hook(self, lookup: Callable[[Plugin], T]) -> Optional[T]:

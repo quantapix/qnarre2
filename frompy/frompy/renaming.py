@@ -2,9 +2,26 @@ from typing import Dict, List
 from typing_extensions import Final
 
 from frompy.nodes import (
-    Block, AssignmentStmt, NameExpr, MypyFile, FuncDef, Lvalue, ListExpr, TupleExpr,
-    WhileStmt, ForStmt, BreakStmt, ContinueStmt, TryStmt, WithStmt, StarExpr, ImportFrom,
-    MemberExpr, IndexExpr, Import, ClassDef
+    Block,
+    AssignmentStmt,
+    NameExpr,
+    FrompyFile,
+    FuncDef,
+    Lvalue,
+    ListExpr,
+    TupleExpr,
+    WhileStmt,
+    ForStmt,
+    BreakStmt,
+    ContinueStmt,
+    TryStmt,
+    WithStmt,
+    StarExpr,
+    ImportFrom,
+    MemberExpr,
+    IndexExpr,
+    Import,
+    ClassDef,
 )
 from frompy.traverser import TraverserVisitor
 
@@ -68,7 +85,7 @@ class VariableRenameVisitor(TraverserVisitor):
         # Kinds of nested scopes (FILE, FUNCTION or CLASS)
         self.scope_kinds = []  # type: List[int]
 
-    def visit_mypy_file(self, file_node: MypyFile) -> None:
+    def visit_mypy_file(self, file_node: FrompyFile) -> None:
         """Rename variables within a file.
 
         This is the main entry point to this class.
@@ -95,7 +112,7 @@ class VariableRenameVisitor(TraverserVisitor):
             name = arg.variable.name
             # 'self' can't be redefined since it's special as it allows definition of
             # attributes. 'cls' can't be used to define attributes so we can ignore it.
-            can_be_redefined = name != 'self'  # TODO: Proper check
+            can_be_redefined = name != "self"  # TODO: Proper check
             self.record_assignment(arg.variable.name, can_be_redefined)
             self.handle_arg(name)
 

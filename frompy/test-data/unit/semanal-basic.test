@@ -1,12 +1,12 @@
 [case testEmptyFile]
 [out]
-MypyFile:1()
+FrompyFile:1()
 
 [case testGlobalVariable]
 x = 1
 x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -18,7 +18,7 @@ x = y = 2
 z = 3
 (x, y, z)
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     Lvalues(
       NameExpr(x* [__main__.x])
@@ -37,7 +37,7 @@ MypyFile:1(
 def f(): pass
 f()
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -53,7 +53,7 @@ f()
 x = 1
 def f(): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ExpressionStmt:1(
     NameExpr(x [__main__.x]))
   ExpressionStmt:2(
@@ -72,7 +72,7 @@ MypyFile:1(
 def f(x, y):
   (x, y)
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -89,7 +89,7 @@ def f():
   x = 1
   x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -106,7 +106,7 @@ def f():
 x = 1
 def g(): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Block:1(
@@ -132,7 +132,7 @@ def f(y):
   z = 1
   z = 2
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -161,7 +161,7 @@ def f():
   x
 x
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     IntExpr(1))
@@ -180,7 +180,7 @@ MypyFile:1(
 def f(x = f, y = object):
   x, y
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -200,7 +200,7 @@ MypyFile:1(
 def f(x, *y):
   x, y
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -221,7 +221,7 @@ def f():
     x
 class A: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     NameExpr(None [builtins.None]))
@@ -245,7 +245,7 @@ def f():
     global x, y
     x = y
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     TupleExpr:1(
       NameExpr(x* [__main__.x])
@@ -270,7 +270,7 @@ def f():
 def g():
     x = None
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     NameExpr(None [builtins.None]))
@@ -293,7 +293,7 @@ def f():
 def g():
     x = None
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     NameExpr(None [builtins.None]))
@@ -316,7 +316,7 @@ class A:
     global x
     x = self
 [out]
-MypyFile:1(
+FrompyFile:1(
   AssignmentStmt:1(
     NameExpr(x* [__main__.x])
     NameExpr(None [builtins.None]))
@@ -340,7 +340,7 @@ if object:
     x = x
 x
 [out]
-MypyFile:1(
+FrompyFile:1(
   IfStmt:2(
     If(
       NameExpr(object [builtins.object]))
@@ -364,7 +364,7 @@ def g():
         x = None
         x
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     g
     Block:1(
@@ -389,7 +389,7 @@ def g():
         nonlocal x, y
         x = y
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     g
     Block:1(
@@ -418,7 +418,7 @@ def f(x):
         z = y + x
     return g
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -443,7 +443,7 @@ def f(x):
     def g():
         x = 1
 [out]
-MypyFile:1(
+FrompyFile:1(
   FuncDef:1(
     f
     Args(
@@ -466,7 +466,7 @@ s: Final = "hi"
 t: Final = True
 n: Final = func()
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Final, Any])
   FuncDef:3(
     func

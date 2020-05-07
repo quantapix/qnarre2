@@ -6,7 +6,7 @@
 --Point = TypedDict('Point', x=int, y=int)
 --[builtins fixtures/dict.pyi]
 --[out]
---MypyFile:1(
+--FrompyFile:1(
 --  ImportFrom:1(mypy_extensions, [TypedDict])
 --  AssignmentStmt:2(
 --    NameExpr(Point* [__main__.Point])
@@ -18,7 +18,7 @@
 --Point = TypedDict('Point', dict(x=int, y=int))
 --[builtins fixtures/dict.pyi]
 --[out]
---MypyFile:1(
+--FrompyFile:1(
 --  ImportFrom:1(mypy_extensions, [TypedDict])
 --  AssignmentStmt:2(
 --    NameExpr(Point* [__main__.Point])
@@ -29,7 +29,7 @@ from frompy.extensions import TypedDict
 Point = TypedDict('Point', {'x': int, 'y': int})
 [builtins fixtures/dict.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(mypy_extensions, [TypedDict])
   AssignmentStmt:2(
     NameExpr(Point* [__main__.Point])
@@ -42,7 +42,7 @@ class A(TypedDict):
     x: str
 [builtins fixtures/dict.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(mypy_extensions, [TypedDict])
   ClassDef:2(
     A

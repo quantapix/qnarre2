@@ -1,25 +1,27 @@
 # NOTE: Requires fixtures/dict.pyi
 from typing import (
-    Any, Dict, Type, TypeVar, Optional, Any, Generic, Mapping, NoReturn as NoReturn, Iterator
+    Any,
+    Dict,
+    Type,
+    TypeVar,
+    Optional,
+    Any,
+    Generic,
+    Mapping,
+    NoReturn as NoReturn,
+    Iterator,
 )
 import sys
 
-_T = TypeVar('_T')
-_U = TypeVar('_U')
-
+_T = TypeVar("_T")
+_U = TypeVar("_U")
 
 def Arg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
-
 def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
-
 def NamedArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
-
 def DefaultNamedArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
-
 def VarArg(type: _T = ...) -> _T: ...
-
 def KwArg(type: _T = ...) -> _T: ...
-
 
 # Fallback type for all typed dicts (does not exist at runtime).
 class _TypedDict(Mapping[str, object]):
@@ -36,7 +38,9 @@ class _TypedDict(Mapping[str, object]):
         def has_key(self, k: str) -> bool: ...
     def __delitem__(self, k: NoReturn) -> None: ...
 
-def TypedDict(typename: str, fields: Dict[str, Type[_T]], *, total: Any = ...) -> Type[dict]: ...
+def TypedDict(
+    typename: str, fields: Dict[str, Type[_T]], *, total: Any = ...
+) -> Type[dict]: ...
 
 # This is intended as a class decorator, but mypy rejects abstract classes
 # when a Type[_T] is expected, so we can't give it the type we want.
@@ -46,5 +50,3 @@ def trait(cls: Any) -> Any: ...
 # a lib-stub because the fixtures might not have dict. Argh!
 # def mypyc_attr(*attrs: str, **kwattrs: object) -> Callable[[_T], _T]: ...
 mypyc_attr: Any
-
-class FlexibleAlias(Generic[_T, _U]): ...

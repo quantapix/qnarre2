@@ -8,7 +8,7 @@ class A(metaclass=ABCMeta):
   @abstractmethod
   def f(self) -> 'A': return self
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(abc, [abstractmethod, ABCMeta])
   Import:2(typing)
   ClassDef:4(
@@ -44,7 +44,7 @@ class A(metaclass=ABCMeta): pass
 class B(metaclass=ABCMeta): pass
 class C(A, B): pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(abc, [abstractmethod, ABCMeta])
   Import:2(typing)
   ClassDef:4(
@@ -70,7 +70,7 @@ class A(Generic[T]):
   @abstractmethod
   def f(self) -> 'A[T]': pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(abc, [abstractmethod])
   ImportFrom:2(typing, [Generic, TypeVar])
   AssignmentStmt:3(
@@ -100,7 +100,7 @@ class A(metaclass=ABCMeta):
   @abc.abstractmethod
   def g(self) -> 'A': pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(abc)
   ImportFrom:2(abc, [ABCMeta])
   Import:3(typing)

@@ -7,12 +7,27 @@ from typing_extensions import Final
 from frompy.extensions import trait
 
 from frompy.nodes import (
-    Context, SymbolTableNode, MypyFile, ImportedName, FuncDef, Node, TypeInfo, Expression, GDEF,
-    SymbolNode, SymbolTable
+    Context,
+    SymbolTableNode,
+    FrompyFile,
+    ImportedName,
+    FuncDef,
+    Node,
+    TypeInfo,
+    Expression,
+    GDEF,
+    SymbolNode,
+    SymbolTable,
 )
 from frompy.util import correct_relative_import
 from frompy.types import (
-    Type, FunctionLike, Instance, TupleType, TPDICT_FB_NAMES, ProperType, get_proper_type
+    Type,
+    FunctionLike,
+    Instance,
+    TupleType,
+    TPDICT_FB_NAMES,
+    ProperType,
+    get_proper_type,
 )
 from frompy.tvar_scope import TypeVarScope
 from frompy.errorcodes import ErrorCode
@@ -33,8 +48,9 @@ class SemanticAnalyzerCoreInterface:
     """
 
     @abstractmethod
-    def lookup_qualified(self, name: str, ctx: Context,
-                         suppress_errors: bool = False) -> Optional[SymbolTableNode]:
+    def lookup_qualified(
+        self, name: str, ctx: Context, suppress_errors: bool = False
+    ) -> Optional[SymbolTableNode]:
         raise NotImplementedError
 
     @abstractmethod
@@ -46,8 +62,15 @@ class SemanticAnalyzerCoreInterface:
         raise NotImplementedError
 
     @abstractmethod
-    def fail(self, msg: str, ctx: Context, serious: bool = False, *,
-             blocker: bool = False, code: Optional[ErrorCode] = None) -> None:
+    def fail(
+        self,
+        msg: str,
+        ctx: Context,
+        serious: bool = False,
+        *,
+        blocker: bool = False,
+        code: Optional[ErrorCode] = None,
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -86,17 +109,21 @@ class SemanticAnalyzerInterface(SemanticAnalyzerCoreInterface):
     """
 
     @abstractmethod
-    def lookup(self, name: str, ctx: Context,
-               suppress_errors: bool = False) -> Optional[SymbolTableNode]:
+    def lookup(
+        self, name: str, ctx: Context, suppress_errors: bool = False
+    ) -> Optional[SymbolTableNode]:
         raise NotImplementedError
 
     @abstractmethod
-    def named_type(self, qualified_name: str, args: Optional[List[Type]] = None) -> Instance:
+    def named_type(
+        self, qualified_name: str, args: Optional[List[Type]] = None
+    ) -> Instance:
         raise NotImplementedError
 
     @abstractmethod
-    def named_type_or_none(self, qualified_name: str,
-                           args: Optional[List[Type]] = None) -> Optional[Instance]:
+    def named_type_or_none(
+        self, qualified_name: str, args: Optional[List[Type]] = None
+    ) -> Optional[Instance]:
         raise NotImplementedError
 
     @abstractmethod
@@ -104,11 +131,15 @@ class SemanticAnalyzerInterface(SemanticAnalyzerCoreInterface):
         raise NotImplementedError
 
     @abstractmethod
-    def anal_type(self, t: Type, *,
-                  tvar_scope: Optional[TypeVarScope] = None,
-                  allow_tuple_literal: bool = False,
-                  allow_unbound_tvars: bool = False,
-                  report_invalid_types: bool = True) -> Optional[Type]:
+    def anal_type(
+        self,
+        t: Type,
+        *,
+        tvar_scope: Optional[TypeVarScope] = None,
+        allow_tuple_literal: bool = False,
+        allow_unbound_tvars: bool = False,
+        report_invalid_types: bool = True,
+    ) -> Optional[Type]:
         raise NotImplementedError
 
     @abstractmethod
@@ -133,9 +164,15 @@ class SemanticAnalyzerInterface(SemanticAnalyzerCoreInterface):
         raise NotImplementedError
 
     @abstractmethod
-    def add_symbol(self, name: str, node: SymbolNode, context: Context,
-                   module_public: bool = True, module_hidden: bool = False,
-                   can_defer: bool = True) -> bool:
+    def add_symbol(
+        self,
+        name: str,
+        node: SymbolNode,
+        context: Context,
+        module_public: bool = True,
+        module_hidden: bool = False,
+        can_defer: bool = True,
+    ) -> bool:
         """Add symbol to the current symbol table."""
         raise NotImplementedError
 
@@ -167,22 +204,19 @@ class SemanticAnalyzerInterface(SemanticAnalyzerCoreInterface):
         raise NotImplementedError
 
 
-def create_indirect_imported_name(file_node: MypyFile,
-                                  module: str,
-                                  relative: int,
-                                  imported_name: str) -> Optional[SymbolTableNode]:
+def create_indirect_imported_name(
+    file_node: FrompyFile, module: str, relative: int, imported_name: str
+) -> Optional[SymbolTableNode]:
     """Create symbol table entry for a name imported from another module.
 
     These entries act as indirect references.
     """
     target_module, ok = correct_relative_import(
-        file_node.fullname,
-        relative,
-        module,
-        file_node.is_package_init_file())
+        file_node.fullname, relative, module, file_node.is_package_init_file()
+    )
     if not ok:
         return None
-    target_name = '%s.%s' % (target_module, imported_name)
+    target_name = "%s.%s" % (target_module, imported_name)
     link = ImportedName(target_name)
     # Use GDEF since this refers to a module-level definition.
     return SymbolTableNode(GDEF, link)
@@ -194,11 +228,10 @@ def set_callable_name(sig: Type, fdef: FuncDef) -> ProperType:
         if fdef.info:
             if fdef.info.fullname in TPDICT_FB_NAMES:
                 # Avoid exposing the internal _TypedDict name.
-                class_name = 'TypedDict'
+                class_name = "TypedDict"
             else:
                 class_name = fdef.info.name
-            return sig.with_name(
-                '{} of {}'.format(fdef.name, class_name))
+            return sig.with_name("{} of {}".format(fdef.name, class_name))
         else:
             return sig.with_name(fdef.name)
     else:
@@ -220,5 +253,5 @@ def calculate_tuple_fallback(typ: TupleType) -> None:
     we don't prevent their existence).
     """
     fallback = typ.partial_fallback
-    assert fallback.type.fullname == 'builtins.tuple'
+    assert fallback.type.fullname == "builtins.tuple"
     fallback.args[0] = join.join_type_list(list(typ.items))

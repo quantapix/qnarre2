@@ -9,7 +9,7 @@ from typing_extensions import DefaultDict
 from frompy import build, defaults
 from frompy.modulefinder import BuildSource
 from frompy.errors import CompileError
-from frompy.nodes import MypyFile, Expression
+from frompy.nodes import FrompyFile, Expression
 from frompy.options import Options
 from frompy.server.deps import get_dependencies
 from frompy.test.config import test_temp_dir
@@ -19,23 +19,23 @@ from frompy.types import Type
 from frompy.typestate import TypeState
 
 # Only dependencies in these modules are dumped
-dumped_modules = ['__main__', 'pkg', 'pkg.mod']
+dumped_modules = ["__main__", "pkg", "pkg.mod"]
 
 
 class GetDependenciesSuite(DataSuite):
     files = [
-        'deps.test',
-        'deps-types.test',
-        'deps-generics.test',
-        'deps-expressions.test',
-        'deps-statements.test',
-        'deps-classes.test',
+        "deps.test",
+        "deps-types.test",
+        "deps-generics.test",
+        "deps-expressions.test",
+        "deps-statements.test",
+        "deps-classes.test",
     ]
 
     def run_case(self, testcase: DataDrivenTestCase) -> None:
-        src = '\n'.join(testcase.input)
-        dump_all = '# __dump_all__' in src
-        if testcase.name.endswith('python2'):
+        src = "\n".join(testcase.input)
+        dump_all = "# __dump_all__" in src
+        if testcase.name.endswith("python2"):
             python_version = defaults.PYTHON2_VERSION
         else:
             python_version = defaults.PYTHON3_VERSION
@@ -50,44 +50,58 @@ class GetDependenciesSuite(DataSuite):
         a = messages
         if files is None or type_map is None:
             if not a:
-                a = ['Unknown compile error (likely syntax error in test case or fixture)']
+                a = [
+                    "Unknown compile error (likely syntax error in test case or fixture)"
+                ]
         else:
             deps = defaultdict(set)  # type: DefaultDict[str, Set[str]]
             for module in files:
-                if module in dumped_modules or dump_all and module not in ('abc',
-                                                                           'typing',
-                                                                           'mypy_extensions',
-                                                                           'typing_extensions',
-                                                                           'enum'):
-                    new_deps = get_dependencies(files[module], type_map, python_version, options)
+                if (
+                    module in dumped_modules
+                    or dump_all
+                    and module
+                    not in (
+                        "abc",
+                        "typing",
+                        "mypy_extensions",
+                        "typing_extensions",
+                        "enum",
+                    )
+                ):
+                    new_deps = get_dependencies(
+                        files[module], type_map, python_version, options
+                    )
                     for source in new_deps:
                         deps[source].update(new_deps[source])
 
             TypeState.add_all_protocol_deps(deps)
 
             for source, targets in sorted(deps.items()):
-                if source.startswith(('<enum', '<typing', '<mypy')):
+                if source.startswith(("<enum", "<typing", "<mypy")):
                     # Remove noise.
                     continue
-                line = '%s -> %s' % (source, ', '.join(sorted(targets)))
+                line = "%s -> %s" % (source, ", ".join(sorted(targets)))
                 # Clean up output a bit
-                line = line.replace('__main__', 'm')
+                line = line.replace("__main__", "m")
                 a.append(line)
 
         assert_string_arrays_equal(
-            testcase.output, a,
-            'Invalid output ({}, line {})'.format(testcase.file,
-                                                  testcase.line))
+            testcase.output,
+            a,
+            "Invalid output ({}, line {})".format(testcase.file, testcase.line),
+        )
 
-    def build(self,
-              source: str,
-              options: Options) -> Tuple[List[str],
-                                         Optional[Dict[str, MypyFile]],
-                                         Optional[Dict[Expression, Type]]]:
+    def build(
+        self, source: str, options: Options
+    ) -> Tuple[
+        List[str], Optional[Dict[str, FrompyFile]], Optional[Dict[Expression, Type]]
+    ]:
         try:
-            result = build.build(sources=[BuildSource('main', None, source)],
-                                 options=options,
-                                 alt_lib_path=test_temp_dir)
+            result = build.build(
+                sources=[BuildSource("main", None, source)],
+                options=options,
+                alt_lib_path=test_temp_dir,
+            )
         except CompileError as e:
             # TODO: Should perhaps not return None here.
             return e.messages, None, None

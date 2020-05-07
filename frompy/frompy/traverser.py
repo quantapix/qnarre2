@@ -4,15 +4,60 @@ from typing import List
 
 from frompy.visitor import NodeVisitor
 from frompy.nodes import (
-    Block, MypyFile, FuncBase, FuncItem, CallExpr, ClassDef, Decorator, FuncDef,
-    ExpressionStmt, AssignmentStmt, OperatorAssignmentStmt, WhileStmt,
-    ForStmt, ReturnStmt, AssertStmt, DelStmt, IfStmt, RaiseStmt,
-    TryStmt, WithStmt, NameExpr, MemberExpr, OpExpr, SliceExpr, CastExpr, RevealExpr,
-    UnaryExpr, ListExpr, TupleExpr, DictExpr, SetExpr, IndexExpr, AssignmentExpr,
-    GeneratorExpr, ListComprehension, SetComprehension, DictionaryComprehension,
-    ConditionalExpr, TypeApplication, ExecStmt, Import, ImportFrom,
-    LambdaExpr, ComparisonExpr, OverloadedFuncDef, YieldFromExpr,
-    YieldExpr, StarExpr, BackquoteExpr, AwaitExpr, PrintStmt, SuperExpr, Node, REVEAL_TYPE,
+    Block,
+    FrompyFile,
+    FuncBase,
+    FuncItem,
+    CallExpr,
+    ClassDef,
+    Decorator,
+    FuncDef,
+    ExpressionStmt,
+    AssignmentStmt,
+    OperatorAssignmentStmt,
+    WhileStmt,
+    ForStmt,
+    ReturnStmt,
+    AssertStmt,
+    DelStmt,
+    IfStmt,
+    RaiseStmt,
+    TryStmt,
+    WithStmt,
+    NameExpr,
+    MemberExpr,
+    OpExpr,
+    SliceExpr,
+    CastExpr,
+    RevealExpr,
+    UnaryExpr,
+    ListExpr,
+    TupleExpr,
+    DictExpr,
+    SetExpr,
+    IndexExpr,
+    AssignmentExpr,
+    GeneratorExpr,
+    ListComprehension,
+    SetComprehension,
+    DictionaryComprehension,
+    ConditionalExpr,
+    TypeApplication,
+    ExecStmt,
+    Import,
+    ImportFrom,
+    LambdaExpr,
+    ComparisonExpr,
+    OverloadedFuncDef,
+    YieldFromExpr,
+    YieldExpr,
+    StarExpr,
+    BackquoteExpr,
+    AwaitExpr,
+    PrintStmt,
+    SuperExpr,
+    Node,
+    REVEAL_TYPE,
 )
 
 
@@ -30,7 +75,7 @@ class TraverserVisitor(NodeVisitor[None]):
 
     # Visit methods
 
-    def visit_mypy_file(self, o: MypyFile) -> None:
+    def visit_mypy_file(self, o: FrompyFile) -> None:
         for d in o.defs:
             d.accept(self)
 
@@ -230,8 +275,7 @@ class TraverserVisitor(NodeVisitor[None]):
             o.analyzed.accept(self)
 
     def visit_generator_expr(self, o: GeneratorExpr) -> None:
-        for index, sequence, conditions in zip(o.indices, o.sequences,
-                                               o.condlists):
+        for index, sequence, conditions in zip(o.indices, o.sequences, o.condlists):
             sequence.accept(self)
             index.accept(self)
             for cond in conditions:
@@ -239,8 +283,7 @@ class TraverserVisitor(NodeVisitor[None]):
         o.left_expr.accept(self)
 
     def visit_dictionary_comprehension(self, o: DictionaryComprehension) -> None:
-        for index, sequence, conditions in zip(o.indices, o.sequences,
-                                               o.condlists):
+        for index, sequence, conditions in zip(o.indices, o.sequences, o.condlists):
             sequence.accept(self)
             index.accept(self)
             for cond in conditions:
@@ -302,7 +345,7 @@ class ReturnSeeker(TraverserVisitor):
         self.found = False
 
     def visit_return_stmt(self, o: ReturnStmt) -> None:
-        if (o.expr is None or isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
+        if o.expr is None or isinstance(o.expr, NameExpr) and o.expr.name == "None":
             return
         self.found = True
 

@@ -7,16 +7,51 @@ and mypyc.irbuild.builder.
 from typing import List, Optional, Union
 
 from frompy.nodes import (
-    Expression, NameExpr, MemberExpr, SuperExpr, CallExpr, UnaryExpr, OpExpr, IndexExpr,
-    ConditionalExpr, ComparisonExpr, IntExpr, FloatExpr, ComplexExpr, StrExpr,
-    BytesExpr, EllipsisExpr, ListExpr, TupleExpr, DictExpr, SetExpr, ListComprehension,
-    SetComprehension, DictionaryComprehension, SliceExpr, GeneratorExpr, CastExpr, StarExpr,
-    Var, RefExpr, MypyFile, TypeInfo, TypeApplication, LDEF, ARG_POS
+    Expression,
+    NameExpr,
+    MemberExpr,
+    SuperExpr,
+    CallExpr,
+    UnaryExpr,
+    OpExpr,
+    IndexExpr,
+    ConditionalExpr,
+    ComparisonExpr,
+    IntExpr,
+    FloatExpr,
+    ComplexExpr,
+    StrExpr,
+    BytesExpr,
+    EllipsisExpr,
+    ListExpr,
+    TupleExpr,
+    DictExpr,
+    SetExpr,
+    ListComprehension,
+    SetComprehension,
+    DictionaryComprehension,
+    SliceExpr,
+    GeneratorExpr,
+    CastExpr,
+    StarExpr,
+    Var,
+    RefExpr,
+    FrompyFile,
+    TypeInfo,
+    TypeApplication,
+    LDEF,
+    ARG_POS,
 )
 from frompy.types import TupleType, get_proper_type
 
 from py2ts.ir.ops import (
-    Value, TupleGet, TupleSet, PrimitiveOp, BasicBlock, OpDescription, Assign
+    Value,
+    TupleGet,
+    TupleSet,
+    PrimitiveOp,
+    BasicBlock,
+    OpDescription,
+    Assign,
 )
 from py2ts.ir.rtypes import RTuple, object_rprimitive, is_none_rprimitive
 from py2ts.ir.func_ir import FUNC_CLASSMETHOD, FUNC_STATICMETHOD
@@ -56,23 +91,29 @@ def transform_name_expr(builder: IRBuilder, expr: NameExpr) -> Value:
         if value is not None:
             return value
 
-    if isinstance(expr.node, MypyFile) and expr.node.fullname in builder.imports:
+    if isinstance(expr.node, FrompyFile) and expr.node.fullname in builder.imports:
         return builder.load_module(expr.node.fullname)
 
     # If the expression is locally defined, then read the result from the corresponding
     # assignment target and return it. Otherwise if the expression is a global, load it from
     # the globals dictionary.
     # Except for imports, that currently always happens in the global namespace.
-    if expr.kind == LDEF and not (isinstance(expr.node, Var)
-                                  and expr.node.is_suppressed_import):
+    if expr.kind == LDEF and not (
+        isinstance(expr.node, Var) and expr.node.is_suppressed_import
+    ):
         # Try to detect and error when we hit the irritating mypy bug
         # where a local variable is cast to None. (#5423)
-        if (isinstance(expr.node, Var) and is_none_rprimitive(builder.node_type(expr))
-                and expr.node.is_inferred):
+        if (
+            isinstance(expr.node, Var)
+            and is_none_rprimitive(builder.node_type(expr))
+            and expr.node.is_inferred
+        ):
             builder.error(
                 "Local variable '{}' has inferred type None; add an annotation".format(
-                    expr.node.name),
-                expr.node.line)
+                    expr.node.name
+                ),
+                expr.node.line,
+            )
 
         # TODO: Behavior currently only defined for Var and FuncDef node types.
         return builder.read(builder.get_assignment_target(expr), expr.line)
@@ -85,12 +126,13 @@ def transform_member_expr(builder: IRBuilder, expr: MemberExpr) -> Value:
     final = builder.get_final_ref(expr)
     if final is not None:
         fullname, final_var, native = final
-        value = builder.emit_load_final(final_var, fullname, final_var.name, native,
-                                     builder.types[expr], expr.line)
+        value = builder.emit_load_final(
+            final_var, fullname, final_var.name, native, builder.types[expr], expr.line
+        )
         if value is not None:
             return value
 
-    if isinstance(expr.node, MypyFile) and expr.node.fullname in builder.imports:
+    if isinstance(expr.node, FrompyFile) and expr.node.fullname in builder.imports:
         return builder.load_module(expr.node.fullname)
 
     obj = builder.accept(expr.expr)
@@ -98,16 +140,18 @@ def transform_member_expr(builder: IRBuilder, expr: MemberExpr) -> Value:
     # Special case: for named tuples transform attribute access to faster index access.
     typ = get_proper_type(builder.types.get(expr.expr))
     if isinstance(typ, TupleType) and typ.partial_fallback.type.is_named_tuple:
-        fields = typ.partial_fallback.type.metadata['namedtuple']['fields']
+        fields = typ.partial_fallback.type.metadata["namedtuple"]["fields"]
         if expr.name in fields:
             index = builder.builder.load_static_int(fields.index(expr.name))
-            return builder.gen_method_call(obj, '__getitem__', [index], rtype, expr.line)
+            return builder.gen_method_call(
+                obj, "__getitem__", [index], rtype, expr.line
+            )
     return builder.builder.get_attr(obj, expr.name, rtype, expr.line)
 
 
 def transform_super_expr(builder: IRBuilder, o: SuperExpr) -> Value:
     # warning(builder, 'can not optimize super() expression', o.line)
-    sup_val = builder.load_module_attr_by_fullname('builtins.super', o.line)
+    sup_val = builder.load_module_attr_by_fullname("builtins.super", o.line)
     if o.call.args:
         args = [builder.accept(arg) for arg in o.call.args]
     else:
@@ -153,11 +197,14 @@ def translate_call(builder: IRBuilder, expr: CallExpr, callee: Expression) -> Va
 
     function = builder.accept(callee)
     args = [builder.accept(arg) for arg in expr.args]
-    return builder.py_call(function, args, expr.line,
-                        arg_kinds=expr.arg_kinds, arg_names=expr.arg_names)
+    return builder.py_call(
+        function, args, expr.line, arg_kinds=expr.arg_kinds, arg_names=expr.arg_names
+    )
 
 
-def translate_refexpr_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Value:
+def translate_refexpr_call(
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Value:
     """Translate a non-method call."""
 
     # TODO: Allow special cases to have default args or named args. Currently they don't since
@@ -175,7 +222,9 @@ def translate_refexpr_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) 
     return builder.call_refexpr_with_args(expr, callee, arg_values)
 
 
-def translate_method_call(builder: IRBuilder, expr: CallExpr, callee: MemberExpr) -> Value:
+def translate_method_call(
+    builder: IRBuilder, expr: CallExpr, callee: MemberExpr
+) -> Value:
     """Generate IR for an arbitrary call of form e.m(...).
 
     This can also deal with calls to module-level functions.
@@ -206,20 +255,27 @@ def translate_method_call(builder: IRBuilder, expr: CallExpr, callee: MemberExpr
             return builder.builder.call(decl, args, arg_kinds, arg_names, expr.line)
         else:
             obj = builder.accept(callee.expr)
-            return builder.gen_method_call(obj,
-                                        callee.name,
-                                        args,
-                                        builder.node_type(expr),
-                                        expr.line,
-                                        expr.arg_kinds,
-                                        expr.arg_names)
+            return builder.gen_method_call(
+                obj,
+                callee.name,
+                args,
+                builder.node_type(expr),
+                expr.line,
+                expr.arg_kinds,
+                expr.arg_names,
+            )
 
     elif builder.is_module_member_expr(callee):
         # Fall back to a PyCall for non-native module calls
         function = builder.accept(callee)
         args = [builder.accept(arg) for arg in expr.args]
-        return builder.py_call(function, args, expr.line,
-                            arg_kinds=expr.arg_kinds, arg_names=expr.arg_names)
+        return builder.py_call(
+            function,
+            args,
+            expr.line,
+            arg_kinds=expr.arg_kinds,
+            arg_names=expr.arg_names,
+        )
     else:
         receiver_typ = builder.node_type(callee.expr)
 
@@ -231,16 +287,20 @@ def translate_method_call(builder: IRBuilder, expr: CallExpr, callee: MemberExpr
 
         obj = builder.accept(callee.expr)
         args = [builder.accept(arg) for arg in expr.args]
-        return builder.gen_method_call(obj,
-                                    callee.name,
-                                    args,
-                                    builder.node_type(expr),
-                                    expr.line,
-                                    expr.arg_kinds,
-                                    expr.arg_names)
+        return builder.gen_method_call(
+            obj,
+            callee.name,
+            args,
+            builder.node_type(expr),
+            expr.line,
+            expr.arg_kinds,
+            expr.arg_names,
+        )
 
 
-def translate_super_method_call(builder: IRBuilder, expr: CallExpr, callee: SuperExpr) -> Value:
+def translate_super_method_call(
+    builder: IRBuilder, expr: CallExpr, callee: SuperExpr
+) -> Value:
     if callee.info is None or callee.call.args:
         return translate_call(builder, expr, callee)
     ir = builder.mapper.type_to_ir[callee.info]
@@ -288,7 +348,7 @@ def transform_unary_expr(builder: IRBuilder, expr: UnaryExpr) -> Value:
 
 
 def transform_op_expr(builder: IRBuilder, expr: OpExpr) -> Value:
-    if expr.op in ('and', 'or'):
+    if expr.op in ("and", "or"):
         return builder.shortcircuit_expr(expr)
     return builder.binary_op(
         builder.accept(expr.left), builder.accept(expr.right), expr.op, expr.line
@@ -303,7 +363,8 @@ def transform_index_expr(builder: IRBuilder, expr: IndexExpr) -> Value:
 
     index_reg = builder.accept(expr.index)
     return builder.gen_method_call(
-        base, '__getitem__', [index_reg], builder.node_type(expr), expr.line)
+        base, "__getitem__", [index_reg], builder.node_type(expr), expr.line
+    )
 
 
 def transform_conditional_expr(builder: IRBuilder, expr: ConditionalExpr) -> Value:
@@ -343,35 +404,37 @@ def transform_comparison_expr(builder: IRBuilder, e: ComparisonExpr) -> Value:
     # assuming that prev contains the value of `ei`.
     def go(i: int, prev: Value) -> Value:
         if i == len(e.operators) - 1:
-            return transform_basic_comparison(builder,
-                e.operators[i], prev, builder.accept(e.operands[i + 1]), e.line)
+            return transform_basic_comparison(
+                builder, e.operators[i], prev, builder.accept(e.operands[i + 1]), e.line
+            )
 
         next = builder.accept(e.operands[i + 1])
         return builder.builder.shortcircuit_helper(
-            'and', expr_type,
-            lambda: transform_basic_comparison(builder,
-                e.operators[i], prev, next, e.line),
+            "and",
+            expr_type,
+            lambda: transform_basic_comparison(
+                builder, e.operators[i], prev, next, e.line
+            ),
             lambda: go(i + 1, next),
-            e.line)
+            e.line,
+        )
 
     return go(0, builder.accept(e.operands[0]))
 
 
-def transform_basic_comparison(builder: IRBuilder,
-                               op: str,
-                               left: Value,
-                               right: Value,
-                               line: int) -> Value:
+def transform_basic_comparison(
+    builder: IRBuilder, op: str, left: Value, right: Value, line: int
+) -> Value:
     negate = False
-    if op == 'is not':
-        op, negate = 'is', True
-    elif op == 'not in':
-        op, negate = 'in', True
+    if op == "is not":
+        op, negate = "is", True
+    elif op == "not in":
+        op, negate = "in", True
 
     target = builder.binary_op(left, right, op, line)
 
     if negate:
-        target = builder.unary_op(target, 'not', line)
+        target = builder.unary_op(target, "not", line)
     return target
 
 
@@ -395,7 +458,9 @@ def transform_str_expr(builder: IRBuilder, expr: StrExpr) -> Value:
 
 
 def transform_bytes_expr(builder: IRBuilder, expr: BytesExpr) -> Value:
-    value = bytes(expr.value, 'utf8').decode('unicode-escape').encode('raw-unicode-escape')
+    value = (
+        bytes(expr.value, "utf8").decode("unicode-escape").encode("raw-unicode-escape")
+    )
     return builder.builder.load_static_bytes(value)
 
 
@@ -410,14 +475,11 @@ def transform_list_expr(builder: IRBuilder, expr: ListExpr) -> Value:
     return _visit_list_display(builder, expr.items, expr.line)
 
 
-def _visit_list_display(builder: IRBuilder, items: List[Expression], line: int) -> Value:
+def _visit_list_display(
+    builder: IRBuilder, items: List[Expression], line: int
+) -> Value:
     return _visit_display(
-        builder,
-        items,
-        new_list_op,
-        list_append_op,
-        list_extend_op,
-        line
+        builder, items, new_list_op, list_append_op, list_extend_op, line
     )
 
 
@@ -430,8 +492,11 @@ def transform_tuple_expr(builder: IRBuilder, expr: TupleExpr) -> Value:
     tuple_type = builder.node_type(expr)
     # When handling NamedTuple et. al we might not have proper type info,
     # so make some up if we need it.
-    types = (tuple_type.types if isinstance(tuple_type, RTuple)
-             else [object_rprimitive] * len(expr.items))
+    types = (
+        tuple_type.types
+        if isinstance(tuple_type, RTuple)
+        else [object_rprimitive] * len(expr.items)
+    )
 
     items = []
     for item_expr, item_type in zip(expr.items, types):
@@ -459,22 +524,18 @@ def transform_dict_expr(builder: IRBuilder, expr: DictExpr) -> Value:
 
 def transform_set_expr(builder: IRBuilder, expr: SetExpr) -> Value:
     return _visit_display(
-        builder,
-        expr.items,
-        new_set_op,
-        set_add_op,
-        set_update_op,
-        expr.line
+        builder, expr.items, new_set_op, set_add_op, set_update_op, expr.line
     )
 
 
-def _visit_display(builder: IRBuilder,
-                   items: List[Expression],
-                   constructor_op: OpDescription,
-                   append_op: OpDescription,
-                   extend_op: OpDescription,
-                   line: int
-                   ) -> Value:
+def _visit_display(
+    builder: IRBuilder,
+    items: List[Expression],
+    constructor_op: OpDescription,
+    append_op: OpDescription,
+    extend_op: OpDescription,
+    line: int,
+) -> Value:
     accepted_items = []
     for item in items:
         if isinstance(item, StarExpr):
@@ -520,7 +581,9 @@ def transform_set_comprehension(builder: IRBuilder, o: SetComprehension) -> Valu
     return set_ops
 
 
-def transform_dictionary_comprehension(builder: IRBuilder, o: DictionaryComprehension) -> Value:
+def transform_dictionary_comprehension(
+    builder: IRBuilder, o: DictionaryComprehension
+) -> Value:
     d = builder.primitive_op(new_dict_op, [], o.line)
     loop_params = list(zip(o.indices, o.sequences, o.condlists))
 
@@ -543,14 +606,12 @@ def transform_slice_expr(builder: IRBuilder, expr: SliceExpr) -> Value:
         else:
             return builder.accept(arg)
 
-    args = [get_arg(expr.begin_index),
-            get_arg(expr.end_index),
-            get_arg(expr.stride)]
+    args = [get_arg(expr.begin_index), get_arg(expr.end_index), get_arg(expr.stride)]
     return builder.primitive_op(new_slice_op, args, expr.line)
 
 
 def transform_generator_expr(builder: IRBuilder, o: GeneratorExpr) -> Value:
-    builder.warning('Treating generator comprehension as list', o.line)
+    builder.warning("Treating generator comprehension as list", o.line)
     return builder.primitive_op(
         iter_op, [translate_list_comprehension(builder, o)], o.line
     )

@@ -3,7 +3,7 @@ from typing import List
 def f() -> List[int]: pass
 [builtins fixtures/list.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [List])
   FuncDef:2(
     f
@@ -16,7 +16,7 @@ from typing import Dict
 def f() -> Dict[int, str]: pass
 [builtins fixtures/dict.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Dict])
   FuncDef:2(
     f
@@ -29,7 +29,7 @@ import typing
 def f() -> typing.List[int]: pass
 [builtins fixtures/list.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   FuncDef:2(
     f
@@ -42,7 +42,7 @@ from typing import List
 List[List[int]]
 [builtins fixtures/list.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [List])
   ExpressionStmt:2(
     TypeApplication:2(
@@ -55,7 +55,7 @@ import typing
 typing.List[typing.List[int]]
 [builtins fixtures/list.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   ExpressionStmt:2(
     TypeApplication:2(
@@ -71,7 +71,7 @@ class A: pass
 A2 = A
 def f(x: A2) -> A: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   ClassDef:2(
     A
@@ -96,7 +96,7 @@ x = 1 # type: A2
 import typing
 class A: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   Import:2(_m)
   AssignmentStmt:3(
@@ -114,7 +114,7 @@ from typing import Union
 U = Union[int, str]
 def f(x: U) -> None: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Union])
   AssignmentStmt:2(
     NameExpr(U* [__main__.U])
@@ -133,7 +133,7 @@ class A: pass
 U = Union[int, A]
 def f(x: U) -> None: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Union])
   ClassDef:2(
     A
@@ -154,7 +154,7 @@ import typing
 U = typing.Union[int, str]
 def f(x: U) -> None: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   AssignmentStmt:2(
     NameExpr(U* [__main__.U])
@@ -173,7 +173,7 @@ T = Tuple[int, str]
 def f(x: T) -> None: pass
 [builtins fixtures/tuple.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Tuple])
   AssignmentStmt:2(
     NameExpr(T* [__main__.T])
@@ -191,7 +191,7 @@ from typing import Callable
 C = Callable[[int], None]
 def f(x: C) -> None: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Callable])
   AssignmentStmt:2(
     NameExpr(C* [__main__.C])
@@ -211,7 +211,7 @@ class G(Generic[T]): pass
 A = G[int]
 def f(x: A) -> None: pass
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Generic, TypeVar])
   AssignmentStmt:2(
     NameExpr(T* [__main__.T])
@@ -238,7 +238,7 @@ A = List[int]
 def f(x: A) -> None: pass
 [builtins fixtures/list.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [List])
   AssignmentStmt:2(
     NameExpr(A* [__main__.A])
@@ -260,7 +260,7 @@ from typing import Union
 class A: pass
 U = Union[int, A]
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   ImportFrom:2(_m, [U])
   FuncDef:3(
@@ -280,7 +280,7 @@ from typing import Union
 class A: pass
 U = Union[int, A]
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   Import:2(_m)
   FuncDef:3(
@@ -299,7 +299,7 @@ def f(x: A) -> None: pass
 import typing
 A = int
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   ImportFrom:2(_m, [A])
   FuncDef:3(
@@ -318,7 +318,7 @@ def f(x: _m.A) -> None: pass
 import typing
 A = int
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   Import:2(_m)
   FuncDef:3(
@@ -334,7 +334,7 @@ from typing import Any
 A = Any
 a = 1 # type: A
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Any])
   AssignmentStmt:2(
     NameExpr(A* [__main__.A])
@@ -349,7 +349,7 @@ import typing
 A = typing.Any
 a = 1 # type: A
 [out]
-MypyFile:1(
+FrompyFile:1(
   Import:1(typing)
   AssignmentStmt:2(
     NameExpr(A* [__main__.A])
@@ -367,7 +367,7 @@ U = Union[int, str]
 U2 = U
 x = 1 # type: U2
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Union])
   AssignmentStmt:2(
     NameExpr(U* [__main__.U])
@@ -389,7 +389,7 @@ x = 1 # type: U2
 from typing import Union
 U = Union[int, str]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Union])
   ImportFrom:2(_m, [U])
   AssignmentStmt:3(
@@ -419,7 +419,7 @@ from typing import Union
 A = Union['int', str]
 a = 1 # type: A
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Union])
   AssignmentStmt:2(
     NameExpr(A* [__main__.A])
@@ -435,7 +435,7 @@ A = Union['int', Tuple[int, Any]]
 a = 1 # type: A
 [builtins fixtures/tuple.pyi]
 [out]
-MypyFile:1(
+FrompyFile:1(
   ImportFrom:1(typing, [Union, Tuple, Any])
   AssignmentStmt:2(
     NameExpr(A* [__main__.A])

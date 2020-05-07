@@ -31,7 +31,7 @@ from typing_extensions import ClassVar, Final, TYPE_CHECKING
 from frompy.extensions import TypedDict
 
 from frompy.nodes import (
-    MypyFile,
+    FrompyFile,
     ImportBase,
     Import,
     ImportFrom,
@@ -126,7 +126,7 @@ class BuildSourceSet:
             else:
                 self.source_modules.add(source.module)
 
-    def is_source(self, file: MypyFile) -> bool:
+    def is_source(self, file: FrompyFile) -> bool:
         if file.path and file.path in self.source_paths:
             return True
         elif file._fullname in self.source_modules:
@@ -564,7 +564,7 @@ class BuildManager:
     Attributes:
       data_dir:        Mypy data directory (contains stubs)
       search_paths:    SearchPaths instance indicating where to look for modules
-      modules:         Mapping of module ID to MypyFile (shared by the passes)
+      modules:         Mapping of module ID to FrompyFile (shared by the passes)
       semantic_analyzer:
                        Semantic analyzer, pass 2
       semantic_analyzer_pass3:
@@ -626,7 +626,7 @@ class BuildManager:
         self.reports = reports
         self.options = options
         self.version_id = version_id
-        self.modules = {}  # type: Dict[str, MypyFile]
+        self.modules = {}  # type: Dict[str, FrompyFile]
         self.missing_modules = set()  # type: Set[str]
         self.fg_deps_meta = {}  # type: Dict[str, FgDepMeta]
         # fg_deps holds the dependencies of every module that has been
@@ -726,7 +726,7 @@ class BuildManager:
             return int(self.metastore.getmtime(path))
 
     def all_imported_modules_in_file(
-        self, file: MypyFile
+        self, file: FrompyFile
     ) -> List[Tuple[int, str, int]]:
         """Find all reachable import statements in a file.
 
@@ -814,7 +814,7 @@ class BuildManager:
 
     def parse_file(
         self, id: str, path: str, source: str, ignore_errors: bool
-    ) -> MypyFile:
+    ) -> FrompyFile:
         """Parse the source of a file with the given name.
 
         Raise CompileError if there is a parse error.
@@ -848,7 +848,7 @@ class BuildManager:
         return val
 
     def report_file(
-        self, file: MypyFile, type_map: Dict[Expression, Type], options: Options
+        self, file: FrompyFile, type_map: Dict[Expression, Type], options: Options
     ) -> None:
         if self.reports is not None and self.source_set.is_source(file):
             self.reports.file(file, self.modules, type_map, options)
@@ -1537,7 +1537,7 @@ def json_dumps(obj: Any, debug_cache: bool) -> str:
 def write_cache(
     id: str,
     path: str,
-    tree: MypyFile,
+    tree: FrompyFile,
     dependencies: List[str],
     suppressed: List[str],
     dep_prios: List[int],
@@ -1859,7 +1859,7 @@ class State:
     )  # type: Optional[str]  # Hash of the source given in the meta, if any
     meta = None  # type: Optional[CacheMeta]
     data = None  # type: Optional[str]
-    tree = None  # type: Optional[MypyFile]
+    tree = None  # type: Optional[FrompyFile]
     # We keep both a list and set of dependencies. A set because it makes it efficient to
     # prevent duplicates and the list because I am afraid of changing the order of
     # iteration over dependencies.
@@ -2122,7 +2122,7 @@ class State:
         data = json.loads(raw)
         t2 = time.time()
         # TODO: Assert data file wasn't changed.
-        self.tree = MypyFile.deserialize(data)
+        self.tree = FrompyFile.deserialize(data)
         t3 = time.time()
         self.manager.add_stats(
             data_read_time=t1 - t0,
@@ -2720,7 +2720,7 @@ def in_partial_package(id: str, manager: BuildManager) -> bool:
     while "." in id:
         parent, _ = id.rsplit(".", 1)
         if parent in manager.modules:
-            parent_mod = manager.modules[parent]  # type: Optional[MypyFile]
+            parent_mod = manager.modules[parent]  # type: Optional[FrompyFile]
         else:
             # Parent is not in build, try quickly if we can find it.
             try:
