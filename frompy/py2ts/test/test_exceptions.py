@@ -15,22 +15,26 @@ from py2ts.transform.uninit import insert_uninit_checks
 from py2ts.transform.exceptions import insert_exception_handling
 from py2ts.transform.refcount import insert_ref_count_opcodes
 from py2ts.test.testutil import (
-    ICODE_GEN_BUILTINS, use_custom_builtins, MypycDataSuite, build_ir_for_single_file,
-    assert_test_output, remove_comment_lines
+    ICODE_GEN_BUILTINS,
+    use_custom_builtins,
+    Py2tsDataSuite,
+    build_ir_for_single_file,
+    assert_test_output,
+    remove_comment_lines,
 )
 
-files = [
-    'exceptions.test'
-]
+files = ["exceptions.test"]
 
 
-class TestExceptionTransform(MypycDataSuite):
+class TestExceptionTransform(Py2tsDataSuite):
     files = files
     base_path = test_temp_dir
 
     def run_case(self, testcase: DataDrivenTestCase) -> None:
         """Perform a runtime checking transformation test case."""
-        with use_custom_builtins(os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase):
+        with use_custom_builtins(
+            os.path.join(self.data_prefix, ICODE_GEN_BUILTINS), testcase
+        ):
             expected_output = remove_comment_lines(testcase.output)
 
             try:
@@ -40,13 +44,15 @@ class TestExceptionTransform(MypycDataSuite):
             else:
                 actual = []
                 for fn in ir:
-                    if (fn.name == TOP_LEVEL_NAME
-                            and not testcase.name.endswith('_toplevel')):
+                    if fn.name == TOP_LEVEL_NAME and not testcase.name.endswith(
+                        "_toplevel"
+                    ):
                         continue
                     insert_uninit_checks(fn)
                     insert_exception_handling(fn)
                     insert_ref_count_opcodes(fn)
                     actual.extend(format_func(fn))
 
-            assert_test_output(testcase, actual, 'Invalid source code output',
-                               expected_output)
+            assert_test_output(
+                testcase, actual, "Invalid source code output", expected_output
+            )

@@ -91,7 +91,7 @@ class MarkedDeclaration:
         self.mark = False
 
 
-class MypycPlugin(Plugin):
+class Py2jlPlugin(Plugin):
     """Plugin for making mypyc interoperate properly with mypy incremental mode.
 
     Basically the point of this plugin is to force mypy to recheck things
@@ -188,7 +188,7 @@ def parse_and_typecheck(
         options=options,
         alt_lib_path=alt_lib_path,
         fscache=fscache,
-        extra_plugins=[MypycPlugin(options, compiler_options, groups)],
+        extra_plugins=[Py2jlPlugin(options, compiler_options, groups)],
     )
     if result.errors:
         raise CompileError(result.errors)

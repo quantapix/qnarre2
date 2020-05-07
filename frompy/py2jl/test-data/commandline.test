@@ -2,7 +2,7 @@
 --
 -- These are slow -- do not add test cases unless you have a very good reason to do so.
 
-[case testCompileMypyc]
+[case testCompilePy2jl]
 # cmd: a.py b.py p/__init__.py p/q.py
 import os.path
 import p
@@ -83,7 +83,7 @@ def bar(x: int) -> int:
 
 -- This test is here so we can turn it on when we get nervous about
 -- this case, but is disabled for speed reasons.
-[case testCompileMypycOne-skip]
+[case testCompilePy2jlOne-skip]
 # cmd: a.py
 import os.path
 import a
