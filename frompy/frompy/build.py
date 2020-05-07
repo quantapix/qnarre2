@@ -84,10 +84,6 @@ if TYPE_CHECKING:
     from frompy.report import Reports  # Avoid unconditional slow import
 
 
-# Switch to True to produce debug output related to fine-grained incremental
-# mode only that is useful during development. This produces only a subset of
-# output compared to --verbose output. We use a global flag to enable this so
-# that it's easy to enable this when running tests.
 DEBUG_FINE_GRAINED = False  # type: Final
 
 # These modules are special and should always come from typeshed.
@@ -173,11 +169,9 @@ def build(
       fscache: optionally a file-system cacher
 
     """
-    # If we were not given a flush_errors, we use one that will populate those
-    # fields for callers that want the traditional API.
     messages = []
 
-    def default_flush_errors(new_messages: List[str], is_serious: bool) -> None:
+    def default_flush_errors(new_messages: List[str], _is_serious: bool) -> None:
         messages.extend(new_messages)
 
     flush_errors = flush_errors or default_flush_errors
@@ -199,10 +193,6 @@ def build(
         result.errors = messages
         return result
     except CompileError as e:
-        # CompileErrors raised from an errors object carry all of the
-        # messages that have not been reported out by error streaming.
-        # Patch it up to contain either none or all none of the messages,
-        # depending on whether we are flushing errors.
         serious = not e.use_stdout
         flush_errors(e.messages, serious)
         e.messages = messages
