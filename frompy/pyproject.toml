@@ -1,0 +1,37 @@
+[tool.black]
+line_length = 88
+target_version = ["py38"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.mypy_cache
+  | \.py3.8
+  | _build
+  | buck-out
+  | build
+  | dist
+  | blib2to3
+  | tests/data
+  | profiling
+)/
+'''
+
+[tool.flake8]
+max-line-length = 88
+max-complexity = 18
+select = B,C,E,F,W,T4,B9
+extend-ignore = E203
+per-file-ignores =
+  *.pyi: E301, E302, E305, E501, E701, E741, F401, F403, F405, F811, F822
+exclude = .py*,@*,.git
+mypy_config = mypy.ini
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+combine_as_imports = true
+line_length = 130
