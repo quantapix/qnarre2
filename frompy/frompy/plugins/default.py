@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Callable, Optional, List
 
-from mypy import message_registry
+from frompy import message_registry
 from frompy.nodes import Expression, StrExpr, IntExpr, DictExpr, UnaryExpr
 from frompy.plugin import (
     Plugin, FunctionContext, MethodContext, MethodSigContext, AttributeContext, ClassDefContext,

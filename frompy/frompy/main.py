@@ -10,10 +10,10 @@ import time
 from typing import Any, Dict, IO, List, Optional, Sequence, Tuple, TextIO, Union
 from typing_extensions import Final, NoReturn
 
-from mypy import build
-from mypy import defaults
-from mypy import state
-from mypy import util
+from frompy import build
+from frompy import defaults
+from frompy import state
+from frompy import util
 from frompy.modulefinder import BuildSource, FindModuleCache, mypy_path, SearchPaths
 from frompy.find_sources import create_source_list, InvalidSourceList
 from frompy.fscache import FileSystemCache

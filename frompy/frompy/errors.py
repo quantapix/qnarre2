@@ -10,7 +10,7 @@ from frompy.scope import Scope
 from frompy.options import Options
 from frompy.version import __version__ as mypy_version
 from frompy.errorcodes import ErrorCode
-from mypy import errorcodes as codes
+from frompy import errorcodes as codes
 from frompy.util import DEFAULT_SOURCE_OFFSET, is_typeshed_file
 
 T = TypeVar('T')

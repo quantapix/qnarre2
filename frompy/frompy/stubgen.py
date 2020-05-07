@@ -64,7 +64,7 @@ import frompy.errors
 import frompy.traverser
 import frompy.mixedtraverser
 import frompy.util
-from mypy import defaults
+from frompy import defaults
 from frompy.modulefinder import (
     ModuleNotFoundReason, FindModuleCache, SearchPaths, BuildSource, default_lib_path
 )

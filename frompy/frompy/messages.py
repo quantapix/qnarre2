@@ -40,7 +40,7 @@ from frompy.subtypes import (
 from frompy.sametypes import is_same_type
 from frompy.util import unmangle
 from frompy.errorcodes import ErrorCode
-from mypy import message_registry, errorcodes as codes
+from frompy import message_registry, errorcodes as codes
 
 TYPES_FOR_UNIMPORTED_HINTS = {
     'typing.Any',

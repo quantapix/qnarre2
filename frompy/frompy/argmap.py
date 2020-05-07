@@ -5,7 +5,7 @@ from typing import List, Optional, Sequence, Callable, Set
 from frompy.types import (
     Type, Instance, TupleType, AnyType, TypeOfAny, TypedDictType, get_proper_type
 )
-from mypy import nodes
+from frompy import nodes
 
 
 def map_actuals_to_formals(actual_kinds: List[int],

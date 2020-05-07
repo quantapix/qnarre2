@@ -9,7 +9,7 @@ from typing_extensions import ClassVar, Final
 from frompy.nodes import TypeInfo
 from frompy.types import Instance, TypeAliasType, get_proper_type, Type
 from frompy.server.trigger import make_trigger
-from mypy import state
+from frompy import state
 
 # Represents that the 'left' instance is a subtype of the 'right' instance
 SubtypeRelationship = Tuple[Instance, Instance]

@@ -2,7 +2,7 @@
 
 import re
 
-from mypy import build
+from frompy import build
 from frompy.modulefinder import BuildSource
 from frompy.test.config import test_temp_dir
 from frompy.test.data import DataDrivenTestCase, DataSuite

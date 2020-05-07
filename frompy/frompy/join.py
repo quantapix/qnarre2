@@ -16,7 +16,7 @@ from frompy.subtypes import (
 )
 from frompy.nodes import ARG_NAMED, ARG_NAMED_OPT
 import frompy.typeops
-from mypy import state
+from frompy import state
 
 
 def join_simple(declaration: Optional[Type], s: Type, t: Type) -> ProperType:

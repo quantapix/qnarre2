@@ -23,7 +23,7 @@ from frompy.nodes import (
 from frompy.maptype import map_instance_to_supertype
 from frompy.expandtype import expand_type_by_instance
 from frompy.typestate import TypeState, SubtypeKind
-from mypy import state
+from frompy import state
 
 # Flags for detected protocol members
 IS_SETTABLE = 1  # type: Final

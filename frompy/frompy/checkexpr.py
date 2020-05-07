@@ -34,20 +34,20 @@ from frompy.nodes import (
     ARG_POS, ARG_OPT, ARG_NAMED, ARG_STAR, ARG_STAR2, LITERAL_TYPE, REVEAL_TYPE,
 )
 from frompy.literals import literal
-from mypy import nodes
+from frompy import nodes
 import frompy.checker
-from mypy import types
+from frompy import types
 from frompy.sametypes import is_same_type
 from frompy.erasetype import replace_meta_vars, erase_type, remove_instance_last_known_values
 from frompy.maptype import map_instance_to_supertype
 from frompy.messages import MessageBuilder
-from mypy import message_registry
+from frompy import message_registry
 from frompy.infer import infer_type_arguments, infer_function_type_arguments
-from mypy import join
+from frompy import join
 from frompy.meet import narrow_declared_type, is_overlapping_types
 from frompy.subtypes import is_subtype, is_proper_subtype, is_equivalent, non_method_protocol_members
-from mypy import applytype
-from mypy import erasetype
+from frompy import applytype
+from frompy import erasetype
 from frompy.checkmember import analyze_member_access, type_object_type
 from frompy.argmap import ArgTypeExpander, map_actuals_to_formals, map_formals_to_actuals
 from frompy.checkstrformat import StringFormatterChecker

@@ -85,7 +85,7 @@ from frompy.messages import (
     best_matches, MessageBuilder, pretty_seq, SUGGESTED_TEST_FIXTURES, TYPES_FOR_UNIMPORTED_HINTS
 )
 from frompy.errorcodes import ErrorCode
-from mypy import message_registry, errorcodes as codes
+from frompy import message_registry, errorcodes as codes
 from frompy.types import (
     FunctionLike, UnboundType, TypeVarDef, TupleType, UnionType, StarType,
     CallableType, Overloaded, Instance, Type, AnyType, LiteralType, LiteralValue,

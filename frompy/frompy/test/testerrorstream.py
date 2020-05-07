@@ -1,7 +1,7 @@
 """Tests for mypy incremental error output."""
 from typing import List
 
-from mypy import build
+from frompy import build
 from frompy.test.helpers import assert_string_arrays_equal
 from frompy.test.data import DataDrivenTestCase, DataSuite
 from frompy.modulefinder import BuildSource

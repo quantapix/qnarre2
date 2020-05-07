@@ -43,7 +43,7 @@ from frompy.types import (
     Type, CallableType, AnyType, UnboundType, EllipsisType, TypeOfAny, Instance,
     ProperType
 )
-from mypy import message_registry, errorcodes as codes
+from frompy import message_registry, errorcodes as codes
 from frompy.errors import Errors
 from frompy.fastparse import (
     TypeConverter, parse_type_comment, bytes_to_human_readable_repr, parse_type_ignore_tag,

@@ -6,7 +6,7 @@ import sys
 from typing_extensions import Final
 from typing import Dict, List, Mapping, Optional, Pattern, Set, Tuple, Callable, Any
 
-from mypy import defaults
+from frompy import defaults
 from frompy.util import get_class_descriptors, replace_object_state
 
 

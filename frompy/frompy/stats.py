@@ -14,7 +14,7 @@ from frompy.types import (
     Type, AnyType, Instance, FunctionLike, TupleType, TypeVarType, TypeQuery, CallableType,
     TypeOfAny, get_proper_type, get_proper_types
 )
-from mypy import nodes
+from frompy import nodes
 from frompy.nodes import (
     Expression, FuncDef, TypeApplication, AssignmentStmt, NameExpr, CallExpr, MypyFile,
     MemberExpr, OpExpr, ComparisonExpr, IndexExpr, UnaryExpr, YieldFromExpr, RefExpr, ClassDef,

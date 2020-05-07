@@ -5,20 +5,13 @@ import os
 import os.path
 import sys
 
-if sys.version_info < (3, 5, 0):
-    sys.stderr.write("ERROR: You need Python 3.5 or later to use mypy.\n")
-    exit(1)
-
 # we'll import stuff from the source tree, let's ensure is on the sys path
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
-# This requires setuptools when building; setuptools is not needed
-# when installing from a wheel file (though it is still neeeded for
-# alternative forms of installing, as suggested by README.md).
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from frompy.version import __version__ as version
-from mypy import git
+from frompy import git
 
 git.verify_git_integrity_or_abort(".")
 
@@ -27,12 +20,7 @@ long_description = '''
 Mypy -- Optional Static Typing for Python
 =========================================
 
-Add type annotations to your Python programs, and use mypy to type
-check them.  Mypy is essentially a Python linter on steroids, and it
-can catch many programming errors by analyzing your program, without
-actually having to run it.  Mypy has a powerful type system with
-features such as type inference, gradual typing, generics and union
-types.
+Add type ...
 '''.lstrip()
 
 

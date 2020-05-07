@@ -25,7 +25,7 @@ from frompy.sharedparse import argument_elide_name
 
 from frompy.typevars import fill_typevars
 
-from mypy import state
+from frompy import state
 
 
 def is_recursive_pair(s: Type, t: Type) -> bool:

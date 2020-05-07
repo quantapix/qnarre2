@@ -18,7 +18,7 @@ from frompy.errors import Errors
 from frompy.scope import Scope
 from frompy.options import Options
 from frompy.errorcodes import ErrorCode
-from mypy import message_registry, errorcodes as codes
+from frompy import message_registry, errorcodes as codes
 
 
 class TypeArgumentAnalyzer(MixedTraverserVisitor):

@@ -40,7 +40,7 @@ from frompy.util import (
 )
 if TYPE_CHECKING:
     from frompy.report import Reports  # Avoid unconditional slow import
-from mypy import moduleinfo
+from frompy import moduleinfo
 from frompy.fixup import fixup_module
 from frompy.modulefinder import (
     BuildSource, compute_search_paths, FindModuleCache, SearchPaths, ModuleSearchResult,
@@ -60,7 +60,7 @@ from frompy.typestate import TypeState, reset_global_state
 from frompy.renaming import VariableRenameVisitor
 from frompy.config_parser import parse_mypy_comments
 from frompy.freetree import free_tree
-from mypy import errorcodes as codes
+from frompy import errorcodes as codes
 
 
 # Switch to True to produce debug output related to fine-grained incremental

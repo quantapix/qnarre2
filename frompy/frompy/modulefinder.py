@@ -17,7 +17,7 @@ from typing_extensions import Final
 from frompy.defaults import PYTHON3_VERSION_MIN
 from frompy.fscache import FileSystemCache
 from frompy.options import Options
-from mypy import sitepkgs
+from frompy import sitepkgs
 
 # Paths to be searched in find_module().
 SearchPaths = NamedTuple(

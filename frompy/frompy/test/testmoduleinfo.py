@@ -1,4 +1,4 @@
-from mypy import moduleinfo
+from frompy import moduleinfo
 from frompy.test.helpers import assert_true, assert_false, Suite
 
 

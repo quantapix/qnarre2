@@ -9,7 +9,7 @@ import argparse
 
 from frompy.errors import CompileError
 from frompy.options import Options
-from mypy import defaults
+from frompy import defaults
 from frompy.parse import parse
 
 

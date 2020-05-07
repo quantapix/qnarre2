@@ -26,7 +26,7 @@ from frompy.nodes import (
     CONTRAVARIANT, COVARIANT, INVARIANT, TypeVarExpr, AssignmentExpr,
     is_final_node,
     ARG_NAMED)
-from mypy import nodes
+from frompy import nodes
 from frompy.literals import literal, literal_hash, Key
 from frompy.typeanal import has_any_from_unimported_type, check_for_explicit_any
 from frompy.types import (
@@ -53,7 +53,7 @@ from frompy.typeops import (
     true_only, false_only, function_type, TypeVarExtractor, custom_special_method,
     is_literal_type_like,
 )
-from mypy import message_registry
+from frompy import message_registry
 from frompy.subtypes import (
     is_subtype, is_equivalent, is_proper_subtype, is_more_precise,
     restrict_subtype_away, is_subtype_ignoring_tvars, is_callable_compatible,
@@ -75,7 +75,7 @@ from frompy.options import Options
 from frompy.plugin import Plugin, CheckerPluginInterface
 from frompy.sharedparse import BINARY_MAGIC_METHODS
 from frompy.scope import Scope
-from mypy import state, errorcodes as codes
+from frompy import state, errorcodes as codes
 from frompy.traverser import has_return_statement, all_return_statements
 from frompy.errorcodes import ErrorCode
 from frompy.util import is_typeshed_file

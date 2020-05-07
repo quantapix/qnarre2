@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, cast, Iterator
 from typing_extensions import Final
 
 from frompy.nodes import MypyFile, Expression, FuncDef
-from mypy import stats
+from frompy import stats
 from frompy.options import Options
 from frompy.traverser import TraverserVisitor
 from frompy.types import Type, TypeOfAny

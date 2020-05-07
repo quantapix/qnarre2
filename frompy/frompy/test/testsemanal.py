@@ -4,7 +4,7 @@ import os.path
 
 from typing import Dict, List
 
-from mypy import build
+from frompy import build
 from frompy.modulefinder import BuildSource
 from frompy.defaults import PYTHON3_VERSION
 from frompy.test.helpers import (

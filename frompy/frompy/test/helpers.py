@@ -7,7 +7,7 @@ import contextlib
 
 from typing import List, Iterable, Dict, Tuple, Callable, Any, Optional, Iterator
 
-from mypy import defaults
+from frompy import defaults
 import frompy.api as api
 
 import pytest  # type: ignore  # no pytest in typeshed

@@ -27,7 +27,7 @@ from frompy.test.config import test_temp_dir
 from frompy.test.data import DataDrivenTestCase, DataSuite
 from frompy.test.helpers import assert_string_arrays_equal, split_lines
 from frompy.util import try_find_python2_interpreter
-from mypy import api
+from frompy import api
 
 # Path to Python 3 interpreter
 python3_path = sys.executable

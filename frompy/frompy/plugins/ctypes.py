@@ -4,7 +4,7 @@ from typing import List, Optional
 
 # Fully qualified instead of "from frompy.plugin import ..." to avoid circular import problems.
 import frompy.plugin
-from mypy import nodes
+from frompy import nodes
 from frompy.maptype import map_instance_to_supertype
 from frompy.messages import format_type
 from frompy.subtypes import is_subtype

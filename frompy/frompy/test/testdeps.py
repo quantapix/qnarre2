@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import List, Tuple, Dict, Optional, Set
 from typing_extensions import DefaultDict
 
-from mypy import build, defaults
+from frompy import build, defaults
 from frompy.modulefinder import BuildSource
 from frompy.errors import CompileError
 from frompy.nodes import MypyFile, Expression

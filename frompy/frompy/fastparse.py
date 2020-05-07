@@ -33,8 +33,8 @@ from frompy.types import (
     Type, CallableType, AnyType, UnboundType, TupleType, TypeList, EllipsisType, CallableArgument,
     TypeOfAny, Instance, RawExpressionType, ProperType
 )
-from mypy import defaults
-from mypy import message_registry, errorcodes as codes
+from frompy import defaults
+from frompy import message_registry, errorcodes as codes
 from frompy.errors import Errors
 from frompy.options import Options
 from frompy.reachability import mark_block_unreachable

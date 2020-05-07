@@ -2,7 +2,7 @@
 
 import os.path
 
-from mypy import build
+from frompy import build
 from frompy.modulefinder import BuildSource
 from frompy.test.helpers import (
     assert_string_arrays_equal, normalize_error_messages, parse_options

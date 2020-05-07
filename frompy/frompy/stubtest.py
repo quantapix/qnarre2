@@ -22,7 +22,7 @@ from typing_extensions import Type
 import frompy.build
 import frompy.modulefinder
 import frompy.types
-from mypy import nodes
+from frompy import nodes
 from frompy.options import Options
 from frompy.util import FancyFormatter
 

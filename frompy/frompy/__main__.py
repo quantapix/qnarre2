@@ -1,5 +1,3 @@
-"""Mypy type checker command line tool."""
-
 import sys
 from frompy.main import main
 

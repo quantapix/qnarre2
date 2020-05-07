@@ -9,7 +9,7 @@ from typing import List, Callable, Iterator, Optional, Tuple
 
 import pytest  # type: ignore[import]
 
-from mypy import build
+from frompy import build
 from frompy.errors import CompileError
 from frompy.options import Options
 from frompy.test.data import DataSuite, DataDrivenTestCase

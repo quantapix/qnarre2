@@ -31,7 +31,7 @@ from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
 from frompy.plugin import Plugin, TypeAnalyzerPluginInterface, AnalyzeTypeContext
 from frompy.semanal_shared import SemanticAnalyzerCoreInterface
 from frompy.errorcodes import ErrorCode
-from mypy import nodes, message_registry, errorcodes as codes
+from frompy import nodes, message_registry, errorcodes as codes
 
 T = TypeVar('T')
 

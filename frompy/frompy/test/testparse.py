@@ -4,7 +4,7 @@ import sys
 
 from pytest import skip  # type: ignore[import]
 
-from mypy import defaults
+from frompy import defaults
 from frompy.test.helpers import assert_string_arrays_equal, parse_options
 from frompy.test.data import DataDrivenTestCase, DataSuite
 from frompy.parse import parse

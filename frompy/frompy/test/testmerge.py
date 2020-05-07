@@ -4,7 +4,7 @@ import os
 import shutil
 from typing import List, Tuple, Dict, Optional
 
-from mypy import build
+from frompy import build
 from frompy.build import BuildResult
 from frompy.modulefinder import BuildSource
 from frompy.defaults import PYTHON3_VERSION

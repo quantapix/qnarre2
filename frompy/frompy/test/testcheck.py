@@ -6,7 +6,7 @@ import sys
 
 from typing import Dict, List, Set, Tuple
 
-from mypy import build
+from frompy import build
 from frompy.build import Graph
 from frompy.modulefinder import BuildSource, SearchPaths, FindModuleCache
 from frompy.test.config import test_temp_dir, test_data_prefix

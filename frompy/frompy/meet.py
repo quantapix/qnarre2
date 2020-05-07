@@ -14,7 +14,7 @@ from frompy.subtypes import is_equivalent, is_subtype, is_callable_compatible, i
 from frompy.erasetype import erase_type
 from frompy.maptype import map_instance_to_supertype
 from frompy.typeops import tuple_fallback, make_simplified_union, is_recursive_pair
-from mypy import state
+from frompy import state
 
 # TODO Describe this module.
 

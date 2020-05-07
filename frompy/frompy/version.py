@@ -1,5 +1,5 @@
 import os
-from mypy import git
+from frompy import git
 
 # Base version.
 # - Release versions have the form "0.NNN".

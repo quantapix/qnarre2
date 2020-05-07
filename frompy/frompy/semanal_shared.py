@@ -16,7 +16,7 @@ from frompy.types import (
 )
 from frompy.tvar_scope import TypeVarScope
 from frompy.errorcodes import ErrorCode
-from mypy import join
+from frompy import join
 
 # Priorities for ordering of patches within the "patch" phase of semantic analysis
 # (after the main pass):

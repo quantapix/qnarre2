@@ -20,9 +20,9 @@ from frompy.expandtype import expand_type_by_instance, freshen_function_type_var
 from frompy.erasetype import erase_typevars
 from frompy.plugin import AttributeContext
 from frompy.typeanal import set_any_tvars
-from mypy import message_registry
-from mypy import subtypes
-from mypy import meet
+from frompy import message_registry
+from frompy import subtypes
+from frompy import meet
 from frompy.typeops import (
     tuple_fallback, bind_self, erase_to_bound, class_callable, type_object_type_from_function,
     make_simplified_union, function_type,
@@ -31,7 +31,7 @@ from frompy.typeops import (
 if TYPE_CHECKING:  # import for forward declaration only
     import frompy.checker
 
-from mypy import state
+from frompy import state
 
 
 class MemberContext:

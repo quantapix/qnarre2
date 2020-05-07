@@ -3,7 +3,7 @@
 import os
 from typing import List, Tuple, Dict, Optional
 
-from mypy import build
+from frompy import build
 from frompy.modulefinder import BuildSource
 from frompy.defaults import PYTHON3_VERSION
 from frompy.errors import CompileError

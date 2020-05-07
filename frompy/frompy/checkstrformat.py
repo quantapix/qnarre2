@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     # break import cycle only needed for mypy
     import frompy.checker
     import frompy.checkexpr
-from mypy import message_registry
+from frompy import message_registry
 from frompy.messages import MessageBuilder
 from frompy.maptype import map_instance_to_supertype
 from frompy.typeops import custom_special_method

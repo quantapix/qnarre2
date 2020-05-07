@@ -12,7 +12,7 @@ from typing import (
 from typing_extensions import ClassVar, Final, TYPE_CHECKING, overload
 
 import frompy.nodes
-from mypy import state
+from frompy import state
 from frompy.nodes import (
     INVARIANT, SymbolNode, ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, ARG_NAMED, ARG_NAMED_OPT,
     FuncDef,

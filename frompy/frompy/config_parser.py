@@ -9,7 +9,7 @@ import sys
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, TextIO
 from typing_extensions import Final
 
-from mypy import defaults
+from frompy import defaults
 from frompy.options import Options, PER_MODULE_OPTIONS
 
 

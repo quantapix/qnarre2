@@ -20,7 +20,7 @@ from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
 from frompy.typeanal import check_for_explicit_any, has_any_from_unimported_type
 from frompy.messages import MessageBuilder, format_type
 from frompy.errorcodes import ErrorCode
-from mypy import errorcodes as codes
+from frompy import errorcodes as codes
 
 
 class NewTypeAnalyzer:

@@ -27,7 +27,7 @@ messages.
 Trivial example of code using this module:
 
 import sys
-from mypy import api
+from frompy import api
 
 result = api.run(sys.argv[1:])
 

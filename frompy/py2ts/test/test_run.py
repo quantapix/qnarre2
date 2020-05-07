@@ -11,7 +11,7 @@ import shutil
 import sys
 from typing import Any, Iterator, List, cast
 
-from mypy import build
+from frompy import build
 from frompy.test.data import DataDrivenTestCase, UpdateFile
 from frompy.test.config import test_temp_dir
 from frompy.errors import CompileError

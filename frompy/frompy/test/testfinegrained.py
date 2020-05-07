@@ -17,7 +17,7 @@ import re
 
 from typing import List, Dict, Any, Tuple, Union, cast
 
-from mypy import build
+from frompy import build
 from frompy.modulefinder import BuildSource
 from frompy.errors import CompileError
 from frompy.options import Options
