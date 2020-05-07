@@ -4,7 +4,7 @@
 
 [case testConfigErrorUnknownReport]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 bad_report = .
 [out]

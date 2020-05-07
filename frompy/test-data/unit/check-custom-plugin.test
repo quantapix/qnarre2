@@ -7,7 +7,7 @@
 # flags: --config-file tmp/mypy.ini
 def f() -> str: ...
 reveal_type(f())  # N: Revealed type is 'builtins.int'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/fnplugin.py
 
@@ -15,7 +15,7 @@ plugins=<ROOT>/test-data/unit/plugins/fnplugin.py
 # flags: --config-file tmp/mypy.ini
 def f() -> str: ...
 reveal_type(f())  # N: Revealed type is 'builtins.int'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=fnplugin
 
@@ -26,7 +26,7 @@ f: Callable[[], None]
 T = TypeVar('T')
 def g(x: T) -> T: return x  # This strips out the name of a callable
 g(f)()
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/fnplugin.py
 
@@ -38,7 +38,7 @@ def h(): ...
 reveal_type(f())  # N: Revealed type is 'builtins.int'
 reveal_type(g())  # N: Revealed type is 'builtins.str'
 reveal_type(h())  # N: Revealed type is 'Any'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/fnplugin.py,
   <ROOT>/test-data/unit/plugins/plugin2.py
@@ -51,13 +51,13 @@ def h(): ...
 reveal_type(f())  # N: Revealed type is 'builtins.int'
 reveal_type(g())  # N: Revealed type is 'builtins.str'
 reveal_type(h())  # N: Revealed type is 'Any'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/fnplugin.py, plugin2
 
 [case testMissingPluginFile]
 # flags: --config-file tmp/mypy.ini
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=missing.py
 [out]
@@ -66,7 +66,7 @@ tmp/mypy.ini:2: error: Can't find plugin 'tmp/missing.py'
 
 [case testMissingPlugin]
 # flags: --config-file tmp/mypy.ini
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=missing
 [out]
@@ -74,7 +74,7 @@ tmp/mypy.ini:2: error: Error importing plugin 'missing': No module named 'missin
 
 [case testMultipleSectionsDefinePlugin]
 # flags: --config-file tmp/mypy.ini
-[file mypy.ini]
+[file frompy.ini]
 \[acme]
 plugins=acmeplugin
 \[mypy]
@@ -87,7 +87,7 @@ tmp/mypy.ini:4: error: Can't find plugin 'tmp/missing.py'
 
 [case testInvalidPluginExtension]
 # flags: --config-file tmp/mypy.ini
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=dir/badext.pyi
 [file dir/badext.pyi]
@@ -96,7 +96,7 @@ tmp/mypy.ini:2: error: Plugin 'badext.pyi' does not have a .py extension
 
 [case testMissingPluginEntryPoint]
 # flags: --config-file tmp/mypy.ini
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
  plugins = <ROOT>/test-data/unit/plugins/noentry.py
 [out]
@@ -106,7 +106,7 @@ tmp/mypy.ini:2: error: Plugin '<ROOT>/test-data/unit/plugins/noentry.py' does no
 # flags: --config-file tmp/mypy.ini
 def f() -> str: ...
 reveal_type(f())  # N: Revealed type is 'builtins.int'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/customentry.py:register
 
@@ -114,7 +114,7 @@ plugins=<ROOT>/test-data/unit/plugins/customentry.py:register
 # flags: --config-file tmp/mypy.ini
 def f() -> str: ...
 reveal_type(f())  # N: Revealed type is 'builtins.int'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=customentry:register
 
@@ -122,7 +122,7 @@ plugins=customentry:register
 # flags: --config-file tmp/mypy.ini
 def f(): pass
 f()
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 
 plugins=<ROOT>/test-data/unit/plugins/badreturn.py
@@ -133,7 +133,7 @@ tmp/mypy.ini:3: error: Type object expected as the return value of "plugin"; got
 # flags: --config-file tmp/mypy.ini
 def f(): pass
 f()
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/badreturn2.py
 [out]
@@ -156,7 +156,7 @@ class Signal(Generic[T]):
     __call__: Callable[..., None]  # This type is replaced by the plugin
 
 class DerivedSignal(Signal[T]): ...
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/attrhook.py
 
@@ -181,7 +181,7 @@ class Magic:
 
 class DerivedMagic(Magic): ...
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/attrhook2.py
 
@@ -199,7 +199,7 @@ from typing import TypeVar, Generic, Callable
 T = TypeVar('T', bound=Callable[..., None])
 class Signal(Generic[T]):
     __call__: Callable[..., None]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/type_anal_hook.py
 [builtins fixtures/dict.pyi]
@@ -236,7 +236,7 @@ class AttrInt(Attr[int]):
     def __init__(self, required: bool = False) -> None:
         pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/class_callable.py
 [builtins fixtures/bool.pyi]
@@ -255,7 +255,7 @@ reveal_type(g) # N: Revealed type is 'def (*Any, **Any) -> builtins.int'
 from typing import Callable
 def decorator1() -> Callable[..., Callable[..., int]]: pass
 def decorator2() -> Callable[..., Callable[..., int]]: pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/named_callable.py
 
@@ -283,7 +283,7 @@ class Class:
 def func(classname: str, arg1: Any, arg2: Any) -> Any:
     pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_names.py
 [builtins fixtures/classmethod.pyi]
@@ -312,7 +312,7 @@ class Class:
 def func(classname: str, arg1: Any, arg2: Any) -> Any:
     pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_names.py
 [builtins fixtures/classmethod.pyi]
@@ -334,7 +334,7 @@ class Outer:
         def __init__(self, classname: str):
             pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_names.py
 
@@ -357,7 +357,7 @@ class ClassUnfilled:
 def func_unfilled(classname: str, arg1: Any = None, arg2: Any = None) -> Any:
     pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_names.py
 
@@ -381,7 +381,7 @@ class ClassStarExpr:
 def func_star_expr(classname: str, *args, **kwargs) -> Any:
     pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_names.py
 [builtins fixtures/dict.pyi]
@@ -405,7 +405,7 @@ class Base:
 class ClassChild(Base):
     pass
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_names.py
 [builtins fixtures/classmethod.pyi]
@@ -434,7 +434,7 @@ foo[4] = 5
 for x in foo:
     reveal_type(x) # N: Revealed type is 'builtins.int*'
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/method_sig_hook.py
 [builtins fixtures/tuple.pyi]
@@ -459,7 +459,7 @@ reveal_type(FullyQualifiedTestClass.class_method()) # N: Revealed type is 'built
 reveal_type(FullyQualifiedTestClass().instance_method()) # N: Revealed type is 'builtins.int'
 reveal_type(FullyQualifiedTestNamedTuple('')._asdict()) # N: Revealed type is 'builtins.int'
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/fully_qualified_test_hook.py
 [builtins fixtures/classmethod.pyi]
@@ -486,7 +486,7 @@ T = TypeVar('T')
 class Column(Generic[T]): ...
 class Instr(Generic[T]): ...
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/dyn_class.py
 
@@ -516,7 +516,7 @@ T = TypeVar('T')
 class Column(Generic[T]): ...
 class Instr(Generic[T]): ...
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/dyn_class.py
 
@@ -545,7 +545,7 @@ class Manager:
     def from_queryset(cls, queryset_cls: Type[QuerySet]): ...
 
 [builtins fixtures/classmethod.pyi]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/dyn_class_from_method.py
 
@@ -571,7 +571,7 @@ Base = declarative_base()
 from typing import Any
 def declarative_base() -> Any: ...
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version=3.6
 plugins=<ROOT>/test-data/unit/plugins/common_api_incremental.py
@@ -588,7 +588,7 @@ class Class:
 
 Class().method(1, *[2], **{'a': 1})  # E: [[0, 2], [4]]
 [builtins fixtures/dict.pyi]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_kinds.py
 
@@ -599,7 +599,7 @@ def func(*args, **kwargs):
 
 func(1, 2, [3, 4], *[5, 6, 7], **{'a': 1})  # E: [[0, 0, 0, 2], [4]]
 [builtins fixtures/dict.pyi]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/arg_kinds.py
 
@@ -614,7 +614,7 @@ reveal_type(Class("hi")("there"))  # N: Revealed type is 'builtins.str*'
 instance = Class(3.14)
 reveal_type(instance(2))  # N: Revealed type is 'builtins.float*'
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/callable_instance.py
 
@@ -636,7 +636,7 @@ else:
     reveal_type(x.meth(int()))  # N: Revealed type is 'builtins.int'
 
 [builtins fixtures/isinstancelist.pyi]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/union_method.py
 
@@ -658,7 +658,7 @@ else:
     reveal_type(x.meth(int()))  # N: Revealed type is 'builtins.int'
 
 [builtins fixtures/isinstancelist.pyi]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/union_method.py
 
@@ -675,7 +675,7 @@ x: Union[Foo, Bar]
 reveal_type(x[int()])  # N: Revealed type is 'builtins.int'
 
 [builtins fixtures/isinstancelist.pyi]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/union_method.py
 
@@ -688,14 +688,14 @@ plugins=<ROOT>/test-data/unit/plugins/union_method.py
 [file err.py]
 1 + 'lol'  # E: Unsupported operand types for + ("int" and "str")
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/depshook.py
 
 [case testCustomizeMroTrivial]
 # flags: --config-file tmp/mypy.ini
 class A: pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/customize_mro.py
 
@@ -718,6 +718,6 @@ reveal_type(Cls.attr)  # N: Revealed type is 'builtins.str'
 Cls().attr = 3
 Cls().attr = "foo"  # E: Incompatible types in assignment (expression has type "str", variable has type "int")
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/descriptor.py

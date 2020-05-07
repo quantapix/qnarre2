@@ -1139,7 +1139,7 @@ T = TypeVar('T')
 class Column(Generic[T]): ...
 class Instr(Generic[T]): ...
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/dyn_class.py
 [out]

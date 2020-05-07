@@ -9,7 +9,7 @@
 --
 -- Dependencies are formatted as "<trigger> -> affected locations".
 --
--- Look at the docstring of mypy.server.deps for an explanation of
+-- Look at the docstring of frompy.server.deps for an explanation of
 -- how fine-grained dependencies are represented.
 
 [case testCallFunction]

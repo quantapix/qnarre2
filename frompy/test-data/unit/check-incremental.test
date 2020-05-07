@@ -1801,10 +1801,10 @@ import a
 reveal_type(a.x)
 [file a.py]
 x = 0
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports = normal
-[file mypy.ini.2]
+[file frompy.ini.2]
 \[mypy]
 follow_imports = skip
 [out1]
@@ -2002,7 +2002,7 @@ class D(C):
 import a
 [file a.py]
 pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 warn_no_return = False
 \[mypy-a]
@@ -3655,10 +3655,10 @@ tmp/a.py:2: error: unused 'type: ignore' comment
 import a
 [file a.py]
 x = 0
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 cache_fine_grained = True
-[file mypy.ini.2]
+[file frompy.ini.2]
 \[mypy]
 cache_fine_grained = False
 -- Nothing should get rechecked
@@ -3670,10 +3670,10 @@ cache_fine_grained = False
 import a
 [file a.py]
 x = 0
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 cache_fine_grained = False
-[file mypy.ini.2]
+[file frompy.ini.2]
 \[mypy]
 cache_fine_grained = True
 [rechecked a, builtins, typing]
@@ -4643,7 +4643,7 @@ x = 1
 import other
 [file other.pyi.2]
 x = 1
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports_for_stubs = True
 [stale]
@@ -4850,7 +4850,7 @@ def my_hook(ctx):
 
 def plugin(version):
     return MyPlugin
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=basic_plugin.py
 [out]
@@ -4901,7 +4901,7 @@ choice = True
 [file version_plugin.py.2]
 __version__ = 0.2
 choice = False
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=basic_plugin.py
 [out]
@@ -4940,10 +4940,10 @@ def my_hook(ctx):
 def plugin(version):
     return MyPlugin
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version=3.6
-[file mypy.ini.2]
+[file frompy.ini.2]
 \[mypy]
 python_version=3.6
 plugins=basic_plugin.py
@@ -4983,11 +4983,11 @@ def my_hook(ctx):
 def plugin(version):
     return MyPlugin
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version=3.6
 plugins=basic_plugin.py
-[file mypy.ini.2]
+[file frompy.ini.2]
 \[mypy]
 python_version=3.6
 [out]
@@ -5005,7 +5005,7 @@ import b
 [file test.json.2]
 {"a": true, "b": false}
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 plugins=<ROOT>/test-data/unit/plugins/config_data.py
 

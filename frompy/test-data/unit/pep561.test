@@ -5,7 +5,7 @@ from typedpkg.sample import ex
 from typedpkg import dne
 a = ex([''])
 reveal_type(a)
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_missing_imports = True
 [out]
@@ -26,7 +26,7 @@ from typedpkg.sample import ex
 from typedpkg import dne
 a = ex([''])
 reveal_type(a)
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 no_site_packages=True
 [out]

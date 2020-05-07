@@ -258,7 +258,7 @@ def compile_modules_to_ir(
     deser_ctx = DeserMaps({}, {})
     modules = {}
 
-    # Process the graph by SCC in topological order, like we do in mypy.build
+    # Process the graph by SCC in topological order, like we do in frompy.build
     for scc in sorted_components(result.graph):
         scc_states = [result.graph[id] for id in scc]
         trees = [st.tree for st in scc_states if st.id in mapper.group_map and st.tree]

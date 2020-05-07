@@ -13,12 +13,15 @@ PY_EXTENSIONS = tuple(PYTHON_EXTENSIONS)  # type: Final
 
 
 class InvalidSourceList(Exception):
-    """Exception indicating a problem in the list of sources given to mypy."""
+    """Exception indicating a problem in the list of sources given to frompy."""
 
 
-def create_source_list(files: Sequence[str], options: Options,
-                       fscache: Optional[FileSystemCache] = None,
-                       allow_empty_dir: bool = False) -> List[BuildSource]:
+def create_source_list(
+    files: Sequence[str],
+    options: Options,
+    fscache: Optional[FileSystemCache] = None,
+    allow_empty_dir: bool = False,
+) -> List[BuildSource]:
     """From a list of source files/directories, makes a list of BuildSources.
 
     Raises InvalidSourceList on errors.
@@ -35,8 +38,9 @@ def create_source_list(files: Sequence[str], options: Options,
         elif fscache.isdir(f):
             sub_targets = finder.expand_dir(os.path.normpath(f))
             if not sub_targets and not allow_empty_dir:
-                raise InvalidSourceList("There are no .py[i] files in directory '{}'"
-                                        .format(f))
+                raise InvalidSourceList(
+                    "There are no .py[i] files in directory '{}'".format(f)
+                )
             targets.extend(sub_targets)
         else:
             mod = os.path.basename(f) if options.scripts_are_modules else None
@@ -62,7 +66,7 @@ class SourceFinder:
         # A cache for package names, mapping from directory path to module id and base dir
         self.package_cache = {}  # type: Dict[str, Tuple[str, str]]
 
-    def expand_dir(self, arg: str, mod_prefix: str = '') -> List[BuildSource]:
+    def expand_dir(self, arg: str, mod_prefix: str = "") -> List[BuildSource]:
         """Convert a directory name to a list of sources to build."""
         f = self.get_init_file(arg)
         if mod_prefix and not f:
@@ -71,28 +75,31 @@ class SourceFinder:
         sources = []
         top_mod, base_dir = self.crawl_up_dir(arg)
         if f and not mod_prefix:
-            mod_prefix = top_mod + '.'
+            mod_prefix = top_mod + "."
         if mod_prefix:
-            sources.append(BuildSource(f, mod_prefix.rstrip('.'), None, base_dir))
+            sources.append(BuildSource(f, mod_prefix.rstrip("."), None, base_dir))
         names = self.fscache.listdir(arg)
         names.sort(key=keyfunc)
         for name in names:
             # Skip certain names altogether
-            if (name == '__pycache__' or name == 'py.typed'
-                    or name.startswith('.')
-                    or name.endswith(('~', '.pyc', '.pyo'))):
+            if (
+                name == "__pycache__"
+                or name == "py.typed"
+                or name.startswith(".")
+                or name.endswith(("~", ".pyc", ".pyo"))
+            ):
                 continue
             path = os.path.join(arg, name)
             if self.fscache.isdir(path):
-                sub_sources = self.expand_dir(path, mod_prefix + name + '.')
+                sub_sources = self.expand_dir(path, mod_prefix + name + ".")
                 if sub_sources:
                     seen.add(name)
                     sources.extend(sub_sources)
             else:
                 base, suffix = os.path.splitext(name)
-                if base == '__init__':
+                if base == "__init__":
                     continue
-                if base not in seen and '.' not in base and suffix in PY_EXTENSIONS:
+                if base not in seen and "." not in base and suffix in PY_EXTENSIONS:
                     seen.add(base)
                     src = BuildSource(path, mod_prefix + base, None, base_dir)
                     sources.append(src)
@@ -107,7 +114,7 @@ class SourceFinder:
         dir, mod = os.path.split(arg)
         mod = strip_py(mod) or mod
         base, base_dir = self.crawl_up_dir(dir)
-        if mod == '__init__' or not mod:
+        if mod == "__init__" or not mod:
             mod = base
         else:
             mod = module_join(base, mod)
@@ -124,12 +131,14 @@ class SourceFinder:
 
         parent_dir, base = os.path.split(dir)
         if not dir or not self.get_init_file(dir) or not base:
-            res = ''
-            base_dir = dir or '.'
+            res = ""
+            base_dir = dir or "."
         else:
             # Ensure that base is a valid python module name
             if not base.isidentifier():
-                raise InvalidSourceList('{} is not a valid Python package name'.format(base))
+                raise InvalidSourceList(
+                    "{} is not a valid Python package name".format(base)
+                )
             parent, base_dir = self.crawl_up_dir(parent_dir)
             res = module_join(parent, base)
 
@@ -145,10 +154,10 @@ class SourceFinder:
         This prefers .pyi over .py (because of the ordering of PY_EXTENSIONS).
         """
         for ext in PY_EXTENSIONS:
-            f = os.path.join(dir, '__init__' + ext)
+            f = os.path.join(dir, "__init__" + ext)
             if self.fscache.isfile(f):
                 return f
-            if ext == '.py' and self.fscache.init_under_package_root(f):
+            if ext == ".py" and self.fscache.init_under_package_root(f):
                 return f
         return None
 
@@ -156,7 +165,7 @@ class SourceFinder:
 def module_join(parent: str, child: str) -> str:
     """Join module ids, accounting for a possibly empty parent."""
     if parent:
-        return parent + '.' + child
+        return parent + "." + child
     else:
         return child
 
@@ -168,5 +177,5 @@ def strip_py(arg: str) -> Optional[str]:
     """
     for ext in PY_EXTENSIONS:
         if arg.endswith(ext):
-            return arg[:-len(ext)]
+            return arg[: -len(ext)]
     return None

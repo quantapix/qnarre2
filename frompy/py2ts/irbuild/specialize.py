@@ -14,15 +14,33 @@ See comment below for more documentation.
 
 from typing import Callable, Optional, Dict, Tuple
 
-from frompy.nodes import CallExpr, RefExpr, MemberExpr, TupleExpr, GeneratorExpr, ARG_POS
+from frompy.nodes import (
+    CallExpr,
+    RefExpr,
+    MemberExpr,
+    TupleExpr,
+    GeneratorExpr,
+    ARG_POS,
+)
 from frompy.types import AnyType, TypeOfAny
 
 from py2ts.ir.ops import (
-    Value, BasicBlock, LoadInt, RaiseStandardError, Unreachable, OpDescription
+    Value,
+    BasicBlock,
+    LoadInt,
+    RaiseStandardError,
+    Unreachable,
+    OpDescription,
 )
 from py2ts.ir.rtypes import (
-    RType, RTuple, str_rprimitive, list_rprimitive, dict_rprimitive, set_rprimitive,
-    bool_rprimitive, is_dict_rprimitive
+    RType,
+    RTuple,
+    str_rprimitive,
+    list_rprimitive,
+    dict_rprimitive,
+    set_rprimitive,
+    bool_rprimitive,
+    is_dict_rprimitive,
 )
 from py2ts.primitives.dict_ops import dict_keys_op, dict_values_op, dict_items_op
 from py2ts.primitives.misc_ops import true_op, false_op
@@ -37,7 +55,7 @@ from py2ts.irbuild.for_helpers import translate_list_comprehension, comprehensio
 #
 # Specializers take three arguments: the IRBuilder, the CallExpr being
 # compiled, and the RefExpr that is the left hand side of the call.
-Specializer = Callable[['IRBuilder', CallExpr, RefExpr], Optional[Value]]
+Specializer = Callable[["IRBuilder", CallExpr, RefExpr], Optional[Value]]
 
 # Dictionary containing all configured specializers.
 #
@@ -47,28 +65,33 @@ specializers = {}  # type: Dict[Tuple[str, Optional[RType]], Specializer]
 
 
 def specialize_function(
-        name: str, typ: Optional[RType] = None) -> Callable[[Specializer], Specializer]:
+    name: str, typ: Optional[RType] = None
+) -> Callable[[Specializer], Specializer]:
     """Decorator to register a function as being a specializer."""
+
     def wrapper(f: Specializer) -> Specializer:
         specializers[name, typ] = f
         return f
+
     return wrapper
 
 
-@specialize_function('builtins.globals')
-def translate_globals(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+@specialize_function("builtins.globals")
+def translate_globals(
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Special case builtins.globals
     if len(expr.args) == 0:
         return builder.load_globals_dict()
     return None
 
 
-@specialize_function('builtins.len')
+@specialize_function("builtins.len")
 def translate_len(
-        builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Special case builtins.len
-    if (len(expr.args) == 1
-            and expr.arg_kinds == [ARG_POS]):
+    if len(expr.args) == 1 and expr.arg_kinds == [ARG_POS]:
         expr_rtype = builder.node_type(expr.args[0])
         if isinstance(expr_rtype, RTuple):
             # len() of fixed-length tuple can be trivially determined statically,
@@ -78,95 +101,124 @@ def translate_len(
     return None
 
 
-@specialize_function('builtins.list')
+@specialize_function("builtins.list")
 def dict_methods_fast_path(
-        builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Specialize a common case when list() is called on a dictionary view
     # method call, for example foo = list(bar.keys()).
     if not (len(expr.args) == 1 and expr.arg_kinds == [ARG_POS]):
         return None
     arg = expr.args[0]
-    if not (isinstance(arg, CallExpr) and not arg.args
-            and isinstance(arg.callee, MemberExpr)):
+    if not (
+        isinstance(arg, CallExpr)
+        and not arg.args
+        and isinstance(arg.callee, MemberExpr)
+    ):
         return None
     base = arg.callee.expr
     attr = arg.callee.name
     rtype = builder.node_type(base)
-    if not (is_dict_rprimitive(rtype) and attr in ('keys', 'values', 'items')):
+    if not (is_dict_rprimitive(rtype) and attr in ("keys", "values", "items")):
         return None
 
     obj = builder.accept(base)
     # Note that it is not safe to use fast methods on dict subclasses, so
     # the corresponding helpers in CPy.h fallback to (inlined) generic logic.
-    if attr == 'keys':
+    if attr == "keys":
         return builder.primitive_op(dict_keys_op, [obj], expr.line)
-    elif attr == 'values':
+    elif attr == "values":
         return builder.primitive_op(dict_values_op, [obj], expr.line)
     else:
         return builder.primitive_op(dict_items_op, [obj], expr.line)
 
 
-@specialize_function('builtins.tuple')
-@specialize_function('builtins.set')
-@specialize_function('builtins.dict')
-@specialize_function('builtins.sum')
-@specialize_function('builtins.min')
-@specialize_function('builtins.max')
-@specialize_function('builtins.sorted')
-@specialize_function('collections.OrderedDict')
-@specialize_function('join', str_rprimitive)
-@specialize_function('extend', list_rprimitive)
-@specialize_function('update', dict_rprimitive)
-@specialize_function('update', set_rprimitive)
+@specialize_function("builtins.tuple")
+@specialize_function("builtins.set")
+@specialize_function("builtins.dict")
+@specialize_function("builtins.sum")
+@specialize_function("builtins.min")
+@specialize_function("builtins.max")
+@specialize_function("builtins.sorted")
+@specialize_function("collections.OrderedDict")
+@specialize_function("join", str_rprimitive)
+@specialize_function("extend", list_rprimitive)
+@specialize_function("update", dict_rprimitive)
+@specialize_function("update", set_rprimitive)
 def translate_safe_generator_call(
-        builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Special cases for things that consume iterators where we know we
     # can safely compile a generator into a list.
-    if (len(expr.args) > 0
-            and expr.arg_kinds[0] == ARG_POS
-            and isinstance(expr.args[0], GeneratorExpr)):
+    if (
+        len(expr.args) > 0
+        and expr.arg_kinds[0] == ARG_POS
+        and isinstance(expr.args[0], GeneratorExpr)
+    ):
         if isinstance(callee, MemberExpr):
             return builder.gen_method_call(
-                builder.accept(callee.expr), callee.name,
-                ([translate_list_comprehension(builder, expr.args[0])]
-                    + [builder.accept(arg) for arg in expr.args[1:]]),
-                builder.node_type(expr), expr.line, expr.arg_kinds, expr.arg_names)
+                builder.accept(callee.expr),
+                callee.name,
+                (
+                    [translate_list_comprehension(builder, expr.args[0])]
+                    + [builder.accept(arg) for arg in expr.args[1:]]
+                ),
+                builder.node_type(expr),
+                expr.line,
+                expr.arg_kinds,
+                expr.arg_names,
+            )
         else:
             return builder.call_refexpr_with_args(
-                expr, callee,
-                ([translate_list_comprehension(builder, expr.args[0])]
-                    + [builder.accept(arg) for arg in expr.args[1:]]))
+                expr,
+                callee,
+                (
+                    [translate_list_comprehension(builder, expr.args[0])]
+                    + [builder.accept(arg) for arg in expr.args[1:]]
+                ),
+            )
     return None
 
 
-@specialize_function('builtins.any')
-def translate_any_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
-    if (len(expr.args) == 1
-            and expr.arg_kinds == [ARG_POS]
-            and isinstance(expr.args[0], GeneratorExpr)):
+@specialize_function("builtins.any")
+def translate_any_call(
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
+    if (
+        len(expr.args) == 1
+        and expr.arg_kinds == [ARG_POS]
+        and isinstance(expr.args[0], GeneratorExpr)
+    ):
         return any_all_helper(builder, expr.args[0], false_op, lambda x: x, true_op)
     return None
 
 
-@specialize_function('builtins.all')
-def translate_all_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
-    if (len(expr.args) == 1
-            and expr.arg_kinds == [ARG_POS]
-            and isinstance(expr.args[0], GeneratorExpr)):
+@specialize_function("builtins.all")
+def translate_all_call(
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
+    if (
+        len(expr.args) == 1
+        and expr.arg_kinds == [ARG_POS]
+        and isinstance(expr.args[0], GeneratorExpr)
+    ):
         return any_all_helper(
-            builder, expr.args[0],
+            builder,
+            expr.args[0],
             true_op,
-            lambda x: builder.unary_op(x, 'not', expr.line),
-            false_op
+            lambda x: builder.unary_op(x, "not", expr.line),
+            false_op,
         )
     return None
 
 
-def any_all_helper(builder: IRBuilder,
-                   gen: GeneratorExpr,
-                   initial_value_op: OpDescription,
-                   modify: Callable[[Value], Value],
-                   new_value_op: OpDescription) -> Value:
+def any_all_helper(
+    builder: IRBuilder,
+    gen: GeneratorExpr,
+    initial_value_op: OpDescription,
+    modify: Callable[[Value], Value],
+    new_value_op: OpDescription,
+) -> Value:
     retval = builder.alloc_temp(bool_rprimitive)
     builder.assign(retval, builder.primitive_op(initial_value_op, [], -1), -1)
     loop_params = list(zip(gen.indices, gen.sequences, gen.condlists))
@@ -186,10 +238,11 @@ def any_all_helper(builder: IRBuilder,
     return retval
 
 
-@specialize_function('dataclasses.field')
-@specialize_function('attr.Factory')
+@specialize_function("dataclasses.field")
+@specialize_function("attr.Factory")
 def translate_dataclasses_field_call(
-        builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Special case for 'dataclasses.field' and 'attr.Factory' function calls
     # because the results of such calls are typechecked by mypy using the types
     # of the arguments to their respective functions, resulting in attempted
@@ -198,17 +251,21 @@ def translate_dataclasses_field_call(
     return None
 
 
-@specialize_function('builtins.next')
-def translate_next_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+@specialize_function("builtins.next")
+def translate_next_call(
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Special case for calling next() on a generator expression, an
-    # idiom that shows up some in mypy.
+    # idiom that shows up some in frompy.
     #
     # For example, next(x for x in l if x.id == 12, None) will
     # generate code that searches l for an element where x.id == 12
     # and produce the first such object, or None if no such element
     # exists.
-    if not (expr.arg_kinds in ([ARG_POS], [ARG_POS, ARG_POS])
-            and isinstance(expr.args[0], GeneratorExpr)):
+    if not (
+        expr.arg_kinds in ([ARG_POS], [ARG_POS, ARG_POS])
+        and isinstance(expr.args[0], GeneratorExpr)
+    ):
         return None
 
     gen = expr.args[0]
@@ -236,20 +293,29 @@ def translate_next_call(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> 
         builder.assign(retval, default_val, gen.left_expr.line)
         builder.goto(exit_block)
     else:
-        builder.add(RaiseStandardError(RaiseStandardError.STOP_ITERATION, None, expr.line))
+        builder.add(
+            RaiseStandardError(RaiseStandardError.STOP_ITERATION, None, expr.line)
+        )
         builder.add(Unreachable())
 
     builder.activate_block(exit_block)
     return retval
 
 
-@specialize_function('builtins.isinstance')
-def translate_isinstance(builder: IRBuilder, expr: CallExpr, callee: RefExpr) -> Optional[Value]:
+@specialize_function("builtins.isinstance")
+def translate_isinstance(
+    builder: IRBuilder, expr: CallExpr, callee: RefExpr
+) -> Optional[Value]:
     # Special case builtins.isinstance
-    if (len(expr.args) == 2
-            and expr.arg_kinds == [ARG_POS, ARG_POS]
-            and isinstance(expr.args[1], (RefExpr, TupleExpr))):
+    if (
+        len(expr.args) == 2
+        and expr.arg_kinds == [ARG_POS, ARG_POS]
+        and isinstance(expr.args[1], (RefExpr, TupleExpr))
+    ):
         irs = builder.flatten_classes(expr.args[1])
         if irs is not None:
-            return builder.builder.isinstance_helper(builder.accept(expr.args[0]), irs, expr.line)
+            return builder.builder.isinstance_helper(
+                builder.accept(expr.args[0]), irs, expr.line
+            )
     return None
+

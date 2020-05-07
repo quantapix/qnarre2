@@ -1024,7 +1024,7 @@ class StubGenerator(mypy.traverser.TraverserVisitor):
         import_names = []
         module, relative = translate_module_name(o.id, o.relative)
         if self.module:
-            full_module, ok = mypy.util.correct_relative_import(
+            full_module, ok = frompy.util.correct_relative_import(
                 self.module, relative, module, self.path.endswith(".__init__.py")
             )
             if not ok:
@@ -1501,9 +1501,9 @@ def parse_source_file(mod: StubSource, mypy_options: MypyOptions) -> None:
     assert mod.path is not None, "Not found module was not skipped"
     with open(mod.path, "rb") as f:
         data = f.read()
-    source = mypy.util.decode_python_encoding(data, mypy_options.python_version)
+    source = frompy.util.decode_python_encoding(data, mypy_options.python_version)
     errors = Errors()
-    mod.ast = mypy.parse.parse(
+    mod.ast = frompy.parse.parse(
         source, fnam=mod.path, module=mod.module, errors=errors, options=mypy_options
     )
     mod.ast._fullname = mod.module
@@ -1803,7 +1803,7 @@ def parse_options(args: List[str]) -> Options:
 
 
 def main() -> None:
-    mypy.util.check_python_version("stubgen")
+    frompy.util.check_python_version("stubgen")
     # Make sure that the current directory is in sys.path so that
     # stubgen can be run on packages in the current directory.
     if not ("" in sys.path or "." in sys.path):

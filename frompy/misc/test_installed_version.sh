@@ -4,7 +4,7 @@
 # Installs a version of mypy into a virtualenv and tests it.
 
 # A bunch of stuff about mypy's code organization and test setup makes
-# it annoying to test an installed version of mypy. If somebody has a
+# it annoying to test an installed version of frompy. If somebody has a
 # better way please let me know.
 
 function abspath {

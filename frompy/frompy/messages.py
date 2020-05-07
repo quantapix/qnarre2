@@ -3,7 +3,7 @@
 Don't add any non-trivial message construction logic to the type
 checker, as it can compromise clarity and make messages less
 consistent. Add such logic to this module instead. Literal messages, including those
-with format args, should be defined as constants in mypy.message_registry.
+with format args, should be defined as constants in frompy.message_registry.
 
 Historically we tried to avoid all message string literals in the type
 checker but we are moving away from this convention.
@@ -2726,4 +2726,3 @@ def format_key_list(keys: List[str], *, short: bool = False) -> str:
         return "{}key {}".format(td, reprs[0])
     else:
         return "{}keys ({})".format(td, ", ".join(reprs))
-

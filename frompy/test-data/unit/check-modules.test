@@ -2381,7 +2381,7 @@ def __getattr__(attr: str) -> Any: ...
 [file a/b/__init__.pyi]
 # empty (i.e. complete subpackage)
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-a.b.c]
 ignore_missing_imports = True
@@ -2643,7 +2643,7 @@ x = 0
 y = 0
 [file foo/baz.py]
 z = 0
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path = tmp/xx, tmp/yy
 
@@ -2656,7 +2656,7 @@ x = ''
 [file yy/foo/bar.py]
 y = 0
 [file yy/foo/__init__.py]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path = tmp/xx, tmp/yy
 
@@ -2668,7 +2668,7 @@ reveal_type(x)  # N: Revealed type is 'builtins.int'
 x = 0
 [file yy/foo/bar.py]
 x = ''
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path = tmp/xx, tmp/yy
 
@@ -2681,7 +2681,7 @@ x = ''
 [file yy/foo/bar/baz.py]
 x = 0
 [file yy/foo/__init__.py]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path = tmp/xx, tmp/yy
 
@@ -2695,7 +2695,7 @@ x = ''
 [file yy/foo/bar/baz/boo.py]
 x = 0
 [file yy/foo/bar/__init__.py]
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path = tmp/xx, tmp/yy
 

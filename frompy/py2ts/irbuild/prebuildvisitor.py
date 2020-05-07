@@ -1,7 +1,15 @@
 from typing import Dict, List, Set
 
 from frompy.nodes import (
-    Decorator, Expression, FuncDef, FuncItem, LambdaExpr, NameExpr, SymbolNode, Var, MemberExpr
+    Decorator,
+    Expression,
+    FuncDef,
+    FuncItem,
+    LambdaExpr,
+    NameExpr,
+    SymbolNode,
+    Var,
+    MemberExpr,
 )
 from frompy.traverser import TraverserVisitor
 
@@ -56,10 +64,13 @@ class PreBuildVisitor(TraverserVisitor):
             # (ordinary) decorators in the decorator list. Certain
             # decorators (such as @property, @abstractmethod) are
             # special cased and removed from this list by
-            # mypy. Functions decorated only by special decorators
+            # frompy. Functions decorated only by special decorators
             # (and property setters) are not treated as decorated
             # functions by the IR builder.
-            if isinstance(dec.decorators[0], MemberExpr) and dec.decorators[0].name == 'setter':
+            if (
+                isinstance(dec.decorators[0], MemberExpr)
+                and dec.decorators[0].name == "setter"
+            ):
                 # Property setters are not treated as decorated methods.
                 self.prop_setters.add(dec.func)
             else:

@@ -1,4 +1,4 @@
-"""Plugin system for extending mypy.
+"""Plugin system for extending frompy.
 
 At large scale the plugin system works as following:
 
@@ -9,23 +9,23 @@ At large scale the plugin system works as following:
 * Every module should get an entry point function (called 'plugin' by default,
   but may be overridden in the config file) that should accept a single string
   argument that is a full mypy version (includes git commit hash for dev
-  versions) and return a subclass of mypy.plugins.Plugin.
+  versions) and return a subclass of frompy.plugins.Plugin.
 
-* All plugin class constructors should match the signature of mypy.plugin.Plugin
-  (i.e. should accept an mypy.options.Options object), and *must* call
+* All plugin class constructors should match the signature of frompy.plugin.Plugin
+  (i.e. should accept an frompy.options.Options object), and *must* call
   super().__init__().
 
 * At several steps during semantic analysis and type checking mypy calls
   special `get_xxx` methods on user plugins with a single string argument that
   is a fully qualified name (full name) of a relevant definition
-  (see mypy.plugin.Plugin method docstrings for details).
+  (see frompy.plugin.Plugin method docstrings for details).
 
 * The plugins are called in the order they are passed in the config option.
   Every plugin must decide whether to act on a given full name. The first
   plugin that returns non-None object will be used.
 
 * The above decision should be made using the limited common API specified by
-  mypy.plugin.CommonPluginApi.
+  frompy.plugin.CommonPluginApi.
 
 * The callback returned by the plugin will be called with a larger context that
   includes relevant current state (e.g. a default return type, or a default
@@ -99,7 +99,7 @@ analyzer is no longer available):
    been fully processed yet. If you encounter a PlaceholderNode, you should
    defer unless it's the final iteration. If it's the final iteration, you
    should generate an error message. It usually means that there's a cyclic
-   definition that cannot be resolved by mypy. PlaceholderNodes can only refer
+   definition that cannot be resolved by frompy. PlaceholderNodes can only refer
    to references inside an import cycle. If you are looking up things from
    another module, such as the builtins, that is outside the current module or
    import cycle, you can safely assume that you won't receive a placeholder.
@@ -567,7 +567,7 @@ class Plugin(CommonPluginApi):
 
         The line number can be -1 when there is not a known real line number.
 
-        Priorities are defined in mypy.build (but maybe shouldn't be).
+        Priorities are defined in frompy.build (but maybe shouldn't be).
         10 is a good choice for priority.
         """
         return []

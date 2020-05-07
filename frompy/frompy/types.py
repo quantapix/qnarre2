@@ -209,7 +209,7 @@ class TypeAliasType(Type):
 
         This doesn't do full expansion, i.e. the result can contain another
         (or even this same) type alias. Use this internal helper only when really needed,
-        its public wrapper mypy.types.get_proper_type() is preferred.
+        its public wrapper frompy.types.get_proper_type() is preferred.
         """
         assert self.alias is not None
         if self.alias.no_args:
@@ -809,7 +809,7 @@ class DeletedType(ProperType):
 
 
 # Fake TypeInfo to be used as a placeholder during Instance de-serialization.
-NOT_READY = mypy.nodes.FakeInfo(
+NOT_READY = frompy.nodes.FakeInfo(
     "De-serialization failure: TypeInfo not fixed"
 )  # type: Final
 
@@ -824,7 +824,7 @@ class Instance(ProperType):
 
     def __init__(
         self,
-        typ: mypy.nodes.TypeInfo,
+        typ: frompy.nodes.TypeInfo,
         args: List[Type],
         line: int = -1,
         column: int = -1,
@@ -1033,7 +1033,7 @@ class FunctionLike(ProperType):
         pass
 
     @abstractmethod
-    def type_object(self) -> mypy.nodes.TypeInfo:
+    def type_object(self) -> frompy.nodes.TypeInfo:
         pass
 
     @abstractmethod
@@ -1216,7 +1216,7 @@ class CallableType(FunctionLike):
     def is_type_obj(self) -> bool:
         return self.fallback.type.is_metaclass()
 
-    def type_object(self) -> mypy.nodes.TypeInfo:
+    def type_object(self) -> frompy.nodes.TypeInfo:
         assert self.is_type_obj()
         ret = get_proper_type(self.ret_type)
         if isinstance(ret, TypeVarType):
@@ -1425,7 +1425,7 @@ class Overloaded(FunctionLike):
         # sufficient to query only (any) one of them.
         return self._items[0].is_type_obj()
 
-    def type_object(self) -> mypy.nodes.TypeInfo:
+    def type_object(self) -> frompy.nodes.TypeInfo:
         # All the items must have the same type object, so it's sufficient to
         # query only (any) one of them.
         return self._items[0].type_object()
@@ -1470,7 +1470,7 @@ class TupleType(ProperType):
         partial_fallback: The (imprecise) underlying instance type that is used
             for non-tuple methods. This is generally builtins.tuple[Any] for
             regular tuples, but it's different for named tuples and classes with
-            a tuple base class. Use mypy.typeops.tuple_fallback to calculate the
+            a tuple base class. Use frompy.typeops.tuple_fallback to calculate the
             precise fallback type derived from item types.
         implicit: If True, derived from a tuple expression (t,....) instead of Tuple[t, ...]
     """
@@ -1969,7 +1969,7 @@ class PartialType(ProperType):
 
     # None for the 'None' partial type; otherwise a generic class
     type = None  # type: Optional[mypy.nodes.TypeInfo]
-    var = None  # type: mypy.nodes.Var
+    var = None  # type: frompy.nodes.Var
     # For partial defaultdict[K, V], the type V (K is unknown). If V is generic,
     # the type argument is Any and will be replaced later.
     value_type = None  # type: Optional[Instance]

@@ -288,7 +288,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
     # Helper for managing conditional types
     binder = None  # type: ConditionalTypeBinder
     # Helper for type checking expressions
-    expr_checker = None  # type: mypy.checkexpr.ExpressionChecker
+    expr_checker = None  # type: frompy.checkexpr.ExpressionChecker
 
     tscope = None  # type: Scope
     scope = None  # type: CheckerScope
@@ -352,7 +352,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         self.path = path
         self.msg = MessageBuilder(errors, modules)
         self.plugin = plugin
-        self.expr_checker = mypy.checkexpr.ExpressionChecker(
+        self.expr_checker = frompy.checkexpr.ExpressionChecker(
             self, self.msg, self.plugin
         )
         self.tscope = Scope()
@@ -1150,7 +1150,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                             "__init_subclass__",
                         )
                         if isclass:
-                            ref_type = mypy.types.TypeType.make_normalized(ref_type)
+                            ref_type = frompy.types.TypeType.make_normalized(ref_type)
                         erased = get_proper_type(erase_to_bound(arg_type))
                         if not is_subtype_ignoring_tvars(ref_type, erased):
                             note = None
@@ -4332,7 +4332,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         if not self.options.disallow_any_decorated or self.is_stub:
             return
 
-        if mypy.checkexpr.has_any_type(typ):
+        if frompy.checkexpr.has_any_type(typ):
             self.msg.untyped_decorated_function(typ, func)
 
     def check_async_with_item(

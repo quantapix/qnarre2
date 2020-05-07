@@ -7,7 +7,7 @@ Changes in the command line version of mypy will be immediately useable.
 
 Just import this module and then call the 'run' function with a parameter of
 type List[str], containing what normally would have been the command line
-arguments to mypy.
+arguments to frompy.
 
 Function 'run' returns a Tuple[str, str, int], namely
 (<normal_report>, <error_report>, <exit_status>),

@@ -471,7 +471,7 @@ def incomplete(x) -> int:
 [file incomplete.py]
 def incomplete(x) -> int:  # E: Function is missing a type annotation for one or more arguments
     return 0
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 disallow_incomplete_defs = False
 \[mypy-incomplete]
@@ -491,7 +491,7 @@ x = 0
 if int():
     x = None  # E: Incompatible types in assignment (expression has type "None", variable has type "int")
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict_optional = False
 \[mypy-optional]
@@ -518,7 +518,7 @@ standard.optional_int = None  # OK -- explicitly declared as optional
 f(standard.an_int)  # ints can be used as ints
 f(standard.optional_int)  # E: Argument 1 to "f" has incompatible type "None"; expected "int"
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict_optional = False
 \[mypy-optional]
@@ -541,7 +541,7 @@ def f(x: int) -> None: pass
 x = 0  # type: Optional[int]
 y = None  # type: None
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict_optional = False
 \[mypy-optional]
@@ -564,7 +564,7 @@ def f(x: List[int]) -> None: pass
 x = []  # type: List[Optional[int]]
 y = []  # type: List[int]
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict_optional = False
 \[mypy-optional]
@@ -590,7 +590,7 @@ import standard
 def f(x: int = None) -> None: pass
 standard.f(None)
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict_optional = False
 \[mypy-optional]
@@ -1071,7 +1071,7 @@ if not YOLO:
     1+()
 if BLAH:
     1+()
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_missing_imports = True
 always_true = YOLO1, YOLO
@@ -1160,7 +1160,7 @@ class A(Generic[T]):
 
 def f(c: A) -> None:  # E: Missing type parameters for generic type "A"
     pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict = True
 [out]
@@ -1176,7 +1176,7 @@ class A(Generic[T]):
 
 def f(c: A) -> None:
     pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict = False
 [out]
@@ -1195,7 +1195,7 @@ import b
 42 == 'no'  # E: Non-overlapping equality check (left operand type: "Literal[42]", right operand type: "Literal['no']")
 [file b.py]
 42 == 'no'
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 strict_equality = True
 \[mypy-b]
@@ -1260,7 +1260,7 @@ a = 5
 [file other_module_2.py]
 from other_module_1 import a
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 implicit_reexport = True
 \[mypy-other_module_2]
@@ -1496,7 +1496,7 @@ x = None  # type: Any
 
 class ShouldNotBeFine(x): ...  # E: Class cannot subclass 'x' (has type 'Any')
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 disallow_subclassing_any = True
 \[mypy-m]

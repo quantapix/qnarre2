@@ -2112,7 +2112,7 @@ main:2: error: Incompatible types in assignment (expression has type "int", vari
 import other
 [file other.pyi.2]
 x = 1
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports_for_stubs = True
 [stale]

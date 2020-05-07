@@ -136,7 +136,7 @@ def f():
 
 [case testConfigFile]
 # cmd: mypy main.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 2.7
 [file main.py]
@@ -148,7 +148,7 @@ def f():
 
 [case testErrorContextConfig]
 # cmd: mypy main.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 show_error_context=True
 [file main.py]
@@ -172,7 +172,7 @@ def f():
 
 [case testNoConfigFile]
 # cmd: mypy main.py --config-file=
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 warn_unused_ignores = True
 [file main.py]
@@ -180,7 +180,7 @@ warn_unused_ignores = True
 
 [case testPerFileConfigSection]
 # cmd: mypy x.py y.py z.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 disallow_untyped_defs = True
 \[mypy-y]
@@ -209,7 +209,7 @@ x.py:1: error: Function is missing a type annotation
 
 [case testPerFileConfigSectionMultipleMatchesDisallowed]
 # cmd: mypy xx.py xy.py yx.py yy.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-*x*]
 disallow_untyped_defs = True
@@ -234,7 +234,7 @@ mypy.ini: [mypy-*y*]: Patterns must be fully-qualified module names, optionally 
 
 [case testMultipleGlobConfigSection]
 # cmd: mypy x.py y.py z.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-x.*,z.*]
 disallow_untyped_defs = True
@@ -250,14 +250,14 @@ x.py:1: error: Function is missing a type annotation
 
 [case testConfigErrorNoSection]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 [out]
 mypy.ini: No [mypy] section in config file
 == Return code: 0
 
 [case testConfigErrorUnknownFlag]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 bad = 0
 [out]
@@ -266,7 +266,7 @@ mypy.ini: [mypy]: Unrecognized option: bad = 0
 
 [case testConfigErrorBadFlag]
 # cmd: mypy a.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 disallow-untyped-defs = True
 [file a.py]
@@ -278,7 +278,7 @@ mypy.ini: [mypy]: Unrecognized option: disallow-untyped-defs = True
 
 [case testConfigErrorBadBoolean]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_missing_imports = nah
 [out]
@@ -287,7 +287,7 @@ mypy.ini: [mypy]: ignore_missing_imports: Not a boolean: nah
 
 [case testConfigErrorNotPerFile]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-*]
 python_version = 3.4
@@ -297,7 +297,7 @@ mypy.ini: [mypy-*]: Per-module sections should only specify per-module flags (py
 
 [case testConfigMypyPath]
 # cmd: mypy file.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path =
     foo:bar
@@ -322,7 +322,7 @@ file.py:6: error: Argument 1 to "foo" has incompatible type "str"; expected "int
 
 [case testIgnoreErrorsConfig]
 # cmd: mypy x.py y.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-x]
 ignore_errors = True
@@ -344,7 +344,7 @@ a.x + 0
 a.x + ''  # E
 a.y  # E
 a + 0  # E
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports = normal
 [file a.py]
@@ -366,7 +366,7 @@ import a
 a.x + ''
 a.y
 a + 0
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports = silent
 [file a.py]
@@ -385,7 +385,7 @@ from a import x
 reveal_type(x)  # Expect Any
 import a
 reveal_type(a.x)  # Expect Any
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports = skip
 [file a.py]
@@ -401,7 +401,7 @@ from a import x
 reveal_type(x)  # Expect Any
 import a  # Error reported here
 reveal_type(a.x)  # Expect Any
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports = error
 [file a.py]
@@ -414,7 +414,7 @@ main.py:4: note: Revealed type is 'Any'
 
 [case testConfigFollowImportsSelective]
 # cmd: mypy main.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-normal]
 follow_imports = normal
@@ -457,7 +457,7 @@ main.py:8: note: Revealed type is 'Any'
 [file main.py]
 import missing  # Expect error here
 reveal_type(missing.x)  # Expect Any
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_missing_imports = False
 [out]
@@ -470,7 +470,7 @@ main.py:2: note: Revealed type is 'Any'
 [file main.py]
 import missing  # No error here
 reveal_type(missing.x)  # Expect Any
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_missing_imports = True
 [out]
@@ -478,7 +478,7 @@ main.py:2: note: Revealed type is 'Any'
 
 [case testConfigNoErrorForUnknownXFlagInSubsection]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-foo]
 x_bad = 0
@@ -514,7 +514,7 @@ main.py:1: error: Cannot find implementation or library stub for module named 'a
 
 [case testPythonVersionTooOld10]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 1.0
 [out]
@@ -523,7 +523,7 @@ mypy.ini: [mypy]: python_version: Python major version '1' out of range (must be
 
 [case testPythonVersionTooOld26]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 2.6
 [out]
@@ -532,7 +532,7 @@ mypy.ini: [mypy]: python_version: Python 2.6 is not supported (must be 2.7)
 
 [case testPythonVersionTooOld33]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 3.3
 [out]
@@ -541,7 +541,7 @@ mypy.ini: [mypy]: python_version: Python 3.3 is not supported (must be 3.4 or hi
 
 [case testPythonVersionTooNew28]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 2.8
 [out]
@@ -550,7 +550,7 @@ mypy.ini: [mypy]: python_version: Python 2.8 is not supported (must be 2.7)
 
 [case testPythonVersionTooNew40]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 4.0
 [out]
@@ -559,21 +559,21 @@ mypy.ini: [mypy]: python_version: Python major version '4' out of range (must be
 
 [case testPythonVersionAccepted27]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 2.7
 [out]
 
 [case testPythonVersionAccepted34]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 3.4
 [out]
 
 [case testPythonVersionAccepted36]
 # cmd: mypy -c pass
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 python_version = 3.6
 [out]
@@ -599,7 +599,7 @@ a.__pow__() # E: Too few arguments for "__pow__" of "int"
 
 [case testDisallowAnyGenericsBuiltinCollections]
 # cmd: mypy m.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-m]
 disallow_any_generics = True
@@ -621,7 +621,7 @@ m.py:7: error: Implicit generic "Any". Use "typing.FrozenSet" and specify generi
 
 [case testDisallowAnyGenericsTypingCollections]
 # cmd: mypy m.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-m]
 disallow_any_generics = True
@@ -655,7 +655,7 @@ m.py:7: error: Missing type parameters for generic type "FrozenSet"
 from typing import List
 def g(x: List) -> None: pass
 g(None)
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 allow_any_generics = True
 \[mypy-a.*]
@@ -678,7 +678,7 @@ a/b/c/d/e/__init__.py:3: error: Argument 1 to "g" has incompatible type "None"; 
 
 [case testDisallowUntypedDefsAndGenerics]
 # cmd: mypy a.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 disallow_untyped_defs = True
 disallow_any_generics = True
@@ -736,7 +736,7 @@ c.py:2: error: Argument 1 to "bar" has incompatible type "str"; expected "int"
 
 [case testSrcPEP420Packages]
 # cmd: mypy -p anamespace --namespace-packages
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]]
 mypy_path = src
 [file src/setup.cfg]
@@ -749,7 +749,7 @@ src/anamespace/foo/bar.py:2: error: Incompatible return value type (got "int", e
 
 [case testFollowImportStubs1]
 # cmd: mypy main.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-math.*]
 follow_imports = error
@@ -763,7 +763,7 @@ main.py:1: note: (Using --follow-imports=error, module not passed on command lin
 
 [case testFollowImportStubs2]
 # cmd: mypy main.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-math.*]
 follow_imports = skip
@@ -813,7 +813,7 @@ s1.py:2: error: Incompatible return value type (got "int", expected "str")
 
 [case testConfigWarnUnusedSection1]
 # cmd: mypy foo.py quux.py spam/eggs.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 warn_unused_configs = True
 incremental = False
@@ -836,12 +836,12 @@ incremental = False
 [file spam/__init__.py]
 [file spam/eggs.py]
 [out]
-Warning: unused section(s) in mypy.ini: [mypy-bar], [mypy-baz.*], [mypy-emarg.*], [mypy-emarg.hatch], [mypy-a.*.c], [mypy-a.x.b]
+Warning: unused section(s) in frompy.ini: [mypy-bar], [mypy-baz.*], [mypy-emarg.*], [mypy-emarg.hatch], [mypy-a.*.c], [mypy-a.x.b]
 == Return code: 0
 
 [case testConfigUnstructuredGlob]
 # cmd: mypy emarg foo
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_errors = true
 \[mypy-*.lol]
@@ -908,7 +908,7 @@ import d
 
 [case testIniFiles]
 # cmd: mypy
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 files = a.py, b.py
 [file a.py]
@@ -921,7 +921,7 @@ a.py:1: error: Name 'fail' is not defined
 
 [case testIniFilesGlobbing]
 # cmd: mypy
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 files = **/*.py
 [file a/b.py]
@@ -934,7 +934,7 @@ c.py:1: error: Name 'fail' is not defined
 
 [case testIniFilesCmdlineOverridesConfig]
 # cmd: mypy override.py
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 files = config.py
 [out]
@@ -1070,7 +1070,7 @@ mypy: stubgen does not support .pyd files: 'a.pyd'
 
 [case testDuplicateModules]
 # cmd: mypy src
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 mypy_path = src
 [file src/__init__.py]

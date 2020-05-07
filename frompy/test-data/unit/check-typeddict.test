@@ -1195,7 +1195,7 @@ d = {'x': int, 'y': int}
 Point = TypedDict('Point', {**d})  # E: Invalid TypedDict() field name
 [builtins fixtures/dict.pyi]
 
--- NOTE: The following code works at runtime but is not yet supported by mypy.
+-- NOTE: The following code works at runtime but is not yet supported by frompy.
 --       Keyword arguments may potentially be supported in the future.
 [case testCannotCreateTypedDictTypeWithNonpositionalArgs]
 from frompy.extensions import TypedDict

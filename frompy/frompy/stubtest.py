@@ -64,7 +64,7 @@ _formatter = FancyFormatter(sys.stdout, sys.stderr, False)
 
 
 def _style(message: str, **kwargs: Any) -> str:
-    """Wrapper around mypy.util for fancy formatting."""
+    """Wrapper around frompy.util for fancy formatting."""
     kwargs.setdefault("color", "none")
     return _formatter.style(message, **kwargs)
 
@@ -361,7 +361,7 @@ def _verify_arg_default_value(
             # UnboundTypes have ugly question marks following them, so default to var type.
             # Note we do this same fallback when constructing signatures in from_overloadedfuncdef
             stub_type = stub_arg.variable.type or stub_arg.type_annotation
-            if isinstance(stub_type, mypy.types.TypeVarType):
+            if isinstance(stub_type, frompy.types.TypeVarType):
                 stub_type = stub_type.upper_bound
             if (
                 runtime_type is not None
@@ -508,13 +508,13 @@ class Signature(Generic[T]):
             # We just need this to return the positional args in the correct order.
             return max(index for _, index in all_args[arg_name])
 
-        def get_type(arg_name: str) -> mypy.types.ProperType:
-            with mypy.state.strict_optional_set(True):
+        def get_type(arg_name: str) -> frompy.types.ProperType:
+            with frompy.state.strict_optional_set(True):
                 all_types = [
                     arg.variable.type or arg.type_annotation
                     for arg, _ in all_args[arg_name]
                 ]
-                return mypy.typeops.make_simplified_union([t for t in all_types if t])
+                return frompy.typeops.make_simplified_union([t for t in all_types if t])
 
         def get_kind(arg_name: str) -> int:
             kinds = {arg.kind for arg, _ in all_args[arg_name]}
@@ -812,7 +812,7 @@ def _verify_property(stub: nodes.Decorator, runtime: Any) -> Iterator[str]:
     runtime_type = get_mypy_type_of_runtime_value(runtime)
     func_type = (
         stub.func.type.ret_type
-        if isinstance(stub.func.type, mypy.types.CallableType)
+        if isinstance(stub.func.type, frompy.types.CallableType)
         else None
     )
     if (
@@ -907,21 +907,21 @@ def is_dunder(name: str, exclude_init: bool = False) -> bool:
     return name.startswith("__") and name.endswith("__")
 
 
-def is_subtype_helper(left: mypy.types.Type, right: mypy.types.Type) -> bool:
+def is_subtype_helper(left: frompy.types.Type, right: frompy.types.Type) -> bool:
     """Checks whether ``left`` is a subtype of ``right``."""
-    left = mypy.types.get_proper_type(left)
-    right = mypy.types.get_proper_type(right)
+    left = frompy.types.get_proper_type(left)
+    right = frompy.types.get_proper_type(right)
     if (
-        isinstance(left, mypy.types.LiteralType)
+        isinstance(left, frompy.types.LiteralType)
         and isinstance(left.value, int)
         and left.value in (0, 1)
-        and isinstance(right, mypy.types.Instance)
+        and isinstance(right, frompy.types.Instance)
         and right.type.fullname == "builtins.bool"
     ):
         # Pretend Literal[0, 1] is a subtype of bool to avoid unhelpful errors.
         return True
-    with mypy.state.strict_optional_set(True):
-        return mypy.subtypes.is_subtype(left, right)
+    with frompy.state.strict_optional_set(True):
+        return frompy.subtypes.is_subtype(left, right)
 
 
 def get_mypy_type_of_runtime_value(runtime: Any) -> Optional[mypy.types.Type]:
@@ -931,12 +931,12 @@ def get_mypy_type_of_runtime_value(runtime: Any) -> Optional[mypy.types.Type]:
 
     """
     if runtime is None:
-        return mypy.types.NoneType()
+        return frompy.types.NoneType()
     if isinstance(runtime, property):
         # Give up on properties to avoid issues with things that are typed as attributes.
         return None
     if isinstance(runtime, (types.FunctionType, types.BuiltinFunctionType)):
-        # TODO: Construct a mypy.types.CallableType
+        # TODO: Construct a frompy.types.CallableType
         return None
 
     # Try and look up a stub for the runtime object
@@ -952,21 +952,23 @@ def get_mypy_type_of_runtime_value(runtime: Any) -> Optional[mypy.types.Type]:
     if not isinstance(type_info, nodes.TypeInfo):
         return None
 
-    def anytype() -> mypy.types.AnyType:
-        return mypy.types.AnyType(mypy.types.TypeOfAny.unannotated)
+    def anytype() -> frompy.types.AnyType:
+        return frompy.types.AnyType(mypy.types.TypeOfAny.unannotated)
 
     if isinstance(runtime, tuple):
-        # Special case tuples so we construct a valid mypy.types.TupleType
+        # Special case tuples so we construct a valid frompy.types.TupleType
         optional_items = [get_mypy_type_of_runtime_value(v) for v in runtime]
         items = [(i if i is not None else anytype()) for i in optional_items]
-        fallback = mypy.types.Instance(type_info, [anytype()])
-        return mypy.types.TupleType(items, fallback)
+        fallback = frompy.types.Instance(type_info, [anytype()])
+        return frompy.types.TupleType(items, fallback)
 
-    fallback = mypy.types.Instance(type_info, [anytype() for _ in type_info.type_vars])
+    fallback = frompy.types.Instance(
+        type_info, [anytype() for _ in type_info.type_vars]
+    )
     try:
         # Literals are supposed to be only bool, int, str, bytes or enums, but this seems to work
         # well (when not using mypyc, for which bytes and enums are also problematic).
-        return mypy.types.LiteralType(value=runtime, fallback=fallback,)
+        return frompy.types.LiteralType(value=runtime, fallback=fallback,)
     except TypeError:
         # Ask for forgiveness if we're using mypyc.
         return fallback
@@ -990,9 +992,9 @@ def build_stubs(
     :param find_submodules: Whether to attempt to find submodules of the given modules as well.
 
     """
-    data_dir = mypy.build.default_data_dir()
-    search_path = mypy.modulefinder.compute_search_paths([], options, data_dir)
-    find_module_cache = mypy.modulefinder.FindModuleCache(search_path)
+    data_dir = frompy.build.default_data_dir()
+    search_path = frompy.modulefinder.compute_search_paths([], options, data_dir)
+    find_module_cache = frompy.modulefinder.FindModuleCache(search_path)
 
     all_modules = []
     sources = []
@@ -1012,8 +1014,8 @@ def build_stubs(
             )
 
     try:
-        res = mypy.build.build(sources=sources, options=options)
-    except mypy.errors.CompileError as e:
+        res = frompy.build.build(sources=sources, options=options)
+    except frompy.errors.CompileError as e:
         output = [
             _style("error: ", color="red", bold=True),
             "failed mypy compile.\n",
@@ -1039,7 +1041,7 @@ def get_stub(module: str) -> Optional[nodes.FrompyFile]:
 
 def get_typeshed_stdlib_modules(custom_typeshed_dir: Optional[str]) -> List[str]:
     """Returns a list of stdlib modules in typeshed (for current Python version)."""
-    # This snippet is based on code in mypy.modulefinder.default_lib_path
+    # This snippet is based on code in frompy.modulefinder.default_lib_path
     if custom_typeshed_dir:
         typeshed_dir = Path(custom_typeshed_dir)
     else:
@@ -1207,7 +1209,7 @@ def parse_options(args: List[str]) -> argparse.Namespace:
 
 
 def main() -> int:
-    mypy.util.check_python_version("stubtest")
+    frompy.util.check_python_version("stubtest")
     return test_stubs(parse_options(sys.argv[1:]))
 
 

@@ -64,7 +64,9 @@ def collect_cases(fn: Callable[..., Iterator[Case]]) -> Callable[..., None]:
     def test(*args: Any, **kwargs: Any) -> None:
         cases = list(fn(*args, **kwargs))
         expected_errors = set(
-            "{}.{}".format(TEST_MODULE_NAME, c.error) for c in cases if c.error is not None
+            "{}.{}".format(TEST_MODULE_NAME, c.error)
+            for c in cases
+            if c.error is not None
         )
         output = run_stubtest(
             stub="\n\n".join(textwrap.dedent(c.stub.lstrip("\n")) for c in cases),
@@ -106,7 +108,9 @@ class StubtestUnit(unittest.TestCase):
             error="mistyped_class",
         )
         yield Case(
-            stub="class mistyped_fn: ...", runtime="def mistyped_fn(): pass", error="mistyped_fn"
+            stub="class mistyped_fn: ...",
+            runtime="def mistyped_fn(): pass",
+            error="mistyped_fn",
         )
         yield Case(
             stub="""
@@ -198,7 +202,9 @@ class StubtestUnit(unittest.TestCase):
             error=None,
         )
         yield Case(
-            stub="def f2(text: str = ...) -> None: ...", runtime="def f2(text): pass", error="f2"
+            stub="def f2(text: str = ...) -> None: ...",
+            runtime="def f2(text): pass",
+            error="f2",
         )
         yield Case(
             stub="def f3(text: str) -> None: ...",
@@ -293,19 +299,29 @@ class StubtestUnit(unittest.TestCase):
     @collect_cases
     def test_arg_mismatch(self) -> Iterator[Case]:
         yield Case(
-            stub="def f1(a, *, b, c) -> None: ...", runtime="def f1(a, *, b, c): pass", error=None
+            stub="def f1(a, *, b, c) -> None: ...",
+            runtime="def f1(a, *, b, c): pass",
+            error=None,
         )
         yield Case(
-            stub="def f2(a, *, b) -> None: ...", runtime="def f2(a, *, b, c): pass", error="f2"
+            stub="def f2(a, *, b) -> None: ...",
+            runtime="def f2(a, *, b, c): pass",
+            error="f2",
         )
         yield Case(
-            stub="def f3(a, *, b, c) -> None: ...", runtime="def f3(a, *, b): pass", error="f3"
+            stub="def f3(a, *, b, c) -> None: ...",
+            runtime="def f3(a, *, b): pass",
+            error="f3",
         )
         yield Case(
-            stub="def f4(a, *, b, c) -> None: ...", runtime="def f4(a, b, *, c): pass", error="f4"
+            stub="def f4(a, *, b, c) -> None: ...",
+            runtime="def f4(a, b, *, c): pass",
+            error="f4",
         )
         yield Case(
-            stub="def f5(a, b, *, c) -> None: ...", runtime="def f5(a, *, b, c): pass", error="f5"
+            stub="def f5(a, b, *, c) -> None: ...",
+            runtime="def f5(a, *, b, c): pass",
+            error="f5",
         )
 
     @collect_cases
@@ -321,10 +337,14 @@ class StubtestUnit(unittest.TestCase):
             error="f2",
         )
         yield Case(
-            stub="def g1(a, b, c, d) -> None: ...", runtime="def g1(a, *args): pass", error=None
+            stub="def g1(a, b, c, d) -> None: ...",
+            runtime="def g1(a, *args): pass",
+            error=None,
         )
         yield Case(
-            stub="def g2(a, b, c, d, *args) -> None: ...", runtime="def g2(a): pass", error="g2"
+            stub="def g2(a, b, c, d, *args) -> None: ...",
+            runtime="def g2(a): pass",
+            error="g2",
         )
         yield Case(
             stub="def g3(a, b, c, d, *args) -> None: ...",
@@ -332,10 +352,14 @@ class StubtestUnit(unittest.TestCase):
             error=None,
         )
         yield Case(
-            stub="def h1(a) -> None: ...", runtime="def h1(a, b, c, d, *args): pass", error="h1"
+            stub="def h1(a) -> None: ...",
+            runtime="def h1(a, b, c, d, *args): pass",
+            error="h1",
         )
         yield Case(
-            stub="def h2(a, *args) -> None: ...", runtime="def h2(a, b, c, d): pass", error="h2"
+            stub="def h2(a, *args) -> None: ...",
+            runtime="def h2(a, b, c, d): pass",
+            error="h2",
         )
         yield Case(
             stub="def h3(a, *args) -> None: ...",
@@ -343,15 +367,25 @@ class StubtestUnit(unittest.TestCase):
             error="h3",
         )
         yield Case(
-            stub="def j1(a: int, *args) -> None: ...", runtime="def j1(a): pass", error="j1"
+            stub="def j1(a: int, *args) -> None: ...",
+            runtime="def j1(a): pass",
+            error="j1",
         )
         yield Case(
-            stub="def j2(a: int) -> None: ...", runtime="def j2(a, *args): pass", error="j2"
+            stub="def j2(a: int) -> None: ...",
+            runtime="def j2(a, *args): pass",
+            error="j2",
         )
         yield Case(
-            stub="def j3(a, b, c) -> None: ...", runtime="def j3(a, *args, c): pass", error="j3"
+            stub="def j3(a, b, c) -> None: ...",
+            runtime="def j3(a, *args, c): pass",
+            error="j3",
         )
-        yield Case(stub="def k1(a, **kwargs) -> None: ...", runtime="def k1(a): pass", error="k1")
+        yield Case(
+            stub="def k1(a, **kwargs) -> None: ...",
+            runtime="def k1(a): pass",
+            error="k1",
+        )
         yield Case(
             # In theory an error, but led to worse results in practice
             stub="def k2(a) -> None: ...",
@@ -359,10 +393,14 @@ class StubtestUnit(unittest.TestCase):
             error=None,
         )
         yield Case(
-            stub="def k3(a, b) -> None: ...", runtime="def k3(a, **kwargs): pass", error="k3"
+            stub="def k3(a, b) -> None: ...",
+            runtime="def k3(a, **kwargs): pass",
+            error="k3",
         )
         yield Case(
-            stub="def k4(a, *, b) -> None: ...", runtime="def k4(a, **kwargs): pass", error=None
+            stub="def k4(a, *, b) -> None: ...",
+            runtime="def k4(a, **kwargs): pass",
+            error=None,
         )
         yield Case(
             stub="def k5(a, *, b) -> None: ...",
@@ -585,7 +623,7 @@ class StubtestUnit(unittest.TestCase):
                 def __mangle_good(self, text): pass
                 def __mangle_bad(self, text): pass
             """,
-            error="X.__mangle_bad"
+            error="X.__mangle_bad",
         )
 
 
@@ -603,7 +641,9 @@ class StubtestMiscUnit(unittest.TestCase):
         expected = (
             'error: {0}.bad is inconsistent, stub argument "number" differs from runtime '
             'argument "num"\nStub: at line 1\ndef (number: builtins.int, text: builtins.str)\n'
-            "Runtime: at line 1 in file {0}.py\ndef (num, text)\n\n".format(TEST_MODULE_NAME)
+            "Runtime: at line 1 in file {0}.py\ndef (num, text)\n\n".format(
+                TEST_MODULE_NAME
+            )
         )
         assert remove_color_code(output) == expected
 
@@ -614,18 +654,24 @@ class StubtestMiscUnit(unittest.TestCase):
         )
         expected = (
             "{}.bad is inconsistent, "
-            'stub argument "number" differs from runtime argument "num"\n'.format(TEST_MODULE_NAME)
+            'stub argument "number" differs from runtime argument "num"\n'.format(
+                TEST_MODULE_NAME
+            )
         )
         assert remove_color_code(output) == expected
 
     def test_ignore_flags(self) -> None:
         output = run_stubtest(
-            stub="", runtime="__all__ = ['f']\ndef f(): pass", options=["--ignore-missing-stub"]
+            stub="",
+            runtime="__all__ = ['f']\ndef f(): pass",
+            options=["--ignore-missing-stub"],
         )
         assert not output
 
         output = run_stubtest(
-            stub="def f(__a): ...", runtime="def f(a): pass", options=["--ignore-positional-only"]
+            stub="def f(__a): ...",
+            runtime="def f(a): pass",
+            options=["--ignore-positional-only"],
         )
         assert not output
 
@@ -644,8 +690,12 @@ class StubtestMiscUnit(unittest.TestCase):
             assert not output
 
             # test unused entry detection
-            output = run_stubtest(stub="", runtime="", options=["--whitelist", whitelist.name])
-            assert output == "note: unused whitelist entry {}.bad\n".format(TEST_MODULE_NAME)
+            output = run_stubtest(
+                stub="", runtime="", options=["--whitelist", whitelist.name]
+            )
+            assert output == "note: unused whitelist entry {}.bad\n".format(
+                TEST_MODULE_NAME
+            )
 
             output = run_stubtest(
                 stub="",
@@ -666,19 +716,26 @@ class StubtestMiscUnit(unittest.TestCase):
                     def good() -> None: ...
                     def bad(number: int) -> None: ...
                     def also_bad(number: int) -> None: ...
-                    """.lstrip("\n")
+                    """.lstrip(
+                        "\n"
+                    )
                 ),
                 runtime=textwrap.dedent(
                     """
                     def good(): pass
                     def bad(asdf): pass
                     def also_bad(asdf): pass
-                    """.lstrip("\n")
+                    """.lstrip(
+                        "\n"
+                    )
                 ),
                 options=["--whitelist", whitelist.name, "--generate-whitelist"],
             )
-            assert output == "note: unused whitelist entry unused.*\n{}.also_bad\n".format(
-                TEST_MODULE_NAME
+            assert (
+                output
+                == "note: unused whitelist entry unused.*\n{}.also_bad\n".format(
+                    TEST_MODULE_NAME
+                )
             )
         finally:
             os.unlink(whitelist.name)
@@ -700,10 +757,12 @@ class StubtestMiscUnit(unittest.TestCase):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             test_stubs(parse_options(["not_a_module"]))
-        assert "error: not_a_module failed to find stubs" in remove_color_code(output.getvalue())
+        assert "error: not_a_module failed to find stubs" in remove_color_code(
+            output.getvalue()
+        )
 
     def test_get_typeshed_stdlib_modules(self) -> None:
-        stdlib = mypy.stubtest.get_typeshed_stdlib_modules(None)
+        stdlib = frompy.stubtest.get_typeshed_stdlib_modules(None)
         assert "builtins" in stdlib
         assert "os" in stdlib
 

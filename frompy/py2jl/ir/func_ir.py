@@ -7,7 +7,13 @@ from frompy.nodes import FuncDef, Block, ARG_POS, ARG_OPT, ARG_NAMED_OPT
 
 from py2jl.common import JsonDict
 from py2jl.ir.ops import (
-    DeserMaps, Goto, Branch, Return, Unreachable, BasicBlock, Environment
+    DeserMaps,
+    Goto,
+    Branch,
+    Return,
+    Unreachable,
+    BasicBlock,
+    Environment,
 )
 from py2jl.ir.rtypes import RType, deserialize_type
 from py2jl.namegen import NameGenerator
@@ -16,7 +22,7 @@ from py2jl.namegen import NameGenerator
 class RuntimeArg:
     """Representation of a function argument in IR.
 
-    Argument kind is one of ARG_* constants defined in mypy.nodes.
+    Argument kind is one of ARG_* constants defined in frompy.nodes.
     """
 
     def __init__(self, name: str, typ: RType, kind: int = ARG_POS) -> None:
@@ -29,17 +35,19 @@ class RuntimeArg:
         return self.kind == ARG_OPT or self.kind == ARG_NAMED_OPT
 
     def __repr__(self) -> str:
-        return 'RuntimeArg(name=%s, type=%s, optional=%r)' % (self.name, self.type, self.optional)
+        return "RuntimeArg(name=%s, type=%s, optional=%r)" % (
+            self.name,
+            self.type,
+            self.optional,
+        )
 
     def serialize(self) -> JsonDict:
-        return {'name': self.name, 'type': self.type.serialize(), 'kind': self.kind}
+        return {"name": self.name, "type": self.type.serialize(), "kind": self.kind}
 
     @classmethod
-    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> 'RuntimeArg':
+    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> "RuntimeArg":
         return RuntimeArg(
-            data['name'],
-            deserialize_type(data['type'], ctx),
-            data['kind'],
+            data["name"], deserialize_type(data["type"], ctx), data["kind"],
         )
 
 
@@ -53,16 +61,19 @@ class FuncSignature:
         self.ret_type = ret_type
 
     def __repr__(self) -> str:
-        return 'FuncSignature(args=%r, ret=%r)' % (self.args, self.ret_type)
+        return "FuncSignature(args=%r, ret=%r)" % (self.args, self.ret_type)
 
     def serialize(self) -> JsonDict:
-        return {'args': [t.serialize() for t in self.args], 'ret_type': self.ret_type.serialize()}
+        return {
+            "args": [t.serialize() for t in self.args],
+            "ret_type": self.ret_type.serialize(),
+        }
 
     @classmethod
-    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> 'FuncSignature':
+    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> "FuncSignature":
         return FuncSignature(
-            [RuntimeArg.deserialize(arg, ctx) for arg in data['args']],
-            deserialize_type(data['ret_type'], ctx),
+            [RuntimeArg.deserialize(arg, ctx) for arg in data["args"]],
+            deserialize_type(data["ret_type"], ctx),
         )
 
 
@@ -78,14 +89,16 @@ class FuncDecl:
     static method, a class method, or a property getter/setter.
     """
 
-    def __init__(self,
-                 name: str,
-                 class_name: Optional[str],
-                 module_name: str,
-                 sig: FuncSignature,
-                 kind: int = FUNC_NORMAL,
-                 is_prop_setter: bool = False,
-                 is_prop_getter: bool = False) -> None:
+    def __init__(
+        self,
+        name: str,
+        class_name: Optional[str],
+        module_name: str,
+        sig: FuncSignature,
+        kind: int = FUNC_NORMAL,
+        is_prop_setter: bool = False,
+        is_prop_getter: bool = False,
+    ) -> None:
         self.name = name
         self.class_name = class_name
         self.module_name = module_name
@@ -103,7 +116,7 @@ class FuncDecl:
 
     @staticmethod
     def compute_shortname(class_name: Optional[str], name: str) -> str:
-        return class_name + '.' + name if class_name else name
+        return class_name + "." + name if class_name else name
 
     @property
     def shortname(self) -> str:
@@ -111,36 +124,40 @@ class FuncDecl:
 
     @property
     def fullname(self) -> str:
-        return self.module_name + '.' + self.shortname
+        return self.module_name + "." + self.shortname
 
     def cname(self, names: NameGenerator) -> str:
         return names.private_name(self.module_name, self.shortname)
 
     def serialize(self) -> JsonDict:
         return {
-            'name': self.name,
-            'class_name': self.class_name,
-            'module_name': self.module_name,
-            'sig': self.sig.serialize(),
-            'kind': self.kind,
-            'is_prop_setter': self.is_prop_setter,
-            'is_prop_getter': self.is_prop_getter,
+            "name": self.name,
+            "class_name": self.class_name,
+            "module_name": self.module_name,
+            "sig": self.sig.serialize(),
+            "kind": self.kind,
+            "is_prop_setter": self.is_prop_setter,
+            "is_prop_getter": self.is_prop_getter,
         }
 
     @staticmethod
     def get_name_from_json(f: JsonDict) -> str:
-        return f['module_name'] + '.' + FuncDecl.compute_shortname(f['class_name'], f['name'])
+        return (
+            f["module_name"]
+            + "."
+            + FuncDecl.compute_shortname(f["class_name"], f["name"])
+        )
 
     @classmethod
-    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> 'FuncDecl':
+    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> "FuncDecl":
         return FuncDecl(
-            data['name'],
-            data['class_name'],
-            data['module_name'],
-            FuncSignature.deserialize(data['sig'], ctx),
-            data['kind'],
-            data['is_prop_setter'],
-            data['is_prop_getter'],
+            data["name"],
+            data["class_name"],
+            data["module_name"],
+            FuncSignature.deserialize(data["sig"], ctx),
+            data["kind"],
+            data["is_prop_setter"],
+            data["is_prop_getter"],
         )
 
 
@@ -151,12 +168,14 @@ class FuncIR:
     environment.
     """
 
-    def __init__(self,
-                 decl: FuncDecl,
-                 blocks: List[BasicBlock],
-                 env: Environment,
-                 line: int = -1,
-                 traceback_name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        decl: FuncDecl,
+        blocks: List[BasicBlock],
+        env: Environment,
+        line: int = -1,
+        traceback_name: Optional[str] = None,
+    ) -> None:
         self.decl = decl
         self.blocks = blocks
         self.env = env
@@ -194,28 +213,28 @@ class FuncIR:
         return self.decl.cname(names)
 
     def __str__(self) -> str:
-        return '\n'.join(format_func(self))
+        return "\n".join(format_func(self))
 
     def serialize(self) -> JsonDict:
         # We don't include blocks or env in the serialized version
         return {
-            'decl': self.decl.serialize(),
-            'line': self.line,
-            'traceback_name': self.traceback_name,
+            "decl": self.decl.serialize(),
+            "line": self.line,
+            "traceback_name": self.traceback_name,
         }
 
     @classmethod
-    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> 'FuncIR':
+    def deserialize(cls, data: JsonDict, ctx: DeserMaps) -> "FuncIR":
         return FuncIR(
-            FuncDecl.deserialize(data['decl'], ctx),
+            FuncDecl.deserialize(data["decl"], ctx),
             [],
             Environment(),
-            data['line'],
-            data['traceback_name'],
+            data["line"],
+            data["traceback_name"],
         )
 
 
-INVALID_FUNC_DEF = FuncDef('<INVALID_FUNC_DEF>', [], Block([]))  # type: Final
+INVALID_FUNC_DEF = FuncDef("<INVALID_FUNC_DEF>", [], Block([]))  # type: Final
 
 
 def format_blocks(blocks: List[BasicBlock], env: Environment) -> List[str]:
@@ -233,34 +252,40 @@ def format_blocks(blocks: List[BasicBlock], env: Environment) -> List[str]:
     for i, block in enumerate(blocks):
         i == len(blocks) - 1
 
-        handler_msg = ''
+        handler_msg = ""
         if block in handler_map:
-            labels = sorted(env.format('%l', b.label) for b in handler_map[block])
-            handler_msg = ' (handler for {})'.format(', '.join(labels))
+            labels = sorted(env.format("%l", b.label) for b in handler_map[block])
+            handler_msg = " (handler for {})".format(", ".join(labels))
 
-        lines.append(env.format('%l:%s', block.label, handler_msg))
+        lines.append(env.format("%l:%s", block.label, handler_msg))
         ops = block.ops
-        if (isinstance(ops[-1], Goto) and i + 1 < len(blocks)
-                and ops[-1].label == blocks[i + 1]):
+        if (
+            isinstance(ops[-1], Goto)
+            and i + 1 < len(blocks)
+            and ops[-1].label == blocks[i + 1]
+        ):
             # Hide the last goto if it just goes to the next basic block.
             ops = ops[:-1]
         for op in ops:
-            line = '    ' + op.to_str(env)
+            line = "    " + op.to_str(env)
             lines.append(line)
 
         if not isinstance(block.ops[-1], (Goto, Branch, Return, Unreachable)):
             # Each basic block needs to exit somewhere.
-            lines.append('    [MISSING BLOCK EXIT OPCODE]')
+            lines.append("    [MISSING BLOCK EXIT OPCODE]")
     return lines
 
 
 def format_func(fn: FuncIR) -> List[str]:
     lines = []
-    cls_prefix = fn.class_name + '.' if fn.class_name else ''
-    lines.append('def {}{}({}):'.format(cls_prefix, fn.name,
-                                        ', '.join(arg.name for arg in fn.args)))
+    cls_prefix = fn.class_name + "." if fn.class_name else ""
+    lines.append(
+        "def {}{}({}):".format(
+            cls_prefix, fn.name, ", ".join(arg.name for arg in fn.args)
+        )
+    )
     for line in fn.env.to_lines():
-        lines.append('    ' + line)
+        lines.append("    " + line)
     code = format_blocks(fn.blocks, fn.env)
     lines.extend(code)
     return lines

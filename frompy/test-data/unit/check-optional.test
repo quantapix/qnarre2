@@ -823,7 +823,7 @@ def asdf(x: List[Optional[str]]) -> None:
 x = ["lol"]
 asdf(x)
 
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 \[mypy-a]
 strict_optional = False

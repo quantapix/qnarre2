@@ -7,14 +7,14 @@ class Errors:
     def __init__(self) -> None:
         self.num_errors = 0
         self.num_warnings = 0
-        self._errors = mypy.errors.Errors()
+        self._errors = frompy.errors.Errors()
 
     def error(self, msg: str, path: str, line: int) -> None:
-        self._errors.report(line, None, msg, severity='error', file=path)
+        self._errors.report(line, None, msg, severity="error", file=path)
         self.num_errors += 1
 
     def warning(self, msg: str, path: str, line: int) -> None:
-        self._errors.report(line, None, msg, severity='warning', file=path)
+        self._errors.report(line, None, msg, severity="warning", file=path)
         self.num_warnings += 1
 
     def new_messages(self) -> List[str]:

@@ -16,7 +16,17 @@ import time
 import traceback
 from contextlib import redirect_stderr, redirect_stdout
 
-from typing import AbstractSet, Any, Callable, Dict, List, Optional, Sequence, Tuple, Set
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Set,
+)
 from typing_extensions import Final
 
 import frompy.build
@@ -28,7 +38,12 @@ from frompy.dmypy_util import receive
 from frompy.ipc import IPCServer
 from frompy.fscache import FileSystemCache
 from frompy.fswatcher import FileSystemWatcher, FileData
-from frompy.modulefinder import BuildSource, compute_search_paths, FindModuleCache, SearchPaths
+from frompy.modulefinder import (
+    BuildSource,
+    compute_search_paths,
+    FindModuleCache,
+    SearchPaths,
+)
 from frompy.options import Options
 from frompy.suggestions import SuggestionFailure, SuggestionEngine
 from frompy.typestate import reset_global_state
@@ -37,13 +52,15 @@ from frompy.util import FancyFormatter, count_stats
 
 MEM_PROFILE = False  # type: Final  # If True, dump memory profile after initialization
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     from subprocess import STARTUPINFO
 
-    def daemonize(options: Options,
-                  status_file: str,
-                  timeout: Optional[int] = None,
-                  log_file: Optional[str] = None) -> int:
+    def daemonize(
+        options: Options,
+        status_file: str,
+        timeout: Optional[int] = None,
+        log_file: Optional[str] = None,
+    ) -> int:
         """Create the daemon process via "dmypy daemon" and pass options via command line
 
         When creating the daemon grandchild, we create it in a new console, which is
@@ -52,23 +69,34 @@ if sys.platform == 'win32':
         https://github.com/python/cpython/pull/4150#issuecomment-340215696
         for more on why we can't have nice things.
 
-        It also pickles the options to be unpickled by mypy.
+        It also pickles the options to be unpickled by frompy.
         """
-        command = [sys.executable, '-m', 'mypy.dmypy', '--status-file', status_file, 'daemon']
+        command = [
+            sys.executable,
+            "-m",
+            "mypy.dmypy",
+            "--status-file",
+            status_file,
+            "daemon",
+        ]
         pickeled_options = pickle.dumps((options.snapshot(), timeout, log_file))
-        command.append('--options-data="{}"'.format(base64.b64encode(pickeled_options).decode()))
+        command.append(
+            '--options-data="{}"'.format(base64.b64encode(pickeled_options).decode())
+        )
         info = STARTUPINFO()
         info.dwFlags = 0x1  # STARTF_USESHOWWINDOW aka use wShowWindow's value
         info.wShowWindow = 0  # SW_HIDE aka make the window invisible
         try:
-            subprocess.Popen(command,
-                             creationflags=0x10,  # CREATE_NEW_CONSOLE
-                             startupinfo=info)
+            subprocess.Popen(
+                command, creationflags=0x10, startupinfo=info  # CREATE_NEW_CONSOLE
+            )
             return 0
         except subprocess.CalledProcessError as e:
             return e.returncode
 
+
 else:
+
     def _daemonize_cb(func: Callable[[], None], log_file: Optional[str] = None) -> int:
         """Arrange to call func() in a grandchild of the current process.
 
@@ -82,7 +110,7 @@ else:
         if pid:
             # Parent process: wait for child in case things go bad there.
             npid, sts = os.waitpid(pid, 0)
-            sig = sts & 0xff
+            sig = sts & 0xFF
             if sig:
                 print("Child killed by signal", sig)
                 return -sig
@@ -94,7 +122,7 @@ else:
         try:
             os.setsid()  # Detach controlling terminal
             os.umask(0o27)
-            devnull = os.open('/dev/null', os.O_RDWR)
+            devnull = os.open("/dev/null", os.O_RDWR)
             os.dup2(devnull, 0)
             os.dup2(devnull, 1)
             os.dup2(devnull, 2)
@@ -105,7 +133,7 @@ else:
                 os._exit(0)
             # Grandchild: run the server.
             if log_file:
-                sys.stdout = sys.stderr = open(log_file, 'a', buffering=1)
+                sys.stdout = sys.stderr = open(log_file, "a", buffering=1)
                 fd = sys.stdout.fileno()
                 os.dup2(fd, 2)
                 os.dup2(fd, 1)
@@ -114,10 +142,12 @@ else:
             # Make sure we never get back into the caller.
             os._exit(1)
 
-    def daemonize(options: Options,
-                  status_file: str,
-                  timeout: Optional[int] = None,
-                  log_file: Optional[str] = None) -> int:
+    def daemonize(
+        options: Options,
+        status_file: str,
+        timeout: Optional[int] = None,
+        log_file: Optional[str] = None,
+    ) -> int:
         """Run the mypy daemon in a grandchild of the current process
 
         Return 0 for success, exit status for failure, negative if
@@ -125,25 +155,28 @@ else:
         """
         return _daemonize_cb(Server(options, status_file, timeout).serve, log_file)
 
+
 # Server code.
 
-CONNECTION_NAME = 'dmypy'  # type: Final
+CONNECTION_NAME = "dmypy"  # type: Final
 
 
 def process_start_options(flags: List[str], allow_sources: bool) -> Options:
-    _, options = mypy.main.process_options(
-        ['-i'] + flags, require_targets=False, server_options=True
+    _, options = frompy.main.process_options(
+        ["-i"] + flags, require_targets=False, server_options=True
     )
     if options.report_dirs:
         sys.exit("dmypy: start/restart cannot generate reports")
     if options.junit_xml:
-        sys.exit("dmypy: start/restart does not support --junit-xml; "
-                 "pass it to check/recheck instead")
+        sys.exit(
+            "dmypy: start/restart does not support --junit-xml; "
+            "pass it to check/recheck instead"
+        )
     if not options.incremental:
         sys.exit("dmypy: start/restart should not disable incremental mode")
     # Our file change tracking can't yet handle changes to files that aren't
     # specified in the sources list.
-    if options.follow_imports not in ('skip', 'error', 'normal'):
+    if options.follow_imports not in ("skip", "error", "normal"):
         sys.exit("dmypy: follow-imports must be 'skip' or 'error'")
     return options
 
@@ -158,9 +191,9 @@ class Server:
     # NOTE: the instance is constructed in the parent process but
     # serve() is called in the grandchild (by daemonize()).
 
-    def __init__(self, options: Options,
-                 status_file: str,
-                 timeout: Optional[int] = None) -> None:
+    def __init__(
+        self, options: Options, status_file: str, timeout: Optional[int] = None
+    ) -> None:
         """Initialize the server with the desired mypy flags."""
         self.options = options
         # Snapshot the options info before we muck with it, to detect changes
@@ -190,13 +223,17 @@ class Server:
 
         # Since the object is created in the parent process we can check
         # the output terminal options here.
-        self.formatter = FancyFormatter(sys.stdout, sys.stderr, options.show_error_codes)
+        self.formatter = FancyFormatter(
+            sys.stdout, sys.stderr, options.show_error_codes
+        )
 
     def _response_metadata(self) -> Dict[str, str]:
-        py_version = '{}_{}'.format(self.options.python_version[0], self.options.python_version[1])
+        py_version = "{}_{}".format(
+            self.options.python_version[0], self.options.python_version[1]
+        )
         return {
-            'platform': self.options.platform,
-            'python_version': py_version,
+            "platform": self.options.platform,
+            "python_version": py_version,
         }
 
     def serve(self) -> None:
@@ -204,36 +241,38 @@ class Server:
         command = None
         try:
             server = IPCServer(CONNECTION_NAME, self.timeout)
-            with open(self.status_file, 'w') as f:
-                json.dump({'pid': os.getpid(), 'connection_name': server.connection_name}, f)
-                f.write('\n')  # I like my JSON with a trailing newline
+            with open(self.status_file, "w") as f:
+                json.dump(
+                    {"pid": os.getpid(), "connection_name": server.connection_name}, f
+                )
+                f.write("\n")  # I like my JSON with a trailing newline
             while True:
                 with server:
                     data = receive(server)
                     resp = {}  # type: Dict[str, Any]
-                    if 'command' not in data:
-                        resp = {'error': "No command found in request"}
+                    if "command" not in data:
+                        resp = {"error": "No command found in request"}
                     else:
-                        command = data['command']
+                        command = data["command"]
                         if not isinstance(command, str):
-                            resp = {'error': "Command is not a string"}
+                            resp = {"error": "Command is not a string"}
                         else:
-                            command = data.pop('command')
+                            command = data.pop("command")
                             try:
                                 resp = self.run_command(command, data)
                             except Exception:
                                 # If we are crashing, report the crash to the client
                                 tb = traceback.format_exception(*sys.exc_info())
-                                resp = {'error': "Daemon crashed!\n" + "".join(tb)}
+                                resp = {"error": "Daemon crashed!\n" + "".join(tb)}
                                 resp.update(self._response_metadata())
-                                server.write(json.dumps(resp).encode('utf8'))
+                                server.write(json.dumps(resp).encode("utf8"))
                                 raise
                     try:
                         resp.update(self._response_metadata())
-                        server.write(json.dumps(resp).encode('utf8'))
+                        server.write(json.dumps(resp).encode("utf8"))
                     except OSError:
                         pass  # Maybe the client hung up
-                    if command == 'stop':
+                    if command == "stop":
                         reset_global_state()
                         sys.exit(0)
         finally:
@@ -242,7 +281,7 @@ class Server:
             # simplify the logic and always remove the file, since
             # that could cause us to remove a future server's
             # status file.)
-            if command != 'stop':
+            if command != "stop":
                 os.unlink(self.status_file)
             try:
                 server.cleanup()  # try to remove the socket dir on Linux
@@ -254,28 +293,30 @@ class Server:
 
     def run_command(self, command: str, data: Dict[str, object]) -> Dict[str, object]:
         """Run a specific command from the registry."""
-        key = 'cmd_' + command
+        key = "cmd_" + command
         method = getattr(self.__class__, key, None)
         if method is None:
-            return {'error': "Unrecognized command '%s'" % command}
+            return {"error": "Unrecognized command '%s'" % command}
         else:
-            if command not in {'check', 'recheck', 'run'}:
+            if command not in {"check", "recheck", "run"}:
                 # Only the above commands use some error formatting.
-                del data['is_tty']
-                del data['terminal_width']
+                del data["is_tty"]
+                del data["terminal_width"]
             return method(self, **data)
 
     # Command functions (run in the server via RPC).
 
-    def cmd_status(self, fswatcher_dump_file: Optional[str] = None) -> Dict[str, object]:
+    def cmd_status(
+        self, fswatcher_dump_file: Optional[str] = None
+    ) -> Dict[str, object]:
         """Return daemon status."""
         res = {}  # type: Dict[str, object]
         res.update(get_meminfo())
         if fswatcher_dump_file:
-            data = self.fswatcher.dump_file_data() if hasattr(self, 'fswatcher') else {}
+            data = self.fswatcher.dump_file_data() if hasattr(self, "fswatcher") else {}
             # Using .dumps and then writing was noticeably faster than using dump
             s = json.dumps(data)
-            with open(fswatcher_dump_file, 'w') as f:
+            with open(fswatcher_dump_file, "w") as f:
                 f.write(s)
         return res
 
@@ -288,8 +329,9 @@ class Server:
         os.unlink(self.status_file)
         return {}
 
-    def cmd_run(self, version: str, args: Sequence[str],
-                is_tty: bool, terminal_width: int) -> Dict[str, object]:
+    def cmd_run(
+        self, version: str, args: Sequence[str], is_tty: bool, terminal_width: int
+    ) -> Dict[str, object]:
         """Check a list of files, triggering a restart if needed."""
         try:
             # Process options can exit on improper arguments, so we need to catch that and
@@ -298,46 +340,54 @@ class Server:
             stdout = io.StringIO()
             with redirect_stderr(stderr):
                 with redirect_stdout(stdout):
-                    sources, options = mypy.main.process_options(
-                        ['-i'] + list(args),
+                    sources, options = frompy.main.process_options(
+                        ["-i"] + list(args),
                         require_targets=True,
                         server_options=True,
                         fscache=self.fscache,
-                        program='mypy-daemon',
-                        header=argparse.SUPPRESS)
+                        program="mypy-daemon",
+                        header=argparse.SUPPRESS,
+                    )
             # Signal that we need to restart if the options have changed
             if self.options_snapshot != options.snapshot():
-                return {'restart': 'configuration changed'}
+                return {"restart": "configuration changed"}
             if __version__ != version:
-                return {'restart': 'mypy version changed'}
+                return {"restart": "mypy version changed"}
             if self.fine_grained_manager:
                 manager = self.fine_grained_manager.manager
                 start_plugins_snapshot = manager.plugins_snapshot
-                _, current_plugins_snapshot = mypy.build.load_plugins(
+                _, current_plugins_snapshot = frompy.build.load_plugins(
                     options, manager.errors, sys.stdout, extra_plugins=()
                 )
                 if current_plugins_snapshot != start_plugins_snapshot:
-                    return {'restart': 'plugins changed'}
+                    return {"restart": "plugins changed"}
         except InvalidSourceList as err:
-            return {'out': '', 'err': str(err), 'status': 2}
+            return {"out": "", "err": str(err), "status": 2}
         except SystemExit as e:
-            return {'out': stdout.getvalue(), 'err': stderr.getvalue(), 'status': e.code}
+            return {
+                "out": stdout.getvalue(),
+                "err": stderr.getvalue(),
+                "status": e.code,
+            }
         return self.check(sources, is_tty, terminal_width)
 
-    def cmd_check(self, files: Sequence[str],
-                  is_tty: bool, terminal_width: int) -> Dict[str, object]:
+    def cmd_check(
+        self, files: Sequence[str], is_tty: bool, terminal_width: int
+    ) -> Dict[str, object]:
         """Check a list of files."""
         try:
             sources = create_source_list(files, self.options, self.fscache)
         except InvalidSourceList as err:
-            return {'out': '', 'err': str(err), 'status': 2}
+            return {"out": "", "err": str(err), "status": 2}
         return self.check(sources, is_tty, terminal_width)
 
-    def cmd_recheck(self,
-                    is_tty: bool,
-                    terminal_width: int,
-                    remove: Optional[List[str]] = None,
-                    update: Optional[List[str]] = None) -> Dict[str, object]:
+    def cmd_recheck(
+        self,
+        is_tty: bool,
+        terminal_width: int,
+        remove: Optional[List[str]] = None,
+        update: Optional[List[str]] = None,
+    ) -> Dict[str, object]:
         """Check the same list of files we checked most recently.
 
         If remove/update is given, they modify the previous list;
@@ -345,7 +395,7 @@ class Server:
         """
         t0 = time.time()
         if not self.fine_grained_manager:
-            return {'error': "Command 'recheck' is only valid after a 'check' command"}
+            return {"error": "Command 'recheck' is only valid after a 'check' command"}
         sources = self.previous_sources
         if remove:
             removals = set(remove)
@@ -356,7 +406,7 @@ class Server:
             try:
                 added_sources = create_source_list(added, self.options, self.fscache)
             except InvalidSourceList as err:
-                return {'out': '', 'err': str(err), 'status': 2}
+                return {"out": "", "err": str(err), "status": 2}
             sources = sources + added_sources  # Make a copy!
         t1 = time.time()
         manager = self.fine_grained_manager.manager
@@ -371,8 +421,9 @@ class Server:
         self.update_stats(res)
         return res
 
-    def check(self, sources: List[BuildSource],
-              is_tty: bool, terminal_width: int) -> Dict[str, Any]:
+    def check(
+        self, sources: List[BuildSource], is_tty: bool, terminal_width: int
+    ) -> Dict[str, Any]:
         """Check using fine-grained incremental mode.
 
         If is_tty is True format the output nicely with colors and summary line
@@ -394,36 +445,39 @@ class Server:
         if self.fine_grained_manager:
             manager = self.fine_grained_manager.manager
             manager.dump_stats()
-            res['stats'] = manager.stats
+            res["stats"] = manager.stats
             manager.stats = {}
 
     def following_imports(self) -> bool:
         """Are we following imports?"""
         # TODO: What about silent?
-        return self.options.follow_imports == 'normal'
+        return self.options.follow_imports == "normal"
 
-    def initialize_fine_grained(self, sources: List[BuildSource],
-                                is_tty: bool, terminal_width: int) -> Dict[str, Any]:
+    def initialize_fine_grained(
+        self, sources: List[BuildSource], is_tty: bool, terminal_width: int
+    ) -> Dict[str, Any]:
         self.fswatcher = FileSystemWatcher(self.fscache)
         t0 = time.time()
         self.update_sources(sources)
         t1 = time.time()
         try:
-            result = mypy.build.build(sources=sources,
-                                      options=self.options,
-                                      fscache=self.fscache)
-        except mypy.errors.CompileError as e:
-            output = ''.join(s + '\n' for s in e.messages)
+            result = frompy.build.build(
+                sources=sources, options=self.options, fscache=self.fscache
+            )
+        except frompy.errors.CompileError as e:
+            output = "".join(s + "\n" for s in e.messages)
             if e.use_stdout:
-                out, err = output, ''
+                out, err = output, ""
             else:
-                out, err = '', output
-            return {'out': out, 'err': err, 'status': 2}
+                out, err = "", output
+            return {"out": out, "err": err, "status": 2}
         messages = result.errors
         self.fine_grained_manager = FineGrainedBuildManager(result)
 
         if self.following_imports():
-            sources = find_all_sources_in_build(self.fine_grained_manager.graph, sources)
+            sources = find_all_sources_in_build(
+                self.fine_grained_manager.graph, sources
+            )
             self.update_sources(sources)
 
         self.previous_sources = sources
@@ -437,11 +491,15 @@ class Server:
             # the fswatcher, so we pick up the changes.
             for state in self.fine_grained_manager.graph.values():
                 meta = state.meta
-                if meta is None: continue
+                if meta is None:
+                    continue
                 assert state.path is not None
                 self.fswatcher.set_file_data(
                     state.path,
-                    FileData(st_mtime=float(meta.mtime), st_size=meta.size, hash=meta.hash))
+                    FileData(
+                        st_mtime=float(meta.mtime), st_size=meta.size, hash=meta.hash
+                    ),
+                )
 
             changed, removed = self.find_changed(sources)
 
@@ -465,7 +523,8 @@ class Server:
                 build_time=t2 - t1,
                 find_changes_time=t3 - t2,
                 fg_update_time=t4 - t3,
-                files_changed=len(removed) + len(changed))
+                files_changed=len(removed) + len(changed),
+            )
 
         else:
             # Stores the initial state of sources as a side effect.
@@ -473,17 +532,19 @@ class Server:
 
         if MEM_PROFILE:
             from frompy.memprofile import print_memory_profile
+
             print_memory_profile(run_gc=False)
 
         status = 1 if messages else 0
         messages = self.pretty_messages(messages, len(sources), is_tty, terminal_width)
-        return {'out': ''.join(s + '\n' for s in messages), 'err': '', 'status': status}
+        return {"out": "".join(s + "\n" for s in messages), "err": "", "status": status}
 
-    def fine_grained_increment(self,
-                               sources: List[BuildSource],
-                               remove: Optional[List[str]] = None,
-                               update: Optional[List[str]] = None,
-                               ) -> List[str]:
+    def fine_grained_increment(
+        self,
+        sources: List[BuildSource],
+        remove: Optional[List[str]] = None,
+        update: Optional[List[str]] = None,
+    ) -> List[str]:
         """Perform a fine-grained type checking increment.
 
         If remove and update are None, determine changed paths by using
@@ -507,7 +568,9 @@ class Server:
             # Use the remove/update lists to update fswatcher.
             # This avoids calling stat() for unchanged files.
             changed, removed = self.update_changed(sources, remove or [], update or [])
-        manager.search_paths = compute_search_paths(sources, manager.options, manager.data_dir)
+        manager.search_paths = compute_search_paths(
+            sources, manager.options, manager.data_dir
+        )
         t1 = time.time()
         manager.log("fine-grained increment: find_changed: {:.3f}s".format(t1 - t0))
         messages = self.fine_grained_manager.update(changed, removed)
@@ -516,12 +579,15 @@ class Server:
         manager.add_stats(
             find_changes_time=t1 - t0,
             fg_update_time=t2 - t1,
-            files_changed=len(removed) + len(changed))
+            files_changed=len(removed) + len(changed),
+        )
 
         self.previous_sources = sources
         return messages
 
-    def fine_grained_increment_follow_imports(self, sources: List[BuildSource]) -> List[str]:
+    def fine_grained_increment_follow_imports(
+        self, sources: List[BuildSource]
+    ) -> List[str]:
         """Like fine_grained_increment, but follow imports."""
         t0 = time.time()
 
@@ -536,7 +602,9 @@ class Server:
 
         self.update_sources(sources)
         changed_paths = self.fswatcher.find_changed()
-        manager.search_paths = compute_search_paths(sources, manager.options, manager.data_dir)
+        manager.search_paths = compute_search_paths(
+            sources, manager.options, manager.data_dir
+        )
 
         t1 = time.time()
         manager.log("fine-grained increment: find_changed: {:.3f}s".format(t1 - t0))
@@ -573,7 +641,12 @@ class Server:
 
         for module_id, state in list(graph.items()):
             new_messages = refresh_suppressed_submodules(
-                module_id, state.path, fine_grained_manager.deps, graph, self.fscache, refresh_file
+                module_id,
+                state.path,
+                fine_grained_manager.deps,
+                graph,
+                self.fscache,
+                refresh_file,
             )
             if new_messages is not None:
                 messages = new_messages
@@ -583,7 +656,9 @@ class Server:
         # There may be new files that became available, currently treated as
         # suppressed imports. Process them.
         while True:
-            new_unsuppressed = self.find_added_suppressed(graph, seen, manager.search_paths)
+            new_unsuppressed = self.find_added_suppressed(
+                graph, seen, manager.search_paths
+            )
             if not new_unsuppressed:
                 break
             new_files = [BuildSource(mod[1], mod[0]) for mod in new_unsuppressed]
@@ -593,11 +668,12 @@ class Server:
 
             for module_id, path in new_unsuppressed:
                 new_messages = refresh_suppressed_submodules(
-                    module_id, path,
+                    module_id,
+                    path,
                     fine_grained_manager.deps,
                     graph,
                     self.fscache,
-                    refresh_file
+                    refresh_file,
                 )
                 if new_messages is not None:
                     messages = new_messages
@@ -632,17 +708,18 @@ class Server:
             fg_update_time=t2 - t1,
             refresh_suppressed_time=t3 - t2,
             find_added_supressed_time=t4 - t3,
-            cleanup_time=t5 - t4)
+            cleanup_time=t5 - t4,
+        )
 
         return messages
 
     def find_reachable_changed_modules(
-            self,
-            roots: List[BuildSource],
-            graph: mypy.build.Graph,
-            seen: Set[str],
-            changed_paths: AbstractSet[str]) -> Tuple[List[Tuple[str, str]],
-                                                      List[BuildSource]]:
+        self,
+        roots: List[BuildSource],
+        graph: frompy.build.Graph,
+        seen: Set[str],
+        changed_paths: AbstractSet[str],
+    ) -> Tuple[List[Tuple[str, str]], List[BuildSource]]:
         """Follow imports within graph from given sources until hitting changed modules.
 
         If we find a changed module, we can't continue following imports as the imports
@@ -674,22 +751,19 @@ class Server:
                 for dep in state.dependencies:
                     if dep not in seen:
                         seen.add(dep)
-                        worklist.append(BuildSource(graph[dep].path,
-                                                    graph[dep].id))
+                        worklist.append(BuildSource(graph[dep].path, graph[dep].id))
         return changed, new_files
 
-    def direct_imports(self,
-                       module: Tuple[str, str],
-                       graph: mypy.build.Graph) -> List[BuildSource]:
+    def direct_imports(
+        self, module: Tuple[str, str], graph: frompy.build.Graph
+    ) -> List[BuildSource]:
         """Return the direct imports of module not included in seen."""
         state = graph[module[0]]
-        return [BuildSource(graph[dep].path, dep)
-                for dep in state.dependencies]
+        return [BuildSource(graph[dep].path, dep) for dep in state.dependencies]
 
-    def find_added_suppressed(self,
-                              graph: mypy.build.Graph,
-                              seen: Set[str],
-                              search_paths: SearchPaths) -> List[Tuple[str, str]]:
+    def find_added_suppressed(
+        self, graph: frompy.build.Graph, seen: Set[str], search_paths: SearchPaths
+    ) -> List[Tuple[str, str]]:
         """Find suppressed modules that have been added (and not included in seen).
 
         Args:
@@ -719,29 +793,38 @@ class Server:
 
         return found
 
-    def increment_output(self,
-                         messages: List[str],
-                         sources: List[BuildSource],
-                         is_tty: bool,
-                         terminal_width: int) -> Dict[str, Any]:
+    def increment_output(
+        self,
+        messages: List[str],
+        sources: List[BuildSource],
+        is_tty: bool,
+        terminal_width: int,
+    ) -> Dict[str, Any]:
         status = 1 if messages else 0
         messages = self.pretty_messages(messages, len(sources), is_tty, terminal_width)
-        return {'out': ''.join(s + '\n' for s in messages), 'err': '', 'status': status}
+        return {"out": "".join(s + "\n" for s in messages), "err": "", "status": status}
 
-    def pretty_messages(self, messages: List[str], n_sources: int,
-                        is_tty: bool = False, terminal_width: Optional[int] = None) -> List[str]:
+    def pretty_messages(
+        self,
+        messages: List[str],
+        n_sources: int,
+        is_tty: bool = False,
+        terminal_width: Optional[int] = None,
+    ) -> List[str]:
         use_color = self.options.color_output and is_tty
         fit_width = self.options.pretty and is_tty
         if fit_width:
-            messages = self.formatter.fit_in_terminal(messages,
-                                                      fixed_terminal_width=terminal_width)
+            messages = self.formatter.fit_in_terminal(
+                messages, fixed_terminal_width=terminal_width
+            )
         if self.options.error_summary:
             summary = None  # type: Optional[str]
             if messages:
                 n_errors, n_files = count_stats(messages)
                 if n_errors:
-                    summary = self.formatter.format_error(n_errors, n_files, n_sources,
-                                                          use_color)
+                    summary = self.formatter.format_error(
+                        n_errors, n_files, n_sources, use_color
+                    )
             else:
                 summary = self.formatter.format_success(n_sources, use_color)
             if summary:
@@ -758,11 +841,9 @@ class Server:
             paths = [path for path in paths if self.fscache.isfile(path)]
         self.fswatcher.add_watched_paths(paths)
 
-    def update_changed(self,
-                       sources: List[BuildSource],
-                       remove: List[str],
-                       update: List[str],
-                       ) -> ChangesAndRemovals:
+    def update_changed(
+        self, sources: List[BuildSource], remove: List[str], update: List[str],
+    ) -> ChangesAndRemovals:
 
         changed_paths = self.fswatcher.update_changed(remove, update)
         return self._find_changed(sources, changed_paths)
@@ -771,16 +852,21 @@ class Server:
         changed_paths = self.fswatcher.find_changed()
         return self._find_changed(sources, changed_paths)
 
-    def _find_changed(self, sources: List[BuildSource],
-                      changed_paths: AbstractSet[str]) -> ChangesAndRemovals:
+    def _find_changed(
+        self, sources: List[BuildSource], changed_paths: AbstractSet[str]
+    ) -> ChangesAndRemovals:
         # Find anything that has been added or modified
-        changed = [(source.module, source.path)
-                   for source in sources
-                   if source.path and source.path in changed_paths]
+        changed = [
+            (source.module, source.path)
+            for source in sources
+            if source.path and source.path in changed_paths
+        ]
 
         # Now find anything that has been removed from the build
         modules = {source.module for source in sources}
-        omitted = [source for source in self.previous_sources if source.module not in modules]
+        omitted = [
+            source for source in self.previous_sources if source.module not in modules
+        ]
         removed = []
         for source in omitted:
             path = source.path
@@ -798,15 +884,15 @@ class Server:
 
         return changed, removed
 
-    def cmd_suggest(self,
-                    function: str,
-                    callsites: bool,
-                    **kwargs: Any) -> Dict[str, object]:
+    def cmd_suggest(
+        self, function: str, callsites: bool, **kwargs: Any
+    ) -> Dict[str, object]:
         """Suggest a signature for a function."""
         if not self.fine_grained_manager:
             return {
-                'error': "Command 'suggest' is only valid after a 'check' command"
-                " (that produces no parse errors)"}
+                "error": "Command 'suggest' is only valid after a 'check' command"
+                " (that produces no parse errors)"
+            }
         engine = SuggestionEngine(self.fine_grained_manager, **kwargs)
         try:
             if callsites:
@@ -814,13 +900,13 @@ class Server:
             else:
                 out = engine.suggest(function)
         except SuggestionFailure as err:
-            return {'error': str(err)}
+            return {"error": str(err)}
         else:
             if not out:
                 out = "No suggestions\n"
             elif not out.endswith("\n"):
                 out += "\n"
-            return {'out': out, 'err': "", 'status': 0}
+            return {"out": out, "err": "", "status": 0}
         finally:
             self.fscache.flush()
 
@@ -833,7 +919,7 @@ class Server:
 # Misc utilities.
 
 
-MiB = 2**20  # type: Final
+MiB = 2 ** 20  # type: Final
 
 
 def get_meminfo() -> Dict[str, Any]:
@@ -841,31 +927,33 @@ def get_meminfo() -> Dict[str, Any]:
     try:
         import psutil  # type: ignore  # It's not in typeshed yet
     except ImportError:
-        res['memory_psutil_missing'] = (
-            'psutil not found, run pip install mypy[dmypy] '
-            'to install the needed components for dmypy'
+        res["memory_psutil_missing"] = (
+            "psutil not found, run pip install mypy[dmypy] "
+            "to install the needed components for dmypy"
         )
     else:
         process = psutil.Process()
         meminfo = process.memory_info()
-        res['memory_rss_mib'] = meminfo.rss / MiB
-        res['memory_vms_mib'] = meminfo.vms / MiB
-        if sys.platform == 'win32':
-            res['memory_maxrss_mib'] = meminfo.peak_wset / MiB
+        res["memory_rss_mib"] = meminfo.rss / MiB
+        res["memory_vms_mib"] = meminfo.vms / MiB
+        if sys.platform == "win32":
+            res["memory_maxrss_mib"] = meminfo.peak_wset / MiB
         else:
             # See https://stackoverflow.com/questions/938733/total-memory-used-by-python-process
             import resource  # Since it doesn't exist on Windows.
+
             rusage = resource.getrusage(resource.RUSAGE_SELF)
-            if sys.platform == 'darwin':
+            if sys.platform == "darwin":
                 factor = 1
             else:
                 factor = 1024  # Linux
-            res['memory_maxrss_mib'] = rusage.ru_maxrss * factor / MiB
+            res["memory_maxrss_mib"] = rusage.ru_maxrss * factor / MiB
     return res
 
 
-def find_all_sources_in_build(graph: mypy.build.Graph,
-                              extra: Sequence[BuildSource] = ()) -> List[BuildSource]:
+def find_all_sources_in_build(
+    graph: frompy.build.Graph, extra: Sequence[BuildSource] = ()
+) -> List[BuildSource]:
     result = list(extra)
     seen = set(source.module for source in result)
     for module, state in graph.items():
@@ -874,7 +962,7 @@ def find_all_sources_in_build(graph: mypy.build.Graph,
     return result
 
 
-def fix_module_deps(graph: mypy.build.Graph) -> None:
+def fix_module_deps(graph: frompy.build.Graph) -> None:
     """After an incremental update, update module dependencies to reflect the new state.
 
     This can make some suppressed dependencies non-suppressed, and vice versa (if modules

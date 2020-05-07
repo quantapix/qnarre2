@@ -27,7 +27,7 @@ Assuming 'A' is a class, this means that
    triggered by trigger '<m.f>' (this explanation is a bit simplified;
    see below for more details).
 
-The triggers to fire are determined using mypy.server.astdiff.
+The triggers to fire are determined using frompy.server.astdiff.
 
 Examples of triggers:
 
@@ -1142,4 +1142,3 @@ def dump_all_dependencies(
         print(trigger)
         for target in sorted(targets):
             print("    %s" % target)
-

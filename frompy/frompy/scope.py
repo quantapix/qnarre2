@@ -1,6 +1,6 @@
 """Track current scope to easily calculate the corresponding fine-grained target.
 
-TODO: Use everywhere where we track targets, including in mypy.errors.
+TODO: Use everywhere where we track targets, including in frompy.errors.
 """
 
 from contextlib import contextmanager
@@ -31,7 +31,7 @@ class Scope:
         assert self.module
         if self.function:
             fullname = self.function.fullname
-            return fullname or ''
+            return fullname or ""
         return self.module
 
     def current_full_target(self) -> str:

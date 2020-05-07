@@ -35,7 +35,7 @@ dne("abc")
 
 
 class PEP561Suite(DataSuite):
-    files = ['pep561.test']
+    files = ["pep561.test"]
 
     def run_case(self, test_case: DataDrivenTestCase) -> None:
         test_pep561(test_case)
@@ -43,58 +43,79 @@ class PEP561Suite(DataSuite):
 
 @contextmanager
 def virtualenv(
-                python_executable: str = sys.executable
-                ) -> Generator[Tuple[str, str], None, None]:
+    python_executable: str = sys.executable,
+) -> Generator[Tuple[str, str], None, None]:
     """Context manager that creates a virtualenv in a temporary directory
 
     returns the path to the created Python executable"""
     # Sadly, we need virtualenv, as the Python 3 venv module does not support creating a venv
     # for Python 2, and Python 2 does not have its own venv.
     with tempfile.TemporaryDirectory() as venv_dir:
-        proc = subprocess.run([sys.executable,
-                               '-m',
-                               'virtualenv',
-                               '-p{}'.format(python_executable),
-                               venv_dir], cwd=os.getcwd(), stdout=PIPE, stderr=PIPE)
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "virtualenv",
+                "-p{}".format(python_executable),
+                venv_dir,
+            ],
+            cwd=os.getcwd(),
+            stdout=PIPE,
+            stderr=PIPE,
+        )
         if proc.returncode != 0:
-            err = proc.stdout.decode('utf-8') + proc.stderr.decode('utf-8')
-            raise Exception("Failed to create venv. Do you have virtualenv installed?\n" + err)
-        if sys.platform == 'win32':
-            yield venv_dir, os.path.abspath(os.path.join(venv_dir, 'Scripts', 'python'))
+            err = proc.stdout.decode("utf-8") + proc.stderr.decode("utf-8")
+            raise Exception(
+                "Failed to create venv. Do you have virtualenv installed?\n" + err
+            )
+        if sys.platform == "win32":
+            yield venv_dir, os.path.abspath(os.path.join(venv_dir, "Scripts", "python"))
         else:
-            yield venv_dir, os.path.abspath(os.path.join(venv_dir, 'bin', 'python'))
+            yield venv_dir, os.path.abspath(os.path.join(venv_dir, "bin", "python"))
 
 
-def install_package(pkg: str,
-                    python_executable: str = sys.executable,
-                    use_pip: bool = True,
-                    editable: bool = False) -> None:
+def install_package(
+    pkg: str,
+    python_executable: str = sys.executable,
+    use_pip: bool = True,
+    editable: bool = False,
+) -> None:
     """Install a package from test-data/packages/pkg/"""
     working_dir = os.path.join(package_path, pkg)
     with tempfile.TemporaryDirectory() as dir:
         if use_pip:
-            install_cmd = [python_executable, '-m', 'pip', 'install', '-b', '{}'.format(dir)]
+            install_cmd = [
+                python_executable,
+                "-m",
+                "pip",
+                "install",
+                "-b",
+                "{}".format(dir),
+            ]
             if editable:
-                install_cmd.append('-e')
-            install_cmd.append('.')
+                install_cmd.append("-e")
+            install_cmd.append(".")
         else:
-            install_cmd = [python_executable, 'setup.py']
+            install_cmd = [python_executable, "setup.py"]
             if editable:
-                install_cmd.append('develop')
+                install_cmd.append("develop")
             else:
-                install_cmd.append('install')
+                install_cmd.append("install")
         proc = subprocess.run(install_cmd, cwd=working_dir, stdout=PIPE, stderr=PIPE)
     if proc.returncode != 0:
-        raise Exception(proc.stdout.decode('utf-8') + proc.stderr.decode('utf-8'))
+        raise Exception(proc.stdout.decode("utf-8") + proc.stderr.decode("utf-8"))
 
 
 def test_pep561(testcase: DataDrivenTestCase) -> None:
     """Test running mypy on files that depend on PEP 561 packages."""
-    if (sys.platform == 'darwin' and hasattr(sys, 'base_prefix') and
-       sys.base_prefix != sys.prefix):
+    if (
+        sys.platform == "darwin"
+        and hasattr(sys, "base_prefix")
+        and sys.base_prefix != sys.prefix
+    ):
         pytest.skip()
     assert testcase.old_cwd is not None, "test was not properly set up"
-    if 'python2' in testcase.name.lower():
+    if "python2" in testcase.name.lower():
         python = try_find_python2_interpreter()
         if python is None:
             pytest.skip()
@@ -106,9 +127,9 @@ def test_pep561(testcase: DataDrivenTestCase) -> None:
     use_pip = True
     editable = False
     for arg in pip_args:
-        if arg == 'no-pip':
+        if arg == "no-pip":
             use_pip = False
-        elif arg == 'editable':
+        elif arg == "editable":
             editable = True
     assert pkgs != [], "No packages to install for PEP 561 test?"
     with virtualenv(python) as venv:
@@ -120,60 +141,68 @@ def test_pep561(testcase: DataDrivenTestCase) -> None:
             old_dir = os.getcwd()
             os.chdir(venv_dir)
         try:
-            program = testcase.name + '.py'
-            with open(program, 'w', encoding='utf-8') as f:
+            program = testcase.name + ".py"
+            with open(program, "w", encoding="utf-8") as f:
                 for s in testcase.input:
-                    f.write('{}\n'.format(s))
-            cmd_line = mypy_args + [program, '--no-incremental', '--no-error-summary']
+                    f.write("{}\n".format(s))
+            cmd_line = mypy_args + [program, "--no-incremental", "--no-error-summary"]
             if python_executable != sys.executable:
-                cmd_line.append('--python-executable={}'.format(python_executable))
+                cmd_line.append("--python-executable={}".format(python_executable))
             if testcase.files != []:
                 for name, content in testcase.files:
-                    if 'mypy.ini' in name:
-                        with open('mypy.ini', 'w') as m:
+                    if "mypy.ini" in name:
+                        with open("mypy.ini", "w") as m:
                             m.write(content)
             output = []
             # Type check the module
-            out, err, returncode = mypy.api.run(cmd_line)
+            out, err, returncode = frompy.api.run(cmd_line)
             os.remove(program)
             # split lines, remove newlines, and remove directory of test case
             for line in (out + err).splitlines():
                 if line.startswith(test_temp_dir + os.sep):
-                    output.append(line[len(test_temp_dir + os.sep):].rstrip("\r\n"))
+                    output.append(line[len(test_temp_dir + os.sep) :].rstrip("\r\n"))
                 else:
                     # Normalize paths so that the output is the same on Windows and Linux/macOS.
-                    line = line.replace(test_temp_dir + os.sep, test_temp_dir + '/')
+                    line = line.replace(test_temp_dir + os.sep, test_temp_dir + "/")
                     output.append(line.rstrip("\r\n"))
-            assert_string_arrays_equal([line for line in testcase.output], output,
-                               'Invalid output ({}, line {})'.format(
-                                   testcase.file, testcase.line))
+            assert_string_arrays_equal(
+                [line for line in testcase.output],
+                output,
+                "Invalid output ({}, line {})".format(testcase.file, testcase.line),
+            )
         finally:
             if venv_dir is not None:
                 os.chdir(old_dir)
 
 
 def parse_pkgs(comment: str) -> Tuple[List[str], List[str]]:
-    if not comment.startswith('# pkgs:'):
+    if not comment.startswith("# pkgs:"):
         return ([], [])
     else:
-        pkgs_str, *args = comment[7:].split(';')
-        return ([pkg.strip() for pkg in pkgs_str.split(',')], [arg.strip() for arg in args])
+        pkgs_str, *args = comment[7:].split(";")
+        return (
+            [pkg.strip() for pkg in pkgs_str.split(",")],
+            [arg.strip() for arg in args],
+        )
 
 
 def parse_mypy_args(line: str) -> List[str]:
-    m = re.match('# flags: (.*)$', line)
+    m = re.match("# flags: (.*)$", line)
     if not m:
         return []  # No args; mypy will spit out an error.
     return m.group(1).split()
 
 
-@pytest.mark.skipif(sys.platform == 'darwin' and hasattr(sys, 'base_prefix') and
-                    sys.base_prefix != sys.prefix,
-                    reason="Temporarily skip to avoid having a virtualenv within a venv.")
+@pytest.mark.skipif(
+    sys.platform == "darwin"
+    and hasattr(sys, "base_prefix")
+    and sys.base_prefix != sys.prefix,
+    reason="Temporarily skip to avoid having a virtualenv within a venv.",
+)
 def test_mypy_path_is_respected() -> None:
     assert False
-    packages = 'packages'
-    pkg_name = 'a'
+    packages = "packages"
+    pkg_name = "a"
     with tempfile.TemporaryDirectory() as temp_dir:
         old_dir = os.getcwd()
         os.chdir(temp_dir)
@@ -183,24 +212,27 @@ def test_mypy_path_is_respected() -> None:
             os.makedirs(full_pkg_name)
 
             # Create the empty __init__ file to declare a package
-            pkg_init_name = os.path.join(temp_dir, packages, pkg_name, '__init__.py')
-            open(pkg_init_name, 'w', encoding='utf8').close()
+            pkg_init_name = os.path.join(temp_dir, packages, pkg_name, "__init__.py")
+            open(pkg_init_name, "w", encoding="utf8").close()
 
-            mypy_config_path = os.path.join(temp_dir, 'mypy.ini')
-            with open(mypy_config_path, 'w') as mypy_file:
-                mypy_file.write('[mypy]\n')
-                mypy_file.write('mypy_path = ./{}\n'.format(packages))
+            mypy_config_path = os.path.join(temp_dir, "mypy.ini")
+            with open(mypy_config_path, "w") as mypy_file:
+                mypy_file.write("[mypy]\n")
+                mypy_file.write("mypy_path = ./{}\n".format(packages))
 
             with virtualenv() as venv:
                 venv_dir, python_executable = venv
 
                 cmd_line_args = []
                 if python_executable != sys.executable:
-                    cmd_line_args.append('--python-executable={}'.format(python_executable))
-                cmd_line_args.extend(['--config-file', mypy_config_path,
-                                      '--package', pkg_name])
+                    cmd_line_args.append(
+                        "--python-executable={}".format(python_executable)
+                    )
+                cmd_line_args.extend(
+                    ["--config-file", mypy_config_path, "--package", pkg_name]
+                )
 
-                out, err, returncode = mypy.api.run(cmd_line_args)
+                out, err, returncode = frompy.api.run(cmd_line_args)
                 assert returncode == 0
         finally:
             os.chdir(old_dir)

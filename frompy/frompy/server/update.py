@@ -73,7 +73,7 @@ Here's a summary of how a fine-grained incremental program update happens:
 
 * Merge the old AST with the new AST, preserving the identities of
   externally visible AST nodes for which we can find a corresponding node
-  in the new AST. (Look at mypy.server.astmerge for the details.) This
+  in the new AST. (Look at frompy.server.astmerge for the details.) This
   way all external references to AST nodes in the changed module will
   continue to point to the right nodes (assuming they still have a valid
   target).
@@ -92,13 +92,13 @@ Here's a summary of how a fine-grained incremental program update happens:
   garbage collect old dependencies, since extra dependencies are relatively
   harmless (they take some memory and can theoretically slow things down
   a bit by causing redundant work). This is implemented in
-  mypy.server.deps.
+  frompy.server.deps.
 
 * Strip the stale AST nodes that we found above. This returns them to a
   state resembling the end of semantic analysis pass 1. We'll run semantic
   analysis again on the existing AST nodes, and since semantic analysis
   is not idempotent, we need to revert some changes made during semantic
-  analysis. This is implemented in mypy.server.aststrip.
+  analysis. This is implemented in frompy.server.aststrip.
 
 * Run semantic analyzer passes 2 and 3 on the stale AST nodes, and type
   check them. We also need to do the symbol table snapshot comparison

@@ -15,7 +15,7 @@ from frompy.test.helpers import assert_string_arrays_equal, normalize_error_mess
 
 # Files containing test cases descriptions.
 daemon_files = [
-    'daemon.test',
+    "daemon.test",
 ]
 
 
@@ -27,7 +27,7 @@ class DaemonSuite(DataSuite):
             test_daemon(testcase)
         finally:
             # Kill the daemon if it's still running.
-            run_cmd('dmypy kill')
+            run_cmd("dmypy kill")
 
 
 def test_daemon(testcase: DataDrivenTestCase) -> None:
@@ -35,18 +35,19 @@ def test_daemon(testcase: DataDrivenTestCase) -> None:
     for i, step in enumerate(parse_script(testcase.input)):
         cmd = step[0]
         expected_lines = step[1:]
-        assert cmd.startswith('$')
+        assert cmd.startswith("$")
         cmd = cmd[1:].strip()
-        cmd = cmd.replace('{python}', sys.executable)
+        cmd = cmd.replace("{python}", sys.executable)
         sts, output = run_cmd(cmd)
         output_lines = output.splitlines()
         output_lines = normalize_error_messages(output_lines)
         if sts:
-            output_lines.append('== Return code: %d' % sts)
-        assert_string_arrays_equal(expected_lines,
-                                   output_lines,
-                                   "Command %d (%s) did not give expected output" %
-                                   (i + 1, cmd))
+            output_lines.append("== Return code: %d" % sts)
+        assert_string_arrays_equal(
+            expected_lines,
+            output_lines,
+            "Command %d (%s) did not give expected output" % (i + 1, cmd),
+        )
 
 
 def parse_script(input: List[str]) -> List[List[str]]:
@@ -59,9 +60,9 @@ def parse_script(input: List[str]) -> List[List[str]]:
     steps = []
     step = []  # type: List[str]
     for line in input:
-        if line.startswith('$'):
+        if line.startswith("$"):
             if step:
-                assert step[0].startswith('$')
+                assert step[0].startswith("$")
                 steps.append(step)
                 step = []
         step.append(line)
@@ -71,19 +72,21 @@ def parse_script(input: List[str]) -> List[List[str]]:
 
 
 def run_cmd(input: str) -> Tuple[int, str]:
-    if input.startswith('dmypy '):
-        input = sys.executable + ' -m mypy.' + input
-    if input.startswith('mypy '):
-        input = sys.executable + ' -m' + input
+    if input.startswith("dmypy "):
+        input = sys.executable + " -m frompy." + input
+    if input.startswith("mypy "):
+        input = sys.executable + " -m" + input
     env = os.environ.copy()
-    env['PYTHONPATH'] = PREFIX
+    env["PYTHONPATH"] = PREFIX
     try:
-        output = subprocess.check_output(input,
-                                         shell=True,
-                                         stderr=subprocess.STDOUT,
-                                         universal_newlines=True,
-                                         cwd=test_temp_dir,
-                                         env=env)
+        output = subprocess.check_output(
+            input,
+            shell=True,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            cwd=test_temp_dir,
+            env=env,
+        )
         return 0, output
     except subprocess.CalledProcessError as err:
         return err.returncode, err.output

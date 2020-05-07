@@ -10,6 +10,7 @@ import frompy.test.testfinegrained
 
 class FineGrainedCacheSuite(mypy.test.testfinegrained.FineGrainedSuite):
     use_cache = True
-    test_name_suffix = '_cached'
-    files = (
-        mypy.test.testfinegrained.FineGrainedSuite.files + ['fine-grained-cache-incremental.test'])
+    test_name_suffix = "_cached"
+    files = frompy.test.testfinegrained.FineGrainedSuite.files + [
+        "fine-grained-cache-incremental.test"
+    ]

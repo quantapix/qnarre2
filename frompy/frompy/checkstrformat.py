@@ -264,11 +264,11 @@ class StringFormatterChecker:
     """
 
     # Some services are provided by a TypeChecker instance.
-    chk = None  # type: mypy.checker.TypeChecker
+    chk = None  # type: frompy.checker.TypeChecker
     # This is shared with TypeChecker, but stored also here for convenience.
     msg = None  # type: MessageBuilder
     # Some services are provided by a ExpressionChecker instance.
-    exprchk = None  # type: mypy.checkexpr.ExpressionChecker
+    exprchk = None  # type: frompy.checkexpr.ExpressionChecker
 
     def __init__(
         self,

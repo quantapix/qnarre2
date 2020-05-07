@@ -57,7 +57,7 @@ def build_ir(
     options: CompilerOptions,
     errors: Errors,
 ) -> ModuleIRs:
-    """Build IR for a set of modules that have been type-checked by mypy."""
+    """Build IR for a set of modules that have been type-checked by frompy."""
 
     build_type_map(mapper, modules, graph, types, options, errors)
 

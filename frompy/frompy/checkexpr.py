@@ -254,7 +254,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
     """
 
     # Some services are provided by a TypeChecker instance.
-    chk = None  # type: mypy.checker.TypeChecker
+    chk = None  # type: frompy.checker.TypeChecker
     # This is shared with TypeChecker, but stored also here for convenience.
     msg = None  # type: MessageBuilder
     # Type context for type inference
@@ -308,7 +308,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             # node.type is None when there are multiple definitions of a function
             # and it's decorated by something that is not typing.overload
             # TODO: use a dummy Overloaded instead of AnyType in this case
-            # like we do in mypy.types.function_type()?
+            # like we do in frompy.types.function_type()?
             result = node.type
         elif isinstance(node, TypeInfo):
             # Reference to a type object.
@@ -399,7 +399,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             and e.callee.name in ("isinstance", "issubclass")
             and len(e.args) == 2
         ):
-            for typ in mypy.checker.flatten(e.args[1]):
+            for typ in frompy.checker.flatten(e.args[1]):
                 node = None
                 if isinstance(typ, NameExpr):
                     try:
@@ -607,7 +607,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         return False
 
     def check_runtime_protocol_test(self, e: CallExpr) -> None:
-        for expr in mypy.checker.flatten(e.args[1]):
+        for expr in frompy.checker.flatten(e.args[1]):
             tp = get_proper_type(self.chk.type_map[expr])
             if (
                 isinstance(tp, CallableType)
@@ -618,7 +618,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                 self.chk.fail(message_registry.RUNTIME_PROTOCOL_EXPECTED, e)
 
     def check_protocol_issubclass(self, e: CallExpr) -> None:
-        for expr in mypy.checker.flatten(e.args[1]):
+        for expr in frompy.checker.flatten(e.args[1]):
             tp = get_proper_type(self.chk.type_map[expr])
             if (
                 isinstance(tp, CallableType)
@@ -821,7 +821,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             if value_type is not None:
                 # Infer key type.
                 key_type = self.accept(index)
-                if mypy.checker.is_valid_inferred_type(key_type):
+                if frompy.checker.is_valid_inferred_type(key_type):
                     # Store inferred partial type.
                     assert partial_type.type is not None
                     typename = partial_type.type.fullname
@@ -863,7 +863,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             and e.arg_kinds == [ARG_POS]
         ):
             item_type = self.accept(e.args[0])
-            if mypy.checker.is_valid_inferred_type(item_type):
+            if frompy.checker.is_valid_inferred_type(item_type):
                 return self.chk.named_generic_type(typename, [item_type])
         elif (
             typename in self.container_args
@@ -875,7 +875,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                 arg_typename = arg_type.type.fullname
                 if arg_typename in self.container_args[typename][methodname]:
                     if all(
-                        mypy.checker.is_valid_inferred_type(item_type)
+                        frompy.checker.is_valid_inferred_type(item_type)
                         for item_type in arg_type.args
                     ):
                         return self.chk.named_generic_type(
@@ -2564,7 +2564,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         context: Context,
         skip_unsatisfied: bool = False,
     ) -> CallableType:
-        """Simple wrapper around mypy.applytype.apply_generic_arguments."""
+        """Simple wrapper around frompy.applytype.apply_generic_arguments."""
         return applytype.apply_generic_arguments(
             callable,
             types,
@@ -3040,7 +3040,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         meth_res = []  # type: List[Type]
         for typ in base_type.relevant_items():
             # Format error messages consistently with
-            # mypy.checkmember.analyze_union_member_access().
+            # frompy.checkmember.analyze_union_member_access().
             local_errors.disable_type_names += 1
             item, meth_item = self.check_method_call_by_name(
                 method, typ, args, arg_kinds, context, local_errors, original_type
@@ -4513,7 +4513,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         full_context_else_type = self.analyze_cond_branch(
             else_map, e.else_expr, context=ctx, allow_none_return=allow_none_return
         )
-        if not mypy.checker.is_valid_inferred_type(if_type):
+        if not frompy.checker.is_valid_inferred_type(if_type):
             # Analyze the right branch disregarding the left branch.
             else_type = full_context_else_type
 

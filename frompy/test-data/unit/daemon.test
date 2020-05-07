@@ -31,7 +31,7 @@ def f(): pass
 [case testDaemonIgnoreConfigFiles]
 $ dmypy start -- --follow-imports=error
 Daemon started
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 files = ./foo.py
 
@@ -95,7 +95,7 @@ Daemon stopped
 Daemon started
 $ dmypy stop
 Daemon stopped
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 follow_imports = error
 plugins = plug.py
@@ -127,7 +127,7 @@ Daemon started
 Success: no issues found in 3 source files
 $ dmypy stop
 Daemon stopped
-[file mypy.ini]
+[file frompy.ini]
 \[mypy]
 ignore_errors = True
 \[mypy-*.lol]

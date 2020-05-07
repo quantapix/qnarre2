@@ -43,7 +43,7 @@ class StrConv(NodeVisitor[str]):
         """Convert a list of items to a multiline pretty-printed string.
 
         The tag is produced from the type name of obj and its line
-        number. See mypy.util.dump_tagged for a description of the nodes
+        number. See frompy.util.dump_tagged for a description of the nodes
         argument.
         """
         tag = short_type(obj) + ":" + str(obj.get_line())
@@ -64,14 +64,14 @@ class StrConv(NodeVisitor[str]):
         extra = []  # type: List[Tuple[str, List[mypy.nodes.Var]]]
         for arg in o.arguments:
             kind = arg.kind  # type: int
-            if kind in (mypy.nodes.ARG_POS, mypy.nodes.ARG_NAMED):
+            if kind in (mypy.nodes.ARG_POS, frompy.nodes.ARG_NAMED):
                 args.append(arg.variable)
-            elif kind in (mypy.nodes.ARG_OPT, mypy.nodes.ARG_NAMED_OPT):
+            elif kind in (mypy.nodes.ARG_OPT, frompy.nodes.ARG_NAMED_OPT):
                 assert arg.initializer is not None
                 args.append(("default", [arg.variable, arg.initializer]))
-            elif kind == mypy.nodes.ARG_STAR:
+            elif kind == frompy.nodes.ARG_STAR:
                 extra.append(("VarArg", [arg.variable]))
-            elif kind == mypy.nodes.ARG_STAR2:
+            elif kind == frompy.nodes.ARG_STAR2:
                 extra.append(("DictVarArg", [arg.variable]))
         a = []  # type: List[Any]
         if args:
@@ -134,7 +134,7 @@ class StrConv(NodeVisitor[str]):
         a = self.func_helper(o)
         a.insert(0, o.name)
         arg_kinds = {arg.kind for arg in o.arguments}
-        if len(arg_kinds & {mypy.nodes.ARG_NAMED, mypy.nodes.ARG_NAMED_OPT}) > 0:
+        if len(arg_kinds & {mypy.nodes.ARG_NAMED, frompy.nodes.ARG_NAMED_OPT}) > 0:
             a.insert(1, "MaxPos({})".format(o.max_pos))
         if o.is_abstract:
             a.insert(-1, "Abstract")
@@ -357,7 +357,7 @@ class StrConv(NodeVisitor[str]):
         pretty = self.pretty_name(
             o.name, o.kind, o.fullname, o.is_inferred_def or o.is_special_form, o.node
         )
-        if isinstance(o.node, mypy.nodes.Var) and o.node.is_final:
+        if isinstance(o.node, frompy.nodes.Var) and o.node.is_final:
             pretty += " = {}".format(o.node.final_value)
         return short_type(o) + "(" + pretty + ")"
 
@@ -376,15 +376,15 @@ class StrConv(NodeVisitor[str]):
             id = self.format_id(target_node)
         else:
             id = ""
-        if isinstance(target_node, mypy.nodes.FrompyFile) and name == fullname:
+        if isinstance(target_node, frompy.nodes.FrompyFile) and name == fullname:
             n += id
-        elif kind == mypy.nodes.GDEF or (fullname != name and fullname is not None):
+        elif kind == frompy.nodes.GDEF or (fullname != name and fullname is not None):
             # Append fully qualified name for global references.
             n += " [{}{}]".format(fullname, id)
-        elif kind == mypy.nodes.LDEF:
+        elif kind == frompy.nodes.LDEF:
             # Add tag to signify a local reference.
             n += " [l{}]".format(id)
-        elif kind == mypy.nodes.MDEF:
+        elif kind == frompy.nodes.MDEF:
             # Add tag to signify a member reference.
             n += " [m{}]".format(id)
         else:
@@ -410,13 +410,13 @@ class StrConv(NodeVisitor[str]):
         args = []  # type: List[mypy.nodes.Expression]
         extra = []  # type: List[Union[str, Tuple[str, List[Any]]]]
         for i, kind in enumerate(o.arg_kinds):
-            if kind in [mypy.nodes.ARG_POS, mypy.nodes.ARG_STAR]:
+            if kind in [mypy.nodes.ARG_POS, frompy.nodes.ARG_STAR]:
                 args.append(o.args[i])
-                if kind == mypy.nodes.ARG_STAR:
+                if kind == frompy.nodes.ARG_STAR:
                     extra.append("VarArg")
-            elif kind == mypy.nodes.ARG_NAMED:
+            elif kind == frompy.nodes.ARG_NAMED:
                 extra.append(("KwArgs", [o.arg_names[i], o.args[i]]))
-            elif kind == mypy.nodes.ARG_STAR2:
+            elif kind == frompy.nodes.ARG_STAR2:
                 extra.append(("DictVarArg", [o.args[i]]))
             else:
                 raise RuntimeError("unknown kind %d" % kind)
@@ -433,7 +433,7 @@ class StrConv(NodeVisitor[str]):
         return self.dump([o.expr, o.type], o)
 
     def visit_reveal_expr(self, o: "mypy.nodes.RevealExpr") -> str:
-        if o.kind == mypy.nodes.REVEAL_TYPE:
+        if o.kind == frompy.nodes.REVEAL_TYPE:
             return self.dump([o.expr], o)
         else:
             # REVEAL_LOCALS
@@ -472,13 +472,13 @@ class StrConv(NodeVisitor[str]):
         import frompy.types
 
         a = []  # type: List[Any]
-        if o.variance == mypy.nodes.COVARIANT:
+        if o.variance == frompy.nodes.COVARIANT:
             a += ["Variance(COVARIANT)"]
-        if o.variance == mypy.nodes.CONTRAVARIANT:
+        if o.variance == frompy.nodes.CONTRAVARIANT:
             a += ["Variance(CONTRAVARIANT)"]
         if o.values:
             a += [("Values", o.values)]
-        if not mypy.types.is_named_instance(o.upper_bound, "builtins.object"):
+        if not frompy.types.is_named_instance(o.upper_bound, "builtins.object"):
             a += ["UpperBound({})".format(o.upper_bound)]
         return self.dump(a, o)
 
@@ -568,7 +568,7 @@ def dump_tagged(
         elif isinstance(n, tuple):
             s = dump_tagged(n[1], n[0], str_conv)
             a.append(indent(s, 2))
-        elif isinstance(n, mypy.nodes.Node):
+        elif isinstance(n, frompy.nodes.Node):
             a.append(indent(n.accept(str_conv), 2))
         elif isinstance(n, Type):
             a.append(indent(n.accept(TypeStrVisitor(str_conv.id_mapper)), 2))

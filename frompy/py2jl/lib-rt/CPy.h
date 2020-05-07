@@ -207,7 +207,7 @@ static PyObject *CPyType_FromTemplate(PyTypeObject *template_,
     assert(t->ht_type.tp_base != NULL);
 
     // XXX: This is a terrible hack to work around a cpython check on
-    // the mro. It was needed for mypy.stats. I need to investigate
+    // the mro. It was needed for frompy.stats. I need to investigate
     // what is actually going on here.
     Py_INCREF(metaclass);
     Py_TYPE(t) = metaclass;

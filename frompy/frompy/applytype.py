@@ -4,16 +4,26 @@ import frompy.subtypes
 import frompy.sametypes
 from frompy.expandtype import expand_type
 from frompy.types import (
-    Type, TypeVarId, TypeVarType, CallableType, AnyType, PartialType, get_proper_types
+    Type,
+    TypeVarId,
+    TypeVarType,
+    CallableType,
+    AnyType,
+    PartialType,
+    get_proper_types,
 )
 from frompy.nodes import Context
 
 
 def apply_generic_arguments(
-        callable: CallableType, orig_types: Sequence[Optional[Type]],
-        report_incompatible_typevar_value: Callable[[CallableType, Type, str, Context], None],
-        context: Context,
-        skip_unsatisfied: bool = False) -> CallableType:
+    callable: CallableType,
+    orig_types: Sequence[Optional[Type]],
+    report_incompatible_typevar_value: Callable[
+        [CallableType, Type, str, Context], None
+    ],
+    context: Context,
+    skip_unsatisfied: bool = False,
+) -> CallableType:
     """Apply generic type arguments to a callable type.
 
     For example, applying [int] to 'def [T] (T) -> T' results in
@@ -30,7 +40,9 @@ def apply_generic_arguments(
     # values and bounds.  Also, promote subtype values to allowed values.
     types = get_proper_types(orig_types)
     for i, type in enumerate(types):
-        assert not isinstance(type, PartialType), "Internal error: must never apply partial type"
+        assert not isinstance(
+            type, PartialType
+        ), "Internal error: must never apply partial type"
         values = get_proper_types(callable.variables[i].values)
         if type is None:
             continue
@@ -40,34 +52,38 @@ def apply_generic_arguments(
             if isinstance(type, TypeVarType) and type.values:
                 # Allow substituting T1 for T if every allowed value of T1
                 # is also a legal value of T.
-                if all(any(mypy.sametypes.is_same_type(v, v1) for v in values)
-                       for v1 in type.values):
+                if all(
+                    any(mypy.sametypes.is_same_type(v, v1) for v in values)
+                    for v1 in type.values
+                ):
                     continue
             matching = []
             for value in values:
-                if mypy.subtypes.is_subtype(type, value):
+                if frompy.subtypes.is_subtype(type, value):
                     matching.append(value)
             if matching:
                 best = matching[0]
                 # If there are more than one matching value, we select the narrowest
                 for match in matching[1:]:
-                    if mypy.subtypes.is_subtype(match, best):
+                    if frompy.subtypes.is_subtype(match, best):
                         best = match
                 types[i] = best
             else:
                 if skip_unsatisfied:
                     types[i] = None
                 else:
-                    report_incompatible_typevar_value(callable, type, callable.variables[i].name,
-                                                      context)
+                    report_incompatible_typevar_value(
+                        callable, type, callable.variables[i].name, context
+                    )
         else:
             upper_bound = callable.variables[i].upper_bound
-            if not mypy.subtypes.is_subtype(type, upper_bound):
+            if not frompy.subtypes.is_subtype(type, upper_bound):
                 if skip_unsatisfied:
                     types[i] = None
                 else:
-                    report_incompatible_typevar_value(callable, type, callable.variables[i].name,
-                                                      context)
+                    report_incompatible_typevar_value(
+                        callable, type, callable.variables[i].name, context
+                    )
 
     # Create a map from type variable id to target type.
     id_to_type = {}  # type: Dict[TypeVarId, Type]
