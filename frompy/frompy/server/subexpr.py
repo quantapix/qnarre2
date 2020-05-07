@@ -2,14 +2,14 @@
 
 from typing import List
 
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, Node, MemberExpr, YieldFromExpr, YieldExpr, CallExpr, OpExpr, ComparisonExpr,
     SliceExpr, CastExpr, RevealExpr, UnaryExpr, ListExpr, TupleExpr, DictExpr, SetExpr,
     IndexExpr, GeneratorExpr, ListComprehension, SetComprehension, DictionaryComprehension,
     ConditionalExpr, TypeApplication, LambdaExpr, StarExpr, BackquoteExpr, AwaitExpr,
     AssignmentExpr,
 )
-from mypy.traverser import TraverserVisitor
+from frompy.traverser import TraverserVisitor
 
 
 def get_subexpressions(node: Node) -> List[Expression]:

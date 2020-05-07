@@ -2,13 +2,13 @@
 
 from typing import Optional
 
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, NameExpr, MemberExpr, IndexExpr, TupleExpr, IntExpr, FloatExpr, UnaryExpr,
     ComplexExpr, ListExpr, StrExpr, BytesExpr, UnicodeExpr, EllipsisExpr, CallExpr,
     get_member_expr_fullname
 )
-from mypy.fastparse import parse_type_string
-from mypy.types import (
+from frompy.fastparse import parse_type_string
+from frompy.types import (
     Type, UnboundType, TypeList, EllipsisType, AnyType, CallableArgument, TypeOfAny,
     RawExpressionType, ProperType
 )

@@ -8,7 +8,7 @@ Usage:
 
 
 This is just a thin wrapper that generates a setup.py file that uses
-mypycify, suitable for prototyping and testing.
+morph, suitable for prototyping and testing.
 """
 
 import os
@@ -22,10 +22,10 @@ base_path = os.path.join(os.path.dirname(__file__), '..')
 
 setup_format = """\
 from distutils.core import setup
-from mypyc.build import mypycify
+from mypyc.build import morph
 
 setup(name='mypyc_output',
-      ext_modules=mypycify({}, {}),
+      ext_modules=morph({}, {}),
 )
 """
 

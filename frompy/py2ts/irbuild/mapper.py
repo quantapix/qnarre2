@@ -3,21 +3,21 @@
 from typing import Dict, Optional, Union
 from collections import OrderedDict
 
-from mypy.nodes import FuncDef, TypeInfo, SymbolNode, ARG_STAR, ARG_STAR2
-from mypy.types import (
+from frompy.nodes import FuncDef, TypeInfo, SymbolNode, ARG_STAR, ARG_STAR2
+from frompy.types import (
     Instance, Type, CallableType, LiteralType, TypedDictType, UnboundType, PartialType,
     UninhabitedType, Overloaded, UnionType, TypeType, AnyType, NoneTyp, TupleType, TypeVarType,
     get_proper_type
 )
 
-from mypyc.ir.ops import LiteralsMap
-from mypyc.ir.rtypes import (
+from py2ts.ir.ops import LiteralsMap
+from py2ts.ir.rtypes import (
     RType, RUnion, RTuple, RInstance, object_rprimitive, dict_rprimitive, tuple_rprimitive,
     none_rprimitive, int_rprimitive, float_rprimitive, str_rprimitive, bool_rprimitive,
     list_rprimitive, set_rprimitive
 )
-from mypyc.ir.func_ir import FuncSignature, FuncDecl, RuntimeArg
-from mypyc.ir.class_ir import ClassIR
+from py2ts.ir.func_ir import FuncSignature, FuncDecl, RuntimeArg
+from py2ts.ir.class_ir import ClassIR
 
 
 class Mapper:

@@ -9,11 +9,11 @@ from typing import (
 from typing_extensions import DefaultDict, Final, TYPE_CHECKING
 from mypy_extensions import trait
 
-import mypy.strconv
-from mypy.util import short_type
-from mypy.visitor import NodeVisitor, StatementVisitor, ExpressionVisitor
+import frompy.strconv
+from frompy.util import short_type
+from frompy.visitor import NodeVisitor, StatementVisitor, ExpressionVisitor
 
-from mypy.bogus_type import Bogus
+from frompy.bogus_type import Bogus
 
 
 class Context:
@@ -57,7 +57,7 @@ class Context:
 
 if TYPE_CHECKING:
     # break import cycle only needed for mypy
-    import mypy.types
+    import frompy.types
 
 
 T = TypeVar('T')

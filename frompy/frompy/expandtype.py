@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, List, TypeVar, Mapping, cast
 
-from mypy.types import (
+from frompy.types import (
     Type, Instance, CallableType, TypeVisitor, UnboundType, AnyType,
     NoneType, TypeVarType, Overloaded, TupleType, TypedDictType, UnionType,
     ErasedType, PartialType, DeletedType, UninhabitedType, TypeType, TypeVarId,
@@ -119,7 +119,7 @@ class ExpandTypeVisitor(TypeVisitor[Type]):
     def visit_union_type(self, t: UnionType) -> Type:
         # After substituting for type variables in t.items,
         # some of the resulting types might be subtypes of others.
-        from mypy.typeops import make_simplified_union  # asdf
+        from frompy.typeops import make_simplified_union  # asdf
         return make_simplified_union(self.expand_types(t.items), t.line, t.column)
 
     def visit_partial_type(self, t: PartialType) -> Type:

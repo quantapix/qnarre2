@@ -1,5 +1,5 @@
-from mypy.plugin import Plugin
-from mypy.types import NoneType, CallableType
+from frompy.plugin import Plugin
+from frompy.types import NoneType, CallableType
 
 
 class DescriptorPlugin(Plugin):

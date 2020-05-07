@@ -5,9 +5,9 @@ import os
 
 from typing import Any, List, Tuple, Optional, Union, Sequence
 
-from mypy.util import short_type, IdMapper
-import mypy.nodes
-from mypy.visitor import NodeVisitor
+from frompy.util import short_type, IdMapper
+import frompy.nodes
+from frompy.visitor import NodeVisitor
 
 
 class StrConv(NodeVisitor[str]):
@@ -455,7 +455,7 @@ class StrConv(NodeVisitor[str]):
         return self.dump([o.expr, ('Types', o.types)], o)
 
     def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> str:
-        import mypy.types
+        import frompy.types
         a = []  # type: List[Any]
         if o.variance == mypy.nodes.COVARIANT:
             a += ['Variance(COVARIANT)']
@@ -537,7 +537,7 @@ def dump_tagged(nodes: Sequence[object], tag: Optional[str], str_conv: 'StrConv'
      - pairs (str, array) are converted recursively, so that str is the tag
      - other items are converted to strings and indented
     """
-    from mypy.types import Type, TypeStrVisitor
+    from frompy.types import Type, TypeStrVisitor
 
     a = []  # type: List[str]
     if tag:

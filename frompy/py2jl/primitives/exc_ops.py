@@ -1,8 +1,8 @@
 """Exception-related primitive ops."""
 
-from mypyc.ir.ops import ERR_NEVER, ERR_FALSE
-from mypyc.ir.rtypes import bool_rprimitive, object_rprimitive, void_rtype, exc_rtuple
-from mypyc.primitives.registry import (
+from py2jl.ir.ops import ERR_NEVER, ERR_FALSE
+from py2jl.ir.rtypes import bool_rprimitive, object_rprimitive, void_rtype, exc_rtuple
+from py2jl.primitives.registry import (
     simple_emit, call_emit, call_void_emit, call_and_fail_emit, custom_op,
 )
 

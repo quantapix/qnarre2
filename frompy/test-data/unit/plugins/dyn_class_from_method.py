@@ -1,6 +1,6 @@
-from mypy.nodes import (Block, ClassDef, GDEF, SymbolTable, SymbolTableNode, TypeInfo)
-from mypy.plugin import DynamicClassDefContext, Plugin
-from mypy.types import Instance
+from frompy.nodes import (Block, ClassDef, GDEF, SymbolTable, SymbolTableNode, TypeInfo)
+from frompy.plugin import DynamicClassDefContext, Plugin
+from frompy.types import Instance
 
 
 class DynPlugin(Plugin):

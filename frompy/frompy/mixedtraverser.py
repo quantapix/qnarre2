@@ -1,13 +1,13 @@
 from typing import Optional
 
-from mypy.nodes import (
+from frompy.nodes import (
     Var, FuncItem, ClassDef, AssignmentStmt, ForStmt, WithStmt,
     CastExpr, TypeApplication, TypeAliasExpr, TypeVarExpr, TypedDictExpr, NamedTupleExpr,
     PromoteExpr, NewTypeExpr
 )
-from mypy.types import Type
-from mypy.traverser import TraverserVisitor
-from mypy.typetraverser import TypeTraverserVisitor
+from frompy.types import Type
+from frompy.traverser import TraverserVisitor
+from frompy.typetraverser import TypeTraverserVisitor
 
 
 class MixedTraverserVisitor(TraverserVisitor, TypeTraverserVisitor):

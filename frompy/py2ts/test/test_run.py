@@ -12,22 +12,22 @@ import sys
 from typing import Any, Iterator, List, cast
 
 from mypy import build
-from mypy.test.data import DataDrivenTestCase, UpdateFile
-from mypy.test.config import test_temp_dir
-from mypy.errors import CompileError
-from mypy.options import Options
-from mypy.test.helpers import copy_and_fudge_mtime, assert_module_equivalence
+from frompy.test.data import DataDrivenTestCase, UpdateFile
+from frompy.test.config import test_temp_dir
+from frompy.errors import CompileError
+from frompy.options import Options
+from frompy.test.helpers import copy_and_fudge_mtime, assert_module_equivalence
 
-from mypyc.codegen import emitmodule
-from mypyc.options import CompilerOptions
-from mypyc.errors import Errors
-from mypyc.build import construct_groups
-from mypyc.test.testutil import (
+from py2ts.codegen import emitmodule
+from py2ts.options import CompilerOptions
+from py2ts.errors import Errors
+from py2ts.build import construct_groups
+from py2ts.test.testutil import (
     ICODE_GEN_BUILTINS, TESTUTIL_PATH,
     use_custom_builtins, MypycDataSuite, assert_test_output,
     show_c, fudge_dir_mtimes,
 )
-from mypyc.test.test_serialization import check_serialization_roundtrip
+from py2ts.test.test_serialization import check_serialization_roundtrip
 
 files = [
     'run-functions.test',
@@ -41,10 +41,10 @@ files = [
 
 setup_format = """\
 from setuptools import setup
-from mypyc.build import mypycify
+from py2ts.build import morph
 
 setup(name='test_run_output',
-      ext_modules=mypycify({}, separate={}, skip_cgen_input={!r}, strip_asserts=False,
+      ext_modules=morph({}, separate={}, skip_cgen_input={!r}, strip_asserts=False,
                            multi_file={}),
 )
 """

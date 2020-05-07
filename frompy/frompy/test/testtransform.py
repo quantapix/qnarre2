@@ -3,14 +3,14 @@
 import os.path
 
 from mypy import build
-from mypy.modulefinder import BuildSource
-from mypy.test.helpers import (
+from frompy.modulefinder import BuildSource
+from frompy.test.helpers import (
     assert_string_arrays_equal, normalize_error_messages, parse_options
 )
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.config import test_temp_dir
-from mypy.test.visitors import TypeAssertTransformVisitor
-from mypy.errors import CompileError
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.config import test_temp_dir
+from frompy.test.visitors import TypeAssertTransformVisitor
+from frompy.errors import CompileError
 
 
 class TransformSuite(DataSuite):

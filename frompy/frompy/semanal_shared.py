@@ -6,16 +6,16 @@ from typing import Optional, List, Callable
 from typing_extensions import Final
 from mypy_extensions import trait
 
-from mypy.nodes import (
+from frompy.nodes import (
     Context, SymbolTableNode, MypyFile, ImportedName, FuncDef, Node, TypeInfo, Expression, GDEF,
     SymbolNode, SymbolTable
 )
-from mypy.util import correct_relative_import
-from mypy.types import (
+from frompy.util import correct_relative_import
+from frompy.types import (
     Type, FunctionLike, Instance, TupleType, TPDICT_FB_NAMES, ProperType, get_proper_type
 )
-from mypy.tvar_scope import TypeVarScope
-from mypy.errorcodes import ErrorCode
+from frompy.tvar_scope import TypeVarScope
+from frompy.errorcodes import ErrorCode
 from mypy import join
 
 # Priorities for ordering of patches within the "patch" phase of semantic analysis

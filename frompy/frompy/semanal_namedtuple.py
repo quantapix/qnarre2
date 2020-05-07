@@ -7,22 +7,22 @@ from contextlib import contextmanager
 from typing import Tuple, List, Dict, Mapping, Optional, Union, cast, Iterator
 from typing_extensions import Final
 
-from mypy.types import (
+from frompy.types import (
     Type, TupleType, AnyType, TypeOfAny, TypeVarDef, CallableType, TypeType, TypeVarType,
     UnboundType,
 )
-from mypy.semanal_shared import (
+from frompy.semanal_shared import (
     SemanticAnalyzerInterface, set_callable_name, calculate_tuple_fallback, PRIORITY_FALLBACKS
 )
-from mypy.nodes import (
+from frompy.nodes import (
     Var, EllipsisExpr, Argument, StrExpr, BytesExpr, UnicodeExpr, ExpressionStmt, NameExpr,
     AssignmentStmt, PassStmt, Decorator, FuncBase, ClassDef, Expression, RefExpr, TypeInfo,
     NamedTupleExpr, CallExpr, Context, TupleExpr, ListExpr, SymbolTableNode, FuncDef, Block,
     TempNode, SymbolTable, TypeVarExpr, ARG_POS, ARG_NAMED_OPT, ARG_OPT, MDEF
 )
-from mypy.options import Options
-from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
-from mypy.util import get_unique_redefinition_name
+from frompy.options import Options
+from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
+from frompy.util import get_unique_redefinition_name
 
 # Matches "_prohibited" in typing.py, but adds __annotations__, which works at runtime but can't
 # easily be supported in a static checker.

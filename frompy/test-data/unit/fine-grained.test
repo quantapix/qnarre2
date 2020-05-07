@@ -32,7 +32,7 @@
 --
 -- Specifications for later runs can be given with [stale2 ...], [stale3 ...], etc.
 --
--- Test runner can parse options from mypy.ini file. Updating this file in between
+-- Test runner can parse options from frompy.ini file. Updating this file in between
 -- incremental runs is not yet supported.
 --
 -- Each test case run without caching and with caching (if the initial run passes),

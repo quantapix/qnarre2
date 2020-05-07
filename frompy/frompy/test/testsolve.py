@@ -2,11 +2,11 @@
 
 from typing import List, Union, Tuple, Optional
 
-from mypy.test.helpers import Suite, assert_equal
-from mypy.constraints import SUPERTYPE_OF, SUBTYPE_OF, Constraint
-from mypy.solve import solve_constraints
-from mypy.test.typefixture import TypeFixture
-from mypy.types import Type, TypeVarType, TypeVarId
+from frompy.test.helpers import Suite, assert_equal
+from frompy.constraints import SUPERTYPE_OF, SUBTYPE_OF, Constraint
+from frompy.solve import solve_constraints
+from frompy.test.typefixture import TypeFixture
+from frompy.types import Type, TypeVarType, TypeVarId
 
 
 class SolveSuite(Suite):

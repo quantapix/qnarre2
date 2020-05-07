@@ -3,7 +3,7 @@ import json
 
 from typing import Any
 
-from mypy.plugin import Plugin, ReportConfigContext
+from frompy.plugin import Plugin, ReportConfigContext
 
 
 class ConfigDataPlugin(Plugin):

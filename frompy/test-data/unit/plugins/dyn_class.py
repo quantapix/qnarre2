@@ -1,8 +1,8 @@
-from mypy.plugin import Plugin
-from mypy.nodes import (
+from frompy.plugin import Plugin
+from frompy.nodes import (
     ClassDef, Block, TypeInfo, SymbolTable, SymbolTableNode, GDEF, Var
 )
-from mypy.types import Instance
+from frompy.types import Instance
 
 DECL_BASES = set()
 

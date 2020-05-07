@@ -5,7 +5,7 @@ Subclass TransformVisitor to perform non-trivial transformations.
 
 from typing import List, Dict, cast, Optional, Iterable
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, Import, Node, ImportAll, ImportFrom, FuncItem, FuncDef,
     OverloadedFuncDef, ClassDef, Decorator, Block, Var,
     OperatorAssignmentStmt, ExpressionStmt, AssignmentStmt, ReturnStmt,
@@ -22,10 +22,10 @@ from mypy.nodes import (
     YieldExpr, ExecStmt, Argument, BackquoteExpr, AwaitExpr, AssignmentExpr,
     OverloadPart, EnumCallExpr, REVEAL_TYPE
 )
-from mypy.types import Type, FunctionLike, ProperType
-from mypy.traverser import TraverserVisitor
-from mypy.visitor import NodeVisitor
-from mypy.util import replace_object_state
+from frompy.types import Type, FunctionLike, ProperType
+from frompy.traverser import TraverserVisitor
+from frompy.visitor import NodeVisitor
+from frompy.util import replace_object_state
 
 
 class TransformVisitor(NodeVisitor[Node]):

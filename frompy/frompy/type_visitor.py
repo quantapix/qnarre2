@@ -7,7 +7,7 @@ mypyc-extension classes can extend interpreted classes but not the
 other way around. Separating them out, then, allows us to compile
 types before we can compile everything that uses a TypeVisitor.
 
-The visitors are all re-exported from mypy.types and that is how
+The visitors are all re-exported from frompy.types and that is how
 other modules refer to them.
 """
 
@@ -18,7 +18,7 @@ from mypy_extensions import trait
 
 T = TypeVar('T')
 
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, CallableType, Overloaded, TupleType, TypedDictType, LiteralType,
     RawExpressionType, Instance, NoneType, TypeType,
     UnionType, TypeVarType, PartialType, DeletedType, UninhabitedType, TypeVarDef,

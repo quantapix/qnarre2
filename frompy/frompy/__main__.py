@@ -1,7 +1,7 @@
 """Mypy type checker command line tool."""
 
 import sys
-from mypy.main import main
+from frompy.main import main
 
 
 def console_entry() -> None:

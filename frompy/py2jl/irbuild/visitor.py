@@ -5,7 +5,7 @@ mypyc.irbuild.builder and mypyc.irbuild.main are closely related.
 
 from typing_extensions import NoReturn
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, FuncDef, ReturnStmt, AssignmentStmt, OpExpr,
     IntExpr, NameExpr, Var, IfStmt, UnaryExpr, ComparisonExpr, WhileStmt, CallExpr,
     IndexExpr, Block, ListExpr, ExpressionStmt, MemberExpr, ForStmt,
@@ -19,10 +19,10 @@ from mypy.nodes import (
     TypeVarExpr, TypedDictExpr, UnicodeExpr, WithStmt, YieldFromExpr, YieldExpr
 )
 
-from mypyc.ir.ops import Value
-from mypyc.irbuild.builder import IRVisitor, IRBuilder, UnsupportedException
-from mypyc.irbuild.classdef import transform_class_def
-from mypyc.irbuild.function import (
+from py2jl.ir.ops import Value
+from py2jl.irbuild.builder import IRVisitor, IRBuilder, UnsupportedException
+from py2jl.irbuild.classdef import transform_class_def
+from py2jl.irbuild.function import (
     transform_func_def,
     transform_overloaded_func_def,
     transform_decorator,
@@ -31,7 +31,7 @@ from mypyc.irbuild.function import (
     transform_yield_from_expr,
     transform_await_expr,
 )
-from mypyc.irbuild.statement import (
+from py2jl.irbuild.statement import (
     transform_block,
     transform_expression_stmt,
     transform_return_stmt,
@@ -51,7 +51,7 @@ from mypyc.irbuild.statement import (
     transform_assert_stmt,
     transform_del_stmt,
 )
-from mypyc.irbuild.expression import (
+from py2jl.irbuild.expression import (
     transform_name_expr,
     transform_member_expr,
     transform_super_expr,

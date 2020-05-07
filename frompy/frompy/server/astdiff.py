@@ -52,16 +52,16 @@ Summary of how this works for certain kinds of differences:
 
 from typing import Set, Dict, Tuple, Optional, Sequence, Union
 
-from mypy.nodes import (
+from frompy.nodes import (
     SymbolTable, TypeInfo, Var, SymbolNode, Decorator, TypeVarExpr, TypeAlias,
     FuncBase, OverloadedFuncDef, FuncItem, MypyFile, UNBOUND_IMPORTED
 )
-from mypy.types import (
+from frompy.types import (
     Type, TypeVisitor, UnboundType, AnyType, NoneType, UninhabitedType,
     ErasedType, DeletedType, Instance, TypeVarType, CallableType, TupleType, TypedDictType,
     UnionType, Overloaded, PartialType, TypeType, LiteralType, TypeAliasType
 )
-from mypy.util import get_prefix
+from frompy.util import get_prefix
 
 
 # Snapshot representation of a symbol table node or type. The representation is

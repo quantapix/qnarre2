@@ -6,12 +6,12 @@ from collections import OrderedDict, defaultdict
 from typing import Tuple, List, TypeVar, Set, Dict, Optional, TextIO, Callable
 from typing_extensions import Final
 
-from mypy.scope import Scope
-from mypy.options import Options
-from mypy.version import __version__ as mypy_version
-from mypy.errorcodes import ErrorCode
+from frompy.scope import Scope
+from frompy.options import Options
+from frompy.version import __version__ as mypy_version
+from frompy.errorcodes import ErrorCode
 from mypy import errorcodes as codes
-from mypy.util import DEFAULT_SOURCE_OFFSET, is_typeshed_file
+from frompy.util import DEFAULT_SOURCE_OFFSET, is_typeshed_file
 
 T = TypeVar('T')
 allowed_duplicates = ['@overload', 'Got:', 'Expected:']  # type: Final

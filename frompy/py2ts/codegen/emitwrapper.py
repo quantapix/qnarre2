@@ -2,16 +2,16 @@
 
 from typing import List, Optional
 
-from mypy.nodes import ARG_POS, ARG_OPT, ARG_NAMED_OPT, ARG_NAMED, ARG_STAR, ARG_STAR2
+from frompy.nodes import ARG_POS, ARG_OPT, ARG_NAMED_OPT, ARG_NAMED, ARG_STAR, ARG_STAR2
 
-from mypyc.common import PREFIX, NATIVE_PREFIX, DUNDER_PREFIX
-from mypyc.codegen.emit import Emitter
-from mypyc.ir.rtypes import (
+from py2ts.common import PREFIX, NATIVE_PREFIX, DUNDER_PREFIX
+from py2ts.codegen.emit import Emitter
+from py2ts.ir.rtypes import (
     RType, is_object_rprimitive, is_int_rprimitive, is_bool_rprimitive, object_rprimitive
 )
-from mypyc.ir.func_ir import FuncIR, RuntimeArg, FUNC_STATICMETHOD
-from mypyc.ir.class_ir import ClassIR
-from mypyc.namegen import NameGenerator
+from py2ts.ir.func_ir import FuncIR, RuntimeArg, FUNC_STATICMETHOD
+from py2ts.ir.class_ir import ClassIR
+from py2ts.namegen import NameGenerator
 
 
 def wrapper_function_header(fn: FuncIR, names: NameGenerator) -> str:

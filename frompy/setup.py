@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 # alternative forms of installing, as suggested by README.md).
 from setuptools import setup
 from setuptools.command.build_py import build_py
-from mypy.version import __version__ as version
+from frompy.version import __version__ as version
 from mypy import git
 
 git.verify_git_integrity_or_abort(".")
@@ -141,10 +141,10 @@ if USE_MYPYC:
         del sys.modules['mypy.git']
         sys.path.insert(0, use_other_mypyc)
 
-    from mypyc.build import mypycify
+    from mypyc.build import morph
     opt_level = os.getenv('MYPYC_OPT_LEVEL', '3')
     force_multifile = os.getenv('MYPYC_MULTI_FILE', '') == '1'
-    ext_modules = mypycify(
+    ext_modules = morph(
         mypyc_targets + ['--config-file=mypy_bootstrap.ini'],
         opt_level=opt_level,
         # Use multi-file compliation mode on windows because without it

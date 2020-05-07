@@ -3,14 +3,14 @@
 from typing import List, Optional, Sequence, Dict
 from typing_extensions import Final
 
-from mypy.nodes import FuncDef, Block, ARG_POS, ARG_OPT, ARG_NAMED_OPT
+from frompy.nodes import FuncDef, Block, ARG_POS, ARG_OPT, ARG_NAMED_OPT
 
-from mypyc.common import JsonDict
-from mypyc.ir.ops import (
+from py2jl.common import JsonDict
+from py2jl.ir.ops import (
     DeserMaps, Goto, Branch, Return, Unreachable, BasicBlock, Environment
 )
-from mypyc.ir.rtypes import RType, deserialize_type
-from mypyc.namegen import NameGenerator
+from py2jl.ir.rtypes import RType, deserialize_type
+from py2jl.namegen import NameGenerator
 
 
 class RuntimeArg:

@@ -8,13 +8,13 @@ even if the test was compiled.
 
 from typing import Set
 
-from mypy.nodes import (
+from frompy.nodes import (
     NameExpr, TypeVarExpr, CallExpr, Expression, MypyFile, AssignmentStmt, IntExpr
 )
-from mypy.traverser import TraverserVisitor
+from frompy.traverser import TraverserVisitor
 
-from mypy.treetransform import TransformVisitor
-from mypy.types import Type
+from frompy.treetransform import TransformVisitor
+from frompy.types import Type
 
 
 # from testtypegen

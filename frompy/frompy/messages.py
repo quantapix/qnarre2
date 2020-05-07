@@ -17,29 +17,29 @@ from textwrap import dedent
 from typing import cast, List, Dict, Any, Sequence, Iterable, Tuple, Set, Optional, Union
 from typing_extensions import Final
 
-from mypy.erasetype import erase_type
-from mypy.errors import Errors
-from mypy.types import (
+from frompy.erasetype import erase_type
+from frompy.errors import Errors
+from frompy.types import (
     Type, CallableType, Instance, TypeVarType, TupleType, TypedDictType, LiteralType,
     UnionType, NoneType, AnyType, Overloaded, FunctionLike, DeletedType, TypeType,
     UninhabitedType, TypeOfAny, UnboundType, PartialType, get_proper_type, ProperType,
     get_proper_types
 )
-from mypy.typetraverser import TypeTraverserVisitor
-from mypy.nodes import (
+from frompy.typetraverser import TypeTraverserVisitor
+from frompy.nodes import (
     TypeInfo, Context, MypyFile, op_methods, op_methods_to_symbols,
     FuncDef, reverse_builtin_aliases,
     ARG_POS, ARG_OPT, ARG_NAMED, ARG_NAMED_OPT, ARG_STAR, ARG_STAR2,
     ReturnStmt, NameExpr, Var, CONTRAVARIANT, COVARIANT, SymbolNode,
     CallExpr, SymbolTable
 )
-from mypy.subtypes import (
+from frompy.subtypes import (
     is_subtype, find_member, get_member_flags,
     IS_SETTABLE, IS_CLASSVAR, IS_CLASS_OR_STATIC,
 )
-from mypy.sametypes import is_same_type
-from mypy.util import unmangle
-from mypy.errorcodes import ErrorCode
+from frompy.sametypes import is_same_type
+from frompy.util import unmangle
+from frompy.errorcodes import ErrorCode
 from mypy import message_registry, errorcodes as codes
 
 TYPES_FOR_UNIMPORTED_HINTS = {

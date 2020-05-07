@@ -5,22 +5,22 @@ import shutil
 from typing import List, Tuple, Dict, Optional
 
 from mypy import build
-from mypy.build import BuildResult
-from mypy.modulefinder import BuildSource
-from mypy.defaults import PYTHON3_VERSION
-from mypy.errors import CompileError
-from mypy.nodes import (
+from frompy.build import BuildResult
+from frompy.modulefinder import BuildSource
+from frompy.defaults import PYTHON3_VERSION
+from frompy.errors import CompileError
+from frompy.nodes import (
     Node, MypyFile, SymbolTable, SymbolTableNode, TypeInfo, Expression, Var, TypeVarExpr,
     UNBOUND_IMPORTED
 )
-from mypy.server.subexpr import get_subexpressions
-from mypy.server.update import FineGrainedBuildManager
-from mypy.strconv import StrConv
-from mypy.test.config import test_temp_dir
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import assert_string_arrays_equal, normalize_error_messages, parse_options
-from mypy.types import TypeStrVisitor, Type
-from mypy.util import short_type, IdMapper
+from frompy.server.subexpr import get_subexpressions
+from frompy.server.update import FineGrainedBuildManager
+from frompy.strconv import StrConv
+from frompy.test.config import test_temp_dir
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.helpers import assert_string_arrays_equal, normalize_error_messages, parse_options
+from frompy.types import TypeStrVisitor, Type
+from frompy.util import short_type, IdMapper
 
 
 # Which data structures to dump in a test case?

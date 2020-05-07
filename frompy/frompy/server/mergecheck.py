@@ -3,8 +3,8 @@
 from typing import Dict, List, Tuple
 from typing_extensions import Final
 
-from mypy.nodes import FakeInfo, SymbolNode, Var, Decorator, FuncDef
-from mypy.server.objgraph import get_reachable_graph, get_path
+from frompy.nodes import FakeInfo, SymbolNode, Var, Decorator, FuncDef
+from frompy.server.objgraph import get_reachable_graph, get_path
 
 # If True, print more verbose output on failure.
 DUMP_MISMATCH_NODES = False  # type: Final

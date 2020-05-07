@@ -13,8 +13,8 @@ semanal_enum.py).
 from typing import Optional
 from typing_extensions import Final
 
-import mypy.plugin  # To avoid circular imports.
-from mypy.types import Type, Instance, LiteralType, get_proper_type
+import frompy.plugin  # To avoid circular imports.
+from frompy.types import Type, Instance, LiteralType, get_proper_type
 
 # Note: 'enum.EnumMeta' is deliberately excluded from this list. Classes that directly use
 # enum.EnumMeta do not necessarily automatically have the 'name' and 'value' attributes.

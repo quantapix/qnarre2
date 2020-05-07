@@ -1,8 +1,8 @@
 from typing import Dict, Iterable, List, Optional, Set, Union
 
-from mypy.types import TypeVisitor
-import mypy.types as types
-from mypy.util import split_module_names
+from frompy.types import TypeVisitor
+import frompy.types as types
+from frompy.util import split_module_names
 
 
 def extract_module_names(type_name: Optional[str]) -> List[str]:

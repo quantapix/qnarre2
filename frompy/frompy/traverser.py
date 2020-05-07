@@ -2,8 +2,8 @@
 
 from typing import List
 
-from mypy.visitor import NodeVisitor
-from mypy.nodes import (
+from frompy.visitor import NodeVisitor
+from frompy.nodes import (
     Block, MypyFile, FuncBase, FuncItem, CallExpr, ClassDef, Decorator, FuncDef,
     ExpressionStmt, AssignmentStmt, OperatorAssignmentStmt, WhileStmt,
     ForStmt, ReturnStmt, AssertStmt, DelStmt, IfStmt, RaiseStmt,

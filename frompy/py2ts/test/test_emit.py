@@ -1,11 +1,11 @@
 import unittest
 
-from mypy.nodes import Var
+from frompy.nodes import Var
 
-from mypyc.codegen.emit import Emitter, EmitterContext
-from mypyc.ir.ops import BasicBlock, Environment
-from mypyc.ir.rtypes import int_rprimitive
-from mypyc.namegen import NameGenerator
+from py2ts.codegen.emit import Emitter, EmitterContext
+from py2ts.ir.ops import BasicBlock, Environment
+from py2ts.ir.rtypes import int_rprimitive
+from py2ts.namegen import NameGenerator
 
 
 class TestEmitter(unittest.TestCase):

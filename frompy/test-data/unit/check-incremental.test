@@ -4820,7 +4820,7 @@ def f() -> C: ...
 x = f()
 
 [file basic_plugin.py]
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 
 class MyPlugin(Plugin):
     def get_function_hook(self, fullname):
@@ -4836,7 +4836,7 @@ def plugin(version):
     return MyPlugin
 
 [file basic_plugin.py.2]
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 
 class MyPlugin(Plugin):
     def get_function_hook(self, fullname):
@@ -4875,7 +4875,7 @@ def f() -> C: ...
 x = f()
 
 [file basic_plugin.py]
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 from version_plugin import __version__, choice
 
 class MyPlugin(Plugin):
@@ -4925,7 +4925,7 @@ def f() -> int: ...
 x = f()
 
 [file basic_plugin.py]
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 
 class MyPlugin(Plugin):
     def get_function_hook(self, fullname):
@@ -4968,7 +4968,7 @@ def f() -> int: ...
 x = f()
 
 [file basic_plugin.py]
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 
 class MyPlugin(Plugin):
     def get_function_hook(self, fullname):

@@ -3,14 +3,14 @@
 from typing import Tuple, TypeVar, Union, Optional
 from typing_extensions import Final
 
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, IfStmt, Block, AssertStmt, NameExpr, UnaryExpr, MemberExpr, OpExpr, ComparisonExpr,
     StrExpr, UnicodeExpr, CallExpr, IntExpr, TupleExpr, IndexExpr, SliceExpr, Import, ImportFrom,
     ImportAll, LITERAL_YES
 )
-from mypy.options import Options
-from mypy.traverser import TraverserVisitor
-from mypy.literals import literal
+from frompy.options import Options
+from frompy.traverser import TraverserVisitor
+from frompy.literals import literal
 
 # Inferred truth value of an expression.
 ALWAYS_TRUE = 1  # type: Final

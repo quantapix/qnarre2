@@ -1,5 +1,5 @@
-from mypy.plugin import CallableType, CheckerPluginInterface, MethodSigContext, Plugin
-from mypy.types import Instance, Type
+from frompy.plugin import CallableType, CheckerPluginInterface, MethodSigContext, Plugin
+from frompy.types import Instance, Type
 
 class MethodSigPlugin(Plugin):
     def get_method_signature_hook(self, fullname):

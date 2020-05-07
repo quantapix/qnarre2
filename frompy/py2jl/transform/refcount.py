@@ -18,7 +18,7 @@ into a regular, owned reference that needs to freed before return.
 
 from typing import Dict, Iterable, List, Set, Tuple
 
-from mypyc.analysis import (
+from py2jl.analysis import (
     get_cfg,
     analyze_must_defined_regs,
     analyze_live_regs,
@@ -26,11 +26,11 @@ from mypyc.analysis import (
     cleanup_cfg,
     AnalysisDict
 )
-from mypyc.ir.ops import (
+from py2jl.ir.ops import (
     BasicBlock, Assign, RegisterOp, DecRef, IncRef, Branch, Goto, Environment,
     Op, ControlOp, Value, Register
 )
-from mypyc.ir.func_ir import FuncIR
+from py2jl.ir.func_ir import FuncIR
 
 
 DecIncs = Tuple[Tuple[Tuple[Value, bool], ...], Tuple[Value, ...]]

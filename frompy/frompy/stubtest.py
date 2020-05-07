@@ -19,12 +19,12 @@ from typing import Any, Dict, Generic, Iterator, List, Optional, Tuple, TypeVar,
 
 from typing_extensions import Type
 
-import mypy.build
-import mypy.modulefinder
-import mypy.types
+import frompy.build
+import frompy.modulefinder
+import frompy.types
 from mypy import nodes
-from mypy.options import Options
-from mypy.util import FancyFormatter
+from frompy.options import Options
+from frompy.util import FancyFormatter
 
 
 class Missing:

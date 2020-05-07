@@ -9,8 +9,8 @@ import textwrap
 import unittest
 from typing import Any, Callable, Iterator, List, Optional
 
-import mypy.stubtest
-from mypy.stubtest import parse_options, test_stubs
+import frompy.stubtest
+from frompy.stubtest import parse_options, test_stubs
 
 
 @contextlib.contextmanager

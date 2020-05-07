@@ -10,11 +10,11 @@ import re
 import subprocess
 import sys
 
-from mypy.test.data import DataDrivenTestCase
-from mypy.test.config import test_temp_dir
-from mypy.test.helpers import normalize_error_messages
+from frompy.test.data import DataDrivenTestCase
+from frompy.test.config import test_temp_dir
+from frompy.test.helpers import normalize_error_messages
 
-from mypyc.test.testutil import MypycDataSuite, assert_test_output
+from py2jl.test.testutil import MypycDataSuite, assert_test_output
 
 files = [
     'commandline.test',

@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from mypy.util import trim_source_line, split_words
+from frompy.util import trim_source_line, split_words
 
 
 class FancyErrorFormattingTestCases(TestCase):

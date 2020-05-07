@@ -17,14 +17,14 @@ non-locals is via an instance of an environment class. Example:
 
 from typing import Optional, Union
 
-from mypy.nodes import FuncDef, SymbolNode
+from frompy.nodes import FuncDef, SymbolNode
 
-from mypyc.common import SELF_NAME, ENV_ATTR_NAME
-from mypyc.ir.ops import Call, GetAttr, SetAttr, Value, Environment, AssignmentTargetAttr
-from mypyc.ir.rtypes import RInstance, object_rprimitive
-from mypyc.ir.class_ir import ClassIR
-from mypyc.irbuild.builder import IRBuilder
-from mypyc.irbuild.context import FuncInfo, ImplicitClass, GeneratorClass
+from py2ts.common import SELF_NAME, ENV_ATTR_NAME
+from py2ts.ir.ops import Call, GetAttr, SetAttr, Value, Environment, AssignmentTargetAttr
+from py2ts.ir.rtypes import RInstance, object_rprimitive
+from py2ts.ir.class_ir import ClassIR
+from py2ts.irbuild.builder import IRBuilder
+from py2ts.irbuild.context import FuncInfo, ImplicitClass, GeneratorClass
 
 
 def setup_env_class(builder: IRBuilder) -> ClassIR:

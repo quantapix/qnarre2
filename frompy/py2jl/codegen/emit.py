@@ -3,22 +3,22 @@
 from collections import OrderedDict
 from typing import List, Set, Dict, Optional, Callable, Union
 
-from mypyc.common import (
+from py2jl.common import (
     REG_PREFIX, ATTR_PREFIX, STATIC_PREFIX, TYPE_PREFIX, NATIVE_PREFIX,
     FAST_ISINSTANCE_MAX_SUBCLASSES,
 )
-from mypyc.ir.ops import Environment, BasicBlock, Value
-from mypyc.ir.rtypes import (
+from py2jl.ir.ops import Environment, BasicBlock, Value
+from py2jl.ir.rtypes import (
     RType, RTuple, RInstance, RUnion, RPrimitive,
     is_float_rprimitive, is_bool_rprimitive, is_int_rprimitive, is_short_int_rprimitive,
     is_list_rprimitive, is_dict_rprimitive, is_set_rprimitive, is_tuple_rprimitive,
     is_none_rprimitive, is_object_rprimitive, object_rprimitive, is_str_rprimitive,
     int_rprimitive, is_optional_type, optional_value_type
 )
-from mypyc.ir.func_ir import FuncDecl
-from mypyc.ir.class_ir import ClassIR, all_concrete_classes
-from mypyc.namegen import NameGenerator, exported_name
-from mypyc.sametype import is_same_type
+from py2jl.ir.func_ir import FuncDecl
+from py2jl.ir.class_ir import ClassIR, all_concrete_classes
+from py2jl.namegen import NameGenerator, exported_name
+from py2jl.sametype import is_same_type
 
 
 class HeaderDeclaration:

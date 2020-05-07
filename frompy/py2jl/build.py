@@ -1,19 +1,19 @@
 """Support for building extensions using mypyc with distutils or setuptools
 
-The main entry point is mypycify, which produces a list of extension
+The main entry point is morph, which produces a list of extension
 modules to be passed to setup. A trivial setup.py for a mypyc built
 project, then, looks like:
 
     from distutils.core import setup
-    from mypyc.build import mypycify
+    from py2jl.build import morph
 
     setup(name='test_module',
-          ext_modules=mypycify(['foo.py']),
+          ext_modules=morph(['foo.py']),
     )
 
-See the mypycify docs for additional arguments.
+See the morph docs for additional arguments.
 
-mypycify can integrate with either distutils or setuptools, but needs
+morph can integrate with either distutils or setuptools, but needs
 to know at import-time whether it is using distutils or setuputils. We
 hackily decide based on whether setuptools has been imported already.
 """
@@ -27,20 +27,20 @@ import re
 from typing import List, Tuple, Any, Optional, Dict, Union, Set, Iterable, cast
 from typing_extensions import TYPE_CHECKING, NoReturn, Type
 
-from mypy.main import process_options
-from mypy.errors import CompileError
-from mypy.options import Options
-from mypy.build import BuildSource
-from mypy.fscache import FileSystemCache
-from mypy.util import write_junit_xml
+from frompy.main import process_options
+from frompy.errors import CompileError
+from frompy.options import Options
+from frompy.build import BuildSource
+from frompy.fscache import FileSystemCache
+from frompy.util import write_junit_xml
 
-from mypyc.namegen import exported_name
-from mypyc.options import CompilerOptions
-from mypyc.errors import Errors
-from mypyc.common import shared_lib_name
-from mypyc.ir.module_ir import format_modules
+from py2jl.namegen import exported_name
+from py2jl.options import CompilerOptions
+from py2jl.errors import Errors
+from py2jl.common import shared_lib_name
+from py2jl.ir.module_ir import format_modules
 
-from mypyc.codegen import emitmodule
+from py2jl.codegen import emitmodule
 
 if TYPE_CHECKING:
     from distutils.core import Extension  # noqa
@@ -61,7 +61,7 @@ def get_extension() -> Type['Extension']:
     return Extension
 
 
-def setup_mypycify_vars() -> None:
+def setup_morph_vars() -> None:
     """Rewrite a bunch of config vars in pretty dubious ways."""
     # There has to be a better approach to this.
 
@@ -320,7 +320,7 @@ def construct_groups(
     """Compute Groups given the input source list and separate configs.
 
     separate is the user-specified configuration for how to assign
-    modules to compilation groups (see mypycify docstring for details).
+    modules to compilation groups (see morph docstring for details).
 
     This takes that and expands it into our internal representation of
     group configuration, documented in mypyc.emitmodule's definition
@@ -421,7 +421,7 @@ def mypyc_build(
     return groups, group_cfilenames
 
 
-def mypycify(
+def morph(
     paths: List[str],
     *,
     only_compile_paths: Optional[Iterable[str]] = None,
@@ -493,7 +493,7 @@ def mypycify(
     )
 
     # Mess around with setuptools and actually get the thing built
-    setup_mypycify_vars()
+    setup_morph_vars()
 
     # Create a compiler object so we can make decisions based on what
     # compiler is being used. typeshed is missing some attribues on the

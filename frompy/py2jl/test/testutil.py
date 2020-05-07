@@ -10,18 +10,18 @@ from typing import List, Callable, Iterator, Optional, Tuple
 import pytest  # type: ignore[import]
 
 from mypy import build
-from mypy.errors import CompileError
-from mypy.options import Options
-from mypy.test.data import DataSuite, DataDrivenTestCase
-from mypy.test.config import test_temp_dir
-from mypy.test.helpers import assert_string_arrays_equal
+from frompy.errors import CompileError
+from frompy.options import Options
+from frompy.test.data import DataSuite, DataDrivenTestCase
+from frompy.test.config import test_temp_dir
+from frompy.test.helpers import assert_string_arrays_equal
 
-from mypyc.options import CompilerOptions
-from mypyc.ir.func_ir import FuncIR
-from mypyc.errors import Errors
-from mypyc.irbuild.main import build_ir
-from mypyc.irbuild.mapper import Mapper
-from mypyc.test.config import test_data_prefix
+from py2jl.options import CompilerOptions
+from py2jl.ir.func_ir import FuncIR
+from py2jl.errors import Errors
+from py2jl.irbuild.main import build_ir
+from py2jl.irbuild.mapper import Mapper
+from py2jl.test.config import test_data_prefix
 
 # The builtins stub used during icode generation test cases.
 ICODE_GEN_BUILTINS = os.path.join(test_data_prefix, 'fixtures/ir.py')

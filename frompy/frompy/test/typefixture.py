@@ -5,11 +5,11 @@ It contains class TypeInfos and Type objects.
 
 from typing import List, Optional, Tuple
 
-from mypy.types import (
+from frompy.types import (
     Type, TypeVarType, AnyType, NoneType, Instance, CallableType, TypeVarDef, TypeType,
     UninhabitedType, TypeOfAny, TypeAliasType, UnionType
 )
-from mypy.nodes import (
+from frompy.nodes import (
     TypeInfo, ClassDef, Block, ARG_POS, ARG_OPT, ARG_STAR, SymbolTable,
     COVARIANT, TypeAlias
 )

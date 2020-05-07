@@ -1,12 +1,12 @@
 from typing import Dict, Sequence, Optional, Callable
 
-import mypy.subtypes
-import mypy.sametypes
-from mypy.expandtype import expand_type
-from mypy.types import (
+import frompy.subtypes
+import frompy.sametypes
+from frompy.expandtype import expand_type
+from frompy.types import (
     Type, TypeVarId, TypeVarType, CallableType, AnyType, PartialType, get_proper_types
 )
-from mypy.nodes import Context
+from frompy.nodes import Context
 
 
 def apply_generic_arguments(

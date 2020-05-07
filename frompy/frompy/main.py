@@ -14,15 +14,15 @@ from mypy import build
 from mypy import defaults
 from mypy import state
 from mypy import util
-from mypy.modulefinder import BuildSource, FindModuleCache, mypy_path, SearchPaths
-from mypy.find_sources import create_source_list, InvalidSourceList
-from mypy.fscache import FileSystemCache
-from mypy.errors import CompileError
-from mypy.options import Options, BuildType
-from mypy.config_parser import parse_version, parse_config_file
-from mypy.split_namespace import SplitNamespace
+from frompy.modulefinder import BuildSource, FindModuleCache, mypy_path, SearchPaths
+from frompy.find_sources import create_source_list, InvalidSourceList
+from frompy.fscache import FileSystemCache
+from frompy.errors import CompileError
+from frompy.options import Options, BuildType
+from frompy.config_parser import parse_version, parse_config_file
+from frompy.split_namespace import SplitNamespace
 
-from mypy.version import __version__
+from frompy.version import __version__
 
 orig_stat = os.stat  # type: Final
 MEM_PROFILE = False  # type: Final  # If True, dump memory profile
@@ -104,7 +104,7 @@ def main(script_path: Optional[str],
                              py_version, options.platform)
 
     if MEM_PROFILE:
-        from mypy.memprofile import print_memory_profile
+        from frompy.memprofile import print_memory_profile
         print_memory_profile()
 
     code = 0

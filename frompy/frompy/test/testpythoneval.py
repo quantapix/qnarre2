@@ -22,11 +22,11 @@ import pytest  # type: ignore  # no pytest in typeshed
 
 from typing import List
 
-from mypy.defaults import PYTHON3_VERSION
-from mypy.test.config import test_temp_dir
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import assert_string_arrays_equal, split_lines
-from mypy.util import try_find_python2_interpreter
+from frompy.defaults import PYTHON3_VERSION
+from frompy.test.config import test_temp_dir
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.helpers import assert_string_arrays_equal, split_lines
+from frompy.util import try_find_python2_interpreter
 from mypy import api
 
 # Path to Python 3 interpreter

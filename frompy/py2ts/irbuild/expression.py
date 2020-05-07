@@ -6,30 +6,30 @@ and mypyc.irbuild.builder.
 
 from typing import List, Optional, Union
 
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, NameExpr, MemberExpr, SuperExpr, CallExpr, UnaryExpr, OpExpr, IndexExpr,
     ConditionalExpr, ComparisonExpr, IntExpr, FloatExpr, ComplexExpr, StrExpr,
     BytesExpr, EllipsisExpr, ListExpr, TupleExpr, DictExpr, SetExpr, ListComprehension,
     SetComprehension, DictionaryComprehension, SliceExpr, GeneratorExpr, CastExpr, StarExpr,
     Var, RefExpr, MypyFile, TypeInfo, TypeApplication, LDEF, ARG_POS
 )
-from mypy.types import TupleType, get_proper_type
+from frompy.types import TupleType, get_proper_type
 
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     Value, TupleGet, TupleSet, PrimitiveOp, BasicBlock, OpDescription, Assign
 )
-from mypyc.ir.rtypes import RTuple, object_rprimitive, is_none_rprimitive
-from mypyc.ir.func_ir import FUNC_CLASSMETHOD, FUNC_STATICMETHOD
-from mypyc.primitives.registry import name_ref_ops
-from mypyc.primitives.generic_ops import iter_op
-from mypyc.primitives.misc_ops import new_slice_op, ellipsis_op, type_op
-from mypyc.primitives.list_ops import new_list_op, list_append_op, list_extend_op
-from mypyc.primitives.tuple_ops import list_tuple_op
-from mypyc.primitives.dict_ops import new_dict_op, dict_set_item_op
-from mypyc.primitives.set_ops import new_set_op, set_add_op, set_update_op
-from mypyc.irbuild.specialize import specializers
-from mypyc.irbuild.builder import IRBuilder
-from mypyc.irbuild.for_helpers import translate_list_comprehension, comprehension_helper
+from py2ts.ir.rtypes import RTuple, object_rprimitive, is_none_rprimitive
+from py2ts.ir.func_ir import FUNC_CLASSMETHOD, FUNC_STATICMETHOD
+from py2ts.primitives.registry import name_ref_ops
+from py2ts.primitives.generic_ops import iter_op
+from py2ts.primitives.misc_ops import new_slice_op, ellipsis_op, type_op
+from py2ts.primitives.list_ops import new_list_op, list_append_op, list_extend_op
+from py2ts.primitives.tuple_ops import list_tuple_op
+from py2ts.primitives.dict_ops import new_dict_op, dict_set_item_op
+from py2ts.primitives.set_ops import new_set_op, set_add_op, set_update_op
+from py2ts.irbuild.specialize import specializers
+from py2ts.irbuild.builder import IRBuilder
+from py2ts.irbuild.for_helpers import translate_list_comprehension, comprehension_helper
 
 
 # Name and attribute references

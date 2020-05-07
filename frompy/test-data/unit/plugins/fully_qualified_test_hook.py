@@ -1,4 +1,4 @@
-from mypy.plugin import CallableType, MethodSigContext, Plugin
+from frompy.plugin import CallableType, MethodSigContext, Plugin
 
 class FullyQualifiedTestPlugin(Plugin):
     def get_method_signature_hook(self, fullname):

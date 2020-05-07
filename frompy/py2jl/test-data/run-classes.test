@@ -1263,7 +1263,7 @@ test(D, -2)
 
 [case testInterpretedInherit]
 from typing import TypeVar, Any, overload
-from mypy_extensions import mypyc_attr, trait
+from mypy_extensions import py2jl_attr, trait
 
 T = TypeVar('T')
 def dec(x: T) -> T: return x

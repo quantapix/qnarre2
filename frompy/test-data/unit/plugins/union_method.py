@@ -1,7 +1,7 @@
-from mypy.plugin import (
+from frompy.plugin import (
     CallableType, CheckerPluginInterface, MethodSigContext, MethodContext, Plugin
 )
-from mypy.types import Instance, Type
+from frompy.types import Instance, Type
 
 
 class MethodPlugin(Plugin):

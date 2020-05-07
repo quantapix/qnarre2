@@ -3,7 +3,7 @@ This is a module for various lookup functions:
 functions that will find a semantic node by its name.
 """
 
-from mypy.nodes import MypyFile, SymbolTableNode, TypeInfo
+from frompy.nodes import MypyFile, SymbolTableNode, TypeInfo
 from typing import Dict, Optional
 
 # TODO: gradually move existing lookup functions to this module.

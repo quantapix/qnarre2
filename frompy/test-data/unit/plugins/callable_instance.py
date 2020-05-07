@@ -1,5 +1,5 @@
-from mypy.plugin import MethodContext, Plugin
-from mypy.types import Instance, Type
+from frompy.plugin import MethodContext, Plugin
+from frompy.types import Instance, Type
 
 class CallableInstancePlugin(Plugin):
     def get_function_hook(self, fullname):

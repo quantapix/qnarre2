@@ -1,4 +1,4 @@
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 
 class DummyPlugin(Plugin):
     def get_customize_class_mro_hook(self, fullname):

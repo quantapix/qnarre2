@@ -23,23 +23,23 @@ below, mypyc.irbuild.builder, and mypyc.irbuild.visitor.
 from collections import OrderedDict
 from typing import List, Dict, Callable, Any, TypeVar, cast
 
-from mypy.nodes import MypyFile, Expression, ClassDef
-from mypy.types import Type
-from mypy.state import strict_optional_set
-from mypy.build import Graph
+from frompy.nodes import MypyFile, Expression, ClassDef
+from frompy.types import Type
+from frompy.state import strict_optional_set
+from frompy.build import Graph
 
-from mypyc.common import TOP_LEVEL_NAME
-from mypyc.errors import Errors
-from mypyc.options import CompilerOptions
-from mypyc.ir.rtypes import none_rprimitive
-from mypyc.ir.module_ir import ModuleIR, ModuleIRs
-from mypyc.ir.func_ir import FuncIR, FuncDecl, FuncSignature
-from mypyc.irbuild.prebuildvisitor import PreBuildVisitor
-from mypyc.irbuild.vtable import compute_vtable
-from mypyc.irbuild.prepare import build_type_map
-from mypyc.irbuild.builder import IRBuilder
-from mypyc.irbuild.visitor import IRBuilderVisitor
-from mypyc.irbuild.mapper import Mapper
+from py2jl.common import TOP_LEVEL_NAME
+from py2jl.errors import Errors
+from py2jl.options import CompilerOptions
+from py2jl.ir.rtypes import none_rprimitive
+from py2jl.ir.module_ir import ModuleIR, ModuleIRs
+from py2jl.ir.func_ir import FuncIR, FuncDecl, FuncSignature
+from py2jl.irbuild.prebuildvisitor import PreBuildVisitor
+from py2jl.irbuild.vtable import compute_vtable
+from py2jl.irbuild.prepare import build_type_map
+from py2jl.irbuild.builder import IRBuilder
+from py2jl.irbuild.visitor import IRBuilderVisitor
+from py2jl.irbuild.mapper import Mapper
 
 
 # The stubs for callable contextmanagers are busted so cast it to the

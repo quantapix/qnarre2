@@ -27,39 +27,39 @@ from typing import (AbstractSet, Any, Dict, Iterable, Iterator, List, Sequence,
 from typing_extensions import ClassVar, Final, TYPE_CHECKING
 from mypy_extensions import TypedDict
 
-from mypy.nodes import MypyFile, ImportBase, Import, ImportFrom, ImportAll, SymbolTable
-from mypy.semanal_pass1 import SemanticAnalyzerPreAnalysis
-from mypy.semanal import SemanticAnalyzer
-import mypy.semanal_main
-from mypy.checker import TypeChecker
-from mypy.indirection import TypeIndirectionVisitor
-from mypy.errors import Errors, CompileError, ErrorInfo, report_internal_error
-from mypy.util import (
+from frompy.nodes import MypyFile, ImportBase, Import, ImportFrom, ImportAll, SymbolTable
+from frompy.semanal_pass1 import SemanticAnalyzerPreAnalysis
+from frompy.semanal import SemanticAnalyzer
+import frompy.semanal_main
+from frompy.checker import TypeChecker
+from frompy.indirection import TypeIndirectionVisitor
+from frompy.errors import Errors, CompileError, ErrorInfo, report_internal_error
+from frompy.util import (
     DecodeError, decode_python_encoding, is_sub_path, get_mypy_comments, module_prefix,
     read_py_file, hash_digest, is_typeshed_file
 )
 if TYPE_CHECKING:
-    from mypy.report import Reports  # Avoid unconditional slow import
+    from frompy.report import Reports  # Avoid unconditional slow import
 from mypy import moduleinfo
-from mypy.fixup import fixup_module
-from mypy.modulefinder import (
+from frompy.fixup import fixup_module
+from frompy.modulefinder import (
     BuildSource, compute_search_paths, FindModuleCache, SearchPaths, ModuleSearchResult,
     ModuleNotFoundReason
 )
-from mypy.nodes import Expression
-from mypy.options import Options
-from mypy.parse import parse
-from mypy.stats import dump_type_stats
-from mypy.types import Type
-from mypy.version import __version__
-from mypy.plugin import Plugin, ChainedPlugin, ReportConfigContext
-from mypy.plugins.default import DefaultPlugin
-from mypy.fscache import FileSystemCache
-from mypy.metastore import MetadataStore, FilesystemMetadataStore, SqliteMetadataStore
-from mypy.typestate import TypeState, reset_global_state
-from mypy.renaming import VariableRenameVisitor
-from mypy.config_parser import parse_mypy_comments
-from mypy.freetree import free_tree
+from frompy.nodes import Expression
+from frompy.options import Options
+from frompy.parse import parse
+from frompy.stats import dump_type_stats
+from frompy.types import Type
+from frompy.version import __version__
+from frompy.plugin import Plugin, ChainedPlugin, ReportConfigContext
+from frompy.plugins.default import DefaultPlugin
+from frompy.fscache import FileSystemCache
+from frompy.metastore import MetadataStore, FilesystemMetadataStore, SqliteMetadataStore
+from frompy.typestate import TypeState, reset_global_state
+from frompy.renaming import VariableRenameVisitor
+from frompy.config_parser import parse_mypy_comments
+from frompy.freetree import free_tree
 from mypy import errorcodes as codes
 
 
@@ -213,7 +213,7 @@ def _build(sources: List[BuildSource],
     reports = None
     if options.report_dirs:
         # Import lazily to avoid slowing down startup.
-        from mypy.report import Reports  # noqa
+        from frompy.report import Reports  # noqa
         reports = Reports(data_dir, options.report_dirs)
 
     source_set = BuildSourceSet(sources)
@@ -812,7 +812,7 @@ class BuildManager:
             self.stderr.flush()
 
     def log_fine_grained(self, *message: str) -> None:
-        import mypy.build
+        import frompy.build
         if self.verbosity() >= 1:
             self.log('fine-grained:', *message)
         elif mypy.build.DEBUG_FINE_GRAINED:
@@ -927,7 +927,7 @@ def invert_deps(deps: Dict[str, Set[str]],
     fake module FAKE_ROOT_MODULE if none are.
     """
     # Lazy import to speed up startup
-    from mypy.server.target import trigger_to_target
+    from frompy.server.target import trigger_to_target
 
     # Prepopulate the map for all the modules that have been processed,
     # so that we always generate files for processed modules (even if
@@ -958,7 +958,7 @@ def generate_deps_for_cache(manager: BuildManager,
     associated with the nearest parent module that is in the build, or the
     fake module FAKE_ROOT_MODULE if none are.
     """
-    from mypy.server.deps import merge_dependencies  # Lazy import to speed up startup
+    from frompy.server.deps import merge_dependencies  # Lazy import to speed up startup
 
     # Split the dependencies out into based on the module that is depended on.
     rdeps = invert_deps(manager.fg_deps, graph)
@@ -2184,7 +2184,7 @@ class State:
             # TODO: Not a reliable test, as we could have a package named typeshed.
             # TODO: Consider relaxing this -- maybe allow some typeshed changes to be tracked.
             return {}
-        from mypy.server.deps import get_dependencies  # Lazy import to speed up startup
+        from frompy.server.deps import get_dependencies  # Lazy import to speed up startup
         return get_dependencies(target=self.tree,
                                 type_map=self.type_map(),
                                 python_version=self.options.python_version,
@@ -2193,7 +2193,7 @@ class State:
     def update_fine_grained_deps(self, deps: Dict[str, Set[str]]) -> None:
         options = self.manager.options
         if options.cache_fine_grained or options.fine_grained_incremental:
-            from mypy.server.deps import merge_dependencies  # Lazy import to speed up startup
+            from frompy.server.deps import merge_dependencies  # Lazy import to speed up startup
             merge_dependencies(self.compute_fine_grained_deps(), deps)
             TypeState.update_protocol_deps(deps)
 
@@ -2639,7 +2639,7 @@ def dispatch(sources: List[BuildSource],
 
     if manager.options.dump_deps:
         # This speeds up startup a little when not using the daemon mode.
-        from mypy.server.deps import dump_all_dependencies
+        from frompy.server.deps import dump_all_dependencies
         dump_all_dependencies(manager.modules, manager.all_types,
                               manager.options.python_version, manager.options)
     return graph

@@ -7,16 +7,16 @@ from typing import List, Tuple, Dict, Optional, Set
 from typing_extensions import DefaultDict
 
 from mypy import build, defaults
-from mypy.modulefinder import BuildSource
-from mypy.errors import CompileError
-from mypy.nodes import MypyFile, Expression
-from mypy.options import Options
-from mypy.server.deps import get_dependencies
-from mypy.test.config import test_temp_dir
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import assert_string_arrays_equal, parse_options
-from mypy.types import Type
-from mypy.typestate import TypeState
+from frompy.modulefinder import BuildSource
+from frompy.errors import CompileError
+from frompy.nodes import MypyFile, Expression
+from frompy.options import Options
+from frompy.server.deps import get_dependencies
+from frompy.test.config import test_temp_dir
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.helpers import assert_string_arrays_equal, parse_options
+from frompy.types import Type
+from frompy.typestate import TypeState
 
 # Only dependencies in these modules are dumped
 dumped_modules = ['__main__', 'pkg', 'pkg.mod']

@@ -133,20 +133,20 @@ example::
 
     from setuptools import setup
 
-    from mypyc.build import mypycify
+    from py2ts.build import morph
 
     setup(
         name='mylib',
         packages=['mylib'],
-        ext_modules=mypycify([
+        ext_modules=morph([
             'mylib/__init__.py',
             'mylib/mod.py',
         ]),
     )
 
-We used ``mypycify(...)`` to specify which files to compile using
+We used ``morph(...)`` to specify which files to compile using
 mypyc.  Your ``setup.py`` can include additional Python files outside
-``mypycify(...)`` that won't be compiled.
+``morph(...)`` that won't be compiled.
 
 Now you can build a wheel (.whl) file for the package::
 

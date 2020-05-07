@@ -2,33 +2,33 @@
 
 from typing import List, Optional
 
-from mypy.nodes import (
+from frompy.nodes import (
     ClassDef, FuncDef, OverloadedFuncDef, PassStmt, AssignmentStmt, NameExpr, StrExpr,
     ExpressionStmt, TempNode, Decorator, Lvalue, RefExpr, Var, is_class_var
 )
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     Value, Call, LoadErrorValue, LoadStatic, InitStatic, TupleSet, SetAttr, Return,
     BasicBlock, Branch, MethodCall, NAMESPACE_TYPE
 )
-from mypyc.ir.rtypes import (
+from py2ts.ir.rtypes import (
     RInstance, object_rprimitive, bool_rprimitive, dict_rprimitive, is_optional_type,
     is_object_rprimitive, is_none_rprimitive
 )
-from mypyc.ir.func_ir import FuncIR, FuncDecl, FuncSignature, RuntimeArg
-from mypyc.ir.class_ir import ClassIR, NonExtClassInfo
-from mypyc.primitives.generic_ops import py_setattr_op, py_hasattr_op
-from mypyc.primitives.misc_ops import (
+from py2ts.ir.func_ir import FuncIR, FuncDecl, FuncSignature, RuntimeArg
+from py2ts.ir.class_ir import ClassIR, NonExtClassInfo
+from py2ts.primitives.generic_ops import py_setattr_op, py_hasattr_op
+from py2ts.primitives.misc_ops import (
     dataclass_sleight_of_hand, pytype_from_template_op, py_calc_meta_op, type_object_op,
     not_implemented_op, true_op
 )
-from mypyc.primitives.dict_ops import dict_set_item_op, new_dict_op
-from mypyc.primitives.tuple_ops import new_tuple_op
-from mypyc.common import SELF_NAME
-from mypyc.irbuild.util import (
+from py2ts.primitives.dict_ops import dict_set_item_op, new_dict_op
+from py2ts.primitives.tuple_ops import new_tuple_op
+from py2ts.common import SELF_NAME
+from py2ts.irbuild.util import (
     is_dataclass_decorator, get_func_def, is_dataclass, is_constant, add_self_to_env
 )
-from mypyc.irbuild.builder import IRBuilder
-from mypyc.irbuild.function import transform_method
+from py2ts.irbuild.builder import IRBuilder
+from py2ts.irbuild.function import transform_method
 
 
 def transform_class_def(builder: IRBuilder, cdef: ClassDef) -> None:

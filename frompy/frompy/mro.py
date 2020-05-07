@@ -1,8 +1,8 @@
 from typing import Optional, Callable, List
 
-from mypy.nodes import TypeInfo
-from mypy.types import Instance
-from mypy.typestate import TypeState
+from frompy.nodes import TypeInfo
+from frompy.types import Instance
+from frompy.typestate import TypeState
 
 
 def calculate_mro(info: TypeInfo, obj_type: Optional[Callable[[], Instance]] = None) -> None:

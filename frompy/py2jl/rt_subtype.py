@@ -13,11 +13,11 @@ particular place and runtime subtyping is used to determine whether a
 coercion is necessary first.
 """
 
-from mypyc.ir.rtypes import (
+from py2jl.ir.rtypes import (
     RType, RUnion, RInstance, RPrimitive, RTuple, RVoid, RTypeVisitor,
     is_int_rprimitive, is_short_int_rprimitive,
 )
-from mypyc.subtype import is_subtype
+from py2jl.subtype import is_subtype
 
 
 def is_runtime_subtype(left: RType, right: RType) -> bool:

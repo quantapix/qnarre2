@@ -27,33 +27,33 @@ from typing import (
 )
 from typing_extensions import TypedDict
 
-from mypy.state import strict_optional_set
-from mypy.types import (
+from frompy.state import strict_optional_set
+from frompy.types import (
     Type, AnyType, TypeOfAny, CallableType, UnionType, NoneType, Instance, TupleType,
     TypeVarType, FunctionLike, UninhabitedType,
     TypeStrVisitor, TypeTranslator,
     is_optional, remove_optional, ProperType, get_proper_type,
     TypedDictType, TypeAliasType
 )
-from mypy.build import State, Graph
-from mypy.nodes import (
+from frompy.build import State, Graph
+from frompy.nodes import (
     ARG_STAR, ARG_NAMED, ARG_STAR2, ARG_NAMED_OPT, FuncDef, MypyFile, SymbolTable,
     Decorator, RefExpr,
     SymbolNode, TypeInfo, Expression, ReturnStmt, CallExpr,
     reverse_builtin_aliases,
 )
-from mypy.server.update import FineGrainedBuildManager
-from mypy.util import split_target
-from mypy.find_sources import SourceFinder, InvalidSourceList
-from mypy.modulefinder import PYTHON_EXTENSIONS
-from mypy.plugin import Plugin, FunctionContext, MethodContext
-from mypy.traverser import TraverserVisitor
-from mypy.checkexpr import has_any_type, map_actuals_to_formals
+from frompy.server.update import FineGrainedBuildManager
+from frompy.util import split_target
+from frompy.find_sources import SourceFinder, InvalidSourceList
+from frompy.modulefinder import PYTHON_EXTENSIONS
+from frompy.plugin import Plugin, FunctionContext, MethodContext
+from frompy.traverser import TraverserVisitor
+from frompy.checkexpr import has_any_type, map_actuals_to_formals
 
-from mypy.join import join_type_list
-from mypy.meet import meet_type_list
-from mypy.sametypes import is_same_type
-from mypy.typeops import make_simplified_union
+from frompy.join import join_type_list
+from frompy.meet import meet_type_list
+from frompy.sametypes import is_same_type
+from frompy.typeops import make_simplified_union
 
 from contextlib import contextmanager
 

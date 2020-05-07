@@ -9,30 +9,30 @@ A few statements are transformed in mypyc.irbuild.function (yield, for example).
 from typing import Optional, List, Tuple, Sequence, Callable
 import importlib.util
 
-from mypy.nodes import (
+from frompy.nodes import (
     Block, ExpressionStmt, ReturnStmt, AssignmentStmt, OperatorAssignmentStmt, IfStmt, WhileStmt,
     ForStmt, BreakStmt, ContinueStmt, RaiseStmt, TryStmt, WithStmt, AssertStmt, DelStmt,
     Expression, StrExpr, TempNode, Lvalue, Import, ImportFrom, ImportAll
 )
 
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     Assign, Unreachable, AssignmentTarget, AssignmentTargetRegister, AssignmentTargetIndex,
     AssignmentTargetAttr, AssignmentTargetTuple, PrimitiveOp, RaiseStandardError, LoadErrorValue,
     BasicBlock, TupleGet, Value, Register, Branch, NO_TRACEBACK_LINE_NO
 )
-from mypyc.ir.rtypes import exc_rtuple
-from mypyc.primitives.generic_ops import py_delattr_op
-from mypyc.primitives.misc_ops import true_op, false_op, type_op, get_module_dict_op
-from mypyc.primitives.dict_ops import dict_get_item_op
-from mypyc.primitives.exc_ops import (
+from py2ts.ir.rtypes import exc_rtuple
+from py2ts.primitives.generic_ops import py_delattr_op
+from py2ts.primitives.misc_ops import true_op, false_op, type_op, get_module_dict_op
+from py2ts.primitives.dict_ops import dict_get_item_op
+from py2ts.primitives.exc_ops import (
     raise_exception_op, reraise_exception_op, error_catch_op, exc_matches_op, restore_exc_info_op,
     get_exc_value_op, keep_propagating_op, get_exc_info_op
 )
-from mypyc.irbuild.nonlocalcontrol import (
+from py2ts.irbuild.nonlocalcontrol import (
     ExceptNonlocalControl, FinallyNonlocalControl, TryFinallyNonlocalControl
 )
-from mypyc.irbuild.for_helpers import for_loop_helper
-from mypyc.irbuild.builder import IRBuilder
+from py2ts.irbuild.for_helpers import for_loop_helper
+from py2ts.irbuild.builder import IRBuilder
 
 GenFunc = Callable[[], None]
 

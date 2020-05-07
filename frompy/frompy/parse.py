@@ -1,8 +1,8 @@
 from typing import Union, Optional
 
-from mypy.errors import Errors
-from mypy.options import Options
-from mypy.nodes import MypyFile
+from frompy.errors import Errors
+from frompy.options import Options
+from frompy.nodes import MypyFile
 
 
 def parse(source: Union[str, bytes],
@@ -21,14 +21,14 @@ def parse(source: Union[str, bytes],
     if options.transform_source is not None:
         source = options.transform_source(source)
     if options.python_version[0] >= 3 or is_stub_file:
-        import mypy.fastparse
+        import frompy.fastparse
         return mypy.fastparse.parse(source,
                                     fnam=fnam,
                                     module=module,
                                     errors=errors,
                                     options=options)
     else:
-        import mypy.fastparse2
+        import frompy.fastparse2
         return mypy.fastparse2.parse(source,
                                      fnam=fnam,
                                      module=module,

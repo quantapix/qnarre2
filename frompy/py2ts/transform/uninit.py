@@ -2,16 +2,16 @@
 
 from typing import List
 
-from mypyc.analysis import (
+from py2ts.analysis import (
     get_cfg,
     cleanup_cfg,
     analyze_must_defined_regs,
     AnalysisDict
 )
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     BasicBlock, Branch, Value, RaiseStandardError, Unreachable, Environment, Register
 )
-from mypyc.ir.func_ir import FuncIR
+from py2ts.ir.func_ir import FuncIR
 
 
 def insert_uninit_checks(ir: FuncIR) -> None:

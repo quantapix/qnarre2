@@ -14,20 +14,20 @@ See comment below for more documentation.
 
 from typing import Callable, Optional, Dict, Tuple
 
-from mypy.nodes import CallExpr, RefExpr, MemberExpr, TupleExpr, GeneratorExpr, ARG_POS
-from mypy.types import AnyType, TypeOfAny
+from frompy.nodes import CallExpr, RefExpr, MemberExpr, TupleExpr, GeneratorExpr, ARG_POS
+from frompy.types import AnyType, TypeOfAny
 
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     Value, BasicBlock, LoadInt, RaiseStandardError, Unreachable, OpDescription
 )
-from mypyc.ir.rtypes import (
+from py2ts.ir.rtypes import (
     RType, RTuple, str_rprimitive, list_rprimitive, dict_rprimitive, set_rprimitive,
     bool_rprimitive, is_dict_rprimitive
 )
-from mypyc.primitives.dict_ops import dict_keys_op, dict_values_op, dict_items_op
-from mypyc.primitives.misc_ops import true_op, false_op
-from mypyc.irbuild.builder import IRBuilder
-from mypyc.irbuild.for_helpers import translate_list_comprehension, comprehension_helper
+from py2ts.primitives.dict_ops import dict_keys_op, dict_values_op, dict_items_op
+from py2ts.primitives.misc_ops import true_op, false_op
+from py2ts.irbuild.builder import IRBuilder
+from py2ts.irbuild.for_helpers import translate_list_comprehension, comprehension_helper
 
 
 # Specializers are attempted before compiling the arguments to the

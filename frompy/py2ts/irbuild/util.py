@@ -2,16 +2,16 @@
 
 from typing import Dict, Any, Union, Optional
 
-from mypy.nodes import (
+from frompy.nodes import (
     ClassDef, FuncDef, Decorator, OverloadedFuncDef, StrExpr, CallExpr, RefExpr, Expression,
     IntExpr, FloatExpr, Var, TupleExpr, UnaryExpr, BytesExpr, ARG_NAMED, ARG_NAMED_OPT, ARG_POS,
     ARG_OPT, GDEF
 )
 
-from mypyc.ir.ops import Environment, AssignmentTargetRegister
-from mypyc.ir.rtypes import RInstance
-from mypyc.ir.class_ir import ClassIR
-from mypyc.common import SELF_NAME
+from py2ts.ir.ops import Environment, AssignmentTargetRegister
+from py2ts.ir.rtypes import RInstance
+from py2ts.ir.class_ir import ClassIR
+from py2ts.common import SELF_NAME
 
 
 def is_trait_decorator(d: Expression) -> bool:

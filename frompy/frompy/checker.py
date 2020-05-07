@@ -10,8 +10,8 @@ from typing import (
 )
 from typing_extensions import Final
 
-from mypy.errors import Errors, report_internal_error
-from mypy.nodes import (
+from frompy.errors import Errors, report_internal_error
+from frompy.nodes import (
     SymbolTable, Statement, MypyFile, Var, Expression, Lvalue, Node,
     OverloadedFuncDef, FuncDef, FuncItem, FuncBase, TypeInfo,
     ClassDef, Block, AssignmentStmt, NameExpr, MemberExpr, IndexExpr,
@@ -27,25 +27,25 @@ from mypy.nodes import (
     is_final_node,
     ARG_NAMED)
 from mypy import nodes
-from mypy.literals import literal, literal_hash, Key
-from mypy.typeanal import has_any_from_unimported_type, check_for_explicit_any
-from mypy.types import (
+from frompy.literals import literal, literal_hash, Key
+from frompy.typeanal import has_any_from_unimported_type, check_for_explicit_any
+from frompy.types import (
     Type, AnyType, CallableType, FunctionLike, Overloaded, TupleType, TypedDictType,
     Instance, NoneType, strip_type, TypeType, TypeOfAny,
     UnionType, TypeVarId, TypeVarType, PartialType, DeletedType, UninhabitedType, TypeVarDef,
     is_named_instance, union_items, TypeQuery, LiteralType,
     is_optional, remove_optional, TypeTranslator, StarType, get_proper_type, ProperType,
     get_proper_types, is_literal_type, TypeAliasType)
-from mypy.sametypes import is_same_type
-from mypy.messages import (
+from frompy.sametypes import is_same_type
+from frompy.messages import (
     MessageBuilder, make_inferred_type_note, append_invariance_notes, pretty_seq,
     format_type, format_type_bare, format_type_distinctly, SUGGESTED_TEST_FIXTURES
 )
-import mypy.checkexpr
-from mypy.checkmember import (
+import frompy.checkexpr
+from frompy.checkmember import (
     analyze_member_access, analyze_descriptor_access, type_object_type,
 )
-from mypy.typeops import (
+from frompy.typeops import (
     map_type_from_supertype, bind_self, erase_to_bound, make_simplified_union,
     erase_def_to_union_or_bound, erase_to_union_or_bound, coerce_to_literal,
     try_getting_str_literals_from_type, try_getting_int_literals_from_type,
@@ -54,31 +54,31 @@ from mypy.typeops import (
     is_literal_type_like,
 )
 from mypy import message_registry
-from mypy.subtypes import (
+from frompy.subtypes import (
     is_subtype, is_equivalent, is_proper_subtype, is_more_precise,
     restrict_subtype_away, is_subtype_ignoring_tvars, is_callable_compatible,
     unify_generic_callable, find_member
 )
-from mypy.constraints import SUPERTYPE_OF
-from mypy.maptype import map_instance_to_supertype
-from mypy.typevars import fill_typevars, has_no_typevars, fill_typevars_with_any
-from mypy.semanal import set_callable_name, refers_to_fullname
-from mypy.mro import calculate_mro, MroError
-from mypy.erasetype import erase_typevars, remove_instance_last_known_values, erase_type
-from mypy.expandtype import expand_type, expand_type_by_instance
-from mypy.visitor import NodeVisitor
-from mypy.join import join_types
-from mypy.treetransform import TransformVisitor
-from mypy.binder import ConditionalTypeBinder, get_declaration
-from mypy.meet import is_overlapping_erased_types, is_overlapping_types
-from mypy.options import Options
-from mypy.plugin import Plugin, CheckerPluginInterface
-from mypy.sharedparse import BINARY_MAGIC_METHODS
-from mypy.scope import Scope
+from frompy.constraints import SUPERTYPE_OF
+from frompy.maptype import map_instance_to_supertype
+from frompy.typevars import fill_typevars, has_no_typevars, fill_typevars_with_any
+from frompy.semanal import set_callable_name, refers_to_fullname
+from frompy.mro import calculate_mro, MroError
+from frompy.erasetype import erase_typevars, remove_instance_last_known_values, erase_type
+from frompy.expandtype import expand_type, expand_type_by_instance
+from frompy.visitor import NodeVisitor
+from frompy.join import join_types
+from frompy.treetransform import TransformVisitor
+from frompy.binder import ConditionalTypeBinder, get_declaration
+from frompy.meet import is_overlapping_erased_types, is_overlapping_types
+from frompy.options import Options
+from frompy.plugin import Plugin, CheckerPluginInterface
+from frompy.sharedparse import BINARY_MAGIC_METHODS
+from frompy.scope import Scope
 from mypy import state, errorcodes as codes
-from mypy.traverser import has_return_statement, all_return_statements
-from mypy.errorcodes import ErrorCode
-from mypy.util import is_typeshed_file
+from frompy.traverser import has_return_statement, all_return_statements
+from frompy.errorcodes import ErrorCode
+from frompy.util import is_typeshed_file
 
 T = TypeVar('T')
 

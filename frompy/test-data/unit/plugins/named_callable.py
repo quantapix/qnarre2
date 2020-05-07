@@ -1,5 +1,5 @@
-from mypy.plugin import Plugin
-from mypy.types import CallableType
+from frompy.plugin import Plugin
+from frompy.types import CallableType
 
 
 class MyPlugin(Plugin):

@@ -37,10 +37,10 @@ optimized implementations of all ops.
 
 from typing import Dict, List, Optional
 
-from mypyc.ir.ops import (
+from py2jl.ir.ops import (
     OpDescription, EmitterInterface, EmitCallback, StealsDescription, short_name
 )
-from mypyc.ir.rtypes import RType,  bool_rprimitive
+from py2jl.ir.rtypes import RType,  bool_rprimitive
 
 
 # Primitive binary ops (key is operator such as '+')
@@ -313,9 +313,9 @@ def custom_op(arg_types: List[RType],
 
 
 # Import various modules that set up global state.
-import mypyc.primitives.int_ops  # noqa
-import mypyc.primitives.str_ops  # noqa
-import mypyc.primitives.list_ops  # noqa
-import mypyc.primitives.dict_ops  # noqa
-import mypyc.primitives.tuple_ops  # noqa
-import mypyc.primitives.misc_ops  # noqa
+import py2jl.primitives.int_ops  # noqa
+import py2jl.primitives.str_ops  # noqa
+import py2jl.primitives.list_ops  # noqa
+import py2jl.primitives.dict_ops  # noqa
+import py2jl.primitives.tuple_ops  # noqa
+import py2jl.primitives.misc_ops  # noqa

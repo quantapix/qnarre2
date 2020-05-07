@@ -7,7 +7,7 @@ from mypy_extensions import trait
 
 if TYPE_CHECKING:
     # break import cycle only needed for mypy
-    import mypy.nodes
+    import frompy.nodes
 
 
 T = TypeVar('T')

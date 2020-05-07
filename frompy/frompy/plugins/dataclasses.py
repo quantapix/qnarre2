@@ -3,17 +3,17 @@
 from typing import Dict, List, Set, Tuple, Optional
 from typing_extensions import Final
 
-from mypy.nodes import (
+from frompy.nodes import (
     ARG_OPT, ARG_POS, MDEF, Argument, AssignmentStmt, CallExpr,
     Context, Expression, JsonDict, NameExpr, RefExpr,
     SymbolTableNode, TempNode, TypeInfo, Var, TypeVarExpr, PlaceholderNode
 )
-from mypy.plugin import ClassDefContext, SemanticAnalyzerPluginInterface
-from mypy.plugins.common import (
+from frompy.plugin import ClassDefContext, SemanticAnalyzerPluginInterface
+from frompy.plugins.common import (
     add_method, _get_decorator_bool_argument, deserialize_and_fixup_type,
 )
-from mypy.types import Type, Instance, NoneType, TypeVarDef, TypeVarType, get_proper_type
-from mypy.server.trigger import make_wildcard_trigger
+from frompy.types import Type, Instance, NoneType, TypeVarDef, TypeVarType, get_proper_type
+from frompy.server.trigger import make_wildcard_trigger
 
 # The set of decorators that generate dataclasses.
 dataclass_makers = {

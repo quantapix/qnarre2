@@ -17,27 +17,27 @@ from typing import (
 )
 from typing_extensions import Final, TYPE_CHECKING
 
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, TupleType, Instance, UnionType, TypeOfAny, get_proper_type, TypeVarType,
     LiteralType, get_proper_types
 )
-from mypy.nodes import (
+from frompy.nodes import (
     StrExpr, BytesExpr, UnicodeExpr, TupleExpr, DictExpr, Context, Expression, StarExpr, CallExpr,
     IndexExpr, MemberExpr, TempNode, ARG_POS, ARG_STAR, ARG_NAMED, ARG_STAR2,
     Node, MypyFile, ExpressionStmt, NameExpr, IntExpr
 )
-import mypy.errorcodes as codes
+import frompy.errorcodes as codes
 
 if TYPE_CHECKING:
     # break import cycle only needed for mypy
-    import mypy.checker
-    import mypy.checkexpr
+    import frompy.checker
+    import frompy.checkexpr
 from mypy import message_registry
-from mypy.messages import MessageBuilder
-from mypy.maptype import map_instance_to_supertype
-from mypy.typeops import custom_special_method
-from mypy.subtypes import is_subtype
-from mypy.parse import parse
+from frompy.messages import MessageBuilder
+from frompy.maptype import map_instance_to_supertype
+from frompy.typeops import custom_special_method
+from frompy.subtypes import is_subtype
+from frompy.parse import parse
 
 FormatStringExpr = Union[StrExpr, BytesExpr, UnicodeExpr]
 Checkers = Tuple[Callable[[Expression], None], Callable[[Type], None]]

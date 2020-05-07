@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, TextIO
 from typing_extensions import Final
 
 from mypy import defaults
-from mypy.options import Options, PER_MODULE_OPTIONS
+from frompy.options import Options, PER_MODULE_OPTIONS
 
 
 def parse_version(v: str) -> Tuple[int, int]:

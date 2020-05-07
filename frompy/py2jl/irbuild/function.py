@@ -12,40 +12,40 @@ instance of the callable class.
 
 from typing import Optional, List, Tuple, Union
 
-from mypy.nodes import (
+from frompy.nodes import (
     ClassDef, FuncDef, OverloadedFuncDef, Decorator, Var, YieldFromExpr, AwaitExpr, YieldExpr,
     FuncItem, LambdaExpr
 )
-from mypy.types import CallableType, get_proper_type
+from frompy.types import CallableType, get_proper_type
 
-from mypyc.ir.ops import (
+from py2jl.ir.ops import (
     BasicBlock, Value,  Return, SetAttr, LoadInt, Environment, GetAttr, Branch, AssignmentTarget,
     TupleGet, InitStatic
 )
-from mypyc.ir.rtypes import object_rprimitive, RInstance
-from mypyc.ir.func_ir import (
+from py2jl.ir.rtypes import object_rprimitive, RInstance
+from py2jl.ir.func_ir import (
     FuncIR, FuncSignature, RuntimeArg, FuncDecl, FUNC_CLASSMETHOD, FUNC_STATICMETHOD, FUNC_NORMAL
 )
-from mypyc.ir.class_ir import ClassIR, NonExtClassInfo
-from mypyc.primitives.generic_ops import py_setattr_op, next_raw_op, iter_op
-from mypyc.primitives.misc_ops import check_stop_op, yield_from_except_op, coro_op, send_op
-from mypyc.primitives.dict_ops import dict_set_item_op
-from mypyc.common import SELF_NAME, LAMBDA_NAME, decorator_helper_name
-from mypyc.sametype import is_same_method_signature
-from mypyc.irbuild.util import concrete_arg_kind, is_constant, add_self_to_env
-from mypyc.irbuild.context import FuncInfo, ImplicitClass
-from mypyc.irbuild.statement import transform_try_except
-from mypyc.irbuild.builder import IRBuilder, gen_arg_defaults
-from mypyc.irbuild.callable_class import (
+from py2jl.ir.class_ir import ClassIR, NonExtClassInfo
+from py2jl.primitives.generic_ops import py_setattr_op, next_raw_op, iter_op
+from py2jl.primitives.misc_ops import check_stop_op, yield_from_except_op, coro_op, send_op
+from py2jl.primitives.dict_ops import dict_set_item_op
+from py2jl.common import SELF_NAME, LAMBDA_NAME, decorator_helper_name
+from py2jl.sametype import is_same_method_signature
+from py2jl.irbuild.util import concrete_arg_kind, is_constant, add_self_to_env
+from py2jl.irbuild.context import FuncInfo, ImplicitClass
+from py2jl.irbuild.statement import transform_try_except
+from py2jl.irbuild.builder import IRBuilder, gen_arg_defaults
+from py2jl.irbuild.callable_class import (
     setup_callable_class, add_call_to_callable_class, add_get_to_callable_class,
     instantiate_callable_class
 )
-from mypyc.irbuild.generator import (
+from py2jl.irbuild.generator import (
     gen_generator_func, setup_env_for_generator_class, create_switch_for_generator_class,
     add_raise_exception_blocks_to_generator_class, populate_switch_for_generator_class,
     add_methods_to_generator_class
 )
-from mypyc.irbuild.env_class import (
+from py2jl.irbuild.env_class import (
     setup_env_class, load_outer_envs, load_env_registers, finalize_env_class,
     setup_func_for_recursive_call
 )

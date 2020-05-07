@@ -8,41 +8,41 @@ import json
 from collections import OrderedDict
 from typing import List, Tuple, Dict, Iterable, Set, TypeVar, Optional
 
-from mypy.nodes import MypyFile
-from mypy.build import (
+from frompy.nodes import MypyFile
+from frompy.build import (
     BuildSource, BuildResult, State, build, sorted_components, get_cache_names,
     create_metastore, compute_hash,
 )
-from mypy.errors import CompileError
-from mypy.options import Options
-from mypy.plugin import Plugin, ReportConfigContext
-from mypy.fscache import FileSystemCache
-from mypy.util import hash_digest
+from frompy.errors import CompileError
+from frompy.options import Options
+from frompy.plugin import Plugin, ReportConfigContext
+from frompy.fscache import FileSystemCache
+from frompy.util import hash_digest
 
-from mypyc.irbuild.main import build_ir
-from mypyc.irbuild.prepare import load_type_map
-from mypyc.irbuild.mapper import Mapper
-from mypyc.common import (
+from py2ts.irbuild.main import build_ir
+from py2ts.irbuild.prepare import load_type_map
+from py2ts.irbuild.mapper import Mapper
+from py2ts.common import (
     PREFIX, TOP_LEVEL_NAME, INT_PREFIX, MODULE_PREFIX, shared_lib_name,
 )
-from mypyc.codegen.cstring import encode_as_c_string, encode_bytes_as_c_string
-from mypyc.codegen.emit import EmitterContext, Emitter, HeaderDeclaration
-from mypyc.codegen.emitfunc import generate_native_function, native_function_header
-from mypyc.codegen.emitclass import generate_class_type_decl, generate_class
-from mypyc.codegen.emitwrapper import (
+from py2ts.codegen.cstring import encode_as_c_string, encode_bytes_as_c_string
+from py2ts.codegen.emit import EmitterContext, Emitter, HeaderDeclaration
+from py2ts.codegen.emitfunc import generate_native_function, native_function_header
+from py2ts.codegen.emitclass import generate_class_type_decl, generate_class
+from py2ts.codegen.emitwrapper import (
     generate_wrapper_function, wrapper_function_header,
 )
-from mypyc.ir.ops import LiteralsMap, DeserMaps
-from mypyc.ir.rtypes import RType, RTuple
-from mypyc.ir.func_ir import FuncIR
-from mypyc.ir.class_ir import ClassIR
-from mypyc.ir.module_ir import ModuleIR, ModuleIRs, deserialize_modules
-from mypyc.options import CompilerOptions
-from mypyc.transform.uninit import insert_uninit_checks
-from mypyc.transform.refcount import insert_ref_count_opcodes
-from mypyc.transform.exceptions import insert_exception_handling
-from mypyc.namegen import NameGenerator, exported_name
-from mypyc.errors import Errors
+from py2ts.ir.ops import LiteralsMap, DeserMaps
+from py2ts.ir.rtypes import RType, RTuple
+from py2ts.ir.func_ir import FuncIR
+from py2ts.ir.class_ir import ClassIR
+from py2ts.ir.module_ir import ModuleIR, ModuleIRs, deserialize_modules
+from py2ts.options import CompilerOptions
+from py2ts.transform.uninit import insert_uninit_checks
+from py2ts.transform.refcount import insert_ref_count_opcodes
+from py2ts.transform.exceptions import insert_exception_handling
+from py2ts.namegen import NameGenerator, exported_name
+from py2ts.errors import Errors
 
 
 # All of the modules being compiled are divided into "groups". A group

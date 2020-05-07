@@ -2,12 +2,12 @@
 
 from typing import List, Optional, Tuple
 
-from mypy.nodes import FuncItem
+from frompy.nodes import FuncItem
 
-from mypyc.ir.ops import Value, BasicBlock, AssignmentTarget
-from mypyc.ir.func_ir import INVALID_FUNC_DEF
-from mypyc.ir.class_ir import ClassIR
-from mypyc.common import decorator_helper_name
+from py2jl.ir.ops import Value, BasicBlock, AssignmentTarget
+from py2jl.ir.func_ir import INVALID_FUNC_DEF
+from py2jl.ir.class_ir import ClassIR
+from py2jl.common import decorator_helper_name
 
 
 class FuncInfo:

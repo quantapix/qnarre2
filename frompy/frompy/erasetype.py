@@ -1,12 +1,12 @@
 from typing import Optional, Container, Callable
 
-from mypy.types import (
+from frompy.types import (
     Type, TypeVisitor, UnboundType, AnyType, NoneType, TypeVarId, Instance, TypeVarType,
     CallableType, TupleType, TypedDictType, UnionType, Overloaded, ErasedType, PartialType,
     DeletedType, TypeTranslator, UninhabitedType, TypeType, TypeOfAny, LiteralType, ProperType,
     get_proper_type, TypeAliasType
 )
-from mypy.nodes import ARG_STAR, ARG_STAR2
+from frompy.nodes import ARG_STAR, ARG_STAR2
 
 
 def erase_type(typ: Type) -> ProperType:
@@ -87,7 +87,7 @@ class EraseTypeVisitor(TypeVisitor[ProperType]):
 
     def visit_union_type(self, t: UnionType) -> ProperType:
         erased_items = [erase_type(item) for item in t.items]
-        from mypy.typeops import make_simplified_union  # asdf
+        from frompy.typeops import make_simplified_union  # asdf
         return make_simplified_union(erased_items)
 
     def visit_type_type(self, t: TypeType) -> ProperType:

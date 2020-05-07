@@ -31,7 +31,7 @@ advantage of the benefits.
 import os
 import stat
 from typing import Dict, List, Set
-from mypy.util import hash_digest
+from frompy.util import hash_digest
 
 
 class FileSystemCache:

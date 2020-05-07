@@ -4,18 +4,18 @@
 from typing import Optional, List, Tuple, Dict, Callable, Mapping, Set
 from collections import OrderedDict
 
-from mypyc.common import PREFIX, NATIVE_PREFIX, REG_PREFIX
-from mypyc.codegen.emit import Emitter, HeaderDeclaration
-from mypyc.codegen.emitfunc import native_function_header
-from mypyc.codegen.emitwrapper import (
+from py2jl.common import PREFIX, NATIVE_PREFIX, REG_PREFIX
+from py2jl.codegen.emit import Emitter, HeaderDeclaration
+from py2jl.codegen.emitfunc import native_function_header
+from py2jl.codegen.emitwrapper import (
     generate_dunder_wrapper, generate_hash_wrapper, generate_richcompare_wrapper,
     generate_bool_wrapper, generate_get_wrapper,
 )
-from mypyc.ir.rtypes import RType, RTuple, object_rprimitive
-from mypyc.ir.func_ir import FuncIR, FuncDecl, FUNC_STATICMETHOD, FUNC_CLASSMETHOD
-from mypyc.ir.class_ir import ClassIR, VTableEntries
-from mypyc.sametype import is_same_type
-from mypyc.namegen import NameGenerator
+from py2jl.ir.rtypes import RType, RTuple, object_rprimitive
+from py2jl.ir.func_ir import FuncIR, FuncDecl, FUNC_STATICMETHOD, FUNC_CLASSMETHOD
+from py2jl.ir.class_ir import ClassIR, VTableEntries
+from py2jl.sametype import is_same_type
+from py2jl.namegen import NameGenerator
 
 
 def native_slot(cl: ClassIR, fn: FuncIR, emitter: Emitter) -> str:

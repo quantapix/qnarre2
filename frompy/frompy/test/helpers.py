@@ -8,7 +8,7 @@ import contextlib
 from typing import List, Iterable, Dict, Tuple, Callable, Any, Optional, Iterator
 
 from mypy import defaults
-import mypy.api as api
+import frompy.api as api
 
 import pytest  # type: ignore  # no pytest in typeshed
 
@@ -16,11 +16,11 @@ import pytest  # type: ignore  # no pytest in typeshed
 # TODO: avoid aliasing - import and subclass TestCase directly
 from unittest import TestCase as Suite  # noqa: F401 (re-exporting)
 
-from mypy.main import process_options
-from mypy.options import Options
-from mypy.test.data import DataDrivenTestCase, fix_cobertura_filename
-from mypy.test.config import test_temp_dir
-import mypy.version
+from frompy.main import process_options
+from frompy.options import Options
+from frompy.test.data import DataDrivenTestCase, fix_cobertura_filename
+from frompy.test.config import test_temp_dir
+import frompy.version
 
 skip = pytest.mark.skip
 

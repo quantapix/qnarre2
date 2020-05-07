@@ -9,9 +9,9 @@ import gc
 import sys
 from typing import List, Dict, Iterable, Tuple, cast
 
-from mypy.nodes import FakeInfo, Node
-from mypy.types import Type
-from mypy.util import get_class_descriptors
+from frompy.nodes import FakeInfo, Node
+from frompy.types import Type
+from frompy.util import get_class_descriptors
 
 
 def collect_memory_stats() -> Tuple[Dict[str, int],

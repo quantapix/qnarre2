@@ -1,7 +1,7 @@
 from typing import Optional, Callable
 
-from mypy.plugin import Plugin, MethodContext, FunctionContext
-from mypy.types import Type
+from frompy.plugin import Plugin, MethodContext, FunctionContext
+from frompy.types import Type
 
 
 class ArgNamesPlugin(Plugin):

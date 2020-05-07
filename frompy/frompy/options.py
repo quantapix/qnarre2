@@ -7,7 +7,7 @@ from typing_extensions import Final
 from typing import Dict, List, Mapping, Optional, Pattern, Set, Tuple, Callable, Any
 
 from mypy import defaults
-from mypy.util import get_class_descriptors, replace_object_state
+from frompy.util import get_class_descriptors, replace_object_state
 
 
 class BuildType:

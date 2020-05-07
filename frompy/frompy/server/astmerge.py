@@ -47,22 +47,22 @@ See the main entry point merge_asts for more details.
 
 from typing import Dict, List, cast, TypeVar, Optional
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, SymbolTable, Block, AssignmentStmt, NameExpr, MemberExpr, RefExpr, TypeInfo,
     FuncDef, ClassDef, NamedTupleExpr, SymbolNode, Var, Statement, SuperExpr, NewTypeExpr,
     OverloadedFuncDef, LambdaExpr, TypedDictExpr, EnumCallExpr, FuncBase, TypeAliasExpr, CallExpr,
     CastExpr, TypeAlias,
     MDEF
 )
-from mypy.traverser import TraverserVisitor
-from mypy.types import (
+from frompy.traverser import TraverserVisitor
+from frompy.types import (
     Type, SyntheticTypeVisitor, Instance, AnyType, NoneType, CallableType, ErasedType, DeletedType,
     TupleType, TypeType, TypeVarType, TypedDictType, UnboundType, UninhabitedType, UnionType,
     Overloaded, TypeVarDef, TypeList, CallableArgument, EllipsisType, StarType, LiteralType,
     RawExpressionType, PartialType, PlaceholderType, TypeAliasType
 )
-from mypy.util import get_prefix, replace_object_state
-from mypy.typestate import TypeState
+from frompy.util import get_prefix, replace_object_state
+from frompy.typestate import TypeState
 
 
 def merge_asts(old: MypyFile, old_symbols: SymbolTable,

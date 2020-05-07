@@ -1,4 +1,4 @@
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 
 class Plugin2(Plugin):
     def get_function_hook(self, fullname):

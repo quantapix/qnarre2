@@ -123,15 +123,15 @@ from abc import abstractmethod
 from typing import Any, Callable, List, Tuple, Optional, NamedTuple, TypeVar, Dict
 from mypy_extensions import trait, mypyc_attr
 
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, Context, ClassDef, SymbolTableNode, MypyFile, CallExpr
 )
-from mypy.tvar_scope import TypeVarScope
-from mypy.types import Type, Instance, CallableType, TypeList, UnboundType, ProperType
-from mypy.messages import MessageBuilder
-from mypy.options import Options
-from mypy.lookup import lookup_fully_qualified
-from mypy.errorcodes import ErrorCode
+from frompy.tvar_scope import TypeVarScope
+from frompy.types import Type, Instance, CallableType, TypeList, UnboundType, ProperType
+from frompy.messages import MessageBuilder
+from frompy.options import Options
+from frompy.lookup import lookup_fully_qualified
+from frompy.errorcodes import ErrorCode
 
 
 @trait

@@ -7,17 +7,17 @@ operations, including subtype checks.
 
 from typing import List, Optional, Set
 
-from mypy.nodes import TypeInfo, Context, MypyFile, FuncItem, ClassDef, Block
-from mypy.types import (
+from frompy.nodes import TypeInfo, Context, MypyFile, FuncItem, ClassDef, Block
+from frompy.types import (
     Type, Instance, TypeVarType, AnyType, get_proper_types, TypeAliasType, get_proper_type
 )
-from mypy.mixedtraverser import MixedTraverserVisitor
-from mypy.subtypes import is_subtype
-from mypy.sametypes import is_same_type
-from mypy.errors import Errors
-from mypy.scope import Scope
-from mypy.options import Options
-from mypy.errorcodes import ErrorCode
+from frompy.mixedtraverser import MixedTraverserVisitor
+from frompy.subtypes import is_subtype
+from frompy.sametypes import is_same_type
+from frompy.errors import Errors
+from frompy.scope import Scope
+from frompy.options import Options
+from frompy.errorcodes import ErrorCode
 from mypy import message_registry, errorcodes as codes
 
 

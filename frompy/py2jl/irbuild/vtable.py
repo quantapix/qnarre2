@@ -2,8 +2,8 @@
 
 import itertools
 
-from mypyc.ir.class_ir import ClassIR, VTableEntries, VTableMethod
-from mypyc.sametype import is_same_method_signature
+from py2jl.ir.class_ir import ClassIR, VTableEntries, VTableMethod
+from py2jl.sametype import is_same_method_signature
 
 
 def compute_vtable(cls: ClassIR) -> None:

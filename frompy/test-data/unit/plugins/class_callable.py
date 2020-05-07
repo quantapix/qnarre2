@@ -1,6 +1,6 @@
-from mypy.plugin import Plugin
-from mypy.nodes import NameExpr
-from mypy.types import UnionType, NoneType, Instance
+from frompy.plugin import Plugin
+from frompy.nodes import NameExpr
+from frompy.types import UnionType, NoneType, Instance
 
 class AttrPlugin(Plugin):
     def get_function_hook(self, fullname):

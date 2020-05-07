@@ -10,8 +10,8 @@ from contextlib import contextmanager
 from typing import Optional, Tuple, List, Iterator, Union
 from typing_extensions import overload
 
-from mypy.moduleinspect import ModuleInspect, InspectError
-from mypy.modulefinder import ModuleNotFoundReason
+from frompy.moduleinspect import ModuleInspect, InspectError
+from frompy.modulefinder import ModuleNotFoundReason
 
 
 # Modules that may fail when imported, or that may have side effects (fully qualified).

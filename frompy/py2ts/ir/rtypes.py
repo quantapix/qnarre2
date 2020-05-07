@@ -25,12 +25,12 @@ from typing import Optional, Union, List, Dict, Generic, TypeVar
 
 from typing_extensions import Final, ClassVar, TYPE_CHECKING
 
-from mypyc.common import JsonDict, short_name
-from mypyc.namegen import NameGenerator
+from py2ts.common import JsonDict, short_name
+from py2ts.namegen import NameGenerator
 
 if TYPE_CHECKING:
-    from mypyc.ir.ops import DeserMaps
-    from mypyc.ir.class_ir import ClassIR
+    from py2ts.ir.ops import DeserMaps
+    from py2ts.ir.class_ir import ClassIR
 
 T = TypeVar('T')
 

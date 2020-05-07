@@ -34,15 +34,15 @@ Notes:
 import contextlib
 from typing import Union, Iterator, Optional, Dict, Tuple
 
-from mypy.nodes import (
+from frompy.nodes import (
     FuncDef, NameExpr, MemberExpr, RefExpr, MypyFile, ClassDef, AssignmentStmt,
     ImportFrom, CallExpr, Decorator, OverloadedFuncDef, Node, TupleExpr, ListExpr,
     SuperExpr, IndexExpr, ImportAll, ForStmt, Block, CLASSDEF_NO_INFO, TypeInfo,
     StarExpr, Var, SymbolTableNode
 )
-from mypy.traverser import TraverserVisitor
-from mypy.types import CallableType
-from mypy.typestate import TypeState
+from frompy.traverser import TraverserVisitor
+from frompy.types import CallableType
+from frompy.typestate import TypeState
 
 
 SavedAttributes = Dict[Tuple[ClassDef, str], SymbolTableNode]

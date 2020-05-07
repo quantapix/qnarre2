@@ -10,23 +10,23 @@ mypyc.irbuild.function.
 
 from typing import List
 
-from mypy.nodes import Var, ARG_OPT
+from frompy.nodes import Var, ARG_OPT
 
-from mypyc.common import SELF_NAME, NEXT_LABEL_ATTR_NAME, ENV_ATTR_NAME
-from mypyc.ir.ops import (
+from py2jl.common import SELF_NAME, NEXT_LABEL_ATTR_NAME, ENV_ATTR_NAME
+from py2jl.ir.ops import (
     BasicBlock, Call, Return, Goto, LoadInt, SetAttr, Environment, Unreachable, RaiseStandardError,
     Value
 )
-from mypyc.ir.rtypes import RInstance, int_rprimitive, object_rprimitive
-from mypyc.ir.func_ir import FuncIR, FuncDecl, FuncSignature, RuntimeArg
-from mypyc.ir.class_ir import ClassIR
-from mypyc.primitives.exc_ops import raise_exception_with_tb_op
-from mypyc.irbuild.util import add_self_to_env
-from mypyc.irbuild.env_class import (
+from py2jl.ir.rtypes import RInstance, int_rprimitive, object_rprimitive
+from py2jl.ir.func_ir import FuncIR, FuncDecl, FuncSignature, RuntimeArg
+from py2jl.ir.class_ir import ClassIR
+from py2jl.primitives.exc_ops import raise_exception_with_tb_op
+from py2jl.irbuild.util import add_self_to_env
+from py2jl.irbuild.env_class import (
     add_args_to_env, load_outer_env, load_env_registers, finalize_env_class
 )
-from mypyc.irbuild.builder import IRBuilder, gen_arg_defaults
-from mypyc.irbuild.context import FuncInfo, GeneratorClass
+from py2jl.irbuild.builder import IRBuilder, gen_arg_defaults
+from py2jl.irbuild.context import FuncInfo, GeneratorClass
 
 
 def gen_generator_func(builder: IRBuilder) -> None:

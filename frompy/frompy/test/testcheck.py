@@ -7,19 +7,19 @@ import sys
 from typing import Dict, List, Set, Tuple
 
 from mypy import build
-from mypy.build import Graph
-from mypy.modulefinder import BuildSource, SearchPaths, FindModuleCache
-from mypy.test.config import test_temp_dir, test_data_prefix
-from mypy.test.data import (
+from frompy.build import Graph
+from frompy.modulefinder import BuildSource, SearchPaths, FindModuleCache
+from frompy.test.config import test_temp_dir, test_data_prefix
+from frompy.test.data import (
     DataDrivenTestCase, DataSuite, FileOperation, UpdateFile, module_from_path
 )
-from mypy.test.helpers import (
+from frompy.test.helpers import (
     assert_string_arrays_equal, normalize_error_messages, assert_module_equivalence,
     retry_on_error, update_testcase_output, parse_options,
     copy_and_fudge_mtime, assert_target_equivalence, check_test_output_files
 )
-from mypy.errors import CompileError
-from mypy.semanal_main import core_modules
+from frompy.errors import CompileError
+from frompy.semanal_main import core_modules
 
 
 # List of files that contain test case descriptions.

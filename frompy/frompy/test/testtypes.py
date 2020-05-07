@@ -2,23 +2,23 @@
 
 from typing import List, Tuple
 
-from mypy.test.helpers import Suite, assert_equal, assert_true, assert_false, assert_type, skip
-from mypy.erasetype import erase_type
-from mypy.expandtype import expand_type
-from mypy.join import join_types, join_simple
-from mypy.meet import meet_types, narrow_declared_type
-from mypy.sametypes import is_same_type
-from mypy.indirection import TypeIndirectionVisitor
-from mypy.types import (
+from frompy.test.helpers import Suite, assert_equal, assert_true, assert_false, assert_type, skip
+from frompy.erasetype import erase_type
+from frompy.expandtype import expand_type
+from frompy.join import join_types, join_simple
+from frompy.meet import meet_types, narrow_declared_type
+from frompy.sametypes import is_same_type
+from frompy.indirection import TypeIndirectionVisitor
+from frompy.types import (
     UnboundType, AnyType, CallableType, TupleType, TypeVarDef, Type, Instance, NoneType,
     Overloaded, TypeType, UnionType, UninhabitedType, TypeVarId, TypeOfAny,
     LiteralType, get_proper_type
 )
-from mypy.nodes import ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, CONTRAVARIANT, INVARIANT, COVARIANT
-from mypy.subtypes import is_subtype, is_more_precise, is_proper_subtype
-from mypy.test.typefixture import TypeFixture, InterfaceTypeFixture
-from mypy.state import strict_optional_set
-from mypy.typeops import true_only, false_only
+from frompy.nodes import ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, CONTRAVARIANT, INVARIANT, COVARIANT
+from frompy.subtypes import is_subtype, is_more_precise, is_proper_subtype
+from frompy.test.typefixture import TypeFixture, InterfaceTypeFixture
+from frompy.state import strict_optional_set
+from frompy.typeops import true_only, false_only
 
 
 class TypesSuite(Suite):

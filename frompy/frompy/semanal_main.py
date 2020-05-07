@@ -28,27 +28,27 @@ import contextlib
 from typing import List, Tuple, Optional, Union, Callable, Iterator
 from typing_extensions import TYPE_CHECKING
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, TypeInfo, FuncDef, Decorator, OverloadedFuncDef, Var
 )
-from mypy.semanal_typeargs import TypeArgumentAnalyzer
-from mypy.state import strict_optional_set
-from mypy.semanal import (
+from frompy.semanal_typeargs import TypeArgumentAnalyzer
+from frompy.state import strict_optional_set
+from frompy.semanal import (
     SemanticAnalyzer, apply_semantic_analyzer_patches, remove_imported_names_from_symtable
 )
-from mypy.semanal_classprop import (
+from frompy.semanal_classprop import (
     calculate_class_abstract_status, calculate_class_vars, check_protocol_status,
     add_type_promotion
 )
-from mypy.errors import Errors
-from mypy.semanal_infer import infer_decorator_signature_if_simple
-from mypy.checker import FineGrainedDeferredNode
-from mypy.server.aststrip import SavedAttributes
-from mypy.util import is_typeshed_file
-import mypy.build
+from frompy.errors import Errors
+from frompy.semanal_infer import infer_decorator_signature_if_simple
+from frompy.checker import FineGrainedDeferredNode
+from frompy.server.aststrip import SavedAttributes
+from frompy.util import is_typeshed_file
+import frompy.build
 
 if TYPE_CHECKING:
-    from mypy.build import Graph, State
+    from frompy.build import Graph, State
 
 
 Patches = List[Tuple[int, Callable[[], None]]]

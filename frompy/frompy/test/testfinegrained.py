@@ -18,22 +18,22 @@ import re
 from typing import List, Dict, Any, Tuple, Union, cast
 
 from mypy import build
-from mypy.modulefinder import BuildSource
-from mypy.errors import CompileError
-from mypy.options import Options
-from mypy.test.config import test_temp_dir
-from mypy.test.data import (
+from frompy.modulefinder import BuildSource
+from frompy.errors import CompileError
+from frompy.options import Options
+from frompy.test.config import test_temp_dir
+from frompy.test.data import (
     DataDrivenTestCase, DataSuite, UpdateFile, DeleteFile
 )
-from mypy.test.helpers import (
+from frompy.test.helpers import (
     assert_string_arrays_equal, parse_options, copy_and_fudge_mtime, assert_module_equivalence,
     assert_target_equivalence
 )
-from mypy.server.mergecheck import check_consistency
-from mypy.dmypy_util import DEFAULT_STATUS_FILE
-from mypy.dmypy_server import Server
-from mypy.config_parser import parse_config_file
-from mypy.find_sources import create_source_list
+from frompy.server.mergecheck import check_consistency
+from frompy.dmypy_util import DEFAULT_STATUS_FILE
+from frompy.dmypy_server import Server
+from frompy.config_parser import parse_config_file
+from frompy.find_sources import create_source_list
 
 import pytest  # type: ignore  # no pytest in typeshed
 

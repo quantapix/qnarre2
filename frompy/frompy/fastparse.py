@@ -8,10 +8,10 @@ from typing import (
 )
 from typing_extensions import Final, Literal, overload
 
-from mypy.sharedparse import (
+from frompy.sharedparse import (
     special_function_elide_names, argument_elide_name,
 )
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, Node, ImportBase, Import, ImportAll, ImportFrom, FuncDef,
     OverloadedFuncDef, OverloadPart,
     ClassDef, Decorator, Block, Var, OperatorAssignmentStmt,
@@ -29,15 +29,15 @@ from mypy.nodes import (
     check_arg_names,
     FakeInfo,
 )
-from mypy.types import (
+from frompy.types import (
     Type, CallableType, AnyType, UnboundType, TupleType, TypeList, EllipsisType, CallableArgument,
     TypeOfAny, Instance, RawExpressionType, ProperType
 )
 from mypy import defaults
 from mypy import message_registry, errorcodes as codes
-from mypy.errors import Errors
-from mypy.options import Options
-from mypy.reachability import mark_block_unreachable
+from frompy.errors import Errors
+from frompy.options import Options
+from frompy.reachability import mark_block_unreachable
 
 try:
     # pull this into a final variable to make mypyc be quiet about the

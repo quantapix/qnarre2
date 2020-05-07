@@ -1,7 +1,7 @@
 from unittest import TestCase, main
 from multiprocessing import Process, Queue
 
-from mypy.ipc import IPCClient, IPCServer
+from frompy.ipc import IPCClient, IPCServer
 
 import pytest  # type: ignore
 import sys

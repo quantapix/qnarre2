@@ -3,7 +3,7 @@ import sys
 import os.path
 from typing import List, Set
 
-from mypy.test.helpers import Suite, run_mypy
+from frompy.test.helpers import Suite, run_mypy
 
 
 class TypeshedSuite(Suite):

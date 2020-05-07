@@ -5,27 +5,27 @@ from collections import OrderedDict
 from typing import Optional, Dict, List, cast, Tuple, Iterable
 from typing_extensions import Final
 
-import mypy.plugin  # To avoid circular imports.
-from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
-from mypy.fixup import lookup_qualified_stnode
-from mypy.nodes import (
+import frompy.plugin  # To avoid circular imports.
+from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
+from frompy.fixup import lookup_qualified_stnode
+from frompy.nodes import (
     Context, Argument, Var, ARG_OPT, ARG_POS, TypeInfo, AssignmentStmt,
     TupleExpr, ListExpr, NameExpr, CallExpr, RefExpr, FuncDef,
     is_class_var, TempNode, Decorator, MemberExpr, Expression,
     SymbolTableNode, MDEF, JsonDict, OverloadedFuncDef, ARG_NAMED_OPT, ARG_NAMED,
     TypeVarExpr, PlaceholderNode
 )
-from mypy.plugins.common import (
+from frompy.plugins.common import (
     _get_argument, _get_bool_argument, _get_decorator_bool_argument, add_method
 )
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, TypeOfAny, CallableType, NoneType, TypeVarDef, TypeVarType,
     Overloaded, UnionType, FunctionLike, get_proper_type
 )
-from mypy.typeops import make_simplified_union
-from mypy.typevars import fill_typevars
-from mypy.util import unmangle
-from mypy.server.trigger import make_wildcard_trigger
+from frompy.typeops import make_simplified_union
+from frompy.typevars import fill_typevars
+from frompy.util import unmangle
+from frompy.server.trigger import make_wildcard_trigger
 
 KW_ONLY_PYTHON_2_UNSUPPORTED = "kw_only is not supported in Python 2"
 
@@ -87,7 +87,7 @@ class Attribute:
             # Get the type of the converter.
             converter_type = None  # type: Optional[Type]
             if converter and isinstance(converter.node, TypeInfo):
-                from mypy.checkmember import type_object_type  # To avoid import cycle.
+                from frompy.checkmember import type_object_type  # To avoid import cycle.
                 converter_type = type_object_type(converter.node, ctx.api.builtin_type)
             elif converter and isinstance(converter.node, OverloadedFuncDef):
                 converter_type = converter.node.type

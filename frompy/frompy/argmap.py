@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Sequence, Callable, Set
 
-from mypy.types import (
+from frompy.types import (
     Type, Instance, TupleType, AnyType, TypeOfAny, TypedDictType, get_proper_type
 )
 from mypy import nodes

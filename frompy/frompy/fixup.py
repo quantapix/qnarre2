@@ -3,17 +3,17 @@
 from typing import Any, Dict, Optional
 from typing_extensions import Final
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, SymbolNode, SymbolTable, SymbolTableNode,
     TypeInfo, FuncDef, OverloadedFuncDef, Decorator, Var,
     TypeVarExpr, ClassDef, Block, TypeAlias,
 )
-from mypy.types import (
+from frompy.types import (
     CallableType, Instance, Overloaded, TupleType, TypedDictType,
     TypeVarType, UnboundType, UnionType, TypeVisitor, LiteralType,
     TypeType, NOT_READY, TypeAliasType, AnyType, TypeOfAny)
-from mypy.visitor import NodeVisitor
-from mypy.lookup import lookup_fully_qualified
+from frompy.visitor import NodeVisitor
+from frompy.lookup import lookup_fully_qualified
 
 
 # N.B: we do a allow_missing fixup when fixing up a fine-grained

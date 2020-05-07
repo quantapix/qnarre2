@@ -7,12 +7,12 @@ from typing import Any, Dict, Tuple
 from collections import OrderedDict
 from collections.abc import Iterable
 
-from mypyc.ir.ops import DeserMaps
-from mypyc.ir.rtypes import RType
-from mypyc.ir.func_ir import FuncDecl, FuncIR, FuncSignature
-from mypyc.ir.class_ir import ClassIR
-from mypyc.ir.module_ir import ModuleIR, deserialize_modules
-from mypyc.sametype import is_same_type, is_same_signature
+from py2jl.ir.ops import DeserMaps
+from py2jl.ir.rtypes import RType
+from py2jl.ir.func_ir import FuncDecl, FuncIR, FuncSignature
+from py2jl.ir.class_ir import ClassIR
+from py2jl.ir.module_ir import ModuleIR, deserialize_modules
+from py2jl.sametype import is_same_type, is_same_signature
 
 
 def get_dict(x: Any) -> Dict[str, Any]:

@@ -1,6 +1,6 @@
 import unittest
 
-from mypyc.namegen import (
+from py2jl.namegen import (
     NameGenerator, exported_name, candidate_suffixes, make_module_translation_map
 )
 

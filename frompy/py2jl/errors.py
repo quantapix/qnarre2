@@ -1,6 +1,6 @@
 from typing import List
 
-import mypy.errors
+import frompy.errors
 
 
 class Errors:

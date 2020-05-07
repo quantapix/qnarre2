@@ -9,9 +9,9 @@ import sys
 
 from typing import List, Tuple
 
-from mypy.test.config import test_temp_dir, PREFIX
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import assert_string_arrays_equal, normalize_error_messages
+from frompy.test.config import test_temp_dir, PREFIX
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.helpers import assert_string_arrays_equal, normalize_error_messages
 
 # Files containing test cases descriptions.
 daemon_files = [

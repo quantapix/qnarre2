@@ -1,9 +1,9 @@
 from typing import Union, List
 
-from mypy.nodes import TypeInfo
+from frompy.nodes import TypeInfo
 
-from mypy.erasetype import erase_typevars
-from mypy.types import Instance, TypeVarType, TupleType, Type, TypeOfAny, AnyType
+from frompy.erasetype import erase_typevars
+from frompy.types import Instance, TypeVarType, TupleType, Type, TypeOfAny, AnyType
 
 
 def fill_typevars(typ: TypeInfo) -> Union[Instance, TupleType]:

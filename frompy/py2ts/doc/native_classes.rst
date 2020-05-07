@@ -69,7 +69,7 @@ can't inherit from a native class outside the compilation unit that
 defines the class. You can enable these through
 ``mypy_extensions.mypyc_attr``::
 
-    from mypy_extensions import mypyc_attr
+    from mypy_extensions import py2ts_attr
 
     @mypyc_attr(allow_interpreted_subclasses=True)
     class Cls:

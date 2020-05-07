@@ -11,11 +11,11 @@ only be placed at the end of a basic block.
 
 from typing import List, Optional
 
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     BasicBlock, LoadErrorValue, Return, Branch, RegisterOp, ERR_NEVER, ERR_MAGIC,
     ERR_FALSE, NO_TRACEBACK_LINE_NO,
 )
-from mypyc.ir.func_ir import FuncIR
+from py2ts.ir.func_ir import FuncIR
 
 
 def insert_exception_handling(ir: FuncIR) -> None:

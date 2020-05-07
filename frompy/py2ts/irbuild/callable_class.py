@@ -6,17 +6,17 @@ non-local variables defined in outer scopes.
 
 from typing import List
 
-from mypy.nodes import Var
+from frompy.nodes import Var
 
-from mypyc.common import SELF_NAME, ENV_ATTR_NAME
-from mypyc.ir.ops import BasicBlock, Return, Call, SetAttr, Value, Environment
-from mypyc.ir.rtypes import RInstance, object_rprimitive
-from mypyc.ir.func_ir import FuncIR, FuncSignature, RuntimeArg, FuncDecl
-from mypyc.ir.class_ir import ClassIR
-from mypyc.irbuild.builder import IRBuilder
-from mypyc.irbuild.context import FuncInfo, ImplicitClass
-from mypyc.irbuild.util import add_self_to_env
-from mypyc.primitives.misc_ops import method_new_op
+from py2ts.common import SELF_NAME, ENV_ATTR_NAME
+from py2ts.ir.ops import BasicBlock, Return, Call, SetAttr, Value, Environment
+from py2ts.ir.rtypes import RInstance, object_rprimitive
+from py2ts.ir.func_ir import FuncIR, FuncSignature, RuntimeArg, FuncDecl
+from py2ts.ir.class_ir import ClassIR
+from py2ts.irbuild.builder import IRBuilder
+from py2ts.irbuild.context import FuncInfo, ImplicitClass
+from py2ts.irbuild.util import add_self_to_env
+from py2ts.primitives.misc_ops import method_new_op
 
 
 def setup_callable_class(builder: IRBuilder) -> None:

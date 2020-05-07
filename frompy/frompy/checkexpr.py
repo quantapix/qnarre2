@@ -8,12 +8,12 @@ from typing import (
 )
 from typing_extensions import ClassVar, Final, overload
 
-from mypy.errors import report_internal_error
-from mypy.typeanal import (
+from frompy.errors import report_internal_error
+from frompy.typeanal import (
     has_any_from_unimported_type, check_for_explicit_any, set_any_tvars, expand_type_alias,
     make_optional_type,
 )
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, CallableType, Overloaded, NoneType, TypeVarDef,
     TupleType, TypedDictType, Instance, TypeVarType, ErasedType, UnionType,
     PartialType, DeletedType, UninhabitedType, TypeType, TypeOfAny, LiteralType, LiteralValue,
@@ -21,7 +21,7 @@ from mypy.types import (
     StarType, is_optional, remove_optional, is_generic_instance, get_proper_type, ProperType,
     get_proper_types, flatten_nested_unions
 )
-from mypy.nodes import (
+from frompy.nodes import (
     NameExpr, RefExpr, Var, FuncDef, OverloadedFuncDef, TypeInfo, CallExpr,
     MemberExpr, IntExpr, StrExpr, BytesExpr, UnicodeExpr, FloatExpr,
     OpExpr, UnaryExpr, IndexExpr, CastExpr, RevealExpr, TypeApplication, ListExpr,
@@ -33,35 +33,35 @@ from mypy.nodes import (
     TypeAliasExpr, BackquoteExpr, EnumCallExpr, TypeAlias, SymbolNode, PlaceholderNode,
     ARG_POS, ARG_OPT, ARG_NAMED, ARG_STAR, ARG_STAR2, LITERAL_TYPE, REVEAL_TYPE,
 )
-from mypy.literals import literal
+from frompy.literals import literal
 from mypy import nodes
-import mypy.checker
+import frompy.checker
 from mypy import types
-from mypy.sametypes import is_same_type
-from mypy.erasetype import replace_meta_vars, erase_type, remove_instance_last_known_values
-from mypy.maptype import map_instance_to_supertype
-from mypy.messages import MessageBuilder
+from frompy.sametypes import is_same_type
+from frompy.erasetype import replace_meta_vars, erase_type, remove_instance_last_known_values
+from frompy.maptype import map_instance_to_supertype
+from frompy.messages import MessageBuilder
 from mypy import message_registry
-from mypy.infer import infer_type_arguments, infer_function_type_arguments
+from frompy.infer import infer_type_arguments, infer_function_type_arguments
 from mypy import join
-from mypy.meet import narrow_declared_type, is_overlapping_types
-from mypy.subtypes import is_subtype, is_proper_subtype, is_equivalent, non_method_protocol_members
+from frompy.meet import narrow_declared_type, is_overlapping_types
+from frompy.subtypes import is_subtype, is_proper_subtype, is_equivalent, non_method_protocol_members
 from mypy import applytype
 from mypy import erasetype
-from mypy.checkmember import analyze_member_access, type_object_type
-from mypy.argmap import ArgTypeExpander, map_actuals_to_formals, map_formals_to_actuals
-from mypy.checkstrformat import StringFormatterChecker
-from mypy.expandtype import expand_type, expand_type_by_instance, freshen_function_type_vars
-from mypy.util import split_module_names
-from mypy.typevars import fill_typevars
-from mypy.visitor import ExpressionVisitor
-from mypy.plugin import Plugin, MethodContext, MethodSigContext, FunctionContext
-from mypy.typeops import (
+from frompy.checkmember import analyze_member_access, type_object_type
+from frompy.argmap import ArgTypeExpander, map_actuals_to_formals, map_formals_to_actuals
+from frompy.checkstrformat import StringFormatterChecker
+from frompy.expandtype import expand_type, expand_type_by_instance, freshen_function_type_vars
+from frompy.util import split_module_names
+from frompy.typevars import fill_typevars
+from frompy.visitor import ExpressionVisitor
+from frompy.plugin import Plugin, MethodContext, MethodSigContext, FunctionContext
+from frompy.typeops import (
     tuple_fallback, make_simplified_union, true_only, false_only, erase_to_union_or_bound,
     function_type, callable_type, try_getting_str_literals, custom_special_method,
     is_literal_type_like,
 )
-import mypy.errorcodes as codes
+import frompy.errorcodes as codes
 
 # Type of callback user for checking individual function arguments. See
 # check_args() below for details.

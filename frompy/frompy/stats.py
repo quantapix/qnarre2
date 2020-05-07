@@ -8,21 +8,21 @@ import typing
 from typing import Dict, List, cast, Optional, Union, Iterator
 from typing_extensions import Final
 
-from mypy.traverser import TraverserVisitor
-from mypy.typeanal import collect_all_inner_types
-from mypy.types import (
+from frompy.traverser import TraverserVisitor
+from frompy.typeanal import collect_all_inner_types
+from frompy.types import (
     Type, AnyType, Instance, FunctionLike, TupleType, TypeVarType, TypeQuery, CallableType,
     TypeOfAny, get_proper_type, get_proper_types
 )
 from mypy import nodes
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, FuncDef, TypeApplication, AssignmentStmt, NameExpr, CallExpr, MypyFile,
     MemberExpr, OpExpr, ComparisonExpr, IndexExpr, UnaryExpr, YieldFromExpr, RefExpr, ClassDef,
     AssignmentExpr, ImportFrom, Import, ImportAll, PassStmt, BreakStmt, ContinueStmt, StrExpr,
     BytesExpr, UnicodeExpr, IntExpr, FloatExpr, ComplexExpr, EllipsisExpr, ExpressionStmt, Node
 )
-from mypy.util import correct_relative_import
-from mypy.argmap import map_formals_to_actuals
+from frompy.util import correct_relative_import
+from frompy.argmap import map_formals_to_actuals
 
 TYPE_EMPTY = 0  # type: Final
 TYPE_UNANALYZED = 1  # type: Final  # type of non-typechecked code

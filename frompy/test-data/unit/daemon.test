@@ -102,7 +102,7 @@ plugins = plug.py
 [file foo.py]
 pass
 [file plug.py]
-from mypy.plugin import Plugin
+from frompy.plugin import Plugin
 class Dummy(Plugin): pass
 def plugin(version): return Dummy
 

@@ -55,7 +55,7 @@ from typing import (
 )
 from typing_extensions import Final
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, TypeInfo, Node, AssignmentStmt, FuncDef, OverloadedFuncDef,
     ClassDef, Var, GDEF, FuncItem, Import, Expression, Lvalue,
     ImportFrom, ImportAll, Block, LDEF, NameExpr, MemberExpr,
@@ -77,48 +77,48 @@ from mypy.nodes import (
     REVEAL_LOCALS, is_final_node, TypedDictExpr, type_aliases_target_versions,
     EnumCallExpr, RUNTIME_PROTOCOL_DECOS, FakeExpression, Statement, AssignmentExpr,
 )
-from mypy.tvar_scope import TypeVarScope
-from mypy.typevars import fill_typevars
-from mypy.visitor import NodeVisitor
-from mypy.errors import Errors, report_internal_error
-from mypy.messages import (
+from frompy.tvar_scope import TypeVarScope
+from frompy.typevars import fill_typevars
+from frompy.visitor import NodeVisitor
+from frompy.errors import Errors, report_internal_error
+from frompy.messages import (
     best_matches, MessageBuilder, pretty_seq, SUGGESTED_TEST_FIXTURES, TYPES_FOR_UNIMPORTED_HINTS
 )
-from mypy.errorcodes import ErrorCode
+from frompy.errorcodes import ErrorCode
 from mypy import message_registry, errorcodes as codes
-from mypy.types import (
+from frompy.types import (
     FunctionLike, UnboundType, TypeVarDef, TupleType, UnionType, StarType,
     CallableType, Overloaded, Instance, Type, AnyType, LiteralType, LiteralValue,
     TypeTranslator, TypeOfAny, TypeType, NoneType, PlaceholderType, TPDICT_NAMES, ProperType,
     get_proper_type, get_proper_types, TypeAliasType)
-from mypy.typeops import function_type
-from mypy.type_visitor import TypeQuery
-from mypy.nodes import implicit_module_attrs
-from mypy.typeanal import (
+from frompy.typeops import function_type
+from frompy.type_visitor import TypeQuery
+from frompy.nodes import implicit_module_attrs
+from frompy.typeanal import (
     TypeAnalyser, analyze_type_alias, no_subscript_builtin_alias,
     TypeVariableQuery, TypeVarList, remove_dups, has_any_from_unimported_type,
     check_for_explicit_any, type_constructors, fix_instance_types
 )
-from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
-from mypy.options import Options
-from mypy.plugin import (
+from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
+from frompy.options import Options
+from frompy.plugin import (
     Plugin, ClassDefContext, SemanticAnalyzerPluginInterface,
     DynamicClassDefContext
 )
-from mypy.util import correct_relative_import, unmangle, module_prefix, is_typeshed_file
-from mypy.scope import Scope
-from mypy.semanal_shared import (
+from frompy.util import correct_relative_import, unmangle, module_prefix, is_typeshed_file
+from frompy.scope import Scope
+from frompy.semanal_shared import (
     SemanticAnalyzerInterface, set_callable_name, calculate_tuple_fallback, PRIORITY_FALLBACKS
 )
-from mypy.semanal_namedtuple import NamedTupleAnalyzer
-from mypy.semanal_typeddict import TypedDictAnalyzer
-from mypy.semanal_enum import EnumCallAnalyzer
-from mypy.semanal_newtype import NewTypeAnalyzer
-from mypy.reachability import (
+from frompy.semanal_namedtuple import NamedTupleAnalyzer
+from frompy.semanal_typeddict import TypedDictAnalyzer
+from frompy.semanal_enum import EnumCallAnalyzer
+from frompy.semanal_newtype import NewTypeAnalyzer
+from frompy.reachability import (
     infer_reachability_of_if_statement, infer_condition_value, ALWAYS_FALSE, ALWAYS_TRUE,
     MYPY_TRUE, MYPY_FALSE
 )
-from mypy.mro import calculate_mro, MroError
+from frompy.mro import calculate_mro, MroError
 
 T = TypeVar('T')
 

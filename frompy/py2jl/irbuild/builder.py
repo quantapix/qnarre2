@@ -15,49 +15,49 @@ from typing import Callable, Dict, List, Tuple, Optional, Union, Sequence, Set, 
 from typing_extensions import overload
 from collections import OrderedDict
 
-from mypy.build import Graph
-from mypy.nodes import (
+from frompy.build import Graph
+from frompy.nodes import (
     MypyFile, SymbolNode, Statement, OpExpr, IntExpr, NameExpr, LDEF, Var, UnaryExpr,
     CallExpr, IndexExpr, Expression, MemberExpr, RefExpr, Lvalue, TupleExpr,
     TypeInfo, Decorator, OverloadedFuncDef, StarExpr, GDEF, ARG_POS, ARG_NAMED
 )
-from mypy.types import (
+from frompy.types import (
     Type, Instance, TupleType, UninhabitedType, get_proper_type
 )
-from mypy.maptype import map_instance_to_supertype
-from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.util import split_target
+from frompy.maptype import map_instance_to_supertype
+from frompy.visitor import ExpressionVisitor, StatementVisitor
+from frompy.util import split_target
 
-from mypyc.common import TEMP_ATTR_NAME
-from mypyc.irbuild.prebuildvisitor import PreBuildVisitor
-from mypyc.ir.ops import (
+from py2jl.common import TEMP_ATTR_NAME
+from py2jl.irbuild.prebuildvisitor import PreBuildVisitor
+from py2jl.ir.ops import (
     BasicBlock, AssignmentTarget, AssignmentTargetRegister, AssignmentTargetIndex,
     AssignmentTargetAttr, AssignmentTargetTuple, Environment, LoadInt, Value,
     Register, Op, Assign, Branch, Unreachable, TupleGet, GetAttr, SetAttr, LoadStatic,
     InitStatic, PrimitiveOp, OpDescription, NAMESPACE_MODULE, RaiseStandardError
 )
-from mypyc.ir.rtypes import (
+from py2jl.ir.rtypes import (
     RType, RTuple, RInstance, int_rprimitive, dict_rprimitive,
     none_rprimitive, is_none_rprimitive, object_rprimitive, is_object_rprimitive,
     str_rprimitive,
 )
-from mypyc.ir.func_ir import FuncIR, INVALID_FUNC_DEF
-from mypyc.ir.class_ir import ClassIR, NonExtClassInfo
-from mypyc.primitives.registry import func_ops
-from mypyc.primitives.list_ops import list_len_op, to_list, list_pop_last
-from mypyc.primitives.dict_ops import dict_get_item_op, dict_set_item_op
-from mypyc.primitives.generic_ops import py_setattr_op, iter_op, next_op
-from mypyc.primitives.misc_ops import true_op, false_op, import_op
-from mypyc.crash import catch_errors
-from mypyc.options import CompilerOptions
-from mypyc.errors import Errors
-from mypyc.irbuild.nonlocalcontrol import (
+from py2jl.ir.func_ir import FuncIR, INVALID_FUNC_DEF
+from py2jl.ir.class_ir import ClassIR, NonExtClassInfo
+from py2jl.primitives.registry import func_ops
+from py2jl.primitives.list_ops import list_len_op, to_list, list_pop_last
+from py2jl.primitives.dict_ops import dict_get_item_op, dict_set_item_op
+from py2jl.primitives.generic_ops import py_setattr_op, iter_op, next_op
+from py2jl.primitives.misc_ops import true_op, false_op, import_op
+from py2jl.crash import catch_errors
+from py2jl.options import CompilerOptions
+from py2jl.errors import Errors
+from py2jl.irbuild.nonlocalcontrol import (
     NonlocalControl, BaseNonlocalControl, LoopNonlocalControl, GeneratorNonlocalControl
 )
-from mypyc.irbuild.context import FuncInfo, ImplicitClass
-from mypyc.irbuild.mapper import Mapper
-from mypyc.irbuild.ll_builder import LowLevelIRBuilder
-from mypyc.irbuild.util import is_constant
+from py2jl.irbuild.context import FuncInfo, ImplicitClass
+from py2jl.irbuild.mapper import Mapper
+from py2jl.irbuild.ll_builder import LowLevelIRBuilder
+from py2jl.irbuild.util import is_constant
 
 
 class IRVisitor(ExpressionVisitor[Value], StatementVisitor[None]):
@@ -636,7 +636,7 @@ class IRBuilder:
         echk = self.graph[self.module_name].type_checker().expr_checker
         iterator = echk.check_method_call_by_name('__iter__', iterable, [], [], expr)[0]
 
-        from mypy.join import join_types
+        from frompy.join import join_types
         if isinstance(iterable, TupleType):
             joined = UninhabitedType()  # type: Type
             for item in iterable.items:

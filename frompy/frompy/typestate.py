@@ -6,9 +6,9 @@ and potentially other mutable TypeInfo state. This module contains mutable globa
 from typing import Dict, Set, Tuple, Optional, List
 from typing_extensions import ClassVar, Final
 
-from mypy.nodes import TypeInfo
-from mypy.types import Instance, TypeAliasType, get_proper_type, Type
-from mypy.server.trigger import make_trigger
+from frompy.nodes import TypeInfo
+from frompy.types import Instance, TypeAliasType, get_proper_type, Type
+from frompy.server.trigger import make_trigger
 from mypy import state
 
 # Represents that the 'left' instance is a subtype of the 'right' instance

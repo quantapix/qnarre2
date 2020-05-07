@@ -7,10 +7,10 @@ from typing import Tuple
 import sys
 import argparse
 
-from mypy.errors import CompileError
-from mypy.options import Options
+from frompy.errors import CompileError
+from frompy.options import Options
 from mypy import defaults
-from mypy.parse import parse
+from frompy.parse import parse
 
 
 def dump(fname: str,

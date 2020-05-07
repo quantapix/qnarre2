@@ -3,12 +3,12 @@
 from typing import List, Optional, Set, Tuple, Dict, NamedTuple
 from collections import OrderedDict
 
-from mypyc.common import JsonDict
-from mypyc.ir.ops import Value, DeserMaps
-from mypyc.ir.rtypes import RType, RInstance, deserialize_type
-from mypyc.ir.func_ir import FuncIR, FuncDecl, FuncSignature
-from mypyc.namegen import NameGenerator, exported_name
-from mypyc.common import PROPSET_PREFIX
+from py2ts.common import JsonDict
+from py2ts.ir.ops import Value, DeserMaps
+from py2ts.ir.rtypes import RType, RInstance, deserialize_type
+from py2ts.ir.func_ir import FuncIR, FuncDecl, FuncSignature
+from py2ts.namegen import NameGenerator, exported_name
+from py2ts.common import PROPSET_PREFIX
 
 
 # Some notes on the vtable layout: Each concrete class has a vtable

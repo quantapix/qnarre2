@@ -3,26 +3,26 @@ from contextlib import contextmanager
 from typing import Any, List, Optional, Callable, Tuple, Iterator, Set, Union, cast, TypeVar
 from typing_extensions import Final
 
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, UnboundType, TypeVisitor, FormalArgument, NoneType,
     Instance, TypeVarType, CallableType, TupleType, TypedDictType, UnionType, Overloaded,
     ErasedType, PartialType, DeletedType, UninhabitedType, TypeType, is_named_instance,
     FunctionLike, TypeOfAny, LiteralType, get_proper_type, TypeAliasType
 )
-import mypy.applytype
-import mypy.constraints
-import mypy.typeops
-import mypy.sametypes
-from mypy.erasetype import erase_type
+import frompy.applytype
+import frompy.constraints
+import frompy.typeops
+import frompy.sametypes
+from frompy.erasetype import erase_type
 # Circular import; done in the function instead.
-# import mypy.solve
-from mypy.nodes import (
+# import frompy.solve
+from frompy.nodes import (
     FuncBase, Var, Decorator, OverloadedFuncDef, TypeInfo, CONTRAVARIANT, COVARIANT,
     ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2
 )
-from mypy.maptype import map_instance_to_supertype
-from mypy.expandtype import expand_type_by_instance
-from mypy.typestate import TypeState, SubtypeKind
+from frompy.maptype import map_instance_to_supertype
+from frompy.expandtype import expand_type_by_instance
+from frompy.typestate import TypeState, SubtypeKind
 from mypy import state
 
 # Flags for detected protocol members
@@ -662,7 +662,7 @@ def find_node_type(node: Union[Var, FuncBase], itype: Instance, subtype: Type) -
     """Find type of a variable or method 'node' (maybe also a decorated method).
     Apply type arguments from 'itype', and bind 'self' to 'subtype'.
     """
-    from mypy.typeops import bind_self
+    from frompy.typeops import bind_self
 
     if isinstance(node, FuncBase):
         typ = mypy.typeops.function_type(
@@ -1041,7 +1041,7 @@ def unify_generic_callable(type: CallableType, target: CallableType,
 
     Return unified CallableType if successful; otherwise, return None.
     """
-    import mypy.solve
+    import frompy.solve
 
     if return_constraint_direction is None:
         return_constraint_direction = mypy.constraints.SUBTYPE_OF

@@ -19,21 +19,21 @@ from contextlib import redirect_stderr, redirect_stdout
 from typing import AbstractSet, Any, Callable, Dict, List, Optional, Sequence, Tuple, Set
 from typing_extensions import Final
 
-import mypy.build
-import mypy.errors
-import mypy.main
-from mypy.find_sources import create_source_list, InvalidSourceList
-from mypy.server.update import FineGrainedBuildManager, refresh_suppressed_submodules
-from mypy.dmypy_util import receive
-from mypy.ipc import IPCServer
-from mypy.fscache import FileSystemCache
-from mypy.fswatcher import FileSystemWatcher, FileData
-from mypy.modulefinder import BuildSource, compute_search_paths, FindModuleCache, SearchPaths
-from mypy.options import Options
-from mypy.suggestions import SuggestionFailure, SuggestionEngine
-from mypy.typestate import reset_global_state
-from mypy.version import __version__
-from mypy.util import FancyFormatter, count_stats
+import frompy.build
+import frompy.errors
+import frompy.main
+from frompy.find_sources import create_source_list, InvalidSourceList
+from frompy.server.update import FineGrainedBuildManager, refresh_suppressed_submodules
+from frompy.dmypy_util import receive
+from frompy.ipc import IPCServer
+from frompy.fscache import FileSystemCache
+from frompy.fswatcher import FileSystemWatcher, FileData
+from frompy.modulefinder import BuildSource, compute_search_paths, FindModuleCache, SearchPaths
+from frompy.options import Options
+from frompy.suggestions import SuggestionFailure, SuggestionEngine
+from frompy.typestate import reset_global_state
+from frompy.version import __version__
+from frompy.util import FancyFormatter, count_stats
 
 MEM_PROFILE = False  # type: Final  # If True, dump memory profile after initialization
 
@@ -472,7 +472,7 @@ class Server:
             self.fswatcher.find_changed()
 
         if MEM_PROFILE:
-            from mypy.memprofile import print_memory_profile
+            from frompy.memprofile import print_memory_profile
             print_memory_profile(run_gc=False)
 
         status = 1 if messages else 0

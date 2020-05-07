@@ -5,11 +5,11 @@ import sys
 from pytest import skip  # type: ignore[import]
 
 from mypy import defaults
-from mypy.test.helpers import assert_string_arrays_equal, parse_options
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.parse import parse
-from mypy.errors import CompileError
-from mypy.options import Options
+from frompy.test.helpers import assert_string_arrays_equal, parse_options
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.parse import parse
+from frompy.errors import CompileError
+from frompy.options import Options
 
 
 class ParserSuite(DataSuite):

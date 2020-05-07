@@ -1,12 +1,12 @@
 """Block/import reachability analysis."""
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, AssertStmt, IfStmt, Block, AssignmentStmt, ExpressionStmt, ReturnStmt, ForStmt,
     Import, ImportAll, ImportFrom, ClassDef, FuncDef
 )
-from mypy.traverser import TraverserVisitor
-from mypy.options import Options
-from mypy.reachability import infer_reachability_of_if_statement, assert_will_always_fail
+from frompy.traverser import TraverserVisitor
+from frompy.options import Options
+from frompy.reachability import infer_reachability_of_if_statement, assert_will_always_fail
 
 
 class SemanticAnalyzerPreAnalysis(TraverserVisitor):

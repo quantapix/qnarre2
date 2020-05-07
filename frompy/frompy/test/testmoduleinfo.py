@@ -1,5 +1,5 @@
 from mypy import moduleinfo
-from mypy.test.helpers import assert_true, assert_false, Suite
+from frompy.test.helpers import assert_true, assert_false, Suite
 
 
 class ModuleInfoSuite(Suite):

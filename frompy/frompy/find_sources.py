@@ -5,9 +5,9 @@ import os.path
 from typing import List, Sequence, Set, Tuple, Optional, Dict
 from typing_extensions import Final
 
-from mypy.modulefinder import BuildSource, PYTHON_EXTENSIONS
-from mypy.fscache import FileSystemCache
-from mypy.options import Options
+from frompy.modulefinder import BuildSource, PYTHON_EXTENSIONS
+from frompy.fscache import FileSystemCache
+from frompy.options import Options
 
 PY_EXTENSIONS = tuple(PYTHON_EXTENSIONS)  # type: Final
 

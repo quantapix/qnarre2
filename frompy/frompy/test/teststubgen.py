@@ -9,23 +9,23 @@ from types import ModuleType
 
 from typing import Any, List, Tuple, Optional
 
-from mypy.test.helpers import (
+from frompy.test.helpers import (
     assert_equal, assert_string_arrays_equal, local_sys_path_set
 )
-from mypy.test.data import DataSuite, DataDrivenTestCase
-from mypy.errors import CompileError
-from mypy.stubgen import (
+from frompy.test.data import DataSuite, DataDrivenTestCase
+from frompy.errors import CompileError
+from frompy.stubgen import (
     generate_stubs, parse_options, Options, collect_build_targets,
     mypy_options, is_blacklisted_path, is_non_library_module
 )
-from mypy.stubutil import walk_packages, remove_misplaced_type_comments, common_dir_prefix
-from mypy.stubgenc import generate_c_type_stub, infer_method_sig, generate_c_function_stub
-from mypy.stubdoc import (
+from frompy.stubutil import walk_packages, remove_misplaced_type_comments, common_dir_prefix
+from frompy.stubgenc import generate_c_type_stub, infer_method_sig, generate_c_function_stub
+from frompy.stubdoc import (
     parse_signature, parse_all_signatures, build_signature, find_unique_signatures,
     infer_sig_from_docstring, infer_prop_type_from_docstring, FunctionSig, ArgSig,
     infer_arg_sig_from_docstring, is_valid_type
 )
-from mypy.moduleinspect import ModuleInspect, InspectError
+from frompy.moduleinspect import ModuleInspect, InspectError
 
 
 class StubgenCmdLineSuite(unittest.TestCase):

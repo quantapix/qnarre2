@@ -15,12 +15,12 @@ import traceback
 
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, List
 
-from mypy.dmypy_util import DEFAULT_STATUS_FILE, receive
-from mypy.ipc import IPCClient, IPCException
-from mypy.dmypy_os import alive, kill
-from mypy.util import check_python_version, get_terminal_width
+from frompy.dmypy_util import DEFAULT_STATUS_FILE, receive
+from frompy.ipc import IPCClient, IPCException
+from frompy.dmypy_os import alive, kill
+from frompy.util import check_python_version, get_terminal_width
 
-from mypy.version import __version__
+from frompy.version import __version__
 
 # Argument parser.  Subparsers are tied to action functions by the
 # @action(subparse) decorator.
@@ -224,7 +224,7 @@ def restart_server(args: argparse.Namespace, allow_sources: bool = False) -> Non
 def start_server(args: argparse.Namespace, allow_sources: bool = False) -> None:
     """Start the server from command arguments and wait for it."""
     # Lazy import so this import doesn't slow down other commands.
-    from mypy.dmypy_server import daemonize, process_start_options
+    from frompy.dmypy_server import daemonize, process_start_options
     start_options = process_start_options(args.flags, allow_sources)
     if daemonize(start_options, args.status_file, timeout=args.timeout, log_file=args.log_file):
         sys.exit(2)
@@ -395,7 +395,7 @@ def check_output(response: Dict[str, Any], verbose: bool,
         show_stats(response)
     if junit_xml:
         # Lazy import so this import doesn't slow things down when not writing junit
-        from mypy.util import write_junit_xml
+        from frompy.util import write_junit_xml
         messages = (out + err).splitlines()
         write_junit_xml(response['roundtrip_time'], bool(err), messages, junit_xml,
                         response['python_version'], response['platform'])
@@ -429,9 +429,9 @@ def do_hang(args: argparse.Namespace) -> None:
 def do_daemon(args: argparse.Namespace) -> None:
     """Serve requests in the foreground."""
     # Lazy import so this import doesn't slow down other commands.
-    from mypy.dmypy_server import Server, process_start_options
+    from frompy.dmypy_server import Server, process_start_options
     if args.options_data:
-        from mypy.options import Options
+        from frompy.options import Options
         options_dict, timeout, log_file = pickle.loads(base64.b64decode(args.options_data))
         options_obj = Options()
         options = options_obj.apply_changes(options_dict)

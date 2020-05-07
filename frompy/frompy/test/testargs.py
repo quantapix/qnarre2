@@ -7,9 +7,9 @@ object it creates.
 import argparse
 import sys
 
-from mypy.test.helpers import Suite, assert_equal
-from mypy.options import Options
-from mypy.main import process_options, infer_python_executable
+from frompy.test.helpers import Suite, assert_equal
+from frompy.options import Options
+from frompy.main import process_options, infer_python_executable
 
 
 class ArgSuite(Suite):

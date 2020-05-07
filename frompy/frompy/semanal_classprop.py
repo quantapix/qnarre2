@@ -6,12 +6,12 @@ These happen after semantic analysis and before type checking.
 from typing import List, Set, Optional
 from typing_extensions import Final
 
-from mypy.nodes import (
+from frompy.nodes import (
     Node, TypeInfo, Var, Decorator, OverloadedFuncDef, SymbolTable, CallExpr, PromoteExpr,
 )
-from mypy.types import Instance, Type
-from mypy.errors import Errors
-from mypy.options import Options
+from frompy.types import Instance, Type
+from frompy.errors import Errors
+from frompy.options import Options
 
 # Hard coded type promotions (shared between all Python versions).
 # These add extra ad-hoc edges to the subtyping relation. For example,

@@ -3,15 +3,15 @@
 import re
 
 from mypy import build
-from mypy.modulefinder import BuildSource
-from mypy.test.config import test_temp_dir
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.helpers import assert_string_arrays_equal
-from mypy.test.visitors import SkippedNodeSearcher, ignore_node
-from mypy.util import short_type
-from mypy.nodes import NameExpr
-from mypy.errors import CompileError
-from mypy.options import Options
+from frompy.modulefinder import BuildSource
+from frompy.test.config import test_temp_dir
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.helpers import assert_string_arrays_equal
+from frompy.test.visitors import SkippedNodeSearcher, ignore_node
+from frompy.util import short_type
+from frompy.nodes import NameExpr
+from frompy.errors import CompileError
+from frompy.options import Options
 
 
 class TypeExportSuite(DataSuite):

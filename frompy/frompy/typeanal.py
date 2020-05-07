@@ -9,9 +9,9 @@ from typing import Callable, List, Optional, Set, Tuple, Iterator, TypeVar, Iter
 from typing_extensions import Final
 from mypy_extensions import DefaultNamedArg
 
-from mypy.messages import MessageBuilder, quote_type_string, format_type_bare
-from mypy.options import Options
-from mypy.types import (
+from frompy.messages import MessageBuilder, quote_type_string, format_type_bare
+from frompy.options import Options
+from frompy.types import (
     Type, UnboundType, TypeVarType, TupleType, TypedDictType, UnionType, Instance, AnyType,
     CallableType, NoneType, ErasedType, DeletedType, TypeList, TypeVarDef, SyntheticTypeVisitor,
     StarType, PartialType, EllipsisType, UninhabitedType, TypeType,
@@ -19,18 +19,18 @@ from mypy.types import (
     PlaceholderType, Overloaded, get_proper_type, TypeAliasType
 )
 
-from mypy.nodes import (
+from frompy.nodes import (
     TypeInfo, Context, SymbolTableNode, Var, Expression,
     nongen_builtins, check_arg_names, check_arg_kinds, ARG_POS, ARG_NAMED,
     ARG_OPT, ARG_NAMED_OPT, ARG_STAR, ARG_STAR2, TypeVarExpr,
     TypeAlias, PlaceholderNode, SYMBOL_FUNCBASE_TYPES, Decorator, MypyFile
 )
-from mypy.typetraverser import TypeTraverserVisitor
-from mypy.tvar_scope import TypeVarScope
-from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
-from mypy.plugin import Plugin, TypeAnalyzerPluginInterface, AnalyzeTypeContext
-from mypy.semanal_shared import SemanticAnalyzerCoreInterface
-from mypy.errorcodes import ErrorCode
+from frompy.typetraverser import TypeTraverserVisitor
+from frompy.tvar_scope import TypeVarScope
+from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
+from frompy.plugin import Plugin, TypeAnalyzerPluginInterface, AnalyzeTypeContext
+from frompy.semanal_shared import SemanticAnalyzerCoreInterface
+from frompy.errorcodes import ErrorCode
 from mypy import nodes, message_registry, errorcodes as codes
 
 T = TypeVar('T')

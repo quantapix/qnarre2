@@ -5,21 +5,21 @@ This is conceptually part of mypy.semanal (semantic analyzer pass 2).
 
 from typing import Tuple, Optional
 
-from mypy.types import (
+from frompy.types import (
     Type, Instance, CallableType, NoneType, TupleType, AnyType, PlaceholderType,
     TypeOfAny, get_proper_type
 )
-from mypy.nodes import (
+from frompy.nodes import (
     AssignmentStmt, NewTypeExpr, CallExpr, NameExpr, RefExpr, Context, StrExpr, BytesExpr,
     UnicodeExpr, Block, FuncDef, Argument, TypeInfo, Var, SymbolTableNode, MDEF, ARG_POS,
     PlaceholderNode
 )
-from mypy.semanal_shared import SemanticAnalyzerInterface
-from mypy.options import Options
-from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
-from mypy.typeanal import check_for_explicit_any, has_any_from_unimported_type
-from mypy.messages import MessageBuilder, format_type
-from mypy.errorcodes import ErrorCode
+from frompy.semanal_shared import SemanticAnalyzerInterface
+from frompy.options import Options
+from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
+from frompy.typeanal import check_for_explicit_any, has_any_from_unimported_type
+from frompy.messages import MessageBuilder, format_type
+from frompy.errorcodes import ErrorCode
 from mypy import errorcodes as codes
 
 

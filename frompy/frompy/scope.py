@@ -6,7 +6,7 @@ TODO: Use everywhere where we track targets, including in mypy.errors.
 from contextlib import contextmanager
 from typing import List, Optional, Iterator, Tuple
 
-from mypy.nodes import TypeInfo, FuncBase
+from frompy.nodes import TypeInfo, FuncBase
 
 
 SavedScope = Tuple[str, Optional[TypeInfo], Optional[FuncBase]]

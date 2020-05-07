@@ -3,19 +3,19 @@
 from typing import Union
 from typing_extensions import Final
 
-from mypyc.common import (
+from py2ts.common import (
     REG_PREFIX, NATIVE_PREFIX, STATIC_PREFIX, TYPE_PREFIX, MODULE_PREFIX,
 )
-from mypyc.codegen.emit import Emitter
-from mypyc.ir.ops import (
+from py2ts.codegen.emit import Emitter
+from py2ts.ir.ops import (
     OpVisitor, Goto, Branch, Return, Assign, LoadInt, LoadErrorValue, GetAttr, SetAttr,
     LoadStatic, InitStatic, TupleGet, TupleSet, Call, IncRef, DecRef, Box, Cast, Unbox,
     BasicBlock, Value, MethodCall, PrimitiveOp, EmitterInterface, Unreachable, NAMESPACE_STATIC,
     NAMESPACE_TYPE, NAMESPACE_MODULE, RaiseStandardError
 )
-from mypyc.ir.rtypes import RType, RTuple
-from mypyc.ir.func_ir import FuncIR, FuncDecl, FUNC_STATICMETHOD, FUNC_CLASSMETHOD
-from mypyc.ir.class_ir import ClassIR
+from py2ts.ir.rtypes import RType, RTuple
+from py2ts.ir.func_ir import FuncIR, FuncDecl, FUNC_STATICMETHOD, FUNC_CLASSMETHOD
+from py2ts.ir.class_ir import ClassIR
 
 # Whether to insert debug asserts for all error handling, to quickly
 # catch errors propagating without exceptions set.

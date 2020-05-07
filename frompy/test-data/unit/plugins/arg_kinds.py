@@ -1,9 +1,9 @@
 import sys
 from typing import Optional, Callable
 
-from mypy.nodes import Context
-from mypy.plugin import Plugin, MethodContext, FunctionContext
-from mypy.types import Type
+from frompy.nodes import Context
+from frompy.plugin import Plugin, MethodContext, FunctionContext
+from frompy.types import Type
 
 
 class ArgKindsPlugin(Plugin):

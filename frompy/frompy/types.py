@@ -11,14 +11,14 @@ from typing import (
 )
 from typing_extensions import ClassVar, Final, TYPE_CHECKING, overload
 
-import mypy.nodes
+import frompy.nodes
 from mypy import state
-from mypy.nodes import (
+from frompy.nodes import (
     INVARIANT, SymbolNode, ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, ARG_NAMED, ARG_NAMED_OPT,
     FuncDef,
 )
-from mypy.util import IdMapper
-from mypy.bogus_type import Bogus
+from frompy.util import IdMapper
+from frompy.bogus_type import Bogus
 
 
 T = TypeVar('T')
@@ -62,7 +62,7 @@ LiteralValue = Union[int, str, bool]
 # We should be able to remove this once we are switched to the new
 # semantic analyzer!
 if TYPE_CHECKING:
-    from mypy.type_visitor import (
+    from frompy.type_visitor import (
         TypeVisitor as TypeVisitor,
         SyntheticTypeVisitor as SyntheticTypeVisitor,
     )
@@ -1943,7 +1943,7 @@ def get_proper_types(it: Iterable[Optional[Type]]
 # to make it easier to gradually get modules working with mypyc.
 # Import them here, after the types are defined.
 # This is intended as a re-export also.
-from mypy.type_visitor import (  # noqa
+from frompy.type_visitor import (  # noqa
     TypeVisitor as TypeVisitor,
     SyntheticTypeVisitor as SyntheticTypeVisitor,
     TypeTranslator as TypeTranslator,

@@ -1,10 +1,10 @@
 import os
 
-from mypy.options import Options
-from mypy.modulefinder import FindModuleCache, SearchPaths, ModuleNotFoundReason
+from frompy.options import Options
+from frompy.modulefinder import FindModuleCache, SearchPaths, ModuleNotFoundReason
 
-from mypy.test.helpers import Suite, assert_equal
-from mypy.test.config import package_path
+from frompy.test.helpers import Suite, assert_equal
+from frompy.test.config import package_path
 data_path = os.path.relpath(os.path.join(package_path, "modulefinder"))
 
 

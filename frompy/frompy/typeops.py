@@ -1,6 +1,6 @@
 """Miscellaneous type operations and helpers for use during type checking.
 
-NOTE: These must not be accessed from mypy.nodes or mypy.types to avoid import
+NOTE: These must not be accessed from frompy.nodes or mypy.types to avoid import
       cycles. These must not be called from the semantic analysis main pass
       since these may assume that MROs are ready.
 """
@@ -9,21 +9,21 @@ from typing import cast, Optional, List, Sequence, Set, Iterable, TypeVar
 from typing_extensions import Type as TypingType
 import sys
 
-from mypy.types import (
+from frompy.types import (
     TupleType, Instance, FunctionLike, Type, CallableType, TypeVarDef, Overloaded,
     TypeVarType, UninhabitedType, FormalArgument, UnionType, NoneType, TypedDictType,
     AnyType, TypeOfAny, TypeType, ProperType, LiteralType, get_proper_type, get_proper_types,
     copy_type, TypeAliasType, TypeQuery
 )
-from mypy.nodes import (
+from frompy.nodes import (
     FuncBase, FuncItem, OverloadedFuncDef, TypeInfo, ARG_STAR, ARG_STAR2, ARG_POS,
     Expression, StrExpr, Var, Decorator, SYMBOL_FUNCBASE_TYPES
 )
-from mypy.maptype import map_instance_to_supertype
-from mypy.expandtype import expand_type_by_instance, expand_type
-from mypy.sharedparse import argument_elide_name
+from frompy.maptype import map_instance_to_supertype
+from frompy.expandtype import expand_type_by_instance, expand_type
+from frompy.sharedparse import argument_elide_name
 
-from mypy.typevars import fill_typevars
+from frompy.typevars import fill_typevars
 
 from mypy import state
 
@@ -36,7 +36,7 @@ def is_recursive_pair(s: Type, t: Type) -> bool:
 
 def tuple_fallback(typ: TupleType) -> Instance:
     """Return fallback type for a tuple."""
-    from mypy.join import join_type_list
+    from frompy.join import join_type_list
 
     info = typ.partial_fallback.type
     if info.fullname != 'builtins.tuple':
@@ -117,7 +117,7 @@ def class_callable(init_type: CallableType, info: TypeInfo, type_type: Instance,
     variables.extend(info.defn.type_vars)
     variables.extend(init_type.variables)
 
-    from mypy.subtypes import is_subtype
+    from frompy.subtypes import is_subtype
 
     init_ret_type = get_proper_type(init_type.ret_type)
     orig_self_type = get_proper_type(orig_self_type)
@@ -209,7 +209,7 @@ def bind_self(method: F, original_type: Optional[Type] = None, is_classmethod: b
     b = B().copy()  # type: B
 
     """
-    from mypy.infer import infer_type_arguments
+    from frompy.infer import infer_type_arguments
 
     if isinstance(method, Overloaded):
         return cast(F, Overloaded([bind_self(c, original_type, is_classmethod)
@@ -301,7 +301,7 @@ def callable_corresponding_argument(typ: CallableType,
 
         # def right(a: int = ...) -> None: ...
         # def left(__a: int = ..., *, a: int = ...) -> None: ...
-        from mypy.subtypes import is_equivalent
+        from frompy.subtypes import is_equivalent
 
         if (not (by_name.required or by_pos.required)
                 and by_pos.name is None
@@ -341,7 +341,7 @@ def make_simplified_union(items: Sequence[Type],
                 all_items.append(typ)
         items = all_items
 
-    from mypy.subtypes import is_proper_subtype
+    from frompy.subtypes import is_proper_subtype
 
     removed = set()  # type: Set[int]
     for i, ti in enumerate(items):

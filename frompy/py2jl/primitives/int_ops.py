@@ -6,12 +6,12 @@ representation (CPyTagged).
 See also the documentation for mypyc.rtypes.int_rprimitive.
 """
 
-from mypyc.ir.ops import OpDescription, ERR_NEVER, ERR_MAGIC
-from mypyc.ir.rtypes import (
+from py2jl.ir.ops import OpDescription, ERR_NEVER, ERR_MAGIC
+from py2jl.ir.rtypes import (
     int_rprimitive, bool_rprimitive, float_rprimitive, object_rprimitive, short_int_rprimitive,
     str_rprimitive, RType
 )
-from mypyc.primitives.registry import (
+from py2jl.primitives.registry import (
     name_ref_op, binary_op, unary_op, func_op, custom_op,
     simple_emit, call_emit, name_emit,
 )

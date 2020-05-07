@@ -1,7 +1,7 @@
 from typing import Optional, Callable
 
-from mypy.plugin import Plugin, AttributeContext
-from mypy.types import Type, AnyType, TypeOfAny
+from frompy.plugin import Plugin, AttributeContext
+from frompy.types import Type, AnyType, TypeOfAny
 
 
 class AttrPlugin(Plugin):

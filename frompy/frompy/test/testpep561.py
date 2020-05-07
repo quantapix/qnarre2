@@ -8,12 +8,12 @@ import sys
 import tempfile
 from typing import Tuple, List, Generator
 
-import mypy.api
-from mypy.test.config import package_path
-from mypy.util import try_find_python2_interpreter
-from mypy.test.data import DataDrivenTestCase, DataSuite
-from mypy.test.config import test_temp_dir
-from mypy.test.helpers import assert_string_arrays_equal
+import frompy.api
+from frompy.test.config import package_path
+from frompy.util import try_find_python2_interpreter
+from frompy.test.data import DataDrivenTestCase, DataSuite
+from frompy.test.config import test_temp_dir
+from frompy.test.helpers import assert_string_arrays_equal
 
 
 # NOTE: options.use_builtins_fixtures should not be set in these

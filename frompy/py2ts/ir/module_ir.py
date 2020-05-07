@@ -2,11 +2,11 @@
 
 from typing import List, Tuple, Dict
 
-from mypyc.common import JsonDict
-from mypyc.ir.ops import DeserMaps
-from mypyc.ir.rtypes import RType, deserialize_type
-from mypyc.ir.func_ir import FuncIR, FuncDecl, format_func
-from mypyc.ir.class_ir import ClassIR
+from py2ts.common import JsonDict
+from py2ts.ir.ops import DeserMaps
+from py2ts.ir.rtypes import RType, deserialize_type
+from py2ts.ir.func_ir import FuncIR, FuncDecl, format_func
+from py2ts.ir.class_ir import ClassIR
 
 
 class ModuleIR:

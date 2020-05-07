@@ -8,26 +8,26 @@ such special case.
 from typing import Union, List, Optional, Tuple, Callable
 from typing_extensions import Type, ClassVar
 
-from mypy.nodes import (
+from frompy.nodes import (
     Lvalue, Expression, TupleExpr, CallExpr, RefExpr, GeneratorExpr, ARG_POS, MemberExpr
 )
-from mypyc.ir.ops import (
+from py2jl.ir.ops import (
     Value, BasicBlock, LoadInt, Branch, Register, AssignmentTarget, TupleGet,
     AssignmentTargetTuple, TupleSet, OpDescription
 )
-from mypyc.ir.rtypes import (
+from py2jl.ir.rtypes import (
     RType, is_short_int_rprimitive, is_list_rprimitive, is_sequence_rprimitive,
     RTuple, is_dict_rprimitive
 )
-from mypyc.primitives.dict_ops import (
+from py2jl.primitives.dict_ops import (
     dict_next_key_op, dict_next_value_op, dict_next_item_op, dict_check_size_op,
     dict_key_iter_op, dict_value_iter_op, dict_item_iter_op
 )
-from mypyc.primitives.int_ops import unsafe_short_add
-from mypyc.primitives.list_ops import new_list_op, list_append_op, list_get_item_unsafe_op
-from mypyc.primitives.generic_ops import iter_op, next_op
-from mypyc.primitives.exc_ops import no_err_occurred_op
-from mypyc.irbuild.builder import IRBuilder
+from py2jl.primitives.int_ops import unsafe_short_add
+from py2jl.primitives.list_ops import new_list_op, list_append_op, list_get_item_unsafe_op
+from py2jl.primitives.generic_ops import iter_op, next_op
+from py2jl.primitives.exc_ops import no_err_occurred_op
+from py2jl.irbuild.builder import IRBuilder
 
 
 GenFunc = Callable[[], None]

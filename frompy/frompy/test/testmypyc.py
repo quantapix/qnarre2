@@ -1,6 +1,6 @@
 """A basic check to make sure that we are using a mypyc-compiled version when expected."""
 
-import mypy
+import frompy
 
 from unittest import TestCase
 import os

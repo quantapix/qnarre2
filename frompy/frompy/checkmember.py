@@ -3,33 +3,33 @@
 from typing import cast, Callable, Optional, Union, List
 from typing_extensions import TYPE_CHECKING
 
-from mypy.types import (
+from frompy.types import (
     Type, Instance, AnyType, TupleType, TypedDictType, CallableType, FunctionLike, TypeVarDef,
     Overloaded, TypeVarType, UnionType, PartialType, TypeOfAny, LiteralType,
     DeletedType, NoneType, TypeType, has_type_vars, get_proper_type, ProperType
 )
-from mypy.nodes import (
+from frompy.nodes import (
     TypeInfo, FuncBase, Var, FuncDef, SymbolNode, SymbolTable, Context,
     MypyFile, TypeVarExpr, ARG_POS, ARG_STAR, ARG_STAR2, Decorator,
     OverloadedFuncDef, TypeAlias, TempNode, is_final_node,
     SYMBOL_FUNCBASE_TYPES,
 )
-from mypy.messages import MessageBuilder
-from mypy.maptype import map_instance_to_supertype
-from mypy.expandtype import expand_type_by_instance, freshen_function_type_vars
-from mypy.erasetype import erase_typevars
-from mypy.plugin import AttributeContext
-from mypy.typeanal import set_any_tvars
+from frompy.messages import MessageBuilder
+from frompy.maptype import map_instance_to_supertype
+from frompy.expandtype import expand_type_by_instance, freshen_function_type_vars
+from frompy.erasetype import erase_typevars
+from frompy.plugin import AttributeContext
+from frompy.typeanal import set_any_tvars
 from mypy import message_registry
 from mypy import subtypes
 from mypy import meet
-from mypy.typeops import (
+from frompy.typeops import (
     tuple_fallback, bind_self, erase_to_bound, class_callable, type_object_type_from_function,
     make_simplified_union, function_type,
 )
 
 if TYPE_CHECKING:  # import for forward declaration only
-    import mypy.checker
+    import frompy.checker
 
 from mypy import state
 

@@ -37,6 +37,6 @@ pip install $TO_INSTALL
 cp "$ROOT/pytest.ini" "$ROOT/conftest.py" "$VENV/"
 
 # Find the directory that mypy tests were installed into
-MYPY_TEST_DIR="$(python3 -c 'import mypy.test; print(mypy.test.__path__[0])')"
+MYPY_TEST_DIR="$(python3 -c 'import frompy.test; print(mypy.test.__path__[0])')"
 # Run the mypy tests
 MYPY_TEST_PREFIX="$ROOT" python3 -m pytest "$MYPY_TEST_DIR"/test*.py

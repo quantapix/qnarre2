@@ -3,19 +3,19 @@
 from collections import OrderedDict
 from typing import List, Optional
 
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, NoneType, TypeVisitor, Instance, UnboundType, TypeVarType, CallableType,
     TupleType, TypedDictType, ErasedType, UnionType, FunctionLike, Overloaded, LiteralType,
     PartialType, DeletedType, UninhabitedType, TypeType, TypeOfAny, get_proper_type,
     ProperType, get_proper_types, TypeAliasType
 )
-from mypy.maptype import map_instance_to_supertype
-from mypy.subtypes import (
+from frompy.maptype import map_instance_to_supertype
+from frompy.subtypes import (
     is_subtype, is_equivalent, is_subtype_ignoring_tvars, is_proper_subtype,
     is_protocol_implementation, find_member
 )
-from mypy.nodes import ARG_NAMED, ARG_NAMED_OPT
-import mypy.typeops
+from frompy.nodes import ARG_NAMED, ARG_NAMED_OPT
+import frompy.typeops
 from mypy import state
 
 
@@ -426,7 +426,7 @@ def is_similar_callables(t: CallableType, s: CallableType) -> bool:
 
 
 def join_similar_callables(t: CallableType, s: CallableType) -> CallableType:
-    from mypy.meet import meet_types
+    from frompy.meet import meet_types
     arg_types = []  # type: List[Type]
     for i in range(len(t.arg_types)):
         arg_types.append(meet_types(t.arg_types[i], s.arg_types[i]))

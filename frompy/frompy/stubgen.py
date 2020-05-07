@@ -58,41 +58,41 @@ from typing import (
 )
 from typing_extensions import Final
 
-import mypy.build
-import mypy.parse
-import mypy.errors
-import mypy.traverser
-import mypy.mixedtraverser
-import mypy.util
+import frompy.build
+import frompy.parse
+import frompy.errors
+import frompy.traverser
+import frompy.mixedtraverser
+import frompy.util
 from mypy import defaults
-from mypy.modulefinder import (
+from frompy.modulefinder import (
     ModuleNotFoundReason, FindModuleCache, SearchPaths, BuildSource, default_lib_path
 )
-from mypy.nodes import (
+from frompy.nodes import (
     Expression, IntExpr, UnaryExpr, StrExpr, BytesExpr, NameExpr, FloatExpr, MemberExpr,
     TupleExpr, ListExpr, ComparisonExpr, CallExpr, IndexExpr, EllipsisExpr,
     ClassDef, MypyFile, Decorator, AssignmentStmt, TypeInfo,
     IfStmt, ImportAll, ImportFrom, Import, FuncDef, FuncBase, TempNode, Block,
     Statement, OverloadedFuncDef, ARG_POS, ARG_STAR, ARG_STAR2, ARG_NAMED, ARG_NAMED_OPT
 )
-from mypy.stubgenc import generate_stub_for_c_module
-from mypy.stubutil import (
+from frompy.stubgenc import generate_stub_for_c_module
+from frompy.stubutil import (
     default_py2_interpreter, CantImport, generate_guarded,
     walk_packages, find_module_path_and_all_py2, find_module_path_and_all_py3,
     report_missing, fail_missing, remove_misplaced_type_comments, common_dir_prefix
 )
-from mypy.stubdoc import parse_all_signatures, find_unique_signatures, Sig
-from mypy.options import Options as MypyOptions
-from mypy.types import (
+from frompy.stubdoc import parse_all_signatures, find_unique_signatures, Sig
+from frompy.options import Options as MypyOptions
+from frompy.types import (
     Type, TypeStrVisitor, CallableType, UnboundType, NoneType, TupleType, TypeList, Instance,
     AnyType
 )
-from mypy.visitor import NodeVisitor
-from mypy.find_sources import create_source_list, InvalidSourceList
-from mypy.build import build
-from mypy.errors import CompileError, Errors
-from mypy.traverser import has_return_statement
-from mypy.moduleinspect import ModuleInspect
+from frompy.visitor import NodeVisitor
+from frompy.find_sources import create_source_list, InvalidSourceList
+from frompy.build import build
+from frompy.errors import CompileError, Errors
+from frompy.traverser import has_return_statement
+from frompy.moduleinspect import ModuleInspect
 
 
 # Common ways of naming package containing vendored modules.

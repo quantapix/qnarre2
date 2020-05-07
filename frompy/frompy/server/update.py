@@ -120,33 +120,33 @@ from typing import (
 )
 from typing_extensions import Final
 
-from mypy.build import (
+from frompy.build import (
     BuildManager, State, BuildResult, Graph, load_graph,
     process_fresh_modules, DEBUG_FINE_GRAINED,
     FAKE_ROOT_MODULE,
 )
-from mypy.modulefinder import BuildSource
-from mypy.checker import FineGrainedDeferredNode
-from mypy.errors import CompileError
-from mypy.nodes import (
+from frompy.modulefinder import BuildSource
+from frompy.checker import FineGrainedDeferredNode
+from frompy.errors import CompileError
+from frompy.nodes import (
     MypyFile, FuncDef, TypeInfo, SymbolNode, Decorator,
     OverloadedFuncDef, SymbolTable, ImportFrom
 )
-from mypy.options import Options
-from mypy.fscache import FileSystemCache
-from mypy.server.astdiff import (
+from frompy.options import Options
+from frompy.fscache import FileSystemCache
+from frompy.server.astdiff import (
     snapshot_symbol_table, compare_symbol_table_snapshots, SnapshotItem
 )
-from mypy.semanal_main import (
+from frompy.semanal_main import (
     semantic_analysis_for_scc, semantic_analysis_for_targets, core_modules
 )
-from mypy.server.astmerge import merge_asts
-from mypy.server.aststrip import strip_target, SavedAttributes
-from mypy.server.deps import get_dependencies_of_target, merge_dependencies
-from mypy.server.target import trigger_to_target
-from mypy.server.trigger import make_trigger, WILDCARD_TAG
-from mypy.util import module_prefix, split_target
-from mypy.typestate import TypeState
+from frompy.server.astmerge import merge_asts
+from frompy.server.aststrip import strip_target, SavedAttributes
+from frompy.server.deps import get_dependencies_of_target, merge_dependencies
+from frompy.server.target import trigger_to_target
+from frompy.server.trigger import make_trigger, WILDCARD_TAG
+from frompy.util import module_prefix, split_target
+from frompy.typestate import TypeState
 
 MAX_ITER = 1000  # type: Final
 

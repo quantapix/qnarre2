@@ -1,11 +1,11 @@
 from typing import Sequence
 
-from mypy.types import (
+from frompy.types import (
     Type, UnboundType, AnyType, NoneType, TupleType, TypedDictType,
     UnionType, CallableType, TypeVarType, Instance, TypeVisitor, ErasedType,
     Overloaded, PartialType, DeletedType, UninhabitedType, TypeType, LiteralType,
     ProperType, get_proper_type, TypeAliasType)
-from mypy.typeops import tuple_fallback, make_simplified_union
+from frompy.typeops import tuple_fallback, make_simplified_union
 
 
 def is_same_type(left: Type, right: Type) -> bool:

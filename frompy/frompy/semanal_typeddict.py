@@ -4,17 +4,17 @@ from collections import OrderedDict
 from typing import Optional, List, Set, Tuple
 from typing_extensions import Final
 
-from mypy.types import Type, AnyType, TypeOfAny, TypedDictType, TPDICT_NAMES
-from mypy.nodes import (
+from frompy.types import Type, AnyType, TypeOfAny, TypedDictType, TPDICT_NAMES
+from frompy.nodes import (
     CallExpr, TypedDictExpr, Expression, NameExpr, Context, StrExpr, BytesExpr, UnicodeExpr,
     ClassDef, RefExpr, TypeInfo, AssignmentStmt, PassStmt, ExpressionStmt, EllipsisExpr, TempNode,
     DictExpr, ARG_POS, ARG_NAMED
 )
-from mypy.semanal_shared import SemanticAnalyzerInterface
-from mypy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
-from mypy.options import Options
-from mypy.typeanal import check_for_explicit_any, has_any_from_unimported_type
-from mypy.messages import MessageBuilder
+from frompy.semanal_shared import SemanticAnalyzerInterface
+from frompy.exprtotype import expr_to_unanalyzed_type, TypeTranslationError
+from frompy.options import Options
+from frompy.typeanal import check_for_explicit_any, has_any_from_unimported_type
+from frompy.messages import MessageBuilder
 
 TPDICT_CLASS_ERROR = ('Invalid statement in TypedDict definition; '
                       'expected "field_name: field_type"')  # type: Final

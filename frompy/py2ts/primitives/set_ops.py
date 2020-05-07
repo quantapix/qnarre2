@@ -1,11 +1,11 @@
 """Primitive set (and frozenset) ops."""
 
-from mypyc.primitives.registry import (
+from py2ts.primitives.registry import (
     func_op, method_op, binary_op,
     simple_emit, negative_int_emit, call_emit, call_negative_bool_emit,
 )
-from mypyc.ir.ops import ERR_MAGIC, ERR_FALSE, ERR_NEVER, EmitterInterface
-from mypyc.ir.rtypes import object_rprimitive, bool_rprimitive, set_rprimitive, int_rprimitive
+from py2ts.ir.ops import ERR_MAGIC, ERR_FALSE, ERR_NEVER, EmitterInterface
+from py2ts.ir.rtypes import object_rprimitive, bool_rprimitive, set_rprimitive, int_rprimitive
 from typing import List
 
 

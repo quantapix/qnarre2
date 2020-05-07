@@ -82,8 +82,8 @@ Test cases for this module live in 'test-data/unit/deps*.test'.
 from typing import Dict, List, Set, Optional, Tuple
 from typing_extensions import DefaultDict
 
-from mypy.checkmember import bind_self
-from mypy.nodes import (
+from frompy.checkmember import bind_self
+from frompy.nodes import (
     Node, Expression, MypyFile, FuncDef, ClassDef, AssignmentStmt, NameExpr, MemberExpr, Import,
     ImportFrom, CallExpr, CastExpr, TypeVarExpr, TypeApplication, IndexExpr, UnaryExpr, OpExpr,
     ComparisonExpr, GeneratorExpr, DictionaryComprehension, StarExpr, PrintStmt, ForStmt, WithStmt,
@@ -92,17 +92,17 @@ from mypy.nodes import (
     LDEF, MDEF, GDEF, TypeAliasExpr, NewTypeExpr, ImportAll, EnumCallExpr, AwaitExpr,
     op_methods, reverse_op_methods, ops_with_inplace_method, unary_op_methods
 )
-from mypy.traverser import TraverserVisitor
-from mypy.types import (
+from frompy.traverser import TraverserVisitor
+from frompy.types import (
     Type, Instance, AnyType, NoneType, TypeVisitor, CallableType, DeletedType, PartialType,
     TupleType, TypeType, TypeVarType, TypedDictType, UnboundType, UninhabitedType, UnionType,
     FunctionLike, Overloaded, TypeOfAny, LiteralType, ErasedType, get_proper_type, ProperType,
     TypeAliasType)
-from mypy.server.trigger import make_trigger, make_wildcard_trigger
-from mypy.util import correct_relative_import
-from mypy.scope import Scope
-from mypy.typestate import TypeState
-from mypy.options import Options
+from frompy.server.trigger import make_trigger, make_wildcard_trigger
+from frompy.util import correct_relative_import
+from frompy.scope import Scope
+from frompy.typestate import TypeState
+from frompy.options import Options
 
 
 def get_dependencies(target: MypyFile,

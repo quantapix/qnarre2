@@ -65,7 +65,7 @@ def _run(main_wrapper: Callable[[TextIO, TextIO], None]) -> Tuple[str, str, int]
 
 def run(args: List[str]) -> Tuple[str, str, int]:
     # Lazy import to avoid needing to import all of mypy to call run_dmypy
-    from mypy.main import main
+    from frompy.main import main
 
     return _run(
         lambda stdout, stderr: main(None, args=args, stdout=stdout, stderr=stderr)
@@ -73,7 +73,7 @@ def run(args: List[str]) -> Tuple[str, str, int]:
 
 
 def run_dmypy(args: List[str]) -> Tuple[str, str, int]:
-    from mypy.dmypy.client import main
+    from frompy.dmypy.client import main
 
     # A bunch of effort has been put into threading stdout and stderr
     # through the main API to avoid the threadsafety problems of

@@ -1,7 +1,7 @@
 from typing import Optional, Callable, List, Tuple
 
-from mypy.plugin import Plugin
-from mypy.nodes import MypyFile
+from frompy.plugin import Plugin
+from frompy.nodes import MypyFile
 
 
 class DepsPlugin(Plugin):

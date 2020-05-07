@@ -14,9 +14,9 @@ from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 from typing_extensions import Final
 
-from mypy.defaults import PYTHON3_VERSION_MIN
-from mypy.fscache import FileSystemCache
-from mypy.options import Options
+from frompy.defaults import PYTHON3_VERSION_MIN
+from frompy.fscache import FileSystemCache
+from frompy.options import Options
 from mypy import sitepkgs
 
 # Paths to be searched in find_module().

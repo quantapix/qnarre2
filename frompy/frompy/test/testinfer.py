@@ -2,13 +2,13 @@
 
 from typing import List, Optional, Tuple, Union, Dict, Set
 
-from mypy.test.helpers import Suite, assert_equal
-from mypy.argmap import map_actuals_to_formals
-from mypy.checker import group_comparison_operands, DisjointDict
-from mypy.literals import Key
-from mypy.nodes import ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, ARG_NAMED, NameExpr
-from mypy.types import AnyType, TupleType, Type, TypeOfAny
-from mypy.test.typefixture import TypeFixture
+from frompy.test.helpers import Suite, assert_equal
+from frompy.argmap import map_actuals_to_formals
+from frompy.checker import group_comparison_operands, DisjointDict
+from frompy.literals import Key
+from frompy.nodes import ARG_POS, ARG_OPT, ARG_STAR, ARG_STAR2, ARG_NAMED, NameExpr
+from frompy.types import AnyType, TupleType, Type, TypeOfAny
+from frompy.test.typefixture import TypeFixture
 
 
 class MapActualsToFormalsSuite(Suite):

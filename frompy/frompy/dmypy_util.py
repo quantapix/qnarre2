@@ -8,7 +8,7 @@ import json
 from typing import Any
 from typing_extensions import Final
 
-from mypy.ipc import IPCBase
+from frompy.ipc import IPCBase
 
 DEFAULT_STATUS_FILE = '.dmypy.json'  # type: Final
 

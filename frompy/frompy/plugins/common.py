@@ -1,18 +1,18 @@
 from typing import List, Optional, Union
 
-from mypy.nodes import (
+from frompy.nodes import (
     ARG_POS, MDEF, Argument, Block, CallExpr, ClassDef, Expression, SYMBOL_FUNCBASE_TYPES,
     FuncDef, PassStmt, RefExpr, SymbolTableNode, Var, JsonDict,
 )
-from mypy.plugin import ClassDefContext, SemanticAnalyzerPluginInterface
-from mypy.semanal import set_callable_name
-from mypy.types import (
+from frompy.plugin import ClassDefContext, SemanticAnalyzerPluginInterface
+from frompy.semanal import set_callable_name
+from frompy.types import (
     CallableType, Overloaded, Type, TypeVarDef, deserialize_type, get_proper_type,
 )
-from mypy.typevars import fill_typevars
-from mypy.util import get_unique_redefinition_name
-from mypy.typeops import try_getting_str_literals  # noqa: F401  # Part of public API
-from mypy.fixup import TypeFixer
+from frompy.typevars import fill_typevars
+from frompy.util import get_unique_redefinition_name
+from frompy.typeops import try_getting_str_literals  # noqa: F401  # Part of public API
+from frompy.fixup import TypeFixer
 
 
 def _get_decorator_bool_argument(

@@ -1,9 +1,9 @@
 from io import StringIO
 import sys
 
-import mypy.api
+import frompy.api
 
-from mypy.test.helpers import Suite
+from frompy.test.helpers import Suite
 
 
 class APISuite(Suite):

@@ -9,9 +9,9 @@ will take precedence. If your specialized op doesn't seem to be used,
 check that the priorities are configured properly.
 """
 
-from mypyc.ir.ops import ERR_NEVER, ERR_MAGIC, ERR_FALSE
-from mypyc.ir.rtypes import object_rprimitive, int_rprimitive, bool_rprimitive
-from mypyc.primitives.registry import (
+from py2jl.ir.ops import ERR_NEVER, ERR_MAGIC, ERR_FALSE
+from py2jl.ir.rtypes import object_rprimitive, int_rprimitive, bool_rprimitive
+from py2jl.primitives.registry import (
     binary_op, unary_op, func_op, method_op, custom_op, call_emit, simple_emit,
     call_negative_bool_emit, call_negative_magic_emit, negative_int_emit
 )

@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from mypy.expandtype import expand_type
-from mypy.nodes import TypeInfo
-from mypy.types import Type, TypeVarId, Instance, AnyType, TypeOfAny, ProperType
+from frompy.expandtype import expand_type
+from frompy.nodes import TypeInfo
+from frompy.types import Type, TypeVarId, Instance, AnyType, TypeOfAny, ProperType
 
 
 def map_instance_to_supertype(instance: Instance,

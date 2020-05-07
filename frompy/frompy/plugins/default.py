@@ -2,19 +2,19 @@ from functools import partial
 from typing import Callable, Optional, List
 
 from mypy import message_registry
-from mypy.nodes import Expression, StrExpr, IntExpr, DictExpr, UnaryExpr
-from mypy.plugin import (
+from frompy.nodes import Expression, StrExpr, IntExpr, DictExpr, UnaryExpr
+from frompy.plugin import (
     Plugin, FunctionContext, MethodContext, MethodSigContext, AttributeContext, ClassDefContext,
     CheckerPluginInterface,
 )
-from mypy.plugins.common import try_getting_str_literals
-from mypy.types import (
+from frompy.plugins.common import try_getting_str_literals
+from frompy.types import (
     Type, Instance, AnyType, TypeOfAny, CallableType, NoneType, TypedDictType,
     TypeVarType, TPDICT_FB_NAMES, get_proper_type, LiteralType
 )
-from mypy.subtypes import is_subtype
-from mypy.typeops import make_simplified_union
-from mypy.checkexpr import is_literal_type_like
+from frompy.subtypes import is_subtype
+from frompy.typeops import make_simplified_union
+from frompy.checkexpr import is_literal_type_like
 
 
 class DefaultPlugin(Plugin):
@@ -22,7 +22,7 @@ class DefaultPlugin(Plugin):
 
     def get_function_hook(self, fullname: str
                           ) -> Optional[Callable[[FunctionContext], Type]]:
-        from mypy.plugins import ctypes
+        from frompy.plugins import ctypes
 
         if fullname == 'contextlib.contextmanager':
             return contextmanager_callback
@@ -34,7 +34,7 @@ class DefaultPlugin(Plugin):
 
     def get_method_signature_hook(self, fullname: str
                                   ) -> Optional[Callable[[MethodSigContext], CallableType]]:
-        from mypy.plugins import ctypes
+        from frompy.plugins import ctypes
 
         if fullname == 'typing.Mapping.get':
             return typed_dict_get_signature_callback
@@ -52,7 +52,7 @@ class DefaultPlugin(Plugin):
 
     def get_method_hook(self, fullname: str
                         ) -> Optional[Callable[[MethodContext], Type]]:
-        from mypy.plugins import ctypes
+        from frompy.plugins import ctypes
 
         if fullname == 'typing.Mapping.get':
             return typed_dict_get_callback
@@ -76,8 +76,8 @@ class DefaultPlugin(Plugin):
 
     def get_attribute_hook(self, fullname: str
                            ) -> Optional[Callable[[AttributeContext], Type]]:
-        from mypy.plugins import ctypes
-        from mypy.plugins import enums
+        from frompy.plugins import ctypes
+        from frompy.plugins import enums
 
         if fullname == 'ctypes.Array.value':
             return ctypes.array_value_callback
@@ -91,8 +91,8 @@ class DefaultPlugin(Plugin):
 
     def get_class_decorator_hook(self, fullname: str
                                  ) -> Optional[Callable[[ClassDefContext], None]]:
-        from mypy.plugins import attrs
-        from mypy.plugins import dataclasses
+        from frompy.plugins import attrs
+        from frompy.plugins import dataclasses
 
         if fullname in attrs.attr_class_makers:
             return attrs.attr_class_maker_callback

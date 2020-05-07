@@ -12,41 +12,41 @@ from typing import (
     Callable, List, Tuple, Optional, Union, Sequence, cast
 )
 
-from mypy.nodes import ARG_POS, ARG_NAMED, ARG_STAR, ARG_STAR2, op_methods
-from mypy.types import AnyType, TypeOfAny
-from mypy.checkexpr import map_actuals_to_formals
+from frompy.nodes import ARG_POS, ARG_NAMED, ARG_STAR, ARG_STAR2, op_methods
+from frompy.types import AnyType, TypeOfAny
+from frompy.checkexpr import map_actuals_to_formals
 
-from mypyc.ir.ops import (
+from py2ts.ir.ops import (
     BasicBlock, Environment, Op, LoadInt, Value, Register,
     Assign, Branch, Goto, Call, Box, Unbox, Cast, GetAttr,
     LoadStatic, MethodCall, PrimitiveOp, OpDescription, RegisterOp,
     NAMESPACE_TYPE, NAMESPACE_MODULE, LoadErrorValue,
 )
-from mypyc.ir.rtypes import (
+from py2ts.ir.rtypes import (
     RType, RUnion, RInstance, optional_value_type, int_rprimitive, float_rprimitive,
     bool_rprimitive, list_rprimitive, str_rprimitive, is_none_rprimitive, object_rprimitive
 )
-from mypyc.ir.func_ir import FuncDecl, FuncSignature
-from mypyc.ir.class_ir import ClassIR, all_concrete_classes
-from mypyc.common import (
+from py2ts.ir.func_ir import FuncDecl, FuncSignature
+from py2ts.ir.class_ir import ClassIR, all_concrete_classes
+from py2ts.common import (
     FAST_ISINSTANCE_MAX_SUBCLASSES, MAX_LITERAL_SHORT_INT,
 )
-from mypyc.primitives.registry import binary_ops, unary_ops, method_ops, func_ops
-from mypyc.primitives.list_ops import (
+from py2ts.primitives.registry import binary_ops, unary_ops, method_ops, func_ops
+from py2ts.primitives.list_ops import (
     list_extend_op, list_len_op, new_list_op
 )
-from mypyc.primitives.tuple_ops import list_tuple_op, new_tuple_op
-from mypyc.primitives.dict_ops import new_dict_op, dict_update_in_display_op
-from mypyc.primitives.generic_ops import (
+from py2ts.primitives.tuple_ops import list_tuple_op, new_tuple_op
+from py2ts.primitives.dict_ops import new_dict_op, dict_update_in_display_op
+from py2ts.primitives.generic_ops import (
     py_getattr_op, py_call_op, py_call_with_kwargs_op, py_method_call_op
 )
-from mypyc.primitives.misc_ops import (
+from py2ts.primitives.misc_ops import (
     none_op, none_object_op, false_op, fast_isinstance_op, bool_op, type_is_op
 )
-from mypyc.rt_subtype import is_runtime_subtype
-from mypyc.subtype import is_subtype
-from mypyc.sametype import is_same_type
-from mypyc.irbuild.mapper import Mapper
+from py2ts.rt_subtype import is_runtime_subtype
+from py2ts.subtype import is_subtype
+from py2ts.sametype import is_same_type
+from py2ts.irbuild.mapper import Mapper
 
 
 DictEntry = Tuple[Optional[Value], Value]

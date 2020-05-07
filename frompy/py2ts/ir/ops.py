@@ -20,18 +20,18 @@ from collections import OrderedDict
 from typing_extensions import Final, Type, TYPE_CHECKING
 from mypy_extensions import trait
 
-from mypy.nodes import SymbolNode
+from frompy.nodes import SymbolNode
 
-from mypyc.ir.rtypes import (
+from py2ts.ir.rtypes import (
     RType, RInstance, RTuple, RVoid, is_bool_rprimitive, is_int_rprimitive,
     is_short_int_rprimitive, is_none_rprimitive, object_rprimitive, bool_rprimitive,
     short_int_rprimitive, int_rprimitive, void_rtype
 )
-from mypyc.common import short_name
+from py2ts.common import short_name
 
 if TYPE_CHECKING:
-    from mypyc.ir.class_ir import ClassIR  # noqa
-    from mypyc.ir.func_ir import FuncIR, FuncDecl  # noqa
+    from py2ts.ir.class_ir import ClassIR  # noqa
+    from py2ts.ir.func_ir import FuncIR, FuncDecl  # noqa
 
 T = TypeVar('T')
 
@@ -1234,4 +1234,4 @@ LiteralsMap = Dict[Tuple[Type[object], Union[int, float, str, bytes, complex]], 
 
 
 # Import mypyc.primitives.registry that will set up set up global primitives tables.
-import mypyc.primitives.registry  # noqa
+import py2ts.primitives.registry  # noqa

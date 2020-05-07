@@ -21,10 +21,10 @@ import typing  # for typing.Type, which conflicts with types.Type
 from typing import Tuple, Union, TypeVar, Callable, Sequence, Optional, Any, Dict, cast, List
 from typing_extensions import Final, Literal
 
-from mypy.sharedparse import (
+from frompy.sharedparse import (
     special_function_elide_names, argument_elide_name,
 )
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, Node, ImportBase, Import, ImportAll, ImportFrom, FuncDef, OverloadedFuncDef,
     ClassDef, Decorator, Block, Var, OperatorAssignmentStmt,
     ExpressionStmt, AssignmentStmt, ReturnStmt, RaiseStmt, AssertStmt,
@@ -39,18 +39,18 @@ from mypy.nodes import (
     ARG_POS, ARG_OPT, ARG_STAR, ARG_NAMED, ARG_STAR2, OverloadPart, check_arg_names,
     FakeInfo,
 )
-from mypy.types import (
+from frompy.types import (
     Type, CallableType, AnyType, UnboundType, EllipsisType, TypeOfAny, Instance,
     ProperType
 )
 from mypy import message_registry, errorcodes as codes
-from mypy.errors import Errors
-from mypy.fastparse import (
+from frompy.errors import Errors
+from frompy.fastparse import (
     TypeConverter, parse_type_comment, bytes_to_human_readable_repr, parse_type_ignore_tag,
     TYPE_IGNORE_PATTERN, INVALID_TYPE_IGNORE
 )
-from mypy.options import Options
-from mypy.reachability import mark_block_unreachable
+from frompy.options import Options
+from frompy.reachability import mark_block_unreachable
 
 try:
     from typed_ast import ast27
@@ -62,7 +62,7 @@ try:
         Tuple as ast27_Tuple,
     )
     # Import ast3 from fastparse, which has special case for Python 3.8
-    from mypy.fastparse import ast3, ast3_parse
+    from frompy.fastparse import ast3, ast3_parse
 except ImportError:
     try:
         from typed_ast import ast35  # type: ignore[attr-defined]  # noqa: F401

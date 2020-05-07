@@ -2,13 +2,13 @@
 
 from typing import List
 
-from mypyc.ir.ops import EmitterInterface, ERR_FALSE, ERR_MAGIC, ERR_NEVER
-from mypyc.ir.rtypes import (
+from py2ts.ir.ops import EmitterInterface, ERR_FALSE, ERR_MAGIC, ERR_NEVER
+from py2ts.ir.rtypes import (
     dict_rprimitive, object_rprimitive, bool_rprimitive, int_rprimitive,
     list_rprimitive, dict_next_rtuple_single, dict_next_rtuple_pair
 )
 
-from mypyc.primitives.registry import (
+from py2ts.primitives.registry import (
     name_ref_op, method_op, binary_op, func_op, custom_op,
     simple_emit, negative_int_emit, call_emit, call_negative_bool_emit,
     name_emit,

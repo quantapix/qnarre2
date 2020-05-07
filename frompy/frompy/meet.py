@@ -1,19 +1,19 @@
 from collections import OrderedDict
 from typing import List, Optional, Tuple, Callable
 
-from mypy.join import (
+from frompy.join import (
     is_similar_callables, combine_similar_callables, join_type_list, unpack_callback_protocol
 )
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, TypeVisitor, UnboundType, NoneType, TypeVarType, Instance, CallableType,
     TupleType, TypedDictType, ErasedType, UnionType, PartialType, DeletedType,
     UninhabitedType, TypeType, TypeOfAny, Overloaded, FunctionLike, LiteralType,
     ProperType, get_proper_type, get_proper_types, TypeAliasType
 )
-from mypy.subtypes import is_equivalent, is_subtype, is_callable_compatible, is_proper_subtype
-from mypy.erasetype import erase_type
-from mypy.maptype import map_instance_to_supertype
-from mypy.typeops import tuple_fallback, make_simplified_union, is_recursive_pair
+from frompy.subtypes import is_equivalent, is_subtype, is_callable_compatible, is_proper_subtype
+from frompy.erasetype import erase_type
+from frompy.maptype import map_instance_to_supertype
+from frompy.typeops import tuple_fallback, make_simplified_union, is_recursive_pair
 from mypy import state
 
 # TODO Describe this module.
@@ -657,7 +657,7 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
 
 
 def meet_similar_callables(t: CallableType, s: CallableType) -> CallableType:
-    from mypy.join import join_types
+    from frompy.join import join_types
     arg_types = []  # type: List[Type]
     for i in range(len(t.arg_types)):
         arg_types.append(join_types(t.arg_types[i], s.arg_types[i]))

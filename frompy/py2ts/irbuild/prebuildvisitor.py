@@ -1,9 +1,9 @@
 from typing import Dict, List, Set
 
-from mypy.nodes import (
+from frompy.nodes import (
     Decorator, Expression, FuncDef, FuncItem, LambdaExpr, NameExpr, SymbolNode, Var, MemberExpr
 )
-from mypy.traverser import TraverserVisitor
+from frompy.traverser import TraverserVisitor
 
 
 class PreBuildVisitor(TraverserVisitor):

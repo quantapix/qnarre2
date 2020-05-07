@@ -2,11 +2,11 @@
 
 from typing import List, Callable
 
-from mypyc.ir.ops import ERR_MAGIC, ERR_NEVER, EmitterInterface, EmitCallback
-from mypyc.ir.rtypes import (
+from py2jl.ir.ops import ERR_MAGIC, ERR_NEVER, EmitterInterface, EmitCallback
+from py2jl.ir.rtypes import (
     RType, object_rprimitive, str_rprimitive, bool_rprimitive, int_rprimitive, list_rprimitive
 )
-from mypyc.primitives.registry import (
+from py2jl.primitives.registry import (
     func_op, binary_op, simple_emit, name_ref_op, method_op, call_emit, name_emit,
 )
 

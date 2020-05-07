@@ -2,34 +2,34 @@ import unittest
 
 from collections import OrderedDict
 
-from mypy.nodes import Var
-from mypy.test.helpers import assert_string_arrays_equal
+from frompy.nodes import Var
+from frompy.test.helpers import assert_string_arrays_equal
 
-from mypyc.ir.ops import (
+from py2jl.ir.ops import (
     Environment, BasicBlock, Goto, Return, LoadInt, Assign, IncRef, DecRef, Branch,
     Call, Unbox, Box, TupleGet, GetAttr, PrimitiveOp, RegisterOp,
     SetAttr, Op, Value
 )
-from mypyc.ir.rtypes import (
+from py2jl.ir.rtypes import (
     RTuple, RInstance, int_rprimitive, bool_rprimitive, list_rprimitive,
     dict_rprimitive, object_rprimitive
 )
-from mypyc.ir.func_ir import FuncIR, FuncDecl, RuntimeArg, FuncSignature
-from mypyc.ir.class_ir import ClassIR
-from mypyc.irbuild.vtable import compute_vtable
-from mypyc.codegen.emit import Emitter, EmitterContext
-from mypyc.codegen.emitfunc import generate_native_function, FunctionEmitterVisitor
-from mypyc.primitives.registry import binary_ops
-from mypyc.primitives.misc_ops import none_object_op, true_op, false_op
-from mypyc.primitives.list_ops import (
+from py2jl.ir.func_ir import FuncIR, FuncDecl, RuntimeArg, FuncSignature
+from py2jl.ir.class_ir import ClassIR
+from py2jl.irbuild.vtable import compute_vtable
+from py2jl.codegen.emit import Emitter, EmitterContext
+from py2jl.codegen.emitfunc import generate_native_function, FunctionEmitterVisitor
+from py2jl.primitives.registry import binary_ops
+from py2jl.primitives.misc_ops import none_object_op, true_op, false_op
+from py2jl.primitives.list_ops import (
     list_len_op, list_get_item_op, list_set_item_op, new_list_op, list_append_op
 )
-from mypyc.primitives.dict_ops import (
+from py2jl.primitives.dict_ops import (
     new_dict_op, dict_update_op, dict_get_item_op, dict_set_item_op
 )
-from mypyc.primitives.int_ops import int_neg_op
-from mypyc.subtype import is_subtype
-from mypyc.namegen import NameGenerator
+from py2jl.primitives.int_ops import int_neg_op
+from py2jl.subtype import is_subtype
+from py2jl.namegen import NameGenerator
 
 
 class TestFunctionEmitterVisitor(unittest.TestCase):

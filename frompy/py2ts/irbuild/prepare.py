@@ -13,27 +13,27 @@ Also build a mapping from mypy TypeInfos to ClassIR objects.
 
 from typing import List, Dict, Iterable, Optional, Union
 
-from mypy.nodes import (
+from frompy.nodes import (
     MypyFile, TypeInfo, FuncDef, ClassDef, Decorator, OverloadedFuncDef, MemberExpr, Var,
     Expression, SymbolNode, ARG_STAR, ARG_STAR2
 )
-from mypy.types import Type
-from mypy.build import Graph
+from frompy.types import Type
+from frompy.build import Graph
 
-from mypyc.ir.ops import DeserMaps
-from mypyc.ir.rtypes import RInstance, tuple_rprimitive, dict_rprimitive
-from mypyc.ir.func_ir import (
+from py2ts.ir.ops import DeserMaps
+from py2ts.ir.rtypes import RInstance, tuple_rprimitive, dict_rprimitive
+from py2ts.ir.func_ir import (
     FuncDecl, FuncSignature, RuntimeArg, FUNC_NORMAL, FUNC_STATICMETHOD, FUNC_CLASSMETHOD
 )
-from mypyc.ir.class_ir import ClassIR
-from mypyc.common import PROPSET_PREFIX
-from mypyc.irbuild.mapper import Mapper
-from mypyc.irbuild.util import (
+from py2ts.ir.class_ir import ClassIR
+from py2ts.common import PROPSET_PREFIX
+from py2ts.irbuild.mapper import Mapper
+from py2ts.irbuild.util import (
     get_func_def, is_dataclass, is_trait, is_extension_class, get_mypyc_attrs
 )
-from mypyc.errors import Errors
-from mypyc.options import CompilerOptions
-from mypyc.crash import catch_errors
+from py2ts.errors import Errors
+from py2ts.options import CompilerOptions
+from py2ts.crash import catch_errors
 
 
 def build_type_map(mapper: Mapper,

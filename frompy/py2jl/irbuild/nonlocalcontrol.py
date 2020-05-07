@@ -7,14 +7,14 @@ from abc import abstractmethod
 from typing import Optional, Union
 from typing_extensions import TYPE_CHECKING
 
-from mypyc.ir.ops import (
+from py2jl.ir.ops import (
     Branch, BasicBlock, Unreachable, Value, Goto, LoadInt, Assign, Register, Return,
     AssignmentTarget, NO_TRACEBACK_LINE_NO
 )
-from mypyc.primitives.exc_ops import set_stop_iteration_value, restore_exc_info_op
+from py2jl.primitives.exc_ops import set_stop_iteration_value, restore_exc_info_op
 
 if TYPE_CHECKING:
-    from mypyc.irbuild.builder import IRBuilder
+    from py2jl.irbuild.builder import IRBuilder
 
 
 class NonlocalControl:

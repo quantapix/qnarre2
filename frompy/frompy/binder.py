@@ -4,16 +4,16 @@ from collections import defaultdict
 from typing import Dict, List, Set, Iterator, Union, Optional, Tuple, cast
 from typing_extensions import DefaultDict
 
-from mypy.types import (
+from frompy.types import (
     Type, AnyType, PartialType, UnionType, TypeOfAny, NoneType, get_proper_type
 )
-from mypy.subtypes import is_subtype
-from mypy.join import join_simple
-from mypy.sametypes import is_same_type
-from mypy.erasetype import remove_instance_last_known_values
-from mypy.nodes import Expression, Var, RefExpr
-from mypy.literals import Key, literal, literal_hash, subkeys
-from mypy.nodes import IndexExpr, MemberExpr, NameExpr
+from frompy.subtypes import is_subtype
+from frompy.join import join_simple
+from frompy.sametypes import is_same_type
+from frompy.erasetype import remove_instance_last_known_values
+from frompy.nodes import Expression, Var, RefExpr
+from frompy.literals import Key, literal, literal_hash, subkeys
+from frompy.nodes import IndexExpr, MemberExpr, NameExpr
 
 
 BindableExpression = Union[IndexExpr, MemberExpr, NameExpr]

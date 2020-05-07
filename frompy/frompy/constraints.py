@@ -3,20 +3,20 @@
 from typing import Iterable, List, Optional, Sequence
 from typing_extensions import Final
 
-from mypy.types import (
+from frompy.types import (
     CallableType, Type, TypeVisitor, UnboundType, AnyType, NoneType, TypeVarType, Instance,
     TupleType, TypedDictType, UnionType, Overloaded, ErasedType, PartialType, DeletedType,
     UninhabitedType, TypeType, TypeVarId, TypeQuery, is_named_instance, TypeOfAny, LiteralType,
     ProperType, get_proper_type, TypeAliasType
 )
-from mypy.maptype import map_instance_to_supertype
-import mypy.subtypes
-import mypy.sametypes
-import mypy.typeops
-from mypy.erasetype import erase_typevars
-from mypy.nodes import COVARIANT, CONTRAVARIANT
-from mypy.argmap import ArgTypeExpander
-from mypy.typestate import TypeState
+from frompy.maptype import map_instance_to_supertype
+import frompy.subtypes
+import frompy.sametypes
+import frompy.typeops
+from frompy.erasetype import erase_typevars
+from frompy.nodes import COVARIANT, CONTRAVARIANT
+from frompy.argmap import ArgTypeExpander
+from frompy.typestate import TypeState
 
 SUBTYPE_OF = 0  # type: Final[int]
 SUPERTYPE_OF = 1  # type: Final[int]

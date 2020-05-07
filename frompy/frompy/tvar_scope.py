@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Union
-from mypy.types import TypeVarDef
-from mypy.nodes import TypeVarExpr, SymbolTableNode
+from frompy.types import TypeVarDef
+from frompy.nodes import TypeVarExpr, SymbolTableNode
 
 
 class TypeVarScope:

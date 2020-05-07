@@ -16,13 +16,13 @@ import typing
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast, Iterator
 from typing_extensions import Final
 
-from mypy.nodes import MypyFile, Expression, FuncDef
+from frompy.nodes import MypyFile, Expression, FuncDef
 from mypy import stats
-from mypy.options import Options
-from mypy.traverser import TraverserVisitor
-from mypy.types import Type, TypeOfAny
-from mypy.version import __version__
-from mypy.defaults import REPORTER_NAMES
+from frompy.options import Options
+from frompy.traverser import TraverserVisitor
+from frompy.types import Type, TypeOfAny
+from frompy.version import __version__
+from frompy.defaults import REPORTER_NAMES
 
 try:
     # mypyc doesn't properly handle import from of submodules that we
