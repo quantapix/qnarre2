@@ -142,8 +142,6 @@ from frompy.reachability import mark_block_unreachable
 # the default argument warning
 PY_MINOR_VERSION = sys.version_info[1]  # type: Final
 
-# Check if we can use the stdlib ast module instead of typed_ast.
-
 assert "kind" in ast.Constant._fields
 
 
@@ -327,11 +325,8 @@ def parse_type_string(
             node.original_str_expr = expr_string
             node.original_str_fallback = expr_fallback_name
             return node
-        else:
-            return RawExpressionType(expr_string, expr_fallback_name, line, column)
+        return RawExpressionType(expr_string, expr_fallback_name, line, column)
     except (SyntaxError, ValueError):
-        # Note: the parser will raise a `ValueError` instead of a SyntaxError if
-        # the string happens to contain things like \x00.
         return RawExpressionType(expr_string, expr_fallback_name, line, column)
 
 

@@ -39,27 +39,27 @@ def apply_generic_arguments(
     # Check that inferred type variable values are compatible with allowed
     # values and bounds.  Also, promote subtype values to allowed values.
     types = get_proper_types(orig_types)
-    for i, type in enumerate(types):
+    for i, typ in enumerate(types):
         assert not isinstance(
-            type, PartialType
+            typ, PartialType
         ), "Internal error: must never apply partial type"
         values = get_proper_types(callable.variables[i].values)
-        if type is None:
+        if typ is None:
             continue
         if values:
-            if isinstance(type, AnyType):
+            if isinstance(typ, AnyType):
                 continue
-            if isinstance(type, TypeVarType) and type.values:
+            if isinstance(typ, TypeVarType) and typ.values:
                 # Allow substituting T1 for T if every allowed value of T1
                 # is also a legal value of T.
                 if all(
-                    any(mypy.sametypes.is_same_type(v, v1) for v in values)
-                    for v1 in type.values
+                    any(frompy.sametypes.is_same_type(v, v1) for v in values)
+                    for v1 in typ.values
                 ):
                     continue
             matching = []
             for value in values:
-                if frompy.subtypes.is_subtype(type, value):
+                if frompy.subtypes.is_subtype(typ, value):
                     matching.append(value)
             if matching:
                 best = matching[0]
@@ -73,16 +73,16 @@ def apply_generic_arguments(
                     types[i] = None
                 else:
                     report_incompatible_typevar_value(
-                        callable, type, callable.variables[i].name, context
+                        callable, typ, callable.variables[i].name, context
                     )
         else:
             upper_bound = callable.variables[i].upper_bound
-            if not frompy.subtypes.is_subtype(type, upper_bound):
+            if not frompy.subtypes.is_subtype(typ, upper_bound):
                 if skip_unsatisfied:
                     types[i] = None
                 else:
                     report_incompatible_typevar_value(
-                        callable, type, callable.variables[i].name, context
+                        callable, typ, callable.variables[i].name, context
                     )
 
     # Create a map from type variable id to target type.
