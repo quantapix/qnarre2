@@ -79,7 +79,7 @@ def build_ir(
         visitor.builder = builder
 
         # Second pass does the bulk of the work.
-        transform_mypy_file(builder, module)
+        transform_frompy_file(builder, module)
         module_ir = ModuleIR(
             module.fullname,
             list(builder.imports),
@@ -98,7 +98,7 @@ def build_ir(
     return result
 
 
-def transform_mypy_file(builder: IRBuilder, mypyfile: FrompyFile) -> None:
+def transform_frompy_file(builder: IRBuilder, mypyfile: FrompyFile) -> None:
     """Generate IR for a single module."""
 
     if mypyfile.fullname in ("typing", "abc"):

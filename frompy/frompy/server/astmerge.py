@@ -201,10 +201,10 @@ class NodeReplaceVisitor(TraverserVisitor):
     def __init__(self, replacements: Dict[SymbolNode, SymbolNode]) -> None:
         self.replacements = replacements
 
-    def visit_mypy_file(self, node: FrompyFile) -> None:
+    def visit_frompy_file(self, node: FrompyFile) -> None:
         node = self.fixup(node)
         node.defs = self.replace_statements(node.defs)
-        super().visit_mypy_file(node)
+        super().visit_frompy_file(node)
 
     def visit_block(self, node: Block) -> None:
         super().visit_block(node)

@@ -236,13 +236,13 @@ class DependencyVisitor(TraverserVisitor):
         self.is_package_init_file = False
         self.options = options
 
-    def visit_mypy_file(self, o: FrompyFile) -> None:
+    def visit_frompy_file(self, o: FrompyFile) -> None:
         self.scope.enter_file(o.fullname)
         self.is_package_init_file = o.is_package_init_file()
         self.add_type_alias_deps(self.scope.current_target())
         for trigger, targets in o.plugin_deps.items():
             self.map.setdefault(trigger, set()).update(targets)
-        super().visit_mypy_file(o)
+        super().visit_frompy_file(o)
         self.scope.leave()
 
     def visit_func_def(self, o: FuncDef) -> None:

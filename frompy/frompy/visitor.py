@@ -1,12 +1,9 @@
-"""Generic abstract syntax tree node visitor"""
-
 from abc import abstractmethod
 from typing import TypeVar, Generic
 from typing_extensions import TYPE_CHECKING
 from frompy.extensions import trait
 
 if TYPE_CHECKING:
-    # break import cycle only needed for mypy
     import frompy.nodes
 
 
@@ -192,8 +189,6 @@ class ExpressionVisitor(Generic[T]):
 
 @trait
 class StatementVisitor(Generic[T]):
-    # Definitions
-
     @abstractmethod
     def visit_assignment_stmt(self, o: "frompy.nodes.AssignmentStmt") -> T:
         pass
@@ -311,23 +306,9 @@ class StatementVisitor(Generic[T]):
 
 @trait
 class NodeVisitor(Generic[T], ExpressionVisitor[T], StatementVisitor[T]):
-    """Empty base class for parse tree node visitors.
-
-    The T type argument specifies the return type of the visit
-    methods. As all methods defined here return None by default,
-    subclasses do not always need to override all the methods.
-
-    TODO make the default return value explicit
-    """
-
-    # Not in superclasses:
-
-    def visit_mypy_file(self, o: "frompy.nodes.FrompyFile") -> T:
+    def visit_frompy_file(self, o: "frompy.nodes.FrompyFile") -> T:
         pass
 
-    # TODO: We have a visit_var method, but no visit_typeinfo or any
-    # other non-Statement SymbolNode (accepting those will raise a
-    # runtime error). Maybe this should be resolved in some direction.
     def visit_var(self, o: "frompy.nodes.Var") -> T:
         pass
 

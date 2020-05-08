@@ -29,9 +29,9 @@ class SkippedNodeSearcher(TraverserVisitor):
         self.nodes = set()  # type: Set[Expression]
         self.is_typing = False
 
-    def visit_mypy_file(self, f: FrompyFile) -> None:
+    def visit_frompy_file(self, f: FrompyFile) -> None:
         self.is_typing = f.fullname == "typing" or f.fullname == "builtins"
-        super().visit_mypy_file(f)
+        super().visit_frompy_file(f)
 
     def visit_assignment_stmt(self, s: AssignmentStmt) -> None:
         if s.type or ignore_node(s.rvalue):

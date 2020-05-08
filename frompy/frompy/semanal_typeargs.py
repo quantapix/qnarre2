@@ -41,10 +41,10 @@ class TypeArgumentAnalyzer(MixedTraverserVisitor):
         # infinite recursion on types like A = Union[int, List[A]].
         self.seen_aliases = set()  # type: Set[TypeAliasType]
 
-    def visit_mypy_file(self, o: FrompyFile) -> None:
+    def visit_frompy_file(self, o: FrompyFile) -> None:
         self.errors.set_file(o.path, o.fullname, scope=self.scope)
         self.scope.enter_file(o.fullname)
-        super().visit_mypy_file(o)
+        super().visit_frompy_file(o)
         self.scope.leave()
 
     def visit_func(self, defn: FuncItem) -> None:

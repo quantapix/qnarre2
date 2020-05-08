@@ -22,10 +22,14 @@ import frompy.strconv
 from frompy.util import short_type
 from frompy.visitor import NodeVisitor, StatementVisitor, ExpressionVisitor
 
+if TYPE_CHECKING:
+    import frompy.types
+
+
+T = TypeVar("T")
+
 
 class Context:
-    """Base type for objects that are valid as error message locations."""
-
     __slots__ = ("line", "column", "end_line")
 
     def __init__(self, line: int = -1, column: int = -1) -> None:
@@ -39,38 +43,17 @@ class Context:
         column: Optional[int] = None,
         end_line: Optional[int] = None,
     ) -> None:
-        """If target is a node, pull line (and column) information
-        into this node. If column is specified, this will override any column
-        information coming from a node.
-        """
         if isinstance(target, int):
             self.line = target
         else:
             self.line = target.line
             self.column = target.column
             self.end_line = target.end_line
-
         if column is not None:
             self.column = column
-
         if end_line is not None:
             self.end_line = end_line
 
-    def get_line(self) -> int:
-        """Don't use. Use x.line."""
-        return self.line
-
-    def get_column(self) -> int:
-        """Don't use. Use x.column."""
-        return self.column
-
-
-if TYPE_CHECKING:
-    # break import cycle only needed for mypy
-    import frompy.types
-
-
-T = TypeVar("T")
 
 JsonDict = Dict[str, Any]
 
@@ -298,7 +281,7 @@ class FrompyFile(SymbolNode):
         return self._fullname
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_mypy_file(self)
+        return visitor.visit_frompy_file(self)
 
     def is_package_init_file(self) -> bool:
         return len(self.path) != 0 and os.path.basename(self.path).startswith(

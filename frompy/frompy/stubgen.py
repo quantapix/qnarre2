@@ -592,7 +592,7 @@ class StubGenerator(mypy.traverser.TraverserVisitor):
         # Short names of methods defined in the body of the current class
         self.method_names = set()  # type: Set[str]
 
-    def visit_mypy_file(self, o: FrompyFile) -> None:
+    def visit_frompy_file(self, o: FrompyFile) -> None:
         self.module = o.fullname  # Current module being processed
         self.path = o.path
         self.defined_names = find_defined_names(o)
@@ -604,7 +604,7 @@ class StubGenerator(mypy.traverser.TraverserVisitor):
             else:
                 alias = "_" + t
             self.import_tracker.add_import_from("typing", [(t, alias)])
-        super().visit_mypy_file(o)
+        super().visit_frompy_file(o)
         undefined_names = [
             name for name in self._all_ or [] if name not in self._toplevel_names
         ]

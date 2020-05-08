@@ -75,7 +75,7 @@ class TraverserVisitor(NodeVisitor[None]):
 
     # Visit methods
 
-    def visit_mypy_file(self, o: FrompyFile) -> None:
+    def visit_frompy_file(self, o: FrompyFile) -> None:
         for d in o.defs:
             d.accept(self)
 

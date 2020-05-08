@@ -216,9 +216,9 @@ def test_mypy_path_is_respected() -> None:
             open(pkg_init_name, "w", encoding="utf8").close()
 
             mypy_config_path = os.path.join(temp_dir, "mypy.ini")
-            with open(mypy_config_path, "w") as mypy_file:
-                mypy_file.write("[mypy]\n")
-                mypy_file.write("mypy_path = ./{}\n".format(packages))
+            with open(mypy_config_path, "w") as frompy_file:
+                frompy_file.write("[mypy]\n")
+                frompy_file.write("mypy_path = ./{}\n".format(packages))
 
             with virtualenv() as venv:
                 venv_dir, python_executable = venv

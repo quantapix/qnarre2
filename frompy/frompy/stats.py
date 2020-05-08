@@ -121,10 +121,10 @@ class StatisticsVisitor(TraverserVisitor):
 
         TraverserVisitor.__init__(self)
 
-    def visit_mypy_file(self, o: FrompyFile) -> None:
+    def visit_frompy_file(self, o: FrompyFile) -> None:
         self.cur_mod_node = o
         self.cur_mod_id = o.fullname
-        super().visit_mypy_file(o)
+        super().visit_frompy_file(o)
 
     def visit_import_from(self, imp: ImportFrom) -> None:
         self.process_import(imp)

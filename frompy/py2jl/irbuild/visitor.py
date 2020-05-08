@@ -157,8 +157,8 @@ class IRBuilderVisitor(IRVisitor):
     # this class since this class and IRBuilder form a reference loop.
     builder = None  # type: IRBuilder
 
-    def visit_mypy_file(self, mypyfile: FrompyFile) -> None:
-        assert False, "use transform_mypy_file instead"
+    def visit_frompy_file(self, mypyfile: FrompyFile) -> None:
+        assert False, "use transform_frompy_file instead"
 
     def visit_class_def(self, cdef: ClassDef) -> None:
         transform_class_def(self.builder, cdef)

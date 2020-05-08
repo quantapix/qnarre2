@@ -123,7 +123,7 @@ class TransformVisitor(NodeVisitor[Node]):
         # transformed node).
         self.func_placeholder_map = {}  # type: Dict[FuncDef, FuncDef]
 
-    def visit_mypy_file(self, node: FrompyFile) -> FrompyFile:
+    def visit_frompy_file(self, node: FrompyFile) -> FrompyFile:
         # NOTE: The 'names' and 'imports' instance variables will be empty!
         ignored_lines = {line: codes[:] for line, codes in node.ignored_lines.items()}
         new = FrompyFile(

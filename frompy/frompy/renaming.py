@@ -85,7 +85,7 @@ class VariableRenameVisitor(TraverserVisitor):
         # Kinds of nested scopes (FILE, FUNCTION or CLASS)
         self.scope_kinds = []  # type: List[int]
 
-    def visit_mypy_file(self, file_node: FrompyFile) -> None:
+    def visit_frompy_file(self, file_node: FrompyFile) -> None:
         """Rename variables within a file.
 
         This is the main entry point to this class.
