@@ -34,6 +34,9 @@
       }
     ]
   },
+  "prettier": {
+    "printWidth": 90
+  },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
@@ -55,6 +58,7 @@
     "@typescript-eslint/eslint-plugin": "",
     "@typescript-eslint/parser": "",
     "eslint-config-prettier": "",
+    "eslint-plugin-node": "",
     "eslint-plugin-prettier": "",
     "eslint": "",
     "fs-extra": "",
@@ -63,6 +67,8 @@
     "prettier": "",
     "source-map-support": "",
     "typescript": "next",
+    "vsce": "",
+    "vscode-jsonrpc": "",
     "vscode-test": "",
     "webpack-cli": "",
     "webpack": ""
