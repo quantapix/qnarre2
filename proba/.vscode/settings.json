@@ -7,6 +7,4 @@
   "search.exclude": {
     "out": true
   },
-  "typescript.tsdk": "./node_modules/typescript/lib",
-  "debug.node.autoAttach": "on"
 }

@@ -2,10 +2,8 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
-    "outDir": "out",
     "rootDir": "src"
   },
-  "files": [],
   "include": ["src"],
   "exclude": ["node_modules", ".vscode-test"],
   "references": [{ "path": "./client" }, { "path": "./server" }]
