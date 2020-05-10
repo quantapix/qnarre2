@@ -15,6 +15,18 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "themes": [
+      {
+        "label": "Proba Light",
+        "uiTheme": "vs",
+        "path": "./Proba_Light.tmTheme"
+      },
+      {
+        "label": "Proba Dark",
+        "uiTheme": "vs-dark",
+        "path": "./Proba_Dark.tmTheme"
+      }
+    ],
     "commands": [
       {
         "command": "extension.proba",
@@ -40,9 +52,19 @@
     "@types/mocha": "",
     "@types/node": "",
     "@types/vscode": "",
+    "@typescript-eslint/eslint-plugin": "",
+    "@typescript-eslint/parser": "",
+    "eslint-config-prettier": "",
+    "eslint-plugin-prettier": "",
+    "eslint": "",
+    "fs-extra": "",
     "glob": "",
     "mocha": "",
+    "prettier": "",
     "source-map-support": "",
-    "vscode-test": ""
+    "typescript": "next",
+    "vscode-test": "",
+    "webpack-cli": "",
+    "webpack": ""
   }
 }
