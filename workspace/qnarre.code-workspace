@@ -4,9 +4,6 @@
       "path": "."
     },
     {
-      "path": "../frompy"
-    },
-    {
       "path": "../qneura"
     },
     {
@@ -14,11 +11,14 @@
     },
     {
       "path": "../spaCy"
+    },
+    {
+      "path": "../quantapix"
     }
   ],
   "settings": {
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "python.pythonPath": ".py3.8/bin/python",
+    "typescript.tsdk": "qnarre/node_modules/typescript/lib",
+    "python.pythonPath": "../py_venv/bin/python",
     "python.formatting.provider": "black",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": false,
@@ -35,5 +35,6 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true
+
   }
 }

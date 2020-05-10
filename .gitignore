@@ -1,7 +1,11 @@
 node_modules
+py_venv
 qnarre-new
 qnarre-old
 llvm-build
 
 yarn.lock
 
+mypy
+cpython
+vscode-extension-samples
