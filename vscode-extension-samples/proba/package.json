@@ -1,0 +1,53 @@
+{
+	"name": "proba",
+	"displayName": "Proba",
+	"description": "Proba...",
+	"version": "0.0.1",
+	"publisher": "qpx",
+	"engines": {
+		"vscode": "^1.45.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:extension.helloWorld"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.helloWorld",
+				"title": "Hello World"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint -p ./",
+		"watch": "tsc -watch -p ./"
+	},
+	"dependencies": {
+		"vscode-languageclient": "",
+		"vscode-languageserver": "",
+		"vscode-uri": ""
+	},
+	"devDependencies": {
+		"@types/node": "",
+		"@types/vscode": "",
+		"typescript": "next",
+		"@typescript-eslint/eslint-plugin": "",
+		"@typescript-eslint/parser": "",
+		"eslint": "",
+		"eslint-config-prettier": "",
+		"eslint-plugin-node": "",
+		"eslint-plugin-prettier": "",
+		"eslint-plugin-promise": "",
+		"eslint-plugin-standard": "",
+		"prettier": "",
+		"vsce": "",
+		"vscode-jsonrpc": "",
+		"vscode-test": ""
+	}
+}
