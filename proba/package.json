@@ -8,6 +8,8 @@
     "vscode": "^1.45.0"
   },
   "categories": [
+    "Programming Languages",
+    "Themes",
     "Other"
   ],
   "activationEvents": [
@@ -25,6 +27,19 @@
         "label": "Proba Dark",
         "uiTheme": "vs-dark",
         "path": "./Proba_Dark.tmTheme"
+      }
+    ],
+    "languages": [
+      {
+        "id": "javascript",
+        "extensions": [
+          ".js"
+        ],
+        "aliases": [
+          "js",
+          "JavaScript"
+        ],
+        "configuration": "./js-configuration.json"
       }
     ],
     "commands": [
