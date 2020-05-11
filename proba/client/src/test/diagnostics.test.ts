@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
-import { docUri, activate } from './helper';
+import { docUri, activate } from './helper.test';
 
 suite('Should get diagnostics', () => {
   const u = docUri('diagnostics.txt');

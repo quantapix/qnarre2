@@ -6,28 +6,19 @@
   "license": "MIT",
   "devDependencies": {
     "@angular/cli": "next",
-    "@types/command-line-args": "",
-    "@types/fs-extra": "",
-    "@types/jest": "",
     "@types/node": "",
     "@typescript-eslint/eslint-plugin": "",
     "@typescript-eslint/parser": "",
-    "eslint": "",
-    "eslint-config-google": "",
     "eslint-config-prettier": "",
     "eslint-plugin-jasmine": "",
+    "eslint-plugin-node": "",
     "eslint-plugin-prettier": "",
     "eslint-plugin-react": "",
-    "fs-extra": "",
-    "jest": "",
-    "jest-junit": "",
-    "node-loader": "",
+    "eslint": "",
     "prettier": "",
-    "react": "",
-    "ts-jest": "",
-    "ts-loader": "",
+    "react": "next",
     "typescript": "next",
-    "webpack": "",
-    "webpack-cli": ""
+    "webpack-cli": "",
+    "webpack": ""
   }
 }

@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
-import { docUri, activate } from './helper';
+import { docUri, activate } from './helper.test';
 
 suite('Should do completion', () => {
   const u = docUri('completion.txt');

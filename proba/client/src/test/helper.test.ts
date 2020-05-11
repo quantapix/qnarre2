@@ -1,12 +1,12 @@
-import * as vscode from 'vscode';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 export let doc: vscode.TextDocument;
 export let editor: vscode.TextEditor;
 
 export async function activate(n: vscode.Uri) {
-  const ext = vscode.extensions.getExtension('qpx.proba')!;
-  await ext.activate();
+  const ext = vscode.extensions.getExtension('qpx.proba');
+  await ext?.activate();
   try {
     doc = await vscode.workspace.openTextDocument(n);
     editor = await vscode.window.showTextDocument(doc);
