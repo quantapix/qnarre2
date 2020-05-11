@@ -17,6 +17,7 @@
     "eslint-config-prettier": "",
     "eslint-plugin-jasmine": "",
     "eslint-plugin-prettier": "",
+    "eslint-plugin-react": "",
     "fs-extra": "",
     "jest": "",
     "jest-junit": "",
