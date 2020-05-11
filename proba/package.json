@@ -62,13 +62,13 @@
 			"type": "object",
 			"title": "Example configuration",
 			"properties": {
-				"languageServerExample.maxNumberOfProblems": {
+				"langServer.maxProblems": {
 					"scope": "resource",
 					"type": "number",
 					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
+					"description": "Max problems by server."
 				},
-				"languageServerExample.trace.server": {
+				"langServer.trace.server": {
 					"scope": "window",
 					"type": "string",
 					"enum": [
@@ -77,18 +77,19 @@
 						"verbose"
 					],
 					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
+					"description": "Communication between VS Code and server."
 				}
 			}
 		}
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -b",
     "lint": "eslint -p ./",
-    "watch": "tsc -watch -p ./",
+    "watch": "tsc -b -w",
     "pretest": "yarn run compile",
-    "test": "node ./out/test/runTest.js"
+    "postinstall": "cd client && yarn install && cd ../server && yarn install && cd ..",
+		"test": "sh ./scripts/e2e.sh"
   },
   "dependencies": {
     "vscode-languageclient": "",
