@@ -92,9 +92,6 @@
 		"test": "sh ./scripts/e2e.sh"
   },
   "dependencies": {
-    "vscode-languageclient": "",
-    "vscode-languageserver": "",
-    "vscode-uri": ""
   },
   "devDependencies": {
     "@types/glob": "",
@@ -116,6 +113,7 @@
     "vsce": "",
     "vscode-jsonrpc": "",
     "vscode-test": "",
+    "vscode-uri": "",
     "webpack-cli": "",
     "webpack": ""
   }

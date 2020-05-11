@@ -18,7 +18,7 @@ export function activate(ctx: vscode.ExtensionContext) {
   });
   ctx.subscriptions.push(disposable);
 
-  let s = ctx.asAbsolutePath(path.join('server', 'out', 'server.js'));
+  const s = ctx.asAbsolutePath(path.join('server', 'out', 'server.js'));
   const dOpts = { execArgv: ['--nolazy', '--inspect=6009'] };
   const sOpts: ServerOptions = {
     run: { module: s, transport: TransportKind.ipc },

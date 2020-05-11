@@ -4,15 +4,11 @@
     "project": ["./tsconfig.json"]
   },
   "rules": {
-    "prefer-rest-params": "off",
-    "prettier/prettier": ["error"]
-  },
-  "qpx-rules": {
-		"semi": "error",
-		"no-extra-semi": "warn",
-		"curly": "warn",
-		"quotes": ["error", "single", { "allowTemplateLiterals": true } ],
-		"eqeqeq": "error",
-		"indent": ["warn", "tab", { "SwitchCase": 1 } ]
+		// "semi": "error",
+		// "no-extra-semi": "warn",
+		// "curly": "warn",
+		// "quotes": ["error", "single", { "allowTemplateLiterals": true } ],
+		// "eqeqeq": "error",
+		// "indent": ["warn", "tab", { "SwitchCase": 1 } ]
 	}
 }

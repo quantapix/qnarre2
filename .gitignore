@@ -9,3 +9,6 @@ yarn.lock
 mypy
 cpython
 vscode-extension-samples
+
+*.tsbuildinfo
+

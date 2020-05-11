@@ -46,6 +46,18 @@
     "python.testing.pytestEnabled": true,
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": true
-    }
+    },
+    "qfiles.trimTrailingWhitespace": true,
+    "qeditor.insertSpaces": false,
+    "qeditor.tabSize": 4,
+    "eslint.enable": true,
+    "eslint.validate": ["typescript"],
+    "eslint.workingDirectories": [
+      { "directory": "./client", "changeProcessCWD": true },
+      { "directory": "./server", "changeProcessCWD": true }
+    ],
+    "eslint.trace.server": "off",
+    "eslint.lintTask.enable": false,
+    "eslint.format.enable": false
   }
 }

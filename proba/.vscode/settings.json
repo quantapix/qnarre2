@@ -5,6 +5,7 @@
     "out": false
   },
   "search.exclude": {
-    "out": true
+    "out": true,
+    "server": true
   },
 }

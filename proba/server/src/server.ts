@@ -44,13 +44,13 @@ con.onInitialized(() => {
     con.client.register(DidChangeConfigurationNotification.type, undefined);
   }
   if (workspace) {
-    con.workspace.onDidChangeWorkspaceFolders((_e) => {
+    con.workspace.onDidChangeWorkspaceFolders(() => {
       con.console.log('Workspace folder change event received.');
     });
   }
 });
 
-con.onCompletion((_ps): CompletionItem[] => {
+con.onCompletion((): CompletionItem[] => {
   return [
     { label: 'TypeScript', kind: CompletionItemKind.Text, data: 1 },
     { label: 'JavaScript', kind: CompletionItemKind.Text, data: 2 },
@@ -68,7 +68,7 @@ con.onCompletionResolve((i) => {
   return i;
 });
 
-con.onDidChangeWatchedFiles((_ps) => {
+con.onDidChangeWatchedFiles(() => {
   con.console.log('Received file change event');
 });
 
@@ -78,30 +78,26 @@ interface Settings {
 
 const defaults = { maxProblems: 1000 } as Settings;
 let gSets = defaults;
-let dSets: Map<string, Thenable<Settings>> = new Map();
+const dSets: Map<string, Thenable<Settings>> = new Map();
 
 const docs: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-con.onDidChangeConfiguration((ps) => {
-  if (configurable) dSets.clear();
-  else gSets = ps.settings.languageServerExample || defaults;
-  docs.all().forEach(validateDoc);
-});
-
-docs.onDidChangeContent((e) => {
-  validateDoc(e.document);
-});
-
-docs.onDidClose((e) => {
-  dSets.delete(e.document.uri);
-});
-
-docs.listen(con);
-con.listen();
+function getDSets(n: string) {
+  if (!configurable) return Promise.resolve(gSets);
+  let r = dSets.get(n);
+  if (!r) {
+    r = con.workspace.getConfiguration({
+      scopeUri: n,
+      section: 'languageServerExample',
+    });
+    dSets.set(n, r);
+  }
+  return r;
+}
 
 async function validateDoc(d: TextDocument) {
   let ps = 0;
-  let ds = [] as Diagnostic[];
+  const ds = [] as Diagnostic[];
   let m: RegExpExecArray | null;
   const t = d.getText();
   const pat = /\b[A-Z]{2,}\b/g;
@@ -140,15 +136,19 @@ async function validateDoc(d: TextDocument) {
   con.sendDiagnostics({ uri: d.uri, diagnostics: ds });
 }
 
-function getDSets(n: string) {
-  if (!configurable) return Promise.resolve(gSets);
-  let r = dSets.get(n);
-  if (!r) {
-    r = con.workspace.getConfiguration({
-      scopeUri: n,
-      section: 'languageServerExample',
-    });
-    dSets.set(n, r);
-  }
-  return r;
-}
+con.onDidChangeConfiguration((ps) => {
+  if (configurable) dSets.clear();
+  else gSets = ps.settings.languageServerExample || defaults;
+  docs.all().forEach(validateDoc);
+});
+
+docs.onDidChangeContent((e) => {
+  validateDoc(e.document);
+});
+
+docs.onDidClose((e) => {
+  dSets.delete(e.document.uri);
+});
+
+docs.listen(con);
+con.listen();
