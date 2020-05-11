@@ -3,16 +3,16 @@
   "displayName": "Proba",
   "description": "Proba...",
   "author": "Qpx",
-	"license": "MIT",
+  "license": "MIT",
   "version": "0.0.1",
   "publisher": "qpx",
   "repository": {
-		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-extension-samples"
   },
   "keywords": [
-		"multi-root ready"
-	],
+    "multi-root ready"
+  ],
   "engines": {
     "vscode": "^1.45.0"
   },
@@ -23,9 +23,10 @@
   ],
   "activationEvents": [
     "onCommand:extension.proba",
-    "onLanguage:plaintext"
+    "onLanguage:plaintext",
+    "onLanguage:html1"
   ],
-  "main": "./client/out/extension",
+  "main": "./out/client/extension",
   "contributes": {
     "themes": [
       {
@@ -50,6 +51,19 @@
           "JavaScript"
         ],
         "configuration": "./js-configuration.json"
+      },
+      {
+        "id": "html1",
+        "extensions": [
+          ".html1"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "html1",
+        "scopeName": "text.html1.basic",
+        "path": "./syntaxes/html1.tmLanguage.json"
       }
     ],
     "commands": [
@@ -59,40 +73,65 @@
       }
     ],
     "configuration": {
-			"type": "object",
-			"title": "Example configuration",
-			"properties": {
-				"langServer.maxProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Max problems by server."
-				},
-				"langServer.trace.server": {
-					"scope": "window",
-					"type": "string",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"default": "off",
-					"description": "Communication between VS Code and server."
-				}
-			}
-		}
+      "type": "object",
+      "title": "Proba config",
+      "properties": {
+        "langServer.maxProblems": {
+          "scope": "resource",
+          "type": "number",
+          "default": 100,
+          "description": "Max problems by server."
+        },
+        "langServer.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Communication between VS Code and server."
+        },
+        "lspMultiServerSample.enable": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Controls the enablement."
+        },
+        "lspMultiServerSample.options": {
+          "scope": "resource",
+          "type": "object",
+          "default": {},
+          "description": "Additional options."
+        },
+        "lspMultiServerSample.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VSCode and the language server."
+        }
+      }
+    }
   },
   "scripts": {
-    "vscode:prepublish": "yarn run compile",
+    "webpack:dev": "npm run clean && yarn run compile && webpack --mode none --config ./client/webpack.config.js && webpack --mode none --config ./server/webpack.config.js",
+    "webpack": "yarn run clean && yarn run compile && webpack --mode production --config ./client/webpack.config.js && webpack --mode production --config ./server/webpack.config.js",
+    "clean": "rimraf client/out && rimraf server/out",
     "compile": "tsc -b",
     "lint": "eslint -p ./",
-    "watch": "tsc -b -w",
-    "pretest": "yarn run compile",
     "postinstall": "cd client && yarn install && cd ../server && yarn install && cd ..",
-		"test": "sh ./scripts/e2e.sh"
+    "pretest": "yarn run compile",
+    "test": "sh ./scripts/e2e.sh",
+    "vscode:prepublish": "yarn run webpack",
+    "watch": "tsc -b -w"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/command-line-args": "",
     "@types/fs-extra": "",
@@ -101,8 +140,11 @@
     "@types/vscode": "",
     "fs-extra": "",
     "glob": "",
+    "merge-options": "",
     "mocha": "",
+    "rimraf": "",
     "source-map-support": "",
+    "ts-loader": "",
     "vsce": "",
     "vscode-jsonrpc": "",
     "vscode-test": "",

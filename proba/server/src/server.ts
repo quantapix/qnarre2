@@ -1,18 +1,25 @@
 import {
-  createConnection,
-  TextDocuments,
-  Diagnostic,
-  DiagnosticSeverity,
-  ProposedFeatures,
-  DidChangeConfigurationNotification,
+  CodeAction,
+  CodeActionKind,
+  Command,
   CompletionItem,
   CompletionItemKind,
-  TextDocumentSyncKind,
+  createConnection,
+  Diagnostic,
+  DiagnosticSeverity,
+  DidChangeConfigurationNotification,
   InitializeResult,
+  Position,
+  ProposedFeatures,
+  TextDocumentEdit,
+  TextDocuments,
+  TextDocumentSyncKind,
+  TextEdit,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 const con = createConnection(ProposedFeatures.all);
+con.console.info(`Sample server running in node ${process.version}`);
 
 let configurable = false;
 let diagnosable = false;
@@ -29,8 +36,13 @@ con.onInitialize((ps) => {
   );
   const r: InitializeResult = {
     capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Incremental,
+      codeActionProvider: true,
       completionProvider: { resolveProvider: true },
+      textDocumentSync: {
+        openClose: true,
+        change: TextDocumentSyncKind.Incremental,
+      },
+      executeCommandProvider: { commands: ['sample.fixMe'] },
     },
   };
   if (workspace) {
@@ -95,7 +107,7 @@ function getDSets(n: string) {
   return r;
 }
 
-async function validateDoc(d: TextDocument) {
+async function validate(d: TextDocument) {
   let ps = 0;
   const ds = [] as Diagnostic[];
   let m: RegExpExecArray | null;
@@ -133,17 +145,21 @@ async function validateDoc(d: TextDocument) {
     }
     ds.push(g);
   }
-  con.sendDiagnostics({ uri: d.uri, diagnostics: ds });
+  con.sendDiagnostics({ uri: d.uri, version: d.version, diagnostics: ds });
 }
 
 con.onDidChangeConfiguration((ps) => {
   if (configurable) dSets.clear();
   else gSets = ps.settings.languageServerExample || defaults;
-  docs.all().forEach(validateDoc);
+  docs.all().forEach(validate);
+});
+
+docs.onDidOpen((e) => {
+  validate(e.document);
 });
 
 docs.onDidChangeContent((e) => {
-  validateDoc(e.document);
+  validate(e.document);
 });
 
 docs.onDidClose((e) => {
@@ -151,4 +167,170 @@ docs.onDidClose((e) => {
 });
 
 docs.listen(con);
+
+con.onCodeAction((ps) => {
+  const textDocument = docs.get(ps.textDocument.uri);
+  if (textDocument === undefined) return undefined;
+  const title = 'With User Input';
+  return [
+    CodeAction.create(
+      title,
+      Command.create(title, 'sample.fixMe', textDocument.uri),
+      CodeActionKind.QuickFix
+    ),
+  ];
+});
+
+con.onExecuteCommand((ps) => {
+  if (ps.command !== 'sample.fixMe' || ps.arguments === undefined) return;
+  const textDocument = docs.get(ps.arguments[0]);
+  if (textDocument === undefined) return;
+  const newText = typeof ps.arguments[1] === 'string' ? ps.arguments[1] : 'Eclipse';
+  con.workspace.applyEdit({
+    documentChanges: [
+      TextDocumentEdit.create({ uri: textDocument.uri, version: textDocument.version }, [
+        TextEdit.insert(Position.create(0, 0), newText),
+      ]),
+    ],
+  });
+});
+
 con.listen();
+
+import {
+  createConnection,
+  TextDocuments,
+  ProposedFeatures,
+  TextDocumentSyncKind,
+} from 'vscode-languageserver';
+
+// Creates the LSP connection
+const connection = createConnection(ProposedFeatures.all);
+
+// Create a manager for open text documents
+const documents = new TextDocuments();
+
+// The workspace folder this server is operating on
+let workspaceFolder: string | null;
+
+documents.onDidOpen((event) => {
+  connection.console.log(
+    `[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`
+  );
+});
+documents.listen(connection);
+
+connection.onInitialize((params) => {
+  workspaceFolder = params.rootUri;
+  connection.console.log(
+    `[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`
+  );
+  return {
+    capabilities: {
+      textDocumentSync: {
+        openClose: true,
+        change: TextDocumentSyncKind.None,
+      },
+    },
+  };
+});
+connection.listen();
+
+import {
+  CompletionList,
+  createConnection,
+  Diagnostic,
+  InitializeParams,
+  ProposedFeatures,
+  TextDocuments,
+  TextDocumentSyncKind,
+} from 'vscode-languageserver';
+import { getLanguageModes, LanguageModes } from './languageModes';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+let connection = createConnection(ProposedFeatures.all);
+
+let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+
+let languageModes: LanguageModes;
+
+connection.onInitialize((_params: InitializeParams) => {
+  languageModes = getLanguageModes();
+
+  documents.onDidClose((e) => {
+    languageModes.onDocumentRemoved(e.document);
+  });
+  connection.onShutdown(() => {
+    languageModes.dispose();
+  });
+
+  return {
+    capabilities: {
+      textDocumentSync: TextDocumentSyncKind.Full,
+      // Tell the client that the server supports code completion
+      completionProvider: {
+        resolveProvider: false,
+      },
+    },
+  };
+});
+
+connection.onInitialized(() => {});
+
+connection.onDidChangeConfiguration((_change) => {
+  // Revalidate all open text documents
+  documents.all().forEach(validateTextDocument);
+});
+
+// The content of a text document has changed. This event is emitted
+// when the text document first opened or when its content has changed.
+documents.onDidChangeContent((change) => {
+  validateTextDocument(change.document);
+});
+
+async function validateTextDocument(textDocument: TextDocument) {
+  try {
+    const version = textDocument.version;
+    const diagnostics: Diagnostic[] = [];
+    if (textDocument.languageId === 'html1') {
+      const modes = languageModes.getAllModesInDocument(textDocument);
+      const latestTextDocument = documents.get(textDocument.uri);
+      if (latestTextDocument && latestTextDocument.version === version) {
+        // check no new version has come in after in after the async op
+        modes.forEach((mode) => {
+          if (mode.doValidation) {
+            mode.doValidation(latestTextDocument).forEach((d) => {
+              diagnostics.push(d);
+            });
+          }
+        });
+        connection.sendDiagnostics({ uri: latestTextDocument.uri, diagnostics });
+      }
+    }
+  } catch (e) {
+    connection.console.error(`Error while validating ${textDocument.uri}`);
+    connection.console.error(e);
+  }
+}
+
+connection.onCompletion(async (textDocumentPosition, token) => {
+  const document = documents.get(textDocumentPosition.textDocument.uri);
+  if (!document) {
+    return null;
+  }
+
+  const mode = languageModes.getModeAtPosition(document, textDocumentPosition.position);
+  if (!mode || !mode.doComplete) {
+    return CompletionList.create();
+  }
+  const doComplete = mode.doComplete;
+
+  return doComplete(document, textDocumentPosition.position);
+});
+
+// Make the text document manager listen on the connection
+// for open, change and close text document events
+documents.listen(connection);
+
+// Listen on the connection
+connection.listen();

@@ -6,7 +6,11 @@ async function main() {
   try {
     const extensionDevelopmentPath = path.resolve(__dirname, '../../../');
     const extensionTestsPath = path.resolve(__dirname, './index');
-    await runTests({ extensionDevelopmentPath, extensionTestsPath });
+    await runTests({
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: ['--disable-extensions'],
+    });
   } catch (e) {
     console.error('Failed to run tests');
     process.exit(1);

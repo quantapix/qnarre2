@@ -1,15 +1,15 @@
-import * as path from 'path';
-import * as Mocha from 'mocha';
 import * as glob from 'glob';
+import * as Mocha from 'mocha';
+import * as path from 'path';
 
-export function run(): Promise<void> {
+export function run() {
   const mocha = new Mocha({ ui: 'tdd' });
   mocha.useColors(true);
   mocha.timeout(100000);
 
   const root = __dirname;
 
-  return new Promise((res, rej) => {
+  return new Promise<void>((res, rej) => {
     glob('**.test.js', { cwd: root }, (err, fs) => {
       if (err) return rej(err);
       fs.forEach((f) => mocha.addFile(path.resolve(root, f)));

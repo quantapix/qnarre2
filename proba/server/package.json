@@ -10,7 +10,10 @@
 		"node": "*"
 	},
 	"dependencies": {
+		"vscode-html-languageservice": "",
 		"vscode-languageserver": "",
-		"vscode-languageserver-textdocument": ""
+    "vscode-css-languageservice": "",
+    "vscode-languageserver-textdocument": "",
+    "vscode-uri": ""
 	}
 }

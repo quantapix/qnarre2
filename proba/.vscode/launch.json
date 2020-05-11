@@ -4,48 +4,52 @@
     {
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "name": "Launch Client",
-      "outFiles": ["${workspaceFolder}/client/out/**/*.js"],
-      "preLaunchTask": "npm: watch",
+      "outFiles": ["${workspaceFolder}/out/client/**/*.js"],
+      "preLaunchTask": "npm: watch", // watch:client
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "sourceMaps": true,
       "stopOnEntry": false,
-      "type": "extensionHost",
+      "type": "extensionHost"
+    },
+    {
+      "address": "localhost",
+      "name": "Attach to Server",
+      "outFiles": ["${workspaceFolder}/out/server/**/*.js"],
+      "port": 6011, // 6009
+      "protocol": "inspector",
+      "request": "attach",
+      "restart": true,
+      "sourceMaps": true,
+      "type": "node"
     },
     {
       "args": [
+        "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/client/out/test"
+        "--extensionTestsPath=${workspaceFolder}/out/client/test"
       ],
       "name": "Client Tests",
-      "outFiles": ["${workspaceFolder}/client/out/test/**/*.js"],
+      "outFiles": ["${workspaceFolder}/out/client/test/**/*.js"],
       "preLaunchTask": "npm: watch",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "type": "extensionHost",
+      "type": "extensionHost"
     },
     {
-			"port": 6011,
-			"protocol": "inspector",
-			"sourceMaps": true,
-      "address": "localhost",
-      "name": "Attach to Server",
-      "outFiles": ["${workspaceFolder}/server/out/**/*.js"],
-      "request": "attach",
-      "restart": true,
-      "type": "node",
-    },
-    {
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/out/client/test",
+        "${workspaceFolder}/client/src/test/fixture"
+      ],
+      "sourceMaps": true,
       "name": "Server Tests",
-      "type": "extensionHost",
+      "outFiles": ["${workspaceFolder}/out/client/test/**/*.js"],
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/client/out/test/index",
-        "${workspaceFolder}/client/testFixture"
-      ],
-      "outFiles": ["${workspaceFolder}/client/out/test/**/*.js"]
+      "stopOnEntry": false,
+      "type": "extensionHost"
     }
   ],
   "compounds": [
