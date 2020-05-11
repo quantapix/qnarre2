@@ -4,6 +4,10 @@
     "project": ["./tsconfig.json"]
   },
   "rules": {
+    "prefer-rest-params": "off",
+    "prettier/prettier": ["error"]
+  },
+  "qpx-rules": {
 		"semi": "error",
 		"no-extra-semi": "warn",
 		"curly": "warn",

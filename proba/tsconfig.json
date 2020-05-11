@@ -3,9 +3,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "outDir": "out",
-    "rootDir": "src"
   },
-  "include": ["src", "client/src/test/suite"],
   "exclude": ["node_modules", ".vscode-test"],
   "references": [{ "path": "./client" }, { "path": "./server" }]
 }
