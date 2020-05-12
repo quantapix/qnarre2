@@ -1,0 +1,199 @@
+{
+  "enableProposedApi": true,
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+    "*",
+    "onLanguage:markdown",
+    "onCommand:config.commands.configureViewOnWindowOpen",
+		"onCommand:config.commands.configureEmptyLastLineCurrentFile",
+		"onCommand:config.commands.configureEmptyLastLineFiles"
+
+  ],
+  "contributes": {
+    "configuration": [
+			{
+				"title": "Configuration Samples",
+				"properties": {
+					"conf.view.showOnWindowOpen": {
+						"type": "string",
+						"enum": [
+							"explorer",
+							"search",
+							"scm",
+							"debug",
+							"extensions"
+						],
+						"default": "explorer",
+						"description": "Window configuration: View to show always when a window opens",
+						"scope": "window"
+					},
+					"conf.resource.insertEmptyLastLine": {
+						"type": "object",
+						"default": {},
+						"description": "Resource configuration: Configure files using glob patterns to have an empty last line always",
+						"scope": "resource"
+					},
+					"conf.language.showSize": {
+						"type": "boolean",
+						"default": false,
+						"description": "Shows the size of the document",
+						"scope": "language-overridable"
+					}
+				}
+			}
+		],
+		"commands": [
+			{
+				"category": "Configuration Sample",
+				"command": "config.commands.configureViewOnWindowOpen",
+				"title": "Configure view to show on window open"
+			},
+			{
+				"category": "Configuration Sample",
+				"command": "config.commands.configureEmptyLastLineCurrentFile",
+				"title": "Configure empty last line for current file"
+			},
+			{
+				"category": "Configuration Sample",
+				"command": "config.commands.configureEmptyLastLineFiles",
+				"title": "Configure empty last line for files"
+			},
+			{
+				"category": "Configuration Sample",
+				"command": "config.commands.overrideLanguageValue",
+				"title": "Configure show size for language"
+			},
+			{
+				"command": "mywiki.createNote",
+				"title": "Create Note",
+				"enablement": "!commentIsEmpty"
+			},
+			{
+				"command": "mywiki.replyNote",
+				"title": "Reply",
+				"enablement": "!commentIsEmpty"
+			},
+			{
+				"command": "mywiki.editNote",
+				"title": "Edit",
+				"icon": {
+					"dark": "resources/edit_inverse.svg",
+					"light": "resources/edit.svg"
+				}
+			},
+			{
+				"command": "mywiki.deleteNote",
+				"title": "Delete",
+				"icon": {
+					"dark": "resources/close_inverse.svg",
+					"light": "resources/close.svg"
+				}
+			},
+			{
+				"command": "mywiki.deleteNoteComment",
+				"title": "Delete",
+				"icon": {
+					"dark": "resources/close_inverse.svg",
+					"light": "resources/close.svg"
+				}
+			},
+			{
+				"command": "mywiki.saveNote",
+				"title": "Save"
+			},
+			{
+				"command": "mywiki.cancelsaveNote",
+				"title": "Cancel"
+			},
+			{
+				"command": "mywiki.startDraft",
+				"title": "Start Draft",
+				"enablement": "!commentIsEmpty"
+			},
+			{
+				"command": "mywiki.finishDraft",
+				"title": "Finish Draft"
+			},
+			{
+				"command": "mywiki.dispose",
+				"title": "Remove All Notes"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "mywiki.createNote",
+					"when": "false"
+				},
+				{
+					"command": "mywiki.replyNote",
+					"when": "false"
+				},
+				{
+					"command": "mywiki.deleteNote",
+					"when": "false"
+				},
+				{
+					"command": "mywiki.deleteNoteComment",
+					"when": "false"
+				}
+			],
+			"comments/commentThread/title": [
+				{
+					"command": "mywiki.deleteNote",
+					"group": "navigation",
+					"when": "commentController == comment-sample && !commentThreadIsEmpty"
+				}
+			],
+			"comments/commentThread/context": [
+				{
+					"command": "mywiki.createNote",
+					"group": "inline",
+					"when": "commentController == comment-sample && commentThreadIsEmpty"
+				},
+				{
+					"command": "mywiki.replyNote",
+					"group": "inline",
+					"when": "commentController == comment-sample && !commentThreadIsEmpty"
+				},
+				{
+					"command": "mywiki.startDraft",
+					"group": "inline",
+					"when": "commentController == comment-sample && commentThreadIsEmpty"
+				},
+				{
+					"command": "mywiki.finishDraft",
+					"group": "inline",
+					"when": "commentController == comment-sample && commentThread == draft"
+				}
+			],
+			"comments/comment/title": [
+				{
+					"command": "mywiki.editNote",
+					"group": "group@1",
+					"when": "commentController == comment-sample"
+				},
+				{
+					"command": "mywiki.deleteNoteComment",
+					"group": "group@2",
+					"when": "commentController == comment-sample && comment == canDelete"
+				}
+			],
+			"comments/comment/context": [
+				{
+					"command": "mywiki.cancelsaveNote",
+					"group": "inline@1",
+					"when": "commentController == comment-sample"
+				},
+				{
+					"command": "mywiki.saveNote",
+					"group": "inline@2",
+					"when": "commentController == comment-sample"
+				}
+			]
+		}
+	},
+
+}

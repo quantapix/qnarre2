@@ -16,6 +16,15 @@
       "type": "extensionHost"
     },
     {
+      "name": "Attach to Extension Host",
+      "outFiles": ["${workspaceFolder}/out/src"],
+      "port": 5870,
+      "protocol": "inspector",
+      "request": "attach",
+      "restart": true,
+      "type": "node"
+    },
+    {
       "address": "localhost",
       "name": "Attach to Server",
       "outFiles": ["${workspaceFolder}/out/server/**/*.js"],
