@@ -2,7 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}/sample"
+      ],
       "name": "Launch Client",
       "outFiles": ["${workspaceFolder}/out/client/**/*.js"],
       "preLaunchTask": "npm: watch", // watch:client
@@ -34,6 +37,8 @@
       "preLaunchTask": "npm: watch",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
+      "sourceMaps": true,
+      "stopOnEntry": false,
       "type": "extensionHost"
     },
     {

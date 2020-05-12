@@ -512,3 +512,288 @@ async function showSampleText(context: vscode.ExtensionContext): Promise<void> {
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
+import {
+  ExtensionContext,
+  StatusBarAlignment,
+  window,
+  StatusBarItem,
+  Selection,
+  workspace,
+  TextEditor,
+  commands,
+} from 'vscode';
+import { basename } from 'path';
+
+export function activate(context: ExtensionContext) {
+  // Create a status bar item
+  const status = window.createStatusBarItem(StatusBarAlignment.Left, 1000000);
+  context.subscriptions.push(status);
+
+  // Update status bar item based on events for multi root folder changes
+  context.subscriptions.push(
+    workspace.onDidChangeWorkspaceFolders((e) => updateStatus(status))
+  );
+
+  // Update status bar item based on events for configuration
+  context.subscriptions.push(
+    workspace.onDidChangeConfiguration((e) => updateStatus(status))
+  );
+
+  // Update status bar item based on events around the active editor
+  context.subscriptions.push(
+    window.onDidChangeActiveTextEditor((e) => updateStatus(status))
+  );
+  context.subscriptions.push(
+    window.onDidChangeTextEditorViewColumn((e) => updateStatus(status))
+  );
+  context.subscriptions.push(
+    workspace.onDidOpenTextDocument((e) => updateStatus(status))
+  );
+  context.subscriptions.push(
+    workspace.onDidCloseTextDocument((e) => updateStatus(status))
+  );
+
+  updateStatus(status);
+}
+
+function updateStatus(status: StatusBarItem): void {
+  const info = getEditorInfo();
+  status.text = info ? info.text || '' : '';
+  status.tooltip = info ? info.tooltip : undefined;
+  status.color = info ? info.color : undefined;
+
+  if (info) {
+    status.show();
+  } else {
+    status.hide();
+  }
+}
+
+function getEditorInfo(): { text?: string; tooltip?: string; color?: string } | null {
+  const editor = window.activeTextEditor;
+
+  // If no workspace is opened or just a single folder, we return without any status label
+  // because our extension only works when more than one folder is opened in a workspace.
+  if (!editor || !workspace.workspaceFolders || workspace.workspaceFolders.length < 2) {
+    return null;
+  }
+
+  let text: string | undefined;
+  let tooltip: string | undefined;
+  let color: string | undefined;
+
+  // If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
+  // the status accordingly.
+  const resource = editor.document.uri;
+  if (resource.scheme === 'file') {
+    const folder = workspace.getWorkspaceFolder(resource);
+    if (!folder) {
+      text = `$(alert) <outside workspace> → ${basename(resource.fsPath)}`;
+    } else {
+      text = `$(file-submodule) ${basename(folder.uri.fsPath)} (${folder.index + 1} of ${
+        workspace.workspaceFolders.length
+      }) → $(file-code) ${basename(resource.fsPath)}`;
+      tooltip = resource.fsPath;
+
+      const multiRootConfigForResource = workspace.getConfiguration(
+        'multiRootSample',
+        resource
+      );
+      color = multiRootConfigForResource.get('statusColor');
+    }
+  }
+
+  return { text, tooltip, color };
+}
+
+// The module 'vscode' contains the VS Code extensibility API
+// Import the module and reference it with the alias vscode in your code below
+import {
+  ExtensionContext,
+  languages,
+  commands,
+  Disposable,
+  workspace,
+  window,
+} from 'vscode';
+import { CodelensProvider } from './CodelensProvider';
+
+// this method is called when your extension is activated
+// your extension is activated the very first time the command is executed
+
+var disposables: Disposable[] = [];
+
+export function activate(context: ExtensionContext) {
+  let codelensProvider = new CodelensProvider();
+
+  languages.registerCodeLensProvider('*', codelensProvider);
+
+  commands.registerCommand('codelens-sample.enableCodeLens', () => {
+    workspace.getConfiguration('codelens-sample').update('enableCodeLens', true, true);
+  });
+
+  commands.registerCommand('codelens-sample.disableCodeLens', () => {
+    workspace.getConfiguration('codelens-sample').update('enableCodeLens', false, true);
+  });
+
+  commands.registerCommand('codelens-sample.codelensAction', (args) => {
+    window.showInformationMessage(`CodeLens action clicked with args=${args}`);
+  });
+}
+
+// this method is called when your extension is deactivated
+export function deactivate() {
+  if (disposables) {
+    disposables.forEach((item) => item.dispose());
+  }
+  disposables = [];
+}
+
+import * as vscode from 'vscode';
+
+const tokenTypes = new Map<string, number>();
+const tokenModifiers = new Map<string, number>();
+
+const legend = (function () {
+  const tokenTypesLegend = [
+    'comment',
+    'string',
+    'keyword',
+    'number',
+    'regexp',
+    'operator',
+    'namespace',
+    'type',
+    'struct',
+    'class',
+    'interface',
+    'enum',
+    'typeParameter',
+    'function',
+    'member',
+    'macro',
+    'variable',
+    'parameter',
+    'property',
+    'label',
+  ];
+  tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
+
+  const tokenModifiersLegend = [
+    'declaration',
+    'documentation',
+    'readonly',
+    'static',
+    'abstract',
+    'deprecated',
+    'modification',
+    'async',
+  ];
+  tokenModifiersLegend.forEach((tokenModifier, index) =>
+    tokenModifiers.set(tokenModifier, index)
+  );
+
+  return new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
+})();
+
+export function activate(context: vscode.ExtensionContext) {
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSemanticTokensProvider(
+      { language: 'semanticLanguage' },
+      new DocumentSemanticTokensProvider(),
+      legend
+    )
+  );
+}
+
+interface IParsedToken {
+  line: number;
+  startCharacter: number;
+  length: number;
+  tokenType: string;
+  tokenModifiers: string[];
+}
+
+class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
+  async provideDocumentSemanticTokens(
+    document: vscode.TextDocument,
+    token: vscode.CancellationToken
+  ): Promise<vscode.SemanticTokens> {
+    const allTokens = this._parseText(document.getText());
+    const builder = new vscode.SemanticTokensBuilder();
+    allTokens.forEach((token) => {
+      builder.push(
+        token.line,
+        token.startCharacter,
+        token.length,
+        this._encodeTokenType(token.tokenType),
+        this._encodeTokenModifiers(token.tokenModifiers)
+      );
+    });
+    return builder.build();
+  }
+
+  private _encodeTokenType(tokenType: string): number {
+    if (tokenTypes.has(tokenType)) {
+      return tokenTypes.get(tokenType)!;
+    } else if (tokenType === 'notInLegend') {
+      return tokenTypes.size + 2;
+    }
+    return 0;
+  }
+
+  private _encodeTokenModifiers(strTokenModifiers: string[]): number {
+    let result = 0;
+    for (let i = 0; i < strTokenModifiers.length; i++) {
+      const tokenModifier = strTokenModifiers[i];
+      if (tokenModifiers.has(tokenModifier)) {
+        result = result | (1 << tokenModifiers.get(tokenModifier)!);
+      } else if (tokenModifier === 'notInLegend') {
+        result = result | (1 << (tokenModifiers.size + 2));
+      }
+    }
+    return result;
+  }
+
+  private _parseText(text: string): IParsedToken[] {
+    let r: IParsedToken[] = [];
+    let lines = text.split(/\r\n|\r|\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let currentOffset = 0;
+      do {
+        const openOffset = line.indexOf('[', currentOffset);
+        if (openOffset === -1) {
+          break;
+        }
+        const closeOffset = line.indexOf(']', openOffset);
+        if (closeOffset === -1) {
+          break;
+        }
+        let tokenData = this._parseTextToken(line.substring(openOffset + 1, closeOffset));
+        r.push({
+          line: i,
+          startCharacter: openOffset + 1,
+          length: closeOffset - openOffset - 1,
+          tokenType: tokenData.tokenType,
+          tokenModifiers: tokenData.tokenModifiers,
+        });
+        currentOffset = closeOffset;
+      } while (true);
+    }
+    return r;
+  }
+
+  private _parseTextToken(text: string): { tokenType: string; tokenModifiers: string[] } {
+    let parts = text.split('.');
+    return {
+      tokenType: parts[0],
+      tokenModifiers: parts.slice(1),
+    };
+  }
+}

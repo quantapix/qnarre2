@@ -22,6 +22,8 @@
     "Other"
   ],
   "activationEvents": [
+    "*",
+    "onLanguage:semanticLanguage",
     "onCommand:extension.proba",
     "onLanguage:plaintext",
     "onLanguage:html1"
@@ -57,6 +59,12 @@
         "extensions": [
           ".html1"
         ]
+      },
+      {
+        "id": "semanticLanguage",
+        "extensions": [
+          ".semanticLanguage"
+        ]
       }
     ],
     "grammars": [
@@ -70,12 +78,34 @@
       {
         "command": "extension.proba",
         "title": "Proba :-)"
+      },
+      {
+        "title": "Enable CodeLens",
+        "command": "codelens-sample.enableCodeLens",
+        "category": "CodeLens Sample"
+      },
+      {
+        "title": "Disable Codelens",
+        "command": "codelens-sample.disableCodeLens",
+        "category": "CodeLens Sample"
       }
     ],
     "configuration": {
       "type": "object",
       "title": "Proba config",
       "properties": {
+        "codelens-sample.enableCodeLens": {
+          "type": "boolean",
+          "default": true
+        },
+        "multiRootSample.statusColor": {
+          "type": [
+            "string"
+          ],
+          "default": "#FFFFFF",
+          "description": "Color to use for the status bar item. Can be set per workspace folder.",
+          "scope": "resource"
+        },
         "langServer.maxProblems": {
           "scope": "resource",
           "type": "number",
