@@ -1,19 +1,19 @@
 {
-  "name": "proba",
-  "displayName": "Proba",
-  "description": "Proba...",
-  "author": "Qpx",
-	"license": "MIT",
-  "version": "0.0.1",
-  "publisher": "qpx",
-	"engines": {
-		"node": "*"
-	},
-	"dependencies": {
-		"vscode-html-languageservice": "",
-		"vscode-languageserver": "",
-    "vscode-css-languageservice": "",
-    "vscode-languageserver-textdocument": "",
-    "vscode-uri": ""
-	}
+ "name": "proba",
+ "displayName": "Proba",
+ "description": "Proba...",
+ "author": "Qpx",
+ "license": "MIT",
+ "version": "0.0.1",
+ "publisher": "qpx",
+ "engines": {
+  "node": "*"
+ },
+ "dependencies": {
+  "vscode-css-languageservice": "",
+  "vscode-html-languageservice": "",
+  "vscode-languageserver": "",
+  "vscode-languageserver-textdocument": "",
+  "vscode-uri": ""
+ }
 }

@@ -272,3 +272,243 @@ export function deactivate(): Thenable<void> | undefined {
   }
   return client.stop();
 }
+
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
+
+import * as path from 'path';
+import { commands, CompletionList, ExtensionContext, Uri, workspace } from 'vscode';
+import { getLanguageService } from 'vscode-html-languageservice';
+import {
+  LanguageClient,
+  LanguageClientOptions,
+  ServerOptions,
+  TransportKind,
+} from 'vscode-languageclient';
+import { getCSSVirtualContent, isInsideStyleRegion } from './embeddedSupport';
+
+let client: LanguageClient;
+
+const htmlLanguageService = getLanguageService();
+
+export function activate(context: ExtensionContext) {
+  // The server is implemented in node
+  let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
+  // The debug options for the server
+  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+  let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+
+  // If the extension is launched in debug mode then the debug server options are used
+  // Otherwise the run options are used
+  let serverOptions: ServerOptions = {
+    run: { module: serverModule, transport: TransportKind.ipc },
+    debug: {
+      module: serverModule,
+      transport: TransportKind.ipc,
+      options: debugOptions,
+    },
+  };
+
+  const virtualDocumentContents = new Map<string, string>();
+
+  workspace.registerTextDocumentContentProvider('embedded-content', {
+    provideTextDocumentContent: (uri) => {
+      const originalUri = uri.path.slice(1).slice(0, -4);
+      const decodedUri = decodeURIComponent(originalUri);
+      return virtualDocumentContents.get(decodedUri);
+    },
+  });
+
+  let clientOptions: LanguageClientOptions = {
+    documentSelector: [{ scheme: 'file', language: 'html1' }],
+    middleware: {
+      provideCompletionItem: async (document, position, context, token, next) => {
+        // If not in `<style>`, do not perform request forwarding
+        if (
+          !isInsideStyleRegion(
+            htmlLanguageService,
+            document.getText(),
+            document.offsetAt(position)
+          )
+        ) {
+          return await next(document, position, context, token);
+        }
+
+        const originalUri = document.uri.toString();
+        virtualDocumentContents.set(
+          originalUri,
+          getCSSVirtualContent(htmlLanguageService, document.getText())
+        );
+
+        const vdocUriString = `embedded-content://css/${encodeURIComponent(
+          originalUri
+        )}.css`;
+        const vdocUri = Uri.parse(vdocUriString);
+        return await commands.executeCommand<CompletionList>(
+          'vscode.executeCompletionItemProvider',
+          vdocUri,
+          position,
+          context.triggerCharacter
+        );
+      },
+    },
+  };
+
+  // Create the language client and start the client.
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    serverOptions,
+    clientOptions
+  );
+
+  // Start the client. This will also launch the server
+  client.start();
+}
+
+export function deactivate(): Thenable<void> | undefined {
+  if (!client) {
+    return undefined;
+  }
+  return client.stop();
+}
+
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
+
+import * as path from 'path';
+import { workspace, commands, ExtensionContext, OutputChannel } from 'vscode';
+import * as WebSocket from 'ws';
+
+import {
+  LanguageClient,
+  LanguageClientOptions,
+  ServerOptions,
+  TransportKind,
+} from 'vscode-languageclient';
+
+let client: LanguageClient;
+
+export function activate(context: ExtensionContext) {
+  const socketPort = workspace
+    .getConfiguration('languageServerExample')
+    .get('port', 7000);
+  let socket: WebSocket | null = null;
+
+  commands.registerCommand('languageServerExample.startStreaming', () => {
+    // Establish websocket connection
+    socket = new WebSocket(`ws://localhost:${socketPort}`);
+  });
+
+  // The server is implemented in node
+  let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
+  // The debug options for the server
+  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+  let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+
+  // If the extension is launched in debug mode then the debug server options are used
+  // Otherwise the run options are used
+  let serverOptions: ServerOptions = {
+    run: { module: serverModule, transport: TransportKind.ipc },
+    debug: {
+      module: serverModule,
+      transport: TransportKind.ipc,
+      options: debugOptions,
+    },
+  };
+
+  // The log to send
+  let log = '';
+  const websocketOutputChannel: OutputChannel = {
+    name: 'websocket',
+    // Only append the logs but send them later
+    append(value: string) {
+      log += value;
+      console.log(value);
+    },
+    appendLine(value: string) {
+      log += value;
+      // Don't send logs until WebSocket initialization
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(log);
+      }
+      log = '';
+    },
+    clear() {},
+    show() {},
+    hide() {},
+    dispose() {},
+  };
+
+  // Options to control the language client
+  let clientOptions: LanguageClientOptions = {
+    // Register the server for plain text documents
+    documentSelector: [{ scheme: 'file', language: 'plaintext' }],
+    synchronize: {
+      // Notify the server about file changes to '.clientrc files contained in the workspace
+      fileEvents: workspace.createFileSystemWatcher('**/.clientrc'),
+    },
+    // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
+    outputChannel: websocketOutputChannel,
+  };
+
+  // Create the language client and start the client.
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    serverOptions,
+    clientOptions
+  );
+
+  // Start the client. This will also launch the server
+  client.start();
+}
+
+export function deactivate(): Thenable<void> {
+  if (!client) {
+    return undefined;
+  }
+  return client.stop();
+}
+
+// The module 'vscode' contains the VS Code extensibility API
+// Import the module and reference it with the alias vscode in your code below
+import * as vscode from 'vscode';
+import { FoodPyramidHierarchyProvider } from './FoodPyramidHierarchyProvider';
+import { TextDecoder } from 'util';
+
+// this method is called when your extension is activated
+// your extension is activated the very first time the command is executed
+export function activate(context: vscode.ExtensionContext) {
+  // Use the console to output diagnostic information (console.log) and errors (console.error)
+  // This line of code will only be executed once when your extension is activated
+  console.log('Congratulations, your extension "call-hierarchy-sample" is now active!');
+
+  let disposable = vscode.languages.registerCallHierarchyProvider(
+    'plaintext',
+    new FoodPyramidHierarchyProvider()
+  );
+
+  context.subscriptions.push(disposable);
+
+  showSampleText(context);
+}
+
+async function showSampleText(context: vscode.ExtensionContext): Promise<void> {
+  let sampleTextEncoded = await vscode.workspace.fs.readFile(
+    vscode.Uri.file(context.asAbsolutePath('sample.txt'))
+  );
+  let sampleText = new TextDecoder('utf-8').decode(sampleTextEncoded);
+  let doc = await vscode.workspace.openTextDocument({
+    language: 'plaintext',
+    content: sampleText,
+  });
+  vscode.window.showTextDocument(doc);
+}
+
+// this method is called when your extension is deactivated
+export function deactivate() {}

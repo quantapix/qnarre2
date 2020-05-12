@@ -1,15 +1,16 @@
 {
-  "name": "proba",
-  "displayName": "Proba",
-  "description": "Proba...",
-  "author": "Qpx",
+	"name": "proba",
+	"displayName": "Proba",
+	"description": "Proba...",
+	"author": "Qpx",
 	"license": "MIT",
-  "version": "0.0.1",
-  "publisher": "qpx",
+	"version": "0.0.1",
+	"publisher": "qpx",
 	"engines": {
 		"vscode": "^1.45.0"
 	},
 	"dependencies": {
+    "vscode-html-languageservice": "",
 		"vscode-languageclient": ""
 	}
 }

@@ -7,18 +7,18 @@
   "devDependencies": {
     "@angular/cli": "next",
     "@types/node": "",
-    "@typescript-eslint/eslint-plugin": "",
-    "@typescript-eslint/parser": "",
+    "@typescript-eslint/eslint-plugin": "*",
+    "@typescript-eslint/parser": "*",
+    "eslint": "",
     "eslint-config-prettier": "",
     "eslint-plugin-jasmine": "",
     "eslint-plugin-node": "",
     "eslint-plugin-prettier": "",
     "eslint-plugin-react": "",
-    "eslint": "",
     "prettier": "",
     "react": "next",
-    "typescript": "next",
-    "webpack-cli": "",
-    "webpack": ""
+    "typescript": "^4.0.0-dev.20200512",
+    "webpack": "",
+    "webpack-cli": ""
   }
 }
