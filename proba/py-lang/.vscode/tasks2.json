@@ -1,0 +1,55 @@
+{
+    "version": "2.0.0",
+    "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+    },
+    "tasks": [
+        {
+            "label": "Compile",
+            "type": "npm",
+            "script": "compile",
+            "isBackground": true,
+            "problemMatcher": [
+                "$tsc-watch",
+                {
+                    "base": "$tslint5",
+                    "fileLocation": "relative"
+                }
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Compile Web Views",
+            "type": "npm",
+            "script": "compile-webviews-watch",
+            "isBackground": true,
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Unit Tests",
+            "type": "npm",
+            "script": "test:unittests",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Inject DS WebBrowser UI",
+            "type": "shell",
+            "command": "node",
+            "args": ["build/debug/replaceWithWebBrowserPanel.js"],
+            "problemMatcher": []
+        }
+    ]
+}
