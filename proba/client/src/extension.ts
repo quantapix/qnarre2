@@ -1,6 +1,20 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-
+import {
+  commands,
+  CompletionList,
+  Disposable,
+  ExtensionContext,
+  languages,
+  OutputChannel,
+  StatusBarAlignment,
+  StatusBarItem,
+  TextDocument,
+  Uri,
+  window,
+  workspace,
+  WorkspaceFolder,
+} from 'vscode';
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -8,16 +22,79 @@ import {
   ServerOptions,
   TransportKind,
 } from 'vscode-languageclient';
+import { getLanguageService } from 'vscode-html-languageservice';
+import * as WebSocket from 'ws';
+
+import { getCSSVirtualContent, isInsideStyleRegion } from './embeddedSupport';
+import { FoodPyramidHierarchyProvider } from './FoodPyramidHierarchyProvider';
+import { TextDecoder } from 'util';
+import { CodelensProvider } from './CodelensProvider';
 
 let client: LanguageClient;
+
+const htmlLanguageService = getLanguageService();
+let disposables = [] as Disposable[];
 
 export function activate(ctx: vscode.ExtensionContext) {
   console.log('Extension "proba" is now active!');
 
-  const disposable = vscode.commands.registerCommand('extension.proba', () => {
+  let x = vscode.commands.registerCommand('extension.proba', () => {
     vscode.window.showInformationMessage('Proba, proba, proba...');
   });
-  ctx.subscriptions.push(disposable);
+  disposables.push(x);
+  ctx.subscriptions.push(x);
+
+  x = vscode.languages.registerCallHierarchyProvider(
+    'plaintext',
+    new FoodPyramidHierarchyProvider()
+  );
+  disposables.push(x);
+  ctx.subscriptions.push(x);
+  showSampleText(ctx);
+
+  const socketPort = workspace
+    .getConfiguration('languageServerExample')
+    .get('port', 7000);
+  let socket: WebSocket | null = null;
+  x = vscode.commands.registerCommand('languageServerExample.startStreaming', () => {
+    socket = new WebSocket(`ws://localhost:${socketPort}`);
+  });
+  disposables.push(x);
+
+  const stat = window.createStatusBarItem(StatusBarAlignment.Left, 1000000);
+  ctx.subscriptions.push(stat);
+  ctx.subscriptions.push(workspace.onDidChangeWorkspaceFolders(() => updateStatus(stat)));
+  ctx.subscriptions.push(workspace.onDidChangeConfiguration(() => updateStatus(stat)));
+  ctx.subscriptions.push(window.onDidChangeActiveTextEditor(() => updateStatus(stat)));
+  ctx.subscriptions.push(
+    window.onDidChangeTextEditorViewColumn(() => updateStatus(stat))
+  );
+  ctx.subscriptions.push(workspace.onDidOpenTextDocument(() => updateStatus(stat)));
+  ctx.subscriptions.push(workspace.onDidCloseTextDocument(() => updateStatus(stat)));
+  updateStatus(stat);
+
+  let codelensProvider = new CodelensProvider();
+  x = languages.registerCodeLensProvider('*', codelensProvider);
+  disposables.push(x);
+  x = commands.registerCommand('codelens-sample.enableCodeLens', () => {
+    workspace.getConfiguration('codelens-sample').update('enableCodeLens', true, true);
+  });
+  disposables.push(x);
+  x = commands.registerCommand('codelens-sample.disableCodeLens', () => {
+    workspace.getConfiguration('codelens-sample').update('enableCodeLens', false, true);
+  });
+  x = commands.registerCommand('codelens-sample.codelensAction', (args) => {
+    window.showInformationMessage(`CodeLens action clicked with args=${args}`);
+  });
+  disposables.push(x);
+
+  x = vscode.languages.registerDocumentSemanticTokensProvider(
+    { language: 'semanticLanguage' },
+    new DocumentSemanticTokensProvider(),
+    legend
+  );
+  disposables.push(x);
+  ctx.subscriptions.push(x);
 
   const s = ctx.asAbsolutePath(path.join('out', 'server', 'server.js'));
   const dOpts = { execArgv: ['--nolazy', '--inspect=6009'], cwd: process.cwd() };
@@ -25,7 +102,93 @@ export function activate(ctx: vscode.ExtensionContext) {
     run: { module: s, transport: TransportKind.ipc, options: { cwd: process.cwd() } },
     debug: { module: s, transport: TransportKind.ipc, options: dOpts },
   };
-  const cOpts: LanguageClientOptions = {
+
+  const vDocs = new Map<string, string>();
+
+  workspace.registerTextDocumentContentProvider('embedded-content', {
+    provideTextDocumentContent: (uri) => {
+      const u = uri.path.slice(1).slice(0, -4);
+      const d = decodeURIComponent(u);
+      return vDocs.get(d);
+    },
+  });
+
+  let client: LanguageClient;
+
+  let cOpts: LanguageClientOptions = {
+    documentSelector: [{ scheme: 'file', language: 'html1' }],
+  };
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    sOpts,
+    cOpts
+  );
+  client.start();
+
+  cOpts = {
+    documentSelector: [{ scheme: 'file', language: 'html1' }],
+    middleware: {
+      provideCompletionItem: async (d, p, c, t, next) => {
+        if (!isInsideStyleRegion(htmlLanguageService, d.getText(), d.offsetAt(p))) {
+          return await next(d, p, c, t);
+        }
+        const u = d.uri.toString();
+        vDocs.set(u, getCSSVirtualContent(htmlLanguageService, d.getText()));
+        const n = `embedded-content://css/${encodeURIComponent(u)}.css`;
+        const v = Uri.parse(n);
+        return await commands.executeCommand<CompletionList>(
+          'vscode.executeCompletionItemProvider',
+          v,
+          p,
+          c.triggerCharacter
+        );
+      },
+    },
+  };
+
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    sOpts,
+    cOpts
+  );
+  client.start();
+
+  let log = '';
+  const websocketOutputChannel: OutputChannel = {
+    name: 'websocket',
+    append(v: string) {
+      log += v;
+      console.log(v);
+    },
+    appendLine(v: string) {
+      log += v;
+      if (socket && socket.readyState === WebSocket.OPEN) socket.send(log);
+      log = '';
+    },
+    clear() {},
+    show() {},
+    hide() {},
+    dispose() {},
+  };
+
+  cOpts = {
+    documentSelector: [{ scheme: 'file', language: 'plaintext' }],
+    synchronize: {
+      fileEvents: workspace.createFileSystemWatcher('**/.clientrc'),
+    },
+    outputChannel: websocketOutputChannel,
+  };
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    sOpts,
+    cOpts
+  );
+  client.start();
+
+  cOpts = {
     documentSelector: [{ scheme: 'file', language: 'plaintext' }],
     diagnosticCollectionName: 'sample',
     revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -46,7 +209,6 @@ export function activate(ctx: vscode.ExtensionContext) {
       },
     },
   };
-  let client: LanguageClient;
   try {
     client = new LanguageClient(
       'languageServerExample',
@@ -63,36 +225,79 @@ export function activate(ctx: vscode.ExtensionContext) {
   ctx.subscriptions.push(client.start());
 }
 
-export function deactivate(): Thenable<void> | undefined {
-  if (client) return client.stop();
-  return;
+async function showSampleText(ctx: vscode.ExtensionContext): Promise<void> {
+  let f = await vscode.workspace.fs.readFile(
+    vscode.Uri.file(ctx.asAbsolutePath('sample.txt'))
+  );
+  let t = new TextDecoder('utf-8').decode(f);
+  let d = await vscode.workspace.openTextDocument({
+    language: 'plaintext',
+    content: t,
+  });
+  vscode.window.showTextDocument(d);
 }
 
-import * as path from 'path';
-import {
-  workspace as Workspace,
-  window as Window,
-  ExtensionContext,
-  TextDocument,
-  OutputChannel,
-  WorkspaceFolder,
-  Uri,
-} from 'vscode';
+function updateStatus(s: StatusBarItem) {
+  const i = getEditorInfo();
+  s.text = i?.text ?? '';
+  s.tooltip = i?.tooltip;
+  s.color = i?.color;
+  if (i) s.show();
+  else s.hide();
+}
 
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  TransportKind,
-} from 'vscode-languageclient';
+function getEditorInfo():
+  | { text?: string; tooltip?: string; color?: string }
+  | undefined {
+  const e = window.activeTextEditor;
+  if (!e || !workspace.workspaceFolders || workspace.workspaceFolders.length < 2) return;
+  let text: string | undefined;
+  let tooltip: string | undefined;
+  let color: string | undefined;
+  const r = e.document.uri;
+  if (r.scheme === 'file') {
+    const f = workspace.getWorkspaceFolder(r);
+    if (!f) {
+      text = `$(alert) <outside workspace> → ${path.basename(r.fsPath)}`;
+    } else {
+      text = `$(file-submodule) ${path.basename(f.uri.fsPath)} (${f.index + 1} of ${
+        workspace.workspaceFolders.length
+      }) → $(file-code) ${path.basename(r.fsPath)}`;
+      tooltip = r.fsPath;
+      const m = workspace.getConfiguration('multiRootSample', r);
+      color = m.get('statusColor');
+    }
+  }
+  return { text, tooltip, color };
+}
+
+export function deactivate() {
+  let r: Thenable<void>;
+  if (client) r = client.stop();
+  else {
+    const ps: Thenable<void>[] = [];
+    if (defaultClient) ps.push(defaultClient.stop());
+    for (const c of clients.values()) {
+      ps.push(c.stop());
+    }
+    r = Promise.all(ps).then(() => undefined);
+  }
+  if (disposables) disposables.forEach((d) => d.dispose());
+  disposables = [];
+  return r;
+}
+
+// ==================== //
 
 let defaultClient: LanguageClient;
 const clients: Map<string, LanguageClient> = new Map();
 
 let _sortedWorkspaceFolders: string[] | undefined;
+
 function sortedWorkspaceFolders(): string[] {
   if (_sortedWorkspaceFolders === void 0) {
-    _sortedWorkspaceFolders = Workspace.workspaceFolders
-      ? Workspace.workspaceFolders
+    _sortedWorkspaceFolders = workspace.workspaceFolders
+      ? workspace.workspaceFolders
           .map((folder) => {
             let result = folder.uri.toString();
             if (!result.endsWith('/')) {
@@ -107,39 +312,32 @@ function sortedWorkspaceFolders(): string[] {
   }
   return _sortedWorkspaceFolders;
 }
-Workspace.onDidChangeWorkspaceFolders(() => (_sortedWorkspaceFolders = undefined));
+workspace.onDidChangeWorkspaceFolders(() => (_sortedWorkspaceFolders = undefined));
 
-function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
+function getOuterMostWorkspaceFolder(f: WorkspaceFolder): WorkspaceFolder {
   const sorted = sortedWorkspaceFolders();
   for (const element of sorted) {
-    let uri = folder.uri.toString();
-    if (!uri.endsWith('/')) {
-      uri = uri + '/';
-    }
-    if (uri.startsWith(element)) {
-      return Workspace.getWorkspaceFolder(Uri.parse(element))!;
-    }
+    let uri = f.uri.toString();
+    if (!uri.endsWith('/')) uri = uri + '/';
+    if (uri.startsWith(element)) return workspace.getWorkspaceFolder(Uri.parse(element))!;
   }
-  return folder;
+  return f;
 }
 
-export function activate(context: ExtensionContext) {
-  const module = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
-  const outputChannel: OutputChannel = Window.createOutputChannel(
+export function activate(ctx: ExtensionContext) {
+  const module = ctx.asAbsolutePath(path.join('server', 'out', 'server.js'));
+  const outputChannel: OutputChannel = window.createOutputChannel(
     'lsp-multi-server-example'
   );
 
-  function didOpenTextDocument(document: TextDocument): void {
-    // We are only interested in language mode text
+  function didOpenTextDocument(d: TextDocument): void {
     if (
-      document.languageId !== 'plaintext' ||
-      (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')
+      d.languageId !== 'plaintext' ||
+      (d.uri.scheme !== 'file' && d.uri.scheme !== 'untitled')
     ) {
       return;
     }
-
-    const uri = document.uri;
-    // Untitled files go to a default client.
+    const uri = d.uri;
     if (uri.scheme === 'untitled' && !defaultClient) {
       const debugOptions = { execArgv: ['--nolazy', '--inspect=6010'] };
       const serverOptions = {
@@ -160,15 +358,9 @@ export function activate(context: ExtensionContext) {
       defaultClient.start();
       return;
     }
-    let folder = Workspace.getWorkspaceFolder(uri);
-    // Files outside a folder can't be handled. This might depend on the language.
-    // Single file languages like JSON might handle files outside the workspace folders.
-    if (!folder) {
-      return;
-    }
-    // If we have nested workspace folders we only start a server on the outer most workspace folder.
+    let folder = workspace.getWorkspaceFolder(uri);
+    if (!folder) return;
     folder = getOuterMostWorkspaceFolder(folder);
-
     if (!clients.has(folder.uri.toString())) {
       const debugOptions = { execArgv: ['--nolazy', `--inspect=${6011 + clients.size}`] };
       const serverOptions = {
@@ -194,473 +386,24 @@ export function activate(context: ExtensionContext) {
     }
   }
 
-  Workspace.onDidOpenTextDocument(didOpenTextDocument);
-  Workspace.textDocuments.forEach(didOpenTextDocument);
-  Workspace.onDidChangeWorkspaceFolders((event) => {
-    for (const folder of event.removed) {
-      const client = clients.get(folder.uri.toString());
-      if (client) {
-        clients.delete(folder.uri.toString());
-        client.stop();
+  workspace.onDidOpenTextDocument(didOpenTextDocument);
+  workspace.textDocuments.forEach(didOpenTextDocument);
+  workspace.onDidChangeWorkspaceFolders((e) => {
+    for (const f of e.removed) {
+      const c = clients.get(f.uri.toString());
+      if (c) {
+        clients.delete(f.uri.toString());
+        c.stop();
       }
     }
   });
 }
-
-export function deactivate(): Thenable<void> {
-  const promises: Thenable<void>[] = [];
-  if (defaultClient) {
-    promises.push(defaultClient.stop());
-  }
-  for (const client of clients.values()) {
-    promises.push(client.stop());
-  }
-  return Promise.all(promises).then(() => undefined);
-}
-
-import * as path from 'path';
-import { ExtensionContext } from 'vscode';
-
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind,
-} from 'vscode-languageclient';
-
-let client: LanguageClient;
-
-export function activate(context: ExtensionContext) {
-  // The server is implemented in node
-  const serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
-  // The debug options for the server
-  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-  const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-
-  // If the extension is launched in debug mode then the debug server options are used
-  // Otherwise the run options are used
-  const serverOptions: ServerOptions = {
-    run: { module: serverModule, transport: TransportKind.ipc },
-    debug: {
-      module: serverModule,
-      transport: TransportKind.ipc,
-      options: debugOptions,
-    },
-  };
-
-  // Options to control the language client
-  const clientOptions: LanguageClientOptions = {
-    // Register the server for plain text documents
-    documentSelector: [{ scheme: 'file', language: 'html1' }],
-  };
-
-  // Create the language client and start the client.
-  client = new LanguageClient(
-    'languageServerExample',
-    'Language Server Example',
-    serverOptions,
-    clientOptions
-  );
-
-  // Start the client. This will also launch the server
-  client.start();
-}
-
-export function deactivate(): Thenable<void> | undefined {
-  if (!client) {
-    return undefined;
-  }
-  return client.stop();
-}
-
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-
-import * as path from 'path';
-import { commands, CompletionList, ExtensionContext, Uri, workspace } from 'vscode';
-import { getLanguageService } from 'vscode-html-languageservice';
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind,
-} from 'vscode-languageclient';
-import { getCSSVirtualContent, isInsideStyleRegion } from './embeddedSupport';
-
-let client: LanguageClient;
-
-const htmlLanguageService = getLanguageService();
-
-export function activate(context: ExtensionContext) {
-  // The server is implemented in node
-  let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
-  // The debug options for the server
-  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-  let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-
-  // If the extension is launched in debug mode then the debug server options are used
-  // Otherwise the run options are used
-  let serverOptions: ServerOptions = {
-    run: { module: serverModule, transport: TransportKind.ipc },
-    debug: {
-      module: serverModule,
-      transport: TransportKind.ipc,
-      options: debugOptions,
-    },
-  };
-
-  const virtualDocumentContents = new Map<string, string>();
-
-  workspace.registerTextDocumentContentProvider('embedded-content', {
-    provideTextDocumentContent: (uri) => {
-      const originalUri = uri.path.slice(1).slice(0, -4);
-      const decodedUri = decodeURIComponent(originalUri);
-      return virtualDocumentContents.get(decodedUri);
-    },
-  });
-
-  let clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: 'file', language: 'html1' }],
-    middleware: {
-      provideCompletionItem: async (document, position, context, token, next) => {
-        // If not in `<style>`, do not perform request forwarding
-        if (
-          !isInsideStyleRegion(
-            htmlLanguageService,
-            document.getText(),
-            document.offsetAt(position)
-          )
-        ) {
-          return await next(document, position, context, token);
-        }
-
-        const originalUri = document.uri.toString();
-        virtualDocumentContents.set(
-          originalUri,
-          getCSSVirtualContent(htmlLanguageService, document.getText())
-        );
-
-        const vdocUriString = `embedded-content://css/${encodeURIComponent(
-          originalUri
-        )}.css`;
-        const vdocUri = Uri.parse(vdocUriString);
-        return await commands.executeCommand<CompletionList>(
-          'vscode.executeCompletionItemProvider',
-          vdocUri,
-          position,
-          context.triggerCharacter
-        );
-      },
-    },
-  };
-
-  // Create the language client and start the client.
-  client = new LanguageClient(
-    'languageServerExample',
-    'Language Server Example',
-    serverOptions,
-    clientOptions
-  );
-
-  // Start the client. This will also launch the server
-  client.start();
-}
-
-export function deactivate(): Thenable<void> | undefined {
-  if (!client) {
-    return undefined;
-  }
-  return client.stop();
-}
-
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-
-import * as path from 'path';
-import { workspace, commands, ExtensionContext, OutputChannel } from 'vscode';
-import * as WebSocket from 'ws';
-
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind,
-} from 'vscode-languageclient';
-
-let client: LanguageClient;
-
-export function activate(context: ExtensionContext) {
-  const socketPort = workspace
-    .getConfiguration('languageServerExample')
-    .get('port', 7000);
-  let socket: WebSocket | null = null;
-
-  commands.registerCommand('languageServerExample.startStreaming', () => {
-    // Establish websocket connection
-    socket = new WebSocket(`ws://localhost:${socketPort}`);
-  });
-
-  // The server is implemented in node
-  let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
-  // The debug options for the server
-  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-  let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-
-  // If the extension is launched in debug mode then the debug server options are used
-  // Otherwise the run options are used
-  let serverOptions: ServerOptions = {
-    run: { module: serverModule, transport: TransportKind.ipc },
-    debug: {
-      module: serverModule,
-      transport: TransportKind.ipc,
-      options: debugOptions,
-    },
-  };
-
-  // The log to send
-  let log = '';
-  const websocketOutputChannel: OutputChannel = {
-    name: 'websocket',
-    // Only append the logs but send them later
-    append(value: string) {
-      log += value;
-      console.log(value);
-    },
-    appendLine(value: string) {
-      log += value;
-      // Don't send logs until WebSocket initialization
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(log);
-      }
-      log = '';
-    },
-    clear() {},
-    show() {},
-    hide() {},
-    dispose() {},
-  };
-
-  // Options to control the language client
-  let clientOptions: LanguageClientOptions = {
-    // Register the server for plain text documents
-    documentSelector: [{ scheme: 'file', language: 'plaintext' }],
-    synchronize: {
-      // Notify the server about file changes to '.clientrc files contained in the workspace
-      fileEvents: workspace.createFileSystemWatcher('**/.clientrc'),
-    },
-    // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
-    outputChannel: websocketOutputChannel,
-  };
-
-  // Create the language client and start the client.
-  client = new LanguageClient(
-    'languageServerExample',
-    'Language Server Example',
-    serverOptions,
-    clientOptions
-  );
-
-  // Start the client. This will also launch the server
-  client.start();
-}
-
-export function deactivate(): Thenable<void> {
-  if (!client) {
-    return undefined;
-  }
-  return client.stop();
-}
-
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
-import { FoodPyramidHierarchyProvider } from './FoodPyramidHierarchyProvider';
-import { TextDecoder } from 'util';
-
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "call-hierarchy-sample" is now active!');
-
-  let disposable = vscode.languages.registerCallHierarchyProvider(
-    'plaintext',
-    new FoodPyramidHierarchyProvider()
-  );
-
-  context.subscriptions.push(disposable);
-
-  showSampleText(context);
-}
-
-async function showSampleText(context: vscode.ExtensionContext): Promise<void> {
-  let sampleTextEncoded = await vscode.workspace.fs.readFile(
-    vscode.Uri.file(context.asAbsolutePath('sample.txt'))
-  );
-  let sampleText = new TextDecoder('utf-8').decode(sampleTextEncoded);
-  let doc = await vscode.workspace.openTextDocument({
-    language: 'plaintext',
-    content: sampleText,
-  });
-  vscode.window.showTextDocument(doc);
-}
-
-// this method is called when your extension is deactivated
-export function deactivate() {}
-
-/*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
- *--------------------------------------------------------*/
-
-import {
-  ExtensionContext,
-  StatusBarAlignment,
-  window,
-  StatusBarItem,
-  Selection,
-  workspace,
-  TextEditor,
-  commands,
-} from 'vscode';
-import { basename } from 'path';
-
-export function activate(context: ExtensionContext) {
-  // Create a status bar item
-  const status = window.createStatusBarItem(StatusBarAlignment.Left, 1000000);
-  context.subscriptions.push(status);
-
-  // Update status bar item based on events for multi root folder changes
-  context.subscriptions.push(
-    workspace.onDidChangeWorkspaceFolders((e) => updateStatus(status))
-  );
-
-  // Update status bar item based on events for configuration
-  context.subscriptions.push(
-    workspace.onDidChangeConfiguration((e) => updateStatus(status))
-  );
-
-  // Update status bar item based on events around the active editor
-  context.subscriptions.push(
-    window.onDidChangeActiveTextEditor((e) => updateStatus(status))
-  );
-  context.subscriptions.push(
-    window.onDidChangeTextEditorViewColumn((e) => updateStatus(status))
-  );
-  context.subscriptions.push(
-    workspace.onDidOpenTextDocument((e) => updateStatus(status))
-  );
-  context.subscriptions.push(
-    workspace.onDidCloseTextDocument((e) => updateStatus(status))
-  );
-
-  updateStatus(status);
-}
-
-function updateStatus(status: StatusBarItem): void {
-  const info = getEditorInfo();
-  status.text = info ? info.text || '' : '';
-  status.tooltip = info ? info.tooltip : undefined;
-  status.color = info ? info.color : undefined;
-
-  if (info) {
-    status.show();
-  } else {
-    status.hide();
-  }
-}
-
-function getEditorInfo(): { text?: string; tooltip?: string; color?: string } | null {
-  const editor = window.activeTextEditor;
-
-  // If no workspace is opened or just a single folder, we return without any status label
-  // because our extension only works when more than one folder is opened in a workspace.
-  if (!editor || !workspace.workspaceFolders || workspace.workspaceFolders.length < 2) {
-    return null;
-  }
-
-  let text: string | undefined;
-  let tooltip: string | undefined;
-  let color: string | undefined;
-
-  // If we have a file:// resource we resolve the WorkspaceFolder this file is from and update
-  // the status accordingly.
-  const resource = editor.document.uri;
-  if (resource.scheme === 'file') {
-    const folder = workspace.getWorkspaceFolder(resource);
-    if (!folder) {
-      text = `$(alert) <outside workspace> → ${basename(resource.fsPath)}`;
-    } else {
-      text = `$(file-submodule) ${basename(folder.uri.fsPath)} (${folder.index + 1} of ${
-        workspace.workspaceFolders.length
-      }) → $(file-code) ${basename(resource.fsPath)}`;
-      tooltip = resource.fsPath;
-
-      const multiRootConfigForResource = workspace.getConfiguration(
-        'multiRootSample',
-        resource
-      );
-      color = multiRootConfigForResource.get('statusColor');
-    }
-  }
-
-  return { text, tooltip, color };
-}
-
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import {
-  ExtensionContext,
-  languages,
-  commands,
-  Disposable,
-  workspace,
-  window,
-} from 'vscode';
-import { CodelensProvider } from './CodelensProvider';
-
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-
-var disposables: Disposable[] = [];
-
-export function activate(context: ExtensionContext) {
-  let codelensProvider = new CodelensProvider();
-
-  languages.registerCodeLensProvider('*', codelensProvider);
-
-  commands.registerCommand('codelens-sample.enableCodeLens', () => {
-    workspace.getConfiguration('codelens-sample').update('enableCodeLens', true, true);
-  });
-
-  commands.registerCommand('codelens-sample.disableCodeLens', () => {
-    workspace.getConfiguration('codelens-sample').update('enableCodeLens', false, true);
-  });
-
-  commands.registerCommand('codelens-sample.codelensAction', (args) => {
-    window.showInformationMessage(`CodeLens action clicked with args=${args}`);
-  });
-}
-
-// this method is called when your extension is deactivated
-export function deactivate() {
-  if (disposables) {
-    disposables.forEach((item) => item.dispose());
-  }
-  disposables = [];
-}
-
-import * as vscode from 'vscode';
 
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
 
 const legend = (function () {
-  const tokenTypesLegend = [
+  const ts = [
     'comment',
     'string',
     'keyword',
@@ -682,9 +425,8 @@ const legend = (function () {
     'property',
     'label',
   ];
-  tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
-
-  const tokenModifiersLegend = [
+  ts.forEach((t, i) => tokenTypes.set(t, i));
+  const ms = [
     'declaration',
     'documentation',
     'readonly',
@@ -694,22 +436,9 @@ const legend = (function () {
     'modification',
     'async',
   ];
-  tokenModifiersLegend.forEach((tokenModifier, index) =>
-    tokenModifiers.set(tokenModifier, index)
-  );
-
-  return new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
+  ms.forEach((m, i) => tokenModifiers.set(m, i));
+  return new vscode.SemanticTokensLegend(ts, ms);
 })();
-
-export function activate(context: vscode.ExtensionContext) {
-  context.subscriptions.push(
-    vscode.languages.registerDocumentSemanticTokensProvider(
-      { language: 'semanticLanguage' },
-      new DocumentSemanticTokensProvider(),
-      legend
-    )
-  );
-}
 
 interface IParsedToken {
   line: number;
@@ -721,79 +450,66 @@ interface IParsedToken {
 
 class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
   async provideDocumentSemanticTokens(
-    document: vscode.TextDocument,
-    token: vscode.CancellationToken
-  ): Promise<vscode.SemanticTokens> {
-    const allTokens = this._parseText(document.getText());
-    const builder = new vscode.SemanticTokensBuilder();
-    allTokens.forEach((token) => {
-      builder.push(
-        token.line,
-        token.startCharacter,
-        token.length,
-        this._encodeTokenType(token.tokenType),
-        this._encodeTokenModifiers(token.tokenModifiers)
+    d: vscode.TextDocument,
+    _c: vscode.CancellationToken
+  ) {
+    const ts = this._parseText(d.getText());
+    const b = new vscode.SemanticTokensBuilder();
+    ts.forEach((t) => {
+      b.push(
+        t.line,
+        t.startCharacter,
+        t.length,
+        this._encodeTokenType(t.tokenType),
+        this._encodeTokenModifiers(t.tokenModifiers)
       );
     });
-    return builder.build();
+    return b.build();
   }
 
-  private _encodeTokenType(tokenType: string): number {
-    if (tokenTypes.has(tokenType)) {
-      return tokenTypes.get(tokenType)!;
-    } else if (tokenType === 'notInLegend') {
-      return tokenTypes.size + 2;
-    }
+  private _encodeTokenType(t: string) {
+    if (tokenTypes.has(t)) return tokenTypes.get(t)!;
+    else if (t === 'notInLegend') return tokenTypes.size + 2;
     return 0;
   }
 
-  private _encodeTokenModifiers(strTokenModifiers: string[]): number {
-    let result = 0;
-    for (let i = 0; i < strTokenModifiers.length; i++) {
-      const tokenModifier = strTokenModifiers[i];
-      if (tokenModifiers.has(tokenModifier)) {
-        result = result | (1 << tokenModifiers.get(tokenModifier)!);
-      } else if (tokenModifier === 'notInLegend') {
-        result = result | (1 << (tokenModifiers.size + 2));
-      }
+  private _encodeTokenModifiers(ms: string[]) {
+    let r = 0;
+    for (let i = 0; i < ms.length; i++) {
+      const m = ms[i];
+      if (tokenModifiers.has(m)) r = r | (1 << tokenModifiers.get(m)!);
+      else if (m === 'notInLegend') r = r | (1 << (tokenModifiers.size + 2));
     }
-    return result;
+    return r;
   }
 
-  private _parseText(text: string): IParsedToken[] {
-    let r: IParsedToken[] = [];
-    let lines = text.split(/\r\n|\r|\n/);
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      let currentOffset = 0;
+  private _parseText(t: string) {
+    let r = [] as IParsedToken[];
+    let ls = t.split(/\r\n|\r|\n/);
+    for (let i = 0; i < ls.length; i++) {
+      const ln = ls[i];
+      let off = 0;
       do {
-        const openOffset = line.indexOf('[', currentOffset);
-        if (openOffset === -1) {
-          break;
-        }
-        const closeOffset = line.indexOf(']', openOffset);
-        if (closeOffset === -1) {
-          break;
-        }
-        let tokenData = this._parseTextToken(line.substring(openOffset + 1, closeOffset));
+        const open = ln.indexOf('[', off);
+        if (open === -1) break;
+        const close = ln.indexOf(']', open);
+        if (close === -1) break;
+        const d = this._parseTextToken(ln.substring(open + 1, close));
         r.push({
           line: i,
-          startCharacter: openOffset + 1,
-          length: closeOffset - openOffset - 1,
-          tokenType: tokenData.tokenType,
-          tokenModifiers: tokenData.tokenModifiers,
+          startCharacter: open + 1,
+          length: close - open - 1,
+          tokenType: d.tokenType,
+          tokenModifiers: d.tokenModifiers,
         });
-        currentOffset = closeOffset;
+        off = close;
       } while (true);
     }
     return r;
   }
 
-  private _parseTextToken(text: string): { tokenType: string; tokenModifiers: string[] } {
-    let parts = text.split('.');
-    return {
-      tokenType: parts[0],
-      tokenModifiers: parts.slice(1),
-    };
+  private _parseTextToken(t: string): { tokenType: string; tokenModifiers: string[] } {
+    const ps = t.split('.');
+    return { tokenType: ps[0], tokenModifiers: ps.slice(1) };
   }
 }

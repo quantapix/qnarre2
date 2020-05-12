@@ -1,88 +1,84 @@
 import * as vscode from 'vscode';
 
-/**
- * Sample model of what the text in the document contains.
- */
 export class FoodPyramid {
-	private _relations: FoodRelation[] = [];
-	private _nouns = new Set<string>();
-	private _verbs = new Set<string>();
+  private _relations = [] as FoodRelation[];
+  private _nouns = new Set<string>();
+  private _verbs = new Set<string>();
 
-	getRelationAt(wordRange: vscode.Range): FoodRelation | undefined {
-		return this._relations.find(relation => relation.range.contains(wordRange));
-	}
+  getRelationAt(w: vscode.Range) {
+    return this._relations.find((r) => r.range.contains(w));
+  }
 
-	addRelation(relation: FoodRelation): void {
-		this._relations.push(relation);
-		this._nouns.add(relation.object).add(relation.subject);
-		this._verbs.add(relation.verb);
-	}
+  addRelation(r: FoodRelation) {
+    this._relations.push(r);
+    this._nouns.add(r.object).add(r.subject);
+    this._verbs.add(r.verb);
+  }
 
-	isVerb(name: string): boolean {
-		return this._verbs.has(name.toLowerCase());
-	}
+  isVerb(x: string) {
+    return this._verbs.has(x.toLowerCase());
+  }
 
-	isNoun(name: string): boolean {
-		return this._nouns.has(name.toLowerCase());
-	}
+  isNoun(x: string) {
+    return this._nouns.has(x.toLowerCase());
+  }
 
-	getVerbRelations(verb: string): FoodRelation[] {
-		return this._relations
-			.filter(relation => relation.verb === verb.toLowerCase());
-	}
+  getVerbRelations(v: string) {
+    return this._relations.filter((r) => r.verb === v.toLowerCase());
+  }
 
-	getNounRelations(noun: string): FoodRelation[] {
-		return this._relations
-			.filter(relation => relation.involves(noun));
-	}
+  getNounRelations(n: string) {
+    return this._relations.filter((r) => r.involves(n));
+  }
 
-	getSubjectRelations(subject: string): FoodRelation[] {
-		return this._relations
-			.filter(relation => relation.subject === subject.toLowerCase());
-	}
+  getSubjectRelations(s: string) {
+    return this._relations.filter((r) => r.subject === s.toLowerCase());
+  }
 
-	getObjectRelations(object: string): FoodRelation[] {
-		return this._relations
-			.filter(relation => relation.object === object.toLowerCase());
-	}
+  getObjectRelations(o: string) {
+    return this._relations.filter((r) => r.object === o.toLowerCase());
+  }
 }
 
-/**
- * Model element.
- */
 export class FoodRelation {
-	private _subject: string;
-	private _verb: string;
-	private _object: string;
+  private _subject: string;
+  private _verb: string;
+  private _object: string;
 
-	constructor(subject: string, verb: string, object: string,
-		private readonly originalText: string, public readonly range: vscode.Range) {
-			
-		this._subject = subject.toLowerCase();
-		this._verb = verb.toLowerCase();
-		this._object = object.toLowerCase();
-	}
+  constructor(
+    s: string,
+    v: string,
+    o: string,
+    private readonly text: string,
+    public readonly range: vscode.Range
+  ) {
+    this._subject = s.toLowerCase();
+    this._verb = v.toLowerCase();
+    this._object = o.toLowerCase();
+  }
 
-	get subject(): string {
-		return this._subject;
-	}
-	
-	get object(): string {
-		return this._object;
-	}
-	
-	get verb(): string {
-		return this._verb;
-	}
+  get subject(): string {
+    return this._subject;
+  }
 
-	involves(noun: string): boolean {
-		let needle = noun.toLowerCase();
-		return this._subject === needle || this._object === needle;
-	}
+  get object(): string {
+    return this._object;
+  }
 
-	getRangeOf(word: string): vscode.Range {
-		let indexOfWord = new RegExp("\\b" + word + "\\b", "i").exec(this.originalText)!.index;
-		return new vscode.Range(this.range.start.translate({ characterDelta: indexOfWord }),
-			this.range.start.translate({ characterDelta: indexOfWord + word.length }));
-	}
+  get verb(): string {
+    return this._verb;
+  }
+
+  involves(noun: string) {
+    let n = noun.toLowerCase();
+    return this._subject === n || this._object === n;
+  }
+
+  getRangeOf(w: string) {
+    let i = new RegExp('\\b' + w + '\\b', 'i').exec(this.text)!.index;
+    return new vscode.Range(
+      this.range.start.translate({ characterDelta: i }),
+      this.range.start.translate({ characterDelta: i + w.length })
+    );
+  }
 }
