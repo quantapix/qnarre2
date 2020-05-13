@@ -7,16 +7,23 @@ import * as vscode from 'vscode';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import DefinitionProviderBase from './definitionProviderBase';
 
-export default class TypeScriptTypeDefinitionProvider extends DefinitionProviderBase implements vscode.TypeDefinitionProvider {
-	public provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Definition | undefined> {
-		return this.getSymbolLocations('typeDefinition', document, position, token);
-	}
+export default class TypeScriptTypeDefinitionProvider extends DefinitionProviderBase
+  implements vscode.TypeDefinitionProvider {
+  public provideTypeDefinition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): Promise<vscode.Definition | undefined> {
+    return this.getSymbolLocations('typeDefinition', document, position, token);
+  }
 }
 
 export function register(
-	selector: vscode.DocumentSelector,
-	client: ITypeScriptServiceClient,
+  selector: vscode.DocumentSelector,
+  client: ITypeScriptServiceClient
 ) {
-	return vscode.languages.registerTypeDefinitionProvider(selector,
-		new TypeScriptTypeDefinitionProvider(client));
+  return vscode.languages.registerTypeDefinitionProvider(
+    selector,
+    new TypeScriptTypeDefinitionProvider(client)
+  );
 }

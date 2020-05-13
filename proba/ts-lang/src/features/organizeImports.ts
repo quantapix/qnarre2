@@ -17,98 +17,116 @@ import { nulToken } from '../utils/cancellation';
 
 const localize = nls.loadMessageBundle();
 
-
 class OrganizeImportsCommand implements Command {
-	public static readonly Id = '_typescript.organizeImports';
+  public static readonly Id = '_typescript.organizeImports';
 
-	public readonly id = OrganizeImportsCommand.Id;
+  public readonly id = OrganizeImportsCommand.Id;
 
-	constructor(
-		private readonly client: ITypeScriptServiceClient,
-		private readonly telemetryReporter: TelemetryReporter,
-	) { }
+  constructor(
+    private readonly client: ITypeScriptServiceClient,
+    private readonly telemetryReporter: TelemetryReporter
+  ) {}
 
-	public async execute(file: string): Promise<boolean> {
-		/* __GDPR__
+  public async execute(file: string): Promise<boolean> {
+    /* __GDPR__
 			"organizeImports.execute" : {
 				"${include}": [
 					"${TypeScriptCommonProperties}"
 				]
 			}
 		*/
-		this.telemetryReporter.logTelemetry('organizeImports.execute', {});
+    this.telemetryReporter.logTelemetry('organizeImports.execute', {});
 
-		const args: Proto.OrganizeImportsRequestArgs = {
-			scope: {
-				type: 'file',
-				args: {
-					file
-				}
-			}
-		};
-		const response = await this.client.interruptGetErr(() => this.client.execute('organizeImports', args, nulToken));
-		if (response.type !== 'response' || !response.body) {
-			return false;
-		}
+    const args: Proto.OrganizeImportsRequestArgs = {
+      scope: {
+        type: 'file',
+        args: {
+          file,
+        },
+      },
+    };
+    const response = await this.client.interruptGetErr(() =>
+      this.client.execute('organizeImports', args, nulToken)
+    );
+    if (response.type !== 'response' || !response.body) {
+      return false;
+    }
 
-		const edits = typeconverts.WorkspaceEdit.fromFileCodeEdits(this.client, response.body);
-		return vscode.workspace.applyEdit(edits);
-	}
+    const edits = typeconverts.WorkspaceEdit.fromFileCodeEdits(
+      this.client,
+      response.body
+    );
+    return vscode.workspace.applyEdit(edits);
+  }
 }
 
 export class OrganizeImportsCodeActionProvider implements vscode.CodeActionProvider {
-	public static readonly minVersion = API.v280;
+  public static readonly minVersion = API.v280;
 
-	public constructor(
-		private readonly client: ITypeScriptServiceClient,
-		commandManager: CommandManager,
-		private readonly fileConfigManager: FileConfigurationManager,
-		telemetryReporter: TelemetryReporter,
+  public constructor(
+    private readonly client: ITypeScriptServiceClient,
+    commandManager: CommandManager,
+    private readonly fileConfigManager: FileConfigurationManager,
+    telemetryReporter: TelemetryReporter
+  ) {
+    commandManager.register(new OrganizeImportsCommand(client, telemetryReporter));
+  }
 
-	) {
-		commandManager.register(new OrganizeImportsCommand(client, telemetryReporter));
-	}
+  public readonly metadata: vscode.CodeActionProviderMetadata = {
+    providedCodeActionKinds: [vscode.CodeActionKind.SourceOrganizeImports],
+  };
 
-	public readonly metadata: vscode.CodeActionProviderMetadata = {
-		providedCodeActionKinds: [vscode.CodeActionKind.SourceOrganizeImports]
-	};
+  public provideCodeActions(
+    document: vscode.TextDocument,
+    _range: vscode.Range,
+    context: vscode.CodeActionContext,
+    token: vscode.CancellationToken
+  ): vscode.CodeAction[] {
+    const file = this.client.toOpenedFilePath(document);
+    if (!file) {
+      return [];
+    }
 
-	public provideCodeActions(
-		document: vscode.TextDocument,
-		_range: vscode.Range,
-		context: vscode.CodeActionContext,
-		token: vscode.CancellationToken
-	): vscode.CodeAction[] {
-		const file = this.client.toOpenedFilePath(document);
-		if (!file) {
-			return [];
-		}
+    if (
+      !context.only ||
+      !context.only.contains(vscode.CodeActionKind.SourceOrganizeImports)
+    ) {
+      return [];
+    }
 
-		if (!context.only || !context.only.contains(vscode.CodeActionKind.SourceOrganizeImports)) {
-			return [];
-		}
+    this.fileConfigManager.ensureConfigurationForDocument(document, token);
 
-		this.fileConfigManager.ensureConfigurationForDocument(document, token);
-
-		const action = new vscode.CodeAction(
-			localize('organizeImportsAction.title', "Organize Imports"),
-			vscode.CodeActionKind.SourceOrganizeImports);
-		action.command = { title: '', command: OrganizeImportsCommand.Id, arguments: [file] };
-		return [action];
-	}
+    const action = new vscode.CodeAction(
+      localize('organizeImportsAction.title', 'Organize Imports'),
+      vscode.CodeActionKind.SourceOrganizeImports
+    );
+    action.command = { title: '', command: OrganizeImportsCommand.Id, arguments: [file] };
+    return [action];
+  }
 }
 
 export function register(
-	selector: vscode.DocumentSelector,
-	client: ITypeScriptServiceClient,
-	commandManager: CommandManager,
-	fileConfigurationManager: FileConfigurationManager,
-	telemetryReporter: TelemetryReporter,
+  selector: vscode.DocumentSelector,
+  client: ITypeScriptServiceClient,
+  commandManager: CommandManager,
+  fileConfigurationManager: FileConfigurationManager,
+  telemetryReporter: TelemetryReporter
 ) {
-	return new VersionDependentRegistration(client, OrganizeImportsCodeActionProvider.minVersion, () => {
-		const organizeImportsProvider = new OrganizeImportsCodeActionProvider(client, commandManager, fileConfigurationManager, telemetryReporter);
-		return vscode.languages.registerCodeActionsProvider(selector,
-			organizeImportsProvider,
-			organizeImportsProvider.metadata);
-	});
+  return new VersionDependentRegistration(
+    client,
+    OrganizeImportsCodeActionProvider.minVersion,
+    () => {
+      const organizeImportsProvider = new OrganizeImportsCodeActionProvider(
+        client,
+        commandManager,
+        fileConfigurationManager,
+        telemetryReporter
+      );
+      return vscode.languages.registerCodeActionsProvider(
+        selector,
+        organizeImportsProvider,
+        organizeImportsProvider.metadata
+      );
+    }
+  );
 }
