@@ -1,7 +1,8 @@
 {
+  "extends": "../.eslintrc.json",
   "parserOptions": {
     "tsconfigRootDir": "/Users/qpix/clone/qnarre2/proba",
-    "project": ["./tsconfig.json"]
+    "project": ["./tsconfig.eslint.json"]
   },
   "rules": {
 		// "semi": "error",
