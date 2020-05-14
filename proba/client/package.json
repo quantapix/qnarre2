@@ -10,7 +10,9 @@
 		"vscode": "^1.45.0"
 	},
 	"dependencies": {
-    "vscode-html-languageservice": "",
-		"vscode-languageclient": ""
+		"vscode-html-languageservice": "",
+		"vscode-languageclient": "next",
+		"vscode-languageserver": "next",
+		"vscode-uri": ""
 	}
 }

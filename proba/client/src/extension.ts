@@ -14,12 +14,17 @@ import {
   window,
   workspace,
   WorkspaceFolder,
+  Position,
+  Range,
+  TextEditor,
+  TextEditorEdit,
 } from 'vscode';
 import {
   LanguageClient,
   LanguageClientOptions,
   RevealOutputChannelOn,
   ServerOptions,
+  TextEdit,
   TransportKind,
 } from 'vscode-languageclient';
 import { getLanguageService } from 'vscode-html-languageservice';
@@ -29,14 +34,125 @@ import { getCSSVirtualContent, isInsideStyleRegion } from './embeddedSupport';
 import { FoodPyramidHierarchyProvider } from './FoodPyramidHierarchyProvider';
 import { TextDecoder } from 'util';
 import { CodelensProvider } from './CodelensProvider';
+import { Cancel } from './cancel';
+import { Commands } from '../../server/src/commands/commands';
+import { Reporting } from './progress';
 
 let client: LanguageClient;
+let cancel: Cancel | undefined;
 
 const htmlLanguageService = getLanguageService();
 let disposables = [] as Disposable[];
 
 export function activate(ctx: vscode.ExtensionContext) {
   console.log('Extension "proba" is now active!');
+
+  cancel = new Cancel();
+  const p = ctx.asAbsolutePath(path.join('out', 'server', 'server.js'));
+  const dOpts = { execArgv: ['--nolazy', '--inspect=6009'], cwd: process.cwd() };
+  const sOpts: ServerOptions = {
+    run: {
+      module: p,
+      transport: TransportKind.ipc,
+      args: cancel.args(),
+      options: { cwd: process.cwd() },
+    },
+    debug: {
+      module: p,
+      transport: TransportKind.ipc,
+      args: cancel.args(),
+      options: dOpts,
+    },
+  };
+  let cOpts: LanguageClientOptions = {
+    documentSelector: [{ scheme: 'file', language: 'python' }],
+    synchronize: { configurationSection: ['python', 'pyright'] },
+    connectionOptions: { cancellationStrategy: cancel },
+  };
+
+  client = new LanguageClient('python', 'Qpx', sOpts, cOpts);
+  ctx.subscriptions.push(client.start());
+  ctx.subscriptions.push(new Reporting(client));
+
+  let cmds = [Commands.orderImports, Commands.addMissingOptionalToParam];
+  cmds.forEach((n) => {
+    ctx.subscriptions.push(
+      commands.registerTextEditorCommand(
+        n,
+        (editor: TextEditor, _: TextEditorEdit, ...args: any[]) => {
+          const cmd = {
+            command: n,
+            arguments: [editor.document.uri.toString(), ...args],
+          };
+          client
+            .sendRequest<TextEdit[] | undefined>('workspace/executeCommand', cmd)
+            .then((es) => {
+              if (es && es.length > 0) {
+                editor.edit((b) => {
+                  es.forEach((e) => {
+                    const s = new Position(e.range.start.line, e.range.start.character);
+                    const f = new Position(e.range.end.line, e.range.end.character);
+                    b.replace(new Range(s, f), e.newText);
+                  });
+                });
+              }
+            });
+        },
+        () => {}
+      )
+    );
+  });
+
+  cmds = [Commands.createTypeStub, Commands.restartServer];
+  cmds.forEach((n) => {
+    ctx.subscriptions.push(
+      commands.registerCommand(n, (...args: any[]) => {
+        client.sendRequest('workspace/executeCommand', {
+          n,
+          arguments: args,
+        });
+      })
+    );
+  });
+
+  cOpts = {
+    documentSelector: [{ scheme: 'file', language: 'html1' }],
+  };
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    sOpts,
+    cOpts
+  );
+  client.start();
+
+  cOpts = {
+    documentSelector: [{ scheme: 'file', language: 'html1' }],
+    middleware: {
+      provideCompletionItem: async (d, p, c, t, next) => {
+        if (!isInsideStyleRegion(htmlLanguageService, d.getText(), d.offsetAt(p))) {
+          return await next(d, p, c, t);
+        }
+        const u = d.uri.toString();
+        vDocs.set(u, getCSSVirtualContent(htmlLanguageService, d.getText()));
+        const n = `embedded-content://css/${encodeURIComponent(u)}.css`;
+        const v = Uri.parse(n);
+        return await commands.executeCommand<CompletionList>(
+          'vscode.executeCompletionItemProvider',
+          v,
+          p,
+          c.triggerCharacter
+        );
+      },
+    },
+  };
+  client = new LanguageClient(
+    'languageServerExample',
+    'Language Server Example',
+    sOpts,
+    cOpts
+  );
+  client.start();
 
   let x = vscode.commands.registerCommand('extension.proba', () => {
     vscode.window.showInformationMessage('Proba, proba, proba...');
@@ -73,7 +189,7 @@ export function activate(ctx: vscode.ExtensionContext) {
   ctx.subscriptions.push(workspace.onDidCloseTextDocument(() => updateStatus(stat)));
   updateStatus(stat);
 
-  let codelensProvider = new CodelensProvider();
+  const codelensProvider = new CodelensProvider();
   x = languages.registerCodeLensProvider('*', codelensProvider);
   disposables.push(x);
   x = commands.registerCommand('codelens-sample.enableCodeLens', () => {
@@ -96,13 +212,6 @@ export function activate(ctx: vscode.ExtensionContext) {
   disposables.push(x);
   ctx.subscriptions.push(x);
 
-  const s = ctx.asAbsolutePath(path.join('out', 'server', 'server.js'));
-  const dOpts = { execArgv: ['--nolazy', '--inspect=6009'], cwd: process.cwd() };
-  const sOpts: ServerOptions = {
-    run: { module: s, transport: TransportKind.ipc, options: { cwd: process.cwd() } },
-    debug: { module: s, transport: TransportKind.ipc, options: dOpts },
-  };
-
   const vDocs = new Map<string, string>();
 
   workspace.registerTextDocumentContentProvider('embedded-content', {
@@ -112,48 +221,6 @@ export function activate(ctx: vscode.ExtensionContext) {
       return vDocs.get(d);
     },
   });
-
-  let client: LanguageClient;
-
-  let cOpts: LanguageClientOptions = {
-    documentSelector: [{ scheme: 'file', language: 'html1' }],
-  };
-  client = new LanguageClient(
-    'languageServerExample',
-    'Language Server Example',
-    sOpts,
-    cOpts
-  );
-  client.start();
-
-  cOpts = {
-    documentSelector: [{ scheme: 'file', language: 'html1' }],
-    middleware: {
-      provideCompletionItem: async (d, p, c, t, next) => {
-        if (!isInsideStyleRegion(htmlLanguageService, d.getText(), d.offsetAt(p))) {
-          return await next(d, p, c, t);
-        }
-        const u = d.uri.toString();
-        vDocs.set(u, getCSSVirtualContent(htmlLanguageService, d.getText()));
-        const n = `embedded-content://css/${encodeURIComponent(u)}.css`;
-        const v = Uri.parse(n);
-        return await commands.executeCommand<CompletionList>(
-          'vscode.executeCompletionItemProvider',
-          v,
-          p,
-          c.triggerCharacter
-        );
-      },
-    },
-  };
-
-  client = new LanguageClient(
-    'languageServerExample',
-    'Language Server Example',
-    sOpts,
-    cOpts
-  );
-  client.start();
 
   let log = '';
   const websocketOutputChannel: OutputChannel = {
@@ -226,11 +293,11 @@ export function activate(ctx: vscode.ExtensionContext) {
 }
 
 async function showSampleText(ctx: vscode.ExtensionContext): Promise<void> {
-  let f = await vscode.workspace.fs.readFile(
+  const f = await vscode.workspace.fs.readFile(
     vscode.Uri.file(ctx.asAbsolutePath('sample.txt'))
   );
-  let t = new TextDecoder('utf-8').decode(f);
-  let d = await vscode.workspace.openTextDocument({
+  const t = new TextDecoder('utf-8').decode(f);
+  const d = await vscode.workspace.openTextDocument({
     language: 'plaintext',
     content: t,
   });
@@ -272,6 +339,10 @@ function getEditorInfo():
 }
 
 export function deactivate() {
+  if (cancel) {
+    cancel.dispose();
+    cancel = undefined;
+  }
   let r: Thenable<void>;
   if (client) r = client.stop();
   else {
@@ -324,7 +395,7 @@ function getOuterMostWorkspaceFolder(f: WorkspaceFolder): WorkspaceFolder {
   return f;
 }
 
-export function activate(ctx: ExtensionContext) {
+export function activate2(ctx: ExtensionContext) {
   const module = ctx.asAbsolutePath(path.join('server', 'out', 'server.js'));
   const outputChannel: OutputChannel = window.createOutputChannel(
     'lsp-multi-server-example'
@@ -484,8 +555,8 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
   }
 
   private _parseText(t: string) {
-    let r = [] as IParsedToken[];
-    let ls = t.split(/\r\n|\r|\n/);
+    const r = [] as IParsedToken[];
+    const ls = t.split(/\r\n|\r|\n/);
     for (let i = 0; i < ls.length; i++) {
       const ln = ls[i];
       let off = 0;
