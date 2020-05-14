@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export class CodelensProvider implements vscode.CodeLensProvider {
+export class Codelens implements vscode.CodeLensProvider {
   private lenses = [] as vscode.CodeLens[];
   private regex: RegExp;
   private _onDidChange: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
@@ -25,10 +25,10 @@ export class CodelensProvider implements vscode.CodeLensProvider {
       const t = d.getText();
       let ms;
       while ((ms = r.exec(t)) !== null) {
-        let ln = d.lineAt(d.positionAt(ms.index).line);
-        let i = ln.text.indexOf(ms[0]);
-        let p = new vscode.Position(ln.lineNumber, i);
-        let range = d.getWordRangeAtPosition(p, new RegExp(this.regex));
+        const ln = d.lineAt(d.positionAt(ms.index).line);
+        const i = ln.text.indexOf(ms[0]);
+        const p = new vscode.Position(ln.lineNumber, i);
+        const range = d.getWordRangeAtPosition(p, new RegExp(this.regex));
         if (range) this.lenses.push(new vscode.CodeLens(range));
       }
       return this.lenses;

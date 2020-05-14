@@ -11,7 +11,11 @@
     "url": "https://github.com/Microsoft/vscode-extension-samples"
   },
   "keywords": [
-    "multi-root ready"
+    "multi-root ready",
+    "typescript",
+    "julia",
+    "python",
+    "theme"
   ],
   "engines": {
     "vscode": "^1.45.0"
@@ -23,11 +27,14 @@
   ],
   "activationEvents": [
     "*",
+    "onLanguage:python",
+    "workspaceContains:**/pyrightconfig.json",
     "onLanguage:semanticLanguage",
     "onCommand:extension.proba",
     "onLanguage:plaintext",
     "onLanguage:html1"
   ],
+  "icon": "images/pyright-icon.png",
   "main": "./out/client/extension",
   "contributes": {
     "themes": [
@@ -40,6 +47,11 @@
         "label": "Proba Dark",
         "uiTheme": "vs-dark",
         "path": "./Proba_Dark.tmTheme"
+      },
+      {
+        "label": "One Dark Pro",
+        "uiTheme": "vs-dark",
+        "path": "./themes/OneDark-Pro.json"
       },
       {
         "label": "Monokai",
@@ -60,6 +72,16 @@
         "configuration": "./js-configuration.json"
       },
       {
+        "id": "python",
+        "aliases": [
+          "Python"
+        ],
+        "extensions": [
+          ".py",
+          ".pyi"
+        ]
+      },
+      {
         "id": "html1",
         "extensions": [
           ".html1"
@@ -72,6 +94,16 @@
         ]
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "pyright.organizeimports",
+          "title": "Pyright: Organize Imports",
+          "group": "Pyright",
+          "when": "editorLangId == python"
+        }
+      ]
+    },
     "grammars": [
       {
         "language": "html1",
@@ -85,20 +117,97 @@
         "title": "Proba :-)"
       },
       {
+        "command": "proba.organizeimports",
+        "title": "Organize Imports",
+        "category": "Proba"
+      },
+      {
+        "command": "proba.restartserver",
+        "title": "Restart Server",
+        "category": "Proba"
+      },
+      {
         "title": "Enable CodeLens",
-        "command": "codelens-sample.enableCodeLens",
-        "category": "CodeLens Sample"
+        "command": "proba.enableCodeLens",
+        "category": "Proba"
       },
       {
         "title": "Disable Codelens",
-        "command": "codelens-sample.disableCodeLens",
-        "category": "CodeLens Sample"
+        "command": "proba.disableCodeLens",
+        "category": "Proba"
       }
+    ],
+    "markdown.previewStyles": [
+      "./styles/base.css",
+      "./styles/markdown.css",
+      "./styles/atom-one-dark.css"
     ],
     "configuration": {
       "type": "object",
-      "title": "Proba config",
+      "title": "Proba",
       "properties": {
+        "python.analysis.typeshedPaths": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Paths to look for typeshed modules.",
+          "scope": "resource"
+        },
+        "python.analysis.autoSearchPaths": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically add common search paths like 'src'?",
+          "scope": "resource"
+        },
+        "python.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python, you can use a custom version of Python.",
+          "scope": "resource"
+        },
+        "python.venvPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to folder with a list of Virtual Environments.",
+          "scope": "resource"
+        },
+        "pyright.disableLanguageServices": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disables type completion, definitions, and references.",
+          "scope": "resource"
+        },
+        "pyright.disableOrganizeImports": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disables the “Organize Imports” command.",
+          "scope": "resource"
+        },
+        "pyright.openFilesOnly": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report errors only for currently-open files.",
+          "scope": "resource"
+        },
+        "pyright.useLibraryCodeForTypes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use library implementations to extract type information when type stub is not present.",
+          "scope": "resource"
+        },
+        "pyright.typeCheckingMode": {
+          "type": "string",
+          "default": "basic",
+          "enum": [
+            "off",
+            "basic",
+            "strict"
+          ],
+          "description": "Defines the default rule set for type checking.",
+          "scope": "resource"
+        },
         "codelens-sample.enableCodeLens": {
           "type": "boolean",
           "default": true
@@ -154,6 +263,9 @@
       }
     }
   },
+  "bin": {
+    "proba": "index.js"
+  },
   "scripts": {
     "webpack:dev": "npm run clean && yarn run compile && webpack --mode none --config ./client/webpack.config.js && webpack --mode none --config ./server/webpack.config.js",
     "webpack": "yarn run clean && yarn run compile && webpack --mode production --config ./client/webpack.config.js && webpack --mode production --config ./server/webpack.config.js",
@@ -164,7 +276,17 @@
     "pretest": "yarn run compile",
     "test": "sh ./scripts/e2e.sh",
     "vscode:prepublish": "yarn run webpack",
-    "watch": "tsc -b -w"
+    "watch": "tsc -b -w",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install && cd ..",
+    "build": "tsc -p ./",
+    "build:client": "cd client && npm run build && cd ..",
+    "build:clientServerDebug": "npm run build:serverDebug && npm run build:client",
+    "build:serverProd": "cd server && npm run build:serverProd && cd ..",
+    "build:serverDebug": "cd server && npm run build:serverDebug && cd ..",
+    "build:cli": "cd server && npm run build:cli && cd ..",
+    "package": "npm run install:all && npm run clean && npm run build:serverProd && npm run build:cli && cd client && npx vsce package && cd ..",
+    "qupdate-vscode": "node ./node_modules/vscode/bin/install",
+    "qpostinstall": "node ./node_modules/vscode/bin/install"
   },
   "dependencies": {},
   "devDependencies": {
@@ -181,8 +303,6 @@
     "source-map-support": "",
     "ts-loader": "",
     "vsce": "",
-    "vscode-jsonrpc": "",
-    "vscode-test": "",
-    "vscode-uri": ""
+    "vscode-test": ""
   }
 }

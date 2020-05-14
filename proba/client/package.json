@@ -13,6 +13,6 @@
 		"vscode-html-languageservice": "",
 		"vscode-languageclient": "next",
 		"vscode-languageserver": "next",
-		"vscode-uri": ""
+		"vscode-uri": "next"
 	}
 }

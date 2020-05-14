@@ -30,10 +30,10 @@ import {
 import { getLanguageService } from 'vscode-html-languageservice';
 import * as WebSocket from 'ws';
 
-import { getCSSVirtualContent, isInsideStyleRegion } from './embeddedSupport';
+import { getCSSVirtualContent, isInsideStyleRegion } from './embedded';
 import { FoodPyramidHierarchyProvider } from './FoodPyramidHierarchyProvider';
 import { TextDecoder } from 'util';
-import { CodelensProvider } from './CodelensProvider';
+import { Codelens } from './codelens';
 import { Cancel } from './cancel';
 import { Commands } from '../../server/src/commands/commands';
 import { Reporting } from './progress';
@@ -189,8 +189,8 @@ export function activate(ctx: vscode.ExtensionContext) {
   ctx.subscriptions.push(workspace.onDidCloseTextDocument(() => updateStatus(stat)));
   updateStatus(stat);
 
-  const codelensProvider = new CodelensProvider();
-  x = languages.registerCodeLensProvider('*', codelensProvider);
+  const codelens = new Codelens();
+  x = languages.registerCodeLensProvider('*', codelens);
   disposables.push(x);
   x = commands.registerCommand('codelens-sample.enableCodeLens', () => {
     workspace.getConfiguration('codelens-sample').update('enableCodeLens', true, true);

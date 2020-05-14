@@ -17,7 +17,7 @@
     "eslint-plugin-react": "",
     "prettier": "",
     "react": "next",
-    "typescript": "^4.0.0-dev.20200512",
+    "typescript": "next",
     "webpack": "",
     "webpack-cli": ""
   }
