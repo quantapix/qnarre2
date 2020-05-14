@@ -40,6 +40,11 @@
         "label": "Proba Dark",
         "uiTheme": "vs-dark",
         "path": "./Proba_Dark.tmTheme"
+      },
+      {
+        "label": "Monokai",
+        "uiTheme": "vs-dark",
+        "path": "./themes/monokai-color-theme.json"
       }
     ],
     "languages": [
