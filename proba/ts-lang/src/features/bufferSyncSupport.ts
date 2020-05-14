@@ -10,7 +10,7 @@ import API from '../utils/api';
 import { coalesce } from '../utils/arrays';
 import { Delayer } from '../utils/async';
 import { nulToken } from '../utils/cancellation';
-import { Disposable } from '../utils/dispose';
+import { Disposable } from '../utils/misc';
 import * as languageModeIds from '../utils/languageModeIds';
 import { ResourceMap } from '../utils/resourceMap';
 import * as typeConverters from '../utils/typeConverters';

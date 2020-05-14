@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { openProjectConfigForFile, ProjectType } from './utils/tsconfig';
 import TypeScriptServiceClientHost from './typeScriptServiceClientHost';
-import { Command, CommandManager } from './utils/commandManager';
-import { Lazy } from './utils/lazy';
+import { Command, CommandManager } from './utils/misc';
+import { Lazy } from './utils/misc';
 import { PluginManager } from './utils/plugins';
-import { isTypeScriptDocument } from './utils/languageModeIds';
+import { isTypeScriptDocument } from './utils/misc';
 
 export class ConfigurePluginCommand implements Command {
   public readonly id = '_typescript.configurePlugin';

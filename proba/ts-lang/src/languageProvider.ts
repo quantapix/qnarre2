@@ -4,11 +4,11 @@ import { CachedResponse } from './server';
 import { DiagnosticKind } from './features/diagnostics';
 import FileConfigurationManager from './features/fileConfigurationManager';
 import TypeScriptServiceClient from './typescriptServiceClient';
-import { CommandManager } from './utils/commandManager';
-import { Disposable } from './utils/dispose';
-import * as fileSchemes from './utils/fileSchemes';
-import { LanguageDescription } from './utils/languageDescription';
-import { memoize } from './utils/memoize';
+import { CommandManager } from './utils/misc';
+import { Disposable } from './utils/misc';
+import * as fileSchemes from './utils/misc';
+import { LanguageDescription } from './utils/misc';
+import { memoize } from './utils/misc';
 import { TelemetryReporter } from './utils/telemetry';
 import TypingsStatus from './utils/typingsStatus';
 

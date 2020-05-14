@@ -16,7 +16,7 @@ import {
 } from './typescriptService';
 import API from './utils/api';
 import { TsServerLogLevel, TypeScriptServiceConfiguration } from './utils/configuration';
-import { Disposable } from './utils/dispose';
+import { Disposable } from './utils/misc';
 import * as fileSchemes from './utils/fileSchemes';
 import LogDirectoryProvider from './utils/logDirectoryProvider';
 import Logger from './utils/logger';

@@ -12,7 +12,7 @@ import API from '../utils/api';
 import { Delayer } from '../utils/async';
 import { nulToken } from '../utils/cancellation';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
-import { Disposable } from '../utils/dispose';
+import { Disposable } from '../utils/misc';
 import * as fileSchemes from '../utils/fileSchemes';
 import { doesResourceLookLikeATypeScriptFile } from '../utils/languageDescription';
 import * as typeConverters from '../utils/typeConverters';

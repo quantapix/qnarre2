@@ -1,20 +1,50 @@
 import * as vscode from 'vscode';
-import { Api, getExtensionApi } from './api';
 import { registerCommands } from './commands';
 import { LanguageConfigurationManager } from './features/languageConfiguration';
 import TypeScriptServiceClientHost from './typeScriptServiceClientHost';
-import { flatten } from './utils/arrays';
+import { flatten } from './utils/misc';
 import * as electron from './utils/electron';
 import * as rimraf from 'rimraf';
-import { CommandManager } from './utils/commandManager';
-import * as fileSchemes from './utils/fileSchemes';
-import { standardLanguageDescriptions } from './utils/languageDescription';
-import { lazy, Lazy } from './utils/lazy';
+import { CommandManager } from './utils/misc';
+import * as fileSchemes from './utils/misc';
+import { standardLanguageDescriptions } from './utils/misc';
+import { lazy, Lazy } from './utils/misc';
 import LogDirectoryProvider from './utils/logDirectoryProvider';
-import ManagedFileContextManager from './utils/managedFileContext';
+import ManagedFileContextManager from './utils/misc';
 import { PluginManager } from './utils/plugins';
 import * as ProjectStatus from './utils/largeProjectStatus';
 import TscTaskProvider from './features/task';
+
+class ApiV0 {
+  public constructor(
+    public readonly onCompletionAccepted: vscode.Event<
+      vscode.CompletionItem & { metadata?: any }
+    >,
+    private readonly _pluginManager: PluginManager
+  ) {}
+
+  configurePlugin(pluginId: string, configuration: {}): void {
+    this._pluginManager.setConfiguration(pluginId, configuration);
+  }
+}
+
+export interface Api {
+  getAPI(version: 0): ApiV0 | undefined;
+}
+
+export function getExtensionApi(
+  onCompletionAccepted: vscode.Event<vscode.CompletionItem>,
+  pluginManager: PluginManager
+): Api {
+  return {
+    getAPI(version) {
+      if (version === 0) {
+        return new ApiV0(onCompletionAccepted, pluginManager);
+      }
+      return undefined;
+    },
+  };
+}
 
 export function activate(context: vscode.ExtensionContext): Api {
   const pluginManager = new PluginManager();

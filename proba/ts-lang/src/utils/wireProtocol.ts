@@ -5,7 +5,7 @@
 
 import * as stream from 'stream';
 import * as vscode from 'vscode';
-import { Disposable } from './dispose';
+import { Disposable } from './misc';
 
 const defaultSize = 8192;
 const contentLength = 'Content-Length: ';

@@ -9,7 +9,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as vscode from 'vscode';
-import { Disposable } from '../utils/dispose';
+import { Disposable } from '../utils/misc';
 import * as languageModeIds from '../utils/languageModeIds';
 
 const jsTsLanguageConfiguration: vscode.LanguageConfiguration = {

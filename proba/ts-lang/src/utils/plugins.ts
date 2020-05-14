@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as arrays from './arrays';
-import { Disposable } from './dispose';
+import { Disposable } from './misc';
 
 export interface TypeScriptServerPlugin {
   readonly path: string;

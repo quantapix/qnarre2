@@ -1,13 +1,8 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import BufferSyncSupport from './features/bufferSyncSupport';
 import * as Proto from './protocol';
-import API from './utils/api';
-import { TypeScriptServiceConfiguration } from './utils/configuration';
+import API from './utils/misc';
+import { TypeScriptServiceConfiguration } from './utils/misc';
 import { PluginManager } from './utils/plugins';
 
 export namespace ServerResponse {

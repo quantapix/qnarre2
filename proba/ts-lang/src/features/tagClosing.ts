@@ -12,7 +12,7 @@ import {
   ConfigurationDependentRegistration,
   VersionDependentRegistration,
 } from '../utils/dependentRegistration';
-import { Disposable } from '../utils/dispose';
+import { Disposable } from '../utils/misc';
 import * as typeConverters from '../utils/typeConverters';
 
 class TagClosing extends Disposable {

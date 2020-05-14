@@ -3,16 +3,16 @@ import * as path from 'path';
 import * as stream from 'stream';
 import * as vscode from 'vscode';
 import * as Proto from 'typescript/lib/protocol';
-import API from './utils/api';
-import { TsServerLogLevel, TypeScriptServiceConfiguration } from './utils/configuration';
+import API from './utils/misc';
+import { TsServerLogLevel, TypeScriptServiceConfiguration } from './utils/misc';
 import * as electron from './utils/electron';
 import LogDirectoryProvider from './utils/logDirectoryProvider';
-import Logger from './utils/logger';
+import Logger from './utils/misc';
 import { TypeScriptPluginPathsProvider } from './utils/pluginPathsProvider';
 import { PluginManager } from './utils/plugins';
 import { TelemetryReporter } from './utils/telemetry';
 import Tracer from './utils/tracer';
-import { TypeScriptVersion, TypeScriptVersionProvider } from './utils/versionProvider';
+import { TypeScriptVersion, TypeScriptVersionProvider } from './utils/version';
 import {
   ITypeScriptServer,
   PipeRequestCanceller,
