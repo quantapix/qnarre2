@@ -1,14 +1,3 @@
-/*
- * hoverProvider.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- * Author: Eric Traut
- *
- * Logic that maps a position within a Python program file into
- * markdown text that is displayed when the user hovers over that
- * position within a smart editor.
- */
-
 import { CancellationToken, Hover, MarkupKind } from 'vscode-languageserver';
 
 import { Declaration, DeclarationType } from '../analyzer/declaration';

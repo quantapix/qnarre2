@@ -1,10 +1,6 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
+import protocol from 'typescript/lib/protocol';
+
 import { ITypeScriptServiceClient } from '../typescriptService';
 import { markdownDocumentation } from '../utils/previewer';
 import * as typeConverters from '../utils/typeConverters';
@@ -36,7 +32,7 @@ class TypeScriptHoverProvider implements vscode.HoverProvider {
     );
   }
 
-  private static getContents(data: Proto.QuickInfoResponseBody) {
+  private static getContents(data: protocol.QuickInfoResponseBody) {
     const parts = [];
 
     if (data.displayString) {
