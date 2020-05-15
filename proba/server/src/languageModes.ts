@@ -8,7 +8,7 @@ import {
   TextDocument,
 } from 'vscode-html-languageservice';
 import { getCSSMode } from './modes/cssMode';
-import { getDocumentRegions, HTMLDocumentRegions } from '../embeddedSupport';
+import { getDocumentRegions, HTMLDocumentRegions } from './embedded';
 import { getHTMLMode } from './modes/htmlMode';
 import { getLanguageModelCache, LanguageModelCache } from '../languageModelCache';
 

@@ -1,9 +1,3 @@
-/*
- * workspaceMap.ts
- *
- * Workspace management related functionality.
- */
-
 import { createDeferred } from './common/deferred';
 import { LanguageServerBase, WorkspaceServiceInstance } from './languageServerBase';
 
@@ -28,7 +22,6 @@ export class WorkspaceMap extends Map<string, WorkspaceServiceInstance> {
   getWorkspaceForFile(filePath: string): WorkspaceServiceInstance {
     let bestRootPath: string | undefined;
     let bestInstance: WorkspaceServiceInstance | undefined;
-
     this.forEach((workspace) => {
       if (workspace.rootPath) {
         // Is the file is under this workspace folder?

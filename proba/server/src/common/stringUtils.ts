@@ -16,52 +16,55 @@ import { compareComparableValues, Comparison } from './core';
 // only in case returns a slightly lower number. A match
 // that involves a few missing or added characters returns
 // an even lower number.
-export function computeCompletionSimilarity(typedValue: string, symbolName: string): number {
-    if (symbolName.startsWith(typedValue)) {
-        return 1;
+export function computeCompletionSimilarity(
+  typedValue: string,
+  symbolName: string
+): number {
+  if (symbolName.startsWith(typedValue)) {
+    return 1;
+  }
+
+  const symbolLower = symbolName.toLocaleLowerCase();
+  const typedLower = typedValue.toLocaleLowerCase();
+
+  if (symbolLower.startsWith(typedLower)) {
+    return 0.75;
+  }
+
+  // How far apart are the two strings? Find the smallest edit
+  // distance for each of the substrings taken from the start of
+  // symbolName.
+  let symbolSubstrLength = symbolLower.length;
+  let smallestEditDistance = Number.MAX_VALUE;
+  while (symbolSubstrLength > 0) {
+    const editDistance = leven(symbolLower.substr(0, symbolSubstrLength), typedLower);
+    if (editDistance < smallestEditDistance) {
+      smallestEditDistance = editDistance;
     }
+    symbolSubstrLength--;
+  }
 
-    const symbolLower = symbolName.toLocaleLowerCase();
-    const typedLower = typedValue.toLocaleLowerCase();
+  // We'll take into account the length of the typed value. If the user
+  // has typed more characters, and they largely match the symbol name,
+  // it is considered more similar. If the the edit distance is similar
+  // to the number of characters the user has typed, then there's almost
+  // no similarity.
+  if (smallestEditDistance >= typedValue.length) {
+    return 0;
+  }
 
-    if (symbolLower.startsWith(typedLower)) {
-        return 0.75;
-    }
-
-    // How far apart are the two strings? Find the smallest edit
-    // distance for each of the substrings taken from the start of
-    // symbolName.
-    let symbolSubstrLength = symbolLower.length;
-    let smallestEditDistance = Number.MAX_VALUE;
-    while (symbolSubstrLength > 0) {
-        const editDistance = leven(symbolLower.substr(0, symbolSubstrLength), typedLower);
-        if (editDistance < smallestEditDistance) {
-            smallestEditDistance = editDistance;
-        }
-        symbolSubstrLength--;
-    }
-
-    // We'll take into account the length of the typed value. If the user
-    // has typed more characters, and they largely match the symbol name,
-    // it is considered more similar. If the the edit distance is similar
-    // to the number of characters the user has typed, then there's almost
-    // no similarity.
-    if (smallestEditDistance >= typedValue.length) {
-        return 0;
-    }
-
-    const similarity = (typedValue.length - smallestEditDistance) / typedValue.length;
-    return 0.5 * similarity;
+  const similarity = (typedValue.length - smallestEditDistance) / typedValue.length;
+  return 0.5 * similarity;
 }
 
 // This is a simple, non-cryptographic hash function for text.
 export function hashString(contents: string) {
-    let hash = 0;
+  let hash = 0;
 
-    for (let i = 0; i < contents.length; i++) {
-        hash = ((hash << 5) - hash + contents.charCodeAt(i)) | 0;
-    }
-    return hash;
+  for (let i = 0; i < contents.length; i++) {
+    hash = ((hash << 5) - hash + contents.charCodeAt(i)) | 0;
+  }
+  return hash;
 }
 
 /**
@@ -76,14 +79,17 @@ export function hashString(contents: string) {
  * strings to their upper-case form as some unicode characters do not properly round-trip to
  * lowercase (such as `áºž` (German sharp capital s)).
  */
-export function compareStringsCaseInsensitive(a: string | undefined, b: string | undefined): Comparison {
-    return a === b
-        ? Comparison.EqualTo
-        : a === undefined
-        ? Comparison.LessThan
-        : b === undefined
-        ? Comparison.GreaterThan
-        : compareComparableValues(a.toUpperCase(), b.toUpperCase());
+export function compareStringsCaseInsensitive(
+  a: string | undefined,
+  b: string | undefined
+): Comparison {
+  return a === b
+    ? Comparison.EqualTo
+    : a === undefined
+    ? Comparison.LessThan
+    : b === undefined
+    ? Comparison.GreaterThan
+    : compareComparableValues(a.toUpperCase(), b.toUpperCase());
 }
 
 /**
@@ -96,12 +102,15 @@ export function compareStringsCaseInsensitive(a: string | undefined, b: string |
  * Case-sensitive comparisons compare both strings one code-point at a time using the integer
  * value of each code-point.
  */
-export function compareStringsCaseSensitive(a: string | undefined, b: string | undefined): Comparison {
-    return compareComparableValues(a, b);
+export function compareStringsCaseSensitive(
+  a: string | undefined,
+  b: string | undefined
+): Comparison {
+  return compareComparableValues(a, b);
 }
 
 export function getStringComparer(ignoreCase?: boolean) {
-    return ignoreCase ? compareStringsCaseInsensitive : compareStringsCaseSensitive;
+  return ignoreCase ? compareStringsCaseInsensitive : compareStringsCaseSensitive;
 }
 
 /**
@@ -113,7 +122,7 @@ export function getStringComparer(ignoreCase?: boolean) {
  * lowercase (such as `ẞ` (German sharp capital s)).
  */
 export function equateStringsCaseInsensitive(a: string, b: string) {
-    return compareStringsCaseInsensitive(a, b) === Comparison.EqualTo;
+  return compareStringsCaseInsensitive(a, b) === Comparison.EqualTo;
 }
 
 /**
@@ -123,5 +132,5 @@ export function equateStringsCaseInsensitive(a: string, b: string) {
  * integer value of each code-point.
  */
 export function equateStringsCaseSensitive(a: string, b: string) {
-    return compareStringsCaseSensitive(a, b) === Comparison.EqualTo;
+  return compareStringsCaseSensitive(a, b) === Comparison.EqualTo;
 }

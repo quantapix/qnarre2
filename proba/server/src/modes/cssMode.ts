@@ -1,5 +1,5 @@
 import { LanguageService as CSSLanguageService } from 'vscode-css-languageservice';
-import { HTMLDocumentRegions } from '../embeddedSupport';
+import { HTMLDocumentRegions } from '../embedded';
 import { LanguageModelCache } from '../languageModelCache';
 import { LanguageMode, Position, TextDocument } from '../languageModes';
 

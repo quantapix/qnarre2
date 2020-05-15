@@ -1,13 +1,3 @@
-/*
- * completionProvider.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- * Author: Eric Traut
- *
- * Logic that maps a position within a Python program file into
- * a list of zero or more text completions that apply in the context.
- */
-
 import {
   CancellationToken,
   CompletionItem,

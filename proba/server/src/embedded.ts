@@ -4,7 +4,7 @@ import {
   LanguageService,
   TokenType,
   Range,
-} from '../languageModes';
+} from './languageModes';
 
 export interface LanguageRange extends Range {
   languageId: string | undefined;
@@ -67,7 +67,7 @@ export function getDocumentRegions(
       case TokenType.AttributeValue:
         if (lastAttributeName === 'src' && lastTagName.toLowerCase() === 'script') {
           let value = scanner.getTokenText();
-          if (value[0] === "'" || value[0] === '"') {
+          if (value.startsWith("'") || value.startsWith('"')) {
             value = value.substr(1, value.length - 1);
           }
           importedScripts.push(value);
