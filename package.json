@@ -7,8 +7,8 @@
   "devDependencies": {
     "@angular/cli": "next",
     "@types/node": "",
-    "@typescript-eslint/eslint-plugin": "*",
-    "@typescript-eslint/parser": "*",
+    "@typescript-eslint/eslint-plugin": "",
+    "@typescript-eslint/parser": "",
     "eslint": "",
     "eslint-config-prettier": "",
     "eslint-plugin-jasmine": "",

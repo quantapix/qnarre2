@@ -30,6 +30,6 @@
     "vscode-html-languageservice": "",
     "vscode-languageserver": "next",
     "vscode-languageserver-textdocument": "next",
-    "vscode-uri": "next"
+    "vscode-uri": ""
   }
 }
