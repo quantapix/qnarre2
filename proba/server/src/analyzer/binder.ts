@@ -16,7 +16,7 @@
  * This binder doesn't perform any static type checking.
  */
 
-import { Commands } from '../commands/commands';
+import { Commands } from '../commands';
 import { DiagnosticLevel } from '../common/configOptions';
 import { assert, fail } from '../common/debug';
 import { CreateTypeStubFileAction } from '../common/diagnostic';

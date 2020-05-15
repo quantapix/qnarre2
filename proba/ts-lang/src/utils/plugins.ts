@@ -1,13 +1,7 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import * as arrays from './arrays';
-import { Disposable } from './misc';
+import * as qu from './misc';
 
-export interface TypeScriptServerPlugin {
+export interface TSServerPlugin {
   readonly path: string;
   readonly name: string;
   readonly enableForWorkspaceTypeScriptVersions: boolean;
@@ -15,39 +9,35 @@ export interface TypeScriptServerPlugin {
   readonly configNamespace?: string;
 }
 
-namespace TypeScriptServerPlugin {
-  export function equals(a: TypeScriptServerPlugin, b: TypeScriptServerPlugin): boolean {
+namespace TSServerPlugin {
+  export function equals(a: TSServerPlugin, b: TSServerPlugin) {
     return (
       a.path === b.path &&
       a.name === b.name &&
       a.enableForWorkspaceTypeScriptVersions === b.enableForWorkspaceTypeScriptVersions &&
-      arrays.equals(a.languages, b.languages)
+      qu.equals(a.languages, b.languages)
     );
   }
 }
 
-export class PluginManager extends Disposable {
-  private readonly _pluginConfigurations = new Map<string, {}>();
-
-  private _plugins: Map<string, ReadonlyArray<TypeScriptServerPlugin>> | undefined;
+export class PluginManager extends qu.Disposable {
+  private readonly _configs = new Map<string, {}>();
+  private _plugins?: Map<string, ReadonlyArray<TSServerPlugin>>;
 
   constructor() {
     super();
-
     vscode.extensions.onDidChange(
       () => {
-        if (!this._plugins) {
-          return;
-        }
-        const newPlugins = this.readPlugins();
+        if (!this._plugins) return;
+        const ps = this.readPlugins();
         if (
-          !arrays.equals(
-            arrays.flatten(Array.from(this._plugins.values())),
-            arrays.flatten(Array.from(newPlugins.values())),
-            TypeScriptServerPlugin.equals
+          !qu.equals(
+            qu.flatten(Array.from(this._plugins.values())),
+            qu.flatten(Array.from(ps.values())),
+            TSServerPlugin.equals
           )
         ) {
-          this._plugins = newPlugins;
+          this._plugins = ps;
           this._onDidUpdatePlugins.fire(this);
         }
       },
@@ -56,11 +46,9 @@ export class PluginManager extends Disposable {
     );
   }
 
-  public get plugins(): ReadonlyArray<TypeScriptServerPlugin> {
-    if (!this._plugins) {
-      this._plugins = this.readPlugins();
-    }
-    return arrays.flatten(Array.from(this._plugins.values()));
+  public get plugins(): ReadonlyArray<TSServerPlugin> {
+    if (!this._plugins) this._plugins = this.readPlugins();
+    return qu.flatten(Array.from(this._plugins.values()));
   }
 
   private readonly _onDidUpdatePlugins = this._register(new vscode.EventEmitter<this>());
@@ -72,34 +60,32 @@ export class PluginManager extends Disposable {
   public readonly onDidUpdateConfig = this._onDidUpdateConfig.event;
 
   public setConfiguration(pluginId: string, config: {}) {
-    this._pluginConfigurations.set(pluginId, config);
+    this._configs.set(pluginId, config);
     this._onDidUpdateConfig.fire({ pluginId, config });
   }
 
-  public configurations(): IterableIterator<[string, {}]> {
-    return this._pluginConfigurations.entries();
+  public configurations() {
+    return this._configs.entries();
   }
 
   private readPlugins() {
-    const pluginMap = new Map<string, ReadonlyArray<TypeScriptServerPlugin>>();
-    for (const extension of vscode.extensions.all) {
-      const pack = extension.packageJSON;
-      if (pack.contributes && Array.isArray(pack.contributes.typescriptServerPlugins)) {
-        const plugins: TypeScriptServerPlugin[] = [];
-        for (const plugin of pack.contributes.typescriptServerPlugins) {
-          plugins.push({
-            name: plugin.name,
-            enableForWorkspaceTypeScriptVersions: !!plugin.enableForWorkspaceTypeScriptVersions,
-            path: extension.extensionPath,
-            languages: Array.isArray(plugin.languages) ? plugin.languages : [],
-            configNamespace: plugin.configNamespace,
+    const m = new Map<string, ReadonlyArray<TSServerPlugin>>();
+    for (const e of vscode.extensions.all) {
+      const j = e.packageJSON;
+      if (j.contributes && Array.isArray(j.contributes.typescriptServerPlugins)) {
+        const ps: TSServerPlugin[] = [];
+        for (const p of j.contributes.typescriptServerPlugins) {
+          ps.push({
+            name: p.name,
+            enableForWorkspaceTypeScriptVersions: !!p.enableForWorkspaceTypeScriptVersions,
+            path: e.extensionPath,
+            languages: Array.isArray(p.languages) ? p.languages : [],
+            configNamespace: p.configNamespace,
           });
         }
-        if (plugins.length) {
-          pluginMap.set(extension.id, plugins);
-        }
+        if (ps.length) m.set(e.id, ps);
       }
     }
-    return pluginMap;
+    return m;
   }
 }

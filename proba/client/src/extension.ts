@@ -35,7 +35,7 @@ import { FoodPyramidHierarchyProvider } from './FoodPyramidHierarchyProvider';
 import { TextDecoder } from 'util';
 import { Codelens } from './codelens';
 import { Cancel } from './cancel';
-import { Commands } from '../../server/src/commands/commands';
+import { Commands } from '../../server/src/commands';
 import { Reporting } from './progress';
 
 let client: LanguageClient;

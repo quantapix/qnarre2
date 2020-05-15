@@ -16,7 +16,7 @@ import {
     ImportGroup,
 } from '../analyzer/importStatementUtils';
 import * as ParseTreeUtils from '../analyzer/parseTreeUtils';
-import { Commands } from '../commands/commands';
+import { Commands } from '../commands';
 import { throwIfCancellationRequested } from '../common/cancellationUtils';
 import { TextEditAction } from '../common/editAction';
 import { convertOffsetToPosition } from '../common/positionUtils';

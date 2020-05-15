@@ -20,11 +20,11 @@ class ApiV0 {
     public readonly onCompletionAccepted: vscode.Event<
       vscode.CompletionItem & { metadata?: any }
     >,
-    private readonly _pluginManager: PluginManager
+    private readonly _m: PluginManager
   ) {}
 
-  configurePlugin(pluginId: string, configuration: {}): void {
-    this._pluginManager.setConfiguration(pluginId, configuration);
+  configurePlugin(id: string, c: {}) {
+    this._m.setConfiguration(id, c);
   }
 }
 
@@ -33,141 +33,104 @@ export interface Api {
 }
 
 export function getExtensionApi(
-  onCompletionAccepted: vscode.Event<vscode.CompletionItem>,
-  pluginManager: PluginManager
+  e: vscode.Event<vscode.CompletionItem>,
+  m: PluginManager
 ): Api {
   return {
     getAPI(version) {
-      if (version === 0) {
-        return new ApiV0(onCompletionAccepted, pluginManager);
-      }
-      return undefined;
+      if (version === 0) return new ApiV0(e, m);
+      return;
     },
   };
 }
 
-export function activate(context: vscode.ExtensionContext): Api {
-  const pluginManager = new PluginManager();
-  context.subscriptions.push(pluginManager);
-
-  const commandManager = new CommandManager();
-  context.subscriptions.push(commandManager);
-
-  const onCompletionAccepted = new vscode.EventEmitter<vscode.CompletionItem>();
-  context.subscriptions.push(onCompletionAccepted);
-
-  const lazyClientHost = createLazyClientHost(
-    context,
-    pluginManager,
-    commandManager,
-    (item) => {
-      onCompletionAccepted.fire(item);
-    }
-  );
-
-  registerCommands(commandManager, lazyClientHost, pluginManager);
-  context.subscriptions.push(
+export function activate(ctx: vscode.ExtensionContext) {
+  const pm = new PluginManager();
+  ctx.subscriptions.push(pm);
+  const cm = new CommandManager();
+  ctx.subscriptions.push(cm);
+  const emitter = new vscode.EventEmitter<vscode.CompletionItem>();
+  ctx.subscriptions.push(emitter);
+  const h = createHost(ctx, pm, cm, (item) => {
+    emitter.fire(item);
+  });
+  registerCommands(cm, h, pm);
+  ctx.subscriptions.push(
     vscode.tasks.registerTaskProvider(
       'typescript',
-      new TscTaskProvider(lazyClientHost.map((x) => x.serviceClient))
+      new TscTaskProvider(h.map((x) => x.serviceClient))
     )
   );
-  context.subscriptions.push(new LanguageConfigurationManager());
-
-  import('./features/tsconfig').then((module) => {
-    context.subscriptions.push(module.register());
+  ctx.subscriptions.push(new LanguageConfigurationManager());
+  import('./features/tsconfig').then((m) => {
+    ctx.subscriptions.push(m.register());
   });
-
-  context.subscriptions.push(lazilyActivateClient(lazyClientHost, pluginManager));
-
-  return getExtensionApi(onCompletionAccepted.event, pluginManager);
+  ctx.subscriptions.push(lazilyActivate(h, pm));
+  return getExtensionApi(emitter.event, pm);
 }
 
-function createLazyClientHost(
-  context: vscode.ExtensionContext,
-  pluginManager: PluginManager,
-  commandManager: CommandManager,
-  onCompletionAccepted: (item: vscode.CompletionItem) => void
-): Lazy<TypeScriptServiceClientHost> {
+function createHost(
+  ctx: vscode.ExtensionContext,
+  pm: PluginManager,
+  cm: CommandManager,
+  emit: (_: vscode.CompletionItem) => void
+) {
   return lazy(() => {
-    const logDirectoryProvider = new LogDirectoryProvider(context);
-
-    const clientHost = new TypeScriptServiceClientHost(
+    const p = new LogDirectoryProvider(ctx);
+    const h = new TypeScriptServiceClientHost(
       standardLanguageDescriptions,
-      context.workspaceState,
-      pluginManager,
-      commandManager,
-      logDirectoryProvider,
-      onCompletionAccepted
+      ctx.workspaceState,
+      pm,
+      cm,
+      p,
+      emit
     );
-
-    context.subscriptions.push(clientHost);
-
-    clientHost.serviceClient.onReady(() => {
-      context.subscriptions.push(
-        ProjectStatus.create(
-          clientHost.serviceClient,
-          clientHost.serviceClient.telemetryReporter
-        )
+    ctx.subscriptions.push(h);
+    h.serviceClient.onReady(() => {
+      ctx.subscriptions.push(
+        ProjectStatus.create(h.serviceClient, h.serviceClient.telemetryReporter)
       );
     });
-
-    return clientHost;
+    return h;
   });
 }
 
-function lazilyActivateClient(
-  lazyClientHost: Lazy<TypeScriptServiceClientHost>,
-  pluginManager: PluginManager
-) {
-  const disposables: vscode.Disposable[] = [];
-
-  const supportedLanguage = flatten([
+function lazilyActivate(h: Lazy<TypeScriptServiceClientHost>, m: PluginManager) {
+  const ds: vscode.Disposable[] = [];
+  const l = flatten([
     ...standardLanguageDescriptions.map((x) => x.modeIds),
-    ...pluginManager.plugins.map((x) => x.languages),
+    ...m.plugins.map((x) => x.languages),
   ]);
-
-  let hasActivated = false;
-  const maybeActivate = (textDocument: vscode.TextDocument): boolean => {
-    if (!hasActivated && isSupportedDocument(supportedLanguage, textDocument)) {
-      hasActivated = true;
-      // Force activation
-      void lazyClientHost.value;
-
-      disposables.push(
-        new ManagedFileContextManager((resource) => {
-          return lazyClientHost.value.serviceClient.toPath(resource);
+  let done = false;
+  const activate = (d: vscode.TextDocument): boolean => {
+    if (!done && isSupported(l, d)) {
+      done = true;
+      void h.value;
+      ds.push(
+        new ManagedFileContextManager((r) => {
+          return h.value.serviceClient.toPath(r);
         })
       );
       return true;
     }
     return false;
   };
-
-  const didActivate = vscode.workspace.textDocuments.some(maybeActivate);
+  const didActivate = vscode.workspace.textDocuments.some(activate);
   if (!didActivate) {
     const openListener = vscode.workspace.onDidOpenTextDocument(
-      (doc) => {
-        if (maybeActivate(doc)) {
-          openListener.dispose();
-        }
+      (d) => {
+        if (activate(d)) openListener.dispose();
       },
       undefined,
-      disposables
+      ds
     );
   }
-
-  return vscode.Disposable.from(...disposables);
+  return vscode.Disposable.from(...ds);
 }
 
-function isSupportedDocument(
-  supportedLanguage: string[],
-  document: vscode.TextDocument
-): boolean {
-  if (!supportedLanguage.includes(document.languageId)) {
-    return false;
-  }
-  return fileSchemes.isSupportedScheme(document.uri.scheme);
+function isSupported(ls: string[], d: vscode.TextDocument) {
+  if (!ls.includes(d.languageId)) return false;
+  return fileSchemes.isSupportedScheme(d.uri.scheme);
 }
 
 export function deactivate() {

@@ -13,7 +13,7 @@ import {
   Command,
 } from 'vscode-languageserver';
 
-import { Commands } from '../commands/commands';
+import { Commands } from '../commands';
 import { throwIfCancellationRequested } from '../common/cancellationUtils';
 import {
   AddMissingOptionalToParamAction,

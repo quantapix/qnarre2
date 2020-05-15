@@ -7,7 +7,7 @@
  * Class that represents errors and warnings.
  */
 
-import { Commands } from '../commands/commands';
+import { Commands } from '../commands';
 import { Range } from './textRange';
 
 export const enum DiagnosticCategory {

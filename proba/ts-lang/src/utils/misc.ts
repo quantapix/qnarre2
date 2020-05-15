@@ -1,6 +1,7 @@
 import * as os from 'os';
-import { basename } from 'path';
+import * as path from 'path';
 import * as vscode from 'vscode';
+import protocol from 'typescript/lib/protocol';
 import * as nls from 'vscode-nls';
 
 export interface ObjectMap<V> {
@@ -238,7 +239,7 @@ export interface Task<T> {
 export class Delayer<T> {
   private task?: Task<T>;
   private done?: Promise<T | undefined>;
-  private timeout?: number;
+  private timeout?: NodeJS.Timeout;
   private onSuccess?: (v?: T | Thenable<T>) => void;
 
   constructor(public defaultDelay: number) {}
@@ -365,11 +366,11 @@ export const standardLanguageDescriptions: LanguageDescription[] = [
 ];
 
 export function isTsConfigFileName(fileName: string): boolean {
-  return /^tsconfig\.(.+\.)?json$/i.test(basename(fileName));
+  return /^tsconfig\.(.+\.)?json$/i.test(path.basename(fileName));
 }
 
 export function isJsConfigOrTsConfigFileName(fileName: string): boolean {
-  return /^[jt]sconfig\.(.+\.)?json$/i.test(basename(fileName));
+  return /^[jt]sconfig\.(.+\.)?json$/i.test(path.basename(fileName));
 }
 
 export function doesResourceLookLikeATypeScriptFile(resource: vscode.Uri): boolean {
@@ -623,7 +624,7 @@ export class TypeScriptServiceConfiguration {
       this.useSeparateSyntaxServer === other.useSeparateSyntaxServer &&
       this.enableProjectDiagnostics === other.enableProjectDiagnostics &&
       this.maxTsServerMemory === other.maxTsServerMemory &&
-      objects.equals(this.watchOptions, other.watchOptions) &&
+      equals2(this.watchOptions, other.watchOptions) &&
       this.enablePromptUseWorkspaceTsdk === other.enablePromptUseWorkspaceTsdk
     );
   }

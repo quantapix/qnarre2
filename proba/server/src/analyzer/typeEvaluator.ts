@@ -16,7 +16,7 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 
-import { Commands } from '../commands/commands';
+import { Commands } from '../commands';
 import { throwIfCancellationRequested } from '../common/cancellationUtils';
 import { DiagnosticLevel } from '../common/configOptions';
 import { assert, fail } from '../common/debug';
