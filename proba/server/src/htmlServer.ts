@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import {
   createConnection,
   IConnection,
@@ -68,7 +63,6 @@ namespace OnTypeRenameRequest {
   > = new RequestType('html/onTypeRename');
 }
 
-// experimental: semantic tokens
 interface SemanticTokenParams {
   textDocument: TextDocumentIdentifier;
   ranges?: Range[];
@@ -90,11 +84,10 @@ namespace SemanticTokenLegendRequest {
   > = new RequestType('html/semanticTokenLegend');
 }
 
-// Create a connection for the server
-const connection: IConnection = createConnection();
+const con: IConnection = createConnection();
 
-console.log = connection.console.log.bind(connection.console);
-console.error = connection.console.error.bind(connection.console);
+console.log = con.console.log.bind(con.console);
+console.error = con.console.error.bind(con.console);
 
 process.on('unhandledRejection', (e: any) => {
   console.error(formatError(`Unhandled exception`, e));
@@ -103,14 +96,10 @@ process.on('uncaughtException', (e: any) => {
   console.error(formatError(`Unhandled exception`, e));
 });
 
-// Create a text document manager.
-const documents = new TextDocuments(TextDocument);
-// Make the text document manager listen on the connection
-// for open, change and close text document events
-documents.listen(connection);
+const docs = new TextDocuments(TextDocument);
+docs.listen(con);
 
 let workspaceFolders: WorkspaceFolder[] = [];
-
 let languageModes: LanguageModes;
 
 let clientSnippetSupport = false;
@@ -121,8 +110,8 @@ let foldingRangeLimit = Number.MAX_VALUE;
 
 let globalSettings: Settings = {};
 let documentSettings: { [key: string]: Thenable<Settings> } = {};
-// remove document settings on close
-documents.onDidClose((e) => {
+
+docs.onDidClose((e) => {
   delete documentSettings[e.document.uri];
 });
 
@@ -151,22 +140,17 @@ function getDocumentSettings(
   return Promise.resolve(undefined);
 }
 
-// After the server has started the client sends an initialize request. The server receives
-// in the passed params the rootPath of the workspace plus the client capabilities
-connection.onInitialize(
-  (params: InitializeParams): InitializeResult => {
-    const initializationOptions = params.initializationOptions;
-
-    workspaceFolders = (<any>params).workspaceFolders;
+con.onInitialize(
+  (ps: InitializeParams): InitializeResult => {
+    workspaceFolders = ps.workspaceFolders ?? [];
     if (!Array.isArray(workspaceFolders)) {
       workspaceFolders = [];
-      if (params.rootPath) {
-        workspaceFolders.push({ name: '', uri: URI.file(params.rootPath).toString() });
+      if (ps.rootPath) {
+        workspaceFolders.push({ name: '', uri: URI.file(ps.rootPath).toString() });
       }
     }
-
-    const dataPaths: string[] = params.initializationOptions.dataPaths;
-    const providers = getDataProviders(dataPaths);
+    const paths: string[] = ps.initializationOptions.dataPaths;
+    const providers = getDataProviders(paths);
 
     const workspace = {
       get settings() {
@@ -177,25 +161,27 @@ connection.onInitialize(
       },
     };
 
+    const initializationOptions = ps.initializationOptions;
+
     languageModes = getLanguageModes(
       initializationOptions
         ? initializationOptions.embeddedLanguages
         : { css: true, javascript: true },
       workspace,
-      params.capabilities,
+      ps.capabilities,
       providers
     );
 
-    documents.onDidClose((e) => {
+    docs.onDidClose((e) => {
       languageModes.onDocumentRemoved(e.document);
     });
-    connection.onShutdown(() => {
+    con.onShutdown(() => {
       languageModes.dispose();
     });
 
     function getClientCapability<T>(name: string, def: T) {
       const keys = name.split('.');
-      let c: any = params.capabilities;
+      let c: any = ps.capabilities;
       for (let i = 0; c && i < keys.length; i++) {
         if (!c.hasOwnProperty(keys[i])) {
           return def;
@@ -211,7 +197,7 @@ connection.onInitialize(
     );
     dynamicFormatterRegistration =
       getClientCapability('textDocument.rangeFormatting.dynamicRegistration', false) &&
-      typeof params.initializationOptions.provideFormatter !== 'boolean';
+      typeof ps.initializationOptions.provideFormatter !== 'boolean';
     scopedSettingsSupport = getClientCapability('workspace.configuration', false);
     workspaceFoldersSupport = getClientCapability('workspace.workspaceFolders', false);
     foldingRangeLimit = getClientCapability(
@@ -225,8 +211,7 @@ connection.onInitialize(
         : undefined,
       hoverProvider: true,
       documentHighlightProvider: true,
-      documentRangeFormattingProvider:
-        params.initializationOptions.provideFormatter === true,
+      documentRangeFormattingProvider: ps.initializationOptions.provideFormatter === true,
       documentLinkProvider: { resolveProvider: false },
       documentSymbolProvider: true,
       definitionProvider: true,
@@ -241,11 +226,11 @@ connection.onInitialize(
   }
 );
 
-connection.onInitialized(() => {
+con.onInitialized(() => {
   if (workspaceFoldersSupport) {
-    connection.client.register(DidChangeWorkspaceFoldersNotification.type);
+    con.client.register(DidChangeWorkspaceFoldersNotification.type);
 
-    connection.onNotification(DidChangeWorkspaceFoldersNotification.type, (e) => {
+    con.onNotification(DidChangeWorkspaceFoldersNotification.type, (e) => {
       const toAdd = e.event.added;
       const toRemove = e.event.removed;
       const updatedFolders = [];
@@ -260,7 +245,7 @@ connection.onInitialized(() => {
         }
       }
       workspaceFolders = updatedFolders.concat(toAdd);
-      documents.all().forEach(triggerValidation);
+      docs.all().forEach(triggerValidation);
     });
   }
 });
@@ -268,10 +253,10 @@ connection.onInitialized(() => {
 let formatterRegistration: Thenable<Disposable> | null = null;
 
 // The settings have changed. Is send on server activation as well.
-connection.onDidChangeConfiguration((change) => {
+con.onDidChangeConfiguration((change) => {
   globalSettings = change.settings;
   documentSettings = {}; // reset all document settings
-  documents.all().forEach(triggerValidation);
+  docs.all().forEach(triggerValidation);
 
   // dynamically enable & disable the formatter
   if (dynamicFormatterRegistration) {
@@ -286,10 +271,9 @@ connection.onDidChangeConfiguration((change) => {
           { language: 'html' },
           { language: 'handlebars' },
         ];
-        formatterRegistration = connection.client.register(
-          DocumentRangeFormattingRequest.type,
-          { documentSelector }
-        );
+        formatterRegistration = con.client.register(DocumentRangeFormattingRequest.type, {
+          documentSelector,
+        });
       }
     } else if (formatterRegistration) {
       formatterRegistration.then((r) => r.dispose());
@@ -303,14 +287,14 @@ const validationDelayMs = 500;
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
-documents.onDidChangeContent((change) => {
+docs.onDidChangeContent((change) => {
   triggerValidation(change.document);
 });
 
 // a document has closed: clear all diagnostics
-documents.onDidClose((event) => {
+docs.onDidClose((event) => {
   cleanPendingValidation(event.document);
-  connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+  con.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 });
 
 function cleanPendingValidation(textDocument: TextDocument): void {
@@ -349,7 +333,7 @@ async function validateTextDocument(textDocument: TextDocument) {
       const settings = await getDocumentSettings(textDocument, () =>
         modes.some((m) => !!m.doValidation)
       );
-      const latestTextDocument = documents.get(textDocument.uri);
+      const latestTextDocument = docs.get(textDocument.uri);
       if (latestTextDocument && latestTextDocument.version === version) {
         // check no new version has come in after in after the async op
         modes.forEach((mode) => {
@@ -357,20 +341,18 @@ async function validateTextDocument(textDocument: TextDocument) {
             pushAll(diagnostics, mode.doValidation(latestTextDocument, settings));
           }
         });
-        connection.sendDiagnostics({ uri: latestTextDocument.uri, diagnostics });
+        con.sendDiagnostics({ uri: latestTextDocument.uri, diagnostics });
       }
     }
   } catch (e) {
-    connection.console.error(
-      formatError(`Error while validating ${textDocument.uri}`, e)
-    );
+    con.console.error(formatError(`Error while validating ${textDocument.uri}`, e));
   }
 }
 
-connection.onCompletion(async (textDocumentPosition, token) => {
+con.onCompletion(async (textDocumentPosition, token) => {
   return runSafeAsync(
     async () => {
-      const document = documents.get(textDocumentPosition.textDocument.uri);
+      const document = docs.get(textDocumentPosition.textDocument.uri);
       if (!document) {
         return null;
       }
@@ -389,7 +371,7 @@ connection.onCompletion(async (textDocumentPosition, token) => {
 					"languageId" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			 */
-        connection.telemetry.logEvent({
+        con.telemetry.logEvent({
           key: 'html.embbedded.complete',
           value: { languageId: mode.getId() },
         });
@@ -405,13 +387,13 @@ connection.onCompletion(async (textDocumentPosition, token) => {
   );
 });
 
-connection.onCompletionResolve((item, token) => {
+con.onCompletionResolve((item, token) => {
   return runSafe(
     () => {
       const data = item.data;
       if (data && data.languageId && data.uri) {
         const mode = languageModes.getMode(data.languageId);
-        const document = documents.get(data.uri);
+        const document = docs.get(data.uri);
         if (mode && mode.doResolve && document) {
           return mode.doResolve(document, item);
         }
@@ -424,10 +406,10 @@ connection.onCompletionResolve((item, token) => {
   );
 });
 
-connection.onHover((textDocumentPosition, token) => {
+con.onHover((textDocumentPosition, token) => {
   return runSafe(
     () => {
-      const document = documents.get(textDocumentPosition.textDocument.uri);
+      const document = docs.get(textDocumentPosition.textDocument.uri);
       if (document) {
         const mode = languageModes.getModeAtPosition(
           document,
@@ -445,10 +427,10 @@ connection.onHover((textDocumentPosition, token) => {
   );
 });
 
-connection.onDocumentHighlight((documentHighlightParams, token) => {
+con.onDocumentHighlight((documentHighlightParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(documentHighlightParams.textDocument.uri);
+      const document = docs.get(documentHighlightParams.textDocument.uri);
       if (document) {
         const mode = languageModes.getModeAtPosition(
           document,
@@ -466,10 +448,10 @@ connection.onDocumentHighlight((documentHighlightParams, token) => {
   );
 });
 
-connection.onDefinition((definitionParams, token) => {
+con.onDefinition((definitionParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(definitionParams.textDocument.uri);
+      const document = docs.get(definitionParams.textDocument.uri);
       if (document) {
         const mode = languageModes.getModeAtPosition(document, definitionParams.position);
         if (mode && mode.findDefinition) {
@@ -484,10 +466,10 @@ connection.onDefinition((definitionParams, token) => {
   );
 });
 
-connection.onReferences((referenceParams, token) => {
+con.onReferences((referenceParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(referenceParams.textDocument.uri);
+      const document = docs.get(referenceParams.textDocument.uri);
       if (document) {
         const mode = languageModes.getModeAtPosition(document, referenceParams.position);
         if (mode && mode.findReferences) {
@@ -502,10 +484,10 @@ connection.onReferences((referenceParams, token) => {
   );
 });
 
-connection.onSignatureHelp((signatureHelpParms, token) => {
+con.onSignatureHelp((signatureHelpParms, token) => {
   return runSafe(
     () => {
-      const document = documents.get(signatureHelpParms.textDocument.uri);
+      const document = docs.get(signatureHelpParms.textDocument.uri);
       if (document) {
         const mode = languageModes.getModeAtPosition(
           document,
@@ -523,10 +505,10 @@ connection.onSignatureHelp((signatureHelpParms, token) => {
   );
 });
 
-connection.onDocumentRangeFormatting(async (formatParams, token) => {
+con.onDocumentRangeFormatting(async (formatParams, token) => {
   return runSafeAsync(
     async () => {
-      const document = documents.get(formatParams.textDocument.uri);
+      const document = docs.get(formatParams.textDocument.uri);
       if (document) {
         let settings = await getDocumentSettings(document, () => true);
         if (!settings) {
@@ -560,10 +542,10 @@ connection.onDocumentRangeFormatting(async (formatParams, token) => {
   );
 });
 
-connection.onDocumentLinks((documentLinkParam, token) => {
+con.onDocumentLinks((documentLinkParam, token) => {
   return runSafe(
     () => {
-      const document = documents.get(documentLinkParam.textDocument.uri);
+      const document = docs.get(documentLinkParam.textDocument.uri);
       const links: DocumentLink[] = [];
       if (document) {
         const documentContext = getDocumentContext(document.uri, workspaceFolders);
@@ -581,10 +563,10 @@ connection.onDocumentLinks((documentLinkParam, token) => {
   );
 });
 
-connection.onDocumentSymbol((documentSymbolParms, token) => {
+con.onDocumentSymbol((documentSymbolParms, token) => {
   return runSafe(
     () => {
-      const document = documents.get(documentSymbolParms.textDocument.uri);
+      const document = docs.get(documentSymbolParms.textDocument.uri);
       const symbols: SymbolInformation[] = [];
       if (document) {
         languageModes.getAllModesInDocument(document).forEach((m) => {
@@ -601,11 +583,11 @@ connection.onDocumentSymbol((documentSymbolParms, token) => {
   );
 });
 
-connection.onRequest(DocumentColorRequest.type, (params, token) => {
+con.onRequest(DocumentColorRequest.type, (ps, token) => {
   return runSafe(
     () => {
       const infos: ColorInformation[] = [];
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
         languageModes.getAllModesInDocument(document).forEach((m) => {
           if (m.findDocumentColors) {
@@ -616,35 +598,35 @@ connection.onRequest(DocumentColorRequest.type, (params, token) => {
       return infos;
     },
     [],
-    `Error while computing document colors for ${params.textDocument.uri}`,
+    `Error while computing document colors for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onRequest(ColorPresentationRequest.type, (params, token) => {
+con.onRequest(ColorPresentationRequest.type, (ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
-        const mode = languageModes.getModeAtPosition(document, params.range.start);
+        const mode = languageModes.getModeAtPosition(document, ps.range.start);
         if (mode && mode.getColorPresentations) {
-          return mode.getColorPresentations(document, params.color, params.range);
+          return mode.getColorPresentations(document, ps.color, ps.range);
         }
       }
       return [];
     },
     [],
-    `Error while computing color presentations for ${params.textDocument.uri}`,
+    `Error while computing color presentations for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onRequest(TagCloseRequest.type, (params, token) => {
+con.onRequest(TagCloseRequest.type, (ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
-        const pos = params.position;
+        const pos = ps.position;
         if (pos.character > 0) {
           const mode = languageModes.getModeAtPosition(
             document,
@@ -658,67 +640,67 @@ connection.onRequest(TagCloseRequest.type, (params, token) => {
       return null;
     },
     null,
-    `Error while computing tag close actions for ${params.textDocument.uri}`,
+    `Error while computing tag close actions for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onFoldingRanges((params, token) => {
+con.onFoldingRanges((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
         return getFoldingRanges(languageModes, document, foldingRangeLimit, token);
       }
       return null;
     },
     null,
-    `Error while computing folding regions for ${params.textDocument.uri}`,
+    `Error while computing folding regions for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onSelectionRanges((params, token) => {
+con.onSelectionRanges((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
-        return getSelectionRanges(languageModes, document, params.positions);
+        return getSelectionRanges(languageModes, document, ps.positions);
       }
       return [];
     },
     [],
-    `Error while computing selection ranges for ${params.textDocument.uri}`,
+    `Error while computing selection ranges for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onRenameRequest((params, token) => {
+con.onRenameRequest((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
-      const position: Position = params.position;
+      const document = docs.get(ps.textDocument.uri);
+      const position: Position = ps.position;
 
       if (document) {
         const htmlMode = languageModes.getMode('html');
         if (htmlMode && htmlMode.doRename) {
-          return htmlMode.doRename(document, position, params.newName);
+          return htmlMode.doRename(document, position, ps.newName);
         }
       }
       return null;
     },
     null,
-    `Error while computing rename for ${params.textDocument.uri}`,
+    `Error while computing rename for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onRequest(OnTypeRenameRequest.type, (params, token) => {
+con.onRequest(OnTypeRenameRequest.type, (ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
-        const pos = params.position;
+        const pos = ps.position;
         if (pos.character > 0) {
           const mode = languageModes.getModeAtPosition(
             document,
@@ -732,7 +714,7 @@ connection.onRequest(OnTypeRenameRequest.type, (params, token) => {
       return null;
     },
     null,
-    `Error while computing synced regions for ${params.textDocument.uri}`,
+    `Error while computing synced regions for ${ps.textDocument.uri}`,
     token
   );
 });
@@ -745,22 +727,22 @@ function getSemanticTokenProvider() {
   return semanticTokensProvider;
 }
 
-connection.onRequest(SemanticTokenRequest.type, (params, token) => {
+con.onRequest(SemanticTokenRequest.type, (ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
-        return getSemanticTokenProvider().getSemanticTokens(document, params.ranges);
+        return getSemanticTokenProvider().getSemanticTokens(document, ps.ranges);
       }
       return null;
     },
     null,
-    `Error while computing semantic tokens for ${params.textDocument.uri}`,
+    `Error while computing semantic tokens for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onRequest(SemanticTokenLegendRequest.type, (_params, token) => {
+con.onRequest(SemanticTokenLegendRequest.type, (_ps, token) => {
   return runSafe(
     () => {
       return getSemanticTokenProvider().legend;
@@ -772,4 +754,4 @@ connection.onRequest(SemanticTokenLegendRequest.type, (_params, token) => {
 });
 
 // Listen on the connection
-connection.listen();
+con.listen();

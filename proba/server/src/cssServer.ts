@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import {
   createConnection,
   IConnection,
@@ -41,29 +36,25 @@ export interface Settings {
   scss: LanguageSettings;
 }
 
-// Create a connection for the server.
-const connection: IConnection = createConnection();
+const con: IConnection = createConnection();
 
-console.log = connection.console.log.bind(connection.console);
-console.error = connection.console.error.bind(connection.console);
+console.log = con.console.log.bind(con.console);
+console.error = con.console.error.bind(con.console);
 
 process.on('unhandledRejection', (e: any) => {
-  connection.console.error(formatError(`Unhandled exception`, e));
+  con.console.error(formatError(`Unhandled exception`, e));
 });
 
-// Create a text document manager.
-const documents = new TextDocuments(TextDocument);
-// Make the text document manager listen on the connection
-// for open, change and close text document events
-documents.listen(connection);
+const docs = new TextDocuments(TextDocument);
+docs.listen(con);
 
 const stylesheets = getLanguageModelCache<Stylesheet>(10, 60, (document) =>
   getLanguageService(document).parseStylesheet(document)
 );
-documents.onDidClose((e) => {
+docs.onDidClose((e) => {
   stylesheets.onDocumentRemoved(e.document);
 });
-connection.onShutdown(() => {
+con.onShutdown(() => {
   stylesheets.dispose();
 });
 
@@ -112,33 +103,28 @@ const fileSystemProvider: FileSystemProvider = {
   },
 };
 
-// After the server has started the client sends an initialize request. The server receives
-// in the passed params the rootPath of the workspace plus the client capabilities.
-connection.onInitialize(
-  (params: InitializeParams): InitializeResult => {
-    workspaceFolders = (<any>params).workspaceFolders;
+con.onInitialize(
+  (ps: InitializeParams): InitializeResult => {
+    workspaceFolders = ps.workspaceFolders ?? [];
     if (!Array.isArray(workspaceFolders)) {
       workspaceFolders = [];
-      if (params.rootPath) {
-        workspaceFolders.push({ name: '', uri: URI.file(params.rootPath).toString() });
+      if (ps.rootPath) {
+        workspaceFolders.push({ name: '', uri: URI.file(ps.rootPath).toString() });
       }
     }
-
-    const dataPaths: string[] = params.initializationOptions.dataPaths || [];
-    const customDataProviders = getDataProviders(dataPaths);
+    const paths: string[] = ps.initializationOptions.dataPaths || [];
+    const customDataProviders = getDataProviders(paths);
 
     function getClientCapability<T>(name: string, def: T) {
       const keys = name.split('.');
-      let c: any = params.capabilities;
+      let c: any = ps.capabilities;
       for (let i = 0; c && i < keys.length; i++) {
-        if (!c.hasOwnProperty(keys[i])) {
-          return def;
-        }
+        if (!c.hasOwnProperty(keys[i])) return def;
         c = c[keys[i]];
       }
       return c;
     }
-    const snippetSupport = !!getClientCapability(
+    const snippets = !!getClientCapability(
       'textDocument.completion.completionItem.snippetSupport',
       false
     );
@@ -151,22 +137,22 @@ connection.onInitialize(
     languageServices.css = getCSSLanguageService({
       customDataProviders,
       fileSystemProvider,
-      clientCapabilities: params.capabilities,
+      clientCapabilities: ps.capabilities,
     });
     languageServices.scss = getSCSSLanguageService({
       customDataProviders,
       fileSystemProvider,
-      clientCapabilities: params.capabilities,
+      clientCapabilities: ps.capabilities,
     });
     languageServices.less = getLESSLanguageService({
       customDataProviders,
       fileSystemProvider,
-      clientCapabilities: params.capabilities,
+      clientCapabilities: ps.capabilities,
     });
 
     const capabilities: ServerCapabilities = {
       textDocumentSync: TextDocumentSyncKind.Incremental,
-      completionProvider: snippetSupport
+      completionProvider: snippets
         ? { resolveProvider: false, triggerCharacters: ['/', '-'] }
         : undefined,
       hoverProvider: true,
@@ -174,9 +160,7 @@ connection.onInitialize(
       referencesProvider: true,
       definitionProvider: true,
       documentHighlightProvider: true,
-      documentLinkProvider: {
-        resolveProvider: false,
-      },
+      documentLinkProvider: { resolveProvider: false },
       codeActionProvider: true,
       renameProvider: true,
       colorProvider: {},
@@ -190,9 +174,7 @@ connection.onInitialize(
 function getLanguageService(document: TextDocument) {
   let service = languageServices[document.languageId];
   if (!service) {
-    connection.console.log(
-      'Document type is ' + document.languageId + ', using css instead.'
-    );
+    con.console.log('Document type is ' + document.languageId + ', using css instead.');
     service = languageServices['css'];
   }
   return service;
@@ -200,7 +182,7 @@ function getLanguageService(document: TextDocument) {
 
 let documentSettings: { [key: string]: Thenable<LanguageSettings | undefined> } = {};
 // remove document settings on close
-documents.onDidClose((e) => {
+docs.onDidClose((e) => {
   delete documentSettings[e.document.uri];
 });
 function getDocumentSettings(
@@ -223,7 +205,7 @@ function getDocumentSettings(
 }
 
 // The settings have changed. Is send on server activation as well.
-connection.onDidChangeConfiguration((change) => {
+con.onDidChangeConfiguration((change) => {
   updateConfiguration(<Settings>change.settings);
 });
 
@@ -234,7 +216,7 @@ function updateConfiguration(settings: Settings) {
   // reset all document settings
   documentSettings = {};
   // Revalidate any open text documents
-  documents.all().forEach(triggerValidation);
+  docs.all().forEach(triggerValidation);
 }
 
 const pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
@@ -242,14 +224,14 @@ const validationDelayMs = 500;
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
-documents.onDidChangeContent((change) => {
+docs.onDidChangeContent((change) => {
   triggerValidation(change.document);
 });
 
 // a document has closed: clear all diagnostics
-documents.onDidClose((event) => {
+docs.onDidClose((event) => {
   cleanPendingValidation(event.document);
-  connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+  con.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 });
 
 function cleanPendingValidation(textDocument: TextDocument): void {
@@ -279,20 +261,18 @@ function validateTextDocument(textDocument: TextDocument): void {
         settings
       );
       // Send the computed diagnostics to VSCode.
-      connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+      con.sendDiagnostics({ uri: textDocument.uri, diagnostics });
     },
     (e) => {
-      connection.console.error(
-        formatError(`Error while validating ${textDocument.uri}`, e)
-      );
+      con.console.error(formatError(`Error while validating ${textDocument.uri}`, e));
     }
   );
 }
 
-connection.onCompletion((textDocumentPosition, token) => {
+con.onCompletion((textDocumentPosition, token) => {
   return runSafe(
     () => {
-      const document = documents.get(textDocumentPosition.textDocument.uri);
+      const document = docs.get(textDocumentPosition.textDocument.uri);
       if (!document) {
         return null;
       }
@@ -320,10 +300,10 @@ connection.onCompletion((textDocumentPosition, token) => {
   );
 });
 
-connection.onHover((textDocumentPosition, token) => {
+con.onHover((textDocumentPosition, token) => {
   return runSafe(
     () => {
-      const document = documents.get(textDocumentPosition.textDocument.uri);
+      const document = docs.get(textDocumentPosition.textDocument.uri);
       if (document) {
         const styleSheet = stylesheets.get(document);
         return getLanguageService(document).doHover(
@@ -340,10 +320,10 @@ connection.onHover((textDocumentPosition, token) => {
   );
 });
 
-connection.onDocumentSymbol((documentSymbolParams, token) => {
+con.onDocumentSymbol((documentSymbolParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(documentSymbolParams.textDocument.uri);
+      const document = docs.get(documentSymbolParams.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).findDocumentSymbols(document, stylesheet);
@@ -356,10 +336,10 @@ connection.onDocumentSymbol((documentSymbolParams, token) => {
   );
 });
 
-connection.onDefinition((documentDefinitionParams, token) => {
+con.onDefinition((documentDefinitionParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(documentDefinitionParams.textDocument.uri);
+      const document = docs.get(documentDefinitionParams.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).findDefinition(
@@ -376,10 +356,10 @@ connection.onDefinition((documentDefinitionParams, token) => {
   );
 });
 
-connection.onDocumentHighlight((documentHighlightParams, token) => {
+con.onDocumentHighlight((documentHighlightParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(documentHighlightParams.textDocument.uri);
+      const document = docs.get(documentHighlightParams.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).findDocumentHighlights(
@@ -396,10 +376,10 @@ connection.onDocumentHighlight((documentHighlightParams, token) => {
   );
 });
 
-connection.onDocumentLinks(async (documentLinkParams, token) => {
+con.onDocumentLinks(async (documentLinkParams, token) => {
   return runSafeAsync(
     async () => {
-      const document = documents.get(documentLinkParams.textDocument.uri);
+      const document = docs.get(documentLinkParams.textDocument.uri);
       if (document) {
         const documentContext = getDocumentContext(document.uri, workspaceFolders);
         const stylesheet = stylesheets.get(document);
@@ -417,10 +397,10 @@ connection.onDocumentLinks(async (documentLinkParams, token) => {
   );
 });
 
-connection.onReferences((referenceParams, token) => {
+con.onReferences((referenceParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(referenceParams.textDocument.uri);
+      const document = docs.get(referenceParams.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).findReferences(
@@ -437,10 +417,10 @@ connection.onReferences((referenceParams, token) => {
   );
 });
 
-connection.onCodeAction((codeActionParams, token) => {
+con.onCodeAction((codeActionParams, token) => {
   return runSafe(
     () => {
-      const document = documents.get(codeActionParams.textDocument.uri);
+      const document = docs.get(codeActionParams.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).doCodeActions(
@@ -458,10 +438,10 @@ connection.onCodeAction((codeActionParams, token) => {
   );
 });
 
-connection.onDocumentColor((params, token) => {
+con.onDocumentColor((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).findDocumentColors(document, stylesheet);
@@ -469,36 +449,36 @@ connection.onDocumentColor((params, token) => {
       return [];
     },
     [],
-    `Error while computing document colors for ${params.textDocument.uri}`,
+    `Error while computing document colors for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onColorPresentation((params, token) => {
+con.onColorPresentation((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).getColorPresentations(
           document,
           stylesheet,
-          params.color,
-          params.range
+          ps.color,
+          ps.range
         );
       }
       return [];
     },
     [],
-    `Error while computing color presentations for ${params.textDocument.uri}`,
+    `Error while computing color presentations for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onRenameRequest((renameParameters, token) => {
+con.onRenameRequest((renameParameters, token) => {
   return runSafe(
     () => {
-      const document = documents.get(renameParameters.textDocument.uri);
+      const document = docs.get(renameParameters.textDocument.uri);
       if (document) {
         const stylesheet = stylesheets.get(document);
         return getLanguageService(document).doRename(
@@ -516,10 +496,10 @@ connection.onRenameRequest((renameParameters, token) => {
   );
 });
 
-connection.onFoldingRanges((params, token) => {
+con.onFoldingRanges((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
+      const document = docs.get(ps.textDocument.uri);
       if (document) {
         return getLanguageService(document).getFoldingRanges(document, {
           rangeLimit: foldingRangeLimit,
@@ -528,16 +508,16 @@ connection.onFoldingRanges((params, token) => {
       return null;
     },
     null,
-    `Error while computing folding ranges for ${params.textDocument.uri}`,
+    `Error while computing folding ranges for ${ps.textDocument.uri}`,
     token
   );
 });
 
-connection.onSelectionRanges((params, token) => {
+con.onSelectionRanges((ps, token) => {
   return runSafe(
     () => {
-      const document = documents.get(params.textDocument.uri);
-      const positions: Position[] = params.positions;
+      const document = docs.get(ps.textDocument.uri);
+      const positions: Position[] = ps.positions;
 
       if (document) {
         const stylesheet = stylesheets.get(document);
@@ -550,10 +530,10 @@ connection.onSelectionRanges((params, token) => {
       return [];
     },
     [],
-    `Error while computing selection ranges for ${params.textDocument.uri}`,
+    `Error while computing selection ranges for ${ps.textDocument.uri}`,
     token
   );
 });
 
 // Listen on the connection
-connection.listen();
+con.listen();
