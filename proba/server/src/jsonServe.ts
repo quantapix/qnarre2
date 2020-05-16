@@ -124,7 +124,7 @@ const httpRequestService: SchemaRequestService = (uri: string) => {
 
 function getSchemaRequestService(handledSchemas: string[] = ['https', 'http', 'file']) {
   const builtInHandlers: { [protocol: string]: SchemaRequestService } = {};
-  for (let protocol of handledSchemas) {
+  for (const protocol of handledSchemas) {
     if (protocol === 'file') {
       builtInHandlers[protocol] = fileRequestService;
     } else if (protocol === 'http' || protocol === 'https') {
@@ -305,7 +305,7 @@ let formatterRegistration: Thenable<Disposable> | null = null;
 
 // The settings have changed. Is send on server activation as well.
 connection.onDidChangeConfiguration((change) => {
-  let settings = <Settings>change.settings;
+  const settings = <Settings>change.settings;
   configureHttpRequests(
     settings.http && settings.http.proxy,
     settings.http && settings.http.proxyStrictSSL

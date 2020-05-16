@@ -24,10 +24,10 @@ export function getLanguageModelCache<T>(
   let cleanupInterval: NodeJS.Timer | undefined = undefined;
   if (cleanupIntervalTimeInSec > 0) {
     cleanupInterval = setInterval(() => {
-      let cutoffTime = Date.now() - cleanupIntervalTimeInSec * 1000;
-      let uris = Object.keys(languageModels);
-      for (let uri of uris) {
-        let languageModelInfo = languageModels[uri];
+      const cutoffTime = Date.now() - cleanupIntervalTimeInSec * 1000;
+      const uris = Object.keys(languageModels);
+      for (const uri of uris) {
+        const languageModelInfo = languageModels[uri];
         if (languageModelInfo.cTime < cutoffTime) {
           delete languageModels[uri];
           nModels--;
@@ -38,9 +38,9 @@ export function getLanguageModelCache<T>(
 
   return {
     get(document: TextDocument): T {
-      let version = document.version;
-      let languageId = document.languageId;
-      let languageModelInfo = languageModels[document.uri];
+      const version = document.version;
+      const languageId = document.languageId;
+      const languageModelInfo = languageModels[document.uri];
       if (
         languageModelInfo &&
         languageModelInfo.version === version &&
@@ -49,7 +49,7 @@ export function getLanguageModelCache<T>(
         languageModelInfo.cTime = Date.now();
         return languageModelInfo.languageModel;
       }
-      let languageModel = parse(document);
+      const languageModel = parse(document);
       languageModels[document.uri] = {
         languageModel,
         version,
@@ -63,8 +63,8 @@ export function getLanguageModelCache<T>(
       if (nModels === maxEntries) {
         let oldestTime = Number.MAX_VALUE;
         let oldestUri = null;
-        for (let uri in languageModels) {
-          let languageModelInfo = languageModels[uri];
+        for (const uri in languageModels) {
+          const languageModelInfo = languageModels[uri];
           if (languageModelInfo.cTime < oldestTime) {
             oldestUri = uri;
             oldestTime = languageModelInfo.cTime;
@@ -78,7 +78,7 @@ export function getLanguageModelCache<T>(
       return languageModel;
     },
     onDocumentRemoved(document: TextDocument) {
-      let uri = document.uri;
+      const uri = document.uri;
       if (languageModels[uri]) {
         delete languageModels[uri];
         nModels--;

@@ -7,23 +7,23 @@ import { IHTMLDataProvider, newHTMLDataProvider } from 'vscode-html-languageserv
 import * as fs from 'fs';
 
 export function getDataProviders(dataPaths?: string[]): IHTMLDataProvider[] {
-	if (!dataPaths) {
-		return [];
-	}
+  if (!dataPaths) {
+    return [];
+  }
 
-	const providers: IHTMLDataProvider[] = [];
+  const providers: IHTMLDataProvider[] = [];
 
-	dataPaths.forEach((path, i) => {
-		try {
-			if (fs.existsSync(path)) {
-				const htmlData = JSON.parse(fs.readFileSync(path, 'utf-8'));
+  dataPaths.forEach((path, i) => {
+    try {
+      if (fs.existsSync(path)) {
+        const htmlData = JSON.parse(fs.readFileSync(path, 'utf-8'));
 
-				providers.push(newHTMLDataProvider(`customProvider${i}`, htmlData));
-			}
-		} catch (err) {
-			console.log(`Failed to load tag from ${path}`);
-		}
-	});
+        providers.push(newHTMLDataProvider(`customProvider${i}`, htmlData));
+      }
+    } catch (err) {
+      console.log(`Failed to load tag from ${path}`);
+    }
+  });
 
-	return providers;
+  return providers;
 }

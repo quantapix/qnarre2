@@ -10,25 +10,29 @@ const glob = require('glob');
 const suite = 'Integration CSS Extension Tests';
 
 const options = {
-	ui: 'tdd',
-	useColors: (!process.env.BUILD_ARTIFACTSTAGINGDIRECTORY && process.platform !== 'win32'),
-	timeout: 60000
+  ui: 'tdd',
+  useColors: !process.env.BUILD_ARTIFACTSTAGINGDIRECTORY && process.platform !== 'win32',
+  timeout: 60000,
 };
 
 if (process.env.BUILD_ARTIFACTSTAGINGDIRECTORY) {
-	options.reporter = 'mocha-multi-reporters';
-	options.reporterOptions = {
-		reporterEnabled: 'spec, mocha-junit-reporter',
-		mochaJunitReporterReporterOptions: {
-			testsuitesTitle: `${suite} ${process.platform}`,
-			mochaFile: path.join(process.env.BUILD_ARTIFACTSTAGINGDIRECTORY, `test-results/${process.platform}-${suite.toLowerCase().replace(/[^\w]/g, '-')}-results.xml`)
-		}
-	};
+  options.reporter = 'mocha-multi-reporters';
+  options.reporterOptions = {
+    reporterEnabled: 'spec, mocha-junit-reporter',
+    mochaJunitReporterReporterOptions: {
+      testsuitesTitle: `${suite} ${process.platform}`,
+      mochaFile: path.join(
+        process.env.BUILD_ARTIFACTSTAGINGDIRECTORY,
+        `test-results/${process.platform}-${suite
+          .toLowerCase()
+          .replace(/[^\w]/g, '-')}-results.xml`
+      ),
+    },
+  };
 }
 
 const mocha = new Mocha(options);
 
-glob.sync(__dirname + '/../out/test/**/*.test.js')
-	.forEach(file => mocha.addFile(file));
+glob.sync(__dirname + '/../out/test/**/*.test.js').forEach((file) => mocha.addFile(file));
 
-mocha.run(failures => process.exit(failures ? -1 : 0));
+mocha.run((failures) => process.exit(failures ? -1 : 0));
