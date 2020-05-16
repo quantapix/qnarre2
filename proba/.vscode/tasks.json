@@ -7,7 +7,7 @@
       "presentation": { "panel": "dedicated", "reveal": "never" },
       "problemMatcher": ["$tsc"],
       "script": "compile",
-      "type": "npm",
+      "type": "npm"
     },
     {
       "group": { "kind": "build", "isDefault": true },
@@ -15,7 +15,20 @@
       "presentation": { "panel": "dedicated", "reveal": "never" },
       "problemMatcher": "$tsc-watch",
       "script": "watch",
-      "type": "npm",
+      "type": "npm"
+    },
+    {
+      "label": "npm",
+      "command": "npm",
+      "args": ["run", "compile"],
+      "type": "shell",
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "isBackground": true,
+      "problemMatcher": "$tsc-watch"
     }
   ]
 }
