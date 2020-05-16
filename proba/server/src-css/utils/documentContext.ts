@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DocumentContext } from 'vscode-css-languageservice';
-import { endsWith, startsWith } from '../utils/strings';
+import { endsWith, startsWith } from './strings';
 import * as url from 'url';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
