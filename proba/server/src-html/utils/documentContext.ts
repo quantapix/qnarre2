@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DocumentContext, WorkspaceFolder } from '../modes/languageModes';
-import { endsWith, startsWith } from '../utils/strings';
+import { endsWith, startsWith } from './strings';
 import * as url from 'url';
 
 export function getDocumentContext(documentUri: string, workspaceFolders: WorkspaceFolder[]): DocumentContext {
