@@ -19,7 +19,7 @@ import {
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { ICompletionParticipant } from 'vscode-css-languageservice';
 
-import { startsWith, endsWith } from './utils/strings';
+import { startsWith, endsWith } from '../src-css/utils/strings';
 
 export function getPathCompletionParticipant(
   document: TextDocument,

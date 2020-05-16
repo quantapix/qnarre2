@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { LanguageModelCache, getLanguageModelCache } from '../languageModelCache';
+import { LanguageModelCache, getLanguageModelCache } from '../../src/htmlModelCache';
 import {
   SymbolInformation,
   SymbolKind,

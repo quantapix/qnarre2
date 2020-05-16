@@ -32,7 +32,7 @@ import {
   WorkspaceEdit,
 } from 'vscode-html-languageservice';
 import { WorkspaceFolder } from 'vscode-languageserver';
-import { getLanguageModelCache, LanguageModelCache } from '../languageModelCache';
+import { getLanguageModelCache, LanguageModelCache } from '../../src/htmlModelCache';
 import { getCSSMode } from './cssMode';
 import { getDocumentRegions, HTMLDocumentRegions } from './embeddedSupport';
 import { getHTMLMode } from './htmlMode';

@@ -1,9 +1,3 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-'use strict';
-
 import {
   CodeAction,
   CodeActionKind,
@@ -46,16 +40,16 @@ import {
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-const connection = createConnection(ProposedFeatures.all);
+const con = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
 
-documents.listen(connection);
+documents.listen(con);
 
 documents.onWillSave((event) => {
-  connection.console.log('On Will save received');
+  con.console.log('On Will save received');
 });
 
-connection.telemetry.logEvent({
+con.telemetry.logEvent({
   name: 'my custome event',
   data: {
     foo: 10,
@@ -129,14 +123,14 @@ function computeLegend(
   return { tokenTypes, tokenModifiers };
 }
 
-connection.onInitialize((params, cancel, progress):
+con.onInitialize((params, cancel, progress):
   | Thenable<InitializeResult>
   | ResponseError<InitializeError>
   | InitializeResult => {
   progress.begin('Initializing test server');
 
   for (const folder of params.workspaceFolders) {
-    connection.console.log(`${folder.name} ${folder.uri}`);
+    con.console.log(`${folder.name} ${folder.uri}`);
   }
   if (params.workspaceFolders && params.workspaceFolders.length > 0) {
     folder = params.workspaceFolders[0].uri;
@@ -211,19 +205,19 @@ connection.onInitialize((params, cancel, progress):
   });
 });
 
-connection.onInitialized((params) => {
-  connection.workspace.onDidChangeWorkspaceFolders((event) => {
-    connection.console.log('Workspace folder changed received');
+con.onInitialized((params) => {
+  con.workspace.onDidChangeWorkspaceFolders((event) => {
+    con.console.log('Workspace folder changed received');
   });
-  connection.workspace.getWorkspaceFolders().then((folders) => {
+  con.workspace.getWorkspaceFolders().then((folders) => {
     for (const folder of folders) {
-      connection.console.log(`Get workspace folders: ${folder.name} ${folder.uri}`);
+      con.console.log(`Get workspace folders: ${folder.name} ${folder.uri}`);
     }
   });
 });
 
-connection.onShutdown((handler) => {
-  connection.console.log('Shutdown received');
+con.onShutdown((handler) => {
+  con.console.log('Shutdown received');
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve(undefined);
@@ -233,28 +227,26 @@ connection.onShutdown((handler) => {
 
 documents.onDidChangeContent((event) => {
   const document = event.document;
-  connection.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
+  con.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
 });
 
 documents.onDidSave((event) => {
-  connection.console.info(
-    `Document got saved: ${event.document.uri} ${event.document.version}`
-  );
+  con.console.info(`Document got saved: ${event.document.uri} ${event.document.version}`);
 });
 
-connection.onDidChangeWatchedFiles((params) => {
-  connection.console.log('File change event received');
+con.onDidChangeWatchedFiles((params) => {
+  con.console.log('File change event received');
   documents.all().forEach((document) => {
-    connection.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
+    con.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
   });
 });
 
-connection.onDidChangeConfiguration((params) => {
+con.onDidChangeConfiguration((params) => {
   documents.all().forEach((document) => {
-    connection.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
+    con.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
   });
-  connection.workspace.getConfiguration('testbed').then((value) => {
-    connection.console.log('Configuration received');
+  con.workspace.getConfiguration('testbed').then((value) => {
+    con.console.log('Configuration received');
   });
 });
 
@@ -279,7 +271,7 @@ function validate(document: TextDocument): Diagnostic[] {
   // 		clearInterval(interval);
   // 	});
   // });
-  connection.console.log('Validaing document ' + document.uri);
+  con.console.log('Validaing document ' + document.uri);
   return [
     {
       range: Range.create(0, 0, 0, 10),
@@ -289,7 +281,7 @@ function validate(document: TextDocument): Diagnostic[] {
   ];
 }
 
-connection.onHover(
+con.onHover(
   (textPosition): Hover => {
     // let doc : MarkedString[] = ["# Title","### description"]
     return {
@@ -314,7 +306,7 @@ connection.onHover(
   }
 );
 
-connection.onCompletion((params, token): CompletionItem[] => {
+con.onCompletion((params, token): CompletionItem[] => {
   const result: CompletionItem[] = [];
   let item = CompletionItem.create('foo');
   result.push(item);
@@ -352,7 +344,7 @@ connection.onCompletion((params, token): CompletionItem[] => {
   return result;
 });
 
-connection.onCompletionResolve(
+con.onCompletionResolve(
   (item): CompletionItem => {
     item.detail = 'This is a special hello world function';
     item.documentation = {
@@ -365,7 +357,7 @@ connection.onCompletionResolve(
   }
 );
 
-connection.onSignatureHelp(
+con.onSignatureHelp(
   (item): SignatureHelp => {
     return {
       signatures: [{ label: 'Hello World Signature' }],
@@ -375,7 +367,7 @@ connection.onSignatureHelp(
   }
 );
 
-connection.onDefinition((params): DefinitionLink[] => {
+con.onDefinition((params): DefinitionLink[] => {
   // return { uri: params.textDocument.uri, range: { start: { line: 0, character: 0}, end: {line: 0, character: 10 }}};
   return [
     {
@@ -396,7 +388,7 @@ connection.onDefinition((params): DefinitionLink[] => {
   ];
 });
 
-connection.onDeclaration((params): DeclarationLink[] => {
+con.onDeclaration((params): DeclarationLink[] => {
   return [
     {
       targetUri: params.textDocument.uri,
@@ -416,7 +408,7 @@ connection.onDeclaration((params): DeclarationLink[] => {
   ];
 });
 
-connection.onImplementation(
+con.onImplementation(
   (params): Promise<Definition> => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
@@ -429,7 +421,7 @@ connection.onImplementation(
   }
 );
 
-connection.onTypeDefinition(
+con.onTypeDefinition(
   (params): Definition => {
     return {
       uri: params.textDocument.uri,
@@ -438,7 +430,7 @@ connection.onTypeDefinition(
   }
 );
 
-connection.onReferences((params): Location[] => {
+con.onReferences((params): Location[] => {
   return [
     {
       uri: params.textDocument.uri,
@@ -451,7 +443,7 @@ connection.onReferences((params): Location[] => {
   ];
 });
 
-connection.onDocumentHighlight((textPosition) => {
+con.onDocumentHighlight((textPosition) => {
   const position = textPosition.position;
   return [
     DocumentHighlight.create(
@@ -464,7 +456,7 @@ connection.onDocumentHighlight((textPosition) => {
   ];
 });
 
-connection.onDocumentSymbol((identifier) => {
+con.onDocumentSymbol((identifier) => {
   return [
     SymbolInformation.create('Item 1', SymbolKind.Function, {
       start: { line: 0, character: 0 },
@@ -477,7 +469,7 @@ connection.onDocumentSymbol((identifier) => {
   ];
 });
 
-connection.onWorkspaceSymbol((params) => {
+con.onWorkspaceSymbol((params) => {
   return [
     SymbolInformation.create(
       'Workspace Item 1',
@@ -500,7 +492,7 @@ connection.onWorkspaceSymbol((params) => {
   ];
 });
 
-connection.onCodeAction((params) => {
+con.onCodeAction((params) => {
   const document = documents.get(params.textDocument.uri);
   const codeAction: CodeAction = {
     title: 'Custom Code Action',
@@ -522,7 +514,7 @@ connection.onCodeAction((params) => {
   return [codeAction];
 });
 
-connection.onCodeLens((params) => {
+con.onCodeLens((params) => {
   return [
     {
       range: Range.create(2, 0, 2, 10),
@@ -532,12 +524,12 @@ connection.onCodeLens((params) => {
   ];
 });
 
-connection.onDocumentFormatting((params) => {
+con.onDocumentFormatting((params) => {
   return [TextEdit.insert(Position.create(1, 0), 'A new line\n')];
 });
 
-connection.onDocumentRangeFormatting((params) => {
-  connection.console.log(
+con.onDocumentRangeFormatting((params) => {
+  con.console.log(
     `Document Range Formatting: ${JSON.stringify(params.range)} ${JSON.stringify(
       params.options
     )}`
@@ -545,8 +537,8 @@ connection.onDocumentRangeFormatting((params) => {
   return [];
 });
 
-connection.onDocumentOnTypeFormatting((params) => {
-  connection.console.log(
+con.onDocumentOnTypeFormatting((params) => {
+  con.console.log(
     `Document On Type Formatting: ${JSON.stringify(params.position)} ${
       params.ch
     } ${JSON.stringify(params.options)}`
@@ -554,33 +546,33 @@ connection.onDocumentOnTypeFormatting((params) => {
   return [];
 });
 
-connection.onRenameRequest((params) => {
-  connection.console.log(`Rename: ${JSON.stringify(params.position)} ${params.newName}`);
+con.onRenameRequest((params) => {
+  con.console.log(`Rename: ${JSON.stringify(params.position)} ${params.newName}`);
   return new ResponseError(20, "Element can't be renaned");
   // let change = new WorkspaceChange();
   // change.getTextEditChange(params.textDocument.uri).insert(Position.create(0,0), 'Raname inserted\n');
   // return change.edit;
 });
 
-connection.onExecuteCommand((params) => {
+con.onExecuteCommand((params) => {
   if (params.command === 'testbed.helloWorld') {
     throw new Error('Command execution failed');
   }
   return undefined;
 });
 
-connection.onRequest('addTwenty', (param) => {
+con.onRequest('addTwenty', (param) => {
   return { value: param.value + 20 };
 });
 
 const not: NotificationType<string[], void> = new NotificationType<string[], void>(
   'testbed/notification'
 );
-connection.onNotification(not, (arr) => {
-  connection.console.log('Is array: ' + Array.isArray(arr));
+con.onNotification(not, (arr) => {
+  con.console.log('Is array: ' + Array.isArray(arr));
 });
 
-connection.onRequest(SelectionRangeRequest.type, (params) => {
+con.onRequest(SelectionRangeRequest.type, (params) => {
   const result: SelectionRange = {
     range: {
       start: {

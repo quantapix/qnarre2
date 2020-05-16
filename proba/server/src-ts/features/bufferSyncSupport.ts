@@ -6,14 +6,14 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import API from '../utils/api';
-import { coalesce } from '../utils/arrays';
-import { Delayer } from '../utils/async';
-import { nulToken } from '../utils/cancellation';
-import { Disposable } from '../utils/misc';
-import * as languageModeIds from '../utils/languageModeIds';
-import { ResourceMap } from '../utils/resourceMap';
-import * as typeConverters from '../utils/typeConverters';
+import API from '../ts/api';
+import { coalesce } from '../ts/arrays';
+import { Delayer } from '../ts/async';
+import { nulToken } from '../ts/cancellation';
+import { Disposable } from '../ts/misc';
+import * as languageModeIds from '../ts/languageModeIds';
+import { ResourceMap } from '../ts/resourceMap';
+import * as typeConverters from '../ts/typeConverters';
 
 const enum BufferKind {
   TypeScript = 1,

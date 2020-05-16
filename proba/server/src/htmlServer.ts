@@ -35,18 +35,21 @@ import {
   DocumentLink,
   SymbolInformation,
   TextDocumentIdentifier,
-} from './modes/languageModes';
+} from '../src-html/modes/languageModes';
 
-import { format } from './modes/formatting';
-import { pushAll } from './utils/arrays';
-import { getDocumentContext } from './utils/documentContext';
+import { format } from '../src-html/modes/formatting';
+import { pushAll } from '../src-html/utils/arrays';
+import { getDocumentContext } from '../src-html/utils/documentContext';
 import { URI } from 'vscode-uri';
-import { formatError, runSafe, runSafeAsync } from './utils/runner';
+import { formatError, runSafe, runSafeAsync } from '../src-html/utils/runner';
 
-import { getFoldingRanges } from './modes/htmlFolding';
+import { getFoldingRanges } from '../src-html/modes/htmlFolding';
 import { getDataProviders } from './customData';
-import { getSelectionRanges } from './modes/selectionRanges';
-import { SemanticTokenProvider, newSemanticTokenProvider } from './modes/semanticTokens';
+import { getSelectionRanges } from '../src-html/modes/selectionRanges';
+import {
+  SemanticTokenProvider,
+  newSemanticTokenProvider,
+} from '../src-html/modes/semanticTokens';
 
 namespace TagCloseRequest {
   export const type: RequestType<

@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import BufferSyncSupport from './features/bufferSyncSupport';
 import * as Proto from './protocol';
-import API from './utils/misc';
-import { TypeScriptServiceConfiguration } from './utils/misc';
-import { PluginManager } from './utils/plugins';
+import API from './ts/misc';
+import { TypeScriptServiceConfiguration } from './ts/misc';
+import { PluginManager } from './ts/plugins';
 
 export namespace ServerResponse {
   export class Cancelled {

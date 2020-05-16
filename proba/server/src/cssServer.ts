@@ -29,11 +29,11 @@ import {
   CompletionList,
   Position,
 } from 'vscode-css-languageservice';
-import { getLanguageModelCache } from './languageModelCache';
+import { getLanguageModelCache } from './cssModelCache';
 import { getPathCompletionParticipant } from './pathCompletion';
-import { formatError, runSafe, runSafeAsync } from './utils/runner';
-import { getDocumentContext } from './utils/documentContext';
-import { getDataProviders } from './customData';
+import { formatError, runSafe, runSafeAsync } from '../src-css/utils/runner';
+import { getDocumentContext } from '../src-css/utils/documentContext';
+import { getDataProviders } from './cssData';
 
 export interface Settings {
   css: LanguageSettings;
