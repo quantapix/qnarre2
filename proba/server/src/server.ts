@@ -1,315 +1,665 @@
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
+'use strict';
+
 import {
   CodeAction,
   CodeActionKind,
   Command,
   CompletionItem,
-  CompletionItemKind,
-  CompletionList,
   createConnection,
+  CreateFile,
+  DeclarationLink,
+  Definition,
+  DefinitionLink,
   Diagnostic,
-  DiagnosticSeverity,
-  DidChangeConfigurationNotification,
-  InitializeParams,
+  DocumentHighlight,
+  DocumentHighlightKind,
+  Hover,
+  InitializeError,
   InitializeResult,
+  Location,
+  MarkupKind,
+  MessageActionItem,
+  NotificationType,
   Position,
-  ProposedFeatures,
+  Range,
+  ResponseError,
+  SignatureHelp,
+  SymbolInformation,
+  SymbolKind,
   TextDocumentEdit,
   TextDocuments,
   TextDocumentSyncKind,
   TextEdit,
+  VersionedTextDocumentIdentifier,
+  ProposedFeatures,
+  DiagnosticTag,
+  Proposed,
+  InsertTextFormat,
+  SelectionRangeRequest,
+  SelectionRange,
+  InsertReplaceEdit,
 } from 'vscode-languageserver';
-import { getLanguageModes, LanguageModes } from './languageModes';
+
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { getLanguageService } from 'vscode-html-languageservice';
 
-const con = createConnection(ProposedFeatures.all);
-con.console.info(`Sample server running in node ${process.version}`);
+const connection = createConnection(ProposedFeatures.all);
+const documents = new TextDocuments(TextDocument);
 
-let config = false;
-let diagnose = false;
-let workspace = false;
+documents.listen(connection);
 
-con.onInitialize((ps) => {
-  const cs = ps.capabilities;
-  config = !!(cs.workspace && !!cs.workspace.configuration);
-  workspace = !!(cs.workspace && !!cs.workspace.workspaceFolders);
-  diagnose = !!(
-    cs.textDocument &&
-    cs.textDocument.publishDiagnostics &&
-    cs.textDocument.publishDiagnostics.relatedInformation
+documents.onWillSave((event) => {
+  connection.console.log('On Will save received');
+});
+
+connection.telemetry.logEvent({
+  name: 'my custome event',
+  data: {
+    foo: 10,
+  },
+});
+
+interface ActionItem extends MessageActionItem {
+  id: string;
+}
+
+let folder: string;
+
+enum TokenTypes {
+  comment = 0,
+  keyword = 1,
+  string = 2,
+  number = 3,
+  regexp = 4,
+  type = 5,
+  class = 6,
+  interface = 7,
+  enum = 8,
+  typeParameter = 9,
+  function = 10,
+  member = 11,
+  property = 12,
+  variable = 13,
+  parameter = 14,
+  lambdaFunction = 15,
+  _ = 16,
+}
+
+enum TokenModifiers {
+  abstract = 0,
+  deprecated = 1,
+  _ = 2,
+}
+
+function computeLegend(
+  capability: Proposed.SemanticTokensClientCapabilities
+): Proposed.SemanticTokensLegend {
+  const clientTokenTypes = new Set<string>(
+    capability.textDocument.semanticTokens.tokenTypes
   );
-  const r: InitializeResult = {
-    capabilities: {
-      codeActionProvider: true,
-      completionProvider: { resolveProvider: true },
-      textDocumentSync: {
-        openClose: true,
-        change: TextDocumentSyncKind.Incremental,
-      },
-      executeCommandProvider: { commands: ['sample.fixMe'] },
-    },
-  };
-  if (workspace) r.cs.workspace = { workspaceFolders: { supported: true } };
-  return r;
-});
+  const clientTokenModifiers = new Set<string>(
+    capability.textDocument.semanticTokens.tokenModifiers
+  );
 
-let languageModes: LanguageModes;
-
-con.onInitialize((_ps: InitializeParams) => {
-  languageModes = getLanguageModes();
-  docs.onDidClose((e) => {
-    languageModes.onDocumentRemoved(e.document);
-  });
-  con.onShutdown(() => {
-    languageModes.dispose();
-  });
-  return {
-    capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Full,
-      completionProvider: { resolveProvider: false },
-    },
-  };
-});
-
-const htmlLanguageService = getLanguageService();
-
-con.onInitialize((_: InitializeParams) => {
-  return {
-    capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Full,
-      completionProvider: {
-        resolveProvider: false,
-      },
-    },
-  };
-});
-
-con.onInitialized(() => {
-  if (config) {
-    con.client.register(DidChangeConfigurationNotification.type, undefined);
+  const tokenTypes: string[] = [];
+  for (let i = 0; i < TokenTypes._; i++) {
+    const str = TokenTypes[i];
+    if (clientTokenTypes.has(str)) {
+      tokenTypes.push(str);
+    } else {
+      if (str === 'lambdaFunction') {
+        tokenTypes.push('function');
+      } else {
+        tokenTypes.push('type');
+      }
+    }
   }
-  if (workspace) {
-    con.workspace.onDidChangeWorkspaceFolders(() => {
-      con.console.log('Workspace folder change event received.');
-    });
+
+  const tokenModifiers: string[] = [];
+  for (let i = 0; i < TokenModifiers._; i++) {
+    const str = TokenModifiers[i];
+    if (clientTokenModifiers.has(str)) {
+      tokenModifiers.push(str);
+    }
   }
+
+  return { tokenTypes, tokenModifiers };
+}
+
+connection.onInitialize((params, cancel, progress):
+  | Thenable<InitializeResult>
+  | ResponseError<InitializeError>
+  | InitializeResult => {
+  progress.begin('Initializing test server');
+
+  for (const folder of params.workspaceFolders) {
+    connection.console.log(`${folder.name} ${folder.uri}`);
+  }
+  if (params.workspaceFolders && params.workspaceFolders.length > 0) {
+    folder = params.workspaceFolders[0].uri;
+  }
+
+  return new Promise((resolve, reject) => {
+    const tokenLegend = computeLegend(
+      params.capabilities as Proposed.SemanticTokensClientCapabilities
+    );
+    const result: InitializeResult & {
+      capabilities: Proposed.CallHierarchyServerCapabilities &
+        Proposed.SemanticTokensServerCapabilities;
+    } = {
+      capabilities: {
+        textDocumentSync: TextDocumentSyncKind.Full,
+        hoverProvider: true,
+        completionProvider: {
+          resolveProvider: false,
+        },
+        signatureHelpProvider: {},
+        definitionProvider: true,
+        referencesProvider: { workDoneProgress: true },
+        documentHighlightProvider: true,
+        documentSymbolProvider: true,
+        workspaceSymbolProvider: true,
+        codeActionProvider: {
+          codeActionKinds: [
+            CodeActionKind.Refactor,
+            CodeActionKind.Source,
+            CodeActionKind.SourceOrganizeImports,
+          ],
+        },
+        codeLensProvider: {
+          resolveProvider: true,
+        },
+        documentFormattingProvider: true,
+        documentRangeFormattingProvider: true,
+        documentOnTypeFormattingProvider: {
+          firstTriggerCharacter: ';',
+          moreTriggerCharacter: ['}', '\n'],
+        },
+        renameProvider: true,
+        workspace: {
+          workspaceFolders: {
+            supported: true,
+            changeNotifications: true,
+          },
+        },
+        implementationProvider: {
+          id: 'mdjdjjdnnnndjjjjddd',
+          documentSelector: ['bat'],
+        },
+        typeDefinitionProvider: true,
+        declarationProvider: { workDoneProgress: true },
+        executeCommandProvider: {
+          commands: ['testbed.helloWorld'],
+        },
+        callHierarchyProvider: true,
+        selectionRangeProvider: { workDoneProgress: true },
+        semanticTokensProvider: {
+          legend: tokenLegend,
+          documentProvider: {
+            edits: true,
+          },
+          rangeProvider: true,
+        },
+      },
+    };
+    setTimeout(() => {
+      resolve(result);
+    }, 50);
+  });
 });
 
-con.onCompletion((): CompletionItem[] => {
+connection.onInitialized((params) => {
+  connection.workspace.onDidChangeWorkspaceFolders((event) => {
+    connection.console.log('Workspace folder changed received');
+  });
+  connection.workspace.getWorkspaceFolders().then((folders) => {
+    for (const folder of folders) {
+      connection.console.log(`Get workspace folders: ${folder.name} ${folder.uri}`);
+    }
+  });
+});
+
+connection.onShutdown((handler) => {
+  connection.console.log('Shutdown received');
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(undefined);
+    }, 3000);
+  });
+});
+
+documents.onDidChangeContent((event) => {
+  const document = event.document;
+  connection.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
+});
+
+documents.onDidSave((event) => {
+  connection.console.info(
+    `Document got saved: ${event.document.uri} ${event.document.version}`
+  );
+});
+
+connection.onDidChangeWatchedFiles((params) => {
+  connection.console.log('File change event received');
+  documents.all().forEach((document) => {
+    connection.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
+  });
+});
+
+connection.onDidChangeConfiguration((params) => {
+  documents.all().forEach((document) => {
+    connection.sendDiagnostics({ uri: document.uri, diagnostics: validate(document) });
+  });
+  connection.workspace.getConfiguration('testbed').then((value) => {
+    connection.console.log('Configuration received');
+  });
+});
+
+/**
+ * Some doc
+ * @param document
+ */
+function validate(document: TextDocument): Diagnostic[] {
+  // connection.window.createWorkDoneProgress().then((progress) => {
+  // 	progress.begin('Validating', 0, 'happy coding', true);
+  // 	let counter = 1;
+  // 	let interval = setInterval(() => {
+  // 		if (counter === 11) {
+  // 			clearInterval(interval);
+  // 			progress.done();
+  // 		} else {
+  // 			progress.report(counter++ * 10);
+  // 		}
+  // 	}, 1000);
+  // 	progress.token.onCancellationRequested(() => {
+  // 		progress.done();
+  // 		clearInterval(interval);
+  // 	});
+  // });
+  connection.console.log('Validaing document ' + document.uri);
   return [
-    { label: 'TypeScript', kind: CompletionItemKind.Text, data: 1 },
-    { label: 'JavaScript', kind: CompletionItemKind.Text, data: 2 },
+    {
+      range: Range.create(0, 0, 0, 10),
+      message: 'A error message',
+      tags: [DiagnosticTag.Unnecessary],
+    },
+  ];
+}
+
+connection.onHover(
+  (textPosition): Hover => {
+    // let doc : MarkedString[] = ["# Title","### description"]
+    return {
+      contents: {
+        kind: MarkupKind.PlainText,
+        value: 'foo\nbar',
+      },
+      // contents: {
+      // 	kind: MarkupKind.Markdown,
+      // 	value: [
+      // 		'```typescript',
+      // 		'function validate(document: TextDocument): Diagnostic[]',
+      // 		'```',
+      // 		'___',
+      // 		'Some doc',
+      // 		'',
+      // 		'_@param_ `document` '
+      // 	].join('\n')
+      // }
+      // contents: doc
+    };
+  }
+);
+
+connection.onCompletion((params, token): CompletionItem[] => {
+  const result: CompletionItem[] = [];
+  let item = CompletionItem.create('foo');
+  result.push(item);
+
+  item = CompletionItem.create('foo-text');
+  item.insertText = 'foo-text';
+  result.push(item);
+
+  item = CompletionItem.create('foo-text-range-insert');
+  item.textEdit = TextEdit.insert(params.position, 'foo-text-range-insert');
+  result.push(item);
+
+  item = CompletionItem.create('foo-text-range-replace');
+  item.textEdit = TextEdit.replace(
+    Range.create(
+      Position.create(params.position.line, params.position.character - 1),
+      params.position
+    ),
+    'foo-text-range-replace'
+  );
+  item.filterText = 'b';
+  result.push(item);
+
+  item = CompletionItem.create('bar');
+  item.textEdit = InsertReplaceEdit.create(
+    'bar',
+    Range.create(params.position, params.position),
+    Range.create(
+      params.position,
+      Position.create(params.position.line, params.position.character + 1)
+    )
+  );
+  result.push(item);
+
+  return result;
+});
+
+connection.onCompletionResolve(
+  (item): CompletionItem => {
+    item.detail = 'This is a special hello world function';
+    item.documentation = {
+      kind: MarkupKind.Markdown,
+      value: ['# Heading', '```typescript', 'console.log("Hello World");', '```'].join(
+        '\n'
+      ),
+    };
+    return item;
+  }
+);
+
+connection.onSignatureHelp(
+  (item): SignatureHelp => {
+    return {
+      signatures: [{ label: 'Hello World Signature' }],
+      activeSignature: 0,
+      activeParameter: 0,
+    };
+  }
+);
+
+connection.onDefinition((params): DefinitionLink[] => {
+  // return { uri: params.textDocument.uri, range: { start: { line: 0, character: 0}, end: {line: 0, character: 10 }}};
+  return [
+    {
+      targetUri: params.textDocument.uri,
+      targetRange: { start: { line: 0, character: 2 }, end: { line: 5, character: 45 } },
+      targetSelectionRange: {
+        start: { line: 1, character: 5 },
+        end: { line: 1, character: 10 },
+      },
+      originSelectionRange: {
+        start: {
+          line: params.position.line,
+          character: Math.max(0, params.position.character - 4),
+        },
+        end: { line: params.position.line, character: params.position.character + 4 },
+      },
+    },
   ];
 });
 
-con.onCompletion(async (ps, _) => {
-  const d = docs.get(ps.textDocument.uri);
-  if (!d) return null;
-  const m = languageModes.getModeAtPosition(d, ps.position);
-  if (!m || !m.doComplete) return CompletionList.create();
-  return m.doComplete(d, ps.position);
-});
-
-con.onCompletion(async (ps, _) => {
-  const d = docs.get(ps.textDocument.uri);
-  if (!d) return null;
-  return htmlLanguageService.doComplete(
-    d,
-    ps.position,
-    htmlLanguageService.parseHTMLDocument(d)
-  );
-});
-
-con.onCompletionResolve((i) => {
-  if (i.data === 1) {
-    i.detail = 'TypeScript details';
-    i.documentation = 'TypeScript documentation';
-  } else if (i.data === 2) {
-    i.detail = 'JavaScript details';
-    i.documentation = 'JavaScript documentation';
-  }
-  return i;
-});
-
-con.onDidChangeWatchedFiles(() => {
-  con.console.log('Received file change event');
-});
-
-interface Settings {
-  maxProblems: number;
-}
-
-const defaults: Settings = { maxProblems: 1000 };
-let gSets = defaults;
-const dSets: Map<string, Thenable<Settings>> = new Map();
-
-const docs: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-
-function getDSets(n: string) {
-  if (!config) return Promise.resolve(gSets);
-  let r = dSets.get(n);
-  if (!r) {
-    r = con.workspace.getConfiguration({
-      scopeUri: n,
-      section: 'languageServerExample',
-    });
-    dSets.set(n, r);
-  }
-  return r;
-}
-
-async function validate(d: TextDocument) {
-  const ds = [] as Diagnostic[];
-  let m: RegExpExecArray | null;
-  const t = d.getText();
-  const pat = /\b[A-Z]{2,}\b/g;
-  const ss = await getDSets(d.uri);
-  let ps = 0;
-  while ((m = pat.exec(t)) && ps < ss.maxProblems) {
-    ps++;
-    const g: Diagnostic = {
-      severity: DiagnosticSeverity.Warning,
-      range: {
-        start: d.positionAt(m.index),
-        end: d.positionAt(m.index + m[0].length),
+connection.onDeclaration((params): DeclarationLink[] => {
+  return [
+    {
+      targetUri: params.textDocument.uri,
+      targetRange: { start: { line: 3, character: 0 }, end: { line: 3, character: 10 } },
+      targetSelectionRange: {
+        start: { line: 3, character: 0 },
+        end: { line: 3, character: 10 },
       },
-      message: `${m[0]} is all uppercase.`,
-      source: 'ex',
-    };
-    if (diagnose) {
-      g.relatedInformation = [
-        {
-          location: {
-            uri: d.uri,
-            range: Object.assign({}, g.range),
-          },
-          message: 'Spelling matters',
+      originSelectionRange: {
+        start: {
+          line: params.position.line,
+          character: Math.max(0, params.position.line - 4),
         },
-        {
-          location: {
-            uri: d.uri,
-            range: Object.assign({}, g.range),
-          },
-          message: 'Particularly for names',
-        },
-      ];
-    }
-    ds.push(g);
-  }
-  con.sendDiagnostics({ uri: d.uri, version: d.version, diagnostics: ds });
-}
+        end: { line: params.position.line, character: params.position.line + 4 },
+      },
+    },
+  ];
+});
 
-async function validate2(d: TextDocument) {
-  try {
-    const version = d.version;
-    const ds: Diagnostic[] = [];
-    if (d.languageId === 'html1') {
-      const ms = languageModes.getAllModesInDocument(d);
-      const t = docs.get(d.uri);
-      if (t && t.version === version) {
-        ms.forEach((m) => {
-          if (m.doValidation) {
-            m.doValidation(t).forEach((d) => {
-              ds.push(d);
-            });
-          }
+connection.onImplementation(
+  (params): Promise<Definition> => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve({
+          uri: params.textDocument.uri,
+          range: { start: { line: 1, character: 0 }, end: { line: 1, character: 10 } },
         });
-        con.sendDiagnostics({ uri: t.uri, ds });
-      }
-    }
-  } catch (e) {
-    con.console.error(`Error while validating ${d.uri}`);
-    con.console.error(e);
-  }
-}
-
-con.onDidChangeConfiguration((ps) => {
-  if (config) dSets.clear();
-  else gSets = ps.settings.languageServerExample || defaults;
-  docs.all().forEach(validate);
-});
-
-docs.onDidOpen((e) => {
-  validate(e.document);
-});
-
-docs.onDidChangeContent((e) => {
-  validate(e.document);
-});
-
-docs.onDidClose((e) => {
-  dSets.delete(e.document.uri);
-});
-
-docs.listen(con);
-
-con.onCodeAction((ps) => {
-  const d = docs.get(ps.textDocument.uri);
-  if (d) {
-    const t = 'With User Input';
-    return [
-      CodeAction.create(
-        t,
-        Command.create(t, 'sample.fixMe', d.uri),
-        CodeActionKind.QuickFix
-      ),
-    ];
-  }
-  return;
-});
-
-con.onExecuteCommand((ps) => {
-  if (ps.command !== 'sample.fixMe' || !ps.arguments) return;
-  const d = docs.get(ps.arguments[0]);
-  if (d) {
-    const newText = typeof ps.arguments[1] === 'string' ? ps.arguments[1] : 'Eclipse';
-    con.workspace.applyEdit({
-      documentChanges: [
-        TextDocumentEdit.create({ uri: d.uri, version: d.version }, [
-          TextEdit.insert(Position.create(0, 0), newText),
-        ]),
-      ],
+      }, 2000);
     });
   }
+);
+
+connection.onTypeDefinition(
+  (params): Definition => {
+    return {
+      uri: params.textDocument.uri,
+      range: { start: { line: 2, character: 0 }, end: { line: 2, character: 10 } },
+    };
+  }
+);
+
+connection.onReferences((params): Location[] => {
+  return [
+    {
+      uri: params.textDocument.uri,
+      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+    },
+    {
+      uri: params.textDocument.uri,
+      range: { start: { line: 2, character: 0 }, end: { line: 2, character: 20 } },
+    },
+  ];
 });
 
-con.listen();
-
-// ==================== //
-
-let workspaceFolder: string | null;
-
-docs.onDidOpen((e) => {
-  con.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Document opened: ${e.document.uri}`
-  );
+connection.onDocumentHighlight((textPosition) => {
+  const position = textPosition.position;
+  return [
+    DocumentHighlight.create(
+      {
+        start: { line: position.line + 1, character: position.character },
+        end: { line: position.line + 1, character: position.character + 5 },
+      },
+      DocumentHighlightKind.Write
+    ),
+  ];
 });
 
-docs.listen(con);
+connection.onDocumentSymbol((identifier) => {
+  return [
+    SymbolInformation.create('Item 1', SymbolKind.Function, {
+      start: { line: 0, character: 0 },
+      end: { line: 0, character: 10 },
+    }),
+    SymbolInformation.create('Item 2', SymbolKind.Function, {
+      start: { line: 1, character: 0 },
+      end: { line: 1, character: 10 },
+    }),
+  ];
+});
 
-con.onInitialize((ps) => {
-  workspaceFolder = ps.rootUri;
-  con.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`
+connection.onWorkspaceSymbol((params) => {
+  return [
+    SymbolInformation.create(
+      'Workspace Item 1',
+      SymbolKind.Function,
+      {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 10 },
+      },
+      `${folder}/test.bat`
+    ),
+    SymbolInformation.create(
+      'Workspace Item 2',
+      SymbolKind.Function,
+      {
+        start: { line: 1, character: 0 },
+        end: { line: 1, character: 10 },
+      },
+      `${folder}/test.bat`
+    ),
+  ];
+});
+
+connection.onCodeAction((params) => {
+  const document = documents.get(params.textDocument.uri);
+  const codeAction: CodeAction = {
+    title: 'Custom Code Action',
+    kind: CodeActionKind.QuickFix,
+    edit: {
+      documentChanges: [
+        TextDocumentEdit.create(
+          VersionedTextDocumentIdentifier.create(document.uri, document.version),
+          [TextEdit.insert({ line: 0, character: 0 }, 'Code Action')]
+        ),
+        CreateFile.create(`${folder}/newFile.bat`, { overwrite: true }),
+        TextDocumentEdit.create(
+          VersionedTextDocumentIdentifier.create(`${folder}/newFile.bat`, null),
+          [TextEdit.insert({ line: 0, character: 0 }, 'The initial content')]
+        ),
+      ],
+    },
+  };
+  return [codeAction];
+});
+
+connection.onCodeLens((params) => {
+  return [
+    {
+      range: Range.create(2, 0, 2, 10),
+      command: Command.create('My Code Lens', 'commandId'),
+      data: '1',
+    },
+  ];
+});
+
+connection.onDocumentFormatting((params) => {
+  return [TextEdit.insert(Position.create(1, 0), 'A new line\n')];
+});
+
+connection.onDocumentRangeFormatting((params) => {
+  connection.console.log(
+    `Document Range Formatting: ${JSON.stringify(params.range)} ${JSON.stringify(
+      params.options
+    )}`
   );
-  return {
-    capabilities: {
-      textDocumentSync: {
-        openClose: true,
-        change: TextDocumentSyncKind.None,
+  return [];
+});
+
+connection.onDocumentOnTypeFormatting((params) => {
+  connection.console.log(
+    `Document On Type Formatting: ${JSON.stringify(params.position)} ${
+      params.ch
+    } ${JSON.stringify(params.options)}`
+  );
+  return [];
+});
+
+connection.onRenameRequest((params) => {
+  connection.console.log(`Rename: ${JSON.stringify(params.position)} ${params.newName}`);
+  return new ResponseError(20, "Element can't be renaned");
+  // let change = new WorkspaceChange();
+  // change.getTextEditChange(params.textDocument.uri).insert(Position.create(0,0), 'Raname inserted\n');
+  // return change.edit;
+});
+
+connection.onExecuteCommand((params) => {
+  if (params.command === 'testbed.helloWorld') {
+    throw new Error('Command execution failed');
+  }
+  return undefined;
+});
+
+connection.onRequest('addTwenty', (param) => {
+  return { value: param.value + 20 };
+});
+
+const not: NotificationType<string[], void> = new NotificationType<string[], void>(
+  'testbed/notification'
+);
+connection.onNotification(not, (arr) => {
+  connection.console.log('Is array: ' + Array.isArray(arr));
+});
+
+connection.onRequest(SelectionRangeRequest.type, (params) => {
+  const result: SelectionRange = {
+    range: {
+      start: {
+        line: params.positions[0].line,
+        character: Math.max(0, params.positions[0].character - 10),
+      },
+      end: {
+        line: params.positions[0].line,
+        character: params.positions[0].character + 10,
       },
     },
   };
+
+  return [result];
 });
 
-con.listen();
+connection.languages.callHierarchy.onPrepare((params) => {
+  return [];
+});
 
-con.onDidOpenTextDocument((ps) => {
-  con.console.log(`${ps.textDocument.uri} opened.`);
+const tokenBuilders: Map<string, ProposedFeatures.SemanticTokensBuilder> = new Map();
+function getTokenBuilder(document: TextDocument): ProposedFeatures.SemanticTokensBuilder {
+  let result = tokenBuilders.get(document.uri);
+  if (result !== undefined) {
+    return result;
+  }
+  result = new ProposedFeatures.SemanticTokensBuilder();
+  tokenBuilders.set(document.uri, result);
+  return result;
+}
+function buildTokens(
+  builder: ProposedFeatures.SemanticTokensBuilder,
+  document: TextDocument
+) {
+  const text = document.getText();
+  const regexp = /\w+/g;
+  let match: RegExpMatchArray;
+  let tokenCounter = 0;
+  let modifierCounter = 0;
+  while ((match = regexp.exec(text)) !== null) {
+    const word = match[0];
+    const position = document.positionAt(match.index);
+    const tokenType = tokenCounter % TokenTypes._;
+    const tokenModifier = 1 << modifierCounter % TokenModifiers._;
+    builder.push(
+      position.line,
+      position.character,
+      word.length,
+      tokenType,
+      tokenModifier
+    );
+    tokenCounter++;
+    modifierCounter++;
+  }
+}
+
+connection.languages.semanticTokens.on((params) => {
+  const document = documents.get(params.textDocument.uri);
+  if (document === undefined) {
+    return { data: [] };
+  }
+  const builder = getTokenBuilder(document);
+  buildTokens(builder, document);
+  return builder.build();
 });
-con.onDidChangeTextDocument((ps) => {
-  con.console.log(`${ps.textDocument.uri} changed: ${JSON.stringify(ps.contentChanges)}`);
+
+connection.languages.semanticTokens.onEdits((params) => {
+  const document = documents.get(params.textDocument.uri);
+  if (document === undefined) {
+    return { edits: [] };
+  }
+  const builder = getTokenBuilder(document);
+  builder.previousResult(params.previousResultId);
+  buildTokens(builder, document);
+  return builder.buildEdits();
 });
-con.onDidCloseTextDocument((ps) => {
-  con.console.log(`${ps.textDocument.uri} closed.`);
+
+connection.languages.semanticTokens.onRange((params) => {
+  return { data: [] };
 });
+
+connection.listen();
