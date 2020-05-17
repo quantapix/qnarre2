@@ -11,6 +11,7 @@ import {
   ServerCapabilities,
   TextDocumentSyncKind,
   TextEdit,
+  DidChangeConfigurationParams,
 } from 'vscode-languageserver';
 
 import {
@@ -39,6 +40,49 @@ import {
   Position,
 } from 'vscode-json-languageservice';
 import { getLanguageModelCache } from './jsonModelCache';
+import { LangServer, getCapability } from './langServer';
+
+export class JsonServer extends LangServer {
+  constructor(name = 'JsonServer', rootDir: string) {
+    super(name, rootDir);
+  }
+
+  protected initialize(ps: InitializeParams) {
+    super.initialize(ps);
+
+    const handledProtocols = ps.initializationOptions?.handledSchemaProtocols;
+
+    languageService = getLanguageService({
+      schemaRequestService: getSchemaRequestService(handledProtocols),
+      workspaceContext,
+      contributions: [],
+      clientCapabilities: ps.capabilities,
+    });
+
+    formatterMaxNumberOfEdits =
+      ps.initializationOptions?.customCapabilities?.rangeFormatting?.editLimit ||
+      Number.MAX_VALUE;
+    const capabilities: ServerCapabilities = {
+      textDocumentSync: TextDocumentSyncKind.Incremental,
+      completionProvider: this._hasSnippets
+        ? {
+            resolveProvider: false, // turn off resolving as the current language service doesn't do anything on resolve. Also fixes #91747
+            triggerCharacters: ['"', ':'],
+          }
+        : undefined,
+      hoverProvider: true,
+      documentSymbolProvider: true,
+      documentRangeFormattingProvider: ps.initializationOptions.provideFormatter === true,
+      colorProvider: {},
+      foldingRangeProvider: true,
+      selectionRangeProvider: true,
+      definitionProvider: true,
+    };
+    return { capabilities };
+  }
+}
+
+const con = createConnection();
 
 interface ISchemaAssociations {
   [pattern: string]: string[];
@@ -79,18 +123,6 @@ namespace ForceValidateRequest {
     'json/validate'
   );
 }
-
-const con: IConnection = createConnection();
-
-console.log = con.console.log.bind(con.console);
-console.error = con.console.error.bind(con.console);
-
-process.on('unhandledRejection', (e: any) => {
-  console.error(formatError(`Unhandled exception`, e));
-});
-process.on('uncaughtException', (e: any) => {
-  console.error(formatError(`Unhandled exception`, e));
-});
 
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
@@ -158,75 +190,8 @@ let languageService = getLanguageService({
 const docs = new TextDocuments(TextDocument);
 docs.listen(con);
 
-let clientSnippetSupport = false;
-let dynamicFormatterRegistration = false;
-let hierarchicalDocumentSymbolSupport = false;
-
-let foldingRangeLimitDefault = Number.MAX_VALUE;
-let foldingRangeLimit = Number.MAX_VALUE;
 let resultLimit = Number.MAX_VALUE;
 let formatterMaxNumberOfEdits = Number.MAX_VALUE;
-
-con.onInitialize(
-  (ps: InitializeParams): InitializeResult => {
-    const handledProtocols = ps.initializationOptions?.handledSchemaProtocols;
-
-    languageService = getLanguageService({
-      schemaRequestService: getSchemaRequestService(handledProtocols),
-      workspaceContext,
-      contributions: [],
-      clientCapabilities: ps.capabilities,
-    });
-
-    function getClientCapability<T>(name: string, def: T) {
-      const keys = name.split('.');
-      let c: any = ps.capabilities;
-      for (let i = 0; c && i < keys.length; i++) {
-        if (!c.hasOwnProperty(keys[i])) {
-          return def;
-        }
-        c = c[keys[i]];
-      }
-      return c;
-    }
-
-    clientSnippetSupport = getClientCapability(
-      'textDocument.completion.completionItem.snippetSupport',
-      false
-    );
-    dynamicFormatterRegistration =
-      getClientCapability('textDocument.rangeFormatting.dynamicRegistration', false) &&
-      typeof ps.initializationOptions?.provideFormatter !== 'boolean';
-    foldingRangeLimitDefault = getClientCapability(
-      'textDocument.foldingRange.rangeLimit',
-      Number.MAX_VALUE
-    );
-    hierarchicalDocumentSymbolSupport = getClientCapability(
-      'textDocument.documentSymbol.hierarchicalDocumentSymbolSupport',
-      false
-    );
-    formatterMaxNumberOfEdits =
-      ps.initializationOptions?.customCapabilities?.rangeFormatting?.editLimit ||
-      Number.MAX_VALUE;
-    const capabilities: ServerCapabilities = {
-      textDocumentSync: TextDocumentSyncKind.Incremental,
-      completionProvider: clientSnippetSupport
-        ? {
-            resolveProvider: false, // turn off resolving as the current language service doesn't do anything on resolve. Also fixes #91747
-            triggerCharacters: ['"', ':'],
-          }
-        : undefined,
-      hoverProvider: true,
-      documentSymbolProvider: true,
-      documentRangeFormattingProvider: ps.initializationOptions.provideFormatter === true,
-      colorProvider: {},
-      foldingRangeProvider: true,
-      selectionRangeProvider: true,
-      definitionProvider: true,
-    };
-    return { capabilities };
-  }
-);
 
 // The settings interface describes the server relevant settings part
 interface Settings {
@@ -295,7 +260,7 @@ let schemaAssociations:
 let formatterRegistration: Thenable<Disposable> | null = null;
 
 // The settings have changed. Is send on server activation as well.
-con.onDidChangeConfiguration((change) => {
+con.onDidChangeConfiguration((change: DidChangeConfigurationParams) => {
   const settings = <Settings>change.settings;
   configureHttpRequests(
     settings.http && settings.http.proxy,
@@ -305,15 +270,15 @@ con.onDidChangeConfiguration((change) => {
   jsonConfigurationSettings = settings.json && settings.json.schemas;
   updateConfiguration();
 
-  foldingRangeLimit = Math.trunc(
-    Math.max((settings.json && settings.json.resultLimit) || foldingRangeLimitDefault, 0)
+  this._hasFoldLimit = Math.trunc(
+    Math.max((settings.json && settings.json.resultLimit) || this._hasFoldLimit, 0)
   );
   resultLimit = Math.trunc(
     Math.max((settings.json && settings.json.resultLimit) || Number.MAX_VALUE, 0)
   );
 
   // dynamically enable & disable the formatter
-  if (dynamicFormatterRegistration) {
+  if (this._hasDynRegistry) {
     const enableFormatter =
       settings && settings.json && settings.json.format && settings.json.format.enable;
     if (enableFormatter) {
@@ -554,7 +519,7 @@ con.onDocumentSymbol((documentSymbolParams, token) => {
           resultLimit,
           'document symbols'
         );
-        if (hierarchicalDocumentSymbolSupport) {
+        if (this._hasHierSymbols) {
           return languageService.findDocumentSymbols2(document, jsonDocument, {
             resultLimit,
             onResultLimitExceeded,
@@ -658,11 +623,11 @@ con.onFoldingRanges((ps, token) => {
       if (document) {
         const onRangeLimitExceeded = LimitExceededWarnings.onResultLimitExceeded(
           document.uri,
-          foldingRangeLimit,
+          this._hasFoldLimit,
           'folding ranges'
         );
         return languageService.getFoldingRanges(document, {
-          rangeLimit: foldingRangeLimit,
+          rangeLimit: this._hasFoldLimit,
           onRangeLimitExceeded,
         });
       }

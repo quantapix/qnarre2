@@ -61,12 +61,13 @@ import { Position } from './common/textRange';
 import { AnalyzerServiceExecutor } from './languageService/analyzerServiceExecutor';
 import { CompletionItemData } from './languageService/completionProvider';
 import { convertHoverResults } from './languageService/hoverProvider';
-import { WorkspaceMap } from './workspaceMap';
+import { WorkspaceMap } from './langServer';
 
 export interface ServerSettings {
   venvPath?: string;
   pythonPath?: string;
   typeshedPath?: string;
+  stubPath?: string;
   openFilesOnly?: boolean;
   typeCheckingMode?: string;
   useLibraryCodeForTypes?: boolean;
@@ -116,11 +117,10 @@ interface InternalFileWatcher extends FileWatcher {
 }
 
 export abstract class LanguageServerBase implements LanguageServerInterface {
-  // Create a connection for the server. The connection type can be changed by the process's arguments
-  protected _connection: IConnection = createConnection(this._GetConnectionOptions());
-  protected _workspaceMap: WorkspaceMap;
-  protected _hasConfigurationCapability = false;
-  protected _hasWatchFileCapability = false;
+  protected _conn: IConnection = createConnection(this._GetConnectionOptions());
+  protected _wsMap: WorkspaceMap;
+  protected _hasConfig = false;
+  protected _hasWatch = false;
   protected _defaultClientConfig: any;
 
   // Tracks whether we're currently displaying progress.
@@ -148,8 +148,8 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     private _maxAnalysisTimeInForeground?: MaxAnalysisTime,
     supportedCommands?: string[]
   ) {
-    this._connection.console.log(`${_productName} language server starting`);
-    this.fs = createFromRealFileSystem(this._connection.console, this);
+    this._conn.console.log(`${_productName} language server starting`);
+    this.fs = createFromRealFileSystem(this._conn.console, this);
 
     // Set the working directory to a known location within
     // the extension directory. Otherwise the execution of
@@ -161,16 +161,16 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
     // Stash the base directory into a global variable.
     (global as any).__rootDirectory = rootDirectory;
-    this._connection.console.log(`Server root directory: ${rootDirectory}`);
+    this._conn.console.log(`Server root directory: ${rootDirectory}`);
 
     // Create workspace map.
-    this._workspaceMap = new WorkspaceMap(this);
+    this._wsMap = new WorkspaceMap(this);
 
     // Set up callbacks.
     this._setupConnection(supportedCommands ?? []);
 
     // Listen on the connection.
-    this._connection.listen();
+    this._conn.listen();
   }
 
   abstract createBackgroundAnalysis(): BackgroundAnalysisBase | undefined;
@@ -179,6 +179,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     params: ExecuteCommandParams,
     token: CancellationToken
   ): Promise<any>;
+
   protected isLongRunningCommand(command: string): boolean {
     // By default, all commands are considered "long-running" and should
     // display a cancelable progress dialog. Servers can override this
@@ -197,13 +198,13 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
   ): Promise<ServerSettings>;
 
   protected getConfiguration(workspace: WorkspaceServiceInstance, section: string) {
-    if (this._hasConfigurationCapability) {
+    if (this._hasConfig) {
       const scopeUri = workspace.rootUri ? workspace.rootUri : undefined;
       const item: ConfigurationItem = {
         scopeUri,
         section,
       };
-      return this._connection.workspace.getConfiguration(item);
+      return this._conn.workspace.getConfiguration(item);
     }
 
     if (this._defaultClientConfig) {
@@ -211,6 +212,10 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     }
 
     return undefined;
+  }
+
+  protected isOpenFilesOnly(diagnosticMode: string): boolean {
+    return diagnosticMode !== 'workspace';
   }
 
   protected createImportResolver(fs: FileSystem, options: ConfigOptions): ImportResolver {
@@ -223,22 +228,22 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
   // Provides access to logging to the client output window.
   get console(): RemoteConsole {
-    return this._connection.console;
+    return this._conn.console;
   }
 
   // Provides access to the client's window.
   get window(): RemoteWindow {
-    return this._connection.window;
+    return this._conn.window;
   }
 
   // Creates a service instance that's used for analyzing a
   // program within a workspace.
   createAnalyzerService(name: string): AnalyzerService {
-    this._connection.console.log(`Starting service instance "${name}"`);
+    this._conn.console.log(`Starting service instance "${name}"`);
     const service = new AnalyzerService(
       name,
       this.fs,
-      this._connection.console,
+      this._conn.console,
       this.createImportResolver.bind(this),
       undefined,
       this._extension,
@@ -252,19 +257,19 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
   }
 
   async getWorkspaceForFile(filePath: string): Promise<WorkspaceServiceInstance> {
-    const workspace = this._workspaceMap.getWorkspaceForFile(filePath);
+    const workspace = this._wsMap.getWorkspaceForFile(filePath);
     await workspace.isInitialized.promise;
     return workspace;
   }
 
   reanalyze() {
-    this._workspaceMap.forEach((workspace) => {
+    this._wsMap.forEach((workspace) => {
       workspace.serviceInstance.invalidateAndForceReanalysis();
     });
   }
 
   restart() {
-    this._workspaceMap.forEach((workspace) => {
+    this._wsMap.forEach((workspace) => {
       workspace.serviceInstance.restart();
     });
   }
@@ -278,7 +283,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     // the client.
     const workspacePaths: string[] = [];
     const nonWorkspacePaths: string[] = [];
-    const workspaces = this._workspaceMap.getNonDefaultWorkspaces();
+    const workspaces = this._wsMap.getNonDefaultWorkspaces();
 
     paths.forEach((path) => {
       if (workspaces.some((workspace) => containsPath(workspace.rootPath, path))) {
@@ -318,21 +323,21 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
   private _setupConnection(supportedCommands: string[]): void {
     // After the server has started the client sends an initialize request. The server receives
     // in the passed params the rootPath of the workspace plus the client capabilities.
-    this._connection.onInitialize(
+    this._conn.onInitialize(
       (params): InitializeResult => {
         this.rootPath = params.rootPath || '';
 
         // Does the client support the `workspace/configuration` request?
         const capabilities = params.capabilities;
-        this._hasConfigurationCapability = !!capabilities.workspace?.configuration;
-        this._hasWatchFileCapability = !!capabilities.workspace?.didChangeWatchedFiles
+        this._hasConfig = !!capabilities.workspace?.configuration;
+        this._hasWatch = !!capabilities.workspace?.didChangeWatchedFiles
           ?.dynamicRegistration;
 
         // Create a service instance for each of the workspace folders.
         if (params.workspaceFolders) {
           params.workspaceFolders.forEach((folder) => {
             const path = convertUriToPath(folder.uri);
-            this._workspaceMap.set(path, {
+            this._wsMap.set(path, {
               workspaceName: folder.name,
               rootPath: path,
               rootUri: folder.uri,
@@ -343,7 +348,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
             });
           });
         } else if (params.rootPath) {
-          this._workspaceMap.set(params.rootPath, {
+          this._wsMap.set(params.rootPath, {
             workspaceName: '',
             rootPath: params.rootPath,
             rootUri: '',
@@ -390,19 +395,17 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       }
     );
 
-    this._connection.onDidChangeConfiguration((params) => {
-      this._connection.console.log(`Received updated settings`);
+    this._conn.onDidChangeConfiguration((params) => {
+      this._conn.console.log(`Received updated settings`);
       if (params?.settings) {
         this._defaultClientConfig = params?.settings;
       }
       this.updateSettingsForAllWorkspaces();
     });
 
-    this._connection.onCodeAction((params, token) =>
-      this.executeCodeAction(params, token)
-    );
+    this._conn.onCodeAction((params, token) => this.executeCodeAction(params, token));
 
-    this._connection.onDefinition(async (params, token) => {
+    this._conn.onDefinition(async (params, token) => {
       this.recordUserInteractionTime();
 
       const filePath = convertUriToPath(params.textDocument.uri);
@@ -429,7 +432,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       );
     });
 
-    this._connection.onReferences(async (params, token, reporter) => {
+    this._conn.onReferences(async (params, token, reporter) => {
       if (this._pendingFindAllRefsCancellationSource) {
         this._pendingFindAllRefsCancellationSource.cancel();
         this._pendingFindAllRefsCancellationSource = undefined;
@@ -478,7 +481,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       }
     });
 
-    this._connection.onDocumentSymbol(async (params, token) => {
+    this._conn.onDocumentSymbol(async (params, token) => {
       this.recordUserInteractionTime();
 
       const filePath = convertUriToPath(params.textDocument.uri);
@@ -493,9 +496,10 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       return symbolList;
     });
 
-    this._connection.onWorkspaceSymbol((params, token) => {
+    this._conn.onWorkspaceSymbol(async (params, token) => {
       const symbolList: SymbolInformation[] = [];
-      this._workspaceMap.forEach(async (workspace) => {
+
+      this._wsMap.forEach(async (workspace) => {
         await workspace.isInitialized.promise;
         if (!workspace.disableLanguageServices) {
           workspace.serviceInstance.addSymbolsForWorkspace(
@@ -505,10 +509,11 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
           );
         }
       });
+
       return symbolList;
     });
 
-    this._connection.onHover(async (params, token) => {
+    this._conn.onHover(async (params, token) => {
       const filePath = convertUriToPath(params.textDocument.uri);
 
       const position: Position = {
@@ -525,7 +530,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       return convertHoverResults(hoverResults);
     });
 
-    this._connection.onSignatureHelp(async (params, token) => {
+    this._conn.onSignatureHelp(async (params, token) => {
       const filePath = convertUriToPath(params.textDocument.uri);
 
       const position: Position = {
@@ -576,7 +581,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
     let lastTriggerKind: CompletionTriggerKind | undefined =
       CompletionTriggerKind.Invoked;
-    this._connection.onCompletion(async (params, token) => {
+    this._conn.onCompletion(async (params, token) => {
       // We set completion incomplete for the first invocation and next consecutive call,
       // but after that we mark it as completed so the client doesn't repeatedly call back.
       // We mark the first one as incomplete because completion could be invoked without
@@ -618,7 +623,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       return completions;
     });
 
-    this._connection.onCompletionResolve(async (params, token) => {
+    this._conn.onCompletionResolve(async (params, token) => {
       // Cancellation bugs in vscode and LSP:
       // https://github.com/microsoft/vscode-languageserver-node/issues/615
       // https://github.com/microsoft/vscode/issues/95485
@@ -639,7 +644,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       return params;
     });
 
-    this._connection.onRenameRequest(async (params, token) => {
+    this._conn.onRenameRequest(async (params, token) => {
       const filePath = convertUriToPath(params.textDocument.uri);
 
       const position: Position = {
@@ -666,7 +671,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       return convertWorkspaceEdits(editActions);
     });
 
-    this._connection.onDidOpenTextDocument(async (params) => {
+    this._conn.onDidOpenTextDocument(async (params) => {
       const filePath = convertUriToPath(params.textDocument.uri);
       const workspace = await this.getWorkspaceForFile(filePath);
       workspace.serviceInstance.setFileOpened(
@@ -676,7 +681,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       );
     });
 
-    this._connection.onDidChangeTextDocument(async (params) => {
+    this._conn.onDidChangeTextDocument(async (params) => {
       this.recordUserInteractionTime();
 
       const filePath = convertUriToPath(params.textDocument.uri);
@@ -688,13 +693,13 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       );
     });
 
-    this._connection.onDidCloseTextDocument(async (params) => {
+    this._conn.onDidCloseTextDocument(async (params) => {
       const filePath = convertUriToPath(params.textDocument.uri);
       const workspace = await this.getWorkspaceForFile(filePath);
       workspace.serviceInstance.setFileClosed(filePath);
     });
 
-    this._connection.onDidChangeWatchedFiles((params) => {
+    this._conn.onDidChangeWatchedFiles((params) => {
       params.changes.forEach((change) => {
         const filePath = convertUriToPath(change.uri);
         const eventType: FileWatcherEventType = change.type === 1 ? 'add' : 'change';
@@ -706,11 +711,11 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       });
     });
 
-    this._connection.onInitialized(() => {
-      this._connection.workspace.onDidChangeWorkspaceFolders((event) => {
+    this._conn.onInitialized(() => {
+      this._conn.workspace.onDidChangeWorkspaceFolders((event) => {
         event.removed.forEach((workspace) => {
           const rootPath = convertUriToPath(workspace.uri);
-          this._workspaceMap.delete(rootPath);
+          this._wsMap.delete(rootPath);
         });
 
         event.added.forEach(async (workspace) => {
@@ -724,14 +729,14 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
             disableOrganizeImports: false,
             isInitialized: createDeferred<boolean>(),
           };
-          this._workspaceMap.set(rootPath, newWorkspace);
+          this._wsMap.set(rootPath, newWorkspace);
           await this.updateSettingsForWorkspace(newWorkspace);
         });
       });
 
       // Set up our file watchers.
-      if (this._hasWatchFileCapability) {
-        this._connection.client.register(DidChangeWatchedFilesNotification.type, {
+      if (this._hasWatch) {
+        this._conn.client.register(DidChangeWatchedFilesNotification.type, {
           watchers: [
             ...configFileNames.map((fileName) => {
               return {
@@ -740,7 +745,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
               };
             }),
             {
-              globPattern: '**/*.{py,pyi,pyd}',
+              globPattern: '**/*.{py,pyi}',
               kind: WatchKind.Create | WatchKind.Change | WatchKind.Delete,
             },
           ],
@@ -748,7 +753,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       }
     });
 
-    this._connection.onExecuteCommand(async (params, token, reporter) => {
+    this._conn.onExecuteCommand(async (params, token, reporter) => {
       // Cancel running command if there is one.
       if (this._pendingCommandCancellationSource) {
         this._pendingCommandCancellationSource.cancel();
@@ -759,7 +764,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
         const result = await this.executeCommand(params, token);
         if (WorkspaceEdit.is(result)) {
           // Tell client to apply edits.
-          this._connection.workspace.applyEdit(result);
+          this._conn.workspace.applyEdit(result);
         }
       };
 
@@ -786,7 +791,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
   }
 
   updateSettingsForAllWorkspaces(): void {
-    this._workspaceMap.forEach((workspace) => {
+    this._wsMap.forEach((workspace) => {
       this.updateSettingsForWorkspace(workspace).ignoreErrors();
     });
   }
@@ -796,7 +801,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       const diagnostics = this._convertDiagnostics(fileDiag.diagnostics);
 
       // Send the computed diagnostics to the client.
-      this._connection.sendDiagnostics({
+      this._conn.sendDiagnostics({
         uri: convertPathToUri(fileDiag.filePath),
         diagnostics,
       });
@@ -806,11 +811,11 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
           // Display a progress spinner if we're checking the entire program.
           if (!this._isDisplayingProgress) {
             this._isDisplayingProgress = true;
-            this._connection.sendNotification('pyright/beginProgress');
+            this._conn.sendNotification('pyright/beginProgress');
           }
 
           const fileOrFiles = results.filesRequiringAnalysis !== 1 ? 'files' : 'file';
-          this._connection.sendNotification(
+          this._conn.sendNotification(
             'pyright/reportProgress',
             `${results.filesRequiringAnalysis} ${fileOrFiles} to analyze`
           );
@@ -818,7 +823,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       } else {
         if (this._isDisplayingProgress) {
           this._isDisplayingProgress = false;
-          this._connection.sendNotification('pyright/endProgress');
+          this._conn.sendNotification('pyright/endProgress');
         }
       }
     });
@@ -856,7 +861,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       return reporter;
     }
 
-    const serverInitiatedReporter = await this._connection.window.createWorkDoneProgress();
+    const serverInitiatedReporter = await this._conn.window.createWorkDoneProgress();
     serverInitiatedReporter.begin(title, undefined, undefined, true);
 
     return serverInitiatedReporter;
@@ -910,7 +915,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     // Tell all of the services that the user is actively
     // interacting with one or more editors, so they should
     // back off from performing any work.
-    this._workspaceMap.forEach((workspace) => {
+    this._wsMap.forEach((workspace) => {
       workspace.serviceInstance.recordUserInteractionTime();
     });
   }
