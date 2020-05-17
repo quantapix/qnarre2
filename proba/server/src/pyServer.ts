@@ -1,315 +1,375 @@
 import {
+  CancellationToken,
+  CancellationTokenSource,
   CodeAction,
   CodeActionKind,
+  CodeActionParams,
   Command,
-  CompletionItem,
-  CompletionItemKind,
-  CompletionList,
+  CompletionTriggerKind,
+  ConfigurationItem,
   createConnection,
   Diagnostic,
+  DiagnosticRelatedInformation,
   DiagnosticSeverity,
-  DidChangeConfigurationNotification,
-  InitializeParams,
+  DiagnosticTag,
+  DidChangeWatchedFilesNotification,
+  DocumentSymbol,
+  ExecuteCommandParams,
+  IConnection,
   InitializeResult,
-  Position,
-  ProposedFeatures,
-  TextDocumentEdit,
-  TextDocuments,
+  InitializeParams,
+  Location,
+  ParameterInformation,
+  SignatureInformation,
+  SymbolInformation,
   TextDocumentSyncKind,
-  TextEdit,
+  WatchKind,
+  WorkDoneProgressReporter,
+  WorkspaceEdit,
 } from 'vscode-languageserver';
-import { getLanguageModes, LanguageModes } from './languageModes';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { getLanguageService } from 'vscode-html-languageservice';
 
-const con = createConnection(ProposedFeatures.all);
-con.console.info(`Sample server running in node ${process.version}`);
+import { createDeferred } from './common/deferred';
+import { CancelAfter } from './common/cancellationUtils';
+import { containsPath, pathToUri, uriToPath } from './common/pathUtils';
+import { LangServer, WorkspaceServiceInstance, getCapability } from './langServer';
+import { Position } from './common/textRange';
+import { CompletionItemData } from './languageService/completionProvider';
+import { convertHoverResults } from './languageService/hoverProvider';
+import { convertWorkspaceEdits } from './common/textEditUtils';
 
-let config = false;
-let diagnose = false;
-let workspace = false;
-
-con.onInitialize((ps) => {
-  const cs = ps.capabilities;
-  config = !!(cs.workspace && !!cs.workspace.configuration);
-  workspace = !!(cs.workspace && !!cs.workspace.workspaceFolders);
-  diagnose = !!(
-    cs.textDocument &&
-    cs.textDocument.publishDiagnostics &&
-    cs.textDocument.publishDiagnostics.relatedInformation
-  );
-  const r: InitializeResult = {
-    capabilities: {
-      codeActionProvider: true,
-      completionProvider: { resolveProvider: true },
-      textDocumentSync: {
-        openClose: true,
-        change: TextDocumentSyncKind.Incremental,
-      },
-      executeCommandProvider: { commands: ['sample.fixMe'] },
-    },
-  };
-  if (workspace) r.cs.workspace = { workspaceFolders: { supported: true } };
-  return r;
-});
-
-let languageModes: LanguageModes;
-
-con.onInitialize((_ps: InitializeParams) => {
-  languageModes = getLanguageModes();
-  docs.onDidClose((e) => {
-    languageModes.onDocumentRemoved(e.document);
-  });
-  con.onShutdown(() => {
-    languageModes.dispose();
-  });
-  return {
-    capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Full,
-      completionProvider: { resolveProvider: false },
-    },
-  };
-});
-
-const htmlLanguageService = getLanguageService();
-
-con.onInitialize((_: InitializeParams) => {
-  return {
-    capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Full,
-      completionProvider: {
-        resolveProvider: false,
-      },
-    },
-  };
-});
-
-con.onInitialized(() => {
-  if (config) {
-    con.client.register(DidChangeConfigurationNotification.type, undefined);
+export class PyServer extends LangServer {
+  constructor(name = 'PyServer', rootDir: string) {
+    super(name, rootDir);
   }
-  if (workspace) {
-    con.workspace.onDidChangeWorkspaceFolders(() => {
-      con.console.log('Workspace folder change event received.');
-    });
-  }
-});
 
-con.onCompletion((): CompletionItem[] => {
-  return [
-    { label: 'TypeScript', kind: CompletionItemKind.Text, data: 1 },
-    { label: 'JavaScript', kind: CompletionItemKind.Text, data: 2 },
-  ];
-});
-
-con.onCompletion(async (ps, _) => {
-  const d = docs.get(ps.textDocument.uri);
-  if (!d) return null;
-  const m = languageModes.getModeAtPosition(d, ps.position);
-  if (!m || !m.doComplete) return CompletionList.create();
-  return m.doComplete(d, ps.position);
-});
-
-con.onCompletion(async (ps, _) => {
-  const d = docs.get(ps.textDocument.uri);
-  if (!d) return null;
-  return htmlLanguageService.doComplete(
-    d,
-    ps.position,
-    htmlLanguageService.parseHTMLDocument(d)
-  );
-});
-
-con.onCompletionResolve((i) => {
-  if (i.data === 1) {
-    i.detail = 'TypeScript details';
-    i.documentation = 'TypeScript documentation';
-  } else if (i.data === 2) {
-    i.detail = 'JavaScript details';
-    i.documentation = 'JavaScript documentation';
-  }
-  return i;
-});
-
-con.onDidChangeWatchedFiles(() => {
-  con.console.log('Received file change event');
-});
-
-interface Settings {
-  maxProblems: number;
-}
-
-const defaults: Settings = { maxProblems: 1000 };
-let gSets = defaults;
-const dSets: Map<string, Thenable<Settings>> = new Map();
-
-const docs: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-
-function getDSets(n: string) {
-  if (!config) return Promise.resolve(gSets);
-  let r = dSets.get(n);
-  if (!r) {
-    r = con.workspace.getConfiguration({
-      scopeUri: n,
-      section: 'languageServerExample',
-    });
-    dSets.set(n, r);
-  }
-  return r;
-}
-
-async function validate(d: TextDocument) {
-  const ds = [] as Diagnostic[];
-  let m: RegExpExecArray | null;
-  const t = d.getText();
-  const pat = /\b[A-Z]{2,}\b/g;
-  const ss = await getDSets(d.uri);
-  let ps = 0;
-  while ((m = pat.exec(t)) && ps < ss.maxProblems) {
-    ps++;
-    const g: Diagnostic = {
-      severity: DiagnosticSeverity.Warning,
-      range: {
-        start: d.positionAt(m.index),
-        end: d.positionAt(m.index + m[0].length),
-      },
-      message: `${m[0]} is all uppercase.`,
-      source: 'ex',
-    };
-    if (diagnose) {
-      g.relatedInformation = [
-        {
-          location: {
-            uri: d.uri,
-            range: Object.assign({}, g.range),
+  protected _prepConn(cmds: string[]) {
+    this._conn.onInitialize(
+      (ps): InitializeResult => {
+        this.rootPath = ps.rootPath || '';
+        const capabilities = ps.capabilities;
+        this._hasConfig = !!capabilities.workspace?.configuration;
+        this._hasWatch = !!capabilities.workspace?.didChangeWatchedFiles
+          ?.dynamicRegistration;
+        if (ps.workspaceFolders) {
+          ps.workspaceFolders.forEach((folder) => {
+            const path = uriToPath(folder.uri);
+            this._wsMap.set(path, {
+              name: folder.name,
+              rootPath: path,
+              rootUri: folder.uri,
+              service: this.createAnalyzerService(folder.name),
+              disableOrganizeImports: false,
+              isInitialized: createDeferred<boolean>(),
+            });
+          });
+        } else if (ps.rootPath) {
+          this._wsMap.set(ps.rootPath, {
+            name: '',
+            rootPath: ps.rootPath,
+            rootUri: '',
+            service: this.createAnalyzerService(ps.rootPath),
+            disableServices: false,
+            disableOrganizeImports: false,
+            isInitialized: createDeferred<boolean>(),
+          });
+        }
+        return {
+          capabilities: {
+            textDocumentSync: TextDocumentSyncKind.Full,
+            definitionProvider: { workDoneProgress: true },
+            referencesProvider: { workDoneProgress: true },
+            documentSymbolProvider: { workDoneProgress: true },
+            workspaceSymbolProvider: { workDoneProgress: true },
+            hoverProvider: { workDoneProgress: true },
+            renameProvider: { workDoneProgress: true },
+            completionProvider: {
+              triggerCharacters: ['.', '['],
+              resolveProvider: true,
+              workDoneProgress: true,
+            },
+            signatureHelpProvider: {
+              triggerCharacters: ['(', ',', ')'],
+              workDoneProgress: true,
+            },
+            codeActionProvider: {
+              codeActionKinds: [
+                CodeActionKind.QuickFix,
+                CodeActionKind.SourceOrganizeImports,
+              ],
+              workDoneProgress: true,
+            },
+            executeCommandProvider: {
+              commands: cmds,
+              workDoneProgress: true,
+            },
           },
-          message: 'Spelling matters',
-        },
-        {
-          location: {
-            uri: d.uri,
-            range: Object.assign({}, g.range),
-          },
-          message: 'Particularly for names',
-        },
-      ];
-    }
-    ds.push(g);
-  }
-  con.sendDiagnostics({ uri: d.uri, version: d.version, diagnostics: ds });
-}
+        };
+      }
+    );
 
-async function validate2(d: TextDocument) {
-  try {
-    const version = d.version;
-    const ds: Diagnostic[] = [];
-    if (d.languageId === 'html1') {
-      const ms = languageModes.getAllModesInDocument(d);
-      const t = docs.get(d.uri);
-      if (t && t.version === version) {
-        ms.forEach((m) => {
-          if (m.doValidation) {
-            m.doValidation(t).forEach((d) => {
-              ds.push(d);
+    this._conn.onDidChangeConfiguration((ps) => {
+      this._conn.console.log(`Received updated settings`);
+      if (ps?.settings) this._defaultClientConfig = ps?.settings;
+      this.updateSettingsForAll();
+    });
+
+    this._conn.onCodeAction((ps, token) => this.executeCodeAction(ps, token));
+
+    this._conn.onDefinition(async (ps, token) => {
+      this.recordTime();
+      const f = uriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
+      };
+      const ws = await this.workspaceFor(f);
+      if (ws.disableServices) return;
+      const ls = ws.service.getDefinitionForPosition(f, p, token);
+      if (!ls) return;
+      return ls.map((l) => Location.create(pathToUri(l.path), l.range));
+    });
+
+    this._conn.onReferences(async (ps, token, reporter) => {
+      if (this._pendingFindAllRefsCancellationSource) {
+        this._pendingFindAllRefsCancellationSource.cancel();
+        this._pendingFindAllRefsCancellationSource = undefined;
+      }
+      const prog = await this.progReporter(
+        ps.workDoneToken,
+        reporter,
+        'finding references'
+      );
+      const src = CancelAfter(token, prog.token);
+      this._pendingFindAllRefsCancellationSource = src;
+      try {
+        const f = uriToPath(ps.textDocument.uri);
+        const p: Position = {
+          line: ps.position.line,
+          character: ps.position.character,
+        };
+        const ws = await this.workspaceFor(f);
+        if (ws.disableServices) return;
+        const ls = ws.service.getReferencesForPosition(
+          f,
+          p,
+          ps.context.includeDeclaration,
+          src.token
+        );
+        if (!ls) return;
+        return ls.map((l) => Location.create(pathToUri(l.path), l.range));
+      } finally {
+        prog.done();
+        src.dispose();
+      }
+    });
+
+    this._conn.onDocumentSymbol(async (ps, token) => {
+      this.recordTime();
+      const f = uriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      if (ws.disableServices) return;
+      const ss: DocumentSymbol[] = [];
+      ws.service.addSymbolsForDocument(f, ss, token);
+      return ss;
+    });
+
+    this._conn.onWorkspaceSymbol(async (ps, token) => {
+      const ss: SymbolInformation[] = [];
+      await Promise.all(
+        Array.from(this._wsMap.values()).map(async (w) => {
+          await w.isInitialized.promise;
+          if (!w.disableServices) {
+            w.service.addSymbolsForWorkspace(ss, ps.query, token);
+          }
+        })
+      );
+      return ss;
+    });
+
+    this._conn.onHover(async (ps, token) => {
+      const f = uriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
+      };
+      const ws = await this.workspaceFor(f);
+      const rs = ws.service.getHoverForPosition(f, p, token);
+      return convertHoverResults(rs);
+    });
+
+    this._conn.onSignatureHelp(async (ps, token) => {
+      const f = uriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
+      };
+      const ws = await this.workspaceFor(f);
+      if (ws.disableServices) return;
+      const rs = ws.service.getSignatureHelpForPosition(f, p, token);
+      if (!rs) return;
+      return {
+        signatures: rs.signatures.map((s) => {
+          let i: ParameterInformation[] = [];
+          if (s.parameters) {
+            i = s.parameters.map((p) => {
+              return ParameterInformation.create(
+                [p.startOffset, p.endOffset],
+                p.documentation
+              );
             });
           }
-        });
-        con.sendDiagnostics({ uri: t.uri, ds });
+          return SignatureInformation.create(s.label, s.documentation, ...i);
+        }),
+        activeSignature: rs.activeSignature !== undefined ? rs.activeSignature : null,
+        activeParameter: rs.activeParameter !== undefined ? rs.activeParameter : -1,
+      };
+    });
+
+    let lastTriggerKind: CompletionTriggerKind | undefined =
+      CompletionTriggerKind.Invoked;
+
+    this._conn.onCompletion(async (ps, token) => {
+      const c =
+        lastTriggerKind !== CompletionTriggerKind.TriggerForIncompleteCompletions ||
+        ps.context?.triggerKind !== CompletionTriggerKind.TriggerForIncompleteCompletions;
+      lastTriggerKind = ps.context?.triggerKind;
+      const f = uriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
+      };
+      const ws = await this.workspaceFor(f);
+      if (ws.disableServices) return;
+      const cs = await ws.service.getCompletionsForPosition(f, p, ws.rootPath, token);
+      if (cs) cs.isIncomplete = c;
+      return cs;
+    });
+
+    this._conn.onCompletionResolve(async (ps, token) => {
+      const d = ps.data as CompletionItemData;
+      if (d && d.filePath) {
+        const ws = await this.workspaceFor(d.workspacePath);
+        ws.service.resolveCompletionItem(d.filePath, ps, token);
       }
-    }
-  } catch (e) {
-    con.console.error(`Error while validating ${d.uri}`);
-    con.console.error(e);
-  }
-}
+      return ps;
+    });
 
-con.onDidChangeConfiguration((ps) => {
-  if (config) dSets.clear();
-  else gSets = ps.settings.languageServerExample || defaults;
-  docs.all().forEach(validate);
-});
+    this._conn.onRenameRequest(async (ps, token) => {
+      const f = uriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
+      };
+      const ws = await this.workspaceFor(f);
+      if (ws.disableServices) return;
+      const es = ws.service.renameSymbolAtPosition(f, p, ps.newName, token);
+      if (!es) return;
+      return convertWorkspaceEdits(es);
+    });
 
-docs.onDidOpen((e) => {
-  validate(e.document);
-});
+    this._conn.onDidOpenTextDocument((ps) => {
+      async () => {
+        const f = uriToPath(ps.textDocument.uri);
+        const ws = await this.workspaceFor(f);
+        ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
+      };
+    });
 
-docs.onDidChangeContent((e) => {
-  validate(e.document);
-});
+    this._conn.onDidChangeTextDocument((ps) => {
+      async () => {
+        this.recordTime();
+        const f = uriToPath(ps.textDocument.uri);
+        const ws = await this.workspaceFor(f);
+        ws.service.updateOpenFileContents(
+          f,
+          ps.textDocument.version,
+          ps.contentChanges[0].text
+        );
+      };
+    });
 
-docs.onDidClose((e) => {
-  dSets.delete(e.document.uri);
-});
+    this._conn.onDidCloseTextDocument((ps) => {
+      async () => {
+        const f = uriToPath(ps.textDocument.uri);
+        const ws = await this.workspaceFor(f);
+        ws.service.setFileClosed(f);
+      };
+    });
 
-docs.listen(con);
+    this._conn.onDidChangeWatchedFiles((ps) => {
+      ps.changes.forEach((e) => {
+        const p = uriToPath(e.uri);
+        const t: FileWatcherEventType = e.type === 1 ? 'add' : 'change';
+        this._fileWatchers.forEach((w) => {
+          if (w.workspacePaths.some((d) => containsPath(d, p))) w.eventHandler(t, p);
+        });
+      });
+    });
 
-con.onCodeAction((ps) => {
-  const d = docs.get(ps.textDocument.uri);
-  if (d) {
-    const t = 'With User Input';
-    return [
-      CodeAction.create(
-        t,
-        Command.create(t, 'sample.fixMe', d.uri),
-        CodeActionKind.QuickFix
-      ),
-    ];
-  }
-  return;
-});
+    this._conn.onInitialized(() => {
+      this._conn.workspace.onDidChangeWorkspaceFolders(async (e) => {
+        e.removed.forEach((ws) => {
+          const p = uriToPath(ws.uri);
+          this._wsMap.delete(p);
+        });
+        await Promise.all(
+          e.added.map(async (ws) => {
+            const rootPath = uriToPath(ws.uri);
+            const ws2: WorkspaceServiceInstance = {
+              name: ws.name,
+              rootPath,
+              rootUri: ws.uri,
+              service: this.createAnalyzerService(ws.name),
+              disableOrganizeImports: false,
+              isInitialized: createDeferred<boolean>(),
+            };
+            this._wsMap.set(rootPath, ws2);
+            await this.updateSettingsFor(ws2);
+          })
+        );
+      });
+      if (this._hasWatch) {
+        this._conn.client.register(DidChangeWatchedFilesNotification.type, {
+          watchers: [
+            ...configFileNames.map((f) => {
+              return {
+                globPattern: `**/${f}`,
+                kind: WatchKind.Create | WatchKind.Change | WatchKind.Delete,
+              };
+            }),
+            {
+              globPattern: '**/*.{py,pyi}',
+              kind: WatchKind.Create | WatchKind.Change | WatchKind.Delete,
+            },
+          ],
+        });
+      }
+    });
 
-con.onExecuteCommand((ps) => {
-  if (ps.command !== 'sample.fixMe' || !ps.arguments) return;
-  const d = docs.get(ps.arguments[0]);
-  if (d) {
-    const newText = typeof ps.arguments[1] === 'string' ? ps.arguments[1] : 'Eclipse';
-    con.workspace.applyEdit({
-      documentChanges: [
-        TextDocumentEdit.create({ uri: d.uri, version: d.version }, [
-          TextEdit.insert(Position.create(0, 0), newText),
-        ]),
-      ],
+    this._conn.onExecuteCommand(async (ps, token, reporter) => {
+      if (this._pendingCommandCancellationSource) {
+        this._pendingCommandCancellationSource.cancel();
+        this._pendingCommandCancellationSource = undefined;
+      }
+      const cmd = async (t: CancellationToken) => {
+        const r = await this.executeCommand(ps, t);
+        if (WorkspaceEdit.is(r)) this._conn.workspace.applyEdit(r);
+      };
+      if (this.isLongRunning(ps.command)) {
+        const prog = await this.progReporter(
+          ps.workDoneToken,
+          reporter,
+          'Executing command'
+        );
+        const s = CancelAfter(token, prog.token);
+        this._pendingCommandCancellationSource = s;
+        try {
+          cmd(s.token);
+        } finally {
+          prog.done();
+          s.dispose();
+        }
+      } else cmd(token);
     });
   }
-});
-
-con.listen();
-
-// ==================== //
-
-let workspaceFolder: string | null;
-
-docs.onDidOpen((e) => {
-  con.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Document opened: ${e.document.uri}`
-  );
-});
-
-docs.listen(con);
-
-con.onInitialize((ps) => {
-  workspaceFolder = ps.rootUri;
-  con.console.log(
-    `[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`
-  );
-  return {
-    capabilities: {
-      textDocumentSync: {
-        openClose: true,
-        change: TextDocumentSyncKind.None,
-      },
-    },
-  };
-});
-
-con.listen();
-
-con.onDidOpenTextDocument((ps) => {
-  con.console.log(`${ps.textDocument.uri} opened.`);
-});
-con.onDidChangeTextDocument((ps) => {
-  con.console.log(`${ps.textDocument.uri} changed: ${JSON.stringify(ps.contentChanges)}`);
-});
-con.onDidCloseTextDocument((ps) => {
-  con.console.log(`${ps.textDocument.uri} closed.`);
-});
+}

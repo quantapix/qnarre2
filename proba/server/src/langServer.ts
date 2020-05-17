@@ -1,18 +1,60 @@
 import {
+  CancellationToken,
+  CancellationTokenSource,
+  CodeAction,
+  CodeActionKind,
+  CodeActionParams,
+  Command,
+  CompletionTriggerKind,
+  ConfigurationItem,
   createConnection,
+  Diagnostic,
+  DiagnosticRelatedInformation,
+  DiagnosticSeverity,
+  DiagnosticTag,
+  DidChangeWatchedFilesNotification,
+  DocumentSymbol,
+  ExecuteCommandParams,
   IConnection,
-  InitializeParams,
   InitializeResult,
+  InitializeParams,
+  Location,
+  ParameterInformation,
+  SignatureInformation,
+  SymbolInformation,
+  TextDocumentSyncKind,
+  WatchKind,
+  WorkDoneProgressReporter,
+  WorkspaceEdit,
 } from 'vscode-languageserver';
+
 import { createDeferred } from './common/deferred';
+import { CancelAfter, connOptions } from './common/cancellationUtils';
+import { containsPath, pathToUri, uriToPath } from './common/pathUtils';
+
+export interface ServerSettings {
+  venvPath?: string;
+  pythonPath?: string;
+  typeshedPath?: string;
+  stubPath?: string;
+  openFilesOnly?: boolean;
+  typeCheckingMode?: string;
+  useLibraryCodeForTypes?: boolean;
+  disableServices?: boolean;
+  disableOrganizeImports?: boolean;
+  autoSearchPaths?: boolean;
+  extraPaths?: string[];
+  watchForSourceChanges?: boolean;
+  watchForLibraryChanges?: boolean;
+}
 
 export interface WorkspaceServiceInstance {
   name: string;
-  rootPath: string;
   rootUri: string;
+  rootPath: string;
   service: AnalyzerService;
-  disableServices: boolean;
-  disableOrganizeImports: boolean;
+  disableServices?: boolean;
+  disableOrganizeImports?: boolean;
   isInitialized: Deferred<boolean>;
 }
 
@@ -27,7 +69,7 @@ export function getCapability<T>(ps: InitializeParams, n: string, d: T) {
 }
 
 export abstract class LangServer {
-  protected _conn: IConnection = createConnection(this._GetConnectionOptions());
+  protected _conn: IConnection = createConnection(connOptions());
   protected _wsMap = new WorkspaceMap(this);
   protected _hasConfig = false;
   protected _hasWatch = false;
@@ -70,6 +112,40 @@ export abstract class LangServer {
     return ws;
   }
 
+  protected isLongRunning(_: string) {
+    return true;
+  }
+
+  protected getConfiguration(ws: WorkspaceServiceInstance, section: string) {
+    if (this._hasConfig) {
+      const scopeUri = ws.rootUri ? ws.rootUri : undefined;
+      const item: ConfigurationItem = {
+        scopeUri,
+        section,
+      };
+      return this._conn.workspace.getConfiguration(item);
+    }
+    if (this._defaultClientConfig)
+      return getNestedProperty(this._defaultClientConfig, section);
+    return;
+  }
+
+  abstract async getSettings(ws: WorkspaceServiceInstance): Promise<ServerSettings>;
+
+  async updateSettingsFor(ws: WorkspaceServiceInstance) {
+    const ss = await this.getSettings(ws);
+    this.updateOptionsAndRestartService(ws, ss);
+    ws.disableServices = ss.disableServices;
+    ws.disableOrganizeImports = ss.disableOrganizeImports;
+    ws.isInitialized.resolve(true);
+  }
+
+  updateSettingsForAll() {
+    this._wsMap.forEach((ws) => {
+      this.updateSettingsFor(ws).ignoreErrors();
+    });
+  }
+
   reanalyze() {
     this._wsMap.forEach((ws) => {
       ws.service.invalidateAndForceReanalysis();
@@ -82,8 +158,23 @@ export abstract class LangServer {
     });
   }
 
-  protected _prepConn() {
-    this._conn.onInitialize(this.initialize.bind(this));
+  protected abstract _prepConn(_cmds: string[]): void;
+
+  protected async progReporter(
+    done: string | number | undefined,
+    reporter: WorkDoneProgressReporter,
+    title: string
+  ) {
+    if (done) return reporter;
+    const p = await this._conn.window.createWorkDoneProgress();
+    p.begin(title, undefined, undefined, true);
+    return p;
+  }
+
+  protected recordTime() {
+    this._wsMap.forEach((ws) => {
+      ws.service.recordUserInteractionTime();
+    });
   }
 
   protected initialize(ps: InitializeParams): InitializeResult {
@@ -211,7 +302,7 @@ export class WorkspaceMap extends Map<string, WorkspaceServiceInstance> {
           isInitialized: createDeferred<boolean>(),
         };
         this.set(this._default, d);
-        this._server.updateSettingsForWorkspace(d).ignoreErrors();
+        this._server.updateSettingsFor(d).ignoreErrors();
       }
       return d;
     }
