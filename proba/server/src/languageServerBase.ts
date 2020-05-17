@@ -502,32 +502,32 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     });
 
     this._conn.onDidOpenTextDocument((ps) => {
-      const f = uriToPath(ps.textDocument.uri);
-      const ws = await this.workspaceFor(f).resolve();
-      ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
+      async () => {
+        const f = uriToPath(ps.textDocument.uri);
+        const ws = await this.workspaceFor(f);
+        ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
+      };
     });
 
-    this._conn.onDidOpenTextDocument(async (ps) => {
-      const f = uriToPath(ps.textDocument.uri);
-      const ws = await this.workspaceFor(f);
-      ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
+    this._conn.onDidChangeTextDocument((ps) => {
+      async () => {
+        this.recordUserInteractionTime();
+        const f = uriToPath(ps.textDocument.uri);
+        const ws = await this.workspaceFor(f);
+        ws.service.updateOpenFileContents(
+          f,
+          ps.textDocument.version,
+          ps.contentChanges[0].text
+        );
+      };
     });
 
-    this._conn.onDidChangeTextDocument(async (ps) => {
-      this.recordUserInteractionTime();
-      const f = uriToPath(ps.textDocument.uri);
-      const ws = await this.workspaceFor(f);
-      ws.service.updateOpenFileContents(
-        f,
-        ps.textDocument.version,
-        ps.contentChanges[0].text
-      );
-    });
-
-    this._conn.onDidCloseTextDocument(async (ps) => {
-      const f = uriToPath(ps.textDocument.uri);
-      const ws = await this.workspaceFor(f);
-      ws.service.setFileClosed(f);
+    this._conn.onDidCloseTextDocument((ps) => {
+      async () => {
+        const f = uriToPath(ps.textDocument.uri);
+        const ws = await this.workspaceFor(f);
+        ws.service.setFileClosed(f);
+      };
     });
 
     this._conn.onDidChangeWatchedFiles((ps) => {
@@ -541,24 +541,26 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     });
 
     this._conn.onInitialized(() => {
-      this._conn.workspace.onDidChangeWorkspaceFolders((e) => {
+      this._conn.workspace.onDidChangeWorkspaceFolders(async (e) => {
         e.removed.forEach((ws) => {
           const p = uriToPath(ws.uri);
           this._wsMap.delete(p);
         });
-        e.added.forEach(async (ws) => {
-          const rootPath = uriToPath(ws.uri);
-          const newWorkspace: WorkspaceServiceInstance = {
-            name: ws.name,
-            rootPath,
-            rootUri: ws.uri,
-            service: this.createAnalyzerService(ws.name),
-            disableOrganizeImports: false,
-            isInitialized: createDeferred<boolean>(),
-          };
-          this._wsMap.set(rootPath, newWorkspace);
-          await this.updateSettingsForWorkspace(newWorkspace);
-        });
+        await Promise.all(
+          e.added.map(async (ws) => {
+            const rootPath = uriToPath(ws.uri);
+            const ws2: WorkspaceServiceInstance = {
+              name: ws.name,
+              rootPath,
+              rootUri: ws.uri,
+              service: this.createAnalyzerService(ws.name),
+              disableOrganizeImports: false,
+              isInitialized: createDeferred<boolean>(),
+            };
+            this._wsMap.set(rootPath, ws2);
+            await this.updateSettingsForWorkspace(ws2);
+          })
+        );
       });
       if (this._hasWatch) {
         this._conn.client.register(DidChangeWatchedFilesNotification.type, {
