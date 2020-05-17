@@ -23,8 +23,6 @@ import {
   InitializeResult,
   Location,
   ParameterInformation,
-  RemoteConsole,
-  RemoteWindow,
   SignatureInformation,
   SymbolInformation,
   TextDocumentSyncKind,
@@ -96,8 +94,8 @@ export interface WindowInterface {
 }
 
 export interface LanguageServerInterface {
-  getWorkspaceForFile(filePath: string): Promise<WorkspaceServiceInstance>;
-  getSettings(workspace: WorkspaceServiceInstance): Promise<ServerSettings>;
+  workspaceFor(f: string): Promise<WorkspaceServiceInstance>;
+  getSettings(ws: WorkspaceServiceInstance): Promise<ServerSettings>;
   createBackgroundAnalysis(): BackgroundAnalysisBase | undefined;
   reanalyze(): void;
   restart(): void;
@@ -123,7 +121,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
   protected _hasWatch = false;
   protected _defaultClientConfig: any;
 
-  // Tracks whether we're currently displaying progress.
+  // Tracks whether we're currently displaying prog.
   private _isDisplayingProgress = false;
 
   // Tracks active file system watchers.
@@ -151,45 +149,34 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     this._conn.console.log(`${_productName} language server starting`);
     this.fs = createFromRealFileSystem(this._conn.console, this);
 
-    // Set the working directory to a known location within
-    // the extension directory. Otherwise the execution of
-    // python can have unintended and surprising results.
     const moduleDirectory = this.fs.getModulePath();
     if (moduleDirectory) {
       this.fs.chdir(moduleDirectory);
     }
 
-    // Stash the base directory into a global variable.
     (global as any).__rootDirectory = rootDirectory;
     this._conn.console.log(`Server root directory: ${rootDirectory}`);
 
-    // Create workspace map.
     this._wsMap = new WorkspaceMap(this);
 
-    // Set up callbacks.
     this._setupConnection(supportedCommands ?? []);
 
-    // Listen on the connection.
     this._conn.listen();
   }
 
   abstract createBackgroundAnalysis(): BackgroundAnalysisBase | undefined;
 
   protected abstract async executeCommand(
-    params: ExecuteCommandParams,
+    ps: ExecuteCommandParams,
     token: CancellationToken
   ): Promise<any>;
 
-  protected isLongRunningCommand(command: string): boolean {
-    // By default, all commands are considered "long-running" and should
-    // display a cancelable progress dialog. Servers can override this
-    // to avoid showing the progress dialog for commands that are
-    // guaranteed to be quick.
+  protected isLongRunningCommand(_: string) {
     return true;
   }
 
   protected abstract async executeCodeAction(
-    params: CodeActionParams,
+    ps: CodeActionParams,
     token: CancellationToken
   ): Promise<(Command | CodeAction)[] | undefined | null>;
 
@@ -197,24 +184,21 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     workspace: WorkspaceServiceInstance
   ): Promise<ServerSettings>;
 
-  protected getConfiguration(workspace: WorkspaceServiceInstance, section: string) {
+  protected getConfiguration(ws: WorkspaceServiceInstance, section: string) {
     if (this._hasConfig) {
-      const scopeUri = workspace.rootUri ? workspace.rootUri : undefined;
+      const scopeUri = ws.rootUri ? ws.rootUri : undefined;
       const item: ConfigurationItem = {
         scopeUri,
         section,
       };
       return this._conn.workspace.getConfiguration(item);
     }
-
-    if (this._defaultClientConfig) {
+    if (this._defaultClientConfig)
       return getNestedProperty(this._defaultClientConfig, section);
-    }
-
-    return undefined;
+    return;
   }
 
-  protected isOpenFilesOnly(diagnosticMode: string): boolean {
+  protected isOpenFilesOnly(diagnosticMode: string) {
     return diagnosticMode !== 'workspace';
   }
 
@@ -222,25 +206,21 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     return new ImportResolver(fs, options);
   }
 
-  protected setExtension(extension: any): void {
+  protected setExtension(extension: any) {
     this._extension = extension;
   }
 
-  // Provides access to logging to the client output window.
-  get console(): RemoteConsole {
+  get console() {
     return this._conn.console;
   }
 
-  // Provides access to the client's window.
-  get window(): RemoteWindow {
+  get window() {
     return this._conn.window;
   }
 
-  // Creates a service instance that's used for analyzing a
-  // program within a workspace.
   createAnalyzerService(name: string): AnalyzerService {
     this._conn.console.log(`Starting service instance "${name}"`);
-    const service = new AnalyzerService(
+    const s = new AnalyzerService(
       name,
       this.fs,
       this._conn.console,
@@ -250,92 +230,64 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       this.createBackgroundAnalysis(),
       this._maxAnalysisTimeInForeground
     );
-
-    service.setCompletionCallback((results) => this.onAnalysisCompletedHandler(results));
-
-    return service;
+    s.setCompletionCallback((rs) => this.onAnalysisCompletedHandler(rs));
+    return s;
   }
 
-  async getWorkspaceForFile(filePath: string): Promise<WorkspaceServiceInstance> {
-    const workspace = this._wsMap.getWorkspaceForFile(filePath);
-    await workspace.isInitialized.promise;
-    return workspace;
+  async workspaceFor(p: string) {
+    const ws = this._wsMap.workspaceFor(p);
+    await ws.isInitialized.promise;
+    return ws;
   }
 
   reanalyze() {
-    this._wsMap.forEach((workspace) => {
-      workspace.serviceInstance.invalidateAndForceReanalysis();
+    this._wsMap.forEach((ws) => {
+      ws.serviceInstance.invalidateAndForceReanalysis();
     });
   }
 
   restart() {
-    this._wsMap.forEach((workspace) => {
-      workspace.serviceInstance.restart();
+    this._wsMap.forEach((ws) => {
+      ws.serviceInstance.restart();
     });
   }
 
   createFileWatcher(paths: string[], listener: FileWatcherEventHandler): FileWatcher {
-    // Capture "this" so we can reference it within the "close" method below.
     const lsBase = this;
-
-    // Determine which paths are located within one or more workspaces.
-    // Those are already covered by existing file watchers handled by
-    // the client.
-    const workspacePaths: string[] = [];
-    const nonWorkspacePaths: string[] = [];
-    const workspaces = this._wsMap.getNonDefaultWorkspaces();
-
-    paths.forEach((path) => {
-      if (workspaces.some((workspace) => containsPath(workspace.rootPath, path))) {
-        workspacePaths.push(path);
-      } else {
-        nonWorkspacePaths.push(path);
-      }
+    const ps: string[] = [];
+    const nps: string[] = [];
+    const wss = this._wsMap.nonDefaults();
+    paths.forEach((p) => {
+      if (wss.some((ws) => containsPath(ws.rootPath, p))) ps.push(p);
+      else nps.push(p);
     });
-
-    // For any non-workspace paths, use the node file watcher.
-    const nodeWatchers = nonWorkspacePaths.map((path) => {
-      return fs.watch(path, { recursive: true }, listener);
+    const nodeWatchers = nps.map((p) => {
+      return fs.watch(p, { recursive: true }, listener);
     });
-
     const fileWatcher: InternalFileWatcher = {
       close() {
-        // Stop listening for workspace paths.
-        lsBase._fileWatchers = lsBase._fileWatchers.filter(
-          (watcher) => watcher !== fileWatcher
-        );
-
-        // Close the node watchers.
-        nodeWatchers.forEach((watcher) => {
-          watcher.close();
+        lsBase._fileWatchers = lsBase._fileWatchers.filter((w) => w !== fileWatcher);
+        nodeWatchers.forEach((w) => {
+          w.close();
         });
       },
-      workspacePaths,
+      workspacePaths: ps,
       eventHandler: listener,
     };
-
-    // Record the file watcher.
     this._fileWatchers.push(fileWatcher);
-
     return fileWatcher;
   }
 
   private _setupConnection(supportedCommands: string[]): void {
-    // After the server has started the client sends an initialize request. The server receives
-    // in the passed params the rootPath of the workspace plus the client capabilities.
     this._conn.onInitialize(
-      (params): InitializeResult => {
-        this.rootPath = params.rootPath || '';
-
-        // Does the client support the `workspace/configuration` request?
-        const capabilities = params.capabilities;
+      (ps): InitializeResult => {
+        this.rootPath = ps.rootPath || '';
+        const capabilities = ps.capabilities;
         this._hasConfig = !!capabilities.workspace?.configuration;
         this._hasWatch = !!capabilities.workspace?.didChangeWatchedFiles
           ?.dynamicRegistration;
-
-        // Create a service instance for each of the workspace folders.
-        if (params.workspaceFolders) {
-          params.workspaceFolders.forEach((folder) => {
+        if (ps.workspaceFolders) {
+          ps.workspaceFolders.forEach((folder) => {
             const path = convertUriToPath(folder.uri);
             this._wsMap.set(path, {
               workspaceName: folder.name,
@@ -347,22 +299,19 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
               isInitialized: createDeferred<boolean>(),
             });
           });
-        } else if (params.rootPath) {
-          this._wsMap.set(params.rootPath, {
+        } else if (ps.rootPath) {
+          this._wsMap.set(ps.rootPath, {
             workspaceName: '',
-            rootPath: params.rootPath,
+            rootPath: ps.rootPath,
             rootUri: '',
-            serviceInstance: this.createAnalyzerService(params.rootPath),
+            serviceInstance: this.createAnalyzerService(ps.rootPath),
             disableLanguageServices: false,
             disableOrganizeImports: false,
             isInitialized: createDeferred<boolean>(),
           });
         }
-
         return {
           capabilities: {
-            // Tell the client that the server works in FULL text document
-            // sync mode (as opposed to incremental).
             textDocumentSync: TextDocumentSyncKind.Full,
             definitionProvider: { workDoneProgress: true },
             referencesProvider: { workDoneProgress: true },
@@ -395,336 +344,215 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       }
     );
 
-    this._conn.onDidChangeConfiguration((params) => {
+    this._conn.onDidChangeConfiguration((ps) => {
       this._conn.console.log(`Received updated settings`);
-      if (params?.settings) {
-        this._defaultClientConfig = params?.settings;
-      }
+      if (ps?.settings) this._defaultClientConfig = ps?.settings;
       this.updateSettingsForAllWorkspaces();
     });
 
-    this._conn.onCodeAction((params, token) => this.executeCodeAction(params, token));
+    this._conn.onCodeAction((ps, token) => this.executeCodeAction(ps, token));
 
-    this._conn.onDefinition(async (params, token) => {
+    this._conn.onDefinition(async (ps, token) => {
       this.recordUserInteractionTime();
-
-      const filePath = convertUriToPath(params.textDocument.uri);
-
-      const position: Position = {
-        line: params.position.line,
-        character: params.position.character,
+      const f = convertUriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
       };
-
-      const workspace = await this.getWorkspaceForFile(filePath);
-      if (workspace.disableLanguageServices) {
-        return;
-      }
-      const locations = workspace.serviceInstance.getDefinitionForPosition(
-        filePath,
-        position,
-        token
-      );
-      if (!locations) {
-        return undefined;
-      }
-      return locations.map((loc) =>
-        Location.create(convertPathToUri(loc.path), loc.range)
-      );
+      const ws = await this.workspaceFor(f);
+      if (ws.disableLanguageServices) return;
+      const ls = ws.serviceInstance.getDefinitionForPosition(f, p, token);
+      if (!ls) return;
+      return ls.map((l) => Location.create(convertPathToUri(l.path), l.range));
     });
 
-    this._conn.onReferences(async (params, token, reporter) => {
+    this._conn.onReferences(async (ps, token, reporter) => {
       if (this._pendingFindAllRefsCancellationSource) {
         this._pendingFindAllRefsCancellationSource.cancel();
         this._pendingFindAllRefsCancellationSource = undefined;
       }
-
-      // VS Code doesn't support cancellation of "final all references".
-      // We provide a progress bar a cancellation button so the user can cancel
-      // any long-running actions.
-      const progress = await this._getProgressReporter(
-        params.workDoneToken,
+      const prog = await this._getProgressReporter(
+        ps.workDoneToken,
         reporter,
         'finding references'
       );
-      const source = CancelAfter(token, progress.token);
-      this._pendingFindAllRefsCancellationSource = source;
-
+      const src = CancelAfter(token, prog.token);
+      this._pendingFindAllRefsCancellationSource = src;
       try {
-        const filePath = convertUriToPath(params.textDocument.uri);
-        const position: Position = {
-          line: params.position.line,
-          character: params.position.character,
+        const f = convertUriToPath(ps.textDocument.uri);
+        const p: Position = {
+          line: ps.position.line,
+          character: ps.position.character,
         };
-
-        const workspace = await this.getWorkspaceForFile(filePath);
-        if (workspace.disableLanguageServices) {
-          return;
-        }
-
-        const locations = workspace.serviceInstance.getReferencesForPosition(
-          filePath,
-          position,
-          params.context.includeDeclaration,
-          source.token
+        const ws = await this.workspaceFor(f);
+        if (ws.disableLanguageServices) return;
+        const ls = ws.serviceInstance.getReferencesForPosition(
+          f,
+          p,
+          ps.context.includeDeclaration,
+          src.token
         );
-
-        if (!locations) {
-          return undefined;
-        }
-
-        return locations.map((loc) =>
-          Location.create(convertPathToUri(loc.path), loc.range)
-        );
+        if (!ls) return;
+        return ls.map((l) => Location.create(convertPathToUri(l.path), l.range));
       } finally {
-        progress.done();
-        source.dispose();
+        prog.done();
+        src.dispose();
       }
     });
 
-    this._conn.onDocumentSymbol(async (params, token) => {
+    this._conn.onDocumentSymbol(async (ps, token) => {
       this.recordUserInteractionTime();
-
-      const filePath = convertUriToPath(params.textDocument.uri);
-
-      const workspace = await this.getWorkspaceForFile(filePath);
-      if (workspace.disableLanguageServices) {
-        return undefined;
-      }
-
-      const symbolList: DocumentSymbol[] = [];
-      workspace.serviceInstance.addSymbolsForDocument(filePath, symbolList, token);
-      return symbolList;
+      const f = convertUriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      if (ws.disableLanguageServices) return;
+      const ss: DocumentSymbol[] = [];
+      ws.serviceInstance.addSymbolsForDocument(f, ss, token);
+      return ss;
     });
 
-    this._conn.onWorkspaceSymbol(async (params, token) => {
-      const symbolList: SymbolInformation[] = [];
-
-      this._wsMap.forEach(async (workspace) => {
-        await workspace.isInitialized.promise;
-        if (!workspace.disableLanguageServices) {
-          workspace.serviceInstance.addSymbolsForWorkspace(
-            symbolList,
-            params.query,
-            token
-          );
+    this._conn.onWorkspaceSymbol(async (ps, token) => {
+      const ss: SymbolInformation[] = [];
+      this._wsMap.forEach(async (ws) => {
+        await ws.isInitialized.promise;
+        if (!ws.disableLanguageServices) {
+          ws.serviceInstance.addSymbolsForWorkspace(ss, ps.query, token);
         }
       });
-
-      return symbolList;
+      return ss;
     });
 
-    this._conn.onHover(async (params, token) => {
-      const filePath = convertUriToPath(params.textDocument.uri);
-
-      const position: Position = {
-        line: params.position.line,
-        character: params.position.character,
+    this._conn.onHover(async (ps, token) => {
+      const f = convertUriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
       };
-
-      const workspace = await this.getWorkspaceForFile(filePath);
-      const hoverResults = workspace.serviceInstance.getHoverForPosition(
-        filePath,
-        position,
-        token
-      );
-      return convertHoverResults(hoverResults);
+      const ws = await this.workspaceFor(f);
+      const rs = ws.serviceInstance.getHoverForPosition(f, p, token);
+      return convertHoverResults(rs);
     });
 
-    this._conn.onSignatureHelp(async (params, token) => {
-      const filePath = convertUriToPath(params.textDocument.uri);
-
-      const position: Position = {
-        line: params.position.line,
-        character: params.position.character,
+    this._conn.onSignatureHelp(async (ps, token) => {
+      const f = convertUriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
       };
-
-      const workspace = await this.getWorkspaceForFile(filePath);
-      if (workspace.disableLanguageServices) {
-        return;
-      }
-      const signatureHelpResults = workspace.serviceInstance.getSignatureHelpForPosition(
-        filePath,
-        position,
-        token
-      );
-      if (!signatureHelpResults) {
-        return undefined;
-      }
-
+      const ws = await this.workspaceFor(f);
+      if (ws.disableLanguageServices) return;
+      const rs = ws.serviceInstance.getSignatureHelpForPosition(f, p, token);
+      if (!rs) return;
       return {
-        signatures: signatureHelpResults.signatures.map((sig) => {
-          let paramInfo: ParameterInformation[] = [];
-          if (sig.parameters) {
-            paramInfo = sig.parameters.map((param) => {
+        signatures: rs.signatures.map((s) => {
+          let i: ParameterInformation[] = [];
+          if (s.parameters) {
+            i = s.parameters.map((p) => {
               return ParameterInformation.create(
-                [param.startOffset, param.endOffset],
-                param.documentation
+                [p.startOffset, p.endOffset],
+                p.documentation
               );
             });
           }
-          return SignatureInformation.create(sig.label, sig.documentation, ...paramInfo);
+          return SignatureInformation.create(s.label, s.documentation, ...i);
         }),
-        activeSignature:
-          signatureHelpResults.activeSignature !== undefined
-            ? signatureHelpResults.activeSignature
-            : null,
-        // A value of -1 is out of bounds but is legal within the LSP (should be treated
-        // as undefined). It produces a better result in VS Code by preventing it from
-        // highlighting the first parameter when no parameter works, since the LSP client
-        // converts null into zero.
-        activeParameter:
-          signatureHelpResults.activeParameter !== undefined
-            ? signatureHelpResults.activeParameter
-            : -1,
+        activeSignature: rs.activeSignature !== undefined ? rs.activeSignature : null,
+        activeParameter: rs.activeParameter !== undefined ? rs.activeParameter : -1,
       };
     });
 
     let lastTriggerKind: CompletionTriggerKind | undefined =
       CompletionTriggerKind.Invoked;
-    this._conn.onCompletion(async (params, token) => {
-      // We set completion incomplete for the first invocation and next consecutive call,
-      // but after that we mark it as completed so the client doesn't repeatedly call back.
-      // We mark the first one as incomplete because completion could be invoked without
-      // any meaningful character provided, such as an explicit completion invocation (ctrl+space)
-      // or a period. That might cause us to not include some items (e.g., auto-imports).
-      // The next consecutive call provides some characters to help us to pick
-      // better completion items. After that, we are not going to introduce new items,
-      // so we can let the client to do the filtering and caching.
-      const completionIncomplete =
+
+    this._conn.onCompletion(async (ps, token) => {
+      const c =
         lastTriggerKind !== CompletionTriggerKind.TriggerForIncompleteCompletions ||
-        params.context?.triggerKind !==
-          CompletionTriggerKind.TriggerForIncompleteCompletions;
-
-      lastTriggerKind = params.context?.triggerKind;
-
-      const filePath = convertUriToPath(params.textDocument.uri);
-
-      const position: Position = {
-        line: params.position.line,
-        character: params.position.character,
+        ps.context?.triggerKind !== CompletionTriggerKind.TriggerForIncompleteCompletions;
+      lastTriggerKind = ps.context?.triggerKind;
+      const f = convertUriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
       };
-
-      const workspace = await this.getWorkspaceForFile(filePath);
-      if (workspace.disableLanguageServices) {
-        return;
-      }
-
-      const completions = await workspace.serviceInstance.getCompletionsForPosition(
-        filePath,
-        position,
-        workspace.rootPath,
+      const ws = await this.workspaceFor(f);
+      if (ws.disableLanguageServices) return;
+      const cs = await ws.serviceInstance.getCompletionsForPosition(
+        f,
+        p,
+        ws.rootPath,
         token
       );
-
-      if (completions) {
-        completions.isIncomplete = completionIncomplete;
-      }
-
-      return completions;
+      if (cs) cs.isIncomplete = c;
+      return cs;
     });
 
-    this._conn.onCompletionResolve(async (params, token) => {
-      // Cancellation bugs in vscode and LSP:
-      // https://github.com/microsoft/vscode-languageserver-node/issues/615
-      // https://github.com/microsoft/vscode/issues/95485
-      //
-      // If resolver throws cancellation exception, LSP and VSCode
-      // cache that result and never call us back.
-      const completionItemData = params.data as CompletionItemData;
-      if (completionItemData && completionItemData.filePath) {
-        const workspace = await this.getWorkspaceForFile(
-          completionItemData.workspacePath
-        );
-        workspace.serviceInstance.resolveCompletionItem(
-          completionItemData.filePath,
-          params,
-          token
-        );
+    this._conn.onCompletionResolve(async (ps, token) => {
+      const d = ps.data as CompletionItemData;
+      if (d && d.filePath) {
+        const ws = await this.workspaceFor(d.workspacePath);
+        ws.serviceInstance.resolveCompletionItem(d.filePath, ps, token);
       }
-      return params;
+      return ps;
     });
 
-    this._conn.onRenameRequest(async (params, token) => {
-      const filePath = convertUriToPath(params.textDocument.uri);
-
-      const position: Position = {
-        line: params.position.line,
-        character: params.position.character,
+    this._conn.onRenameRequest(async (ps, token) => {
+      const f = convertUriToPath(ps.textDocument.uri);
+      const p: Position = {
+        line: ps.position.line,
+        character: ps.position.character,
       };
-
-      const workspace = await this.getWorkspaceForFile(filePath);
-      if (workspace.disableLanguageServices) {
-        return;
-      }
-
-      const editActions = workspace.serviceInstance.renameSymbolAtPosition(
-        filePath,
-        position,
-        params.newName,
-        token
-      );
-
-      if (!editActions) {
-        return undefined;
-      }
-
-      return convertWorkspaceEdits(editActions);
+      const ws = await this.workspaceFor(f);
+      if (ws.disableLanguageServices) return;
+      const es = ws.serviceInstance.renameSymbolAtPosition(f, p, ps.newName, token);
+      if (!es) return;
+      return convertWorkspaceEdits(es);
     });
 
-    this._conn.onDidOpenTextDocument(async (params) => {
-      const filePath = convertUriToPath(params.textDocument.uri);
-      const workspace = await this.getWorkspaceForFile(filePath);
-      workspace.serviceInstance.setFileOpened(
-        filePath,
-        params.textDocument.version,
-        params.textDocument.text
-      );
+    this._conn.onDidOpenTextDocument(async (ps) => {
+      const f = convertUriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      ws.serviceInstance.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
     });
 
-    this._conn.onDidChangeTextDocument(async (params) => {
+    this._conn.onDidChangeTextDocument(async (ps) => {
       this.recordUserInteractionTime();
-
-      const filePath = convertUriToPath(params.textDocument.uri);
-      const workspace = await this.getWorkspaceForFile(filePath);
-      workspace.serviceInstance.updateOpenFileContents(
-        filePath,
-        params.textDocument.version,
-        params.contentChanges[0].text
+      const f = convertUriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      ws.serviceInstance.updateOpenFileContents(
+        f,
+        ps.textDocument.version,
+        ps.contentChanges[0].text
       );
     });
 
-    this._conn.onDidCloseTextDocument(async (params) => {
-      const filePath = convertUriToPath(params.textDocument.uri);
-      const workspace = await this.getWorkspaceForFile(filePath);
-      workspace.serviceInstance.setFileClosed(filePath);
+    this._conn.onDidCloseTextDocument(async (ps) => {
+      const f = convertUriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      ws.serviceInstance.setFileClosed(f);
     });
 
-    this._conn.onDidChangeWatchedFiles((params) => {
-      params.changes.forEach((change) => {
-        const filePath = convertUriToPath(change.uri);
-        const eventType: FileWatcherEventType = change.type === 1 ? 'add' : 'change';
-        this._fileWatchers.forEach((watcher) => {
-          if (watcher.workspacePaths.some((dirPath) => containsPath(dirPath, filePath))) {
-            watcher.eventHandler(eventType, filePath);
-          }
+    this._conn.onDidChangeWatchedFiles((ps) => {
+      ps.changes.forEach((e) => {
+        const p = convertUriToPath(e.uri);
+        const t: FileWatcherEventType = e.type === 1 ? 'add' : 'change';
+        this._fileWatchers.forEach((w) => {
+          if (w.workspacePaths.some((d) => containsPath(d, p))) w.eventHandler(t, p);
         });
       });
     });
 
     this._conn.onInitialized(() => {
-      this._conn.workspace.onDidChangeWorkspaceFolders((event) => {
-        event.removed.forEach((workspace) => {
-          const rootPath = convertUriToPath(workspace.uri);
-          this._wsMap.delete(rootPath);
+      this._conn.workspace.onDidChangeWorkspaceFolders((e) => {
+        e.removed.forEach((ws) => {
+          const p = convertUriToPath(ws.uri);
+          this._wsMap.delete(p);
         });
-
-        event.added.forEach(async (workspace) => {
-          const rootPath = convertUriToPath(workspace.uri);
+        e.added.forEach(async (ws) => {
+          const rootPath = convertUriToPath(ws.uri);
           const newWorkspace: WorkspaceServiceInstance = {
-            workspaceName: workspace.name,
+            workspaceName: ws.name,
             rootPath,
-            rootUri: workspace.uri,
-            serviceInstance: this.createAnalyzerService(workspace.name),
+            rootUri: ws.uri,
+            serviceInstance: this.createAnalyzerService(ws.name),
             disableLanguageServices: false,
             disableOrganizeImports: false,
             isInitialized: createDeferred<boolean>(),
@@ -733,14 +561,12 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
           await this.updateSettingsForWorkspace(newWorkspace);
         });
       });
-
-      // Set up our file watchers.
       if (this._hasWatch) {
         this._conn.client.register(DidChangeWatchedFilesNotification.type, {
           watchers: [
-            ...configFileNames.map((fileName) => {
+            ...configFileNames.map((f) => {
               return {
-                globPattern: `**/${fileName}`,
+                globPattern: `**/${f}`,
                 kind: WatchKind.Create | WatchKind.Change | WatchKind.Delete,
               };
             }),
@@ -753,71 +579,56 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       }
     });
 
-    this._conn.onExecuteCommand(async (params, token, reporter) => {
-      // Cancel running command if there is one.
+    this._conn.onExecuteCommand(async (ps, token, reporter) => {
       if (this._pendingCommandCancellationSource) {
         this._pendingCommandCancellationSource.cancel();
         this._pendingCommandCancellationSource = undefined;
       }
-
-      const executeCommand = async (token: CancellationToken) => {
-        const result = await this.executeCommand(params, token);
-        if (WorkspaceEdit.is(result)) {
-          // Tell client to apply edits.
-          this._conn.workspace.applyEdit(result);
-        }
+      const cmd = async (t: CancellationToken) => {
+        const r = await this.executeCommand(ps, t);
+        if (WorkspaceEdit.is(r)) this._conn.workspace.applyEdit(r);
       };
-
-      if (this.isLongRunningCommand(params.command)) {
-        // Create a progress dialog for long-running commands.
-        const progress = await this._getProgressReporter(
-          params.workDoneToken,
+      if (this.isLongRunningCommand(ps.command)) {
+        const prog = await this._getProgressReporter(
+          ps.workDoneToken,
           reporter,
           'Executing command'
         );
-        const source = CancelAfter(token, progress.token);
-        this._pendingCommandCancellationSource = source;
-
+        const s = CancelAfter(token, prog.token);
+        this._pendingCommandCancellationSource = s;
         try {
-          executeCommand(source.token);
+          cmd(s.token);
         } finally {
-          progress.done();
-          source.dispose();
+          prog.done();
+          s.dispose();
         }
-      } else {
-        executeCommand(token);
-      }
+      } else cmd(token);
     });
   }
 
   updateSettingsForAllWorkspaces(): void {
-    this._wsMap.forEach((workspace) => {
-      this.updateSettingsForWorkspace(workspace).ignoreErrors();
+    this._wsMap.forEach((ws) => {
+      this.updateSettingsForWorkspace(ws).ignoreErrors();
     });
   }
 
-  protected onAnalysisCompletedHandler(results: AnalysisResults): void {
-    results.diagnostics.forEach((fileDiag) => {
-      const diagnostics = this._convertDiagnostics(fileDiag.diagnostics);
-
-      // Send the computed diagnostics to the client.
+  protected onAnalysisCompletedHandler(rs: AnalysisResults): void {
+    rs.diagnostics.forEach((f) => {
+      const diagnostics = this._convertDiagnostics(f.diagnostics);
       this._conn.sendDiagnostics({
-        uri: convertPathToUri(fileDiag.filePath),
+        uri: convertPathToUri(f.filePath),
         diagnostics,
       });
-
-      if (results.filesRequiringAnalysis > 0) {
-        if (!results.checkingOnlyOpenFiles) {
-          // Display a progress spinner if we're checking the entire program.
+      if (rs.filesRequiringAnalysis > 0) {
+        if (!rs.checkingOnlyOpenFiles) {
           if (!this._isDisplayingProgress) {
             this._isDisplayingProgress = true;
             this._conn.sendNotification('pyright/beginProgress');
           }
-
-          const fileOrFiles = results.filesRequiringAnalysis !== 1 ? 'files' : 'file';
+          const fs = rs.filesRequiringAnalysis !== 1 ? 'files' : 'file';
           this._conn.sendNotification(
             'pyright/reportProgress',
-            `${results.filesRequiringAnalysis} ${fileOrFiles} to analyze`
+            `${rs.filesRequiringAnalysis} ${fs} to analyze`
           );
         }
       } else {
@@ -829,27 +640,20 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     });
   }
 
-  async updateSettingsForWorkspace(workspace: WorkspaceServiceInstance): Promise<void> {
-    const serverSettings = await this.getSettings(workspace);
-    this.updateOptionsAndRestartService(workspace, serverSettings);
-    workspace.disableLanguageServices = !!serverSettings.disableLanguageServices;
-    workspace.disableOrganizeImports = !!serverSettings.disableOrganizeImports;
-
-    // The workspace is now open for business.
-    workspace.isInitialized.resolve(true);
+  async updateSettingsForWorkspace(ws: WorkspaceServiceInstance) {
+    const ss = await this.getSettings(ws);
+    this.updateOptionsAndRestartService(ws, ss);
+    ws.disableLanguageServices = !!ss.disableLanguageServices;
+    ws.disableOrganizeImports = !!ss.disableOrganizeImports;
+    ws.isInitialized.resolve(true);
   }
 
   updateOptionsAndRestartService(
-    workspace: WorkspaceServiceInstance,
-    serverSettings: ServerSettings,
-    typeStubTargetImportName?: string
+    ws: WorkspaceServiceInstance,
+    ss: ServerSettings,
+    n?: string
   ) {
-    AnalyzerServiceExecutor.runWithOptions(
-      this.rootPath,
-      workspace,
-      serverSettings,
-      typeStubTargetImportName
-    );
+    AnalyzerServiceExecutor.runWithOptions(this.rootPath, ws, ss, n);
   }
 
   private async _getProgressReporter(
@@ -857,66 +661,46 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     reporter: WorkDoneProgressReporter,
     title: string
   ) {
-    if (workDoneToken) {
-      return reporter;
-    }
-
-    const serverInitiatedReporter = await this._conn.window.createWorkDoneProgress();
-    serverInitiatedReporter.begin(title, undefined, undefined, true);
-
-    return serverInitiatedReporter;
+    if (workDoneToken) return reporter;
+    const p = await this._conn.window.createWorkDoneProgress();
+    p.begin(title, undefined, undefined, true);
+    return p;
   }
 
   private _GetConnectionOptions(): ConnectionOptions {
     return { cancellationStrategy: getCancellationStrategyFromArgv(process.argv) };
   }
 
-  private _convertDiagnostics(diags: AnalyzerDiagnostic[]): Diagnostic[] {
-    return diags.map((diag) => {
+  private _convertDiagnostics(ds: AnalyzerDiagnostic[]): Diagnostic[] {
+    return ds.map((d) => {
       const severity =
-        diag.category === DiagnosticCategory.Error
+        d.category === DiagnosticCategory.Error
           ? DiagnosticSeverity.Error
           : DiagnosticSeverity.Warning;
-
-      let source = this._productName;
-      const rule = diag.getRule();
-      if (rule) {
-        source = `${source} (${rule})`;
-      }
-
-      const vsDiag = Diagnostic.create(
-        diag.range,
-        diag.message,
-        severity,
-        undefined,
-        source
-      );
-
-      if (diag.category === DiagnosticCategory.UnusedCode) {
+      let src = this._productName;
+      const rule = d.getRule();
+      if (rule) src = `${src} (${rule})`;
+      const vsDiag = Diagnostic.create(d.range, d.message, severity, undefined, src);
+      if (d.category === DiagnosticCategory.UnusedCode) {
         vsDiag.tags = [DiagnosticTag.Unnecessary];
         vsDiag.severity = DiagnosticSeverity.Hint;
       }
-
-      const relatedInfo = diag.getRelatedInfo();
-      if (relatedInfo.length > 0) {
-        vsDiag.relatedInformation = relatedInfo.map((info) => {
+      const ii = d.getRelatedInfo();
+      if (ii.length) {
+        vsDiag.relatedInformation = ii.map((i) => {
           return DiagnosticRelatedInformation.create(
-            Location.create(convertPathToUri(info.filePath), info.range),
-            info.message
+            Location.create(convertPathToUri(i.filePath), i.range),
+            i.message
           );
         });
       }
-
       return vsDiag;
     });
   }
 
   protected recordUserInteractionTime() {
-    // Tell all of the services that the user is actively
-    // interacting with one or more editors, so they should
-    // back off from performing any work.
-    this._wsMap.forEach((workspace) => {
-      workspace.serviceInstance.recordUserInteractionTime();
+    this._wsMap.forEach((ws) => {
+      ws.serviceInstance.recordUserInteractionTime();
     });
   }
 }
