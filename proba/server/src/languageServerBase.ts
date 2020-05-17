@@ -53,7 +53,7 @@ import {
   FileWatcherEventHandler,
   FileWatcherEventType,
 } from './common/fileSystem';
-import { containsPath, convertPathToUri, convertUriToPath } from './common/pathUtils';
+import { containsPath, pathToUri, uriToPath } from './common/pathUtils';
 import { convertWorkspaceEdits } from './common/textEditUtils';
 import { Position } from './common/textRange';
 import { AnalyzerServiceExecutor } from './languageService/analyzerServiceExecutor';
@@ -69,7 +69,7 @@ export interface ServerSettings {
   openFilesOnly?: boolean;
   typeCheckingMode?: string;
   useLibraryCodeForTypes?: boolean;
-  disableLanguageServices?: boolean;
+  disableServices?: boolean;
   disableOrganizeImports?: boolean;
   autoSearchPaths?: boolean;
   extraPaths?: string[];
@@ -78,11 +78,11 @@ export interface ServerSettings {
 }
 
 export interface WorkspaceServiceInstance {
-  workspaceName: string;
-  rootPath: string;
+  name: string;
   rootUri: string;
-  serviceInstance: AnalyzerService;
-  disableLanguageServices: boolean;
+  rootPath: string;
+  service: AnalyzerService;
+  disableServices?: boolean;
   disableOrganizeImports: boolean;
   isInitialized: Deferred<boolean>;
 }
@@ -180,9 +180,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     token: CancellationToken
   ): Promise<(Command | CodeAction)[] | undefined | null>;
 
-  abstract async getSettings(
-    workspace: WorkspaceServiceInstance
-  ): Promise<ServerSettings>;
+  abstract async getSettings(ws: WorkspaceServiceInstance): Promise<ServerSettings>;
 
   protected getConfiguration(ws: WorkspaceServiceInstance, section: string) {
     if (this._hasConfig) {
@@ -242,13 +240,13 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
   reanalyze() {
     this._wsMap.forEach((ws) => {
-      ws.serviceInstance.invalidateAndForceReanalysis();
+      ws.service.invalidateAndForceReanalysis();
     });
   }
 
   restart() {
     this._wsMap.forEach((ws) => {
-      ws.serviceInstance.restart();
+      ws.service.restart();
     });
   }
 
@@ -288,24 +286,23 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
           ?.dynamicRegistration;
         if (ps.workspaceFolders) {
           ps.workspaceFolders.forEach((folder) => {
-            const path = convertUriToPath(folder.uri);
+            const path = uriToPath(folder.uri);
             this._wsMap.set(path, {
-              workspaceName: folder.name,
+              name: folder.name,
               rootPath: path,
               rootUri: folder.uri,
-              serviceInstance: this.createAnalyzerService(folder.name),
-              disableLanguageServices: false,
+              service: this.createAnalyzerService(folder.name),
               disableOrganizeImports: false,
               isInitialized: createDeferred<boolean>(),
             });
           });
         } else if (ps.rootPath) {
           this._wsMap.set(ps.rootPath, {
-            workspaceName: '',
+            name: '',
             rootPath: ps.rootPath,
             rootUri: '',
-            serviceInstance: this.createAnalyzerService(ps.rootPath),
-            disableLanguageServices: false,
+            service: this.createAnalyzerService(ps.rootPath),
+            disableServices: false,
             disableOrganizeImports: false,
             isInitialized: createDeferred<boolean>(),
           });
@@ -354,16 +351,16 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
     this._conn.onDefinition(async (ps, token) => {
       this.recordUserInteractionTime();
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const p: Position = {
         line: ps.position.line,
         character: ps.position.character,
       };
       const ws = await this.workspaceFor(f);
-      if (ws.disableLanguageServices) return;
-      const ls = ws.serviceInstance.getDefinitionForPosition(f, p, token);
+      if (ws.disableServices) return;
+      const ls = ws.service.getDefinitionForPosition(f, p, token);
       if (!ls) return;
-      return ls.map((l) => Location.create(convertPathToUri(l.path), l.range));
+      return ls.map((l) => Location.create(pathToUri(l.path), l.range));
     });
 
     this._conn.onReferences(async (ps, token, reporter) => {
@@ -379,21 +376,21 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       const src = CancelAfter(token, prog.token);
       this._pendingFindAllRefsCancellationSource = src;
       try {
-        const f = convertUriToPath(ps.textDocument.uri);
+        const f = uriToPath(ps.textDocument.uri);
         const p: Position = {
           line: ps.position.line,
           character: ps.position.character,
         };
         const ws = await this.workspaceFor(f);
-        if (ws.disableLanguageServices) return;
-        const ls = ws.serviceInstance.getReferencesForPosition(
+        if (ws.disableServices) return;
+        const ls = ws.service.getReferencesForPosition(
           f,
           p,
           ps.context.includeDeclaration,
           src.token
         );
         if (!ls) return;
-        return ls.map((l) => Location.create(convertPathToUri(l.path), l.range));
+        return ls.map((l) => Location.create(pathToUri(l.path), l.range));
       } finally {
         prog.done();
         src.dispose();
@@ -402,45 +399,47 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
     this._conn.onDocumentSymbol(async (ps, token) => {
       this.recordUserInteractionTime();
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const ws = await this.workspaceFor(f);
-      if (ws.disableLanguageServices) return;
+      if (ws.disableServices) return;
       const ss: DocumentSymbol[] = [];
-      ws.serviceInstance.addSymbolsForDocument(f, ss, token);
+      ws.service.addSymbolsForDocument(f, ss, token);
       return ss;
     });
 
     this._conn.onWorkspaceSymbol(async (ps, token) => {
       const ss: SymbolInformation[] = [];
-      this._wsMap.forEach(async (ws) => {
-        await ws.isInitialized.promise;
-        if (!ws.disableLanguageServices) {
-          ws.serviceInstance.addSymbolsForWorkspace(ss, ps.query, token);
-        }
-      });
+      await Promise.all(
+        Array.from(this._wsMap.values()).map(async (w) => {
+          await w.isInitialized.promise;
+          if (!w.disableServices) {
+            w.service.addSymbolsForWorkspace(ss, ps.query, token);
+          }
+        })
+      );
       return ss;
     });
 
     this._conn.onHover(async (ps, token) => {
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const p: Position = {
         line: ps.position.line,
         character: ps.position.character,
       };
       const ws = await this.workspaceFor(f);
-      const rs = ws.serviceInstance.getHoverForPosition(f, p, token);
+      const rs = ws.service.getHoverForPosition(f, p, token);
       return convertHoverResults(rs);
     });
 
     this._conn.onSignatureHelp(async (ps, token) => {
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const p: Position = {
         line: ps.position.line,
         character: ps.position.character,
       };
       const ws = await this.workspaceFor(f);
-      if (ws.disableLanguageServices) return;
-      const rs = ws.serviceInstance.getSignatureHelpForPosition(f, p, token);
+      if (ws.disableServices) return;
+      const rs = ws.service.getSignatureHelpForPosition(f, p, token);
       if (!rs) return;
       return {
         signatures: rs.signatures.map((s) => {
@@ -468,19 +467,14 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
         lastTriggerKind !== CompletionTriggerKind.TriggerForIncompleteCompletions ||
         ps.context?.triggerKind !== CompletionTriggerKind.TriggerForIncompleteCompletions;
       lastTriggerKind = ps.context?.triggerKind;
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const p: Position = {
         line: ps.position.line,
         character: ps.position.character,
       };
       const ws = await this.workspaceFor(f);
-      if (ws.disableLanguageServices) return;
-      const cs = await ws.serviceInstance.getCompletionsForPosition(
-        f,
-        p,
-        ws.rootPath,
-        token
-      );
+      if (ws.disableServices) return;
+      const cs = await ws.service.getCompletionsForPosition(f, p, ws.rootPath, token);
       if (cs) cs.isIncomplete = c;
       return cs;
     });
@@ -489,35 +483,41 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       const d = ps.data as CompletionItemData;
       if (d && d.filePath) {
         const ws = await this.workspaceFor(d.workspacePath);
-        ws.serviceInstance.resolveCompletionItem(d.filePath, ps, token);
+        ws.service.resolveCompletionItem(d.filePath, ps, token);
       }
       return ps;
     });
 
     this._conn.onRenameRequest(async (ps, token) => {
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const p: Position = {
         line: ps.position.line,
         character: ps.position.character,
       };
       const ws = await this.workspaceFor(f);
-      if (ws.disableLanguageServices) return;
-      const es = ws.serviceInstance.renameSymbolAtPosition(f, p, ps.newName, token);
+      if (ws.disableServices) return;
+      const es = ws.service.renameSymbolAtPosition(f, p, ps.newName, token);
       if (!es) return;
       return convertWorkspaceEdits(es);
     });
 
+    this._conn.onDidOpenTextDocument((ps) => {
+      const f = uriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f).resolve();
+      ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
+    });
+
     this._conn.onDidOpenTextDocument(async (ps) => {
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const ws = await this.workspaceFor(f);
-      ws.serviceInstance.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
+      ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
     });
 
     this._conn.onDidChangeTextDocument(async (ps) => {
       this.recordUserInteractionTime();
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const ws = await this.workspaceFor(f);
-      ws.serviceInstance.updateOpenFileContents(
+      ws.service.updateOpenFileContents(
         f,
         ps.textDocument.version,
         ps.contentChanges[0].text
@@ -525,14 +525,14 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     });
 
     this._conn.onDidCloseTextDocument(async (ps) => {
-      const f = convertUriToPath(ps.textDocument.uri);
+      const f = uriToPath(ps.textDocument.uri);
       const ws = await this.workspaceFor(f);
-      ws.serviceInstance.setFileClosed(f);
+      ws.service.setFileClosed(f);
     });
 
     this._conn.onDidChangeWatchedFiles((ps) => {
       ps.changes.forEach((e) => {
-        const p = convertUriToPath(e.uri);
+        const p = uriToPath(e.uri);
         const t: FileWatcherEventType = e.type === 1 ? 'add' : 'change';
         this._fileWatchers.forEach((w) => {
           if (w.workspacePaths.some((d) => containsPath(d, p))) w.eventHandler(t, p);
@@ -543,17 +543,16 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     this._conn.onInitialized(() => {
       this._conn.workspace.onDidChangeWorkspaceFolders((e) => {
         e.removed.forEach((ws) => {
-          const p = convertUriToPath(ws.uri);
+          const p = uriToPath(ws.uri);
           this._wsMap.delete(p);
         });
         e.added.forEach(async (ws) => {
-          const rootPath = convertUriToPath(ws.uri);
+          const rootPath = uriToPath(ws.uri);
           const newWorkspace: WorkspaceServiceInstance = {
-            workspaceName: ws.name,
+            name: ws.name,
             rootPath,
             rootUri: ws.uri,
-            serviceInstance: this.createAnalyzerService(ws.name),
-            disableLanguageServices: false,
+            service: this.createAnalyzerService(ws.name),
             disableOrganizeImports: false,
             isInitialized: createDeferred<boolean>(),
           };
@@ -616,7 +615,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
     rs.diagnostics.forEach((f) => {
       const diagnostics = this._convertDiagnostics(f.diagnostics);
       this._conn.sendDiagnostics({
-        uri: convertPathToUri(f.filePath),
+        uri: pathToUri(f.filePath),
         diagnostics,
       });
       if (rs.filesRequiringAnalysis > 0) {
@@ -643,7 +642,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
   async updateSettingsForWorkspace(ws: WorkspaceServiceInstance) {
     const ss = await this.getSettings(ws);
     this.updateOptionsAndRestartService(ws, ss);
-    ws.disableLanguageServices = !!ss.disableLanguageServices;
+    ws.disableServices = !!ss.disableServices;
     ws.disableOrganizeImports = !!ss.disableOrganizeImports;
     ws.isInitialized.resolve(true);
   }
@@ -689,7 +688,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
       if (ii.length) {
         vsDiag.relatedInformation = ii.map((i) => {
           return DiagnosticRelatedInformation.create(
-            Location.create(convertPathToUri(i.filePath), i.range),
+            Location.create(pathToUri(i.filePath), i.range),
             i.message
           );
         });
@@ -700,7 +699,7 @@ export abstract class LanguageServerBase implements LanguageServerInterface {
 
   protected recordUserInteractionTime() {
     this._wsMap.forEach((ws) => {
-      ws.serviceInstance.recordUserInteractionTime();
+      ws.service.recordUserInteractionTime();
     });
   }
 }

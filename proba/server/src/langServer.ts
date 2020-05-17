@@ -7,11 +7,11 @@ import {
 import { createDeferred } from './common/deferred';
 
 export interface WorkspaceServiceInstance {
-  workspaceName: string;
+  name: string;
   rootPath: string;
   rootUri: string;
-  serviceInstance: AnalyzerService;
-  disableLanguageServices: boolean;
+  service: AnalyzerService;
+  disableServices: boolean;
   disableOrganizeImports: boolean;
   isInitialized: Deferred<boolean>;
 }
@@ -72,13 +72,13 @@ export abstract class LangServer {
 
   reanalyze() {
     this._wsMap.forEach((ws) => {
-      ws.serviceInstance.invalidateAndForceReanalysis();
+      ws.service.invalidateAndForceReanalysis();
     });
   }
 
   restart() {
     this._wsMap.forEach((ws) => {
-      ws.serviceInstance.restart();
+      ws.service.restart();
     });
   }
 
@@ -112,24 +112,24 @@ export abstract class LangServer {
 
     if (ps.workspaceFolders) {
       ps.workspaceFolders.forEach((f) => {
-        const p = convertUriToPath(f.uri);
+        const p = uriToPath(f.uri);
         this._wsMap.set(p, {
-          workspaceName: f.name,
+          name: f.name,
           rootPath: p,
           rootUri: f.uri,
-          serviceInstance: this.createAnalyzerService(f.name),
-          disableLanguageServices: false,
+          service: this.createAnalyzerService(f.name),
+          disableServices: false,
           disableOrganizeImports: false,
           isInitialized: createDeferred<boolean>(),
         });
       });
     } else if (ps.rootPath) {
       this._wsMap.set(ps.rootPath, {
-        workspaceName: '',
+        name: '',
         rootPath: ps.rootPath,
         rootUri: '',
-        serviceInstance: this.createAnalyzerService(ps.rootPath),
-        disableLanguageServices: false,
+        service: this.createAnalyzerService(ps.rootPath),
+        disableServices: false,
         disableOrganizeImports: false,
         isInitialized: createDeferred<boolean>(),
       });
@@ -202,11 +202,11 @@ export class WorkspaceMap extends Map<string, WorkspaceServiceInstance> {
         const ns = [...this.keys()];
         if (ns.length === 1) return this.get(ns[0])!;
         d = {
-          workspaceName: '',
+          name: '',
           rootPath: '',
           rootUri: '',
-          serviceInstance: this._server.createAnalyzerService(this._default),
-          disableLanguageServices: false,
+          service: this._server.createAnalyzerService(this._default),
+          disableServices: false,
           disableOrganizeImports: false,
           isInitialized: createDeferred<boolean>(),
         };

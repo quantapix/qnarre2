@@ -7,10 +7,10 @@ import {
 import { AnalyzerService } from './analyzer/service';
 import { OperationCanceledException } from './common/cancellationUtils';
 import { createDeferred } from './common/deferred';
-import { convertPathToUri } from './common/pathUtils';
+import { pathToUri } from './common/pathUtils';
 import { LanguageServerInterface, WorkspaceServiceInstance } from './languageServerBase';
 import { AnalyzerServiceExecutor } from './languageService/analyzerServiceExecutor';
-import { convertUriToPath } from './common/pathUtils';
+import { uriToPath } from './common/pathUtils';
 import { convertTextEdits } from './common/textEditUtils';
 
 export const enum Commands {
@@ -31,10 +31,10 @@ export class QuickActionCommand implements ServerCommand {
     if (ps.arguments && ps.arguments.length >= 1) {
       const docUri = ps.arguments[0];
       const otherArgs = ps.arguments.slice(1);
-      const filePath = convertUriToPath(docUri);
+      const filePath = uriToPath(docUri);
       const ws = await this._ls.getWorkspaceForFile(filePath);
       if (ps.command === Commands.orderImports && ws.disableOrganizeImports) return [];
-      const editActions = ws.serviceInstance.performQuickAction(
+      const editActions = ws.service.performQuickAction(
         filePath,
         ps.command,
         otherArgs,
@@ -102,11 +102,11 @@ export class CreateTypeStubCommand implements ServerCommand {
       const callingFile = ps.arguments[2];
       const service = await this._createTypeStubService(callingFile);
       const workspace: WorkspaceServiceInstance = {
-        workspaceName: `Create Type Stub ${importName}`,
+        name: `Create Type Stub ${importName}`,
         rootPath: workspaceRoot,
-        rootUri: convertPathToUri(workspaceRoot),
-        serviceInstance: service,
-        disableLanguageServices: true,
+        rootUri: pathToUri(workspaceRoot),
+        service: service,
+        disableServices: true,
         disableOrganizeImports: true,
         isInitialized: createDeferred<boolean>(),
       };
@@ -151,10 +151,7 @@ export class CreateTypeStubCommand implements ServerCommand {
     this._ls.console.log('Starting type stub service instance');
     if (callingFile) {
       const workspace = await this._ls.getWorkspaceForFile(callingFile);
-      return workspace.serviceInstance.clone(
-        'Type stub',
-        this._ls.createBackgroundAnalysis()
-      );
+      return workspace.service.clone('Type stub', this._ls.createBackgroundAnalysis());
     }
     return new AnalyzerService('Type stub', this._ls.fs, this._ls.console);
   }

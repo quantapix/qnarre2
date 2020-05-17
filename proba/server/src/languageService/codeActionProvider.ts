@@ -19,7 +19,7 @@ import {
   AddMissingOptionalToParamAction,
   CreateTypeStubFileAction,
 } from '../common/diagnostic';
-import { convertPathToUri } from '../common/pathUtils';
+import { pathToUri } from '../common/pathUtils';
 import { Range } from '../common/textRange';
 import { WorkspaceServiceInstance } from '../languageServerBase';
 
@@ -34,11 +34,7 @@ export class CodeActionProvider {
 
     const sortImportsCodeAction = CodeAction.create(
       'Organize Imports',
-      Command.create(
-        'Organize Imports',
-        Commands.orderImports,
-        convertPathToUri(filePath)
-      ),
+      Command.create('Organize Imports', Commands.orderImports, pathToUri(filePath)),
       CodeActionKind.SourceOrganizeImports
     );
     const codeActions: CodeAction[] = [];
@@ -47,8 +43,8 @@ export class CodeActionProvider {
       codeActions.push(sortImportsCodeAction);
     }
 
-    if (!workspace.disableLanguageServices) {
-      const diags = await workspace.serviceInstance.getDiagnosticsForRange(
+    if (!workspace.disableServices) {
+      const diags = await workspace.service.getDiagnosticsForRange(
         filePath,
         range,
         token

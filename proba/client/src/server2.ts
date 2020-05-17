@@ -19,7 +19,7 @@ import { BackgroundAnalysisBase } from './backgroundAnalysisBase';
 import { CommandController } from './commands/commandController';
 import { getCancellationFolderName } from './common/cancellationUtils';
 import { isDebugMode } from './common/core';
-import { convertUriToPath, getDirectoryPath, normalizeSlashes } from './common/pathUtils';
+import { uriToPath, getDirectoryPath, normalizeSlashes } from './common/pathUtils';
 import {
   LanguageServerBase,
   ServerSettings,
@@ -72,13 +72,13 @@ class PyrightServer extends LanguageServerBase {
       if (pyrightSection) {
         serverSettings.openFilesOnly = !!pyrightSection.openFilesOnly;
         serverSettings.useLibraryCodeForTypes = !!pyrightSection.useLibraryCodeForTypes;
-        serverSettings.disableLanguageServices = !!pyrightSection.disableLanguageServices;
+        serverSettings.disableServices = !!pyrightSection.disableServices;
         serverSettings.disableOrganizeImports = !!pyrightSection.disableOrganizeImports;
         serverSettings.typeCheckingMode = pyrightSection.typeCheckingMode;
       } else {
         serverSettings.openFilesOnly = true;
         serverSettings.useLibraryCodeForTypes = false;
-        serverSettings.disableLanguageServices = false;
+        serverSettings.disableServices = false;
         serverSettings.disableOrganizeImports = false;
         serverSettings.typeCheckingMode = undefined;
       }
@@ -115,7 +115,7 @@ class PyrightServer extends LanguageServerBase {
   ): Promise<(Command | CodeAction)[] | undefined | null> {
     this.recordUserInteractionTime();
 
-    const filePath = convertUriToPath(params.textDocument.uri);
+    const filePath = uriToPath(params.textDocument.uri);
     const workspace = await this.getWorkspaceForFile(filePath);
     return CodeActionProvider.getCodeActionsForPosition(
       workspace,

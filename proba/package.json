@@ -618,7 +618,7 @@
           "description": "Path to folder with a list of Virtual Environments.",
           "scope": "resource"
         },
-        "pyright.disableLanguageServices": {
+        "pyright.disableServices": {
           "type": "boolean",
           "default": false,
           "description": "Disables type completion, definitions, and references.",
