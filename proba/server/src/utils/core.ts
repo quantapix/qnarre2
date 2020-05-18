@@ -9,9 +9,9 @@
  */
 
 export const enum Comparison {
-    LessThan = -1,
-    EqualTo = 0,
-    GreaterThan = 1,
+  LessThan = -1,
+  EqualTo = 0,
+  GreaterThan = 1,
 }
 
 /**
@@ -22,47 +22,56 @@ export type AnyFunction = (...args: never[]) => void;
 
 /** Do nothing and return false */
 export function returnFalse(): false {
-    return false;
+  return false;
 }
 
 /** Do nothing and return true */
 export function returnTrue(): true {
-    return true;
+  return true;
 }
 
 /** Do nothing and return undefined */
 export function returnUndefined(): undefined {
-    return undefined;
+  return undefined;
 }
 
 /** Returns its argument. */
 export function identity<T>(x: T) {
-    return x;
+  return x;
 }
 
 /** Returns lower case string */
 export function toLowerCase(x: string) {
-    return x.toLowerCase();
+  return x.toLowerCase();
 }
 
 export function equateValues<T>(a: T, b: T) {
-    return a === b;
+  return a === b;
 }
 
 export type GetCanonicalFileName = (fileName: string) => string;
 
-export function compareComparableValues(a: string | undefined, b: string | undefined): Comparison;
-export function compareComparableValues(a: number | undefined, b: number | undefined): Comparison;
-export function compareComparableValues(a: string | number | undefined, b: string | number | undefined) {
-    return a === b
-        ? Comparison.EqualTo
-        : a === undefined
-        ? Comparison.LessThan
-        : b === undefined
-        ? Comparison.GreaterThan
-        : a < b
-        ? Comparison.LessThan
-        : Comparison.GreaterThan;
+export function compareComparableValues(
+  a: string | undefined,
+  b: string | undefined
+): Comparison;
+export function compareComparableValues(
+  a: number | undefined,
+  b: number | undefined
+): Comparison;
+export function compareComparableValues(
+  a: string | number | undefined,
+  b: string | number | undefined
+) {
+  return a === b
+    ? Comparison.EqualTo
+    : a === undefined
+    ? Comparison.LessThan
+    : b === undefined
+    ? Comparison.GreaterThan
+    : a < b
+    ? Comparison.LessThan
+    : Comparison.GreaterThan;
 }
 
 /**
@@ -70,25 +79,25 @@ export function compareComparableValues(a: string | number | undefined, b: strin
  * To compare strings, use any of the `compareStrings` functions.
  */
 export function compareValues(a: number | undefined, b: number | undefined): Comparison {
-    return compareComparableValues(a, b);
+  return compareComparableValues(a, b);
 }
 
 /**
  * Tests whether a value is an array.
  */
 export function isArray(value: any): value is readonly {}[] {
-    return Array.isArray ? Array.isArray(value) : value instanceof Array;
+  return Array.isArray ? Array.isArray(value) : value instanceof Array;
 }
 
 /**
  * Tests whether a value is string
  */
 export function isString(text: unknown): text is string {
-    return typeof text === 'string';
+  return typeof text === 'string';
 }
 
 export function isNumber(x: unknown): x is number {
-    return typeof x === 'number';
+  return typeof x === 'number';
 }
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -99,7 +108,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
  * since `Object.prototype` may be modified by outside code.
  */
 export interface MapLike<T> {
-    [index: string]: T;
+  [index: string]: T;
 }
 
 /**
@@ -109,7 +118,7 @@ export interface MapLike<T> {
  * @param key A property key.
  */
 export function hasProperty(map: MapLike<any>, key: string): boolean {
-    return hasOwnProperty.call(map, key);
+  return hasOwnProperty.call(map, key);
 }
 
 /**
@@ -117,15 +126,15 @@ export function hasProperty(map: MapLike<any>, key: string): boolean {
  * @param trueOrFalse string value 'true' or 'false'
  */
 export function toBoolean(trueOrFalse: string): boolean {
-    const normalized = trueOrFalse?.trim().toUpperCase();
-    if (normalized === 'TRUE') {
-        return true;
-    }
+  const normalized = trueOrFalse?.trim().toUpperCase();
+  if (normalized === 'TRUE') {
+    return true;
+  }
 
-    return false;
+  return false;
 }
 
 export function isDebugMode() {
-    const argv = process.execArgv.join();
-    return argv.includes('inspect') || argv.includes('debug');
+  const argv = process.execArgv.join();
+  return argv.includes('inspect') || argv.includes('debug');
 }

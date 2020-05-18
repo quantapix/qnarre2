@@ -1,68 +1,54 @@
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
 
-export function formatError(message: string, err: any): string {
-  if (err instanceof Error) {
-    let error = <Error>err;
-    return `${message}: ${error.message}\n${error.stack}`;
-  } else if (typeof err === 'string') {
-    return `${message}: ${err}`;
-  } else if (err) {
-    return `${message}: ${err.toString()}`;
-  }
-  return message;
+export function formatError(m: string, e: any) {
+  if (e instanceof Error) return `${m}: ${e.message}\n${e.stack}`;
+  if (typeof e === 'string') return `${m}: ${e}`;
+  if (e) return `${m}: ${e.toString()}`;
+  return m;
 }
 
-export function runSafeAsync<T>(
-  func: () => Thenable<T>,
-  errorVal: T,
-  errorMessage: string,
+export function runSafeAsync<T, E>(
+  f: () => Thenable<T>,
+  v: T,
+  m: string,
   token: CancellationToken
-): Thenable<T | ResponseError<any>> {
-  return new Promise<T | ResponseError<any>>((resolve) => {
+): Thenable<T | ResponseError<E>> {
+  return new Promise<T | ResponseError<E>>((res) => {
     setImmediate(() => {
-      if (token.isCancellationRequested) {
-        resolve(cancelValue());
-      }
-      return func().then(
-        (result) => {
-          if (token.isCancellationRequested) {
-            resolve(cancelValue());
-            return;
-          } else {
-            resolve(result);
+      if (token.isCancellationRequested) res(cancelValue());
+      else {
+        f().then(
+          (r) => {
+            if (token.isCancellationRequested) res(cancelValue());
+            else res(r);
+          },
+          (e) => {
+            console.error(formatError(m, e));
+            res(v);
           }
-        },
-        (e) => {
-          console.error(formatError(errorMessage, e));
-          resolve(errorVal);
-        }
-      );
+        );
+      }
     });
   });
 }
 
 export function runSafe<T, E>(
-  func: () => T,
-  errorVal: T,
-  errorMessage: string,
+  f: () => T,
+  v: T,
+  m: string,
   token: CancellationToken
 ): Thenable<T | ResponseError<E>> {
-  return new Promise<T | ResponseError<E>>((resolve) => {
+  return new Promise<T | ResponseError<E>>((res) => {
     setImmediate(() => {
-      if (token.isCancellationRequested) {
-        resolve(cancelValue());
-      } else {
+      if (token.isCancellationRequested) res(cancelValue());
+      else {
         try {
-          let result = func();
-          if (token.isCancellationRequested) {
-            resolve(cancelValue());
-            return;
-          } else {
-            resolve(result);
-          }
+          const r = f();
+          if (token.isCancellationRequested) res(cancelValue());
+          else res(r);
         } catch (e) {
-          console.error(formatError(errorMessage, e));
-          resolve(errorVal);
+          console.error(formatError(m, e));
+          res(v);
         }
       }
     });

@@ -1,18 +1,5 @@
-/*
- * fileSystem.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- *
- * Defines a "file system provider" abstraction used throughout the
- * code base. This abstraction allows us to swap out a real file system
- * implementation for a virtual (mocked) implementation for testing.
- */
-
-/* eslint-disable no-dupe-class-members */
-
-// * NOTE * except tests, this should be only file that import "fs"
-import * as chokidar from 'chokidar';
 import * as fs from 'fs';
+import * as chokidar from 'chokidar';
 
 import { ConsoleInterface, NullConsole } from './console';
 import { createDeferred } from './deferred';

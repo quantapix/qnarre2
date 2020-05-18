@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 export function pushAll<T>(to: T[], from: T[]) {
   if (from) {
     for (const e of from) {
@@ -15,10 +10,6 @@ export function contains<T>(arr: T[], val: T) {
   return arr.includes(val);
 }
 
-/**
- * Like `Array#sort` but always stable. Usually runs a little slower `than Array#sort`
- * so only use this when actually needing stable sort.
- */
 export function mergeSort<T>(data: T[], compare: (a: T, b: T) => number): T[] {
   _divideAndMerge(data, compare);
   return data;
@@ -77,4 +68,26 @@ export function binarySearch<T>(
     }
   }
   return -(low + 1);
+}
+
+export function equals<T>(
+  one: ReadonlyArray<T>,
+  other: ReadonlyArray<T>,
+  itemEquals: (a: T, b: T) => boolean = (a, b) => a === b
+): boolean {
+  if (one.length !== other.length) {
+    return false;
+  }
+
+  for (let i = 0, len = one.length; i < len; i++) {
+    if (!itemEquals(one[i], other[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function flatten<T>(arr: ReadonlyArray<T>[]): T[] {
+  return ([] as T[]).concat.apply([], arr);
 }

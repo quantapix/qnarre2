@@ -267,33 +267,27 @@ export class PyServer extends LangServer {
       return convertWorkspaceEdits(es);
     });
 
-    this._conn.onDidOpenTextDocument((ps) => {
-      async () => {
-        const f = uriToPath(ps.textDocument.uri);
-        const ws = await this.workspaceFor(f);
-        ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
-      };
+    this._conn.onDidOpenTextDocument((ps) => async () => {
+      const f = uriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      ws.service.setFileOpened(f, ps.textDocument.version, ps.textDocument.text);
     });
 
-    this._conn.onDidChangeTextDocument((ps) => {
-      async () => {
-        this.recordTime();
-        const f = uriToPath(ps.textDocument.uri);
-        const ws = await this.workspaceFor(f);
-        ws.service.updateOpenFileContents(
-          f,
-          ps.textDocument.version,
-          ps.contentChanges[0].text
-        );
-      };
+    this._conn.onDidChangeTextDocument((ps) => async () => {
+      this.recordTime();
+      const f = uriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      ws.service.updateOpenFileContents(
+        f,
+        ps.textDocument.version,
+        ps.contentChanges[0].text
+      );
     });
 
-    this._conn.onDidCloseTextDocument((ps) => {
-      async () => {
-        const f = uriToPath(ps.textDocument.uri);
-        const ws = await this.workspaceFor(f);
-        ws.service.setFileClosed(f);
-      };
+    this._conn.onDidCloseTextDocument((ps) => async () => {
+      const f = uriToPath(ps.textDocument.uri);
+      const ws = await this.workspaceFor(f);
+      ws.service.setFileClosed(f);
     });
 
     this._conn.onDidChangeWatchedFiles((ps) => {

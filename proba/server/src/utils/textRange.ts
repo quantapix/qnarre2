@@ -1,12 +1,3 @@
-/*
- * textRange.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- * Author: Eric Traut
- *
- * Specifies the range of text within a larger string.
- */
-
 export interface TextRange {
   start: number;
   length: number;
@@ -65,7 +56,6 @@ export namespace TextRange {
 }
 
 export interface Position {
-  // Both line and column are zero-based
   line: number;
   character: number;
 }
