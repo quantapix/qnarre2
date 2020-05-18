@@ -14,9 +14,9 @@
 
 import { DiagnosticLevel } from '../utils/options';
 import { assert } from '../utils/misc';
-import { Diagnostic, DiagnosticAddendum } from '../common/diagnostic';
+import { Diagnostic, DiagnosticAddendum } from '../utils/diagnostic';
 import { DiagnosticRule } from '../utils/diagnostic';
-import { TextRange } from '../common/textRange';
+import { TextRange } from '../utils/textRange';
 import {
   AssertNode,
   AssignmentExpressionNode,

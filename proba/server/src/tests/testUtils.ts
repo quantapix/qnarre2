@@ -21,9 +21,9 @@ import {
   ExecutionEnvironment,
 } from '../utils/options';
 import { fail } from '../utils/misc';
-import { Diagnostic, DiagnosticCategory } from '../common/diagnostic';
-import { DiagnosticSink, TextRangeDiagnosticSink } from '../common/diagnosticSink';
-import { createFromRealFileSystem } from '../common/fileSystem';
+import { Diagnostic, DiagnosticCategory } from '../utils/diagnostic';
+import { DiagnosticSink, TextRangeDiagnosticSink } from '../utils/diagnostic';
+import { createFromRealFileSystem } from '../utils/fileSystem';
 import { ParseOptions, Parser, ParseResults } from '../parser/parser';
 
 // This is a bit gross, but it's necessary to allow the fallback typeshed

@@ -28,9 +28,9 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver';
 
-import { createDeferred } from './common/deferred';
-import { CancelAfter, connOptions } from './common/cancellationUtils';
-import { containsPath, pathToUri, uriToPath } from './common/pathUtils';
+import { createDeferred } from './utils/deferred';
+import { CancelAfter, connOptions } from './utils/cancellationUtils';
+import { containsPath, pathToUri, uriToPath } from './utils/pathUtils';
 
 export interface ServerSettings {
   venvPath?: string;

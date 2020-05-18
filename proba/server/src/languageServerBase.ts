@@ -1,5 +1,3 @@
-import './common/extensions';
-
 import * as fs from 'fs';
 import {
   CancellationToken,
@@ -38,22 +36,27 @@ import { BackgroundAnalysisBase } from './backgroundAnalysisBase';
 import { getNestedProperty } from './utils/collection';
 import { ConfigOptions } from './utils/options';
 import { QConsole } from './utils/misc';
-import { createDeferred, Deferred } from './common/deferred';
-import {
-  Diagnostic as AnalyzerDiagnostic,
-  DiagnosticCategory,
-} from './common/diagnostic';
-import { LanguageServiceExtension } from './common/extensibility';
+import { createDeferred, Deferred } from './utils/deferred';
+import { Diagnostic as AnalyzerDiagnostic, DiagnosticCategory } from './utils/diagnostic';
+import { LanguageServiceExtension } from './utils/extensibility';
 import {
   createFromRealFileSystem,
   FileSystem,
   FileWatcher,
   FileWatcherEventHandler,
   FileWatcherEventType,
-} from './common/fileSystem';
-import { containsPath, pathToUri, uriToPath } from './common/pathUtils';
+} from './utils/fileSystem';
+import { containsPath, pathToUri, uriToPath } from './utils/pathUtils';
 import { AnalyzerServiceExecutor } from './languageService/analyzerServiceExecutor';
 import { WorkspaceMap } from './langServer';
+
+declare interface Promise<T> {
+  ignoreErrors(): void;
+}
+
+Promise.prototype.ignoreErrors = function <T>(this: Promise<T>) {
+  this.catch(() => {});
+};
 
 export interface WindowInterface {
   showErrorMessage(message: string): void;

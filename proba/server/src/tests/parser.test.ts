@@ -10,28 +10,28 @@
 
 import * as assert from 'assert';
 
-import { DiagnosticSink } from '../common/diagnosticSink';
+import { DiagnosticSink } from '../utils/diagnostic';
 import * as TestUtils from './testUtils';
 
 test('Empty', () => {
-    const diagSink = new DiagnosticSink();
-    const parseResults = TestUtils.parseText('', diagSink);
+  const diagSink = new DiagnosticSink();
+  const parseResults = TestUtils.parseText('', diagSink);
 
-    assert.equal(diagSink.fetchAndClear().length, 0);
-    assert.equal(parseResults.parseTree.statements.length, 0);
+  assert.equal(diagSink.fetchAndClear().length, 0);
+  assert.equal(parseResults.parseTree.statements.length, 0);
 });
 
 test('Sample1', () => {
-    const diagSink = new DiagnosticSink();
-    const parseInfo = TestUtils.parseSampleFile('sample1.py', diagSink);
+  const diagSink = new DiagnosticSink();
+  const parseInfo = TestUtils.parseSampleFile('sample1.py', diagSink);
 
-    assert.equal(diagSink.fetchAndClear().length, 0);
-    assert.equal(parseInfo.parseResults.parseTree.statements.length, 4);
+  assert.equal(diagSink.fetchAndClear().length, 0);
+  assert.equal(parseInfo.parseResults.parseTree.statements.length, 4);
 });
 
 test('TypeSyntax1', () => {
-    const diagSink = new DiagnosticSink();
-    TestUtils.parseSampleFile('typeSyntax1.py', diagSink);
+  const diagSink = new DiagnosticSink();
+  TestUtils.parseSampleFile('typeSyntax1.py', diagSink);
 
-    assert.equal(diagSink.fetchAndClear().length, 13);
+  assert.equal(diagSink.fetchAndClear().length, 13);
 });

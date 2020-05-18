@@ -8,8 +8,8 @@
 
 import { TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 
-import { FileEditAction, TextEditAction } from '../common/editAction';
-import { pathToUri } from '../common/pathUtils';
+import { FileEditAction, TextEditAction } from '../utils/editAction';
+import { pathToUri } from '../utils/pathUtils';
 
 export function convertTextEdits(
   uri: string,

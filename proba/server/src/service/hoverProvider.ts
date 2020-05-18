@@ -10,13 +10,10 @@ import {
   isProperty,
   lookUpClassMember,
 } from '../analyzer/typeUtils';
-import { throwIfCancellationRequested } from '../common/cancellationUtils';
-import {
-  convertOffsetToPosition,
-  convertPositionToOffset,
-} from '../common/positionUtils';
-import { Position, Range } from '../common/textRange';
-import { TextRange } from '../common/textRange';
+import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { convertOffsetToPosition, convertPositionToOffset } from '../utils/positionUtils';
+import { Position, Range } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
 import { NameNode, ParseNode, ParseNodeType } from '../parser/parseNodes';
 import { ParseResults } from '../parser/parser';
 

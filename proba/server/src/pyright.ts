@@ -8,11 +8,11 @@ import * as process from 'process';
 import { AnalyzerService } from './analyzer/service';
 import { CommandLineOptions as PyrightCommandLineOptions } from './utils/options';
 import { NullConsole } from './utils/misc';
-import { DiagnosticCategory } from './common/diagnostic';
-import { FileDiagnostics } from './common/diagnosticSink';
-import { combinePaths, normalizePath } from './common/pathUtils';
-import { Range } from './common/textRange';
-import { createFromRealFileSystem } from './common/fileSystem';
+import { DiagnosticCategory } from './utils/diagnostic';
+import { FileDiagnostics } from './utils/diagnostic';
+import { combinePaths, normalizePath } from './utils/pathUtils';
+import { Range } from './utils/textRange';
+import { createFromRealFileSystem } from './utils/fileSystem';
 
 const toolName = 'pyright';
 

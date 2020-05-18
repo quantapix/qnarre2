@@ -15,7 +15,7 @@ import {
   SymbolInformation,
 } from 'vscode-languageserver';
 
-import { OperationCanceledException } from '../common/cancellationUtils';
+import { OperationCanceledException } from '../utils/cancellationUtils';
 import {
   ConfigOptions,
   ExecutionEnvironment,
@@ -23,14 +23,14 @@ import {
 } from '../utils/options';
 import { QConsole, StdConsole } from '../utils/misc';
 import { assert } from '../utils/misc';
-import { Diagnostic, DiagnosticCategory } from '../common/diagnostic';
-import { DiagnosticSink, TextRangeDiagnosticSink } from '../common/diagnosticSink';
-import { TextEditAction } from '../common/editAction';
-import { FileSystem } from '../common/fileSystem';
-import { getFileName, normalizeSlashes } from '../common/pathUtils';
-import * as StringUtils from '../common/stringUtils';
-import { DocumentRange, getEmptyRange, Position, TextRange } from '../common/textRange';
-import { TextRangeCollection } from '../common/textRangeCollection';
+import { Diagnostic, DiagnosticCategory } from '../utils/diagnostic';
+import { DiagnosticSink, TextRangeDiagnosticSink } from '../utils/diagnostic';
+import { TextEditAction } from '../utils/editAction';
+import { FileSystem } from '../utils/fileSystem';
+import { getFileName, normalizeSlashes } from '../utils/pathUtils';
+import * as StringUtils from '../utils/stringUtils';
+import { DocumentRange, getEmptyRange, Position, TextRange } from '../utils/textRange';
+import { TextRangeCollection } from '../utils/textRangeCollection';
 import { timings } from '../utils/misc';
 import { ModuleSymbolMap } from '../languageService/autoImporter';
 import {

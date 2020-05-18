@@ -14,13 +14,13 @@ import {
 } from 'vscode-languageserver';
 
 import { Commands } from '../commands';
-import { throwIfCancellationRequested } from '../common/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancellationUtils';
 import {
   AddMissingOptionalToParamAction,
   CreateTypeStubFileAction,
-} from '../common/diagnostic';
-import { pathToUri } from '../common/pathUtils';
-import { Range } from '../common/textRange';
+} from '../utils/diagnostic';
+import { pathToUri } from '../utils/pathUtils';
+import { Range } from '../utils/textRange';
 import { WorkspaceServiceInstance } from '../languageServerBase';
 
 export class CodeActionProvider {

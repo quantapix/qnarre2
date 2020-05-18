@@ -5,13 +5,13 @@ import {
 } from 'vscode-languageserver';
 
 import { AnalyzerService } from './analyzer/service';
-import { OperationCanceledException } from './common/cancellationUtils';
-import { createDeferred } from './common/deferred';
-import { pathToUri } from './common/pathUtils';
+import { OperationCanceledException } from './utils/cancellationUtils';
+import { createDeferred } from './utils/deferred';
+import { pathToUri } from './utils/pathUtils';
 import { LanguageServerInterface, WorkspaceServiceInstance } from './languageServerBase';
 import { AnalyzerServiceExecutor } from './languageService/analyzerServiceExecutor';
-import { uriToPath } from './common/pathUtils';
-import { convertTextEdits } from './common/textEditUtils';
+import { uriToPath } from './utils/pathUtils';
+import { convertTextEdits } from './utils/textEditUtils';
 
 export const enum Commands {
   createTypeStub = 'pyright.createtypestub',

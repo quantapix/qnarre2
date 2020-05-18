@@ -9,7 +9,7 @@
  */
 
 import { CommandLineOptions } from '../utils/options';
-import { combinePaths, normalizePath } from '../common/pathUtils';
+import { combinePaths, normalizePath } from '../utils/pathUtils';
 import { ServerSettings, WorkspaceServiceInstance } from '../languageServerBase';
 
 export class AnalyzerServiceExecutor {

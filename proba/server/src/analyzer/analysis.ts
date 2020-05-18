@@ -11,11 +11,11 @@ import { CancellationToken } from 'vscode-languageserver';
 import {
   OperationCanceledException,
   throwIfCancellationRequested,
-} from '../common/cancellationUtils';
+} from '../utils/cancellationUtils';
 import { ConfigOptions } from '../utils/options';
 import { QConsole } from '../utils/misc';
 import * as debug from '../utils/misc';
-import { FileDiagnostics } from '../common/diagnosticSink';
+import { FileDiagnostics } from '../utils/diagnostic';
 import { Duration } from '../utils/misc';
 import { MaxAnalysisTime, Program } from './program';
 

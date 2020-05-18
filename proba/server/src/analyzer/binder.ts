@@ -19,12 +19,12 @@
 import { Commands } from '../commands';
 import { DiagnosticLevel } from '../utils/options';
 import { assert, fail } from '../utils/misc';
-import { CreateTypeStubFileAction } from '../common/diagnostic';
+import { CreateTypeStubFileAction } from '../utils/diagnostic';
 import { DiagnosticRule } from '../utils/diagnostic';
-import { convertOffsetsToRange } from '../common/positionUtils';
-import { PythonVersion } from '../common/pythonVersion';
-import { getEmptyRange } from '../common/textRange';
-import { TextRange } from '../common/textRange';
+import { convertOffsetsToRange } from '../utils/positionUtils';
+import { PythonVersion } from '../utils/pythonVersion';
+import { getEmptyRange } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
 import {
   ArgumentCategory,
   AssertNode,

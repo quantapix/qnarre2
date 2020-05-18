@@ -8,8 +8,13 @@
 
 import * as assert from 'assert';
 
-import { combinePaths, comparePathsCaseSensitive, getFileName, normalizeSlashes } from '../common/pathUtils';
-import { compareStringsCaseSensitive } from '../common/stringUtils';
+import {
+  combinePaths,
+  comparePathsCaseSensitive,
+  getFileName,
+  normalizeSlashes,
+} from '../utils/pathUtils';
+import { compareStringsCaseSensitive } from '../utils/stringUtils';
 import { parseTestData } from './harness/fourslash/fourSlashParser';
 import { Range } from './harness/fourslash/fourSlashTypes';
 import { runFourSlashTestContent } from './harness/fourslash/runner';
@@ -17,18 +22,18 @@ import { TestState } from './harness/fourslash/testState';
 import * as factory from './harness/vfs/factory';
 
 test('Create', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 ////class A:
 ////    pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    assert(state.activeFile === data.files[0]);
+  const { data, state } = parseAndGetTestState(code);
+  assert(state.activeFile === data.files[0]);
 });
 
 test('Multiple files', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 ////class A:
 ////    pass
@@ -42,14 +47,16 @@ test('Multiple files', () => {
 ////    pass
     `;
 
-    const state = parseAndGetTestState(code).state;
+  const state = parseAndGetTestState(code).state;
 
-    assert.equal(state.fs.cwd(), normalizeSlashes('/'));
-    assert(state.fs.existsSync(normalizeSlashes(combinePaths(factory.srcFolder, 'file1.py'))));
+  assert.equal(state.fs.cwd(), normalizeSlashes('/'));
+  assert(
+    state.fs.existsSync(normalizeSlashes(combinePaths(factory.srcFolder, 'file1.py')))
+  );
 });
 
 test('Configuration', () => {
-    const code = `
+  const code = `
 // @filename: mspythonconfig.json
 //// {
 ////   "include": [
@@ -113,18 +120,23 @@ test('Configuration', () => {
 ////    pass
     `;
 
-    const state = parseAndGetTestState(code).state;
+  const state = parseAndGetTestState(code).state;
 
-    assert.equal(state.fs.cwd(), normalizeSlashes('/'));
-    assert(state.fs.existsSync(normalizeSlashes(combinePaths(factory.srcFolder, 'file1.py'))));
+  assert.equal(state.fs.cwd(), normalizeSlashes('/'));
+  assert(
+    state.fs.existsSync(normalizeSlashes(combinePaths(factory.srcFolder, 'file1.py')))
+  );
 
-    assert.equal(state.configOptions.diagnosticRuleSet.reportMissingImports, 'error');
-    assert.equal(state.configOptions.diagnosticRuleSet.reportMissingModuleSource, 'warning');
-    assert.equal(state.configOptions.typingsPath, normalizeSlashes('/src/typestubs'));
+  assert.equal(state.configOptions.diagnosticRuleSet.reportMissingImports, 'error');
+  assert.equal(
+    state.configOptions.diagnosticRuleSet.reportMissingModuleSource,
+    'warning'
+  );
+  assert.equal(state.configOptions.typingsPath, normalizeSlashes('/src/typestubs'));
 });
 
 test('ProjectRoot', () => {
-    const code = `
+  const code = `
 // global options
 // @projectRoot: /root
 
@@ -133,32 +145,34 @@ test('ProjectRoot', () => {
 ////    pass
     `;
 
-    const state = parseAndGetTestState(code).state;
+  const state = parseAndGetTestState(code).state;
 
-    assert.equal(state.fs.cwd(), normalizeSlashes('/'));
-    assert(state.fs.existsSync(normalizeSlashes('/root/file1.py')));
+  assert.equal(state.fs.cwd(), normalizeSlashes('/'));
+  assert(state.fs.existsSync(normalizeSlashes('/root/file1.py')));
 
-    assert.equal(state.configOptions.projectRoot, normalizeSlashes('/root'));
+  assert.equal(state.configOptions.projectRoot, normalizeSlashes('/root'));
 });
 
 test('CustomTypeshedFolder', () => {
-    // use differnt physical folder as typeshed folder. this is different than
-    // typeshed folder settings in config json file since that points to a path
-    // in virtual file system. not physical one. this decides which physical folder
-    // those virtual folder will mount to.
-    const code = `
+  // use differnt physical folder as typeshed folder. this is different than
+  // typeshed folder settings in config json file since that points to a path
+  // in virtual file system. not physical one. this decides which physical folder
+  // those virtual folder will mount to.
+  const code = `
 // global options
 // @typeshed: ${__dirname}
     `;
 
-    // mount the folder this file is in as typeshed folder and check whether
-    // in typeshed folder in virtual file system, this file exists.
-    const state = parseAndGetTestState(code).state;
-    assert(state.fs.existsSync(combinePaths(factory.typeshedFolder, getFileName(__filename))));
+  // mount the folder this file is in as typeshed folder and check whether
+  // in typeshed folder in virtual file system, this file exists.
+  const state = parseAndGetTestState(code).state;
+  assert(
+    state.fs.existsSync(combinePaths(factory.typeshedFolder, getFileName(__filename)))
+  );
 });
 
 test('IgnoreCase', () => {
-    const code = `
+  const code = `
 // global options
 // @ignoreCase: true
 
@@ -167,32 +181,34 @@ test('IgnoreCase', () => {
 ////    pass
     `;
 
-    const state = parseAndGetTestState(code).state;
+  const state = parseAndGetTestState(code).state;
 
-    assert(state.fs.existsSync(normalizeSlashes(combinePaths(factory.srcFolder, 'FILE1.py'))));
+  assert(
+    state.fs.existsSync(normalizeSlashes(combinePaths(factory.srcFolder, 'FILE1.py')))
+  );
 });
 
 test('GoToMarker', () => {
-    const code = `
+  const code = `
 ////class A:
 ////    /*marker1*/pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const marker = data.markerPositions.get('marker1');
+  const { data, state } = parseAndGetTestState(code);
+  const marker = data.markerPositions.get('marker1');
 
-    state.goToMarker('marker1');
-    assert.equal(state.lastKnownMarker, 'marker1');
-    assert.equal(state.currentCaretPosition, marker!.position);
+  state.goToMarker('marker1');
+  assert.equal(state.lastKnownMarker, 'marker1');
+  assert.equal(state.currentCaretPosition, marker!.position);
 
-    state.goToMarker(marker);
-    assert.equal(state.lastKnownMarker, 'marker1');
-    assert.equal(state.currentCaretPosition, marker!.position);
-    assert.equal(state.selectionEnd, -1);
+  state.goToMarker(marker);
+  assert.equal(state.lastKnownMarker, 'marker1');
+  assert.equal(state.currentCaretPosition, marker!.position);
+  assert.equal(state.selectionEnd, -1);
 });
 
 test('GoToEachMarker', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 ////class A:
 ////    /*marker1*/pass
@@ -202,24 +218,24 @@ test('GoToEachMarker', () => {
 ////    /*marker2*/pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const marker1 = data.markerPositions.get('marker1');
-    const marker2 = data.markerPositions.get('marker2');
+  const { data, state } = parseAndGetTestState(code);
+  const marker1 = data.markerPositions.get('marker1');
+  const marker2 = data.markerPositions.get('marker2');
 
-    const results: number[] = [];
-    state.goToEachMarker([marker1!, marker2!], (m) => {
-        results.push(m.position);
-    });
+  const results: number[] = [];
+  state.goToEachMarker([marker1!, marker2!], (m) => {
+    results.push(m.position);
+  });
 
-    assert.deepEqual(results, [marker1!.position, marker2!.position]);
+  assert.deepEqual(results, [marker1!.position, marker2!.position]);
 
-    assert.equal(state.activeFile.fileName, marker2!.fileName);
-    assert.equal(state.currentCaretPosition, marker2!.position);
-    assert.equal(state.selectionEnd, -1);
+  assert.equal(state.activeFile.fileName, marker2!.fileName);
+  assert.equal(state.currentCaretPosition, marker2!.position);
+  assert.equal(state.selectionEnd, -1);
 });
 
 test('Markers', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 ////class A:
 ////    /*marker1*/pass
@@ -229,36 +245,36 @@ test('Markers', () => {
 ////    /*marker2*/pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const marker1 = data.markerPositions.get('marker1');
+  const { data, state } = parseAndGetTestState(code);
+  const marker1 = data.markerPositions.get('marker1');
 
-    assert.deepEqual(state.getMarkerName(marker1!), 'marker1');
-    assert.deepEqual(
-        state
-            .getMarkers()
-            .map((m) => state.getMarkerName(m))
-            .sort(compareStringsCaseSensitive),
-        state.getMarkerNames().sort(comparePathsCaseSensitive)
-    );
+  assert.deepEqual(state.getMarkerName(marker1!), 'marker1');
+  assert.deepEqual(
+    state
+      .getMarkers()
+      .map((m) => state.getMarkerName(m))
+      .sort(compareStringsCaseSensitive),
+    state.getMarkerNames().sort(comparePathsCaseSensitive)
+  );
 });
 
 test('GoToPosition', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 ////class A:
 ////    /*marker1*/pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const marker1 = data.markerPositions.get('marker1');
-    state.goToPosition(marker1!.position);
+  const { data, state } = parseAndGetTestState(code);
+  const marker1 = data.markerPositions.get('marker1');
+  state.goToPosition(marker1!.position);
 
-    assert.equal(state.currentCaretPosition, marker1!.position);
-    assert.equal(state.selectionEnd, -1);
+  assert.equal(state.currentCaretPosition, marker1!.position);
+  assert.equal(state.selectionEnd, -1);
 });
 
 test('select', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////*start*/class A:
 ////    class B:
@@ -269,16 +285,16 @@ test('select', () => {
 ////        pass/*end*/
     `;
 
-    const { data, state } = parseAndGetTestState(code);
+  const { data, state } = parseAndGetTestState(code);
 
-    state.select('start', 'end');
+  state.select('start', 'end');
 
-    assert.equal(state.currentCaretPosition, data.markerPositions.get('start')!.position);
-    assert.equal(state.selectionEnd, data.markerPositions.get('end')!.position);
+  assert.equal(state.currentCaretPosition, data.markerPositions.get('start')!.position);
+  assert.equal(state.selectionEnd, data.markerPositions.get('end')!.position);
 });
 
 test('selectAllInFile', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////*start*/class A:
 ////    class B:
@@ -289,15 +305,15 @@ test('selectAllInFile', () => {
 ////        pass/*end*/
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    state.selectAllInFile(data.files[0].fileName);
+  const { data, state } = parseAndGetTestState(code);
+  state.selectAllInFile(data.files[0].fileName);
 
-    assert.equal(state.currentCaretPosition, data.markerPositions.get('start')!.position);
-    assert.equal(state.selectionEnd, data.markerPositions.get('end')!.position);
+  assert.equal(state.currentCaretPosition, data.markerPositions.get('start')!.position);
+  assert.equal(state.selectionEnd, data.markerPositions.get('end')!.position);
 });
 
 test('selectRange', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////class A:
 ////    class B:
@@ -308,18 +324,18 @@ test('selectRange', () => {
 ////        pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const range = data.ranges[0];
+  const { data, state } = parseAndGetTestState(code);
+  const range = data.ranges[0];
 
-    state.selectRange(range);
+  state.selectRange(range);
 
-    assert.equal(state.activeFile.fileName, range.fileName);
-    assert.equal(state.currentCaretPosition, range.pos);
-    assert.equal(state.selectionEnd, range.end);
+  assert.equal(state.activeFile.fileName, range.fileName);
+  assert.equal(state.currentCaretPosition, range.pos);
+  assert.equal(state.selectionEnd, range.end);
 });
 
 test('selectLine', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////class A:
 ////    class B:
@@ -330,17 +346,17 @@ test('selectLine', () => {
 ////        pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const range = data.ranges[0];
+  const { data, state } = parseAndGetTestState(code);
+  const range = data.ranges[0];
 
-    state.selectLine(2);
+  state.selectLine(2);
 
-    assert.equal(state.currentCaretPosition, range.pos);
-    assert.equal(state.selectionEnd, range.end);
+  assert.equal(state.currentCaretPosition, range.pos);
+  assert.equal(state.selectionEnd, range.end);
 });
 
 test('goToEachRange', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////class A:
 ////    class B:
@@ -351,19 +367,19 @@ test('goToEachRange', () => {
 ////        [|pass|]
     `;
 
-    const { state } = parseAndGetTestState(code);
+  const { state } = parseAndGetTestState(code);
 
-    const results: Range[] = [];
-    state.goToEachRange((r) => {
-        assert.equal(state.activeFile.fileName, r.fileName);
-        results.push(r);
-    });
+  const results: Range[] = [];
+  state.goToEachRange((r) => {
+    assert.equal(state.activeFile.fileName, r.fileName);
+    results.push(r);
+  });
 
-    assert.deepEqual(results, [state.getRanges()[0], state.getRanges()[1]]);
+  assert.deepEqual(results, [state.getRanges()[0], state.getRanges()[1]]);
 });
 
 test('getRangesInFile', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////class A:
 ////    class B:
@@ -375,16 +391,16 @@ test('getRangesInFile', () => {
 ////        [|pass|]
     `;
 
-    const { data, state } = parseAndGetTestState(code);
+  const { data, state } = parseAndGetTestState(code);
 
-    assert.deepEqual(
-        state.getRangesInFile(data.files[0].fileName),
-        data.ranges.filter((r) => r.fileName === data.files[0].fileName)
-    );
+  assert.deepEqual(
+    state.getRangesInFile(data.files[0].fileName),
+    data.ranges.filter((r) => r.fileName === data.files[0].fileName)
+  );
 });
 
 test('rangesByText', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////class A:
 ////    class B:
@@ -396,15 +412,15 @@ test('rangesByText', () => {
 ////        [|pass|]
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const map = state.getRangesByText();
+  const { data, state } = parseAndGetTestState(code);
+  const map = state.getRangesByText();
 
-    assert.deepEqual(map.get('def Test(self):'), [data.ranges[0]]);
-    assert.deepEqual(map.get('pass'), [data.ranges[1]]);
+  assert.deepEqual(map.get('def Test(self):'), [data.ranges[0]]);
+  assert.deepEqual(map.get('pass'), [data.ranges[1]]);
 });
 
 test('moveCaretRight', () => {
-    const code = `
+  const code = `
 // @filename: file1.py
 /////class A:
 ////    class B:
@@ -415,24 +431,24 @@ test('moveCaretRight', () => {
 ////        pass
     `;
 
-    const { data, state } = parseAndGetTestState(code);
-    const marker = data.markerPositions.get('position')!;
+  const { data, state } = parseAndGetTestState(code);
+  const marker = data.markerPositions.get('position')!;
 
-    state.goToBOF();
-    assert.equal(state.currentCaretPosition, 0);
+  state.goToBOF();
+  assert.equal(state.currentCaretPosition, 0);
 
-    state.goToEOF();
-    assert.equal(state.currentCaretPosition, data.files[0].content.length);
+  state.goToEOF();
+  assert.equal(state.currentCaretPosition, data.files[0].content.length);
 
-    state.goToPosition(marker.position);
-    state.moveCaretRight('def'.length);
+  state.goToPosition(marker.position);
+  state.moveCaretRight('def'.length);
 
-    assert.equal(state.currentCaretPosition, marker.position + 'def'.length);
-    assert.equal(state.selectionEnd, -1);
+  assert.equal(state.currentCaretPosition, marker.position + 'def'.length);
+  assert.equal(state.selectionEnd, -1);
 });
 
 test('runFourSlashTestContent', () => {
-    const code = `
+  const code = `
 /// <reference path="fourslash.d.ts" />
 
 // @filename: file1.py
@@ -447,11 +463,11 @@ test('runFourSlashTestContent', () => {
 helper.getMarkerByName("position");
     `;
 
-    runFourSlashTestContent(normalizeSlashes('/'), 'unused.py', code);
+  runFourSlashTestContent(normalizeSlashes('/'), 'unused.py', code);
 });
 
 test('VerifyDiagnosticsTest1', () => {
-    const code = `
+  const code = `
 /// <reference path="fourslash.d.ts" />
 
 // @filename: dataclass1.py
@@ -487,11 +503,11 @@ test('VerifyDiagnosticsTest1', () => {
 helper.verifyDiagnostics();
     `;
 
-    runFourSlashTestContent(factory.srcFolder, 'unused.py', code);
+  runFourSlashTestContent(factory.srcFolder, 'unused.py', code);
 });
 
 test('VerifyDiagnosticsTest2', () => {
-    const code = `
+  const code = `
 /// <reference path="fourslash.ts" />
 
 //// # This sample tests the handling of the @dataclass decorator.
@@ -552,12 +568,12 @@ helper.verifyDiagnostics({
 });
     `;
 
-    runFourSlashTestContent(factory.srcFolder, 'unused.py', code);
+  runFourSlashTestContent(factory.srcFolder, 'unused.py', code);
 });
 
 function parseAndGetTestState(code: string) {
-    const data = parseTestData(factory.srcFolder, code, 'test.py');
-    const state = new TestState(normalizeSlashes('/'), data);
+  const data = parseTestData(factory.srcFolder, code, 'test.py');
+  const state = new TestState(normalizeSlashes('/'), data);
 
-    return { data, state };
+  return { data, state };
 }

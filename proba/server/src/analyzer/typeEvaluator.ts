@@ -17,20 +17,20 @@
 import { CancellationToken } from 'vscode-languageserver';
 
 import { Commands } from '../commands';
-import { throwIfCancellationRequested } from '../common/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancellationUtils';
 import { DiagnosticLevel } from '../utils/options';
 import { assert, fail } from '../utils/misc';
 import {
   AddMissingOptionalToParamAction,
   Diagnostic,
   DiagnosticAddendum,
-} from '../common/diagnostic';
+} from '../utils/diagnostic';
 import { DiagnosticRule } from '../utils/diagnostic';
-import { convertOffsetsToRange } from '../common/positionUtils';
-import { PythonVersion } from '../common/pythonVersion';
-import { getEmptyRange } from '../common/textRange';
-import { TextRange } from '../common/textRange';
-import { TextRangeCollection } from '../common/textRangeCollection';
+import { convertOffsetsToRange } from '../utils/positionUtils';
+import { PythonVersion } from '../utils/pythonVersion';
+import { getEmptyRange } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
+import { TextRangeCollection } from '../utils/textRangeCollection';
 import {
   ArgumentCategory,
   AssignmentNode,

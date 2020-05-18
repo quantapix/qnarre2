@@ -9,28 +9,30 @@
 
 import * as path from 'path';
 
-import { normalizeSlashes } from '../common/pathUtils';
+import { normalizeSlashes } from '../utils/pathUtils';
 import { runFourSlashTest } from './harness/fourslash/runner';
 import * as host from './harness/host';
 import { MODULE_PATH } from './harness/vfs/filesystem';
 
 describe('fourslash tests', () => {
-    const testFiles: string[] = [];
+  const testFiles: string[] = [];
 
-    const basePath = path.resolve(path.dirname(module.filename), 'fourslash/');
-    for (const file of host.HOST.listFiles(basePath, /.*\.fourslash\.ts$/i, { recursive: true })) {
-        testFiles.push(file);
-    }
+  const basePath = path.resolve(path.dirname(module.filename), 'fourslash/');
+  for (const file of host.HOST.listFiles(basePath, /.*\.fourslash\.ts$/i, {
+    recursive: true,
+  })) {
+    testFiles.push(file);
+  }
 
-    testFiles.forEach((file) => {
-        describe(file, () => {
-            const fn = normalizeSlashes(file);
-            const justName = fn.replace(/^.*[\\/]/, '');
+  testFiles.forEach((file) => {
+    describe(file, () => {
+      const fn = normalizeSlashes(file);
+      const justName = fn.replace(/^.*[\\/]/, '');
 
-            // TODO: make these to use promise/async rather than callback token
-            it('fourslash test ' + justName + ' runs correctly', (cb) => {
-                runFourSlashTest(MODULE_PATH, fn, cb);
-            });
-        });
+      // TODO: make these to use promise/async rather than callback token
+      it('fourslash test ' + justName + ' runs correctly', (cb) => {
+        runFourSlashTest(MODULE_PATH, fn, cb);
+      });
     });
+  });
 });

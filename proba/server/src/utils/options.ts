@@ -1,6 +1,6 @@
 import { isAbsolute } from 'path';
 
-import * as pathConsts from '../common/pathConsts';
+import * as pathConsts from '../utils/pathConsts';
 import { QConsole } from './misc';
 import { DiagnosticRule } from './diagnostic';
 import { FileSystem } from './fileSystem';

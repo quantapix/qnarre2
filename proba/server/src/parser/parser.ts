@@ -12,12 +12,12 @@
  */
 
 import { assert } from '../utils/misc';
-import { Diagnostic, DiagnosticAddendum } from '../common/diagnostic';
-import { DiagnosticSink } from '../common/diagnosticSink';
-import { convertOffsetsToRange, convertPositionToOffset } from '../common/positionUtils';
-import { latestStablePythonVersion, PythonVersion } from '../common/pythonVersion';
-import { TextRange } from '../common/textRange';
-import { TextRangeCollection } from '../common/textRangeCollection';
+import { Diagnostic, DiagnosticAddendum } from '../utils/diagnostic';
+import { DiagnosticSink } from '../utils/diagnostic';
+import { convertOffsetsToRange, convertPositionToOffset } from '../utils/positionUtils';
+import { latestStablePythonVersion, PythonVersion } from '../utils/pythonVersion';
+import { TextRange } from '../utils/textRange';
+import { TextRangeCollection } from '../utils/textRangeCollection';
 import { timings } from '../utils/misc';
 import {
   ArgumentCategory,

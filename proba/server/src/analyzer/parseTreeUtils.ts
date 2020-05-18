@@ -8,10 +8,10 @@
  */
 
 import { fail } from '../utils/misc';
-import { convertPositionToOffset } from '../common/positionUtils';
-import { Position } from '../common/textRange';
-import { TextRange } from '../common/textRange';
-import { TextRangeCollection } from '../common/textRangeCollection';
+import { convertPositionToOffset } from '../utils/positionUtils';
+import { Position } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
+import { TextRangeCollection } from '../utils/textRangeCollection';
 import {
   ArgumentCategory,
   AssignmentExpressionNode,

@@ -17,7 +17,7 @@ import {
   getStrictDiagnosticRuleSet,
   getStrictModeNotOverridenRules,
 } from '../utils/options';
-import { TextRangeCollection } from '../common/textRangeCollection';
+import { TextRangeCollection } from '../utils/textRangeCollection';
 import { Token } from '../parser/tokenizerTypes';
 
 export function getFileLevelDirectives(

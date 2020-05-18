@@ -7,7 +7,7 @@
 import * as assert from 'assert';
 
 import * as core from '../utils/misc';
-import * as utils from '../common/stringUtils';
+import * as utils from '../utils/stringUtils';
 
 test('CoreCompareStringsCaseInsensitive1', () => {
   assert.equal(

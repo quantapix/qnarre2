@@ -16,11 +16,11 @@ import {
   getTopLevelImports,
   ImportStatement,
 } from '../analyzer/importStatementUtils';
-import { throwIfCancellationRequested } from '../common/cancellationUtils';
-import { TextEditAction } from '../common/editAction';
-import { convertOffsetToPosition } from '../common/positionUtils';
-import { Range } from '../common/textRange';
-import { TextRange } from '../common/textRange';
+import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { TextEditAction } from '../utils/editAction';
+import { convertOffsetToPosition } from '../utils/positionUtils';
+import { Range } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
 import {
   ImportAsNode,
   ImportFromAsNode,

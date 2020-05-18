@@ -19,15 +19,15 @@ import {
 import {
   OperationCanceledException,
   throwIfCancellationRequested,
-} from '../common/cancellationUtils';
+} from '../utils/cancellationUtils';
 import { ConfigOptions } from '../utils/options';
 import { QConsole, StdConsole } from '../utils/misc';
 import { isDebugMode } from '../utils/misc';
 import { assert } from '../utils/misc';
-import { Diagnostic } from '../common/diagnostic';
-import { FileDiagnostics } from '../common/diagnosticSink';
-import { FileEditAction, TextEditAction } from '../common/editAction';
-import { LanguageServiceExtension } from '../common/extensibility';
+import { Diagnostic } from '../utils/diagnostic';
+import { FileDiagnostics } from '../utils/diagnostic';
+import { FileEditAction, TextEditAction } from '../utils/editAction';
+import { LanguageServiceExtension } from '../utils/extensibility';
 import {
   combinePaths,
   getDirectoryPath,
@@ -35,12 +35,9 @@ import {
   makeDirectories,
   normalizePath,
   stripFileExtension,
-} from '../common/pathUtils';
-import {
-  convertPositionToOffset,
-  convertRangeToTextRange,
-} from '../common/positionUtils';
-import { DocumentRange, doRangesOverlap, Position, Range } from '../common/textRange';
+} from '../utils/pathUtils';
+import { convertPositionToOffset, convertRangeToTextRange } from '../utils/positionUtils';
+import { DocumentRange, doRangesOverlap, Position, Range } from '../utils/textRange';
 import { Duration, timings } from '../utils/misc';
 import {
   AutoImporter,

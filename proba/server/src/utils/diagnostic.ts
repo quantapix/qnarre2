@@ -1,5 +1,7 @@
 import { Commands } from '../commands';
-import { Range } from './textRange';
+import { convertOffsetsToRange } from './position';
+import { Range, TextRange } from './textRange';
+import { TextRangeCollection } from './textRangeCollection';
 
 export const enum DiagnosticCategory {
   Error,
@@ -162,4 +164,97 @@ export const enum DiagnosticRule {
   reportImplicitStringConcatenation = 'reportImplicitStringConcatenation',
   reportUndefinedVariable = 'reportUndefinedVariable',
   reportUnboundVariable = 'reportUnboundVariable',
+}
+
+export interface FileDiagnostics {
+  filePath: string;
+  diagnostics: Diagnostic[];
+}
+
+export class DiagnosticSink {
+  private _diagnosticList: Diagnostic[];
+  private _diagnosticMap: Map<string, Diagnostic>;
+
+  constructor(diagnostics?: Diagnostic[]) {
+    this._diagnosticList = diagnostics || [];
+    this._diagnosticMap = new Map<string, Diagnostic>();
+  }
+
+  fetchAndClear() {
+    const prevDiagnostics = this._diagnosticList;
+    this._diagnosticList = [];
+    this._diagnosticMap.clear();
+    return prevDiagnostics;
+  }
+
+  addError(message: string, range: Range) {
+    return this.addDiagnostic(new Diagnostic(DiagnosticCategory.Error, message, range));
+  }
+
+  addWarning(message: string, range: Range) {
+    return this.addDiagnostic(new Diagnostic(DiagnosticCategory.Warning, message, range));
+  }
+
+  addUnusedCode(message: string, range: Range) {
+    return this.addDiagnostic(
+      new Diagnostic(DiagnosticCategory.UnusedCode, message, range)
+    );
+  }
+
+  addDiagnostic(diag: Diagnostic) {
+    const key =
+      `${diag.range.start.line},${diag.range.start.character}-` +
+      `${diag.range.end.line}-${diag.range.end.character}:${diag.message.substr(0, 25)}}`;
+    if (!this._diagnosticMap.has(key)) {
+      this._diagnosticList.push(diag);
+      this._diagnosticMap.set(key, diag);
+    }
+    return diag;
+  }
+
+  addDiagnostics(diagsToAdd: Diagnostic[]) {
+    this._diagnosticList.push(...diagsToAdd);
+  }
+
+  getErrors() {
+    return this._diagnosticList.filter(
+      (diag) => diag.category === DiagnosticCategory.Error
+    );
+  }
+
+  getWarnings() {
+    return this._diagnosticList.filter(
+      (diag) => diag.category === DiagnosticCategory.Warning
+    );
+  }
+}
+
+export class TextRangeDiagnosticSink extends DiagnosticSink {
+  private _lines: TextRangeCollection<TextRange>;
+
+  constructor(lines: TextRangeCollection<TextRange>, diagnostics?: Diagnostic[]) {
+    super(diagnostics);
+    this._lines = lines;
+  }
+
+  addErrorWithTextRange(message: string, range: TextRange) {
+    return this.addError(
+      message,
+      convertOffsetsToRange(range.start, range.start + range.length, this._lines)
+    );
+  }
+
+  addWarningWithTextRange(message: string, range: TextRange) {
+    return this.addWarning(
+      message,
+      convertOffsetsToRange(range.start, range.start + range.length, this._lines)
+    );
+  }
+
+  addUnusedCodeWithTextRange(message: string, range: TextRange) {
+    return this.addUnusedCode(
+      message,
+      convertOffsetsToRange(range.start, range.start + range.length, this._lines)
+    );
+  }
 }

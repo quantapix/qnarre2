@@ -16,13 +16,10 @@ import * as DeclarationUtils from '../analyzer/declarationUtils';
 import * as ParseTreeUtils from '../analyzer/parseTreeUtils';
 import { ParseTreeWalker } from '../analyzer/parseTreeWalker';
 import { TypeEvaluator } from '../analyzer/typeEvaluator';
-import { throwIfCancellationRequested } from '../common/cancellationUtils';
-import {
-  convertOffsetToPosition,
-  convertPositionToOffset,
-} from '../common/positionUtils';
-import { DocumentRange, Position } from '../common/textRange';
-import { TextRange } from '../common/textRange';
+import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { convertOffsetToPosition, convertPositionToOffset } from '../utils/positionUtils';
+import { DocumentRange, Position } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
 import { ModuleNameNode, NameNode, ParseNode, ParseNodeType } from '../parser/parseNodes';
 import { ParseResults } from '../parser/parser';
 

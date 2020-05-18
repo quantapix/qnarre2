@@ -24,16 +24,13 @@ import {
   getMembersForClass,
   getMembersForModule,
 } from '../analyzer/typeUtils';
-import { throwIfCancellationRequested } from '../common/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancellationUtils';
 import { ConfigOptions } from '../utils/options';
-import { TextEditAction } from '../common/editAction';
-import {
-  convertOffsetToPosition,
-  convertPositionToOffset,
-} from '../common/positionUtils';
-import * as StringUtils from '../common/stringUtils';
-import { comparePositions, Position } from '../common/textRange';
-import { TextRange } from '../common/textRange';
+import { TextEditAction } from '../utils/editAction';
+import { convertOffsetToPosition, convertPositionToOffset } from '../utils/positionUtils';
+import * as StringUtils from '../utils/stringUtils';
+import { comparePositions, Position } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
 import {
   ErrorExpressionCategory,
   ErrorNode,

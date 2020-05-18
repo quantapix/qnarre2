@@ -22,16 +22,16 @@ import {
   OperationCanceledException,
   setCancellationFolderName,
   throwIfCancellationRequested,
-} from './common/cancellationUtils';
+} from './utils/cancellationUtils';
 import { ConfigOptions } from './utils/options';
 import { QConsole } from './utils/misc';
 import * as debug from './utils/misc';
-import { Diagnostic } from './common/diagnostic';
-import { FileDiagnostics } from './common/diagnosticSink';
-import { LanguageServiceExtension } from './common/extensibility';
-import { createFromRealFileSystem, FileSystem } from './common/fileSystem';
-import { FileSpec } from './common/pathUtils';
-import { Range } from './common/textRange';
+import { Diagnostic } from './utils/diagnostic';
+import { FileDiagnostics } from './utils/diagnostic';
+import { LanguageServiceExtension } from './utils/extensibility';
+import { createFromRealFileSystem, FileSystem } from './utils/fileSystem';
+import { FileSpec } from './utils/pathUtils';
+import { Range } from './utils/textRange';
 
 export class BackgroundAnalysisBase {
   private _worker: Worker;

@@ -8,10 +8,10 @@
  * import statements in a python source file.
  */
 
-import { TextEditAction } from '../common/editAction';
-import { convertOffsetToPosition } from '../common/positionUtils';
-import { Position } from '../common/textRange';
-import { TextRange } from '../common/textRange';
+import { TextEditAction } from '../utils/editAction';
+import { convertOffsetToPosition } from '../utils/positionUtils';
+import { Position } from '../utils/textRange';
+import { TextRange } from '../utils/textRange';
 import {
   ImportAsNode,
   ImportFromAsNode,
