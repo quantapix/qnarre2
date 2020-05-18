@@ -11,7 +11,7 @@ import { CancellationToken } from 'vscode-languageserver';
 import {
   OperationCanceledException,
   throwIfCancellationRequested,
-} from '../utils/cancellationUtils';
+} from '../utils/cancel';
 import { ConfigOptions } from '../utils/options';
 import { QConsole } from '../utils/misc';
 import * as debug from '../utils/misc';

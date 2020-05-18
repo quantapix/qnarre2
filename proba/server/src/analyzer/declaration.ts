@@ -9,7 +9,7 @@
  * is explicitly declared).
  */
 
-import { Range } from '../utils/textRange';
+import { Range } from '../utils/text';
 import {
   ClassNode,
   ExpressionNode,

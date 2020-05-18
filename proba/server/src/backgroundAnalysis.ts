@@ -5,7 +5,7 @@ import {
   BackgroundAnalysisRunnerBase,
   InitializationData,
 } from './backgroundAnalysisBase';
-import { getCancellationFolderName } from './utils/cancellationUtils';
+import { getCancellationFolderName } from './utils/cancel';
 import { QConsole } from './utils/misc';
 
 export class BackgroundAnalysis extends BackgroundAnalysisBase {

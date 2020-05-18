@@ -14,9 +14,9 @@ import { CancellationToken } from 'vscode-languageserver';
 
 import * as ParseTreeUtils from '../analyzer/parseTreeUtils';
 import { TypeEvaluator } from '../analyzer/typeEvaluator';
-import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancel';
 import { convertPositionToOffset } from '../utils/positionUtils';
-import { DocumentRange, Position, rangesAreEqual } from '../utils/textRange';
+import { DocumentRange, Position, rangesAreEqual } from '../utils/text';
 import { ParseNodeType } from '../parser/parseNodes';
 import { ParseResults } from '../parser/parser';
 

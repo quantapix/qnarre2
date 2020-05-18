@@ -1,17 +1,4 @@
-/*
- * pythonLanguageVersion.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- * Author: Eric Traut
- *
- * Types and functions that relate to the Python language version
- * and features within them.
- */
-
 export enum PythonVersion {
-  // The order of this enumeration is significant. We assume
-  // that we can use comparison operators to check for older
-  // or newer versions.
   V24 = 0x0204,
   V25 = 0x0205,
   V26 = 0x0206,

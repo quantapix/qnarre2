@@ -15,9 +15,9 @@ import { assert } from '../utils/misc';
 import { Diagnostic, DiagnosticAddendum } from '../utils/diagnostic';
 import { DiagnosticSink } from '../utils/diagnostic';
 import { convertOffsetsToRange, convertPositionToOffset } from '../utils/positionUtils';
-import { latestStablePythonVersion, PythonVersion } from '../utils/pythonVersion';
-import { TextRange } from '../utils/textRange';
-import { TextRangeCollection } from '../utils/textRangeCollection';
+import { latestStablePythonVersion, PythonVersion } from '../utils/version';
+import { TextRange } from '../utils/text';
+import { TextRangeCollection } from '../utils/text';
 import { timings } from '../utils/misc';
 import {
   ArgumentCategory,

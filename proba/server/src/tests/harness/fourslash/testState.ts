@@ -28,9 +28,9 @@ import { ConfigOptions } from '../../../utils/options';
 import { QConsole, NullConsole } from '../../../utils/misc';
 import { Comparison, isNumber, isString, toBoolean } from '../../../utils/misc';
 import * as debug from '../../../utils/misc';
-import { createDeferred } from '../../../utils/deferred';
+import { createDeferred } from '../../../utils/lazy';
 import { DiagnosticCategory } from '../../../utils/diagnostic';
-import { FileEditAction } from '../../../utils/editAction';
+import { FileEditAction } from '../../../utils/text';
 import {
   combinePaths,
   comparePaths,
@@ -38,20 +38,20 @@ import {
   getBaseFileName,
   normalizePath,
   normalizeSlashes,
-} from '../../../utils/pathUtils';
+} from '../../../utils/files';
 import {
   convertOffsetToPosition,
   convertPositionToOffset,
 } from '../../../utils/positionUtils';
-import { getStringComparer } from '../../../utils/stringUtils';
+import { getStringComparer } from '../../../utils/strings';
 import {
   DocumentRange,
   Position,
   Range as PositionRange,
   rangesAreEqual,
   TextRange,
-} from '../../../utils/textRange';
-import { TextRangeCollection } from '../../../utils/textRangeCollection';
+} from '../../../utils/text';
+import { TextRangeCollection } from '../../../utils/text';
 import {
   LanguageServerInterface,
   WorkspaceServiceInstance,

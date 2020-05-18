@@ -9,9 +9,9 @@
 
 import { fail } from '../utils/misc';
 import { convertPositionToOffset } from '../utils/positionUtils';
-import { Position } from '../utils/textRange';
-import { TextRange } from '../utils/textRange';
-import { TextRangeCollection } from '../utils/textRangeCollection';
+import { Position } from '../utils/text';
+import { TextRange } from '../utils/text';
+import { TextRangeCollection } from '../utils/text';
 import {
   ArgumentCategory,
   AssignmentExpressionNode,

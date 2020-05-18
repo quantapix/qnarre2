@@ -28,14 +28,14 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver';
 
-import { createDeferred } from './utils/deferred';
-import { CancelAfter } from './utils/cancellationUtils';
-import { containsPath, pathToUri, uriToPath } from './utils/pathUtils';
+import { createDeferred } from './utils/lazy';
+import { CancelAfter } from './utils/cancel';
+import { containsPath, pathToUri, uriToPath } from './utils/files';
 import { LangServer, WorkspaceServiceInstance, getCapability } from './langServer';
-import { Position } from './utils/textRange';
+import { Position } from './utils/text';
 import { CompletionItemData } from './languageService/completionProvider';
 import { convertHoverResults } from './languageService/hoverProvider';
-import { convertWorkspaceEdits } from './utils/textEditUtils';
+import { convertWorkspaceEdits } from './utils/text';
 
 export class PyServer extends LangServer {
   constructor(name = 'PyServer', rootDir: string) {

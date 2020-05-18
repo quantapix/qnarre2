@@ -12,8 +12,8 @@
 
 import Char from 'typescript-char';
 
-import { TextRange } from '../utils/textRange';
-import { TextRangeCollection } from '../utils/textRangeCollection';
+import { TextRange } from '../utils/text';
+import { TextRangeCollection } from '../utils/text';
 import {
   isBinary,
   isDecimal,

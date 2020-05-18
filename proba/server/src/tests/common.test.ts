@@ -6,14 +6,14 @@
 
 import * as assert from 'assert';
 
-import { computeCompletionSimilarity } from '../utils/stringUtils';
+import { computeCompletionSimilarity } from '../utils/strings';
 import {
   doesRangeContain,
   doRangesOverlap,
   Range,
   rangesAreEqual,
   TextRange,
-} from '../utils/textRange';
+} from '../utils/text';
 
 test('textRange create', () => {
   assert.throws(() => TextRange.create(-1, 1), Error);

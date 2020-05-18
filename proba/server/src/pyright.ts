@@ -10,9 +10,9 @@ import { CommandLineOptions as PyrightCommandLineOptions } from './utils/options
 import { NullConsole } from './utils/misc';
 import { DiagnosticCategory } from './utils/diagnostic';
 import { FileDiagnostics } from './utils/diagnostic';
-import { combinePaths, normalizePath } from './utils/pathUtils';
-import { Range } from './utils/textRange';
-import { createFromRealFileSystem } from './utils/fileSystem';
+import { combinePaths, normalizePath } from './utils/files';
+import { Range } from './utils/text';
+import { createFromRealFileSystem } from './utils/files';
 
 const toolName = 'pyright';
 

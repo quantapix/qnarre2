@@ -9,7 +9,7 @@
  */
 
 import { ConfigOptions, ExecutionEnvironment } from '../utils/options';
-import { FileSystem } from '../utils/fileSystem';
+import { FileSystem } from '../utils/files';
 import {
   combinePaths,
   ensureTrailingDirectorySeparator,
@@ -21,9 +21,9 @@ import {
   isFile,
   stripFileExtension,
   stripTrailingDirectorySeparator,
-} from '../utils/pathUtils';
-import { versionToString } from '../utils/pythonVersion';
-import * as StringUtils from '../utils/stringUtils';
+} from '../utils/files';
+import { versionToString } from '../utils/version';
+import * as StringUtils from '../utils/strings';
 import { ImplicitImport, ImportResult, ImportType } from './importResult';
 import * as PythonPathUtils from './pythonPathUtils';
 import { isDunderName } from './symbolNameUtils';

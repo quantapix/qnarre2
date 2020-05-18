@@ -13,13 +13,13 @@ import { AnalyzerService } from '../analyzer/service';
 import { CommandLineOptions } from '../utils/options';
 import { ConfigOptions, ExecutionEnvironment } from '../utils/options';
 import { NullConsole } from '../utils/misc';
-import { createFromRealFileSystem } from '../utils/fileSystem';
+import { createFromRealFileSystem } from '../utils/files';
 import {
   combinePaths,
   getBaseFileName,
   normalizePath,
   normalizeSlashes,
-} from '../utils/pathUtils';
+} from '../utils/files';
 
 test('FindFilesWithConfigFile', () => {
   const cwd = normalizePath(combinePaths(process.cwd(), '../server'));

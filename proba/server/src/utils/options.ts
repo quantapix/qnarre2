@@ -1,21 +1,17 @@
 import { isAbsolute } from 'path';
 
-import * as pathConsts from '../utils/pathConsts';
+import * as pathConsts from '../utils/strings';
 import { QConsole } from './misc';
 import { DiagnosticRule } from './diagnostic';
-import { FileSystem } from './fileSystem';
+import { FileSystem } from './files';
 import {
   combinePaths,
   ensureTrailingDirectorySeparator,
   FileSpec,
   getFileSpec,
   normalizePath,
-} from './pathUtils';
-import {
-  latestStablePythonVersion,
-  PythonVersion,
-  versionFromString,
-} from './pythonVersion';
+} from './files';
+import { latestStablePythonVersion, PythonVersion, versionFromString } from './version';
 
 export class ExecutionEnvironment {
   // Default to "." which indicates every file in the project.

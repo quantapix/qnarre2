@@ -1,6 +1,6 @@
 import { assert } from './debug';
-import { Position, Range, TextRange } from './textRange';
-import { TextRangeCollection } from './textRangeCollection';
+import { Position, Range, TextRange } from './text';
+import { TextRangeCollection } from './text';
 
 export function beforeOrSame(p1: Position, p2: Position) {
   return p1.line < p2.line || (p1.line === p2.line && p1.character <= p2.character);

@@ -10,10 +10,10 @@ import {
   isProperty,
   lookUpClassMember,
 } from '../analyzer/typeUtils';
-import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancel';
 import { convertOffsetToPosition, convertPositionToOffset } from '../utils/positionUtils';
-import { Position, Range } from '../utils/textRange';
-import { TextRange } from '../utils/textRange';
+import { Position, Range } from '../utils/text';
+import { TextRange } from '../utils/text';
 import { NameNode, ParseNode, ParseNodeType } from '../parser/parseNodes';
 import { ParseResults } from '../parser/parser';
 

@@ -1,5 +1,13 @@
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
 
+declare interface Promise<T> {
+  ignoreErrors(): void;
+}
+
+Promise.prototype.ignoreErrors = function <T>(this: Promise<T>) {
+  this.catch(() => {});
+};
+
 export function formatError(m: string, e: any) {
   if (e instanceof Error) return `${m}: ${e.message}\n${e.stack}`;
   if (typeof e === 'string') return `${m}: ${e}`;

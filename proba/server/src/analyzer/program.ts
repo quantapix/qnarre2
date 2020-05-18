@@ -19,14 +19,14 @@ import {
 import {
   OperationCanceledException,
   throwIfCancellationRequested,
-} from '../utils/cancellationUtils';
+} from '../utils/cancel';
 import { ConfigOptions } from '../utils/options';
 import { QConsole, StdConsole } from '../utils/misc';
 import { isDebugMode } from '../utils/misc';
 import { assert } from '../utils/misc';
 import { Diagnostic } from '../utils/diagnostic';
 import { FileDiagnostics } from '../utils/diagnostic';
-import { FileEditAction, TextEditAction } from '../utils/editAction';
+import { FileEditAction, TextEditAction } from '../utils/text';
 import { LanguageServiceExtension } from '../utils/extensibility';
 import {
   combinePaths,
@@ -35,9 +35,9 @@ import {
   makeDirectories,
   normalizePath,
   stripFileExtension,
-} from '../utils/pathUtils';
+} from '../utils/files';
 import { convertPositionToOffset, convertRangeToTextRange } from '../utils/positionUtils';
-import { DocumentRange, doRangesOverlap, Position, Range } from '../utils/textRange';
+import { DocumentRange, doRangesOverlap, Position, Range } from '../utils/text';
 import { Duration, timings } from '../utils/misc';
 import {
   AutoImporter,

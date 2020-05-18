@@ -1,7 +1,7 @@
-import { Commands } from '../commands';
+import { Commands } from '../pyCommands';
 import { convertOffsetsToRange } from './position';
-import { Range, TextRange } from './textRange';
-import { TextRangeCollection } from './textRangeCollection';
+import { Range, TextRange } from './text';
+import { TextRangeCollection } from './text';
 
 export const enum DiagnosticCategory {
   Error,

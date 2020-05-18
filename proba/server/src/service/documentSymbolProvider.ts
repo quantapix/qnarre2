@@ -24,9 +24,9 @@ import { ParseTreeWalker } from '../analyzer/parseTreeWalker';
 import { getLastTypedDeclaredForSymbol } from '../analyzer/symbolUtils';
 import { TypeEvaluator } from '../analyzer/typeEvaluator';
 import { isProperty } from '../analyzer/typeUtils';
-import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancel';
 import { convertOffsetsToRange } from '../utils/positionUtils';
-import * as StringUtils from '../utils/stringUtils';
+import * as StringUtils from '../utils/strings';
 import {
   ClassNode,
   FunctionNode,

@@ -16,15 +16,15 @@
  * This binder doesn't perform any static type checking.
  */
 
-import { Commands } from '../commands';
+import { Commands } from '../pyCommands';
 import { DiagnosticLevel } from '../utils/options';
 import { assert, fail } from '../utils/misc';
 import { CreateTypeStubFileAction } from '../utils/diagnostic';
 import { DiagnosticRule } from '../utils/diagnostic';
 import { convertOffsetsToRange } from '../utils/positionUtils';
-import { PythonVersion } from '../utils/pythonVersion';
-import { getEmptyRange } from '../utils/textRange';
-import { TextRange } from '../utils/textRange';
+import { PythonVersion } from '../utils/version';
+import { getEmptyRange } from '../utils/text';
+import { TextRange } from '../utils/text';
 import {
   ArgumentCategory,
   AssertNode,

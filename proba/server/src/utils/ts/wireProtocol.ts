@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as stream from 'stream';
 import * as vscode from 'vscode';
 import { Disposable } from './misc';
@@ -112,10 +107,7 @@ export class Reader<T> extends Disposable {
   public readonly onData = this._onData.event;
 
   private onLengthData(data: Buffer | string): void {
-    if (this.isDisposed) {
-      return;
-    }
-
+    if (this.isDisposed) return;
     try {
       this.buffer.append(data);
       while (true) {

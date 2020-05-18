@@ -19,8 +19,8 @@ import { BackgroundAnalysisBase } from '../../../backgroundAnalysisBase';
 import { CommandController } from '../../../commands/commandController';
 import { QConsole } from '../../../utils/misc';
 import * as debug from '../../../utils/misc';
-import { FileSystem } from '../../../utils/fileSystem';
-import { Range } from '../../../utils/textRange';
+import { FileSystem } from '../../../utils/files';
+import { Range } from '../../../utils/text';
 import {
   LanguageServerInterface,
   ServerSettings,

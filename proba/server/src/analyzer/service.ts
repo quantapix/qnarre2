@@ -18,14 +18,14 @@ import {
 } from 'vscode-languageserver';
 
 import { BackgroundAnalysisBase } from '../backgroundAnalysisBase';
-import { createAnalysisCancellationTokenSource } from '../utils/cancellationUtils';
+import { createAnalysisCancellationTokenSource } from '../utils/cancel';
 import { CommandLineOptions } from '../utils/options';
 import { ConfigOptions } from '../utils/options';
 import { QConsole, StdConsole } from '../utils/misc';
 import { Diagnostic } from '../utils/diagnostic';
-import { FileEditAction, TextEditAction } from '../utils/editAction';
+import { FileEditAction, TextEditAction } from '../utils/text';
 import { LanguageServiceExtension } from '../utils/extensibility';
-import { FileSystem, FileWatcher } from '../utils/fileSystem';
+import { FileSystem, FileWatcher } from '../utils/files';
 import {
   combinePaths,
   FileSpec,
@@ -37,8 +37,8 @@ import {
   isDirectory,
   normalizePath,
   stripFileExtension,
-} from '../utils/pathUtils';
-import { DocumentRange, Position, Range } from '../utils/textRange';
+} from '../utils/files';
+import { DocumentRange, Position, Range } from '../utils/text';
 import { timings } from '../utils/misc';
 import { HoverResults } from '../languageService/hoverProvider';
 import { SignatureHelpResults } from '../languageService/signatureHelpProvider';

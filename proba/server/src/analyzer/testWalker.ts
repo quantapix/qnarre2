@@ -6,7 +6,7 @@
 
 import { ParseTreeWalker } from '../analyzer/parseTreeWalker';
 import { fail } from '../utils/misc';
-import { TextRange } from '../utils/textRange';
+import { TextRange } from '../utils/text';
 import { ParseNode, ParseNodeArray, ParseNodeType } from '../parser/parseNodes';
 
 export class TestWalker extends ParseTreeWalker {

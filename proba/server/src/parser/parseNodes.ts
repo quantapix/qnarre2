@@ -8,7 +8,7 @@
  * syntax tree (AST).
  */
 
-import { TextRange } from '../utils/textRange';
+import { TextRange } from '../utils/text';
 import {
   IdentifierToken,
   KeywordToken,

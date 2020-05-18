@@ -1,3 +1,6 @@
+import leven from 'leven';
+import { compareComparableValues, Comparison } from './misc';
+
 export function getWordAtText(
   text: string,
   offset: number,
@@ -9,8 +12,6 @@ export function getWordAtText(
   }
   const offsetInLine = offset - lineStart;
   const lineText = text.substr(lineStart);
-
-  // make a copy of the regex as to not keep the state
   const flags = wordDefinition.ignoreCase ? 'gi' : 'g';
   wordDefinition = new RegExp(wordDefinition.source, flags);
 
@@ -68,4 +69,73 @@ export function isNewlineCharacter(charCode: number) {
 
 export function convertSimple2RegExpPattern(pattern: string): string {
   return pattern.replace(/[-\\{}+?|^$.,[\]()#\s]/g, '\\$&').replace(/[*]/g, '.*');
+}
+
+export function computeCompletionSimilarity(
+  typedValue: string,
+  symbolName: string
+): number {
+  if (symbolName.startsWith(typedValue)) {
+    return 1;
+  }
+  const symbolLower = symbolName.toLocaleLowerCase();
+  const typedLower = typedValue.toLocaleLowerCase();
+  if (symbolLower.startsWith(typedLower)) {
+    return 0.75;
+  }
+  let symbolSubstrLength = symbolLower.length;
+  let smallestEditDistance = Number.MAX_VALUE;
+  while (symbolSubstrLength > 0) {
+    const editDistance = leven(symbolLower.substr(0, symbolSubstrLength), typedLower);
+    if (editDistance < smallestEditDistance) {
+      smallestEditDistance = editDistance;
+    }
+    symbolSubstrLength--;
+  }
+  if (smallestEditDistance >= typedValue.length) {
+    return 0;
+  }
+  const similarity = (typedValue.length - smallestEditDistance) / typedValue.length;
+  return 0.5 * similarity;
+}
+
+export function hashString(contents: string) {
+  let hash = 0;
+
+  for (let i = 0; i < contents.length; i++) {
+    hash = ((hash << 5) - hash + contents.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
+export function compareStringsCaseInsensitive(
+  a: string | undefined,
+  b: string | undefined
+): Comparison {
+  return a === b
+    ? Comparison.EqualTo
+    : a === undefined
+    ? Comparison.LessThan
+    : b === undefined
+    ? Comparison.GreaterThan
+    : compareComparableValues(a.toUpperCase(), b.toUpperCase());
+}
+
+export function compareStringsCaseSensitive(
+  a: string | undefined,
+  b: string | undefined
+): Comparison {
+  return compareComparableValues(a, b);
+}
+
+export function getStringComparer(ignoreCase?: boolean) {
+  return ignoreCase ? compareStringsCaseInsensitive : compareStringsCaseSensitive;
+}
+
+export function equateStringsCaseInsensitive(a: string, b: string) {
+  return compareStringsCaseInsensitive(a, b) === Comparison.EqualTo;
+}
+
+export function equateStringsCaseSensitive(a: string, b: string) {
+  return compareStringsCaseSensitive(a, b) === Comparison.EqualTo;
 }

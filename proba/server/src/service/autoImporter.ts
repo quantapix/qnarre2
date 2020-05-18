@@ -21,16 +21,16 @@ import { SourceFile } from '../analyzer/sourceFile';
 import { SymbolTable } from '../analyzer/symbol';
 import { Symbol } from '../analyzer/symbol';
 import * as SymbolNameUtils from '../analyzer/symbolNameUtils';
-import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancel';
 import { ConfigOptions } from '../utils/options';
-import { TextEditAction } from '../utils/editAction';
+import { TextEditAction } from '../utils/text';
 import {
   combinePaths,
   getDirectoryPath,
   getFileName,
   stripFileExtension,
-} from '../utils/pathUtils';
-import * as StringUtils from '../utils/stringUtils';
+} from '../utils/files';
+import * as StringUtils from '../utils/strings';
 import { ParseNodeType } from '../parser/parseNodes';
 import { ParseResults } from '../parser/parser';
 

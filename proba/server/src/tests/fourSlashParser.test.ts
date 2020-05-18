@@ -9,8 +9,8 @@
 
 import * as assert from 'assert';
 
-import { combinePaths, getBaseFileName, normalizeSlashes } from '../utils/pathUtils';
-import { compareStringsCaseSensitive } from '../utils/stringUtils';
+import { combinePaths, getBaseFileName, normalizeSlashes } from '../utils/files';
+import { compareStringsCaseSensitive } from '../utils/strings';
 import { parseTestData } from './harness/fourslash/fourSlashParser';
 import { CompilerSettings } from './harness/fourslash/fourSlashTypes';
 import * as host from './harness/host';

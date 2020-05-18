@@ -12,7 +12,7 @@ import * as assert from 'assert';
 import * as AnalyzerNodeInfo from '../analyzer/analyzerNodeInfo';
 import { ScopeType } from '../analyzer/scope';
 import { ConfigOptions } from '../utils/options';
-import { PythonVersion } from '../utils/pythonVersion';
+import { PythonVersion } from '../utils/version';
 import * as TestUtils from './testUtils';
 
 test('Builtins1', () => {

@@ -15,9 +15,9 @@ import { extractParameterDocumentation } from '../analyzer/docStringUtils';
 import * as ParseTreeUtils from '../analyzer/parseTreeUtils';
 import { TypeEvaluator } from '../analyzer/typeEvaluator';
 import { FunctionType } from '../analyzer/types';
-import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { throwIfCancellationRequested } from '../utils/cancel';
 import { convertPositionToOffset } from '../utils/positionUtils';
-import { Position } from '../utils/textRange';
+import { Position } from '../utils/text';
 import { ParseResults } from '../parser/parser';
 
 export interface ParamInfo {

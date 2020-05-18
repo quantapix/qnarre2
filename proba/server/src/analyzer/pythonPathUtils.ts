@@ -10,8 +10,8 @@
 import * as child_process from 'child_process';
 
 import { ConfigOptions } from '../utils/options';
-import { FileSystem } from '../utils/fileSystem';
-import * as pathConsts from '../utils/pathConsts';
+import { FileSystem } from '../utils/files';
+import * as pathConsts from '../utils/strings';
 import {
   combinePaths,
   containsPath,
@@ -20,7 +20,7 @@ import {
   getFileSystemEntries,
   isDirectory,
   normalizePath,
-} from '../utils/pathUtils';
+} from '../utils/files';
 
 const cachedSearchPaths = new Map<string, PythonPathResult>();
 

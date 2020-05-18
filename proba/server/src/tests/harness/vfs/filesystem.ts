@@ -9,12 +9,8 @@
 /* eslint-disable no-dupe-class-members */
 import { Dirent, ReadStream, WriteStream } from 'fs';
 
-import {
-  FileSystem,
-  FileWatcher,
-  FileWatcherEventHandler,
-} from '../../../utils/fileSystem';
-import * as pathUtil from '../../../utils/pathUtils';
+import { FileSystem, FileWatcher, FileWatcherEventHandler } from '../../../utils/files';
+import * as pathUtil from '../../../utils/files';
 import { bufferFrom, createIOError } from '../utils';
 import { closeIterator, getIterator, Metadata, nextResult, SortedMap } from './../utils';
 import { validate, ValidationFlags } from './pathValidation';

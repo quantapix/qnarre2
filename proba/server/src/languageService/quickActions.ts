@@ -17,10 +17,10 @@ import {
 } from '../analyzer/importStatementUtils';
 import * as ParseTreeUtils from '../analyzer/parseTreeUtils';
 import { Commands } from '../pyCommands';
-import { throwIfCancellationRequested } from '../utils/cancel';
-import { TextEditAction } from '../utils/text';
-import { convertOffsetToPosition } from '../utils/positionUtils';
-import { TextRange } from '../utils/text';
+import { throwIfCancellationRequested } from '../common/cancellationUtils';
+import { TextEditAction } from '../common/editAction';
+import { convertOffsetToPosition } from '../common/positionUtils';
+import { TextRange } from '../common/textRange';
 import { ParseNode, ParseNodeType } from '../parser/parseNodes';
 import { ParseResults } from '../parser/parser';
 import { ImportSorter } from './importSorter';

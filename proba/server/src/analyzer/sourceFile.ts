@@ -15,7 +15,7 @@ import {
   SymbolInformation,
 } from 'vscode-languageserver';
 
-import { OperationCanceledException } from '../utils/cancellationUtils';
+import { OperationCanceledException } from '../utils/cancel';
 import {
   ConfigOptions,
   ExecutionEnvironment,
@@ -25,12 +25,12 @@ import { QConsole, StdConsole } from '../utils/misc';
 import { assert } from '../utils/misc';
 import { Diagnostic, DiagnosticCategory } from '../utils/diagnostic';
 import { DiagnosticSink, TextRangeDiagnosticSink } from '../utils/diagnostic';
-import { TextEditAction } from '../utils/editAction';
-import { FileSystem } from '../utils/fileSystem';
-import { getFileName, normalizeSlashes } from '../utils/pathUtils';
-import * as StringUtils from '../utils/stringUtils';
-import { DocumentRange, getEmptyRange, Position, TextRange } from '../utils/textRange';
-import { TextRangeCollection } from '../utils/textRangeCollection';
+import { TextEditAction } from '../utils/text';
+import { FileSystem } from '../utils/files';
+import { getFileName, normalizeSlashes } from '../utils/files';
+import * as StringUtils from '../utils/strings';
+import { DocumentRange, getEmptyRange, Position, TextRange } from '../utils/text';
+import { TextRangeCollection } from '../utils/text';
 import { timings } from '../utils/misc';
 import { ModuleSymbolMap } from '../languageService/autoImporter';
 import {

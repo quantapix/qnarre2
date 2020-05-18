@@ -6,7 +6,7 @@
 
 import { sep } from 'path';
 
-import * as pu from '../../../utils/pathUtils';
+import * as pu from '../../../utils/files';
 import { createIOError } from '../utils';
 
 const invalidRootComponentRegExp = getInvalidRootComponentRegExp();

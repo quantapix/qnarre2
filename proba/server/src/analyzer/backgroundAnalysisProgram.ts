@@ -15,7 +15,7 @@ import { QConsole } from '../utils/misc';
 import { Diagnostic } from '../utils/diagnostic';
 import { FileDiagnostics } from '../utils/diagnostic';
 import { LanguageServiceExtension } from '../utils/extensibility';
-import { Range } from '../utils/textRange';
+import { Range } from '../utils/text';
 import { AnalysisCompleteCallback, analyzeProgram } from './analysis';
 import { ImportResolver } from './importResolver';
 import { MaxAnalysisTime, Program } from './program';

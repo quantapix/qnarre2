@@ -10,8 +10,8 @@
 
 import { DiagnosticRuleSet, ExecutionEnvironment } from '../utils/options';
 import { TextRangeDiagnosticSink } from '../utils/diagnostic';
-import { TextRange } from '../utils/textRange';
-import { TextRangeCollection } from '../utils/textRangeCollection';
+import { TextRange } from '../utils/text';
+import { TextRangeCollection } from '../utils/text';
 import { Scope } from './scope';
 import { SymbolTable } from './symbol';
 

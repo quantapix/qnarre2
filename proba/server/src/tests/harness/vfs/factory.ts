@@ -6,13 +6,13 @@
  * Provides a factory to create virtual file system backed by a real file system with some path remapped
  */
 
-import * as pathConsts from '../../../utils/pathConsts';
+import * as pathConsts from '../../../utils/strings';
 import {
   combinePaths,
   getDirectoryPath,
   normalizeSlashes,
   resolvePaths,
-} from '../../../utils/pathUtils';
+} from '../../../utils/files';
 import { GlobalMetadataOptionNames } from '../fourslash/fourSlashTypes';
 import { TestHost } from '../host';
 import { bufferFrom } from '../utils';

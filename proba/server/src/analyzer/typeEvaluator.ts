@@ -16,8 +16,8 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 
-import { Commands } from '../commands';
-import { throwIfCancellationRequested } from '../utils/cancellationUtils';
+import { Commands } from '../pyCommands';
+import { throwIfCancellationRequested } from '../utils/cancel';
 import { DiagnosticLevel } from '../utils/options';
 import { assert, fail } from '../utils/misc';
 import {
@@ -27,10 +27,10 @@ import {
 } from '../utils/diagnostic';
 import { DiagnosticRule } from '../utils/diagnostic';
 import { convertOffsetsToRange } from '../utils/positionUtils';
-import { PythonVersion } from '../utils/pythonVersion';
-import { getEmptyRange } from '../utils/textRange';
-import { TextRange } from '../utils/textRange';
-import { TextRangeCollection } from '../utils/textRangeCollection';
+import { PythonVersion } from '../utils/version';
+import { getEmptyRange } from '../utils/text';
+import { TextRange } from '../utils/text';
+import { TextRangeCollection } from '../utils/text';
 import {
   ArgumentCategory,
   AssignmentNode,

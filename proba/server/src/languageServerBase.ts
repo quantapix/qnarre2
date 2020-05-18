@@ -36,7 +36,7 @@ import { BackgroundAnalysisBase } from './backgroundAnalysisBase';
 import { getNestedProperty } from './utils/collection';
 import { ConfigOptions } from './utils/options';
 import { QConsole } from './utils/misc';
-import { createDeferred, Deferred } from './utils/deferred';
+import { createDeferred, Deferred } from './utils/lazy';
 import { Diagnostic as AnalyzerDiagnostic, DiagnosticCategory } from './utils/diagnostic';
 import { LanguageServiceExtension } from './utils/extensibility';
 import {
@@ -45,18 +45,10 @@ import {
   FileWatcher,
   FileWatcherEventHandler,
   FileWatcherEventType,
-} from './utils/fileSystem';
-import { containsPath, pathToUri, uriToPath } from './utils/pathUtils';
+} from './utils/files';
+import { containsPath, pathToUri, uriToPath } from './utils/files';
 import { AnalyzerServiceExecutor } from './languageService/analyzerServiceExecutor';
 import { WorkspaceMap } from './langServer';
-
-declare interface Promise<T> {
-  ignoreErrors(): void;
-}
-
-Promise.prototype.ignoreErrors = function <T>(this: Promise<T>) {
-  this.catch(() => {});
-};
 
 export interface WindowInterface {
   showErrorMessage(message: string): void;

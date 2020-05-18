@@ -14,7 +14,7 @@ import {
   isRootedDiskPath,
   normalizePath,
   normalizeSlashes,
-} from '../../../utils/pathUtils';
+} from '../../../utils/files';
 import { libFolder } from '../vfs/factory';
 import {
   fileMetadataNames,

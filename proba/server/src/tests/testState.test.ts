@@ -13,8 +13,8 @@ import {
   comparePathsCaseSensitive,
   getFileName,
   normalizeSlashes,
-} from '../utils/pathUtils';
-import { compareStringsCaseSensitive } from '../utils/stringUtils';
+} from '../utils/files';
+import { compareStringsCaseSensitive } from '../utils/strings';
 import { parseTestData } from './harness/fourslash/fourSlashParser';
 import { Range } from './harness/fourslash/fourSlashTypes';
 import { runFourSlashTestContent } from './harness/fourslash/runner';
