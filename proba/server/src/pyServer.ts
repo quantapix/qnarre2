@@ -245,13 +245,13 @@ export class PyServer extends LangServer {
       return cs;
     });
 
-    this._conn.onCompletionResolve(async (ps, token) => {
-      const d = ps.data as CompletionItemData;
+    this._conn.onCompletionResolve(async (i, token) => {
+      const d = i.data as CompletionItemData;
       if (d && d.filePath) {
         const ws = await this.workspaceFor(d.workspacePath);
-        ws.service.resolveCompletionItem(d.filePath, ps, token);
+        ws.service.resolveCompletionItem(d.filePath, i, token);
       }
-      return ps;
+      return i;
     });
 
     this._conn.onRenameRequest(async (ps, token) => {

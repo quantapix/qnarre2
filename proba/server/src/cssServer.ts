@@ -54,279 +54,281 @@ export class CssServer extends LangServer {
     super(name, rootDir);
   }
 
-  protected initialize(ps: InitializeParams) {
-    super.initialize(ps);
-    workspaceFolders = ps.workspaceFolders ?? [];
-    if (!Array.isArray(workspaceFolders)) {
-      workspaceFolders = [];
-      if (ps.rootPath) {
-        workspaceFolders.push({ name: '', uri: URI.file(ps.rootPath).toString() });
+  protected _prepConn(cmds: string[]) {
+    this._conn.onInitialize((ps) => {
+      super.initialize(ps);
+      workspaceFolders = ps.workspaceFolders ?? [];
+      if (!Array.isArray(workspaceFolders)) {
+        workspaceFolders = [];
+        if (ps.rootPath) {
+          workspaceFolders.push({ name: '', uri: URI.file(ps.rootPath).toString() });
+        }
       }
-    }
-    const paths: string[] = ps.initializationOptions.dataPaths || [];
-    const customDataProviders = getDataProviders(paths);
+      const paths: string[] = ps.initializationOptions.dataPaths || [];
+      const customDataProviders = getDataProviders(paths);
 
-    languageServices.css = getCSSLanguageService({
-      customDataProviders,
-      fileSystemProvider,
-      clientCapabilities: ps.capabilities,
+      languageServices.css = getCSSLanguageService({
+        customDataProviders,
+        fileSystemProvider,
+        clientCapabilities: ps.capabilities,
+      });
+      languageServices.scss = getSCSSLanguageService({
+        customDataProviders,
+        fileSystemProvider,
+        clientCapabilities: ps.capabilities,
+      });
+      languageServices.less = getLESSLanguageService({
+        customDataProviders,
+        fileSystemProvider,
+        clientCapabilities: ps.capabilities,
+      });
+
+      const capabilities: ServerCapabilities = {
+        textDocumentSync: TextDocumentSyncKind.Incremental,
+        completionProvider: this._hasSnippets
+          ? { resolveProvider: false, triggerCharacters: ['/', '-'] }
+          : undefined,
+        hoverProvider: true,
+        documentSymbolProvider: true,
+        referencesProvider: true,
+        definitionProvider: true,
+        documentHighlightProvider: true,
+        documentLinkProvider: { resolveProvider: false },
+        codeActionProvider: true,
+        renameProvider: true,
+        colorProvider: {},
+        foldingRangeProvider: true,
+        selectionRangeProvider: true,
+      };
+      return { capabilities };
     });
-    languageServices.scss = getSCSSLanguageService({
-      customDataProviders,
-      fileSystemProvider,
-      clientCapabilities: ps.capabilities,
-    });
-    languageServices.less = getLESSLanguageService({
-      customDataProviders,
-      fileSystemProvider,
-      clientCapabilities: ps.capabilities,
+
+    this._conn.onDidChangeConfiguration((ps) => {
+      updateConfiguration(ps.settings as Settings);
     });
 
-    const capabilities: ServerCapabilities = {
-      textDocumentSync: TextDocumentSyncKind.Incremental,
-      completionProvider: this._hasSnippets
-        ? { resolveProvider: false, triggerCharacters: ['/', '-'] }
-        : undefined,
-      hoverProvider: true,
-      documentSymbolProvider: true,
-      referencesProvider: true,
-      definitionProvider: true,
-      documentHighlightProvider: true,
-      documentLinkProvider: { resolveProvider: false },
-      codeActionProvider: true,
-      renameProvider: true,
-      colorProvider: {},
-      foldingRangeProvider: true,
-      selectionRangeProvider: true,
-    };
-    return { capabilities };
-  }
+    this._conn.onCompletion((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (!d) return null;
+          const cssLS = getLanguageService(d);
+          const cl: CompletionList = {
+            isIncomplete: false,
+            items: [],
+          };
+          cssLS.setCompletionParticipants([
+            getPathCompletionParticipant(d, workspaceFolders, cl),
+          ]);
+          const r = cssLS.doComplete(d, ps.position, stylesheets.get(d));
+          return {
+            isIncomplete: cl.isIncomplete,
+            items: [...cl.items, ...r.items],
+          };
+        },
+        null,
+        `Error while computing completions for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected didChangeConfiguration(ps: DidChangeConfigurationParams) {
-    updateConfiguration(ps.settings as Settings);
-  }
+    this._conn.onHover((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).doHover(d, ps.position, s);
+          }
+          return null;
+        },
+        null,
+        `Error while computing hover for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected completion(ps: CompletionParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (!d) return null;
-        const cssLS = getLanguageService(d);
-        const cl: CompletionList = {
-          isIncomplete: false,
-          items: [],
-        };
-        cssLS.setCompletionParticipants([
-          getPathCompletionParticipant(d, workspaceFolders, cl),
-        ]);
-        const r = cssLS.doComplete(d, ps.position, stylesheets.get(d));
-        return {
-          isIncomplete: cl.isIncomplete,
-          items: [...cl.items, ...r.items],
-        };
-      },
-      null,
-      `Error while computing completions for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onDocumentSymbol((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).findDocumentSymbols(d, s);
+          }
+          return [];
+        },
+        [],
+        `Error while computing document symbols for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected hover(ps: HoverParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).doHover(d, ps.position, s);
-        }
-        return null;
-      },
-      null,
-      `Error while computing hover for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onDefinition((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).findDefinition(d, ps.position, s);
+          }
+          return null;
+        },
+        null,
+        `Error while computing definitions for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected documentSymbol(ps: DocumentSymbolParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).findDocumentSymbols(d, s);
-        }
-        return [];
-      },
-      [],
-      `Error while computing document symbols for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onDocumentHighlight((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).findDocumentHighlights(d, ps.position, s);
+          }
+          return [];
+        },
+        [],
+        `Error while computing document highlights for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected definition(ps: DefinitionParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).findDefinition(d, ps.position, s);
-        }
-        return null;
-      },
-      null,
-      `Error while computing definitions for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onDocumentLinks((ps, token) => {
+      return runSafeAsync(
+        async () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const c = getDocumentContext(d.uri, workspaceFolders);
+            const s = stylesheets.get(d);
+            return await getLanguageService(d).findDocumentLinks2(d, s, c);
+          }
+          return [];
+        },
+        [],
+        `Error while computing document links for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected documentHighlight(ps: DocumentHighlightParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).findDocumentHighlights(d, ps.position, s);
-        }
-        return [];
-      },
-      [],
-      `Error while computing document highlights for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onReferences((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).findReferences(d, ps.position, s);
+          }
+          return [];
+        },
+        [],
+        `Error while computing references for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected async documentLinks(ps: DocumentLinkParams, token: CancellationToken) {
-    return runSafeAsync(
-      async () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const c = getDocumentContext(d.uri, workspaceFolders);
-          const s = stylesheets.get(d);
-          return await getLanguageService(d).findDocumentLinks2(d, s, c);
-        }
-        return [];
-      },
-      [],
-      `Error while computing document links for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onCodeAction((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).doCodeActions(d, ps.range, ps.context, s);
+          }
+          return [];
+        },
+        [],
+        `Error while computing code actions for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected references(ps: ReferenceParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).findReferences(d, ps.position, s);
-        }
-        return [];
-      },
-      [],
-      `Error while computing references for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onDocumentColor((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).findDocumentColors(d, s);
+          }
+          return [];
+        },
+        [],
+        `Error while computing document colors for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected codeAction(ps: CodeActionParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).doCodeActions(d, ps.range, ps.context, s);
-        }
-        return [];
-      },
-      [],
-      `Error while computing code actions for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onColorPresentation((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).getColorPresentations(d, s, ps.color, ps.range);
+          }
+          return [];
+        },
+        [],
+        `Error while computing color presentations for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected documentColor(ps: DocumentColorParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).findDocumentColors(d, s);
-        }
-        return [];
-      },
-      [],
-      `Error while computing document colors for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onRenameRequest((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).doRename(d, ps.position, ps.newName, s);
+          }
+          return null;
+        },
+        null,
+        `Error while computing renames for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected colorPresentation(ps: ColorPresentationParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).getColorPresentations(d, s, ps.color, ps.range);
-        }
-        return [];
-      },
-      [],
-      `Error while computing color presentations for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onFoldingRanges((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            return getLanguageService(d).getFoldingRanges(d, {
+              rangeLimit: this._hasFoldLimit,
+            });
+          }
+          return null;
+        },
+        null,
+        `Error while computing folding ranges for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected renameRequest(ps: RenameParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).doRename(d, ps.position, ps.newName, s);
-        }
-        return null;
-      },
-      null,
-      `Error while computing renames for ${ps.textDocument.uri}`,
-      token
-    );
-  }
+    this._conn.onSelectionRanges((ps, token) => {
+      return runSafe(
+        () => {
+          const d = docs.get(ps.textDocument.uri);
+          if (d) {
+            const s = stylesheets.get(d);
+            return getLanguageService(d).getSelectionRanges(d, ps.positions, s);
+          }
+          return [];
+        },
+        [],
+        `Error while computing selection ranges for ${ps.textDocument.uri}`,
+        token
+      );
+    });
 
-  protected foldingRanges(ps: FoldingRangeParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          return getLanguageService(d).getFoldingRanges(d, {
-            rangeLimit: this._hasFoldLimit,
-          });
-        }
-        return null;
-      },
-      null,
-      `Error while computing folding ranges for ${ps.textDocument.uri}`,
-      token
-    );
-  }
-
-  protected selectionRanges(ps: SelectionRangeParams, token: CancellationToken) {
-    return runSafe(
-      () => {
-        const d = docs.get(ps.textDocument.uri);
-        if (d) {
-          const s = stylesheets.get(d);
-          return getLanguageService(d).getSelectionRanges(d, ps.positions, s);
-        }
-        return [];
-      },
-      [],
-      `Error while computing selection ranges for ${ps.textDocument.uri}`,
-      token
-    );
-  }
-
-  protected shutdown() {
-    stylesheets.dispose();
+    this._conn.onShutdown(() => {
+      stylesheets.dispose();
+    });
   }
 }
 
