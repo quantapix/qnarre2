@@ -17,8 +17,8 @@ import { ImportResolverFactory } from '../../../analyzer/importResolver';
 import { AnalyzerService } from '../../../analyzer/service';
 import { BackgroundAnalysisBase } from '../../../backgroundAnalysisBase';
 import { CommandController } from '../../../commands/commandController';
-import { ConsoleInterface } from '../../../common/console';
-import * as debug from '../../../common/debug';
+import { QConsole } from '../../../utils/misc';
+import * as debug from '../../../utils/misc';
 import { FileSystem } from '../../../common/fileSystem';
 import { Range } from '../../../common/textRange';
 import {
@@ -60,7 +60,7 @@ export class TestLanguageService implements LanguageServerInterface {
 
   constructor(
     workspace: WorkspaceServiceInstance,
-    readonly console: ConsoleInterface,
+    readonly console: QConsole,
     readonly fs: FileSystem
   ) {
     this._workspace = workspace;

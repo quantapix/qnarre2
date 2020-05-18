@@ -8,7 +8,7 @@
  * with a specified set of options.
  */
 
-import { CommandLineOptions } from '../common/commandLineOptions';
+import { CommandLineOptions } from '../utils/options';
 import { combinePaths, normalizePath } from '../common/pathUtils';
 import { ServerSettings, WorkspaceServiceInstance } from '../languageServerBase';
 

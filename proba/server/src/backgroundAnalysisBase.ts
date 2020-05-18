@@ -23,9 +23,9 @@ import {
   setCancellationFolderName,
   throwIfCancellationRequested,
 } from './common/cancellationUtils';
-import { ConfigOptions } from './common/configOptions';
-import { ConsoleInterface } from './common/console';
-import * as debug from './common/debug';
+import { ConfigOptions } from './utils/options';
+import { QConsole } from './utils/misc';
+import * as debug from './utils/misc';
 import { Diagnostic } from './common/diagnostic';
 import { FileDiagnostics } from './common/diagnosticSink';
 import { LanguageServiceExtension } from './common/extensibility';
@@ -35,14 +35,14 @@ import { Range } from './common/textRange';
 
 export class BackgroundAnalysisBase {
   private _worker: Worker;
-  private _console: ConsoleInterface;
+  private _console: QConsole;
   private _onAnalysisCompletion: AnalysisCompleteCallback = nullCallback;
 
   protected constructor() {
     // Don't allow instantiation of this type directly.
   }
 
-  protected setup(worker: Worker, console: ConsoleInterface) {
+  protected setup(worker: Worker, console: QConsole) {
     this._worker = worker;
     this._console = console;
 

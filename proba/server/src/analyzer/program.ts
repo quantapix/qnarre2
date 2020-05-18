@@ -9,38 +9,44 @@
  */
 
 import {
-    CancellationToken,
-    CompletionItem,
-    CompletionList,
-    DocumentSymbol,
-    SymbolInformation,
+  CancellationToken,
+  CompletionItem,
+  CompletionList,
+  DocumentSymbol,
+  SymbolInformation,
 } from 'vscode-languageserver';
 
-import { OperationCanceledException, throwIfCancellationRequested } from '../common/cancellationUtils';
-import { ConfigOptions } from '../common/configOptions';
-import { ConsoleInterface, StandardConsole } from '../common/console';
-import { isDebugMode } from '../common/core';
-import { assert } from '../common/debug';
+import {
+  OperationCanceledException,
+  throwIfCancellationRequested,
+} from '../common/cancellationUtils';
+import { ConfigOptions } from '../utils/options';
+import { QConsole, StdConsole } from '../utils/misc';
+import { isDebugMode } from '../utils/misc';
+import { assert } from '../utils/misc';
 import { Diagnostic } from '../common/diagnostic';
 import { FileDiagnostics } from '../common/diagnosticSink';
 import { FileEditAction, TextEditAction } from '../common/editAction';
 import { LanguageServiceExtension } from '../common/extensibility';
 import {
-    combinePaths,
-    getDirectoryPath,
-    getRelativePath,
-    makeDirectories,
-    normalizePath,
-    stripFileExtension,
+  combinePaths,
+  getDirectoryPath,
+  getRelativePath,
+  makeDirectories,
+  normalizePath,
+  stripFileExtension,
 } from '../common/pathUtils';
-import { convertPositionToOffset, convertRangeToTextRange } from '../common/positionUtils';
-import { DocumentRange, doRangesOverlap, Position, Range } from '../common/textRange';
-import { Duration, timingStats } from '../common/timing';
 import {
-    AutoImporter,
-    AutoImportResult,
-    buildModuleSymbolsMap,
-    ModuleSymbolMap,
+  convertPositionToOffset,
+  convertRangeToTextRange,
+} from '../common/positionUtils';
+import { DocumentRange, doRangesOverlap, Position, Range } from '../common/textRange';
+import { Duration, timings } from '../utils/misc';
+import {
+  AutoImporter,
+  AutoImportResult,
+  buildModuleSymbolsMap,
+  ModuleSymbolMap,
 } from '../languageService/autoImporter';
 import { HoverResults } from '../languageService/hoverProvider';
 import { SignatureHelpResults } from '../languageService/signatureHelpProvider';
@@ -59,33 +65,33 @@ import { TypeStubWriter } from './typeStubWriter';
 const _maxImportDepth = 256;
 
 export interface SourceFileInfo {
-    sourceFile: SourceFile;
-    isTracked: boolean;
-    isOpenByClient: boolean;
-    isTypeshedFile: boolean;
-    isThirdPartyImport: boolean;
-    diagnosticsVersion?: number;
-    imports: SourceFileInfo[];
-    builtinsImport?: SourceFileInfo;
-    importedBy: SourceFileInfo[];
+  sourceFile: SourceFile;
+  isTracked: boolean;
+  isOpenByClient: boolean;
+  isTypeshedFile: boolean;
+  isThirdPartyImport: boolean;
+  diagnosticsVersion?: number;
+  imports: SourceFileInfo[];
+  builtinsImport?: SourceFileInfo;
+  importedBy: SourceFileInfo[];
 }
 
 export interface MaxAnalysisTime {
-    // Maximum number of ms to analyze when there are open files
-    // that require analysis. This number is usually kept relatively
-    // small to guarantee responsiveness during typing.
-    openFilesTimeInMs: number;
+  // Maximum number of ms to analyze when there are open files
+  // that require analysis. This number is usually kept relatively
+  // small to guarantee responsiveness during typing.
+  openFilesTimeInMs: number;
 
-    // Maximum number of ms to analyze when all open files and their
-    // dependencies have been analyzed. This number can be higher
-    // to reduce overall analysis time but needs to be short enough
-    // to remain responsive if an open file is modified.
-    noOpenFilesTimeInMs: number;
+  // Maximum number of ms to analyze when all open files and their
+  // dependencies have been analyzed. This number can be higher
+  // to reduce overall analysis time but needs to be short enough
+  // to remain responsive if an open file is modified.
+  noOpenFilesTimeInMs: number;
 }
 
 interface UpdateImportInfo {
-    isTypeshedFile: boolean;
-    isThirdPartyImport: boolean;
+  isTypeshedFile: boolean;
+  isThirdPartyImport: boolean;
 }
 
 // Container for all of the files that are being analyzed. Files
@@ -94,1352 +100,1467 @@ interface UpdateImportInfo {
 //  Referenced - part of the transitive closure
 //  Opened - temporarily opened in the editor
 export class Program {
-    private _console: ConsoleInterface;
-    private _sourceFileList: SourceFileInfo[] = [];
-    private _sourceFileMap = new Map<string, SourceFileInfo>();
-    private _allowedThirdPartyImports: string[] | undefined;
-    private _evaluator: TypeEvaluator;
-    private _configOptions: ConfigOptions;
-    private _importResolver: ImportResolver;
+  private _console: QConsole;
+  private _sourceFileList: SourceFileInfo[] = [];
+  private _sourceFileMap = new Map<string, SourceFileInfo>();
+  private _allowedThirdPartyImports: string[] | undefined;
+  private _evaluator: TypeEvaluator;
+  private _configOptions: ConfigOptions;
+  private _importResolver: ImportResolver;
 
-    constructor(
-        initialImportResolver: ImportResolver,
-        initialConfigOptions: ConfigOptions,
-        console?: ConsoleInterface,
-        private _extension?: LanguageServiceExtension
-    ) {
-        this._console = console || new StandardConsole();
-        this._evaluator = createTypeEvaluator(this._lookUpImport);
-        this._importResolver = initialImportResolver;
-        this._configOptions = initialConfigOptions;
-    }
+  constructor(
+    initialImportResolver: ImportResolver,
+    initialConfigOptions: ConfigOptions,
+    console?: QConsole,
+    private _extension?: LanguageServiceExtension
+  ) {
+    this._console = console || new StdConsole();
+    this._evaluator = createTypeEvaluator(this._lookUpImport);
+    this._importResolver = initialImportResolver;
+    this._configOptions = initialConfigOptions;
+  }
 
-    setConfigOptions(configOptions: ConfigOptions) {
-        this._configOptions = configOptions;
-    }
+  setConfigOptions(configOptions: ConfigOptions) {
+    this._configOptions = configOptions;
+  }
 
-    setImportResolver(importResolver: ImportResolver) {
-        this._importResolver = importResolver;
-    }
+  setImportResolver(importResolver: ImportResolver) {
+    this._importResolver = importResolver;
+  }
 
-    // Sets the list of tracked files that make up the program.
-    setTrackedFiles(filePaths: string[]): FileDiagnostics[] {
-        if (this._sourceFileList.length > 0) {
-            // We need to determine which files to remove from the existing file list.
-            const newFileMap = new Map<string, string>();
-            filePaths.forEach((path) => {
-                newFileMap.set(path, path);
-            });
+  // Sets the list of tracked files that make up the program.
+  setTrackedFiles(filePaths: string[]): FileDiagnostics[] {
+    if (this._sourceFileList.length > 0) {
+      // We need to determine which files to remove from the existing file list.
+      const newFileMap = new Map<string, string>();
+      filePaths.forEach((path) => {
+        newFileMap.set(path, path);
+      });
 
-            // Files that are not in the tracked file list are
-            // marked as no longer tracked.
-            this._sourceFileList.forEach((oldFile) => {
-                const filePath = oldFile.sourceFile.getFilePath();
-                if (!newFileMap.has(filePath)) {
-                    oldFile.isTracked = false;
-                }
-            });
+      // Files that are not in the tracked file list are
+      // marked as no longer tracked.
+      this._sourceFileList.forEach((oldFile) => {
+        const filePath = oldFile.sourceFile.getFilePath();
+        if (!newFileMap.has(filePath)) {
+          oldFile.isTracked = false;
         }
-
-        // Add the new files. Only the new items will be added.
-        this._addTrackedFiles(filePaths);
-
-        return this._removeUnneededFiles();
+      });
     }
 
-    // By default, no third-party imports are allowed. This enables
-    // third-party imports for a specified import and its children.
-    // For example, if importNames is ['tensorflow'], then third-party
-    // (absolute) imports are allowed for 'import tensorflow',
-    // 'import tensorflow.optimizers', etc.
-    setAllowedThirdPartyImports(importNames: string[]) {
-        this._allowedThirdPartyImports = importNames;
+    // Add the new files. Only the new items will be added.
+    this._addTrackedFiles(filePaths);
+
+    return this._removeUnneededFiles();
+  }
+
+  // By default, no third-party imports are allowed. This enables
+  // third-party imports for a specified import and its children.
+  // For example, if importNames is ['tensorflow'], then third-party
+  // (absolute) imports are allowed for 'import tensorflow',
+  // 'import tensorflow.optimizers', etc.
+  setAllowedThirdPartyImports(importNames: string[]) {
+    this._allowedThirdPartyImports = importNames;
+  }
+
+  addTrackedFiles(filePaths: string[]) {
+    filePaths.forEach((filePath) => {
+      this.addTrackedFile(filePath);
+    });
+  }
+
+  addTrackedFile(filePath: string): SourceFile {
+    let sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (sourceFileInfo) {
+      sourceFileInfo.isTracked = true;
+      return sourceFileInfo.sourceFile;
     }
 
-    addTrackedFiles(filePaths: string[]) {
-        filePaths.forEach((filePath) => {
-            this.addTrackedFile(filePath);
-        });
-    }
-
-    addTrackedFile(filePath: string): SourceFile {
-        let sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (sourceFileInfo) {
-            sourceFileInfo.isTracked = true;
-            return sourceFileInfo.sourceFile;
-        }
-
-        const sourceFile = new SourceFile(this._fs, filePath, false, false, this._console);
-        sourceFileInfo = {
-            sourceFile,
-            isTracked: true,
-            isOpenByClient: false,
-            isTypeshedFile: false,
-            isThirdPartyImport: false,
-            diagnosticsVersion: sourceFile.getDiagnosticVersion(),
-            imports: [],
-            importedBy: [],
-        };
-        this._addToSourceFileListAndMap(sourceFileInfo);
-        return sourceFile;
-    }
-
-    setFileOpened(filePath: string, version: number | null, contents: string) {
-        let sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            const sourceFile = new SourceFile(this._fs, filePath, false, false, this._console);
-            sourceFileInfo = {
-                sourceFile,
-                isTracked: false,
-                isOpenByClient: true,
-                isTypeshedFile: false,
-                isThirdPartyImport: false,
-                diagnosticsVersion: sourceFile.getDiagnosticVersion(),
-                imports: [],
-                importedBy: [],
-            };
-            this._addToSourceFileListAndMap(sourceFileInfo);
-        } else {
-            sourceFileInfo.isOpenByClient = true;
-
-            if (this._configOptions.checkOnlyOpenFiles) {
-                // Reset the diagnostic version so we force an update
-                // to the diagnostics, which can change based on whether
-                // the file is open.
-                sourceFileInfo.diagnosticsVersion = undefined;
-            }
-        }
-
-        sourceFileInfo.sourceFile.setClientVersion(version, contents);
-    }
-
-    setFileClosed(filePath: string): FileDiagnostics[] {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (sourceFileInfo) {
-            sourceFileInfo.isOpenByClient = false;
-            sourceFileInfo.sourceFile.setClientVersion(null, '');
-
-            if (this._configOptions.checkOnlyOpenFiles) {
-                // Set the diagnostic version to an invalid value so we force an
-                // update to the diagnostics, which can change based on whether
-                // the file is open.
-                sourceFileInfo.diagnosticsVersion = -1;
-            }
-        }
-
-        return this._removeUnneededFiles();
-    }
-
-    markAllFilesDirty(evenIfContentsAreSame: boolean) {
-        const markDirtyMap = new Map<string, boolean>();
-
-        this._sourceFileList.forEach((sourceFileInfo) => {
-            if (evenIfContentsAreSame) {
-                sourceFileInfo.sourceFile.markDirty();
-            } else if (sourceFileInfo.sourceFile.didContentsChangeOnDisk()) {
-                sourceFileInfo.sourceFile.markDirty();
-
-                // Mark any files that depend on this file as dirty
-                // also. This will retrigger analysis of these other files.
-                this._markFileDirtyRecursive(sourceFileInfo, markDirtyMap);
-            }
-        });
-
-        if (markDirtyMap.size > 0) {
-            this._createNewEvaluator();
-        }
-    }
-
-    markFilesDirty(filePaths: string[], evenIfContentsAreSame: boolean) {
-        const markDirtyMap = new Map<string, boolean>();
-        filePaths.forEach((filePath) => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (sourceFileInfo) {
-                // If !evenIfContentsAreSame, see if the on-disk contents have
-                // changed. If the file is open, the on-disk contents don't matter
-                // because we'll receive updates directly from the client.
-                if (
-                    evenIfContentsAreSame ||
-                    (!sourceFileInfo.isOpenByClient && !sourceFileInfo.sourceFile.didContentsChangeOnDisk())
-                ) {
-                    sourceFileInfo.sourceFile.markDirty();
-
-                    // Mark any files that depend on this file as dirty
-                    // also. This will retrigger analysis of these other files.
-                    this._markFileDirtyRecursive(sourceFileInfo, markDirtyMap);
-                }
-            }
-        });
-
-        if (markDirtyMap.size > 0) {
-            this._createNewEvaluator();
-        }
-    }
-
-    getFileCount() {
-        return this._sourceFileList.length;
-    }
-
-    getFilesToAnalyzeCount() {
-        let sourceFileCount = 0;
-
-        this._sourceFileList.forEach((fileInfo) => {
-            if (
-                fileInfo.sourceFile.isParseRequired() ||
-                fileInfo.sourceFile.isBindingRequired() ||
-                fileInfo.sourceFile.isCheckingRequired()
-            ) {
-                if ((!this._configOptions.checkOnlyOpenFiles && fileInfo.isTracked) || fileInfo.isOpenByClient) {
-                    sourceFileCount++;
-                }
-            }
-        });
-
-        return sourceFileCount;
-    }
-
-    isCheckingOnlyOpenFiles() {
-        return this._configOptions.checkOnlyOpenFiles;
-    }
-
-    getSourceFile(filePath: string): SourceFile | undefined {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            return undefined;
-        }
-
-        return sourceFileInfo.sourceFile;
-    }
-
-    getBoundSourceFile(filePath: string): SourceFile | undefined {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            return undefined;
-        }
-
-        this._bindFile(sourceFileInfo);
-        return this.getSourceFile(filePath);
-    }
-
-    // Performs parsing and analysis of any source files in the program
-    // that require it. If a limit time is specified, the operation
-    // is interrupted when the time expires. The return value indicates
-    // whether the method needs to be called again to complete the
-    // analysis. In interactive mode, the timeout is always limited
-    // to the smaller value to maintain responsiveness.
-    analyze(maxTime?: MaxAnalysisTime, token: CancellationToken = CancellationToken.None): boolean {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const elapsedTime = new Duration();
-
-            const openFiles = this._sourceFileList.filter(
-                (sf) => sf.isOpenByClient && sf.sourceFile.isCheckingRequired()
-            );
-
-            if (openFiles.length > 0) {
-                const effectiveMaxTime = maxTime ? maxTime.openFilesTimeInMs : Number.MAX_VALUE;
-
-                // Check the open files.
-                for (const sourceFileInfo of openFiles) {
-                    if (this._checkTypes(sourceFileInfo)) {
-                        if (elapsedTime.getDurationInMilliseconds() > effectiveMaxTime) {
-                            return true;
-                        }
-                    }
-                }
-
-                // If the caller specified a maxTime, return at this point
-                // since we've finalized all open files. We want to get
-                // the results to the user as quickly as possible.
-                if (maxTime !== undefined) {
-                    return true;
-                }
-            }
-
-            if (!this._configOptions.checkOnlyOpenFiles) {
-                // Do type analysis of remaining files.
-                const allFiles = this._sourceFileList;
-                const effectiveMaxTime = maxTime ? maxTime.noOpenFilesTimeInMs : Number.MAX_VALUE;
-
-                // Now do type parsing and analysis of the remaining.
-                for (const sourceFileInfo of allFiles) {
-                    if (this._checkTypes(sourceFileInfo)) {
-                        if (elapsedTime.getDurationInMilliseconds() > effectiveMaxTime) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        });
-    }
-
-    // Prints import dependency information for each of the files in
-    // the program, skipping any typeshed files.
-    printDependencies(projectRootDir: string, verbose: boolean) {
-        const sortedFiles = this._sourceFileList
-            .filter((s) => !s.isTypeshedFile)
-            .sort((a, b) => {
-                return a.sourceFile.getFilePath() < b.sourceFile.getFilePath() ? 1 : -1;
-            });
-
-        const zeroImportFiles: SourceFile[] = [];
-
-        sortedFiles.forEach((sfInfo) => {
-            this._console.log('');
-            let filePath = sfInfo.sourceFile.getFilePath();
-            const relPath = getRelativePath(filePath, projectRootDir);
-            if (relPath) {
-                filePath = relPath;
-            }
-
-            this._console.log(`${filePath}`);
-
-            this._console.log(
-                ` Imports     ${sfInfo.imports.length} ` + `file${sfInfo.imports.length === 1 ? '' : 's'}`
-            );
-            if (verbose) {
-                sfInfo.imports.forEach((importInfo) => {
-                    this._console.log(`    ${importInfo.sourceFile.getFilePath()}`);
-                });
-            }
-
-            this._console.log(
-                ` Imported by ${sfInfo.importedBy.length} ` + `file${sfInfo.importedBy.length === 1 ? '' : 's'}`
-            );
-            if (verbose) {
-                sfInfo.importedBy.forEach((importInfo) => {
-                    this._console.log(`    ${importInfo.sourceFile.getFilePath()}`);
-                });
-            }
-
-            if (sfInfo.importedBy.length === 0) {
-                zeroImportFiles.push(sfInfo.sourceFile);
-            }
-        });
-
-        if (zeroImportFiles.length > 0) {
-            this._console.log('');
-            this._console.log(
-                `${zeroImportFiles.length} file${zeroImportFiles.length === 1 ? '' : 's'}` + ` not explicitly imported`
-            );
-            zeroImportFiles.forEach((importFile) => {
-                this._console.log(`    ${importFile.getFilePath()}`);
-            });
-        }
-    }
-
-    writeTypeStub(
-        targetImportPath: string,
-        targetIsSingleFile: boolean,
-        typingsPath: string,
-        token: CancellationToken
-    ) {
-        for (const sourceFileInfo of this._sourceFileList) {
-            throwIfCancellationRequested(token);
-
-            const filePath = sourceFileInfo.sourceFile.getFilePath();
-
-            // Generate type stubs only for the files within the target path,
-            // not any files that the target module happened to import.
-            const relativePath = getRelativePath(filePath, targetImportPath);
-            if (relativePath !== undefined) {
-                let typeStubPath = normalizePath(combinePaths(typingsPath, relativePath));
-
-                // If the target is a single file implementation, as opposed to
-                // a package in a directory, transform the name of the type stub
-                // to __init__.pyi because we're placing it in a directory.
-                if (targetIsSingleFile) {
-                    typeStubPath = combinePaths(getDirectoryPath(typeStubPath), '__init__.pyi');
-                } else {
-                    typeStubPath = stripFileExtension(typeStubPath) + '.pyi';
-                }
-
-                const typeStubDir = getDirectoryPath(typeStubPath);
-
-                try {
-                    makeDirectories(this._fs, typeStubDir, typingsPath);
-                } catch (e) {
-                    const errMsg = `Could not create directory for '${typeStubDir}'`;
-                    throw new Error(errMsg);
-                }
-
-                this._bindFile(sourceFileInfo);
-
-                this._runEvaluatorWithCancellationToken(token, () => {
-                    const writer = new TypeStubWriter(typeStubPath, sourceFileInfo.sourceFile, this._evaluator);
-                    writer.write();
-                });
-            }
-        }
-    }
-
-    private get _fs() {
-        return this._importResolver.fileSystem;
-    }
-
-    private _addTrackedFiles(filePaths: string[]) {
-        filePaths.forEach((filePath) => {
-            this._addTrackedFile(filePath);
-        });
-    }
-
-    private _addTrackedFile(filePath: string): SourceFile {
-        let sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (sourceFileInfo) {
-            sourceFileInfo.isTracked = true;
-            return sourceFileInfo.sourceFile;
-        }
-
-        const sourceFile = new SourceFile(this._fs, filePath, false, false, this._console);
-        sourceFileInfo = {
-            sourceFile,
-            isTracked: true,
-            isOpenByClient: false,
-            isTypeshedFile: false,
-            isThirdPartyImport: false,
-            diagnosticsVersion: sourceFile.getDiagnosticVersion(),
-            imports: [],
-            importedBy: [],
-        };
-        this._addToSourceFileListAndMap(sourceFileInfo);
-        return sourceFile;
-    }
-
-    private _createNewEvaluator() {
-        this._evaluator = createTypeEvaluator(this._lookUpImport);
-    }
-
-    private _parseFile(fileToParse: SourceFileInfo) {
-        if (!this._isFileNeeded(fileToParse) || !fileToParse.sourceFile.isParseRequired()) {
-            return;
-        }
-
-        if (fileToParse.sourceFile.parse(this._configOptions, this._importResolver)) {
-            this._updateSourceFileImports(fileToParse, this._configOptions);
-        }
-
-        if (fileToParse.sourceFile.isFileDeleted()) {
-            fileToParse.isTracked = false;
-
-            // Mark any files that depend on this file as dirty
-            // also. This will retrigger analysis of these other files.
-            const markDirtyMap = new Map<string, boolean>();
-            this._markFileDirtyRecursive(fileToParse, markDirtyMap);
-
-            // Invalidate the import resolver's cache as well.
-            this._importResolver.invalidateCache();
-        }
-    }
-
-    // Binds the specified file and all of its dependencies, recursively. If
-    // it runs out of time, it returns true. If it completes, it returns false.
-    private _bindFile(fileToAnalyze: SourceFileInfo): void {
-        if (!this._isFileNeeded(fileToAnalyze) || !fileToAnalyze.sourceFile.isBindingRequired()) {
-            return;
-        }
-
-        this._parseFile(fileToAnalyze);
-
-        // We need to parse and bind the builtins import first.
-        let builtinsScope: Scope | undefined;
-        if (fileToAnalyze.builtinsImport) {
-            this._bindFile(fileToAnalyze.builtinsImport);
-
-            // Get the builtins scope to pass to the binding pass.
-            const parseResults = fileToAnalyze.builtinsImport.sourceFile.getParseResults();
-            if (parseResults) {
-                builtinsScope = AnalyzerNodeInfo.getScope(parseResults.parseTree);
-                assert(builtinsScope !== undefined);
-            }
-        }
-
-        fileToAnalyze.sourceFile.bind(this._configOptions, this._lookUpImport, builtinsScope);
-    }
-
-    private _lookUpImport = (filePath: string): ImportLookupResult | undefined => {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            return undefined;
-        }
-
-        if (sourceFileInfo.sourceFile.isBindingRequired()) {
-            // Bind the file if it's not already bound. Don't count this time
-            // against the type checker.
-            timingStats.typeCheckerTime.subtractFromTime(() => {
-                this._bindFile(sourceFileInfo);
-            });
-        }
-
-        const symbolTable = sourceFileInfo.sourceFile.getModuleSymbolTable();
-        if (!symbolTable) {
-            return undefined;
-        }
-
-        const docString = sourceFileInfo.sourceFile.getModuleDocString();
-
-        return {
-            symbolTable,
-            docString,
-        };
+    const sourceFile = new SourceFile(this._fs, filePath, false, false, this._console);
+    sourceFileInfo = {
+      sourceFile,
+      isTracked: true,
+      isOpenByClient: false,
+      isTypeshedFile: false,
+      isThirdPartyImport: false,
+      diagnosticsVersion: sourceFile.getDiagnosticVersion(),
+      imports: [],
+      importedBy: [],
     };
+    this._addToSourceFileListAndMap(sourceFileInfo);
+    return sourceFile;
+  }
 
-    // Build a map of all modules within this program and the module-
-    // level scope that contains the symbol table for the module.
-    private _buildModuleSymbolsMap(sourceFileToExclude: SourceFileInfo, token: CancellationToken): ModuleSymbolMap {
-        return buildModuleSymbolsMap(
-            this._sourceFileList.filter((s) => s !== sourceFileToExclude).map((s) => s.sourceFile),
-            token
-        );
+  setFileOpened(filePath: string, version: number | null, contents: string) {
+    let sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      const sourceFile = new SourceFile(this._fs, filePath, false, false, this._console);
+      sourceFileInfo = {
+        sourceFile,
+        isTracked: false,
+        isOpenByClient: true,
+        isTypeshedFile: false,
+        isThirdPartyImport: false,
+        diagnosticsVersion: sourceFile.getDiagnosticVersion(),
+        imports: [],
+        importedBy: [],
+      };
+      this._addToSourceFileListAndMap(sourceFileInfo);
+    } else {
+      sourceFileInfo.isOpenByClient = true;
+
+      if (this._configOptions.checkOnlyOpenFiles) {
+        // Reset the diagnostic version so we force an update
+        // to the diagnostics, which can change based on whether
+        // the file is open.
+        sourceFileInfo.diagnosticsVersion = undefined;
+      }
     }
 
-    private _checkTypes(fileToCheck: SourceFileInfo) {
-        // If the file isn't needed because it was eliminated from the
-        // transitive closure or deleted, skip the file rather than wasting
-        // time on it.
-        if (!this._isFileNeeded(fileToCheck)) {
-            return false;
-        }
+    sourceFileInfo.sourceFile.setClientVersion(version, contents);
+  }
 
-        if (!fileToCheck.sourceFile.isCheckingRequired()) {
-            return false;
-        }
+  setFileClosed(filePath: string): FileDiagnostics[] {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (sourceFileInfo) {
+      sourceFileInfo.isOpenByClient = false;
+      sourceFileInfo.sourceFile.setClientVersion(null, '');
 
-        // Don't bother checking third-party imports or typeshed files unless they're open.
+      if (this._configOptions.checkOnlyOpenFiles) {
+        // Set the diagnostic version to an invalid value so we force an
+        // update to the diagnostics, which can change based on whether
+        // the file is open.
+        sourceFileInfo.diagnosticsVersion = -1;
+      }
+    }
+
+    return this._removeUnneededFiles();
+  }
+
+  markAllFilesDirty(evenIfContentsAreSame: boolean) {
+    const markDirtyMap = new Map<string, boolean>();
+
+    this._sourceFileList.forEach((sourceFileInfo) => {
+      if (evenIfContentsAreSame) {
+        sourceFileInfo.sourceFile.markDirty();
+      } else if (sourceFileInfo.sourceFile.didContentsChangeOnDisk()) {
+        sourceFileInfo.sourceFile.markDirty();
+
+        // Mark any files that depend on this file as dirty
+        // also. This will retrigger analysis of these other files.
+        this._markFileDirtyRecursive(sourceFileInfo, markDirtyMap);
+      }
+    });
+
+    if (markDirtyMap.size > 0) {
+      this._createNewEvaluator();
+    }
+  }
+
+  markFilesDirty(filePaths: string[], evenIfContentsAreSame: boolean) {
+    const markDirtyMap = new Map<string, boolean>();
+    filePaths.forEach((filePath) => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (sourceFileInfo) {
+        // If !evenIfContentsAreSame, see if the on-disk contents have
+        // changed. If the file is open, the on-disk contents don't matter
+        // because we'll receive updates directly from the client.
         if (
-            fileToCheck.isThirdPartyImport ||
-            (fileToCheck.isTypeshedFile && this._configOptions.diagnosticRuleSet.reportTypeshedErrors === 'none')
+          evenIfContentsAreSame ||
+          (!sourceFileInfo.isOpenByClient &&
+            !sourceFileInfo.sourceFile.didContentsChangeOnDisk())
         ) {
-            if (!fileToCheck.isOpenByClient) {
-                return false;
-            }
+          sourceFileInfo.sourceFile.markDirty();
+
+          // Mark any files that depend on this file as dirty
+          // also. This will retrigger analysis of these other files.
+          this._markFileDirtyRecursive(sourceFileInfo, markDirtyMap);
         }
+      }
+    });
 
-        if (this._configOptions.checkOnlyOpenFiles && !fileToCheck.isOpenByClient) {
-            return false;
+    if (markDirtyMap.size > 0) {
+      this._createNewEvaluator();
+    }
+  }
+
+  getFileCount() {
+    return this._sourceFileList.length;
+  }
+
+  getFilesToAnalyzeCount() {
+    let sourceFileCount = 0;
+
+    this._sourceFileList.forEach((fileInfo) => {
+      if (
+        fileInfo.sourceFile.isParseRequired() ||
+        fileInfo.sourceFile.isBindingRequired() ||
+        fileInfo.sourceFile.isCheckingRequired()
+      ) {
+        if (
+          (!this._configOptions.checkOnlyOpenFiles && fileInfo.isTracked) ||
+          fileInfo.isOpenByClient
+        ) {
+          sourceFileCount++;
         }
+      }
+    });
 
-        this._bindFile(fileToCheck);
+    return sourceFileCount;
+  }
 
-        // For very large programs, we may need to discard the evaluator and
-        // its cached types to avoid running out of heap space.
-        const typeCacheSize = this._evaluator.getTypeCacheSize();
+  isCheckingOnlyOpenFiles() {
+    return this._configOptions.checkOnlyOpenFiles;
+  }
 
-        // If the type cache size has exceeded a high-water mark, query the heap usage.
-        // Don't bother doing this until we hit this point because the heap usage may not
-        // drop immediately after we empty the cache due to garbage collection timing.
-        if (typeCacheSize > 750000) {
-            const heapSizeInMb = Math.round(process.memoryUsage().heapUsed / (1024 * 1024));
-
-            // Don't allow the heap to get close to the 2GB limit imposed by
-            // the OS when running Node in a 32-bit process.
-            if (heapSizeInMb > 1536) {
-                this._console.log(`Emptying type cache to avoid heap overflow. Heap size used: ${heapSizeInMb}MB`);
-                this._createNewEvaluator();
-            }
-        }
-
-        fileToCheck.sourceFile.check(this._evaluator);
-
-        // Detect import cycles that involve the file.
-        if (this._configOptions.diagnosticRuleSet.reportImportCycles !== 'none') {
-            // Don't detect import cycles when doing type stub generation. Some
-            // third-party modules are pretty convoluted.
-            if (!this._allowedThirdPartyImports) {
-                // We need to force all of the files to be parsed and build
-                // a closure map for the files.
-                const closureMap = new Map<string, SourceFileInfo>();
-                this._getImportsRecursive(fileToCheck, closureMap, 0);
-
-                closureMap.forEach((file) => {
-                    timingStats.cycleDetectionTime.timeOperation(() => {
-                        this._detectAndReportImportCycles(file);
-                    });
-                });
-            }
-        }
-
-        return true;
+  getSourceFile(filePath: string): SourceFile | undefined {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      return undefined;
     }
 
-    // Builds a map of files that includes the specified file and all of the files
-    // it imports (recursively) and ensures that all such files. If any of these files
-    // have already been checked (they and their recursive imports have completed the
-    // check phase), they are not included in the results.
-    private _getImportsRecursive(
-        file: SourceFileInfo,
-        closureMap: Map<string, SourceFileInfo>,
-        recursionCount: number
-    ) {
-        // If the file is already in the closure map, we found a cyclical
-        // dependency. Don't recur further.
-        const filePath = file.sourceFile.getFilePath();
-        if (closureMap.has(filePath)) {
-            return;
-        }
+    return sourceFileInfo.sourceFile;
+  }
 
-        // If the import chain is too long, emit an error. Otherwise we
-        // risk blowing the stack.
-        if (recursionCount > _maxImportDepth) {
-            file.sourceFile.setHitMaxImportDepth(_maxImportDepth);
-            return;
-        }
-
-        // Add the file to the closure map.
-        closureMap.set(filePath, file);
-
-        // Recursively add the file's imports.
-        for (const importedFileInfo of file.imports) {
-            this._getImportsRecursive(importedFileInfo, closureMap, recursionCount + 1);
-        }
+  getBoundSourceFile(filePath: string): SourceFile | undefined {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      return undefined;
     }
 
-    private _detectAndReportImportCycles(
-        sourceFileInfo: SourceFileInfo,
-        dependencyChain: SourceFileInfo[] = [],
-        dependencyMap = new Map<string, boolean>()
-    ): void {
-        // Don't bother checking for typestub files or third-party files.
-        if (sourceFileInfo.sourceFile.isStubFile() || sourceFileInfo.isThirdPartyImport) {
-            return;
+    this._bindFile(sourceFileInfo);
+    return this.getSourceFile(filePath);
+  }
+
+  // Performs parsing and analysis of any source files in the program
+  // that require it. If a limit time is specified, the operation
+  // is interrupted when the time expires. The return value indicates
+  // whether the method needs to be called again to complete the
+  // analysis. In interactive mode, the timeout is always limited
+  // to the smaller value to maintain responsiveness.
+  analyze(
+    maxTime?: MaxAnalysisTime,
+    token: CancellationToken = CancellationToken.None
+  ): boolean {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const elapsedTime = new Duration();
+
+      const openFiles = this._sourceFileList.filter(
+        (sf) => sf.isOpenByClient && sf.sourceFile.isCheckingRequired()
+      );
+
+      if (openFiles.length > 0) {
+        const effectiveMaxTime = maxTime ? maxTime.openFilesTimeInMs : Number.MAX_VALUE;
+
+        // Check the open files.
+        for (const sourceFileInfo of openFiles) {
+          if (this._checkTypes(sourceFileInfo)) {
+            if (elapsedTime.inMillis() > effectiveMaxTime) {
+              return true;
+            }
+          }
         }
 
-        const filePath = sourceFileInfo.sourceFile.getFilePath();
-        if (dependencyMap.has(filePath)) {
-            // Look for chains at least two in length. A file that contains
-            // an "import . from X" will technically create a cycle with
-            // itself, but those are not interesting to report.
-            if (dependencyChain.length > 1 && sourceFileInfo === dependencyChain[0]) {
-                this._logImportCycle(dependencyChain);
+        // If the caller specified a maxTime, return at this point
+        // since we've finalized all open files. We want to get
+        // the results to the user as quickly as possible.
+        if (maxTime !== undefined) {
+          return true;
+        }
+      }
+
+      if (!this._configOptions.checkOnlyOpenFiles) {
+        // Do type analysis of remaining files.
+        const allFiles = this._sourceFileList;
+        const effectiveMaxTime = maxTime ? maxTime.noOpenFilesTimeInMs : Number.MAX_VALUE;
+
+        // Now do type parsing and analysis of the remaining.
+        for (const sourceFileInfo of allFiles) {
+          if (this._checkTypes(sourceFileInfo)) {
+            if (elapsedTime.inMillis() > effectiveMaxTime) {
+              return true;
             }
+          }
+        }
+      }
+
+      return false;
+    });
+  }
+
+  // Prints import dependency information for each of the files in
+  // the program, skipping any typeshed files.
+  printDependencies(projectRootDir: string, verbose: boolean) {
+    const sortedFiles = this._sourceFileList
+      .filter((s) => !s.isTypeshedFile)
+      .sort((a, b) => {
+        return a.sourceFile.getFilePath() < b.sourceFile.getFilePath() ? 1 : -1;
+      });
+
+    const zeroImportFiles: SourceFile[] = [];
+
+    sortedFiles.forEach((sfInfo) => {
+      this._console.log('');
+      let filePath = sfInfo.sourceFile.getFilePath();
+      const relPath = getRelativePath(filePath, projectRootDir);
+      if (relPath) {
+        filePath = relPath;
+      }
+
+      this._console.log(`${filePath}`);
+
+      this._console.log(
+        ` Imports     ${sfInfo.imports.length} ` +
+          `file${sfInfo.imports.length === 1 ? '' : 's'}`
+      );
+      if (verbose) {
+        sfInfo.imports.forEach((importInfo) => {
+          this._console.log(`    ${importInfo.sourceFile.getFilePath()}`);
+        });
+      }
+
+      this._console.log(
+        ` Imported by ${sfInfo.importedBy.length} ` +
+          `file${sfInfo.importedBy.length === 1 ? '' : 's'}`
+      );
+      if (verbose) {
+        sfInfo.importedBy.forEach((importInfo) => {
+          this._console.log(`    ${importInfo.sourceFile.getFilePath()}`);
+        });
+      }
+
+      if (sfInfo.importedBy.length === 0) {
+        zeroImportFiles.push(sfInfo.sourceFile);
+      }
+    });
+
+    if (zeroImportFiles.length > 0) {
+      this._console.log('');
+      this._console.log(
+        `${zeroImportFiles.length} file${zeroImportFiles.length === 1 ? '' : 's'}` +
+          ` not explicitly imported`
+      );
+      zeroImportFiles.forEach((importFile) => {
+        this._console.log(`    ${importFile.getFilePath()}`);
+      });
+    }
+  }
+
+  writeTypeStub(
+    targetImportPath: string,
+    targetIsSingleFile: boolean,
+    typingsPath: string,
+    token: CancellationToken
+  ) {
+    for (const sourceFileInfo of this._sourceFileList) {
+      throwIfCancellationRequested(token);
+
+      const filePath = sourceFileInfo.sourceFile.getFilePath();
+
+      // Generate type stubs only for the files within the target path,
+      // not any files that the target module happened to import.
+      const relativePath = getRelativePath(filePath, targetImportPath);
+      if (relativePath !== undefined) {
+        let typeStubPath = normalizePath(combinePaths(typingsPath, relativePath));
+
+        // If the target is a single file implementation, as opposed to
+        // a package in a directory, transform the name of the type stub
+        // to __init__.pyi because we're placing it in a directory.
+        if (targetIsSingleFile) {
+          typeStubPath = combinePaths(getDirectoryPath(typeStubPath), '__init__.pyi');
         } else {
-            // If we've already checked this dependency along
-            // some other path, we can skip it.
-            if (dependencyMap.has(filePath)) {
-                return;
-            }
-
-            // We use both a map (for fast lookups) and a list
-            // (for ordering information). Set the dependency map
-            // entry to true to indicate that we're actively exploring
-            // that dependency.
-            dependencyMap.set(filePath, true);
-            dependencyChain.push(sourceFileInfo);
-
-            for (const imp of sourceFileInfo.imports) {
-                this._detectAndReportImportCycles(imp, dependencyChain, dependencyMap);
-            }
-
-            // Set the dependencyMap entry to false to indicate that we have
-            // already explored this file and don't need to explore it again.
-            dependencyMap.set(filePath, false);
-            dependencyChain.pop();
-        }
-    }
-
-    private _logImportCycle(dependencyChain: SourceFileInfo[]) {
-        const circDep = new CircularDependency();
-        dependencyChain.forEach((sourceFileInfo) => {
-            circDep.appendPath(sourceFileInfo.sourceFile.getFilePath());
-        });
-
-        circDep.normalizeOrder();
-        const firstFilePath = circDep.getPaths()[0];
-        const firstSourceFile = this._sourceFileMap.get(firstFilePath)!;
-        assert(firstSourceFile !== undefined);
-        firstSourceFile.sourceFile.addCircularDependency(circDep);
-    }
-
-    private _markFileDirtyRecursive(sourceFileInfo: SourceFileInfo, markMap: Map<string, boolean>) {
-        const filePath = sourceFileInfo.sourceFile.getFilePath();
-
-        // Don't mark it again if it's already been visited.
-        if (!markMap.has(filePath)) {
-            sourceFileInfo.sourceFile.markReanalysisRequired();
-            markMap.set(filePath, true);
-
-            sourceFileInfo.importedBy.forEach((dep) => {
-                this._markFileDirtyRecursive(dep, markMap);
-            });
-        }
-    }
-
-    getAutoImports(
-        filePath: string,
-        range: Range,
-        similarityLimit: number,
-        token: CancellationToken
-    ): AutoImportResult[] {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            return [];
+          typeStubPath = stripFileExtension(typeStubPath) + '.pyi';
         }
 
-        const sourceFile = sourceFileInfo.sourceFile;
-        const fileContents = sourceFile.getFileContents();
-        if (!fileContents) {
-            // this only works with opened file
-            return [];
-        }
+        const typeStubDir = getDirectoryPath(typeStubPath);
 
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            this._bindFile(sourceFileInfo);
-
-            const parseTree = sourceFile.getParseResults()!;
-            const textRange = convertRangeToTextRange(range, parseTree.tokenizerOutput.lines);
-            if (!textRange) {
-                return [];
-            }
-
-            const currentNode = findNodeByOffset(parseTree.parseTree, textRange.start);
-            if (!currentNode) {
-                return [];
-            }
-
-            const word = fileContents.substr(textRange.start, textRange.length);
-            const map = this._buildModuleSymbolsMap(sourceFileInfo, token);
-            const autoImporter = new AutoImporter(
-                this._configOptions,
-                sourceFile.getFilePath(),
-                this._importResolver,
-                parseTree,
-                map
-            );
-
-            // Filter out any name that is already defined in the current scope.
-            const currentScope = getScopeForNode(currentNode);
-            return autoImporter
-                .getAutoImportCandidates(word, similarityLimit, [], token)
-                .filter((r) => !currentScope.lookUpSymbolRecursive(r.name));
-        });
-    }
-
-    getDiagnostics(options: ConfigOptions): FileDiagnostics[] {
-        const fileDiagnostics: FileDiagnostics[] = this._removeUnneededFiles();
-
-        this._sourceFileList.forEach((sourceFileInfo) => {
-            if (sourceFileInfo.isOpenByClient || (!options.checkOnlyOpenFiles && !sourceFileInfo.isThirdPartyImport)) {
-                const diagnostics = sourceFileInfo.sourceFile.getDiagnostics(
-                    options,
-                    sourceFileInfo.diagnosticsVersion
-                );
-                if (diagnostics !== undefined) {
-                    fileDiagnostics.push({
-                        filePath: sourceFileInfo.sourceFile.getFilePath(),
-                        diagnostics,
-                    });
-
-                    // Update the cached diagnosticsVersion so we can determine
-                    // whether there are any updates next time we call getDiagnostics.
-                    sourceFileInfo.diagnosticsVersion = sourceFileInfo.sourceFile.getDiagnosticVersion();
-                }
-            }
-        });
-
-        return fileDiagnostics;
-    }
-
-    getDiagnosticsForRange(filePath: string, range: Range): Diagnostic[] {
-        const sourceFile = this.getSourceFile(filePath);
-        if (!sourceFile) {
-            return [];
-        }
-
-        const unfilteredDiagnostics = sourceFile.getDiagnostics(this._configOptions);
-        if (!unfilteredDiagnostics) {
-            return [];
-        }
-
-        return unfilteredDiagnostics.filter((diag) => {
-            return doRangesOverlap(diag.range, range);
-        });
-    }
-
-    getDefinitionsForPosition(
-        filePath: string,
-        position: Position,
-        token: CancellationToken
-    ): DocumentRange[] | undefined {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (!sourceFileInfo) {
-                return undefined;
-            }
-
-            this._bindFile(sourceFileInfo);
-
-            return sourceFileInfo.sourceFile.getDefinitionsForPosition(position, this._evaluator, token);
-        });
-    }
-
-    getReferencesForPosition(
-        filePath: string,
-        position: Position,
-        includeDeclaration: boolean,
-        token: CancellationToken
-    ): DocumentRange[] | undefined {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (!sourceFileInfo) {
-                return undefined;
-            }
-
-            this._bindFile(sourceFileInfo);
-
-            const referencesResult = sourceFileInfo.sourceFile.getDeclarationForPosition(
-                position,
-                this._evaluator,
-                token
-            );
-
-            if (!referencesResult) {
-                return undefined;
-            }
-
-            // Do we need to do a global search as well?
-            if (referencesResult.requiresGlobalSearch) {
-                for (const curSourceFileInfo of this._sourceFileList) {
-                    this._bindFile(curSourceFileInfo);
-
-                    curSourceFileInfo.sourceFile.addReferences(
-                        referencesResult,
-                        includeDeclaration,
-                        this._evaluator,
-                        token
-                    );
-                }
-            } else {
-                sourceFileInfo.sourceFile.addReferences(referencesResult, includeDeclaration, this._evaluator, token);
-            }
-
-            return referencesResult.locations;
-        });
-    }
-
-    addSymbolsForDocument(filePath: string, symbolList: DocumentSymbol[], token: CancellationToken) {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (sourceFileInfo) {
-                this._bindFile(sourceFileInfo);
-
-                sourceFileInfo.sourceFile.addHierarchicalSymbolsForDocument(symbolList, this._evaluator, token);
-            }
-        });
-    }
-
-    addSymbolsForWorkspace(symbolList: SymbolInformation[], query: string, token: CancellationToken) {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            // Don't do a search if the query is empty. We'll return
-            // too many results in this case.
-            if (!query) {
-                return;
-            }
-
-            for (const sourceFileInfo of this._sourceFileList) {
-                this._bindFile(sourceFileInfo);
-
-                sourceFileInfo.sourceFile.addSymbolsForDocument(symbolList, this._evaluator, query, token);
-            }
-        });
-    }
-
-    getHoverForPosition(filePath: string, position: Position, token: CancellationToken): HoverResults | undefined {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (!sourceFileInfo) {
-                return undefined;
-            }
-
-            this._bindFile(sourceFileInfo);
-
-            return sourceFileInfo.sourceFile.getHoverForPosition(position, this._evaluator, token);
-        });
-    }
-
-    getSignatureHelpForPosition(
-        filePath: string,
-        position: Position,
-        token: CancellationToken
-    ): SignatureHelpResults | undefined {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (!sourceFileInfo) {
-                return undefined;
-            }
-
-            this._bindFile(sourceFileInfo);
-
-            return sourceFileInfo.sourceFile.getSignatureHelpForPosition(
-                position,
-                this._lookUpImport,
-                this._evaluator,
-                token
-            );
-        });
-    }
-
-    async getCompletionsForPosition(
-        filePath: string,
-        position: Position,
-        workspacePath: string,
-        token: CancellationToken
-    ): Promise<CompletionList | undefined> {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            return undefined;
-        }
-
-        let completionList = this._runEvaluatorWithCancellationToken(token, () => {
-            this._bindFile(sourceFileInfo);
-
-            return sourceFileInfo.sourceFile.getCompletionsForPosition(
-                position,
-                workspacePath,
-                this._configOptions,
-                this._importResolver,
-                this._lookUpImport,
-                this._evaluator,
-                () => this._buildModuleSymbolsMap(sourceFileInfo, token),
-                token
-            );
-        });
-
-        if (!completionList || !this._extension?.completionListExtension) {
-            return completionList;
-        }
-
-        const pr = sourceFileInfo.sourceFile.getParseResults();
-        const content = sourceFileInfo.sourceFile.getFileContents();
-        if (pr?.parseTree && content) {
-            const offset = convertPositionToOffset(position, pr.tokenizerOutput.lines);
-            if (offset) {
-                completionList = await this._extension.completionListExtension.updateCompletionList(
-                    completionList,
-                    pr.parseTree,
-                    content,
-                    offset,
-                    this._configOptions,
-                    token
-                );
-            }
-        }
-
-        return completionList;
-    }
-
-    resolveCompletionItem(filePath: string, completionItem: CompletionItem, token: CancellationToken) {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (!sourceFileInfo) {
-                return;
-            }
-
-            this._bindFile(sourceFileInfo);
-
-            sourceFileInfo.sourceFile.resolveCompletionItem(
-                this._configOptions,
-                this._importResolver,
-                this._lookUpImport,
-                this._evaluator,
-                () => this._buildModuleSymbolsMap(sourceFileInfo, token),
-                completionItem,
-                token
-            );
-        });
-    }
-
-    renameSymbolAtPosition(
-        filePath: string,
-        position: Position,
-        newName: string,
-        token: CancellationToken
-    ): FileEditAction[] | undefined {
-        return this._runEvaluatorWithCancellationToken(token, () => {
-            const sourceFileInfo = this._sourceFileMap.get(filePath);
-            if (!sourceFileInfo) {
-                return undefined;
-            }
-
-            this._bindFile(sourceFileInfo);
-
-            const referencesResult = sourceFileInfo.sourceFile.getDeclarationForPosition(
-                position,
-                this._evaluator,
-                token
-            );
-
-            if (!referencesResult) {
-                return undefined;
-            }
-
-            referencesResult.declarations = referencesResult.declarations.filter((d) =>
-                this._isUserCode(this._sourceFileMap.get(d.path))
-            );
-
-            if (referencesResult.declarations.length === 0) {
-                // There is no symbol we can rename
-                return undefined;
-            }
-
-            // Do we need to do a global search as well?
-            if (referencesResult.requiresGlobalSearch) {
-                for (const curSourceFileInfo of this._sourceFileList) {
-                    // Make sure we only add user code to the references to prevent us
-                    // from accidentally changing third party library or type stub.
-                    if (this._isUserCode(curSourceFileInfo)) {
-                        this._bindFile(curSourceFileInfo);
-
-                        curSourceFileInfo.sourceFile.addReferences(referencesResult, true, this._evaluator, token);
-                    }
-                }
-            } else if (this._isUserCode(sourceFileInfo)) {
-                sourceFileInfo.sourceFile.addReferences(referencesResult, true, this._evaluator, token);
-            }
-
-            const editActions: FileEditAction[] = [];
-
-            referencesResult.locations.forEach((loc) => {
-                editActions.push({
-                    filePath: loc.path,
-                    range: loc.range,
-                    replacementText: newName,
-                });
-            });
-
-            return editActions;
-        });
-    }
-
-    performQuickAction(
-        filePath: string,
-        command: string,
-        args: any[],
-        token: CancellationToken
-    ): TextEditAction[] | undefined {
-        const sourceFileInfo = this._sourceFileMap.get(filePath);
-        if (!sourceFileInfo) {
-            return undefined;
+        try {
+          makeDirectories(this._fs, typeStubDir, typingsPath);
+        } catch (e) {
+          const errMsg = `Could not create directory for '${typeStubDir}'`;
+          throw new Error(errMsg);
         }
 
         this._bindFile(sourceFileInfo);
 
-        return sourceFileInfo.sourceFile.performQuickAction(command, args, token);
+        this._runEvaluatorWithCancellationToken(token, () => {
+          const writer = new TypeStubWriter(
+            typeStubPath,
+            sourceFileInfo.sourceFile,
+            this._evaluator
+          );
+          writer.write();
+        });
+      }
+    }
+  }
+
+  private get _fs() {
+    return this._importResolver.fileSystem;
+  }
+
+  private _addTrackedFiles(filePaths: string[]) {
+    filePaths.forEach((filePath) => {
+      this._addTrackedFile(filePath);
+    });
+  }
+
+  private _addTrackedFile(filePath: string): SourceFile {
+    let sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (sourceFileInfo) {
+      sourceFileInfo.isTracked = true;
+      return sourceFileInfo.sourceFile;
     }
 
-    private _isUserCode(fileInfo: SourceFileInfo | undefined) {
-        return fileInfo && fileInfo.isTracked && !fileInfo.isThirdPartyImport && !fileInfo.isTypeshedFile;
+    const sourceFile = new SourceFile(this._fs, filePath, false, false, this._console);
+    sourceFileInfo = {
+      sourceFile,
+      isTracked: true,
+      isOpenByClient: false,
+      isTypeshedFile: false,
+      isThirdPartyImport: false,
+      diagnosticsVersion: sourceFile.getDiagnosticVersion(),
+      imports: [],
+      importedBy: [],
+    };
+    this._addToSourceFileListAndMap(sourceFileInfo);
+    return sourceFile;
+  }
+
+  private _createNewEvaluator() {
+    this._evaluator = createTypeEvaluator(this._lookUpImport);
+  }
+
+  private _parseFile(fileToParse: SourceFileInfo) {
+    if (!this._isFileNeeded(fileToParse) || !fileToParse.sourceFile.isParseRequired()) {
+      return;
     }
 
-    // Wrapper function that should be used when invoking this._evaluator
-    // with a cancellation token. It handles cancellation exceptions and
-    // any other unexpected exceptions.
-    private _runEvaluatorWithCancellationToken<T>(token: CancellationToken | undefined, callback: () => T): T {
-        try {
-            // Don't support cancellation in debug mode because cancellation
-            // checks and exceptions interfere with debugging.
-            if (token && !isDebugMode()) {
-                return this._evaluator.runWithCancellationToken(token, callback);
-            } else {
-                return callback();
-            }
-        } catch (e) {
-            // An unexpected exception occurred, potentially leaving the current evaluator
-            // in an inconsistent state. Discard it and replace it with a fresh one. It is
-            // Cancellation exceptions are known to handle this correctly.
-            if (!(e instanceof OperationCanceledException)) {
-                this._createNewEvaluator();
-            }
-            throw e;
-        }
+    if (fileToParse.sourceFile.parse(this._configOptions, this._importResolver)) {
+      this._updateSourceFileImports(fileToParse, this._configOptions);
     }
 
-    // Returns a list of empty file diagnostic entries for the files
-    // that have been removed. This is needed to clear out the
-    // errors for files that have been deleted or closed.
-    private _removeUnneededFiles(): FileDiagnostics[] {
-        const fileDiagnostics: FileDiagnostics[] = [];
+    if (fileToParse.sourceFile.isFileDeleted()) {
+      fileToParse.isTracked = false;
 
-        // If a file is no longer tracked or opened, it can
-        // be removed from the program.
-        for (let i = 0; i < this._sourceFileList.length; ) {
-            const fileInfo = this._sourceFileList[i];
-            if (!this._isFileNeeded(fileInfo)) {
-                fileDiagnostics.push({
-                    filePath: fileInfo.sourceFile.getFilePath(),
-                    diagnostics: [],
-                });
+      // Mark any files that depend on this file as dirty
+      // also. This will retrigger analysis of these other files.
+      const markDirtyMap = new Map<string, boolean>();
+      this._markFileDirtyRecursive(fileToParse, markDirtyMap);
 
-                fileInfo.sourceFile.prepareForClose();
-                this._sourceFileMap.delete(fileInfo.sourceFile.getFilePath());
-                this._sourceFileList.splice(i, 1);
+      // Invalidate the import resolver's cache as well.
+      this._importResolver.invalidateCache();
+    }
+  }
 
-                // Unlink any imports and remove them from the list if
-                // they are no longer referenced.
-                fileInfo.imports.forEach((importedFile) => {
-                    const indexToRemove = importedFile.importedBy.findIndex((fi) => fi === fileInfo);
-                    assert(indexToRemove >= 0);
-                    importedFile.importedBy.splice(indexToRemove, 1);
-
-                    // See if we need to remove the imported file because it
-                    // is no longer needed. If its index is >= i, it will be
-                    // removed when we get to it.
-                    if (!this._isFileNeeded(importedFile)) {
-                        const indexToRemove = this._sourceFileList.findIndex((fi) => fi === importedFile);
-                        if (indexToRemove >= 0 && indexToRemove < i) {
-                            fileDiagnostics.push({
-                                filePath: importedFile.sourceFile.getFilePath(),
-                                diagnostics: [],
-                            });
-
-                            importedFile.sourceFile.prepareForClose();
-                            this._sourceFileMap.delete(importedFile.sourceFile.getFilePath());
-                            this._sourceFileList.splice(indexToRemove, 1);
-                            i--;
-                        }
-                    }
-                });
-            } else {
-                // If we're showing the user errors only for open files, clear
-                // out the errors for the now-closed file.
-                if (
-                    this._configOptions.checkOnlyOpenFiles &&
-                    !fileInfo.isOpenByClient &&
-                    fileInfo.diagnosticsVersion !== fileInfo.sourceFile.getDiagnosticVersion()
-                ) {
-                    // If the old diagnostic version was undefined or zero, we haven't
-                    // reported any diagnostics for this file, so no need to clear them.
-                    if (fileInfo.diagnosticsVersion !== undefined && fileInfo.diagnosticsVersion !== 0) {
-                        fileDiagnostics.push({
-                            filePath: fileInfo.sourceFile.getFilePath(),
-                            diagnostics: [],
-                        });
-                    }
-
-                    fileInfo.diagnosticsVersion = fileInfo.sourceFile.getDiagnosticVersion();
-                }
-
-                i++;
-            }
-        }
-
-        return fileDiagnostics;
+  // Binds the specified file and all of its dependencies, recursively. If
+  // it runs out of time, it returns true. If it completes, it returns false.
+  private _bindFile(fileToAnalyze: SourceFileInfo): void {
+    if (
+      !this._isFileNeeded(fileToAnalyze) ||
+      !fileToAnalyze.sourceFile.isBindingRequired()
+    ) {
+      return;
     }
 
-    private _isFileNeeded(fileInfo: SourceFileInfo) {
-        if (fileInfo.sourceFile.isFileDeleted()) {
-            return false;
-        }
+    this._parseFile(fileToAnalyze);
 
-        if (fileInfo.isTracked || fileInfo.isOpenByClient) {
-            return true;
-        }
+    // We need to parse and bind the builtins import first.
+    let builtinsScope: Scope | undefined;
+    if (fileToAnalyze.builtinsImport) {
+      this._bindFile(fileToAnalyze.builtinsImport);
 
-        if (fileInfo.importedBy.length === 0) {
-            return false;
-        }
-
-        // It's possible for a cycle of files to be imported
-        // by a tracked file but then abandoned. The import cycle
-        // will keep the entire group "alive" if we don't detect
-        // the condition and garbage collect them.
-        return this._isImportNeededRecursive(fileInfo, new Map<string, boolean>());
+      // Get the builtins scope to pass to the binding pass.
+      const parseResults = fileToAnalyze.builtinsImport.sourceFile.getParseResults();
+      if (parseResults) {
+        builtinsScope = AnalyzerNodeInfo.getScope(parseResults.parseTree);
+        assert(builtinsScope !== undefined);
+      }
     }
 
-    private _isImportNeededRecursive(fileInfo: SourceFileInfo, recursionMap: Map<string, boolean>) {
-        if (fileInfo.isTracked || fileInfo.isOpenByClient) {
-            return true;
-        }
+    fileToAnalyze.sourceFile.bind(this._configOptions, this._lookUpImport, builtinsScope);
+  }
 
-        const filePath = fileInfo.sourceFile.getFilePath();
+  private _lookUpImport = (filePath: string): ImportLookupResult | undefined => {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      return undefined;
+    }
 
-        // Avoid infinite recursion.
-        if (recursionMap.has(filePath)) {
-            return false;
-        }
+    if (sourceFileInfo.sourceFile.isBindingRequired()) {
+      // Bind the file if it's not already bound. Don't count this time
+      // against the type checker.
+      timings.typeCheckerTime.subtractTime(() => {
+        this._bindFile(sourceFileInfo);
+      });
+    }
 
-        recursionMap.set(filePath, true);
+    const symbolTable = sourceFileInfo.sourceFile.getModuleSymbolTable();
+    if (!symbolTable) {
+      return undefined;
+    }
 
-        for (const importerInfo of fileInfo.importedBy) {
-            if (this._isImportNeededRecursive(importerInfo, recursionMap)) {
-                return true;
-            }
-        }
+    const docString = sourceFileInfo.sourceFile.getModuleDocString();
 
+    return {
+      symbolTable,
+      docString,
+    };
+  };
+
+  // Build a map of all modules within this program and the module-
+  // level scope that contains the symbol table for the module.
+  private _buildModuleSymbolsMap(
+    sourceFileToExclude: SourceFileInfo,
+    token: CancellationToken
+  ): ModuleSymbolMap {
+    return buildModuleSymbolsMap(
+      this._sourceFileList
+        .filter((s) => s !== sourceFileToExclude)
+        .map((s) => s.sourceFile),
+      token
+    );
+  }
+
+  private _checkTypes(fileToCheck: SourceFileInfo) {
+    // If the file isn't needed because it was eliminated from the
+    // transitive closure or deleted, skip the file rather than wasting
+    // time on it.
+    if (!this._isFileNeeded(fileToCheck)) {
+      return false;
+    }
+
+    if (!fileToCheck.sourceFile.isCheckingRequired()) {
+      return false;
+    }
+
+    // Don't bother checking third-party imports or typeshed files unless they're open.
+    if (
+      fileToCheck.isThirdPartyImport ||
+      (fileToCheck.isTypeshedFile &&
+        this._configOptions.diagnosticRuleSet.reportTypeshedErrors === 'none')
+    ) {
+      if (!fileToCheck.isOpenByClient) {
         return false;
+      }
     }
 
-    private _isImportAllowed(importer: SourceFileInfo, importResult: ImportResult, isImportStubFile: boolean): boolean {
-        let thirdPartyImportAllowed = this._configOptions.useLibraryCodeForTypes;
+    if (this._configOptions.checkOnlyOpenFiles && !fileToCheck.isOpenByClient) {
+      return false;
+    }
 
+    this._bindFile(fileToCheck);
+
+    // For very large programs, we may need to discard the evaluator and
+    // its cached types to avoid running out of heap space.
+    const typeCacheSize = this._evaluator.getTypeCacheSize();
+
+    // If the type cache size has exceeded a high-water mark, query the heap usage.
+    // Don't bother doing this until we hit this point because the heap usage may not
+    // drop immediately after we empty the cache due to garbage collection timing.
+    if (typeCacheSize > 750000) {
+      const heapSizeInMb = Math.round(process.memoryUsage().heapUsed / (1024 * 1024));
+
+      // Don't allow the heap to get close to the 2GB limit imposed by
+      // the OS when running Node in a 32-bit process.
+      if (heapSizeInMb > 1536) {
+        this._console.log(
+          `Emptying type cache to avoid heap overflow. Heap size used: ${heapSizeInMb}MB`
+        );
+        this._createNewEvaluator();
+      }
+    }
+
+    fileToCheck.sourceFile.check(this._evaluator);
+
+    // Detect import cycles that involve the file.
+    if (this._configOptions.diagnosticRuleSet.reportImportCycles !== 'none') {
+      // Don't detect import cycles when doing type stub generation. Some
+      // third-party modules are pretty convoluted.
+      if (!this._allowedThirdPartyImports) {
+        // We need to force all of the files to be parsed and build
+        // a closure map for the files.
+        const closureMap = new Map<string, SourceFileInfo>();
+        this._getImportsRecursive(fileToCheck, closureMap, 0);
+
+        closureMap.forEach((file) => {
+          timings.cycleDetectionTime.timeCall(() => {
+            this._detectAndReportImportCycles(file);
+          });
+        });
+      }
+    }
+
+    return true;
+  }
+
+  // Builds a map of files that includes the specified file and all of the files
+  // it imports (recursively) and ensures that all such files. If any of these files
+  // have already been checked (they and their recursive imports have completed the
+  // check phase), they are not included in the results.
+  private _getImportsRecursive(
+    file: SourceFileInfo,
+    closureMap: Map<string, SourceFileInfo>,
+    recursionCount: number
+  ) {
+    // If the file is already in the closure map, we found a cyclical
+    // dependency. Don't recur further.
+    const filePath = file.sourceFile.getFilePath();
+    if (closureMap.has(filePath)) {
+      return;
+    }
+
+    // If the import chain is too long, emit an error. Otherwise we
+    // risk blowing the stack.
+    if (recursionCount > _maxImportDepth) {
+      file.sourceFile.setHitMaxImportDepth(_maxImportDepth);
+      return;
+    }
+
+    // Add the file to the closure map.
+    closureMap.set(filePath, file);
+
+    // Recursively add the file's imports.
+    for (const importedFileInfo of file.imports) {
+      this._getImportsRecursive(importedFileInfo, closureMap, recursionCount + 1);
+    }
+  }
+
+  private _detectAndReportImportCycles(
+    sourceFileInfo: SourceFileInfo,
+    dependencyChain: SourceFileInfo[] = [],
+    dependencyMap = new Map<string, boolean>()
+  ): void {
+    // Don't bother checking for typestub files or third-party files.
+    if (sourceFileInfo.sourceFile.isStubFile() || sourceFileInfo.isThirdPartyImport) {
+      return;
+    }
+
+    const filePath = sourceFileInfo.sourceFile.getFilePath();
+    if (dependencyMap.has(filePath)) {
+      // Look for chains at least two in length. A file that contains
+      // an "import . from X" will technically create a cycle with
+      // itself, but those are not interesting to report.
+      if (dependencyChain.length > 1 && sourceFileInfo === dependencyChain[0]) {
+        this._logImportCycle(dependencyChain);
+      }
+    } else {
+      // If we've already checked this dependency along
+      // some other path, we can skip it.
+      if (dependencyMap.has(filePath)) {
+        return;
+      }
+
+      // We use both a map (for fast lookups) and a list
+      // (for ordering information). Set the dependency map
+      // entry to true to indicate that we're actively exploring
+      // that dependency.
+      dependencyMap.set(filePath, true);
+      dependencyChain.push(sourceFileInfo);
+
+      for (const imp of sourceFileInfo.imports) {
+        this._detectAndReportImportCycles(imp, dependencyChain, dependencyMap);
+      }
+
+      // Set the dependencyMap entry to false to indicate that we have
+      // already explored this file and don't need to explore it again.
+      dependencyMap.set(filePath, false);
+      dependencyChain.pop();
+    }
+  }
+
+  private _logImportCycle(dependencyChain: SourceFileInfo[]) {
+    const circDep = new CircularDependency();
+    dependencyChain.forEach((sourceFileInfo) => {
+      circDep.appendPath(sourceFileInfo.sourceFile.getFilePath());
+    });
+
+    circDep.normalizeOrder();
+    const firstFilePath = circDep.getPaths()[0];
+    const firstSourceFile = this._sourceFileMap.get(firstFilePath)!;
+    assert(firstSourceFile !== undefined);
+    firstSourceFile.sourceFile.addCircularDependency(circDep);
+  }
+
+  private _markFileDirtyRecursive(
+    sourceFileInfo: SourceFileInfo,
+    markMap: Map<string, boolean>
+  ) {
+    const filePath = sourceFileInfo.sourceFile.getFilePath();
+
+    // Don't mark it again if it's already been visited.
+    if (!markMap.has(filePath)) {
+      sourceFileInfo.sourceFile.markReanalysisRequired();
+      markMap.set(filePath, true);
+
+      sourceFileInfo.importedBy.forEach((dep) => {
+        this._markFileDirtyRecursive(dep, markMap);
+      });
+    }
+  }
+
+  getAutoImports(
+    filePath: string,
+    range: Range,
+    similarityLimit: number,
+    token: CancellationToken
+  ): AutoImportResult[] {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      return [];
+    }
+
+    const sourceFile = sourceFileInfo.sourceFile;
+    const fileContents = sourceFile.getFileContents();
+    if (!fileContents) {
+      // this only works with opened file
+      return [];
+    }
+
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      this._bindFile(sourceFileInfo);
+
+      const parseTree = sourceFile.getParseResults()!;
+      const textRange = convertRangeToTextRange(range, parseTree.tokenizerOutput.lines);
+      if (!textRange) {
+        return [];
+      }
+
+      const currentNode = findNodeByOffset(parseTree.parseTree, textRange.start);
+      if (!currentNode) {
+        return [];
+      }
+
+      const word = fileContents.substr(textRange.start, textRange.length);
+      const map = this._buildModuleSymbolsMap(sourceFileInfo, token);
+      const autoImporter = new AutoImporter(
+        this._configOptions,
+        sourceFile.getFilePath(),
+        this._importResolver,
+        parseTree,
+        map
+      );
+
+      // Filter out any name that is already defined in the current scope.
+      const currentScope = getScopeForNode(currentNode);
+      return autoImporter
+        .getAutoImportCandidates(word, similarityLimit, [], token)
+        .filter((r) => !currentScope.lookUpSymbolRecursive(r.name));
+    });
+  }
+
+  getDiagnostics(options: ConfigOptions): FileDiagnostics[] {
+    const fileDiagnostics: FileDiagnostics[] = this._removeUnneededFiles();
+
+    this._sourceFileList.forEach((sourceFileInfo) => {
+      if (
+        sourceFileInfo.isOpenByClient ||
+        (!options.checkOnlyOpenFiles && !sourceFileInfo.isThirdPartyImport)
+      ) {
+        const diagnostics = sourceFileInfo.sourceFile.getDiagnostics(
+          options,
+          sourceFileInfo.diagnosticsVersion
+        );
+        if (diagnostics !== undefined) {
+          fileDiagnostics.push({
+            filePath: sourceFileInfo.sourceFile.getFilePath(),
+            diagnostics,
+          });
+
+          // Update the cached diagnosticsVersion so we can determine
+          // whether there are any updates next time we call getDiagnostics.
+          sourceFileInfo.diagnosticsVersion = sourceFileInfo.sourceFile.getDiagnosticVersion();
+        }
+      }
+    });
+
+    return fileDiagnostics;
+  }
+
+  getDiagnosticsForRange(filePath: string, range: Range): Diagnostic[] {
+    const sourceFile = this.getSourceFile(filePath);
+    if (!sourceFile) {
+      return [];
+    }
+
+    const unfilteredDiagnostics = sourceFile.getDiagnostics(this._configOptions);
+    if (!unfilteredDiagnostics) {
+      return [];
+    }
+
+    return unfilteredDiagnostics.filter((diag) => {
+      return doRangesOverlap(diag.range, range);
+    });
+  }
+
+  getDefinitionsForPosition(
+    filePath: string,
+    position: Position,
+    token: CancellationToken
+  ): DocumentRange[] | undefined {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (!sourceFileInfo) {
+        return undefined;
+      }
+
+      this._bindFile(sourceFileInfo);
+
+      return sourceFileInfo.sourceFile.getDefinitionsForPosition(
+        position,
+        this._evaluator,
+        token
+      );
+    });
+  }
+
+  getReferencesForPosition(
+    filePath: string,
+    position: Position,
+    includeDeclaration: boolean,
+    token: CancellationToken
+  ): DocumentRange[] | undefined {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (!sourceFileInfo) {
+        return undefined;
+      }
+
+      this._bindFile(sourceFileInfo);
+
+      const referencesResult = sourceFileInfo.sourceFile.getDeclarationForPosition(
+        position,
+        this._evaluator,
+        token
+      );
+
+      if (!referencesResult) {
+        return undefined;
+      }
+
+      // Do we need to do a global search as well?
+      if (referencesResult.requiresGlobalSearch) {
+        for (const curSourceFileInfo of this._sourceFileList) {
+          this._bindFile(curSourceFileInfo);
+
+          curSourceFileInfo.sourceFile.addReferences(
+            referencesResult,
+            includeDeclaration,
+            this._evaluator,
+            token
+          );
+        }
+      } else {
+        sourceFileInfo.sourceFile.addReferences(
+          referencesResult,
+          includeDeclaration,
+          this._evaluator,
+          token
+        );
+      }
+
+      return referencesResult.locations;
+    });
+  }
+
+  addSymbolsForDocument(
+    filePath: string,
+    symbolList: DocumentSymbol[],
+    token: CancellationToken
+  ) {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (sourceFileInfo) {
+        this._bindFile(sourceFileInfo);
+
+        sourceFileInfo.sourceFile.addHierarchicalSymbolsForDocument(
+          symbolList,
+          this._evaluator,
+          token
+        );
+      }
+    });
+  }
+
+  addSymbolsForWorkspace(
+    symbolList: SymbolInformation[],
+    query: string,
+    token: CancellationToken
+  ) {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      // Don't do a search if the query is empty. We'll return
+      // too many results in this case.
+      if (!query) {
+        return;
+      }
+
+      for (const sourceFileInfo of this._sourceFileList) {
+        this._bindFile(sourceFileInfo);
+
+        sourceFileInfo.sourceFile.addSymbolsForDocument(
+          symbolList,
+          this._evaluator,
+          query,
+          token
+        );
+      }
+    });
+  }
+
+  getHoverForPosition(
+    filePath: string,
+    position: Position,
+    token: CancellationToken
+  ): HoverResults | undefined {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (!sourceFileInfo) {
+        return undefined;
+      }
+
+      this._bindFile(sourceFileInfo);
+
+      return sourceFileInfo.sourceFile.getHoverForPosition(
+        position,
+        this._evaluator,
+        token
+      );
+    });
+  }
+
+  getSignatureHelpForPosition(
+    filePath: string,
+    position: Position,
+    token: CancellationToken
+  ): SignatureHelpResults | undefined {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (!sourceFileInfo) {
+        return undefined;
+      }
+
+      this._bindFile(sourceFileInfo);
+
+      return sourceFileInfo.sourceFile.getSignatureHelpForPosition(
+        position,
+        this._lookUpImport,
+        this._evaluator,
+        token
+      );
+    });
+  }
+
+  async getCompletionsForPosition(
+    filePath: string,
+    position: Position,
+    workspacePath: string,
+    token: CancellationToken
+  ): Promise<CompletionList | undefined> {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      return undefined;
+    }
+
+    let completionList = this._runEvaluatorWithCancellationToken(token, () => {
+      this._bindFile(sourceFileInfo);
+
+      return sourceFileInfo.sourceFile.getCompletionsForPosition(
+        position,
+        workspacePath,
+        this._configOptions,
+        this._importResolver,
+        this._lookUpImport,
+        this._evaluator,
+        () => this._buildModuleSymbolsMap(sourceFileInfo, token),
+        token
+      );
+    });
+
+    if (!completionList || !this._extension?.completionListExtension) {
+      return completionList;
+    }
+
+    const pr = sourceFileInfo.sourceFile.getParseResults();
+    const content = sourceFileInfo.sourceFile.getFileContents();
+    if (pr?.parseTree && content) {
+      const offset = convertPositionToOffset(position, pr.tokenizerOutput.lines);
+      if (offset) {
+        completionList = await this._extension.completionListExtension.updateCompletionList(
+          completionList,
+          pr.parseTree,
+          content,
+          offset,
+          this._configOptions,
+          token
+        );
+      }
+    }
+
+    return completionList;
+  }
+
+  resolveCompletionItem(
+    filePath: string,
+    completionItem: CompletionItem,
+    token: CancellationToken
+  ) {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (!sourceFileInfo) {
+        return;
+      }
+
+      this._bindFile(sourceFileInfo);
+
+      sourceFileInfo.sourceFile.resolveCompletionItem(
+        this._configOptions,
+        this._importResolver,
+        this._lookUpImport,
+        this._evaluator,
+        () => this._buildModuleSymbolsMap(sourceFileInfo, token),
+        completionItem,
+        token
+      );
+    });
+  }
+
+  renameSymbolAtPosition(
+    filePath: string,
+    position: Position,
+    newName: string,
+    token: CancellationToken
+  ): FileEditAction[] | undefined {
+    return this._runEvaluatorWithCancellationToken(token, () => {
+      const sourceFileInfo = this._sourceFileMap.get(filePath);
+      if (!sourceFileInfo) {
+        return undefined;
+      }
+
+      this._bindFile(sourceFileInfo);
+
+      const referencesResult = sourceFileInfo.sourceFile.getDeclarationForPosition(
+        position,
+        this._evaluator,
+        token
+      );
+
+      if (!referencesResult) {
+        return undefined;
+      }
+
+      referencesResult.declarations = referencesResult.declarations.filter((d) =>
+        this._isUserCode(this._sourceFileMap.get(d.path))
+      );
+
+      if (referencesResult.declarations.length === 0) {
+        // There is no symbol we can rename
+        return undefined;
+      }
+
+      // Do we need to do a global search as well?
+      if (referencesResult.requiresGlobalSearch) {
+        for (const curSourceFileInfo of this._sourceFileList) {
+          // Make sure we only add user code to the references to prevent us
+          // from accidentally changing third party library or type stub.
+          if (this._isUserCode(curSourceFileInfo)) {
+            this._bindFile(curSourceFileInfo);
+
+            curSourceFileInfo.sourceFile.addReferences(
+              referencesResult,
+              true,
+              this._evaluator,
+              token
+            );
+          }
+        }
+      } else if (this._isUserCode(sourceFileInfo)) {
+        sourceFileInfo.sourceFile.addReferences(
+          referencesResult,
+          true,
+          this._evaluator,
+          token
+        );
+      }
+
+      const editActions: FileEditAction[] = [];
+
+      referencesResult.locations.forEach((loc) => {
+        editActions.push({
+          filePath: loc.path,
+          range: loc.range,
+          replacementText: newName,
+        });
+      });
+
+      return editActions;
+    });
+  }
+
+  performQuickAction(
+    filePath: string,
+    command: string,
+    args: any[],
+    token: CancellationToken
+  ): TextEditAction[] | undefined {
+    const sourceFileInfo = this._sourceFileMap.get(filePath);
+    if (!sourceFileInfo) {
+      return undefined;
+    }
+
+    this._bindFile(sourceFileInfo);
+
+    return sourceFileInfo.sourceFile.performQuickAction(command, args, token);
+  }
+
+  private _isUserCode(fileInfo: SourceFileInfo | undefined) {
+    return (
+      fileInfo &&
+      fileInfo.isTracked &&
+      !fileInfo.isThirdPartyImport &&
+      !fileInfo.isTypeshedFile
+    );
+  }
+
+  // Wrapper function that should be used when invoking this._evaluator
+  // with a cancellation token. It handles cancellation exceptions and
+  // any other unexpected exceptions.
+  private _runEvaluatorWithCancellationToken<T>(
+    token: CancellationToken | undefined,
+    callback: () => T
+  ): T {
+    try {
+      // Don't support cancellation in debug mode because cancellation
+      // checks and exceptions interfere with debugging.
+      if (token && !isDebugMode()) {
+        return this._evaluator.runWithCancellationToken(token, callback);
+      } else {
+        return callback();
+      }
+    } catch (e) {
+      // An unexpected exception occurred, potentially leaving the current evaluator
+      // in an inconsistent state. Discard it and replace it with a fresh one. It is
+      // Cancellation exceptions are known to handle this correctly.
+      if (!(e instanceof OperationCanceledException)) {
+        this._createNewEvaluator();
+      }
+      throw e;
+    }
+  }
+
+  // Returns a list of empty file diagnostic entries for the files
+  // that have been removed. This is needed to clear out the
+  // errors for files that have been deleted or closed.
+  private _removeUnneededFiles(): FileDiagnostics[] {
+    const fileDiagnostics: FileDiagnostics[] = [];
+
+    // If a file is no longer tracked or opened, it can
+    // be removed from the program.
+    for (let i = 0; i < this._sourceFileList.length; ) {
+      const fileInfo = this._sourceFileList[i];
+      if (!this._isFileNeeded(fileInfo)) {
+        fileDiagnostics.push({
+          filePath: fileInfo.sourceFile.getFilePath(),
+          diagnostics: [],
+        });
+
+        fileInfo.sourceFile.prepareForClose();
+        this._sourceFileMap.delete(fileInfo.sourceFile.getFilePath());
+        this._sourceFileList.splice(i, 1);
+
+        // Unlink any imports and remove them from the list if
+        // they are no longer referenced.
+        fileInfo.imports.forEach((importedFile) => {
+          const indexToRemove = importedFile.importedBy.findIndex(
+            (fi) => fi === fileInfo
+          );
+          assert(indexToRemove >= 0);
+          importedFile.importedBy.splice(indexToRemove, 1);
+
+          // See if we need to remove the imported file because it
+          // is no longer needed. If its index is >= i, it will be
+          // removed when we get to it.
+          if (!this._isFileNeeded(importedFile)) {
+            const indexToRemove = this._sourceFileList.findIndex(
+              (fi) => fi === importedFile
+            );
+            if (indexToRemove >= 0 && indexToRemove < i) {
+              fileDiagnostics.push({
+                filePath: importedFile.sourceFile.getFilePath(),
+                diagnostics: [],
+              });
+
+              importedFile.sourceFile.prepareForClose();
+              this._sourceFileMap.delete(importedFile.sourceFile.getFilePath());
+              this._sourceFileList.splice(indexToRemove, 1);
+              i--;
+            }
+          }
+        });
+      } else {
+        // If we're showing the user errors only for open files, clear
+        // out the errors for the now-closed file.
         if (
-            importResult.importType === ImportType.ThirdParty ||
-            (importer.isThirdPartyImport && importResult.importType === ImportType.Local)
+          this._configOptions.checkOnlyOpenFiles &&
+          !fileInfo.isOpenByClient &&
+          fileInfo.diagnosticsVersion !== fileInfo.sourceFile.getDiagnosticVersion()
         ) {
-            if (this._allowedThirdPartyImports) {
-                if (importResult.isRelative) {
-                    // If it's a relative import, we'll allow it because the
-                    // importer was already deemed to be allowed.
-                    thirdPartyImportAllowed = true;
-                } else if (
-                    this._allowedThirdPartyImports.some((importName: string) => {
-                        // If this import name is the one that was explicitly
-                        // allowed or is a child of that import name,
-                        // it's considered allowed.
-                        if (importResult.importName === importName) {
-                            return true;
-                        }
+          // If the old diagnostic version was undefined or zero, we haven't
+          // reported any diagnostics for this file, so no need to clear them.
+          if (
+            fileInfo.diagnosticsVersion !== undefined &&
+            fileInfo.diagnosticsVersion !== 0
+          ) {
+            fileDiagnostics.push({
+              filePath: fileInfo.sourceFile.getFilePath(),
+              diagnostics: [],
+            });
+          }
 
-                        if (importResult.importName.startsWith(importName + '.')) {
-                            return true;
-                        }
-
-                        return false;
-                    })
-                ) {
-                    thirdPartyImportAllowed = true;
-                }
-            }
-
-            // Some libraries ship with stub files that import from non-stubs. Don't
-            // explore those.
-            // Don't explore any third-party files unless they're type stub files
-            // or we've been told explicitly that third-party imports are OK.
-            if (!isImportStubFile) {
-                return thirdPartyImportAllowed;
-            }
+          fileInfo.diagnosticsVersion = fileInfo.sourceFile.getDiagnosticVersion();
         }
 
+        i++;
+      }
+    }
+
+    return fileDiagnostics;
+  }
+
+  private _isFileNeeded(fileInfo: SourceFileInfo) {
+    if (fileInfo.sourceFile.isFileDeleted()) {
+      return false;
+    }
+
+    if (fileInfo.isTracked || fileInfo.isOpenByClient) {
+      return true;
+    }
+
+    if (fileInfo.importedBy.length === 0) {
+      return false;
+    }
+
+    // It's possible for a cycle of files to be imported
+    // by a tracked file but then abandoned. The import cycle
+    // will keep the entire group "alive" if we don't detect
+    // the condition and garbage collect them.
+    return this._isImportNeededRecursive(fileInfo, new Map<string, boolean>());
+  }
+
+  private _isImportNeededRecursive(
+    fileInfo: SourceFileInfo,
+    recursionMap: Map<string, boolean>
+  ) {
+    if (fileInfo.isTracked || fileInfo.isOpenByClient) {
+      return true;
+    }
+
+    const filePath = fileInfo.sourceFile.getFilePath();
+
+    // Avoid infinite recursion.
+    if (recursionMap.has(filePath)) {
+      return false;
+    }
+
+    recursionMap.set(filePath, true);
+
+    for (const importerInfo of fileInfo.importedBy) {
+      if (this._isImportNeededRecursive(importerInfo, recursionMap)) {
         return true;
+      }
     }
 
-    private _updateSourceFileImports(sourceFileInfo: SourceFileInfo, options: ConfigOptions): SourceFileInfo[] {
-        const filesAdded: SourceFileInfo[] = [];
+    return false;
+  }
 
-        // Get the new list of imports and see if it changed from the last
-        // list of imports for this file.
-        const imports = sourceFileInfo.sourceFile.getImports();
+  private _isImportAllowed(
+    importer: SourceFileInfo,
+    importResult: ImportResult,
+    isImportStubFile: boolean
+  ): boolean {
+    let thirdPartyImportAllowed = this._configOptions.useLibraryCodeForTypes;
 
-        // Create a map of unique imports, since imports can appear more than once.
-        const newImportPathMap = new Map<string, UpdateImportInfo>();
-        imports.forEach((importResult) => {
-            if (importResult.isImportFound) {
-                if (this._isImportAllowed(sourceFileInfo, importResult, importResult.isStubFile)) {
-                    if (importResult.resolvedPaths.length > 0) {
-                        const filePath = importResult.resolvedPaths[importResult.resolvedPaths.length - 1];
-                        if (filePath) {
-                            newImportPathMap.set(filePath, {
-                                isTypeshedFile: !!importResult.isTypeshedFile,
-                                isThirdPartyImport:
-                                    importResult.importType === ImportType.ThirdParty ||
-                                    (sourceFileInfo.isThirdPartyImport && importResult.importType === ImportType.Local),
-                            });
-                        }
-                    }
-                }
-
-                importResult.implicitImports.forEach((implicitImport) => {
-                    if (this._isImportAllowed(sourceFileInfo, importResult, implicitImport.isStubFile)) {
-                        newImportPathMap.set(implicitImport.path, {
-                            isTypeshedFile: !!importResult.isTypeshedFile,
-                            isThirdPartyImport:
-                                importResult.importType === ImportType.ThirdParty ||
-                                (sourceFileInfo.isThirdPartyImport && importResult.importType === ImportType.Local),
-                        });
-                    }
-                });
-            } else if (options.verboseOutput) {
-                if (!sourceFileInfo.isTypeshedFile || options.diagnosticRuleSet.reportTypeshedErrors !== 'none') {
-                    this._console.log(
-                        `Could not import '${importResult.importName}' ` +
-                            `in file '${sourceFileInfo.sourceFile.getFilePath()}'`
-                    );
-                    if (importResult.importFailureInfo) {
-                        importResult.importFailureInfo.forEach((diag) => {
-                            this._console.log(`  ${diag}`);
-                        });
-                    }
-                }
+    if (
+      importResult.importType === ImportType.ThirdParty ||
+      (importer.isThirdPartyImport && importResult.importType === ImportType.Local)
+    ) {
+      if (this._allowedThirdPartyImports) {
+        if (importResult.isRelative) {
+          // If it's a relative import, we'll allow it because the
+          // importer was already deemed to be allowed.
+          thirdPartyImportAllowed = true;
+        } else if (
+          this._allowedThirdPartyImports.some((importName: string) => {
+            // If this import name is the one that was explicitly
+            // allowed or is a child of that import name,
+            // it's considered allowed.
+            if (importResult.importName === importName) {
+              return true;
             }
-        });
 
-        const updatedImportMap = new Map<string, SourceFileInfo>();
-        sourceFileInfo.imports.forEach((importInfo) => {
-            const oldFilePath = importInfo.sourceFile.getFilePath();
-
-            // A previous import was removed.
-            if (!newImportPathMap.has(oldFilePath)) {
-                importInfo.importedBy = importInfo.importedBy.filter(
-                    (fi) => fi.sourceFile.getFilePath() !== sourceFileInfo.sourceFile.getFilePath()
-                );
-            } else {
-                updatedImportMap.set(oldFilePath, importInfo);
+            if (importResult.importName.startsWith(importName + '.')) {
+              return true;
             }
-        });
 
-        // See if there are any new imports to be added.
-        newImportPathMap.forEach((importInfo, importPath) => {
-            if (!updatedImportMap.has(importPath)) {
-                // We found a new import to add. See if it's already part
-                // of the program.
-                let importedFileInfo: SourceFileInfo;
-                if (this._sourceFileMap.has(importPath)) {
-                    importedFileInfo = this._sourceFileMap.get(importPath)!;
-                } else {
-                    const sourceFile = new SourceFile(
-                        this._fs,
-                        importPath,
-                        importInfo.isTypeshedFile,
-                        importInfo.isThirdPartyImport,
-                        this._console
-                    );
-                    importedFileInfo = {
-                        sourceFile,
-                        isTracked: false,
-                        isOpenByClient: false,
-                        isTypeshedFile: importInfo.isTypeshedFile,
-                        isThirdPartyImport: importInfo.isThirdPartyImport,
-                        diagnosticsVersion: sourceFile.getDiagnosticVersion(),
-                        imports: [],
-                        importedBy: [],
-                    };
+            return false;
+          })
+        ) {
+          thirdPartyImportAllowed = true;
+        }
+      }
 
-                    this._addToSourceFileListAndMap(importedFileInfo);
-                    filesAdded.push(importedFileInfo);
-                }
+      // Some libraries ship with stub files that import from non-stubs. Don't
+      // explore those.
+      // Don't explore any third-party files unless they're type stub files
+      // or we've been told explicitly that third-party imports are OK.
+      if (!isImportStubFile) {
+        return thirdPartyImportAllowed;
+      }
+    }
 
-                importedFileInfo.importedBy.push(sourceFileInfo);
-                updatedImportMap.set(importPath, importedFileInfo);
+    return true;
+  }
+
+  private _updateSourceFileImports(
+    sourceFileInfo: SourceFileInfo,
+    options: ConfigOptions
+  ): SourceFileInfo[] {
+    const filesAdded: SourceFileInfo[] = [];
+
+    // Get the new list of imports and see if it changed from the last
+    // list of imports for this file.
+    const imports = sourceFileInfo.sourceFile.getImports();
+
+    // Create a map of unique imports, since imports can appear more than once.
+    const newImportPathMap = new Map<string, UpdateImportInfo>();
+    imports.forEach((importResult) => {
+      if (importResult.isImportFound) {
+        if (
+          this._isImportAllowed(sourceFileInfo, importResult, importResult.isStubFile)
+        ) {
+          if (importResult.resolvedPaths.length > 0) {
+            const filePath =
+              importResult.resolvedPaths[importResult.resolvedPaths.length - 1];
+            if (filePath) {
+              newImportPathMap.set(filePath, {
+                isTypeshedFile: !!importResult.isTypeshedFile,
+                isThirdPartyImport:
+                  importResult.importType === ImportType.ThirdParty ||
+                  (sourceFileInfo.isThirdPartyImport &&
+                    importResult.importType === ImportType.Local),
+              });
             }
-        });
-
-        // Update the imports list. It should now map the set of imports
-        // specified by the source file.
-        sourceFileInfo.imports = [];
-        newImportPathMap.forEach((_, path) => {
-            if (this._sourceFileMap.has(path)) {
-                sourceFileInfo.imports.push(this._sourceFileMap.get(path)!);
-            }
-        });
-
-        // Resolve the builtins import for the file. This needs to be
-        // analyzed before the file can be analyzed.
-        sourceFileInfo.builtinsImport = undefined;
-        const builtinsImport = sourceFileInfo.sourceFile.getBuiltinsImport();
-        if (builtinsImport) {
-            const resolvedBuiltinsPath = builtinsImport.resolvedPaths[builtinsImport.resolvedPaths.length - 1];
-            sourceFileInfo.builtinsImport = this._sourceFileMap.get(resolvedBuiltinsPath);
+          }
         }
 
-        return filesAdded;
+        importResult.implicitImports.forEach((implicitImport) => {
+          if (
+            this._isImportAllowed(sourceFileInfo, importResult, implicitImport.isStubFile)
+          ) {
+            newImportPathMap.set(implicitImport.path, {
+              isTypeshedFile: !!importResult.isTypeshedFile,
+              isThirdPartyImport:
+                importResult.importType === ImportType.ThirdParty ||
+                (sourceFileInfo.isThirdPartyImport &&
+                  importResult.importType === ImportType.Local),
+            });
+          }
+        });
+      } else if (options.verboseOutput) {
+        if (
+          !sourceFileInfo.isTypeshedFile ||
+          options.diagnosticRuleSet.reportTypeshedErrors !== 'none'
+        ) {
+          this._console.log(
+            `Could not import '${importResult.importName}' ` +
+              `in file '${sourceFileInfo.sourceFile.getFilePath()}'`
+          );
+          if (importResult.importFailureInfo) {
+            importResult.importFailureInfo.forEach((diag) => {
+              this._console.log(`  ${diag}`);
+            });
+          }
+        }
+      }
+    });
+
+    const updatedImportMap = new Map<string, SourceFileInfo>();
+    sourceFileInfo.imports.forEach((importInfo) => {
+      const oldFilePath = importInfo.sourceFile.getFilePath();
+
+      // A previous import was removed.
+      if (!newImportPathMap.has(oldFilePath)) {
+        importInfo.importedBy = importInfo.importedBy.filter(
+          (fi) => fi.sourceFile.getFilePath() !== sourceFileInfo.sourceFile.getFilePath()
+        );
+      } else {
+        updatedImportMap.set(oldFilePath, importInfo);
+      }
+    });
+
+    // See if there are any new imports to be added.
+    newImportPathMap.forEach((importInfo, importPath) => {
+      if (!updatedImportMap.has(importPath)) {
+        // We found a new import to add. See if it's already part
+        // of the program.
+        let importedFileInfo: SourceFileInfo;
+        if (this._sourceFileMap.has(importPath)) {
+          importedFileInfo = this._sourceFileMap.get(importPath)!;
+        } else {
+          const sourceFile = new SourceFile(
+            this._fs,
+            importPath,
+            importInfo.isTypeshedFile,
+            importInfo.isThirdPartyImport,
+            this._console
+          );
+          importedFileInfo = {
+            sourceFile,
+            isTracked: false,
+            isOpenByClient: false,
+            isTypeshedFile: importInfo.isTypeshedFile,
+            isThirdPartyImport: importInfo.isThirdPartyImport,
+            diagnosticsVersion: sourceFile.getDiagnosticVersion(),
+            imports: [],
+            importedBy: [],
+          };
+
+          this._addToSourceFileListAndMap(importedFileInfo);
+          filesAdded.push(importedFileInfo);
+        }
+
+        importedFileInfo.importedBy.push(sourceFileInfo);
+        updatedImportMap.set(importPath, importedFileInfo);
+      }
+    });
+
+    // Update the imports list. It should now map the set of imports
+    // specified by the source file.
+    sourceFileInfo.imports = [];
+    newImportPathMap.forEach((_, path) => {
+      if (this._sourceFileMap.has(path)) {
+        sourceFileInfo.imports.push(this._sourceFileMap.get(path)!);
+      }
+    });
+
+    // Resolve the builtins import for the file. This needs to be
+    // analyzed before the file can be analyzed.
+    sourceFileInfo.builtinsImport = undefined;
+    const builtinsImport = sourceFileInfo.sourceFile.getBuiltinsImport();
+    if (builtinsImport) {
+      const resolvedBuiltinsPath =
+        builtinsImport.resolvedPaths[builtinsImport.resolvedPaths.length - 1];
+      sourceFileInfo.builtinsImport = this._sourceFileMap.get(resolvedBuiltinsPath);
     }
 
-    private _addToSourceFileListAndMap(fileInfo: SourceFileInfo) {
-        const filePath = fileInfo.sourceFile.getFilePath();
+    return filesAdded;
+  }
 
-        // We should never add a file with the same path twice.
-        assert(!this._sourceFileMap.has(filePath));
+  private _addToSourceFileListAndMap(fileInfo: SourceFileInfo) {
+    const filePath = fileInfo.sourceFile.getFilePath();
 
-        this._sourceFileList.push(fileInfo);
-        this._sourceFileMap.set(filePath, fileInfo);
-    }
+    // We should never add a file with the same path twice.
+    assert(!this._sourceFileMap.has(filePath));
+
+    this._sourceFileList.push(fileInfo);
+    this._sourceFileMap.set(filePath, fileInfo);
+  }
 }

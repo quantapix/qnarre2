@@ -22,7 +22,7 @@ import { SymbolTable } from '../analyzer/symbol';
 import { Symbol } from '../analyzer/symbol';
 import * as SymbolNameUtils from '../analyzer/symbolNameUtils';
 import { throwIfCancellationRequested } from '../common/cancellationUtils';
-import { ConfigOptions } from '../common/configOptions';
+import { ConfigOptions } from '../utils/options';
 import { TextEditAction } from '../common/editAction';
 import {
   combinePaths,

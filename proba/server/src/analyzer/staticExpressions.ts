@@ -8,7 +8,7 @@
  * (parse node trees).
  */
 
-import { ExecutionEnvironment } from '../common/configOptions';
+import { ExecutionEnvironment } from '../utils/options';
 import {
   ExpressionNode,
   NumberNode,

@@ -6,10 +6,10 @@ import {
   InitializationData,
 } from './backgroundAnalysisBase';
 import { getCancellationFolderName } from './common/cancellationUtils';
-import { ConsoleInterface } from './common/console';
+import { QConsole } from './utils/misc';
 
 export class BackgroundAnalysis extends BackgroundAnalysisBase {
-  constructor(console: ConsoleInterface) {
+  constructor(console: QConsole) {
     super();
 
     const initialData: InitializationData = {

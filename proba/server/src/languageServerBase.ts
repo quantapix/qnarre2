@@ -35,9 +35,9 @@ import { ImportResolver } from './analyzer/importResolver';
 import { MaxAnalysisTime } from './analyzer/program';
 import { AnalyzerService, configFileNames } from './analyzer/service';
 import { BackgroundAnalysisBase } from './backgroundAnalysisBase';
-import { getNestedProperty } from './common/collectionUtils';
-import { ConfigOptions } from './common/configOptions';
-import { ConsoleInterface } from './common/console';
+import { getNestedProperty } from './utils/collection';
+import { ConfigOptions } from './utils/options';
+import { QConsole } from './utils/misc';
 import { createDeferred, Deferred } from './common/deferred';
 import {
   Diagnostic as AnalyzerDiagnostic,
@@ -69,7 +69,7 @@ export interface LanguageServerInterface {
   restart(): void;
 
   readonly rootPath: string;
-  readonly console: ConsoleInterface;
+  readonly console: QConsole;
   readonly window: WindowInterface;
   readonly fs: FileSystem;
 }

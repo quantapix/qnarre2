@@ -8,7 +8,7 @@
  * runtime rules of Python.
  */
 
-import { ConfigOptions, ExecutionEnvironment } from '../common/configOptions';
+import { ConfigOptions, ExecutionEnvironment } from '../utils/options';
 import { FileSystem } from '../common/fileSystem';
 import {
   combinePaths,

@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import { flatten } from '../utils/arrays';
+import { flatten } from '../utils/collection';
 import * as typeConverters from '../utils/typeConverters';
 
 class TypeScriptDocumentHighlightProvider implements vscode.DocumentHighlightProvider {

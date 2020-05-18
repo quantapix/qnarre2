@@ -6,7 +6,7 @@
 import * as jsonc from 'jsonc-parser';
 import { basename, dirname, join } from 'path';
 import * as vscode from 'vscode';
-import { coalesce, flatten } from '../utils/arrays';
+import { coalesce, flatten } from '../utils/collection';
 
 function mapChildren<R>(node: jsonc.Node | undefined, f: (x: jsonc.Node) => R): R[] {
   return node && node.type === 'array' && node.children ? node.children.map(f) : [];

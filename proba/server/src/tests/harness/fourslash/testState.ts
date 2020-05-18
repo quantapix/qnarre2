@@ -24,10 +24,10 @@ import {
 import { ImportResolver, ImportResolverFactory } from '../../../analyzer/importResolver';
 import { Program } from '../../../analyzer/program';
 import { AnalyzerService, configFileNames } from '../../../analyzer/service';
-import { ConfigOptions } from '../../../common/configOptions';
-import { ConsoleInterface, NullConsole } from '../../../common/console';
-import { Comparison, isNumber, isString, toBoolean } from '../../../common/core';
-import * as debug from '../../../common/debug';
+import { ConfigOptions } from '../../../utils/options';
+import { QConsole, NullConsole } from '../../../utils/misc';
+import { Comparison, isNumber, isString, toBoolean } from '../../../utils/misc';
+import * as debug from '../../../utils/misc';
 import { createDeferred } from '../../../common/deferred';
 import { DiagnosticCategory } from '../../../common/diagnostic';
 import { FileEditAction } from '../../../common/editAction';
@@ -109,7 +109,7 @@ export class TestState {
 
   readonly fs: vfs.TestFileSystem;
   readonly workspace: WorkspaceServiceInstance;
-  readonly console: ConsoleInterface;
+  readonly console: QConsole;
   readonly asyncTest: boolean;
 
   // The current caret position in the active file
@@ -1507,7 +1507,7 @@ export class TestState {
   }
 
   private _createAnalysisService(
-    nullConsole: ConsoleInterface,
+    nullConsole: QConsole,
     importResolverFactory: ImportResolverFactory,
     configOptions: ConfigOptions
   ) {

@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { ResourceMap } from '../utils/resourceMap';
 import { DiagnosticLanguage } from '../utils/languageDescription';
-import * as arrays from '../utils/arrays';
+import * as arrays from '../utils/collection';
 import { Disposable } from '../utils/misc';
 
 function diagnosticsEquals(a: vscode.Diagnostic, b: vscode.Diagnostic): boolean {

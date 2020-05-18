@@ -1,12 +1,3 @@
-/*
- * diagnostics.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- * Author: Eric Traut
- *
- * Class that represents errors and warnings.
- */
-
 import { Commands } from '../commands';
 import { Range } from './textRange';
 
@@ -36,7 +27,6 @@ export interface DiagnosticRelatedInfo {
   range: Range;
 }
 
-// Represents a single error or warning.
 export class Diagnostic {
   private _actions: DiagnosticAction[] | undefined;
   private _rule: string | undefined;
@@ -77,8 +67,6 @@ export class Diagnostic {
   }
 }
 
-// Helps to build additional information that can be appended to a diagnostic
-// message. It supports hierarchical information and flexible formatting.
 export class DiagnosticAddendum {
   private _messages: string[] = [];
   private _childAddenda: DiagnosticAddendum[] = [];
@@ -87,7 +75,6 @@ export class DiagnosticAddendum {
     this._messages.push(message);
   }
 
-  // Create a new (nested) addendum to which messages can be added.
   createAddendum() {
     const newAddendum = new DiagnosticAddendum();
     this.addAddendum(newAddendum);
@@ -122,15 +109,57 @@ export class DiagnosticAddendum {
     if (maxDepth <= 0) {
       return [];
     }
-
     const childLines: string[] = [];
     for (const addendum of this._childAddenda) {
       childLines.push(...addendum._getLinesRecursive(maxDepth - 1));
     }
-
-    // Prepend indentation for readability. Skip if there are no
-    // messages at this level.
     const extraSpace = this._messages.length > 0 ? '  ' : '';
     return this._messages.concat(childLines).map((line) => extraSpace + line);
   }
+}
+
+export const enum DiagnosticRule {
+  strictListInference = 'strictListInference',
+  strictDictionaryInference = 'strictDictionaryInference',
+  strictParameterNoneValue = 'strictParameterNoneValue',
+  enableTypeIgnoreComments = 'enableTypeIgnoreComments',
+
+  reportGeneralTypeIssues = 'reportGeneralTypeIssues',
+  reportTypeshedErrors = 'reportTypeshedErrors',
+  reportMissingImports = 'reportMissingImports',
+  reportMissingModuleSource = 'reportMissingModuleSource',
+  reportMissingTypeStubs = 'reportMissingTypeStubs',
+  reportImportCycles = 'reportImportCycles',
+  reportUnusedImport = 'reportUnusedImport',
+  reportUnusedClass = 'reportUnusedClass',
+  reportUnusedFunction = 'reportUnusedFunction',
+  reportUnusedVariable = 'reportUnusedVariable',
+  reportDuplicateImport = 'reportDuplicateImport',
+  reportOptionalSubscript = 'reportOptionalSubscript',
+  reportOptionalMemberAccess = 'reportOptionalMemberAccess',
+  reportOptionalCall = 'reportOptionalCall',
+  reportOptionalIterable = 'reportOptionalIterable',
+  reportOptionalContextManager = 'reportOptionalContextManager',
+  reportOptionalOperand = 'reportOptionalOperand',
+  reportUntypedFunctionDecorator = 'reportUntypedFunctionDecorator',
+  reportUntypedClassDecorator = 'reportUntypedClassDecorator',
+  reportUntypedBaseClass = 'reportUntypedBaseClass',
+  reportUntypedNamedTuple = 'reportUntypedNamedTuple',
+  reportPrivateUsage = 'reportPrivateUsage',
+  reportConstantRedefinition = 'reportConstantRedefinition',
+  reportIncompatibleMethodOverride = 'reportIncompatibleMethodOverride',
+  reportInvalidStringEscapeSequence = 'reportInvalidStringEscapeSequence',
+  reportUnknownParameterType = 'reportUnknownParameterType',
+  reportUnknownArgumentType = 'reportUnknownArgumentType',
+  reportUnknownLambdaType = 'reportUnknownLambdaType',
+  reportUnknownVariableType = 'reportUnknownVariableType',
+  reportUnknownMemberType = 'reportUnknownMemberType',
+  reportCallInDefaultInitializer = 'reportCallInDefaultInitializer',
+  reportUnnecessaryIsInstance = 'reportUnnecessaryIsInstance',
+  reportUnnecessaryCast = 'reportUnnecessaryCast',
+  reportAssertAlwaysTrue = 'reportAssertAlwaysTrue',
+  reportSelfClsParameterName = 'reportSelfClsParameterName',
+  reportImplicitStringConcatenation = 'reportImplicitStringConcatenation',
+  reportUndefinedVariable = 'reportUndefinedVariable',
+  reportUnboundVariable = 'reportUnboundVariable',
 }

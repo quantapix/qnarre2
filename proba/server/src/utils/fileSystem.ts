@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as chokidar from 'chokidar';
 
-import { ConsoleInterface, NullConsole } from './console';
+import { QConsole, NullConsole } from './misc';
 import { createDeferred } from './deferred';
 
 export type FileWatcherEventType = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir';
@@ -66,7 +66,7 @@ export interface FileWatcherProvider {
 // Callers can specify a different file watcher provider if desired.
 // By default, we'll use the file watcher based on chokidar.
 export function createFromRealFileSystem(
-  console?: ConsoleInterface,
+  console?: QConsole,
   fileWatcherProvider?: FileWatcherProvider
 ): FileSystem {
   return new RealFileSystem(
@@ -177,7 +177,7 @@ class RealFileSystem implements FileSystem {
 }
 
 class ChokidarFileWatcherProvider implements FileWatcherProvider {
-  constructor(private _console: ConsoleInterface) {}
+  constructor(private _console: QConsole) {}
 
   createFileWatcher(paths: string[], listener: FileWatcherEventHandler): FileWatcher {
     return this._createFileSystemWatcher(paths).on('all', listener);

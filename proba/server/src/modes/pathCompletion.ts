@@ -17,7 +17,7 @@ import {
   WorkspaceFolder,
 } from './languageModes';
 import { startsWith } from '../utils/strings';
-import { contains } from '../utils/arrays';
+import { contains } from '../utils/collection';
 
 export function getPathCompletionParticipant(
   document: TextDocument,

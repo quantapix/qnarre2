@@ -9,19 +9,19 @@
 import { CancellationToken, CompletionList } from 'vscode-languageserver';
 
 import { ModuleNode } from '../parser/parseNodes';
-import { ConfigOptions } from './configOptions';
+import { ConfigOptions } from './options';
 
 export interface LanguageServiceExtension {
-    readonly completionListExtension: CompletionListExtension;
+  readonly completionListExtension: CompletionListExtension;
 }
 
 export interface CompletionListExtension {
-    updateCompletionList(
-        sourceList: CompletionList,
-        ast: ModuleNode,
-        content: string,
-        position: number,
-        options: ConfigOptions,
-        token: CancellationToken
-    ): Promise<CompletionList>;
+  updateCompletionList(
+    sourceList: CompletionList,
+    ast: ModuleNode,
+    content: string,
+    position: number,
+    options: ConfigOptions,
+    token: CancellationToken
+  ): Promise<CompletionList>;
 }

@@ -11,7 +11,7 @@ import * as path from 'path';
 import Char from 'typescript-char';
 import { URI } from 'vscode-uri';
 
-import { some } from './collectionUtils';
+import { some } from './collection';
 import { compareValues, Comparison, GetCanonicalFileName, identity } from './core';
 import * as debug from './debug';
 import { FileSystem } from './fileSystem';

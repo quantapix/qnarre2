@@ -13,7 +13,7 @@ import {
   FormattingOptions,
   Position,
 } from './languageModes';
-import { pushAll } from '../utils/arrays';
+import { pushAll } from '../utils/collection';
 import { isEOL } from '../utils/strings';
 
 export function format(

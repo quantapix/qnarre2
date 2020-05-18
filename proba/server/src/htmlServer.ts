@@ -33,7 +33,7 @@ import {
 } from '../src-html/modes/languageModes';
 
 import { format } from '../src-html/modes/formatting';
-import { pushAll } from '../src-html/utils/arrays';
+import { pushAll } from '../src-html/utils/collection';
 import { getDocumentContext } from '../src-html/utils/documentContext';
 import { URI } from 'vscode-uri';
 import { formatError, runSafe, runSafeAsync } from '../src-html/utils/runner';

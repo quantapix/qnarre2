@@ -1,4 +1,4 @@
-import { timingStats } from './common/timing';
+import { timings } from './utils/misc';
 
 import * as chalk from 'chalk';
 import * as commandLineArgs from 'command-line-args';
@@ -6,8 +6,8 @@ import { CommandLineOptions, OptionDefinition } from 'command-line-args';
 import * as process from 'process';
 
 import { AnalyzerService } from './analyzer/service';
-import { CommandLineOptions as PyrightCommandLineOptions } from './common/commandLineOptions';
-import { NullConsole } from './common/console';
+import { CommandLineOptions as PyrightCommandLineOptions } from './utils/options';
+import { NullConsole } from './utils/misc';
 import { DiagnosticCategory } from './common/diagnostic';
 import { FileDiagnostics } from './common/diagnosticSink';
 import { combinePaths, normalizePath } from './common/pathUtils';
@@ -178,10 +178,10 @@ function processArgs() {
       }
       process.exit(ExitStatus.NoErrors);
     }
-    if (!watch) timingStats.printSummary(console);
+    if (!watch) timings.printSummary(console);
     if (args.stats) {
       service.printStats();
-      timingStats.printDetails(console);
+      timings.details(console);
     }
     if (args.dependencies) service.printDependencies(!!args.verbose);
     if (!watch) {

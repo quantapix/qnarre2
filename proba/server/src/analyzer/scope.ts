@@ -9,7 +9,7 @@
  * top-most built-in scope).
  */
 
-import { fail } from '../common/debug';
+import { fail } from '../utils/misc';
 import { Symbol, SymbolFlags, SymbolTable } from './symbol';
 
 export const enum ScopeType {

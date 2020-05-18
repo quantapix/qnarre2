@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../ts/api';
-import { coalesce } from '../ts/arrays';
+import { coalesce } from '../ts/collection';
 import { Delayer } from '../ts/async';
 import { nulToken } from '../ts/cancellation';
 import { Disposable } from '../ts/misc';

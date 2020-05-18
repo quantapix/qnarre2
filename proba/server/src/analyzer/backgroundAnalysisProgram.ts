@@ -10,8 +10,8 @@
 import { CancellationToken } from 'vscode-languageserver';
 
 import { BackgroundAnalysisBase } from '../backgroundAnalysisBase';
-import { ConfigOptions } from '../common/configOptions';
-import { ConsoleInterface } from '../common/console';
+import { ConfigOptions } from '../utils/options';
+import { QConsole } from '../utils/misc';
 import { Diagnostic } from '../common/diagnostic';
 import { FileDiagnostics } from '../common/diagnosticSink';
 import { LanguageServiceExtension } from '../common/extensibility';
@@ -27,7 +27,7 @@ export class BackgroundAnalysisProgram {
   private _maxAnalysisTime?: MaxAnalysisTime;
 
   constructor(
-    private _console: ConsoleInterface,
+    private _console: QConsole,
     private _configOptions: ConfigOptions,
     private _importResolver: ImportResolver,
     extension?: LanguageServiceExtension,

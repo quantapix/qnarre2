@@ -8,7 +8,7 @@
  * by the binder and checker.
  */
 
-import { DiagnosticRuleSet, ExecutionEnvironment } from '../common/configOptions';
+import { DiagnosticRuleSet, ExecutionEnvironment } from '../utils/options';
 import { TextRangeDiagnosticSink } from '../common/diagnosticSink';
 import { TextRange } from '../common/textRange';
 import { TextRangeCollection } from '../common/textRangeCollection';
@@ -19,24 +19,24 @@ import { SymbolTable } from './symbol';
 export type ImportLookup = (filePath: string) => ImportLookupResult | undefined;
 
 export interface ImportLookupResult {
-    symbolTable: SymbolTable;
-    docString?: string;
+  symbolTable: SymbolTable;
+  docString?: string;
 }
 
 export interface AnalyzerFileInfo {
-    importLookup: ImportLookup;
-    futureImports: Map<string, boolean>;
-    builtinsScope?: Scope;
-    typingModulePath?: string;
-    collectionsModulePath?: string;
-    diagnosticSink: TextRangeDiagnosticSink;
-    executionEnvironment: ExecutionEnvironment;
-    diagnosticRuleSet: DiagnosticRuleSet;
-    fileContents: string;
-    lines: TextRangeCollection<TextRange>;
-    filePath: string;
-    isStubFile: boolean;
-    isTypingStubFile: boolean;
-    isBuiltInStubFile: boolean;
-    accessedSymbolMap: Map<number, true>;
+  importLookup: ImportLookup;
+  futureImports: Map<string, boolean>;
+  builtinsScope?: Scope;
+  typingModulePath?: string;
+  collectionsModulePath?: string;
+  diagnosticSink: TextRangeDiagnosticSink;
+  executionEnvironment: ExecutionEnvironment;
+  diagnosticRuleSet: DiagnosticRuleSet;
+  fileContents: string;
+  lines: TextRangeCollection<TextRange>;
+  filePath: string;
+  isStubFile: boolean;
+  isTypingStubFile: boolean;
+  isBuiltInStubFile: boolean;
+  accessedSymbolMap: Map<number, true>;
 }

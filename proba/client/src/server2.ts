@@ -18,7 +18,7 @@ import { BackgroundAnalysis } from './backgroundAnalysis';
 import { BackgroundAnalysisBase } from './backgroundAnalysisBase';
 import { CommandController } from './commands/commandController';
 import { getCancellationFolderName } from './common/cancellationUtils';
-import { isDebugMode } from './common/core';
+import { isDebugMode } from './utils/misc';
 import { uriToPath, getDirectoryPath, normalizeSlashes } from './common/pathUtils';
 import {
   LanguageServerBase,

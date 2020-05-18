@@ -8,88 +8,91 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 
-import { OperationCanceledException, throwIfCancellationRequested } from '../common/cancellationUtils';
-import { ConfigOptions } from '../common/configOptions';
-import { ConsoleInterface } from '../common/console';
-import * as debug from '../common/debug';
+import {
+  OperationCanceledException,
+  throwIfCancellationRequested,
+} from '../common/cancellationUtils';
+import { ConfigOptions } from '../utils/options';
+import { QConsole } from '../utils/misc';
+import * as debug from '../utils/misc';
 import { FileDiagnostics } from '../common/diagnosticSink';
-import { Duration } from '../common/timing';
+import { Duration } from '../utils/misc';
 import { MaxAnalysisTime, Program } from './program';
 
 export const nullCallback: AnalysisCompleteCallback = (_) => {
-    /* empty */
+  /* empty */
 };
 
 export interface AnalysisResults {
-    diagnostics: FileDiagnostics[];
-    filesInProgram: number;
-    checkingOnlyOpenFiles: boolean;
-    filesRequiringAnalysis: number;
-    fatalErrorOccurred: boolean;
-    configParseErrorOccurred: boolean;
-    elapsedTime: number;
+  diagnostics: FileDiagnostics[];
+  filesInProgram: number;
+  checkingOnlyOpenFiles: boolean;
+  filesRequiringAnalysis: number;
+  fatalErrorOccurred: boolean;
+  configParseErrorOccurred: boolean;
+  elapsedTime: number;
 }
 
 export type AnalysisCompleteCallback = (results: AnalysisResults) => void;
 
 export function analyzeProgram(
-    program: Program,
-    maxTime: MaxAnalysisTime | undefined,
-    configOptions: ConfigOptions,
-    callback: AnalysisCompleteCallback | undefined,
-    console: ConsoleInterface,
-    token: CancellationToken
+  program: Program,
+  maxTime: MaxAnalysisTime | undefined,
+  configOptions: ConfigOptions,
+  callback: AnalysisCompleteCallback | undefined,
+  console: QConsole,
+  token: CancellationToken
 ): boolean {
-    let moreToAnalyze = false;
+  let moreToAnalyze = false;
 
-    callback = callback ?? nullCallback;
+  callback = callback ?? nullCallback;
 
-    try {
-        throwIfCancellationRequested(token);
+  try {
+    throwIfCancellationRequested(token);
 
-        const duration = new Duration();
-        moreToAnalyze = program.analyze(maxTime, token);
+    const duration = new Duration();
+    moreToAnalyze = program.analyze(maxTime, token);
 
-        const filesLeftToAnalyze = program.getFilesToAnalyzeCount();
-        debug.assert(filesLeftToAnalyze === 0 || moreToAnalyze);
+    const filesLeftToAnalyze = program.getFilesToAnalyzeCount();
+    debug.assert(filesLeftToAnalyze === 0 || moreToAnalyze);
 
-        const diagnostics = program.getDiagnostics(configOptions);
-        const diagnosticFileCount = diagnostics.length;
-        const elapsedTime = duration.getDurationInSeconds();
+    const diagnostics = program.getDiagnostics(configOptions);
+    const diagnosticFileCount = diagnostics.length;
+    const elapsedTime = duration.inSecs();
 
-        // Report any diagnostics or completion.
-        if (diagnosticFileCount > 0 || !moreToAnalyze) {
-            callback({
-                diagnostics,
-                filesInProgram: program.getFileCount(),
-                filesRequiringAnalysis: filesLeftToAnalyze,
-                checkingOnlyOpenFiles: program.isCheckingOnlyOpenFiles(),
-                fatalErrorOccurred: false,
-                configParseErrorOccurred: false,
-                elapsedTime,
-            });
-        }
-    } catch (e) {
-        if (OperationCanceledException.is(e)) {
-            return false;
-        }
-
-        const message: string =
-            (e.stack ? e.stack.toString() : undefined) ||
-            (typeof e.message === 'string' ? e.message : undefined) ||
-            JSON.stringify(e);
-        console.log('Error performing analysis: ' + message);
-
-        callback({
-            diagnostics: [],
-            filesInProgram: 0,
-            filesRequiringAnalysis: 0,
-            checkingOnlyOpenFiles: true,
-            fatalErrorOccurred: true,
-            configParseErrorOccurred: false,
-            elapsedTime: 0,
-        });
+    // Report any diagnostics or completion.
+    if (diagnosticFileCount > 0 || !moreToAnalyze) {
+      callback({
+        diagnostics,
+        filesInProgram: program.getFileCount(),
+        filesRequiringAnalysis: filesLeftToAnalyze,
+        checkingOnlyOpenFiles: program.isCheckingOnlyOpenFiles(),
+        fatalErrorOccurred: false,
+        configParseErrorOccurred: false,
+        elapsedTime,
+      });
+    }
+  } catch (e) {
+    if (OperationCanceledException.is(e)) {
+      return false;
     }
 
-    return moreToAnalyze;
+    const message: string =
+      (e.stack ? e.stack.toString() : undefined) ||
+      (typeof e.message === 'string' ? e.message : undefined) ||
+      JSON.stringify(e);
+    console.log('Error performing analysis: ' + message);
+
+    callback({
+      diagnostics: [],
+      filesInProgram: 0,
+      filesRequiringAnalysis: 0,
+      checkingOnlyOpenFiles: true,
+      fatalErrorOccurred: true,
+      configParseErrorOccurred: false,
+      elapsedTime: 0,
+    });
+  }
+
+  return moreToAnalyze;
 }

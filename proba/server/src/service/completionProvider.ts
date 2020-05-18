@@ -25,7 +25,7 @@ import {
   getMembersForModule,
 } from '../analyzer/typeUtils';
 import { throwIfCancellationRequested } from '../common/cancellationUtils';
-import { ConfigOptions } from '../common/configOptions';
+import { ConfigOptions } from '../utils/options';
 import { TextEditAction } from '../common/editAction';
 import {
   convertOffsetToPosition,

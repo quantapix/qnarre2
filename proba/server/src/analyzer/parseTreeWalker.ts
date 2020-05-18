@@ -7,7 +7,7 @@
  * Class that traverses a parse tree.
  */
 
-import { fail } from '../common/debug';
+import { fail } from '../utils/misc';
 import {
   ArgumentNode,
   AssertNode,
