@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Command } from '../utils/command';
+import { Command } from '../utils/extras';
 import { isTypeScriptDocument } from '../utils/languageModeIds';
 
 export class LearnMoreAboutRefactoringsCommand implements Command {

@@ -9,7 +9,7 @@ import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient, ServerResponse } from '../typescriptService';
 import { nulToken } from './cancellation';
-import { TypeScriptServiceConfiguration } from './configuration';
+import { ServiceConfig } from './configuration';
 
 const localize = nls.loadMessageBundle();
 
@@ -24,7 +24,7 @@ export function isImplicitProjectConfigFile(configFileName: string) {
 
 export function inferredProjectCompilerOptions(
   projectType: ProjectType,
-  serviceConfig: TypeScriptServiceConfiguration
+  serviceConfig: ServiceConfig
 ): Proto.ExternalProjectCompilerOptions {
   const projectConfig: Proto.ExternalProjectCompilerOptions = {
     module: 'commonjs' as Proto.ModuleKind,
@@ -50,10 +50,7 @@ export function inferredProjectCompilerOptions(
   return projectConfig;
 }
 
-function inferredProjectConfigSnippet(
-  projectType: ProjectType,
-  config: TypeScriptServiceConfiguration
-) {
+function inferredProjectConfigSnippet(projectType: ProjectType, config: ServiceConfig) {
   const baseConfig = inferredProjectCompilerOptions(projectType, config);
   const compilerOptions = Object.keys(baseConfig).map(
     (key) => `"${key}": ${JSON.stringify(baseConfig[key])}`
@@ -72,7 +69,7 @@ function inferredProjectConfigSnippet(
 export async function openOrCreateConfig(
   projectType: ProjectType,
   rootPath: string,
-  configuration: TypeScriptServiceConfiguration
+  configuration: ServiceConfig
 ): Promise<vscode.TextEditor | null> {
   const configFile = vscode.Uri.file(
     path.join(

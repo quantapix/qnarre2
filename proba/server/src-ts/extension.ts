@@ -11,11 +11,11 @@ import TypeScriptServiceClientHost from './typeScriptServiceClientHost';
 import { flatten } from './utils/arrays';
 import * as electron from './utils/electron';
 import * as rimraf from 'rimraf';
-import { Commands } from './utils/command';
+import { Commands } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
-import { standardLanguageDescriptions } from './utils/languageDescription';
+import { standardLanguageDescriptions } from './utils/language';
 import { lazy, Lazy } from './utils/lazy';
-import LogDirectoryProvider from './utils/logDirectoryProvider';
+import LogDirectory from './utils/providers';
 import ManagedFileContextManager from './utils/managedFileContext';
 import { Plugins } from './utils/plugin';
 import * as ProjectStatus from './utils/largeProjectStatus';
@@ -65,7 +65,7 @@ function createLazyClientHost(
   onCompletionAccepted: (item: vscode.CompletionItem) => void
 ): Lazy<TypeScriptServiceClientHost> {
   return lazy(() => {
-    const logDirectoryProvider = new LogDirectoryProvider(context);
+    const logDirectoryProvider = new LogDirectory(context);
 
     const clientHost = new TypeScriptServiceClientHost(
       standardLanguageDescriptions,

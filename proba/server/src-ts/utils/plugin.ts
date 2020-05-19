@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import * as arrays from './arrays';
-import { Disposable } from './dispose';
+import * as qu from '.';
+import { Disposable } from './extras';
 
 export interface Plugin {
   readonly path: string;
@@ -16,7 +16,7 @@ namespace Plugin {
       a.path === b.path &&
       a.name === b.name &&
       a.enableForVersions === b.enableForVersions &&
-      arrays.equals(a.languages, b.languages)
+      qu.deepEquals(a.languages, b.languages)
     );
   }
 }
@@ -32,9 +32,9 @@ export class Plugins extends Disposable {
         if (!this.plugs) return;
         const ps = this.readPlugins();
         if (
-          !arrays.equals(
-            arrays.flatten(Array.from(this.plugs.values())),
-            arrays.flatten(Array.from(ps.values())),
+          !qu.deepEquals(
+            qu.flatten(Array.from(this.plugs.values())),
+            qu.flatten(Array.from(ps.values())),
             Plugin.equals
           )
         ) {
@@ -43,7 +43,7 @@ export class Plugins extends Disposable {
         }
       },
       undefined,
-      this.disps
+      this.dispos
     );
   }
 
@@ -58,7 +58,7 @@ export class Plugins extends Disposable {
 
   public get plugins(): ReadonlyArray<Plugin> {
     if (!this.plugs) this.plugs = this.readPlugins();
-    return arrays.flatten(Array.from(this.plugs.values()));
+    return qu.flatten(Array.from(this.plugs.values()));
   }
 
   private readonly _onDidUpdatePlugins = this.register(new vscode.EventEmitter<this>());

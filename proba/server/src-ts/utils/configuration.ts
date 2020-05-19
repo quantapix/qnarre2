@@ -1,12 +1,7 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as objects from './objects';
+import * as objects from '.';
 import * as arrays from './arrays';
 
 export enum TsServerLogLevel {
@@ -46,7 +41,7 @@ export namespace TsServerLogLevel {
   }
 }
 
-export class TypeScriptServiceConfiguration {
+export class ServiceConfig {
   public readonly locale: string | null;
   public readonly globalTsdk: string | null;
   public readonly localTsdk: string | null;
@@ -62,46 +57,38 @@ export class TypeScriptServiceConfiguration {
   public readonly enablePromptUseWorkspaceTsdk: boolean;
   public readonly watchOptions: protocol.WatchOptions | undefined;
 
-  public static loadFromWorkspace(): TypeScriptServiceConfiguration {
-    return new TypeScriptServiceConfiguration();
+  public static loadFromWorkspace(): ServiceConfig {
+    return new ServiceConfig();
   }
 
   private constructor() {
     const configuration = vscode.workspace.getConfiguration();
 
-    this.locale = TypeScriptServiceConfiguration.extractLocale(configuration);
-    this.globalTsdk = TypeScriptServiceConfiguration.extractGlobalTsdk(configuration);
-    this.localTsdk = TypeScriptServiceConfiguration.extractLocalTsdk(configuration);
-    this.npmLocation = TypeScriptServiceConfiguration.readNpmLocation(configuration);
-    this.tsServerLogLevel = TypeScriptServiceConfiguration.readTsServerLogLevel(
+    this.locale = ServiceConfig.extractLocale(configuration);
+    this.globalTsdk = ServiceConfig.extractGlobalTsdk(configuration);
+    this.localTsdk = ServiceConfig.extractLocalTsdk(configuration);
+    this.npmLocation = ServiceConfig.readNpmLocation(configuration);
+    this.tsServerLogLevel = ServiceConfig.readTsServerLogLevel(configuration);
+    this.tsServerPluginPaths = ServiceConfig.readTsServerPluginPaths(configuration);
+    this.checkJs = ServiceConfig.readCheckJs(configuration);
+    this.experimentalDecorators = ServiceConfig.readExperimentalDecorators(configuration);
+    this.disableAutomaticTypeAcquisition = ServiceConfig.readDisableAutomaticTypeAcquisition(
       configuration
     );
-    this.tsServerPluginPaths = TypeScriptServiceConfiguration.readTsServerPluginPaths(
+    this.useSeparateSyntaxServer = ServiceConfig.readUseSeparateSyntaxServer(
       configuration
     );
-    this.checkJs = TypeScriptServiceConfiguration.readCheckJs(configuration);
-    this.experimentalDecorators = TypeScriptServiceConfiguration.readExperimentalDecorators(
+    this.enableProjectDiagnostics = ServiceConfig.readEnableProjectDiagnostics(
       configuration
     );
-    this.disableAutomaticTypeAcquisition = TypeScriptServiceConfiguration.readDisableAutomaticTypeAcquisition(
+    this.maxTsServerMemory = ServiceConfig.readMaxTsServerMemory(configuration);
+    this.enablePromptUseWorkspaceTsdk = ServiceConfig.readEnablePromptUseWorkspaceTsdk(
       configuration
     );
-    this.useSeparateSyntaxServer = TypeScriptServiceConfiguration.readUseSeparateSyntaxServer(
-      configuration
-    );
-    this.enableProjectDiagnostics = TypeScriptServiceConfiguration.readEnableProjectDiagnostics(
-      configuration
-    );
-    this.maxTsServerMemory = TypeScriptServiceConfiguration.readMaxTsServerMemory(
-      configuration
-    );
-    this.enablePromptUseWorkspaceTsdk = TypeScriptServiceConfiguration.readEnablePromptUseWorkspaceTsdk(
-      configuration
-    );
-    this.watchOptions = TypeScriptServiceConfiguration.readWatchOptions(configuration);
+    this.watchOptions = ServiceConfig.readWatchOptions(configuration);
   }
 
-  public isEqualTo(other: TypeScriptServiceConfiguration): boolean {
+  public isEqualTo(other: ServiceConfig): boolean {
     return (
       this.locale === other.locale &&
       this.globalTsdk === other.globalTsdk &&

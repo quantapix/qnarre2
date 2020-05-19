@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
-import { Command } from '../utils/command';
+import { Command } from '../utils/extras';
 import { Lazy } from '../utils/lazy';
 
 export class RestartTsServerCommand implements Command {

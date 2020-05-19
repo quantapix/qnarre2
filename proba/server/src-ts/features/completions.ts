@@ -11,7 +11,7 @@ import { ITypeScriptServiceClient, ServerResponse } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { applyCodeAction } from '../utils/codeAction';
-import { Command, Commands } from '../utils/command';
+import { Command, Commands } from '../utils/extras';
 import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
 import * as Previewer from '../utils/previewer';
 import { snippetForFunctionCall } from '../utils/snippetForFunctionCall';

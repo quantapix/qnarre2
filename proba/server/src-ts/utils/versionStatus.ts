@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import { coalesce } from './arrays';
-import { Command, Commands } from './command';
+import { Command, Commands } from './extras';
 import { isTypeScriptDocument } from './languageModeIds';
 import {
   isImplicitProjectConfigFile,
@@ -16,7 +16,7 @@ import {
   openProjectConfigForFile,
   ProjectType,
 } from './tsconfig';
-import { Disposable } from './dispose';
+import { Disposable } from './disposable';
 import { TypeScriptVersion } from './versionProvider';
 
 const localize = nls.loadMessageBundle();

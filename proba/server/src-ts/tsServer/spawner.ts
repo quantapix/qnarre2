@@ -1,19 +1,14 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as child_process from 'child_process';
 import * as path from 'path';
 import * as stream from 'stream';
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import API from '../utils/api';
-import { TsServerLogLevel, TypeScriptServiceConfiguration } from '../utils/configuration';
+import { TsServerLogLevel, ServiceConfig } from '../utils/configuration';
 import * as electron from '../utils/electron';
-import LogDirectoryProvider from '../utils/logDirectoryProvider';
+import LogDirectory from '../utils/providers';
 import Logger from '../utils/logger';
-import { TypeScriptPluginPathsProvider } from '../utils/pluginPathsProvider';
+import { PluginPaths } from '../utils/pluginPathsProvider';
 import { Plugins } from '../utils/plugin';
 import { TelemetryReporter } from '../utils/telemetry';
 import Tracer from '../utils/tracer';
@@ -38,8 +33,8 @@ const enum ServerKind {
 export class TypeScriptServerSpawner {
   public constructor(
     private readonly _versionProvider: TypeScriptVersionProvider,
-    private readonly _logDirectoryProvider: LogDirectoryProvider,
-    private readonly _pluginPathsProvider: TypeScriptPluginPathsProvider,
+    private readonly _logDirectoryProvider: LogDirectory,
+    private readonly _pluginPathsProvider: PluginPaths,
     private readonly _logger: Logger,
     private readonly _telemetryReporter: TelemetryReporter,
     private readonly _tracer: Tracer
@@ -47,7 +42,7 @@ export class TypeScriptServerSpawner {
 
   public spawn(
     version: TypeScriptVersion,
-    configuration: TypeScriptServiceConfiguration,
+    configuration: ServiceConfig,
     pluginManager: Plugins,
     delegate: TsServerDelegate
   ): ITypeScriptServer {
@@ -99,7 +94,7 @@ export class TypeScriptServerSpawner {
 
   private shouldUseSeparateSyntaxServer(
     version: TypeScriptVersion,
-    configuration: TypeScriptServiceConfiguration
+    configuration: ServiceConfig
   ): boolean {
     return (
       configuration.useSeparateSyntaxServer &&
@@ -108,16 +103,14 @@ export class TypeScriptServerSpawner {
     );
   }
 
-  private shouldUseSeparateDiagnosticsServer(
-    configuration: TypeScriptServiceConfiguration
-  ): boolean {
+  private shouldUseSeparateDiagnosticsServer(configuration: ServiceConfig): boolean {
     return configuration.enableProjectDiagnostics;
   }
 
   private spawnTsServer(
     kind: ServerKind,
     version: TypeScriptVersion,
-    configuration: TypeScriptServiceConfiguration,
+    configuration: ServiceConfig,
     pluginManager: Plugins
   ): ITypeScriptServer {
     const apiVersion = version.apiVersion || API.defaultVersion;
@@ -157,10 +150,7 @@ export class TypeScriptServerSpawner {
     );
   }
 
-  private getForkOptions(
-    kind: ServerKind,
-    configuration: TypeScriptServiceConfiguration
-  ) {
+  private getForkOptions(kind: ServerKind, configuration: ServiceConfig) {
     const debugPort = TypeScriptServerSpawner.getDebugPort(kind);
     const tsServerForkOptions: electron.ForkOptions = {
       execArgv: [
@@ -175,7 +165,7 @@ export class TypeScriptServerSpawner {
 
   private getTsServerArgs(
     kind: ServerKind,
-    configuration: TypeScriptServiceConfiguration,
+    configuration: ServiceConfig,
     currentVersion: TypeScriptVersion,
     apiVersion: API,
     pluginManager: Plugins
@@ -279,11 +269,11 @@ export class TypeScriptServerSpawner {
     return undefined;
   }
 
-  private static isLoggingEnabled(configuration: TypeScriptServiceConfiguration) {
+  private static isLoggingEnabled(configuration: ServiceConfig) {
     return configuration.tsServerLogLevel !== TsServerLogLevel.Off;
   }
 
-  private static getTsLocale(configuration: TypeScriptServiceConfiguration): string {
+  private static getTsLocale(configuration: ServiceConfig): string {
     return configuration.locale ? configuration.locale : vscode.env.language;
   }
 }

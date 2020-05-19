@@ -10,7 +10,7 @@ import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
-import { Command, Commands } from '../utils/command';
+import { Command, Commands } from '../utils/extras';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as fileSchemes from '../utils/fileSchemes';
 import { TelemetryReporter } from '../utils/telemetry';

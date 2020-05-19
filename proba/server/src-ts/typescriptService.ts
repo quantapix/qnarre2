@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import BufferSyncSupport from './features/bufferSyncSupport';
 import * as Proto from './protocol';
 import API from './utils/api';
-import { TypeScriptServiceConfiguration } from './utils/configuration';
+import { ServiceConfig } from './utils/configuration';
 import { Plugins } from './utils/plugin';
 
 export namespace ServerResponse {
@@ -164,7 +164,7 @@ export interface ITypeScriptServiceClient {
 
   readonly apiVersion: API;
   readonly pluginManager: Plugins;
-  readonly configuration: TypeScriptServiceConfiguration;
+  readonly configuration: ServiceConfig;
   readonly bufferSyncSupport: BufferSyncSupport;
 
   execute<K extends keyof StandardTsServerRequests>(

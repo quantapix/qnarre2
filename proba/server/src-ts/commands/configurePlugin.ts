@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Command } from '../utils/command';
+import { Command } from '../utils/extras';
 import { Plugins } from '../utils/plugin';
 
 export class ConfigurePluginCommand implements Command {

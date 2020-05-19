@@ -1,54 +1,50 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import { Disposable } from './dispose';
-import { isJsConfigOrTsConfigFileName } from './languageDescription';
+import { Disposable } from './disposable';
+import { isJsConfigOrTsConfigFileName } from './language';
 import { isSupportedLanguageMode } from './languageModeIds';
 
-/**
- * When clause context set when the current file is managed by vscode's built-in typescript extension.
- */
 export default class ManagedFileContextManager extends Disposable {
-	private static readonly contextName = 'typescript.isManagedFile';
+  private static readonly contextName = 'typescript.isManagedFile';
 
-	private isInManagedFileContext: boolean = false;
+  private isInManagedFileContext = false;
 
-	public constructor(
-		private readonly normalizePath: (resource: vscode.Uri) => string | undefined
-	) {
-		super();
-		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, this._disposables);
+  public constructor(
+    private readonly normalizePath: (resource: vscode.Uri) => string | undefined
+  ) {
+    super();
+    vscode.window.onDidChangeActiveTextEditor(
+      this.onDidChangeActiveTextEditor,
+      this,
+      this.dispos
+    );
+    this.onDidChangeActiveTextEditor(vscode.window.activeTextEditor);
+  }
 
-		this.onDidChangeActiveTextEditor(vscode.window.activeTextEditor);
-	}
+  private onDidChangeActiveTextEditor(e?: vscode.TextEditor): any {
+    if (e) this.updateContext(this.isManagedFile(e));
+  }
 
-	private onDidChangeActiveTextEditor(editor?: vscode.TextEditor): any {
-		if (editor) {
-			this.updateContext(this.isManagedFile(editor));
-		}
-	}
+  private updateContext(newValue: boolean) {
+    if (newValue === this.isInManagedFileContext) return;
+    vscode.commands.executeCommand(
+      'setContext',
+      ManagedFileContextManager.contextName,
+      newValue
+    );
+    this.isInManagedFileContext = newValue;
+  }
 
-	private updateContext(newValue: boolean) {
-		if (newValue === this.isInManagedFileContext) {
-			return;
-		}
+  private isManagedFile(e: vscode.TextEditor) {
+    return this.isManagedScriptFile(e) || this.isManagedConfigFile(e);
+  }
 
-		vscode.commands.executeCommand('setContext', ManagedFileContextManager.contextName, newValue);
-		this.isInManagedFileContext = newValue;
-	}
+  private isManagedScriptFile(e: vscode.TextEditor) {
+    return (
+      isSupportedLanguageMode(e.document) && this.normalizePath(e.document.uri) !== null
+    );
+  }
 
-	private isManagedFile(editor: vscode.TextEditor): boolean {
-		return this.isManagedScriptFile(editor) || this.isManagedConfigFile(editor);
-	}
-
-	private isManagedScriptFile(editor: vscode.TextEditor): boolean {
-		return isSupportedLanguageMode(editor.document) && this.normalizePath(editor.document.uri) !== null;
-	}
-
-	private isManagedConfigFile(editor: vscode.TextEditor): boolean {
-		return isJsConfigOrTsConfigFileName(editor.document.fileName);
-	}
+  private isManagedConfigFile(e: vscode.TextEditor) {
+    return isJsConfigOrTsConfigFileName(e.document.fileName);
+  }
 }

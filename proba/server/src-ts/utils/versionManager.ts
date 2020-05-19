@@ -1,13 +1,8 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { TypeScriptVersion, TypeScriptVersionProvider } from './versionProvider';
-import { Disposable } from './dispose';
-import { TypeScriptServiceConfiguration } from './configuration';
+import { Disposable } from './disposable';
+import { ServiceConfig } from './configuration';
 
 const localize = nls.loadMessageBundle();
 
@@ -22,7 +17,7 @@ export class TypeScriptVersionManager extends Disposable {
   private _currentVersion: TypeScriptVersion;
 
   public constructor(
-    private configuration: TypeScriptServiceConfiguration,
+    private configuration: ServiceConfig,
     private readonly versionProvider: TypeScriptVersionProvider,
     private readonly workspaceState: vscode.Memento
   ) {
@@ -47,7 +42,7 @@ export class TypeScriptVersionManager extends Disposable {
   private readonly _onDidPickNewVersion = this._register(new vscode.EventEmitter<void>());
   public readonly onDidPickNewVersion = this._onDidPickNewVersion.event;
 
-  public updateConfiguration(nextConfiguration: TypeScriptServiceConfiguration) {
+  public updateConfiguration(nextConfiguration: ServiceConfig) {
     const lastConfiguration = this.configuration;
     this.configuration = nextConfiguration;
 
@@ -161,7 +156,7 @@ export class TypeScriptVersionManager extends Disposable {
     return this.workspaceState.get<boolean>(suppressPromptWorkspaceTsdkStorageKey, false);
   }
 
-  private isInPromptWorkspaceTsdkState(configuration: TypeScriptServiceConfiguration) {
+  private isInPromptWorkspaceTsdkState(configuration: ServiceConfig) {
     return (
       configuration.localTsdk !== null &&
       configuration.enablePromptUseWorkspaceTsdk === true &&

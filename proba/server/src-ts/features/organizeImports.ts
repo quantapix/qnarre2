@@ -8,7 +8,7 @@ import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
-import { Command, Commands } from '../utils/command';
+import { Command, Commands } from '../utils/extras';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as typeconverts from '../utils/typeConverters';
 import FileConfigurationManager from './fileConfigurationManager';

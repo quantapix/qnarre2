@@ -20,12 +20,12 @@ import {
   TypeScriptRequests,
 } from './typescriptService';
 import API from './utils/api';
-import { TsServerLogLevel, TypeScriptServiceConfiguration } from './utils/configuration';
-import { Disposable } from './utils/dispose';
+import { TsServerLogLevel, ServiceConfig } from './utils/configuration';
+import { Disposable } from './utils/disposable';
 import * as fileSchemes from './utils/fileSchemes';
-import LogDirectoryProvider from './utils/logDirectoryProvider';
+import LogDirectory from './utils/providers';
 import Logger from './utils/logger';
-import { TypeScriptPluginPathsProvider } from './utils/pluginPathsProvider';
+import { PluginPaths } from './utils/pluginPathsProvider';
 import { Plugins } from './utils/plugin';
 import {
   TelemetryReporter,
@@ -104,9 +104,9 @@ export default class TypeScriptServiceClient extends Disposable
   private readonly inMemoryResourcePrefix = '^';
 
   private _onReady?: { promise: Promise<void>; resolve: () => void; reject: () => void };
-  private _configuration: TypeScriptServiceConfiguration;
+  private _configuration: ServiceConfig;
   private versionProvider: TypeScriptVersionProvider;
-  private pluginPathsProvider: TypeScriptPluginPathsProvider;
+  private pluginPathsProvider: PluginPaths;
   private readonly _versionManager: TypeScriptVersionManager;
 
   private readonly logger = new Logger();
@@ -130,7 +130,7 @@ export default class TypeScriptServiceClient extends Disposable
     private readonly workspaceState: vscode.Memento,
     private readonly onDidChangeTypeScriptVersion: (version: TypeScriptVersion) => void,
     public readonly pluginManager: Plugins,
-    private readonly logDirectoryProvider: LogDirectoryProvider,
+    private readonly logDirectoryProvider: LogDirectory,
     allModeIds: readonly string[]
   ) {
     super();
@@ -145,9 +145,9 @@ export default class TypeScriptServiceClient extends Disposable
 
     this.numberRestarts = 0;
 
-    this._configuration = TypeScriptServiceConfiguration.loadFromWorkspace();
+    this._configuration = ServiceConfig.loadFromWorkspace();
     this.versionProvider = new TypeScriptVersionProvider(this._configuration);
-    this.pluginPathsProvider = new TypeScriptPluginPathsProvider(this._configuration);
+    this.pluginPathsProvider = new PluginPaths(this._configuration);
     this._versionManager = this._register(
       new TypeScriptVersionManager(
         this._configuration,
@@ -183,7 +183,7 @@ export default class TypeScriptServiceClient extends Disposable
     vscode.workspace.onDidChangeConfiguration(
       () => {
         const oldConfiguration = this._configuration;
-        this._configuration = TypeScriptServiceConfiguration.loadFromWorkspace();
+        this._configuration = ServiceConfig.loadFromWorkspace();
 
         this.versionProvider.updateConfiguration(this._configuration);
         this._versionManager.updateConfiguration(this._configuration);
@@ -609,9 +609,7 @@ export default class TypeScriptServiceClient extends Disposable
     }
   }
 
-  private setCompilerOptionsForInferredProjects(
-    configuration: TypeScriptServiceConfiguration
-  ): void {
+  private setCompilerOptionsForInferredProjects(configuration: ServiceConfig): void {
     const args: Proto.SetCompilerOptionsForInferredProjectsArgs = {
       options: this.getCompilerOptionsForInferredProjects(configuration),
     };
@@ -619,7 +617,7 @@ export default class TypeScriptServiceClient extends Disposable
   }
 
   private getCompilerOptionsForInferredProjects(
-    configuration: TypeScriptServiceConfiguration
+    configuration: ServiceConfig
   ): Proto.ExternalProjectCompilerOptions {
     return {
       ...inferredProjectCompilerOptions(ProjectType.TypeScript, configuration),

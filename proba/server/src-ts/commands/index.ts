@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
-import { Commands } from '../utils/command';
+import { Commands } from '../utils/extras';
 import { Lazy } from '../utils/lazy';
 import { Plugins } from '../utils/plugin';
 import { ConfigurePluginCommand } from './configurePlugin';

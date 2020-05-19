@@ -16,11 +16,11 @@ import * as Proto from './protocol';
 import * as PConst from './protocol.const';
 import TypeScriptServiceClient from './typescriptServiceClient';
 import { coalesce, flatten } from './utils/arrays';
-import { Commands } from './utils/command';
-import { Disposable } from './utils/dispose';
+import { Commands } from './utils/extras';
+import { Disposable } from './utils/disposable';
 import * as errorCodes from './utils/errorCodes';
-import { DiagnosticLanguage, LanguageDescription } from './utils/languageDescription';
-import LogDirectoryProvider from './utils/logDirectoryProvider';
+import { DiagnosticLanguage, LanguageDescription } from './utils/language';
+import LogDirectory from './utils/providers';
 import { Plugins } from './utils/plugin';
 import * as typeConverters from './utils/typeConverters';
 import TypingsStatus, { AtaProgressReporter } from './utils/typingsStatus';
@@ -54,7 +54,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
     workspaceState: vscode.Memento,
     pluginManager: Plugins,
     private readonly commandManager: Commands,
-    logDirectoryProvider: LogDirectoryProvider,
+    logDirectoryProvider: LogDirectory,
     onCompletionAccepted: (item: vscode.CompletionItem) => void
   ) {
     super();
