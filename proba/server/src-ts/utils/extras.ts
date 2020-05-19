@@ -48,17 +48,17 @@ export interface Command {
 }
 
 export class Commands {
-  private readonly cmds = new Map<string, vscode.Disposable>();
+  private readonly cs = new Map<string, vscode.Disposable>();
 
   public dispose() {
-    for (const c of this.cmds.values()) {
+    for (const c of this.cs.values()) {
       c.dispose();
     }
-    this.cmds.clear();
+    this.cs.clear();
   }
 
   public register<T extends Command>(c: T) {
-    const cs = this.cmds;
+    const cs = this.cs;
     for (const i of Array.isArray(c.id) ? c.id : [c.id]) {
       if (!cs.has(i)) cs.set(i, vscode.commands.registerCommand(i, c.execute, c));
     }

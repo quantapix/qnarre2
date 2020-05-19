@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { Api, getExtensionApi } from './api';
-import { registerCommands } from './commands/index';
+import { registerCommands } from './commands';
 import { LanguageConfigurationManager } from './features/languageConfiguration';
 import TypeScriptServiceClientHost from './typeScriptServiceClientHost';
 import { flatten } from './utils/arrays';
