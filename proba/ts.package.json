@@ -1,14 +1,36 @@
 {
-  "name": "typescript",
+  "name": "typescript-language-features",
   "description": "%description%",
   "displayName": "%displayName%",
   "version": "1.0.0",
+  "icon": "icon.png",
   "author": "vscode",
   "publisher": "vscode",
   "license": "MIT",
+  "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
   "enableProposedApi": true,
   "engines": {
-    "vscode": "*"
+    "vscode": "^1.30.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "dependencies": {
+    "jsonc-parser": "^2.2.1",
+    "rimraf": "^2.6.3",
+    "semver": "5.5.1",
+    "typescript-vscode-sh-plugin": "^0.6.13",
+    "vscode-extension-telemetry": "0.1.1",
+    "vscode-nls": "^4.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^12.11.7",
+    "@types/rimraf": "2.0.2",
+    "@types/semver": "^5.5.0",
+    "vscode": "^1.1.36"
+  },
+  "scripts": {
+    "vscode:prepublish": "node ../../node_modules/gulp/bin/gulp.js --gulpfile ../../build/gulpfile.extensions.js compile-extension:typescript-language-features"
   },
   "activationEvents": [
     "onLanguage:javascript",
@@ -28,147 +50,7 @@
     "onLanguage:jsonc"
   ],
   "main": "./out/extension",
-  "scripts": {
-    "update-grammar": "node ./build/update-grammars.js",
-    "vscode:prepublish": "node ../../node_modules/gulp/bin/gulp.js --gulpfile ../../build/gulpfile.extensions.js compile-extension:typescript-language-features"
-  },
   "contributes": {
-    "languages": [
-      {
-        "id": "typescript",
-        "aliases": [
-          "TypeScript",
-          "ts",
-          "typescript"
-        ],
-        "extensions": [
-          ".ts"
-        ],
-        "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "typescriptreact",
-        "aliases": [
-          "TypeScript React",
-          "tsx"
-        ],
-        "extensions": [
-          ".tsx"
-        ],
-        "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "jsonc",
-        "filenames": [
-          "tsconfig.json",
-          "jsconfig.json"
-        ],
-        "filenamePatterns": [
-          "tsconfig.*.json",
-          "tsconfig-*.json"
-        ]
-      }
-    ],
-    "grammars": [
-      {
-        "language": "typescript",
-        "scopeName": "source.ts",
-        "path": "./syntaxes/TypeScript.tmLanguage.json",
-        "tokenTypes": {
-          "entity.name.type.instance.jsdoc": "other",
-          "entity.name.function.tagged-template": "other",
-          "meta.import string.quoted": "other",
-          "variable.other.jsdoc": "other"
-        }
-      },
-      {
-        "language": "typescriptreact",
-        "scopeName": "source.tsx",
-        "path": "./syntaxes/TypeScriptReact.tmLanguage.json",
-        "embeddedLanguages": {
-          "meta.tag.tsx": "jsx-tags",
-          "meta.tag.without-attributes.tsx": "jsx-tags",
-          "meta.tag.attributes.tsx": "typescriptreact",
-          "meta.embedded.expression.tsx": "typescriptreact"
-        },
-        "tokenTypes": {
-          "entity.name.type.instance.jsdoc": "other",
-          "entity.name.function.tagged-template": "other",
-          "meta.import string.quoted": "other",
-          "variable.other.jsdoc": "other"
-        }
-      }
-    ],
-    "semanticTokenScopes": [
-      {
-        "language": "typescript",
-        "scopes": {
-          "property": [
-            "variable.other.property.ts"
-          ],
-          "property.readonly": [
-            "variable.other.constant.property.ts"
-          ],
-          "variable": [
-            "variable.other.readwrite.ts"
-          ],
-          "variable.readonly": [
-            "variable.other.constant.object.ts"
-          ],
-          "function": [
-            "entity.name.function.ts"
-          ],
-          "namespace": [
-            "entity.name.type.module.ts"
-          ],
-          "variable.defaultLibrary": [
-            "support.variable.ts"
-          ],
-          "function.defaultLibrary": [
-            "support.function.ts"
-          ]
-        }
-      },
-      {
-        "language": "typescriptreact",
-        "scopes": {
-          "property": [
-            "variable.other.property.tsx"
-          ],
-          "property.readonly": [
-            "variable.other.constant.property.tsx"
-          ],
-          "variable": [
-            "variable.other.readwrite.tsx"
-          ],
-          "variable.readonly": [
-            "variable.other.constant.object.tsx"
-          ],
-          "function": [
-            "entity.name.function.tsx"
-          ],
-          "namespace": [
-            "entity.name.type.module.tsx"
-          ],
-          "variable.defaultLibrary": [
-            "support.variable.tsx"
-          ],
-          "function.defaultLibrary": [
-            "support.function.tsx"
-          ]
-        }
-      }
-    ],
-    "snippets": [
-      {
-        "language": "typescript",
-        "path": "./snippets/typescript.code-snippets"
-      },
-      {
-        "language": "typescriptreact",
-        "path": "./snippets/typescript.code-snippets"
-      }
-    ],
     "jsonValidation": [
       {
         "fileMatch": "package.json",
@@ -1142,11 +1024,7 @@
           "typescript",
           "typescriptreact"
         ],
-        "actions": {
-          "kind": "",
-          "title": ""
-        },
-        "actionsx": [
+        "actions": [
           {
             "kind": "refactor.extract.constant",
             "title": "%codeActions.refactor.extract.constant.title%",
@@ -1209,19 +1087,5 @@
         "enableForWorkspaceTypeScriptVersions": true
       }
     ]
-  },
-  "dependencies": {
-    "jsonc-parser": "",
-    "rimraf": "",
-    "semver": "",
-    "typescript-vscode-sh-plugin": "",
-    "vscode-extension-telemetry": "",
-    "vscode-nls": ""
-  },
-  "devDependencies": {
-    "@types/node": "",
-    "@types/rimraf": "",
-    "@types/semver": "",
-    "vscode": ""
   }
 }

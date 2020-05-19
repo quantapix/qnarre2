@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as jsonc from 'jsonc-parser';
+import * as jsonc from './node_modules/jsonc-parser';
 import { basename, dirname, join } from 'path';
 import * as vscode from 'vscode';
 import { coalesce, flatten } from '../utils/collection';

@@ -13,3 +13,13 @@ client/node_modules/**
 !client/node_modules/vscode-languageserver-protocol/**
 !client/node_modules/vscode-languageserver-types/**
 !client/node_modules/semver/**
+
+
+build/**
+src/**
+test/**
+out/**
+tsconfig.json
+extension.webpack.config.js
+cgmanifest.json
+yarn.lock

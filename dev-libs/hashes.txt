@@ -1,2 +1,3 @@
 rxjs @ 5baa104
 spaCy @ 5b5528f
+vscode @ a7fb3ef303
