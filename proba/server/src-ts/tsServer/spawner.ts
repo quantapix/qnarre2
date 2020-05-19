@@ -15,12 +15,12 @@ import Tracer from '../utils/tracer';
 import { TypeScriptVersion, TypeScriptVersionProvider } from '../utils/versionProvider';
 import {
   ITypeScriptServer,
-  PipeRequestCanceller,
-  ProcessBasedTsServer,
-  SyntaxRoutingTsServer,
-  TsServerProcess,
-  TsServerDelegate,
-  GetErrRoutingTsServer,
+  PipeCanceller,
+  ProcessBased,
+  SyntaxRouting,
+  ServerProcess,
+  ServerDelegate,
+  GetErrRouting,
 } from './server';
 
 const enum ServerKind {
@@ -44,11 +44,11 @@ export class TypeScriptServerSpawner {
     version: TypeScriptVersion,
     configuration: ServiceConfig,
     pluginManager: Plugins,
-    delegate: TsServerDelegate
+    delegate: ServerDelegate
   ): ITypeScriptServer {
     let primaryServer: ITypeScriptServer;
     if (this.shouldUseSeparateSyntaxServer(version, configuration)) {
-      primaryServer = new SyntaxRoutingTsServer(
+      primaryServer = new SyntaxRouting(
         {
           syntax: this.spawnTsServer(
             ServerKind.Syntax,
@@ -75,7 +75,7 @@ export class TypeScriptServerSpawner {
     }
 
     if (this.shouldUseSeparateDiagnosticsServer(configuration)) {
-      return new GetErrRoutingTsServer(
+      return new GetErrRouting(
         {
           getErr: this.spawnTsServer(
             ServerKind.Diagnostics,
@@ -139,11 +139,11 @@ export class TypeScriptServerSpawner {
     );
     this._logger.info(`<${kind}> Starting...`);
 
-    return new ProcessBasedTsServer(
+    return new ProcessBased(
       kind,
       new ChildServerProcess(childProcess),
       tsServerLogFile,
-      new PipeRequestCanceller(kind, cancellationPipeName, this._tracer),
+      new PipeCanceller(kind, cancellationPipeName, this._tracer),
       version,
       this._telemetryReporter,
       this._tracer
@@ -278,7 +278,7 @@ export class TypeScriptServerSpawner {
   }
 }
 
-class ChildServerProcess implements TsServerProcess {
+class ChildServerProcess implements ServerProcess {
   public constructor(private readonly _process: child_process.ChildProcess) {}
 
   get stdout(): stream.Readable {

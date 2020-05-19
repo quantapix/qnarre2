@@ -1,42 +1,30 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
+import type * as proto from '../protocol';
 import { ServerResponse } from '../typescriptService';
 
-type Resolve<T extends Proto.Response> = () => Promise<ServerResponse.Response<T>>;
+type Resolve<T extends proto.Response> = () => Promise<ServerResponse.Response<T>>;
 
-export class CachedResponse<T extends Proto.Response> {
-  private response?: Promise<ServerResponse.Response<T>>;
+export class CachedResponse<T extends proto.Response> {
+  private reply?: Promise<ServerResponse.Response<T>>;
   private version = -1;
-  private document = '';
+  private doc = '';
 
-  public execute(
-    document: vscode.TextDocument,
-    resolve: Resolve<T>
-  ): Promise<ServerResponse.Response<T>> {
-    if (this.response && this.matches(document)) {
-      // Chain so that on cancellation we fall back to the next resolve
-      return (this.response = this.response.then((result) =>
-        result.type === 'cancelled' ? resolve() : result
+  private matches(d: vscode.TextDocument) {
+    return this.version === d.version && this.doc === d.uri.toString();
+  }
+
+  public execute(d: vscode.TextDocument, r: Resolve<T>) {
+    if (this.reply && this.matches(d)) {
+      return (this.reply = this.reply.then((res) =>
+        res.type === 'cancelled' ? r() : res
       ));
     }
-    return this.reset(document, resolve);
+    return this.reset(d, r);
   }
 
-  private matches(document: vscode.TextDocument): boolean {
-    return this.version === document.version && this.document === document.uri.toString();
-  }
-
-  private async reset(
-    document: vscode.TextDocument,
-    resolve: Resolve<T>
-  ): Promise<ServerResponse.Response<T>> {
-    this.version = document.version;
-    this.document = document.uri.toString();
-    return (this.response = resolve());
+  private async reset(d: vscode.TextDocument, r: Resolve<T>) {
+    this.version = d.version;
+    this.doc = d.uri.toString();
+    return (this.reply = r());
   }
 }

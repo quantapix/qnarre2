@@ -288,7 +288,7 @@ interface RequestExecutionMetadata {
   readonly queuingStartTime: number;
 }
 
-export default class Tracer {
+export class Tracer {
   private trace?: Trace;
 
   constructor(private readonly logger: Logger) {
