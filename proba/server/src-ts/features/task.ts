@@ -83,12 +83,12 @@ export default class TscTaskProvider implements vscode.TaskProvider {
           'TypeScript Task in tasks.json contains "\\\\". TypeScript tasks tsconfig must use "/"'
         )
       );
-      return undefined;
+      return;
     }
 
     const tsconfigPath = definition.tsconfig;
     if (!tsconfigPath) {
-      return undefined;
+      return;
     }
 
     if (
@@ -97,7 +97,7 @@ export default class TscTaskProvider implements vscode.TaskProvider {
       task.scope === vscode.TaskScope.Workspace
     ) {
       // scope is required to be a WorkspaceFolder for resolveTask
-      return undefined;
+      return;
     }
     const tsconfigUri = task.scope.uri.with({
       path: task.scope.uri.path + '/' + tsconfigPath,
@@ -220,7 +220,7 @@ export default class TscTaskProvider implements vscode.TaskProvider {
     ) {
       return path.join(bin, 'tsc');
     }
-    return undefined;
+    return;
   }
 
   private getActiveTypeScriptFile(): string | undefined {
@@ -235,7 +235,7 @@ export default class TscTaskProvider implements vscode.TaskProvider {
         return this.client.value.toPath(document.uri);
       }
     }
-    return undefined;
+    return;
   }
 
   private getBuildTask(

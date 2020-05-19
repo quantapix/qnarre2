@@ -32,7 +32,7 @@ export function getExtensionApi(
       if (version === 0) {
         return new ApiV0(onCompletionAccepted, pluginManager);
       }
-      return undefined;
+      return;
     },
   };
 }

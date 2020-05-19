@@ -6,7 +6,7 @@
 import * as assert from 'assert';
 import 'mocha';
 import * as stream from 'stream';
-import { PipeCanceller, ServerProcess, ProcessBased } from '../tsServer/server';
+import { PipeCanceller, ServerProcess, ProcessBased } from '../server';
 import { nulToken } from '../utils/cancellation';
 import Logger from '../utils/logger';
 import { TelemetryReporter } from '../utils/telemetry';

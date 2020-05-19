@@ -37,7 +37,7 @@ export class LogDirectory {
       if (!fs.existsSync(p)) fs.mkdirSync(p);
       return this.context.logPath;
     } catch {}
-    return undefined;
+    return;
   }
 }
 

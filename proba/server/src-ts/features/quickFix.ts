@@ -82,7 +82,7 @@ class ApplyFixAllCodeAction implements Command {
 
     const response = await this.client.execute('getCombinedCodeFix', args, nulToken);
     if (response.type !== 'response' || !response.body) {
-      return undefined;
+      return;
     }
 
     const edit = typeConverters.WorkspaceEdit.fromFileCodeEdits(

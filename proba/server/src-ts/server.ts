@@ -1,13 +1,11 @@
 import * as fs from 'fs';
 import * as stream from 'stream';
 import * as vscode from 'vscode';
-import type * as proto from '../protocol';
-import { ServerResponse, TypeScriptRequests } from '../typescriptService';
-import { Disposable, Reader, Tracer } from '../utils/extras';
-import { TelemetryReporter } from '../utils/telemetry';
-import { TypeScriptVersion } from '../utils/versionProvider';
-import { RequestItem, RequestQueue, RequestQueueingType } from './requestQueue';
-import { TypeScriptServerError } from './serverError';
+import type * as proto from './protocol';
+import { ServerResponse, TypeScriptRequests } from './typescriptService';
+import { Disposable, Reader, Tracer } from './utils/extras';
+import { TelemetryReporter } from './utils/telemetry';
+import { TypeScriptVersion } from './utils/versionProvider';
 
 interface Callback<R> {
   readonly onSuccess: (_: R) => void;
@@ -50,8 +48,86 @@ class CallbackMap<R extends proto.Response> {
   }
 }
 
+enum QueueingType {
+  Normal = 1,
+  LowPriority = 2,
+  Fence = 3,
+}
+
+interface RequestItem {
+  readonly request: proto.Request;
+  readonly expectsResponse: boolean;
+  readonly isAsync: boolean;
+  readonly queueingType: QueueingType;
+}
+
+class RequestQueue {
+  private readonly queue: RequestItem[] = [];
+  private seq = 0;
+
+  get length() {
+    return this.queue.length;
+  }
+
+  enqueue(item: RequestItem) {
+    if (item.queueingType === QueueingType.Normal) {
+      let i = this.queue.length - 1;
+      while (i >= 0) {
+        if (this.queue[i].queueingType !== QueueingType.LowPriority) break;
+        --i;
+      }
+      this.queue.splice(i + 1, 0, item);
+    } else this.queue.push(item);
+  }
+
+  dequeue(): RequestItem | undefined {
+    return this.queue.shift();
+  }
+
+  tryDeletePending(seq: number) {
+    for (let i = 0; i < this.queue.length; i++) {
+      if (this.queue[i].request.seq === seq) {
+        this.queue.splice(i, 1);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  createRequest(command: string, args: any): proto.Request {
+    return { seq: this.seq++, type: 'request', command, arguments: args };
+  }
+}
+
+type Resolve<T extends proto.Response> = () => Promise<ServerResponse.Response<T>>;
+
+export class CachedResponse<T extends proto.Response> {
+  private reply?: Promise<ServerResponse.Response<T>>;
+  private version = -1;
+  private doc = '';
+
+  execute(d: vscode.TextDocument, r: Resolve<T>) {
+    if (this.reply && this.matches(d)) {
+      return (this.reply = this.reply.then((res) =>
+        res.type === 'cancelled' ? r() : res
+      ));
+    }
+    return this.reset(d, r);
+  }
+
+  private matches(d: vscode.TextDocument) {
+    return this.version === d.version && this.doc === d.uri.toString();
+  }
+
+  private async reset(d: vscode.TextDocument, r: Resolve<T>) {
+    this.version = d.version;
+    this.doc = d.uri.toString();
+    return (this.reply = r());
+  }
+}
+
 interface OngoingCanceller {
-  tryCancelOngoing(seq: number): boolean;
+  tryCancel(seq: number): boolean;
 }
 
 export class PipeCanceller implements OngoingCanceller {
@@ -61,7 +137,7 @@ export class PipeCanceller implements OngoingCanceller {
     private readonly tracer: Tracer
   ) {}
 
-  tryCancelOngoing(seq: number) {
+  tryCancel(seq: number) {
     if (!this.pipe) return false;
     this.tracer.logTrace(this.id, `Server: trying to cancel with seq ${seq}`);
     try {
@@ -76,8 +152,7 @@ export interface IServer {
   readonly onError: vscode.Event<any>;
   readonly onEvent: vscode.Event<proto.Event>;
   readonly onReaderError: vscode.Event<Error>;
-
-  readonly tsServerLogFile: string | undefined;
+  readonly logFile: string | undefined;
 
   executeImpl(
     cmd: keyof TypeScriptRequests,
@@ -127,6 +202,13 @@ export interface ServerProcess {
 }
 
 export class ProcessBased extends Disposable implements IServer {
+  private static readonly fences = new Set(['change', 'close', 'open', 'updateOpen']);
+
+  private static queueingType(cmd: string, low?: boolean) {
+    if (ProcessBased.fences.has(cmd)) return QueueingType.Fence;
+    return low ? QueueingType.LowPriority : QueueingType.Normal;
+  }
+
   private readonly reader: Reader<proto.Response>;
   private readonly queue = new RequestQueue();
   private readonly cbs = new CallbackMap<proto.Response>();
@@ -135,9 +217,9 @@ export class ProcessBased extends Disposable implements IServer {
   constructor(
     private readonly sid: string,
     private readonly proc: ServerProcess,
-    private readonly logFile: string | undefined,
+    public readonly logFile: string | undefined,
     private readonly canceller: OngoingCanceller,
-    private readonly _version: TypeScriptVersion,
+    private readonly version: TypeScriptVersion,
     private readonly telemetry: TelemetryReporter,
     private readonly tracer: Tracer
   ) {
@@ -155,33 +237,29 @@ export class ProcessBased extends Disposable implements IServer {
   }
 
   private readonly _onEvent = this.register(new vscode.EventEmitter<proto.Event>());
-  public readonly onEvent = this._onEvent.event;
+  readonly onEvent = this._onEvent.event;
 
   private readonly _onExit = this.register(new vscode.EventEmitter<any>());
-  public readonly onExit = this._onExit.event;
+  readonly onExit = this._onExit.event;
 
   private readonly _onError = this.register(new vscode.EventEmitter<any>());
-  public readonly onError = this._onError.event;
+  readonly onError = this._onError.event;
 
-  public get onReaderError() {
+  get onReaderError() {
     return this.reader.onError;
-  }
-
-  public get tsServerLogFile() {
-    return this.logFile;
   }
 
   private write(r: proto.Request) {
     this.proc.write(r);
   }
 
-  public dispose() {
+  dispose() {
     super.dispose();
     this.cbs.destroy('server disposed');
     this.pendings.clear();
   }
 
-  public kill() {
+  kill() {
     this.proc.kill();
   }
 
@@ -192,34 +270,34 @@ export class ProcessBased extends Disposable implements IServer {
           this.dispatchResponse(m as proto.Response);
           break;
         case 'event':
-          const event = m as proto.Event;
-          if (event.event === 'requestCompleted') {
-            const seq = (event as proto.RequestCompletedEvent).body.request_seq;
+          const e = m as proto.Event;
+          if (e.event === 'requestCompleted') {
+            const seq = (e as proto.RequestCompletedEvent).body.request_seq;
             const cb = this.cbs.fetch(seq);
             if (cb) {
               this.tracer.traceRequestCompleted(this.sid, 'requestCompleted', seq, cb);
               cb.onSuccess(undefined);
             }
           } else {
-            this.tracer.traceEvent(this.sid, event);
-            this._onEvent.fire(event);
+            this.tracer.traceEvent(this.sid, e);
+            this._onEvent.fire(e);
           }
           break;
         default:
-          throw new Error(`Unknown message type ${m.type} received`);
+          throw new Error(`Unknown message type ${m.type}`);
       }
     } finally {
       this.sendNexts();
     }
   }
 
-  private tryCancelRequest(seq: number, cmd: string) {
+  private tryCancel(seq: number, cmd: string) {
     try {
-      if (this.queue.tryDeletePendingRequest(seq)) {
+      if (this.queue.tryDeletePending(seq)) {
         this.logTrace(`Canceled with ${seq}`);
         return true;
       }
-      if (this.canceller.tryCancelOngoing(seq)) return true;
+      if (this.canceller.tryCancel(seq)) return true;
       this.logTrace(`Missed cancel with ${seq}.`);
       return false;
     } finally {
@@ -235,11 +313,11 @@ export class ProcessBased extends Disposable implements IServer {
       if (r.success) cb.onSuccess(r);
       else if (r.message === 'No content available.') {
         cb.onSuccess(ServerResponse.NoContent);
-      } else cb.onError(TypeScriptServerError.create(this.sid, this._version, r));
+      } else cb.onError(ServerError.create(this.sid, this.version, r));
     }
   }
 
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -249,7 +327,7 @@ export class ProcessBased extends Disposable implements IServer {
       lowPriority?: boolean;
     }
   ): undefined;
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -259,7 +337,7 @@ export class ProcessBased extends Disposable implements IServer {
       lowPriority?: boolean;
     }
   ): Promise<ServerResponse.Response<proto.Response>>;
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -274,37 +352,24 @@ export class ProcessBased extends Disposable implements IServer {
       request,
       expectsResponse: info.expectsResult,
       isAsync: info.isAsync,
-      queueingType: ProcessBased.getQueueingType(cmd, info.lowPriority),
+      queueingType: ProcessBased.queueingType(cmd, info.lowPriority),
     };
     let r: Promise<ServerResponse.Response<proto.Response>> | undefined;
     if (info.expectsResult) {
       r = new Promise<ServerResponse.Response<proto.Response>>((res, rej) => {
         this.cbs.add(
           request.seq,
-          {
-            onSuccess: res,
-            onError: rej,
-            startTime: Date.now(),
-            isAsync: info.isAsync,
-          },
+          { onSuccess: res, onError: rej, startTime: Date.now(), isAsync: info.isAsync },
           info.isAsync
         );
         if (info.token) {
           info.token.onCancellationRequested(() => {
-            this.tryCancelRequest(request.seq, cmd);
+            this.tryCancel(request.seq, cmd);
           });
         }
       }).catch((e: Error) => {
-        if (e instanceof TypeScriptServerError) {
+        if (e instanceof ServerError) {
           if (!info.token || !info.token.isCancellationRequested) {
-            /* __GDPR__
-							"languageServiceErrorResponse" : {
-								"${include}": [
-									"${TypeScriptCommonProperties}",
-									"${TypeScriptRequestErrorProperties}"
-								]
-							}
-						*/
             this.telemetry.logTelemetry('languageServiceErrorResponse', e.telemetry);
           }
         }
@@ -347,22 +412,10 @@ export class ProcessBased extends Disposable implements IServer {
   private logTrace(m: string) {
     this.tracer.logTrace(this.sid, m);
   }
-
-  private static readonly fenceCommands = new Set([
-    'change',
-    'close',
-    'open',
-    'updateOpen',
-  ]);
-
-  private static getQueueingType(cmd: string, low?: boolean) {
-    if (ProcessBased.fenceCommands.has(cmd)) return RequestQueueingType.Fence;
-    return low ? RequestQueueingType.LowPriority : RequestQueueingType.Normal;
-  }
 }
 
 class RequestRouter {
-  private static readonly sharedCommands = new Set<keyof TypeScriptRequests>([
+  private static readonly shareds = new Set<keyof TypeScriptRequests>([
     'change',
     'close',
     'open',
@@ -374,12 +427,12 @@ class RequestRouter {
   constructor(
     private readonly servers: ReadonlyArray<{
       readonly server: IServer;
-      readonly preferredCommands?: ReadonlySet<keyof TypeScriptRequests>;
+      readonly preferreds?: ReadonlySet<keyof TypeScriptRequests>;
     }>,
     private readonly delegate: ServerDelegate
   ) {}
 
-  public execute(
+  execute(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -389,7 +442,7 @@ class RequestRouter {
       lowPriority?: boolean;
     }
   ): Promise<ServerResponse.Response<proto.Response>> | undefined {
-    if (RequestRouter.sharedCommands.has(cmd)) {
+    if (RequestRouter.shareds.has(cmd)) {
       const states: RequestState.State[] = this.servers.map(
         () => RequestState.Unresolved
       );
@@ -426,17 +479,15 @@ class RequestRouter {
       }
       return first;
     }
-    for (const { preferredCommands, server } of this.servers) {
-      if (!preferredCommands || preferredCommands.has(cmd)) {
-        return server.executeImpl(cmd, args, info);
-      }
+    for (const { preferreds, server } of this.servers) {
+      if (!preferreds || preferreds.has(cmd)) return server.executeImpl(cmd, args, info);
     }
     throw new Error(`Could not find server for '${cmd}'`);
   }
 }
 
 export class SyntaxRouting extends Disposable implements IServer {
-  private static readonly syntaxCommands = new Set<keyof TypeScriptRequests>([
+  private static readonly syntactics = new Set<keyof TypeScriptRequests>([
     'navtree',
     'getOutliningSpans',
     'jsxClosingTag',
@@ -446,64 +497,55 @@ export class SyntaxRouting extends Disposable implements IServer {
     'docCommentTemplate',
   ]);
 
-  private readonly syntaxServer: IServer;
-  private readonly semanticServer: IServer;
+  private readonly synServ: IServer;
+  private readonly semServ: IServer;
   private readonly router: RequestRouter;
 
-  public constructor(
-    servers: { syntax: IServer; semantic: IServer },
-    delegate: ServerDelegate
-  ) {
+  constructor(servers: { syntax: IServer; semantic: IServer }, delegate: ServerDelegate) {
     super();
-    this.syntaxServer = servers.syntax;
-    this.semanticServer = servers.semantic;
+    this.synServ = servers.syntax;
+    this.semServ = servers.semantic;
     this.router = new RequestRouter(
       [
-        {
-          server: this.syntaxServer,
-          preferredCommands: SyntaxRouting.syntaxCommands,
-        },
-        {
-          server: this.semanticServer,
-          preferredCommands: undefined,
-        },
+        { server: this.synServ, preferreds: SyntaxRouting.syntactics },
+        { server: this.semServ, preferreds: undefined },
       ],
       delegate
     );
-    this.register(this.syntaxServer.onEvent((e) => this._onEvent.fire(e)));
-    this.register(this.semanticServer.onEvent((e) => this._onEvent.fire(e)));
+    this.register(this.synServ.onEvent((e) => this._onEvent.fire(e)));
+    this.register(this.semServ.onEvent((e) => this._onEvent.fire(e)));
     this.register(
-      this.semanticServer.onExit((e) => {
+      this.semServ.onExit((e) => {
         this._onExit.fire(e);
-        this.syntaxServer.kill();
+        this.synServ.kill();
       })
     );
-    this.register(this.semanticServer.onError((e) => this._onError.fire(e)));
+    this.register(this.semServ.onError((e) => this._onError.fire(e)));
   }
 
   private readonly _onEvent = this.register(new vscode.EventEmitter<proto.Event>());
-  public readonly onEvent = this._onEvent.event;
+  readonly onEvent = this._onEvent.event;
 
   private readonly _onExit = this.register(new vscode.EventEmitter<any>());
-  public readonly onExit = this._onExit.event;
+  readonly onExit = this._onExit.event;
 
   private readonly _onError = this.register(new vscode.EventEmitter<any>());
-  public readonly onError = this._onError.event;
+  readonly onError = this._onError.event;
 
-  public get onReaderError() {
-    return this.semanticServer.onReaderError;
+  get onReaderError() {
+    return this.semServ.onReaderError;
   }
 
-  public get tsServerLogFile() {
-    return this.semanticServer.tsServerLogFile;
+  get logFile() {
+    return this.semServ.logFile;
   }
 
-  public kill(): void {
-    this.syntaxServer.kill();
-    this.semanticServer.kill();
+  kill(): void {
+    this.synServ.kill();
+    this.semServ.kill();
   }
 
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -513,7 +555,7 @@ export class SyntaxRouting extends Disposable implements IServer {
       lowPriority?: boolean;
     }
   ): undefined;
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -523,7 +565,7 @@ export class SyntaxRouting extends Disposable implements IServer {
       lowPriority?: boolean;
     }
   ): Promise<ServerResponse.Response<proto.Response>>;
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -538,83 +580,74 @@ export class SyntaxRouting extends Disposable implements IServer {
 }
 
 export class GetErrRouting extends Disposable implements IServer {
-  private static readonly diagnosticEvents = new Set([
+  private static readonly diagnostics = new Set([
     'configFileDiag',
     'syntaxDiag',
     'semanticDiag',
     'suggestionDiag',
   ]);
 
-  private readonly getErrServer: IServer;
-  private readonly mainServer: IServer;
+  private readonly getErrServ: IServer;
+  private readonly mainServ: IServer;
   private readonly router: RequestRouter;
 
-  public constructor(
-    servers: { getErr: IServer; primary: IServer },
-    delegate: ServerDelegate
-  ) {
+  constructor(servers: { getErr: IServer; primary: IServer }, delegate: ServerDelegate) {
     super();
-    this.getErrServer = servers.getErr;
-    this.mainServer = servers.primary;
+    this.getErrServ = servers.getErr;
+    this.mainServ = servers.primary;
     this.router = new RequestRouter(
       [
         {
-          server: this.getErrServer,
-          preferredCommands: new Set<keyof TypeScriptRequests>([
-            'geterr',
-            'geterrForProject',
-          ]),
+          server: this.getErrServ,
+          preferreds: new Set<keyof TypeScriptRequests>(['geterr', 'geterrForProject']),
         },
-        {
-          server: this.mainServer,
-          preferredCommands: undefined,
-        },
+        { server: this.mainServ, preferreds: undefined },
       ],
       delegate
     );
     this.register(
-      this.getErrServer.onEvent((e) => {
-        if (GetErrRouting.diagnosticEvents.has(e.event)) this._onEvent.fire(e);
+      this.getErrServ.onEvent((e) => {
+        if (GetErrRouting.diagnostics.has(e.event)) this._onEvent.fire(e);
       })
     );
     this.register(
-      this.mainServer.onEvent((e) => {
-        if (!GetErrRouting.diagnosticEvents.has(e.event)) this._onEvent.fire(e);
+      this.mainServ.onEvent((e) => {
+        if (!GetErrRouting.diagnostics.has(e.event)) this._onEvent.fire(e);
       })
     );
-    this.register(this.getErrServer.onError((e) => this._onError.fire(e)));
-    this.register(this.mainServer.onError((e) => this._onError.fire(e)));
+    this.register(this.getErrServ.onError((e) => this._onError.fire(e)));
+    this.register(this.mainServ.onError((e) => this._onError.fire(e)));
     this.register(
-      this.mainServer.onExit((e) => {
+      this.mainServ.onExit((e) => {
         this._onExit.fire(e);
-        this.getErrServer.kill();
+        this.getErrServ.kill();
       })
     );
   }
 
   private readonly _onEvent = this.register(new vscode.EventEmitter<proto.Event>());
-  public readonly onEvent = this._onEvent.event;
+  readonly onEvent = this._onEvent.event;
 
   private readonly _onExit = this.register(new vscode.EventEmitter<any>());
-  public readonly onExit = this._onExit.event;
+  readonly onExit = this._onExit.event;
 
   private readonly _onError = this.register(new vscode.EventEmitter<any>());
-  public readonly onError = this._onError.event;
+  readonly onError = this._onError.event;
 
-  public get onReaderError() {
-    return this.mainServer.onReaderError;
+  get onReaderError() {
+    return this.mainServ.onReaderError;
   }
 
-  public get tsServerLogFile() {
-    return this.mainServer.tsServerLogFile;
+  get logFile() {
+    return this.mainServ.logFile;
   }
 
-  public kill(): void {
-    this.getErrServer.kill();
-    this.mainServer.kill();
+  kill(): void {
+    this.getErrServ.kill();
+    this.mainServ.kill();
   }
 
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -624,7 +657,7 @@ export class GetErrRouting extends Disposable implements IServer {
       lowPriority?: boolean;
     }
   ): undefined;
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -634,7 +667,7 @@ export class GetErrRouting extends Disposable implements IServer {
       lowPriority?: boolean;
     }
   ): Promise<ServerResponse.Response<proto.Response>>;
-  public executeImpl(
+  executeImpl(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
@@ -656,7 +689,6 @@ namespace RequestState {
   }
 
   export const Unresolved = { type: Type.Unresolved } as const;
-
   export const Resolved = { type: Type.Resolved } as const;
 
   export class Errored {
@@ -665,4 +697,66 @@ namespace RequestState {
   }
 
   export type State = typeof Unresolved | typeof Resolved | Errored;
+}
+
+export class ServerError extends Error {
+  static create(sid: string, version: TypeScriptVersion, r: proto.Response) {
+    const p = parseError(r);
+    return new ServerError(sid, version, r, p?.message, p?.stack, p?.sanitized);
+  }
+
+  private constructor(
+    sid: string,
+    public readonly version: TypeScriptVersion,
+    private readonly response: proto.Response,
+    public readonly msg: string | undefined,
+    public readonly stack: string | undefined,
+    private readonly sanitized: string | undefined
+  ) {
+    super(`<${sid}> TypeScript Server Error (${version.displayName})\n${msg}\n${stack}`);
+  }
+
+  get errorText() {
+    return this.response.message;
+  }
+
+  get command() {
+    return this.response.command;
+  }
+
+  get telemetry() {
+    return { command: this.command, sanitized: this.sanitized || '' } as const;
+  }
+}
+
+function parseError(r: proto.Response) {
+  const t = r.message;
+  if (t) {
+    const pre = 'Error processing request. ';
+    if (t.startsWith(pre)) {
+      const t2 = t.substr(pre.length);
+      const i = t2.indexOf('\n');
+      if (i >= 0) {
+        const stack = t2.substring(i + 1);
+        return {
+          message: t2.substring(0, i),
+          stack,
+          sanitized: sanitizeStack(stack),
+        };
+      }
+    }
+  }
+  return;
+}
+
+function sanitizeStack(msg: string | undefined) {
+  if (!msg) return '';
+  const r = /(tsserver)?(\.(?:ts|tsx|js|jsx)(?::\d+(?::\d+)?)?)\)?$/gim;
+  let stack = '';
+  while (true) {
+    const match = r.exec(msg);
+    if (!match) break;
+    stack += `${match[1] || 'suppressed'}${match[2]}\n`;
+  }
+  return stack;
 }

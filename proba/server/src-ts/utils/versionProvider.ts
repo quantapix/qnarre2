@@ -81,17 +81,17 @@ export class TypeScriptVersion {
       return API.fromVersionString(tsdkVersion);
     }
 
-    return undefined;
+    return;
   }
 
   private static getTypeScriptVersion(serverPath: string): API | undefined {
     if (!fs.existsSync(serverPath)) {
-      return undefined;
+      return;
     }
 
     const p = serverPath.split(path.sep);
     if (p.length <= 2) {
-      return undefined;
+      return;
     }
     const p2 = p.slice(0, -2);
     const modulePath = p2.join(path.sep);
@@ -103,7 +103,7 @@ export class TypeScriptVersion {
       }
     }
     if (!fs.existsSync(fileName)) {
-      return undefined;
+      return;
     }
 
     const contents = fs.readFileSync(fileName).toString();
@@ -111,10 +111,10 @@ export class TypeScriptVersion {
     try {
       desc = JSON.parse(contents);
     } catch (err) {
-      return undefined;
+      return;
     }
     if (!desc || !desc.version) {
-      return undefined;
+      return;
     }
     return desc.version ? API.fromVersionString(desc.version) : undefined;
   }
@@ -154,7 +154,7 @@ export class TypeScriptVersionProvider {
     if (nodeVersions && nodeVersions.length === 1) {
       return nodeVersions[0];
     }
-    return undefined;
+    return;
   }
 
   public get localVersions(): TypeScriptVersion[] {
@@ -218,7 +218,7 @@ export class TypeScriptVersionProvider {
     } catch {
       // noop
     }
-    return undefined;
+    return;
   }
 
   private get localTsdkVersions(): TypeScriptVersion[] {

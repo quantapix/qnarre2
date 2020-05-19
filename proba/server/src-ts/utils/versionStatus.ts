@@ -91,7 +91,7 @@ class ProjectStatusCommand implements Command {
         ? this._client.getWorkspaceRootForResource(info.resource)
         : undefined;
     if (!rootPath) {
-      return undefined;
+      return;
     }
 
     if (info.type === ProjectInfoState.Type.Resolved) {

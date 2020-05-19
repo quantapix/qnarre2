@@ -10,9 +10,9 @@ import * as nls from 'vscode-nls';
 import BufferSyncSupport from './features/bufferSyncSupport';
 import { DiagnosticKind, DiagnosticsManager } from './features/diagnostics';
 import * as Proto from './protocol';
-import { ITypeScriptServer } from './tsServer/server';
-import { TypeScriptServerError } from './tsServer/serverError';
-import { TypeScriptServerSpawner } from './tsServer/spawner';
+import { ITypeScriptServer } from './server';
+import { ServerError } from './tsServer/serverError';
+import { ServerSpawner } from './spawner';
 import {
   ExecConfig,
   ITypeScriptServiceClient,
@@ -112,7 +112,7 @@ export default class TypeScriptServiceClient extends Disposable
   private readonly logger = new Logger();
   private readonly tracer = new Tracer(this.logger);
 
-  private readonly typescriptServerSpawner: TypeScriptServerSpawner;
+  private readonly typescriptServerSpawner: ServerSpawner;
   private serverState: ServerState.State = ServerState.None;
   private lastStart: number;
   private numberRestarts: number;
@@ -219,7 +219,7 @@ export default class TypeScriptServiceClient extends Disposable
       })
     );
 
-    this.typescriptServerSpawner = new TypeScriptServerSpawner(
+    this.typescriptServerSpawner = new ServerSpawner(
       this.versionProvider,
       this.logDirectoryProvider,
       this.pluginPathsProvider,
@@ -535,7 +535,7 @@ export default class TypeScriptServiceClient extends Disposable
                 this.restartTsServer();
               });
           }
-          return undefined;
+          return;
         });
       return false;
     }
@@ -681,7 +681,7 @@ export default class TypeScriptServiceClient extends Disposable
         if (
           !this._isPromptingAfterCrash &&
           previousState.type === ServerState.Type.Errored &&
-          previousState.error instanceof TypeScriptServerError
+          previousState.error instanceof ServerError
         ) {
           this.numberRestarts = 0;
           this._isPromptingAfterCrash = true;
@@ -701,7 +701,7 @@ export default class TypeScriptServiceClient extends Disposable
         if (item === reportIssueItem) {
           const args =
             previousState.type === ServerState.Type.Errored &&
-            previousState.error instanceof TypeScriptServerError
+            previousState.error instanceof ServerError
               ? getReportIssueArgsForError(previousState.error)
               : undefined;
           vscode.commands.executeCommand('workbench.action.openIssueReporter', args);
@@ -727,12 +727,12 @@ export default class TypeScriptServiceClient extends Disposable
     }
 
     if (resource.scheme !== fileSchemes.file) {
-      return undefined;
+      return;
     }
 
     let result = resource.fsPath;
     if (!result) {
-      return undefined;
+      return;
     }
 
     if (resource.scheme === fileSchemes.file) {
@@ -750,7 +750,7 @@ export default class TypeScriptServiceClient extends Disposable
   public toOpenedFilePath(document: vscode.TextDocument): string | undefined {
     if (!this.bufferSyncSupport.ensureHasBuffer(document.uri)) {
       console.error(`Unexpected resource ${document.uri}`);
-      return undefined;
+      return;
     }
     return this.toPath(document.uri) || undefined;
   }
@@ -783,7 +783,7 @@ export default class TypeScriptServiceClient extends Disposable
       ? Array.from(vscode.workspace.workspaceFolders)
       : undefined;
     if (!roots || !roots.length) {
-      return undefined;
+      return;
     }
 
     if (
@@ -800,7 +800,7 @@ export default class TypeScriptServiceClient extends Disposable
       return roots[0].uri.fsPath;
     }
 
-    return undefined;
+    return;
   }
 
   public execute(
@@ -921,19 +921,19 @@ export default class TypeScriptServiceClient extends Disposable
 			}
 		*/
     this.logTelemetry('fatalError', {
-      ...(error instanceof TypeScriptServerError ? error.telemetry : { command }),
+      ...(error instanceof ServerError ? error.telemetry : { command }),
     });
     console.error(
       `A non-recoverable error occured while executing tsserver command: ${command}`
     );
-    if (error instanceof TypeScriptServerError && error.serverErrorText) {
+    if (error instanceof ServerError && error.serverErrorText) {
       console.error(error.serverErrorText);
     }
 
     if (this.serverState.type === ServerState.Type.Running) {
       this.info('Killing TS Server');
       this.serverState.server.kill();
-      if (error instanceof TypeScriptServerError) {
+      if (error instanceof ServerError) {
         this.serverState = new ServerState.Errored(error);
       }
     }
@@ -1079,10 +1079,10 @@ export default class TypeScriptServiceClient extends Disposable
 }
 
 function getReportIssueArgsForError(
-  error: TypeScriptServerError
+  error: ServerError
 ): { extensionId: string; issueTitle: string; issueBody: string } | undefined {
   if (!error.serverStack || !error.serverMessage) {
-    return undefined;
+    return;
   }
 
   // Note these strings are intentionally not localized

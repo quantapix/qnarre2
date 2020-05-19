@@ -145,7 +145,7 @@ class TypeScriptWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvide
         return document;
       }
     }
-    return undefined;
+    return;
   }
 }
 

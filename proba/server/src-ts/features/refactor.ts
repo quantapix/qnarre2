@@ -269,16 +269,16 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider {
     token: vscode.CancellationToken
   ): Promise<vscode.CodeAction[] | undefined> {
     if (!this.shouldTrigger(rangeOrSelection, context)) {
-      return undefined;
+      return;
     }
     if (!this.client.toOpenedFilePath(document)) {
-      return undefined;
+      return;
     }
 
     const response = await this.client.interruptGetErr(() => {
       const file = this.client.toOpenedFilePath(document);
       if (!file) {
-        return undefined;
+        return;
       }
       this.formattingOptionsManager.ensureConfigurationForDocument(document, token);
 
@@ -289,7 +289,7 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider {
       return this.client.execute('getApplicableRefactors', args, token);
     });
     if (response?.type !== 'response' || !response.body) {
-      return undefined;
+      return;
     }
 
     const actions = this.convertApplicableRefactors(

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Plugins } from './utils/plugin';
 import { Command, Commands, Lazy } from './utils/extras';
 import { openProjectConfigForFile, ProjectType } from './utils/tsconfig';
-import ServiceClientHost from './typeScriptServiceClientHost';
+import ServiceClientHost from './clientHost';
 import { isTypeScriptDocument } from '../utils/languageModeIds';
 
 export class ReloadProjects implements Command {

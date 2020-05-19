@@ -31,7 +31,7 @@ function processInlineTags(text: string): string {
 
 function getTagBodyText(tag: Proto.JSDocTagInfo): string | undefined {
   if (!tag.text) {
-    return undefined;
+    return;
   }
 
   // Convert to markdown code block if it is not already one

@@ -175,7 +175,7 @@ class MyCompletionItem extends vscode.CompletionItem {
 
     // For `this.` completions, generally don't set the filter text since we don't want them to be overly prioritized. #74164
     if (insertText?.startsWith('this.')) {
-      return undefined;
+      return;
     }
 
     // Handle the case:
@@ -306,7 +306,7 @@ class MyCompletionItem extends vscode.CompletionItem {
     entry: Proto.CompletionEntry
   ): string[] | undefined {
     if (context.isNewIdentifierLocation || !context.isInValidCommitCharacterContext) {
-      return undefined;
+      return;
     }
 
     const commitCharacters: string[] = [];
@@ -641,7 +641,7 @@ class TypeScriptCompletionItemProvider
         return context.triggerCharacter;
     }
 
-    return undefined;
+    return;
   }
 
   public async resolveCompletionItem(
@@ -650,7 +650,7 @@ class TypeScriptCompletionItemProvider
   ): Promise<MyCompletionItem | undefined> {
     const filepath = this.client.toOpenedFilePath(item.document);
     if (!filepath) {
-      return undefined;
+      return;
     }
 
     const args: Proto.CompletionDetailsRequestArgs = {

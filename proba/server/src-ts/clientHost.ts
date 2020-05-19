@@ -11,10 +11,10 @@
 import * as vscode from 'vscode';
 import { DiagnosticKind } from './features/diagnostics';
 import FileConfigurationManager from './features/fileConfigurationManager';
-import LanguageProvider from './languageProvider';
+import LanguageProvider from './language';
 import * as Proto from './protocol';
 import * as PConst from './protocol.const';
-import TypeScriptServiceClient from './typescriptServiceClient';
+import TypeScriptServiceClient from './serviceClient';
 import { coalesce, flatten } from './utils/arrays';
 import { Commands } from './utils/extras';
 import { Disposable } from './utils/disposable';
@@ -233,7 +233,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
       const doc = await vscode.workspace.openTextDocument(resource);
       return this.languages.find((language) => language.handles(resource, doc));
     } catch {
-      return undefined;
+      return;
     }
   }
 
@@ -328,7 +328,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
         relatedInformation.map((info: any) => {
           const span = info.span;
           if (!span) {
-            return undefined;
+            return;
           }
           return new vscode.DiagnosticRelatedInformation(
             typeConverters.Location.fromTextSpan(this.client.toResource(span.file), span),

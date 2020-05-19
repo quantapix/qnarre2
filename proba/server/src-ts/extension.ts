@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { Api, getExtensionApi } from './api';
 import { registerCommands } from './commands';
 import { LanguageConfigurationManager } from './features/languageConfiguration';
-import TypeScriptServiceClientHost from './typeScriptServiceClientHost';
+import TypeScriptServiceClientHost from './clientHost';
 import { flatten } from './utils/arrays';
 import * as electron from './utils/electron';
 import * as rimraf from 'rimraf';

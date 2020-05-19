@@ -266,12 +266,12 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
     token: vscode.CancellationToken
   ): Promise<vscode.CodeAction[] | undefined> {
     if (!context.only || !vscode.CodeActionKind.Source.intersects(context.only)) {
-      return undefined;
+      return;
     }
 
     const file = this.client.toOpenedFilePath(document);
     if (!file) {
-      return undefined;
+      return;
     }
 
     const actions = this.getFixAllActions(context.only);
@@ -288,7 +288,7 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
     await this.fileConfigurationManager.ensureConfigurationForDocument(document, token);
 
     if (token.isCancellationRequested) {
-      return undefined;
+      return;
     }
 
     await Promise.all(

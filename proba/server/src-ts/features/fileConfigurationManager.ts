@@ -255,7 +255,7 @@ function getImportModuleSpecifierPreference(config: vscode.WorkspaceConfiguratio
     case 'non-relative':
       return 'non-relative';
     default:
-      return undefined;
+      return;
   }
 }
 

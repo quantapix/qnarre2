@@ -267,7 +267,7 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
     resource: vscode.Uri
   ): Promise<vscode.Uri | undefined> {
     if (resource.scheme !== fileSchemes.file) {
-      return undefined;
+      return;
     }
 
     if (await isDirectory(resource)) {
