@@ -16,7 +16,7 @@ import { Disposable } from '../utils/disposable';
 import * as fileSchemes from '../utils/fileSchemes';
 import { doesResourceLookLikeATypeScriptFile } from '../utils/language';
 import * as typeConverters from '../utils/convert';
-import FileConfigs from './fileConfigurationManager';
+import FileConfigs from './configs';
 
 const localize = nls.loadMessageBundle();
 

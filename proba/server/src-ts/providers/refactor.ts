@@ -11,7 +11,7 @@ import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as fileSchemes from '../utils/fileSchemes';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/convert';
-import FormattingOptionsManager from './fileConfigurationManager';
+import FormattingOptionsManager from './configs';
 
 const localize = nls.loadMessageBundle();
 

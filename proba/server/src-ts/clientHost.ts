@@ -10,7 +10,7 @@
 
 import * as vscode from 'vscode';
 import { DiagnosticKind } from './providers/diagnostics';
-import FileConfigs from './providers/fileConfigurationManager';
+import FileConfigs from './providers/configs';
 import LanguageProvider from './language';
 import * as Proto from './protocol';
 import * as PConst from './protocol.const';

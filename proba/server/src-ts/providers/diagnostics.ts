@@ -1,13 +1,7 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import { ResourceMap } from '../utils/resourceMap';
 import { DiagnosticLanguage } from '../utils/language';
-import * as arrays from '../utils/arrays';
-import { Disposable } from '../utils/disposable';
+import * as qu from '../utils';
+import { Disposable, ResourceMap } from '../utils/extras';
 
 function diagnosticsEquals(a: vscode.Diagnostic, b: vscode.Diagnostic): boolean {
   if (a === b) {
@@ -20,9 +14,9 @@ function diagnosticsEquals(a: vscode.Diagnostic, b: vscode.Diagnostic): boolean 
     a.severity === b.severity &&
     a.source === b.source &&
     a.range.isEqual(b.range) &&
-    arrays.equals(
-      a.relatedInformation || arrays.empty,
-      b.relatedInformation || arrays.empty,
+    qu.deepEquals(
+      a.relatedInformation || qu.empty,
+      b.relatedInformation || qu.empty,
       (a, b) => {
         return (
           a.message === b.message &&
@@ -31,7 +25,7 @@ function diagnosticsEquals(a: vscode.Diagnostic, b: vscode.Diagnostic): boolean 
         );
       }
     ) &&
-    arrays.equals(a.tags || arrays.empty, b.tags || arrays.empty)
+    qu.equals(a.tags || qu.empty, b.tags || qu.empty)
   );
 }
 
@@ -60,7 +54,7 @@ class FileDiagnostics {
     }
 
     const existing = this._diagnostics.get(kind);
-    if (arrays.equals(existing || arrays.empty, diagnostics, diagnosticsEquals)) {
+    if (qu.equals(existing || qu.empty, diagnostics, diagnosticsEquals)) {
       // No need to update
       return false;
     }
@@ -171,7 +165,7 @@ export class DiagnosticsManager extends Disposable {
 
   constructor(owner: string) {
     super();
-    this._currentDiagnostics = this._register(
+    this._currentDiagnostics = this.register(
       vscode.languages.createDiagnosticCollection(owner)
     );
   }

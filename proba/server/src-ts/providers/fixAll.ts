@@ -13,7 +13,7 @@ import * as errorCodes from '../utils/errorCodes';
 import * as fixNames from '../utils/names';
 import * as typeConverters from '../utils/convert';
 import { DiagnosticsManager } from './diagnostics';
-import FileConfigs from './fileConfigurationManager';
+import FileConfigs from './configs';
 
 const localize = nls.loadMessageBundle();
 

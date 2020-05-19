@@ -8,7 +8,7 @@ import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
 import * as typeConverters from '../utils/convert';
-import FileConfigs from './fileConfigurationManager';
+import FileConfigs from './configs';
 
 class TypeScriptFormattingProvider
   implements

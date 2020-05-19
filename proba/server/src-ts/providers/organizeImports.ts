@@ -11,7 +11,7 @@ import API from '../utils/api';
 import { Command, Commands } from '../utils/extras';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as typeconverts from '../utils/convert';
-import FileConfigs from './fileConfigurationManager';
+import FileConfigs from './configs';
 import { TelemetryReporter } from '../utils/telemetry';
 import { nulToken } from '../utils/cancellation';
 

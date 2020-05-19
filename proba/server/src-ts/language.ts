@@ -2,7 +2,7 @@ import { basename } from 'path';
 import * as vscode from 'vscode';
 import { CachedResponse } from './server';
 import { DiagnosticKind } from './providers/diagnostics';
-import FileConfigs from './providers/fileConfigurationManager';
+import FileConfigs from './providers/configs';
 import TypeScriptServiceClient from './serviceClient';
 import { Commands, Disposable } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';

@@ -1,26 +1,23 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { ITypeScriptServiceClient } from '../service';
 import API from '../utils/api';
-import { Disposable } from '../utils/disposable';
 import * as fileSchemes from '../utils/fileSchemes';
 import { isTypeScriptDocument } from '../utils/languageModeIds';
 import { equals } from '../utils';
-import { ResourceMap } from '../utils/resourceMap';
+import { Disposable, ResourceMap } from '../utils/extras';
 
-interface FileConfiguration {
+interface FileConfig {
   readonly formatOptions: Proto.FormatCodeSettings;
   readonly preferences: Proto.UserPreferences;
 }
 
-function areFileConfigurationsEqual(a: FileConfiguration, b: FileConfiguration): boolean {
+function areFileConfigsEqual(a: FileConfig, b: FileConfig) {
   return equals(a, b);
 }
 
 export default class FileConfigs extends Disposable {
-  private readonly formatOptions = new ResourceMap<
-    Promise<FileConfiguration | undefined>
-  >();
+  private readonly formatOptions = new ResourceMap<Promise<FileConfig | undefined>>();
 
   public constructor(private readonly client: ITypeScriptServiceClient) {
     super();
@@ -75,18 +72,15 @@ export default class FileConfigs extends Disposable {
     const cachedOptions = this.formatOptions.get(document.uri);
     if (cachedOptions) {
       const cachedOptionsValue = await cachedOptions;
-      if (
-        cachedOptionsValue &&
-        areFileConfigurationsEqual(cachedOptionsValue, currentOptions)
-      ) {
+      if (cachedOptionsValue && areFileConfigsEqual(cachedOptionsValue, currentOptions)) {
         return;
       }
     }
 
-    let resolve: (x: FileConfiguration | undefined) => void;
+    let resolve: (x: FileConfig | undefined) => void;
     this.formatOptions.set(
       document.uri,
-      new Promise<FileConfiguration | undefined>((r) => (resolve = r))
+      new Promise<FileConfig | undefined>((r) => (resolve = r))
     );
 
     const args: Proto.ConfigureRequestArguments = {
@@ -124,7 +118,7 @@ export default class FileConfigs extends Disposable {
   private getFileOptions(
     document: vscode.TextDocument,
     options: vscode.FormattingOptions
-  ): FileConfiguration {
+  ): FileConfig {
     return {
       formatOptions: this.getFormatOptions(document, options),
       preferences: this.getPreferences(document),
