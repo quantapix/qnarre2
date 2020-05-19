@@ -1,42 +1,29 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 
-export function disposeAll(disposables: vscode.Disposable[]) {
-	while (disposables.length) {
-		const item = disposables.pop();
-		if (item) {
-			item.dispose();
-		}
-	}
+export function disposeAll(ds: vscode.Disposable[]) {
+  while (ds.length) {
+    const d = ds.pop();
+    if (d) d.dispose();
+  }
 }
 
 export abstract class Disposable {
-	private _isDisposed = false;
+  protected disps?: vscode.Disposable[] = [];
 
-	protected _disposables: vscode.Disposable[] = [];
+  protected get isDisposed() {
+    return !!this.disps;
+  }
 
-	public dispose(): any {
-		if (this._isDisposed) {
-			return;
-		}
-		this._isDisposed = true;
-		disposeAll(this._disposables);
-	}
+  protected register<T extends vscode.Disposable>(d: T) {
+    if (this.disps) this.disps.push(d);
+    else d.dispose();
+    return d;
+  }
 
-	protected _register<T extends vscode.Disposable>(value: T): T {
-		if (this._isDisposed) {
-			value.dispose();
-		} else {
-			this._disposables.push(value);
-		}
-		return value;
-	}
-
-	protected get isDisposed() {
-		return this._isDisposed;
-	}
+  public dispose() {
+    if (this.disps) {
+      disposeAll(this.disps);
+      this.disps = undefined;
+    }
+  }
 }

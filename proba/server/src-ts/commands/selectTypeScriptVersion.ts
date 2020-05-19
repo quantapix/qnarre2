@@ -4,17 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
-import { Command } from '../utils/commandManager';
+import { Command } from '../utils/command';
 import { Lazy } from '../utils/lazy';
 
 export class SelectTypeScriptVersionCommand implements Command {
-	public readonly id = 'typescript.selectTypeScriptVersion';
+  public readonly id = 'typescript.selectTypeScriptVersion';
 
-	public constructor(
-		private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>
-	) { }
+  public constructor(
+    private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>
+  ) {}
 
-	public execute() {
-		this.lazyClientHost.value.serviceClient.showVersionPicker();
-	}
+  public execute() {
+    this.lazyClientHost.value.serviceClient.showVersionPicker();
+  }
 }

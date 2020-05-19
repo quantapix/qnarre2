@@ -4,29 +4,35 @@
  *--------------------------------------------------------------------------------------------*/
 
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
-import { CommandManager } from '../utils/commandManager';
+import { Commands } from '../utils/command';
 import { Lazy } from '../utils/lazy';
-import { PluginManager } from '../utils/plugins';
+import { Plugins } from '../utils/plugin';
 import { ConfigurePluginCommand } from './configurePlugin';
-import { JavaScriptGoToProjectConfigCommand, TypeScriptGoToProjectConfigCommand } from './goToProjectConfiguration';
+import {
+  JavaScriptGoToProjectConfigCommand,
+  TypeScriptGoToProjectConfigCommand,
+} from './goToProjectConfiguration';
 import { OpenTsServerLogCommand } from './openTsServerLog';
-import { ReloadJavaScriptProjectsCommand, ReloadTypeScriptProjectsCommand } from './reloadProject';
+import {
+  ReloadJavaScriptProjectsCommand,
+  ReloadTypeScriptProjectsCommand,
+} from './reloadProject';
 import { RestartTsServerCommand } from './restartTsServer';
 import { SelectTypeScriptVersionCommand } from './selectTypeScriptVersion';
 import { LearnMoreAboutRefactoringsCommand } from './learnMoreAboutRefactorings';
 
 export function registerCommands(
-	commandManager: CommandManager,
-	lazyClientHost: Lazy<TypeScriptServiceClientHost>,
-	pluginManager: PluginManager
+  commandManager: Commands,
+  lazyClientHost: Lazy<TypeScriptServiceClientHost>,
+  pluginManager: Plugins
 ) {
-	commandManager.register(new ReloadTypeScriptProjectsCommand(lazyClientHost));
-	commandManager.register(new ReloadJavaScriptProjectsCommand(lazyClientHost));
-	commandManager.register(new SelectTypeScriptVersionCommand(lazyClientHost));
-	commandManager.register(new OpenTsServerLogCommand(lazyClientHost));
-	commandManager.register(new RestartTsServerCommand(lazyClientHost));
-	commandManager.register(new TypeScriptGoToProjectConfigCommand(lazyClientHost));
-	commandManager.register(new JavaScriptGoToProjectConfigCommand(lazyClientHost));
-	commandManager.register(new ConfigurePluginCommand(pluginManager));
-	commandManager.register(new LearnMoreAboutRefactoringsCommand());
+  commandManager.register(new ReloadTypeScriptProjectsCommand(lazyClientHost));
+  commandManager.register(new ReloadJavaScriptProjectsCommand(lazyClientHost));
+  commandManager.register(new SelectTypeScriptVersionCommand(lazyClientHost));
+  commandManager.register(new OpenTsServerLogCommand(lazyClientHost));
+  commandManager.register(new RestartTsServerCommand(lazyClientHost));
+  commandManager.register(new TypeScriptGoToProjectConfigCommand(lazyClientHost));
+  commandManager.register(new JavaScriptGoToProjectConfigCommand(lazyClientHost));
+  commandManager.register(new ConfigurePluginCommand(pluginManager));
+  commandManager.register(new LearnMoreAboutRefactoringsCommand());
 }

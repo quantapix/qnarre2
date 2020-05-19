@@ -4,33 +4,35 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { PluginManager } from './utils/plugins';
+import { Plugins } from './utils/plugin';
 
 class ApiV0 {
-	public constructor(
-		public readonly onCompletionAccepted: vscode.Event<vscode.CompletionItem & { metadata?: any }>,
-		private readonly _pluginManager: PluginManager,
-	) { }
+  public constructor(
+    public readonly onCompletionAccepted: vscode.Event<
+      vscode.CompletionItem & { metadata?: any }
+    >,
+    private readonly _pluginManager: Plugins
+  ) {}
 
-	configurePlugin(pluginId: string, configuration: {}): void {
-		this._pluginManager.setConfiguration(pluginId, configuration);
-	}
+  configurePlugin(pluginId: string, configuration: {}): void {
+    this._pluginManager.setConfiguration(pluginId, configuration);
+  }
 }
 
 export interface Api {
-	getAPI(version: 0): ApiV0 | undefined;
+  getAPI(version: 0): ApiV0 | undefined;
 }
 
 export function getExtensionApi(
-	onCompletionAccepted: vscode.Event<vscode.CompletionItem>,
-	pluginManager: PluginManager,
+  onCompletionAccepted: vscode.Event<vscode.CompletionItem>,
+  pluginManager: Plugins
 ): Api {
-	return {
-		getAPI(version) {
-			if (version === 0) {
-				return new ApiV0(onCompletionAccepted, pluginManager);
-			}
-			return undefined;
-		}
-	};
+  return {
+    getAPI(version) {
+      if (version === 0) {
+        return new ApiV0(onCompletionAccepted, pluginManager);
+      }
+      return undefined;
+    },
+  };
 }

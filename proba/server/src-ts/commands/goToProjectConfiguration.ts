@@ -5,37 +5,44 @@
 
 import * as vscode from 'vscode';
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
-import { Command } from '../utils/commandManager';
+import { Command } from '../utils/command';
 import { Lazy } from '../utils/lazy';
 import { openProjectConfigForFile, ProjectType } from '../utils/tsconfig';
 
 export class TypeScriptGoToProjectConfigCommand implements Command {
-	public readonly id = 'typescript.goToProjectConfig';
+  public readonly id = 'typescript.goToProjectConfig';
 
-	public constructor(
-		private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>,
-	) { }
+  public constructor(
+    private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>
+  ) {}
 
-	public execute() {
-		const editor = vscode.window.activeTextEditor;
-		if (editor) {
-			openProjectConfigForFile(ProjectType.TypeScript, this.lazyClientHost.value.serviceClient, editor.document.uri);
-		}
-	}
+  public execute() {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      openProjectConfigForFile(
+        ProjectType.TypeScript,
+        this.lazyClientHost.value.serviceClient,
+        editor.document.uri
+      );
+    }
+  }
 }
 
 export class JavaScriptGoToProjectConfigCommand implements Command {
-	public readonly id = 'javascript.goToProjectConfig';
+  public readonly id = 'javascript.goToProjectConfig';
 
-	public constructor(
-		private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>,
-	) { }
+  public constructor(
+    private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>
+  ) {}
 
-	public execute() {
-		const editor = vscode.window.activeTextEditor;
-		if (editor) {
-			openProjectConfigForFile(ProjectType.JavaScript, this.lazyClientHost.value.serviceClient, editor.document.uri);
-		}
-	}
+  public execute() {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      openProjectConfigForFile(
+        ProjectType.JavaScript,
+        this.lazyClientHost.value.serviceClient,
+        editor.document.uri
+      );
+    }
+  }
 }
-

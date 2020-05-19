@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import { coalesce } from './arrays';
-import { Command, CommandManager } from './commandManager';
+import { Command, Commands } from './command';
 import { isTypeScriptDocument } from './languageModeIds';
 import {
   isImplicitProjectConfigFile,
@@ -154,7 +154,7 @@ export default class VersionStatus extends Disposable {
 
   constructor(
     private readonly _client: ITypeScriptServiceClient,
-    commandManager: CommandManager
+    commandManager: Commands
   ) {
     super();
 
