@@ -66,7 +66,7 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./providers/definitions').then((p) =>
+      import('./providers/defs').then((p) =>
         this.register(p.register(selector, this.client))
       ),
       import('./providers/directiveCommentCompletions').then((p) =>
@@ -94,10 +94,10 @@ export default class LanguageProvider extends Disposable {
       import('./providers/hover').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./providers/implementations').then((p) =>
+      import('./providers/implement').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./providers/implementationsCodeLens').then((p) =>
+      import('./providers/clImplements').then((p) =>
         this.register(
           p.register(selector, this.description.id, this.client, cachedResponse)
         )
@@ -152,7 +152,7 @@ export default class LanguageProvider extends Disposable {
       import('./providers/references').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./providers/referencesCodeLens').then((p) =>
+      import('./providers/clReferences').then((p) =>
         this.register(
           p.register(selector, this.description.id, this.client, cachedResponse)
         )
@@ -169,7 +169,7 @@ export default class LanguageProvider extends Disposable {
       import('./providers/tagClosing').then((p) =>
         this.register(p.register(selector, this.description.id, this.client))
       ),
-      import('./providers/typeDefinitions').then((p) =>
+      import('./providers/typeDefs').then((p) =>
         this.register(p.register(selector, this.client))
       ),
       import('./providers/semanticTokens').then((p) =>
