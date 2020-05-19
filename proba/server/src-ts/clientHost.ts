@@ -9,8 +9,8 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as vscode from 'vscode';
-import { DiagnosticKind } from './features/diagnostics';
-import FileConfigurationManager from './features/fileConfigurationManager';
+import { DiagnosticKind } from './providers/diagnostics';
+import FileConfigs from './providers/fileConfigurationManager';
 import LanguageProvider from './language';
 import * as Proto from './protocol';
 import * as PConst from './protocol.const';
@@ -22,7 +22,7 @@ import * as errorCodes from './utils/errorCodes';
 import { DiagnosticLanguage, LanguageDescription } from './utils/language';
 import LogDirectory from './utils/providers';
 import { Plugins } from './utils/plugin';
-import * as typeConverters from './utils/typeConverters';
+import * as typeConverters from './utils/convert';
 import TypingsStatus, { AtaProgressReporter } from './utils/typingsStatus';
 import VersionStatus from './utils/versionStatus';
 
@@ -45,7 +45,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
   private readonly typingsStatus: TypingsStatus;
   private readonly versionStatus: VersionStatus;
 
-  private readonly fileConfigurationManager: FileConfigurationManager;
+  private readonly fileConfigurationManager: FileConfigs;
 
   private reportStyleCheckAsWarnings = true;
 
@@ -93,9 +93,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
 
     this._register(new AtaProgressReporter(this.client));
     this.typingsStatus = this._register(new TypingsStatus(this.client));
-    this.fileConfigurationManager = this._register(
-      new FileConfigurationManager(this.client)
-    );
+    this.fileConfigurationManager = this._register(new FileConfigs(this.client));
 
     for (const description of descriptions) {
       const manager = new LanguageProvider(
@@ -112,7 +110,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
       this.languagePerId.set(description.id, manager);
     }
 
-    import('./features/updatePathsOnRename').then((module) =>
+    import('./providers/updatePathsOnRename').then((module) =>
       this._register(
         module.register(this.client, this.fileConfigurationManager, (uri) =>
           this.handles(uri)
@@ -120,7 +118,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
       )
     );
 
-    import('./features/workspaceSymbols').then((module) =>
+    import('./providers/workspaceSymbols').then((module) =>
       this._register(module.register(this.client, allModeIds))
     );
 

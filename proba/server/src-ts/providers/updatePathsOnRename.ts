@@ -15,8 +15,8 @@ import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import { Disposable } from '../utils/disposable';
 import * as fileSchemes from '../utils/fileSchemes';
 import { doesResourceLookLikeATypeScriptFile } from '../utils/language';
-import * as typeConverters from '../utils/typeConverters';
-import FileConfigurationManager from './fileConfigurationManager';
+import * as typeConverters from '../utils/convert';
+import FileConfigs from './fileConfigurationManager';
 
 const localize = nls.loadMessageBundle();
 
@@ -52,7 +52,7 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
 
   public constructor(
     private readonly client: ITypeScriptServiceClient,
-    private readonly fileConfigurationManager: FileConfigurationManager,
+    private readonly fileConfigurationManager: FileConfigs,
     private readonly _handles: (uri: vscode.Uri) => Promise<boolean>
   ) {
     super();
@@ -364,7 +364,7 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
 
 export function register(
   client: ITypeScriptServiceClient,
-  fileConfigurationManager: FileConfigurationManager,
+  fileConfigurationManager: FileConfigs,
   handles: (uri: vscode.Uri) => Promise<boolean>
 ) {
   return new VersionDependentRegistration(

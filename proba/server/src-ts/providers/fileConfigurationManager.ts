@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
@@ -22,7 +17,7 @@ function areFileConfigurationsEqual(a: FileConfiguration, b: FileConfiguration):
   return equals(a, b);
 }
 
-export default class FileConfigurationManager extends Disposable {
+export default class FileConfigs extends Disposable {
   private readonly formatOptions = new ResourceMap<
     Promise<FileConfiguration | undefined>
   >();

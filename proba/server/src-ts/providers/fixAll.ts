@@ -11,9 +11,9 @@ import API from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as errorCodes from '../utils/errorCodes';
 import * as fixNames from '../utils/names';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 import { DiagnosticsManager } from './diagnostics';
-import FileConfigurationManager from './fileConfigurationManager';
+import FileConfigs from './fileConfigurationManager';
 
 const localize = nls.loadMessageBundle();
 
@@ -255,7 +255,7 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
 
   constructor(
     private readonly client: ITypeScriptServiceClient,
-    private readonly fileConfigurationManager: FileConfigurationManager,
+    private readonly fileConfigurationManager: FileConfigs,
     private readonly diagnosticsManager: DiagnosticsManager
   ) {}
 
@@ -320,7 +320,7 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
 export function register(
   selector: vscode.DocumentSelector,
   client: ITypeScriptServiceClient,
-  fileConfigurationManager: FileConfigurationManager,
+  fileConfigurationManager: FileConfigs,
   diagnosticsManager: DiagnosticsManager
 ) {
   return new VersionDependentRegistration(client, API.v300, () =>

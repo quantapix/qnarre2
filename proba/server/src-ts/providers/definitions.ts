@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 import DefinitionProviderBase from './definitionProviderBase';
 
 export default class TypeScriptDefinitionProvider extends DefinitionProviderBase
@@ -41,12 +41,12 @@ export default class TypeScriptDefinitionProvider extends DefinitionProviderBase
             this.client.toResource(location.file),
             location
           );
-          if ((location as any).contextStart) {
+          if (location.contextStart) {
             return {
               originSelectionRange: span,
               targetRange: typeConverters.Range.fromLocations(
-                (location as any).contextStart,
-                (location as any).contextEnd
+                location.contextStart,
+                location.contextEnd
               ),
               targetUri: target.uri,
               targetSelectionRange: target.range,

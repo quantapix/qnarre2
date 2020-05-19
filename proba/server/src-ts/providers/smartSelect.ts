@@ -8,7 +8,7 @@ import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
 class SmartSelection implements vscode.SelectionRangeProvider {
   public static readonly minVersion = API.v350;

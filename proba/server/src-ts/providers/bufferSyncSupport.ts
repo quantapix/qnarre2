@@ -123,7 +123,7 @@ class BufferSynchronizer {
       for (const { range, text } of events) {
         const args: Proto.ChangeRequestArgs = {
           insertString: text,
-          ...typeConverters.Range.toFormattingRequestArgs(filepath, range),
+          ...typeConverters.Range.toFormatRequestArgs(filepath, range),
         };
         this.client.executeWithoutWaitingForResponse('change', args);
       }

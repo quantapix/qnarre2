@@ -7,8 +7,8 @@ import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
-import * as typeConverters from '../utils/typeConverters';
-import FileConfigurationManager from './fileConfigurationManager';
+import * as typeConverters from '../utils/convert';
+import FileConfigs from './fileConfigurationManager';
 
 class TypeScriptFormattingProvider
   implements
@@ -16,7 +16,7 @@ class TypeScriptFormattingProvider
     vscode.OnTypeFormattingEditProvider {
   public constructor(
     private readonly client: ITypeScriptServiceClient,
-    private readonly formattingOptionsManager: FileConfigurationManager
+    private readonly formattingOptionsManager: FileConfigs
   ) {}
 
   public async provideDocumentRangeFormattingEdits(
@@ -36,7 +36,7 @@ class TypeScriptFormattingProvider
       token
     );
 
-    const args = typeConverters.Range.toFormattingRequestArgs(file, range);
+    const args = typeConverters.Range.toFormatRequestArgs(file, range);
     const response = await this.client.execute('format', args, token);
     if (response.type !== 'response' || !response.body) {
       return;
@@ -102,7 +102,7 @@ export function register(
   selector: vscode.DocumentSelector,
   modeId: string,
   client: ITypeScriptServiceClient,
-  fileConfigurationManager: FileConfigurationManager
+  fileConfigurationManager: FileConfigs
 ) {
   return new ConfigurationDependentRegistration(modeId, 'format.enable', () => {
     const formattingProvider = new TypeScriptFormattingProvider(

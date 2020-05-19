@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import BufferSyncSupport from './features/bufferSyncSupport';
+import BufferSyncSupport from './providers/bufferSyncSupport';
 import * as Proto from './protocol';
 import API from './utils/api';
 import { ServiceConfig } from './utils/configuration';

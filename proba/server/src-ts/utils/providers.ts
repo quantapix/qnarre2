@@ -18,9 +18,9 @@ export function isSupportedScheme(s: string) {
 }
 
 export class LogDirectory {
-  public constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {}
 
-  public getNewLogDirectory(): string | undefined {
+  getNewLogDirectory(): string | undefined {
     const root = this.logDirectory();
     if (root) {
       try {
@@ -42,13 +42,13 @@ export class LogDirectory {
 }
 
 export class PluginPaths {
-  public constructor(private config: ServiceConfig) {}
+  constructor(private config: ServiceConfig) {}
 
-  public updateConfiguration(c: ServiceConfig) {
+  updateConfiguration(c: ServiceConfig) {
     this.config = c;
   }
 
-  public getPluginPaths() {
+  getPluginPaths() {
     const ps: string[] = [];
     for (const p of this.config[`${n}PluginPaths`]) {
       ps.push(...this.resolvePluginPath(p));
@@ -74,7 +74,7 @@ export interface TSConfig {
 }
 
 export class TsConfig {
-  public async getConfigsForWorkspace(): Promise<Iterable<TSConfig>> {
+  async getConfigsForWorkspace(): Promise<Iterable<TSConfig>> {
     if (!vscode.workspace.workspaceFolders) return [];
     const cs = new Map<string, TSConfig>();
     for (const c of await vscode.workspace.findFiles(

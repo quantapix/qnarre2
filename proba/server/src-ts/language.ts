@@ -1,8 +1,8 @@
 import { basename } from 'path';
 import * as vscode from 'vscode';
 import { CachedResponse } from './server';
-import { DiagnosticKind } from './features/diagnostics';
-import FileConfigurationManager from './features/fileConfigurationManager';
+import { DiagnosticKind } from './providers/diagnostics';
+import FileConfigs from './providers/fileConfigurationManager';
 import TypeScriptServiceClient from './serviceClient';
 import { Commands, Disposable } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
@@ -21,7 +21,7 @@ export default class LanguageProvider extends Disposable {
     private readonly commandManager: Commands,
     private readonly telemetryReporter: TelemetryReporter,
     private readonly typingsStatus: TypingsStatus,
-    private readonly fileConfigurationManager: FileConfigurationManager,
+    private readonly fileConfigurationManager: FileConfigs,
     private readonly onCompletionAccepted: (item: vscode.CompletionItem) => void
   ) {
     super();
@@ -52,7 +52,7 @@ export default class LanguageProvider extends Disposable {
     const cachedResponse = new CachedResponse();
 
     await Promise.all([
-      import('./features/completions').then((p) =>
+      import('./providers/completions').then((p) =>
         this.register(
           p.register(
             selector,
@@ -66,22 +66,22 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/definitions').then((p) =>
+      import('./providers/definitions').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/directiveCommentCompletions').then((p) =>
+      import('./providers/directiveCommentCompletions').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/documentHighlight').then((p) =>
+      import('./providers/documentHighlight').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/documentSymbol').then((p) =>
+      import('./providers/documentSymbol').then((p) =>
         this.register(p.register(selector, this.client, cachedResponse))
       ),
-      import('./features/folding').then((p) =>
+      import('./providers/folding').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/formatting').then((p) =>
+      import('./providers/formatting').then((p) =>
         this.register(
           p.register(
             selector,
@@ -91,21 +91,21 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/hover').then((p) =>
+      import('./providers/hover').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/implementations').then((p) =>
+      import('./providers/implementations').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/implementationsCodeLens').then((p) =>
+      import('./providers/implementationsCodeLens').then((p) =>
         this.register(
           p.register(selector, this.description.id, this.client, cachedResponse)
         )
       ),
-      import('./features/jsDocCompletions').then((p) =>
+      import('./providers/jsDocCompletions').then((p) =>
         this.register(p.register(selector, this.description.id, this.client))
       ),
-      import('./features/organizeImports').then((p) =>
+      import('./providers/organizeImports').then((p) =>
         this.register(
           p.register(
             selector,
@@ -116,7 +116,7 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/quickFix').then((p) =>
+      import('./providers/quickFix').then((p) =>
         this.register(
           p.register(
             selector,
@@ -128,7 +128,7 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/fixAll').then((p) =>
+      import('./providers/fixAll').then((p) =>
         this.register(
           p.register(
             selector,
@@ -138,7 +138,7 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/refactor').then((p) =>
+      import('./providers/refactor').then((p) =>
         this.register(
           p.register(
             selector,
@@ -149,33 +149,33 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/references').then((p) =>
+      import('./providers/references').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/referencesCodeLens').then((p) =>
+      import('./providers/referencesCodeLens').then((p) =>
         this.register(
           p.register(selector, this.description.id, this.client, cachedResponse)
         )
       ),
-      import('./features/rename').then((p) =>
+      import('./providers/rename').then((p) =>
         this.register(p.register(selector, this.client, this.fileConfigurationManager))
       ),
-      import('./features/smartSelect').then((p) =>
+      import('./providers/smartSelect').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/signatureHelp').then((p) =>
+      import('./providers/signatureHelp').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/tagClosing').then((p) =>
+      import('./providers/tagClosing').then((p) =>
         this.register(p.register(selector, this.description.id, this.client))
       ),
-      import('./features/typeDefinitions').then((p) =>
+      import('./providers/typeDefinitions').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/semanticTokens').then((p) =>
+      import('./providers/semanticTokens').then((p) =>
         this.register(p.register(selector, this.client))
       ),
-      import('./features/callHierarchy').then((p) =>
+      import('./providers/callHierarchy').then((p) =>
         this.register(p.register(selector, this.client))
       ),
     ]);

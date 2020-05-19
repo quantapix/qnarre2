@@ -16,9 +16,9 @@ import { ConfigurationDependentRegistration } from '../utils/dependentRegistrati
 import * as Previewer from '../utils/previewer';
 import { snippetForFunctionCall } from '../utils/snippetForFunctionCall';
 import { TelemetryReporter } from '../utils/telemetry';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 import TypingsStatus from '../utils/typingsStatus';
-import FileConfigurationManager from './fileConfigurationManager';
+import FileConfigs from './fileConfigurationManager';
 
 const localize = nls.loadMessageBundle();
 
@@ -452,7 +452,7 @@ class TypeScriptCompletionItemProvider
     private readonly client: ITypeScriptServiceClient,
     private readonly modeId: string,
     private readonly typingsStatus: TypingsStatus,
-    private readonly fileConfigurationManager: FileConfigurationManager,
+    private readonly fileConfigurationManager: FileConfigs,
     commandManager: Commands,
     private readonly telemetryReporter: TelemetryReporter,
     onCompletionAccepted: (item: vscode.CompletionItem) => void
@@ -577,8 +577,7 @@ class TypeScriptCompletionItemProvider
           dotAccessorContext = { range, text };
         }
       }
-      isIncomplete =
-        (response as any).metadata && (response as any).metadata.isIncomplete;
+      isIncomplete = response.metadata && response.metadata.isIncomplete;
       entries = response.body.entries;
       metadata = response.metadata;
     } else {
@@ -918,7 +917,7 @@ export function register(
   modeId: string,
   client: ITypeScriptServiceClient,
   typingsStatus: TypingsStatus,
-  fileConfigurationManager: FileConfigurationManager,
+  fileConfigurationManager: FileConfigs,
   commandManager: Commands,
   telemetryReporter: TelemetryReporter,
   onCompletionAccepted: (item: vscode.CompletionItem) => void

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import * as typeConverters from './typeConverters';
+import * as typeConverters from './convert';
 
 export function getEditForCodeAction(
   client: ITypeScriptServiceClient,

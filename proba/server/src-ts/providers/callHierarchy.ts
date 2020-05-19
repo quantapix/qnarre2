@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 import API from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import type * as Proto from '../protocol';
@@ -107,7 +107,7 @@ function fromProtocolCallHierarchyItem(
     ? vscode.workspace.asRelativePath(path.dirname(item.file))
     : '';
   return new vscode.CallHierarchyItem(
-    typeConverters.SymbolKind.fromProtocolScriptElementKind(item.kind),
+    typeConverters.SymbolKind.fromScriptElem(item.kind),
     name,
     detail,
     vscode.Uri.file(item.file),

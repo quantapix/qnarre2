@@ -10,8 +10,8 @@ import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { Command, Commands } from '../utils/extras';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
-import * as typeconverts from '../utils/typeConverters';
-import FileConfigurationManager from './fileConfigurationManager';
+import * as typeconverts from '../utils/convert';
+import FileConfigs from './fileConfigurationManager';
 import { TelemetryReporter } from '../utils/telemetry';
 import { nulToken } from '../utils/cancellation';
 
@@ -66,7 +66,7 @@ export class OrganizeImportsCodeActionProvider implements vscode.CodeActionProvi
   public constructor(
     private readonly client: ITypeScriptServiceClient,
     commandManager: Commands,
-    private readonly fileConfigManager: FileConfigurationManager,
+    private readonly fileConfigManager: FileConfigs,
     telemetryReporter: TelemetryReporter
   ) {
     commandManager.register(new OrganizeImportsCommand(client, telemetryReporter));
@@ -109,7 +109,7 @@ export function register(
   selector: vscode.DocumentSelector,
   client: ITypeScriptServiceClient,
   commandManager: Commands,
-  fileConfigurationManager: FileConfigurationManager,
+  fileConfigurationManager: FileConfigs,
   telemetryReporter: TelemetryReporter
 ) {
   return new VersionDependentRegistration(

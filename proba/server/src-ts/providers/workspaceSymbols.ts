@@ -13,7 +13,7 @@ import {
   doesResourceLookLikeAJavaScriptFile,
   doesResourceLookLikeATypeScriptFile,
 } from '../utils/language';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
 function getSymbolKind(item: Proto.NavtoItem): vscode.SymbolKind {
   switch (item.kind) {

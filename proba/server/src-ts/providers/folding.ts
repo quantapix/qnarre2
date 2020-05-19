@@ -9,7 +9,7 @@ import { ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { coalesce } from '../utils/arrays';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
 class TypeScriptFoldingProvider implements vscode.FoldingRangeProvider {
   public static readonly minVersion = API.v280;

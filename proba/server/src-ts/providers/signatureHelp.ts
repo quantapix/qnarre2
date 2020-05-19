@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
 import * as Previewer from '../utils/previewer';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
 class TypeScriptSignatureHelpProvider implements vscode.SignatureHelpProvider {
   public static readonly triggerCharacters = ['(', ',', '<'];

@@ -13,7 +13,7 @@ import {
   VersionDependentRegistration,
 } from '../utils/dependentRegistration';
 import { Disposable } from '../utils/disposable';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
 class TagClosing extends Disposable {
   public static readonly minVersion = API.v300;

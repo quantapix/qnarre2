@@ -4,55 +4,48 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import { markdownDocumentation } from '../utils/previewer';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
-class TypeScriptHoverProvider implements vscode.HoverProvider {
+class TypeScriptReferenceSupport implements vscode.ReferenceProvider {
   public constructor(private readonly client: ITypeScriptServiceClient) {}
 
-  public async provideHover(
+  public async provideReferences(
     document: vscode.TextDocument,
     position: vscode.Position,
+    options: vscode.ReferenceContext,
     token: vscode.CancellationToken
-  ): Promise<vscode.Hover | undefined> {
+  ): Promise<vscode.Location[]> {
     const filepath = this.client.toOpenedFilePath(document);
     if (!filepath) {
-      return;
+      return [];
     }
 
     const args = typeConverters.Position.toFileLocationRequestArgs(filepath, position);
-    const response = await this.client.interruptGetErr(() =>
-      this.client.execute('quickinfo', args, token)
-    );
+    const response = await this.client.execute('references', args, token);
     if (response.type !== 'response' || !response.body) {
-      return;
+      return [];
     }
 
-    return new vscode.Hover(
-      TypeScriptHoverProvider.getContents(response.body),
-      typeConverters.Range.fromTextSpan(response.body)
-    );
-  }
-
-  private static getContents(data: Proto.QuickInfoResponseBody) {
-    const parts = [];
-
-    if (data.displayString) {
-      parts.push({ language: 'typescript', value: data.displayString });
+    const result: vscode.Location[] = [];
+    for (const ref of response.body.refs) {
+      if (!options.includeDeclaration && ref.isDefinition) {
+        continue;
+      }
+      const url = this.client.toResource(ref.file);
+      const location = typeConverters.Location.fromTextSpan(url, ref);
+      result.push(location);
     }
-    parts.push(markdownDocumentation(data.documentation, data.tags));
-    return parts;
+    return result;
   }
 }
 
 export function register(
   selector: vscode.DocumentSelector,
   client: ITypeScriptServiceClient
-): vscode.Disposable {
-  return vscode.languages.registerHoverProvider(
+) {
+  return vscode.languages.registerReferenceProvider(
     selector,
-    new TypeScriptHoverProvider(client)
+    new TypeScriptReferenceSupport(client)
   );
 }

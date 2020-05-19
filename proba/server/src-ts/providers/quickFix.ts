@@ -14,9 +14,9 @@ import { Command, Commands } from '../utils/extras';
 import * as fixNames from '../utils/names';
 import { memoize } from '../utils/memoize';
 import { TelemetryReporter } from '../utils/telemetry';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 import { DiagnosticsManager } from './diagnostics';
-import FileConfigurationManager from './fileConfigurationManager';
+import FileConfigs from './fileConfigurationManager';
 
 const localize = nls.loadMessageBundle();
 
@@ -193,7 +193,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
 
   constructor(
     private readonly client: ITypeScriptServiceClient,
-    private readonly formattingConfigurationManager: FileConfigurationManager,
+    private readonly formattingConfigurationManager: FileConfigs,
     commandManager: Commands,
     private readonly diagnosticsManager: DiagnosticsManager,
     telemetryReporter: TelemetryReporter
@@ -413,7 +413,7 @@ function isPreferredFix(
 export function register(
   selector: vscode.DocumentSelector,
   client: ITypeScriptServiceClient,
-  fileConfigurationManager: FileConfigurationManager,
+  fileConfigurationManager: FileConfigs,
   commandManager: Commands,
   diagnosticsManager: DiagnosticsManager,
   telemetryReporter: TelemetryReporter

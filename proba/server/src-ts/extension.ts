@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { Api, getExtensionApi } from './api';
 import { registerCommands } from './commands';
-import { LanguageConfigurationManager } from './features/languageConfiguration';
+import { LanguageConfigurationManager } from './providers/languageConfiguration';
 import TypeScriptServiceClientHost from './clientHost';
 import { flatten } from './utils/arrays';
 import * as electron from './utils/electron';
@@ -19,7 +19,7 @@ import LogDirectory from './utils/providers';
 import ManagedFileContextManager from './utils/managedFileContext';
 import { Plugins } from './utils/plugin';
 import * as ProjectStatus from './utils/largeProjectStatus';
-import TscTaskProvider from './features/task';
+import TscTaskProvider from './providers/task';
 
 export function activate(context: vscode.ExtensionContext): Api {
   const pluginManager = new Plugins();
@@ -49,7 +49,7 @@ export function activate(context: vscode.ExtensionContext): Api {
   );
   context.subscriptions.push(new LanguageConfigurationManager());
 
-  import('./features/tsconfig').then((module) => {
+  import('./providers/tsconfig').then((module) => {
     context.subscriptions.push(module.register());
   });
 

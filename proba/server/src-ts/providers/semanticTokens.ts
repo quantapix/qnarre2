@@ -19,7 +19,7 @@ import {
   TokenModifier,
   TokenEncodingConsts,
   VersionRequirement,
-} from './node_modules/typescript-vscode-sh-plugin/lib/constants';
+} from 'typescript-vscode-sh-plugin/lib/constants';
 
 const minTypeScriptVersion = API.fromVersionString(
   `${VersionRequirement.major}.${VersionRequirement.minor}`
@@ -103,7 +103,7 @@ class DocumentSemanticTokensProvider
       return null;
     }
 
-    const versionBeforeRequest = document.version;
+    let versionBeforeRequest = document.version;
 
     const response = await (this
       .client as ExperimentalProtocol.IExtendedTypeScriptServiceClient).execute(
@@ -177,7 +177,7 @@ class DocumentSemanticTokensProvider
 function waitForDocumentChangesToEnd(document: vscode.TextDocument) {
   let version = document.version;
   return new Promise((s) => {
-    const iv = setInterval((_) => {
+    let iv = setInterval((_) => {
       if (document.version === version) {
         clearInterval(iv);
         s();

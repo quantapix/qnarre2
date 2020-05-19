@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import * as typeConverters from '../utils/typeConverters';
+import * as typeConverters from '../utils/convert';
 
 export default class TypeScriptDefinitionProviderBase {
   constructor(protected readonly client: ITypeScriptServiceClient) {}
