@@ -1,19 +1,13 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import { basename } from 'path';
 import * as vscode from 'vscode';
-import { CachedResponse } from './tsServer/cachedResponse';
+import { CachedResponse } from './server';
 import { DiagnosticKind } from './features/diagnostics';
 import FileConfigurationManager from './features/fileConfigurationManager';
 import TypeScriptServiceClient from './serviceClient';
-import { Commands } from './utils/extras';
-import { Disposable } from './utils/disposable';
+import { Commands, Disposable } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
 import { LanguageDescription } from './utils/language';
-import { memoize } from './utils/memoize';
+import { memoize } from './utils';
 import { TelemetryReporter } from './utils/telemetry';
 import TypingsStatus from './utils/typingsStatus';
 
@@ -58,9 +52,9 @@ export default class LanguageProvider extends Disposable {
     const cachedResponse = new CachedResponse();
 
     await Promise.all([
-      import('./features/completions').then((provider) =>
-        this._register(
-          provider.register(
+      import('./features/completions').then((p) =>
+        this.register(
+          p.register(
             selector,
             this.description.id,
             this.client,
@@ -72,24 +66,24 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/definitions').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/definitions').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/directiveCommentCompletions').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/directiveCommentCompletions').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/documentHighlight').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/documentHighlight').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/documentSymbol').then((provider) =>
-        this._register(provider.register(selector, this.client, cachedResponse))
+      import('./features/documentSymbol').then((p) =>
+        this.register(p.register(selector, this.client, cachedResponse))
       ),
-      import('./features/folding').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/folding').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/formatting').then((provider) =>
-        this._register(
-          provider.register(
+      import('./features/formatting').then((p) =>
+        this.register(
+          p.register(
             selector,
             this.description.id,
             this.client,
@@ -97,23 +91,23 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/hover').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/hover').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/implementations').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/implementations').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/implementationsCodeLens').then((provider) =>
-        this._register(
-          provider.register(selector, this.description.id, this.client, cachedResponse)
+      import('./features/implementationsCodeLens').then((p) =>
+        this.register(
+          p.register(selector, this.description.id, this.client, cachedResponse)
         )
       ),
-      import('./features/jsDocCompletions').then((provider) =>
-        this._register(provider.register(selector, this.description.id, this.client))
+      import('./features/jsDocCompletions').then((p) =>
+        this.register(p.register(selector, this.description.id, this.client))
       ),
-      import('./features/organizeImports').then((provider) =>
-        this._register(
-          provider.register(
+      import('./features/organizeImports').then((p) =>
+        this.register(
+          p.register(
             selector,
             this.client,
             this.commandManager,
@@ -122,9 +116,9 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/quickFix').then((provider) =>
-        this._register(
-          provider.register(
+      import('./features/quickFix').then((p) =>
+        this.register(
+          p.register(
             selector,
             this.client,
             this.fileConfigurationManager,
@@ -134,9 +128,9 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/fixAll').then((provider) =>
-        this._register(
-          provider.register(
+      import('./features/fixAll').then((p) =>
+        this.register(
+          p.register(
             selector,
             this.client,
             this.fileConfigurationManager,
@@ -144,9 +138,9 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/refactor').then((provider) =>
-        this._register(
-          provider.register(
+      import('./features/refactor').then((p) =>
+        this.register(
+          p.register(
             selector,
             this.client,
             this.fileConfigurationManager,
@@ -155,36 +149,34 @@ export default class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./features/references').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/references').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/referencesCodeLens').then((provider) =>
-        this._register(
-          provider.register(selector, this.description.id, this.client, cachedResponse)
+      import('./features/referencesCodeLens').then((p) =>
+        this.register(
+          p.register(selector, this.description.id, this.client, cachedResponse)
         )
       ),
-      import('./features/rename').then((provider) =>
-        this._register(
-          provider.register(selector, this.client, this.fileConfigurationManager)
-        )
+      import('./features/rename').then((p) =>
+        this.register(p.register(selector, this.client, this.fileConfigurationManager))
       ),
-      import('./features/smartSelect').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/smartSelect').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/signatureHelp').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/signatureHelp').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/tagClosing').then((provider) =>
-        this._register(provider.register(selector, this.description.id, this.client))
+      import('./features/tagClosing').then((p) =>
+        this.register(p.register(selector, this.description.id, this.client))
       ),
-      import('./features/typeDefinitions').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/typeDefinitions').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/semanticTokens').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/semanticTokens').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
-      import('./features/callHierarchy').then((provider) =>
-        this._register(provider.register(selector, this.client))
+      import('./features/callHierarchy').then((p) =>
+        this.register(p.register(selector, this.client))
       ),
     ]);
   }

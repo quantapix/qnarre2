@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import BufferSyncSupport from './features/bufferSyncSupport';
 import * as Proto from './protocol';
@@ -12,7 +7,7 @@ import { Plugins } from './utils/plugin';
 
 export namespace ServerResponse {
   export class Cancelled {
-    public readonly type = 'cancelled';
+    readonly type = 'cancelled';
 
     constructor(public readonly reason: string) {}
   }
