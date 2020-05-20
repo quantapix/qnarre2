@@ -6,22 +6,22 @@ import { memoize } from '.';
 import { ServiceConfig } from './configuration';
 import { PathResolver } from './extras';
 
+export const git = 'git';
 export const file = 'file';
 export const untitled = 'untitled';
-export const git = 'git';
 export const walkThroughSnippet = 'walkThroughSnippet';
 
-export const supportedSchemes = [file, untitled, walkThroughSnippet];
+export const schemes = [file, untitled, walkThroughSnippet];
 
 export function isSupportedScheme(s: string) {
-  return supportedSchemes.includes(s);
+  return schemes.includes(s);
 }
 
 export class LogDirectory {
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly ctx: vscode.ExtensionContext) {}
 
-  getNewLogDirectory(): string | undefined {
-    const root = this.logDirectory();
+  newDirectory(): string | undefined {
+    const root = this.directory();
     if (root) {
       try {
         return fs.mkdtempSync(path.join(root, `tsserver-log-`));
@@ -31,32 +31,32 @@ export class LogDirectory {
   }
 
   @memoize
-  private logDirectory(): string | undefined {
+  private directory(): string | undefined {
     try {
-      const p = this.context.logPath;
+      const p = this.ctx.logPath;
       if (!fs.existsSync(p)) fs.mkdirSync(p);
-      return this.context.logPath;
+      return this.ctx.logPath;
     } catch {}
     return;
   }
 }
 
 export class PluginPaths {
-  constructor(private config: ServiceConfig) {}
+  constructor(private cfg: ServiceConfig) {}
 
-  updateConfiguration(c: ServiceConfig) {
-    this.config = c;
+  updateConfig(c: ServiceConfig) {
+    this.cfg = c;
   }
 
-  getPluginPaths() {
+  pluginPaths() {
     const ps: string[] = [];
-    for (const p of this.config[`${n}PluginPaths`]) {
-      ps.push(...this.resolvePluginPath(p));
+    for (const p of this.cfg[`${n}PluginPaths`]) {
+      ps.push(...this.resolvePath(p));
     }
     return ps;
   }
 
-  private resolvePluginPath(p: string) {
+  private resolvePath(p: string) {
     if (path.isAbsolute(p)) return [p];
     const w = PathResolver.asWorkspacePath(p);
     if (w !== undefined) return [w];
@@ -66,19 +66,19 @@ export class PluginPaths {
   }
 }
 
-export interface TSConfig {
+export interface Config {
   readonly uri: vscode.Uri;
   readonly fsPath: string;
-  readonly posixPath: string;
-  readonly workspaceFolder?: vscode.WorkspaceFolder;
+  readonly posix: string;
+  readonly folder?: vscode.WorkspaceFolder;
 }
 
 export class TsConfig {
-  async getConfigsForWorkspace(): Promise<Iterable<TSConfig>> {
+  async configsForWorkspace(): Promise<Iterable<Config>> {
     if (!vscode.workspace.workspaceFolders) return [];
-    const cs = new Map<string, TSConfig>();
+    const cs = new Map<string, Config>();
     for (const c of await vscode.workspace.findFiles(
-      '**/tsconfig*.json',
+      '**/tscfg*.json',
       '**/{node_modules,.*}/**'
     )) {
       const r = vscode.workspace.getWorkspaceFolder(c);
@@ -86,8 +86,8 @@ export class TsConfig {
         cs.set(c.fsPath, {
           uri: c,
           fsPath: c.fsPath,
-          posixPath: c.path,
-          workspaceFolder: r,
+          posix: c.path,
+          folder: r,
         });
       }
     }

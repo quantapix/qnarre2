@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { IServiceClient } from '../service';
-import DefBase from './definition';
+import { DefBase } from './definition';
 
 class TypeDefinition extends DefBase implements vscode.TypeDefinitionProvider {
   public provideTypeDefinition(

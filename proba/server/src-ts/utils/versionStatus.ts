@@ -5,7 +5,7 @@ import { coalesce } from '.';
 import { Command, Commands } from './extras';
 import { isTypeScriptDocument } from './language';
 import {
-  isImplicitProjectConfigFile,
+  isImplicitConfig,
   openOrCreateConfig,
   openProjectConfigOrPromptToCreate,
   openProjectConfigForFile,
@@ -81,7 +81,7 @@ class ProjectStatusCommand implements Command {
       return;
     }
     if (info.type === ProjectInfoState.Type.Resolved) {
-      if (isImplicitProjectConfigFile(info.configFile)) {
+      if (isImplicitConfig(info.configFile)) {
         return {
           label: localize('projectQuickPick.project.create', 'Create tsconfig'),
           detail: localize(

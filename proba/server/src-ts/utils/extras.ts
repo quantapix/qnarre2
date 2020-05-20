@@ -292,10 +292,10 @@ export class Tracer {
   private trace?: Trace;
 
   constructor(private readonly logger: Logger) {
-    this.updateConfiguration();
+    this.updateConfig();
   }
 
-  public updateConfiguration() {
+  public updateConfig() {
     this.trace = Tracer.readTrace();
   }
 

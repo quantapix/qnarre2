@@ -153,10 +153,10 @@ export class ServiceClient extends Disposable implements IServiceClient {
         const oldConfiguration = this._configuration;
         this._configuration = ServiceConfig.loadFromWorkspace();
 
-        this.versionProvider.updateConfiguration(this._configuration);
-        this._versionManager.updateConfiguration(this._configuration);
-        this.pluginPathsProvider.updateConfiguration(this._configuration);
-        this.tracer.updateConfiguration();
+        this.versionProvider.updateConfig(this._configuration);
+        this._versionManager.updateConfig(this._configuration);
+        this.pluginPathsProvider.updateConfig(this._configuration);
+        this.tracer.updateConfig();
 
         if (this.serverState.type === ServerState.Type.Running) {
           if (

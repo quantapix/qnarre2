@@ -383,12 +383,8 @@ export class BufferSyncSupport extends Disposable {
     this.pendingDiagnostics = new PendingDiagnostics(pathNormalizer);
     this.synchronizer = new BufferSynchronizer(client);
 
-    this.updateConfiguration();
-    vscode.workspace.onDidChangeConfiguration(
-      this.updateConfiguration,
-      this,
-      this._disposables
-    );
+    this.updateConfig();
+    vscode.workspace.onDidChangeConfiguration(this.updateConfig, this, this._disposables);
   }
 
   private readonly _onDelete = this._register(new vscode.EventEmitter<vscode.Uri>());
@@ -644,7 +640,7 @@ export class BufferSyncSupport extends Disposable {
     this.pendingDiagnostics.clear();
   }
 
-  private updateConfiguration() {
+  private updateConfig() {
     const jsConfig = vscode.workspace.getConfiguration('javascript', null);
     const tsConfig = vscode.workspace.getConfiguration('typescript', null);
 

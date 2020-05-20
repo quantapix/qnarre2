@@ -161,7 +161,7 @@ export class Spawner {
     const cancellationPipeName = electron.getTempFile('tscancellation');
     args.push('--cancellationPipeName', cancellationPipeName + '*');
     if (Spawner.isLoggingEnabled(configuration)) {
-      const logDir = this._logDirectoryProvider.getNewLogDirectory();
+      const logDir = this._logDirectoryProvider.newDirectory();
       if (logDir) {
         tsServerLogFile = path.join(logDir, `tsserver.log`);
         args.push(
@@ -171,7 +171,7 @@ export class Spawner {
         args.push('--logFile', tsServerLogFile);
       }
     }
-    const pluginPaths = this._pluginPathsProvider.getPluginPaths();
+    const pluginPaths = this._pluginPathsProvider.pluginPaths();
     if (plugins.plugins.length) {
       args.push('--globalPlugins', plugins.plugins.map((x) => x.name).join(','));
       const isUsingBundledTypeScriptVersion =

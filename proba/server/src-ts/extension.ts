@@ -14,7 +14,7 @@ import LogDirectory from './utils/providers';
 import ManagedFileContextManager from './utils/managedFileContext';
 import { Plugins } from './utils/plugin';
 import * as ProjectStatus from './utils/largeProjectStatus';
-import TscTaskProvider from './providers/task';
+import Task from './providers/task';
 
 export function activate(context: vscode.ExtensionContext): Api {
   const plugins = new Plugins();
@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext): Api {
   context.subscriptions.push(
     vscode.tasks.registerTaskProvider(
       'typescript',
-      new TscTaskProvider(lazyClientHost.map((x) => x.serviceClient))
+      new Task(lazyClientHost.map((x) => x.serviceClient))
     )
   );
   context.subscriptions.push(new LanguageConfigurationManager());

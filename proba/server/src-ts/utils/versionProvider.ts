@@ -123,7 +123,7 @@ export class TypeScriptVersion {
 export class TypeScriptVersionProvider {
   public constructor(private configuration: ServiceConfig) {}
 
-  public updateConfiguration(configuration: ServiceConfig): void {
+  public updateConfig(configuration: ServiceConfig): void {
     this.configuration = configuration;
   }
 

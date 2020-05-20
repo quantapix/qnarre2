@@ -13,8 +13,8 @@ export const enum ProjectType {
   JavaScript,
 }
 
-export function isImplicitProjectConfigFile(configFileName: string) {
-  return configFileName.startsWith('/dev/null/');
+export function isImplicitConfig(n: string) {
+  return n.startsWith('/dev/null/');
 }
 
 export function inferredProjectCompilerOptions(
@@ -81,7 +81,7 @@ export async function openProjectConfigOrPromptToCreate(
   root: string,
   configFileName: string
 ): Promise<void> {
-  if (!isImplicitProjectConfigFile(configFileName)) {
+  if (!isImplicitConfig(configFileName)) {
     const doc = await vscode.workspace.openTextDocument(configFileName);
     vscode.window.showTextDocument(doc, vscode.window.activeTextEditor?.viewColumn);
     return;
