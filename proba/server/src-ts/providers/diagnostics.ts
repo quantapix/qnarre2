@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DiagnosticLanguage } from '../utils/language';
+import { DiagLang } from '../utils/language';
 import * as qu from '../utils';
 import { Disposable, ResourceMap } from '../utils/extras';
 
@@ -41,10 +41,10 @@ class FileDiagnostics {
     ReadonlyArray<vscode.Diagnostic>
   >();
 
-  constructor(public readonly file: vscode.Uri, public language: DiagnosticLanguage) {}
+  constructor(public readonly file: vscode.Uri, public language: DiagLang) {}
 
   public updateDiagnostics(
-    language: DiagnosticLanguage,
+    language: DiagLang,
     kind: DiagnosticKind,
     diagnostics: ReadonlyArray<vscode.Diagnostic>
   ): boolean {
@@ -113,39 +113,36 @@ class DiagnosticSettings {
     enableSuggestions: true,
   };
 
-  private readonly _languageSettings = new Map<
-    DiagnosticLanguage,
-    LanguageDiagnosticSettings
-  >();
+  private readonly _languageSettings = new Map<DiagLang, LanguageDiagnosticSettings>();
 
-  public getValidate(language: DiagnosticLanguage): boolean {
+  public getValidate(language: DiagLang): boolean {
     return this.get(language).validate;
   }
 
-  public setValidate(language: DiagnosticLanguage, value: boolean): boolean {
+  public setValidate(language: DiagLang, value: boolean): boolean {
     return this.update(language, (settings) => ({
       validate: value,
       enableSuggestions: settings.enableSuggestions,
     }));
   }
 
-  public getEnableSuggestions(language: DiagnosticLanguage): boolean {
+  public getEnableSuggestions(language: DiagLang): boolean {
     return this.get(language).enableSuggestions;
   }
 
-  public setEnableSuggestions(language: DiagnosticLanguage, value: boolean): boolean {
+  public setEnableSuggestions(language: DiagLang, value: boolean): boolean {
     return this.update(language, (settings) => ({
       validate: settings.validate,
       enableSuggestions: value,
     }));
   }
 
-  private get(language: DiagnosticLanguage): LanguageDiagnosticSettings {
+  private get(language: DiagLang): LanguageDiagnosticSettings {
     return this._languageSettings.get(language) || DiagnosticSettings.defaultSettings;
   }
 
   private update(
-    language: DiagnosticLanguage,
+    language: DiagLang,
     f: (x: LanguageDiagnosticSettings) => LanguageDiagnosticSettings
   ): boolean {
     const currentSettings = this.get(language);
@@ -184,14 +181,14 @@ export class DiagnosticsManager extends Disposable {
     this._diagnostics.clear();
   }
 
-  public setValidate(language: DiagnosticLanguage, value: boolean) {
+  public setValidate(language: DiagLang, value: boolean) {
     const didUpdate = this._settings.setValidate(language, value);
     if (didUpdate) {
       this.rebuild();
     }
   }
 
-  public setEnableSuggestions(language: DiagnosticLanguage, value: boolean) {
+  public setEnableSuggestions(language: DiagLang, value: boolean) {
     const didUpdate = this._settings.setEnableSuggestions(language, value);
     if (didUpdate) {
       this.rebuild();
@@ -200,7 +197,7 @@ export class DiagnosticsManager extends Disposable {
 
   public updateDiagnostics(
     file: vscode.Uri,
-    language: DiagnosticLanguage,
+    language: DiagLang,
     kind: DiagnosticKind,
     diagnostics: ReadonlyArray<vscode.Diagnostic>
   ): void {

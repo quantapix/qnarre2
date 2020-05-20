@@ -468,7 +468,7 @@ class TypeScriptCompletionItemProvider
     ct: vscode.CancellationToken,
     context: vscode.CompletionContext
   ): Promise<vscode.CompletionList<MyCompletionItem> | null> {
-    if (this.typingsStatus.isAcquiringTypings) {
+    if (this.typingsStatus.isAcquiring) {
       return Promise.reject<vscode.CompletionList<MyCompletionItem>>({
         label: localize(
           {

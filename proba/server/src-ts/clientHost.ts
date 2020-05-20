@@ -4,16 +4,16 @@ import FileConfigs from './providers/configs';
 import LanguageProvider from './language';
 import * as Proto from './protocol';
 import * as PConst from './protocol.const';
-import ServiceClient from './serviceClient';
-import { coalesce, flatten } from './utils/arrays';
+import { ServiceClient } from './serviceClient';
+import { coalesce, flatten } from './utils';
 import { Commands } from './utils/extras';
-import { Disposable } from './utils/disposable';
+import { Disposable } from './utils/extras';
 import * as errorCodes from './utils/errorCodes';
-import { DiagnosticLanguage, LanguageDescription } from './utils/language';
-import LogDirectory from './utils/providers';
+import { DiagLang, LangDesc } from './utils/language';
+import { LogDirectory } from './utils/providers';
 import { Plugins } from './utils/plugin';
-import * as typeConverters from './utils/convert';
-import TypingsStatus, { AtaProgressReporter } from './utils/typingsStatus';
+import * as qc from './utils/convert';
+import TypingsStatus, { ProgressReporter } from './utils/typingsStatus';
 import VersionStatus from './utils/versionStatus';
 
 // Style check diagnostics that can be reported as warnings
@@ -40,7 +40,7 @@ export class ServiceClientHost extends Disposable {
   private reportStyleCheckAsWarnings = true;
 
   constructor(
-    descriptions: LanguageDescription[],
+    descriptions: LangDesc[],
     workspaceState: vscode.Memento,
     plugins: Plugins,
     private readonly commandManager: Commands,
@@ -50,7 +50,7 @@ export class ServiceClientHost extends Disposable {
     super();
 
     const allModeIds = this.getAllModeIds(descriptions, plugins);
-    this.client = this._register(
+    this.client = this.register(
       new ServiceClient(
         workspaceState,
         (version) => this.versionStatus.onDidChangeTypeScriptVersion(version),
@@ -65,25 +65,21 @@ export class ServiceClientHost extends Disposable {
         this.diagnosticsReceived(kind, resource, diagnostics);
       },
       null,
-      this._disposables
+      this.dispos
     );
 
     this.client.onConfigDiagnosticsReceived(
       (diag) => this.configFileDiagnosticsReceived(diag),
       null,
-      this._disposables
+      this.dispos
     );
-    this.client.onResendModelsRequested(
-      () => this.populateService(),
-      null,
-      this._disposables
-    );
+    this.client.onResendModelsRequested(() => this.populateService(), null, this.dispos);
 
-    this.versionStatus = this._register(new VersionStatus(this.client, commandManager));
+    this.versionStatus = this.register(new VersionStatus(this.client, commandManager));
 
-    this._register(new AtaProgressReporter(this.client));
-    this.typingsStatus = this._register(new TypingsStatus(this.client));
-    this.fileConfigurationManager = this._register(new FileConfigs(this.client));
+    this.register(new ProgressReporter(this.client));
+    this.typingsStatus = this.register(new TypingsStatus(this.client));
+    this.fileConfigurationManager = this.register(new FileConfigs(this.client));
 
     for (const description of descriptions) {
       const manager = new LanguageProvider(
@@ -96,12 +92,12 @@ export class ServiceClientHost extends Disposable {
         onCompletionAccepted
       );
       this.languages.push(manager);
-      this._register(manager);
+      this.register(manager);
       this.languagePerId.set(description.id, manager);
     }
 
     import('./providers/updatePathsOnRename').then((module) =>
-      this._register(
+      this.register(
         module.register(this.client, this.fileConfigurationManager, (uri) =>
           this.handles(uri)
         )
@@ -109,7 +105,7 @@ export class ServiceClientHost extends Disposable {
     );
 
     import('./providers/workspaceSymbols').then((module) =>
-      this._register(module.register(this.client, allModeIds))
+      this.register(module.register(this.client, allModeIds))
     );
 
     this.client.ensureServiceStarted();
@@ -120,10 +116,10 @@ export class ServiceClientHost extends Disposable {
           this.registerExtensionLanguageProvider(
             {
               id: plugin.configNamespace,
-              modeIds: Array.from(plugin.languages),
-              diagnosticSource: 'ts-plugin',
-              diagnosticLanguage: DiagnosticLanguage.TypeScript,
-              diagnosticOwner: 'typescript',
+              modes: Array.from(plugin.languages),
+              diagSource: 'ts-plugin',
+              diagLang: DiagLang.TypeScript,
+              diagOwner: 'typescript',
               isExternal: true,
             },
             onCompletionAccepted
@@ -139,10 +135,10 @@ export class ServiceClientHost extends Disposable {
         this.registerExtensionLanguageProvider(
           {
             id: 'typescript-plugins',
-            modeIds: Array.from(languages.values()),
-            diagnosticSource: 'ts-plugin',
-            diagnosticLanguage: DiagnosticLanguage.TypeScript,
-            diagnosticOwner: 'typescript',
+            modes: Array.from(languages.values()),
+            diagSource: 'ts-plugin',
+            diagLang: DiagLang.TypeScript,
+            diagOwner: 'typescript',
             isExternal: true,
           },
           onCompletionAccepted
@@ -157,13 +153,13 @@ export class ServiceClientHost extends Disposable {
     vscode.workspace.onDidChangeConfiguration(
       this.configurationChanged,
       this,
-      this._disposables
+      this.dispos
     );
     this.configurationChanged();
   }
 
   private registerExtensionLanguageProvider(
-    description: LanguageDescription,
+    description: LangDesc,
     onCompletionAccepted: (item: vscode.CompletionItem) => void
   ) {
     const manager = new LanguageProvider(
@@ -176,13 +172,13 @@ export class ServiceClientHost extends Disposable {
       onCompletionAccepted
     );
     this.languages.push(manager);
-    this._register(manager);
+    this.register(manager);
     this.languagePerId.set(description.id, manager);
   }
 
-  private getAllModeIds(descriptions: LanguageDescription[], plugins: Plugins) {
+  private getAllModeIds(descriptions: LangDesc[], plugins: Plugins) {
     const allModeIds = flatten([
-      ...descriptions.map((x) => x.modeIds),
+      ...descriptions.map((x) => x.modes),
       ...plugins.plugins.map((x) => x.languages),
     ]);
     return allModeIds;
@@ -249,7 +245,7 @@ export class ServiceClientHost extends Disposable {
       language.diagnosticsReceived(
         kind,
         resource,
-        this.createMarkerDatas(diagnostics, language.diagnosticSource)
+        this.createMarkerDatas(diagnostics, language.diagSource)
       );
     }
   }
@@ -262,23 +258,20 @@ export class ServiceClientHost extends Disposable {
     }
 
     this.findLanguage(this.client.toResource(body.configFile)).then((language) => {
-      if (!language) {
-        return;
-      }
-
+      if (!language) return;
       language.configFileDiagnosticsReceived(
         this.client.toResource(body.configFile),
         body.diagnostics.map((tsDiag) => {
           const range =
             tsDiag.start && tsDiag.end
-              ? typeConverters.Range.fromTextSpan(tsDiag)
+              ? qc.Range.fromTextSpan(tsDiag)
               : new vscode.Range(0, 0, 0, 1);
           const diagnostic = new vscode.Diagnostic(
             range,
             body.diagnostics[0].text,
             this.getDiagnosticSeverity(tsDiag)
           );
-          diagnostic.source = language.diagnosticSource;
+          diagnostic.source = language.diagSource;
           return diagnostic;
         })
       );
@@ -298,8 +291,8 @@ export class ServiceClientHost extends Disposable {
   ): vscode.Diagnostic & { reportUnnecessary: any } {
     const { start, end, text } = diagnostic;
     const range = new vscode.Range(
-      typeConverters.Position.fromLocation(start),
-      typeConverters.Position.fromLocation(end)
+      qc.Position.fromLocation(start),
+      qc.Position.fromLocation(end)
     );
     const converted = new vscode.Diagnostic(
       range,
@@ -319,7 +312,7 @@ export class ServiceClientHost extends Disposable {
             return;
           }
           return new vscode.DiagnosticRelatedInformation(
-            typeConverters.Location.fromTextSpan(this.client.toResource(span.file), span),
+            qc.Location.fromTextSpan(this.client.toResource(span.file), span),
             info.message
           );
         })

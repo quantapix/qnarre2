@@ -8,7 +8,7 @@ import * as electron from './utils/electron';
 import * as rimraf from 'rimraf';
 import { Commands } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
-import { standardLanguageDescriptions } from './utils/language';
+import { standardLangDescs } from './utils/language';
 import { lazy, Lazy } from './utils/lazy';
 import LogDirectory from './utils/providers';
 import ManagedFileContextManager from './utils/managedFileContext';
@@ -63,7 +63,7 @@ function createLazyClientHost(
     const logDirectoryProvider = new LogDirectory(context);
 
     const clientHost = new ServiceClientHost(
-      standardLanguageDescriptions,
+      standardLangDescs,
       context.workspaceState,
       plugins,
       commandManager,
@@ -87,7 +87,7 @@ function lazilyActivateClient(lazyClientHost: Lazy<ServiceClientHost>, plugins: 
   const disposables: vscode.Disposable[] = [];
 
   const supportedLanguage = flatten([
-    ...standardLanguageDescriptions.map((x) => x.modeIds),
+    ...standardLangDescs.map((x) => x.modes),
     ...plugins.plugins.map((x) => x.languages),
   ]);
 

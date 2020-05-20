@@ -2,7 +2,7 @@ import * as child_process from 'child_process';
 import * as path from 'path';
 import * as stream from 'stream';
 import * as vscode from 'vscode';
-import type * as Proto from './protocol';
+import type * as proto from './protocol';
 import { TsServerLogLevel, ServiceConfig } from './utils/configuration';
 import * as electron from './utils/electron';
 import { LogDirectory, PluginPaths } from './utils/providers';
@@ -27,7 +27,7 @@ const enum ServerKind {
   Diagnostics = 'diagnostics',
 }
 
-export class ServerSpawner {
+export class Spawner {
   public constructor(
     private readonly _versionProvider: TypeScriptVersionProvider,
     private readonly _logDirectoryProvider: LogDirectory,
@@ -78,7 +78,7 @@ export class ServerSpawner {
   }
 
   private useSeparateSynServer(v: TypeScriptVersion, c: ServiceConfig) {
-    return c.useSeparateSyntaxServer && !!v.apiVersion && v.apiVersion.gte(API.v340);
+    return c.useSeparateSyntaxServer;
   }
 
   private useSeparateDiagServer(c: ServiceConfig) {
@@ -99,7 +99,7 @@ export class ServerSpawner {
       apiVersion,
       plugins
     );
-    if (ServerSpawner.isLoggingEnabled(configuration)) {
+    if (Spawner.isLoggingEnabled(configuration)) {
       if (tsServerLogFile) this.logger.info(`<${kind}> Log file: ${tsServerLogFile}`);
       else this.logger.error(`<${kind}> Could not create log directory`);
     }
@@ -122,7 +122,7 @@ export class ServerSpawner {
   }
 
   private forkOptions(kind: ServerKind, configuration: ServiceConfig) {
-    const debugPort = ServerSpawner.debugPort(kind);
+    const debugPort = Spawner.debugPort(kind);
     const tsServerForkOptions: electron.ForkOptions = {
       execArgv: [
         ...(debugPort ? [`--inspect=${debugPort}`] : []),
@@ -148,8 +148,7 @@ export class ServerSpawner {
     const args: string[] = [];
     let tsServerLogFile: string | undefined;
     if (kind === ServerKind.Syntax) args.push('--syntaxOnly');
-    if (apiVersion.gte(API.v250)) args.push('--useInferredProjectPerProjectRoot');
-    else args.push('--useSingleInferredProject');
+    args.push('--useInferredProjectPerProjectRoot');
     if (
       configuration.disableAutomaticTypeAcquisition ||
       kind === ServerKind.Syntax ||
@@ -161,7 +160,7 @@ export class ServerSpawner {
       args.push('--enableTelemetry');
     const cancellationPipeName = electron.getTempFile('tscancellation');
     args.push('--cancellationPipeName', cancellationPipeName + '*');
-    if (ServerSpawner.isLoggingEnabled(configuration)) {
+    if (Spawner.isLoggingEnabled(configuration)) {
       const logDir = this._logDirectoryProvider.getNewLogDirectory();
       if (logDir) {
         tsServerLogFile = path.join(logDir, `tsserver.log`);
@@ -190,10 +189,9 @@ export class ServerSpawner {
       args.push('--pluginProbeLocations', pluginPaths.join(','));
     if (configuration.npmLocation)
       args.push('--npmLocation', `"${configuration.npmLocation}"`);
-    if (apiVersion.gte(API.v260))
-      args.push('--locale', ServerSpawner.locale(configuration));
-    if (apiVersion.gte(API.v291)) args.push('--noGetErrOnBackgroundUpdate');
-    if (apiVersion.gte(API.v345)) args.push('--validateDefaultNpmLocation');
+    args.push('--locale', Spawner.locale(configuration));
+    args.push('--noGetErrOnBackgroundUpdate');
+    args.push('--validateDefaultNpmLocation');
     return { args, cancellationPipeName, tsServerLogFile };
   }
 
@@ -223,7 +221,7 @@ class ChildProcess implements ServerProcess {
     return this.proc.stdout!;
   }
 
-  write(r: Proto.Request) {
+  write(r: proto.Request) {
     this.proc.stdin!.write(JSON.stringify(r) + '\r\n', 'utf8');
   }
 

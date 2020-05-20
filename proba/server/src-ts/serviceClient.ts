@@ -7,7 +7,7 @@ import { DiagnosticKind, DiagnosticsManager } from './providers/diagnostics';
 import * as Proto from './protocol';
 import { IServer, ExecInfo } from './server';
 import { ServerError } from './server';
-import { ServerSpawner } from './spawner';
+import { Spawner } from './spawner';
 import {
   ExecConfig,
   IServiceClient,
@@ -87,7 +87,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
   private readonly logger = new Logger();
   private readonly tracer = new Tracer(this.logger);
 
-  private readonly spawner: ServerSpawner;
+  private readonly spawner: Spawner;
   private serverState: ServerState.State = ServerState.None;
   private lastStart: number;
   private numberRestarts: number;
@@ -187,7 +187,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
       })
     );
 
-    this.spawner = new ServerSpawner(
+    this.spawner = new Spawner(
       this.versionProvider,
       this.logDirectoryProvider,
       this.pluginPathsProvider,

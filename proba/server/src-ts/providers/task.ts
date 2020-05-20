@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { IServiceClient, ServerResponse } from '../typescriptService';
-import { isTsConfigFileName } from '../utils/language';
+import { isTsConfigName } from '../utils/language';
 import { Lazy } from '../utils/lazy';
 import { isImplicitProjectConfigFile } from '../utils/tsconfig';
 import TsConfigProvider, { TSConfig } from '../utils/tsconfigProvider';
@@ -130,7 +130,7 @@ export class TscTaskProvider implements vscode.TaskProvider {
   ): Promise<TSConfig[]> {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
-      if (isTsConfigFileName(editor.document.fileName)) {
+      if (isTsConfigName(editor.document.fileName)) {
         const uri = editor.document.uri;
         return [
           {

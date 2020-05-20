@@ -1,134 +1,106 @@
 import * as vscode from 'vscode';
 import { loadMessageBundle } from 'vscode-nls';
-import { IServiceClient } from '../typescriptService';
-import { Disposable } from './disposable';
+import { IServiceClient } from '../service';
+import { Disposable } from './extras';
 
 const localize = loadMessageBundle();
-
-const typingsInstallTimeout = 30 * 1000;
+const timeout = 30 * 1000;
 
 export class TypingsStatus extends Disposable {
-  private readonly _acquiringTypings = new Map<number, NodeJS.Timer>();
-  private readonly _client: IServiceClient;
+  private readonly acquiring = new Map<number, NodeJS.Timer>();
 
-  constructor(client: IServiceClient) {
+  constructor(private readonly client: IServiceClient) {
     super();
-    this._client = client;
-
-    this.register(
-      this._client.onDidBeginInstallTypes((event) =>
-        this.onBeginInstallTypings(event.eventId)
-      )
-    );
-
-    this.register(
-      this._client.onDidEndInstallTypes((event) =>
-        this.onEndInstallTypings(event.eventId)
-      )
-    );
+    this.register(this.client.onDidBeginInstallTypes((e) => this.onBegin(e.eventId)));
+    this.register(this.client.onDidEndInstallTypes((e) => this.onEnd(e.eventId)));
   }
 
-  public dispose(): void {
+  dispose() {
     super.dispose();
-
-    for (const timeout of this._acquiringTypings.values()) {
-      clearTimeout(timeout);
+    for (const t of this.acquiring.values()) {
+      clearTimeout(t);
     }
   }
 
-  public get isAcquiringTypings(): boolean {
-    return Object.keys(this._acquiringTypings).length > 0;
+  get isAcquiring() {
+    return Object.keys(this.acquiring).length > 0;
   }
 
-  private onBeginInstallTypings(eventId: number): void {
-    if (this._acquiringTypings.has(eventId)) {
-      return;
-    }
-    this._acquiringTypings.set(
-      eventId,
+  private onBegin(e: number) {
+    if (this.acquiring.has(e)) return;
+    this.acquiring.set(
+      e,
       setTimeout(() => {
-        this.onEndInstallTypings(eventId);
-      }, typingsInstallTimeout)
+        this.onEnd(e);
+      }, timeout)
     );
   }
 
-  private onEndInstallTypings(eventId: number): void {
-    const timer = this._acquiringTypings.get(eventId);
-    if (timer) {
-      clearTimeout(timer);
-    }
-    this._acquiringTypings.delete(eventId);
+  private onEnd(e: number) {
+    const timer = this.acquiring.get(e);
+    if (timer) clearTimeout(timer);
+    this.acquiring.delete(e);
   }
 }
 
-export class AtaProgressReporter extends Disposable {
-  private readonly _promises = new Map<number, Function>();
+export class ProgressReporter extends Disposable {
+  private readonly promises = new Map<number, Function>();
 
   constructor(client: IServiceClient) {
     super();
-    this.register(client.onDidBeginInstallTypes((e) => this._onBegin(e.eventId)));
-    this.register(client.onDidEndInstallTypes((e) => this._onEndOrTimeout(e.eventId)));
-    this.register(
-      client.onTypesInstallerInitFailed((_) => this.onTypesInstallerInitFailed())
-    );
+    this.register(client.onDidBeginInstallTypes((e) => this.onBegin(e.eventId)));
+    this.register(client.onDidEndInstallTypes((e) => this.onEndOrTimeout(e.eventId)));
+    this.register(client.onTypesInstallerInitFailed((_) => this.onInitFailed()));
   }
 
-  dispose(): void {
+  dispose() {
     super.dispose();
-    this._promises.forEach((value) => value());
+    this.promises.forEach((v) => v());
   }
 
-  private _onBegin(eventId: number): void {
-    const handle = setTimeout(() => this._onEndOrTimeout(eventId), typingsInstallTimeout);
-    const promise = new Promise((resolve) => {
-      this._promises.set(eventId, () => {
-        clearTimeout(handle);
-        resolve();
+  private onBegin(e: number) {
+    const h = setTimeout(() => this.onEndOrTimeout(e), timeout);
+    const p = new Promise((res) => {
+      this.promises.set(e, () => {
+        clearTimeout(h);
+        res();
       });
     });
-
     vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Window,
-        title: localize(
-          'installingPackages',
-          'Fetching data for better TypeScript IntelliSense'
-        ),
+        title: localize('installingPackages', 'Fetching data for IntelliSense'),
       },
-      () => promise
+      () => p
     );
   }
 
-  private _onEndOrTimeout(eventId: number): void {
-    const resolve = this._promises.get(eventId);
-    if (resolve) {
-      this._promises.delete(eventId);
-      resolve();
+  private onEndOrTimeout(e: number) {
+    const res = this.promises.get(e);
+    if (res) {
+      this.promises.delete(e);
+      res();
     }
   }
 
-  private async onTypesInstallerInitFailed() {
-    const config = vscode.workspace.getConfiguration('typescript');
-
-    if (config.get<boolean>('check.npmIsInstalled', true)) {
-      const dontShowAgain: vscode.MessageItem = {
+  private async onInitFailed() {
+    const c = vscode.workspace.getConfiguration('typescript');
+    if (c.get<boolean>('check.npmIsInstalled', true)) {
+      const noMore: vscode.MessageItem = {
         title: localize(
           'typesInstallerInitializationFailed.doNotCheckAgain',
           "Don't Show Again"
         ),
       };
-      const selected = await vscode.window.showWarningMessage(
+      const s = await vscode.window.showWarningMessage(
         localize(
           'typesInstallerInitializationFailed.title',
           "Could not install typings files for JavaScript language features. Please ensure that NPM is installed or configure 'typescript.npm' in your user settings. Click [here]({0}) to learn more.",
           'https://go.microsoft.com/fwlink/?linkid=847635'
         ),
-        dontShowAgain
+        noMore
       );
-
-      if (selected === dontShowAgain) {
-        config.update('check.npmIsInstalled', false, true);
-      }
+      if (s === noMore) c.update('check.npmIsInstalled', false, true);
     }
   }
 }

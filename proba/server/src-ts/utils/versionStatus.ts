@@ -1,14 +1,9 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { IServiceClient } from '../typescriptService';
-import { coalesce } from './arrays';
+import { IServiceClient } from '../service';
+import { coalesce } from '.';
 import { Command, Commands } from './extras';
-import { isTypeScriptDocument } from './languageModeIds';
+import { isTypeScriptDocument } from './language';
 import {
   isImplicitProjectConfigFile,
   openOrCreateConfig,
@@ -16,7 +11,7 @@ import {
   openProjectConfigForFile,
   ProjectType,
 } from './tsconfig';
-import { Disposable } from './disposable';
+import { Disposable } from './extras';
 import { TypeScriptVersion } from './versionProvider';
 
 const localize = nls.loadMessageBundle();
@@ -32,19 +27,13 @@ namespace ProjectInfoState {
 
   export class Pending {
     public readonly type = Type.Pending;
-
-    public readonly cancellation = new vscode.CancellationTokenSource();
-
-    constructor(public readonly resource: vscode.Uri) {}
+    public readonly cancel = new vscode.CancellationTokenSource();
+    constructor(public readonly uri: vscode.Uri) {}
   }
 
   export class Resolved {
     public readonly type = Type.Resolved;
-
-    constructor(
-      public readonly resource: vscode.Uri,
-      public readonly configFile: string
-    ) {}
+    constructor(public readonly uri: vscode.Uri, public readonly configFile: string) {}
   }
 
   export type State = typeof None | Pending | Resolved;
@@ -58,29 +47,27 @@ class ProjectStatusCommand implements Command {
   public readonly id = '_typescript.projectStatus';
 
   public constructor(
-    private readonly _client: IServiceClient,
-    private readonly _delegate: () => ProjectInfoState.State
+    private readonly client: IServiceClient,
+    private readonly delegate: () => ProjectInfoState.State
   ) {}
 
   public async execute(): Promise<void> {
-    const info = this._delegate();
-
-    const result = await vscode.window.showQuickPick<QuickPickItem>(
+    const info = this.delegate();
+    const r = await vscode.window.showQuickPick<QuickPickItem>(
       coalesce([this.getProjectItem(info), this.getVersionItem(), this.getHelpItem()]),
       {
         placeHolder: localize('projectQuickPick.placeholder', 'TypeScript Project Info'),
       }
     );
-
-    return result?.run();
+    return r?.run();
   }
 
   private getVersionItem(): QuickPickItem {
     return {
       label: localize('projectQuickPick.version.label', 'Select TypeScript Version...'),
-      description: this._client.apiVersion.displayName,
+      description: this.client.apiVersion.display,
       run: () => {
-        this._client.showVersionPicker();
+        this.client.showVersionPicker();
       },
     };
   }
@@ -88,12 +75,11 @@ class ProjectStatusCommand implements Command {
   private getProjectItem(info: ProjectInfoState.State): QuickPickItem | undefined {
     const rootPath =
       info.type === ProjectInfoState.Type.Resolved
-        ? this._client.workspaceRootFor(info.resource)
+        ? this.client.workspaceRootFor(info.uri)
         : undefined;
     if (!rootPath) {
       return;
     }
-
     if (info.type === ProjectInfoState.Type.Resolved) {
       if (isImplicitProjectConfigFile(info.configFile)) {
         return {
@@ -106,13 +92,12 @@ class ProjectStatusCommand implements Command {
             openOrCreateConfig(
               ProjectType.TypeScript,
               rootPath,
-              this._client.configuration
+              this.client.configuration
             );
           },
         };
       }
     }
-
     return {
       label: localize('projectQuickPick.version.goProjectConfig', 'Open tsconfig'),
       description:
@@ -123,12 +108,12 @@ class ProjectStatusCommand implements Command {
         if (info.type === ProjectInfoState.Type.Resolved) {
           openProjectConfigOrPromptToCreate(
             ProjectType.TypeScript,
-            this._client,
+            this.client,
             rootPath,
             info.configFile
           );
         } else if (info.type === ProjectInfoState.Type.Pending) {
-          openProjectConfigForFile(ProjectType.TypeScript, this._client, info.resource);
+          openProjectConfigForFile(ProjectType.TypeScript, this.client, info.resource);
         }
       },
     };
@@ -140,7 +125,7 @@ class ProjectStatusCommand implements Command {
       run: () => {
         vscode.env.openExternal(
           vscode.Uri.parse('https://go.microsoft.com/fwlink/?linkid=839919')
-        ); // TODO:
+        );
       },
     };
   }
@@ -148,37 +133,32 @@ class ProjectStatusCommand implements Command {
 
 export class VersionStatus extends Disposable {
   private readonly _statusBarEntry: vscode.StatusBarItem;
-
   private _ready = false;
   private _state: ProjectInfoState.State = ProjectInfoState.None;
 
-  constructor(private readonly _client: IServiceClient, commandManager: Commands) {
+  constructor(private readonly client: IServiceClient, cmds: Commands) {
     super();
-
-    this._statusBarEntry = this._register(
+    this._statusBarEntry = this.register(
       vscode.window.createStatusBarItem({
         id: 'status.typescript',
         name: localize('projectInfo.name', 'TypeScript: Project Info'),
         alignment: vscode.StatusBarAlignment.Right,
-        priority: 99 /* to the right of editor status (100) */,
+        priority: 99,
       })
     );
-
-    const command = new ProjectStatusCommand(this._client, () => this._state);
-    commandManager.register(command);
-    this._statusBarEntry.command = command.id;
-
-    vscode.window.onDidChangeActiveTextEditor(this.updateStatus, this, this._disposables);
-
-    this._client.onReady(() => {
+    const c = new ProjectStatusCommand(this.client, () => this._state);
+    cmds.register(c);
+    this._statusBarEntry.command = c.id;
+    vscode.window.onDidChangeActiveTextEditor(this.updateStatus, this, this.dispos);
+    this.client.onReady(() => {
       this._ready = true;
       this.updateStatus();
     });
   }
 
-  public onDidChangeTypeScriptVersion(version: TypeScriptVersion) {
-    this._statusBarEntry.text = version.displayName;
-    this._statusBarEntry.tooltip = version.path;
+  public onDidChangeTypeScriptVersion(v: TypeScriptVersion) {
+    this._statusBarEntry.text = v.displayName;
+    this._statusBarEntry.tooltip = v.path;
     this.updateStatus();
   }
 
@@ -187,61 +167,45 @@ export class VersionStatus extends Disposable {
       this.hide();
       return;
     }
-
-    const doc = vscode.window.activeTextEditor.document;
-    if (isTypeScriptDocument(doc)) {
-      const file = this._client.toNormPath(doc.uri);
+    const d = vscode.window.activeTextEditor.document;
+    if (isTypeScriptDocument(d)) {
+      const file = this.client.toNormPath(d.uri);
       if (file) {
         this._statusBarEntry.show();
-        if (!this._ready) {
-          return;
-        }
-
-        const pendingState = new ProjectInfoState.Pending(doc.uri);
+        if (!this._ready) return;
+        const pendingState = new ProjectInfoState.Pending(d.uri);
         this.updateState(pendingState);
-
-        const response = await this._client.execute(
+        const response = await this.client.execute(
           'projectInfo',
           { file, needFileNameList: false },
-          pendingState.cancellation.token
+          pendingState.cancel.token
         );
         if (response.type === 'response' && response.body) {
           if (this._state === pendingState) {
             this.updateState(
-              new ProjectInfoState.Resolved(doc.uri, response.body.configFileName)
+              new ProjectInfoState.Resolved(d.uri, response.body.configFileName)
             );
             this._statusBarEntry.show();
           }
         }
-
         return;
       }
     }
-
-    if (!vscode.window.activeTextEditor.viewColumn) {
-      // viewColumn is undefined for the debug/output panel, but we still want
-      // to show the version info in the existing editor
-      return;
-    }
-
+    if (!vscode.window.activeTextEditor.viewColumn) return;
     this.hide();
   }
 
-  private hide(): void {
+  private hide() {
     this._statusBarEntry.hide();
     this.updateState(ProjectInfoState.None);
   }
 
-  private updateState(newState: ProjectInfoState.State): void {
-    if (this._state === newState) {
-      return;
-    }
-
+  private updateState(s: ProjectInfoState.State) {
+    if (this._state === s) return;
     if (this._state.type === ProjectInfoState.Type.Pending) {
-      this._state.cancellation.cancel();
-      this._state.cancellation.dispose();
+      this._state.cancel.cancel();
+      this._state.cancel.dispose();
     }
-
-    this._state = newState;
+    this._state = s;
   }
 }

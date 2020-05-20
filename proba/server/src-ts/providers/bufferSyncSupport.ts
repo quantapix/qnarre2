@@ -363,7 +363,7 @@ export class BufferSyncSupport extends Disposable {
 
   private _validateJavaScript = true;
   private _validateTypeScript = true;
-  private readonly modeIds: Set<string>;
+  private readonly modes: Set<string>;
   private readonly syncedBuffers: SyncedBufferMap;
   private readonly pendingDiagnostics: PendingDiagnostics;
   private readonly diagnosticDelayer: Delayer<any>;
@@ -371,10 +371,10 @@ export class BufferSyncSupport extends Disposable {
   private listening = false;
   private readonly synchronizer: BufferSynchronizer;
 
-  constructor(client: IServiceClient, modeIds: readonly string[]) {
+  constructor(client: IServiceClient, modes: readonly string[]) {
     super();
     this.client = client;
-    this.modeIds = new Set<string>(modeIds);
+    this.modes = new Set<string>(modes);
 
     this.diagnosticDelayer = new Delayer<any>(300);
 
@@ -483,7 +483,7 @@ export class BufferSyncSupport extends Disposable {
   }
 
   public openTextDocument(document: vscode.TextDocument): boolean {
-    if (!this.modeIds.has(document.languageId)) {
+    if (!this.modes.has(document.languageId)) {
       return false;
     }
     const resource = document.uri;

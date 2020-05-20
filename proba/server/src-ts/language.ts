@@ -3,10 +3,10 @@ import * as vscode from 'vscode';
 import { CachedResponse } from './server';
 import { DiagnosticKind } from './providers/diagnostics';
 import FileConfigs from './providers/configs';
-import ServiceClient from './serviceClient';
+import { ServiceClient } from './serviceClient';
 import { Commands, Disposable } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
-import { LanguageDescription } from './utils/language';
+import { LangDesc } from './utils/language';
 import { memoize } from './utils';
 import { TelemetryReporter } from './utils/telemetry';
 import TypingsStatus from './utils/typingsStatus';
@@ -17,112 +17,88 @@ const suggestionSetting = 'suggestionActions.enabled';
 export class LanguageProvider extends Disposable {
   constructor(
     private readonly client: ServiceClient,
-    private readonly description: LanguageDescription,
-    private readonly commandManager: Commands,
+    private readonly description: LangDesc,
+    private readonly cmds: Commands,
     private readonly telemetry: TelemetryReporter,
     private readonly typingsStatus: TypingsStatus,
-    private readonly fileConfigurationManager: FileConfigs,
-    private readonly onCompletionAccepted: (item: vscode.CompletionItem) => void
+    private readonly configs: FileConfigs,
+    private readonly onCompletionAccepted: (_: vscode.CompletionItem) => void
   ) {
     super();
     vscode.workspace.onDidChangeConfiguration(
       this.configurationChanged,
       this,
-      this._disposables
+      this.dispos
     );
     this.configurationChanged();
-
     client.onReady(() => this.registerProviders());
   }
 
   @memoize
   private get documentSelector(): vscode.DocumentFilter[] {
-    const documentSelector = [];
-    for (const language of this.description.modeIds) {
+    const fs = [];
+    for (const language of this.description.modes) {
       for (const scheme of fileSchemes.supportedSchemes) {
-        documentSelector.push({ language, scheme });
+        fs.push({ language, scheme });
       }
     }
-    return documentSelector;
+    return fs;
   }
 
   private async registerProviders(): Promise<void> {
-    const selector = this.documentSelector;
-
-    const cachedResponse = new CachedResponse();
-
+    const s = this.documentSelector;
+    const r = new CachedResponse();
     await Promise.all([
       import('./providers/completions').then((p) =>
         this.register(
           p.register(
-            selector,
+            s,
             this.description.id,
             this.client,
             this.typingsStatus,
-            this.fileConfigurationManager,
-            this.commandManager,
+            this.configs,
+            this.cmds,
             this.telemetry,
             this.onCompletionAccepted
           )
         )
       ),
-      import('./providers/defs').then((p) =>
-        this.register(p.register(selector, this.client))
-      ),
+      import('./providers/defs').then((p) => this.register(p.register(s, this.client))),
       import('./providers/directiveCommentCompletions').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/documentHighlight').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/documentSymbol').then((p) =>
-        this.register(p.register(selector, this.client, cachedResponse))
+        this.register(p.register(s, this.client, r))
       ),
       import('./providers/folding').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/formatting').then((p) =>
-        this.register(
-          p.register(
-            selector,
-            this.description.id,
-            this.client,
-            this.fileConfigurationManager
-          )
-        )
+        this.register(p.register(s, this.description.id, this.client, this.configs))
       ),
-      import('./providers/hover').then((p) =>
-        this.register(p.register(selector, this.client))
-      ),
+      import('./providers/hover').then((p) => this.register(p.register(s, this.client))),
       import('./providers/implement').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/clImplements').then((p) =>
-        this.register(
-          p.register(selector, this.description.id, this.client, cachedResponse)
-        )
+        this.register(p.register(s, this.description.id, this.client, r))
       ),
       import('./providers/jsDocCompletions').then((p) =>
-        this.register(p.register(selector, this.description.id, this.client))
+        this.register(p.register(s, this.description.id, this.client))
       ),
       import('./providers/organizeImports').then((p) =>
-        this.register(
-          p.register(
-            selector,
-            this.client,
-            this.commandManager,
-            this.fileConfigurationManager,
-            this.telemetry
-          )
-        )
+        this.register(p.register(s, this.client, this.cmds, this.configs, this.telemetry))
       ),
       import('./providers/quickFix').then((p) =>
         this.register(
           p.register(
-            selector,
+            s,
             this.client,
-            this.fileConfigurationManager,
-            this.commandManager,
+            this.configs,
+            this.cmds,
             this.client.diagnosticsManager,
             this.telemetry
           )
@@ -130,118 +106,97 @@ export class LanguageProvider extends Disposable {
       ),
       import('./providers/fixAll').then((p) =>
         this.register(
-          p.register(
-            selector,
-            this.client,
-            this.fileConfigurationManager,
-            this.client.diagnosticsManager
-          )
+          p.register(s, this.client, this.configs, this.client.diagnosticsManager)
         )
       ),
       import('./providers/refactor').then((p) =>
-        this.register(
-          p.register(
-            selector,
-            this.client,
-            this.fileConfigurationManager,
-            this.commandManager,
-            this.telemetry
-          )
-        )
+        this.register(p.register(s, this.client, this.configs, this.cmds, this.telemetry))
       ),
       import('./providers/references').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/clReferences').then((p) =>
-        this.register(
-          p.register(selector, this.description.id, this.client, cachedResponse)
-        )
+        this.register(p.register(s, this.description.id, this.client, r))
       ),
       import('./providers/rename').then((p) =>
-        this.register(p.register(selector, this.client, this.fileConfigurationManager))
+        this.register(p.register(s, this.client, this.configs))
       ),
       import('./providers/smartSelect').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/signatureHelp').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/tagClosing').then((p) =>
-        this.register(p.register(selector, this.description.id, this.client))
+        this.register(p.register(s, this.description.id, this.client))
       ),
       import('./providers/typeDefs').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/semanticTokens').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
       import('./providers/callHierarchy').then((p) =>
-        this.register(p.register(selector, this.client))
+        this.register(p.register(s, this.client))
       ),
     ]);
   }
 
-  private configurationChanged(): void {
+  private configurationChanged() {
     const config = vscode.workspace.getConfiguration(this.id, null);
     this.updateValidate(config.get(validateSetting, true));
-    this.updateSuggestionDiagnostics(config.get(suggestionSetting, true));
+    this.updateSuggestionDiags(config.get(suggestionSetting, true));
   }
 
-  public handles(resource: vscode.Uri, doc: vscode.TextDocument): boolean {
-    if (doc && this.description.modeIds.includes(doc.languageId)) {
-      return true;
-    }
-
-    const base = basename(resource.fsPath);
+  public handles(r: vscode.Uri, d: vscode.TextDocument) {
+    if (d && this.description.modes.includes(d.languageId)) return true;
+    const b = basename(r.fsPath);
     return (
-      !!base &&
+      !!b &&
       !!this.description.configFilePattern &&
-      this.description.configFilePattern.test(base)
+      this.description.configFilePattern.test(b)
     );
   }
 
-  private get id(): string {
+  private get id() {
     return this.description.id;
   }
 
-  public get diagnosticSource(): string {
-    return this.description.diagnosticSource;
+  public get diagSource() {
+    return this.description.diagSource;
   }
 
-  private updateValidate(value: boolean) {
-    this.client.diagnosticsManager.setValidate(this._diagnosticLanguage, value);
+  private updateValidate(v: boolean) {
+    this.client.diagnosticsManager.setValidate(this._diagLang, v);
   }
 
-  private updateSuggestionDiagnostics(value: boolean) {
-    this.client.diagnosticsManager.setEnableSuggestions(this._diagnosticLanguage, value);
+  private updateSuggestionDiags(v: boolean) {
+    this.client.diagnosticsManager.setEnableSuggestions(this._diagLang, v);
   }
 
-  public reInitialize(): void {
+  public reInitialize() {
     this.client.diagnosticsManager.reInitialize();
   }
 
-  public triggerAllDiagnostics(): void {
+  public triggerAllDiagnostics() {
     this.client.bufferSyncSupport.requestAllDiagnostics();
   }
 
   public diagnosticsReceived(
-    diagnosticsKind: DiagnosticKind,
-    file: vscode.Uri,
-    diagnostics: (vscode.Diagnostic & { reportUnnecessary: any })[]
-  ): void {
-    const config = vscode.workspace.getConfiguration(this.id, file);
+    k: DiagnosticKind,
+    r: vscode.Uri,
+    ds: (vscode.Diagnostic & { reportUnnecessary: any })[]
+  ) {
+    const config = vscode.workspace.getConfiguration(this.id, r);
     const reportUnnecessary = config.get<boolean>('showUnused', true);
     this.client.diagnosticsManager.updateDiagnostics(
-      file,
-      this._diagnosticLanguage,
-      diagnosticsKind,
-      diagnostics.filter((diag) => {
+      r,
+      this._diagLang,
+      k,
+      ds.filter((d) => {
         if (!reportUnnecessary) {
-          diag.tags = undefined;
-          if (
-            diag.reportUnnecessary &&
-            diag.severity === vscode.DiagnosticSeverity.Hint
-          ) {
+          d.tags = undefined;
+          if (d.reportUnnecessary && d.severity === vscode.DiagnosticSeverity.Hint) {
             return false;
           }
         }
@@ -250,14 +205,11 @@ export class LanguageProvider extends Disposable {
     );
   }
 
-  public configFileDiagnosticsReceived(
-    file: vscode.Uri,
-    diagnostics: vscode.Diagnostic[]
-  ): void {
-    this.client.diagnosticsManager.configFileDiagnosticsReceived(file, diagnostics);
+  public configFileDiagnosticsReceived(r: vscode.Uri, ds: vscode.Diagnostic[]) {
+    this.client.diagnosticsManager.configFileDiagnosticsReceived(r, ds);
   }
 
-  private get _diagnosticLanguage() {
-    return this.description.diagnosticLanguage;
+  private get _diagLang() {
+    return this.description.diagLang;
   }
 }

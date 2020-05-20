@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { TypeScriptVersion, TypeScriptVersionProvider } from './versionProvider';
-import { Disposable } from './disposable';
+import { Disposable } from './extras';
 import { ServiceConfig } from './configuration';
 
 const localize = nls.loadMessageBundle();
