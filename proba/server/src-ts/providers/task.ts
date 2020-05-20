@@ -7,7 +7,7 @@ import * as jsonc from './node_modules/jsonc-parser';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { ITypeScriptServiceClient, ServerResponse } from '../typescriptService';
+import { IServiceClient, ServerResponse } from '../typescriptService';
 import { isTsConfigFileName } from '../utils/language';
 import { Lazy } from '../utils/lazy';
 import { isImplicitProjectConfigFile } from '../utils/tsconfig';
@@ -35,13 +35,13 @@ interface TypeScriptTaskDefinition extends vscode.TaskDefinition {
 /**
  * Provides tasks for building `tsconfig.json` files in a project.
  */
-export default class TscTaskProvider implements vscode.TaskProvider {
+export class TscTaskProvider implements vscode.TaskProvider {
   private readonly projectInfoRequestTimeout = 2000;
   private autoDetect: AutoDetect = 'on';
   private readonly tsconfigProvider: TsConfigProvider;
   private readonly disposables: vscode.Disposable[] = [];
 
-  public constructor(private readonly client: Lazy<ITypeScriptServiceClient>) {
+  public constructor(private readonly client: Lazy<IServiceClient>) {
     this.tsconfigProvider = new TsConfigProvider();
 
     vscode.workspace.onDidChangeConfiguration(
@@ -56,7 +56,7 @@ export default class TscTaskProvider implements vscode.TaskProvider {
     this.disposables.forEach((x) => x.dispose());
   }
 
-  public async provideTasks(token: vscode.CancellationToken): Promise<vscode.Task[]> {
+  public async provideTasks(ct: vscode.CancellationToken): Promise<vscode.Task[]> {
     const folders = vscode.workspace.workspaceFolders;
     if (this.autoDetect === 'off' || !folders || !folders.length) {
       return [];
@@ -111,7 +111,7 @@ export default class TscTaskProvider implements vscode.TaskProvider {
     return this.getTasksForProjectAndDefinition(tsconfig, definition);
   }
 
-  private async getAllTsConfigs(token: vscode.CancellationToken): Promise<TSConfig[]> {
+  private async getAllTsConfigs(ct: vscode.CancellationToken): Promise<TSConfig[]> {
     const out = new Set<TSConfig>();
     const configs = [
       ...(await this.getTsConfigForActiveFile(token)),
@@ -126,7 +126,7 @@ export default class TscTaskProvider implements vscode.TaskProvider {
   }
 
   private async getTsConfigForActiveFile(
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<TSConfig[]> {
     const editor = vscode.window.activeTextEditor;
     if (editor) {

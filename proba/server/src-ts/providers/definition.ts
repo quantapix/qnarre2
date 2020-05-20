@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import * as qc from '../utils/convert';
 
-export default class DefBase {
-  constructor(protected readonly client: ITypeScriptServiceClient) {}
+export class DefBase {
+  constructor(protected readonly client: IServiceClient) {}
 
   protected async symbolLocations(
     t: 'definition' | 'implementation' | 'typeDefinition',
@@ -11,7 +11,7 @@ export default class DefBase {
     p: vscode.Position,
     ct: vscode.CancellationToken
   ): Promise<vscode.Location[] | undefined> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, p);
     const r = await this.client.execute(t, args, ct);
@@ -21,7 +21,7 @@ export default class DefBase {
 }
 
 class Definition extends DefBase implements vscode.DefinitionProvider {
-  constructor(client: ITypeScriptServiceClient) {
+  constructor(client: IServiceClient) {
     super(client);
   }
 
@@ -30,7 +30,7 @@ class Definition extends DefBase implements vscode.DefinitionProvider {
     p: vscode.Position,
     ct: vscode.CancellationToken
   ): Promise<vscode.DefinitionLink[] | vscode.Definition | undefined> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, p);
     const r = await this.client.execute('definitionAndBoundSpan', args, ct);
@@ -57,6 +57,6 @@ class Definition extends DefBase implements vscode.DefinitionProvider {
   }
 }
 
-export function register(s: vscode.DocumentSelector, c: ITypeScriptServiceClient) {
+export function register(s: vscode.DocumentSelector, c: IServiceClient) {
   return vscode.languages.registerDefinitionProvider(s, new Definition(c));
 }

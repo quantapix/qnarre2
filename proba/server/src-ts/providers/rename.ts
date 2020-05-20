@@ -4,13 +4,13 @@ import * as nls from 'vscode-nls';
 import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
 import FileConfigs from './configs';
-import { ITypeScriptServiceClient, ServerResponse } from '../service';
+import { IServiceClient, ServerResponse } from '../service';
 
 const localize = nls.loadMessageBundle();
 
 class TypeScriptRenameProvider implements vscode.RenameProvider {
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly configs: FileConfigs
   ) {}
 
@@ -53,7 +53,7 @@ class TypeScriptRenameProvider implements vscode.RenameProvider {
     p: vscode.Position,
     ct: vscode.CancellationToken
   ): Promise<ServerResponse.Response<proto.RenameResponse> | undefined> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return;
     const args: proto.RenameRequestArgs = {
       ...qc.Position.toFileLocationRequestArgs(f, p),
@@ -102,10 +102,6 @@ class TypeScriptRenameProvider implements vscode.RenameProvider {
   }
 }
 
-export function register(
-  s: vscode.DocumentSelector,
-  c: ITypeScriptServiceClient,
-  cs: FileConfigs
-) {
+export function register(s: vscode.DocumentSelector, c: IServiceClient, cs: FileConfigs) {
   return vscode.languages.registerRenameProvider(s, new TypeScriptRenameProvider(c, cs));
 }

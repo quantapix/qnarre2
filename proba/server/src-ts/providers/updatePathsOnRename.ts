@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { Delayer } from '../utils/async';
 import { nulToken } from '../utils/cancellation';
@@ -51,7 +51,7 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
   private readonly _pendingRenames = new Set<RenameAction>();
 
   public constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly fileConfigurationManager: FileConfigs,
     private readonly _handles: (uri: vscode.Uri) => Promise<boolean>
   ) {
@@ -317,7 +317,7 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
 
     for (const rename of renames) {
       // Group renames by type (js/ts) and by workspace.
-      const key = `${this.client.getWorkspaceRootForResource(
+      const key = `${this.client.workspaceRootFor(
         rename.jsTsFileThatIsBeingMoved
       )}@@@${doesResourceLookLikeATypeScriptFile(rename.jsTsFileThatIsBeingMoved)}`;
       if (!groups.has(key)) {
@@ -363,7 +363,7 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
 }
 
 export function register(
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   fileConfigurationManager: FileConfigs,
   handles: (uri: vscode.Uri) => Promise<boolean>
 ) {

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as stream from 'stream';
 import * as vscode from 'vscode';
 import type * as proto from './protocol';
-import { ServerResponse, TypeScriptRequests } from './typescriptService';
+import { ServerResponse, TypeScriptRequests } from './service';
 import { Disposable, Reader, Tracer } from './utils/extras';
 import { TelemetryReporter } from './utils/telemetry';
 import { TypeScriptVersion } from './utils/versionProvider';
@@ -10,7 +10,7 @@ import { TypeScriptVersion } from './utils/versionProvider';
 interface Callback<R> {
   readonly onSuccess: (_: R) => void;
   readonly onError: (_: Error) => void;
-  readonly startTime: number;
+  readonly queuingStartTime: number;
   readonly isAsync: boolean;
 }
 
@@ -48,17 +48,24 @@ class CallbackMap<R extends proto.Response> {
   }
 }
 
-enum QueueingType {
+export interface ExecInfo {
+  readonly isAsync?: boolean;
+  readonly respond?: boolean;
+  readonly slow?: boolean;
+  readonly ct?: vscode.CancellationToken;
+}
+
+enum Queueing {
   Normal = 1,
-  LowPriority = 2,
+  Slow = 2,
   Fence = 3,
 }
 
 interface RequestItem {
   readonly request: proto.Request;
-  readonly expectsResponse: boolean;
-  readonly isAsync: boolean;
-  readonly queueingType: QueueingType;
+  readonly isAsync?: boolean;
+  readonly respond?: boolean;
+  readonly queueing: Queueing;
 }
 
 class RequestQueue {
@@ -70,10 +77,10 @@ class RequestQueue {
   }
 
   enqueue(item: RequestItem) {
-    if (item.queueingType === QueueingType.Normal) {
+    if (item.queueing === Queueing.Normal) {
       let i = this.queue.length - 1;
       while (i >= 0) {
-        if (this.queue[i].queueingType !== QueueingType.LowPriority) break;
+        if (this.queue[i].queueing !== Queueing.Slow) break;
         --i;
       }
       this.queue.splice(i + 1, 0, item);
@@ -154,35 +161,25 @@ export interface IServer {
   readonly onReaderError: vscode.Event<Error>;
   readonly logFile: string | undefined;
 
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: false;
-      lowPriority?: boolean;
+      isAsync?: boolean;
+      ct?: vscode.CancellationToken;
+      respond?: false;
+      slow?: boolean;
     }
   ): undefined;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>>;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>> | undefined;
 
   dispose(): void;
@@ -204,9 +201,9 @@ export interface ServerProcess {
 export class ProcessBased extends Disposable implements IServer {
   private static readonly fences = new Set(['change', 'close', 'open', 'updateOpen']);
 
-  private static queueingType(cmd: string, low?: boolean) {
-    if (ProcessBased.fences.has(cmd)) return QueueingType.Fence;
-    return low ? QueueingType.LowPriority : QueueingType.Normal;
+  private static queueing(cmd: string, low?: boolean) {
+    if (ProcessBased.fences.has(cmd)) return Queueing.Fence;
+    return low ? Queueing.Slow : Queueing.Normal;
   }
 
   private readonly reader: Reader<proto.Response>;
@@ -265,17 +262,17 @@ export class ProcessBased extends Disposable implements IServer {
 
   private dispatchMessage(m: proto.Message) {
     try {
+      const e = m as proto.Event;
       switch (m.type) {
         case 'response':
           this.dispatchResponse(m as proto.Response);
           break;
         case 'event':
-          const e = m as proto.Event;
           if (e.event === 'requestCompleted') {
-            const seq = (e as proto.RequestCompletedEvent).body.request_seq;
-            const cb = this.cbs.fetch(seq);
+            const s = (e as proto.RequestCompletedEvent).body.request_seq;
+            const cb = this.cbs.fetch(s);
             if (cb) {
-              this.tracer.traceRequestCompleted(this.sid, 'requestCompleted', seq, cb);
+              this.tracer.traceRequestCompleted(this.sid, 'requestCompleted', s, cb);
               cb.onSuccess(undefined);
             }
           } else {
@@ -317,59 +314,54 @@ export class ProcessBased extends Disposable implements IServer {
     }
   }
 
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: false;
-      lowPriority?: boolean;
+      isAsync?: boolean;
+      ct?: vscode.CancellationToken;
+      respond?: false;
+      slow?: boolean;
     }
   ): undefined;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>>;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>> | undefined {
     const request = this.queue.createRequest(cmd, args);
     const item: RequestItem = {
       request,
-      expectsResponse: info.expectsResult,
+      respond: info.respond,
       isAsync: info.isAsync,
-      queueingType: ProcessBased.queueingType(cmd, info.lowPriority),
+      queueing: ProcessBased.queueing(cmd, info.slow),
     };
     let r: Promise<ServerResponse.Response<proto.Response>> | undefined;
-    if (info.expectsResult) {
+    if (info.respond) {
       r = new Promise<ServerResponse.Response<proto.Response>>((res, rej) => {
         this.cbs.add(
           request.seq,
-          { onSuccess: res, onError: rej, startTime: Date.now(), isAsync: info.isAsync },
+          {
+            onSuccess: res,
+            onError: rej,
+            queuingStartTime: Date.now(),
+            isAsync: info.isAsync,
+          },
           info.isAsync
         );
-        if (info.token) {
-          info.token.onCancellationRequested(() => {
+        if (info.ct) {
+          info.ct.onCancellationRequested(() => {
             this.tryCancel(request.seq, cmd);
           });
         }
       }).catch((e: Error) => {
         if (e instanceof ServerError) {
-          if (!info.token || !info.token.isCancellationRequested) {
+          if (!info.ct || !info.ct.isCancellationRequested) {
             this.telemetry.logTelemetry('languageServiceErrorResponse', e.telemetry);
           }
         }
@@ -390,8 +382,8 @@ export class ProcessBased extends Disposable implements IServer {
 
   private sendRequest(i: RequestItem) {
     const r = i.request;
-    this.tracer.traceRequest(this.sid, r, i.expectsResponse, this.queue.length);
-    if (i.expectsResponse && !i.isAsync) this.pendings.add(i.request.seq);
+    this.tracer.traceRequest(this.sid, r, i.respond, this.queue.length);
+    if (i.respond && !i.isAsync) this.pendings.add(i.request.seq);
     try {
       this.write(r);
     } catch (e) {
@@ -435,29 +427,24 @@ class RequestRouter {
   execute(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>> | undefined {
     if (RequestRouter.shareds.has(cmd)) {
       const states: RequestState.State[] = this.servers.map(
         () => RequestState.Unresolved
       );
-      let token: vscode.CancellationToken | undefined;
-      if (info.token) {
+      let ct: vscode.CancellationToken | undefined;
+      if (info.ct) {
         const s = new vscode.CancellationTokenSource();
-        info.token.onCancellationRequested(() => {
+        info.ct.onCancellationRequested(() => {
           if (states.some((state) => state === RequestState.Resolved)) return;
           s.cancel();
         });
-        token = s.token;
+        ct = s.token;
       }
       let first: Promise<ServerResponse.Response<proto.Response>> | undefined;
       for (let i = 0; i < this.servers.length; ++i) {
-        const req = this.servers[i].server.executeImpl(cmd, args, { ...info, token });
+        const req = this.servers[i].server.exec(cmd, args, { ...info, ct });
         if (i === 0) first = req;
         req?.then(
           (r) => {
@@ -480,7 +467,7 @@ class RequestRouter {
       return first;
     }
     for (const { preferreds, server } of this.servers) {
-      if (!preferreds || preferreds.has(cmd)) return server.executeImpl(cmd, args, info);
+      if (!preferreds || preferreds.has(cmd)) return server.exec(cmd, args, info);
     }
     throw new Error(`Could not find server for '${cmd}'`);
   }
@@ -545,35 +532,25 @@ export class SyntaxRouting extends Disposable implements IServer {
     this.semServ.kill();
   }
 
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: false;
-      lowPriority?: boolean;
+      isAsync?: boolean;
+      ct?: vscode.CancellationToken;
+      respond?: false;
+      slow?: boolean;
     }
   ): undefined;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>>;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>> | undefined {
     return this.router.execute(cmd, args, info);
   }
@@ -647,35 +624,25 @@ export class GetErrRouting extends Disposable implements IServer {
     this.mainServ.kill();
   }
 
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
     info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: false;
-      lowPriority?: boolean;
+      isAsync?: boolean;
+      ct?: vscode.CancellationToken;
+      respond?: false;
+      slow?: boolean;
     }
   ): undefined;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>>;
-  executeImpl(
+  exec(
     cmd: keyof TypeScriptRequests,
     args: any,
-    info: {
-      isAsync: boolean;
-      token?: vscode.CancellationToken;
-      expectsResult: boolean;
-      lowPriority?: boolean;
-    }
+    info: ExecInfo
   ): Promise<ServerResponse.Response<proto.Response>> | undefined {
     return this.router.execute(cmd, args, info);
   }
@@ -709,11 +676,11 @@ export class ServerError extends Error {
     sid: string,
     public readonly version: TypeScriptVersion,
     private readonly response: proto.Response,
-    public readonly msg: string | undefined,
+    public readonly message: string | undefined,
     public readonly stack: string | undefined,
     private readonly sanitized: string | undefined
   ) {
-    super(`<${sid}> TypeScript Server Error (${version.displayName})\n${msg}\n${stack}`);
+    super(`<${sid}> Server Error (${version.displayName})\n${message}\n${stack}`);
   }
 
   get errorText() {
@@ -753,6 +720,7 @@ function sanitizeStack(msg: string | undefined) {
   if (!msg) return '';
   const r = /(tsserver)?(\.(?:ts|tsx|js|jsx)(?::\d+(?::\d+)?)?)\)?$/gim;
   let stack = '';
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const match = r.exec(msg);
     if (!match) break;

@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { Command, Commands } from '../utils/extras';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
@@ -23,8 +23,8 @@ class OrganizeImportsCommand implements Command {
   public readonly id = OrganizeImportsCommand.Id;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
-    private readonly telemetryReporter: TelemetryReporter
+    private readonly client: IServiceClient,
+    private readonly telemetry: TelemetryReporter
   ) {}
 
   public async execute(file: string): Promise<boolean> {
@@ -35,7 +35,7 @@ class OrganizeImportsCommand implements Command {
 				]
 			}
 		*/
-    this.telemetryReporter.logTelemetry('organizeImports.execute', {});
+    this.telemetry.logTelemetry('organizeImports.execute', {});
 
     const args: Proto.OrganizeImportsRequestArgs = {
       scope: {
@@ -64,12 +64,12 @@ export class OrganizeImportsCodeActionProvider implements vscode.CodeActionProvi
   public static readonly minVersion = API.v280;
 
   public constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     commandManager: Commands,
     private readonly fileConfigManager: FileConfigs,
-    telemetryReporter: TelemetryReporter
+    telemetry: TelemetryReporter
   ) {
-    commandManager.register(new OrganizeImportsCommand(client, telemetryReporter));
+    commandManager.register(new OrganizeImportsCommand(client, telemetry));
   }
 
   public readonly metadata: vscode.CodeActionProviderMetadata = {
@@ -80,9 +80,9 @@ export class OrganizeImportsCodeActionProvider implements vscode.CodeActionProvi
     document: vscode.TextDocument,
     _range: vscode.Range,
     context: vscode.CodeActionContext,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): vscode.CodeAction[] {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return [];
     }
@@ -107,10 +107,10 @@ export class OrganizeImportsCodeActionProvider implements vscode.CodeActionProvi
 
 export function register(
   selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   commandManager: Commands,
   fileConfigurationManager: FileConfigs,
-  telemetryReporter: TelemetryReporter
+  telemetry: TelemetryReporter
 ) {
   return new VersionDependentRegistration(
     client,
@@ -120,7 +120,7 @@ export function register(
         client,
         commandManager,
         fileConfigurationManager,
-        telemetryReporter
+        telemetry
       );
       return vscode.languages.registerCodeActionsProvider(
         selector,

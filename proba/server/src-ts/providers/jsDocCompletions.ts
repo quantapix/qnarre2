@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
 import * as typeConverters from '../utils/convert';
 
@@ -38,14 +38,14 @@ class JsDocCompletionItem extends vscode.CompletionItem {
 }
 
 class JsDocCompletionProvider implements vscode.CompletionItemProvider {
-  constructor(private readonly client: ITypeScriptServiceClient) {}
+  constructor(private readonly client: IServiceClient) {}
 
   public async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.CompletionItem[] | undefined> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return;
     }
@@ -117,7 +117,7 @@ export function templateToSnippet(template: string): vscode.SnippetString {
 export function register(
   selector: vscode.DocumentSelector,
   modeId: string,
-  client: ITypeScriptServiceClient
+  client: IServiceClient
 ): vscode.Disposable {
   return new ConfigurationDependentRegistration(modeId, 'suggest.completeJSDocs', () => {
     return vscode.languages.registerCompletionItemProvider(

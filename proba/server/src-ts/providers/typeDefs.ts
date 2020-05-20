@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import DefBase from './definition';
 
 class TypeDefinition extends DefBase implements vscode.TypeDefinitionProvider {
@@ -12,6 +12,6 @@ class TypeDefinition extends DefBase implements vscode.TypeDefinitionProvider {
   }
 }
 
-export function register(s: vscode.DocumentSelector, c: ITypeScriptServiceClient) {
+export function register(s: vscode.DocumentSelector, c: IServiceClient) {
   return vscode.languages.registerTypeDefinitionProvider(s, new TypeDefinition(c));
 }

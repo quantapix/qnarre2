@@ -1,13 +1,8 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import { Api, getExtensionApi } from './api';
 import { registerCommands } from './commands';
 import { LanguageConfigurationManager } from './providers/languageConfiguration';
-import TypeScriptServiceClientHost from './clientHost';
+import ServiceClientHost from './clientHost';
 import { flatten } from './utils/arrays';
 import * as electron from './utils/electron';
 import * as rimraf from 'rimraf';
@@ -22,8 +17,8 @@ import * as ProjectStatus from './utils/largeProjectStatus';
 import TscTaskProvider from './providers/task';
 
 export function activate(context: vscode.ExtensionContext): Api {
-  const pluginManager = new Plugins();
-  context.subscriptions.push(pluginManager);
+  const plugins = new Plugins();
+  context.subscriptions.push(plugins);
 
   const commandManager = new Commands();
   context.subscriptions.push(commandManager);
@@ -33,14 +28,14 @@ export function activate(context: vscode.ExtensionContext): Api {
 
   const lazyClientHost = createLazyClientHost(
     context,
-    pluginManager,
+    plugins,
     commandManager,
     (item) => {
       onCompletionAccepted.fire(item);
     }
   );
 
-  registerCommands(commandManager, lazyClientHost, pluginManager);
+  registerCommands(commandManager, lazyClientHost, plugins);
   context.subscriptions.push(
     vscode.tasks.registerTaskProvider(
       'typescript',
@@ -53,24 +48,24 @@ export function activate(context: vscode.ExtensionContext): Api {
     context.subscriptions.push(module.register());
   });
 
-  context.subscriptions.push(lazilyActivateClient(lazyClientHost, pluginManager));
+  context.subscriptions.push(lazilyActivateClient(lazyClientHost, plugins));
 
-  return getExtensionApi(onCompletionAccepted.event, pluginManager);
+  return getExtensionApi(onCompletionAccepted.event, plugins);
 }
 
 function createLazyClientHost(
   context: vscode.ExtensionContext,
-  pluginManager: Plugins,
+  plugins: Plugins,
   commandManager: Commands,
   onCompletionAccepted: (item: vscode.CompletionItem) => void
-): Lazy<TypeScriptServiceClientHost> {
+): Lazy<ServiceClientHost> {
   return lazy(() => {
     const logDirectoryProvider = new LogDirectory(context);
 
-    const clientHost = new TypeScriptServiceClientHost(
+    const clientHost = new ServiceClientHost(
       standardLanguageDescriptions,
       context.workspaceState,
-      pluginManager,
+      plugins,
       commandManager,
       logDirectoryProvider,
       onCompletionAccepted
@@ -80,10 +75,7 @@ function createLazyClientHost(
 
     clientHost.serviceClient.onReady(() => {
       context.subscriptions.push(
-        ProjectStatus.create(
-          clientHost.serviceClient,
-          clientHost.serviceClient.telemetryReporter
-        )
+        ProjectStatus.create(clientHost.serviceClient, clientHost.serviceClient.telemetry)
       );
     });
 
@@ -91,15 +83,12 @@ function createLazyClientHost(
   });
 }
 
-function lazilyActivateClient(
-  lazyClientHost: Lazy<TypeScriptServiceClientHost>,
-  pluginManager: Plugins
-) {
+function lazilyActivateClient(lazyClientHost: Lazy<ServiceClientHost>, plugins: Plugins) {
   const disposables: vscode.Disposable[] = [];
 
   const supportedLanguage = flatten([
     ...standardLanguageDescriptions.map((x) => x.modeIds),
-    ...pluginManager.plugins.map((x) => x.languages),
+    ...plugins.plugins.map((x) => x.languages),
   ]);
 
   let hasActivated = false;

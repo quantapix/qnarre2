@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import {
   ConditionalRegistration,
@@ -22,7 +22,7 @@ class TagClosing extends Disposable {
   private _timeout: NodeJS.Timer | undefined = undefined;
   private _cancel: vscode.CancellationTokenSource | undefined = undefined;
 
-  constructor(private readonly client: ITypeScriptServiceClient) {
+  constructor(private readonly client: IServiceClient) {
     super();
     vscode.workspace.onDidChangeTextDocument(
       (event) => this.onDidChangeTextDocument(event.document, event.contentChanges),
@@ -57,7 +57,7 @@ class TagClosing extends Disposable {
       return;
     }
 
-    const filepath = this.client.toOpenedFilePath(document);
+    const filepath = this.client.toOpenedPath(document);
     if (!filepath) {
       return;
     }
@@ -195,7 +195,7 @@ export class ActiveDocumentDependentRegistration extends Disposable {
 export function register(
   selector: vscode.DocumentSelector,
   modeId: string,
-  client: ITypeScriptServiceClient
+  client: IServiceClient
 ) {
   return new VersionDependentRegistration(
     client,

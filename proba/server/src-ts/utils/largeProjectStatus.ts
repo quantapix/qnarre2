@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { loadMessageBundle } from 'vscode-nls';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import { TelemetryReporter } from './telemetry';
 import { isImplicitProjectConfigFile, openOrCreateConfig, ProjectType } from './tsconfig';
 
@@ -15,7 +15,7 @@ class ExcludeHintItem {
   private _item: vscode.StatusBarItem;
   private _currentHint?: Hint;
 
-  constructor(private readonly telemetryReporter: TelemetryReporter) {
+  constructor(private readonly telemetry: TelemetryReporter) {
     this._item = vscode.window.createStatusBarItem({
       id: 'status.typescript.exclude',
       name: localize('statusExclude', 'TypeScript: Configure Excludes'),
@@ -61,19 +61,19 @@ class ExcludeHintItem {
 				]
 			}
 		*/
-    this.telemetryReporter.logTelemetry('js.hintProjectExcludes');
+    this.telemetry.logTelemetry('js.hintProjectExcludes');
   }
 }
 
 function createLargeProjectMonitorFromTypeScript(
   item: ExcludeHintItem,
-  client: ITypeScriptServiceClient
+  client: IServiceClient
 ): vscode.Disposable {
   interface LargeProjectMessageItem extends vscode.MessageItem {
     index: number;
   }
 
-  return client.onProjectLanguageServiceStateChanged((body) => {
+  return client.onServiceStateChanged((body) => {
     if (body.languageServiceEnabled) {
       item.hide();
     } else {
@@ -96,16 +96,13 @@ function createLargeProjectMonitorFromTypeScript(
   });
 }
 
-function onConfigureExcludesSelected(
-  client: ITypeScriptServiceClient,
-  configFileName: string
-) {
+function onConfigureExcludesSelected(client: IServiceClient, configFileName: string) {
   if (!isImplicitProjectConfigFile(configFileName)) {
     vscode.workspace
       .openTextDocument(configFileName)
       .then(vscode.window.showTextDocument);
   } else {
-    const root = client.getWorkspaceRootForResource(vscode.Uri.file(configFileName));
+    const root = client.workspaceRootFor(vscode.Uri.file(configFileName));
     if (root) {
       openOrCreateConfig(
         /tsconfig\.?.*\.json/.test(configFileName)
@@ -118,13 +115,10 @@ function onConfigureExcludesSelected(
   }
 }
 
-export function create(
-  client: ITypeScriptServiceClient,
-  telemetryReporter: TelemetryReporter
-) {
+export function create(client: IServiceClient, telemetry: TelemetryReporter) {
   const toDispose: vscode.Disposable[] = [];
 
-  const item = new ExcludeHintItem(telemetryReporter);
+  const item = new ExcludeHintItem(telemetry);
   toDispose.push(
     vscode.commands.registerCommand('js.projectStatus.command', () => {
       if (item.configFileName) {

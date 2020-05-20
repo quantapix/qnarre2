@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import * as Previewer from '../utils/previewer';
 import * as typeConverters from '../utils/convert';
 
@@ -13,15 +13,15 @@ class TypeScriptSignatureHelpProvider implements vscode.SignatureHelpProvider {
   public static readonly triggerCharacters = ['(', ',', '<'];
   public static readonly retriggerCharacters = [')'];
 
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async provideSignatureHelp(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken,
+    ct: vscode.CancellationToken,
     context: vscode.SignatureHelpContext
   ): Promise<vscode.SignatureHelp | undefined> {
-    const filepath = this.client.toOpenedFilePath(document);
+    const filepath = this.client.toOpenedPath(document);
     if (!filepath) {
       return;
     }
@@ -138,10 +138,7 @@ function toTsTriggerReason(
       return { kind: 'invoked' };
   }
 }
-export function register(
-  selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
-) {
+export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
   return vscode.languages.registerSignatureHelpProvider(
     selector,
     new TypeScriptSignatureHelpProvider(client),

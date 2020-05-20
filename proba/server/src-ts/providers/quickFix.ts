@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { applyCodeActionCommands, getEditForCodeAction } from '../utils/codeAction';
@@ -25,8 +25,8 @@ class ApplyCodeActionCommand implements Command {
   public readonly id = ApplyCodeActionCommand.ID;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
-    private readonly telemetryReporter: TelemetryReporter
+    private readonly client: IServiceClient,
+    private readonly telemetry: TelemetryReporter
   ) {}
 
   public async execute(action: Proto.CodeFixAction): Promise<boolean> {
@@ -38,7 +38,7 @@ class ApplyCodeActionCommand implements Command {
 				]
 			}
 		*/
-    this.telemetryReporter.logTelemetry('quickFix.execute', {
+    this.telemetry.logTelemetry('quickFix.execute', {
       fixName: action.fixName,
     });
 
@@ -51,8 +51,8 @@ class ApplyFixAllCodeAction implements Command {
   public readonly id = ApplyFixAllCodeAction.ID;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
-    private readonly telemetryReporter: TelemetryReporter
+    private readonly client: IServiceClient,
+    private readonly telemetry: TelemetryReporter
   ) {}
 
   public async execute(file: string, tsAction: Proto.CodeFixAction): Promise<void> {
@@ -68,7 +68,7 @@ class ApplyFixAllCodeAction implements Command {
 				]
 			}
 		*/
-    this.telemetryReporter.logTelemetry('quickFixAll.execute', {
+    this.telemetry.logTelemetry('quickFixAll.execute', {
       fixName: tsAction.fixName,
     });
 
@@ -161,7 +161,7 @@ class CodeActionSet {
 }
 
 class SupportedCodeActionProvider {
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async getFixableDiagnosticsForContext(
     context: vscode.CodeActionContext
@@ -192,14 +192,14 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
   private readonly supportedCodeActionProvider: SupportedCodeActionProvider;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly formattingConfigurationManager: FileConfigs,
     commandManager: Commands,
     private readonly diagnosticsManager: DiagnosticsManager,
-    telemetryReporter: TelemetryReporter
+    telemetry: TelemetryReporter
   ) {
-    commandManager.register(new ApplyCodeActionCommand(client, telemetryReporter));
-    commandManager.register(new ApplyFixAllCodeAction(client, telemetryReporter));
+    commandManager.register(new ApplyCodeActionCommand(client, telemetry));
+    commandManager.register(new ApplyFixAllCodeAction(client, telemetry));
 
     this.supportedCodeActionProvider = new SupportedCodeActionProvider(client);
   }
@@ -208,9 +208,9 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
     document: vscode.TextDocument,
     _range: vscode.Range,
     context: vscode.CodeActionContext,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.CodeAction[]> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return [];
     }
@@ -248,7 +248,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
     file: string,
     diagnostic: vscode.Diagnostic,
     results: CodeActionSet,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<CodeActionSet> {
     const args: Proto.CodeFixRequestArgs = {
       ...typeConverters.Range.toFileRangeRequestArgs(file, diagnostic.range),
@@ -412,11 +412,11 @@ function isPreferredFix(
 
 export function register(
   selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   fileConfigurationManager: FileConfigs,
   commandManager: Commands,
   diagnosticsManager: DiagnosticsManager,
-  telemetryReporter: TelemetryReporter
+  telemetry: TelemetryReporter
 ) {
   return vscode.languages.registerCodeActionsProvider(
     selector,
@@ -425,7 +425,7 @@ export function register(
       fileConfigurationManager,
       commandManager,
       diagnosticsManager,
-      telemetryReporter
+      telemetry
     ),
     TypeScriptQuickFixProvider.metadata
   );

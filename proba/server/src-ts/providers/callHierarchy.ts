@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import * as typeConverters from '../utils/convert';
 import API from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
@@ -15,14 +15,14 @@ import * as PConst from '../protocol.const';
 class TypeScriptCallHierarchySupport implements vscode.CallHierarchyProvider {
   public static readonly minVersion = API.v380;
 
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async prepareCallHierarchy(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.CallHierarchyItem | vscode.CallHierarchyItem[] | undefined> {
-    const filepath = this.client.toOpenedFilePath(document);
+    const filepath = this.client.toOpenedPath(document);
     if (!filepath) {
       return;
     }
@@ -40,7 +40,7 @@ class TypeScriptCallHierarchySupport implements vscode.CallHierarchyProvider {
 
   public async provideCallHierarchyIncomingCalls(
     item: vscode.CallHierarchyItem,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.CallHierarchyIncomingCall[] | undefined> {
     const filepath = this.client.toPath(item.uri);
     if (!filepath) {
@@ -65,7 +65,7 @@ class TypeScriptCallHierarchySupport implements vscode.CallHierarchyProvider {
 
   public async provideCallHierarchyOutgoingCalls(
     item: vscode.CallHierarchyItem,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.CallHierarchyOutgoingCall[] | undefined> {
     const filepath = this.client.toPath(item.uri);
     if (!filepath) {
@@ -134,10 +134,7 @@ function fromProtocolCallHierchyOutgoingCall(
   );
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
-) {
+export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
   return new VersionDependentRegistration(
     client,
     TypeScriptCallHierarchySupport.minVersion,

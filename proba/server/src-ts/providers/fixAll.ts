@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as errorCodes from '../utils/errorCodes';
@@ -25,10 +25,10 @@ interface AutoFix {
 async function buildIndividualFixes(
   fixes: readonly AutoFix[],
   edit: vscode.WorkspaceEdit,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   file: string,
   diagnostics: readonly vscode.Diagnostic[],
-  token: vscode.CancellationToken
+  ct: vscode.CancellationToken
 ): Promise<void> {
   for (const diagnostic of diagnostics) {
     for (const { code, fixName } of fixes) {
@@ -62,10 +62,10 @@ async function buildIndividualFixes(
 async function buildCombinedFix(
   fixes: readonly AutoFix[],
   edit: vscode.WorkspaceEdit,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   file: string,
   diagnostics: readonly vscode.Diagnostic[],
-  token: vscode.CancellationToken
+  ct: vscode.CancellationToken
 ): Promise<void> {
   for (const diagnostic of diagnostics) {
     for (const { code, fixName } of fixes) {
@@ -128,10 +128,10 @@ async function buildCombinedFix(
 
 abstract class SourceAction extends vscode.CodeAction {
   abstract async build(
-    client: ITypeScriptServiceClient,
+    client: IServiceClient,
     file: string,
     diagnostics: readonly vscode.Diagnostic[],
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void>;
 }
 
@@ -143,10 +143,10 @@ class SourceFixAll extends SourceAction {
   }
 
   async build(
-    client: ITypeScriptServiceClient,
+    client: IServiceClient,
     file: string,
     diagnostics: readonly vscode.Diagnostic[],
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void> {
     this.edit = new vscode.WorkspaceEdit();
 
@@ -190,10 +190,10 @@ class SourceRemoveUnused extends SourceAction {
   }
 
   async build(
-    client: ITypeScriptServiceClient,
+    client: IServiceClient,
     file: string,
     diagnostics: readonly vscode.Diagnostic[],
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void> {
     this.edit = new vscode.WorkspaceEdit();
     await buildCombinedFix(
@@ -225,10 +225,10 @@ class SourceAddMissingImports extends SourceAction {
   }
 
   async build(
-    client: ITypeScriptServiceClient,
+    client: IServiceClient,
     file: string,
     diagnostics: readonly vscode.Diagnostic[],
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void> {
     this.edit = new vscode.WorkspaceEdit();
     await buildCombinedFix(
@@ -254,7 +254,7 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
   };
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly fileConfigurationManager: FileConfigs,
     private readonly diagnosticsManager: DiagnosticsManager
   ) {}
@@ -263,13 +263,13 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
     document: vscode.TextDocument,
     _range: vscode.Range,
     context: vscode.CodeActionContext,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.CodeAction[] | undefined> {
     if (!context.only || !vscode.CodeActionKind.Source.intersects(context.only)) {
       return;
     }
 
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return;
     }
@@ -319,7 +319,7 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
 
 export function register(
   selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   fileConfigurationManager: FileConfigs,
   diagnosticsManager: DiagnosticsManager
 ) {

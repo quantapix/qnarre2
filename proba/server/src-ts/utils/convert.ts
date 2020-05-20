@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 
 export namespace Range {
   export function fromTextSpan(s: proto.TextSpan): vscode.Range {
@@ -83,7 +83,7 @@ export namespace TextEdit {
 
 export namespace WorkspaceEdit {
   export function fromFileCodeEdits(
-    c: ITypeScriptServiceClient,
+    c: IServiceClient,
     es: Iterable<proto.FileCodeEdits>
   ): vscode.WorkspaceEdit {
     return withFileCodeEdits(new vscode.WorkspaceEdit(), c, es);
@@ -91,7 +91,7 @@ export namespace WorkspaceEdit {
 
   export function withFileCodeEdits(
     we: vscode.WorkspaceEdit,
-    c: ITypeScriptServiceClient,
+    c: IServiceClient,
     es: Iterable<proto.FileCodeEdits>
   ): vscode.WorkspaceEdit {
     for (const e of es) {

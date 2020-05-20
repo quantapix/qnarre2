@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
 import * as PConst from '../protocol.const';
-import { ITypeScriptServiceClient, ServerResponse } from '../typescriptService';
+import { IServiceClient, ServerResponse } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { applyCodeAction } from '../utils/codeAction';
@@ -371,7 +371,7 @@ class ApplyCompletionCodeActionCommand implements Command {
   public static readonly ID = '_typescript.applyCompletionCodeAction';
   public readonly id = ApplyCompletionCodeActionCommand.ID;
 
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async execute(_file: string, codeActions: Proto.CodeAction[]): Promise<boolean> {
     if (codeActions.length === 0) {
@@ -449,12 +449,12 @@ class TypeScriptCompletionItemProvider
   public static readonly triggerCharacters = ['.', '"', "'", '`', '/', '@', '<', '#'];
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly modeId: string,
     private readonly typingsStatus: TypingsStatus,
     private readonly fileConfigurationManager: FileConfigs,
     commandManager: Commands,
-    private readonly telemetryReporter: TelemetryReporter,
+    private readonly telemetry: TelemetryReporter,
     onCompletionAccepted: (item: vscode.CompletionItem) => void
   ) {
     commandManager.register(new ApplyCompletionCodeActionCommand(this.client));
@@ -465,7 +465,7 @@ class TypeScriptCompletionItemProvider
   public async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken,
+    ct: vscode.CancellationToken,
     context: vscode.CompletionContext
   ): Promise<vscode.CompletionList<MyCompletionItem> | null> {
     if (this.typingsStatus.isAcquiringTypings) {
@@ -491,7 +491,7 @@ class TypeScriptCompletionItemProvider
       });
     }
 
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return null;
     }
@@ -546,7 +546,7 @@ class TypeScriptCompletionItemProvider
 						]
 					}
 				*/
-        this.telemetryReporter.logTelemetry('completions.execute', {
+        this.telemetry.logTelemetry('completions.execute', {
           duration: duration,
           type: response?.type ?? 'unknown',
           count:
@@ -645,9 +645,9 @@ class TypeScriptCompletionItemProvider
 
   public async resolveCompletionItem(
     item: MyCompletionItem,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<MyCompletionItem | undefined> {
-    const filepath = this.client.toOpenedFilePath(item.document);
+    const filepath = this.client.toOpenedPath(item.document);
     if (!filepath) {
       return;
     }
@@ -868,7 +868,7 @@ class TypeScriptCompletionItemProvider
     filepath: string,
     position: vscode.Position,
     document: vscode.TextDocument,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<boolean> {
     // Workaround for https://github.com/Microsoft/TypeScript/issues/12677
     // Don't complete function calls inside of destructive assignments or imports
@@ -915,11 +915,11 @@ function shouldExcludeCompletionEntry(
 export function register(
   selector: vscode.DocumentSelector,
   modeId: string,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   typingsStatus: TypingsStatus,
   fileConfigurationManager: FileConfigs,
   commandManager: Commands,
-  telemetryReporter: TelemetryReporter,
+  telemetry: TelemetryReporter,
   onCompletionAccepted: (item: vscode.CompletionItem) => void
 ) {
   return new ConfigurationDependentRegistration(modeId, 'suggest.enabled', () =>
@@ -931,7 +931,7 @@ export function register(
         typingsStatus,
         fileConfigurationManager,
         commandManager,
-        telemetryReporter,
+        telemetry,
         onCompletionAccepted
       ),
       ...TypeScriptCompletionItemProvider.triggerCharacters

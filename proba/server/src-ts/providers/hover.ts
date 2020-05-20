@@ -5,19 +5,19 @@
 
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import { markdownDocumentation } from '../utils/previewer';
 import * as typeConverters from '../utils/convert';
 
 class TypeScriptHoverProvider implements vscode.HoverProvider {
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async provideHover(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.Hover | undefined> {
-    const filepath = this.client.toOpenedFilePath(document);
+    const filepath = this.client.toOpenedPath(document);
     if (!filepath) {
       return;
     }
@@ -49,7 +49,7 @@ class TypeScriptHoverProvider implements vscode.HoverProvider {
 
 export function register(
   selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
+  client: IServiceClient
 ): vscode.Disposable {
   return vscode.languages.registerHoverProvider(
     selector,

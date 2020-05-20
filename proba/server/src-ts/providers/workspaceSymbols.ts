@@ -1,72 +1,38 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
-import * as PConst from '../protocol.const';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import type * as proto from '../protocol';
+import * as cproto from '../protocol.const';
+import { IServiceClient } from '../service';
 import API from '../utils/api';
 import * as fileSchemes from '../utils/fileSchemes';
 import {
   doesResourceLookLikeAJavaScriptFile,
   doesResourceLookLikeATypeScriptFile,
 } from '../utils/language';
-import * as typeConverters from '../utils/convert';
+import * as qc from '../utils/convert';
 
-function getSymbolKind(item: Proto.NavtoItem): vscode.SymbolKind {
-  switch (item.kind) {
-    case PConst.Kind.method:
-      return vscode.SymbolKind.Method;
-    case PConst.Kind.enum:
-      return vscode.SymbolKind.Enum;
-    case PConst.Kind.enumMember:
-      return vscode.SymbolKind.EnumMember;
-    case PConst.Kind.function:
-      return vscode.SymbolKind.Function;
-    case PConst.Kind.class:
-      return vscode.SymbolKind.Class;
-    case PConst.Kind.interface:
-      return vscode.SymbolKind.Interface;
-    case PConst.Kind.type:
-      return vscode.SymbolKind.Class;
-    case PConst.Kind.memberVariable:
-      return vscode.SymbolKind.Field;
-    case PConst.Kind.memberGetAccessor:
-      return vscode.SymbolKind.Field;
-    case PConst.Kind.memberSetAccessor:
-      return vscode.SymbolKind.Field;
-    case PConst.Kind.variable:
-      return vscode.SymbolKind.Variable;
-    default:
-      return vscode.SymbolKind.Variable;
-  }
-}
-
-class TypeScriptWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
-  public constructor(
-    private readonly client: ITypeScriptServiceClient,
-    private readonly modeIds: readonly string[]
+class WorkspaceSymbol implements vscode.WorkspaceSymbolProvider {
+  constructor(
+    private readonly client: IServiceClient,
+    private readonly modes: readonly string[]
   ) {}
 
-  public async provideWorkspaceSymbols(
+  async provideWorkspaceSymbols(
     search: string,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.SymbolInformation[]> {
     let file: string | undefined;
     if (this.searchAllOpenProjects) {
       file = undefined;
     } else {
-      const document = this.getDocument();
-      file = document ? await this.toOpenedFiledPath(document) : undefined;
+      const document = this.document();
+      file = document ? await this.openedPath(document) : undefined;
 
       if (!file && this.client.apiVersion.lt(API.v390)) {
         return [];
       }
     }
 
-    const args: Proto.NavtoRequestArgs = {
+    const args: proto.NavtoRequestArgs = {
       file,
       searchValue: search,
       maxResultCount: 256,
@@ -78,8 +44,8 @@ class TypeScriptWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvide
     }
 
     return response.body
-      .filter((item) => item.containerName || item.kind !== 'alias')
-      .map((item) => this.toSymbolInformation(item));
+      .filter((n) => n.containerName || n.kind !== 'alias')
+      .map((n) => this.symbolInfo(n));
   }
 
   private get searchAllOpenProjects() {
@@ -91,66 +57,80 @@ class TypeScriptWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvide
     );
   }
 
-  private async toOpenedFiledPath(document: vscode.TextDocument) {
+  private async openedPath(document: vscode.TextDocument) {
     if (document.uri.scheme === fileSchemes.git) {
       try {
-        const path = vscode.Uri.file(JSON.parse(document.uri.query)?.path);
+        const p = vscode.Uri.file(JSON.parse(document.uri.query)?.p);
         if (
-          doesResourceLookLikeATypeScriptFile(path) ||
-          doesResourceLookLikeAJavaScriptFile(path)
+          doesResourceLookLikeATypeScriptFile(p) ||
+          doesResourceLookLikeAJavaScriptFile(p)
         ) {
-          const document = await vscode.workspace.openTextDocument(path);
-          return this.client.toOpenedFilePath(document);
+          const document = await vscode.workspace.openTextDocument(p);
+          return this.client.toOpenedPath(document);
         }
-      } catch {
-        // noop
-      }
+      } catch {}
     }
-    return this.client.toOpenedFilePath(document);
+    return this.client.toOpenedPath(document);
   }
 
-  private toSymbolInformation(item: Proto.NavtoItem) {
-    const label = TypeScriptWorkspaceSymbolProvider.getLabel(item);
+  private symbolInfo(n: proto.NavtoItem) {
+    const l = WorkspaceSymbol.label(n);
     return new vscode.SymbolInformation(
-      label,
-      getSymbolKind(item),
-      item.containerName || '',
-      typeConverters.Location.fromTextSpan(this.client.toResource(item.file), item)
+      l,
+      symbolKind(n),
+      n.containerName || '',
+      qc.Location.fromTextSpan(this.client.toResource(n.file), n)
     );
   }
 
-  private static getLabel(item: Proto.NavtoItem) {
-    const label = item.name;
-    if (item.kind === 'method' || item.kind === 'function') {
-      return label + '()';
-    }
-    return label;
+  private static label(n: proto.NavtoItem) {
+    const l = n.name;
+    if (n.kind === 'method' || n.kind === 'function') return l + '()';
+    return l;
   }
 
-  private getDocument(): vscode.TextDocument | undefined {
-    // typescript wants to have a resource even when asking
-    // general questions so we check the active editor. If this
-    // doesn't match we take the first TS document.
-
-    const activeDocument = vscode.window.activeTextEditor?.document;
-    if (activeDocument) {
-      if (this.modeIds.includes(activeDocument.languageId)) {
-        return activeDocument;
-      }
+  private document() {
+    const d = vscode.window.activeTextEditor?.document;
+    if (d) {
+      if (this.modes.includes(d.languageId)) return d;
     }
-
-    const documents = vscode.workspace.textDocuments;
-    for (const document of documents) {
-      if (this.modeIds.includes(document.languageId)) {
-        return document;
-      }
+    const ds = vscode.workspace.textDocuments;
+    for (const d of ds) {
+      if (this.modes.includes(d.languageId)) return d;
     }
     return;
   }
 }
 
-export function register(client: ITypeScriptServiceClient, modeIds: readonly string[]) {
-  return vscode.languages.registerWorkspaceSymbolProvider(
-    new TypeScriptWorkspaceSymbolProvider(client, modeIds)
-  );
+function symbolKind(n: proto.NavtoItem): vscode.SymbolKind {
+  switch (n.kind) {
+    case cproto.Kind.method:
+      return vscode.SymbolKind.Method;
+    case cproto.Kind.enum:
+      return vscode.SymbolKind.Enum;
+    case cproto.Kind.enumMember:
+      return vscode.SymbolKind.EnumMember;
+    case cproto.Kind.function:
+      return vscode.SymbolKind.Function;
+    case cproto.Kind.class:
+      return vscode.SymbolKind.Class;
+    case cproto.Kind.interface:
+      return vscode.SymbolKind.Interface;
+    case cproto.Kind.type:
+      return vscode.SymbolKind.Class;
+    case cproto.Kind.memberVariable:
+      return vscode.SymbolKind.Field;
+    case cproto.Kind.memberGetAccessor:
+      return vscode.SymbolKind.Field;
+    case cproto.Kind.memberSetAccessor:
+      return vscode.SymbolKind.Field;
+    case cproto.Kind.variable:
+      return vscode.SymbolKind.Variable;
+    default:
+      return vscode.SymbolKind.Variable;
+  }
+}
+
+export function register(c: IServiceClient, modes: readonly string[]) {
+  return vscode.languages.registerWorkspaceSymbolProvider(new WorkspaceSymbol(c, modes));
 }

@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient, ServerResponse } from '../typescriptService';
+import { IServiceClient, ServerResponse } from '../typescriptService';
 import { nulToken } from './cancellation';
 import { ServiceConfig } from './configuration';
 
@@ -97,7 +97,7 @@ export async function openOrCreateConfig(
 
 export async function openProjectConfigOrPromptToCreate(
   projectType: ProjectType,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   rootPath: string,
   configFileName: string
 ): Promise<void> {
@@ -138,10 +138,10 @@ export async function openProjectConfigOrPromptToCreate(
 
 export async function openProjectConfigForFile(
   projectType: ProjectType,
-  client: ITypeScriptServiceClient,
+  client: IServiceClient,
   resource: vscode.Uri
 ): Promise<void> {
-  const rootPath = client.getWorkspaceRootForResource(resource);
+  const rootPath = client.workspaceRootFor(resource);
   if (!rootPath) {
     vscode.window.showInformationMessage(
       localize(

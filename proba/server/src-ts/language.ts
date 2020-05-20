@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { CachedResponse } from './server';
 import { DiagnosticKind } from './providers/diagnostics';
 import FileConfigs from './providers/configs';
-import TypeScriptServiceClient from './serviceClient';
+import ServiceClient from './serviceClient';
 import { Commands, Disposable } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
 import { LanguageDescription } from './utils/language';
@@ -14,12 +14,12 @@ import TypingsStatus from './utils/typingsStatus';
 const validateSetting = 'validate.enable';
 const suggestionSetting = 'suggestionActions.enabled';
 
-export default class LanguageProvider extends Disposable {
+export class LanguageProvider extends Disposable {
   constructor(
-    private readonly client: TypeScriptServiceClient,
+    private readonly client: ServiceClient,
     private readonly description: LanguageDescription,
     private readonly commandManager: Commands,
-    private readonly telemetryReporter: TelemetryReporter,
+    private readonly telemetry: TelemetryReporter,
     private readonly typingsStatus: TypingsStatus,
     private readonly fileConfigurationManager: FileConfigs,
     private readonly onCompletionAccepted: (item: vscode.CompletionItem) => void
@@ -61,7 +61,7 @@ export default class LanguageProvider extends Disposable {
             this.typingsStatus,
             this.fileConfigurationManager,
             this.commandManager,
-            this.telemetryReporter,
+            this.telemetry,
             this.onCompletionAccepted
           )
         )
@@ -112,7 +112,7 @@ export default class LanguageProvider extends Disposable {
             this.client,
             this.commandManager,
             this.fileConfigurationManager,
-            this.telemetryReporter
+            this.telemetry
           )
         )
       ),
@@ -124,7 +124,7 @@ export default class LanguageProvider extends Disposable {
             this.fileConfigurationManager,
             this.commandManager,
             this.client.diagnosticsManager,
-            this.telemetryReporter
+            this.telemetry
           )
         )
       ),
@@ -145,7 +145,7 @@ export default class LanguageProvider extends Disposable {
             this.client,
             this.fileConfigurationManager,
             this.commandManager,
-            this.telemetryReporter
+            this.telemetry
           )
         )
       ),

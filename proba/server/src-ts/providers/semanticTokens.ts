@@ -4,11 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import {
-  ITypeScriptServiceClient,
-  ExecConfig,
-  ServerResponse,
-} from '../typescriptService';
+import { IServiceClient, ExecConfig, ServerResponse } from '../typescriptService';
 import * as Proto from '../protocol';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import API from '../utils/api';
@@ -28,10 +24,7 @@ const minTypeScriptVersion = API.fromVersionString(
 // as we don't do deltas, for performance reasons, don't compute semantic tokens for documents above that limit
 const CONTENT_LENGTH_LIMIT = 100000;
 
-export function register(
-  selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
-) {
+export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
   return new VersionDependentRegistration(client, minTypeScriptVersion, () => {
     const provider = new DocumentSemanticTokensProvider(client);
     return vscode.Disposable.from(
@@ -54,7 +47,7 @@ class DocumentSemanticTokensProvider
   implements
     vscode.DocumentSemanticTokensProvider,
     vscode.DocumentRangeSemanticTokensProvider {
-  constructor(private readonly client: ITypeScriptServiceClient) {}
+  constructor(private readonly client: IServiceClient) {}
 
   getLegend(): vscode.SemanticTokensLegend {
     return new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
@@ -62,9 +55,9 @@ class DocumentSemanticTokensProvider
 
   async provideDocumentSemanticTokens(
     document: vscode.TextDocument,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.SemanticTokens | null> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file || document.getText().length > CONTENT_LENGTH_LIMIT) {
       return null;
     }
@@ -78,9 +71,9 @@ class DocumentSemanticTokensProvider
   async provideDocumentRangeSemanticTokens(
     document: vscode.TextDocument,
     range: vscode.Range,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.SemanticTokens | null> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (
       !file ||
       document.offsetAt(range.end) - document.offsetAt(range.start) > CONTENT_LENGTH_LIMIT
@@ -96,9 +89,9 @@ class DocumentSemanticTokensProvider
   async _provideSemanticTokens(
     document: vscode.TextDocument,
     requestArg: ExperimentalProtocol.EncodedSemanticClassificationsRequestArgs,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.SemanticTokens | null> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return null;
     }
@@ -106,7 +99,7 @@ class DocumentSemanticTokensProvider
     const versionBeforeRequest = document.version;
 
     const response = await (this
-      .client as ExperimentalProtocol.IExtendedTypeScriptServiceClient).execute(
+      .client as ExperimentalProtocol.IExtendedServiceClient).execute(
       'encodedSemanticClassifications-full',
       requestArg,
       token
@@ -243,11 +236,11 @@ tokenTypeMap[ExperimentalProtocol.ClassificationType.typeAliasName] = TokenType.
 tokenTypeMap[ExperimentalProtocol.ClassificationType.parameterName] = TokenType.parameter;
 
 namespace ExperimentalProtocol {
-  export interface IExtendedTypeScriptServiceClient {
+  export interface IExtendedServiceClient {
     execute<K extends keyof ExperimentalProtocol.ExtendedTsServerRequests>(
       command: K,
       args: ExperimentalProtocol.ExtendedTsServerRequests[K][0],
-      token: vscode.CancellationToken,
+      ct: vscode.CancellationToken,
       config?: ExecConfig
     ): Promise<
       ServerResponse.Response<ExperimentalProtocol.ExtendedTsServerRequests[K][1]>

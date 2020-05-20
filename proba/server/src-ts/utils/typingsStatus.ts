@@ -1,28 +1,28 @@
 import * as vscode from 'vscode';
 import { loadMessageBundle } from 'vscode-nls';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import { Disposable } from './disposable';
 
 const localize = loadMessageBundle();
 
 const typingsInstallTimeout = 30 * 1000;
 
-export default class TypingsStatus extends Disposable {
+export class TypingsStatus extends Disposable {
   private readonly _acquiringTypings = new Map<number, NodeJS.Timer>();
-  private readonly _client: ITypeScriptServiceClient;
+  private readonly _client: IServiceClient;
 
-  constructor(client: ITypeScriptServiceClient) {
+  constructor(client: IServiceClient) {
     super();
     this._client = client;
 
     this.register(
-      this._client.onDidBeginInstallTypings((event) =>
+      this._client.onDidBeginInstallTypes((event) =>
         this.onBeginInstallTypings(event.eventId)
       )
     );
 
     this.register(
-      this._client.onDidEndInstallTypings((event) =>
+      this._client.onDidEndInstallTypes((event) =>
         this.onEndInstallTypings(event.eventId)
       )
     );
@@ -64,14 +64,12 @@ export default class TypingsStatus extends Disposable {
 export class AtaProgressReporter extends Disposable {
   private readonly _promises = new Map<number, Function>();
 
-  constructor(client: ITypeScriptServiceClient) {
+  constructor(client: IServiceClient) {
     super();
-    this.register(client.onDidBeginInstallTypings((e) => this._onBegin(e.eventId)));
-    this.register(client.onDidEndInstallTypings((e) => this._onEndOrTimeout(e.eventId)));
+    this.register(client.onDidBeginInstallTypes((e) => this._onBegin(e.eventId)));
+    this.register(client.onDidEndInstallTypes((e) => this._onEndOrTimeout(e.eventId)));
     this.register(
-      client.onTypesInstallerInitializationFailed((_) =>
-        this.onTypesInstallerInitializationFailed()
-      )
+      client.onTypesInstallerInitFailed((_) => this.onTypesInstallerInitFailed())
     );
   }
 
@@ -109,7 +107,7 @@ export class AtaProgressReporter extends Disposable {
     }
   }
 
-  private async onTypesInstallerInitializationFailed() {
+  private async onTypesInstallerInitFailed() {
     const config = vscode.workspace.getConfiguration('typescript');
 
     if (config.get<boolean>('check.npmIsInstalled', true)) {

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as proto from '../protocol';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import { escapeRegExp } from '../utils';
 import * as qc from '../utils/convert';
 import { CachedResponse } from '../server';
@@ -28,7 +28,7 @@ export abstract class BaseCodeLens implements vscode.CodeLensProvider {
   private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
 
   constructor(
-    protected client: ITypeScriptServiceClient,
+    protected client: IServiceClient,
     private cached: CachedResponse<proto.NavTreeResponse>
   ) {}
 
@@ -40,7 +40,7 @@ export abstract class BaseCodeLens implements vscode.CodeLensProvider {
     d: vscode.TextDocument,
     ct: vscode.CancellationToken
   ): Promise<vscode.CodeLens[]> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return [];
     const r = await this.cached.execute(d, () =>
       this.client.execute('navtree', { file: f }, ct)

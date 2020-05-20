@@ -15,7 +15,7 @@ function mapChildren<R>(node: jsonc.Node | undefined, f: (x: jsonc.Node) => R): 
 class TsconfigLinkProvider implements vscode.DocumentLinkProvider {
   public provideDocumentLinks(
     document: vscode.TextDocument,
-    _token: vscode.CancellationToken
+    _ct: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.DocumentLink[]> {
     const root = jsonc.parseTree(document.getText());
     if (!root) {

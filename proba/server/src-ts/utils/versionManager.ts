@@ -13,7 +13,7 @@ interface QuickPickItem extends vscode.QuickPickItem {
   run(): void;
 }
 
-export class TypeScriptVersionManager extends Disposable {
+export class Versions extends Disposable {
   private _currentVersion: TypeScriptVersion;
 
   public constructor(

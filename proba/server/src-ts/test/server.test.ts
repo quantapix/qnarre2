@@ -90,19 +90,11 @@ suite('Server', () => {
     );
 
     const onWrite1 = process.onWrite();
-    server.executeImpl(
-      'geterr',
-      {},
-      { isAsync: false, token: nulToken, expectsResult: true }
-    );
+    server.exec('geterr', {}, { isAsync: false, token: nulToken, respond: true });
     assert.strictEqual((await onWrite1).seq, 0);
 
     const onWrite2 = process.onWrite();
-    server.executeImpl(
-      'geterr',
-      {},
-      { isAsync: false, token: nulToken, expectsResult: true }
-    );
+    server.exec('geterr', {}, { isAsync: false, token: nulToken, respond: true });
     assert.strictEqual((await onWrite2).seq, 1);
   });
 });

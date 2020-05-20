@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import API from '../utils/api';
 import * as fileSchemes from '../utils/fileSchemes';
 import { isTypeScriptDocument } from '../utils/languageModeIds';
@@ -16,10 +16,10 @@ function areFileConfigsEqual(a: FileConfig, b: FileConfig) {
   return equals(a, b);
 }
 
-export default class FileConfigs extends Disposable {
+export class FileConfigs extends Disposable {
   private readonly formatOptions = new ResourceMap<Promise<FileConfig | undefined>>();
 
-  public constructor(private readonly client: ITypeScriptServiceClient) {
+  public constructor(private readonly client: IServiceClient) {
     super();
     vscode.workspace.onDidCloseTextDocument(
       (textDocument) => {
@@ -36,7 +36,7 @@ export default class FileConfigs extends Disposable {
 
   public async ensureConfigurationForDocument(
     document: vscode.TextDocument,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void> {
     const formattingOptions = this.getFormattingOptions(document);
     if (formattingOptions) {
@@ -61,9 +61,9 @@ export default class FileConfigs extends Disposable {
   public async ensureConfigurationOptions(
     document: vscode.TextDocument,
     options: vscode.FormattingOptions,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return;
     }
@@ -97,7 +97,7 @@ export default class FileConfigs extends Disposable {
 
   public async setGlobalConfigurationFromDocument(
     document: vscode.TextDocument,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<void> {
     const formattingOptions = this.getFormattingOptions(document);
     if (!formattingOptions) {

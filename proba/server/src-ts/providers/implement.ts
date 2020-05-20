@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import DefBase from './definition';
 
 class Implementation extends DefBase implements vscode.ImplementationProvider {
@@ -12,6 +12,6 @@ class Implementation extends DefBase implements vscode.ImplementationProvider {
   }
 }
 
-export function register(s: vscode.DocumentSelector, c: ITypeScriptServiceClient) {
+export function register(s: vscode.DocumentSelector, c: IServiceClient) {
   return vscode.languages.registerImplementationProvider(s, new Implementation(c));
 }

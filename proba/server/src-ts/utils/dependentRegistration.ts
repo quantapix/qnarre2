@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from './api';
 import { Disposable } from './disposable';
 
@@ -33,7 +33,7 @@ export class VersionDependentRegistration extends Disposable {
   private readonly _registration: ConditionalRegistration;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly minVersion: API,
     register: () => vscode.Disposable
   ) {
@@ -42,7 +42,7 @@ export class VersionDependentRegistration extends Disposable {
 
     this.update(client.apiVersion);
 
-    this.client.onTsServerStarted(
+    this.client.onServerStarted(
       () => {
         this.update(this.client.apiVersion);
       },

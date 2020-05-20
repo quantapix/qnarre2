@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
 import { Plugins } from './utils/plugin';
 
@@ -11,11 +6,11 @@ class ApiV0 {
     public readonly onCompletionAccepted: vscode.Event<
       vscode.CompletionItem & { metadata?: any }
     >,
-    private readonly _pluginManager: Plugins
+    private readonly _plugins: Plugins
   ) {}
 
   configurePlugin(pluginId: string, configuration: {}): void {
-    this._pluginManager.setConfiguration(pluginId, configuration);
+    this._plugins.setConfiguration(pluginId, configuration);
   }
 }
 
@@ -25,12 +20,12 @@ export interface Api {
 
 export function getExtensionApi(
   onCompletionAccepted: vscode.Event<vscode.CompletionItem>,
-  pluginManager: Plugins
+  plugins: Plugins
 ): Api {
   return {
     getAPI(version) {
       if (version === 0) {
-        return new ApiV0(onCompletionAccepted, pluginManager);
+        return new ApiV0(onCompletionAccepted, plugins);
       }
       return;
     },

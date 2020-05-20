@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
 import FileConfigs from './configs';
 
@@ -10,7 +10,7 @@ class Formatting
     vscode.DocumentRangeFormattingEditProvider,
     vscode.OnTypeFormattingEditProvider {
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly configs: FileConfigs
   ) {}
 
@@ -20,7 +20,7 @@ class Formatting
     opts: vscode.FormattingOptions,
     ct: vscode.CancellationToken
   ): Promise<vscode.TextEdit[] | undefined> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return;
     await this.configs.ensureConfigurationOptions(d, opts, ct);
     const args = qc.Range.toFormatRequestArgs(f, range);
@@ -36,7 +36,7 @@ class Formatting
     opts: vscode.FormattingOptions,
     ct: vscode.CancellationToken
   ): Promise<vscode.TextEdit[]> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return [];
     await this.configs.ensureConfigurationOptions(d, opts, ct);
     const args: proto.FormatOnKeyRequestArgs = {
@@ -61,7 +61,7 @@ class Formatting
 export function register(
   s: vscode.DocumentSelector,
   mode: string,
-  c: ITypeScriptServiceClient,
+  c: IServiceClient,
   cs: FileConfigs
 ) {
   return new ConfigurationDependentRegistration(mode, 'format.enable', () => {

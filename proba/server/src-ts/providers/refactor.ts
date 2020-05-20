@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { LearnMoreAboutRefactoringsCommand } from '../commands/learnMoreAboutRefactorings';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { Command, Commands } from '../utils/extras';
@@ -36,7 +36,7 @@ class ApplyRefactoring implements Command {
   readonly id = ApplyRefactoring.ID;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly telemetry: TelemetryReporter
   ) {}
 
@@ -46,7 +46,7 @@ class ApplyRefactoring implements Command {
     action: string,
     range: vscode.Range
   ): Promise<boolean> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return false;
     this.telemetry.logTelemetry('refactor.execute', {
       action: action,
@@ -94,7 +94,7 @@ class SelectRefactor implements Command {
   readonly id = SelectRefactor.ID;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly doRefactoring: ApplyRefactoring
   ) {}
 
@@ -103,7 +103,7 @@ class SelectRefactor implements Command {
     i: Proto.ApplicableRefactorInfo,
     r: vscode.Range
   ): Promise<boolean> {
-    const f = this.client.toOpenedFilePath(d);
+    const f = this.client.toOpenedPath(d);
     if (!f) return false;
     const s = await vscode.window.showQuickPick(
       i.actions.map(
@@ -200,7 +200,7 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider {
   static readonly minVersion = API.v240;
 
   constructor(
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly formattingOptionsManager: FormattingOptionsManager,
     cmds: Commands,
     telemetry: TelemetryReporter
@@ -237,9 +237,9 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider {
     ct: vscode.CancellationToken
   ): Promise<vscode.CodeAction[] | undefined> {
     if (!this.shouldTrigger(rs, ctx)) return;
-    if (!this.client.toOpenedFilePath(d)) return;
+    if (!this.client.toOpenedPath(d)) return;
     const response = await this.client.interruptGetErr(() => {
-      const file = this.client.toOpenedFilePath(d);
+      const file = this.client.toOpenedPath(d);
       if (!file) return;
       this.formattingOptionsManager.ensureConfigurationForDocument(d, ct);
       const args: Experimental.GetApplicableRefactorsRequestArgs = {
@@ -386,7 +386,7 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider {
 
 export function register(
   s: vscode.DocumentSelector,
-  c: ITypeScriptServiceClient,
+  c: IServiceClient,
   formats: FormattingOptionsManager,
   cmds: Commands,
   telemetry: TelemetryReporter

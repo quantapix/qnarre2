@@ -1,20 +1,10 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-/* --------------------------------------------------------------------------------------------
- * Includes code from typescript-sublime-plugin project, obtained from
- * https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/TypeScript%20Indent.tmPreferences
- * ------------------------------------------------------------------------------------------ */
-
 import * as vscode from 'vscode';
 import { DiagnosticKind } from './providers/diagnostics';
 import FileConfigs from './providers/configs';
 import LanguageProvider from './language';
 import * as Proto from './protocol';
 import * as PConst from './protocol.const';
-import TypeScriptServiceClient from './serviceClient';
+import ServiceClient from './serviceClient';
 import { coalesce, flatten } from './utils/arrays';
 import { Commands } from './utils/extras';
 import { Disposable } from './utils/disposable';
@@ -37,8 +27,8 @@ const styleCheckDiagnostics = [
   errorCodes.notAllCodePathsReturnAValue,
 ];
 
-export default class TypeScriptServiceClientHost extends Disposable {
-  private readonly client: TypeScriptServiceClient;
+export class ServiceClientHost extends Disposable {
+  private readonly client: ServiceClient;
   private readonly languages: LanguageProvider[] = [];
   private readonly languagePerId = new Map<string, LanguageProvider>();
 
@@ -52,19 +42,19 @@ export default class TypeScriptServiceClientHost extends Disposable {
   constructor(
     descriptions: LanguageDescription[],
     workspaceState: vscode.Memento,
-    pluginManager: Plugins,
+    plugins: Plugins,
     private readonly commandManager: Commands,
     logDirectoryProvider: LogDirectory,
     onCompletionAccepted: (item: vscode.CompletionItem) => void
   ) {
     super();
 
-    const allModeIds = this.getAllModeIds(descriptions, pluginManager);
+    const allModeIds = this.getAllModeIds(descriptions, plugins);
     this.client = this._register(
-      new TypeScriptServiceClient(
+      new ServiceClient(
         workspaceState,
         (version) => this.versionStatus.onDidChangeTypeScriptVersion(version),
-        pluginManager,
+        plugins,
         logDirectoryProvider,
         allModeIds
       )
@@ -100,7 +90,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
         this.client,
         description,
         this.commandManager,
-        this.client.telemetryReporter,
+        this.client.telemetry,
         this.typingsStatus,
         this.fileConfigurationManager,
         onCompletionAccepted
@@ -125,7 +115,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
     this.client.ensureServiceStarted();
     this.client.onReady(() => {
       const languages = new Set<string>();
-      for (const plugin of pluginManager.plugins) {
+      for (const plugin of plugins.plugins) {
         if (plugin.configNamespace && plugin.languages.length) {
           this.registerExtensionLanguageProvider(
             {
@@ -160,7 +150,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
       }
     });
 
-    this.client.onTsServerStarted(() => {
+    this.client.onServerStarted(() => {
       this.triggerAllDiagnostics();
     });
 
@@ -180,7 +170,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
       this.client,
       description,
       this.commandManager,
-      this.client.telemetryReporter,
+      this.client.telemetry,
       this.typingsStatus,
       this.fileConfigurationManager,
       onCompletionAccepted
@@ -190,20 +180,20 @@ export default class TypeScriptServiceClientHost extends Disposable {
     this.languagePerId.set(description.id, manager);
   }
 
-  private getAllModeIds(descriptions: LanguageDescription[], pluginManager: Plugins) {
+  private getAllModeIds(descriptions: LanguageDescription[], plugins: Plugins) {
     const allModeIds = flatten([
       ...descriptions.map((x) => x.modeIds),
-      ...pluginManager.plugins.map((x) => x.languages),
+      ...plugins.plugins.map((x) => x.languages),
     ]);
     return allModeIds;
   }
 
-  public get serviceClient(): TypeScriptServiceClient {
+  public get serviceClient(): ServiceClient {
     return this.client;
   }
 
   public reloadProjects(): void {
-    this.client.executeWithoutWaitingForResponse('reloadProjects', null);
+    this.client.executeNoResponse('reloadProjects', null);
     this.triggerAllDiagnostics();
   }
 

@@ -3,7 +3,7 @@ import * as nls from 'vscode-nls';
 import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
 import * as qc from '../utils/convert';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
 import { BaseCodeLens, RefsCodeLens, getSymbolRange } from './codeLens';
 import { CachedResponse } from '../server';
@@ -18,7 +18,7 @@ class Implementations extends BaseCodeLens {
     const cl = inp as RefsCodeLens;
     const args = qc.Position.toFileLocationRequestArgs(cl.file, cl.range.start);
     const r = await this.client.execute('implementation', args, ct, {
-      lowPriority: true,
+      slow: true,
       cancelOnResourceChange: cl.doc,
     });
     if (r.type !== 'response' || !r.body) {
@@ -89,7 +89,7 @@ class Implementations extends BaseCodeLens {
 export function register(
   s: vscode.DocumentSelector,
   mode: string,
-  c: ITypeScriptServiceClient,
+  c: IServiceClient,
   r: CachedResponse<proto.NavTreeResponse>
 ) {
   return new ConfigurationDependentRegistration(

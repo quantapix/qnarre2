@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../ts/api';
 import { coalesce } from '../ts/collection';
 import { Delayer } from '../ts/async';
@@ -71,13 +71,13 @@ type BufferOperation = CloseOperation | OpenOperation | ChangeOperation;
 class BufferSynchronizer {
   private readonly _pending = new ResourceMap<BufferOperation>();
 
-  constructor(private readonly client: ITypeScriptServiceClient) {}
+  constructor(private readonly client: IServiceClient) {}
 
   public open(resource: vscode.Uri, args: Proto.OpenRequestArgs) {
     if (this.supportsBatching) {
       this.updatePending(resource, new OpenOperation(args));
     } else {
-      this.client.executeWithoutWaitingForResponse('open', args);
+      this.client.executeNoResponse('open', args);
     }
   }
 
@@ -89,7 +89,7 @@ class BufferSynchronizer {
       return this.updatePending(resource, new CloseOperation(filepath));
     } else {
       const args: Proto.FileRequestArgs = { file: filepath };
-      this.client.executeWithoutWaitingForResponse('close', args);
+      this.client.executeNoResponse('close', args);
       return true;
     }
   }
@@ -125,7 +125,7 @@ class BufferSynchronizer {
           insertString: text,
           ...typeConverters.Range.toFormatRequestArgs(filepath, range),
         };
-        this.client.executeWithoutWaitingForResponse('change', args);
+        this.client.executeNoResponse('change', args);
       }
     }
   }
@@ -207,7 +207,7 @@ class SyncedBuffer {
   constructor(
     private readonly document: vscode.TextDocument,
     public readonly filepath: string,
-    private readonly client: ITypeScriptServiceClient,
+    private readonly client: IServiceClient,
     private readonly synchronizer: BufferSynchronizer
   ) {}
 
@@ -215,7 +215,7 @@ class SyncedBuffer {
     const args: Proto.OpenRequestArgs = {
       file: this.filepath,
       fileContent: this.document.getText(),
-      projectRootPath: this.client.getWorkspaceRootForResource(this.document.uri),
+      projectRootPath: this.client.workspaceRootFor(this.document.uri),
     };
 
     const scriptKind = mode2ScriptKind(this.document.languageId);
@@ -224,7 +224,7 @@ class SyncedBuffer {
     }
 
     if (this.client.apiVersion.gte(API.v240)) {
-      const tsPluginsForDocument = this.client.pluginManager.plugins.filter((x) =>
+      const tsPluginsForDocument = this.client.plugins.plugins.filter((x) =>
         x.languages.includes(this.document.languageId)
       );
 
@@ -307,7 +307,7 @@ class PendingDiagnostics extends ResourceMap<number> {
 
 class GetErrRequest {
   public static executeGetErrRequest(
-    client: ITypeScriptServiceClient,
+    client: IServiceClient,
     files: ResourceMap<void>,
     onDone: () => void
   ) {
@@ -315,15 +315,15 @@ class GetErrRequest {
   }
 
   private _done = false;
-  private readonly _token: vscode.CancellationTokenSource = new vscode.CancellationTokenSource();
+  private readonly _ct: vscode.CancellationTokenSource = new vscode.CancellationTokenSource();
 
   private constructor(
-    client: ITypeScriptServiceClient,
+    client: IServiceClient,
     public readonly files: ResourceMap<void>,
     onDone: () => void
   ) {
     const allFiles = coalesce(
-      Array.from(files.entries).map((entry) => client.normalizedPath(entry.resource))
+      Array.from(files.entries).map((entry) => client.toNormPath(entry.resource))
     );
     if (!allFiles.length) {
       this._done = true;
@@ -358,8 +358,8 @@ class GetErrRequest {
   }
 }
 
-export default class BufferSyncSupport extends Disposable {
-  private readonly client: ITypeScriptServiceClient;
+export class BufferSyncSupport extends Disposable {
+  private readonly client: IServiceClient;
 
   private _validateJavaScript = true;
   private _validateTypeScript = true;
@@ -371,14 +371,14 @@ export default class BufferSyncSupport extends Disposable {
   private listening = false;
   private readonly synchronizer: BufferSynchronizer;
 
-  constructor(client: ITypeScriptServiceClient, modeIds: readonly string[]) {
+  constructor(client: IServiceClient, modeIds: readonly string[]) {
     super();
     this.client = client;
     this.modeIds = new Set<string>(modeIds);
 
     this.diagnosticDelayer = new Delayer<any>(300);
 
-    const pathNormalizer = (path: vscode.Uri) => this.client.normalizedPath(path);
+    const pathNormalizer = (path: vscode.Uri) => this.client.toNormPath(path);
     this.syncedBuffers = new SyncedBufferMap(pathNormalizer);
     this.pendingDiagnostics = new PendingDiagnostics(pathNormalizer);
     this.synchronizer = new BufferSynchronizer(client);
@@ -452,7 +452,7 @@ export default class BufferSyncSupport extends Disposable {
   }
 
   public toVsCodeResource(resource: vscode.Uri): vscode.Uri {
-    const filepath = this.client.normalizedPath(resource);
+    const filepath = this.client.toNormPath(resource);
     for (const buffer of this.syncedBuffers.allBuffers) {
       if (buffer.filepath === filepath) {
         return buffer.resource;
@@ -487,7 +487,7 @@ export default class BufferSyncSupport extends Disposable {
       return false;
     }
     const resource = document.uri;
-    const filepath = this.client.normalizedPath(resource);
+    const filepath = this.client.toNormPath(resource);
     if (!filepath) {
       return false;
     }

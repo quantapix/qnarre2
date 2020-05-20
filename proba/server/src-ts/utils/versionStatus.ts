@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import { coalesce } from './arrays';
 import { Command, Commands } from './extras';
 import { isTypeScriptDocument } from './languageModeIds';
@@ -58,7 +58,7 @@ class ProjectStatusCommand implements Command {
   public readonly id = '_typescript.projectStatus';
 
   public constructor(
-    private readonly _client: ITypeScriptServiceClient,
+    private readonly _client: IServiceClient,
     private readonly _delegate: () => ProjectInfoState.State
   ) {}
 
@@ -88,7 +88,7 @@ class ProjectStatusCommand implements Command {
   private getProjectItem(info: ProjectInfoState.State): QuickPickItem | undefined {
     const rootPath =
       info.type === ProjectInfoState.Type.Resolved
-        ? this._client.getWorkspaceRootForResource(info.resource)
+        ? this._client.workspaceRootFor(info.resource)
         : undefined;
     if (!rootPath) {
       return;
@@ -146,16 +146,13 @@ class ProjectStatusCommand implements Command {
   }
 }
 
-export default class VersionStatus extends Disposable {
+export class VersionStatus extends Disposable {
   private readonly _statusBarEntry: vscode.StatusBarItem;
 
   private _ready = false;
   private _state: ProjectInfoState.State = ProjectInfoState.None;
 
-  constructor(
-    private readonly _client: ITypeScriptServiceClient,
-    commandManager: Commands
-  ) {
+  constructor(private readonly _client: IServiceClient, commandManager: Commands) {
     super();
 
     this._statusBarEntry = this._register(
@@ -193,7 +190,7 @@ export default class VersionStatus extends Disposable {
 
     const doc = vscode.window.activeTextEditor.document;
     if (isTypeScriptDocument(doc)) {
-      const file = this._client.normalizedPath(doc.uri);
+      const file = this._client.toNormPath(doc.uri);
       if (file) {
         this._statusBarEntry.show();
         if (!this._ready) {

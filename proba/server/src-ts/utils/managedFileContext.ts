@@ -3,7 +3,7 @@ import { Disposable } from './disposable';
 import { isJsConfigOrTsConfigFileName } from './language';
 import { isSupportedLanguageMode } from './languageModeIds';
 
-export default class ManagedFileContextManager extends Disposable {
+export class ManagedFileContextManager extends Disposable {
   private static readonly contextName = 'typescript.isManagedFile';
 
   private isInManagedFileContext = false;

@@ -64,11 +64,11 @@ export class GoToProjectConfig implements Command {
 
 export class ConfigPlugin implements Command {
   public readonly id: string;
-  public constructor(p: string, private readonly plugs: Plugins) {
+  public constructor(p: string, private readonly plugins: Plugins) {
     this.id = `${p}.configurePlugin`;
   }
   public execute(id: string, c: any) {
-    this.plugs.setConfiguration(id, c);
+    this.plugins.setConfiguration(id, c);
   }
 }
 
@@ -90,7 +90,7 @@ export class AboutRefactorings implements Command {
 export function registerCommands(
   cs: Commands,
   host: Lazy<ServiceClientHost>,
-  plugs: Plugins
+  plugins: Plugins
 ) {
   cs.register(new ReloadProjects('typescript', host));
   cs.register(new ReloadProjects('javascript', host));
@@ -99,6 +99,6 @@ export function registerCommands(
   cs.register(new RestartServer('typescript', host));
   cs.register(new GoToProjectConfig('typescript', host));
   cs.register(new GoToProjectConfig('javascript', host));
-  cs.register(new ConfigPlugin('typescript', plugs));
+  cs.register(new ConfigPlugin('typescript', plugins));
   cs.register(new AboutRefactorings('typescript'));
 }

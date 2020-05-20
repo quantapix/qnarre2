@@ -4,19 +4,19 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import * as typeConverters from '../utils/convert';
 
 class TypeScriptReferenceSupport implements vscode.ReferenceProvider {
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async provideReferences(
     document: vscode.TextDocument,
     position: vscode.Position,
     options: vscode.ReferenceContext,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.Location[]> {
-    const filepath = this.client.toOpenedFilePath(document);
+    const filepath = this.client.toOpenedPath(document);
     if (!filepath) {
       return [];
     }
@@ -40,10 +40,7 @@ class TypeScriptReferenceSupport implements vscode.ReferenceProvider {
   }
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
-) {
+export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
   return vscode.languages.registerReferenceProvider(
     selector,
     new TypeScriptReferenceSupport(client)

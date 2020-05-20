@@ -40,35 +40,25 @@ export class ServerSpawner {
   public spawn(
     version: TypeScriptVersion,
     configuration: ServiceConfig,
-    pluginManager: Plugins,
+    plugins: Plugins,
     delegate: ServerDelegate
   ): IServer {
     let primaryServer: IServer;
     if (this.useSeparateSynServer(version, configuration)) {
       primaryServer = new SyntaxRouting(
         {
-          syntax: this.spawnServer(
-            ServerKind.Syntax,
-            version,
-            configuration,
-            pluginManager
-          ),
+          syntax: this.spawnServer(ServerKind.Syntax, version, configuration, plugins),
           semantic: this.spawnServer(
             ServerKind.Semantic,
             version,
             configuration,
-            pluginManager
+            plugins
           ),
         },
         delegate
       );
     } else {
-      primaryServer = this.spawnServer(
-        ServerKind.Main,
-        version,
-        configuration,
-        pluginManager
-      );
+      primaryServer = this.spawnServer(ServerKind.Main, version, configuration, plugins);
     }
     if (this.useSeparateDiagServer(configuration)) {
       return new GetErrRouting(
@@ -77,7 +67,7 @@ export class ServerSpawner {
             ServerKind.Diagnostics,
             version,
             configuration,
-            pluginManager
+            plugins
           ),
           primary: primaryServer,
         },
@@ -99,7 +89,7 @@ export class ServerSpawner {
     kind: ServerKind,
     version: TypeScriptVersion,
     configuration: ServiceConfig,
-    pluginManager: Plugins
+    plugins: Plugins
   ): IServer {
     const apiVersion = version.apiVersion || API.defaultVersion;
     const { args, cancellationPipeName, tsServerLogFile } = this.serverArgs(
@@ -107,7 +97,7 @@ export class ServerSpawner {
       configuration,
       version,
       apiVersion,
-      pluginManager
+      plugins
     );
     if (ServerSpawner.isLoggingEnabled(configuration)) {
       if (tsServerLogFile) this.logger.info(`<${kind}> Log file: ${tsServerLogFile}`);
@@ -149,7 +139,7 @@ export class ServerSpawner {
     configuration: ServiceConfig,
     currentVersion: TypeScriptVersion,
     apiVersion: API,
-    pluginManager: Plugins
+    plugins: Plugins
   ): {
     args: string[];
     cancellationPipeName: string;
@@ -183,11 +173,11 @@ export class ServerSpawner {
       }
     }
     const pluginPaths = this._pluginPathsProvider.getPluginPaths();
-    if (pluginManager.plugins.length) {
-      args.push('--globalPlugins', pluginManager.plugins.map((x) => x.name).join(','));
+    if (plugins.plugins.length) {
+      args.push('--globalPlugins', plugins.plugins.map((x) => x.name).join(','));
       const isUsingBundledTypeScriptVersion =
         currentVersion.path === this._versionProvider.defaultVersion.path;
-      for (const plugin of pluginManager.plugins) {
+      for (const plugin of plugins.plugins) {
         if (
           isUsingBundledTypeScriptVersion ||
           plugin.enableForWorkspaceTypeScriptVersions

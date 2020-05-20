@@ -1,21 +1,21 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
-import { ITypeScriptServiceClient } from '../service';
+import { IServiceClient } from '../service';
 import { coalesce } from '../utils';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 
 class Folding implements vscode.FoldingRangeProvider {
   static readonly minVersion = API.v280;
 
-  constructor(private readonly client: ITypeScriptServiceClient) {}
+  constructor(private readonly client: IServiceClient) {}
 
   async provideFoldingRanges(
     d: vscode.TextDocument,
     _: vscode.FoldingContext,
     ct: vscode.CancellationToken
   ): Promise<vscode.FoldingRange[] | undefined> {
-    const file = this.client.toOpenedFilePath(d);
+    const file = this.client.toOpenedPath(d);
     if (!file) return;
     const args: proto.FileRequestArgs = { file };
     const r = await this.client.execute('getOutliningSpans', args, ct);
@@ -61,7 +61,7 @@ class Folding implements vscode.FoldingRangeProvider {
 
 export function register(
   s: vscode.DocumentSelector,
-  c: ITypeScriptServiceClient
+  c: IServiceClient
 ): vscode.Disposable {
   return new VersionDependentRegistration(c, Folding.minVersion, () => {
     return vscode.languages.registerFoldingRangeProvider(s, new Folding(c));

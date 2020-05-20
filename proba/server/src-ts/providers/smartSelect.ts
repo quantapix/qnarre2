@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
 import * as typeConverters from '../utils/convert';
@@ -13,14 +13,14 @@ import * as typeConverters from '../utils/convert';
 class SmartSelection implements vscode.SelectionRangeProvider {
   public static readonly minVersion = API.v350;
 
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async provideSelectionRanges(
     document: vscode.TextDocument,
     positions: vscode.Position[],
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.SelectionRange[] | undefined> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return;
     }
@@ -48,10 +48,7 @@ class SmartSelection implements vscode.SelectionRangeProvider {
   }
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
-) {
+export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
   return new VersionDependentRegistration(client, SmartSelection.minVersion, () =>
     vscode.languages.registerSelectionRangeProvider(selector, new SmartSelection(client))
   );

@@ -1,18 +1,18 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { ITypeScriptServiceClient } from '../typescriptService';
+import { IServiceClient } from '../typescriptService';
 import { flatten } from '../utils/arrays';
 import * as typeConverters from '../utils/convert';
 
 class TypeScriptDocumentHighlightProvider implements vscode.DocumentHighlightProvider {
-  public constructor(private readonly client: ITypeScriptServiceClient) {}
+  public constructor(private readonly client: IServiceClient) {}
 
   public async provideDocumentHighlights(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken
+    ct: vscode.CancellationToken
   ): Promise<vscode.DocumentHighlight[]> {
-    const file = this.client.toOpenedFilePath(document);
+    const file = this.client.toOpenedPath(document);
     if (!file) {
       return [];
     }
@@ -48,10 +48,7 @@ function convertDocumentHighlight(
   );
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  client: ITypeScriptServiceClient
-) {
+export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
   return vscode.languages.registerDocumentHighlightProvider(
     selector,
     new TypeScriptDocumentHighlightProvider(client)

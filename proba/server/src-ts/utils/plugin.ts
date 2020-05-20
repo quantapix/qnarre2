@@ -23,22 +23,22 @@ namespace Plugin {
 
 export class Plugins extends Disposable {
   private readonly configs = new Map<string, {}>();
-  private plugs?: Map<string, ReadonlyArray<Plugin>>;
+  private plugins?: Map<string, ReadonlyArray<Plugin>>;
 
   constructor(private name: string) {
     super();
     vscode.extensions.onDidChange(
       () => {
-        if (!this.plugs) return;
+        if (!this.plugins) return;
         const ps = this.readPlugins();
         if (
           !qu.deepEquals(
-            qu.flatten(Array.from(this.plugs.values())),
+            qu.flatten(Array.from(this.plugins.values())),
             qu.flatten(Array.from(ps.values())),
             Plugin.equals
           )
         ) {
-          this.plugs = ps;
+          this.plugins = ps;
           this._onDidUpdatePlugins.fire(this);
         }
       },
@@ -57,8 +57,8 @@ export class Plugins extends Disposable {
   }
 
   public get plugins(): ReadonlyArray<Plugin> {
-    if (!this.plugs) this.plugs = this.readPlugins();
-    return qu.flatten(Array.from(this.plugs.values()));
+    if (!this.plugins) this.plugins = this.readPlugins();
+    return qu.flatten(Array.from(this.plugins.values()));
   }
 
   private readonly _onDidUpdatePlugins = this.register(new vscode.EventEmitter<this>());
@@ -71,7 +71,7 @@ export class Plugins extends Disposable {
 
   private readPlugins() {
     const n = this.name;
-    const plugs = new Map<string, ReadonlyArray<Plugin>>();
+    const plugins = new Map<string, ReadonlyArray<Plugin>>();
     for (const e of vscode.extensions.all) {
       const j = e.packageJSON;
       if (j.contributes && Array.isArray(j.contributes[`{n}Plugins`])) {
@@ -85,9 +85,9 @@ export class Plugins extends Disposable {
             configNamespace: p.configNamespace,
           });
         }
-        if (ps.length) plugs.set(e.id, ps);
+        if (ps.length) plugins.set(e.id, ps);
       }
     }
-    return plugs;
+    return plugins;
   }
 }
