@@ -501,9 +501,9 @@ export class ServiceClient extends Disposable implements IServiceClient {
     if (resendModels) {
       this._onResendModelsRequested.fire();
       this.bufferSync.reinitialize();
-      this.bufferSync.requestAllDiagnostics();
+      this.bufferSync.requestAllDiags();
     }
-    for (const [config, pluginName] of this.plugins.configurations()) {
+    for (const [config, pluginName] of this.plugins.configs()) {
       this.configurePlugin(config, pluginName);
     }
   }
@@ -743,6 +743,8 @@ export class ServiceClient extends Disposable implements IServiceClient {
 
   private dispatchEvent(event: Proto.Event) {
     const diagnosticEvent = event as Proto.DiagnosticEvent;
+    const body = (event as Proto.ProjectsUpdatedInBackgroundEvent).body;
+    const resources = body.openFiles.map((file) => this.toResource(file));
     switch (event.event) {
       case 'syntaxDiag':
       case 'semanticDiag':
@@ -773,8 +775,6 @@ export class ServiceClient extends Disposable implements IServiceClient {
         break;
       }
       case 'projectsUpdatedInBackground':
-        const body = (event as Proto.ProjectsUpdatedInBackgroundEvent).body;
-        const resources = body.openFiles.map((file) => this.toResource(file));
         this.bufferSync.getErr(resources);
         break;
       case 'beginInstallTypes':
@@ -806,9 +806,10 @@ export class ServiceClient extends Disposable implements IServiceClient {
 
   private dispatchTelemetryEvent(telemetryData: Proto.TelemetryEventBody): void {
     const properties: ObjectMap<string> = Object.create(null);
+    const typingsInstalledPayload: Proto.TypingsInstalledTelemetryEventPayload = telemetryData.payload as Proto.TypingsInstalledTelemetryEventPayload;
+    const payload = telemetryData.payload;
     switch (telemetryData.telemetryEventName) {
       case 'typingsInstalled':
-        const typingsInstalledPayload: Proto.TypingsInstalledTelemetryEventPayload = telemetryData.payload as Proto.TypingsInstalledTelemetryEventPayload;
         properties['installedPackages'] = typingsInstalledPayload.installedPackages;
         if (typeof typingsInstalledPayload.installSuccess === 'boolean') {
           properties[
@@ -821,7 +822,6 @@ export class ServiceClient extends Disposable implements IServiceClient {
         }
         break;
       default:
-        const payload = telemetryData.payload;
         if (payload) {
           Object.keys(payload).forEach((key) => {
             try {

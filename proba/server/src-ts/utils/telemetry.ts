@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import VsCodeTelemetryReporter from 'vscode-extension-telemetry';
-import { memoize } from './memoize';
+import { memoize } from '.';
 
 interface PackageInfo {
   readonly name: string;
@@ -23,19 +23,14 @@ export class VSCodeTelemetryReporter implements TelemetryReporter {
 
   constructor(private readonly clientVersionDelegate: () => string) {}
 
-  public logTelemetry(eventName: string, properties: { [prop: string]: string } = {}) {
+  logTelemetry(eventName: string, properties: { [prop: string]: string } = {}) {
     const reporter = this.reporter;
     if (!reporter) return;
-    /* __GDPR__FRAGMENT__
-			"TypeScriptCommonProperties" : {
-				"version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-			}
-		*/
     properties['version'] = this.clientVersionDelegate();
     reporter.sendTelemetryEvent(eventName, properties);
   }
 
-  public dispose() {
+  dispose() {
     if (this._reporter) {
       this._reporter.dispose();
       this._reporter = null;

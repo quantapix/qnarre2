@@ -1,14 +1,10 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import API from './api';
+import { API } from './api';
 import { ServiceConfig } from './configuration';
-import { PathResolver } from './relativePathResolver';
+import { PathResolver } from './extras';
 
 const localize = nls.loadMessageBundle();
 
@@ -60,7 +56,7 @@ export class TypeScriptVersion {
   public get displayName(): string {
     const version = this.apiVersion;
     return version
-      ? version.displayName
+      ? version.display
       : localize(
           'couldNotLoadTsVersion',
           'Could not load the TypeScript version at this path'

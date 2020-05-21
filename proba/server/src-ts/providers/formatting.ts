@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
 import { IServiceClient } from '../service';
-import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
+import { ConfigurationDependentRegistration } from '../utils/registration';
 import FileConfigs from './configs';
 
 class Formatting

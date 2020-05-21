@@ -8,7 +8,7 @@ import API from '../utils/api';
 import { nulToken } from '../utils/extras';
 import { applyCodeAction } from '../utils/codeAction';
 import { Command, Commands } from '../utils/extras';
-import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
+import { ConfigurationDependentRegistration } from '../utils/registration';
 import * as Previewer from '../utils/previewer';
 import { snippetForFunctionCall } from '../utils/snippetForFunctionCall';
 import { TelemetryReporter } from '../utils/telemetry';

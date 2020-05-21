@@ -3,7 +3,7 @@ import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
 import { IServiceClient } from '../service';
 import { coalesce } from '../utils';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 
 class Folding implements vscode.FoldingRangeProvider {
   static readonly minVersion = API.v280;

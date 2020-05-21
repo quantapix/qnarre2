@@ -4,7 +4,7 @@ import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
 import * as qc from '../utils/convert';
 import { IServiceClient } from '../service';
-import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
+import { ConfigurationDependentRegistration } from '../utils/registration';
 import { BaseCodeLens, RefsCodeLens, getSymbolRange } from './codeLens';
 import { CachedResponse } from '../server';
 

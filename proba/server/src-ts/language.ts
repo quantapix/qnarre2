@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { basename } from 'path';
 import * as vscode from 'vscode';
 import { CachedResponse } from './server';
@@ -179,7 +180,7 @@ export class LanguageProvider extends Disposable {
   }
 
   public triggerAllDiagnostics() {
-    this.client.bufferSync.requestAllDiagnostics();
+    this.client.bufferSync.requestAllDiags();
   }
 
   public diagnosticsReceived(

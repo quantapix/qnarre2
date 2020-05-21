@@ -7,7 +7,7 @@ import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { Command, Commands } from '../utils/extras';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 import * as fileSchemes from '../utils/fileSchemes';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/convert';

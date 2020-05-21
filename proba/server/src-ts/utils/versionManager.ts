@@ -39,7 +39,7 @@ export class Versions extends Disposable {
     }
   }
 
-  private readonly _onDidPickNewVersion = this._register(new vscode.EventEmitter<void>());
+  private readonly _onDidPickNewVersion = this.register(new vscode.EventEmitter<void>());
   public readonly onDidPickNewVersion = this._onDidPickNewVersion.event;
 
   public updateConfig(nextConfiguration: ServiceConfig) {

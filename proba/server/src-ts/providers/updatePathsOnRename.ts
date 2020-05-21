@@ -11,7 +11,7 @@ import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { Delayer } from '../utils/async';
 import { nulToken } from '../utils/cancellation';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 import { Disposable } from '../utils/disposable';
 import * as fileSchemes from '../utils/fileSchemes';
 import { doesResourceLookLikeATypeScriptFile } from '../utils/language';

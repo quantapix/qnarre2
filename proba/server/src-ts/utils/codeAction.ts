@@ -1,34 +1,32 @@
 import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
-import { IServiceClient } from '../typescriptService';
-import * as typeConverters from './convert';
+import type * as proto from '../protocol';
+import * as qc from './convert';
+import { IServiceClient } from '../service';
 
-export function getEditForCodeAction(client: IServiceClient, action: Proto.CodeAction) {
-  return action.changes && action.changes.length
-    ? typeConverters.WorkspaceEdit.fromFileCodeEdits(client, action.changes)
-    : undefined;
+export function getEditForCodeAction(c: IServiceClient, a: proto.CodeAction) {
+  return a.changes?.length ? qc.WorkspaceEdit.fromFileCodeEdits(c, a.changes) : undefined;
 }
 
 export async function applyCodeAction(
-  client: IServiceClient,
-  action: Proto.CodeAction,
+  c: IServiceClient,
+  a: proto.CodeAction,
   ct: vscode.CancellationToken
 ) {
-  const e = getEditForCodeAction(client, action);
+  const e = getEditForCodeAction(c, a);
   if (e) {
     if (!(await vscode.workspace.applyEdit(e))) return false;
   }
-  return applyCodeActionCommands(client, action.commands, token);
+  return applyCodeActionCommands(c, a.commands, ct);
 }
 
 export async function applyCodeActionCommands(
-  client: IServiceClient,
-  commands: ReadonlyArray<{}> | undefined,
+  c: IServiceClient,
+  cs: ReadonlyArray<{}> | undefined,
   ct: vscode.CancellationToken
 ) {
-  if (commands && commands.length) {
-    for (const command of commands) {
-      await client.execute('applyCodeActionCommand', { command }, token);
+  if (cs?.length) {
+    for (const command of cs) {
+      await c.execute('applyCodeActionCommand', { command }, ct);
     }
   }
   return true;

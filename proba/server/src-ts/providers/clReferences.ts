@@ -5,7 +5,7 @@ import * as cproto from '../protocol.const';
 import * as qc from '../utils/convert';
 import { CachedResponse } from '../server';
 import { IServiceClient } from '../service';
-import { ConfigurationDependentRegistration } from '../utils/dependentRegistration';
+import { ConfigurationDependentRegistration } from '../utils/registration';
 import { getSymbolRange, RefsCodeLens, BaseCodeLens } from './codeLens';
 
 const localize = nls.loadMessageBundle();

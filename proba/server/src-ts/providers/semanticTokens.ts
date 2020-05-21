@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { IServiceClient, ExecConfig, ServerResponse } from '../typescriptService';
 import * as Proto from '../protocol';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 import API from '../utils/api';
 
 // all constants are const

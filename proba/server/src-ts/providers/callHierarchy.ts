@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { IServiceClient } from '../service';
 import * as qc from '../utils/convert';
 import { API } from '../utils/api';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 import type * as proto from '../protocol';
 import * as path from 'path';
 import * as cproto from '../protocol.const';

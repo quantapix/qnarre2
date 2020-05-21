@@ -1,18 +1,19 @@
 import * as vscode from 'vscode';
-import { Disposable } from './disposable';
+import { Disposable } from './extras';
 import { isJsConfigOrTsConfigFileName } from './language';
-import { isSupportedLanguageMode } from './languageModeIds';
+import { isSupportedLanguageMode } from './language';
 
 export class ManagedFileContextManager extends Disposable {
   private static readonly contextName = 'typescript.isManagedFile';
 
   private isInManagedFileContext = false;
 
-  public constructor(
+  constructor(
     private readonly normalizePath: (resource: vscode.Uri) => string | undefined
   ) {
     super();
     vscode.window.onDidChangeActiveTextEditor(
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       this.onDidChangeActiveTextEditor,
       this,
       this.dispos
@@ -20,7 +21,7 @@ export class ManagedFileContextManager extends Disposable {
     this.onDidChangeActiveTextEditor(vscode.window.activeTextEditor);
   }
 
-  private onDidChangeActiveTextEditor(e?: vscode.TextEditor): any {
+  private onDidChangeActiveTextEditor(e?: vscode.TextEditor) {
     if (e) this.updateContext(this.isManagedFile(e));
   }
 

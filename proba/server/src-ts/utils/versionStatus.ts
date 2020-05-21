@@ -113,7 +113,7 @@ class ProjectStatusCommand implements Command {
             info.configFile
           );
         } else if (info.type === ProjectInfoState.Type.Pending) {
-          openProjectConfigForFile(ProjectType.TypeScript, this.client, info.resource);
+          openProjectConfigForFile(ProjectType.TypeScript, this.client, info.uri);
         }
       },
     };
@@ -139,16 +139,14 @@ export class VersionStatus extends Disposable {
   constructor(private readonly client: IServiceClient, cmds: Commands) {
     super();
     this._statusBarEntry = this.register(
-      vscode.window.createStatusBarItem({
-        id: 'status.typescript',
-        name: localize('projectInfo.name', 'TypeScript: Project Info'),
-        alignment: vscode.StatusBarAlignment.Right,
-        priority: 99,
-      })
+      vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99)
     );
+    //id: 'status.typescript',
+    //name: localize('projectInfo.name', 'TypeScript: Project Info'),
     const c = new ProjectStatusCommand(this.client, () => this._state);
     cmds.register(c);
     this._statusBarEntry.command = c.id;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     vscode.window.onDidChangeActiveTextEditor(this.updateStatus, this, this.dispos);
     this.client.onReady(() => {
       this._ready = true;

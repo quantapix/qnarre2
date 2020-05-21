@@ -9,7 +9,7 @@ import type * as Proto from '../protocol';
 import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { Command, Commands } from '../utils/extras';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 import * as typeconverts from '../utils/convert';
 import FileConfigs from './configs';
 import { TelemetryReporter } from '../utils/telemetry';

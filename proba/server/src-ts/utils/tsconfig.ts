@@ -129,7 +129,7 @@ export async function openProjectConfigForFile(
     return;
   }
   const file = client.toPath(resource);
-  if (!file || !(await client.toPath(resource))) {
+  if (!file || !client.toPath(resource)) {
     vscode.window.showWarningMessage(
       localize(
         'typescript.pcUnsupportedFile',

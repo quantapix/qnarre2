@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import { IServiceClient } from '../service';
 import { API } from '../utils/api';
-import { VersionDependentRegistration } from '../utils/dependentRegistration';
+import { VersionDependentRegistration } from '../utils/registration';
 import * as qc from '../utils/convert';
 
 class SmartSelection implements vscode.SelectionRangeProvider {

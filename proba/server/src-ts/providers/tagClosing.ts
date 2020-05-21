@@ -11,7 +11,7 @@ import {
   ConditionalRegistration,
   ConfigurationDependentRegistration,
   VersionDependentRegistration,
-} from '../utils/dependentRegistration';
+} from '../utils/registration';
 import { Disposable } from '../utils/disposable';
 import * as typeConverters from '../utils/convert';
 
