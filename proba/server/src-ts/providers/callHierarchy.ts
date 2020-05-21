@@ -1,22 +1,22 @@
-import * as vscode from 'vscode';
-import { IServiceClient } from '../service';
-import * as qc from '../utils/convert';
-import { API } from '../utils/api';
-import { VersionDependentRegistration } from '../utils/registration';
-import type * as proto from '../protocol';
-import * as path from 'path';
 import * as cproto from '../protocol.const';
+import * as path from 'path';
+import * as vsc from 'vscode';
+import type * as proto from '../protocol';
 
-class CallHierarchy implements vscode.CallHierarchyProvider {
-  static readonly minVersion = API.v380;
+import * as qc from '../utils/convert';
+import * as qr from '../utils/registration';
+import * as qs from '../service';
 
-  constructor(private readonly client: IServiceClient) {}
+class CallHierarchy implements vsc.CallHierarchyProvider {
+  static readonly minApi = qr.API.default;
+
+  constructor(private readonly client: qs.IServiceClient) {}
 
   async prepareCallHierarchy(
-    d: vscode.TextDocument,
-    p: vscode.Position,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.CallHierarchyItem | vscode.CallHierarchyItem[] | undefined> {
+    d: vsc.TextDocument,
+    p: vsc.Position,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.CallHierarchyItem | vsc.CallHierarchyItem[] | undefined> {
     const f = this.client.toOpenedPath(d);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, p);
@@ -26,27 +26,27 @@ class CallHierarchy implements vscode.CallHierarchyProvider {
   }
 
   async provideCallHierarchyIncomingCalls(
-    i: vscode.CallHierarchyItem,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.CallHierarchyIncomingCall[] | undefined> {
+    i: vsc.CallHierarchyItem,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.CallHierarchyIncomingCall[] | undefined> {
     const f = this.client.toPath(i.uri);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, i.selectionRange.start);
     const r = await this.client.execute('provideCallHierarchyIncomingCalls', args, ct);
     if (r.type !== 'response' || !r.body) return;
-    return r.body.map(fromIncomingCall);
+    return r.body.map(fromIncoming);
   }
 
   async provideCallHierarchyOutgoingCalls(
-    i: vscode.CallHierarchyItem,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.CallHierarchyOutgoingCall[] | undefined> {
+    i: vsc.CallHierarchyItem,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.CallHierarchyOutgoingCall[] | undefined> {
     const f = this.client.toPath(i.uri);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, i.selectionRange.start);
     const r = await this.client.execute('provideCallHierarchyOutgoingCalls', args, ct);
     if (r.type !== 'response' || !r.body) return;
-    return r.body.map(fromOutgoingCall);
+    return r.body.map(fromOutgoing);
   }
 }
 
@@ -62,33 +62,33 @@ function isSource(i: proto.CallHierarchyItem) {
 function fromProtocol(i: proto.CallHierarchyItem) {
   const src = isSource(i);
   const n = src ? path.basename(i.file) : i.name;
-  const detail = src ? vscode.workspace.asRelativePath(path.dirname(i.file)) : '';
-  return new vscode.CallHierarchyItem(
+  const detail = src ? vsc.workspace.asRelativePath(path.dirname(i.file)) : '';
+  return new vsc.CallHierarchyItem(
     qc.SymbolKind.fromScriptElem(i.kind),
     name,
     detail,
-    vscode.Uri.file(i.file),
+    vsc.Uri.file(i.file),
     qc.Range.fromTextSpan(i.span),
     qc.Range.fromTextSpan(i.selectionSpan)
   );
 }
 
-function fromIncomingCall(c: proto.CallHierarchyIncomingCall) {
-  return new vscode.CallHierarchyIncomingCall(
+function fromIncoming(c: proto.CallHierarchyIncomingCall) {
+  return new vsc.CallHierarchyIncomingCall(
     fromProtocol(c.from),
     c.fromSpans.map(qc.Range.fromTextSpan)
   );
 }
 
-function fromOutgoingCall(c: proto.CallHierarchyOutgoingCall) {
-  return new vscode.CallHierarchyOutgoingCall(
+function fromOutgoing(c: proto.CallHierarchyOutgoingCall) {
+  return new vsc.CallHierarchyOutgoingCall(
     fromProtocol(c.to),
     c.fromSpans.map(qc.Range.fromTextSpan)
   );
 }
 
-export function register(s: vscode.DocumentSelector, c: IServiceClient) {
-  return new VersionDependentRegistration(c, CallHierarchy.minVersion, () =>
-    vscode.languages.registerCallHierarchyProvider(s, new CallHierarchy(c))
+export function register(s: vsc.DocumentSelector, c: qs.IServiceClient) {
+  return new qr.VersionDependent(c, CallHierarchy.minApi, () =>
+    vsc.languages.registerCallHierarchyProvider(s, new CallHierarchy(c))
   );
 }

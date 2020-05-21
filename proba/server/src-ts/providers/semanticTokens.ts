@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { IServiceClient, ExecConfig, ServerResponse } from '../typescriptService';
 import * as Proto from '../protocol';
-import { VersionDependentRegistration } from '../utils/registration';
+import { VersionDependent } from '../utils/registration';
 import API from '../utils/api';
 
 // all constants are const
@@ -25,7 +25,7 @@ const minTypeScriptVersion = API.fromVersionString(
 const CONTENT_LENGTH_LIMIT = 100000;
 
 export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
-  return new VersionDependentRegistration(client, minTypeScriptVersion, () => {
+  return new VersionDependent(client, minTypeScriptVersion, () => {
     const provider = new DocumentSemanticTokensProvider(client);
     return vscode.Disposable.from(
       // register only as a range provider

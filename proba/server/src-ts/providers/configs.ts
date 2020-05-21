@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import API from '../utils/api';
 import * as fileSchemes from '../utils/fileSchemes';
 import { isTypeScriptDocument } from '../utils/languageModeIds';
@@ -186,7 +186,7 @@ export class FileConfigs extends Disposable {
   }
 
   private getPreferences(document: vscode.TextDocument): Proto.UserPreferences {
-    if (this.client.apiVersion.lt(API.v290)) {
+    if (this.client.api.lt(API.v290)) {
       return {};
     }
 
@@ -232,7 +232,7 @@ export class FileConfigs extends Disposable {
       case 'double':
         return 'double';
       default:
-        return this.client.apiVersion.gte(API.v333) ? 'auto' : undefined;
+        return this.client.api.gte(API.v333) ? 'auto' : undefined;
     }
   }
 }

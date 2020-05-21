@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
 import type * as proto from '../protocol';
-import { IServiceClient } from '../service';
-import { coalesce } from '../utils';
-import { Delayer, Disposable, nulToken, ResourceMap } from '../utils/extras';
-import * as languageModeIds from '../utils/language';
+
 import * as qc from '../utils/convert';
+import * as ql from '../utils/language';
+import * as qs from '../service';
+import * as qu from '../utils';
+import * as qx from '../utils/extras';
 
 const enum Kind {
   TypeScript = 1,
@@ -16,20 +17,6 @@ const enum State {
   Initial = 1,
   Open = 2,
   Closed = 2,
-}
-
-function mode2Kind(mode: string): 'TS' | 'TSX' | 'JS' | 'JSX' | undefined {
-  switch (mode) {
-    case languageModeIds.typescript:
-      return 'TS';
-    case languageModeIds.typescriptreact:
-      return 'TSX';
-    case languageModeIds.javascript:
-      return 'JS';
-    case languageModeIds.javascriptreact:
-      return 'JSX';
-  }
-  return;
 }
 
 const enum OpType {
@@ -56,19 +43,19 @@ class ChangeOp {
 type BufferOp = CloseOp | OpenOp | ChangeOp;
 
 class Synchronizer {
-  private readonly pending = new ResourceMap<BufferOp>();
+  private readonly pending = new qx.ResourceMap<BufferOp>();
 
-  constructor(private readonly client: IServiceClient) {}
+  constructor(private readonly client: qs.IServiceClient) {}
 
-  open(r: vscode.Uri, args: proto.OpenRequestArgs) {
+  open(r: vsc.Uri, args: proto.OpenRequestArgs) {
     this.update(r, new OpenOp(args));
   }
 
-  close(r: vscode.Uri, filepath: string) {
+  close(r: vsc.Uri, filepath: string) {
     return this.update(r, new CloseOp(filepath));
   }
 
-  change(r: vscode.Uri, f: string, es: readonly vscode.TextDocumentContentChangeEvent[]) {
+  change(r: vsc.Uri, f: string, es: readonly vsc.TextDocumentContentChangeEvent[]) {
     if (!es.length) return;
     this.update(
       r,
@@ -117,14 +104,14 @@ class Synchronizer {
       this.client.execute(
         'updateOpen',
         { changedFiles, closedFiles, openFiles },
-        nulToken,
+        qx.nulToken,
         { nonRecoverable: true }
       );
       this.pending.clear();
     }
   }
 
-  private update(r: vscode.Uri, op: BufferOp) {
+  private update(r: vsc.Uri, op: BufferOp) {
     const existing = this.pending.get(r);
     switch (op.type) {
       case OpType.Close:
@@ -145,9 +132,9 @@ class Buffer {
   private state = State.Initial;
 
   constructor(
-    private readonly doc: vscode.TextDocument,
+    private readonly doc: vsc.TextDocument,
     public readonly filepath: string,
-    private readonly client: IServiceClient,
+    private readonly client: qs.IServiceClient,
     private readonly sync: Synchronizer
   ) {}
 
@@ -179,11 +166,11 @@ class Buffer {
 
   get kind(): Kind {
     switch (this.doc.languageId) {
-      case languageModeIds.javascript:
-      case languageModeIds.javascriptreact:
+      case ql.javascript:
+      case ql.javascriptreact:
         return Kind.JavaScript;
-      case languageModeIds.typescript:
-      case languageModeIds.typescriptreact:
+      case ql.typescript:
+      case ql.typescriptreact:
       default:
         return Kind.TypeScript;
     }
@@ -198,7 +185,7 @@ class Buffer {
     return this.sync.close(this.resource, this.filepath);
   }
 
-  onContentChanged(es: readonly vscode.TextDocumentContentChangeEvent[]) {
+  onContentChanged(es: readonly vsc.TextDocumentContentChangeEvent[]) {
     if (this.state !== State.Open) {
       console.error(`Unexpected state: ${this.state}`);
     }
@@ -206,21 +193,35 @@ class Buffer {
   }
 }
 
-class BufferMap extends ResourceMap<Buffer> {
+function mode2Kind(mode: string): 'TS' | 'TSX' | 'JS' | 'JSX' | undefined {
+  switch (mode) {
+    case ql.typescript:
+      return 'TS';
+    case ql.typescriptreact:
+      return 'TSX';
+    case ql.javascript:
+      return 'JS';
+    case ql.javascriptreact:
+      return 'JSX';
+  }
+  return;
+}
+
+class BufferMap extends qx.ResourceMap<Buffer> {
   forPath(p: string) {
-    return this.get(vscode.Uri.file(p));
+    return this.get(vsc.Uri.file(p));
   }
   get allBuffers() {
     return this.values;
   }
 }
 
-class Diags extends ResourceMap<number> {
-  orderedFiles(): ResourceMap<void> {
+class Diags extends qx.ResourceMap<number> {
+  orderedFiles(): qx.ResourceMap<void> {
     const rs = Array.from(this.entries)
       .sort((a, b) => a.value - b.value)
       .map((entry) => entry.resource);
-    const m = new ResourceMap<void>();
+    const m = new qx.ResourceMap<void>();
     for (const r of rs) {
       m.set(r, undefined);
     }
@@ -230,22 +231,22 @@ class Diags extends ResourceMap<number> {
 
 class GetErrRequest {
   static executeGetErrRequest(
-    client: IServiceClient,
-    files: ResourceMap<void>,
+    client: qs.IServiceClient,
+    files: qx.ResourceMap<void>,
     onDone: () => void
   ) {
     return new GetErrRequest(client, files, onDone);
   }
 
   private done = false;
-  private readonly ct: vscode.CancellationTokenSource = new vscode.CancellationTokenSource();
+  private readonly ct: vsc.CancellationTokenSource = new vsc.CancellationTokenSource();
 
   private constructor(
-    client: IServiceClient,
-    public readonly files: ResourceMap<void>,
+    client: qs.IServiceClient,
+    public readonly files: qx.ResourceMap<void>,
     onDone: () => void
   ) {
-    const fs = coalesce(
+    const fs = qu.coalesce(
       Array.from(files.entries).map((e) => client.toNormPath(e.resource))
     );
     if (!fs.length) {
@@ -273,49 +274,45 @@ class GetErrRequest {
   }
 }
 
-export class BufferSync extends Disposable {
+export class BufferSync extends qx.Disposable {
   private validateJs = true;
   private validateTs = true;
   private readonly modes: Set<string>;
   private readonly bufs: BufferMap;
   private readonly diags: Diags;
-  private readonly delayer = new Delayer<any>(300);
+  private readonly delayer = new qx.Delayer<any>(300);
   private pendingGetErr: GetErrRequest | undefined;
   private listening = false;
   private readonly sync: Synchronizer;
 
-  constructor(private readonly client: IServiceClient, modes: readonly string[]) {
+  constructor(private readonly client: qs.IServiceClient, modes: readonly string[]) {
     super();
     this.modes = new Set<string>(modes);
-    const n = (r: vscode.Uri) => this.client.toNormPath(r);
+    const n = (r: vsc.Uri) => this.client.toNormPath(r);
     this.bufs = new BufferMap(n);
     this.diags = new Diags(n);
     this.sync = new Synchronizer(client);
     this.updateConfig();
-    vscode.workspace.onDidChangeConfiguration(this.updateConfig, this, this.dispos);
+    vsc.workspace.onDidChangeConfiguration(this.updateConfig, this, this.dispos);
   }
 
-  private readonly _onDelete = this.register(new vscode.EventEmitter<vscode.Uri>());
+  private readonly _onDelete = this.register(new vsc.EventEmitter<vsc.Uri>());
   readonly onDelete = this._onDelete.event;
 
-  private readonly _onWillChange = this.register(new vscode.EventEmitter<vscode.Uri>());
+  private readonly _onWillChange = this.register(new vsc.EventEmitter<vsc.Uri>());
   readonly onWillChange = this._onWillChange.event;
 
   listen() {
     if (this.listening) return;
     this.listening = true;
-    vscode.workspace.onDidOpenTextDocument(this.openTextDocument, this, this.dispos);
-    vscode.workspace.onDidCloseTextDocument(
-      this.onDidCloseTextDocument,
-      this,
-      this.dispos
-    );
-    vscode.workspace.onDidChangeTextDocument(
+    vsc.workspace.onDidOpenTextDocument(this.openTextDocument, this, this.dispos);
+    vsc.workspace.onDidCloseTextDocument(this.onDidCloseTextDocument, this, this.dispos);
+    vsc.workspace.onDidChangeTextDocument(
       this.onDidChangeTextDocument,
       this,
       this.dispos
     );
-    vscode.window.onDidChangeVisibleTextEditors(
+    vsc.window.onDidChangeVisibleTextEditors(
       (e) => {
         for (const { document } of e) {
           const b = this.bufs.get(document.uri);
@@ -325,23 +322,21 @@ export class BufferSync extends Disposable {
       this,
       this.dispos
     );
-    vscode.workspace.textDocuments.forEach(this.openTextDocument, this);
+    vsc.workspace.textDocuments.forEach(this.openTextDocument, this);
   }
 
-  handles(r: vscode.Uri) {
+  handles(r: vsc.Uri) {
     return this.bufs.has(r);
   }
 
-  ensureHasBuffer(r: vscode.Uri) {
+  ensureHasBuffer(r: vsc.Uri) {
     if (this.bufs.has(r)) return true;
-    const t = vscode.workspace.textDocuments.find(
-      (d) => d.uri.toString() === r.toString()
-    );
+    const t = vsc.workspace.textDocuments.find((d) => d.uri.toString() === r.toString());
     if (t) return this.openTextDocument(t);
     return false;
   }
 
-  toVsCodeResource(r: vscode.Uri) {
+  toVsCodeResource(r: vsc.Uri) {
     const p = this.client.toNormPath(r);
     for (const b of this.bufs.allBuffers) {
       if (b.filepath === p) return b.resource;
@@ -352,7 +347,7 @@ export class BufferSync extends Disposable {
   toResource(p: string) {
     const b = this.bufs.forPath(p);
     if (b) return b.resource;
-    return vscode.Uri.file(p);
+    return vsc.Uri.file(p);
   }
 
   reset() {
@@ -368,7 +363,7 @@ export class BufferSync extends Disposable {
     }
   }
 
-  openTextDocument(d: vscode.TextDocument) {
+  openTextDocument(d: vsc.TextDocument) {
     if (!this.modes.has(d.languageId)) return false;
     const r = d.uri;
     const p = this.client.toNormPath(r);
@@ -381,7 +376,7 @@ export class BufferSync extends Disposable {
     return true;
   }
 
-  closeResource(r: vscode.Uri) {
+  closeResource(r: vsc.Uri) {
     const b = this.bufs.get(r);
     if (!b) return;
     this.diags.delete(r);
@@ -407,11 +402,11 @@ export class BufferSync extends Disposable {
     this.sync.beforeCommand(c);
   }
 
-  private onDidCloseTextDocument(d: vscode.TextDocument) {
+  private onDidCloseTextDocument(d: vsc.TextDocument) {
     this.closeResource(d.uri);
   }
 
-  private onDidChangeTextDocument(e: vscode.TextDocumentChangeEvent) {
+  private onDidChangeTextDocument(e: vsc.TextDocumentChangeEvent) {
     const b = this.bufs.get(e.document.uri);
     if (!b) return;
     this._onWillChange.fire(b.resource);
@@ -430,7 +425,7 @@ export class BufferSync extends Disposable {
     this.triggerDiags();
   }
 
-  getErr(rs: vscode.Uri[]): any {
+  getErr(rs: vsc.Uri[]): any {
     const hr = rs.filter((r) => this.handles(r));
     if (!hr.length) return;
     for (const r of hr) {
@@ -453,7 +448,7 @@ export class BufferSync extends Disposable {
     return true;
   }
 
-  hasDiags(r: vscode.Uri) {
+  hasDiags(r: vsc.Uri) {
     return this.diags.has(r);
   }
 
@@ -482,8 +477,8 @@ export class BufferSync extends Disposable {
   }
 
   private updateConfig() {
-    const js = vscode.workspace.getConfiguration('javascript', null);
-    const ts = vscode.workspace.getConfiguration('typescript', null);
+    const js = vsc.workspace.getConfiguration('javascript', null);
+    const ts = vsc.workspace.getConfiguration('typescript', null);
     this.validateJs = js.get<boolean>('validate.enable', true);
     this.validateTs = ts.get<boolean>('validate.enable', true);
   }

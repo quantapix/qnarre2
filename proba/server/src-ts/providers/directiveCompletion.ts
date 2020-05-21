@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-regexp-exec */
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 
 const localize = nls.loadMessageBundle();
 

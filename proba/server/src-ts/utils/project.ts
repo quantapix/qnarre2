@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { loadMessageBundle } from 'vscode-nls';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import { TelemetryReporter } from './telemetry';
 import { isImplicitConfig, openOrCreateConfig, ProjectType } from './tsconfig';
 

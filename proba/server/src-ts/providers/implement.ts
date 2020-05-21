@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import DefBase from './definition';
 
 class Implementation extends DefBase implements vscode.ImplementationProvider {

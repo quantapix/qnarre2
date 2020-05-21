@@ -7,7 +7,7 @@ import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { Command, Commands } from '../utils/extras';
-import { VersionDependentRegistration } from '../utils/registration';
+import { VersionDependent } from '../utils/registration';
 import * as fileSchemes from '../utils/fileSchemes';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/convert';
@@ -391,15 +391,11 @@ export function register(
   cmds: Commands,
   telemetry: TelemetryReporter
 ) {
-  return new VersionDependentRegistration(
-    c,
-    TypeScriptRefactorProvider.minVersion,
-    () => {
-      return vscode.languages.registerCodeActionsProvider(
-        s,
-        new TypeScriptRefactorProvider(c, formats, cmds, telemetry),
-        TypeScriptRefactorProvider.metadata
-      );
-    }
-  );
+  return new VersionDependent(c, TypeScriptRefactorProvider.minVersion, () => {
+    return vscode.languages.registerCodeActionsProvider(
+      s,
+      new TypeScriptRefactorProvider(c, formats, cmds, telemetry),
+      TypeScriptRefactorProvider.metadata
+    );
+  });
 }

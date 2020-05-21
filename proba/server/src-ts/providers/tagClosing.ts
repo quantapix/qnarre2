@@ -7,11 +7,7 @@ import * as vscode from 'vscode';
 import type * as Proto from '../protocol';
 import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
-import {
-  ConditionalRegistration,
-  ConfigurationDependentRegistration,
-  VersionDependentRegistration,
-} from '../utils/registration';
+import { Conditional, ConfigDependent, VersionDependent } from '../utils/registration';
 import { Disposable } from '../utils/disposable';
 import * as typeConverters from '../utils/convert';
 
@@ -158,14 +154,14 @@ class TagClosing extends Disposable {
 }
 
 export class ActiveDocumentDependentRegistration extends Disposable {
-  private readonly _registration: ConditionalRegistration;
+  private readonly _registration: Conditional;
 
   constructor(
     private readonly selector: vscode.DocumentSelector,
     register: () => vscode.Disposable
   ) {
     super();
-    this._registration = this._register(new ConditionalRegistration(register));
+    this._registration = this._register(new Conditional(register));
     vscode.window.onDidChangeActiveTextEditor(this.update, this, this._disposables);
     vscode.workspace.onDidOpenTextDocument(
       this.onDidOpenDocument,
@@ -197,11 +193,11 @@ export function register(
   modeId: string,
   client: IServiceClient
 ) {
-  return new VersionDependentRegistration(
+  return new VersionDependent(
     client,
     TagClosing.minVersion,
     () =>
-      new ConfigurationDependentRegistration(
+      new ConfigDependent(
         modeId,
         'autoClosingTags',
         () =>

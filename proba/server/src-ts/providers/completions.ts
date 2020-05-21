@@ -8,7 +8,7 @@ import API from '../utils/api';
 import { nulToken } from '../utils/extras';
 import { applyCodeAction } from '../utils/codeAction';
 import { Command, Commands } from '../utils/extras';
-import { ConfigurationDependentRegistration } from '../utils/registration';
+import { ConfigDependent } from '../utils/registration';
 import * as Previewer from '../utils/previewer';
 import { snippetForFunctionCall } from '../utils/snippetForFunctionCall';
 import { TelemetryReporter } from '../utils/telemetry';
@@ -463,7 +463,7 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider 
     let dotAccessorContext: DotAccessorContext | undefined;
     let entries: ReadonlyArray<proto.CompletionEntry>;
     let metadata: any | undefined;
-    if (this.client.apiVersion.gte(API.v300)) {
+    if (this.client.api.gte(API.v300)) {
       const startTime = Date.now();
       let response: ServerResponse.Response<proto.CompletionInfoResponse> | undefined;
       try {
@@ -524,7 +524,7 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider 
       line: line.text,
       useCodeSnippetsOnMethodSuggest:
         completionConfiguration.useCodeSnippetsOnMethodSuggest,
-      useFuzzyWordRangeLogic: this.client.apiVersion.lt(API.v390),
+      useFuzzyWordRangeLogic: this.client.api.lt(API.v390),
     };
     const items: MyCompletionItem[] = [];
     for (const e of entries) {
@@ -542,11 +542,11 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider 
   ): proto.CompletionsTriggerCharacter | undefined {
     switch (context.triggerCharacter) {
       case '@': // Workaround for https://github.com/Microsoft/TypeScript/issues/27321
-        return this.client.apiVersion.gte(API.v310) && this.client.apiVersion.lt(API.v320)
+        return this.client.api.gte(API.v310) && this.client.api.lt(API.v320)
           ? undefined
           : '@';
       case '#': // Workaround for https://github.com/microsoft/TypeScript/issues/36367
-        return this.client.apiVersion.lt(API.v381) ? undefined : '#';
+        return this.client.api.lt(API.v381) ? undefined : '#';
       case '.':
       case '"':
       case "'":
@@ -675,7 +675,7 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider 
     document: vscode.TextDocument,
     position: vscode.Position
   ): boolean {
-    if (this.client.apiVersion.lt(API.v320)) {
+    if (this.client.api.lt(API.v320)) {
       if (position.character > 1) {
         const preText = document.getText(
           new vscode.Range(position.line, 0, position.line, position.character)
@@ -691,7 +691,7 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider 
     line: vscode.TextLine,
     position: vscode.Position
   ): boolean {
-    if (context.triggerCharacter && this.client.apiVersion.lt(API.v290)) {
+    if (context.triggerCharacter && this.client.api.lt(API.v290)) {
       if (context.triggerCharacter === '"' || context.triggerCharacter === "'") {
         const pre = line.text.slice(0, position.character);
         if (
@@ -790,7 +790,7 @@ export function register(
   telemetry: TelemetryReporter,
   onCompletionAccepted: (_: vscode.CompletionItem) => void
 ) {
-  return new ConfigurationDependentRegistration(mode, 'suggest.enabled', () =>
+  return new ConfigDependent(mode, 'suggest.enabled', () =>
     vscode.languages.registerCompletionItemProvider(
       s,
       new TypeScriptCompletionItemProvider(

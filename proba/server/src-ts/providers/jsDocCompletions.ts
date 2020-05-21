@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { IServiceClient } from '../typescriptService';
-import { ConfigurationDependentRegistration } from '../utils/registration';
+import { ConfigDependent } from '../utils/registration';
 import * as typeConverters from '../utils/convert';
 
 const localize = nls.loadMessageBundle();
@@ -119,7 +119,7 @@ export function register(
   modeId: string,
   client: IServiceClient
 ): vscode.Disposable {
-  return new ConfigurationDependentRegistration(modeId, 'suggest.completeJSDocs', () => {
+  return new ConfigDependent(modeId, 'suggest.completeJSDocs', () => {
     return vscode.languages.registerCompletionItemProvider(
       selector,
       new JsDocCompletionProvider(client),

@@ -54,7 +54,7 @@ namespace ServerState {
     readonly toCancels = new Set<ToCancel>();
     constructor(
       public readonly server: IServer,
-      public readonly apiVersion: API,
+      public readonly api: API,
       public version: string | undefined,
       public serviceEnabled: boolean
     ) {}
@@ -183,7 +183,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
             return this.serverState.version;
           }
         }
-        return this.apiVersion.fullVersion;
+        return this.api.fullVersion;
       })
     );
 
@@ -286,9 +286,9 @@ export class ServiceClient extends Disposable implements IServiceClient {
   );
   readonly onSurveyReady = this._onSurveyReady.event;
 
-  get apiVersion(): API {
+  get api(): API {
     if (this.serverState.type === ServerState.Type.Running) {
-      return this.serverState.apiVersion;
+      return this.serverState.api;
     }
     return API.defaultVersion;
   }
@@ -356,12 +356,12 @@ export class ServiceClient extends Disposable implements IServiceClient {
       version = this._versionManager.currentVersion;
     }
 
-    const apiVersion = version.apiVersion || API.defaultVersion;
+    const api = version.api || API.defaultVersion;
     const mytoken = ++this.token;
     const handle = this.spawner.spawn(version, this.configuration, this.plugins, {
       onFatalError: (command, err) => this.fatalError(command, err),
     });
-    this.serverState = new ServerState.Running(handle, apiVersion, undefined, true);
+    this.serverState = new ServerState.Running(handle, api, undefined, true);
     this.onDidChangeTypeScriptVersion(version);
     this.lastStart = Date.now();
     this.logTelemetry('tsserver.spawned', {
@@ -409,7 +409,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
     handle.onEvent((event) => this.dispatchEvent(event));
 
     this._onReady!.resolve();
-    this._onServerStarted.fire(apiVersion);
+    this._onServerStarted.fire(api);
     this.loadingIndicator.startedLoadingProject(undefined /* projectName */);
 
     this.serviceStarted(resendModels);
@@ -860,7 +860,7 @@ function getReportIssueArgsForError(
     extensionId: 'vscode.typescript-language-features',
     issueTitle: `TS Server fatal error:  ${e.message}`,
 
-    issueBody: `**TypeScript Version:** ${e.version.apiVersion?.fullVersion}
+    issueBody: `**TypeScript Version:** ${e.version.api?.fullVersion}
 
 **Steps to reproduce crash**
 

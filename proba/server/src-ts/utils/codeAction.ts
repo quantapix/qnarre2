@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as qc from './convert';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 
 export function getEditForCodeAction(c: IServiceClient, a: proto.CodeAction) {
   return a.changes?.length ? qc.WorkspaceEdit.fromFileCodeEdits(c, a.changes) : undefined;

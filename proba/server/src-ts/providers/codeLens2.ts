@@ -1,20 +1,21 @@
-import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
-import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
+import * as nls from 'vscode-nls';
+import * as vsc from 'vscode';
+import type * as proto from '../protocol';
+
 import * as qc from '../utils/convert';
-import { IServiceClient } from '../service';
-import { ConfigurationDependentRegistration } from '../utils/registration';
-import { BaseCodeLens, RefsCodeLens, getSymbolRange } from './codeLens';
+import * as qs from '../service';
+import * as qr from '../utils/registration';
+import { CodeLens, RefsCodeLens, symbolRange } from './codeLens';
 import { CachedResponse } from '../server';
 
 const localize = nls.loadMessageBundle();
 
-class Implementations extends BaseCodeLens {
+class Implements extends CodeLens {
   public async resolveCodeLens(
-    inp: vscode.CodeLens,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.CodeLens> {
+    inp: vsc.CodeLens,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.CodeLens> {
     const cl = inp as RefsCodeLens;
     const args = qc.Position.toFileLocationRequestArgs(cl.file, cl.range.start);
     const r = await this.client.execute('implementation', args, ct, {
@@ -22,19 +23,19 @@ class Implementations extends BaseCodeLens {
       cancelOnResourceChange: cl.doc,
     });
     if (r.type !== 'response' || !r.body) {
-      cl.command = r.type === 'cancelled' ? BaseCodeLens.cancelled : BaseCodeLens.error;
+      cl.command = r.type === 'cancelled' ? CodeLens.cancelled : CodeLens.error;
       return cl;
     }
     const ls = r.body
       .map(
         (r) =>
-          new vscode.Location(
+          new vsc.Location(
             this.client.toResource(r.file),
             r.start.line === r.end.line
               ? qc.Range.fromTextSpan(r)
-              : new vscode.Range(
+              : new vsc.Range(
                   qc.Position.fromLocation(r.start),
-                  new vscode.Position(r.start.line, 0)
+                  new vsc.Position(r.start.line, 0)
                 )
           )
       )
@@ -50,7 +51,7 @@ class Implementations extends BaseCodeLens {
     return cl;
   }
 
-  private command(ls: vscode.Location[], cl: RefsCodeLens): vscode.Command | undefined {
+  private command(ls: vsc.Location[], cl: RefsCodeLens): vsc.Command | undefined {
     return {
       title: this.label(ls),
       command: ls.length ? 'editor.action.showReferences' : '',
@@ -58,45 +59,41 @@ class Implementations extends BaseCodeLens {
     };
   }
 
-  private label(ls: vscode.Location[]) {
+  private label(ls: vsc.Location[]) {
     return ls.length === 1
       ? localize('oneImplementationLabel', '1 implementation')
       : localize('manyImplementationLabel', '{0} implementations', ls.length);
   }
 
   protected extractSymbol(
-    d: vscode.TextDocument,
+    d: vsc.TextDocument,
     n: proto.NavigationTree,
-    _parent: proto.NavigationTree | null
-  ): vscode.Range | null {
+    _parent: proto.NavigationTree | undefined
+  ): vsc.Range | undefined {
     switch (n.kind) {
       case cproto.Kind.interface:
-        return getSymbolRange(d, n);
+        return symbolRange(d, n);
       case cproto.Kind.class:
       case cproto.Kind.method:
       case cproto.Kind.memberVariable:
       case cproto.Kind.memberGetAccessor:
       case cproto.Kind.memberSetAccessor:
         if (n.kindModifiers.match(/\babstract\b/g)) {
-          return getSymbolRange(d, n);
+          return symbolRange(d, n);
         }
         break;
     }
-    return null;
+    return;
   }
 }
 
 export function register(
-  s: vscode.DocumentSelector,
-  mode: string,
-  c: IServiceClient,
+  s: vsc.DocumentSelector,
+  lang: string,
+  c: qs.IServiceClient,
   r: CachedResponse<proto.NavTreeResponse>
 ) {
-  return new ConfigurationDependentRegistration(
-    mode,
-    'implementationsCodeLens.enabled',
-    () => {
-      return vscode.languages.registerCodeLensProvider(s, new Implementations(c, r));
-    }
-  );
+  return new qr.ConfigDependent(lang, 'implementationsCodeLens.enabled', () => {
+    return vsc.languages.registerCodeLensProvider(s, new Implements(c, r));
+  });
 }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import { coalesce } from '.';
 import { Command, Commands } from './extras';
 import { isTypeScriptDocument } from './language';
@@ -65,7 +65,7 @@ class ProjectStatusCommand implements Command {
   private getVersionItem(): QuickPickItem {
     return {
       label: localize('projectQuickPick.version.label', 'Select TypeScript Version...'),
-      description: this.client.apiVersion.display,
+      description: this.client.api.display,
       run: () => {
         this.client.showVersionPicker();
       },

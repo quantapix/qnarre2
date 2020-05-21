@@ -11,7 +11,7 @@ import { IServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { Delayer } from '../utils/async';
 import { nulToken } from '../utils/cancellation';
-import { VersionDependentRegistration } from '../utils/registration';
+import { VersionDependent } from '../utils/registration';
 import { Disposable } from '../utils/disposable';
 import * as fileSchemes from '../utils/fileSchemes';
 import { doesResourceLookLikeATypeScriptFile } from '../utils/language';
@@ -367,7 +367,7 @@ export function register(
   fileConfigurationManager: FileConfigs,
   handles: (uri: vscode.Uri) => Promise<boolean>
 ) {
-  return new VersionDependentRegistration(
+  return new VersionDependent(
     client,
     UpdateImportsOnFileRenameHandler.minVersion,
     () => new UpdateImportsOnFileRenameHandler(client, fileConfigurationManager, handles)

@@ -17,14 +17,14 @@ const enum TypeScriptVersionSource {
 }
 
 export class TypeScriptVersion {
-  public readonly apiVersion: API | undefined;
+  public readonly api: API | undefined;
 
   constructor(
     public readonly source: TypeScriptVersionSource,
     public readonly path: string,
     private readonly _pathLabel?: string
   ) {
-    this.apiVersion = TypeScriptVersion.getApiVersion(this.tsServerPath);
+    this.api = TypeScriptVersion.getApiVersion(this.tsServerPath);
   }
 
   public get tsServerPath(): string {
@@ -36,7 +36,7 @@ export class TypeScriptVersion {
   }
 
   public get isValid(): boolean {
-    return this.apiVersion !== undefined;
+    return this.api !== undefined;
   }
 
   public eq(other: TypeScriptVersion): boolean {
@@ -44,17 +44,17 @@ export class TypeScriptVersion {
       return false;
     }
 
-    if (this.apiVersion === other.apiVersion) {
+    if (this.api === other.api) {
       return true;
     }
-    if (!this.apiVersion || !other.apiVersion) {
+    if (!this.api || !other.api) {
       return false;
     }
-    return this.apiVersion.eq(other.apiVersion);
+    return this.api.eq(other.api);
   }
 
   public get displayName(): string {
-    const version = this.apiVersion;
+    const version = this.api;
     return version
       ? version.display
       : localize(

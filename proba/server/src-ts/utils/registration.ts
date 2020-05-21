@@ -1,46 +1,85 @@
-import * as vscode from 'vscode';
-import { IServiceClient } from '../service';
-import API from './api';
-import { Disposable } from './extras';
+import * as nls from 'vscode-nls';
+import * as semver from 'semver';
+import * as vsc from 'vscode';
 
-export class ConditionalRegistration {
-  private registration: vscode.Disposable | undefined = undefined;
+import * as qs from '../service';
+import * as qx from './extras';
 
-  constructor(private readonly _doRegister: () => vscode.Disposable) {}
+const localize = nls.loadMessageBundle();
+
+export class API {
+  static readonly default = API.fromString('4.0.0');
+  static readonly v400 = API.fromString('4.0.0');
+
+  private static fromString(v: string) {
+    return new API(v, v, v);
+  }
+
+  static fromVersionString(s: string) {
+    let v = semver.valid(s);
+    if (!v) return new API(localize('invalid', 'invalid'), '0.0.0', '0.0.0');
+    const i = s.indexOf('-');
+    if (i >= 0) v = v.substr(0, i);
+    return new API(s, v, s);
+  }
+
+  private constructor(
+    public readonly display: string,
+    public readonly version: string,
+    public readonly fullVersion: string
+  ) {}
+
+  eq(o: API) {
+    return semver.eq(this.version, o.version);
+  }
+
+  gte(o: API) {
+    return semver.gte(this.version, o.version);
+  }
+
+  lt(o: API) {
+    return !this.gte(o);
+  }
+}
+
+export class Conditional {
+  private reg?: vsc.Disposable;
+
+  constructor(private readonly register: () => vsc.Disposable) {}
 
   dispose() {
-    if (this.registration) {
-      this.registration.dispose();
-      this.registration = undefined;
+    if (this.reg) {
+      this.reg.dispose();
+      this.reg = undefined;
     }
   }
 
-  update(enabled: boolean) {
-    if (enabled) {
-      if (!this.registration) this.registration = this._doRegister();
+  update(on: boolean) {
+    if (on) {
+      if (!this.reg) this.reg = this.register();
     } else {
-      if (this.registration) {
-        this.registration.dispose();
-        this.registration = undefined;
+      if (this.reg) {
+        this.reg.dispose();
+        this.reg = undefined;
       }
     }
   }
 }
 
-export class VersionDependentRegistration extends Disposable {
-  private readonly _registration: ConditionalRegistration;
+export class VersionDependent extends qx.Disposable {
+  private readonly reg: Conditional;
 
   constructor(
-    private readonly client: IServiceClient,
-    private readonly minVersion: API,
-    register: () => vscode.Disposable
+    private readonly client: qs.IServiceClient,
+    private readonly min: API,
+    register: () => vsc.Disposable
   ) {
     super();
-    this._registration = new ConditionalRegistration(register);
-    this.update(client.apiVersion);
+    this.reg = new Conditional(register);
+    this.update(client.api);
     this.client.onServerStarted(
       () => {
-        this.update(this.client.apiVersion);
+        this.update(this.client.api);
       },
       null,
       this.dispos
@@ -49,36 +88,36 @@ export class VersionDependentRegistration extends Disposable {
 
   dispose() {
     super.dispose();
-    this._registration.dispose();
+    this.reg.dispose();
   }
 
   private update(api: API) {
-    this._registration.update(api.gte(this.minVersion));
+    this.reg.update(api.gte(this.min));
   }
 }
 
-export class ConfigurationDependentRegistration extends Disposable {
-  private readonly _registration: ConditionalRegistration;
+export class ConfigDependent extends qx.Disposable {
+  private readonly reg: Conditional;
 
   constructor(
-    private readonly language: string,
-    private readonly configValue: string,
-    register: () => vscode.Disposable
+    private readonly lang: string,
+    private readonly cfg: string,
+    register: () => vsc.Disposable
   ) {
     super();
-    this._registration = new ConditionalRegistration(register);
+    this.reg = new Conditional(register);
     this.update();
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    vscode.workspace.onDidChangeConfiguration(this.update, this, this.dispos);
+    vsc.workspace.onDidChangeConfiguration(this.update, this, this.dispos);
   }
 
   dispose() {
     super.dispose();
-    this._registration.dispose();
+    this.reg.dispose();
   }
 
   private update() {
-    const c = vscode.workspace.getConfiguration(this.language, null);
-    this._registration.update(!!c.get<boolean>(this.configValue));
+    const c = vsc.workspace.getConfiguration(this.lang);
+    this.reg.update(!!c.get<boolean>(this.cfg));
   }
 }

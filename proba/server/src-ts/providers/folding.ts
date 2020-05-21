@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import { coalesce } from '../utils';
-import { VersionDependentRegistration } from '../utils/registration';
+import { VersionDependent } from '../utils/registration';
 
 class Folding implements vscode.FoldingRangeProvider {
   static readonly minVersion = API.v280;
@@ -63,7 +63,7 @@ export function register(
   s: vscode.DocumentSelector,
   c: IServiceClient
 ): vscode.Disposable {
-  return new VersionDependentRegistration(c, Folding.minVersion, () => {
+  return new VersionDependent(c, Folding.minVersion, () => {
     return vscode.languages.registerFoldingRangeProvider(s, new Folding(c));
   });
 }

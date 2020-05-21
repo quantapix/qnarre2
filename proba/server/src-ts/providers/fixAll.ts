@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as Proto from '../protocol';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import API from '../utils/api';
-import { VersionDependentRegistration } from '../utils/registration';
+import { VersionDependent } from '../utils/registration';
 import { fix, codes } from '../utils/names';
 import * as qc from '../utils/convert';
 import { DiagnosticsManager } from './diagnostics';
@@ -252,7 +252,7 @@ export function register(
   cfgs: FileConfigs,
   diags: DiagnosticsManager
 ) {
-  return new VersionDependentRegistration(c, API.v300, () =>
+  return new VersionDependent(c, API.v300, () =>
     vscode.languages.registerCodeActionsProvider(
       s,
       new TypeScriptAutoFixProvider(c, cfgs, diags),

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import { API } from '../utils/api';
-import { VersionDependentRegistration } from '../utils/registration';
+import { VersionDependent } from '../utils/registration';
 import * as qc from '../utils/convert';
 
 class SmartSelection implements vscode.SelectionRangeProvider {
@@ -35,7 +35,7 @@ function convert(r: proto.SelectionRange): vscode.SelectionRange {
 }
 
 export function register(s: vscode.DocumentSelector, c: IServiceClient) {
-  return new VersionDependentRegistration(c, SmartSelection.minVersion, () =>
+  return new VersionDependent(c, SmartSelection.minVersion, () =>
     vscode.languages.registerSelectionRangeProvider(s, new SmartSelection(c))
   );
 }

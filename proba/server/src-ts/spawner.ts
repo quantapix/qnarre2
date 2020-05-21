@@ -91,12 +91,12 @@ export class Spawner {
     configuration: ServiceConfig,
     plugins: Plugins
   ): IServer {
-    const apiVersion = version.apiVersion || API.defaultVersion;
+    const api = version.api || API.defaultVersion;
     const { args, cancellationPipeName, tsServerLogFile } = this.serverArgs(
       kind,
       configuration,
       version,
-      apiVersion,
+      api,
       plugins
     );
     if (Spawner.isLoggingEnabled(configuration)) {
@@ -138,7 +138,7 @@ export class Spawner {
     kind: ServerKind,
     configuration: ServiceConfig,
     currentVersion: TypeScriptVersion,
-    apiVersion: API,
+    api: API,
     plugins: Plugins
   ): {
     args: string[];

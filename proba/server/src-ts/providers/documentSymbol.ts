@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import * as qc from '../utils/convert';
 import { CachedResponse } from '../server';
 

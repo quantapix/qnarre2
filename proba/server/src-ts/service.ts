@@ -130,7 +130,7 @@ export interface IServiceClient {
 
   showVersionPicker(): void;
 
-  readonly apiVersion: API;
+  readonly api: API;
   readonly plugins: Plugins;
   readonly configuration: ServiceConfig;
   readonly bufferSync: BufferSync;

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import * as qc from '../utils/convert';
 
 export class DefBase {

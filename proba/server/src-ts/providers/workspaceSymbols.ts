@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 import API from '../utils/api';
 import * as fileSchemes from '../utils/fileSchemes';
 import {
@@ -27,7 +27,7 @@ class WorkspaceSymbol implements vscode.WorkspaceSymbolProvider {
       const document = this.document();
       file = document ? await this.openedPath(document) : undefined;
 
-      if (!file && this.client.apiVersion.lt(API.v390)) {
+      if (!file && this.client.api.lt(API.v390)) {
         return [];
       }
     }
@@ -50,7 +50,7 @@ class WorkspaceSymbol implements vscode.WorkspaceSymbolProvider {
 
   private get searchAllOpenProjects() {
     return (
-      this.client.apiVersion.gte(API.v390) &&
+      this.client.api.gte(API.v390) &&
       vscode.workspace
         .getConfiguration('typescript')
         .get('workspaceSymbols.scope', 'allOpenProjects') === 'allOpenProjects'

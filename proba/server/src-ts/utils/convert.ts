@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as proto from '../protocol';
 import * as cproto from '../protocol.const';
-import { IServiceClient } from '../service';
+import * as qs from '../service';
 
 export namespace Range {
   export function fromTextSpan(s: proto.TextSpan): vscode.Range {
