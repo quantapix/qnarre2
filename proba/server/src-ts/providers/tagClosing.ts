@@ -1,29 +1,25 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+/* eslint-disable @typescript-eslint/unbound-method */
+import * as vsc from 'vscode';
+import type * as proto from '../protocol';
 
-import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
-import { IServiceClient } from '../typescriptService';
-import API from '../utils/api';
-import { Conditional, ConfigDependent, VersionDependent } from '../utils/registration';
-import { Disposable } from '../utils/disposable';
-import * as typeConverters from '../utils/convert';
+import * as qc from '../utils/convert';
+import * as qr from '../utils/registration';
+import * as qs from '../service';
+import * as qx from '../utils/extras';
 
-class TagClosing extends Disposable {
-  public static readonly minApi = API.v300;
+class TagClosing extends qx.Disposable {
+  public static readonly minApi = qr.API.default;
 
   private _disposed = false;
   private _timeout: NodeJS.Timer | undefined = undefined;
-  private _cancel: vscode.CancellationTokenSource | undefined = undefined;
+  private _cancel: vsc.CancellationTokenSource | undefined = undefined;
 
-  constructor(private readonly client: IServiceClient) {
+  constructor(private readonly client: qs.IServiceClient) {
     super();
-    vscode.workspace.onDidChangeTextDocument(
+    vsc.workspace.onDidChangeTextDocument(
       (event) => this.onDidChangeTextDocument(event.document, event.contentChanges),
       null,
-      this._disposables
+      this.dispos
     );
   }
 
@@ -44,108 +40,82 @@ class TagClosing extends Disposable {
   }
 
   private onDidChangeTextDocument(
-    document: vscode.TextDocument,
-    changes: readonly vscode.TextDocumentContentChangeEvent[]
+    document: vsc.TextDocument,
+    changes: readonly vsc.TextDocumentContentChangeEvent[]
   ) {
     const activeDocument =
-      vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
-    if (document !== activeDocument || changes.length === 0) {
-      return;
-    }
-
+      vsc.window.activeTextEditor && vsc.window.activeTextEditor.document;
+    if (document !== activeDocument || changes.length === 0) return;
     const filepath = this.client.toOpenedPath(document);
-    if (!filepath) {
-      return;
-    }
-
-    if (typeof this._timeout !== 'undefined') {
-      clearTimeout(this._timeout);
-    }
-
+    if (!filepath) return;
+    if (typeof this._timeout !== 'undefined') clearTimeout(this._timeout);
     if (this._cancel) {
       this._cancel.cancel();
       this._cancel.dispose();
       this._cancel = undefined;
     }
-
     const lastChange = changes[changes.length - 1];
     const lastCharacter = lastChange.text[lastChange.text.length - 1];
-    if (lastChange.rangeLength > 0 || (lastCharacter !== '>' && lastCharacter !== '/')) {
+    if (lastChange.rangeLength > 0 || (lastCharacter !== '>' && lastCharacter !== '/'))
       return;
-    }
-
     const priorCharacter =
       lastChange.range.start.character > 0
         ? document.getText(
-            new vscode.Range(
+            new vsc.Range(
               lastChange.range.start.translate({ characterDelta: -1 }),
               lastChange.range.start
             )
           )
         : '';
-    if (priorCharacter === '>') {
-      return;
-    }
-
+    if (priorCharacter === '>') return;
     const version = document.version;
-    this._timeout = setTimeout(async () => {
-      this._timeout = undefined;
-
-      if (this._disposed) {
-        return;
-      }
-
-      const addedLines = lastChange.text.split(/\r\n|\n/g);
-      const position =
-        addedLines.length <= 1
-          ? lastChange.range.start.translate({ characterDelta: lastChange.text.length })
-          : new vscode.Position(
-              lastChange.range.start.line + addedLines.length - 1,
-              addedLines[addedLines.length - 1].length
-            );
-
-      const args: Proto.JsxClosingTagRequestArgs = typeConverters.Position.toFileLocationRequestArgs(
-        filepath,
-        position
-      );
-      this._cancel = new vscode.CancellationTokenSource();
-      const response = await this.client.execute(
-        'jsxClosingTag',
-        args,
-        this._cancel.token
-      );
-      if (response.type !== 'response' || !response.body) {
-        return;
-      }
-
-      if (this._disposed) {
-        return;
-      }
-
-      const activeEditor = vscode.window.activeTextEditor;
-      if (!activeEditor) {
-        return;
-      }
-
-      const insertion = response.body;
-      const activeDocument = activeEditor.document;
-      if (document === activeDocument && activeDocument.version === version) {
-        activeEditor.insertSnippet(
-          this.getTagSnippet(insertion),
-          this.getInsertionPositions(activeEditor, position)
+    this._timeout = setTimeout(
+      () => async () => {
+        this._timeout = undefined;
+        if (this._disposed) return;
+        const addedLines = lastChange.text.split(/\r\n|\n/g);
+        const position =
+          addedLines.length <= 1
+            ? lastChange.range.start.translate({ characterDelta: lastChange.text.length })
+            : new vsc.Position(
+                lastChange.range.start.line + addedLines.length - 1,
+                addedLines[addedLines.length - 1].length
+              );
+        const args: proto.JsxClosingTagRequestArgs = qc.Position.toFileLocationRequestArgs(
+          filepath,
+          position
         );
-      }
-    }, 100);
+        this._cancel = new vsc.CancellationTokenSource();
+        const response = await this.client.execute(
+          'jsxClosingTag',
+          args,
+          this._cancel.token
+        );
+        if (response.type !== 'response' || !response.body) return;
+        if (this._disposed) return;
+        const activeEditor = vsc.window.activeTextEditor;
+        if (!activeEditor) return;
+        const insertion = response.body;
+        const activeDocument = activeEditor.document;
+        if (document === activeDocument && activeDocument.version === version) {
+          activeEditor.insertSnippet(
+            this.getTagSnippet(insertion),
+            this.getInsertionPositions(activeEditor, position)
+          );
+        }
+      },
+      100
+    );
   }
 
-  private getTagSnippet(closingTag: Proto.TextInsertion): vscode.SnippetString {
-    const snippet = new vscode.SnippetString();
+  private getTagSnippet(closingTag: proto.TextInsertion): vsc.SnippetString {
+    const snippet = new vsc.SnippetString();
     snippet.appendPlaceholder('', 0);
     snippet.appendText(closingTag.newText);
     return snippet;
   }
 
-  private getInsertionPositions(editor: vscode.TextEditor, position: vscode.Position) {
+  private getInsertionPositions(editor: vsc.TextEditor, position: vsc.Position) {
     const activeSelectionPositions = editor.selections.map((s) => s.active);
     return activeSelectionPositions.some((p) => p.isEqual(position))
       ? activeSelectionPositions
@@ -153,55 +123,44 @@ class TagClosing extends Disposable {
   }
 }
 
-export class ActiveDocumentDependentRegistration extends Disposable {
-  private readonly _registration: Conditional;
-
+export class ActiveDocumentDependentRegistration extends qx.Disposable {
+  private readonly _registration: qr.Conditional;
   constructor(
-    private readonly selector: vscode.DocumentSelector,
-    register: () => vscode.Disposable
+    private readonly selector: vsc.DocumentSelector,
+    register: () => vsc.Disposable
   ) {
     super();
-    this._registration = this._register(new Conditional(register));
-    vscode.window.onDidChangeActiveTextEditor(this.update, this, this._disposables);
-    vscode.workspace.onDidOpenTextDocument(
-      this.onDidOpenDocument,
-      this,
-      this._disposables
-    );
+    this._registration = this.register(new qr.Conditional(register));
+    vsc.window.onDidChangeActiveTextEditor(this.update, this, this.dispos);
+    vsc.workspace.onDidOpenTextDocument(this.onDidOpenDocument, this, this.dispos);
     this.update();
   }
 
   private update() {
-    const editor = vscode.window.activeTextEditor;
-    const enabled = !!(editor && vscode.languages.match(this.selector, editor.document));
+    const editor = vsc.window.activeTextEditor;
+    const enabled = !!(editor && vsc.languages.match(this.selector, editor.document));
     this._registration.update(enabled);
   }
 
-  private onDidOpenDocument(openedDocument: vscode.TextDocument) {
+  private onDidOpenDocument(openedDocument: vsc.TextDocument) {
     if (
-      vscode.window.activeTextEditor &&
-      vscode.window.activeTextEditor.document === openedDocument
+      vsc.window.activeTextEditor &&
+      vsc.window.activeTextEditor.document === openedDocument
     ) {
-      // The active document's language may have changed
       this.update();
     }
   }
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  modeId: string,
-  client: IServiceClient
-) {
-  return new VersionDependent(
-    client,
+export function register(s: vsc.DocumentSelector, lang: string, c: qs.IServiceClient) {
+  return new qr.VersionDependent(
+    c,
     TagClosing.minApi,
     () =>
-      new ConfigDependent(
-        modeId,
+      new qr.ConfigDependent(
+        lang,
         'autoClosingTags',
-        () =>
-          new ActiveDocumentDependentRegistration(selector, () => new TagClosing(client))
+        () => new ActiveDocumentDependentRegistration(s, () => new TagClosing(c))
       )
   );
 }

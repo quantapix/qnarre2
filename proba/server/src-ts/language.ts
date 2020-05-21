@@ -134,7 +134,7 @@ export class LanguageProvider extends Disposable {
       import('./providers/typeDefs').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/semanticTokens').then((p) =>
+      import('./providers/semantic').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/callHierarchy').then((p) =>

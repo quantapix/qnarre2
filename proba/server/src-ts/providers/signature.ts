@@ -1,8 +1,8 @@
 import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
-import * as qp from '../utils/previewer';
 import * as qc from '../utils/convert';
+import * as qp from '../utils/previewer';
 import * as qs from '../service';
 
 class SignatureHelp implements vsc.SignatureHelpProvider {
