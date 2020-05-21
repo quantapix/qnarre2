@@ -1,12 +1,7 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
+/* eslint-disable @typescript-eslint/prefer-regexp-exec */
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { IServiceClient } from '../typescriptService';
-import API from '../utils/api';
+import { IServiceClient } from '../service';
 
 const localize = nls.loadMessageBundle();
 
@@ -37,10 +32,6 @@ const tsDirectives: Directive[] = [
       'Suppresses @ts-check errors on the next line of a file.'
     ),
   },
-];
-
-const tsDirectives390: Directive[] = [
-  ...tsDirectives,
   {
     value: '@ts-expect-error',
     description: localize(
@@ -50,7 +41,7 @@ const tsDirectives390: Directive[] = [
   },
 ];
 
-class DirectiveCommentCompletionProvider implements vscode.CompletionItemProvider {
+class DirectiveCompletion implements vscode.CompletionItemProvider {
   constructor(private readonly client: IServiceClient) {}
 
   public provideCompletionItems(
@@ -59,18 +50,12 @@ class DirectiveCommentCompletionProvider implements vscode.CompletionItemProvide
     _ct: vscode.CancellationToken
   ): vscode.CompletionItem[] {
     const file = this.client.toOpenedPath(document);
-    if (!file) {
-      return [];
-    }
-
+    if (!file) return [];
     const line = document.lineAt(position.line).text;
     const prefix = line.slice(0, position.character);
-    const match = prefix.match(/^\s*\/\/+\s?(@[a-zA-Z\-]*)?$/);
+    const match = prefix.match(/^\s*\/\/+\s?(@[a-zA-Z-]*)?$/);
     if (match) {
-      const directives = this.client.apiVersion.gte(API.v390)
-        ? tsDirectives390
-        : tsDirectives;
-
+      const directives = tsDirectives;
       return directives.map((directive) => {
         const item = new vscode.CompletionItem(
           directive.value,
@@ -90,10 +75,10 @@ class DirectiveCommentCompletionProvider implements vscode.CompletionItemProvide
   }
 }
 
-export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
+export function register(s: vscode.DocumentSelector, c: IServiceClient) {
   return vscode.languages.registerCompletionItemProvider(
-    selector,
-    new DirectiveCommentCompletionProvider(client),
+    s,
+    new DirectiveCompletion(c),
     '@'
   );
 }

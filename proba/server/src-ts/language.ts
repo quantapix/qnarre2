@@ -64,7 +64,7 @@ export class LanguageProvider extends Disposable {
         )
       ),
       import('./providers/defs').then((p) => this.register(p.register(s, this.client))),
-      import('./providers/directiveCommentCompletions').then((p) =>
+      import('./providers/directiveCompletion').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/documentHighlight').then((p) =>
@@ -179,7 +179,7 @@ export class LanguageProvider extends Disposable {
   }
 
   public triggerAllDiagnostics() {
-    this.client.bufferSyncSupport.requestAllDiagnostics();
+    this.client.bufferSync.requestAllDiagnostics();
   }
 
   public diagnosticsReceived(

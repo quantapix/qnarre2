@@ -22,7 +22,7 @@ namespace Plugin {
 }
 
 export class Plugins extends Disposable {
-  private readonly configs = new Map<string, {}>();
+  private readonly cfgs = new Map<string, {}>();
   private plugins?: Map<string, ReadonlyArray<Plugin>>;
 
   constructor(private name: string) {
@@ -47,36 +47,36 @@ export class Plugins extends Disposable {
     );
   }
 
-  public configurations() {
-    return this.configs.entries();
+  configs() {
+    return this.cfgs.entries();
   }
 
-  public setConfiguration(pluginId: string, config: {}) {
-    this.configs.set(pluginId, config);
+  setConfig(pluginId: string, config: {}) {
+    this.cfgs.set(pluginId, config);
     this._onDidUpdateConfig.fire({ pluginId, config });
   }
 
-  public get plugins(): ReadonlyArray<Plugin> {
+  get all(): ReadonlyArray<Plugin> {
     if (!this.plugins) this.plugins = this.readPlugins();
     return qu.flatten(Array.from(this.plugins.values()));
   }
 
   private readonly _onDidUpdatePlugins = this.register(new vscode.EventEmitter<this>());
-  public readonly onDidChangePlugins = this._onDidUpdatePlugins.event;
+  readonly onDidChangePlugins = this._onDidUpdatePlugins.event;
 
   private readonly _onDidUpdateConfig = this.register(
     new vscode.EventEmitter<{ pluginId: string; config: {} }>()
   );
-  public readonly onDidUpdateConfig = this._onDidUpdateConfig.event;
+  readonly onDidUpdateConfig = this._onDidUpdateConfig.event;
 
   private readPlugins() {
     const n = this.name;
-    const plugins = new Map<string, ReadonlyArray<Plugin>>();
+    const m = new Map<string, ReadonlyArray<Plugin>>();
     for (const e of vscode.extensions.all) {
       const j = e.packageJSON;
-      if (j.contributes && Array.isArray(j.contributes[`{n}Plugins`])) {
+      if (j.contributes && Array.isArray(j.contributes[`${n}Plugins`])) {
         const ps: Plugin[] = [];
-        for (const p of j.contributes[`{n}Plugins`]) {
+        for (const p of j.contributes[`${n}Plugins`]) {
           ps.push({
             name: p.name,
             enableForVersions: !!p.enableForVersions,
@@ -85,9 +85,9 @@ export class Plugins extends Disposable {
             configNamespace: p.configNamespace,
           });
         }
-        if (ps.length) plugins.set(e.id, ps);
+        if (ps.length) m.set(e.id, ps);
       }
     }
-    return plugins;
+    return m;
   }
 }

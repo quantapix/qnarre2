@@ -1,78 +1,66 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
-import * as PConst from '../protocol.const';
-import { IServiceClient } from '../typescriptService';
-import * as typeConverters from '../utils/convert';
-import { CachedResponse } from '../tsServer/cachedResponse';
+import type * as proto from '../protocol';
+import * as cproto from '../protocol.const';
+import { IServiceClient } from '../service';
+import * as qc from '../utils/convert';
+import { CachedResponse } from '../server';
 
 const getSymbolKind = (kind: string): vscode.SymbolKind => {
   switch (kind) {
-    case PConst.Kind.module:
+    case cproto.Kind.module:
       return vscode.SymbolKind.Module;
-    case PConst.Kind.class:
+    case cproto.Kind.class:
       return vscode.SymbolKind.Class;
-    case PConst.Kind.enum:
+    case cproto.Kind.enum:
       return vscode.SymbolKind.Enum;
-    case PConst.Kind.interface:
+    case cproto.Kind.interface:
       return vscode.SymbolKind.Interface;
-    case PConst.Kind.method:
+    case cproto.Kind.method:
       return vscode.SymbolKind.Method;
-    case PConst.Kind.memberVariable:
+    case cproto.Kind.memberVariable:
       return vscode.SymbolKind.Property;
-    case PConst.Kind.memberGetAccessor:
+    case cproto.Kind.memberGetAccessor:
       return vscode.SymbolKind.Property;
-    case PConst.Kind.memberSetAccessor:
+    case cproto.Kind.memberSetAccessor:
       return vscode.SymbolKind.Property;
-    case PConst.Kind.variable:
+    case cproto.Kind.variable:
       return vscode.SymbolKind.Variable;
-    case PConst.Kind.const:
+    case cproto.Kind.const:
       return vscode.SymbolKind.Variable;
-    case PConst.Kind.localVariable:
+    case cproto.Kind.localVariable:
       return vscode.SymbolKind.Variable;
-    case PConst.Kind.function:
+    case cproto.Kind.function:
       return vscode.SymbolKind.Function;
-    case PConst.Kind.localFunction:
+    case cproto.Kind.localFunction:
       return vscode.SymbolKind.Function;
-    case PConst.Kind.constructSignature:
+    case cproto.Kind.constructSignature:
       return vscode.SymbolKind.Constructor;
-    case PConst.Kind.constructorImplementation:
+    case cproto.Kind.constructorImplementation:
       return vscode.SymbolKind.Constructor;
   }
   return vscode.SymbolKind.Variable;
 };
 
-class TypeScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
-  public constructor(
+class DocumentSymbol implements vscode.DocumentSymbolProvider {
+  constructor(
     private readonly client: IServiceClient,
-    private cachedResponse: CachedResponse<Proto.NavTreeResponse>
+    private cached: CachedResponse<proto.NavTreeResponse>
   ) {}
 
-  public async provideDocumentSymbols(
+  async provideDocumentSymbols(
     document: vscode.TextDocument,
     ct: vscode.CancellationToken
   ): Promise<vscode.DocumentSymbol[] | undefined> {
     const file = this.client.toOpenedPath(document);
-    if (!file) {
-      return;
-    }
-
-    const args: Proto.FileRequestArgs = { file };
-    const response = await this.cachedResponse.execute(document, () =>
-      this.client.execute('navtree', args, token)
+    if (!file) return;
+    const args: proto.FileRequestArgs = { file };
+    const response = await this.cached.execute(document, () =>
+      this.client.execute('navtree', args, ct)
     );
-    if (response.type !== 'response' || !response.body?.childItems) {
-      return;
-    }
-
-    // The root represents the file. Ignore this when showing in the UI
+    if (response.type !== 'response' || !response.body?.childItems) return;
     const result: vscode.DocumentSymbol[] = [];
     for (const item of response.body.childItems) {
-      TypeScriptDocumentSymbolProvider.convertNavTree(document.uri, result, item);
+      DocumentSymbol.convertNavTree(document.uri, result, item);
     }
     return result;
   }
@@ -80,19 +68,14 @@ class TypeScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
   private static convertNavTree(
     resource: vscode.Uri,
     output: vscode.DocumentSymbol[],
-    item: Proto.NavigationTree
+    item: proto.NavigationTree
   ): boolean {
-    let shouldInclude = TypeScriptDocumentSymbolProvider.shouldInclueEntry(item);
-    if (!shouldInclude && !item.childItems?.length) {
-      return false;
-    }
-
+    let shouldInclude = DocumentSymbol.shouldInclueEntry(item);
+    if (!shouldInclude && !item.childItems?.length) return false;
     const children = new Set(item.childItems || []);
     for (const span of item.spans) {
-      const range = typeConverters.Range.fromTextSpan(span);
-      const selectionRange = item.nameSpan
-        ? typeConverters.Range.fromTextSpan(item.nameSpan)
-        : range;
+      const range = qc.Range.fromTextSpan(span);
+      const selectionRange = item.nameSpan ? qc.Range.fromTextSpan(item.nameSpan) : range;
       const symbolInfo = new vscode.DocumentSymbol(
         item.text,
         '',
@@ -100,14 +83,11 @@ class TypeScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
         range,
         range.contains(selectionRange) ? selectionRange : range
       );
-
       for (const child of children) {
         if (
-          child.spans.some(
-            (span) => !!range.intersection(typeConverters.Range.fromTextSpan(span))
-          )
+          child.spans.some((span) => !!range.intersection(qc.Range.fromTextSpan(span)))
         ) {
-          const includedChild = TypeScriptDocumentSymbolProvider.convertNavTree(
+          const includedChild = DocumentSymbol.convertNavTree(
             resource,
             symbolInfo.children,
             child
@@ -116,33 +96,27 @@ class TypeScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
           children.delete(child);
         }
       }
-
-      if (shouldInclude) {
-        output.push(symbolInfo);
-      }
+      if (shouldInclude) output.push(symbolInfo);
     }
-
     return shouldInclude;
   }
 
   private static shouldInclueEntry(
-    item: Proto.NavigationTree | Proto.NavigationBarItem
+    item: proto.NavigationTree | proto.NavigationBarItem
   ): boolean {
-    if (item.kind === PConst.Kind.alias) {
-      return false;
-    }
+    if (item.kind === cproto.Kind.alias) return false;
     return !!(item.text && item.text !== '<function>' && item.text !== '<class>');
   }
 }
 
 export function register(
-  selector: vscode.DocumentSelector,
-  client: IServiceClient,
-  cachedResponse: CachedResponse<Proto.NavTreeResponse>
+  s: vscode.DocumentSelector,
+  c: IServiceClient,
+  cached: CachedResponse<proto.NavTreeResponse>
 ) {
   return vscode.languages.registerDocumentSymbolProvider(
-    selector,
-    new TypeScriptDocumentSymbolProvider(client, cachedResponse),
+    s,
+    new DocumentSymbol(c, cached),
     { label: 'TypeScript' }
   );
 }

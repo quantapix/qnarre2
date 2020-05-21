@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { BufferSyncSupport } from './providers/bufferSyncSupport';
+import { BufferSync } from './providers/bufferSync';
 import { DiagnosticKind, DiagnosticsManager } from './providers/diagnostics';
 import * as Proto from './protocol';
 import { IServer, ExecInfo } from './server';
@@ -98,7 +98,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
 
   readonly telemetry: TelemetryReporter;
 
-  readonly bufferSyncSupport: BufferSyncSupport;
+  readonly bufferSync: BufferSync;
   readonly diagnosticsManager: DiagnosticsManager;
 
   constructor(
@@ -131,12 +131,12 @@ export class ServiceClient extends Disposable implements IServiceClient {
         this.restartTsServer();
       })
     );
-    this.bufferSyncSupport = new BufferSyncSupport(this, allModeIds);
+    this.bufferSync = new BufferSync(this, allModeIds);
     this.onReady(() => {
-      this.bufferSyncSupport.listen();
+      this.bufferSync.listen();
     });
     this.diagnosticsManager = new DiagnosticsManager('typescript');
-    this.bufferSyncSupport.onDelete(
+    this.bufferSync.onDelete(
       (resource) => {
         this.cancelInflightRequestsForResource(resource);
         this.diagnosticsManager.delete(resource);
@@ -144,7 +144,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
       null,
       this.dispos
     );
-    this.bufferSyncSupport.onWillChange((resource) => {
+    this.bufferSync.onWillChange((resource) => {
       this.cancelInflightRequestsForResource(resource);
     });
 
@@ -227,7 +227,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
 
   dispose() {
     super.dispose();
-    this.bufferSyncSupport.dispose();
+    this.bufferSync.dispose();
     if (this.serverState.type === ServerState.Type.Running) {
       this.serverState.server.kill();
     }
@@ -486,7 +486,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
   }
 
   private serviceStarted(resendModels: boolean): void {
-    this.bufferSyncSupport.reset();
+    this.bufferSync.reset();
     const watchOptions = this.configuration.watchOptions;
     const configureOptions: Proto.ConfigureRequestArguments = {
       hostInfo: 'vscode',
@@ -500,8 +500,8 @@ export class ServiceClient extends Disposable implements IServiceClient {
     this.setCompilerOptionsForInferredProjects(this._configuration);
     if (resendModels) {
       this._onResendModelsRequested.fire();
-      this.bufferSyncSupport.reinitialize();
-      this.bufferSyncSupport.requestAllDiagnostics();
+      this.bufferSync.reinitialize();
+      this.bufferSync.requestAllDiagnostics();
     }
     for (const [config, pluginName] of this.plugins.configurations()) {
       this.configurePlugin(config, pluginName);
@@ -616,7 +616,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
   }
 
   toOpenedPath(d: vscode.TextDocument): string | undefined {
-    if (!this.bufferSyncSupport.ensureHasBuffer(d.uri)) {
+    if (!this.bufferSync.ensureHasBuffer(d.uri)) {
       console.error(`Unexpected resource ${d.uri}`);
       return;
     }
@@ -636,9 +636,9 @@ export class ServiceClient extends Disposable implements IServiceClient {
           path: path.posix.join(d, f.slice(this.inMemoryResourcePrefix.length)),
         });
       }
-      return this.bufferSyncSupport.toVsCodeResource(r);
+      return this.bufferSync.toVsCodeResource(r);
     }
-    return this.bufferSyncSupport.toResource(filepath);
+    return this.bufferSync.toResource(filepath);
   }
 
   workspaceRootFor(r: vscode.Uri): string | undefined {
@@ -712,13 +712,13 @@ export class ServiceClient extends Disposable implements IServiceClient {
     args: any,
     info: ExecInfo
   ): Promise<ServerResponse.Response<Proto.Response>> | undefined {
-    this.bufferSyncSupport.beforeCommand(cmd);
+    this.bufferSync.beforeCommand(cmd);
     const state = this.service();
     return state.server.exec(cmd, args, info);
   }
 
   interruptGetErr<R>(f: () => R): R {
-    return this.bufferSyncSupport.interuptGetErr(f);
+    return this.bufferSync.interuptGetErr(f);
   }
 
   private fatalError(command: string, error: unknown): void {
@@ -775,7 +775,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
       case 'projectsUpdatedInBackground':
         const body = (event as Proto.ProjectsUpdatedInBackgroundEvent).body;
         const resources = body.openFiles.map((file) => this.toResource(file));
-        this.bufferSyncSupport.getErr(resources);
+        this.bufferSync.getErr(resources);
         break;
       case 'beginInstallTypes':
         this._onDidBeginInstallTypes.fire((event as Proto.BeginInstallTypesEvent).body);

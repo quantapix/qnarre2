@@ -128,8 +128,8 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
         );
 
         // Make sure TS knows about file
-        this.client.bufferSyncSupport.closeResource(oldUri);
-        this.client.bufferSyncSupport.openTextDocument(document);
+        this.client.bufferSync.closeResource(oldUri);
+        this.client.bufferSync.openTextDocument(document);
 
         if (
           await this.withEditsForFileRename(edits, document, oldFilePath, newFilePath)

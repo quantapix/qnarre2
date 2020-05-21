@@ -1,25 +1,23 @@
 import * as vscode from 'vscode';
-import { IServiceClient } from '../typescriptService';
+import { IServiceClient } from '../service';
 import API from './api';
-import { Disposable } from './disposable';
+import { Disposable } from './extras';
 
 export class ConditionalRegistration {
   private registration: vscode.Disposable | undefined = undefined;
 
-  public constructor(private readonly _doRegister: () => vscode.Disposable) {}
+  constructor(private readonly _doRegister: () => vscode.Disposable) {}
 
-  public dispose() {
+  dispose() {
     if (this.registration) {
       this.registration.dispose();
       this.registration = undefined;
     }
   }
 
-  public update(enabled: boolean) {
+  update(enabled: boolean) {
     if (enabled) {
-      if (!this.registration) {
-        this.registration = this._doRegister();
-      }
+      if (!this.registration) this.registration = this._doRegister();
     } else {
       if (this.registration) {
         this.registration.dispose();
@@ -39,19 +37,17 @@ export class VersionDependentRegistration extends Disposable {
   ) {
     super();
     this._registration = new ConditionalRegistration(register);
-
     this.update(client.apiVersion);
-
     this.client.onServerStarted(
       () => {
         this.update(this.client.apiVersion);
       },
       null,
-      this._disposables
+      this.dispos
     );
   }
 
-  public dispose() {
+  dispose() {
     super.dispose();
     this._registration.dispose();
   }
@@ -72,16 +68,17 @@ export class ConfigurationDependentRegistration extends Disposable {
     super();
     this._registration = new ConditionalRegistration(register);
     this.update();
-    vscode.workspace.onDidChangeConfiguration(this.update, this, this._disposables);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    vscode.workspace.onDidChangeConfiguration(this.update, this, this.dispos);
   }
 
-  public dispose() {
+  dispose() {
     super.dispose();
     this._registration.dispose();
   }
 
   private update() {
-    const config = vscode.workspace.getConfiguration(this.language, null);
-    this._registration.update(!!config.get<boolean>(this.configValue));
+    const c = vscode.workspace.getConfiguration(this.language, null);
+    this._registration.update(!!c.get<boolean>(this.configValue));
   }
 }

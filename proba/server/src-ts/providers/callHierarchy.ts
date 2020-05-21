@@ -1,147 +1,94 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import * as vscode from 'vscode';
-import { IServiceClient } from '../typescriptService';
-import * as typeConverters from '../utils/convert';
-import API from '../utils/api';
+import { IServiceClient } from '../service';
+import * as qc from '../utils/convert';
+import { API } from '../utils/api';
 import { VersionDependentRegistration } from '../utils/dependentRegistration';
-import type * as Proto from '../protocol';
+import type * as proto from '../protocol';
 import * as path from 'path';
-import * as PConst from '../protocol.const';
+import * as cproto from '../protocol.const';
 
-class TypeScriptCallHierarchySupport implements vscode.CallHierarchyProvider {
-  public static readonly minVersion = API.v380;
+class CallHierarchy implements vscode.CallHierarchyProvider {
+  static readonly minVersion = API.v380;
 
-  public constructor(private readonly client: IServiceClient) {}
+  constructor(private readonly client: IServiceClient) {}
 
-  public async prepareCallHierarchy(
-    document: vscode.TextDocument,
-    position: vscode.Position,
+  async prepareCallHierarchy(
+    d: vscode.TextDocument,
+    p: vscode.Position,
     ct: vscode.CancellationToken
   ): Promise<vscode.CallHierarchyItem | vscode.CallHierarchyItem[] | undefined> {
-    const filepath = this.client.toOpenedPath(document);
-    if (!filepath) {
-      return;
-    }
-
-    const args = typeConverters.Position.toFileLocationRequestArgs(filepath, position);
-    const response = await this.client.execute('prepareCallHierarchy', args, token);
-    if (response.type !== 'response' || !response.body) {
-      return;
-    }
-
-    return Array.isArray(response.body)
-      ? response.body.map(fromProtocolCallHierarchyItem)
-      : fromProtocolCallHierarchyItem(response.body);
+    const f = this.client.toOpenedPath(d);
+    if (!f) return;
+    const args = qc.Position.toFileLocationRequestArgs(f, p);
+    const r = await this.client.execute('prepareCallHierarchy', args, ct);
+    if (r.type !== 'response' || !r.body) return;
+    return Array.isArray(r.body) ? r.body.map(fromProtocol) : fromProtocol(r.body);
   }
 
-  public async provideCallHierarchyIncomingCalls(
-    item: vscode.CallHierarchyItem,
+  async provideCallHierarchyIncomingCalls(
+    i: vscode.CallHierarchyItem,
     ct: vscode.CancellationToken
   ): Promise<vscode.CallHierarchyIncomingCall[] | undefined> {
-    const filepath = this.client.toPath(item.uri);
-    if (!filepath) {
-      return;
-    }
-
-    const args = typeConverters.Position.toFileLocationRequestArgs(
-      filepath,
-      item.selectionRange.start
-    );
-    const response = await this.client.execute(
-      'provideCallHierarchyIncomingCalls',
-      args,
-      token
-    );
-    if (response.type !== 'response' || !response.body) {
-      return;
-    }
-
-    return response.body.map(fromProtocolCallHierchyIncomingCall);
+    const f = this.client.toPath(i.uri);
+    if (!f) return;
+    const args = qc.Position.toFileLocationRequestArgs(f, i.selectionRange.start);
+    const r = await this.client.execute('provideCallHierarchyIncomingCalls', args, ct);
+    if (r.type !== 'response' || !r.body) return;
+    return r.body.map(fromIncomingCall);
   }
 
-  public async provideCallHierarchyOutgoingCalls(
-    item: vscode.CallHierarchyItem,
+  async provideCallHierarchyOutgoingCalls(
+    i: vscode.CallHierarchyItem,
     ct: vscode.CancellationToken
   ): Promise<vscode.CallHierarchyOutgoingCall[] | undefined> {
-    const filepath = this.client.toPath(item.uri);
-    if (!filepath) {
-      return;
-    }
-
-    const args = typeConverters.Position.toFileLocationRequestArgs(
-      filepath,
-      item.selectionRange.start
-    );
-    const response = await this.client.execute(
-      'provideCallHierarchyOutgoingCalls',
-      args,
-      token
-    );
-    if (response.type !== 'response' || !response.body) {
-      return;
-    }
-
-    return response.body.map(fromProtocolCallHierchyOutgoingCall);
+    const f = this.client.toPath(i.uri);
+    if (!f) return;
+    const args = qc.Position.toFileLocationRequestArgs(f, i.selectionRange.start);
+    const r = await this.client.execute('provideCallHierarchyOutgoingCalls', args, ct);
+    if (r.type !== 'response' || !r.body) return;
+    return r.body.map(fromOutgoingCall);
   }
 }
 
-function isSourceFileItem(item: Proto.CallHierarchyItem) {
+function isSource(i: proto.CallHierarchyItem) {
   return (
-    item.kind === PConst.Kind.script ||
-    (item.kind === PConst.Kind.module &&
-      item.selectionSpan.start.line === 1 &&
-      item.selectionSpan.start.offset === 1)
+    i.kind === cproto.Kind.script ||
+    (i.kind === cproto.Kind.module &&
+      i.selectionSpan.start.line === 1 &&
+      i.selectionSpan.start.offset === 1)
   );
 }
 
-function fromProtocolCallHierarchyItem(
-  item: Proto.CallHierarchyItem
-): vscode.CallHierarchyItem {
-  const useFileName = isSourceFileItem(item);
-  const name = useFileName ? path.basename(item.file) : item.name;
-  const detail = useFileName
-    ? vscode.workspace.asRelativePath(path.dirname(item.file))
-    : '';
+function fromProtocol(i: proto.CallHierarchyItem) {
+  const src = isSource(i);
+  const n = src ? path.basename(i.file) : i.name;
+  const detail = src ? vscode.workspace.asRelativePath(path.dirname(i.file)) : '';
   return new vscode.CallHierarchyItem(
-    typeConverters.SymbolKind.fromScriptElem(item.kind),
+    qc.SymbolKind.fromScriptElem(i.kind),
     name,
     detail,
-    vscode.Uri.file(item.file),
-    typeConverters.Range.fromTextSpan(item.span),
-    typeConverters.Range.fromTextSpan(item.selectionSpan)
+    vscode.Uri.file(i.file),
+    qc.Range.fromTextSpan(i.span),
+    qc.Range.fromTextSpan(i.selectionSpan)
   );
 }
 
-function fromProtocolCallHierchyIncomingCall(
-  item: Proto.CallHierarchyIncomingCall
-): vscode.CallHierarchyIncomingCall {
+function fromIncomingCall(c: proto.CallHierarchyIncomingCall) {
   return new vscode.CallHierarchyIncomingCall(
-    fromProtocolCallHierarchyItem(item.from),
-    item.fromSpans.map(typeConverters.Range.fromTextSpan)
+    fromProtocol(c.from),
+    c.fromSpans.map(qc.Range.fromTextSpan)
   );
 }
 
-function fromProtocolCallHierchyOutgoingCall(
-  item: Proto.CallHierarchyOutgoingCall
-): vscode.CallHierarchyOutgoingCall {
+function fromOutgoingCall(c: proto.CallHierarchyOutgoingCall) {
   return new vscode.CallHierarchyOutgoingCall(
-    fromProtocolCallHierarchyItem(item.to),
-    item.fromSpans.map(typeConverters.Range.fromTextSpan)
+    fromProtocol(c.to),
+    c.fromSpans.map(qc.Range.fromTextSpan)
   );
 }
 
-export function register(selector: vscode.DocumentSelector, client: IServiceClient) {
-  return new VersionDependentRegistration(
-    client,
-    TypeScriptCallHierarchySupport.minVersion,
-    () =>
-      vscode.languages.registerCallHierarchyProvider(
-        selector,
-        new TypeScriptCallHierarchySupport(client)
-      )
+export function register(s: vscode.DocumentSelector, c: IServiceClient) {
+  return new VersionDependentRegistration(c, CallHierarchy.minVersion, () =>
+    vscode.languages.registerCallHierarchyProvider(s, new CallHierarchy(c))
   );
 }

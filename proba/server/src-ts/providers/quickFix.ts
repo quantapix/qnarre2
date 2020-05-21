@@ -222,7 +222,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
       return [];
     }
 
-    if (this.client.bufferSyncSupport.hasPendingDiagnostics(document.uri)) {
+    if (this.client.bufferSync.hasPendingDiagnostics(document.uri)) {
       return [];
     }
 

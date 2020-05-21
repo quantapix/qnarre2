@@ -198,7 +198,7 @@ export class ServiceClientHost extends Disposable {
     if (provider) {
       return true;
     }
-    return this.client.bufferSyncSupport.handles(resource);
+    return this.client.bufferSync.handles(resource);
   }
 
   private configurationChanged(): void {
