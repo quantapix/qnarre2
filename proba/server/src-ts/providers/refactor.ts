@@ -197,7 +197,7 @@ const allKnownCodeActionKinds = [
 ];
 
 class TypeScriptRefactorProvider implements vscode.CodeActionProvider {
-  static readonly minVersion = API.v240;
+  static readonly minApi = API.v240;
 
   constructor(
     private readonly client: IServiceClient,
@@ -391,7 +391,7 @@ export function register(
   cmds: Commands,
   telemetry: TelemetryReporter
 ) {
-  return new VersionDependent(c, TypeScriptRefactorProvider.minVersion, () => {
+  return new VersionDependent(c, TypeScriptRefactorProvider.minApi, () => {
     return vscode.languages.registerCodeActionsProvider(
       s,
       new TypeScriptRefactorProvider(c, formats, cmds, telemetry),

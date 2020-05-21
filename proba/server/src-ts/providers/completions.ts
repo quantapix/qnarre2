@@ -735,7 +735,7 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider 
       );
       item.detail = `${autoImportLabel}\n${item.detail}`;
     }
-    Previewer.addMarkdownDocumentation(documentation, detail.documentation, detail.tags);
+    Previewer.addMdDocumentation(documentation, detail.documentation, detail.tags);
     return documentation.value.length ? documentation : undefined;
   }
 

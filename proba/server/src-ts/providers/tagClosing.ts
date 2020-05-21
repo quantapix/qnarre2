@@ -12,7 +12,7 @@ import { Disposable } from '../utils/disposable';
 import * as typeConverters from '../utils/convert';
 
 class TagClosing extends Disposable {
-  public static readonly minVersion = API.v300;
+  public static readonly minApi = API.v300;
 
   private _disposed = false;
   private _timeout: NodeJS.Timer | undefined = undefined;
@@ -195,7 +195,7 @@ export function register(
 ) {
   return new VersionDependent(
     client,
-    TagClosing.minVersion,
+    TagClosing.minApi,
     () =>
       new ConfigDependent(
         modeId,

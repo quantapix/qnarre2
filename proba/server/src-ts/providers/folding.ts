@@ -1,34 +1,35 @@
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
 import type * as proto from '../protocol';
+
 import * as qc from '../utils/convert';
+import * as qr from '../utils/registration';
 import * as qs from '../service';
-import { coalesce } from '../utils';
-import { VersionDependent } from '../utils/registration';
+import * as qu from '../utils';
 
-class Folding implements vscode.FoldingRangeProvider {
-  static readonly minVersion = API.v280;
+class FoldingRange implements vsc.FoldingRangeProvider {
+  static readonly minApi = qr.API.default;
 
-  constructor(private readonly client: IServiceClient) {}
+  constructor(private readonly client: qs.IServiceClient) {}
 
   async provideFoldingRanges(
-    d: vscode.TextDocument,
-    _: vscode.FoldingContext,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.FoldingRange[] | undefined> {
+    d: vsc.TextDocument,
+    _: vsc.FoldingContext,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.FoldingRange[] | undefined> {
     const file = this.client.toOpenedPath(d);
     if (!file) return;
     const args: proto.FileRequestArgs = { file };
     const r = await this.client.execute('getOutliningSpans', args, ct);
     if (r.type !== 'response' || !r.body) return;
-    return coalesce(r.body.map((span) => this.convertOutliningSpan(span, d)));
+    return qu.coalesce(r.body.map((span) => this.outliningSpan(span, d)));
   }
 
-  private convertOutliningSpan(
+  private outliningSpan(
     o: proto.OutliningSpan,
-    d: vscode.TextDocument
-  ): vscode.FoldingRange | undefined {
+    d: vsc.TextDocument
+  ): vsc.FoldingRange | undefined {
     const r = qc.Range.fromTextSpan(o.textSpan);
-    const kind = Folding.foldingRangeKind(o);
+    const k = foldingRangeKind(o);
     if (o.kind === 'comment') {
       const l = d.lineAt(r.start.line).text;
       if (l.match(/\/\/\s*#endregion/gi)) return;
@@ -36,34 +37,29 @@ class Folding implements vscode.FoldingRangeProvider {
     const s = r.start.line;
     const e =
       r.end.character > 0 &&
-      ['}', ']'].includes(d.getText(new vscode.Range(r.end.translate(0, -1), r.end)))
+      ['}', ']'].includes(d.getText(new vsc.Range(r.end.translate(0, -1), r.end)))
         ? Math.max(r.end.line - 1, r.start.line)
         : r.end.line;
-    return new vscode.FoldingRange(s, e, kind);
-  }
-
-  private static foldingRangeKind(
-    s: proto.OutliningSpan
-  ): vscode.FoldingRangeKind | undefined {
-    switch (s.kind) {
-      case 'comment':
-        return vscode.FoldingRangeKind.Comment;
-      case 'region':
-        return vscode.FoldingRangeKind.Region;
-      case 'imports':
-        return vscode.FoldingRangeKind.Imports;
-      case 'code':
-      default:
-        return;
-    }
+    return new vsc.FoldingRange(s, e, k);
   }
 }
 
-export function register(
-  s: vscode.DocumentSelector,
-  c: IServiceClient
-): vscode.Disposable {
-  return new VersionDependent(c, Folding.minVersion, () => {
-    return vscode.languages.registerFoldingRangeProvider(s, new Folding(c));
+function foldingRangeKind(s: proto.OutliningSpan): vsc.FoldingRangeKind | undefined {
+  switch (s.kind) {
+    case 'comment':
+      return vsc.FoldingRangeKind.Comment;
+    case 'region':
+      return vsc.FoldingRangeKind.Region;
+    case 'imports':
+      return vsc.FoldingRangeKind.Imports;
+    case 'code':
+    default:
+      return;
+  }
+}
+
+export function register(s: vsc.DocumentSelector, c: qs.IServiceClient): vsc.Disposable {
+  return new qr.VersionDependent(c, FoldingRange.minApi, () => {
+    return vsc.languages.registerFoldingRangeProvider(s, new FoldingRange(c));
   });
 }

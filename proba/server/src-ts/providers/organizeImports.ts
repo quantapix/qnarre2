@@ -61,7 +61,7 @@ class OrganizeImportsCommand implements Command {
 }
 
 export class OrganizeImportsCodeActionProvider implements vscode.CodeActionProvider {
-  public static readonly minVersion = API.v280;
+  public static readonly minApi = API.v280;
 
   public constructor(
     private readonly client: IServiceClient,
@@ -112,21 +112,17 @@ export function register(
   fileConfigurationManager: FileConfigs,
   telemetry: TelemetryReporter
 ) {
-  return new VersionDependent(
-    client,
-    OrganizeImportsCodeActionProvider.minVersion,
-    () => {
-      const organizeImportsProvider = new OrganizeImportsCodeActionProvider(
-        client,
-        commandManager,
-        fileConfigurationManager,
-        telemetry
-      );
-      return vscode.languages.registerCodeActionsProvider(
-        selector,
-        organizeImportsProvider,
-        organizeImportsProvider.metadata
-      );
-    }
-  );
+  return new VersionDependent(client, OrganizeImportsCodeActionProvider.minApi, () => {
+    const organizeImportsProvider = new OrganizeImportsCodeActionProvider(
+      client,
+      commandManager,
+      fileConfigurationManager,
+      telemetry
+    );
+    return vscode.languages.registerCodeActionsProvider(
+      selector,
+      organizeImportsProvider,
+      organizeImportsProvider.metadata
+    );
+  });
 }

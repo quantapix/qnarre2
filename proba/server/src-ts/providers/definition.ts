@@ -1,16 +1,17 @@
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
+
 import * as qs from '../service';
 import * as qc from '../utils/convert';
 
 export class DefBase {
-  constructor(protected readonly client: IServiceClient) {}
+  constructor(protected readonly client: qs.IServiceClient) {}
 
   protected async symbolLocations(
     t: 'definition' | 'implementation' | 'typeDefinition',
-    d: vscode.TextDocument,
-    p: vscode.Position,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.Location[] | undefined> {
+    d: vsc.TextDocument,
+    p: vsc.Position,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.Location[] | undefined> {
     const f = this.client.toOpenedPath(d);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, p);
@@ -20,16 +21,12 @@ export class DefBase {
   }
 }
 
-class Definition extends DefBase implements vscode.DefinitionProvider {
-  constructor(client: IServiceClient) {
-    super(client);
-  }
-
+class Definition extends DefBase implements vsc.DefinitionProvider {
   async provideDefinition(
-    d: vscode.TextDocument,
-    p: vscode.Position,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.DefinitionLink[] | vscode.Definition | undefined> {
+    d: vsc.TextDocument,
+    p: vsc.Position,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.DefinitionLink[] | vsc.Definition | undefined> {
     const f = this.client.toOpenedPath(d);
     if (!f) return;
     const args = qc.Position.toFileLocationRequestArgs(f, p);
@@ -37,7 +34,7 @@ class Definition extends DefBase implements vscode.DefinitionProvider {
     if (r.type !== 'response' || !r.body) return;
     const s = r.body.textSpan ? qc.Range.fromTextSpan(r.body.textSpan) : undefined;
     return r.body.definitions.map(
-      (l): vscode.DefinitionLink => {
+      (l): vsc.DefinitionLink => {
         const t = qc.Location.fromTextSpan(this.client.toResource(l.file), l);
         if (l.contextStart) {
           return {
@@ -57,6 +54,6 @@ class Definition extends DefBase implements vscode.DefinitionProvider {
   }
 }
 
-export function register(s: vscode.DocumentSelector, c: IServiceClient) {
-  return vscode.languages.registerDefinitionProvider(s, new Definition(c));
+export function register(s: vsc.DocumentSelector, c: qs.IServiceClient) {
+  return vsc.languages.registerDefinitionProvider(s, new Definition(c));
 }

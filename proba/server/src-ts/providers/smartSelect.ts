@@ -6,7 +6,7 @@ import { VersionDependent } from '../utils/registration';
 import * as qc from '../utils/convert';
 
 class SmartSelection implements vscode.SelectionRangeProvider {
-  static readonly minVersion = API.v350;
+  static readonly minApi = API.v350;
 
   public constructor(private readonly client: IServiceClient) {}
 
@@ -35,7 +35,7 @@ function convert(r: proto.SelectionRange): vscode.SelectionRange {
 }
 
 export function register(s: vscode.DocumentSelector, c: IServiceClient) {
-  return new VersionDependent(c, SmartSelection.minVersion, () =>
+  return new VersionDependent(c, SmartSelection.minApi, () =>
     vscode.languages.registerSelectionRangeProvider(s, new SmartSelection(c))
   );
 }

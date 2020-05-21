@@ -45,7 +45,7 @@ interface RenameAction {
 }
 
 class UpdateImportsOnFileRenameHandler extends Disposable {
-  public static readonly minVersion = API.v300;
+  public static readonly minApi = API.v300;
 
   private readonly _delayer = new Delayer(50);
   private readonly _pendingRenames = new Set<RenameAction>();
@@ -369,7 +369,7 @@ export function register(
 ) {
   return new VersionDependent(
     client,
-    UpdateImportsOnFileRenameHandler.minVersion,
+    UpdateImportsOnFileRenameHandler.minApi,
     () => new UpdateImportsOnFileRenameHandler(client, fileConfigurationManager, handles)
   );
 }

@@ -1,58 +1,36 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+import * as vsc from 'vscode';
+import type * as proto from '../protocol';
 
-import * as vscode from 'vscode';
-import type * as Proto from '../protocol';
-import { IServiceClient } from '../typescriptService';
-import { markdownDocumentation } from '../utils/previewer';
-import * as typeConverters from '../utils/convert';
+import { mdDocumentation } from '../utils/previewer';
+import * as qc from '../utils/convert';
+import * as qs from '../service';
 
-class TypeScriptHoverProvider implements vscode.HoverProvider {
-  public constructor(private readonly client: IServiceClient) {}
+class Hover implements vsc.HoverProvider {
+  public constructor(private readonly client: qs.IServiceClient) {}
 
   public async provideHover(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.Hover | undefined> {
-    const filepath = this.client.toOpenedPath(document);
-    if (!filepath) {
-      return;
-    }
-
-    const args = typeConverters.Position.toFileLocationRequestArgs(filepath, position);
-    const response = await this.client.interruptGetErr(() =>
-      this.client.execute('quickinfo', args, token)
+    d: vsc.TextDocument,
+    p: vsc.Position,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.Hover | undefined> {
+    const f = this.client.toOpenedPath(d);
+    if (!f) return;
+    const args = qc.Position.toFileLocationRequestArgs(f, p);
+    const r = await this.client.interruptGetErr(() =>
+      this.client.execute('quickinfo', args, ct)
     );
-    if (response.type !== 'response' || !response.body) {
-      return;
-    }
-
-    return new vscode.Hover(
-      TypeScriptHoverProvider.getContents(response.body),
-      typeConverters.Range.fromTextSpan(response.body)
-    );
+    if (r.type !== 'response' || !r.body) return;
+    return new vsc.Hover(Hover.contents(r.body), qc.Range.fromTextSpan(r.body));
   }
 
-  private static getContents(data: Proto.QuickInfoResponseBody) {
-    const parts = [];
-
-    if (data.displayString) {
-      parts.push({ language: 'typescript', value: data.displayString });
-    }
-    parts.push(markdownDocumentation(data.documentation, data.tags));
-    return parts;
+  private static contents(b: proto.QuickInfoResponseBody) {
+    const ps = [];
+    if (b.displayString) ps.push({ language: 'typescript', value: b.displayString });
+    ps.push(mdDocumentation(b.documentation, b.tags));
+    return ps;
   }
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  client: IServiceClient
-): vscode.Disposable {
-  return vscode.languages.registerHoverProvider(
-    selector,
-    new TypeScriptHoverProvider(client)
-  );
+export function register(s: vsc.DocumentSelector, c: qs.IServiceClient): vsc.Disposable {
+  return vsc.languages.registerHoverProvider(s, new Hover(c));
 }

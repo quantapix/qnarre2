@@ -1,25 +1,24 @@
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
 import type * as proto from '../protocol';
+
+import { FileConfigs } from './configs';
 import * as qc from '../utils/convert';
+import * as qr from '../utils/registration';
 import * as qs from '../service';
-import { ConfigDependent } from '../utils/registration';
-import FileConfigs from './configs';
 
 class Formatting
-  implements
-    vscode.DocumentRangeFormattingEditProvider,
-    vscode.OnTypeFormattingEditProvider {
+  implements vsc.DocumentRangeFormattingEditProvider, vsc.OnTypeFormattingEditProvider {
   constructor(
-    private readonly client: IServiceClient,
+    private readonly client: qs.IServiceClient,
     private readonly configs: FileConfigs
   ) {}
 
   async provideDocumentRangeFormattingEdits(
-    d: vscode.TextDocument,
-    range: vscode.Range,
-    opts: vscode.FormattingOptions,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.TextEdit[] | undefined> {
+    d: vsc.TextDocument,
+    range: vsc.Range,
+    opts: vsc.FormattingOptions,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.TextEdit[] | undefined> {
     const f = this.client.toOpenedPath(d);
     if (!f) return;
     await this.configs.ensureConfigurationOptions(d, opts, ct);
@@ -30,12 +29,12 @@ class Formatting
   }
 
   async provideOnTypeFormattingEdits(
-    d: vscode.TextDocument,
-    p: vscode.Position,
+    d: vsc.TextDocument,
+    p: vsc.Position,
     ch: string,
-    opts: vscode.FormattingOptions,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.TextEdit[]> {
+    opts: vsc.FormattingOptions,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.TextEdit[]> {
     const f = this.client.toOpenedPath(d);
     if (!f) return [];
     await this.configs.ensureConfigurationOptions(d, opts, ct);
@@ -45,7 +44,7 @@ class Formatting
     };
     const res = await this.client.execute('formatonkey', args, ct);
     if (res.type !== 'response' || !res.body) return [];
-    const es: vscode.TextEdit[] = [];
+    const es: vsc.TextEdit[] = [];
     for (const e of res.body) {
       const te = qc.TextEdit.fromCodeEdit(e);
       const r = te.range;
@@ -59,16 +58,16 @@ class Formatting
 }
 
 export function register(
-  s: vscode.DocumentSelector,
-  mode: string,
-  c: IServiceClient,
+  s: vsc.DocumentSelector,
+  lang: string,
+  c: qs.IServiceClient,
   cs: FileConfigs
 ) {
-  return new ConfigDependent(mode, 'format.enable', () => {
+  return new qr.ConfigDependent(lang, 'format.enable', () => {
     const f = new Formatting(c, cs);
-    return vscode.Disposable.from(
-      vscode.languages.registerOnTypeFormattingEditProvider(s, f, ';', '}', '\n'),
-      vscode.languages.registerDocumentRangeFormattingEditProvider(s, f)
+    return vsc.Disposable.from(
+      vsc.languages.registerOnTypeFormattingEditProvider(s, f, ';', '}', '\n'),
+      vsc.languages.registerDocumentRangeFormattingEditProvider(s, f)
     );
   });
 }
