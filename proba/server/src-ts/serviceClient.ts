@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import { BufferSync } from './providers/bufferSync';
-import { DiagnosticKind, DiagnosticsManager } from './providers/diagnostics';
+import { Buffer } from './utils/buffer';
+import { DiagKind, Diags } from './utils/diagnostic';
 import * as Proto from './protocol';
 import { IServer, ExecInfo } from './server';
 import { ServerError } from './server';
@@ -33,7 +33,7 @@ const localize = nls.loadMessageBundle();
 
 export interface TsDiagnostics {
   readonly uri: vscode.Uri;
-  readonly kind: DiagnosticKind;
+  readonly kind: DiagKind;
   readonly diags: Proto.Diagnostic[];
 }
 
@@ -98,8 +98,8 @@ export class ServiceClient extends Disposable implements IServiceClient {
 
   readonly telemetry: TelemetryReporter;
 
-  readonly bufferSync: BufferSync;
-  readonly diagnosticsManager: DiagnosticsManager;
+  readonly buffer: Buffer;
+  readonly diagnosticsManager: Diags;
 
   constructor(
     private readonly workspaceState: vscode.Memento,
@@ -131,12 +131,12 @@ export class ServiceClient extends Disposable implements IServiceClient {
         this.restartTsServer();
       })
     );
-    this.bufferSync = new BufferSync(this, allModeIds);
+    this.buffer = new Buffer(this, allModeIds);
     this.onReady(() => {
-      this.bufferSync.listen();
+      this.buffer.listen();
     });
-    this.diagnosticsManager = new DiagnosticsManager('typescript');
-    this.bufferSync.onDelete(
+    this.diagnosticsManager = new Diags('typescript');
+    this.buffer.onDelete(
       (resource) => {
         this.cancelInflightRequestsForResource(resource);
         this.diagnosticsManager.delete(resource);
@@ -144,7 +144,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
       null,
       this.dispos
     );
-    this.bufferSync.onWillChange((resource) => {
+    this.buffer.onWillChange((resource) => {
       this.cancelInflightRequestsForResource(resource);
     });
 
@@ -227,7 +227,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
 
   dispose() {
     super.dispose();
-    this.bufferSync.dispose();
+    this.buffer.dispose();
     if (this.serverState.type === ServerState.Type.Running) {
       this.serverState.server.kill();
     }
@@ -486,7 +486,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
   }
 
   private serviceStarted(resendModels: boolean): void {
-    this.bufferSync.reset();
+    this.buffer.reset();
     const watchOptions = this.configuration.watchOptions;
     const configureOptions: Proto.ConfigureRequestArguments = {
       hostInfo: 'vscode',
@@ -500,8 +500,8 @@ export class ServiceClient extends Disposable implements IServiceClient {
     this.setCompilerOptionsForInferredProjects(this._configuration);
     if (resendModels) {
       this._onResendModelsRequested.fire();
-      this.bufferSync.reinitialize();
-      this.bufferSync.requestAllDiags();
+      this.buffer.reinitialize();
+      this.buffer.requestAllDiags();
     }
     for (const [config, pluginName] of this.plugins.configs()) {
       this.configurePlugin(config, pluginName);
@@ -616,7 +616,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
   }
 
   toOpenedPath(d: vscode.TextDocument): string | undefined {
-    if (!this.bufferSync.ensureHasBuffer(d.uri)) {
+    if (!this.buffer.ensureHasBuffer(d.uri)) {
       console.error(`Unexpected resource ${d.uri}`);
       return;
     }
@@ -636,9 +636,9 @@ export class ServiceClient extends Disposable implements IServiceClient {
           path: path.posix.join(d, f.slice(this.inMemoryResourcePrefix.length)),
         });
       }
-      return this.bufferSync.toVsCodeResource(r);
+      return this.buffer.toVsCodeResource(r);
     }
-    return this.bufferSync.toResource(filepath);
+    return this.buffer.toResource(filepath);
   }
 
   workspaceRootFor(r: vscode.Uri): string | undefined {
@@ -712,13 +712,13 @@ export class ServiceClient extends Disposable implements IServiceClient {
     args: any,
     info: ExecInfo
   ): Promise<ServerResponse.Response<Proto.Response>> | undefined {
-    this.bufferSync.beforeCommand(cmd);
+    this.buffer.beforeCommand(cmd);
     const state = this.service();
     return state.server.exec(cmd, args, info);
   }
 
   interruptGetErr<R>(f: () => R): R {
-    return this.bufferSync.interuptGetErr(f);
+    return this.buffer.interuptGetErr(f);
   }
 
   private fatalError(command: string, error: unknown): void {
@@ -775,7 +775,7 @@ export class ServiceClient extends Disposable implements IServiceClient {
         break;
       }
       case 'projectsUpdatedInBackground':
-        this.bufferSync.getErr(resources);
+        this.buffer.getErr(resources);
         break;
       case 'beginInstallTypes':
         this._onDidBeginInstallTypes.fire((event as Proto.BeginInstallTypesEvent).body);
@@ -879,11 +879,11 @@ ${e.stack}
 function getDignosticsKind(event: Proto.Event) {
   switch (event.event) {
     case 'syntaxDiag':
-      return DiagnosticKind.Syntax;
+      return DiagKind.Syntax;
     case 'semanticDiag':
-      return DiagnosticKind.Semantic;
+      return DiagKind.Semantic;
     case 'suggestionDiag':
-      return DiagnosticKind.Suggestion;
+      return DiagKind.Suggestion;
   }
   throw new Error('Unknown dignostics kind');
 }

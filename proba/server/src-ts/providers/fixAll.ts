@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import type * as Proto from '../protocol';
-import * as qs from '../service';
-import API from '../utils/api';
-import { VersionDependent } from '../utils/registration';
+import * as vsc from 'vscode';
+import type * as proto from '../protocol';
+
+import { Diags } from '../utils/diagnostic';
+import { FileConfigs } from '../utils/configs';
 import { fix, codes } from '../utils/names';
 import * as qc from '../utils/convert';
-import { DiagnosticsManager } from './diagnostics';
-import { FileConfigs } from './configs';
+import * as qr from '../utils/registration';
+import * as qs from '../service';
 
 const localize = nls.loadMessageBundle();
 
@@ -18,17 +18,17 @@ interface AutoFix {
 
 async function buildIndividualFixes(
   fixes: readonly AutoFix[],
-  edit: vscode.WorkspaceEdit,
-  client: IServiceClient,
+  edit: vsc.WorkspaceEdit,
+  client: qs.IServiceClient,
   file: string,
-  diagnostics: readonly vscode.Diagnostic[],
-  ct: vscode.CancellationToken
+  diagnostics: readonly vsc.Diagnostic[],
+  ct: vsc.CancellationToken
 ): Promise<void> {
   for (const diagnostic of diagnostics) {
     for (const { code, fixName } of fixes) {
       if (ct.isCancellationRequested) return;
       if (diagnostic.code !== code) continue;
-      const args: Proto.CodeFixRequestArgs = {
+      const args: proto.CodeFixRequestArgs = {
         ...qc.Range.toFileRangeRequestArgs(file, diagnostic.range),
         errorCodes: [+diagnostic.code],
       };
@@ -45,17 +45,17 @@ async function buildIndividualFixes(
 
 async function buildCombinedFix(
   fixes: readonly AutoFix[],
-  edit: vscode.WorkspaceEdit,
-  client: IServiceClient,
+  edit: vsc.WorkspaceEdit,
+  client: qs.IServiceClient,
   file: string,
-  diagnostics: readonly vscode.Diagnostic[],
-  ct: vscode.CancellationToken
+  diagnostics: readonly vsc.Diagnostic[],
+  ct: vsc.CancellationToken
 ): Promise<void> {
   for (const diagnostic of diagnostics) {
     for (const { code, fixName } of fixes) {
       if (ct.isCancellationRequested) return;
       if (diagnostic.code !== code) continue;
-      const args: Proto.CodeFixRequestArgs = {
+      const args: proto.CodeFixRequestArgs = {
         ...qc.Range.toFileRangeRequestArgs(file, diagnostic.range),
         errorCodes: [+diagnostic.code],
       };
@@ -67,7 +67,7 @@ async function buildCombinedFix(
         qc.WorkspaceEdit.withFileCodeEdits(edit, client, fix.changes);
         return;
       }
-      const combinedArgs: Proto.GetCombinedCodeFixRequestArgs = {
+      const combinedArgs: proto.GetCombinedCodeFixRequestArgs = {
         scope: {
           type: 'file',
           args: { file },
@@ -86,28 +86,28 @@ async function buildCombinedFix(
   }
 }
 
-abstract class SourceAction extends vscode.CodeAction {
+abstract class SourceAction extends vsc.CodeAction {
   abstract async build(
-    client: IServiceClient,
+    client: qs.IServiceClient,
     file: string,
-    diagnostics: readonly vscode.Diagnostic[],
-    ct: vscode.CancellationToken
+    diagnostics: readonly vsc.Diagnostic[],
+    ct: vsc.CancellationToken
   ): Promise<void>;
 }
 
 class SourceFixAll extends SourceAction {
-  static readonly kind = vscode.CodeActionKind.SourceFixAll.append('ts');
+  static readonly kind = vsc.CodeActionKind.SourceFixAll.append('ts');
   constructor() {
     super(localize('autoFix.label', 'Fix All'), SourceFixAll.kind);
   }
 
   async build(
-    client: IServiceClient,
+    client: qs.IServiceClient,
     file: string,
-    diagnostics: readonly vscode.Diagnostic[],
-    ct: vscode.CancellationToken
+    diagnostics: readonly vsc.Diagnostic[],
+    ct: vsc.CancellationToken
   ): Promise<void> {
-    this.edit = new vscode.WorkspaceEdit();
+    this.edit = new vsc.WorkspaceEdit();
     await buildIndividualFixes(
       [
         {
@@ -138,7 +138,7 @@ class SourceFixAll extends SourceAction {
 }
 
 class SourceRemoveUnused extends SourceAction {
-  static readonly kind = vscode.CodeActionKind.Source.append('removeUnused').append('ts');
+  static readonly kind = vsc.CodeActionKind.Source.append('removeUnused').append('ts');
 
   constructor() {
     super(
@@ -148,12 +148,12 @@ class SourceRemoveUnused extends SourceAction {
   }
 
   async build(
-    client: IServiceClient,
+    client: qs.IServiceClient,
     file: string,
-    diagnostics: readonly vscode.Diagnostic[],
-    ct: vscode.CancellationToken
+    diagnostics: readonly vsc.Diagnostic[],
+    ct: vsc.CancellationToken
   ): Promise<void> {
-    this.edit = new vscode.WorkspaceEdit();
+    this.edit = new vsc.WorkspaceEdit();
     await buildCombinedFix(
       [
         {
@@ -171,7 +171,7 @@ class SourceRemoveUnused extends SourceAction {
 }
 
 class SourceAddMissingImports extends SourceAction {
-  static readonly kind = vscode.CodeActionKind.Source.append('addMissingImports').append(
+  static readonly kind = vsc.CodeActionKind.Source.append('addMissingImports').append(
     'ts'
   );
 
@@ -183,12 +183,12 @@ class SourceAddMissingImports extends SourceAction {
   }
 
   async build(
-    client: IServiceClient,
+    client: qs.IServiceClient,
     file: string,
-    diagnostics: readonly vscode.Diagnostic[],
-    ct: vscode.CancellationToken
+    diagnostics: readonly vsc.Diagnostic[],
+    ct: vsc.CancellationToken
   ): Promise<void> {
-    this.edit = new vscode.WorkspaceEdit();
+    this.edit = new vsc.WorkspaceEdit();
     await buildCombinedFix(
       codes.cannotFindName.map((code) => ({ code, fixName: fix.fixImport })),
       this.edit,
@@ -200,8 +200,8 @@ class SourceAddMissingImports extends SourceAction {
   }
 }
 
-class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
-  public static readonly metadata: vscode.CodeActionProviderMetadata = {
+class TypeScriptAutoFixProvider implements vsc.CodeActionProvider {
+  public static readonly metadata: vsc.CodeActionProviderMetadata = {
     providedCodeActionKinds: [
       SourceFixAll.kind,
       SourceRemoveUnused.kind,
@@ -210,23 +210,23 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
   };
 
   constructor(
-    private readonly client: IServiceClient,
+    private readonly client: qs.IServiceClient,
     private readonly fileConfigurationManager: FileConfigs,
-    private readonly diagnosticsManager: DiagnosticsManager
+    private readonly diagnosticsManager: Diags
   ) {}
 
   public async provideCodeActions(
-    document: vscode.TextDocument,
-    _range: vscode.Range,
-    context: vscode.CodeActionContext,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.CodeAction[] | undefined> {
-    if (!context.only || !vscode.CodeActionKind.Source.intersects(context.only)) return;
+    document: vsc.TextDocument,
+    _range: vsc.Range,
+    context: vsc.CodeActionContext,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.CodeAction[] | undefined> {
+    if (!context.only || !vsc.CodeActionKind.Source.intersects(context.only)) return;
     const file = this.client.toOpenedPath(document);
     if (!file) return;
     const actions = this.getFixAllActions(context.only);
-    if (this.client.bufferSync.hasDiags(document.uri)) return actions;
-    const diagnostics = this.diagnosticsManager.getDiagnostics(document.uri);
+    if (this.client.buffer.hasDiags(document.uri)) return actions;
+    const diagnostics = this.diagnosticsManager.diagnostics(document.uri);
     if (!diagnostics.length) return actions;
     await this.fileConfigurationManager.ensureConfigurationForDocument(document, ct);
     if (ct.isCancellationRequested) return;
@@ -236,7 +236,7 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
     return actions;
   }
 
-  private getFixAllActions(only: vscode.CodeActionKind): SourceAction[] {
+  private getFixAllActions(only: vsc.CodeActionKind): SourceAction[] {
     const fixes = [];
     if (only.intersects(SourceFixAll.kind)) fixes.push(new SourceFixAll());
     if (only.intersects(SourceRemoveUnused.kind)) fixes.push(new SourceRemoveUnused());
@@ -247,13 +247,13 @@ class TypeScriptAutoFixProvider implements vscode.CodeActionProvider {
 }
 
 export function register(
-  s: vscode.DocumentSelector,
-  c: IServiceClient,
+  s: vsc.DocumentSelector,
+  c: qs.IServiceClient,
   cfgs: FileConfigs,
-  diags: DiagnosticsManager
+  diags: Diags
 ) {
-  return new VersionDependent(c, API.v300, () =>
-    vscode.languages.registerCodeActionsProvider(
+  return new qr.VersionDependent(c, qr.API.default, () =>
+    vsc.languages.registerCodeActionsProvider(
       s,
       new TypeScriptAutoFixProvider(c, cfgs, diags),
       TypeScriptAutoFixProvider.metadata

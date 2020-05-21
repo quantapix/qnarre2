@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { Disposable } from './extras';
 import { isJsConfigOrTsConfigFileName } from './language';
-import { isSupportedLanguageMode } from './language';
+import { isSupported } from './language';
 
 export class ManagedFileContextManager extends Disposable {
   private static readonly contextName = 'typescript.isManagedFile';
@@ -40,9 +40,7 @@ export class ManagedFileContextManager extends Disposable {
   }
 
   private isManagedScriptFile(e: vscode.TextEditor) {
-    return (
-      isSupportedLanguageMode(e.document) && this.normalizePath(e.document.uri) !== null
-    );
+    return isSupported(e.document) && this.normalizePath(e.document.uri) !== null;
   }
 
   private isManagedConfigFile(e: vscode.TextEditor) {

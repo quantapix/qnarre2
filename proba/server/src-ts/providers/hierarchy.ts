@@ -7,7 +7,7 @@ import * as qc from '../utils/convert';
 import * as qr from '../utils/registration';
 import * as qs from '../service';
 
-class CallHierarchy implements vsc.CallHierarchyProvider {
+class Hierarchy implements vsc.CallHierarchyProvider {
   static readonly minApi = qr.API.default;
 
   constructor(private readonly client: qs.IServiceClient) {}
@@ -88,7 +88,7 @@ function fromOutgoing(c: proto.CallHierarchyOutgoingCall) {
 }
 
 export function register(s: vsc.DocumentSelector, c: qs.IServiceClient) {
-  return new qr.VersionDependent(c, CallHierarchy.minApi, () =>
-    vsc.languages.registerCallHierarchyProvider(s, new CallHierarchy(c))
+  return new qr.VersionDependent(c, Hierarchy.minApi, () =>
+    vsc.languages.registerCallHierarchyProvider(s, new Hierarchy(c))
   );
 }

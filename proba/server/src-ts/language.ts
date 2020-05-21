@@ -2,8 +2,8 @@
 import { basename } from 'path';
 import * as vscode from 'vscode';
 import { CachedResponse } from './server';
-import { DiagnosticKind } from './providers/diagnostics';
-import FileConfigs from './providers/configs';
+import { DiagKind } from './providers/diagnostics';
+import FileConfigs from './utils/configs';
 import { ServiceClient } from './serviceClient';
 import { Commands, Disposable } from './utils/extras';
 import * as fileSchemes from './utils/fileSchemes';
@@ -50,7 +50,7 @@ export class LanguageProvider extends Disposable {
     const s = this.documentSelector;
     const r = new CachedResponse();
     await Promise.all([
-      import('./providers/completions').then((p) =>
+      import('./providers/completion').then((p) =>
         this.register(
           p.register(
             s,
@@ -65,10 +65,10 @@ export class LanguageProvider extends Disposable {
         )
       ),
       import('./providers/defs').then((p) => this.register(p.register(s, this.client))),
-      import('./providers/directiveCompletion').then((p) =>
+      import('./providers/directive').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/documentHighlight').then((p) =>
+      import('./providers/highlight').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/documentSymbol').then((p) =>
@@ -90,7 +90,7 @@ export class LanguageProvider extends Disposable {
       import('./providers/jsDocCompletions').then((p) =>
         this.register(p.register(s, this.description.id, this.client))
       ),
-      import('./providers/organizeImports').then((p) =>
+      import('./providers/import').then((p) =>
         this.register(p.register(s, this.client, this.cmds, this.configs, this.telemetry))
       ),
       import('./providers/quickFix').then((p) =>
@@ -113,7 +113,7 @@ export class LanguageProvider extends Disposable {
       import('./providers/refactor').then((p) =>
         this.register(p.register(s, this.client, this.configs, this.cmds, this.telemetry))
       ),
-      import('./providers/references').then((p) =>
+      import('./providers/reference').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/clReferences').then((p) =>
@@ -125,7 +125,7 @@ export class LanguageProvider extends Disposable {
       import('./providers/smartSelect').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/signatureHelp').then((p) =>
+      import('./providers/signature').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/tagClosing').then((p) =>
@@ -180,11 +180,11 @@ export class LanguageProvider extends Disposable {
   }
 
   public triggerAllDiagnostics() {
-    this.client.bufferSync.requestAllDiags();
+    this.client.buffer.requestAllDiags();
   }
 
   public diagnosticsReceived(
-    k: DiagnosticKind,
+    k: DiagKind,
     r: vscode.Uri,
     ds: (vscode.Diagnostic & { reportUnnecessary: any })[]
   ) {

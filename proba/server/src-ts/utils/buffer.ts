@@ -2,11 +2,11 @@
 import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
-import * as qc from '../utils/convert';
-import * as ql from '../utils/language';
+import * as qc from './convert';
+import * as ql from './language';
 import * as qs from '../service';
-import * as qu from '../utils';
-import * as qx from '../utils/extras';
+import * as qu from '.';
+import * as qx from './extras';
 
 const enum Kind {
   TypeScript = 1,
@@ -40,10 +40,10 @@ class ChangeOp {
   constructor(public readonly args: proto.FileCodeEdits) {}
 }
 
-type BufferOp = CloseOp | OpenOp | ChangeOp;
+type BufOp = CloseOp | OpenOp | ChangeOp;
 
 class Synchronizer {
-  private readonly pending = new qx.ResourceMap<BufferOp>();
+  private readonly pending = new qx.ResourceMap<BufOp>();
 
   constructor(private readonly client: qs.IServiceClient) {}
 
@@ -111,7 +111,7 @@ class Synchronizer {
     }
   }
 
-  private update(r: vsc.Uri, op: BufferOp) {
+  private update(r: vsc.Uri, op: BufOp) {
     const existing = this.pending.get(r);
     switch (op.type) {
       case OpType.Close:
@@ -128,7 +128,7 @@ class Synchronizer {
   }
 }
 
-class Buffer {
+class Buf {
   private state = State.Initial;
 
   constructor(
@@ -207,11 +207,11 @@ function mode2Kind(mode: string): 'TS' | 'TSX' | 'JS' | 'JSX' | undefined {
   return;
 }
 
-class BufferMap extends qx.ResourceMap<Buffer> {
+class BufMap extends qx.ResourceMap<Buf> {
   forPath(p: string) {
     return this.get(vsc.Uri.file(p));
   }
-  get allBuffers() {
+  get allBufs() {
     return this.values;
   }
 }
@@ -274,11 +274,11 @@ class GetErrRequest {
   }
 }
 
-export class BufferSync extends qx.Disposable {
+export class Buffer extends qx.Disposable {
   private validateJs = true;
   private validateTs = true;
   private readonly modes: Set<string>;
-  private readonly bufs: BufferMap;
+  private readonly bufs: BufMap;
   private readonly diags: Diags;
   private readonly delayer = new qx.Delayer<any>(300);
   private pendingGetErr: GetErrRequest | undefined;
@@ -289,7 +289,7 @@ export class BufferSync extends qx.Disposable {
     super();
     this.modes = new Set<string>(modes);
     const n = (r: vsc.Uri) => this.client.toNormPath(r);
-    this.bufs = new BufferMap(n);
+    this.bufs = new BufMap(n);
     this.diags = new Diags(n);
     this.sync = new Synchronizer(client);
     this.updateConfig();
@@ -338,7 +338,7 @@ export class BufferSync extends qx.Disposable {
 
   toVsCodeResource(r: vsc.Uri) {
     const p = this.client.toNormPath(r);
-    for (const b of this.bufs.allBuffers) {
+    for (const b of this.bufs.allBufs) {
       if (b.filepath === p) return b.resource;
     }
     return r;
@@ -358,7 +358,7 @@ export class BufferSync extends qx.Disposable {
 
   reinitialize() {
     this.reset();
-    for (const b of this.bufs.allBuffers) {
+    for (const b of this.bufs.allBufs) {
       b.open();
     }
   }
@@ -369,7 +369,7 @@ export class BufferSync extends qx.Disposable {
     const p = this.client.toNormPath(r);
     if (!p) return false;
     if (this.bufs.has(r)) return true;
-    const b = new Buffer(d, p, this.client, this.sync);
+    const b = new Buf(d, p, this.client, this.sync);
     this.bufs.set(r, b);
     b.open();
     this.requestDiags(b);
@@ -419,7 +419,7 @@ export class BufferSync extends qx.Disposable {
   }
 
   requestAllDiags() {
-    for (const b of this.bufs.allBuffers) {
+    for (const b of this.bufs.allBufs) {
       if (this.shouldValidate(b)) this.diags.set(b.resource, Date.now());
     }
     this.triggerDiags();
@@ -440,7 +440,7 @@ export class BufferSync extends qx.Disposable {
     }, delay);
   }
 
-  private requestDiags(b: Buffer) {
+  private requestDiags(b: Buf) {
     if (!this.shouldValidate(b)) return false;
     this.diags.set(b.resource, Date.now());
     const delay = Math.min(Math.max(Math.ceil(b.lineCount / 20), 300), 800);
@@ -483,7 +483,7 @@ export class BufferSync extends qx.Disposable {
     this.validateTs = ts.get<boolean>('validate.enable', true);
   }
 
-  private shouldValidate(b: Buffer) {
+  private shouldValidate(b: Buf) {
     switch (b.kind) {
       case Kind.JavaScript:
         return this.validateJs;

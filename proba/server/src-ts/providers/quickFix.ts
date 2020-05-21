@@ -15,8 +15,8 @@ import * as fixNames from '../utils/names';
 import { memoize } from '../utils/memoize';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/convert';
-import { DiagnosticsManager } from './diagnostics';
-import FileConfigs from './configs';
+import { Diags } from '../utils/diagnostic';
+import FileConfigs from '../utils/configs';
 
 const localize = nls.loadMessageBundle();
 
@@ -195,7 +195,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
     private readonly client: IServiceClient,
     private readonly formattingConfigurationManager: FileConfigs,
     commandManager: Commands,
-    private readonly diagnosticsManager: DiagnosticsManager,
+    private readonly diagnosticsManager: Diags,
     telemetry: TelemetryReporter
   ) {
     commandManager.register(new ApplyCodeActionCommand(client, telemetry));
@@ -222,7 +222,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider {
       return [];
     }
 
-    if (this.client.bufferSync.hasPendingDiagnostics(document.uri)) {
+    if (this.client.buffer.hasPendingDiagnostics(document.uri)) {
       return [];
     }
 
@@ -415,7 +415,7 @@ export function register(
   client: IServiceClient,
   fileConfigurationManager: FileConfigs,
   commandManager: Commands,
-  diagnosticsManager: DiagnosticsManager,
+  diagnosticsManager: Diags,
   telemetry: TelemetryReporter
 ) {
   return vscode.languages.registerCodeActionsProvider(

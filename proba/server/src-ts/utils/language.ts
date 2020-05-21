@@ -1,13 +1,15 @@
 import { basename } from 'path';
 import * as vscode from 'vscode';
 
+import * as qd from './diagnostic';
+
 export const typescript = 'typescript';
 export const typescriptreact = 'typescriptreact';
 export const javascript = 'javascript';
 export const javascriptreact = 'javascriptreact';
 export const jsxTags = 'jsx-tags';
 
-export function isSupportedLanguageMode(d: vscode.TextDocument) {
+export function isSupported(d: vscode.TextDocument) {
   return (
     vscode.languages.match(
       [typescript, typescriptreact, javascript, javascriptreact],
@@ -20,18 +22,11 @@ export function isTypeScriptDocument(d: vscode.TextDocument) {
   return vscode.languages.match([typescript, typescriptreact], d) > 0;
 }
 
-export const enum DiagLang {
-  JavaScript,
-  TypeScript,
-}
-
-export const allDiagLangs = [DiagLang.JavaScript, DiagLang.TypeScript];
-
 export interface LangDesc {
   readonly id: string;
   readonly diagOwner: string;
   readonly diagSource: string;
-  readonly diagLang: DiagLang;
+  readonly diagLang: qd.Lang;
   readonly modes: string[];
   readonly configFilePattern?: RegExp;
   readonly isExternal?: boolean;
@@ -42,7 +37,7 @@ export const standardLangDescs: LangDesc[] = [
     id: 'typescript',
     diagOwner: 'typescript',
     diagSource: 'ts',
-    diagLang: DiagLang.TypeScript,
+    diagLang: qd.Lang.TypeScript,
     modes: [typescript, typescriptreact],
     configFilePattern: /^tsconfig(\..*)?\.json$/gi,
   },
@@ -50,7 +45,7 @@ export const standardLangDescs: LangDesc[] = [
     id: 'javascript',
     diagOwner: 'typescript',
     diagSource: 'ts',
-    diagLang: DiagLang.JavaScript,
+    diagLang: qd.Lang.JavaScript,
     modes: [javascript, javascriptreact],
     configFilePattern: /^jsconfig(\..*)?\.json$/gi,
   },

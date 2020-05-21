@@ -1,7 +1,7 @@
 import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
-import { FileConfigs } from './configs';
+import { FileConfigs } from '../utils/configs';
 import * as qc from '../utils/convert';
 import * as qr from '../utils/registration';
 import * as qs from '../service';

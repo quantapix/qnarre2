@@ -16,7 +16,7 @@ import { Disposable } from '../utils/disposable';
 import * as fileSchemes from '../utils/fileSchemes';
 import { doesResourceLookLikeATypeScriptFile } from '../utils/language';
 import * as typeConverters from '../utils/convert';
-import FileConfigs from './configs';
+import FileConfigs from '../utils/configs';
 
 const localize = nls.loadMessageBundle();
 
@@ -128,8 +128,8 @@ class UpdateImportsOnFileRenameHandler extends Disposable {
         );
 
         // Make sure TS knows about file
-        this.client.bufferSync.closeResource(oldUri);
-        this.client.bufferSync.openTextDocument(document);
+        this.client.buffer.closeResource(oldUri);
+        this.client.buffer.openTextDocument(document);
 
         if (
           await this.withEditsForFileRename(edits, document, oldFilePath, newFilePath)

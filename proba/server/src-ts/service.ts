@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { BufferSync } from './providers/bufferSync';
+import { Buffer } from './utils/buffer';
 import * as proto from './protocol';
 import { API } from './utils/api';
 import { ServiceConfig } from './utils/configuration';
@@ -133,7 +133,7 @@ export interface IServiceClient {
   readonly api: API;
   readonly plugins: Plugins;
   readonly configuration: ServiceConfig;
-  readonly bufferSync: BufferSync;
+  readonly buffer: Buffer;
 
   execute<K extends keyof StandardRequests>(
     cmd: K,

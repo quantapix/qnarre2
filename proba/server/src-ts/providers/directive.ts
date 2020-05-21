@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/prefer-regexp-exec */
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
 import * as nls from 'vscode-nls';
 import * as qs from '../service';
 
@@ -41,14 +41,14 @@ const tsDirectives: Directive[] = [
   },
 ];
 
-class DirectiveCompletion implements vscode.CompletionItemProvider {
-  constructor(private readonly client: IServiceClient) {}
+class DirectiveCompletion implements vsc.CompletionItemProvider {
+  constructor(private readonly client: qs.IServiceClient) {}
 
   public provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    _ct: vscode.CancellationToken
-  ): vscode.CompletionItem[] {
+    document: vsc.TextDocument,
+    position: vsc.Position,
+    _ct: vsc.CancellationToken
+  ): vsc.CompletionItem[] {
     const file = this.client.toOpenedPath(document);
     if (!file) return [];
     const line = document.lineAt(position.line).text;
@@ -57,12 +57,12 @@ class DirectiveCompletion implements vscode.CompletionItemProvider {
     if (match) {
       const directives = tsDirectives;
       return directives.map((directive) => {
-        const item = new vscode.CompletionItem(
+        const item = new vsc.CompletionItem(
           directive.value,
-          vscode.CompletionItemKind.Snippet
+          vsc.CompletionItemKind.Snippet
         );
         item.detail = directive.description;
-        item.range = new vscode.Range(
+        item.range = new vsc.Range(
           position.line,
           Math.max(0, position.character - (match[1] ? match[1].length : 0)),
           position.line,
@@ -75,10 +75,6 @@ class DirectiveCompletion implements vscode.CompletionItemProvider {
   }
 }
 
-export function register(s: vscode.DocumentSelector, c: IServiceClient) {
-  return vscode.languages.registerCompletionItemProvider(
-    s,
-    new DirectiveCompletion(c),
-    '@'
-  );
+export function register(s: vsc.DocumentSelector, c: qs.IServiceClient) {
+  return vsc.languages.registerCompletionItemProvider(s, new DirectiveCompletion(c), '@');
 }

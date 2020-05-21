@@ -14,7 +14,7 @@ import { snippetForFunctionCall } from '../utils/snippetForFunctionCall';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/convert';
 import { TypingsStatus } from '../utils/typingsStatus';
-import { FileConfigs } from './configs';
+import { FileConfigs } from '../utils/configs';
 
 const localize = nls.loadMessageBundle();
 

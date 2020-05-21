@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as proto from '../protocol';
 import * as qc from '../utils/convert';
-import FileConfigs from './configs';
+import FileConfigs from '../utils/configs';
 import { IServiceClient, ServerResponse } from '../service';
 
 const localize = nls.loadMessageBundle();

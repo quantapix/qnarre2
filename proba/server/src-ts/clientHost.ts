@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { DiagnosticKind } from './providers/diagnostics';
-import FileConfigs from './providers/configs';
+import { DiagKind } from './providers/diagnostics';
+import FileConfigs from './utils/configs';
 import LanguageProvider from './language';
 import * as Proto from './protocol';
 import * as PConst from './protocol.const';
@@ -198,7 +198,7 @@ export class ServiceClientHost extends Disposable {
     if (provider) {
       return true;
     }
-    return this.client.bufferSync.handles(resource);
+    return this.client.buffer.handles(resource);
   }
 
   private configurationChanged(): void {
@@ -236,7 +236,7 @@ export class ServiceClientHost extends Disposable {
   }
 
   private async diagnosticsReceived(
-    kind: DiagnosticKind,
+    kind: DiagKind,
     resource: vscode.Uri,
     diagnostics: Proto.Diagnostic[]
   ): Promise<void> {

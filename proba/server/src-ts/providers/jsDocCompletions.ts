@@ -1,24 +1,21 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-import * as vscode from 'vscode';
+/* eslint-disable @typescript-eslint/prefer-regexp-exec */
+import * as vsc from 'vscode';
 import * as nls from 'vscode-nls';
-import { IServiceClient } from '../typescriptService';
-import { ConfigDependent } from '../utils/registration';
-import * as typeConverters from '../utils/convert';
+
+import * as qc from '../utils/convert';
+import * as qr from '../utils/registration';
+import * as qs from '../service';
 
 const localize = nls.loadMessageBundle();
 
-const defaultJsDoc = new vscode.SnippetString(`/**\n * $0\n */`);
+const defaultJsDoc = new vsc.SnippetString(`/**\n * $0\n */`);
 
-class JsDocCompletionItem extends vscode.CompletionItem {
+class JsDocCompletionItem extends vsc.CompletionItem {
   constructor(
-    public readonly document: vscode.TextDocument,
-    public readonly position: vscode.Position
+    public readonly document: vsc.TextDocument,
+    public readonly position: vsc.Position
   ) {
-    super('/** */', vscode.CompletionItemKind.Snippet);
+    super('/** */', vsc.CompletionItemKind.Snippet);
     this.detail = localize(
       'typescript.jsDocCompletionItem.documentation',
       'JSDoc comment'
@@ -29,7 +26,7 @@ class JsDocCompletionItem extends vscode.CompletionItem {
     const prefix = line.slice(0, position.character).match(/\/\**\s*$/);
     const suffix = line.slice(position.character).match(/^\s*\**\//);
     const start = position.translate(0, prefix ? -prefix[0].length : 0);
-    const range = new vscode.Range(
+    const range = new vsc.Range(
       start,
       position.translate(0, suffix ? suffix[0].length : 0)
     );
@@ -37,73 +34,52 @@ class JsDocCompletionItem extends vscode.CompletionItem {
   }
 }
 
-class JsDocCompletionProvider implements vscode.CompletionItemProvider {
-  constructor(private readonly client: IServiceClient) {}
+class JsDocCompletionProvider implements vsc.CompletionItemProvider {
+  constructor(private readonly client: qs.IServiceClient) {}
 
   public async provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    ct: vscode.CancellationToken
-  ): Promise<vscode.CompletionItem[] | undefined> {
+    document: vsc.TextDocument,
+    position: vsc.Position,
+    ct: vsc.CancellationToken
+  ): Promise<vsc.CompletionItem[] | undefined> {
     const file = this.client.toOpenedPath(document);
-    if (!file) {
-      return;
-    }
-
-    if (!this.isPotentiallyValidDocCompletionPosition(document, position)) {
-      return;
-    }
-
-    const args = typeConverters.Position.toFileLocationRequestArgs(file, position);
-    const response = await this.client.execute('docCommentTemplate', args, token);
-    if (response.type !== 'response' || !response.body) {
-      return;
-    }
-
+    if (!file) return;
+    if (!this.isPotentiallyValidDocCompletionPosition(document, position)) return;
+    const args = qc.Position.toFileLocationRequestArgs(file, position);
+    const response = await this.client.execute('docCommentTemplate', args, ct);
+    if (response.type !== 'response' || !response.body) return;
     const item = new JsDocCompletionItem(document, position);
-
-    // Workaround for #43619
-    // docCommentTemplate previously returned undefined for empty jsdoc templates.
-    // TS 2.7 now returns a single line doc comment, which breaks indentation.
     if (response.body.newText === '/** */') {
       item.insertText = defaultJsDoc;
     } else {
       item.insertText = templateToSnippet(response.body.newText);
     }
-
     return [item];
   }
 
   private isPotentiallyValidDocCompletionPosition(
-    document: vscode.TextDocument,
-    position: vscode.Position
+    document: vsc.TextDocument,
+    position: vsc.Position
   ): boolean {
-    // Only show the JSdoc completion when the everything before the cursor is whitespace
-    // or could be the opening of a comment
     const line = document.lineAt(position.line).text;
     const prefix = line.slice(0, position.character);
-    if (!/^\s*$|\/\*\*\s*$|^\s*\/\*\*+\s*$/.test(prefix)) {
-      return false;
-    }
-
-    // And everything after is possibly a closing comment or more whitespace
+    if (!/^\s*$|\/\*\*\s*$|^\s*\/\*\*+\s*$/.test(prefix)) return false;
     const suffix = line.slice(position.character);
     return /^\s*(\*+\/)?\s*$/.test(suffix);
   }
 }
 
-export function templateToSnippet(template: string): vscode.SnippetString {
-  // TODO: use append placeholder
+export function templateToSnippet(template: string): vsc.SnippetString {
   let snippetIndex = 1;
   template = template.replace(/\$/g, '\\$');
   template = template.replace(/^\s*(?=(\/|[ ]\*))/gm, '');
-  template = template.replace(/^(\/\*\*\s*\*[ ]*)$/m, (x) => x + `\$0`);
+  template = template.replace(/^(\/\*\*\s*\*[ ]*)$/m, (x) => x + `$0`);
   template = template.replace(
     /\* @param([ ]\{\S+\})?\s+(\S+)\s*$/gm,
     (_param, type, post) => {
       let out = '* @param ';
       if (type === ' {any}' || type === ' {*}') {
-        out += `{\$\{${snippetIndex++}:*\}} `;
+        out += `{$\{${snippetIndex++}:*}} `;
       } else if (type) {
         out += type + ' ';
       }
@@ -111,18 +87,14 @@ export function templateToSnippet(template: string): vscode.SnippetString {
       return out;
     }
   );
-  return new vscode.SnippetString(template);
+  return new vsc.SnippetString(template);
 }
 
-export function register(
-  selector: vscode.DocumentSelector,
-  modeId: string,
-  client: IServiceClient
-): vscode.Disposable {
-  return new ConfigDependent(modeId, 'suggest.completeJSDocs', () => {
-    return vscode.languages.registerCompletionItemProvider(
-      selector,
-      new JsDocCompletionProvider(client),
+export function register(s: vsc.DocumentSelector, lang: string, c: qs.IServiceClient) {
+  return new qr.ConfigDependent(lang, 'suggest.completeJSDocs', () => {
+    return vsc.languages.registerCompletionItemProvider(
+      s,
+      new JsDocCompletionProvider(c),
       '*'
     );
   });
