@@ -2,7 +2,7 @@ import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
 import * as qc from '../utils/convert';
-import * as qp from '../utils/previewer';
+import * as qp from '../utils/preview';
 import * as qs from '../service';
 
 class SignatureHelp implements vsc.SignatureHelpProvider {
@@ -58,7 +58,7 @@ class SignatureHelp implements vsc.SignatureHelpProvider {
   private convert(h: proto.SignatureHelpItem) {
     const s = new vsc.SignatureInformation(
       qp.plain(h.prefixDisplayParts),
-      qp.mdDocumentation(
+      qp.documentation(
         h.documentation,
         h.tags.filter((t) => t.name !== 'param')
       )
@@ -71,7 +71,7 @@ class SignatureHelp implements vsc.SignatureHelpProvider {
       s.parameters.push(
         new vsc.ParameterInformation(
           [idx, idx + label.length],
-          qp.mdDocumentation(p.documentation, [])
+          qp.documentation(p.documentation, [])
         )
       );
       idx += label.length;

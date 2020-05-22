@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { Buffer } from './utils/buffer';
 import * as proto from './protocol';
-import { API } from './utils/api';
-import { ServiceConfig } from './utils/configuration';
+
+import { Buffer } from './utils/buffer';
+import { API } from './utils/registration';
+import { ServiceConfig } from './utils/configs';
 import { Plugins } from './utils/plugin';
 
 export namespace ServerResponse {

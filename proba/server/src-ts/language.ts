@@ -1,45 +1,41 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { basename } from 'path';
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
+
 import { CachedResponse } from './server';
-import { DiagKind } from './providers/diagnostics';
-import FileConfigs from './utils/configs';
-import { ServiceClient } from './serviceClient';
-import { Commands, Disposable } from './utils/extras';
-import * as fileSchemes from './utils/fileSchemes';
+import { Kind } from './utils/diagnostic';
+import { FileConfigs } from './utils/configs';
+import * as qs from './serviceClient';
+import * as qx from './utils/extras';
 import { LangDesc } from './utils/language';
-import { memoize } from './utils';
+import * as qu from './utils';
 import { TelemetryReporter } from './utils/telemetry';
-import TypingsStatus from './utils/typingsStatus';
+import { TypingsStatus } from './utils/typingsStatus';
 
 const validateSetting = 'validate.enable';
 const suggestionSetting = 'suggestionActions.enabled';
 
-export class LanguageProvider extends Disposable {
+export class LanguageProvider extends qx.Disposable {
   constructor(
-    private readonly client: ServiceClient,
+    private readonly client: qs.ServiceClient,
     private readonly description: LangDesc,
-    private readonly cmds: Commands,
+    private readonly cmds: qx.Commands,
     private readonly telemetry: TelemetryReporter,
     private readonly typingsStatus: TypingsStatus,
     private readonly configs: FileConfigs,
-    private readonly onCompletionAccepted: (_: vscode.CompletionItem) => void
+    private readonly onCompletionAccepted: (_: vsc.CompletionItem) => void
   ) {
     super();
-    vscode.workspace.onDidChangeConfiguration(
-      this.configurationChanged,
-      this,
-      this.dispos
-    );
+    vsc.workspace.onDidChangeConfiguration(this.configurationChanged, this, this.dispos);
     this.configurationChanged();
     client.onReady(() => this.registerProviders());
   }
 
-  @memoize
-  private get documentSelector(): vscode.DocumentFilter[] {
+  @qu.memoize
+  private get documentSelector(): vsc.DocumentFilter[] {
     const fs = [];
     for (const language of this.description.modes) {
-      for (const scheme of fileSchemes.supportedSchemes) {
+      for (const scheme of qx.schemes) {
         fs.push({ language, scheme });
       }
     }
@@ -64,14 +60,16 @@ export class LanguageProvider extends Disposable {
           )
         )
       ),
-      import('./providers/defs').then((p) => this.register(p.register(s, this.client))),
+      import('./providers/definition').then((p) =>
+        this.register(p.register(s, this.client))
+      ),
       import('./providers/directive').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/highlight').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/documentSymbol').then((p) =>
+      import('./providers/symbol').then((p) =>
         this.register(p.register(s, this.client, r))
       ),
       import('./providers/folding').then((p) =>
@@ -81,13 +79,13 @@ export class LanguageProvider extends Disposable {
         this.register(p.register(s, this.description.id, this.client, this.configs))
       ),
       import('./providers/hover').then((p) => this.register(p.register(s, this.client))),
-      import('./providers/implement').then((p) =>
+      import('./providers/implementation').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/clImplements').then((p) =>
+      import('./providers/codeLens2').then((p) =>
         this.register(p.register(s, this.description.id, this.client, r))
       ),
-      import('./providers/jsDocCompletions').then((p) =>
+      import('./providers/jsDoc').then((p) =>
         this.register(p.register(s, this.description.id, this.client))
       ),
       import('./providers/import').then((p) =>
@@ -116,7 +114,7 @@ export class LanguageProvider extends Disposable {
       import('./providers/reference').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/clReferences').then((p) =>
+      import('./providers/codeLens').then((p) =>
         this.register(p.register(s, this.description.id, this.client, r))
       ),
       import('./providers/rename').then((p) =>
@@ -131,25 +129,25 @@ export class LanguageProvider extends Disposable {
       import('./providers/tagClosing').then((p) =>
         this.register(p.register(s, this.description.id, this.client))
       ),
-      import('./providers/typeDefs').then((p) =>
+      import('./providers/typeDefinition').then((p) =>
         this.register(p.register(s, this.client))
       ),
       import('./providers/semantic').then((p) =>
         this.register(p.register(s, this.client))
       ),
-      import('./providers/callHierarchy').then((p) =>
+      import('./providers/hierarchy').then((p) =>
         this.register(p.register(s, this.client))
       ),
     ]);
   }
 
   private configurationChanged() {
-    const config = vscode.workspace.getConfiguration(this.id, null);
+    const config = vsc.workspace.getConfiguration(this.id, null);
     this.updateValidate(config.get(validateSetting, true));
     this.updateSuggestionDiags(config.get(suggestionSetting, true));
   }
 
-  public handles(r: vscode.Uri, d: vscode.TextDocument) {
+  public handles(r: vsc.Uri, d: vsc.TextDocument) {
     if (d && this.description.modes.includes(d.languageId)) return true;
     const b = basename(r.fsPath);
     return (
@@ -172,7 +170,7 @@ export class LanguageProvider extends Disposable {
   }
 
   private updateSuggestionDiags(v: boolean) {
-    this.client.diagnosticsManager.setEnableSuggestions(this._diagLang, v);
+    this.client.diagnosticsManager.setSuggestions(this._diagLang, v);
   }
 
   public reInitialize() {
@@ -184,20 +182,20 @@ export class LanguageProvider extends Disposable {
   }
 
   public diagnosticsReceived(
-    k: DiagKind,
-    r: vscode.Uri,
-    ds: (vscode.Diagnostic & { reportUnnecessary: any })[]
+    k: Kind,
+    r: vsc.Uri,
+    ds: (vsc.Diagnostic & { reportUnnecessary: any })[]
   ) {
-    const config = vscode.workspace.getConfiguration(this.id, r);
+    const config = vsc.workspace.getConfiguration(this.id, r);
     const reportUnnecessary = config.get<boolean>('showUnused', true);
-    this.client.diagnosticsManager.updateDiagnostics(
+    this.client.diagnosticsManager.update(
       r,
       this._diagLang,
       k,
       ds.filter((d) => {
         if (!reportUnnecessary) {
           d.tags = undefined;
-          if (d.reportUnnecessary && d.severity === vscode.DiagnosticSeverity.Hint) {
+          if (d.reportUnnecessary && d.severity === vsc.DiagnosticSeverity.Hint) {
             return false;
           }
         }
@@ -206,8 +204,8 @@ export class LanguageProvider extends Disposable {
     );
   }
 
-  public configFileDiagnosticsReceived(r: vscode.Uri, ds: vscode.Diagnostic[]) {
-    this.client.diagnosticsManager.configFileDiagnosticsReceived(r, ds);
+  public configFileDiagnosticsReceived(r: vsc.Uri, ds: vsc.Diagnostic[]) {
+    this.client.diagnosticsManager.configFileDiagsReceived(r, ds);
   }
 
   private get _diagLang() {

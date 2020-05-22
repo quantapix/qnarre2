@@ -48,7 +48,7 @@ export class Plugins extends Disposable {
   }
 
   configs() {
-    return this.cfgs.entries();
+    return Array.from(this.cfgs.entries());
   }
 
   setConfig(pluginId: string, config: {}) {

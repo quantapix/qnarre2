@@ -1,6 +1,10 @@
 import path from 'path';
 import os from 'os';
 
+export interface Dict<T> {
+  [_: string]: T;
+}
+
 export const empty = Object.freeze([]);
 
 export function deepEquals<T>(

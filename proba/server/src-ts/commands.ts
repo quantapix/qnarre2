@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import { Plugins } from './utils/plugin';
-import { Command, Commands, Lazy } from './utils/extras';
+import * as qx from './utils/extras';
 import { openProjectConfigForFile, ProjectType } from './utils/tsconfig';
-import ServiceClientHost from './clientHost';
-import { isTypeScriptDocument } from '../utils/languageModeIds';
+import { ServiceClientHost } from './clientHost';
+import { isTypeScriptDocument } from './utils/language';
 
-export class ReloadProjects implements Command {
+export class ReloadProjects implements qx.Command {
   public readonly id: string;
-  public constructor(p: string, private readonly host: Lazy<ServiceClientHost>) {
+  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.reloadProjects`;
   }
   public execute() {
@@ -15,9 +15,9 @@ export class ReloadProjects implements Command {
   }
 }
 
-export class SelectVersion implements Command {
+export class SelectVersion implements qx.Command {
   public readonly id: string;
-  public constructor(p: string, private readonly host: Lazy<ServiceClientHost>) {
+  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.selectVersion`;
   }
   public execute() {
@@ -25,9 +25,9 @@ export class SelectVersion implements Command {
   }
 }
 
-export class OpenLog implements Command {
+export class OpenLog implements qx.Command {
   public readonly id: string;
-  public constructor(p: string, private readonly host: Lazy<ServiceClientHost>) {
+  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.openLog`;
   }
   public execute() {
@@ -35,9 +35,9 @@ export class OpenLog implements Command {
   }
 }
 
-export class RestartServer implements Command {
+export class RestartServer implements qx.Command {
   public readonly id: string;
-  public constructor(p: string, private readonly host: Lazy<ServiceClientHost>) {
+  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = '.restartServer';
   }
   public execute() {
@@ -45,9 +45,9 @@ export class RestartServer implements Command {
   }
 }
 
-export class GoToProjectConfig implements Command {
+export class GoToProjectConfig implements qx.Command {
   public readonly id: string;
-  public constructor(p: string, private readonly host: Lazy<ServiceClientHost>) {
+  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.goToProjectConfig`;
   }
   public execute() {
@@ -62,17 +62,17 @@ export class GoToProjectConfig implements Command {
   }
 }
 
-export class ConfigPlugin implements Command {
+export class ConfigPlugin implements qx.Command {
   public readonly id: string;
   public constructor(p: string, private readonly plugins: Plugins) {
     this.id = `${p}.configurePlugin`;
   }
   public execute(id: string, c: any) {
-    this.plugins.setConfiguration(id, c);
+    this.plugins.setConfig(id, c);
   }
 }
 
-export class AboutRefactorings implements Command {
+export class AboutRefactorings implements qx.Command {
   public readonly id: string;
   public constructor(p: string) {
     this.id = `${p}.aboutRefactorings`;
@@ -88,8 +88,8 @@ export class AboutRefactorings implements Command {
 }
 
 export function registerCommands(
-  cs: Commands,
-  host: Lazy<ServiceClientHost>,
+  cs: qx.Commands,
+  host: qx.Lazy<ServiceClientHost>,
   plugins: Plugins
 ) {
   cs.register(new ReloadProjects('typescript', host));

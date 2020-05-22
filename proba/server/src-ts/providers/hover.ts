@@ -1,7 +1,7 @@
 import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
-import { mdDocumentation } from '../utils/previewer';
+import { documentation } from '../utils/preview';
 import * as qc from '../utils/convert';
 import * as qs from '../service';
 
@@ -26,7 +26,7 @@ class Hover implements vsc.HoverProvider {
   private static contents(b: proto.QuickInfoResponseBody) {
     const ps = [];
     if (b.displayString) ps.push({ language: 'typescript', value: b.displayString });
-    ps.push(mdDocumentation(b.documentation, b.tags));
+    ps.push(documentation(b.documentation, b.tags));
     return ps;
   }
 }

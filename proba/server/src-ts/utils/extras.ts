@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import * as fs from 'fs';
 import * as path from 'path';
 import * as stream from 'stream';
@@ -6,6 +7,17 @@ import * as nls from 'vscode-nls';
 import type * as proto from '../protocol';
 
 import { memoize } from '.';
+
+export const git = 'git';
+export const file = 'file';
+export const untitled = 'untitled';
+export const walkThroughSnippet = 'walkThroughSnippet';
+
+export const schemes = [file, untitled, walkThroughSnippet];
+
+export function isSupportedScheme(s: string) {
+  return schemes.includes(s);
+}
 
 const noopDisposable = vscode.Disposable.from();
 
@@ -27,7 +39,7 @@ export abstract class Disposable {
     return d;
   }
 
-  public dispose() {
+  dispose() {
     if (this.dispos) {
       disposeAll(this.dispos);
       this.dispos = undefined;
@@ -50,14 +62,14 @@ export interface Command {
 export class Commands {
   private readonly cs = new Map<string, vscode.Disposable>();
 
-  public dispose() {
+  dispose() {
     for (const c of this.cs.values()) {
       c.dispose();
     }
     this.cs.clear();
   }
 
-  public register<T extends Command>(c: T) {
+  register<T extends Command>(c: T) {
     const cs = this.cs;
     for (const i of Array.isArray(c.id) ? c.id : [c.id]) {
       if (!cs.has(i)) cs.set(i, vscode.commands.registerCommand(i, c.execute, c));
@@ -90,7 +102,7 @@ class LazyValue<T> implements Lazy<T> {
     return this._hasValue;
   }
 
-  public map<R>(f: (x: T) => R): Lazy<R> {
+  map<R>(f: (x: T) => R): Lazy<R> {
     return new LazyValue(() => f(this.value));
   }
 }
@@ -104,7 +116,7 @@ export interface ITask<T> {
 }
 
 export class Delayer<T> {
-  public defaultDelay: number;
+  defaultDelay: number;
   private timeout: any; // Timer
   private completionPromise: Promise<T | null> | null;
   private onSuccess: ((value?: T | Thenable<T>) => void) | null;
@@ -118,7 +130,7 @@ export class Delayer<T> {
     this.task = null;
   }
 
-  public trigger(task: ITask<T>, delay: number = this.defaultDelay): Promise<T | null> {
+  trigger(task: ITask<T>, delay: number = this.defaultDelay): Promise<T | null> {
     this.task = task;
     if (delay >= 0) this.cancelTimeout();
     if (!this.completionPromise) {
@@ -159,23 +171,23 @@ export class ResourceMap<T> {
     private readonly toKey: (r: vscode.Uri) => string | undefined = (r) => r.fsPath
   ) {}
 
-  public get size() {
+  get size() {
     return this._map.size;
   }
 
-  public has(r: vscode.Uri) {
+  has(r: vscode.Uri) {
     const k = this.toKey(r);
     return !!k && this._map.has(k);
   }
 
-  public get(r: vscode.Uri): T | undefined {
+  get(r: vscode.Uri): T | undefined {
     const k = this.toKey(r);
     if (!k) return;
     const e = this._map.get(k);
     return e ? e.value : undefined;
   }
 
-  public set(r: vscode.Uri, value: T) {
+  set(r: vscode.Uri, value: T) {
     const k = this.toKey(r);
     if (!k) return;
     const e = this._map.get(k);
@@ -183,26 +195,26 @@ export class ResourceMap<T> {
     else this._map.set(k, { resource: r, value });
   }
 
-  public delete(r: vscode.Uri) {
+  delete(r: vscode.Uri) {
     const k = this.toKey(r);
     if (k) this._map.delete(k);
   }
 
-  public clear() {
+  clear() {
     this._map.clear();
   }
 
-  public get values(): Iterable<T> {
+  get values(): Iterable<T> {
     return Array.from(this._map.values()).map((x) => x.value);
   }
 
-  public get entries(): Iterable<{ resource: vscode.Uri; value: T }> {
+  get entries(): Iterable<{ resource: vscode.Uri; value: T }> {
     return this._map.values();
   }
 }
 
 export class PathResolver {
-  public static asWorkspacePath(relative: string): string | undefined {
+  static asWorkspacePath(relative: string): string | undefined {
     for (const r of vscode.workspace.workspaceFolders || []) {
       const ps = [`./${r.name}/`, `${r.name}/`, `.\\${r.name}\\`, `${r.name}\\`];
       for (const p of ps) {
@@ -231,16 +243,16 @@ export class Logger {
     return d.toString();
   }
 
-  public info(m: string, d?: any) {
+  info(m: string, d?: any) {
     this.logLevel('Info', m, d);
   }
 
-  public error(m: string, d?: any) {
+  error(m: string, d?: any) {
     if (d && d.message === 'No content available.') return;
     this.logLevel('Error', m, d);
   }
 
-  public logLevel(l: Level, m: string, d?: any) {
+  logLevel(l: Level, m: string, d?: any) {
     this.output.appendLine(`[${l}  - ${this.now()}] ${m}`);
     if (d) this.output.appendLine(this.data2String(d));
   }
@@ -295,7 +307,7 @@ export class Tracer {
     this.updateConfig();
   }
 
-  public updateConfig() {
+  updateConfig() {
     this.trace = Tracer.readTrace();
   }
 
@@ -307,7 +319,7 @@ export class Tracer {
     return r;
   }
 
-  public traceRequest(id: string, req: proto.Request, response: boolean, len: number) {
+  traceRequest(id: string, req: proto.Request, response: boolean, len: number) {
     if (this.trace === Trace.Off) return;
     let data: string | undefined = undefined;
     if (this.trace === Trace.Verbose && req.arguments) {
@@ -322,7 +334,7 @@ export class Tracer {
     );
   }
 
-  public traceResponse(id: string, r: proto.Response, meta: RequestExecutionMetadata) {
+  traceResponse(id: string, r: proto.Response, meta: RequestExecutionMetadata) {
     if (this.trace === Trace.Off) return;
     let d: string | undefined = undefined;
     if (this.trace === Trace.Verbose && r.body) {
@@ -337,7 +349,7 @@ export class Tracer {
     );
   }
 
-  public traceRequestCompleted(
+  traceRequestCompleted(
     id: string,
     cmd: string,
     seq: number,
@@ -352,7 +364,7 @@ export class Tracer {
     );
   }
 
-  public traceEvent(id: string, e: proto.Event) {
+  traceEvent(id: string, e: proto.Event) {
     if (this.trace === Trace.Off) return;
     let d: string | undefined = undefined;
     if (this.trace === Trace.Verbose && e.body) {
@@ -361,7 +373,7 @@ export class Tracer {
     this.logTrace(id, `Event received: ${e.event} (${e.seq}).`, d);
   }
 
-  public logTrace(id: string, m: string, d?: any) {
+  logTrace(id: string, m: string, d?: any) {
     if (this.trace !== Trace.Off) {
       this.logger.logLevel('Trace', `<${id}> ${m}`, d);
     }
@@ -379,7 +391,7 @@ class ProtocolBuffer {
   private index = 0;
   private buf: Buffer = Buffer.allocUnsafe(defSize);
 
-  public append(d: string | Buffer) {
+  append(d: string | Buffer) {
     let r: Buffer | undefined;
     if (Buffer.isBuffer(d)) r = d;
     else r = Buffer.from(d, 'utf8');
@@ -397,7 +409,7 @@ class ProtocolBuffer {
     this.index += r.length;
   }
 
-  public tryReadContentLength() {
+  tryReadContentLength() {
     let r = -1;
     let i = 0;
     while (
@@ -427,7 +439,7 @@ class ProtocolBuffer {
     return r;
   }
 
-  public tryReadContent(len: number): string | null {
+  tryReadContent(len: number): string | null {
     if (this.index < len) return null;
     const r = this.buf.toString('utf8', 0, len);
     let s = len;
@@ -444,21 +456,22 @@ export class Reader<T> extends Disposable {
   private readonly buf = new ProtocolBuffer();
   private nextLen = -1;
 
-  public constructor(readable: stream.Readable) {
+  constructor(readable: stream.Readable) {
     super();
     readable.on('data', (d) => this.onLengthData(d));
   }
 
   private readonly _onError = this.register(new vscode.EventEmitter<Error>());
-  public readonly onError = this._onError.event;
+  readonly onError = this._onError.event;
 
   private readonly _onData = this.register(new vscode.EventEmitter<T>());
-  public readonly onData = this._onData.event;
+  readonly onData = this._onData.event;
 
   private onLengthData(d: Buffer | string) {
     if (this.isDisposed) return;
     try {
       this.buf.append(d);
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         if (this.nextLen === -1) {
           this.nextLen = this.buf.tryReadContentLength();

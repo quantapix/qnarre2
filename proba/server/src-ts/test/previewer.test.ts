@@ -5,12 +5,12 @@
 
 import * as assert from 'assert';
 import 'mocha';
-import { tagsMarkdownPreview, mdDocumentation } from '../utils/previewer';
+import { tagsPreview, documentation } from '../utils/previewer';
 
 suite('typescript.previewer', () => {
   test('Should ignore hyphens after a param tag', async () => {
     assert.strictEqual(
-      tagsMarkdownPreview([
+      tagsPreview([
         {
           name: 'param',
           text: 'a - b',
@@ -22,7 +22,7 @@ suite('typescript.previewer', () => {
 
   test('Should parse url jsdoc @link', async () => {
     assert.strictEqual(
-      mdDocumentation(
+      documentation(
         'x {@link http://www.example.com/foo} y {@link https://api.jquery.com/bind/#bind-eventType-eventData-handler} z',
         []
       ).value,
@@ -32,7 +32,7 @@ suite('typescript.previewer', () => {
 
   test('Should parse url jsdoc @link with text', async () => {
     assert.strictEqual(
-      mdDocumentation(
+      documentation(
         'x {@link http://www.example.com/foo abc xyz} y {@link http://www.example.com/bar|b a z} z',
         []
       ).value,
@@ -42,7 +42,7 @@ suite('typescript.previewer', () => {
 
   test('Should treat @linkcode jsdocs links as monospace', async () => {
     assert.strictEqual(
-      mdDocumentation(
+      documentation(
         'x {@linkcode http://www.example.com/foo} y {@linkplain http://www.example.com/bar} z',
         []
       ).value,
@@ -52,7 +52,7 @@ suite('typescript.previewer', () => {
 
   test('Should parse url jsdoc @link in param tag', async () => {
     assert.strictEqual(
-      tagsMarkdownPreview([
+      tagsPreview([
         {
           name: 'param',
           text:
@@ -65,7 +65,7 @@ suite('typescript.previewer', () => {
 
   test('Should ignore unclosed jsdocs @link', async () => {
     assert.strictEqual(
-      mdDocumentation(
+      documentation(
         'x {@link http://www.example.com/foo y {@link http://www.example.com/bar bar} z',
         []
       ).value,
@@ -75,7 +75,7 @@ suite('typescript.previewer', () => {
 
   test('Should support non-ascii characters in parameter name (#90108)', async () => {
     assert.strictEqual(
-      tagsMarkdownPreview([
+      tagsPreview([
         {
           name: 'param',
           text: 'parámetroConDiacríticos this will not',

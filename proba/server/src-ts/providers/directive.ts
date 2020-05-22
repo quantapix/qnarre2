@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/prefer-regexp-exec */
 import * as vsc from 'vscode';
 import * as nls from 'vscode-nls';
 import * as qs from '../service';
@@ -7,37 +6,25 @@ const localize = nls.loadMessageBundle();
 
 interface Directive {
   readonly value: string;
-  readonly description: string;
+  readonly desc: string;
 }
 
 const tsDirectives: Directive[] = [
   {
     value: '@ts-check',
-    description: localize(
-      'ts-check',
-      'Enables semantic checking in a JavaScript file. Must be at the top of a file.'
-    ),
+    desc: localize('ts-check', 'Enables semantic checking at the top of a file.'),
   },
   {
     value: '@ts-nocheck',
-    description: localize(
-      'ts-nocheck',
-      'Disables semantic checking in a JavaScript file. Must be at the top of a file.'
-    ),
+    desc: localize('ts-nocheck', 'Disables semantic checking.'),
   },
   {
     value: '@ts-ignore',
-    description: localize(
-      'ts-ignore',
-      'Suppresses @ts-check errors on the next line of a file.'
-    ),
+    desc: localize('ts-ignore', 'Suppresses @ts-check errors on the next line.'),
   },
   {
     value: '@ts-expect-error',
-    description: localize(
-      'ts-expect-error',
-      'Suppresses @ts-check errors on the next line of a file, expecting at least one to exist.'
-    ),
+    desc: localize('ts-expect-error', 'Suppresses at least one @ts-check error.'),
   },
 ];
 
@@ -45,30 +32,27 @@ class DirectiveCompletion implements vsc.CompletionItemProvider {
   constructor(private readonly client: qs.IServiceClient) {}
 
   public provideCompletionItems(
-    document: vsc.TextDocument,
-    position: vsc.Position,
+    t: vsc.TextDocument,
+    p: vsc.Position,
     _ct: vsc.CancellationToken
   ): vsc.CompletionItem[] {
-    const file = this.client.toOpenedPath(document);
-    if (!file) return [];
-    const line = document.lineAt(position.line).text;
-    const prefix = line.slice(0, position.character);
-    const match = prefix.match(/^\s*\/\/+\s?(@[a-zA-Z-]*)?$/);
-    if (match) {
-      const directives = tsDirectives;
-      return directives.map((directive) => {
-        const item = new vsc.CompletionItem(
-          directive.value,
-          vsc.CompletionItemKind.Snippet
+    const f = this.client.toOpenedPath(t);
+    if (!f) return [];
+    const l = t.lineAt(p.line).text;
+    const pre = l.slice(0, p.character);
+    const m = /^\s*\/\/+\s?(@[a-zA-Z-]*)?$/.exec(pre);
+    if (m) {
+      const ds = tsDirectives;
+      return ds.map((d) => {
+        const i = new vsc.CompletionItem(d.value, vsc.CompletionItemKind.Snippet);
+        i.detail = d.desc;
+        i.range = new vsc.Range(
+          p.line,
+          Math.max(0, p.character - (m[1] ? m[1].length : 0)),
+          p.line,
+          p.character
         );
-        item.detail = directive.description;
-        item.range = new vsc.Range(
-          position.line,
-          Math.max(0, position.character - (match[1] ? match[1].length : 0)),
-          position.line,
-          position.character
-        );
-        return item;
+        return i;
       });
     }
     return [];

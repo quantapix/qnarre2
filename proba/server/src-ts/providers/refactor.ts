@@ -8,7 +8,6 @@ import * as qs from '../service';
 import * as qu from '../utils';
 import * as qx from '../utils/extras';
 import * as qr from '../utils/registration';
-import * as fileSchemes from '../utils/names';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as qc from '../utils/convert';
 import { FormattingOptionsManager } from '../utils/configs';
@@ -78,9 +77,7 @@ class ApplyRefactoring implements qx.Command {
     const we = new vsc.WorkspaceEdit();
     for (const e of i.edits) {
       const r = this.client.toResource(e.fileName);
-      if (r.scheme === fileSchemes.file) {
-        we.createFile(r, { ignoreIfExists: true });
-      }
+      if (r.scheme === qx.file) we.createFile(r, { ignoreIfExists: true });
     }
     qc.WorkspaceEdit.withFileCodeEdits(we, this.client, i.edits);
     return we;

@@ -2,20 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { memoize } from '.';
-import { ServiceConfig } from './configuration';
-import { PathResolver } from './extras';
-
-export const git = 'git';
-export const file = 'file';
-export const untitled = 'untitled';
-export const walkThroughSnippet = 'walkThroughSnippet';
-
-export const schemes = [file, untitled, walkThroughSnippet];
-
-export function isSupportedScheme(s: string) {
-  return schemes.includes(s);
-}
+import * as qu from '.';
+import { ServiceConfig } from './configs';
+import * as qx from './extras';
 
 export class LogDirectory {
   constructor(private readonly ctx: vscode.ExtensionContext) {}
@@ -30,7 +19,7 @@ export class LogDirectory {
     return;
   }
 
-  @memoize
+  @qu.memoize
   private directory(): string | undefined {
     try {
       const p = this.ctx.logPath;
@@ -58,7 +47,7 @@ export class PluginPaths {
 
   private resolvePath(p: string) {
     if (path.isAbsolute(p)) return [p];
-    const w = PathResolver.asWorkspacePath(p);
+    const w = qx.PathResolver.asWorkspacePath(p);
     if (w !== undefined) return [w];
     return (vscode.workspace.workspaceFolders || []).map((f) =>
       path.join(f.uri.fsPath, p)

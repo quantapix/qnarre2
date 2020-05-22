@@ -3,10 +3,8 @@ import * as path from 'path';
 import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
-import * as qs from '../service';
-import { API } from './registration';
-import * as fileSchemes from './names';
 import { isTypeScriptDocument } from './language';
+import * as qs from '../service';
 import * as qu from '.';
 import * as qx from './extras';
 
@@ -25,12 +23,8 @@ export class FileConfigs extends qx.Disposable {
   constructor(private readonly client: qs.IServiceClient) {
     super();
     vsc.workspace.onDidCloseTextDocument(
-      (textDocument) => {
-        // When a document gets closed delete the cached formatting options.
-        // This is necessary since the tsserver now closed a project when its
-        // last file in it closes which drops the stored formatting options
-        // as well.
-        this.formatOptions.delete(textDocument.uri);
+      (d) => {
+        this.formatOptions.delete(d.uri);
       },
       undefined,
       this.dispos
@@ -207,7 +201,7 @@ export class FileConfigs extends qx.Disposable {
       importModuleSpecifierEnding: getImportModuleSpecifierEndingPreference(
         preferencesConfig
       ),
-      allowTextChangesInNewFiles: document.uri.scheme === fileSchemes.file,
+      allowTextChangesInNewFiles: document.uri.scheme === qx.file,
       providePrefixAndSuffixTextForRename:
         preferencesConfig.get<boolean>('renameShorthandProperties', true) === false
           ? false
