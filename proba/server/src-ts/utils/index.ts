@@ -1,5 +1,8 @@
-import path from 'path';
+import cp from 'child_process';
+import fs from 'fs';
 import os from 'os';
+import path from 'path';
+import proc from 'process';
 
 export interface Dict<T> {
   [_: string]: T;
@@ -74,16 +77,63 @@ export function escapeRegExp(t: string) {
   return t.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
-export function makeRandomHexString(length: number) {
+function randHexString(len: number) {
   let r = '';
   // prettier-ignore
   const cs = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < len; i++) {
     r += cs[Math.floor(cs.length * Math.random())];
   }
   return r;
 }
 
-export function getTempFile(n: string) {
-  return path.join(os.tmpdir(), n);
+const rootDir = (() => {
+  let d: string | undefined;
+  return () => {
+    if (!d) {
+      d = path.join(
+        os.tmpdir(),
+        `vscode-typescript${
+          proc.platform !== 'win32' && proc.getuid ? proc.getuid() : ''
+        }`
+      );
+    }
+    if (!fs.existsSync(d)) fs.mkdirSync(d);
+    return d;
+  };
+})();
+
+export const instanceDir = (() => {
+  let d: string | undefined;
+  return () => {
+    if (!d) d = path.join(rootDir(), randHexString(20));
+    if (!fs.existsSync(d)) fs.mkdirSync(d);
+    return d;
+  };
+})();
+
+export function tempFile(pre: string) {
+  return path.join(instanceDir(), `${pre}-${randHexString(20)}.tmp`);
+}
+
+function patch(env: any, p: string) {
+  const e = Object.assign({}, env);
+  e['ELECTRON_RUN_AS_NODE'] = '1';
+  e['NODE_PATH'] = path.join(p, '..', '..', '..');
+  e['PATH'] = e['PATH'] || proc.env.PATH;
+  return e;
+}
+
+export interface ForkOptions {
+  readonly cwd?: string;
+  readonly argv?: string[];
+}
+
+export function fork(
+  modulePath: string,
+  args: string[],
+  o: ForkOptions
+): cp.ChildProcess {
+  const env = patch(proc.env, modulePath);
+  return cp.fork(modulePath, args, { silent: true, cwd: o.cwd, env, execArgv: o.argv });
 }

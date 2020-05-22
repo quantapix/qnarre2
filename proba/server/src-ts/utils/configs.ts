@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as vsc from 'vscode';
 import type * as proto from '../protocol';
 
-import { isTypeScriptDocument } from './language';
+import { isTsDocument } from './language';
 import * as qs from '../service';
 import * as qu from '.';
 import * as qx from './extras';
@@ -127,7 +127,7 @@ export class FileConfigs extends qx.Disposable {
     options: vsc.FormattingOptions
   ): proto.FormatCodeSettings {
     const config = vsc.workspace.getConfiguration(
-      isTypeScriptDocument(document) ? 'typescript.format' : 'javascript.format',
+      isTsDocument(document) ? 'typescript.format' : 'javascript.format',
       document.uri
     );
 
@@ -184,13 +184,11 @@ export class FileConfigs extends qx.Disposable {
 
   private getPreferences(document: vsc.TextDocument): proto.UserPreferences {
     const config = vsc.workspace.getConfiguration(
-      isTypeScriptDocument(document) ? 'typescript' : 'javascript',
+      isTsDocument(document) ? 'typescript' : 'javascript',
       document.uri
     );
     const preferencesConfig = vsc.workspace.getConfiguration(
-      isTypeScriptDocument(document)
-        ? 'typescript.preferences'
-        : 'javascript.preferences',
+      isTsDocument(document) ? 'typescript.preferences' : 'javascript.preferences',
       document.uri
     );
     const preferences: proto.UserPreferences = {

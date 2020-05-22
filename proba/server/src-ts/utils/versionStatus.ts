@@ -3,7 +3,7 @@ import * as nls from 'vscode-nls';
 import * as qs from '../service';
 import { coalesce } from '.';
 import { Command, Commands } from './extras';
-import { isTypeScriptDocument } from './language';
+import { isTsDocument } from './language';
 import {
   isImplicitConfig,
   openOrCreateConfig,
@@ -166,7 +166,7 @@ export class VersionStatus extends Disposable {
       return;
     }
     const d = vscode.window.activeTextEditor.document;
-    if (isTypeScriptDocument(d)) {
+    if (isTsDocument(d)) {
       const file = this.client.toNormPath(d.uri);
       if (file) {
         this._statusBarEntry.show();

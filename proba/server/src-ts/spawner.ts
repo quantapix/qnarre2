@@ -1,14 +1,16 @@
-import * as child_process from 'child_process';
-import * as path from 'path';
-import * as stream from 'stream';
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
+import cp from 'child_process';
+import path from 'path';
+import stream from 'stream';
 import type * as proto from './protocol';
-import { TsServerLogLevel, ServiceConfig } from './utils/configuration';
-import * as electron from './utils/electron';
+
+import { TsServerLogLevel, ServiceConfig } from './utils/configs';
+import * as qu from './utils';
 import { LogDirectory, PluginPaths } from './utils/providers';
 import { Plugins } from './utils/plugin';
 import { TelemetryReporter } from './utils/telemetry';
-import { API, Logger, Tracer } from './utils/extras';
+import * as qx from './utils/extras';
+import * as qr from './utils/registration';
 import { TypeScriptVersion, TypeScriptVersionProvider } from './utils/versionProvider';
 import {
   IServer,
@@ -20,7 +22,7 @@ import {
   GetErrRouting,
 } from './server';
 
-const enum ServerKind {
+const enum Kind {
   Main = 'main',
   Syntax = 'syntax',
   Semantic = 'semantic',
@@ -29,52 +31,40 @@ const enum ServerKind {
 
 export class Spawner {
   public constructor(
-    private readonly _versionProvider: TypeScriptVersionProvider,
-    private readonly _logDirectoryProvider: LogDirectory,
-    private readonly _pluginPathsProvider: PluginPaths,
-    private readonly logger: Logger,
+    private readonly version: TypeScriptVersionProvider,
+    private readonly logDir: LogDirectory,
+    private readonly paths: PluginPaths,
+    private readonly logger: qx.Logger,
     private readonly telemetry: TelemetryReporter,
-    private readonly tracer: Tracer
+    private readonly tracer: qx.Tracer
   ) {}
 
   public spawn(
-    version: TypeScriptVersion,
-    configuration: ServiceConfig,
+    v: TypeScriptVersion,
+    cfg: ServiceConfig,
     plugins: Plugins,
     delegate: ServerDelegate
   ): IServer {
-    let primaryServer: IServer;
-    if (this.useSeparateSynServer(version, configuration)) {
-      primaryServer = new SyntaxRouting(
+    let s: IServer;
+    if (this.useSeparateSynServer(v, cfg)) {
+      s = new SyntaxRouting(
         {
-          syntax: this.spawnServer(ServerKind.Syntax, version, configuration, plugins),
-          semantic: this.spawnServer(
-            ServerKind.Semantic,
-            version,
-            configuration,
-            plugins
-          ),
+          syntax: this.spawnServer(Kind.Syntax, v, cfg, plugins),
+          semantic: this.spawnServer(Kind.Semantic, v, cfg, plugins),
         },
         delegate
       );
-    } else {
-      primaryServer = this.spawnServer(ServerKind.Main, version, configuration, plugins);
-    }
-    if (this.useSeparateDiagServer(configuration)) {
+    } else s = this.spawnServer(Kind.Main, v, cfg, plugins);
+    if (this.useSeparateDiagServer(cfg)) {
       return new GetErrRouting(
         {
-          getErr: this.spawnServer(
-            ServerKind.Diagnostics,
-            version,
-            configuration,
-            plugins
-          ),
-          primary: primaryServer,
+          getErr: this.spawnServer(Kind.Diagnostics, v, cfg, plugins),
+          primary: s,
         },
         delegate
       );
     }
-    return primaryServer;
+    return s;
   }
 
   private useSeparateSynServer(v: TypeScriptVersion, c: ServiceConfig) {
@@ -86,59 +76,54 @@ export class Spawner {
   }
 
   private spawnServer(
-    kind: ServerKind,
-    version: TypeScriptVersion,
-    configuration: ServiceConfig,
+    kind: Kind,
+    v: TypeScriptVersion,
+    cfg: ServiceConfig,
     plugins: Plugins
   ): IServer {
-    const api = version.api || API.defaultVersion;
+    const api = v.api || qr.API.default;
     const { args, cancellationPipeName, tsServerLogFile } = this.serverArgs(
       kind,
-      configuration,
-      version,
+      cfg,
+      v,
       api,
       plugins
     );
-    if (Spawner.isLoggingEnabled(configuration)) {
+    if (Spawner.isLoggingEnabled(cfg)) {
       if (tsServerLogFile) this.logger.info(`<${kind}> Log file: ${tsServerLogFile}`);
       else this.logger.error(`<${kind}> Could not create log directory`);
     }
     this.logger.info(`<${kind}> Forking...`);
-    const childProcess = electron.fork(
-      version.tsServerPath,
-      args,
-      this.forkOptions(kind, configuration)
-    );
+    const childProcess = qu.fork(v.tsServerPath, args, this.forkOptions(kind, cfg));
     this.logger.info(`<${kind}> Starting...`);
     return new ProcessBased(
       kind,
       new ChildProcess(childProcess),
       tsServerLogFile,
       new PipeCanceller(kind, cancellationPipeName, this.tracer),
-      version,
+      v,
       this.telemetry,
       this.tracer
     );
   }
 
-  private forkOptions(kind: ServerKind, configuration: ServiceConfig) {
-    const debugPort = Spawner.debugPort(kind);
-    const tsServerForkOptions: electron.ForkOptions = {
-      execArgv: [
-        ...(debugPort ? [`--inspect=${debugPort}`] : []),
-        ...(configuration.maxTsServerMemory
-          ? [`--max-old-space-size=${configuration.maxTsServerMemory}`]
+  private forkOptions(k: Kind, cfg: ServiceConfig): qu.ForkOptions {
+    const p = Spawner.debugPort(k);
+    return {
+      argv: [
+        ...(p ? [`--inspect=${p}`] : []),
+        ...(cfg.maxTsServerMemory
+          ? [`--max-old-space-size=${cfg.maxTsServerMemory}`]
           : []),
       ],
     };
-    return tsServerForkOptions;
   }
 
   private serverArgs(
-    kind: ServerKind,
-    configuration: ServiceConfig,
+    kind: Kind,
+    cfg: ServiceConfig,
     currentVersion: TypeScriptVersion,
-    api: API,
+    api: qr.API,
     plugins: Plugins
   ): {
     args: string[];
@@ -147,55 +132,44 @@ export class Spawner {
   } {
     const args: string[] = [];
     let tsServerLogFile: string | undefined;
-    if (kind === ServerKind.Syntax) args.push('--syntaxOnly');
+    if (kind === Kind.Syntax) args.push('--syntaxOnly');
     args.push('--useInferredProjectPerProjectRoot');
     if (
-      configuration.disableAutomaticTypeAcquisition ||
-      kind === ServerKind.Syntax ||
-      kind === ServerKind.Diagnostics
+      cfg.disableAutomaticTypeAcquisition ||
+      kind === Kind.Syntax ||
+      kind === Kind.Diagnostics
     ) {
       args.push('--disableAutomaticTypingAcquisition');
     }
-    if (kind === ServerKind.Semantic || kind === ServerKind.Main)
-      args.push('--enableTelemetry');
-    const cancellationPipeName = electron.getTempFile('tscancellation');
+    if (kind === Kind.Semantic || kind === Kind.Main) args.push('--enableTelemetry');
+    const cancellationPipeName = qu.tempFile('tscancellation');
     args.push('--cancellationPipeName', cancellationPipeName + '*');
-    if (Spawner.isLoggingEnabled(configuration)) {
-      const logDir = this._logDirectoryProvider.newDirectory();
-      if (logDir) {
-        tsServerLogFile = path.join(logDir, `tsserver.log`);
-        args.push(
-          '--logVerbosity',
-          TsServerLogLevel.toString(configuration.tsServerLogLevel)
-        );
+    if (Spawner.isLoggingEnabled(cfg)) {
+      const d = this.logDir.newDirectory();
+      if (d) {
+        tsServerLogFile = path.join(d, `tsserver.log`);
+        args.push('--logVerbosity', TsServerLogLevel.toString(cfg.tsServerLogLevel));
         args.push('--logFile', tsServerLogFile);
       }
     }
-    const pluginPaths = this._pluginPathsProvider.pluginPaths();
-    if (plugins.plugins.length) {
-      args.push('--globalPlugins', plugins.plugins.map((x) => x.name).join(','));
+    const ps = this.paths.pluginPaths();
+    if (plugins.all.length) {
+      args.push('--globalPlugins', plugins.all.map((x) => x.name).join(','));
       const isUsingBundledTypeScriptVersion =
-        currentVersion.path === this._versionProvider.defaultVersion.path;
-      for (const plugin of plugins.plugins) {
-        if (
-          isUsingBundledTypeScriptVersion ||
-          plugin.enableForWorkspaceTypeScriptVersions
-        ) {
-          pluginPaths.push(plugin.path);
-        }
+        currentVersion.path === this.version.defaultVersion.path;
+      for (const p of plugins.all) {
+        if (isUsingBundledTypeScriptVersion || p.enableForVersions) ps.push(p.path);
       }
     }
-    if (pluginPaths.length !== 0)
-      args.push('--pluginProbeLocations', pluginPaths.join(','));
-    if (configuration.npmLocation)
-      args.push('--npmLocation', `"${configuration.npmLocation}"`);
-    args.push('--locale', Spawner.locale(configuration));
+    if (ps.length !== 0) args.push('--pluginProbeLocations', ps.join(','));
+    if (cfg.npmLocation) args.push('--npmLocation', `"${cfg.npmLocation}"`);
+    args.push('--locale', Spawner.locale(cfg));
     args.push('--noGetErrOnBackgroundUpdate');
     args.push('--validateDefaultNpmLocation');
     return { args, cancellationPipeName, tsServerLogFile };
   }
 
-  private static debugPort(kind: ServerKind) {
+  private static debugPort(kind: Kind) {
     if (kind === 'syntax') return;
     const v = process.env['TSS_DEBUG'];
     if (v) {
@@ -210,12 +184,12 @@ export class Spawner {
   }
 
   private static locale(c: ServiceConfig) {
-    return c.locale ? c.locale : vscode.env.language;
+    return c.locale ? c.locale : vsc.env.language;
   }
 }
 
 class ChildProcess implements ServerProcess {
-  constructor(private readonly proc: child_process.ChildProcess) {}
+  constructor(private readonly proc: cp.ChildProcess) {}
 
   get stdout(): stream.Readable {
     return this.proc.stdout!;

@@ -3,54 +3,54 @@ import { Plugins } from './utils/plugin';
 import * as qx from './utils/extras';
 import { openProjectConfigForFile, ProjectType } from './utils/tsconfig';
 import { ServiceClientHost } from './clientHost';
-import { isTypeScriptDocument } from './utils/language';
+import { isTsDocument } from './utils/language';
 
 export class ReloadProjects implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
+  readonly id: string;
+  constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.reloadProjects`;
   }
-  public execute() {
+  execute() {
     this.host.value.reloadProjects();
   }
 }
 
 export class SelectVersion implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
+  readonly id: string;
+  constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.selectVersion`;
   }
-  public execute() {
+  execute() {
     this.host.value.serviceClient.showVersionPicker();
   }
 }
 
 export class OpenLog implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
+  readonly id: string;
+  constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.openLog`;
   }
-  public execute() {
+  execute() {
     this.host.value.serviceClient.openLog();
   }
 }
 
 export class RestartServer implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
+  readonly id: string;
+  constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = '.restartServer';
   }
-  public execute() {
+  execute() {
     this.host.value.serviceClient.restartServer();
   }
 }
 
 export class GoToProjectConfig implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
+  readonly id: string;
+  constructor(p: string, private readonly host: qx.Lazy<ServiceClientHost>) {
     this.id = `${p}.goToProjectConfig`;
   }
-  public execute() {
+  execute() {
     const e = vscode.window.activeTextEditor;
     if (e) {
       openProjectConfigForFile(
@@ -63,24 +63,24 @@ export class GoToProjectConfig implements qx.Command {
 }
 
 export class ConfigPlugin implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string, private readonly plugins: Plugins) {
+  readonly id: string;
+  constructor(p: string, private readonly plugins: Plugins) {
     this.id = `${p}.configurePlugin`;
   }
-  public execute(id: string, c: any) {
+  execute(id: string, c: any) {
     this.plugins.setConfig(id, c);
   }
 }
 
 export class AboutRefactorings implements qx.Command {
-  public readonly id: string;
-  public constructor(p: string) {
+  readonly id: string;
+  constructor(p: string) {
     this.id = `${p}.aboutRefactorings`;
   }
-  public execute() {
+  execute() {
     const url =
       vscode.window.activeTextEditor &&
-      isTypeScriptDocument(vscode.window.activeTextEditor.document)
+      isTsDocument(vscode.window.activeTextEditor.document)
         ? 'https://go.microsoft.com/fwlink/?linkid=2114477'
         : 'https://go.microsoft.com/fwlink/?linkid=2116761';
     vscode.env.openExternal(vscode.Uri.parse(url));

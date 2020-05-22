@@ -111,55 +111,47 @@ export function lazy<T>(getValue: () => T): Lazy<T> {
   return new LazyValue<T>(getValue);
 }
 
-export interface ITask<T> {
+export interface Task<T> {
   (): T;
 }
 
 export class Delayer<T> {
-  defaultDelay: number;
-  private timeout: any; // Timer
-  private completionPromise: Promise<T | null> | null;
-  private onSuccess: ((value?: T | Thenable<T>) => void) | null;
-  private task: ITask<T> | null;
+  private timeout?: any;
+  private task?: Task<T>;
+  private done?: Promise<T | undefined>;
+  private res?: (_?: T | Thenable<T>) => void;
 
-  constructor(defaultDelay: number) {
-    this.defaultDelay = defaultDelay;
-    this.timeout = null;
-    this.completionPromise = null;
-    this.onSuccess = null;
-    this.task = null;
-  }
+  constructor(public defaultDelay: number) {}
 
-  trigger(task: ITask<T>, delay: number = this.defaultDelay): Promise<T | null> {
+  trigger(task: Task<T>, delay = this.defaultDelay): Promise<T | undefined> {
     this.task = task;
     if (delay >= 0) this.cancelTimeout();
-    if (!this.completionPromise) {
-      this.completionPromise = new Promise<T>((resolve) => {
-        this.onSuccess = resolve;
+    if (!this.done) {
+      this.done = new Promise<T>((res) => {
+        this.res = res;
       }).then(() => {
-        this.completionPromise = null;
-        this.onSuccess = null;
-        const result = this.task && this.task();
-        this.task = null;
-        return result;
+        this.done = this.res = undefined;
+        const r = this.task?.();
+        this.task = undefined;
+        return r;
       });
     }
-    if (delay >= 0 || this.timeout === null) {
+    if (delay >= 0 || this.timeout === undefined) {
       this.timeout = setTimeout(
         () => {
-          this.timeout = null;
-          if (this.onSuccess) this.onSuccess(undefined);
+          this.timeout = undefined;
+          this.res?.();
         },
         delay >= 0 ? delay : this.defaultDelay
       );
     }
-    return this.completionPromise;
+    return this.done;
   }
 
   private cancelTimeout() {
-    if (this.timeout !== null) {
+    if (this.timeout !== undefined) {
       clearTimeout(this.timeout);
-      this.timeout = null;
+      this.timeout = undefined;
     }
   }
 }
@@ -323,7 +315,7 @@ export class Tracer {
     if (this.trace === Trace.Off) return;
     let data: string | undefined = undefined;
     if (this.trace === Trace.Verbose && req.arguments) {
-      data = `Arguments: ${JSON.stringify(req.arguments, null, 4)}`;
+      data = `Arguments: ${JSON.stringify(req.arguments, undefined, 4)}`;
     }
     this.logTrace(
       id,
@@ -338,7 +330,7 @@ export class Tracer {
     if (this.trace === Trace.Off) return;
     let d: string | undefined = undefined;
     if (this.trace === Trace.Verbose && r.body) {
-      d = `Result: ${JSON.stringify(r.body, null, 4)}`;
+      d = `Result: ${JSON.stringify(r.body, undefined, 4)}`;
     }
     this.logTrace(
       id,
@@ -368,7 +360,7 @@ export class Tracer {
     if (this.trace === Trace.Off) return;
     let d: string | undefined = undefined;
     if (this.trace === Trace.Verbose && e.body) {
-      d = `Data: ${JSON.stringify(e.body, null, 4)}`;
+      d = `Data: ${JSON.stringify(e.body, undefined, 4)}`;
     }
     this.logTrace(id, `Event received: ${e.event} (${e.seq}).`, d);
   }
@@ -439,8 +431,8 @@ class ProtocolBuffer {
     return r;
   }
 
-  tryReadContent(len: number): string | null {
-    if (this.index < len) return null;
+  tryReadContent(len: number): string | undefined {
+    if (this.index < len) return undefined;
     const r = this.buf.toString('utf8', 0, len);
     let s = len;
     while (s < this.index && (this.buf[s] === backR || this.buf[s] === backN)) {
@@ -478,7 +470,7 @@ export class Reader<T> extends Disposable {
           if (this.nextLen === -1) return;
         }
         const m = this.buf.tryReadContent(this.nextLen);
-        if (m === null) return;
+        if (m === undefined) return;
         this.nextLen = -1;
         const j = JSON.parse(m);
         this._onData.fire(j);

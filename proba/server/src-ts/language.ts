@@ -7,7 +7,7 @@ import { Kind } from './utils/diagnostic';
 import { FileConfigs } from './utils/configs';
 import * as qs from './serviceClient';
 import * as qx from './utils/extras';
-import { LangDesc } from './utils/language';
+import { Language } from './utils/language';
 import * as qu from './utils';
 import { TelemetryReporter } from './utils/telemetry';
 import { TypingsStatus } from './utils/typingsStatus';
@@ -18,7 +18,7 @@ const suggestionSetting = 'suggestionActions.enabled';
 export class LanguageProvider extends qx.Disposable {
   constructor(
     private readonly client: qs.ServiceClient,
-    private readonly description: LangDesc,
+    private readonly description: Language,
     private readonly cmds: qx.Commands,
     private readonly telemetry: TelemetryReporter,
     private readonly typingsStatus: TypingsStatus,

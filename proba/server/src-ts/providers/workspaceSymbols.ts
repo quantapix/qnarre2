@@ -5,10 +5,7 @@ import type * as proto from '../protocol';
 import * as qs from '../service';
 import * as qr from '../utils/registration';
 import * as qx from '../utils/extras';
-import {
-  doesResourceLookLikeAJavaScriptFile,
-  doesResourceLookLikeATypeScriptFile,
-} from '../utils/language';
+import { jsLike, tsLike } from '../utils/language';
 import * as qc from '../utils/convert';
 
 class WorkspaceSymbol implements vsc.WorkspaceSymbolProvider {
@@ -51,10 +48,7 @@ class WorkspaceSymbol implements vsc.WorkspaceSymbolProvider {
     if (document.uri.scheme === qx.git) {
       try {
         const p = vsc.Uri.file(JSON.parse(document.uri.query)?.p);
-        if (
-          doesResourceLookLikeATypeScriptFile(p) ||
-          doesResourceLookLikeAJavaScriptFile(p)
-        ) {
+        if (tsLike(p) || jsLike(p)) {
           const document = await vsc.workspace.openTextDocument(p);
           return this.client.toOpenedPath(document);
         }

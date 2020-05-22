@@ -3,14 +3,14 @@ import * as vsc from 'vscode';
 import * as nls from 'vscode-nls';
 import type * as proto from '../protocol';
 
-import { LearnMoreAboutRefactoringsCommand } from '../commands';
+import { AboutRefactorings } from '../commands';
 import * as qs from '../service';
 import * as qu from '../utils';
 import * as qx from '../utils/extras';
 import * as qr from '../utils/registration';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as qc from '../utils/convert';
-import { FormattingOptionsManager } from '../utils/configs';
+import { FileConfigs } from '../utils/configs';
 
 const localize = nls.loadMessageBundle();
 
@@ -28,9 +28,9 @@ namespace Experimental {
   }
 }
 
-class ApplyRefactoring implements qx.Command {
+class Apply implements qx.Command {
   static readonly ID = '_typescript.applyRefactoring';
-  readonly id = ApplyRefactoring.ID;
+  readonly id = Apply.ID;
 
   constructor(
     private readonly client: qs.IServiceClient,
@@ -84,13 +84,13 @@ class ApplyRefactoring implements qx.Command {
   }
 }
 
-class SelectRefactor implements qx.Command {
+class Select implements qx.Command {
   static readonly ID = '_typescript.selectRefactoring';
-  readonly id = SelectRefactor.ID;
+  readonly id = Select.ID;
 
   constructor(
     private readonly client: qs.IServiceClient,
-    private readonly doRefactoring: ApplyRefactoring
+    private readonly doRefactoring: Apply
   ) {}
 
   async execute(
@@ -192,12 +192,12 @@ class Refactor implements vsc.CodeActionProvider {
 
   constructor(
     private readonly client: qs.IServiceClient,
-    private readonly formattingOptionsManager: FormattingOptionsManager,
+    private readonly formattingOptionsManager: FileConfigs,
     cmds: qx.Commands,
     tele: TelemetryReporter
   ) {
-    const doRefactoringCommand = cmds.register(new ApplyRefactoring(this.client, tele));
-    cmds.register(new SelectRefactor(this.client, doRefactoringCommand));
+    const doRefactoringCommand = cmds.register(new Apply(this.client, tele));
+    cmds.register(new Select(this.client, doRefactoringCommand));
   }
 
   static readonly metadata = {
@@ -209,7 +209,7 @@ class Refactor implements vsc.CodeActionProvider {
       {
         kind: vsc.CodeActionKind.Refactor,
         command: {
-          command: LearnMoreAboutRefactoringsCommand.id,
+          command: AboutRefactorings.id,
           title: localize(
             'refactor.documentation.title',
             'Learn more about JS/TS refactorings'
@@ -261,7 +261,7 @@ class Refactor implements vsc.CodeActionProvider {
         const a = new vsc.CodeAction(info.description, vsc.CodeActionKind.Refactor);
         a.command = {
           title: info.description,
-          command: SelectRefactor.ID,
+          command: Select.ID,
           arguments: [d, info, rs],
         };
         actions.push(a);
@@ -288,7 +288,7 @@ class Refactor implements vsc.CodeActionProvider {
     }
     codeAction.command = {
       title: action.description,
-      command: ApplyRefactoring.ID,
+      command: Apply.ID,
       arguments: [d, info.name, action.name, rs],
     };
     codeAction.isPreferred = Refactor.isPreferred(action, allActions);
@@ -371,7 +371,7 @@ class Refactor implements vsc.CodeActionProvider {
 export function register(
   s: vsc.DocumentSelector,
   c: qs.IServiceClient,
-  fs: FormattingOptionsManager,
+  fs: FileConfigs,
   cmds: qx.Commands,
   tele: TelemetryReporter
 ) {

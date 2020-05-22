@@ -7,7 +7,7 @@ import * as qs from '../service';
 import * as qu from '../utils';
 import * as qx from '../utils/extras';
 import * as qr from '../utils/registration';
-import { doesResourceLookLikeATypeScriptFile } from '../utils/language';
+import { tsLike } from '../utils/language';
 import * as qc from '../utils/convert';
 import { FileConfigs } from '../utils/configs';
 
@@ -144,7 +144,7 @@ class UpdateImportsOnFileRenameHandler extends qx.Disposable {
 
   private getConfiguration(resource: vsc.Uri) {
     return vsc.workspace.getConfiguration(
-      doesResourceLookLikeATypeScriptFile(resource) ? 'typescript' : 'javascript',
+      tsLike(resource) ? 'typescript' : 'javascript',
       resource
     );
   }
@@ -274,7 +274,7 @@ class UpdateImportsOnFileRenameHandler extends qx.Disposable {
       // Group renames by type (js/ts) and by workspace.
       const key = `${this.client.workspaceRootFor(
         rename.jsTsFileThatIsBeingMoved
-      )}@@@${doesResourceLookLikeATypeScriptFile(rename.jsTsFileThatIsBeingMoved)}`;
+      )}@@@${tsLike(rename.jsTsFileThatIsBeingMoved)}`;
       if (!groups.has(key)) {
         groups.set(key, new Set());
       }

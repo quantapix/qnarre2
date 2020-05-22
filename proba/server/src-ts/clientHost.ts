@@ -1,33 +1,34 @@
-import * as vscode from 'vscode';
-import { DiagKind } from './providers/diagnostics';
-import FileConfigs from './utils/configs';
-import LanguageProvider from './language';
-import * as Proto from './protocol';
-import * as PConst from './protocol.const';
+/* eslint-disable @typescript-eslint/unbound-method */
+import * as vsc from 'vscode';
+import * as proto from './protocol';
+import * as cproto from './protocol.const';
+
+import { Kind, Lang } from './utils/diagnostic';
+import { FileConfigs } from './utils/configs';
+import { LanguageProvider } from './language';
 import { ServiceClient } from './serviceClient';
-import { coalesce, flatten } from './utils';
-import { Commands } from './utils/extras';
-import { Disposable } from './utils/extras';
-import * as errorCodes from './utils/errorCodes';
-import { DiagLang, LangDesc } from './utils/language';
+import * as qu from './utils';
+import * as qx from './utils/extras';
+import { codes } from './utils/names';
+import { Language } from './utils/language';
 import { LogDirectory } from './utils/providers';
 import { Plugins } from './utils/plugin';
 import * as qc from './utils/convert';
-import TypingsStatus, { ProgressReporter } from './utils/typingsStatus';
-import VersionStatus from './utils/versionStatus';
+import { TypingsStatus, ProgressReporter } from './utils/typingsStatus';
+import { VersionStatus } from './utils/versionStatus';
 
 // Style check diagnostics that can be reported as warnings
 const styleCheckDiagnostics = [
-  errorCodes.variableDeclaredButNeverUsed,
-  errorCodes.propertyDeclaretedButNeverUsed,
-  errorCodes.allImportsAreUnused,
-  errorCodes.unreachableCode,
-  errorCodes.unusedLabel,
-  errorCodes.fallThroughCaseInSwitch,
-  errorCodes.notAllCodePathsReturnAValue,
+  codes.variableDeclaredButNeverUsed,
+  codes.propertyDeclaretedButNeverUsed,
+  codes.allImportsAreUnused,
+  codes.unreachableCode,
+  codes.unusedLabel,
+  codes.fallThroughCaseInSwitch,
+  codes.notAllCodePathsReturnAValue,
 ];
 
-export class ServiceClientHost extends Disposable {
+export class ServiceClientHost extends qx.Disposable {
   private readonly client: ServiceClient;
   private readonly languages: LanguageProvider[] = [];
   private readonly languagePerId = new Map<string, LanguageProvider>();
@@ -40,12 +41,12 @@ export class ServiceClientHost extends Disposable {
   private reportStyleCheckAsWarnings = true;
 
   constructor(
-    descriptions: LangDesc[],
-    workspaceState: vscode.Memento,
+    descriptions: Language[],
+    workspaceState: vsc.Memento,
     plugins: Plugins,
-    private readonly commandManager: Commands,
+    private readonly commandManager: qx.Commands,
     logDirectoryProvider: LogDirectory,
-    onCompletionAccepted: (item: vscode.CompletionItem) => void
+    onCompletionAccepted: (item: vsc.CompletionItem) => void
   ) {
     super();
 
@@ -61,8 +62,8 @@ export class ServiceClientHost extends Disposable {
     );
 
     this.client.onDiagnosticsReceived(
-      ({ kind, resource, diagnostics }) => {
-        this.diagnosticsReceived(kind, resource, diagnostics);
+      ({ kind, uri, diag }) => {
+        this.diagnosticsReceived(kind, uri, diag);
       },
       null,
       this.dispos
@@ -96,48 +97,43 @@ export class ServiceClientHost extends Disposable {
       this.languagePerId.set(description.id, manager);
     }
 
-    import('./providers/updatePathsOnRename').then((module) =>
+    import('./providers/updatePathsOnRename').then((m) =>
       this.register(
-        module.register(this.client, this.fileConfigurationManager, (uri) =>
-          this.handles(uri)
-        )
+        m.register(this.client, this.fileConfigurationManager, (uri) => this.handles(uri))
       )
     );
-
-    import('./providers/workspaceSymbols').then((module) =>
-      this.register(module.register(this.client, allModeIds))
+    import('./providers/workspaceSymbols').then((m) =>
+      this.register(m.register(this.client, allModeIds))
     );
-
     this.client.ensureServiceStarted();
     this.client.onReady(() => {
       const languages = new Set<string>();
-      for (const plugin of plugins.plugins) {
-        if (plugin.configNamespace && plugin.languages.length) {
+      for (const p of plugins.all) {
+        if (p.configNamespace && p.languages.length) {
           this.registerExtensionLanguageProvider(
             {
-              id: plugin.configNamespace,
-              modes: Array.from(plugin.languages),
+              id: p.configNamespace,
+              modes: Array.from(p.languages),
               diagSource: 'ts-plugin',
-              diagLang: DiagLang.TypeScript,
+              diagLang: Lang.TypeScript,
               diagOwner: 'typescript',
               isExternal: true,
             },
             onCompletionAccepted
           );
         } else {
-          for (const language of plugin.languages) {
-            languages.add(language);
+          for (const l of p.languages) {
+            languages.add(l);
           }
         }
       }
-
       if (languages.size) {
         this.registerExtensionLanguageProvider(
           {
             id: 'typescript-plugins',
             modes: Array.from(languages.values()),
             diagSource: 'ts-plugin',
-            diagLang: DiagLang.TypeScript,
+            diagLang: Lang.TypeScript,
             diagOwner: 'typescript',
             isExternal: true,
           },
@@ -145,26 +141,20 @@ export class ServiceClientHost extends Disposable {
         );
       }
     });
-
     this.client.onServerStarted(() => {
       this.triggerAllDiagnostics();
     });
-
-    vscode.workspace.onDidChangeConfiguration(
-      this.configurationChanged,
-      this,
-      this.dispos
-    );
+    vsc.workspace.onDidChangeConfiguration(this.configurationChanged, this, this.dispos);
     this.configurationChanged();
   }
 
   private registerExtensionLanguageProvider(
-    description: LangDesc,
-    onCompletionAccepted: (item: vscode.CompletionItem) => void
+    lang: Language,
+    onCompletionAccepted: (item: vsc.CompletionItem) => void
   ) {
     const manager = new LanguageProvider(
       this.client,
-      description,
+      lang,
       this.commandManager,
       this.client.telemetry,
       this.typingsStatus,
@@ -173,184 +163,144 @@ export class ServiceClientHost extends Disposable {
     );
     this.languages.push(manager);
     this.register(manager);
-    this.languagePerId.set(description.id, manager);
+    this.languagePerId.set(lang.id, manager);
   }
 
-  private getAllModeIds(descriptions: LangDesc[], plugins: Plugins) {
-    const allModeIds = flatten([
-      ...descriptions.map((x) => x.modes),
-      ...plugins.plugins.map((x) => x.languages),
+  private getAllModeIds(ls: Language[], plugins: Plugins) {
+    const allModeIds = qu.flatten([
+      ...ls.map((x) => x.modes),
+      ...plugins.all.map((x) => x.languages),
     ]);
     return allModeIds;
   }
 
-  public get serviceClient(): ServiceClient {
+  public get serviceClient() {
     return this.client;
   }
 
-  public reloadProjects(): void {
+  public reloadProjects() {
     this.client.executeNoResponse('reloadProjects', null);
     this.triggerAllDiagnostics();
   }
 
-  public async handles(resource: vscode.Uri): Promise<boolean> {
-    const provider = await this.findLanguage(resource);
-    if (provider) {
-      return true;
-    }
-    return this.client.buffer.handles(resource);
+  public async handles(r: vsc.Uri) {
+    const p = await this.findLanguage(r);
+    if (p) return true;
+    return this.client.buffer.handles(r);
   }
 
-  private configurationChanged(): void {
-    const typescriptConfig = vscode.workspace.getConfiguration('typescript');
-
-    this.reportStyleCheckAsWarnings = typescriptConfig.get(
-      'reportStyleChecksAsWarnings',
-      true
-    );
+  private configurationChanged() {
+    const c = vsc.workspace.getConfiguration('typescript');
+    this.reportStyleCheckAsWarnings = c.get('reportStyleChecksAsWarnings', true);
   }
 
-  private async findLanguage(
-    resource: vscode.Uri
-  ): Promise<LanguageProvider | undefined> {
+  private async findLanguage(r: vsc.Uri) {
     try {
-      const doc = await vscode.workspace.openTextDocument(resource);
-      return this.languages.find((language) => language.handles(resource, doc));
-    } catch {
-      return;
-    }
+      const d = await vsc.workspace.openTextDocument(r);
+      return this.languages.find((language) => language.handles(r, d));
+    } catch {}
+    return;
   }
 
   private triggerAllDiagnostics() {
-    for (const language of this.languagePerId.values()) {
-      language.triggerAllDiagnostics();
+    for (const l of this.languagePerId.values()) {
+      l.triggerAllDiagnostics();
     }
   }
 
-  private populateService(): void {
+  private populateService() {
     this.fileConfigurationManager.reset();
-
-    for (const language of this.languagePerId.values()) {
-      language.reInitialize();
+    for (const l of this.languagePerId.values()) {
+      l.reInitialize();
     }
   }
 
-  private async diagnosticsReceived(
-    kind: DiagKind,
-    resource: vscode.Uri,
-    diagnostics: Proto.Diagnostic[]
-  ): Promise<void> {
-    const language = await this.findLanguage(resource);
-    if (language) {
-      language.diagnosticsReceived(
-        kind,
-        resource,
-        this.createMarkerDatas(diagnostics, language.diagSource)
-      );
-    }
+  private async diagnosticsReceived(k: Kind, r: vsc.Uri, ds: proto.Diagnostic[]) {
+    const l = await this.findLanguage(r);
+    if (l) l.diagnosticsReceived(k, r, this.createMarkerDatas(ds, l.diagSource));
   }
 
-  private configFileDiagnosticsReceived(event: Proto.ConfigFileDiagnosticEvent): void {
-    // See https://github.com/Microsoft/TypeScript/issues/10384
-    const body = event.body;
-    if (!body || !body.diagnostics || !body.configFile) {
-      return;
-    }
-
-    this.findLanguage(this.client.toResource(body.configFile)).then((language) => {
-      if (!language) return;
-      language.configFileDiagnosticsReceived(
-        this.client.toResource(body.configFile),
-        body.diagnostics.map((tsDiag) => {
-          const range =
-            tsDiag.start && tsDiag.end
-              ? qc.Range.fromTextSpan(tsDiag)
-              : new vscode.Range(0, 0, 0, 1);
-          const diagnostic = new vscode.Diagnostic(
-            range,
-            body.diagnostics[0].text,
-            this.getDiagnosticSeverity(tsDiag)
+  private configFileDiagnosticsReceived(e: proto.ConfigFileDiagnosticEvent) {
+    const b = e.body;
+    if (!b || !b.diagnostics || !b.configFile) return;
+    this.findLanguage(this.client.toResource(b.configFile)).then((l) => {
+      if (!l) return;
+      l.configFileDiagnosticsReceived(
+        this.client.toResource(b.configFile),
+        b.diagnostics.map((d) => {
+          const r =
+            d.start && d.end ? qc.Range.fromTextSpan(d) : new vsc.Range(0, 0, 0, 1);
+          const d2 = new vsc.Diagnostic(
+            r,
+            b.diagnostics[0].text,
+            this.getDiagnosticSeverity(d)
           );
-          diagnostic.source = language.diagSource;
-          return diagnostic;
+          d2.source = l.diagSource;
+          return d2;
         })
       );
     });
   }
 
   private createMarkerDatas(
-    diagnostics: Proto.Diagnostic[],
+    ds: proto.Diagnostic[],
     source: string
-  ): (vscode.Diagnostic & { reportUnnecessary: any })[] {
-    return diagnostics.map((tsDiag) => this.tsDiagnosticToVsDiagnostic(tsDiag, source));
+  ): (vsc.Diagnostic & { reportUnnecessary: any })[] {
+    return ds.map((d) => this.tsDiagnosticToVsDiagnostic(d, source));
   }
 
   private tsDiagnosticToVsDiagnostic(
-    diagnostic: Proto.Diagnostic,
+    d: proto.Diagnostic,
     source: string
-  ): vscode.Diagnostic & { reportUnnecessary: any } {
-    const { start, end, text } = diagnostic;
-    const range = new vscode.Range(
+  ): vsc.Diagnostic & { reportUnnecessary: any } {
+    const { start, end, text } = d;
+    const r = new vsc.Range(
       qc.Position.fromLocation(start),
       qc.Position.fromLocation(end)
     );
-    const converted = new vscode.Diagnostic(
-      range,
-      text,
-      this.getDiagnosticSeverity(diagnostic)
-    );
-    converted.source = diagnostic.source || source;
-    if (diagnostic.code) {
-      converted.code = diagnostic.code;
-    }
-    const relatedInformation = diagnostic.relatedInformation;
-    if (relatedInformation) {
-      converted.relatedInformation = coalesce(
-        relatedInformation.map((info: any) => {
-          const span = info.span;
-          if (!span) {
-            return;
-          }
-          return new vscode.DiagnosticRelatedInformation(
-            qc.Location.fromTextSpan(this.client.toResource(span.file), span),
-            info.message
+    const n = new vsc.Diagnostic(r, text, this.getDiagnosticSeverity(d));
+    n.source = d.source || source;
+    if (d.code) n.code = d.code;
+    const i = d.relatedInformation;
+    if (i) {
+      n.relatedInformation = qu.coalesce(
+        i.map((i2: any) => {
+          const s = i2.span;
+          if (!s) return;
+          return new vsc.DiagnosticRelatedInformation(
+            qc.Location.fromTextSpan(this.client.toResource(s.file), s),
+            i2.message
           );
         })
       );
     }
-    if (diagnostic.reportsUnnecessary) {
-      converted.tags = [vscode.DiagnosticTag.Unnecessary];
-    }
-    (converted as vscode.Diagnostic & { reportUnnecessary: any }).reportUnnecessary =
-      diagnostic.reportsUnnecessary;
-    return converted as vscode.Diagnostic & { reportUnnecessary: any };
+    if (d.reportsUnnecessary) n.tags = [vsc.DiagnosticTag.Unnecessary];
+    (n as vsc.Diagnostic & { reportUnnecessary: any }).reportUnnecessary =
+      d.reportsUnnecessary;
+    return n as vsc.Diagnostic & { reportUnnecessary: any };
   }
 
-  private getDiagnosticSeverity(diagnostic: Proto.Diagnostic): vscode.DiagnosticSeverity {
+  private getDiagnosticSeverity(d: proto.Diagnostic): vsc.DiagnosticSeverity {
     if (
       this.reportStyleCheckAsWarnings &&
-      this.isStyleCheckDiagnostic(diagnostic.code) &&
-      diagnostic.category === PConst.DiagnosticCategory.error
+      this.isStyleCheckDiagnostic(d.code) &&
+      d.category === cproto.DiagnosticCategory.error
     ) {
-      return vscode.DiagnosticSeverity.Warning;
+      return vsc.DiagnosticSeverity.Warning;
     }
-
-    switch (diagnostic.category) {
-      case PConst.DiagnosticCategory.error:
-        return vscode.DiagnosticSeverity.Error;
-
-      case PConst.DiagnosticCategory.warning:
-        return vscode.DiagnosticSeverity.Warning;
-
-      case PConst.DiagnosticCategory.suggestion:
-        return vscode.DiagnosticSeverity.Hint;
-
+    switch (d.category) {
+      case cproto.DiagnosticCategory.error:
+        return vsc.DiagnosticSeverity.Error;
+      case cproto.DiagnosticCategory.warning:
+        return vsc.DiagnosticSeverity.Warning;
+      case cproto.DiagnosticCategory.suggestion:
+        return vsc.DiagnosticSeverity.Hint;
       default:
-        return vscode.DiagnosticSeverity.Error;
+        return vsc.DiagnosticSeverity.Error;
     }
   }
 
-  private isStyleCheckDiagnostic(code: number | undefined): boolean {
+  private isStyleCheckDiagnostic(code: number | undefined) {
     return code ? styleCheckDiagnostics.includes(code) : false;
   }
 }

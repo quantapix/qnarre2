@@ -4,7 +4,7 @@ import type * as proto from '../protocol';
 import * as qc from './convert';
 import * as qs from '../service';
 
-export function getEditForCodeAction(c: qs.IServiceClient, a: proto.CodeAction) {
+export function editForCodeAction(c: qs.IServiceClient, a: proto.CodeAction) {
   return a.changes?.length ? qc.WorkspaceEdit.fromFileCodeEdits(c, a.changes) : undefined;
 }
 
@@ -13,7 +13,7 @@ export async function applyCodeAction(
   a: proto.CodeAction,
   ct: vscode.CancellationToken
 ) {
-  const e = getEditForCodeAction(c, a);
+  const e = editForCodeAction(c, a);
   if (e) {
     if (!(await vscode.workspace.applyEdit(e))) return false;
   }
