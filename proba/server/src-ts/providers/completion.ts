@@ -363,7 +363,7 @@ class Completion implements vsc.CompletionItemProvider {
     for (const e of r.body.entries) {
       if (!shouldExclude(e, cfg)) items.push(new CompletionItem(p, d, e, c, meta));
     }
-    return new vsc.CompletionList(items, meta?.isIncomplete);
+    return new vsc.CompletionList(items, meta.isIncomplete);
   }
 
   private triggerCharacter(
@@ -478,7 +478,7 @@ class Completion implements vsc.CompletionItemProvider {
     if (d.source) {
       const p = `'${md.plain(d.source)}'`;
       const l = localize('autoImportLabel', 'Auto import from {0}', p);
-      i.detail = `${l}\n${i.detail}`;
+      i.detail = `${l}\n${i.detail!}`;
     }
     md.addDocumentation(m, d.documentation, d.tags);
     return m.value.length ? m : undefined;

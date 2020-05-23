@@ -12,7 +12,7 @@ export async function applyCodeAction(
   c: qs.IServiceClient,
   a: proto.CodeAction,
   ct: vscode.CancellationToken
-): Promise<boolean> {
+) {
   const e = editForCodeAction(c, a);
   if (e) {
     if (!(await vscode.workspace.applyEdit(e))) return false;
@@ -24,7 +24,7 @@ export async function applyCodeActionCommands(
   c: qs.IServiceClient,
   cs: ReadonlyArray<unknown> | undefined,
   ct: vscode.CancellationToken
-): Promise<boolean> {
+) {
   if (cs?.length) {
     for (const command of cs) {
       await c.execute('applyCodeActionCommand', { command }, ct);

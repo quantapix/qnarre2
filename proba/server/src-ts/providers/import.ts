@@ -63,19 +63,14 @@ export class ImportsAction implements vsc.CodeActionProvider {
     ct: vsc.CancellationToken
   ): vsc.CodeAction[] {
     const file = this.client.toOpenedPath(document);
-    if (!file) {
-      return [];
-    }
-
+    if (!file) return [];
     if (
       !context.only ||
       !context.only.contains(vsc.CodeActionKind.SourceOrganizeImports)
     ) {
       return [];
     }
-
     this.fileConfigManager.ensureConfigurationForDocument(document, ct);
-
     const action = new vsc.CodeAction(
       localize('organizeImportsAction.title', 'Organize Imports'),
       vsc.CodeActionKind.SourceOrganizeImports

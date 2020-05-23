@@ -15,7 +15,7 @@ export const walkThroughSnippet = 'walkThroughSnippet';
 
 export const schemes = [file, untitled, walkThroughSnippet];
 
-export function isSupportedScheme(s: string): boolean {
+export function isSupportedScheme(s: string) {
   return schemes.includes(s);
 }
 
@@ -29,17 +29,17 @@ export const nulToken: vscode.CancellationToken = {
 export abstract class Disposable {
   protected dispos?: vscode.Disposable[] = [];
 
-  protected get isDisposed(): boolean {
+  protected get isDisposed() {
     return !!this.dispos;
   }
 
-  protected register<T extends vscode.Disposable>(d: T): T {
+  protected register<T extends vscode.Disposable>(d: T) {
     if (this.dispos) this.dispos.push(d);
     else d.dispose();
     return d;
   }
 
-  dispose(): void {
+  dispose() {
     if (this.dispos) {
       disposeAll(this.dispos);
       this.dispos = undefined;
@@ -47,7 +47,7 @@ export abstract class Disposable {
   }
 }
 
-export function disposeAll(ds: vscode.Disposable[]): void {
+export function disposeAll(ds: vscode.Disposable[]) {
   while (ds.length) {
     const d = ds.pop();
     if (d) d.dispose();
@@ -62,14 +62,14 @@ export interface Command {
 export class Commands {
   private readonly cs = new Map<string, vscode.Disposable>();
 
-  dispose(): void {
+  dispose() {
     for (const c of this.cs.values()) {
       c.dispose();
     }
     this.cs.clear();
   }
 
-  register<T extends Command>(c: T): T {
+  register<T extends Command>(c: T) {
     const cs = this.cs;
     for (const i of Array.isArray(c.id) ? c.id : [c.id]) {
       if (!cs.has(i)) cs.set(i, vscode.commands.registerCommand(i, c.execute, c));
@@ -90,7 +90,7 @@ class LazyValue<T> implements Lazy<T> {
 
   constructor(private readonly _getValue: () => T) {}
 
-  get value(): T {
+  get value() {
     if (!this._hasValue) {
       this._hasValue = true;
       this._value = this._getValue();
@@ -161,11 +161,11 @@ export class ResourceMap<T> {
 
   constructor(private readonly toKey = (r: vscode.Uri): string | undefined => r.fsPath) {}
 
-  get size(): number {
+  get size() {
     return this._map.size;
   }
 
-  has(r: vscode.Uri): boolean {
+  has(r: vscode.Uri) {
     const k = this.toKey(r);
     return !!k && this._map.has(k);
   }
@@ -177,7 +177,7 @@ export class ResourceMap<T> {
     return e ? e.value : undefined;
   }
 
-  set(r: vscode.Uri, value: T): void {
+  set(r: vscode.Uri, value: T) {
     const k = this.toKey(r);
     if (!k) return;
     const e = this._map.get(k);
@@ -185,12 +185,12 @@ export class ResourceMap<T> {
     else this._map.set(k, { resource: r, value });
   }
 
-  delete(r: vscode.Uri): void {
+  delete(r: vscode.Uri) {
     const k = this.toKey(r);
     if (k) this._map.delete(k);
   }
 
-  clear(): void {
+  clear() {
     this._map.clear();
   }
 
@@ -233,16 +233,16 @@ export class Logger {
     return d.toString();
   }
 
-  info(m: string, d?: unknown): void {
+  info(m: string, d?: unknown) {
     this.logLevel('Info', m, d);
   }
 
-  error(m: string, d?: unknown): void {
+  error(m: string, d?: unknown) {
     if (d && d.message === 'No content available.') return;
     this.logLevel('Error', m, d);
   }
 
-  logLevel(l: Level, m: string, d?: unknown): void {
+  logLevel(l: Level, m: string, d?: unknown) {
     this.output.appendLine(`[${l}  - ${this.now()}] ${m}`);
     if (d) this.output.appendLine(this.data2String(d));
   }
@@ -296,7 +296,7 @@ export class Tracer {
     this.updateConfig();
   }
 
-  updateConfig(): void {
+  updateConfig() {
     this.trace = Tracer.readTrace();
   }
 
@@ -308,7 +308,7 @@ export class Tracer {
     return r;
   }
 
-  traceRequest(id: string, req: proto.Request, response: boolean, len: number): void {
+  traceRequest(id: string, req: proto.Request, response: boolean, len: number) {
     if (this.trace === Trace.Off) return;
     let data: string | undefined = undefined;
     if (this.trace === Trace.Verbose && req.arguments) {
@@ -323,7 +323,7 @@ export class Tracer {
     );
   }
 
-  traceResponse(id: string, r: proto.Response, meta: RequestExecutionMetadata): void {
+  traceResponse(id: string, r: proto.Response, meta: RequestExecutionMetadata) {
     if (this.trace === Trace.Off) return;
     let d: string | undefined = undefined;
     if (this.trace === Trace.Verbose && r.body) {
@@ -343,7 +343,7 @@ export class Tracer {
     cmd: string,
     seq: number,
     meta: RequestExecutionMetadata
-  ): void {
+  ) {
     if (this.trace === Trace.Off) return;
     this.logTrace(
       id,
@@ -353,7 +353,7 @@ export class Tracer {
     );
   }
 
-  traceEvent(id: string, e: proto.Event): void {
+  traceEvent(id: string, e: proto.Event) {
     if (this.trace === Trace.Off) return;
     let d: string | undefined = undefined;
     if (this.trace === Trace.Verbose && e.body) {
@@ -362,7 +362,7 @@ export class Tracer {
     this.logTrace(id, `Event received: ${e.event} (${e.seq}).`, d);
   }
 
-  logTrace(id: string, m: string, d?: unknown): void {
+  logTrace(id: string, m: string, d?: unknown) {
     if (this.trace !== Trace.Off) this.logger.logLevel('Trace', `<${id}> ${m}`, d);
   }
 }
