@@ -14,21 +14,21 @@ export function deepEquals<T>(
   a: ReadonlyArray<T>,
   b: ReadonlyArray<T>,
   cmp: (a: T, b: T) => boolean = (a, b) => a === b
-) {
+): boolean {
   if (a === b) return true;
   if (a.length !== b.length) return false;
   return a.every((x, i) => cmp(x, b[i]));
 }
 
 export function flatten<T>(a: ReadonlyArray<T>[]): T[] {
-  return Array.prototype.concat.apply([], a);
+  return Array.prototype.concat.apply([], a) as T[];
 }
 
 export function coalesce<T>(a: ReadonlyArray<T | undefined>): T[] {
   return a.filter((e) => !!e);
 }
 
-export function equals(a: any, b: any) {
+export function equals(a: any, b: any): boolean {
   if (a === b) return true;
   if (a === null || a === undefined || b === null || b === undefined) return false;
   if (typeof a !== typeof b) return false;
@@ -49,7 +49,7 @@ export function equals(a: any, b: any) {
   return aks.every((k) => equals(a[k], b[k]));
 }
 
-export function memoize(_target: any, key: string, desc: any) {
+export function memoize(_target: any, key: string, desc: any): void {
   let fk: string | undefined;
   let f: Function | undefined;
   if (typeof desc.value === 'function') {
@@ -73,7 +73,7 @@ export function memoize(_target: any, key: string, desc: any) {
   };
 }
 
-export function escapeRegExp(t: string) {
+export function escapeRegExp(t: string): string {
   return t.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
@@ -112,7 +112,7 @@ export const instanceDir = (() => {
   };
 })();
 
-export function tempFile(pre: string) {
+export function tempFile(pre: string): string {
   return path.join(instanceDir(), `${pre}-${randHexString(20)}.tmp`);
 }
 

@@ -11,7 +11,7 @@ export interface Plugin {
 }
 
 namespace Plugin {
-  export function equals(a: Plugin, b: Plugin) {
+  export function equals(a: Plugin, b: Plugin): boolean {
     return (
       a.path === b.path &&
       a.name === b.name &&
@@ -51,7 +51,7 @@ export class Plugins extends Disposable {
     return Array.from(this.cfgs.entries());
   }
 
-  setConfig(pluginId: string, config: {}) {
+  setConfig(pluginId: string, config: {}): void {
     this.cfgs.set(pluginId, config);
     this._onDidUpdateConfig.fire({ pluginId, config });
   }

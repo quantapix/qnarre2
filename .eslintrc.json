@@ -40,7 +40,13 @@
     // "@typescript-eslint/consistent-type-assertions": "off",
     // "@typescript-eslint/prefer-regexp-exec": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
-    "@typescript-eslint/no-namespace": "off"
+    "@typescript-eslint/no-namespace": "off",
     //"@typescript-eslint/no-unnecessary-type-assertion": "off"
+    "@typescript-eslint/restrict-template-expressions": {
+      "allowNumber": true,
+      "allowBoolean": true,
+      "allowAny": false,
+      "allowNullish": false
+    }
   }
 }

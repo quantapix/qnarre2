@@ -70,14 +70,14 @@ export function plain(parts: proto.SymbolDisplayPart[] | string): string {
   );
 }
 
-export function tagsPreview(tags: proto.JSDocTagInfo[]) {
+export function tagsPreview(tags: proto.JSDocTagInfo[]): string {
   return tags.map(tagDocumentation).join('  \n\n');
 }
 
 export function documentation(
   d: proto.SymbolDisplayPart[] | string,
   ts: proto.JSDocTagInfo[]
-) {
+): vsc.MarkdownString {
   const md = new vsc.MarkdownString();
   addDocumentation(md, d, ts);
   return md;
@@ -87,7 +87,7 @@ export function addDocumentation(
   md: vsc.MarkdownString,
   d?: proto.SymbolDisplayPart[] | string,
   ts?: proto.JSDocTagInfo[]
-) {
+): vsc.MarkdownString {
   if (d) md.appendMarkdown(plain(d));
   if (ts) {
     const p = tagsPreview(ts);

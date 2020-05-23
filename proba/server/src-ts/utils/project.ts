@@ -1,5 +1,6 @@
-import * as vscode from 'vscode';
+import * as vsc from 'vscode';
 import { loadMessageBundle } from 'vscode-nls';
+
 import * as qs from '../service';
 import { TelemetryReporter } from './telemetry';
 import { isImplicitConfig, openOrCreateConfig, ProjectType } from './tsconfig';
@@ -12,11 +13,11 @@ interface Hint {
 
 class ExcludeHintItem {
   cfgName?: string;
-  private bitem: vscode.StatusBarItem;
+  private bitem: vsc.StatusBarItem;
   private hint?: Hint;
 
   constructor(private readonly telemetry: TelemetryReporter) {
-    this.bitem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 98);
+    this.bitem = vsc.window.createStatusBarItem(vsc.StatusBarAlignment.Right, 98);
     this.bitem.command = 'js.projectStatus.command';
     // this.bitem.id = 'status.typescript.exclude';
     this.bitem.text = localize('statusExclude', 'TypeScript: Configure Excludes');
@@ -55,8 +56,8 @@ class ExcludeHintItem {
   }
 }
 
-function createMonitor(i: ExcludeHintItem, c: IServiceClient): vscode.Disposable {
-  interface MessageItem extends vscode.MessageItem {
+function createMonitor(i: ExcludeHintItem, c: qs.IServiceClient): vsc.Disposable {
+  interface MessageItem extends vsc.MessageItem {
     index: number;
   }
   return c.onServiceStateChanged((b) => {
@@ -67,24 +68,27 @@ function createMonitor(i: ExcludeHintItem, c: IServiceClient): vscode.Disposable
       const n = b.projectName;
       if (n) {
         i.cfgName = n;
-        vscode.window
+        vsc.window
           .showWarningMessage<MessageItem>(i.currentHint().message, {
             title: localize('large.label', 'Configure Excludes'),
             index: 0,
           })
-          .then((s) => {
-            if (s && s.index === 0) onConfigureSelected(c, n);
-          });
+          .then(
+            (s) => {
+              if (s && s.index === 0) onConfigureSelected(c, n);
+            },
+            () => {}
+          );
       }
     }
   });
 }
 
-function onConfigureSelected(c: IServiceClient, n: string) {
+function onConfigureSelected(c: qs.IServiceClient, n: string) {
   if (!isImplicitConfig(n)) {
-    vscode.workspace.openTextDocument(n).then(vscode.window.showTextDocument);
+    vsc.workspace.openTextDocument(n).then(vsc.window.showTextDocument, () => {});
   } else {
-    const r = c.workspaceRootFor(vscode.Uri.file(n));
+    const r = c.workspaceRootFor(vsc.Uri.file(n));
     if (r) {
       openOrCreateConfig(
         /tsconfig\.?.*\.json/.test(n) ? ProjectType.TypeScript : ProjectType.JavaScript,
@@ -95,16 +99,16 @@ function onConfigureSelected(c: IServiceClient, n: string) {
   }
 }
 
-export function create(c: IServiceClient, t: TelemetryReporter) {
-  const ds: vscode.Disposable[] = [];
+export function create(c: qs.IServiceClient, t: TelemetryReporter): vsc.Disposable {
+  const ds: vsc.Disposable[] = [];
   const i = new ExcludeHintItem(t);
   ds.push(
-    vscode.commands.registerCommand('js.projectStatus.command', () => {
+    vsc.commands.registerCommand('js.projectStatus.command', () => {
       if (i.cfgName) onConfigureSelected(c, i.cfgName);
       const { message } = i.currentHint();
-      return vscode.window.showInformationMessage(message);
+      return vsc.window.showInformationMessage(message);
     })
   );
   ds.push(createMonitor(i, c));
-  return vscode.Disposable.from(...ds);
+  return vsc.Disposable.from(...ds);
 }

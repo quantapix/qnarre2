@@ -15,7 +15,7 @@ export class API {
     return new API(v, v, v);
   }
 
-  static fromVersionString(s: string) {
+  static fromVersionString(s: string): API {
     let v = semver.valid(s);
     if (!v) return new API(localize('invalid', 'invalid'), '0.0.0', '0.0.0');
     const i = s.indexOf('-');
@@ -29,15 +29,15 @@ export class API {
     public readonly fullVersion: string
   ) {}
 
-  eq(o: API) {
+  eq(o: API): boolean {
     return semver.eq(this.version, o.version);
   }
 
-  gte(o: API) {
+  gte(o: API): boolean {
     return semver.gte(this.version, o.version);
   }
 
-  lt(o: API) {
+  lt(o: API): boolean {
     return !this.gte(o);
   }
 }
@@ -47,14 +47,14 @@ export class Conditional {
 
   constructor(private readonly register: () => vsc.Disposable) {}
 
-  dispose() {
+  dispose(): void {
     if (this.reg) {
       this.reg.dispose();
       this.reg = undefined;
     }
   }
 
-  update(on: boolean) {
+  update(on: boolean): void {
     if (on) {
       if (!this.reg) this.reg = this.register();
     } else {
@@ -86,7 +86,7 @@ export class VersionDependent extends qx.Disposable {
     );
   }
 
-  dispose() {
+  dispose(): void {
     super.dispose();
     this.reg.dispose();
   }
@@ -111,7 +111,7 @@ export class ConfigDependent extends qx.Disposable {
     vsc.workspace.onDidChangeConfiguration(this.update, this, this.dispos);
   }
 
-  dispose() {
+  dispose(): void {
     super.dispose();
     this.reg.dispose();
   }

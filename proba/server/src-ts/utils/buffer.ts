@@ -150,7 +150,7 @@ class Buf {
       x.languages.includes(this.doc.languageId)
     );
     if (tsPluginsForDocument.length) {
-      (args as any).plugins = tsPluginsForDocument.map((p) => p.name);
+      args.plugins = tsPluginsForDocument.map((p) => p.name);
     }
     this.sync.open(this.resource, args);
     this.state = State.Open;
@@ -302,7 +302,7 @@ export class Buffer extends qx.Disposable {
   private readonly _onWillChange = this.register(new vsc.EventEmitter<vsc.Uri>());
   readonly onWillChange = this._onWillChange.event;
 
-  listen() {
+  listen(): void {
     if (this.listening) return;
     this.listening = true;
     vsc.workspace.onDidOpenTextDocument(this.openTextDocument, this, this.dispos);
@@ -325,18 +325,18 @@ export class Buffer extends qx.Disposable {
     vsc.workspace.textDocuments.forEach(this.openTextDocument, this);
   }
 
-  handles(r: vsc.Uri) {
+  handles(r: vsc.Uri): boolean {
     return this.bufs.has(r);
   }
 
-  ensureHasBuffer(r: vsc.Uri) {
+  ensureHasBuffer(r: vsc.Uri): boolean {
     if (this.bufs.has(r)) return true;
     const t = vsc.workspace.textDocuments.find((d) => d.uri.toString() === r.toString());
     if (t) return this.openTextDocument(t);
     return false;
   }
 
-  toVsCodeResource(r: vsc.Uri) {
+  toVsCodeResource(r: vsc.Uri): vsc.Uri {
     const p = this.client.toNormPath(r);
     for (const b of this.bufs.allBufs) {
       if (b.filepath === p) return b.resource;
@@ -344,26 +344,26 @@ export class Buffer extends qx.Disposable {
     return r;
   }
 
-  toResource(p: string) {
+  toResource(p: string): vsc.Uri {
     const b = this.bufs.forPath(p);
     if (b) return b.resource;
     return vsc.Uri.file(p);
   }
 
-  reset() {
+  reset(): void {
     this.pendingGetErr?.cancel();
     this.diags.clear();
     this.sync.reset();
   }
 
-  reinitialize() {
+  reinitialize(): void {
     this.reset();
     for (const b of this.bufs.allBufs) {
       b.open();
     }
   }
 
-  openTextDocument(d: vsc.TextDocument) {
+  openTextDocument(d: vsc.TextDocument): boolean {
     if (!this.modes.has(d.languageId)) return false;
     const r = d.uri;
     const p = this.client.toNormPath(r);
@@ -376,7 +376,7 @@ export class Buffer extends qx.Disposable {
     return true;
   }
 
-  closeResource(r: vsc.Uri) {
+  closeResource(r: vsc.Uri): void {
     const b = this.bufs.get(r);
     if (!b) return;
     this.diags.delete(r);
@@ -398,7 +398,7 @@ export class Buffer extends qx.Disposable {
     return r;
   }
 
-  beforeCommand(c: string) {
+  beforeCommand(c: string): void {
     this.sync.beforeCommand(c);
   }
 
@@ -418,7 +418,7 @@ export class Buffer extends qx.Disposable {
     }
   }
 
-  requestAllDiags() {
+  requestAllDiags(): void {
     for (const b of this.bufs.allBufs) {
       if (this.shouldValidate(b)) this.diags.set(b.resource, Date.now());
     }
@@ -448,7 +448,7 @@ export class Buffer extends qx.Disposable {
     return true;
   }
 
-  hasDiags(r: vsc.Uri) {
+  hasDiags(r: vsc.Uri): boolean {
     return this.diags.has(r);
   }
 
