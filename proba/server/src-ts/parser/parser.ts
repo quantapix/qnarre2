@@ -14,28 +14,6 @@ import { TSESTree, TSNode, TSESTreeToTSNode, TSToken } from './ts-estree';
 
 type DebugModule = 'typescript-eslint' | 'eslint' | 'typescript';
 
-interface Extra {
-  code: string;
-  comment: boolean;
-  comments: TSESTree.Comment[];
-  createDefaultProgram: boolean;
-  debugLevel: Set<DebugModule>;
-  errorOnTypeScriptSyntacticAndSemanticIssues: boolean;
-  errorOnUnknownASTType: boolean;
-  extraFileExtensions: string[];
-  filePath: string;
-  jsx: boolean;
-  loc: boolean;
-  log: (message: string) => void;
-  preserveNodeMaps?: boolean;
-  projects: string[];
-  range: boolean;
-  strict: boolean;
-  tokens: null | TSESTree.Token[];
-  tsconfigRootDir: string;
-  useJSXTextNode: boolean;
-}
-
 interface ParseOptions {
   comment?: boolean;
   debugLevel?: boolean | ('typescript-eslint' | 'eslint' | 'typescript')[];
@@ -57,7 +35,7 @@ interface ParseAndGenerateServicesOptions extends ParseOptions {
   project?: string | string[];
   projectFolderIgnoreList?: (string | RegExp)[];
   tsconfigRootDir?: string;
-  createDefaultProgram?: boolean;
+  defaultProgram?: boolean;
 }
 
 export type TSESTreeOptions = ParseAndGenerateServicesOptions;
@@ -131,7 +109,7 @@ export function simpleTraverse(
 
 export function astConverter(
   ast: ts.SourceFile,
-  extra: Extra,
+  extra: qp.Extra,
   shouldPreserveNodeMaps: boolean
 ): { estree: TSESTree.Program; astMaps: ASTMaps } {
   const parseDiagnostics = (ast as any).parseDiagnostics;
@@ -166,7 +144,7 @@ const isRunningSupportedTypeScriptVersion = semver.satisfies(
   [SUPPORTED_TYPESCRIPT_VERSIONS].concat(SUPPORTED_PRERELEASE_RANGES).join(' || ')
 );
 
-let extra: Extra;
+let extra: qp.Extra;
 let warnedAboutTSVersion = false;
 
 function enforceString(code: unknown): string {
@@ -181,11 +159,11 @@ function getProgramAndAST(
 ): ASTAndProgram {
   return (
     (shouldProvideParserServices &&
-      createProjectProgram(code, shouldCreateDefaultProgram, extra)) ||
+      qp.projectProgram(code, shouldCreateDefaultProgram, extra)) ||
     (shouldProvideParserServices &&
       shouldCreateDefaultProgram &&
-      createDefaultProgram(code, extra)) ||
-    createIsolatedProgram(code, extra)
+      qp.defaultProgram(code, extra)) ||
+    qp.isolatedProgram(code, extra)
   );
 }
 
@@ -198,7 +176,7 @@ function resetExtra(): void {
     code: '',
     comment: false,
     comments: [],
-    createDefaultProgram: false,
+    defaultProgram: false,
     debugLevel: new Set(),
     errorOnTypeScriptSyntacticAndSemanticIssues: false,
     errorOnUnknownASTType: false,
@@ -341,8 +319,8 @@ function applyParserOptionsToExtra(options: TSESTreeOptions): void {
   if (typeof options.preserveNodeMaps === 'boolean') {
     extra.preserveNodeMaps = options.preserveNodeMaps;
   }
-  extra.createDefaultProgram =
-    typeof options.createDefaultProgram === 'boolean' && options.createDefaultProgram;
+  extra.defaultProgram =
+    typeof options.defaultProgram === 'boolean' && options.defaultProgram;
 }
 
 function warnAboutTSVersion(): void {
@@ -392,7 +370,7 @@ function parse<T extends TSESTreeOptions = TSESTreeOptions>(
     applyParserOptionsToExtra(options);
   }
   warnAboutTSVersion();
-  const ast = createSourceFile(code, extra);
+  const ast = qp.sourceFile(code, extra);
   const { estree } = astConverter(ast, extra, false);
   return estree as AST<T>;
 }
@@ -418,7 +396,7 @@ function parseAndGenerateServices<T extends TSESTreeOptions = TSESTreeOptions>(
   const { ast, program } = getProgramAndAST(
     code,
     shouldProvideParserServices,
-    extra.createDefaultProgram
+    extra.defaultProgram
   )!;
   const preserveNodeMaps =
     typeof extra.preserveNodeMaps === 'boolean' ? extra.preserveNodeMaps : true;

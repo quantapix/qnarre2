@@ -6,7 +6,29 @@ import * as ts from 'typescript';
 import { TSESTree } from './ts-estree';
 import { firstDefined } from './utils';
 
-export function createSourceFile(s: string, e: Extra): ts.SourceFile {
+export interface Extra {
+  code: string;
+  comment: boolean;
+  comments: TSESTree.Comment[];
+  defaultProgram: boolean;
+  debugLevel: Set<unknown>;
+  errorOnTypeScriptSyntacticAndSemanticIssues: boolean;
+  errorOnUnknownASTType: boolean;
+  extraFileExtensions: string[];
+  filePath: string;
+  jsx: boolean;
+  loc: boolean;
+  log: (message: string) => void;
+  preserveNodeMaps?: boolean;
+  projects: string[];
+  range: boolean;
+  strict: boolean;
+  tokens: null | TSESTree.Token[];
+  cfgRootDir: string;
+  useJSXTextNode: boolean;
+}
+
+export function sourceFile(s: string, e: Extra): ts.SourceFile {
   return ts.createSourceFile(
     e.filePath,
     s,
@@ -39,7 +61,7 @@ interface ASTAndProgram {
   program: ts.Program;
 }
 
-export function createProjectProgram(
+export function projectProgram(
   s: string,
   defaulted: boolean,
   e: Extra
@@ -47,7 +69,7 @@ export function createProjectProgram(
   function extension(f?: string) {
     return f ? (f.endsWith('.d.ts') ? '.d.ts' : path.extname(f)) : undefined;
   }
-  const r = firstDefined(programsForProjects(s, e.filePath, e), (p) => {
+  const r = firstDefined(programsFor(s, e.filePath, e), (p) => {
     const ast = p.getSourceFile(e.filePath);
     if (extension(e.filePath) !== extension(ast?.fileName)) return;
     return ast && { ast, program: p };
@@ -84,57 +106,68 @@ export function createProjectProgram(
   return r;
 }
 
-function programsForProjects(code: string, fIn: string, e: Extra): ts.Program[] {
+const programs = new Map<CanonicalPath, ts.WatchOfConfigFile<ts.BuilderProgram>>();
+const fileWatchers = new Map<CanonicalPath, Set<ts.FileWatcherCallback>>();
+const dirWatchers = new Map<CanonicalPath, Set<ts.FileWatcherCallback>>();
+const fileLists = new Map<CanonicalPath, Set<CanonicalPath>>();
+const timestamps = new Map<CanonicalPath, number>();
+const hashes = new Map<CanonicalPath, string>();
+
+const currentState: { code: string; filePath: CanonicalPath } = {
+  code: '',
+  filePath: '' as CanonicalPath,
+};
+
+function programsFor(s: string, fIn: string, e: Extra): ts.Program[] {
   const f = canonicalPath(fIn);
-  const results = [];
-  currentState.code = code;
+  currentState.code = s;
   currentState.filePath = f;
-  const fileWatchCallbacks = fileWatchers.get(f);
-  const codeHash = createHash(code);
-  if (hashes.get(f) !== codeHash && fileWatchCallbacks && fileWatchCallbacks.size > 0) {
-    fileWatchCallbacks.forEach((cb) => cb(f, ts.FileWatcherEventKind.Changed));
+  const ws = fileWatchers.get(f);
+  if (hashes.get(f) !== createHash(s) && ws?.size > 0) {
+    ws.forEach((w) => w(f, ts.FileWatcherEventKind.Changed));
   }
-  for (const rawTsconfigPath of e.projects) {
-    const cfg = getTsconfigPath(rawTsconfigPath, e);
-    const existingWatch = programs.get(cfg);
-    if (!existingWatch) continue;
-    let fileList = fileLists.get(cfg);
-    let updatedProgram: ts.Program | null = null;
-    if (!fileList) {
-      updatedProgram = existingWatch.getProgram().getProgram();
-      fileList = new Set(updatedProgram.getRootFileNames().map((f) => canonicalPath(f)));
-      fileLists.set(cfg, fileList);
+  for (const c of e.projects) {
+    const cfg = configPath(c, e);
+    const w = programs.get(cfg);
+    if (!w) continue;
+    let fs = fileLists.get(cfg);
+    let p: ts.Program | undefined;
+    if (!fs) {
+      p = w.getProgram().getProgram();
+      fs = new Set(p.getRootFileNames().map((f) => canonicalPath(f)));
+      fileLists.set(cfg, fs);
     }
-    if (fileList.has(f)) {
-      updatedProgram = updatedProgram ?? existingWatch.getProgram().getProgram();
-      updatedProgram.getTypeChecker();
-      return [updatedProgram];
+    if (fs.has(f)) {
+      p = p ?? w.getProgram().getProgram();
+      p.getTypeChecker();
+      return [p];
     }
   }
-  for (const rawTsconfigPath of e.projects) {
-    const cfg = getTsconfigPath(rawTsconfigPath, e);
-    const existingWatch = programs.get(cfg);
-    if (existingWatch) {
-      const updatedProgram = maybeInvalidateProgram(existingWatch, f, cfg);
-      if (!updatedProgram) continue;
-      updatedProgram.getTypeChecker();
-      results.push(updatedProgram);
+  const ps = [];
+  for (const c of e.projects) {
+    const cfg = configPath(c, e);
+    let w = programs.get(cfg);
+    if (w) {
+      const p = maybeInvalidate(w, f, cfg);
+      if (!p) continue;
+      p.getTypeChecker();
+      ps.push(p);
       continue;
     }
-    const programWatch = createWatch(cfg, e);
-    const program = programWatch.getProgram().getProgram();
-    programs.set(cfg, programWatch);
-    program.getTypeChecker();
-    results.push(program);
+    w = createWatch(cfg, e);
+    const p = w.getProgram().getProgram();
+    programs.set(cfg, w);
+    p.getTypeChecker();
+    ps.push(p);
   }
-  return results;
+  return ps;
 }
 
-export function createDefaultProgram(s: string, e: Extra): ASTAndProgram | undefined {
+export function defaultProgram(s: string, e: Extra): ASTAndProgram | undefined {
   if (!e.projects || e.projects.length !== 1) return;
   const c = ts.getParsedCommandLineOfConfigFile(
-    getTsconfigPath(e.projects[0], e),
-    createDefaultCompilerOptionsFromExtra(e),
+    configPath(e.projects[0], e),
+    optionsFrom(e),
     { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} }
   );
   if (!c) return;
@@ -147,7 +180,7 @@ export function createDefaultProgram(s: string, e: Extra): ASTAndProgram | undef
   return ast && { ast, program };
 }
 
-export function createIsolatedProgram(s: string, e: Extra): ASTAndProgram | undefined {
+export function isolatedProgram(s: string, e: Extra): ASTAndProgram | undefined {
   const compilerHost: ts.CompilerHost = {
     fileExists() {
       return true;
@@ -192,20 +225,13 @@ export function createIsolatedProgram(s: string, e: Extra): ASTAndProgram | unde
       noResolve: true,
       target: ts.ScriptTarget.Latest,
       jsx: e.jsx ? ts.JsxEmit.Preserve : undefined,
-      ...createDefaultCompilerOptionsFromExtra(e),
+      ...optionsFrom(e),
     },
     compilerHost
   );
   const ast = program.getSourceFile(e.filePath);
   return ast && { ast, program };
 }
-
-const programs = new Map<CanonicalPath, ts.WatchOfConfigFile<ts.BuilderProgram>>();
-const fileWatchers = new Map<CanonicalPath, Set<ts.FileWatcherCallback>>();
-const dirWatchers = new Map<CanonicalPath, Set<ts.FileWatcherCallback>>();
-const fileLists = new Map<CanonicalPath, Set<CanonicalPath>>();
-const timestamps = new Map<CanonicalPath, number>();
-const hashes = new Map<CanonicalPath, string>();
 
 export function clearCaches() {
   programs.clear();
@@ -217,6 +243,88 @@ export function clearCaches() {
 }
 
 const DEFAULT_EXTS = ['.ts', '.tsx', '.js', '.jsx'];
+
+type CanonicalPath = string & { __brand: unknown };
+
+const correctCasing =
+  ts.sys?.useCaseSensitiveFileNames ?? true
+    ? (f: string): string => f
+    : (f: string): string => f.toLowerCase();
+
+function canonicalPath(f: string) {
+  let n = path.normalize(f);
+  if (n.endsWith(path.sep)) n = n.substr(0, n.length - 1);
+  return correctCasing(n) as CanonicalPath;
+}
+
+function configPath(p: string, e: Extra) {
+  p = path.isAbsolute(p) ? p : path.join(e.cfgRootDir || process.cwd(), p);
+  return canonicalPath(p);
+}
+
+function createHash(s: string) {
+  return ts.sys?.createHash ? ts.sys.createHash(s) : s;
+}
+
+function maybeInvalidate(
+  w: ts.WatchOfConfigFile<ts.BuilderProgram>,
+  f: CanonicalPath,
+  cfg: CanonicalPath
+): ts.Program | undefined {
+  let r = w.getProgram().getProgram();
+  if (process.env.TSESTREE_NO_INVALIDATION === 'true') return r;
+  if (hasChanged(cfg)) {
+    fileWatchers.get(cfg)?.forEach((w) => w(cfg, ts.FileWatcherEventKind.Changed));
+    fileLists.delete(cfg);
+  }
+  let s = r.getSourceFile(f);
+  if (s) return r;
+  const d = canonicalDir(f);
+  let p: CanonicalPath | undefined;
+  let n = d;
+  let hasCallback = false;
+  while (p !== n) {
+    p = n;
+    const ws = dirWatchers.get(p);
+    if (ws) {
+      ws.forEach((w) => {
+        if (d !== p) w(d, ts.FileWatcherEventKind.Changed);
+        w(p!, ts.FileWatcherEventKind.Changed);
+      });
+      hasCallback = true;
+    }
+    n = canonicalDir(p);
+  }
+  if (!hasCallback) return;
+  fileLists.delete(cfg);
+  r = w.getProgram().getProgram();
+  s = r.getSourceFile(f);
+  if (s) return r;
+  const rs = r.getRootFileNames();
+  const deletedFile = rs.find((f) => !fs.existsSync(f));
+  if (!deletedFile) return;
+  const ws = fileWatchers.get(canonicalPath(deletedFile));
+  if (!ws) return r;
+  ws.forEach((w) => w(deletedFile, ts.FileWatcherEventKind.Deleted));
+  fileLists.delete(cfg);
+  r = w.getProgram().getProgram();
+  s = r.getSourceFile(f);
+  if (s) return r;
+  return;
+}
+
+function hasChanged(p: CanonicalPath) {
+  const s = fs.statSync(p);
+  const last = s.mtimeMs;
+  const t = timestamps.get(p);
+  timestamps.set(p, last);
+  if (t === undefined) return false;
+  return Math.abs(t - last) > Number.EPSILON;
+}
+
+function canonicalDir(p: CanonicalPath): CanonicalPath {
+  return path.dirname(p) as CanonicalPath;
+}
 
 interface DirectoryStructureHost {
   readDirectory?(
@@ -244,65 +352,10 @@ interface WatchCompilerHostOfConfigFile<T extends ts.BuilderProgram>
   extraFileExtensions?: readonly ts.FileExtensionInfo[];
 }
 
-interface Extra {
-  code: string;
-  comment: boolean;
-  comments: TSESTree.Comment[];
-  createDefaultProgram: boolean;
-  debugLevel: Set<unknown>;
-  errorOnTypeScriptSyntacticAndSemanticIssues: boolean;
-  errorOnUnknownASTType: boolean;
-  extraFileExtensions: string[];
-  filePath: string;
-  jsx: boolean;
-  loc: boolean;
-  log: (message: string) => void;
-  preserveNodeMaps?: boolean;
-  projects: string[];
-  range: boolean;
-  strict: boolean;
-  tokens: null | TSESTree.Token[];
-  cfgRootDir: string;
-  useJSXTextNode: boolean;
-}
-
-function saveWatchCallback(ws: Map<string, Set<ts.FileWatcherCallback>>) {
-  return (p: string, cb: ts.FileWatcherCallback): ts.FileWatcher => {
-    const f = canonicalPath(p);
-    const s = ((): Set<ts.FileWatcherCallback> => {
-      let s = ws.get(f);
-      if (!s) {
-        s = new Set();
-        ws.set(f, s);
-      }
-      return s;
-    })();
-    s.add(cb);
-    return {
-      close: (): void => {
-        s.delete(cb);
-      },
-    };
-  };
-}
-
-const currentState: { code: string; filePath: CanonicalPath } = {
-  code: '',
-  filePath: '' as CanonicalPath,
-};
-
-function reporter(d: ts.Diagnostic) {
-  throw new Error(ts.flattenDiagnosticMessageText(d.messageText, ts.sys.newLine));
-}
-
-function createHash(s: string) {
-  return ts.sys?.createHash ? ts.sys.createHash(s) : s;
-}
-
 function createWatch(cfg: string, e: Extra): ts.WatchOfConfigFile<ts.BuilderProgram> {
   const h = ts.createWatchCompilerHost(
     cfg,
-    createDefaultCompilerOptionsFromExtra(e),
+    optionsFrom(e),
     ts.sys,
     ts.createAbstractBuilder,
     reporter,
@@ -342,69 +395,17 @@ function createWatch(cfg: string, e: Extra): ts.WatchOfConfigFile<ts.BuilderProg
     isMixedContent: true,
     scriptKind: ts.ScriptKind.Deferred,
   }));
-  h.trace = log;
+  //h.trace = debug('qnarre:server:parser');;
   h.setTimeout = undefined;
   h.clearTimeout = undefined;
   return ts.createWatchProgram(h);
 }
 
-function hasChanged(p: CanonicalPath) {
-  const s = fs.statSync(p);
-  const last = s.mtimeMs;
-  const t = timestamps.get(p);
-  timestamps.set(p, last);
-  if (t === undefined) return false;
-  return Math.abs(t - last) > Number.EPSILON;
+function reporter(d: ts.Diagnostic) {
+  throw new Error(ts.flattenDiagnosticMessageText(d.messageText, ts.sys.newLine));
 }
 
-function maybeInvalidateProgram(
-  w: ts.WatchOfConfigFile<ts.BuilderProgram>,
-  f: CanonicalPath,
-  cfg: CanonicalPath
-): ts.Program | undefined {
-  let r = w.getProgram().getProgram();
-  if (process.env.TSESTREE_NO_INVALIDATION === 'true') return r;
-  if (hasChanged(cfg)) {
-    fileWatchers.get(cfg)?.forEach((w) => w(cfg, ts.FileWatcherEventKind.Changed));
-    fileLists.delete(cfg);
-  }
-  let s = r.getSourceFile(f);
-  if (s) return r;
-  const d = canonicalDirname(f);
-  let p: CanonicalPath | undefined;
-  let n = d;
-  let hasCallback = false;
-  while (p !== n) {
-    p = n;
-    const ws = dirWatchers.get(p);
-    if (ws) {
-      ws.forEach((w) => {
-        if (d !== p) w(d, ts.FileWatcherEventKind.Changed);
-        w(p!, ts.FileWatcherEventKind.Changed);
-      });
-      hasCallback = true;
-    }
-    n = canonicalDirname(p);
-  }
-  if (!hasCallback) return;
-  fileLists.delete(cfg);
-  r = w.getProgram().getProgram();
-  s = r.getSourceFile(f);
-  if (s) return r;
-  const rs = r.getRootFileNames();
-  const deletedFile = rs.find((f) => !fs.existsSync(f));
-  if (!deletedFile) return;
-  const ws = fileWatchers.get(canonicalPath(deletedFile));
-  if (!ws) return r;
-  ws.forEach((w) => w(deletedFile, ts.FileWatcherEventKind.Deleted));
-  fileLists.delete(cfg);
-  r = w.getProgram().getProgram();
-  s = r.getSourceFile(f);
-  if (s) return r;
-  return;
-}
-
-const DEFAULT_COMPILER_OPTIONS: ts.CompilerOptions = {
+const DEFAULT_OPTS: ts.CompilerOptions = {
   allowNonTsExtensions: true,
   allowJs: true,
   checkJs: true,
@@ -414,37 +415,32 @@ const DEFAULT_COMPILER_OPTIONS: ts.CompilerOptions = {
   noUnusedParameters: true,
 };
 
-function createDefaultCompilerOptionsFromExtra(e: Extra): ts.CompilerOptions {
+function optionsFrom(e: Extra): ts.CompilerOptions {
   if (e.debugLevel.has('typescript')) {
     return {
-      ...DEFAULT_COMPILER_OPTIONS,
+      ...DEFAULT_OPTS,
       extendedDiagnostics: true,
     };
   }
-  return DEFAULT_COMPILER_OPTIONS;
+  return DEFAULT_OPTS;
 }
 
-type CanonicalPath = string & { __brand: unknown };
-
-const correctCasing =
-  ts.sys?.useCaseSensitiveFileNames ?? true
-    ? (f: string): string => f
-    : (f: string): string => f.toLowerCase();
-
-function canonicalPath(f: string): CanonicalPath {
-  let n = path.normalize(f);
-  if (n.endsWith(path.sep)) n = n.substr(0, n.length - 1);
-  return correctCasing(n) as CanonicalPath;
-}
-
-function ensureAbsolutePath(p: string, e: Extra): string {
-  return path.isAbsolute(p) ? p : path.join(e.cfgRootDir || process.cwd(), p);
-}
-
-function getTsconfigPath(p: string, e: Extra): CanonicalPath {
-  return canonicalPath(ensureAbsolutePath(p, e));
-}
-
-function canonicalDirname(p: CanonicalPath): CanonicalPath {
-  return path.dirname(p) as CanonicalPath;
+function saveWatchCallback(ws: Map<string, Set<ts.FileWatcherCallback>>) {
+  return (p: string, cb: ts.FileWatcherCallback): ts.FileWatcher => {
+    const f = canonicalPath(p);
+    const s = ((): Set<ts.FileWatcherCallback> => {
+      let s = ws.get(f);
+      if (!s) {
+        s = new Set();
+        ws.set(f, s);
+      }
+      return s;
+    })();
+    s.add(cb);
+    return {
+      close: (): void => {
+        s.delete(cb);
+      },
+    };
+  };
 }
