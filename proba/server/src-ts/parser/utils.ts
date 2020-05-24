@@ -3,7 +3,7 @@ import { AST_NODE_TYPES, AST_TOKEN_TYPES, TSESTree } from './ts-estree';
 
 const SyntaxKind = ts.SyntaxKind;
 
-const ASSIGNMENT_OPERATORS: ts.AssignmentOperator[] = [
+const ASSIGN_OPS: ts.AssignmentOperator[] = [
   SyntaxKind.EqualsToken,
   SyntaxKind.PlusEqualsToken,
   SyntaxKind.MinusEqualsToken,
@@ -19,7 +19,7 @@ const ASSIGNMENT_OPERATORS: ts.AssignmentOperator[] = [
   SyntaxKind.CaretEqualsToken,
 ];
 
-const LOGICAL_OPERATORS: (ts.LogicalOperator | ts.SyntaxKind.QuestionQuestionToken)[] = [
+const LOGICAL_OPS: (ts.LogicalOperator | ts.SyntaxKind.QuestionQuestionToken)[] = [
   SyntaxKind.BarBarToken,
   SyntaxKind.AmpersandAmpersandToken,
   SyntaxKind.QuestionQuestionToken,
@@ -91,59 +91,48 @@ const TOKEN_TO_TEXT = {
   [SyntaxKind.QuestionDotToken]: '?.',
 } as const;
 
-export function isAssignmentOperator<T extends ts.SyntaxKind>(
-  operator: ts.Token<T>
-): boolean {
-  return (ASSIGNMENT_OPERATORS as ts.SyntaxKind[]).includes(operator.kind);
+export function isAssignmentOperator<T extends ts.SyntaxKind>(o: ts.Token<T>) {
+  return (ASSIGN_OPS as ts.SyntaxKind[]).includes(o.kind);
 }
 
-export function isLogicalOperator<T extends ts.SyntaxKind>(
-  operator: ts.Token<T>
-): boolean {
-  return (LOGICAL_OPERATORS as ts.SyntaxKind[]).includes(operator.kind);
+export function isLogicalOperator<T extends ts.SyntaxKind>(o: ts.Token<T>) {
+  return (LOGICAL_OPS as ts.SyntaxKind[]).includes(o.kind);
 }
 
 export function getTextForTokenKind<T extends ts.SyntaxKind>(
-  kind: T
+  k: T
 ): T extends keyof typeof TOKEN_TO_TEXT ? typeof TOKEN_TO_TEXT[T] : undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return kind in TOKEN_TO_TEXT ? (TOKEN_TO_TEXT as any)[kind] : undefined;
+  return k in TOKEN_TO_TEXT ? (TOKEN_TO_TEXT as any)[k] : undefined;
 }
 
-export function isESTreeClassMember(node: ts.Node): boolean {
-  return node.kind !== SyntaxKind.SemicolonClassElement;
+export function isESTreeClassMember(n: ts.Node) {
+  return n.kind !== SyntaxKind.SemicolonClassElement;
 }
 
-export function hasModifier(modifierKind: ts.KeywordSyntaxKind, node: ts.Node): boolean {
+export function hasModifier(k: ts.KeywordSyntaxKind, n: ts.Node) {
+  return !!n.modifiers && !!n.modifiers.length && n.modifiers.some((m) => m.kind === k);
+}
+
+export function getLastModifier(n: ts.Node): ts.Modifier | undefined {
   return (
-    !!node.modifiers &&
-    !!node.modifiers.length &&
-    node.modifiers.some((modifier) => modifier.kind === modifierKind)
+    (!!n.modifiers && !!n.modifiers.length && n.modifiers[n.modifiers.length - 1]) ||
+    undefined
   );
 }
 
-export function getLastModifier(node: ts.Node): ts.Modifier | null {
+export function isComma(n: ts.Node) {
+  return n.kind === SyntaxKind.CommaToken;
+}
+
+export function isComment(n: ts.Node) {
   return (
-    (!!node.modifiers &&
-      !!node.modifiers.length &&
-      node.modifiers[node.modifiers.length - 1]) ||
-    null
+    n.kind === SyntaxKind.SingleLineCommentTrivia ||
+    n.kind === SyntaxKind.MultiLineCommentTrivia
   );
 }
 
-export function isComma(token: ts.Node): boolean {
-  return token.kind === SyntaxKind.CommaToken;
-}
-
-export function isComment(node: ts.Node): boolean {
-  return (
-    node.kind === SyntaxKind.SingleLineCommentTrivia ||
-    node.kind === SyntaxKind.MultiLineCommentTrivia
-  );
-}
-
-export function isJSDocComment(node: ts.Node): boolean {
-  return node.kind === SyntaxKind.JSDocComment;
+export function isJSDocComment(n: ts.Node): boolean {
+  return n.kind === SyntaxKind.JSDocComment;
 }
 
 export function getBinaryExpressionType<T extends ts.SyntaxKind>(
@@ -183,10 +172,10 @@ export function getLocFor(
 }
 
 export function canContainDirective(
-  node: ts.SourceFile | ts.Block | ts.ModuleBlock
+  n: ts.SourceFile | ts.Block | ts.ModuleBlock
 ): boolean {
-  if (node.kind === ts.SyntaxKind.Block) {
-    switch (node.parent.kind) {
+  if (n.kind === ts.SyntaxKind.Block) {
+    switch (n.parent.kind) {
       case ts.SyntaxKind.Constructor:
       case ts.SyntaxKind.GetAccessor:
       case ts.SyntaxKind.SetAccessor:
@@ -202,37 +191,31 @@ export function canContainDirective(
   return true;
 }
 
-export function getRange(node: ts.Node, ast: ts.SourceFile): [number, number] {
-  return [node.getStart(ast), node.getEnd()];
+export function getRange(n: ts.Node, ast: ts.SourceFile): [number, number] {
+  return [n.getStart(ast), n.getEnd()];
 }
 
-export function isToken(node: ts.Node): boolean {
-  return node.kind >= SyntaxKind.FirstToken && node.kind <= SyntaxKind.LastToken;
+export function isToken(n: ts.Node): boolean {
+  return n.kind >= SyntaxKind.FirstToken && n.kind <= SyntaxKind.LastToken;
 }
 
-export function isJSXToken(node: ts.Node): boolean {
-  return node.kind >= SyntaxKind.JsxElement && node.kind <= SyntaxKind.JsxAttribute;
+export function isJSXToken(n: ts.Node): boolean {
+  return n.kind >= SyntaxKind.JsxElement && n.kind <= SyntaxKind.JsxAttribute;
 }
 
 export function getDeclarationKind(
-  node: ts.VariableDeclarationList
+  n: ts.VariableDeclarationList
 ): 'let' | 'const' | 'var' {
-  if (node.flags & ts.NodeFlags.Let) {
-    return 'let';
-  }
-  if (node.flags & ts.NodeFlags.Const) {
-    return 'const';
-  }
+  if (n.flags & ts.NodeFlags.Let) return 'let';
+  if (n.flags & ts.NodeFlags.Const) return 'const';
   return 'var';
 }
 
 export function getTSNodeAccessibility(
-  node: ts.Node
-): 'public' | 'protected' | 'private' | null {
-  const modifiers = node.modifiers;
-  if (!modifiers) {
-    return null;
-  }
+  n: ts.Node
+): 'public' | 'protected' | 'private' | undefined {
+  const modifiers = n.modifiers;
+  if (!modifiers) return;
   for (let i = 0; i < modifiers.length; i++) {
     const modifier = modifiers[i];
     switch (modifier.kind) {
@@ -246,7 +229,7 @@ export function getTSNodeAccessibility(
         break;
     }
   }
-  return null;
+  return;
 }
 
 export function findNextToken(
@@ -255,17 +238,11 @@ export function findNextToken(
   ast: ts.SourceFile
 ): ts.Node | undefined {
   return find(parent);
-
   function find(n: ts.Node): ts.Node | undefined {
-    if (ts.isToken(n) && n.pos === previousToken.end) {
-      // this is token that starts at the end of previous token - return it
-      return n;
-    }
+    if (ts.isToken(n) && n.pos === previousToken.end) return n;
     return firstDefined(n.getChildren(ast), (child: ts.Node) => {
       const shouldDiveInChildNode =
-        // previous token is enclosed somewhere in the child
         (child.pos <= previousToken.pos && child.end > previousToken.end) ||
-        // previous token ends exactly at the beginning of child
         child.pos === previousToken.end;
       return shouldDiveInChildNode && nodeHasTokens(child, ast) ? find(child) : undefined;
     });
@@ -273,20 +250,18 @@ export function findNextToken(
 }
 
 export function findFirstMatchingAncestor(
-  node: ts.Node,
-  predicate: (node: ts.Node) => boolean
+  n: ts.Node,
+  predicate: (n: ts.Node) => boolean
 ): ts.Node | undefined {
-  while (node) {
-    if (predicate(node)) {
-      return node;
-    }
-    node = node.parent;
+  while (n) {
+    if (predicate(n)) return n;
+    n = n.parent;
   }
-  return undefined;
+  return;
 }
 
-export function hasJSXAncestor(node: ts.Node): boolean {
-  return !!findFirstMatchingAncestor(node, isJSXToken);
+export function hasJSXAncestor(n: ts.Node): boolean {
+  return !!findFirstMatchingAncestor(n, isJSXToken);
 }
 
 const unescapes = {
@@ -307,44 +282,36 @@ export function unescapeStringLiteralText(text: string): string {
   return unescape(text);
 }
 
-export function isComputedProperty(node: ts.Node): boolean {
-  return node.kind === SyntaxKind.ComputedPropertyName;
+export function isComputedProperty(n: ts.Node): boolean {
+  return n.kind === SyntaxKind.ComputedPropertyName;
 }
 
-export function isOptional(node: { questionToken?: ts.QuestionToken }): boolean {
-  return node.questionToken
-    ? node.questionToken.kind === SyntaxKind.QuestionToken
-    : false;
+export function isOptional(n: { questionToken?: ts.QuestionToken }): boolean {
+  return n.questionToken ? n.questionToken.kind === SyntaxKind.QuestionToken : false;
 }
 
 export function isOptionalChain(
-  node: TSESTree.Node
-): node is TSESTree.OptionalCallExpression | TSESTree.OptionalMemberExpression {
+  n: TSESTree.Node
+): n is TSESTree.OptionalCallExpression | TSESTree.OptionalMemberExpression {
   return (
-    node.type === AST_NODE_TYPES.OptionalCallExpression ||
-    node.type == AST_NODE_TYPES.OptionalMemberExpression
+    n.type === AST_NODE_TYPES.OptionalCallExpression ||
+    n.type == AST_NODE_TYPES.OptionalMemberExpression
   );
 }
 
 export function isChildOptionalChain(
-  node: ts.PropertyAccessExpression | ts.ElementAccessExpression | ts.CallExpression,
-  object: TSESTree.LeftHandSideExpression
+  n: ts.PropertyAccessExpression | ts.ElementAccessExpression | ts.CallExpression,
+  o: TSESTree.LeftHandSideExpression
 ): boolean {
-  if (
-    isOptionalChain(object) &&
-    node.expression.kind !== ts.SyntaxKind.ParenthesizedExpression
-  ) {
+  if (isOptionalChain(o) && n.expression.kind !== ts.SyntaxKind.ParenthesizedExpression) {
     return true;
   }
-  if (
-    object.type !== AST_NODE_TYPES.TSNonNullExpression ||
-    !isOptionalChain(object.expression)
-  ) {
+  if (o.type !== AST_NODE_TYPES.TSNonNullExpression || !isOptionalChain(o.expression)) {
     return false;
   }
   if (
-    node.expression.kind === ts.SyntaxKind.NonNullExpression &&
-    (node.expression as ts.NonNullExpression).expression.kind !==
+    n.expression.kind === ts.SyntaxKind.NonNullExpression &&
+    (n.expression as ts.NonNullExpression).expression.kind !==
       ts.SyntaxKind.ParenthesizedExpression
   ) {
     return true;
@@ -353,101 +320,70 @@ export function isChildOptionalChain(
 }
 
 export function getTokenType(
-  token: ts.Identifier | ts.Token<ts.SyntaxKind>
+  t: ts.Identifier | ts.Token<ts.SyntaxKind>
 ): Exclude<AST_TOKEN_TYPES, AST_TOKEN_TYPES.Line | AST_TOKEN_TYPES.Block> {
-  if ('originalKeywordKind' in token && token.originalKeywordKind) {
-    if (token.originalKeywordKind === SyntaxKind.NullKeyword) {
-      return AST_TOKEN_TYPES.Null;
-    } else if (
-      token.originalKeywordKind >= SyntaxKind.FirstFutureReservedWord &&
-      token.originalKeywordKind <= SyntaxKind.LastKeyword
+  if ('originalKeywordKind' in t && t.originalKeywordKind) {
+    if (t.originalKeywordKind === SyntaxKind.NullKeyword) return AST_TOKEN_TYPES.Null;
+    else if (
+      t.originalKeywordKind >= SyntaxKind.FirstFutureReservedWord &&
+      t.originalKeywordKind <= SyntaxKind.LastKeyword
     ) {
       return AST_TOKEN_TYPES.Identifier;
     }
     return AST_TOKEN_TYPES.Keyword;
   }
-
-  if (
-    token.kind >= SyntaxKind.FirstKeyword &&
-    token.kind <= SyntaxKind.LastFutureReservedWord
-  ) {
-    if (token.kind === SyntaxKind.FalseKeyword || token.kind === SyntaxKind.TrueKeyword) {
+  if (t.kind >= SyntaxKind.FirstKeyword && t.kind <= SyntaxKind.LastFutureReservedWord) {
+    if (t.kind === SyntaxKind.FalseKeyword || t.kind === SyntaxKind.TrueKeyword) {
       return AST_TOKEN_TYPES.Boolean;
     }
-
     return AST_TOKEN_TYPES.Keyword;
   }
-
-  if (
-    token.kind >= SyntaxKind.FirstPunctuation &&
-    token.kind <= SyntaxKind.LastBinaryOperator
-  ) {
+  if (t.kind >= SyntaxKind.FirstPunctuation && t.kind <= SyntaxKind.LastBinaryOperator) {
     return AST_TOKEN_TYPES.Punctuator;
   }
-
   if (
-    token.kind >= SyntaxKind.NoSubstitutionTemplateLiteral &&
-    token.kind <= SyntaxKind.TemplateTail
+    t.kind >= SyntaxKind.NoSubstitutionTemplateLiteral &&
+    t.kind <= SyntaxKind.TemplateTail
   ) {
     return AST_TOKEN_TYPES.Template;
   }
-
-  switch (token.kind) {
+  switch (t.kind) {
     case SyntaxKind.NumericLiteral:
       return AST_TOKEN_TYPES.Numeric;
-
     case SyntaxKind.JsxText:
       return AST_TOKEN_TYPES.JSXText;
-
     case SyntaxKind.StringLiteral:
-      // A TypeScript-StringLiteral token with a TypeScript-JsxAttribute or TypeScript-JsxElement parent,
-      // must actually be an ESTree-JSXText token
       if (
-        token.parent &&
-        (token.parent.kind === SyntaxKind.JsxAttribute ||
-          token.parent.kind === SyntaxKind.JsxElement)
+        t.parent &&
+        (t.parent.kind === SyntaxKind.JsxAttribute ||
+          t.parent.kind === SyntaxKind.JsxElement)
       ) {
         return AST_TOKEN_TYPES.JSXText;
       }
-
       return AST_TOKEN_TYPES.String;
-
     case SyntaxKind.RegularExpressionLiteral:
       return AST_TOKEN_TYPES.RegularExpression;
-
     case SyntaxKind.Identifier:
     case SyntaxKind.ConstructorKeyword:
     case SyntaxKind.GetKeyword:
     case SyntaxKind.SetKeyword:
-
     // falls through
     default:
   }
-
-  // Some JSX tokens have to be determined based on their parent
-  if (token.parent && token.kind === SyntaxKind.Identifier) {
-    if (isJSXToken(token.parent)) {
-      return AST_TOKEN_TYPES.JSXIdentifier;
-    }
-
-    if (
-      token.parent.kind === SyntaxKind.PropertyAccessExpression &&
-      hasJSXAncestor(token)
-    ) {
+  if (t.parent && t.kind === SyntaxKind.Identifier) {
+    if (isJSXToken(t.parent)) return AST_TOKEN_TYPES.JSXIdentifier;
+    if (t.parent.kind === SyntaxKind.PropertyAccessExpression && hasJSXAncestor(t)) {
       return AST_TOKEN_TYPES.JSXIdentifier;
     }
   }
-
   return AST_TOKEN_TYPES.Identifier;
 }
 
-export function convertToken(token: ts.Node, ast: ts.SourceFile): TSESTree.Token {
-  const start =
-    token.kind === SyntaxKind.JsxText ? token.getFullStart() : token.getStart(ast);
-  const end = token.getEnd();
+export function convertToken(n: ts.Node, ast: ts.SourceFile): TSESTree.Token {
+  const start = n.kind === SyntaxKind.JsxText ? n.getFullStart() : n.getStart(ast);
+  const end = n.getEnd();
   const value = ast.text.slice(start, end);
-  const tokenType = getTokenType(token);
-
+  const tokenType = getTokenType(n);
   if (tokenType === AST_TOKEN_TYPES.RegularExpression) {
     return {
       type: tokenType,
@@ -471,25 +407,12 @@ export function convertToken(token: ts.Node, ast: ts.SourceFile): TSESTree.Token
 
 export function convertTokens(ast: ts.SourceFile): TSESTree.Token[] {
   const result: TSESTree.Token[] = [];
-  /**
-   * @param node the ts.Node
-   */
-  function walk(node: ts.Node): void {
-    // TypeScript generates tokens for types in JSDoc blocks. Comment tokens
-    // and their children should not be walked or added to the resulting tokens list.
-    if (isComment(node) || isJSDocComment(node)) {
-      return;
-    }
-
-    if (isToken(node) && node.kind !== SyntaxKind.EndOfFileToken) {
-      const converted = convertToken(node, ast);
-
-      if (converted) {
-        result.push(converted);
-      }
-    } else {
-      node.getChildren(ast).forEach(walk);
-    }
+  function walk(n: ts.Node): void {
+    if (isComment(n) || isJSDocComment(n)) return;
+    if (isToken(n) && n.kind !== SyntaxKind.EndOfFileToken) {
+      const converted = convertToken(n, ast);
+      if (converted) result.push(converted);
+    } else n.getChildren(ast).forEach(walk);
   }
   walk(ast);
   return result;
@@ -513,27 +436,17 @@ export function createError(ast: ts.SourceFile, start: number, message: string):
 }
 
 export function nodeHasTokens(n: ts.Node, ast: ts.SourceFile): boolean {
-  // If we have a token or node that has a non-zero width, it must have tokens.
-  // Note: getWidth() does not take trivia into account.
   return n.kind === SyntaxKind.EndOfFileToken
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      !!(n as any).jsDoc
+    ? !!(n as any).jsDoc
     : n.getWidth(ast) !== 0;
 }
 
-export function firstDefined<T, U>(
-  array: readonly T[] | undefined,
-  callback: (element: T, index: number) => U | undefined
-): U | undefined {
-  if (array === undefined) {
-    return undefined;
-  }
-
-  for (let i = 0; i < array.length; i++) {
-    const result = callback(array[i], i);
-    if (result !== undefined) {
-      return result;
+export function firstDefined<T, U>(a?: readonly T[], cb?: (e: T, i: number) => U) {
+  if (a) {
+    for (let i = 0; i < a.length; i++) {
+      const r = cb?.(a[i], i);
+      if (r !== undefined) return r;
     }
   }
-  return undefined;
+  return;
 }

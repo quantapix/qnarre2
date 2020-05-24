@@ -3,14 +3,9 @@ import { sync as globSync } from 'glob';
 import isGlob from 'is-glob';
 import semver from 'semver';
 import * as ts from 'typescript';
-import { createDefaultProgram } from './program';
-import { createIsolatedProgram } from './program';
-import { createProjectProgram } from './program';
-import { createSourceFile } from './program';
+import * as qp from './program';
 import { getFirstSemanticOrSyntacticError } from './errors';
-import { ASTAndProgram, ensureAbsolutePath } from './program';
-import { convertError, Converter, ASTMaps } from './convert';
-import { convertComments } from './convert-comments';
+import * as qc from './convert';
 import { convertTokens } from './utils';
 import { visitorKeys } from './visitor-keys';
 
