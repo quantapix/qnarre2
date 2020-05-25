@@ -47,7 +47,7 @@ function getModuleInstanceStateWorker(node: qt.Node, visited: Map<ModuleInstance
     // 3. non-exported import declarations
     case qt.SyntaxKind.ImportDeclaration:
     case qt.SyntaxKind.ImportEqualsDeclaration:
-      if (!hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (!hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         return ModuleInstanceState.NonInstantiated;
       }
       break;
@@ -180,7 +180,7 @@ export function bindSourceFile(file: SourceFile, options: qt.CompilerOptions) {
 function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void {
   let file: SourceFile;
   let options: qt.CompilerOptions;
-  let languageVersion: ScriptTarget;
+  let languageVersion: qt.ScriptTarget;
   let parent: Node;
   let container: Node;
   let thisParentContainer: Node; // Container one level up
@@ -409,7 +409,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function declareSymbol(symbolTable: SymbolTable, parent: symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceableByMethod?: boolean): symbol {
     Debug.assert(!hasDynamicName(node));
 
-    const isDefaultExport = hasSyntacticModifier(node, ModifierFlags.Default) || (isExportSpecifier(node) && node.name.escapedText === 'default');
+    const isDefaultExport = qu.hasSyntacticModifier(node, qt.ModifierFlags.Default) || (isExportSpecifier(node) && node.name.escapedText === 'default');
 
     // The exported symbol for an export default function/class node is always named "default"
     const name = isDefaultExport && parent ? InternalSymbolName.Default : getDeclarationName(node);
@@ -496,7 +496,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           }
 
           const relatedInformation: DiagnosticRelatedInformation[] = [];
-          if (isTypeAliasDeclaration(node) && nodeIsMissing(node.type) && hasSyntacticModifier(node, ModifierFlags.Export) && symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)) {
+          if (isTypeAliasDeclaration(node) && nodeIsMissing(node.type) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Export) && symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)) {
             // export type T; - may have meant export type { T }?
             relatedInformation.push(createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${unescapeLeadingUnderscores(node.name.escapedText)} }`));
           }
@@ -530,7 +530,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function declareModuleMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): symbol {
-    const hasExportModifier = getCombinedModifierFlags(node) & ModifierFlags.Export;
+    const hasExportModifier = getCombinedModifierFlags(node) & qt.ModifierFlags.Export;
     if (symbolFlags & SymbolFlags.Alias) {
       if (node.kind === qt.SyntaxKind.ExportSpecifier || (node.kind === qt.SyntaxKind.ImportEqualsDeclaration && hasExportModifier)) {
         return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
@@ -555,7 +555,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       //       and should never be merged directly with other augmentation, and the latter case would be possible if automatic merge is allowed.
       if (isJSDocTypeAlias(node)) Debug.assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
       if ((!isAmbientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
-        if (!container.locals || (hasSyntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node))) {
+        if (!container.locals || (hasSyntacticModifier(node, qt.ModifierFlags.Default) && !getDeclarationName(node))) {
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes); // No local symbol for an unnamed default!
         }
         const exportKind = symbolFlags & SymbolFlags.Value ? SymbolFlags.ExportValue : 0;
@@ -618,7 +618,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       const saveExceptionTarget = currentExceptionTarget;
       const saveActiveLabelList = activeLabelList;
       const saveHasExplicitReturn = hasExplicitReturn;
-      const isIIFE = containerFlags & ContainerFlags.IsFunctionExpression && !hasSyntacticModifier(node, ModifierFlags.Async) && !node.asteriskToken && !!getImmediatelyInvokedFunctionExpression(node);
+      const isIIFE = containerFlags & ContainerFlags.IsFunctionExpression && !hasSyntacticModifier(node, qt.ModifierFlags.Async) && !node.asteriskToken && !!getImmediatelyInvokedFunctionExpression(node);
       // A non-async, non-generator IIFE is considered part of the containing control flow. Return statements behave
       // similarly to break statements that exit to a label just past the statement body.
       if (!isIIFE) {
@@ -954,7 +954,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return initFlowNode({ flags: FlowFlags.SwitchClause, antecedent, switchStatement, clauseStart, clauseEnd });
   }
 
-  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: Expression | VariableDeclaration | ArrayBindingElement): FlowNode {
+  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: Expression | qt.VariableDeclaration | ArrayBindingElement): FlowNode {
     setFlowNodeReferenced(antecedent);
     const result = initFlowNode({ flags, antecedent, node });
     if (currentExceptionTarget) {
@@ -1563,7 +1563,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     currentFlow = finishFlowLabel(postExpressionLabel);
   }
 
-  function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElement) {
+  function bindInitializedVariableFlow(node: qt.VariableDeclaration | ArrayBindingElement) {
     const name = !isOmittedExpression(node) ? node.name : undefined;
     if (isBindingPattern(name)) {
       for (const child of name.elements) {
@@ -1574,7 +1574,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindVariableDeclarationFlow(node: VariableDeclaration) {
+  function bindVariableDeclarationFlow(node: qt.VariableDeclaration) {
     bindEachChild(node);
     if (node.initializer || isForInOrOfStatement(node.parent.parent)) {
       bindInitializedVariableFlow(node);
@@ -1848,7 +1848,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function declareClassMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
-    return hasSyntacticModifier(node, ModifierFlags.Static) ? declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes) : declareSymbol(container.symbol.members!, container.symbol, node, symbolFlags, symbolExcludes);
+    return qu.hasSyntacticModifier(node, qt.ModifierFlags.Static) ? declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes) : declareSymbol(container.symbol.members!, container.symbol, node, symbolFlags, symbolExcludes);
   }
 
   function declareSourceFileMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
@@ -1873,7 +1873,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function bindModuleDeclaration(node: ModuleDeclaration) {
     setExportContextFlag(node);
     if (isAmbientModule(node)) {
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         errorOnFirstToken(node, Diagnostics.export_modifier_cannot_be_applied_to_ambient_modules_and_module_augmentations_since_they_are_always_visible);
       }
       if (isModuleAugmentationExternal(node)) {
@@ -2186,7 +2186,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function checkStrictModeFunctionDeclaration(node: FunctionDeclaration) {
-    if (languageVersion < ScriptTarget.ES2015) {
+    if (languageVersion < qt.ScriptTarget.ES2015) {
       // Report error if function is not top level function declaration
       if (blockScopeContainer.kind !== qt.SyntaxKind.SourceFile && blockScopeContainer.kind !== qt.SyntaxKind.ModuleDeclaration && !isFunctionLike(blockScopeContainer)) {
         // We check first if the name is inside class declaration or class expression; if so give explicit message
@@ -2231,7 +2231,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
   function checkStrictModeLabeledStatement(node: LabeledStatement) {
     // Grammar checking for labeledStatement
-    if (inStrictMode && options.target! >= ScriptTarget.ES2015) {
+    if (inStrictMode && options.target! >= qt.ScriptTarget.ES2015) {
       if (isDeclarationStatement(node.statement) || isVariableStatement(node.statement)) {
         errorOnFirstToken(node.label, Diagnostics.A_label_is_not_allowed_here);
       }
@@ -2761,7 +2761,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
         // this.foo assignment in a JavaScript class
         // Bind this property to the containing class
         const containingClass = thisContainer.parent;
-        const symbolTable = hasSyntacticModifier(thisContainer, ModifierFlags.Static) ? containingClass.symbol.exports! : containingClass.symbol.members!;
+        const symbolTable = qu.hasSyntacticModifier(thisContainer, qt.ModifierFlags.Static) ? containingClass.symbol.exports! : containingClass.symbol.members!;
         if (hasDynamicName(node)) {
           bindDynamicallyNamedThisPropertyAssignment(node, containingClass.symbol);
         } else {
@@ -3067,7 +3067,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return isEnumConst(node) ? bindBlockScopedDeclaration(node, SymbolFlags.ConstEnum, SymbolFlags.ConstEnumExcludes) : bindBlockScopedDeclaration(node, SymbolFlags.RegularEnum, SymbolFlags.RegularEnumExcludes);
   }
 
-  function bindVariableDeclarationOrBindingElement(node: VariableDeclaration | BindingElement) {
+  function bindVariableDeclarationOrBindingElement(node: qt.VariableDeclaration | qt.BindingElement) {
     if (inStrictMode) {
       checkStrictModeEvalOrArguments(node, node.name);
     }
@@ -3261,7 +3261,7 @@ function isPurelyTypeDeclaration(s: Statement): boolean {
     case qt.SyntaxKind.ModuleDeclaration:
       return getModuleInstanceState(s) !== ModuleInstanceState.Instantiated;
     case qt.SyntaxKind.EnumDeclaration:
-      return hasSyntacticModifier(s, ModifierFlags.Const);
+      return qu.hasSyntacticModifier(s, qt.ModifierFlags.Const);
     default:
       return false;
   }
@@ -3487,7 +3487,7 @@ function computeParameter(node: ParameterDeclaration, subtreeFlags: TransformFla
   }
 
   // If a parameter has an accessibility modifier, then it is TypeScript syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.ParameterPropertyModifier)) {
     transformFlags |= TransformFlags.AssertTypeScript | TransformFlags.ContainsTypeScriptClassSyntax;
   }
 
@@ -3525,7 +3525,7 @@ function computeParenthesizedExpression(node: ParenthesizedExpression, subtreeFl
 function computeClassDeclaration(node: ClassDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags: TransformFlags;
 
-  if (hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.Ambient)) {
     // An ambient declaration is TypeScript syntax.
     transformFlags = TransformFlags.AssertTypeScript;
   } else {
@@ -3608,11 +3608,11 @@ function computeExpressionWithTypeArguments(node: ExpressionWithTypeArguments, s
   return transformFlags & ~TransformFlags.NodeExcludes;
 }
 
-function computeConstructor(node: ConstructorDeclaration, subtreeFlags: TransformFlags) {
+function computeConstructor(node: qt.ConstructorDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
 
   // TypeScript-specific modifiers and overloads are TypeScript syntax
-  if (hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || !node.body) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.TypeScriptModifier) || !node.body) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
@@ -3631,7 +3631,7 @@ function computeMethod(node: MethodDeclaration, subtreeFlags: TransformFlags) {
 
   // Decorators, TypeScript-specific modifiers, type parameters, type annotations, and
   // overloads are TypeScript syntax.
-  if (node.decorators || hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type || !node.body || node.questionToken) {
+  if (node.decorators || qu.hasSyntacticModifier(node, qt.ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type || !node.body || node.questionToken) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
@@ -3641,7 +3641,7 @@ function computeMethod(node: MethodDeclaration, subtreeFlags: TransformFlags) {
   }
 
   // An async method declaration is ES2017 syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.Async)) {
     transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
   }
 
@@ -3658,7 +3658,7 @@ function computeAccessor(node: AccessorDeclaration, subtreeFlags: TransformFlags
 
   // Decorators, TypeScript-specific modifiers, type annotations, and overloads are
   // TypeScript syntax.
-  if (node.decorators || hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || !node.body) {
+  if (node.decorators || qu.hasSyntacticModifier(node, qt.ModifierFlags.TypeScriptModifier) || node.type || !node.body) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
@@ -3675,7 +3675,7 @@ function computePropertyDeclaration(node: PropertyDeclaration, subtreeFlags: Tra
   let transformFlags = subtreeFlags | TransformFlags.ContainsClassFields;
 
   // Decorators, TypeScript-specific modifiers, and type annotations are TypeScript syntax.
-  if (some(node.decorators) || hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || node.questionToken || node.exclamationToken) {
+  if (some(node.decorators) || qu.hasSyntacticModifier(node, qt.ModifierFlags.TypeScriptModifier) || node.type || node.questionToken || node.exclamationToken) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
@@ -3693,7 +3693,7 @@ function computeFunctionDeclaration(node: FunctionDeclaration, subtreeFlags: Tra
   const modifierFlags = getSyntacticModifierFlags(node);
   const body = node.body;
 
-  if (!body || modifierFlags & ModifierFlags.Ambient) {
+  if (!body || modifierFlags & qt.ModifierFlags.Ambient) {
     // An ambient declaration is TypeScript syntax.
     // A FunctionDeclaration without a body is an overload and is TypeScript syntax.
     transformFlags = TransformFlags.AssertTypeScript;
@@ -3702,12 +3702,12 @@ function computeFunctionDeclaration(node: FunctionDeclaration, subtreeFlags: Tra
 
     // TypeScript-specific modifiers, type parameters, and type annotations are TypeScript
     // syntax.
-    if (modifierFlags & ModifierFlags.TypeScriptModifier || node.typeParameters || node.type) {
+    if (modifierFlags & qt.ModifierFlags.TypeScriptModifier || node.typeParameters || node.type) {
       transformFlags |= TransformFlags.AssertTypeScript;
     }
 
     // An async function declaration is ES2017 syntax.
-    if (modifierFlags & ModifierFlags.Async) {
+    if (modifierFlags & qt.ModifierFlags.Async) {
       transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
     }
 
@@ -3735,12 +3735,12 @@ function computeFunctionExpression(node: FunctionExpression, subtreeFlags: Trans
 
   // TypeScript-specific modifiers, type parameters, and type annotations are TypeScript
   // syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
   // An async function expression is ES2017 syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.Async)) {
     transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
   }
 
@@ -3766,12 +3766,12 @@ function computeArrowFunction(node: ArrowFunction, subtreeFlags: TransformFlags)
 
   // TypeScript-specific modifiers, type parameters, and type annotations are TypeScript
   // syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
   // An async arrow function is ES2017 syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.Async)) {
     transformFlags |= TransformFlags.AssertES2017;
   }
 
@@ -3822,11 +3822,11 @@ function computeElementAccess(node: ElementAccessExpression, subtreeFlags: Trans
   return transformFlags & ~TransformFlags.PropertyAccessExcludes;
 }
 
-function computeVariableDeclaration(node: VariableDeclaration, subtreeFlags: TransformFlags) {
+function computeVariableDeclaration(node: qt.VariableDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
   transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern; // TODO(rbuckton): Why are these set unconditionally?
 
-  // A VariableDeclaration containing ObjectRest is ES2018 syntax
+  // A qt.VariableDeclaration containing ObjectRest is ES2018 syntax
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
     transformFlags |= TransformFlags.AssertES2018;
   }
@@ -3845,7 +3845,7 @@ function computeVariableStatement(node: VariableStatement, subtreeFlags: Transfo
   const declarationListTransformFlags = node.declarationList.transformFlags;
 
   // An ambient declaration is TypeScript syntax.
-  if (hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.Ambient)) {
     transformFlags = TransformFlags.AssertTypeScript;
   } else {
     transformFlags = subtreeFlags;
@@ -3893,7 +3893,7 @@ function computeModuleDeclaration(node: ModuleDeclaration, subtreeFlags: Transfo
   let transformFlags = TransformFlags.AssertTypeScript;
   const modifierFlags = getSyntacticModifierFlags(node);
 
-  if ((modifierFlags & ModifierFlags.Ambient) === 0) {
+  if ((modifierFlags & qt.ModifierFlags.Ambient) === 0) {
     transformFlags |= subtreeFlags;
   }
 
@@ -3901,14 +3901,14 @@ function computeModuleDeclaration(node: ModuleDeclaration, subtreeFlags: Transfo
   return transformFlags & ~TransformFlags.ModuleExcludes;
 }
 
-function computeVariableDeclarationList(node: VariableDeclarationList, subtreeFlags: TransformFlags) {
+function computeVariableDeclarationList(node: qt.VariableDeclarationList, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags | TransformFlags.ContainsHoistedDeclarationOrCompletion;
 
   if (subtreeFlags & TransformFlags.ContainsBindingPattern) {
     transformFlags |= TransformFlags.AssertES2015;
   }
 
-  // If a VariableDeclarationList is `let` or `const`, then it is ES6 syntax.
+  // If a qt.VariableDeclarationList is `let` or `const`, then it is ES6 syntax.
   if (node.flags & NodeFlags.BlockScoped) {
     transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBlockScopedBinding;
   }

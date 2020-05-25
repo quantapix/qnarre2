@@ -35,7 +35,7 @@ export function transformClassFields(context: TransformationContext) {
   const compilerOptions = context.getCompilerOptions();
   const languageVersion = getEmitScriptTarget(compilerOptions);
 
-  const shouldTransformPrivateFields = languageVersion < ScriptTarget.ESNext;
+  const shouldTransformPrivateFields = languageVersion < qt.ScriptTarget.ESNext;
 
   const previousOnSubstituteNode = context.onSubstituteNode;
   context.onSubstituteNode = onSubstituteNode;
@@ -63,7 +63,7 @@ export function transformClassFields(context: TransformationContext) {
 
   function transformSourceFile(node: SourceFile) {
     const options = context.getCompilerOptions();
-    if (node.isDeclarationFile || (options.useDefineForClassFields && options.target === ScriptTarget.ESNext)) {
+    if (node.isDeclarationFile || (options.useDefineForClassFields && options.target === qt.ScriptTarget.ESNext)) {
       return node;
     }
     const visited = visitEachChild(node, visitor, context);
@@ -438,7 +438,7 @@ export function transformClassFields(context: TransformationContext) {
 
         // To preserve the behavior of the old emitter, we explicitly indent
         // the body of a class with static initializers.
-        setEmitFlags(classExpression, EmitFlags.Indented | getEmitFlags(classExpression));
+        setEmitFlags(classExpression, EmitFlags.Indented | qu.getEmitFlags(classExpression));
         expressions.push(startOnNewLine(createAssignment(temp, classExpression)));
         // Add any pending expressions leftover from elided or relocated computed property names
         addRange(expressions, map(pendingExpressions, startOnNewLine));
@@ -478,7 +478,7 @@ export function transformClassFields(context: TransformationContext) {
     if (context.getCompilerOptions().useDefineForClassFields) {
       // If we are using define semantics and targeting ESNext or higher,
       // then we don't need to transform any class properties.
-      return languageVersion < ScriptTarget.ESNext;
+      return languageVersion < qt.ScriptTarget.ESNext;
     }
     return isInitializedProperty(member) || (shouldTransformPrivateFields && isPrivateIdentifierPropertyDeclaration(member));
   }
@@ -497,7 +497,7 @@ export function transformClassFields(context: TransformationContext) {
     return startOnNewLine(setOriginalNode(setTextRange(createConstructor(/*decorators*/ undefined, /*modifiers*/ undefined, parameters ?? [], body), constructor || node), constructor));
   }
 
-  function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
+  function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: qt.ConstructorDeclaration | undefined, isDerivedClass: boolean) {
     const useDefineForClassFields = context.getCompilerOptions().useDefineForClassFields;
     let properties = getProperties(node, /*requireInitializer*/ false, /*isStatic*/ false);
     if (!useDefineForClassFields) {

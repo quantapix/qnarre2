@@ -557,7 +557,7 @@ function getPos(range: qt.Node) {
  * For example, searching for a `SourceFile` in a `SourceFile[]` wouldn't work.
  */
 export function indexOfNode(nodeArray: readonly qt.Node[], node: qt.Node) {
-  return binarySearch(nodeArray, node, getPos, compareValues);
+  return qc.binarySearch(nodeArray, node, getPos, qc.compareValues);
 }
 
 /**
@@ -1050,14 +1050,14 @@ export function isJsonSourceFile(file: qt.SourceFile): file is JsonSourceFile {
 }
 
 export function isEnumConst(node: EnumDeclaration): boolean {
-  return !!(getCombinedModifierFlags(node) & ModifierFlags.Const);
+  return !!(getCombinedModifierFlags(node) & qt.ModifierFlags.Const);
 }
 
 export function isDeclarationReadonly(declaration: qt.Declaration): boolean {
-  return !!(getCombinedModifierFlags(declaration) & ModifierFlags.Readonly && !isParameterPropertyDeclaration(declaration, declaration.parent));
+  return !!(getCombinedModifierFlags(declaration) & qt.ModifierFlags.Readonly && !isParameterPropertyDeclaration(declaration, declaration.parent));
 }
 
-export function isVarConst(node: VariableDeclaration | VariableDeclarationList): boolean {
+export function isVarConst(node: qt.VariableDeclaration | qt.VariableDeclarationList): boolean {
   return !!(getCombinedNodeFlags(node) & qt.NodeFlags.Const);
 }
 
@@ -1093,7 +1093,7 @@ export function isHoistedFunction(node: Statement) {
   return isCustomPrologue(node) && isFunctionDeclaration(node);
 }
 
-function isHoistedVariable(node: VariableDeclaration) {
+function isHoistedVariable(node: qt.VariableDeclaration) {
   return isIdentifier(node.name) && !node.initializer;
 }
 
@@ -1350,11 +1350,11 @@ export function isVariableLikeOrAccessor(node: qt.Node): node is AccessorDeclara
   return isVariableLike(node) || isAccessor(node);
 }
 
-export function isVariableDeclarationInVariableStatement(node: VariableDeclaration) {
+export function isVariableDeclarationInVariableStatement(node: qt.VariableDeclaration) {
   return node.parent.kind === qt.SyntaxKind.VariableDeclarationList && node.parent.parent.kind === qt.SyntaxKind.VariableStatement;
 }
 
-export function isValidESSymbolDeclaration(node: qt.Node): node is VariableDeclaration | PropertyDeclaration | SignatureDeclaration {
+export function isValidESSymbolDeclaration(node: qt.Node): node is qt.VariableDeclaration | PropertyDeclaration | SignatureDeclaration {
   return isVariableDeclaration(node)
     ? isVarConst(node) && isIdentifier(node.name) && isVariableDeclarationInVariableStatement(node)
     : isPropertyDeclaration(node)
@@ -1901,12 +1901,12 @@ export function isRequireCall(callExpression: qt.Node, requireStringLiteralLikeA
 }
 
 /**
- * Returns true if the node is a VariableDeclaration initialized to a require call (see `isRequireCall`).
+ * Returns true if the node is a qt.VariableDeclaration initialized to a require call (see `isRequireCall`).
  * This function does not test if the node is in a JavaScript file or not.
  */
 export function isRequireVariableDeclaration(node: qt.Node, requireStringLiteralLikeArgument: true): node is RequireVariableDeclaration;
-export function isRequireVariableDeclaration(node: qt.Node, requireStringLiteralLikeArgument: boolean): node is VariableDeclaration;
-export function isRequireVariableDeclaration(node: qt.Node, requireStringLiteralLikeArgument: boolean): node is VariableDeclaration {
+export function isRequireVariableDeclaration(node: qt.Node, requireStringLiteralLikeArgument: boolean): node is qt.VariableDeclaration;
+export function isRequireVariableDeclaration(node: qt.Node, requireStringLiteralLikeArgument: boolean): node is qt.VariableDeclaration {
   return isVariableDeclaration(node) && !!node.initializer && isRequireCall(node.initializer, requireStringLiteralLikeArgument);
 }
 
@@ -1926,7 +1926,7 @@ export function getDeclarationOfExpando(node: qt.Node): qt.Node | undefined {
   if (!node.parent) {
     return undefined;
   }
-  let name: Expression | BindingName | undefined;
+  let name: Expression | qt.BindingName | undefined;
   let decl: qt.Node | undefined;
   if (isVariableDeclaration(node.parent) && node.parent.initializer === node) {
     if (!isInJSFile(node) && !isVarConst(node.parent)) {
@@ -2436,7 +2436,7 @@ export function getSingleInitializerOfVariableStatementOrPropertyDeclaration(nod
   }
 }
 
-function getSingleVariableOfVariableStatement(node: qt.Node): VariableDeclaration | undefined {
+function getSingleVariableOfVariableStatement(node: qt.Node): qt.VariableDeclaration | undefined {
   return isVariableStatement(node) ? firstOrUndefined(node.declarationList.declarations) : undefined;
 }
 
@@ -2547,7 +2547,7 @@ export function getTypeParameterFromJsDoc(node: TypeParameterDeclaration & { par
 }
 
 export function hasRestParameter(s: SignatureDeclaration | JSDocSignature): boolean {
-  const last = lastOrUndefined<ParameterDeclaration | JSDocParameterTag>(s.parameters);
+  const last = qc.lastOrUndefined<ParameterDeclaration | JSDocParameterTag>(s.parameters);
   return !!last && isRestParameter(last);
 }
 
@@ -2636,7 +2636,7 @@ export type NodeWithPossibleHoistedDeclaration =
   | CatchClause;
 
 /**
- * Indicates whether a node could contain a `var` VariableDeclarationList that contributes to
+ * Indicates whether a node could contain a `var` qt.VariableDeclarationList that contributes to
  * the same `var` declaration scope as the node's parent.
  */
 export function isNodeWithPossibleHoistedDeclaration(node: qt.Node): node is qt.NodeWithPossibleHoistedDeclaration {
@@ -2662,7 +2662,7 @@ export function isNodeWithPossibleHoistedDeclaration(node: qt.Node): node is qt.
   return false;
 }
 
-export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression | ArrowFunction;
+export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | qt.ConstructorDeclaration | AccessorDeclaration | FunctionExpression | ArrowFunction;
 
 export function isValueSignatureDeclaration(node: qt.Node): node is ValueSignatureDeclaration {
   return isFunctionExpression(node) || isArrowFunction(node) || isMethodOrAccessor(node) || isFunctionDeclaration(node) || isConstructorDeclaration(node);
@@ -2980,7 +2980,7 @@ export function getFunctionFlags(node: SignatureDeclaration | undefined) {
     // falls through
 
     case qt.SyntaxKind.ArrowFunction:
-      if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Async)) {
         flags |= FunctionFlags.Async;
       }
       break;
@@ -2999,7 +2999,7 @@ export function isAsyncFunction(node: qt.Node): boolean {
     case qt.SyntaxKind.FunctionExpression:
     case qt.SyntaxKind.ArrowFunction:
     case qt.SyntaxKind.MethodDeclaration:
-      return (<FunctionLikeDeclaration>node).body !== undefined && (<FunctionLikeDeclaration>node).asteriskToken === undefined && hasSyntacticModifier(node, ModifierFlags.Async);
+      return (<FunctionLikeDeclaration>node).body !== undefined && (<FunctionLikeDeclaration>node).asteriskToken === undefined && hasSyntacticModifier(node, qt.ModifierFlags.Async);
   }
   return false;
 }
@@ -3104,7 +3104,7 @@ export function getSymbolNameForPrivateIdentifier(containingClassSymbol: qt.Symb
 }
 
 export function isKnownSymbol(symbol: qt.Symbol): boolean {
-  return startsWith(symbol.escapedName as string, '__@');
+  return qc.startsWith(symbol.escapedName as string, '__@');
 }
 
 /**
@@ -3379,7 +3379,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     if (!diagnostics) {
       return undefined;
     }
-    const result = binarySearch(diagnostics, diagnostic, identity, compareDiagnosticsSkipRelatedInformation);
+    const result = qc.binarySearch(diagnostics, diagnostic, qc.identity, compareDiagnosticsSkipRelatedInformation);
     if (result >= 0) {
       return diagnostics[result];
     }
@@ -3393,7 +3393,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
       if (!diagnostics) {
         diagnostics = ([] as Diagnostic[]) as SortedArray<DiagnosticWithLocation>; // See GH#19873
         fileDiagnostics.set(diagnostic.file.fileName, diagnostics as SortedArray<DiagnosticWithLocation>);
-        insertSorted(filesWithDiagnostics, diagnostic.file.fileName, compareStringsCaseSensitive);
+        insertSorted(filesWithDiagnostics, diagnostic.file.fileName, qc.compareStringsCaseSensitive);
       }
     } else {
       // If we've already read the non-file diagnostics, do not modify the existing array.
@@ -3434,7 +3434,7 @@ function escapeTemplateSubstitution(str: string): string {
   return str.replace(templateSubstitutionRegExp, '\\${');
 }
 
-/** @internal */
+
 export function hasInvalidEscape(template: TemplateLiteral): boolean {
   return template && !!(isNoSubstitutionTemplateLiteral(template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
 }
@@ -3448,7 +3448,7 @@ const doubleQuoteEscapedCharsRegExp = /[\\\"\u0000-\u001f\t\v\f\b\r\n\u2028\u202
 const singleQuoteEscapedCharsRegExp = /[\\\'\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
 // Template strings should be preserved as much as possible
 const backtickQuoteEscapedCharsRegExp = /[\\`]/g;
-const escapedCharsMap = createMapFromTemplate({
+const escapedCharsMap = qc.createMapFromTemplate({
   '\t': '\\t',
   '\v': '\\v',
   '\f': '\\f',
@@ -3508,7 +3508,7 @@ export function escapeNonAsciiString(s: string, quoteChar?: qt.CharacterCodes.do
 // the map below must be updated.
 const jsxDoubleQuoteEscapedCharsRegExp = /[\"\u0000-\u001f\u2028\u2029\u0085]/g;
 const jsxSingleQuoteEscapedCharsRegExp = /[\'\u0000-\u001f\u2028\u2029\u0085]/g;
-const jsxEscapedCharsMap = createMapFromTemplate({
+const jsxEscapedCharsMap = qc.createMapFromTemplate({
   '"': '&quot;',
   "'": '&apos;',
 });
@@ -3549,7 +3549,7 @@ function isQuoteOrBacktick(charCode: number) {
 
 export function isIntrinsicJsxName(name: qt.__String | string) {
   const ch = (name as string).charCodeAt(0);
-  return (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) || stringContains(name as string, '-');
+  return (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) || qc.stringContains(name as string, '-');
 }
 
 const indentStrings: string[] = ['', '    '];
@@ -3755,7 +3755,7 @@ export function hostUsesCaseSensitiveFileNames(host: { useCaseSensitiveFileNames
   return host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : false;
 }
 
-export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): GetCanonicalFileName {
+export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): qc.GetCanonicalFileName {
   return createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
 }
 
@@ -3786,7 +3786,7 @@ export function getExternalModuleNameFromDeclaration(
  */
 export function getExternalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
   const getCanonicalFileName = (f: string) => host.getCanonicalFileName(f);
-  const dir = toPath(referencePath ? getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
+  const dir = toPath(referencePath ? qp.getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
   const filePath = getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
   const relativePath = getRelativePathToDirectoryOrUrl(dir, filePath, dir, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
   const extensionless = removeFileExtension(relativePath);
@@ -3814,7 +3814,7 @@ export function getDeclarationEmitOutputFilePathWorker(
   options: qt.CompilerOptions,
   currentDirectory: string,
   commonSourceDirectory: string,
-  getCanonicalFileName: GetCanonicalFileName
+  getCanonicalFileName: qc.GetCanonicalFileName
 ): string {
   const outputDir = options.declarationDir || options.outDir; // Prefer declaration folder if specified
 
@@ -3868,7 +3868,7 @@ export function getSourceFilePathInNewDir(fileName: string, host: EmitHost, newD
   return getSourceFilePathInNewDirWorker(fileName, newDirPath, host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
 }
 
-export function getSourceFilePathInNewDirWorker(fileName: string, newDirPath: string, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
+export function getSourceFilePathInNewDirWorker(fileName: string, newDirPath: string, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: qc.GetCanonicalFileName): string {
   let sourceFilePath = getNormalizedAbsolutePath(fileName, currentDirectory);
   const isSourceFileInCommonSourceDirectory = getCanonicalFileName(sourceFilePath).indexOf(getCanonicalFileName(commonSourceDirectory)) === 0;
   sourceFilePath = isSourceFileInCommonSourceDirectory ? sourceFilePath.substring(commonSourceDirectory.length) : sourceFilePath;
@@ -3889,7 +3889,7 @@ export function writeFile(host: { writeFile: WriteFileCallback }, diagnostics: D
 
 function ensureDirectoriesExist(directoryPath: string, createDirectory: (path: string) => void, directoryExists: (path: string) => boolean): void {
   if (directoryPath.length > getRootLength(directoryPath) && !directoryExists(directoryPath)) {
-    const parentDirectory = getDirectoryPath(directoryPath);
+    const parentDirectory = qp.getDirectoryPath(directoryPath);
     ensureDirectoriesExist(parentDirectory, createDirectory, directoryExists);
     createDirectory(directoryPath);
   }
@@ -3908,7 +3908,7 @@ export function writeFileEnsuringDirectories(
   try {
     writeFile(path, data, writeByteOrderMark);
   } catch {
-    ensureDirectoriesExist(getDirectoryPath(normalizePath(path)), createDirectory, directoryExists);
+    ensureDirectoriesExist(qp.getDirectoryPath(normalizePath(path)), createDirectory, directoryExists);
     writeFile(path, data, writeByteOrderMark);
   }
 }
@@ -3923,7 +3923,7 @@ export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], po
 }
 
 export function getFirstConstructorWithBody(node: ClassLikeDeclaration): (ConstructorDeclaration & { body: FunctionBody }) | undefined {
-  return find(node.members, (member): member is ConstructorDeclaration & { body: FunctionBody } => isConstructorDeclaration(member) && nodeIsPresent(member.body));
+  return find(node.members, (member): member is qt.ConstructorDeclaration & { body: FunctionBody } => isConstructorDeclaration(member) && nodeIsPresent(member.body));
 }
 
 export function getSetAccessorValueParameter(accessor: SetAccessorDeclaration): ParameterDeclaration | undefined {
@@ -3978,7 +3978,7 @@ export function getAllAccessorDeclarations(declarations: readonly qt.Declaration
     }
   } else {
     forEach(declarations, (member) => {
-      if (isAccessor(member) && hasSyntacticModifier(member, ModifierFlags.Static) === hasSyntacticModifier(accessor, ModifierFlags.Static)) {
+      if (isAccessor(member) && hasSyntacticModifier(member, qt.ModifierFlags.Static) === hasSyntacticModifier(accessor, qt.ModifierFlags.Static)) {
         const memberName = getPropertyNameForPropertyNameNode(member.name);
         const accessorName = getPropertyNameForPropertyNameNode(accessor.name);
         if (memberName === accessorName) {
@@ -4272,106 +4272,106 @@ function calculateIndent(text: string, pos: number, end: number) {
 }
 
 export function hasEffectiveModifiers(node: qt.Node) {
-  return getEffectiveModifierFlags(node) !== ModifierFlags.None;
+  return getEffectiveModifierFlags(node) !== qt.ModifierFlags.None;
 }
 
 export function hasSyntacticModifiers(node: qt.Node) {
-  return getSyntacticModifierFlags(node) !== ModifierFlags.None;
+  return getSyntacticModifierFlags(node) !== qt.ModifierFlags.None;
 }
 
-export function hasEffectiveModifier(node: qt.Node, flags: ModifierFlags): boolean {
+export function hasEffectiveModifier(node: qt.Node, flags: qt.ModifierFlags): boolean {
   return !!getSelectedEffectiveModifierFlags(node, flags);
 }
 
-export function hasSyntacticModifier(node: qt.Node, flags: ModifierFlags): boolean {
+export function hasSyntacticModifier(node: qt.Node, flags: qt.ModifierFlags): boolean {
   return !!getSelectedSyntacticModifierFlags(node, flags);
 }
 
 export function hasStaticModifier(node: qt.Node): boolean {
-  return hasSyntacticModifier(node, ModifierFlags.Static);
+  return hasSyntacticModifier(node, qt.ModifierFlags.Static);
 }
 
 export function hasEffectiveReadonlyModifier(node: qt.Node): boolean {
-  return hasEffectiveModifier(node, ModifierFlags.Readonly);
+  return hasEffectiveModifier(node, qt.ModifierFlags.Readonly);
 }
 
-export function getSelectedEffectiveModifierFlags(node: qt.Node, flags: ModifierFlags): ModifierFlags {
+export function getSelectedEffectiveModifierFlags(node: qt.Node, flags: qt.ModifierFlags): qt.ModifierFlags {
   return getEffectiveModifierFlags(node) & flags;
 }
 
-export function getSelectedSyntacticModifierFlags(node: qt.Node, flags: ModifierFlags): ModifierFlags {
+export function getSelectedSyntacticModifierFlags(node: qt.Node, flags: qt.ModifierFlags): qt.ModifierFlags {
   return getSyntacticModifierFlags(node) & flags;
 }
 
-function getModifierFlagsWorker(node: qt.Node, includeJSDoc: boolean): ModifierFlags {
+function getModifierFlagsWorker(node: qt.Node, includeJSDoc: boolean): qt.ModifierFlags {
   if (node.kind >= qt.SyntaxKind.FirstToken && node.kind <= qt.SyntaxKind.LastToken) {
-    return ModifierFlags.None;
+    return qt.ModifierFlags.None;
   }
 
-  if (!(node.modifierFlagsCache & ModifierFlags.HasComputedFlags)) {
-    node.modifierFlagsCache = getSyntacticModifierFlagsNoCache(node) | ModifierFlags.HasComputedFlags;
+  if (!(node.modifierFlagsCache & qt.ModifierFlags.HasComputedFlags)) {
+    node.modifierFlagsCache = getSyntacticModifierFlagsNoCache(node) | qt.ModifierFlags.HasComputedFlags;
   }
 
-  if (includeJSDoc && !(node.modifierFlagsCache & ModifierFlags.HasComputedJSDocModifiers) && isInJSFile(node) && node.parent) {
-    node.modifierFlagsCache |= getJSDocModifierFlagsNoCache(node) | ModifierFlags.HasComputedJSDocModifiers;
+  if (includeJSDoc && !(node.modifierFlagsCache & qt.ModifierFlags.HasComputedJSDocModifiers) && isInJSFile(node) && node.parent) {
+    node.modifierFlagsCache |= getJSDocModifierFlagsNoCache(node) | qt.ModifierFlags.HasComputedJSDocModifiers;
   }
 
-  return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | ModifierFlags.HasComputedJSDocModifiers);
+  return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | qt.ModifierFlags.HasComputedJSDocModifiers);
 }
 
 /**
- * Gets the effective ModifierFlags for the provided node, including JSDoc modifiers. The modifiers will be cached on the node to improve performance.
+ * Gets the effective qt.ModifierFlags for the provided node, including JSDoc modifiers. The modifiers will be cached on the node to improve performance.
  *
  * NOTE: This function may use `parent` pointers.
  */
-export function getEffectiveModifierFlags(node: qt.Node): ModifierFlags {
+export function getEffectiveModifierFlags(node: qt.Node): qt.ModifierFlags {
   return getModifierFlagsWorker(node, /*includeJSDoc*/ true);
 }
 
 /**
- * Gets the ModifierFlags for syntactic modifiers on the provided node. The modifiers will be cached on the node to improve performance.
+ * Gets the qt.ModifierFlags for syntactic modifiers on the provided node. The modifiers will be cached on the node to improve performance.
  *
  * NOTE: This function does not use `parent` pointers and will not include modifiers from JSDoc.
  */
-export function getSyntacticModifierFlags(node: qt.Node): ModifierFlags {
+export function getSyntacticModifierFlags(node: qt.Node): qt.ModifierFlags {
   return getModifierFlagsWorker(node, /*includeJSDoc*/ false);
 }
 
-function getJSDocModifierFlagsNoCache(node: qt.Node): ModifierFlags {
-  let flags = ModifierFlags.None;
+function getJSDocModifierFlagsNoCache(node: qt.Node): qt.ModifierFlags {
+  let flags = qt.ModifierFlags.None;
   if (isInJSFile(node) && !!node.parent && !isParameter(node)) {
-    if (getJSDocPublicTagNoCache(node)) flags |= ModifierFlags.Public;
-    if (getJSDocPrivateTagNoCache(node)) flags |= ModifierFlags.Private;
-    if (getJSDocProtectedTagNoCache(node)) flags |= ModifierFlags.Protected;
-    if (getJSDocReadonlyTagNoCache(node)) flags |= ModifierFlags.Readonly;
+    if (getJSDocPublicTagNoCache(node)) flags |= qt.ModifierFlags.Public;
+    if (getJSDocPrivateTagNoCache(node)) flags |= qt.ModifierFlags.Private;
+    if (getJSDocProtectedTagNoCache(node)) flags |= qt.ModifierFlags.Protected;
+    if (getJSDocReadonlyTagNoCache(node)) flags |= qt.ModifierFlags.Readonly;
   }
   return flags;
 }
 
 /**
- * Gets the effective ModifierFlags for the provided node, including JSDoc modifiers. The modifier flags cache on the node is ignored.
+ * Gets the effective qt.ModifierFlags for the provided node, including JSDoc modifiers. The modifier flags cache on the node is ignored.
  *
  * NOTE: This function may use `parent` pointers.
  */
-export function getEffectiveModifierFlagsNoCache(node: qt.Node): ModifierFlags {
+export function getEffectiveModifierFlagsNoCache(node: qt.Node): qt.ModifierFlags {
   return getSyntacticModifierFlagsNoCache(node) | getJSDocModifierFlagsNoCache(node);
 }
 
 /**
- * Gets the ModifierFlags for syntactic modifiers on the provided node. The modifier flags cache on the node is ignored.
+ * Gets the qt.ModifierFlags for syntactic modifiers on the provided node. The modifier flags cache on the node is ignored.
  *
  * NOTE: This function does not use `parent` pointers and will not include modifiers from JSDoc.
  */
-export function getSyntacticModifierFlagsNoCache(node: qt.Node): ModifierFlags {
+export function getSyntacticModifierFlagsNoCache(node: qt.Node): qt.ModifierFlags {
   let flags = modifiersToFlags(node.modifiers);
   if (node.flags & qt.NodeFlags.NestedNamespace || (node.kind === qt.SyntaxKind.Identifier && (<Identifier>node).isInJSDocNamespace)) {
-    flags |= ModifierFlags.Export;
+    flags |= qt.ModifierFlags.Export;
   }
   return flags;
 }
 
 export function modifiersToFlags(modifiers: qt.NodeArray<Modifier> | undefined) {
-  let flags = ModifierFlags.None;
+  let flags = qt.ModifierFlags.None;
   if (modifiers) {
     for (const modifier of modifiers) {
       flags |= modifierToFlag(modifier.kind);
@@ -4380,32 +4380,32 @@ export function modifiersToFlags(modifiers: qt.NodeArray<Modifier> | undefined) 
   return flags;
 }
 
-export function modifierToFlag(token: qt.SyntaxKind): ModifierFlags {
+export function modifierToFlag(token: qt.SyntaxKind): qt.ModifierFlags {
   switch (token) {
     case qt.SyntaxKind.StaticKeyword:
-      return ModifierFlags.Static;
+      return qt.ModifierFlags.Static;
     case qt.SyntaxKind.PublicKeyword:
-      return ModifierFlags.Public;
+      return qt.ModifierFlags.Public;
     case qt.SyntaxKind.ProtectedKeyword:
-      return ModifierFlags.Protected;
+      return qt.ModifierFlags.Protected;
     case qt.SyntaxKind.PrivateKeyword:
-      return ModifierFlags.Private;
+      return qt.ModifierFlags.Private;
     case qt.SyntaxKind.AbstractKeyword:
-      return ModifierFlags.Abstract;
+      return qt.ModifierFlags.Abstract;
     case qt.SyntaxKind.ExportKeyword:
-      return ModifierFlags.Export;
+      return qt.ModifierFlags.Export;
     case qt.SyntaxKind.DeclareKeyword:
-      return ModifierFlags.Ambient;
+      return qt.ModifierFlags.Ambient;
     case qt.SyntaxKind.ConstKeyword:
-      return ModifierFlags.Const;
+      return qt.ModifierFlags.Const;
     case qt.SyntaxKind.DefaultKeyword:
-      return ModifierFlags.Default;
+      return qt.ModifierFlags.Default;
     case qt.SyntaxKind.AsyncKeyword:
-      return ModifierFlags.Async;
+      return qt.ModifierFlags.Async;
     case qt.SyntaxKind.ReadonlyKeyword:
-      return ModifierFlags.Readonly;
+      return qt.ModifierFlags.Readonly;
   }
-  return ModifierFlags.None;
+  return qt.ModifierFlags.None;
 }
 
 export function isLogicalOperator(token: qt.SyntaxKind): boolean {
@@ -4524,7 +4524,7 @@ export function getLocalSymbolForExportDefault(symbol: qt.Symbol) {
 }
 
 function isExportDefaultSymbol(symbol: qt.Symbol): boolean {
-  return symbol && length(symbol.declarations) > 0 && hasSyntacticModifier(symbol.declarations[0], ModifierFlags.Default);
+  return symbol && length(symbol.declarations) > 0 && hasSyntacticModifier(symbol.declarations[0], qt.ModifierFlags.Default);
 }
 
 /** Return ".ts", ".d.ts", or ".tsx", if that is the extension. */
@@ -4848,11 +4848,11 @@ export function isDeclarationNameOfEnumOrNamespace(node: Identifier) {
   return false;
 }
 
-export function getInitializedVariables(node: VariableDeclarationList) {
+export function getInitializedVariables(node: qt.VariableDeclarationList) {
   return filter(node.declarations, isInitializedVariable);
 }
 
-function isInitializedVariable(node: VariableDeclaration) {
+function isInitializedVariable(node: qt.VariableDeclaration) {
   return node.initializer !== undefined;
 }
 
@@ -4869,19 +4869,19 @@ export function getCheckFlags(symbol: qt.Symbol): CheckFlags {
   return symbol.flags & qt.SymbolFlags.Transient ? (<TransientSymbol>symbol).checkFlags : 0;
 }
 
-export function getDeclarationModifierFlagsFromSymbol(s: qt.Symbol): ModifierFlags {
+export function getDeclarationModifierFlagsFromSymbol(s: qt.Symbol): qt.ModifierFlags {
   if (s.valueDeclaration) {
     const flags = getCombinedModifierFlags(s.valueDeclaration);
     return s.parent && s.parent.flags & qt.SymbolFlags.Class ? flags : flags & ~ModifierFlags.AccessibilityModifier;
   }
   if (getCheckFlags(s) & CheckFlags.Synthetic) {
     const checkFlags = (<TransientSymbol>s).checkFlags;
-    const accessModifier = checkFlags & CheckFlags.ContainsPrivate ? ModifierFlags.Private : checkFlags & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
-    const staticModifier = checkFlags & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
+    const accessModifier = checkFlags & CheckFlags.ContainsPrivate ? qt.ModifierFlags.Private : checkFlags & CheckFlags.ContainsPublic ? qt.ModifierFlags.Public : qt.ModifierFlags.Protected;
+    const staticModifier = checkFlags & CheckFlags.ContainsStatic ? qt.ModifierFlags.Static : 0;
     return accessModifier | staticModifier;
   }
   if (s.flags & qt.SymbolFlags.Prototype) {
-    return ModifierFlags.Public | ModifierFlags.Static;
+    return qt.ModifierFlags.Public | qt.ModifierFlags.Static;
   }
   return 0;
 }
@@ -5048,7 +5048,7 @@ export function isAbstractConstructorType(type: Type): boolean {
 export function isAbstractConstructorSymbol(symbol: qt.Symbol): boolean {
   if (symbol.flags & qt.SymbolFlags.Class) {
     const declaration = getClassLikeDeclarationOfSymbol(symbol);
-    return !!declaration && hasSyntacticModifier(declaration, ModifierFlags.Abstract);
+    return !!declaration && hasSyntacticModifier(declaration, qt.ModifierFlags.Abstract);
   }
   return false;
 }
@@ -5208,7 +5208,7 @@ function Node(this: qt.Node, kind: qt.SyntaxKind, pos: number, end: number) {
   this.kind = kind;
   this.id = 0;
   this.flags = qt.NodeFlags.None;
-  this.modifierFlagsCache = ModifierFlags.None;
+  this.modifierFlagsCache = qt.ModifierFlags.None;
   this.transformFlags = TransformFlags.None;
   this.parent = undefined!;
   this.original = undefined;
@@ -5379,57 +5379,57 @@ function getDiagnosticFilePath(diagnostic: Diagnostic): string | undefined {
 }
 
 export function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): Comparison {
-  return compareDiagnosticsSkipRelatedInformation(d1, d2) || compareRelatedInformation(d1, d2) || Comparison.EqualTo;
+  return compareDiagnosticsSkipRelatedInformation(d1, d2) || compareRelatedInformation(d1, d2) || qpc.Comparison.EqualTo;
 }
 
 export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
   return (
-    compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
-    compareValues(d1.start, d2.start) ||
-    compareValues(d1.length, d2.length) ||
-    compareValues(d1.code, d2.code) ||
+    qc.compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
+    qc.compareValues(d1.start, d2.start) ||
+    qc.compareValues(d1.length, d2.length) ||
+    qc.compareValues(d1.code, d2.code) ||
     compareMessageText(d1.messageText, d2.messageText) ||
-    Comparison.EqualTo
+    qpc.Comparison.EqualTo
   );
 }
 
 function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
   if (!d1.relatedInformation && !d2.relatedInformation) {
-    return Comparison.EqualTo;
+    return qpc.Comparison.EqualTo;
   }
   if (d1.relatedInformation && d2.relatedInformation) {
     return (
-      compareValues(d1.relatedInformation.length, d2.relatedInformation.length) ||
+      qc.compareValues(d1.relatedInformation.length, d2.relatedInformation.length) ||
       forEach(d1.relatedInformation, (d1i, index) => {
         const d2i = d2.relatedInformation![index];
         return compareDiagnostics(d1i, d2i); // EqualTo is 0, so falsy, and will cause the next item to be compared
       }) ||
-      Comparison.EqualTo
+      qpc.Comparison.EqualTo
     );
   }
-  return d1.relatedInformation ? Comparison.LessThan : Comparison.GreaterThan;
+  return d1.relatedInformation ? qpc.Comparison.LessThan : qpc.Comparison.GreaterThan;
 }
 
 function compareMessageText(t1: string | qt.DiagnosticMessageChain, t2: string | qt.DiagnosticMessageChain): Comparison {
   if (typeof t1 === 'string' && typeof t2 === 'string') {
-    return compareStringsCaseSensitive(t1, t2);
+    return qc.compareStringsCaseSensitive(t1, t2);
   } else if (typeof t1 === 'string') {
-    return Comparison.LessThan;
+    return qpc.Comparison.LessThan;
   } else if (typeof t2 === 'string') {
-    return Comparison.GreaterThan;
+    return qpc.Comparison.GreaterThan;
   }
-  let res = compareStringsCaseSensitive(t1.messageText, t2.messageText);
+  let res = qc.compareStringsCaseSensitive(t1.messageText, t2.messageText);
   if (res) {
     return res;
   }
   if (!t1.next && !t2.next) {
-    return Comparison.EqualTo;
+    return qpc.Comparison.EqualTo;
   }
   if (!t1.next) {
-    return Comparison.LessThan;
+    return qpc.Comparison.LessThan;
   }
   if (!t2.next) {
-    return Comparison.GreaterThan;
+    return qpc.Comparison.GreaterThan;
   }
   const len = Math.min(t1.next.length, t2.next.length);
   for (let i = 0; i < len; i++) {
@@ -5439,19 +5439,19 @@ function compareMessageText(t1: string | qt.DiagnosticMessageChain, t2: string |
     }
   }
   if (t1.next.length < t2.next.length) {
-    return Comparison.LessThan;
+    return qpc.Comparison.LessThan;
   } else if (t1.next.length > t2.next.length) {
-    return Comparison.GreaterThan;
+    return qpc.Comparison.GreaterThan;
   }
-  return Comparison.EqualTo;
+  return qpc.Comparison.EqualTo;
 }
 
 export function getEmitScriptTarget(compilerOptions: qt.CompilerOptions) {
-  return compilerOptions.target || ScriptTarget.ES3;
+  return compilerOptions.target || qt.ScriptTarget.ES3;
 }
 
 export function getEmitModuleKind(compilerOptions: { module?: qt.CompilerOptions['module']; target?: qt.CompilerOptions['target'] }) {
-  return typeof compilerOptions.module === 'number' ? compilerOptions.module : getEmitScriptTarget(compilerOptions) >= ScriptTarget.ES2015 ? ModuleKind.ES2015 : ModuleKind.CommonJS;
+  return typeof compilerOptions.module === 'number' ? compilerOptions.module : getEmitScriptTarget(compilerOptions) >= qt.ScriptTarget.ES2015 ? ModuleKind.ES2015 : ModuleKind.CommonJS;
 }
 
 export function getEmitModuleResolutionKind(compilerOptions: qt.CompilerOptions) {
@@ -5533,7 +5533,7 @@ export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
   return true;
 }
 
-export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): qpc.ReadonlyMap<string> {
+export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCanonicalFileName: qc.GetCanonicalFileName, cwd: string): qpc.ReadonlyMap<string> {
   const result = qc.createMap<string>();
   const symlinks = flatten<readonly [string, string]>(
     mapDefined(
@@ -5554,7 +5554,7 @@ export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCan
   return result;
 }
 
-function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: GetCanonicalFileName): [string, string] {
+function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: qc.GetCanonicalFileName): [string, string] {
   const aParts = getPathComponents(toPath(a, cwd, getCanonicalFileName));
   const bParts = getPathComponents(toPath(b, cwd, getCanonicalFileName));
   while (
@@ -5570,15 +5570,15 @@ function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFi
 
 // KLUDGE: Don't assume one 'node_modules' links to another. More likely a single directory inside the node_modules is the symlink.
 // ALso, don't assume that an `@foo` directory is linked. More likely the contents of that are linked.
-function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: GetCanonicalFileName): boolean {
-  return getCanonicalFileName(s) === 'node_modules' || startsWith(s, '@');
+function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: qc.GetCanonicalFileName): boolean {
+  return getCanonicalFileName(s) === 'node_modules' || qc.startsWith(s, '@');
 }
 
 function stripLeadingDirectorySeparator(s: string): string | undefined {
   return isAnyDirectorySeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
 }
 
-export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
+export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: qc.GetCanonicalFileName): string | undefined {
   const withoutPrefix = tryRemovePrefix(path, dirPath, getCanonicalFileName);
   return withoutPrefix === undefined ? undefined : stripLeadingDirectorySeparator(withoutPrefix);
 }
@@ -5834,7 +5834,7 @@ export function matchFiles(
     visited.set(canonicalPath, true);
     const { files, directories } = getFileSystemEntries(path);
 
-    for (const current of sort<string>(files, compareStringsCaseSensitive)) {
+    for (const current of sort<string>(files, qc.compareStringsCaseSensitive)) {
       const name = combinePaths(path, current);
       const absoluteName = combinePaths(absolutePath, current);
       if (extensions && !fileExtensionIsOneOf(name, extensions)) continue;
@@ -5856,7 +5856,7 @@ export function matchFiles(
       }
     }
 
-    for (const current of sort<string>(directories, compareStringsCaseSensitive)) {
+    for (const current of sort<string>(directories, qc.compareStringsCaseSensitive)) {
       const name = combinePaths(path, current);
       const absoluteName = combinePaths(absolutePath, current);
       if ((!includeDirectoryRegex || includeDirectoryRegex.test(absoluteName)) && (!excludeRegex || !excludeRegex.test(absoluteName))) {
@@ -5885,7 +5885,7 @@ function getBasePaths(path: string, includes: readonly string[] | undefined, use
     }
 
     // Sort the offsets array using either the literal or canonical path representations.
-    includeBasePaths.sort(getStringComparer(!useCaseSensitiveFileNames));
+    includeBasePaths.sort(qc.getStringComparer(!useCaseSensitiveFileNames));
 
     // Iterate over each include base path and include unique base paths that are not a
     // subpath of an existing base path
@@ -5903,7 +5903,7 @@ function getIncludeBasePath(absolute: string): string {
   const wildcardOffset = indexOfAnyCharCode(absolute, wildcardCharCodes);
   if (wildcardOffset < 0) {
     // No "*" or "?" in the path
-    return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(getDirectoryPath(absolute));
+    return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(qp.getDirectoryPath(absolute));
   }
   return absolute.substring(0, absolute.lastIndexOf(directorySeparator, wildcardOffset));
 }
@@ -5962,7 +5962,7 @@ export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileEx
     ...mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined)),
   ];
 
-  return deduplicate<string>(extensions, equateStringsCaseSensitive, compareStringsCaseSensitive);
+  return deduplicate<string>(extensions, qc.equateStringsCaseSensitive, qc.compareStringsCaseSensitive);
 }
 
 export function getSuppoertedExtensionsWithJsonIfResolveJsonModule(options: qt.CompilerOptions | undefined, supportedExtensions: readonly string[]): readonly string[] {
@@ -6378,7 +6378,7 @@ function isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(node: qt.Node) 
   if (node.kind !== qt.SyntaxKind.ComputedPropertyName) {
     return false;
   }
-  if (hasSyntacticModifier(node.parent, ModifierFlags.Abstract)) {
+  if (hasSyntacticModifier(node.parent, qt.ModifierFlags.Abstract)) {
     return true;
   }
   const containerKind = node.parent.parent.kind;

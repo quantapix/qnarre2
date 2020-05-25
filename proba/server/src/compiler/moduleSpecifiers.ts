@@ -40,7 +40,7 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
 function getPreferencesForUpdate(compilerOptions: qt.CompilerOptions, oldImportSpecifier: string): Preferences {
   return {
     relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
-    ending: hasJSFileExtension(oldImportSpecifier) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index') ? Ending.Index : Ending.Minimal,
+    ending: hasJSFileExtension(oldImportSpecifier) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || qc.endsWith(oldImportSpecifier, 'index') ? Ending.Index : Ending.Minimal,
   };
 }
 
@@ -82,13 +82,13 @@ export function getModuleSpecifiers(moduleSymbol: symbol, compilerOptions: qt.Co
 }
 
 interface Info {
-  readonly getCanonicalFileName: GetCanonicalFileName;
+  readonly getCanonicalFileName: qc.GetCanonicalFileName;
   readonly sourceDirectory: Path;
 }
 // importingSourceFileName is separate because getEditsForFileRename may need to specify an updated path
 function getInfo(importingSourceFileName: Path, host: ModuleSpecifierResolutionHost): Info {
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : true);
-  const sourceDirectory = getDirectoryPath(importingSourceFileName);
+  const sourceDirectory = qp.getDirectoryPath(importingSourceFileName);
   return { getCanonicalFileName, sourceDirectory };
 }
 
@@ -121,7 +121,7 @@ function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName,
 
 export function countPathComponents(path: string): number {
   let count = 0;
-  for (let i = startsWith(path, './') ? 2 : 0; i < path.length; i++) {
+  for (let i = qc.startsWith(path, './') ? 2 : 0; i < path.length; i++) {
     if (path.charCodeAt(i) === qt.CharacterCodes.slash) count++;
   }
   return count;
@@ -137,7 +137,7 @@ function numberOfDirectorySeparators(str: string) {
 }
 
 function comparePathsByNumberOfDirectorySeparators(a: string, b: string) {
-  return compareValues(numberOfDirectorySeparators(a), numberOfDirectorySeparators(b));
+  return qc.compareValues(numberOfDirectorySeparators(a), numberOfDirectorySeparators(b));
 }
 
 export function forEachFileNameOfModule<T>(importingFileName: string, importedFileName: string, host: ModuleSpecifierResolutionHost, preferSymlinks: boolean, cb: (fileName: string) => T | undefined): T | undefined {
@@ -153,17 +153,17 @@ export function forEachFileNameOfModule<T>(importingFileName: string, importedFi
   }
   const links = host.getProbableSymlinks ? host.getProbableSymlinks(host.getSourceFiles()) : discoverProbableSymlinks(host.getSourceFiles(), getCanonicalFileName, cwd);
 
-  const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareStringsCaseSensitive : compareStringsCaseInsensitive;
+  const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? qc.compareStringsCaseSensitive : qc.compareStringsCaseInsensitive;
   const result = forEachEntry(links, (resolved, path) => {
     if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
       return undefined; // Don't want to a package to globally import from itself
     }
 
-    const target = find(targets, (t) => compareStrings(t.slice(0, resolved.length + 1), resolved + '/') === Comparison.EqualTo);
+    const target = find(targets, (t) => compareStrings(t.slice(0, resolved.length + 1), resolved + '/') === qpc.Comparison.EqualTo);
     if (target === undefined) return undefined;
 
     const relative = getRelativePathFromDirectory(resolved, target, getCanonicalFileName);
-    const option = resolvePath(path, relative);
+    const option = qp.resolvePath(path, relative);
     if (!host.fileExists || host.fileExists(option)) {
       const result = cb(option);
       if (result) return result;
@@ -189,11 +189,11 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
 
   // Sort by paths closest to importing file Name directory
   const sortedPaths: string[] = [];
-  for (let directory = getDirectoryPath(toPath(importingFileName, cwd, getCanonicalFileName)); allFileNames.size !== 0; ) {
+  for (let directory = qp.getDirectoryPath(toPath(importingFileName, cwd, getCanonicalFileName)); allFileNames.size !== 0; ) {
     const directoryStart = ensureTrailingDirectorySeparator(directory);
     let pathsInDirectory: string[] | undefined;
     allFileNames.forEach((canonicalFileName, fileName) => {
-      if (startsWith(canonicalFileName, directoryStart)) {
+      if (qc.startsWith(canonicalFileName, directoryStart)) {
         // If the importedFile is from node modules, use only paths in node_modules folder as option
         if (!importedFileFromNodeModules || pathContainsNodeModules(fileName)) {
           (pathsInDirectory || (pathsInDirectory = [])).push(fileName);
@@ -207,7 +207,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
       }
       sortedPaths.push(...pathsInDirectory);
     }
-    const newDirectory = getDirectoryPath(directory);
+    const newDirectory = qp.getDirectoryPath(directory);
     if (newDirectory === directory) break;
     directory = newDirectory;
   }
@@ -234,7 +234,7 @@ function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeT
       if (indexOfStar !== -1) {
         const prefix = pattern.substr(0, indexOfStar);
         const suffix = pattern.substr(indexOfStar + 1);
-        if ((relativeToBaseUrl.length >= prefix.length + suffix.length && startsWith(relativeToBaseUrl, prefix) && endsWith(relativeToBaseUrl, suffix)) || (!suffix && relativeToBaseUrl === removeTrailingDirectorySeparator(prefix))) {
+        if ((relativeToBaseUrl.length >= prefix.length + suffix.length && qc.startsWith(relativeToBaseUrl, prefix) && qc.endsWith(relativeToBaseUrl, suffix)) || (!suffix && relativeToBaseUrl === removeTrailingDirectorySeparator(prefix))) {
           const matchedStar = relativeToBaseUrl.substr(prefix.length, relativeToBaseUrl.length - suffix.length);
           return key.replace('*', matchedStar);
         }
@@ -293,7 +293,7 @@ function tryGetModuleNameAsNodeModule(moduleFileName: string, { getCanonicalFile
   // Get a path that's relative to node_modules or the importing file's path
   // if node_modules folder is in this folder or any of its parent folders, no need to keep it.
   const pathToTopLevelNodeModules = getCanonicalFileName(moduleSpecifier.substring(0, parts.topLevelNodeModulesIndex));
-  if (!(startsWith(sourceDirectory, pathToTopLevelNodeModules) || (globalTypingsCacheLocation && startsWith(getCanonicalFileName(globalTypingsCacheLocation), pathToTopLevelNodeModules)))) {
+  if (!(qc.startsWith(sourceDirectory, pathToTopLevelNodeModules) || (globalTypingsCacheLocation && qc.startsWith(getCanonicalFileName(globalTypingsCacheLocation), pathToTopLevelNodeModules)))) {
     return undefined;
   }
 
@@ -421,7 +421,7 @@ function getNodeModulePathParts(fullPath: string): NodeModulePathParts | undefin
   return state > States.NodeModules ? { topLevelNodeModulesIndex, topLevelPackageNameIndex, packageRootIndex, fileNameIndex } : undefined;
 }
 
-function getPathRelativeToRootDirs(path: string, rootDirs: readonly string[], getCanonicalFileName: GetCanonicalFileName): string | undefined {
+function getPathRelativeToRootDirs(path: string, rootDirs: readonly string[], getCanonicalFileName: qc.GetCanonicalFileName): string | undefined {
   return firstDefined(rootDirs, (rootDir) => {
     const relativePath = getRelativePathIfInDirectory(path, rootDir, getCanonicalFileName)!; // TODO: GH#18217
     return isPathRelativeToParent(relativePath) ? undefined : relativePath;
@@ -462,11 +462,11 @@ function getJSExtensionForFile(fileName: string, options: qt.CompilerOptions): E
   }
 }
 
-function getRelativePathIfInDirectory(path: string, directoryPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
+function getRelativePathIfInDirectory(path: string, directoryPath: string, getCanonicalFileName: qc.GetCanonicalFileName): string | undefined {
   const relativePath = getRelativePathToDirectoryOrUrl(directoryPath, path, directoryPath, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
   return isRootedDiskPath(relativePath) ? undefined : relativePath;
 }
 
 function isPathRelativeToParent(path: string): boolean {
-  return startsWith(path, '..');
+  return qc.startsWith(path, '..');
 }

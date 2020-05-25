@@ -7,10 +7,10 @@ export interface SymbolAccessibilityDiagnostic {
 }
 
 export type DeclarationDiagnosticProducing =
-  | VariableDeclaration
+  | qt.VariableDeclaration
   | PropertyDeclaration
   | PropertySignature
-  | BindingElement
+  | qt.BindingElement
   | SetAccessorDeclaration
   | GetAccessorDeclaration
   | ConstructSignatureDeclaration
@@ -23,7 +23,7 @@ export type DeclarationDiagnosticProducing =
   | ExpressionWithTypeArguments
   | ImportEqualsDeclaration
   | TypeAliasDeclaration
-  | ConstructorDeclaration
+  | qt.ConstructorDeclaration
   | IndexSignatureDeclaration
   | PropertyAccessExpression;
 
@@ -71,7 +71,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
   }
 
   function getAccessorNameVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
-    if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Static)) {
       return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_private_name_1;
     } else if (node.parent.kind === qt.SyntaxKind.ClassDeclaration) {
       return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Public_property_0_of_exported_class_has_or_is_using_private_name_1;
@@ -92,7 +92,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
   }
 
   function getMethodNameVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
-    if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Static)) {
       return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Public_static_method_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Public_static_method_0_of_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Public_static_method_0_of_exported_class_has_or_is_using_private_name_1;
     } else if (node.parent.kind === qt.SyntaxKind.ClassDeclaration) {
       return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Public_method_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Public_method_0_of_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Public_method_0_of_exported_class_has_or_is_using_private_name_1;
@@ -110,7 +110,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   } else if (isConstructSignatureDeclaration(node) || isCallSignatureDeclaration(node) || isMethodDeclaration(node) || isMethodSignature(node) || isFunctionDeclaration(node) || isIndexSignatureDeclaration(node)) {
     return getReturnTypeVisibilityError;
   } else if (isParameter(node)) {
-    if (isParameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) {
+    if (isParameterPropertyDeclaration(node, node.parent) && qu.hasSyntacticModifier(node.parent, qt.ModifierFlags.Private)) {
       return getVariableDeclarationTypeVisibilityError;
     }
     return getParameterDeclarationTypeVisibilityError;
@@ -132,9 +132,9 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     }
     // This check is to ensure we don't report error on constructor parameter property as that error would be reported during parameter emit
     // The only exception here is if the constructor was marked as private. we are not emitting the constructor parameters at all.
-    else if (node.kind === qt.SyntaxKind.PropertyDeclaration || node.kind === qt.SyntaxKind.PropertyAccessExpression || node.kind === qt.SyntaxKind.PropertySignature || (node.kind === qt.SyntaxKind.Parameter && hasSyntacticModifier(node.parent, ModifierFlags.Private))) {
+    else if (node.kind === qt.SyntaxKind.PropertyDeclaration || node.kind === qt.SyntaxKind.PropertyAccessExpression || node.kind === qt.SyntaxKind.PropertySignature || (node.kind === qt.SyntaxKind.Parameter && qu.hasSyntacticModifier(node.parent, qt.ModifierFlags.Private))) {
       // TODO(jfreeman): Deal with computed properties in error reporting.
-      if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Static)) {
         return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_private_name_1;
       } else if (node.parent.kind === qt.SyntaxKind.ClassDeclaration || node.kind === qt.SyntaxKind.Parameter) {
         return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Public_property_0_of_exported_class_has_or_is_using_private_name_1;
@@ -161,13 +161,13 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     if (node.kind === qt.SyntaxKind.SetAccessor) {
       // Getters can infer the return type from the returned expression, but setters cannot, so the
       // "_from_external_module_1_but_cannot_be_named" case cannot occur.
-      if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Static)) {
         diagnosticMessage = symbolAccessibilityResult.errorModuleName ? Diagnostics.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2 : Diagnostics.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1;
       } else {
         diagnosticMessage = symbolAccessibilityResult.errorModuleName ? Diagnostics.Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2 : Diagnostics.Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1;
       }
     } else {
-      if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Static)) {
         diagnosticMessage = symbolAccessibilityResult.errorModuleName
           ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
             ? Diagnostics.Return_type_of_public_static_getter_0_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -204,7 +204,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
 
       case qt.SyntaxKind.MethodDeclaration:
       case qt.SyntaxKind.MethodSignature:
-        if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+        if (hasSyntacticModifier(node, qt.ModifierFlags.Static)) {
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? Diagnostics.Return_type_of_public_static_method_from_exported_class_has_or_is_using_name_0_from_external_module_1_but_cannot_be_named
@@ -263,7 +263,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
 
       case qt.SyntaxKind.MethodDeclaration:
       case qt.SyntaxKind.MethodSignature:
-        if (hasSyntacticModifier(node.parent, ModifierFlags.Static)) {
+        if (hasSyntacticModifier(node.parent, qt.ModifierFlags.Static)) {
           return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
         } else if (node.parent.parent.kind === qt.SyntaxKind.ClassDeclaration) {
           return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
@@ -311,7 +311,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
 
       case qt.SyntaxKind.MethodDeclaration:
       case qt.SyntaxKind.MethodSignature:
-        if (hasSyntacticModifier(node.parent, ModifierFlags.Static)) {
+        if (hasSyntacticModifier(node.parent, qt.ModifierFlags.Static)) {
           diagnosticMessage = Diagnostics.Type_parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
         } else if (node.parent.parent.kind === qt.SyntaxKind.ClassDeclaration) {
           diagnosticMessage = Diagnostics.Type_parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;

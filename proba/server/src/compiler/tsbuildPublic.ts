@@ -220,7 +220,7 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly host: SolutionBuilderHost<T>;
   readonly hostWithWatch: SolutionBuilderWithWatchHost<T>;
   readonly currentDirectory: string;
-  readonly getCanonicalFileName: GetCanonicalFileName;
+  readonly getCanonicalFileName: qc.GetCanonicalFileName;
   readonly parseConfigFileHost: ParseConfigFileHost;
   readonly writeFileName: ((s: string) => void) | undefined;
 
@@ -386,7 +386,7 @@ function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedCo
 }
 
 function resolveProjectName(state: SolutionBuilderState, name: string): ResolvedConfigFileName {
-  return resolveConfigFileProjectName(resolvePath(state.currentDirectory, name));
+  return resolveConfigFileProjectName(qp.resolvePath(state.currentDirectory, name));
 }
 
 function createBuildOrder(state: SolutionBuilderState, roots: readonly ResolvedConfigFileName[]): AnyBuildOrder {
@@ -673,7 +673,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(kind: Inv
         buildOrder,
         getCompilerOptions: () => config.options,
         getCurrentDirectory: () => state.currentDirectory,
-        getBuilderProgram: () => withProgramOrUndefined(identity),
+        getBuilderProgram: () => withProgramOrUndefined(qc.identity),
         getProgram: () => withProgramOrUndefined((program) => program.getProgramOrUndefined()),
         getSourceFile: (fileName) => withProgramOrUndefined((program) => program.getSourceFile(fileName)),
         getSourceFiles: () => withProgramOrEmptyArray((program) => program.getSourceFiles()),
@@ -973,7 +973,7 @@ function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuil
       watchInputFiles(state, project, projectPath, config);
     } else if (reloadLevel === ConfigFileProgramReloadLevel.Partial) {
       // Update file names
-      const result = getFileNamesFromConfigSpecs(config.configFileSpecs!, getDirectoryPath(project), config.options, state.parseConfigFileHost);
+      const result = getFileNamesFromConfigSpecs(config.configFileSpecs!, qp.getDirectoryPath(project), config.options, state.parseConfigFileHost);
       updateErrorForNoInputFiles(result, project, config.configFileSpecs!, config.errors, canJsonReportNoInutFiles(config.raw));
       config.fileNames = result.fileNames;
       watchInputFiles(state, project, projectPath, config);
@@ -1540,7 +1540,7 @@ function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFi
 }
 
 function isSameFile(state: SolutionBuilderState, file1: string, file2: string) {
-  return comparePaths(file1, file2, state.currentDirectory, !state.host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
+  return comparePaths(file1, file2, state.currentDirectory, !state.host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
 }
 
 function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: ParsedCommandLine) {
@@ -1572,7 +1572,7 @@ function isOutputFile(state: SolutionBuilderState, fileName: string, configFile:
 
 function watchWildCardDirectories(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
   if (!state.watch) return;
-  updateWatchingWildcardDirectories(getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath), createMapFromTemplate(parsed.configFileSpecs!.wildcardDirectories), (dir, flags) =>
+  updateWatchingWildcardDirectories(getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath), qc.createMapFromTemplate(parsed.configFileSpecs!.wildcardDirectories), (dir, flags) =>
     state.watchDirectory(
       state.hostWithWatch,
       dir,

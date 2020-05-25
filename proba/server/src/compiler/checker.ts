@@ -135,7 +135,7 @@ const enum TypeFacts {
   EmptyObjectFacts = All,
 }
 
-const typeofEQFacts: qpc.ReadonlyMap<TypeFacts> = createMapFromTemplate({
+const typeofEQFacts: qpc.ReadonlyMap<TypeFacts> = qc.createMapFromTemplate({
   string: TypeFacts.TypeofEQString,
   number: TypeFacts.TypeofEQNumber,
   bigint: TypeFacts.TypeofEQBigInt,
@@ -146,7 +146,7 @@ const typeofEQFacts: qpc.ReadonlyMap<TypeFacts> = createMapFromTemplate({
   function: TypeFacts.TypeofEQFunction,
 });
 
-const typeofNEFacts: qpc.ReadonlyMap<TypeFacts> = createMapFromTemplate({
+const typeofNEFacts: qpc.ReadonlyMap<TypeFacts> = qc.createMapFromTemplate({
   string: TypeFacts.TypeofNEString,
   number: TypeFacts.TypeofNENumber,
   bigint: TypeFacts.TypeofNEBigInt,
@@ -361,7 +361,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     getInstantiationCount: () => totalInstantiationCount,
     getRelationCacheSizes: () => ({
       assignable: assignableRelation.size,
-      identity: identityRelation.size,
+      qc.identity: qc.identityRelation.size,
       subtype: subtypeRelation.size,
       strictSubtype: strictSubtypeRelation.size,
     }),
@@ -909,7 +909,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   const diagnostics = createDiagnosticCollection();
   const suggestionDiagnostics = createDiagnosticCollection();
 
-  const typeofTypesByName: qpc.ReadonlyMap<Type> = createMapFromTemplate<Type>({
+  const typeofTypesByName: qpc.ReadonlyMap<Type> = qc.createMapFromTemplate<Type>({
     string: stringType,
     number: numberType,
     bigint: bigintType,
@@ -927,7 +927,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   const strictSubtypeRelation = qc.createMap<RelationComparisonResult>();
   const assignableRelation = qc.createMap<RelationComparisonResult>();
   const comparableRelation = qc.createMap<RelationComparisonResult>();
-  const identityRelation = qc.createMap<RelationComparisonResult>();
+  const qc.identityRelation = qc.createMap<RelationComparisonResult>();
   const enumRelation = qc.createMap<RelationComparisonResult>();
 
   const builtinGlobals = createSymbolTable();
@@ -1128,7 +1128,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
       // Collect top-level duplicate identifier errors into one mapping, so we can then merge their diagnostics if there are a bunch
       if (sourceSymbolFile && targetSymbolFile && amalgamatedDuplicates && !isEitherEnum && sourceSymbolFile !== targetSymbolFile) {
-        const firstFile = comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
+        const firstFile = comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === qpc.Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
         const secondFile = firstFile === sourceSymbolFile ? targetSymbolFile : sourceSymbolFile;
         const filesDuplicates = getOrUpdate<DuplicateInfoForFiles>(amalgamatedDuplicates, `${firstFile.path}|${secondFile.path}`, () => ({ firstFile, secondFile, conflictingSymbols: createMap() }));
         const conflictingSymbolInfo = getOrUpdate<DuplicateInfoForSymbol>(filesDuplicates.conflictingSymbols, symbolName, () => ({
@@ -1167,7 +1167,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       err.relatedInformation = err.relatedInformation || [];
       const leadingMessage = createDiagnosticForNode(adjustedNode, Diagnostics._0_was_also_declared_here, symbolName);
       const followOnMessage = createDiagnosticForNode(adjustedNode, Diagnostics.and_here);
-      if (length(err.relatedInformation) >= 5 || some(err.relatedInformation, (r) => compareDiagnostics(r, followOnMessage) === Comparison.EqualTo || compareDiagnostics(r, leadingMessage) === Comparison.EqualTo)) continue;
+      if (length(err.relatedInformation) >= 5 || some(err.relatedInformation, (r) => qu.compareDiagnostics(r, followOnMessage) === qpc.Comparison.EqualTo || qu.compareDiagnostics(r, leadingMessage) === qpc.Comparison.EqualTo)) continue;
       addRelatedInfo(err, !length(err.relatedInformation) ? leadingMessage : followOnMessage);
     }
   }
@@ -1352,7 +1352,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ false);
       } else if (isParameterPropertyDeclaration(declaration, declaration.parent)) {
         // foo = this.bar is illegal in esnext+useDefineForClassFields when bar is a parameter property
-        return !(compilerOptions.target === ScriptTarget.ESNext && !!compilerOptions.useDefineForClassFields && getContainingClass(declaration) === getContainingClass(usage) && isUsedInFunctionOrInstanceProperty(usage, declaration));
+        return !(compilerOptions.target === qt.ScriptTarget.ESNext && !!compilerOptions.useDefineForClassFields && getContainingClass(declaration) === getContainingClass(usage) && isUsedInFunctionOrInstanceProperty(usage, declaration));
       }
       return true;
     }
@@ -1380,7 +1380,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return true;
     }
     if (isUsedInFunctionOrInstanceProperty(usage, declaration)) {
-      if (compilerOptions.target === ScriptTarget.ESNext && !!compilerOptions.useDefineForClassFields && getContainingClass(declaration) && (isPropertyDeclaration(declaration) || isParameterPropertyDeclaration(declaration, declaration.parent))) {
+      if (compilerOptions.target === qt.ScriptTarget.ESNext && !!compilerOptions.useDefineForClassFields && getContainingClass(declaration) && (isPropertyDeclaration(declaration) || isParameterPropertyDeclaration(declaration, declaration.parent))) {
         return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ true);
       } else {
         return true;
@@ -1392,7 +1392,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return !!findAncestor(usage, (node) => isInterfaceDeclaration(node) || isTypeAliasDeclaration(node));
     }
 
-    function isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration: VariableDeclaration, usage: Node): boolean {
+    function isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration: qt.VariableDeclaration, usage: Node): boolean {
       switch (declaration.parent.parent.kind) {
         case qt.SyntaxKind.VariableStatement:
         case qt.SyntaxKind.ForStatement:
@@ -1422,12 +1422,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         const initializerOfProperty = current.parent && current.parent.kind === qt.SyntaxKind.PropertyDeclaration && (<qt.PropertyDeclaration>current.parent).initializer === current;
 
         if (initializerOfProperty) {
-          if (hasSyntacticModifier(current.parent, ModifierFlags.Static)) {
+          if (hasSyntacticModifier(current.parent, qt.ModifierFlags.Static)) {
             if (declaration.kind === qt.SyntaxKind.MethodDeclaration) {
               return true;
             }
           } else {
-            const isDeclarationInstanceProperty = declaration.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(declaration, ModifierFlags.Static);
+            const isDeclarationInstanceProperty = declaration.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(declaration, qt.ModifierFlags.Static);
             if (!isDeclarationInstanceProperty || getContainingClass(usage) !== getContainingClass(declaration)) {
               return true;
             }
@@ -1484,7 +1484,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       // - optional chaining pre-es2020
       // - nullish coalesce pre-es2020
       // - spread assignment in binding pattern pre-es2017
-      if (target >= ScriptTarget.ES2015) {
+      if (target >= qt.ScriptTarget.ES2015) {
         const links = getNodeLinks(functionLocation);
         if (links.declarationRequiresScopeChange === undefined) {
           links.declarationRequiresScopeChange = forEach(functionLocation.parameters, requiresScopeChange) || false;
@@ -1514,16 +1514,16 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         case qt.SyntaxKind.PropertyDeclaration:
           // static properties in classes introduce temporary variables
           if (hasStaticModifier(node)) {
-            return target < ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields;
+            return target < qt.ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields;
           }
           return requiresScopeChangeWorker((node as PropertyDeclaration).name);
         default:
           // null coalesce and optional chain pre-es2020 produce temporary variables
           if (isNullishCoalesce(node) || isOptionalChain(node)) {
-            return target < ScriptTarget.ES2020;
+            return target < qt.ScriptTarget.ES2020;
           }
           if (isBindingElement(node) && node.dotDotDotToken && isObjectBindingPattern(node.parent)) {
-            return target < ScriptTarget.ES2017;
+            return target < qt.ScriptTarget.ES2017;
           }
           if (isTypeNode(node)) return false;
           return forEachChild(node, requiresScopeChangeWorker) || false;
@@ -1548,7 +1548,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     let lastLocation: Node | undefined;
     let lastSelfReferenceLocation: Node | undefined;
     let propertyWithInvalidInitializer: Node | undefined;
-    let associatedDeclarationForContainingInitializerOrBindingName: ParameterDeclaration | BindingElement | undefined;
+    let associatedDeclarationForContainingInitializerOrBindingName: ParameterDeclaration | qt.BindingElement | undefined;
     let withinDeferredContext = false;
     const errorLocation = location;
     let grandparent: Node;
@@ -1656,7 +1656,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           // local variables of the constructor. This effectively means that entities from outer scopes
           // by the same name as a constructor parameter or local variable are inaccessible
           // in initializer expressions for instance member variables.
-          if (!hasSyntacticModifier(location, ModifierFlags.Static)) {
+          if (!hasSyntacticModifier(location, qt.ModifierFlags.Static)) {
             const ctor = findConstructorDeclaration(location.parent);
             if (ctor && ctor.locals) {
               if (lookup(ctor.locals, name, meaning & SymbolFlags.Value)) {
@@ -1678,7 +1678,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               result = undefined;
               break;
             }
-            if (lastLocation && hasSyntacticModifier(lastLocation, ModifierFlags.Static)) {
+            if (lastLocation && qu.hasSyntacticModifier(lastLocation, qt.ModifierFlags.Static)) {
               // TypeScript 1.0 spec (April 2014): 3.4.1
               // The scope of a type parameter extends over the entire declaration with which the type
               // parameter list is associated, with the exception of static member declarations in classes.
@@ -1728,7 +1728,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         case qt.SyntaxKind.ArrowFunction:
           // when targeting ES6 or higher there is no 'arguments' in an arrow function
           // for lower compile targets the resolved symbol is used to emit an error
-          if (compilerOptions.target! >= ScriptTarget.ES2015) {
+          if (compilerOptions.target! >= qt.ScriptTarget.ES2015) {
             break;
           }
         // falls through
@@ -1799,11 +1799,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           }
           break;
         case qt.SyntaxKind.BindingElement:
-          if (lastLocation && (lastLocation === (location as BindingElement).initializer || (lastLocation === (location as BindingElement).name && isBindingPattern(lastLocation)))) {
+          if (lastLocation && (lastLocation === (location as qt.BindingElement).initializer || (lastLocation === (location as qt.BindingElement).name && isBindingPattern(lastLocation)))) {
             const root = getRootDeclaration(location);
             if (root.kind === qt.SyntaxKind.Parameter) {
               if (!associatedDeclarationForContainingInitializerOrBindingName) {
-                associatedDeclarationForContainingInitializerOrBindingName = location as BindingElement;
+                associatedDeclarationForContainingInitializerOrBindingName = location as qt.BindingElement;
               }
             }
           }
@@ -1876,7 +1876,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     // Perform extra checks only if error reporting was requested
     if (nameNotFoundMessage) {
-      if (propertyWithInvalidInitializer && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields)) {
+      if (propertyWithInvalidInitializer && !(compilerOptions.target === qt.ScriptTarget.ESNext && compilerOptions.useDefineForClassFields)) {
         // We have a match, but the reference occurred within a property initializer and the identifier also binds
         // to a local variable in the constructor where the code will be emitted. Note that this is actually allowed
         // with ESNext+useDefineForClassFields because the scope semantics are different.
@@ -1947,13 +1947,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function getIsDeferredContext(location: Node, lastLocation: Node | undefined): boolean {
     if (location.kind !== qt.SyntaxKind.ArrowFunction && location.kind !== qt.SyntaxKind.FunctionExpression) {
       // initializers in instance property declaration of class like entities are executed in constructor and thus deferred
-      return isTypeQueryNode(location) || ((isFunctionLikeDeclaration(location) || (location.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(location, ModifierFlags.Static))) && (!lastLocation || lastLocation !== (location as FunctionLike | PropertyDeclaration).name)); // A name is evaluated within the enclosing scope - so it shouldn't count as deferred
+      return isTypeQueryNode(location) || ((isFunctionLikeDeclaration(location) || (location.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(location, qt.ModifierFlags.Static))) && (!lastLocation || lastLocation !== (location as FunctionLike | PropertyDeclaration).name)); // A name is evaluated within the enclosing scope - so it shouldn't count as deferred
     }
     if (lastLocation && lastLocation === (location as FunctionExpression | ArrowFunction).name) {
       return false;
     }
     // generator functions and async functions are not inlined in control flow when immediately invoked
-    if ((location as FunctionExpression | ArrowFunction).asteriskToken || hasSyntacticModifier(location, ModifierFlags.Async)) {
+    if ((location as FunctionExpression | ArrowFunction).asteriskToken || qu.hasSyntacticModifier(location, qt.ModifierFlags.Async)) {
       return true;
     }
     return !getImmediatelyInvokedFunctionExpression(location);
@@ -2013,7 +2013,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
         // No static member is present.
         // Check if we're in an instance method and look for a relevant instance member.
-        if (location === container && !hasSyntacticModifier(location, ModifierFlags.Static)) {
+        if (location === container && !hasSyntacticModifier(location, qt.ModifierFlags.Static)) {
           const instanceType = getDeclaredTypeOfSymbol(classSymbol).thisType!; // TODO: GH#18217
           if (getPropertyOfType(instanceType, name)) {
             error(errorLocation, Diagnostics.Cannot_find_name_0_Did_you_mean_the_instance_member_this_0, diagnosticName(nameArg));
@@ -2279,7 +2279,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isSyntacticDefault(node: qt.Node) {
-    return (isExportAssignment(node) && !node.isExportEquals) || hasSyntacticModifier(node, ModifierFlags.Default) || isExportSpecifier(node);
+    return (isExportAssignment(node) && !node.isExportEquals) || qu.hasSyntacticModifier(node, qt.ModifierFlags.Default) || isExportSpecifier(node);
   }
 
   function canHaveSyntheticDefault(file: SourceFile | undefined, moduleSymbol: symbol, dontResolveAlias: boolean) {
@@ -2901,7 +2901,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function resolveExternalModule(location: Node, moduleReference: string, moduleNotFoundError: qt.DiagnosticMessage | undefined, errorNode: Node, isForAugmentation = false): symbol | undefined {
-    if (startsWith(moduleReference, '@types/')) {
+    if (qc.startsWith(moduleReference, '@types/')) {
       const diag = Diagnostics.Cannot_import_type_declaration_files_Consider_importing_0_instead_of_1;
       const withoutAtTypePrefix = removePrefix(moduleReference, '@types/');
       error(errorNode, diag, withoutAtTypePrefix, moduleReference);
@@ -3338,7 +3338,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return !!(symbol.flags & SymbolFlags.Value || (symbol.flags & SymbolFlags.Alias && resolveAlias(symbol).flags & SymbolFlags.Value && !getTypeOnlyAliasDeclaration(symbol)));
   }
 
-  function findConstructorDeclaration(node: ClassLikeDeclaration): ConstructorDeclaration | undefined {
+  function findConstructorDeclaration(node: ClassLikeDeclaration): qt.ConstructorDeclaration | undefined {
     const members = node.members;
     for (const member of members) {
       if (member.kind === qt.SyntaxKind.Constructor && nodeIsPresent(member.body)) {
@@ -3780,20 +3780,20 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         const anyImportSyntax = getAnyImportSyntax(declaration);
         if (
           anyImportSyntax &&
-          !hasSyntacticModifier(anyImportSyntax, ModifierFlags.Export) && // import clause without export
+          !hasSyntacticModifier(anyImportSyntax, qt.ModifierFlags.Export) && // import clause without export
           isDeclarationVisible(anyImportSyntax.parent)
         ) {
           return addVisibleAlias(declaration, anyImportSyntax);
         } else if (
           isVariableDeclaration(declaration) &&
           isVariableStatement(declaration.parent.parent) &&
-          !hasSyntacticModifier(declaration.parent.parent, ModifierFlags.Export) && // unexported variable statement
+          !hasSyntacticModifier(declaration.parent.parent, qt.ModifierFlags.Export) && // unexported variable statement
           isDeclarationVisible(declaration.parent.parent.parent)
         ) {
           return addVisibleAlias(declaration, declaration.parent.parent);
         } else if (
           isLateVisibilityPaintedStatement(declaration) && // unexported top-level statement
-          !hasSyntacticModifier(declaration, ModifierFlags.Export) &&
+          !hasSyntacticModifier(declaration, qt.ModifierFlags.Export) &&
           isDeclarationVisible(declaration.parent)
         ) {
           return addVisibleAlias(declaration, declaration);
@@ -4221,7 +4221,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           return createTypeNodeFromObjectType(type);
         }
         function shouldWriteTypeOfFunctionSymbol() {
-          const isStaticMethodSymbol = !!(symbol.flags & SymbolFlags.Method) && some(symbol.declarations, (declaration) => hasSyntacticModifier(declaration, ModifierFlags.Static)); // typeof static method
+          const isStaticMethodSymbol = !!(symbol.flags & SymbolFlags.Method) && some(symbol.declarations, (declaration) => qu.hasSyntacticModifier(declaration, qt.ModifierFlags.Static)); // typeof static method
           const isNonLocalFunctionSymbol =
             !!(symbol.flags & SymbolFlags.Function) &&
             (symbol.parent || // is exported function symbol
@@ -4454,7 +4454,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             if (propertySymbol.flags & SymbolFlags.Prototype) {
               continue;
             }
-            if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | ModifierFlags.Protected) && context.tracker.reportPrivateInBaseOfClassExpression) {
+            if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | qt.ModifierFlags.Protected) && context.tracker.reportPrivateInBaseOfClassExpression) {
               context.tracker.reportPrivateInBaseOfClassExpression(unescapeLeadingUnderscores(propertySymbol.escapedName));
             }
           }
@@ -4693,7 +4693,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       context.approximateLength += symbolName(parameterSymbol).length + 3;
       return parameterNode;
 
-      function cloneBindingName(node: BindingName): BindingName {
+      function cloneBindingName(node: qt.BindingName): qt.BindingName {
         return <BindingName>elideInitializerAndSetEmitFlags(node);
         function elideInitializerAndSetEmitFlags(node: qt.Node): Node {
           if (context.tracker.trackSymbol && isComputedPropertyName(node) && isLateBindableName(node)) {
@@ -5110,7 +5110,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     function isSingleQuotedStringNamed(d: Declaration) {
       const name = getNameOfDeclaration(d);
-      if (name && isStringLiteral(name) && (name.singleQuote || (!nodeIsSynthesized(name) && startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))) {
+      if (name && isStringLiteral(name) && (name.singleQuote || (!nodeIsSynthesized(name) && qc.startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))) {
         return true;
       }
       return false;
@@ -5138,7 +5138,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           if (!isIdentifierText(name, compilerOptions.target) && !isNumericLiteralName(name)) {
             return createLiteral(name, !!singleQuote);
           }
-          if (isNumericLiteralName(name) && startsWith(name, '-')) {
+          if (isNumericLiteralName(name) && qc.startsWith(name, '-')) {
             return createComputedPropertyName(createLiteral(+name));
           }
           return createPropertyNameNodeForIdentifierOrLiteral(name);
@@ -5431,7 +5431,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (ns && exportAssignment && exportAssignment.isExportEquals && isIdentifier(exportAssignment.expression) && isIdentifier(ns.name) && idText(ns.name) === idText(exportAssignment.expression) && ns.body && isModuleBlock(ns.body)) {
           // Pass 0: Correct situations where a module has both an `export = ns` and multiple top-level exports by stripping the export modifiers from
           //  the top-level exports and exporting them in the targeted ns, as can occur when a js file has both typedefs and `module.export` assignments
-          const excessExports = filter(statements, (s) => !!(getEffectiveModifierFlags(s) & ModifierFlags.Export));
+          const excessExports = filter(statements, (s) => !!(getEffectiveModifierFlags(s) & qt.ModifierFlags.Export));
           if (length(excessExports)) {
             ns.body.statements = createNodeArray([
               ...ns.body.statements,
@@ -5453,7 +5453,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           if (!find(statements, (s) => s !== ns && nodeHasName(s, ns.name))) {
             results = [];
             forEach(ns.body.statements, (s) => {
-              addResult(s, ModifierFlags.None); // Recalculates the ambient (and export, if applicable from above) flag
+              addResult(s, qt.ModifierFlags.None); // Recalculates the ambient (and export, if applicable from above) flag
             });
             statements = [...filter(statements, (s) => s !== ns && s !== exportAssignment), ...results];
           }
@@ -5529,7 +5529,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       }
 
       function addExportModifier(statement: Statement) {
-        const flags = (getEffectiveModifierFlags(statement) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
+        const flags = (getEffectiveModifierFlags(statement) | qt.ModifierFlags.Export) & ~ModifierFlags.Ambient;
         statement.modifiers = createNodeArray(createModifiersFromModifierFlags(flags));
         statement.modifierFlagsCache = 0;
       }
@@ -5594,7 +5594,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (needsPostExportDefault) {
           isPrivate = true;
         }
-        const modifierFlags = (!isPrivate ? ModifierFlags.Export : 0) | (isDefault && !needsPostExportDefault ? ModifierFlags.Default : 0);
+        const modifierFlags = (!isPrivate ? qt.ModifierFlags.Export : 0) | (isDefault && !needsPostExportDefault ? qt.ModifierFlags.Default : 0);
         const isConstMergedWithNS = symbol.flags & SymbolFlags.Module && symbol.flags & (SymbolFlags.BlockScopedVariable | SymbolFlags.FunctionScopedVariable | SymbolFlags.Property) && symbol.escapedName !== InternalSymbolName.ExportEquals;
         const isConstMergedWithNSPrintableAsSignatureMerge = isConstMergedWithNS && isTypeRepresentableAsFunctionNamespaceMerge(getTypeOfSymbol(symbol), symbol);
         if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Method) || isConstMergedWithNSPrintableAsSignatureMerge) {
@@ -5639,11 +5639,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           for (const node of symbol.declarations) {
             const resolvedModule = resolveExternalModuleName(node, node.moduleSpecifier!);
             if (!resolvedModule) continue;
-            addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*exportClause*/ undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), ModifierFlags.None);
+            addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*exportClause*/ undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), qt.ModifierFlags.None);
           }
         }
         if (needsPostExportDefault) {
-          addResult(createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportAssignment*/ false, createIdentifier(getInternalSymbolName(symbol, symbolName))), ModifierFlags.None);
+          addResult(createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportAssignment*/ false, createIdentifier(getInternalSymbolName(symbol, symbolName))), qt.ModifierFlags.None);
         }
       }
 
@@ -5660,18 +5660,18 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
       // Prepends a `declare` and/or `export` modifier if the context requires it, and then adds `node` to `result` and returns `node`
       // Note: This _mutates_ `node` without using `updateNode` - the assumption being that all nodes should be manufactured fresh by the node builder
-      function addResult(node: Statement, additionalModifierFlags: ModifierFlags) {
-        let newModifierFlags: ModifierFlags = ModifierFlags.None;
-        if (additionalModifierFlags & ModifierFlags.Export && enclosingDeclaration && isExportingScope(enclosingDeclaration) && canHaveExportModifier(node)) {
+      function addResult(node: Statement, additionalModifierFlags: qt.ModifierFlags) {
+        let newModifierFlags: qt.ModifierFlags = qt.ModifierFlags.None;
+        if (additionalModifierFlags & qt.ModifierFlags.Export && enclosingDeclaration && isExportingScope(enclosingDeclaration) && canHaveExportModifier(node)) {
           // Classes, namespaces, variables, functions, interfaces, and types should all be `export`ed in a module context if not private
-          newModifierFlags |= ModifierFlags.Export;
+          newModifierFlags |= qt.ModifierFlags.Export;
         }
-        if (addingDeclare && !(newModifierFlags & ModifierFlags.Export) && (!enclosingDeclaration || !(enclosingDeclaration.flags & NodeFlags.Ambient)) && (isEnumDeclaration(node) || isVariableStatement(node) || isFunctionDeclaration(node) || isClassDeclaration(node) || isModuleDeclaration(node))) {
+        if (addingDeclare && !(newModifierFlags & qt.ModifierFlags.Export) && (!enclosingDeclaration || !(enclosingDeclaration.flags & NodeFlags.Ambient)) && (isEnumDeclaration(node) || isVariableStatement(node) || isFunctionDeclaration(node) || isClassDeclaration(node) || isModuleDeclaration(node))) {
           // Classes, namespaces, variables, enums, and functions all need `declare` modifiers to be valid in a declaration file top-level scope
-          newModifierFlags |= ModifierFlags.Ambient;
+          newModifierFlags |= qt.ModifierFlags.Ambient;
         }
-        if (additionalModifierFlags & ModifierFlags.Default && (isClassDeclaration(node) || isInterfaceDeclaration(node) || isFunctionDeclaration(node))) {
-          newModifierFlags |= ModifierFlags.Default;
+        if (additionalModifierFlags & qt.ModifierFlags.Default && (isClassDeclaration(node) || isInterfaceDeclaration(node) || isFunctionDeclaration(node))) {
+          newModifierFlags |= qt.ModifierFlags.Default;
         }
         if (newModifierFlags) {
           node.modifiers = createNodeArray(createModifiersFromModifierFlags(newModifierFlags | getEffectiveModifierFlags(node)));
@@ -5680,7 +5680,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         results.push(node);
       }
 
-      function serializeTypeAlias(symbol: symbol, symbolName: string, modifierFlags: ModifierFlags) {
+      function serializeTypeAlias(symbol: symbol, symbolName: string, modifierFlags: qt.ModifierFlags) {
         const aliasType = getDeclaredTypeOfTypeAlias(symbol);
         const typeParams = getSymbolLinks(symbol).typeParameters;
         const typeParamDecls = map(typeParams, (p) => typeParameterToDeclaration(p, context));
@@ -5692,7 +5692,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         context.flags = oldFlags;
       }
 
-      function serializeInterface(symbol: symbol, symbolName: string, modifierFlags: ModifierFlags) {
+      function serializeInterface(symbol: symbol, symbolName: string, modifierFlags: qt.ModifierFlags) {
         const interfaceType = getDeclaredTypeOfClassOrInterface(symbol);
         const localParams = getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol);
         const typeParamDecls = map(localParams, (p) => typeParameterToDeclaration(p, context));
@@ -5722,7 +5722,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         return every(getNamespaceMembersForSerialization(symbol), (m) => !(resolveSymbol(m).flags & SymbolFlags.Value));
       }
 
-      function serializeModule(symbol: symbol, symbolName: string, modifierFlags: ModifierFlags) {
+      function serializeModule(symbol: symbol, symbolName: string, modifierFlags: qt.ModifierFlags) {
         const members = getNamespaceMembersForSerialization(symbol);
         // Split NS members up by declaration - members whose parent symbol is the ns symbol vs those whose is not (but were added in later via merging)
         const locationMap = arrayToMultiMap(members, (m) => (m.parent && m.parent === symbol ? 'real' : 'merged'));
@@ -5762,15 +5762,15 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               )
             ),
           ]);
-          addResult(createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
+          addResult(createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody, NodeFlags.Namespace), qt.ModifierFlags.None);
         }
       }
 
-      function serializeEnum(symbol: symbol, symbolName: string, modifierFlags: ModifierFlags) {
+      function serializeEnum(symbol: symbol, symbolName: string, modifierFlags: qt.ModifierFlags) {
         addResult(
           createEnumDeclaration(
             /*decorators*/ undefined,
-            createModifiersFromModifierFlags(isConstEnumSymbol(symbol) ? ModifierFlags.Const : 0),
+            createModifiersFromModifierFlags(isConstEnumSymbol(symbol) ? qt.ModifierFlags.Const : 0),
             getInternalSymbolName(symbol, symbolName),
             map(
               filter(getPropertiesOfType(getTypeOfSymbol(symbol)), (p) => !!(p.flags & SymbolFlags.EnumMember)),
@@ -5788,7 +5788,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         );
       }
 
-      function serializeVariableOrProperty(symbol: symbol, symbolName: string, isPrivate: boolean, needsPostExportDefault: boolean, propertyAsAlias: boolean | undefined, modifierFlags: ModifierFlags) {
+      function serializeVariableOrProperty(symbol: symbol, symbolName: string, isPrivate: boolean, needsPostExportDefault: boolean, propertyAsAlias: boolean | undefined, modifierFlags: qt.ModifierFlags) {
         if (propertyAsAlias) {
           serializeMaybeAliasAssignment(symbol);
         } else {
@@ -5830,13 +5830,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               // export { g_1 as g };
               // ```
               // To create an export named `g` that does _not_ shadow the local `g`
-              addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(name, localName)])), ModifierFlags.None);
+              addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(name, localName)])), qt.ModifierFlags.None);
             }
           }
         }
       }
 
-      function serializeAsFunctionNamespaceMerge(type: Type, symbol: symbol, localName: string, modifierFlags: ModifierFlags) {
+      function serializeAsFunctionNamespaceMerge(type: Type, symbol: symbol, localName: string, modifierFlags: qt.ModifierFlags) {
         const signatures = getSignaturesOfType(type, SignatureKind.Call);
         for (const sig of signatures) {
           // Each overload becomes a separate function declaration, in order
@@ -5852,7 +5852,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         }
       }
 
-      function serializeAsNamespaceDeclaration(props: readonly symbol[], localName: string, modifierFlags: ModifierFlags, suppressNewPrivateContext: boolean) {
+      function serializeAsNamespaceDeclaration(props: readonly symbol[], localName: string, modifierFlags: qt.ModifierFlags, suppressNewPrivateContext: boolean) {
         if (length(props)) {
           const localVsRemoteMap = arrayToMultiMap(props, (p) => (!length(p.declarations) || some(p.declarations, (d) => getSourceFileOfNode(d) === getSourceFileOfNode(context.enclosingDeclaration!)) ? 'local' : 'remote'));
           const localProps = localVsRemoteMap.get('local') || emptyArray;
@@ -5903,7 +5903,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         return !(p.flags & SymbolFlags.Prototype || p.escapedName === 'prototype' || (p.valueDeclaration && isClassLike(p.valueDeclaration.parent)));
       }
 
-      function serializeAsClass(symbol: symbol, localName: string, modifierFlags: ModifierFlags) {
+      function serializeAsClass(symbol: symbol, localName: string, modifierFlags: qt.ModifierFlags) {
         const localParams = getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol);
         const typeParamDecls = map(localParams, (p) => typeParameterToDeclaration(p, context));
         const classType = getDeclaredTypeOfClassOrInterface(symbol);
@@ -5957,7 +5957,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         // the value is ever initialized with a class or function-like value. For cases where `X` could never be
         // created via `new`, we will inject a `private constructor()` declaration to indicate it is not createable.
         const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && isInJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
-        const constructors = isNonConstructableClassLikeInJsFile ? [createConstructor(/*decorators*/ undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], /*body*/ undefined)] : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], qt.SyntaxKind.Constructor) as ConstructorDeclaration[]);
+        const constructors = isNonConstructableClassLikeInJsFile ? [createConstructor(/*decorators*/ undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], /*body*/ undefined)] : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], qt.SyntaxKind.Constructor) as qt.ConstructorDeclaration[]);
         for (const c of constructors) {
           // A constructor's return type and type parameters are supposed to be controlled by the enclosing class declaration
           // `signatureToSignatureDeclarationHelper` appends them regardless, so for now we delete them here
@@ -5968,7 +5968,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         addResult(setTextRange(createClassDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, localName, typeParamDecls, heritageClauses, [...indexSignatures, ...staticMembers, ...constructors, ...publicProperties, ...privateProperties]), symbol.declarations && filter(symbol.declarations, (d) => isClassDeclaration(d) || isClassExpression(d))[0]), modifierFlags);
       }
 
-      function serializeAsAlias(symbol: symbol, localName: string, modifierFlags: ModifierFlags) {
+      function serializeAsAlias(symbol: symbol, localName: string, modifierFlags: qt.ModifierFlags) {
         // synthesize an alias, eg `export { symbolName as Name }`
         // need to mark the alias `symbol` points at
         // as something we need to serialize as a private declaration as well
@@ -5990,13 +5990,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             // Could be a local `import localName = ns.member` or
             // an external `import localName = require("whatever")`
             const isLocalImport = !(target.flags & SymbolFlags.ValueModule);
-            addResult(createImportEqualsDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), isLocalImport ? symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false) : createExternalModuleReference(createLiteral(getSpecifierForModuleSymbol(symbol, context)))), isLocalImport ? modifierFlags : ModifierFlags.None);
+            addResult(createImportEqualsDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), isLocalImport ? symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false) : createExternalModuleReference(createLiteral(getSpecifierForModuleSymbol(symbol, context)))), isLocalImport ? modifierFlags : qt.ModifierFlags.None);
             break;
           case qt.SyntaxKind.NamespaceExportDeclaration:
             // export as namespace foo
             // TODO: Not part of a file's local or export symbol tables
             // Is bound into file.symbol.globalExports instead, which we don't currently traverse
-            addResult(createNamespaceExportDeclaration(idText((node as NamespaceExportDeclaration).name)), ModifierFlags.None);
+            addResult(createNamespaceExportDeclaration(idText((node as NamespaceExportDeclaration).name)), qt.ModifierFlags.None);
             break;
           case qt.SyntaxKind.ImportClause:
             addResult(
@@ -6009,17 +6009,17 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
                 // In such cases, the `target` refers to the module itself already
                 createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))
               ),
-              ModifierFlags.None
+              qt.ModifierFlags.None
             );
             break;
           case qt.SyntaxKind.NamespaceImport:
-            addResult(createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*importClause*/ undefined, createNamespaceImport(createIdentifier(localName))), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
+            addResult(createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*importClause*/ undefined, createNamespaceImport(createIdentifier(localName))), createLiteral(getSpecifierForModuleSymbol(target, context))), qt.ModifierFlags.None);
             break;
           case qt.SyntaxKind.NamespaceExport:
-            addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamespaceExport(createIdentifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
+            addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamespaceExport(createIdentifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), qt.ModifierFlags.None);
             break;
           case qt.SyntaxKind.ImportSpecifier:
-            addResult(createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*importClause*/ undefined, createNamedImports([createImportSpecifier(localName !== verbatimTargetName ? createIdentifier(verbatimTargetName) : undefined, createIdentifier(localName))])), createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))), ModifierFlags.None);
+            addResult(createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*importClause*/ undefined, createNamedImports([createImportSpecifier(localName !== verbatimTargetName ? createIdentifier(verbatimTargetName) : undefined, createIdentifier(localName))])), createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))), qt.ModifierFlags.None);
             break;
           case qt.SyntaxKind.ExportSpecifier:
             // does not use localName because the symbol name in this case refers to the name in the exports table,
@@ -6049,7 +6049,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       }
 
       function serializeExportSpecifier(localName: string, targetName: string, specifier?: Expression) {
-        addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(localName !== targetName ? targetName : undefined, localName)]), specifier), ModifierFlags.None);
+        addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(localName !== targetName ? targetName : undefined, localName)]), specifier), qt.ModifierFlags.None);
       }
 
       function serializeMaybeAliasAssignment(symbol: symbol) {
@@ -6096,7 +6096,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             } else {
               // serialize as `import _Ref = t.arg.et; export { _Ref as name }`
               const varName = getUnusedName(name, symbol);
-              addResult(createImportEqualsDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(varName), symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false)), ModifierFlags.None);
+              addResult(createImportEqualsDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(varName), symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false)), qt.ModifierFlags.None);
               serializeExportSpecifier(name, varName);
             }
           }
@@ -6109,10 +6109,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           const typeToSerialize = getWidenedType(getTypeOfSymbol(getMergedSymbol(symbol)));
           if (isTypeRepresentableAsFunctionNamespaceMerge(typeToSerialize, symbol)) {
             // If there are no index signatures and `typeToSerialize` is an object type, emit as a namespace instead of a const
-            serializeAsFunctionNamespaceMerge(typeToSerialize, symbol, varName, isExportAssignment ? ModifierFlags.None : ModifierFlags.Export);
+            serializeAsFunctionNamespaceMerge(typeToSerialize, symbol, varName, isExportAssignment ? qt.ModifierFlags.None : qt.ModifierFlags.Export);
           } else {
             const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(varName, serializeTypeForDeclaration(context, typeToSerialize, symbol, enclosingDeclaration, includePrivateSymbol, bundled))], NodeFlags.Const));
-            addResult(statement, name === varName ? ModifierFlags.Export : ModifierFlags.None);
+            addResult(statement, name === varName ? qt.ModifierFlags.Export : qt.ModifierFlags.None);
           }
           if (isExportAssignment) {
             results.push(createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, isExportEquals, createIdentifier(varName)));
@@ -6146,7 +6146,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       function makeSerializePropertySymbol<T extends Node>(createProperty: (decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, questionOrExclamationToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined) => T, methodKind: qt.SyntaxKind, useAccessors: boolean): (p: symbol, isStatic: boolean, baseType: Type | undefined) => T | AccessorDeclaration | (T | AccessorDeclaration)[] {
         return function serializePropertySymbol(p: symbol, isStatic: boolean, baseType: Type | undefined) {
           const modifierFlags = getDeclarationModifierFlagsFromSymbol(p);
-          const isPrivate = !!(modifierFlags & ModifierFlags.Private);
+          const isPrivate = !!(modifierFlags & qt.ModifierFlags.Private);
           if (isStatic && p.flags & (SymbolFlags.Type | SymbolFlags.Namespace | SymbolFlags.Alias)) {
             // Only value-only-meaning symbols can be correctly encoded as class statics, type/namespace/alias meaning symbols
             // need to be merged namespace members
@@ -6155,7 +6155,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           if (p.flags & SymbolFlags.Prototype || (baseType && getPropertyOfType(baseType, p.escapedName) && isReadonlySymbol(getPropertyOfType(baseType, p.escapedName)!) === isReadonlySymbol(p) && (p.flags & SymbolFlags.Optional) === (getPropertyOfType(baseType, p.escapedName)!.flags & SymbolFlags.Optional) && isTypeIdenticalTo(getTypeOfSymbol(p), getTypeOfPropertyOfType(baseType, p.escapedName)!))) {
             return [];
           }
-          const flag = (modifierFlags & ~ModifierFlags.Async) | (isStatic ? ModifierFlags.Static : 0);
+          const flag = (modifierFlags & ~ModifierFlags.Async) | (isStatic ? qt.ModifierFlags.Static : 0);
           const name = getPropertyNameNodeForSymbol(p, context);
           const firstPropertyLikeDecl = find(p.declarations, or(isPropertyDeclaration, isAccessor, isVariableDeclaration, isPropertySignature, isBinaryExpression, isPropertyAccessExpression));
           if (p.flags & SymbolFlags.Accessor && useAccessors) {
@@ -6164,7 +6164,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               result.push(setTextRange(createSetAccessor(/*decorators*/ undefined, createModifiersFromModifierFlags(flag), name, [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'arg', /*questionToken*/ undefined, isPrivate ? undefined : serializeTypeForDeclaration(context, getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled))], /*body*/ undefined), find(p.declarations, isSetAccessor) || firstPropertyLikeDecl));
             }
             if (p.flags & SymbolFlags.GetAccessor) {
-              const isPrivate = modifierFlags & ModifierFlags.Private;
+              const isPrivate = modifierFlags & qt.ModifierFlags.Private;
               result.push(setTextRange(createGetAccessor(/*decorators*/ undefined, createModifiersFromModifierFlags(flag), name, [], isPrivate ? undefined : serializeTypeForDeclaration(context, getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled), /*body*/ undefined), find(p.declarations, isGetAccessor) || firstPropertyLikeDecl));
             }
             return result;
@@ -6175,7 +6175,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             return setTextRange(
               createProperty(
                 /*decorators*/ undefined,
-                createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+                createModifiersFromModifierFlags((isReadonlySymbol(p) ? qt.ModifierFlags.Readonly : 0) | flag),
                 name,
                 p.flags & SymbolFlags.Optional ? createToken(SyntaxKind.QuestionToken) : undefined,
                 isPrivate ? undefined : serializeTypeForDeclaration(context, getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
@@ -6189,8 +6189,8 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
             const type = getTypeOfSymbol(p);
             const signatures = getSignaturesOfType(type, SignatureKind.Call);
-            if (flag & ModifierFlags.Private) {
-              return setTextRange(createProperty(/*decorators*/ undefined, createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag), name, p.flags & SymbolFlags.Optional ? createToken(SyntaxKind.QuestionToken) : undefined, /*type*/ undefined, /*initializer*/ undefined), find(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]);
+            if (flag & qt.ModifierFlags.Private) {
+              return setTextRange(createProperty(/*decorators*/ undefined, createModifiersFromModifierFlags((isReadonlySymbol(p) ? qt.ModifierFlags.Readonly : 0) | flag), name, p.flags & SymbolFlags.Optional ? createToken(SyntaxKind.QuestionToken) : undefined, /*type*/ undefined, /*initializer*/ undefined), find(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]);
             }
 
             const results = [];
@@ -6242,10 +6242,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               }
             }
           }
-          let privateProtected: ModifierFlags = 0;
+          let privateProtected: qt.ModifierFlags = 0;
           for (const s of signatures) {
             if (s.declaration) {
-              privateProtected |= getSelectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
+              privateProtected |= getSelectedEffectiveModifierFlags(s.declaration, qt.ModifierFlags.Private | qt.ModifierFlags.Protected);
             }
           }
           if (privateProtected) {
@@ -6288,7 +6288,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         }
         const tempName = getUnusedName(`${rootName}_base`);
         const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(tempName, typeToTypeNodeHelper(staticType, context))], NodeFlags.Const));
-        addResult(statement, ModifierFlags.None);
+        addResult(statement, qt.ModifierFlags.None);
         return createExpressionWithTypeArguments(/*typeArgs*/ undefined, createIdentifier(tempName));
       }
 
@@ -6401,11 +6401,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return result || types;
   }
 
-  function visibilityToString(flags: ModifierFlags): string | undefined {
-    if (flags === ModifierFlags.Private) {
+  function visibilityToString(flags: qt.ModifierFlags): string | undefined {
+    if (flags === qt.ModifierFlags.Private) {
       return 'private';
     }
-    if (flags === ModifierFlags.Protected) {
+    if (flags === qt.ModifierFlags.Protected) {
       return 'protected';
     }
     return 'public';
@@ -6456,7 +6456,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (!isIdentifierText(name, compilerOptions.target) && !isNumericLiteralName(name)) {
           return `"${escapeString(name, qt.CharacterCodes.doubleQuote)}"`;
         }
-        if (isNumericLiteralName(name) && startsWith(name, '-')) {
+        if (isNumericLiteralName(name) && qc.startsWith(name, '-')) {
           return `[${name}]`;
         }
         return name;
@@ -6549,7 +6549,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         case qt.SyntaxKind.BindingElement:
           return isDeclarationVisible(node.parent.parent);
         case qt.SyntaxKind.VariableDeclaration:
-          if (isBindingPattern((node as VariableDeclaration).name) && !(node as VariableDeclaration).name.elements.length) {
+          if (isBindingPattern((node as qt.VariableDeclaration).name) && !(node as qt.VariableDeclaration).name.elements.length) {
             // If the binding pattern is empty, this variable declaration is not visible
             return false;
           }
@@ -6567,7 +6567,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           }
           const parent = getDeclarationContainer(node);
           // If the node is not exported or it is not ambient module element (except import declaration)
-          if (!(getCombinedModifierFlags(node as Declaration) & ModifierFlags.Export) && !(node.kind !== qt.SyntaxKind.ImportEqualsDeclaration && parent.kind !== qt.SyntaxKind.SourceFile && parent.flags & NodeFlags.Ambient)) {
+          if (!(getCombinedModifierFlags(node as Declaration) & qt.ModifierFlags.Export) && !(node.kind !== qt.SyntaxKind.ImportEqualsDeclaration && parent.kind !== qt.SyntaxKind.SourceFile && parent.flags & NodeFlags.Ambient)) {
             return isGlobalSourceFile(parent);
           }
           // Exported members/ambient module elements (exception import declaration) are visible if parent is visible
@@ -6579,7 +6579,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         case qt.SyntaxKind.SetAccessor:
         case qt.SyntaxKind.MethodDeclaration:
         case qt.SyntaxKind.MethodSignature:
-          if (hasEffectiveModifier(node, ModifierFlags.Private | ModifierFlags.Protected)) {
+          if (hasEffectiveModifier(node, qt.ModifierFlags.Private | qt.ModifierFlags.Protected)) {
             // Private/protected properties/methods are not visible
             return false;
           }
@@ -6786,7 +6786,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   // Return the type of a binding element parent. We check SymbolLinks first to see if a type has been
   // assigned by contextual typing.
-  function getTypeForBindingElementParent(node: BindingElementGrandparent) {
+  function getTypeForBindingElementParent(node: qt.BindingElementGrandparent) {
     const symbol = getSymbolOfNode(node);
     return (symbol && getSymbolLinks(symbol).type) || getTypeForVariableLikeDeclaration(node, /*includeOptionality*/ false);
   }
@@ -6813,7 +6813,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
     const members = createSymbolTable();
     for (const prop of getPropertiesOfType(source)) {
-      if (!isTypeAssignableTo(getLiteralTypeFromProperty(prop, TypeFlags.StringOrNumberLiteralOrUnique), omitKeyType) && !(getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) && isSpreadableProperty(prop)) {
+      if (!isTypeAssignableTo(getLiteralTypeFromProperty(prop, TypeFlags.StringOrNumberLiteralOrUnique), omitKeyType) && !(getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | qt.ModifierFlags.Protected)) && isSpreadableProperty(prop)) {
         members.set(prop.escapedName, getSpreadSymbol(prop, /*readonly*/ false));
       }
     }
@@ -6826,19 +6826,19 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   // Determine the control flow type associated with a destructuring declaration or assignment. The following
   // forms of destructuring are possible:
-  //   let { x } = obj;  // BindingElement
-  //   let [ x ] = obj;  // BindingElement
+  //   let { x } = obj;  // qt.BindingElement
+  //   let [ x ] = obj;  // qt.BindingElement
   //   { x } = obj;      // ShorthandPropertyAssignment
   //   { x: v } = obj;   // PropertyAssignment
   //   [ x ] = obj;      // Expression
   // We construct a synthetic element access expression corresponding to 'obj.x' such that the control
   // flow analyzer doesn't have to handle all the different syntactic forms.
-  function getFlowTypeOfDestructuring(node: BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression, declaredType: Type) {
+  function getFlowTypeOfDestructuring(node: qt.BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression, declaredType: Type) {
     const reference = getSyntheticElementAccess(node);
     return reference ? getFlowTypeOfReference(reference, declaredType) : declaredType;
   }
 
-  function getSyntheticElementAccess(node: BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression): ElementAccessExpression | undefined {
+  function getSyntheticElementAccess(node: qt.BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression): ElementAccessExpression | undefined {
     const parentAccess = getParentElementAccess(node);
     if (parentAccess && parentAccess.flowNode) {
       const propName = getDestructuringPropertyName(node);
@@ -6856,7 +6856,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function getParentElementAccess(node: BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression) {
+  function getParentElementAccess(node: qt.BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression) {
     const ancestor = node.parent.parent;
     switch (ancestor.kind) {
       case qt.SyntaxKind.BindingElement:
@@ -6871,7 +6871,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function getDestructuringPropertyName(node: BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression) {
+  function getDestructuringPropertyName(node: qt.BindingElement | PropertyAssignment | ShorthandPropertyAssignment | Expression) {
     const parent = node.parent;
     if (node.kind === qt.SyntaxKind.BindingElement && parent.kind === qt.SyntaxKind.ObjectBindingPattern) {
       return getLiteralPropertyNameText((<BindingElement>node).propertyName || (<BindingElement>node).name);
@@ -6888,7 +6888,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   /** Return the inferred type for a binding element */
-  function getTypeForBindingElement(declaration: BindingElement): Type | undefined {
+  function getTypeForBindingElement(declaration: qt.BindingElement): Type | undefined {
     const pattern = declaration.parent;
     let parentType = getTypeForBindingElementParent(pattern.parent);
     // If no type or an any type was inferred for parent, infer that for the binding element
@@ -6980,7 +6980,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   // Return the inferred type for a variable, parameter, or property declaration
-  function getTypeForVariableLikeDeclaration(declaration: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement, includeOptionality: boolean): Type | undefined {
+  function getTypeForVariableLikeDeclaration(declaration: ParameterDeclaration | PropertyDeclaration | PropertySignature | qt.VariableDeclaration | qt.BindingElement, includeOptionality: boolean): Type | undefined {
     // A variable declared in a for..in statement is of type string, or of type keyof T when the
     // right hand expression is of a type parameter type.
     if (isVariableDeclaration(declaration) && declaration.parent.parent.kind === qt.SyntaxKind.ForInStatement) {
@@ -7009,7 +7009,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return addOptionality(declaredType, isOptional);
     }
 
-    if ((noImplicitAny || isInJSFile(declaration)) && declaration.kind === qt.SyntaxKind.VariableDeclaration && !isBindingPattern(declaration.name) && !(getCombinedModifierFlags(declaration) & ModifierFlags.Export) && !(declaration.flags & NodeFlags.Ambient)) {
+    if ((noImplicitAny || isInJSFile(declaration)) && declaration.kind === qt.SyntaxKind.VariableDeclaration && !isBindingPattern(declaration.name) && !(getCombinedModifierFlags(declaration) & qt.ModifierFlags.Export) && !(declaration.flags & NodeFlags.Ambient)) {
       // If --noImplicitAny is on or the declaration is in a Javascript file,
       // use control flow tracked 'any' type for non-ambient, non-exported var or let variables with no
       // initializer or a 'null' or 'undefined' initializer.
@@ -7068,7 +7068,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       // We have a property declaration with no type annotation or initializer, in noImplicitAny mode or a .js file.
       // Use control flow analysis of this.xxx assignments in the constructor to determine the type of the property.
       const constructor = findConstructorDeclaration(declaration.parent);
-      const type = constructor ? getFlowTypeInConstructor(declaration.symbol, constructor) : getEffectiveModifierFlags(declaration) & ModifierFlags.Ambient ? getTypeOfPropertyInBaseClass(declaration.symbol) : undefined;
+      const type = constructor ? getFlowTypeInConstructor(declaration.symbol, constructor) : getEffectiveModifierFlags(declaration) & qt.ModifierFlags.Ambient ? getTypeOfPropertyInBaseClass(declaration.symbol) : undefined;
       return type && addOptionality(type, isOptional);
     }
 
@@ -7119,7 +7119,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function getFlowTypeInConstructor(symbol: symbol, constructor: ConstructorDeclaration) {
+  function getFlowTypeInConstructor(symbol: symbol, constructor: qt.ConstructorDeclaration) {
     const reference = createPropertyAccess(createThis(), unescapeLeadingUnderscores(symbol.escapedName));
     reference.expression.parent = reference;
     reference.parent = constructor;
@@ -7133,7 +7133,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function getFlowTypeOfProperty(reference: Node, prop: symbol | undefined) {
-    const initialType = (prop && (!isAutoTypedProperty(prop) || getEffectiveModifierFlags(prop.valueDeclaration) & ModifierFlags.Ambient) && getTypeOfPropertyInBaseClass(prop)) || undefinedType;
+    const initialType = (prop && (!isAutoTypedProperty(prop) || getEffectiveModifierFlags(prop.valueDeclaration) & qt.ModifierFlags.Ambient) && getTypeOfPropertyInBaseClass(prop)) || undefinedType;
     return getFlowTypeOfReference(reference, autoType, initialType);
   }
 
@@ -7351,7 +7351,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // Return the type implied by a binding pattern element. This is the type of the initializer of the element if
   // one is present. Otherwise, if the element is itself a binding pattern, it is the type implied by the binding
   // pattern. Otherwise, it is the type any.
-  function getTypeFromBindingElement(element: BindingElement, includePatternInType?: boolean, reportErrors?: boolean): Type {
+  function getTypeFromBindingElement(element: qt.BindingElement, includePatternInType?: boolean, reportErrors?: boolean): Type {
     if (element.initializer) {
       // The type implied by a binding pattern is independent of context, so we check the initializer with no
       // contextual type or, if the element itself is a binding pattern, with the type implied by that binding
@@ -7407,12 +7407,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   // Return the type implied by an array binding pattern
-  function getTypeFromArrayBindingPattern(pattern: BindingPattern, includePatternInType: boolean, reportErrors: boolean): Type {
+  function getTypeFromArrayBindingPattern(pattern: qt.BindingPattern, includePatternInType: boolean, reportErrors: boolean): Type {
     const elements = pattern.elements;
-    const lastElement = lastOrUndefined(elements);
+    const lastElement = qc.lastOrUndefined(elements);
     const hasRestElement = !!(lastElement && lastElement.kind === qt.SyntaxKind.BindingElement && lastElement.dotDotDotToken);
     if (elements.length === 0 || (elements.length === 1 && hasRestElement)) {
-      return languageVersion >= ScriptTarget.ES2015 ? createIterableType(anyType) : anyArrayType;
+      return languageVersion >= qt.ScriptTarget.ES2015 ? createIterableType(anyType) : anyArrayType;
     }
     const elementTypes = map(elements, (e) => (isOmittedExpression(e) ? anyType : getTypeFromBindingElement(e, includePatternInType, reportErrors)));
     const minLength = findLastIndex(elements, (e) => !isOmittedExpression(e) && !hasDefaultValue(e), elements.length - (hasRestElement ? 2 : 1)) + 1;
@@ -7432,7 +7432,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // used as the contextual type of an initializer associated with the binding pattern. Also, for a destructuring
   // parameter with no type annotation or initializer, the type implied by the binding pattern becomes the type of
   // the parameter.
-  function getTypeFromBindingPattern(pattern: BindingPattern, includePatternInType = false, reportErrors = false): Type {
+  function getTypeFromBindingPattern(pattern: qt.BindingPattern, includePatternInType = false, reportErrors = false): Type {
     return pattern.kind === qt.SyntaxKind.ObjectBindingPattern ? getTypeFromObjectBindingPattern(pattern, includePatternInType, reportErrors) : getTypeFromArrayBindingPattern(pattern, includePatternInType, reportErrors);
   }
 
@@ -7445,7 +7445,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // Here, the array literal [1, "one"] is contextually typed by the type [any, string], which is the implied type of the
   // binding pattern [x, s = ""]. Because the contextual type is a tuple type, the resulting type of [1, "one"] is the
   // tuple type [number, string]. Thus, the type inferred for 'x' is number and the type inferred for 's' is string.
-  function getWidenedTypeForVariableLikeDeclaration(declaration: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement, reportErrors?: boolean): Type {
+  function getWidenedTypeForVariableLikeDeclaration(declaration: ParameterDeclaration | PropertyDeclaration | PropertySignature | qt.VariableDeclaration | qt.BindingElement, reportErrors?: boolean): Type {
     return widenTypeForVariableLikeDeclaration(getTypeForVariableLikeDeclaration(declaration, /*includeOptionality*/ true), declaration, reportErrors);
   }
 
@@ -8231,7 +8231,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const links = getSymbolLinks(symbol);
     if (!links.declaredType) {
       // Note that we use the links object as the target here because the symbol object is used as the unique
-      // identity for resolution of the 'type' property in SymbolLinks.
+      // qc.identity for resolution of the 'type' property in SymbolLinks.
       if (!pushTypeResolution(symbol, TypeSystemPropertyName.DeclaredType)) {
         return errorType;
       }
@@ -8494,7 +8494,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isStaticPrivateIdentifierProperty(s: symbol): boolean {
-    return !!s.valueDeclaration && isPrivateIdentifierPropertyDeclaration(s.valueDeclaration) && hasSyntacticModifier(s.valueDeclaration, ModifierFlags.Static);
+    return !!s.valueDeclaration && isPrivateIdentifierPropertyDeclaration(s.valueDeclaration) && qu.hasSyntacticModifier(s.valueDeclaration, qt.ModifierFlags.Static);
   }
 
   function resolveDeclaredMembers(type: InterfaceType): InterfaceTypeWithDeclaredMembers {
@@ -8782,7 +8782,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         members = createSymbolTable(source.declaredProperties);
       }
       setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
-      const thisArgument = lastOrUndefined(typeArguments);
+      const thisArgument = qc.lastOrUndefined(typeArguments);
       for (const baseType of baseTypes) {
         const instantiatedBaseType = thisArgument ? getTypeWithThisArgument(instantiateType(baseType, mapper), thisArgument) : baseType;
         addInheritedMembers(members, getPropertiesOfType(instantiatedBaseType));
@@ -9840,11 +9840,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       : t.flags & TypeFlags.NumberLike
       ? globalNumberType
       : t.flags & TypeFlags.BigIntLike
-      ? getGlobalBigIntType(/*reportErrors*/ languageVersion >= ScriptTarget.ES2020)
+      ? getGlobalBigIntType(/*reportErrors*/ languageVersion >= qt.ScriptTarget.ES2020)
       : t.flags & TypeFlags.BooleanLike
       ? globalBooleanType
       : t.flags & TypeFlags.ESSymbolLike
-      ? getGlobalESSymbolType(/*reportErrors*/ languageVersion >= ScriptTarget.ES2015)
+      ? getGlobalESSymbolType(/*reportErrors*/ languageVersion >= qt.ScriptTarget.ES2015)
       : t.flags & TypeFlags.NonPrimitive
       ? emptyObjectType
       : t.flags & TypeFlags.Index
@@ -9894,7 +9894,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               propSet.set(id, prop);
             }
           }
-          checkFlags |= (isReadonlySymbol(prop) ? CheckFlags.Readonly : 0) | (!(modifiers & ModifierFlags.NonPublicAccessibilityModifier) ? CheckFlags.ContainsPublic : 0) | (modifiers & ModifierFlags.Protected ? CheckFlags.ContainsProtected : 0) | (modifiers & ModifierFlags.Private ? CheckFlags.ContainsPrivate : 0) | (modifiers & ModifierFlags.Static ? CheckFlags.ContainsStatic : 0);
+          checkFlags |= (isReadonlySymbol(prop) ? CheckFlags.Readonly : 0) | (!(modifiers & qt.ModifierFlags.NonPublicAccessibilityModifier) ? CheckFlags.ContainsPublic : 0) | (modifiers & qt.ModifierFlags.Protected ? CheckFlags.ContainsProtected : 0) | (modifiers & qt.ModifierFlags.Private ? CheckFlags.ContainsPrivate : 0) | (modifiers & qt.ModifierFlags.Static ? CheckFlags.ContainsStatic : 0);
           if (!isPrototypeProperty(prop)) {
             syntheticFlag = CheckFlags.SyntheticProperty;
           }
@@ -10340,7 +10340,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (isJSDocSignature(declaration) || !containsArgumentsReference(declaration)) {
       return false;
     }
-    const lastParam = lastOrUndefined(declaration.parameters);
+    const lastParam = qc.lastOrUndefined(declaration.parameters);
     const lastParamTags = lastParam ? getJSDocParameterTags(lastParam) : getJSDocTags(declaration).filter(isJSDocParameterTag);
     const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && isJSDocVariadicType(p.typeExpression.type) ? p.typeExpression.type : undefined));
 
@@ -10663,7 +10663,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function getIndexInfoOfSymbol(symbol: symbol, kind: IndexKind): IndexInfo | undefined {
     const declaration = getIndexDeclarationOfSymbol(symbol, kind);
     if (declaration) {
-      return createIndexInfo(declaration.type ? getTypeFromTypeNode(declaration.type) : anyType, hasEffectiveModifier(declaration, ModifierFlags.Readonly), declaration);
+      return createIndexInfo(declaration.type ? getTypeFromTypeNode(declaration.type) : anyType, hasEffectiveModifier(declaration, qt.ModifierFlags.Readonly), declaration);
     }
     return undefined;
   }
@@ -11318,7 +11318,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (node.kind === qt.SyntaxKind.ArrayType || (node.elements.length === 1 && isTupleRestElement(node.elements[0]))) {
       return readonly ? globalReadonlyArrayType : globalArrayType;
     }
-    const lastElement = lastOrUndefined(node.elements);
+    const lastElement = qc.lastOrUndefined(node.elements);
     const restElement = lastElement && isTupleRestElement(lastElement) ? lastElement : undefined;
     const minLength = findLastIndex(node.elements, (n) => !isTupleOptionalElement(n) && n !== restElement) + 1;
     const missingName = some(node.elements, (e) => e.kind !== qt.SyntaxKind.NamedTupleMember);
@@ -11493,11 +11493,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function containsType(types: readonly Type[], type: Type): boolean {
-    return binarySearch(types, type, getTypeId, compareValues) >= 0;
+    return qc.binarySearch(types, type, getTypeId, qc.compareValues) >= 0;
   }
 
   function insertType(types: Type[], type: Type): boolean {
-    const index = binarySearch(types, type, getTypeId, compareValues);
+    const index = qc.binarySearch(types, type, getTypeId, qc.compareValues);
     if (index < 0) {
       types.splice(~index, 0, type);
       return true;
@@ -11519,7 +11519,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (!(getObjectFlags(type) & ObjectFlags.ContainsWideningType)) includes |= TypeFlags.IncludesNonWideningType;
       } else {
         const len = typeSet.length;
-        const index = len && type.id > typeSet[len - 1].id ? ~len : binarySearch(typeSet, type, getTypeId, compareValues);
+        const index = len && type.id > typeSet[len - 1].id ? ~len : qc.binarySearch(typeSet, type, getTypeId, qc.compareValues);
         if (index < 0) {
           typeSet.splice(~index, 0, type);
         }
@@ -11600,7 +11600,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  // We sort and deduplicate the constituent types based on object identity. If the subtypeReduction
+  // We sort and deduplicate the constituent types based on object qc.identity. If the subtypeReduction
   // flag is specified we also reduce the constituent type set to only include types that aren't subtypes
   // of other types. Subtype reduction is expensive for large union types and is possible only when union
   // types are known not to circularly reference themselves (as is the case with union types created by
@@ -11954,12 +11954,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function getBigIntLiteralType(node: BigIntLiteral): LiteralType {
     return getLiteralType({
       negative: false,
-      base10Value: parsePseudoBigInt(node.text),
+      base10Value: qu.parsePseudoBigInt(node.text),
     });
   }
 
   function getLiteralTypeFromProperty(prop: symbol, include: TypeFlags) {
-    if (!(getDeclarationModifierFlagsFromSymbol(prop) & ModifierFlags.NonPublicAccessibilityModifier)) {
+    if (!(getDeclarationModifierFlagsFromSymbol(prop) & qt.ModifierFlags.NonPublicAccessibilityModifier)) {
       let type = getSymbolLinks(getLateBoundSymbol(prop)).nameType;
       if (!type && !isKnownSymbol(prop)) {
         if (prop.escapedName === InternalSymbolName.Default) {
@@ -12092,7 +12092,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       : undefined;
   }
 
-  function getPropertyTypeForIndexType(originalObjectType: Type, objectType: Type, indexType: Type, fullIndexType: Type, suppressNoImplicitAnyError: boolean, accessNode: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | BindingName | SyntheticExpression | undefined, accessFlags: AccessFlags) {
+  function getPropertyTypeForIndexType(originalObjectType: Type, objectType: Type, indexType: Type, fullIndexType: Type, suppressNoImplicitAnyError: boolean, accessNode: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | qt.BindingName | SyntheticExpression | undefined, accessFlags: AccessFlags) {
     const accessExpression = accessNode && accessNode.kind === qt.SyntaxKind.ElementAccessExpression ? accessNode : undefined;
     const propName = accessNode && isPrivateIdentifier(accessNode) ? undefined : getPropertyNameFromIndex(indexType, accessNode);
     if (propName !== undefined) {
@@ -12221,7 +12221,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function getIndexNodeForAccessExpression(accessNode: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | BindingName | SyntheticExpression) {
+  function getIndexNodeForAccessExpression(accessNode: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | qt.BindingName | SyntheticExpression) {
     return accessNode.kind === qt.SyntaxKind.ElementAccessExpression ? accessNode.argumentExpression : accessNode.kind === qt.SyntaxKind.IndexedAccessType ? accessNode.indexType : accessNode.kind === qt.SyntaxKind.ComputedPropertyName ? accessNode.expression : accessNode;
   }
 
@@ -12359,11 +12359,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return instantiateType(getTemplateTypeFromMappedType(objectType), templateMapper);
   }
 
-  function getIndexedAccessType(objectType: Type, indexType: Type, accessNode?: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | BindingName | SyntheticExpression): Type {
+  function getIndexedAccessType(objectType: Type, indexType: Type, accessNode?: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | qt.BindingName | SyntheticExpression): Type {
     return getIndexedAccessTypeOrUndefined(objectType, indexType, accessNode, AccessFlags.None) || (accessNode ? errorType : unknownType);
   }
 
-  function getIndexedAccessTypeOrUndefined(objectType: Type, indexType: Type, accessNode?: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | BindingName | SyntheticExpression, accessFlags = AccessFlags.None): Type | undefined {
+  function getIndexedAccessTypeOrUndefined(objectType: Type, indexType: Type, accessNode?: ElementAccessExpression | IndexedAccessTypeNode | PropertyName | qt.BindingName | SyntheticExpression, accessFlags = AccessFlags.None): Type | undefined {
     if (objectType === wildcardType || indexType === wildcardType) {
       return wildcardType;
     }
@@ -12728,7 +12728,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       // gets the type as if it had been spread, but where everything in the spread is made optional
       const members = createSymbolTable();
       for (const prop of getPropertiesOfType(type)) {
-        if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
+        if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | qt.ModifierFlags.Protected)) {
           // do nothing, skip privates
         } else if (isSpreadableProperty(prop)) {
           const isSetonlyAccessor = prop.flags & SymbolFlags.SetAccessor && !(prop.flags & SymbolFlags.GetAccessor);
@@ -12814,7 +12814,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     for (const rightProp of getPropertiesOfType(right)) {
-      if (getDeclarationModifierFlagsFromSymbol(rightProp) & (ModifierFlags.Private | ModifierFlags.Protected)) {
+      if (getDeclarationModifierFlagsFromSymbol(rightProp) & (ModifierFlags.Private | qt.ModifierFlags.Protected)) {
         skippedPrivateMembers.set(rightProp.escapedName, true);
       } else if (isSpreadableProperty(rightProp)) {
         members.set(rightProp.escapedName, getSpreadSymbol(rightProp, readonly));
@@ -12944,7 +12944,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const container = getThisContainer(node, /*includeArrowFunctions*/ false);
     const parent = container && container.parent;
     if (parent && (isClassLike(parent) || parent.kind === qt.SyntaxKind.InterfaceDeclaration)) {
-      if (!hasSyntacticModifier(container, ModifierFlags.Static) && (!isConstructorDeclaration(container) || isNodeDescendantOf(node, container.body))) {
+      if (!hasSyntacticModifier(container, qt.ModifierFlags.Static) && (!isConstructorDeclaration(container) || isNodeDescendantOf(node, container.body))) {
         return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent)).thisType!;
       }
     }
@@ -13643,11 +13643,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // TYPE CHECKING
 
   function isTypeIdenticalTo(source: Type, target: Type): boolean {
-    return isTypeRelatedTo(source, target, identityRelation);
+    return isTypeRelatedTo(source, target, qc.identityRelation);
   }
 
   function compareTypesIdentical(source: Type, target: Type): Ternary {
-    return isTypeRelatedTo(source, target, identityRelation) ? Ternary.True : Ternary.False;
+    return isTypeRelatedTo(source, target, qc.identityRelation) ? Ternary.True : Ternary.False;
   }
 
   function compareTypesAssignable(source: Type, target: Type): Ternary {
@@ -14363,7 +14363,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (source === target) {
       return true;
     }
-    if (relation !== identityRelation) {
+    if (relation !== qc.identityRelation) {
       if ((relation === comparableRelation && !(target.flags & TypeFlags.Never) && isSimpleTypeRelatedTo(target, source, relation)) || isSimpleTypeRelatedTo(source, target, relation)) {
         return true;
       }
@@ -14399,7 +14399,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    * Checks if 'source' is related to 'target' (e.g.: is a assignable to).
    * @param source The left-hand-side of the relation.
    * @param target The right-hand-side of the relation.
-   * @param relation The relation considered. One of 'identityRelation', 'subtypeRelation', 'assignableRelation', or 'comparableRelation'.
+   * @param relation The relation considered. One of 'qc.identityRelation', 'subtypeRelation', 'assignableRelation', or 'comparableRelation'.
    * Used as both to determine which checks are performed and as a cache of previously computed results.
    * @param errorNode The suggested node upon which all errors will be reported, if defined. This may or may not be the actual node used.
    * @param headMessage If the error chain should be prepended by a head message, then headMessage will be used.
@@ -14421,7 +14421,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     let incompatibleStack: [DiagnosticMessage, (string | number)?, (string | number)?, (string | number)?, (string | number)?][] = [];
     let inPropertyCheck = false;
 
-    Debug.assert(relation !== identityRelation || !errorNode, 'no error reporting in identity checking');
+    Debug.assert(relation !== qc.identityRelation || !errorNode, 'no error reporting in qc.identity checking');
 
     const result = isRelatedTo(source, target, /*reportErrors*/ !!errorNode, headMessage);
     if (incompatibleStack.length) {
@@ -14694,7 +14694,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
       if (source === target) return Ternary.True;
 
-      if (relation === identityRelation) {
+      if (relation === qc.identityRelation) {
         return isIdenticalTo(source, target);
       }
 
@@ -15057,7 +15057,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     function typeArgumentsRelatedTo(sources: readonly Type[] = emptyArray, targets: readonly Type[] = emptyArray, variances: readonly VarianceFlags[] = emptyArray, reportErrors: boolean, intersectionState: IntersectionState): Ternary {
-      if (sources.length !== targets.length && relation === identityRelation) {
+      if (sources.length !== targets.length && relation === qc.identityRelation) {
         return Ternary.False;
       }
       const length = sources.length <= targets.length ? sources.length : targets.length;
@@ -15077,7 +15077,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             // Even an `Unmeasurable` variance works out without a structural check if the source and target are _identical_.
             // We can't simply assume invariance, because `Unmeasurable` marks nonlinear relations, for example, a relation tained by
             // the `-?` modifier in a mapped type (where, no matter how the inputs are related, the outputs still might not be)
-            related = relation === identityRelation ? isRelatedTo(s, t, /*reportErrors*/ false) : compareTypesIdentical(s, t);
+            related = relation === qc.identityRelation ? isRelatedTo(s, t, /*reportErrors*/ false) : compareTypesIdentical(s, t);
           } else if (variance === VarianceFlags.Covariant) {
             related = isRelatedTo(s, t, reportErrors, /*headMessage*/ undefined, intersectionState);
           } else if (variance === VarianceFlags.Contravariant) {
@@ -15200,7 +15200,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         return propertiesRelatedTo(source, target, reportErrors, /*excludedProperties*/ undefined, IntersectionState.None);
       }
       const flags = source.flags & target.flags;
-      if (relation === identityRelation && !(flags & TypeFlags.Object)) {
+      if (relation === qc.identityRelation && !(flags & TypeFlags.Object)) {
         if (flags & TypeFlags.Index) {
           return isRelatedTo(source.type, target.type, /*reportErrors*/ false);
         }
@@ -15283,7 +15283,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       } else if (target.flags & TypeFlags.IndexedAccess) {
         // A type S is related to a type T[K] if S is related to C, where C is the base
         // constraint of T[K] for writing.
-        if (relation !== identityRelation) {
+        if (relation !== qc.identityRelation) {
           const objectType = target.objectType;
           const indexType = target.indexType;
           const baseObjectType = getBaseConstraintOfType(objectType) || objectType;
@@ -15420,7 +15420,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           return Ternary.False;
         }
         const sourceIsPrimitive = !!(source.flags & TypeFlags.Primitive);
-        if (relation !== identityRelation) {
+        if (relation !== qc.identityRelation) {
           source = getApparentType(source);
         } else if (isGenericMappedType(source)) {
           return Ternary.False;
@@ -15441,7 +15441,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             return varianceResult;
           }
         } else if (isReadonlyArrayType(target) ? isArrayType(source) || isTupleType(source) : isArrayType(target) && isTupleType(source) && !source.target.readonly) {
-          if (relation !== identityRelation) {
+          if (relation !== qc.identityRelation) {
             return isRelatedTo(getIndexTypeOfType(source, IndexKind.Number) || anyType, getIndexTypeOfType(target, IndexKind.Number) || anyType, reportErrors);
           } else {
             // By flags alone, we know that the `target` is a readonly array while the source is a normal array or tuple
@@ -15505,7 +15505,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           // If some type parameter was `Unmeasurable` or `Unreliable`, and we couldn't pass by assuming it was identical, then we
           // have to allow a structural fallback check
           // We elide the variance-based error elaborations, since those might not be too helpful, since we'll potentially
-          // be assuming identity of the type parameter.
+          // be assuming qc.identity of the type parameter.
           originalErrorInfo = undefined;
           resetErrorInfo(saveErrorInfo);
           return undefined;
@@ -15558,7 +15558,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // related to Y, where X' is an instantiation of X in which P is replaced with Q. Notice
     // that S and T are contra-variant whereas X and Y are co-variant.
     function mappedTypeRelatedTo(source: MappedType, target: MappedType, reportErrors: boolean): Ternary {
-      const modifiersRelated = relation === comparableRelation || (relation === identityRelation ? getMappedTypeModifiers(source) === getMappedTypeModifiers(target) : getCombinedMappedTypeOptionality(source) <= getCombinedMappedTypeOptionality(target));
+      const modifiersRelated = relation === comparableRelation || (relation === qc.identityRelation ? getMappedTypeModifiers(source) === getMappedTypeModifiers(target) : getCombinedMappedTypeOptionality(source) <= getCombinedMappedTypeOptionality(target));
       if (modifiersRelated) {
         let result: Ternary;
         const targetConstraint = getConstraintTypeFromMappedType(target);
@@ -15721,25 +15721,25 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     function propertyRelatedTo(source: Type, target: Type, sourceProp: symbol, targetProp: symbol, getTypeOfSourceProperty: (sym: symbol) => Type, reportErrors: boolean, intersectionState: IntersectionState, skipOptional: boolean): Ternary {
       const sourcePropFlags = getDeclarationModifierFlagsFromSymbol(sourceProp);
       const targetPropFlags = getDeclarationModifierFlagsFromSymbol(targetProp);
-      if (sourcePropFlags & ModifierFlags.Private || targetPropFlags & ModifierFlags.Private) {
+      if (sourcePropFlags & qt.ModifierFlags.Private || targetPropFlags & qt.ModifierFlags.Private) {
         if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
           if (reportErrors) {
-            if (sourcePropFlags & ModifierFlags.Private && targetPropFlags & ModifierFlags.Private) {
+            if (sourcePropFlags & qt.ModifierFlags.Private && targetPropFlags & qt.ModifierFlags.Private) {
               reportError(Diagnostics.Types_have_separate_declarations_of_a_private_property_0, symbolToString(targetProp));
             } else {
-              reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp), typeToString(sourcePropFlags & ModifierFlags.Private ? source : target), typeToString(sourcePropFlags & ModifierFlags.Private ? target : source));
+              reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp), typeToString(sourcePropFlags & qt.ModifierFlags.Private ? source : target), typeToString(sourcePropFlags & qt.ModifierFlags.Private ? target : source));
             }
           }
           return Ternary.False;
         }
-      } else if (targetPropFlags & ModifierFlags.Protected) {
+      } else if (targetPropFlags & qt.ModifierFlags.Protected) {
         if (!isValidOverrideOf(sourceProp, targetProp)) {
           if (reportErrors) {
             reportError(Diagnostics.Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2, symbolToString(targetProp), typeToString(getDeclaringClass(sourceProp) || source), typeToString(getDeclaringClass(targetProp) || target));
           }
           return Ternary.False;
         }
-      } else if (sourcePropFlags & ModifierFlags.Protected) {
+      } else if (sourcePropFlags & qt.ModifierFlags.Protected) {
         if (reportErrors) {
           reportError(Diagnostics.Property_0_is_protected_in_type_1_but_public_in_type_2, symbolToString(targetProp), typeToString(source), typeToString(target));
         }
@@ -15811,7 +15811,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     function propertiesRelatedTo(source: Type, target: Type, reportErrors: boolean, excludedProperties: qt.UnderscoreEscapedMap<true> | undefined, intersectionState: IntersectionState): Ternary {
-      if (relation === identityRelation) {
+      if (relation === qc.identityRelation) {
         return propertiesIdenticalTo(source, target, excludedProperties);
       }
       const requireOptionalProperties = (relation === subtypeRelation || relation === strictSubtypeRelation) && !isObjectLiteralType(source) && !isEmptyArrayLiteralType(source) && !isTupleType(source);
@@ -15909,7 +15909,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     function signaturesRelatedTo(source: Type, target: Type, kind: SignatureKind, reportErrors: boolean): Ternary {
-      if (relation === identityRelation) {
+      if (relation === qc.identityRelation) {
         return signaturesIdenticalTo(source, target, kind);
       }
       if (target === anyFunctionType || source === anyFunctionType) {
@@ -16058,7 +16058,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     function indexTypesRelatedTo(source: Type, target: Type, kind: IndexKind, sourceIsPrimitive: boolean, reportErrors: boolean, intersectionState: IntersectionState): Ternary {
-      if (relation === identityRelation) {
+      if (relation === qc.identityRelation) {
         return indexTypesIdenticalTo(source, target, kind);
       }
       const targetType = getIndexTypeOfType(target, kind);
@@ -16109,21 +16109,21 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         return true;
       }
 
-      const sourceAccessibility = getSelectedEffectiveModifierFlags(sourceSignature.declaration, ModifierFlags.NonPublicAccessibilityModifier);
-      const targetAccessibility = getSelectedEffectiveModifierFlags(targetSignature.declaration, ModifierFlags.NonPublicAccessibilityModifier);
+      const sourceAccessibility = getSelectedEffectiveModifierFlags(sourceSignature.declaration, qt.ModifierFlags.NonPublicAccessibilityModifier);
+      const targetAccessibility = getSelectedEffectiveModifierFlags(targetSignature.declaration, qt.ModifierFlags.NonPublicAccessibilityModifier);
 
       // A public, protected and private signature is assignable to a private signature.
-      if (targetAccessibility === ModifierFlags.Private) {
+      if (targetAccessibility === qt.ModifierFlags.Private) {
         return true;
       }
 
       // A public and protected signature is assignable to a protected signature.
-      if (targetAccessibility === ModifierFlags.Protected && sourceAccessibility !== ModifierFlags.Private) {
+      if (targetAccessibility === qt.ModifierFlags.Protected && sourceAccessibility !== qt.ModifierFlags.Private) {
         return true;
       }
 
       // Only a public signature is assignable to public signature.
-      if (targetAccessibility !== ModifierFlags.Protected && !sourceAccessibility) {
+      if (targetAccessibility !== qt.ModifierFlags.Protected && !sourceAccessibility) {
         return true;
       }
 
@@ -16314,7 +16314,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    * For other cases, the types ids are used.
    */
   function getRelationKey(source: Type, target: Type, intersectionState: IntersectionState, relation: Map<RelationComparisonResult>) {
-    if (relation === identityRelation && source.id > target.id) {
+    if (relation === qc.identityRelation && source.id > target.id) {
       const temp = source;
       source = target;
       target = temp;
@@ -16366,13 +16366,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   // Return true if source property is a valid override of protected parts of target property.
   function isValidOverrideOf(sourceProp: symbol, targetProp: symbol) {
-    return !forEachProperty(targetProp, (tp) => (getDeclarationModifierFlagsFromSymbol(tp) & ModifierFlags.Protected ? !isPropertyInClassDerivedFrom(sourceProp, getDeclaringClass(tp)) : false));
+    return !forEachProperty(targetProp, (tp) => (getDeclarationModifierFlagsFromSymbol(tp) & qt.ModifierFlags.Protected ? !isPropertyInClassDerivedFrom(sourceProp, getDeclaringClass(tp)) : false));
   }
 
   // Return true if the given class derives from each of the declaring classes of the protected
   // constituents of the given property.
   function isClassDerivedFromDeclaringClasses(checkClass: Type, prop: symbol) {
-    return forEachProperty(prop, (p) => (getDeclarationModifierFlagsFromSymbol(p) & ModifierFlags.Protected ? !hasBaseType(checkClass, getDeclaringClass(p)) : false)) ? undefined : checkClass;
+    return forEachProperty(prop, (p) => (getDeclarationModifierFlagsFromSymbol(p) & qt.ModifierFlags.Protected ? !hasBaseType(checkClass, getDeclaringClass(p)) : false)) ? undefined : checkClass;
   }
 
   // Return true if the given type is deeply nested. We consider this to be the case when structural type comparisons
@@ -16434,8 +16434,8 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (sourceProp === targetProp) {
       return Ternary.True;
     }
-    const sourcePropAccessibility = getDeclarationModifierFlagsFromSymbol(sourceProp) & ModifierFlags.NonPublicAccessibilityModifier;
-    const targetPropAccessibility = getDeclarationModifierFlagsFromSymbol(targetProp) & ModifierFlags.NonPublicAccessibilityModifier;
+    const sourcePropAccessibility = getDeclarationModifierFlagsFromSymbol(sourceProp) & qt.ModifierFlags.NonPublicAccessibilityModifier;
+    const targetPropAccessibility = getDeclarationModifierFlagsFromSymbol(targetProp) & qt.ModifierFlags.NonPublicAccessibilityModifier;
     if (sourcePropAccessibility !== targetPropAccessibility) {
       return Ternary.False;
     }
@@ -18393,9 +18393,9 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return errorType;
   }
 
-  function getInitialTypeOfBindingElement(node: BindingElement): Type {
+  function getInitialTypeOfBindingElement(node: qt.BindingElement): Type {
     const pattern = node.parent;
-    const parentType = getInitialType(<VariableDeclaration | BindingElement>pattern.parent);
+    const parentType = getInitialType(<VariableDeclaration | qt.BindingElement>pattern.parent);
     const type = pattern.kind === qt.SyntaxKind.ObjectBindingPattern ? getTypeOfDestructuredProperty(parentType, node.propertyName || node.name) : !node.dotDotDotToken ? getTypeOfDestructuredArrayElement(parentType, pattern.elements.indexOf(node)) : getTypeOfDestructuredSpreadExpression(parentType);
     return getTypeWithDefault(type, node.initializer!);
   }
@@ -18408,7 +18408,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return links.resolvedType || getTypeOfExpression(node);
   }
 
-  function getInitialTypeOfVariableDeclaration(node: VariableDeclaration) {
+  function getInitialTypeOfVariableDeclaration(node: qt.VariableDeclaration) {
     if (node.initializer) {
       return getTypeOfInitializer(node.initializer);
     }
@@ -18421,11 +18421,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return errorType;
   }
 
-  function getInitialType(node: VariableDeclaration | BindingElement) {
+  function getInitialType(node: qt.VariableDeclaration | qt.BindingElement) {
     return node.kind === qt.SyntaxKind.VariableDeclaration ? getInitialTypeOfVariableDeclaration(node) : getInitialTypeOfBindingElement(node);
   }
 
-  function isEmptyArrayAssignment(node: VariableDeclaration | BindingElement | Expression) {
+  function isEmptyArrayAssignment(node: qt.VariableDeclaration | qt.BindingElement | Expression) {
     return (node.kind === qt.SyntaxKind.VariableDeclaration && (<VariableDeclaration>node).initializer && isEmptyArrayLiteral((<VariableDeclaration>node).initializer!)) || (node.kind !== qt.SyntaxKind.BindingElement && node.parent.kind === qt.SyntaxKind.BinaryExpression && isEmptyArrayLiteral((<BinaryExpression>node.parent).right));
   }
 
@@ -18652,7 +18652,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isDeclarationWithExplicitTypeAnnotation(declaration: Declaration) {
-    return (declaration.kind === qt.SyntaxKind.VariableDeclaration || declaration.kind === qt.SyntaxKind.Parameter || declaration.kind === qt.SyntaxKind.PropertyDeclaration || declaration.kind === qt.SyntaxKind.PropertySignature) && !!getEffectiveTypeAnnotationNode(declaration as VariableDeclaration | ParameterDeclaration | PropertyDeclaration | PropertySignature);
+    return (declaration.kind === qt.SyntaxKind.VariableDeclaration || declaration.kind === qt.SyntaxKind.Parameter || declaration.kind === qt.SyntaxKind.PropertyDeclaration || declaration.kind === qt.SyntaxKind.PropertySignature) && !!getEffectiveTypeAnnotationNode(declaration as qt.VariableDeclaration | ParameterDeclaration | PropertyDeclaration | PropertySignature);
   }
 
   function getExplicitTypeOfSymbol(symbol: symbol, diagnostic?: Diagnostic) {
@@ -18975,7 +18975,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     function getInitialOrAssignedType(flow: FlowAssignment) {
       const node = flow.node;
-      return getConstraintForLocation(node.kind === qt.SyntaxKind.VariableDeclaration || node.kind === qt.SyntaxKind.BindingElement ? getInitialType(<VariableDeclaration | BindingElement>node) : getAssignedType(node), reference);
+      return getConstraintForLocation(node.kind === qt.SyntaxKind.VariableDeclaration || node.kind === qt.SyntaxKind.BindingElement ? getInitialType(<VariableDeclaration | qt.BindingElement>node) : getAssignedType(node), reference);
     }
 
     function getTypeAtFlowAssignment(flow: FlowAssignment) {
@@ -19928,10 +19928,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // can explicitly bound arguments objects
     if (symbol === argumentsSymbol) {
       const container = getContainingFunction(node)!;
-      if (languageVersion < ScriptTarget.ES2015) {
+      if (languageVersion < qt.ScriptTarget.ES2015) {
         if (container.kind === qt.SyntaxKind.ArrowFunction) {
           error(node, Diagnostics.The_arguments_object_cannot_be_referenced_in_an_arrow_function_in_ES3_and_ES5_Consider_using_a_standard_function_expression);
-        } else if (hasSyntacticModifier(container, ModifierFlags.Async)) {
+        } else if (hasSyntacticModifier(container, qt.ModifierFlags.Async)) {
           error(node, Diagnostics.The_arguments_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_using_a_standard_function_or_method);
         }
       }
@@ -19971,7 +19971,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         let container = getThisContainer(node, /*includeArrowFunctions*/ false);
         while (container.kind !== qt.SyntaxKind.SourceFile) {
           if (container.parent === declaration) {
-            if (container.kind === qt.SyntaxKind.PropertyDeclaration && hasSyntacticModifier(container, ModifierFlags.Static)) {
+            if (container.kind === qt.SyntaxKind.PropertyDeclaration && qu.hasSyntacticModifier(container, qt.ModifierFlags.Static)) {
               getNodeLinks(declaration).flags |= NodeCheckFlags.ClassWithConstructorReference;
               getNodeLinks(node).flags |= NodeCheckFlags.ConstructorReferenceInClass;
             }
@@ -20080,7 +20080,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkNestedBlockScopedBinding(node: Identifier, symbol: symbol): void {
-    if (languageVersion >= ScriptTarget.ES2015 || (symbol.flags & (SymbolFlags.BlockScopedVariable | SymbolFlags.Class)) === 0 || isSourceFile(symbol.valueDeclaration) || symbol.valueDeclaration.parent.kind === qt.SyntaxKind.CatchClause) {
+    if (languageVersion >= qt.ScriptTarget.ES2015 || (symbol.flags & (SymbolFlags.BlockScopedVariable | SymbolFlags.Class)) === 0 || isSourceFile(symbol.valueDeclaration) || symbol.valueDeclaration.parent.kind === qt.SyntaxKind.CatchClause) {
       return;
     }
 
@@ -20146,7 +20146,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function isBindingCapturedByNode(node: qt.Node, decl: VariableDeclaration | BindingElement) {
+  function isBindingCapturedByNode(node: qt.Node, decl: qt.VariableDeclaration | qt.BindingElement) {
     const links = getNodeLinks(node);
     return !!links && contains(links.capturedBlockScopeBindings, getSymbolOfNode(decl));
   }
@@ -20249,7 +20249,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         break;
       case qt.SyntaxKind.PropertyDeclaration:
       case qt.SyntaxKind.PropertySignature:
-        if (hasSyntacticModifier(container, ModifierFlags.Static) && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields)) {
+        if (hasSyntacticModifier(container, qt.ModifierFlags.Static) && !(compilerOptions.target === qt.ScriptTarget.ESNext && compilerOptions.useDefineForClassFields)) {
           error(node, Diagnostics.this_cannot_be_referenced_in_a_static_property_initializer);
           // do not return here so in case if lexical this is captured - it will be reflected in flags on NodeLinks
         }
@@ -20260,7 +20260,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     // When targeting es6, mark that we'll need to capture `this` in its lexically bound scope.
-    if (capturedByArrowFunction && languageVersion < ScriptTarget.ES2015) {
+    if (capturedByArrowFunction && languageVersion < qt.ScriptTarget.ES2015) {
       captureLexicalThis(node, container);
     }
 
@@ -20315,7 +20315,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     if (isClassLike(container.parent)) {
       const symbol = getSymbolOfNode(container.parent);
-      const type = hasSyntacticModifier(container, ModifierFlags.Static) ? getTypeOfSymbol(symbol) : getDeclaredTypeOfSymbol(symbol).thisType!;
+      const type = qu.hasSyntacticModifier(container, qt.ModifierFlags.Static) ? getTypeOfSymbol(symbol) : getDeclaredTypeOfSymbol(symbol).thisType!;
       return getFlowTypeOfReference(node, type);
     }
 
@@ -20349,7 +20349,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
     if (isClassLike(container.parent)) {
       const symbol = getSymbolOfNode(container.parent);
-      return hasSyntacticModifier(container, ModifierFlags.Static) ? getTypeOfSymbol(symbol) : getDeclaredTypeOfSymbol(symbol).thisType!;
+      return qu.hasSyntacticModifier(container, qt.ModifierFlags.Static) ? getTypeOfSymbol(symbol) : getDeclaredTypeOfSymbol(symbol).thisType!;
     }
   }
 
@@ -20419,7 +20419,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (!isCallExpression) {
       while (container && container.kind === qt.SyntaxKind.ArrowFunction) {
         container = getSuperContainer(container, /*stopOnFunctions*/ true);
-        needToCaptureLexicalThis = languageVersion < ScriptTarget.ES2015;
+        needToCaptureLexicalThis = languageVersion < qt.ScriptTarget.ES2015;
       }
     }
 
@@ -20449,7 +20449,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       checkThisBeforeSuper(node, container, Diagnostics.super_must_be_called_before_accessing_a_property_of_super_in_the_constructor_of_a_derived_class);
     }
 
-    if (hasSyntacticModifier(container, ModifierFlags.Static) || isCallExpression) {
+    if (hasSyntacticModifier(container, qt.ModifierFlags.Static) || isCallExpression) {
       nodeCheckFlag = NodeCheckFlags.SuperStatic;
     } else {
       nodeCheckFlag = NodeCheckFlags.SuperInstance;
@@ -20516,7 +20516,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // as a call expression cannot be used as the target of a destructuring assignment while a property access can.
     //
     // For element access expressions (`super[x]`), we emit a generic helper that forwards the element access in both situations.
-    if (container.kind === qt.SyntaxKind.MethodDeclaration && hasSyntacticModifier(container, ModifierFlags.Async)) {
+    if (container.kind === qt.SyntaxKind.MethodDeclaration && qu.hasSyntacticModifier(container, qt.ModifierFlags.Async)) {
       if (isSuperProperty(node.parent) && isAssignmentTarget(node.parent)) {
         getNodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuperBinding;
       } else {
@@ -20532,7 +20532,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     if (container.parent.kind === qt.SyntaxKind.ObjectLiteralExpression) {
-      if (languageVersion < ScriptTarget.ES2015) {
+      if (languageVersion < qt.ScriptTarget.ES2015) {
         error(node, Diagnostics.super_is_only_allowed_in_members_of_object_literal_expressions_when_option_target_is_ES2015_or_higher);
         return errorType;
       } else {
@@ -20579,7 +20579,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
         // topmost container must be something that is directly nested in the class declaration\object literal expression
         if (isClassLike(container.parent) || container.parent.kind === qt.SyntaxKind.ObjectLiteralExpression) {
-          if (hasSyntacticModifier(container, ModifierFlags.Static)) {
+          if (hasSyntacticModifier(container, qt.ModifierFlags.Static)) {
             return container.kind === qt.SyntaxKind.MethodDeclaration || container.kind === qt.SyntaxKind.MethodSignature || container.kind === qt.SyntaxKind.GetAccessor || container.kind === qt.SyntaxKind.SetAccessor;
           } else {
             return container.kind === qt.SyntaxKind.MethodDeclaration || container.kind === qt.SyntaxKind.MethodSignature || container.kind === qt.SyntaxKind.GetAccessor || container.kind === qt.SyntaxKind.SetAccessor || container.kind === qt.SyntaxKind.PropertyDeclaration || container.kind === qt.SyntaxKind.PropertySignature || container.kind === qt.SyntaxKind.Constructor;
@@ -20689,7 +20689,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const contextualSignature = getContextualSignature(func);
     if (contextualSignature) {
       const index = func.parameters.indexOf(parameter) - (getThisParameter(func) ? 1 : 0);
-      return parameter.dotDotDotToken && lastOrUndefined(func.parameters) === parameter ? getRestTypeAtPosition(contextualSignature, index) : tryGetTypeAtPosition(contextualSignature, index);
+      return parameter.dotDotDotToken && qc.lastOrUndefined(func.parameters) === parameter ? getRestTypeAtPosition(contextualSignature, index) : tryGetTypeAtPosition(contextualSignature, index);
     }
   }
 
@@ -20707,7 +20707,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function getContextualTypeForBindingElement(declaration: BindingElement): Type | undefined {
+  function getContextualTypeForBindingElement(declaration: qt.BindingElement): Type | undefined {
     const parent = declaration.parent.parent;
     const name = declaration.propertyName || declaration.name;
     const parentType = getContextualTypeForVariableLikeDeclaration(parent) || (parent.kind !== qt.SyntaxKind.BindingElement && parent.initializer && checkDeclarationInitializer(parent));
@@ -21489,7 +21489,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkSpreadExpression(node: SpreadElement, checkMode?: CheckMode): Type {
-    if (languageVersion < ScriptTarget.ES2015) {
+    if (languageVersion < qt.ScriptTarget.ES2015) {
       checkExternalEmitHelpers(node, compilerOptions.downlevelIteration ? ExternalEmitHelpers.SpreadIncludes : ExternalEmitHelpers.SpreadArrays);
     }
 
@@ -21497,7 +21497,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return checkIteratedTypeOrElementType(IterationUse.Spread, arrayOrIterableType, undefinedType, node.expression);
   }
 
-  function hasDefaultValue(node: BindingElement | Expression): boolean {
+  function hasDefaultValue(node: qt.BindingElement | Expression): boolean {
     return (node.kind === qt.SyntaxKind.BindingElement && !!(<BindingElement>node).initializer) || (node.kind === qt.SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === qt.SyntaxKind.EqualsToken);
   }
 
@@ -21758,7 +21758,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         member = prop;
         allPropertiesTable?.set(prop.escapedName, prop);
       } else if (memberDecl.kind === qt.SyntaxKind.SpreadAssignment) {
-        if (languageVersion < ScriptTarget.ES2015) {
+        if (languageVersion < qt.ScriptTarget.ES2015) {
           checkExternalEmitHelpers(memberDecl, ExternalEmitHelpers.Assign);
         }
         if (propertiesArray.length > 0) {
@@ -21910,7 +21910,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    */
   function isUnhyphenatedJsxName(name: string | qt.__String) {
     // - is the only character supported in JSX attribute names that isn't valid in JavaScript identifiers
-    return !stringContains(name as string, '-');
+    return !qc.stringContains(name as string, '-');
   }
 
   /**
@@ -22437,7 +22437,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    * @param type The type of the object whose property is being accessed. (Not the type of the property.)
    * @param prop The symbol for the property being accessed.
    */
-  function checkPropertyAccessibility(node: PropertyAccessExpression | QualifiedName | PropertyAccessExpression | VariableDeclaration | ParameterDeclaration | ImportTypeNode | PropertyAssignment | ShorthandPropertyAssignment | BindingElement, isSuper: boolean, type: Type, prop: symbol): boolean {
+  function checkPropertyAccessibility(node: PropertyAccessExpression | QualifiedName | PropertyAccessExpression | qt.VariableDeclaration | ParameterDeclaration | ImportTypeNode | PropertyAssignment | ShorthandPropertyAssignment | qt.BindingElement, isSuper: boolean, type: Type, prop: symbol): boolean {
     const flags = getDeclarationModifierFlagsFromSymbol(prop);
     const errorNode = node.kind === qt.SyntaxKind.QualifiedName ? node.right : node.kind === qt.SyntaxKind.ImportType ? node : node.name;
 
@@ -22449,13 +22449,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       // - In a static member function or static member accessor
       //   where this references the constructor function object of a derived class,
       //   a super property access is permitted and must specify a public static member function of the base class.
-      if (languageVersion < ScriptTarget.ES2015) {
+      if (languageVersion < qt.ScriptTarget.ES2015) {
         if (symbolHasNonMethodDeclaration(prop)) {
           error(errorNode, Diagnostics.Only_public_and_protected_methods_of_the_base_class_are_accessible_via_the_super_keyword);
           return false;
         }
       }
-      if (flags & ModifierFlags.Abstract) {
+      if (flags & qt.ModifierFlags.Abstract) {
         // A method cannot be accessed in a super property access if the method is abstract.
         // This error could mask a private property access error. But, a member
         // cannot simultaneously be private and abstract, so this will trigger an
@@ -22466,7 +22466,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     // Referencing abstract properties within their own constructors is not allowed
-    if (flags & ModifierFlags.Abstract && isThisProperty(node) && symbolHasNonMethodDeclaration(prop)) {
+    if (flags & qt.ModifierFlags.Abstract && isThisProperty(node) && symbolHasNonMethodDeclaration(prop)) {
       const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(getParentOfSymbol(prop)!);
       if (declaringClassDeclaration && isNodeUsedDuringClassInitialization(node)) {
         error(errorNode, Diagnostics.Abstract_property_0_in_class_1_cannot_be_accessed_in_the_constructor, symbolToString(prop), getTextOfIdentifierOrLiteral(declaringClassDeclaration.name!)); // TODO: GH#18217
@@ -22483,14 +22483,14 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     // Public properties are otherwise accessible.
-    if (!(flags & ModifierFlags.NonPublicAccessibilityModifier)) {
+    if (!(flags & qt.ModifierFlags.NonPublicAccessibilityModifier)) {
       return true;
     }
 
     // Property is known to be private or protected at this point
 
     // Private property is accessible if the property is within the declaring class
-    if (flags & ModifierFlags.Private) {
+    if (flags & qt.ModifierFlags.Private) {
       const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(getParentOfSymbol(prop)!)!;
       if (!isNodeWithinClass(node, declaringClassDeclaration)) {
         error(errorNode, Diagnostics.Property_0_is_private_and_only_accessible_within_class_1, symbolToString(prop), typeToString(getDeclaringClass(prop)!));
@@ -22517,7 +22517,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       // allow PropertyAccessibility if context is in function with this parameter
       // static member access is disallow
       let thisParameter: ParameterDeclaration | undefined;
-      if (flags & ModifierFlags.Static || !(thisParameter = getThisParameterFromNodeContext(node)) || !thisParameter.type) {
+      if (flags & qt.ModifierFlags.Static || !(thisParameter = getThisParameterFromNodeContext(node)) || !thisParameter.type) {
         error(errorNode, Diagnostics.Property_0_is_protected_and_only_accessible_within_class_1_and_its_subclasses, symbolToString(prop), typeToString(getDeclaringClass(prop) || type));
         return false;
       }
@@ -22526,7 +22526,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       enclosingClass = ((thisType.flags & TypeFlags.TypeParameter ? getConstraintOfTypeParameter(thisType) : thisType) as TypeReference).target;
     }
     // No further restrictions for static properties
-    if (flags & ModifierFlags.Static) {
+    if (flags & qt.ModifierFlags.Static) {
       return true;
     }
     if (type.flags & TypeFlags.TypeParameter) {
@@ -22900,7 +22900,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function typeHasStaticProperty(propName: qt.__String, containingType: Type): boolean {
     const prop = containingType.symbol && getPropertyOfType(getTypeOfSymbol(containingType.symbol), propName);
-    return prop !== undefined && prop.valueDeclaration && hasSyntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
+    return prop !== undefined && prop.valueDeclaration && qu.hasSyntacticModifier(prop.valueDeclaration, qt.ModifierFlags.Static);
   }
 
   function getSuggestedSymbolForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): symbol | undefined {
@@ -22984,7 +22984,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return getSpellingSuggestion(name, symbols, getCandidateName);
     function getCandidateName(candidate: symbol) {
       const candidateName = symbolName(candidate);
-      if (startsWith(candidateName, '"')) {
+      if (qc.startsWith(candidateName, '"')) {
         return undefined;
       }
 
@@ -23008,7 +23008,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (!valueDeclaration) {
       return;
     }
-    const hasPrivateModifier = hasEffectiveModifier(valueDeclaration, ModifierFlags.Private);
+    const hasPrivateModifier = hasEffectiveModifier(valueDeclaration, qt.ModifierFlags.Private);
     const hasPrivateIdentifier = isNamedDeclaration(prop.valueDeclaration) && isPrivateIdentifier(prop.valueDeclaration.name);
     if (!hasPrivateModifier && !hasPrivateIdentifier) {
       return;
@@ -23783,7 +23783,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         // A method or accessor declaration decorator will have two or three arguments (see
         // `PropertyDecorator` and `MethodDecorator` in core.d.ts). If we are emitting decorators
         // for ES3, we will only pass two arguments.
-        const hasPropDesc = parent.kind !== qt.SyntaxKind.PropertyDeclaration && languageVersion !== ScriptTarget.ES3;
+        const hasPropDesc = parent.kind !== qt.SyntaxKind.PropertyDeclaration && languageVersion !== qt.ScriptTarget.ES3;
         return [createSyntheticExpression(expr, getParentTypeOfClassElement(parent)), createSyntheticExpression(expr, getClassElementPropertyKeyType(parent)), createSyntheticExpression(expr, hasPropDesc ? createTypedPropertyDescriptorType(getTypeOfNode(parent)) : anyType)];
     }
     return Debug.fail();
@@ -23803,7 +23803,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       case qt.SyntaxKind.GetAccessor:
       case qt.SyntaxKind.SetAccessor:
         // For ES3 or decorators with only two parameters we supply only two arguments
-        return languageVersion === ScriptTarget.ES3 || signature.parameters.length <= 2 ? 2 : 3;
+        return languageVersion === qt.ScriptTarget.ES3 || signature.parameters.length <= 2 ? 2 : 3;
       case qt.SyntaxKind.Parameter:
         return 3;
       default:
@@ -24422,7 +24422,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function resolveNewExpression(node: NewExpression, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
-    if (node.arguments && languageVersion < ScriptTarget.ES5) {
+    if (node.arguments && languageVersion < qt.ScriptTarget.ES5) {
       const spreadIndex = getSpreadArgumentIndex(node.arguments);
       if (spreadIndex >= 0) {
         error(node.arguments[spreadIndex], Diagnostics.Spread_operator_in_new_expressions_is_only_available_when_targeting_ECMAScript_5_and_higher);
@@ -24469,7 +24469,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       // In the case of a merged class-module or class-interface declaration,
       // only the class declaration node will have the Abstract flag set.
       const valueDecl = expressionType.symbol && getClassLikeDeclarationOfSymbol(expressionType.symbol);
-      if (valueDecl && hasSyntacticModifier(valueDecl, ModifierFlags.Abstract)) {
+      if (valueDecl && qu.hasSyntacticModifier(valueDecl, qt.ModifierFlags.Abstract)) {
         error(node, Diagnostics.Cannot_create_an_instance_of_an_abstract_class);
         return resolveErrorCall(node);
       }
@@ -24537,7 +24537,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     const declaration = signature.declaration;
-    const modifiers = getSelectedEffectiveModifierFlags(declaration, ModifierFlags.NonPublicAccessibilityModifier);
+    const modifiers = getSelectedEffectiveModifierFlags(declaration, qt.ModifierFlags.NonPublicAccessibilityModifier);
 
     // (1) Public constructors and (2) constructor functions are always accessible.
     if (!modifiers || declaration.kind !== qt.SyntaxKind.Constructor) {
@@ -24550,16 +24550,16 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // A private or protected constructor can only be instantiated within its own class (or a subclass, for protected)
     if (!isNodeWithinClass(node, declaringClassDeclaration)) {
       const containingClass = getContainingClass(node);
-      if (containingClass && modifiers & ModifierFlags.Protected) {
+      if (containingClass && modifiers & qt.ModifierFlags.Protected) {
         const containingType = getTypeOfNode(containingClass);
         if (typeHasProtectedAccessibleBase(declaration.parent.symbol, containingType)) {
           return true;
         }
       }
-      if (modifiers & ModifierFlags.Private) {
+      if (modifiers & qt.ModifierFlags.Private) {
         error(node, Diagnostics.Constructor_of_class_0_is_private_and_only_accessible_within_the_class_declaration, typeToString(declaringClass));
       }
-      if (modifiers & ModifierFlags.Protected) {
+      if (modifiers & qt.ModifierFlags.Protected) {
         error(node, Diagnostics.Constructor_of_class_0_is_protected_and_only_accessible_within_the_class_declaration, typeToString(declaringClass));
       }
       return false;
@@ -25062,7 +25062,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function checkTaggedTemplateExpression(node: TaggedTemplateExpression): Type {
     if (!checkGrammarTaggedTemplateChain(node)) checkGrammarTypeArguments(node, node.typeArguments);
-    if (languageVersion < ScriptTarget.ES2015) {
+    if (languageVersion < qt.ScriptTarget.ES2015) {
       checkExternalEmitHelpers(node, ExternalEmitHelpers.MakeTemplateObject);
     }
     return getReturnTypeOfSignature(getResolvedSignature(node));
@@ -25411,7 +25411,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   // When contextual typing assigns a type to a parameter that contains a binding pattern, we also need to push
   // the destructured type into the contained binding elements.
-  function assignBindingElementTypes(pattern: BindingPattern) {
+  function assignBindingElementTypes(pattern: qt.BindingPattern) {
     for (const element of pattern.elements) {
       if (!isOmittedExpression(element)) {
         if (element.name.kind === qt.SyntaxKind.Identifier) {
@@ -25780,7 +25780,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     Debug.assert(node.kind !== qt.SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
     checkNodeDeferred(node);
 
-    // The identityMapper object is used to indicate that function expressions are wildcards
+    // The qc.identityMapper object is used to indicate that function expressions are wildcards
     if (checkMode && checkMode & CheckMode.SkipContextSensitive && isContextSensitive(node)) {
       // Skip parameters, return signature with return type that retains noncontextual parts so inferences can still be drawn in an early stage
       if (!getEffectiveReturnTypeNode(node) && !hasContextSensitiveParameters(node)) {
@@ -25939,7 +25939,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // Enum members
     // Object.defineProperty assignments with writable false or no setter
     // Unions and intersections of the above (unions and intersections eagerly set isReadonly on creation)
-    return !!(getCheckFlags(symbol) & CheckFlags.Readonly || (symbol.flags & SymbolFlags.Property && getDeclarationModifierFlagsFromSymbol(symbol) & ModifierFlags.Readonly) || (symbol.flags & SymbolFlags.Variable && getDeclarationNodeFlagsFromSymbol(symbol) & NodeFlags.Const) || (symbol.flags & SymbolFlags.Accessor && !(symbol.flags & SymbolFlags.SetAccessor)) || symbol.flags & SymbolFlags.EnumMember || some(symbol.declarations, isReadonlyAssignmentDeclaration));
+    return !!(getCheckFlags(symbol) & CheckFlags.Readonly || (symbol.flags & SymbolFlags.Property && getDeclarationModifierFlagsFromSymbol(symbol) & qt.ModifierFlags.Readonly) || (symbol.flags & SymbolFlags.Variable && getDeclarationNodeFlagsFromSymbol(symbol) & NodeFlags.Const) || (symbol.flags & SymbolFlags.Accessor && !(symbol.flags & SymbolFlags.SetAccessor)) || symbol.flags & SymbolFlags.EnumMember || some(symbol.declarations, isReadonlyAssignmentDeclaration));
   }
 
   function isAssignmentToReadonlyEntity(expr: Expression, symbol: symbol, assignmentKind: AssignmentKind) {
@@ -26052,7 +26052,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               const diagnostic = createFileDiagnostic(sourceFile, span.start, span.length, Diagnostics.await_expressions_are_only_allowed_at_the_top_level_of_a_file_when_that_file_is_a_module_but_this_file_has_no_imports_or_exports_Consider_adding_an_empty_export_to_make_this_file_a_module);
               diagnostics.add(diagnostic);
             }
-            if ((moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) || languageVersion < ScriptTarget.ES2017) {
+            if ((moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) || languageVersion < qt.ScriptTarget.ES2017) {
               span = getSpanOfTokenAtPosition(sourceFile, node.pos);
               const diagnostic = createFileDiagnostic(sourceFile, span.start, span.length, Diagnostics.Top_level_await_expressions_are_only_allowed_when_the_module_option_is_set_to_esnext_or_system_and_the_target_option_is_set_to_es2017_or_higher);
               diagnostics.add(diagnostic);
@@ -26106,7 +26106,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           return getFreshTypeOfLiteralType(
             getLiteralType({
               negative: true,
-              base10Value: parsePseudoBigInt(node.operand.text),
+              base10Value: qu.parsePseudoBigInt(node.operand.text),
             })
           );
         }
@@ -26284,7 +26284,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       if (propertyIndex < properties.length - 1) {
         error(property, Diagnostics.A_rest_element_must_be_last_in_a_destructuring_pattern);
       } else {
-        if (languageVersion < ScriptTarget.ESNext) {
+        if (languageVersion < qt.ScriptTarget.ESNext) {
           checkExternalEmitHelpers(property, ExternalEmitHelpers.Rest);
         }
         const nonRestNames: PropertyName[] = [];
@@ -26306,7 +26306,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function checkArrayLiteralAssignment(node: ArrayLiteralExpression, sourceType: Type, checkMode?: CheckMode): Type {
     const elements = node.elements;
-    if (languageVersion < ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
+    if (languageVersion < qt.ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
       checkExternalEmitHelpers(node, ExternalEmitHelpers.Read);
     }
     // This elementType will be used if the specific property corresponding to this index is not
@@ -26639,7 +26639,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
                 break;
               case qt.SyntaxKind.AsteriskAsteriskToken:
               case qt.SyntaxKind.AsteriskAsteriskEqualsToken:
-                if (languageVersion < ScriptTarget.ES2016) {
+                if (languageVersion < qt.ScriptTarget.ES2016) {
                   error(errorNode, Diagnostics.Exponentiation_cannot_be_performed_on_bigint_values_unless_the_target_option_is_set_to_es2016_or_later);
                 }
             }
@@ -26925,12 +26925,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     if (node.asteriskToken) {
       // Async generator functions prior to ESNext require the __await, __asyncDelegator,
       // and __asyncValues helpers
-      if (isAsync && languageVersion < ScriptTarget.ESNext) {
+      if (isAsync && languageVersion < qt.ScriptTarget.ESNext) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.AsyncDelegatorIncludes);
       }
 
       // Generator functions prior to ES2015 require the __values helper
-      if (!isAsync && languageVersion < ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
+      if (!isAsync && languageVersion < qt.ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.Values);
       }
     }
@@ -27547,7 +27547,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     checkVariableLikeDeclaration(node);
     const func = getContainingFunction(node)!;
-    if (hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.ParameterPropertyModifier)) {
       if (!(func.kind === qt.SyntaxKind.Constructor && nodeIsPresent(func.body))) {
         error(node, Diagnostics.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
       }
@@ -27640,7 +27640,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function checkIfTypePredicateVariableIsDeclaredInBindingPattern(pattern: BindingPattern, predicateVariableNode: Node, predicateVariableName: string) {
+  function checkIfTypePredicateVariableIsDeclaredInBindingPattern(pattern: qt.BindingPattern, predicateVariableNode: Node, predicateVariableName: string) {
     for (const element of pattern.elements) {
       if (isOmittedExpression(element)) {
         continue;
@@ -27671,18 +27671,18 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const functionFlags = getFunctionFlags(node);
     if (!(functionFlags & FunctionFlags.Invalid)) {
       // Async generators prior to ESNext require the __await and __asyncGenerator helpers
-      if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.AsyncGenerator && languageVersion < ScriptTarget.ESNext) {
+      if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.AsyncGenerator && languageVersion < qt.ScriptTarget.ESNext) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.AsyncGeneratorIncludes);
       }
 
       // Async functions prior to ES2017 require the __awaiter helper
-      if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.Async && languageVersion < ScriptTarget.ES2017) {
+      if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.Async && languageVersion < qt.ScriptTarget.ES2017) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.Awaiter);
       }
 
       // Generator functions, Async functions, and Async Generator functions prior to
       // ES2015 require the __generator helper
-      if ((functionFlags & FunctionFlags.AsyncGenerator) !== FunctionFlags.Normal && languageVersion < ScriptTarget.ES2015) {
+      if ((functionFlags & FunctionFlags.AsyncGenerator) !== FunctionFlags.Normal && languageVersion < qt.ScriptTarget.ES2015) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.Generator);
       }
     }
@@ -27752,7 +27752,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           }
         }
       } else {
-        const isStatic = hasSyntacticModifier(member, ModifierFlags.Static);
+        const isStatic = qu.hasSyntacticModifier(member, qt.ModifierFlags.Static);
         const name = member.name;
         if (!name) {
           return;
@@ -27813,7 +27813,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function checkClassForStaticPropertyNameConflicts(node: ClassLikeDeclaration) {
     for (const member of node.members) {
       const memberNameNode = member.name;
-      const isStatic = hasSyntacticModifier(member, ModifierFlags.Static);
+      const isStatic = qu.hasSyntacticModifier(member, qt.ModifierFlags.Static);
       if (isStatic && memberNameNode) {
         const memberName = getPropertyNameForPropertyNameNode(memberNameNode);
         switch (memberName) {
@@ -27906,7 +27906,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     checkVariableLikeDeclaration(node);
 
     // Private class fields transformation relies on WeakMaps.
-    if (isPrivateIdentifier(node.name) && languageVersion < ScriptTarget.ESNext) {
+    if (isPrivateIdentifier(node.name) && languageVersion < qt.ScriptTarget.ESNext) {
       for (let lexicalScope = getEnclosingBlockScopeContainer(node); lexicalScope; lexicalScope = getEnclosingBlockScopeContainer(lexicalScope)) {
         getNodeLinks(lexicalScope).flags |= NodeCheckFlags.ContainsClassWithPrivateIdentifiers;
       }
@@ -27933,12 +27933,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     // Abstract methods cannot have an implementation.
     // Extra checks are to avoid reporting multiple errors relating to the "abstractness" of the node.
-    if (hasSyntacticModifier(node, ModifierFlags.Abstract) && node.kind === qt.SyntaxKind.MethodDeclaration && node.body) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Abstract) && node.kind === qt.SyntaxKind.MethodDeclaration && node.body) {
       error(node, Diagnostics.Method_0_cannot_have_an_implementation_because_it_is_marked_abstract, declarationNameToString(node.name));
     }
   }
 
-  function checkConstructorDeclaration(node: ConstructorDeclaration) {
+  function checkConstructorDeclaration(node: qt.ConstructorDeclaration) {
     // Grammar check on signature of constructor and modifier of the constructor is done in checkSignatureDeclaration function.
     checkSignatureDeclaration(node);
     // Grammar check for checking only related to constructorDeclaration
@@ -27967,7 +27967,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       if (isPrivateIdentifierPropertyDeclaration(n)) {
         return true;
       }
-      return n.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(n, ModifierFlags.Static) && !!(<qt.PropertyDeclaration>n).initializer;
+      return n.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(n, qt.ModifierFlags.Static) && !!(<qt.PropertyDeclaration>n).initializer;
     }
 
     // TS 1.0 spec (April 2014): 8.3.2
@@ -27988,7 +27988,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         // - The containing class is a derived class.
         // - The constructor declares parameter properties
         //   or the containing class declares instance member variables with initializers.
-        const superCallShouldBeFirst = (compilerOptions.target !== ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields) && (some(node.parent.members, isInstancePropertyWithInitializerOrPrivateIdentifierProperty) || some(node.parameters, (p) => hasSyntacticModifier(p, ModifierFlags.ParameterPropertyModifier)));
+        const superCallShouldBeFirst = (compilerOptions.target !== qt.ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields) && (some(node.parent.members, isInstancePropertyWithInitializerOrPrivateIdentifierProperty) || some(node.parameters, (p) => qu.hasSyntacticModifier(p, qt.ModifierFlags.ParameterPropertyModifier)));
 
         // Skip past any prologue directives to find the first statement
         // to ensure that it was a super call.
@@ -28046,10 +28046,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (otherAccessor) {
           const nodeFlags = getEffectiveModifierFlags(node);
           const otherFlags = getEffectiveModifierFlags(otherAccessor);
-          if ((nodeFlags & ModifierFlags.AccessibilityModifier) !== (otherFlags & ModifierFlags.AccessibilityModifier)) {
+          if ((nodeFlags & qt.ModifierFlags.AccessibilityModifier) !== (otherFlags & qt.ModifierFlags.AccessibilityModifier)) {
             error(node.name, Diagnostics.Getter_and_setter_accessors_do_not_agree_in_visibility);
           }
-          if ((nodeFlags & ModifierFlags.Abstract) !== (otherFlags & ModifierFlags.Abstract)) {
+          if ((nodeFlags & qt.ModifierFlags.Abstract) !== (otherFlags & qt.ModifierFlags.Abstract)) {
             error(node.name, Diagnostics.Accessors_must_both_be_abstract_or_non_abstract);
           }
 
@@ -28214,7 +28214,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       const propertyName = getPropertyNameFromIndex(indexType, accessNode);
       if (propertyName) {
         const propertySymbol = forEachType(apparentObjectType, (t) => getPropertyOfType(t, propertyName));
-        if (propertySymbol && getDeclarationModifierFlagsFromSymbol(propertySymbol) & ModifierFlags.NonPublicAccessibilityModifier) {
+        if (propertySymbol && getDeclarationModifierFlagsFromSymbol(propertySymbol) & qt.ModifierFlags.NonPublicAccessibilityModifier) {
           error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, unescapeLeadingUnderscores(propertyName));
           return errorType;
         }
@@ -28284,20 +28284,20 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isPrivateWithinAmbient(node: qt.Node): boolean {
-    return (hasEffectiveModifier(node, ModifierFlags.Private) || isPrivateIdentifierPropertyDeclaration(node)) && !!(node.flags & NodeFlags.Ambient);
+    return (hasEffectiveModifier(node, qt.ModifierFlags.Private) || isPrivateIdentifierPropertyDeclaration(node)) && !!(node.flags & NodeFlags.Ambient);
   }
 
-  function getEffectiveDeclarationFlags(n: Declaration, flagsToCheck: ModifierFlags): ModifierFlags {
+  function getEffectiveDeclarationFlags(n: Declaration, flagsToCheck: qt.ModifierFlags): qt.ModifierFlags {
     let flags = getCombinedModifierFlags(n);
 
     // children of classes (even ambient classes) should not be marked as ambient or export
     // because those flags have no useful semantics there.
     if (n.parent.kind !== qt.SyntaxKind.InterfaceDeclaration && n.parent.kind !== qt.SyntaxKind.ClassDeclaration && n.parent.kind !== qt.SyntaxKind.ClassExpression && n.flags & NodeFlags.Ambient) {
-      if (!(flags & ModifierFlags.Ambient) && !(isModuleBlock(n.parent) && isModuleDeclaration(n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent))) {
+      if (!(flags & qt.ModifierFlags.Ambient) && !(isModuleBlock(n.parent) && isModuleDeclaration(n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent))) {
         // It is nested in an ambient context, which means it is automatically exported
-        flags |= ModifierFlags.Export;
+        flags |= qt.ModifierFlags.Export;
       }
-      flags |= ModifierFlags.Ambient;
+      flags |= qt.ModifierFlags.Ambient;
     }
 
     return flags & flagsToCheck;
@@ -28318,7 +28318,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return implementationSharesContainerWithFirstOverload ? implementation : overloads[0];
     }
 
-    function checkFlagAgreementBetweenOverloads(overloads: Declaration[], implementation: FunctionLikeDeclaration | undefined, flagsToCheck: ModifierFlags, someOverloadFlags: ModifierFlags, allOverloadFlags: ModifierFlags): void {
+    function checkFlagAgreementBetweenOverloads(overloads: Declaration[], implementation: FunctionLikeDeclaration | undefined, flagsToCheck: qt.ModifierFlags, someOverloadFlags: qt.ModifierFlags, allOverloadFlags: qt.ModifierFlags): void {
       // Error if some overloads have a flag that is not shared by all overloads. To find the
       // deviations, we XOR someOverloadFlags with allOverloadFlags
       const someButNotAllOverloadFlags = someOverloadFlags ^ allOverloadFlags;
@@ -28327,13 +28327,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
         forEach(overloads, (o) => {
           const deviation = getEffectiveDeclarationFlags(o, flagsToCheck) ^ canonicalFlags;
-          if (deviation & ModifierFlags.Export) {
+          if (deviation & qt.ModifierFlags.Export) {
             error(getNameOfDeclaration(o), Diagnostics.Overload_signatures_must_all_be_exported_or_non_exported);
-          } else if (deviation & ModifierFlags.Ambient) {
+          } else if (deviation & qt.ModifierFlags.Ambient) {
             error(getNameOfDeclaration(o), Diagnostics.Overload_signatures_must_all_be_ambient_or_non_ambient);
-          } else if (deviation & (ModifierFlags.Private | ModifierFlags.Protected)) {
+          } else if (deviation & (ModifierFlags.Private | qt.ModifierFlags.Protected)) {
             error(getNameOfDeclaration(o) || o, Diagnostics.Overload_signatures_must_all_be_public_private_or_protected);
-          } else if (deviation & ModifierFlags.Abstract) {
+          } else if (deviation & qt.ModifierFlags.Abstract) {
             error(getNameOfDeclaration(o), Diagnostics.Overload_signatures_must_all_be_abstract_or_non_abstract);
           }
         });
@@ -28352,8 +28352,8 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       }
     }
 
-    const flagsToCheck: ModifierFlags = ModifierFlags.Export | ModifierFlags.Ambient | ModifierFlags.Private | ModifierFlags.Protected | ModifierFlags.Abstract;
-    let someNodeFlags: ModifierFlags = ModifierFlags.None;
+    const flagsToCheck: qt.ModifierFlags = qt.ModifierFlags.Export | qt.ModifierFlags.Ambient | qt.ModifierFlags.Private | qt.ModifierFlags.Protected | qt.ModifierFlags.Abstract;
+    let someNodeFlags: qt.ModifierFlags = qt.ModifierFlags.None;
     let allNodeFlags = flagsToCheck;
     let someHaveQuestionToken = false;
     let allHaveQuestionToken = true;
@@ -28395,13 +28395,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               // Both are literal property names that are the same.
               (isPropertyNameLiteral(node.name) && isPropertyNameLiteral(subsequentName) && getEscapedTextOfIdentifierOrLiteral(node.name) === getEscapedTextOfIdentifierOrLiteral(subsequentName)))
           ) {
-            const reportError = (node.kind === qt.SyntaxKind.MethodDeclaration || node.kind === qt.SyntaxKind.MethodSignature) && hasSyntacticModifier(node, ModifierFlags.Static) !== hasSyntacticModifier(subsequentNode, ModifierFlags.Static);
+            const reportError = (node.kind === qt.SyntaxKind.MethodDeclaration || node.kind === qt.SyntaxKind.MethodSignature) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Static) !== qu.hasSyntacticModifier(subsequentNode, qt.ModifierFlags.Static);
             // we can get here in two cases
             // 1. mixed static and instance class members
             // 2. something with the same name was defined before the set of overloads that prevents them from merging
             // here we'll report error only for the first case since for second we should already report error in binder
             if (reportError) {
-              const diagnostic = hasSyntacticModifier(node, ModifierFlags.Static) ? Diagnostics.Function_overload_must_be_static : Diagnostics.Function_overload_must_not_be_static;
+              const diagnostic = qu.hasSyntacticModifier(node, qt.ModifierFlags.Static) ? Diagnostics.Function_overload_must_be_static : Diagnostics.Function_overload_must_not_be_static;
               error(errorNode, diagnostic);
             }
             return;
@@ -28418,7 +28418,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       } else {
         // Report different errors regarding non-consecutive blocks of declarations depending on whether
         // the node in question is abstract.
-        if (hasSyntacticModifier(node, ModifierFlags.Abstract)) {
+        if (hasSyntacticModifier(node, qt.ModifierFlags.Abstract)) {
           error(errorNode, Diagnostics.All_declarations_of_an_abstract_method_must_be_consecutive);
         } else {
           error(errorNode, Diagnostics.Function_implementation_is_missing_or_not_immediately_following_the_declaration);
@@ -28504,7 +28504,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     // Abstract methods can't have an implementation -- in particular, they don't need one.
-    if (lastSeenNonAmbientDeclaration && !lastSeenNonAmbientDeclaration.body && !hasSyntacticModifier(lastSeenNonAmbientDeclaration, ModifierFlags.Abstract) && !lastSeenNonAmbientDeclaration.questionToken) {
+    if (lastSeenNonAmbientDeclaration && !lastSeenNonAmbientDeclaration.body && !hasSyntacticModifier(lastSeenNonAmbientDeclaration, qt.ModifierFlags.Abstract) && !lastSeenNonAmbientDeclaration.questionToken) {
       reportImplementationExpectedError(lastSeenNonAmbientDeclaration);
     }
 
@@ -28552,10 +28552,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     let defaultExportedDeclarationSpaces = DeclarationSpaces.None;
     for (const d of symbol.declarations) {
       const declarationSpaces = getDeclarationSpaces(d);
-      const effectiveDeclarationFlags = getEffectiveDeclarationFlags(d, ModifierFlags.Export | ModifierFlags.Default);
+      const effectiveDeclarationFlags = getEffectiveDeclarationFlags(d, qt.ModifierFlags.Export | qt.ModifierFlags.Default);
 
-      if (effectiveDeclarationFlags & ModifierFlags.Export) {
-        if (effectiveDeclarationFlags & ModifierFlags.Default) {
+      if (effectiveDeclarationFlags & qt.ModifierFlags.Export) {
+        if (effectiveDeclarationFlags & qt.ModifierFlags.Default) {
           defaultExportedDeclarationSpaces |= declarationSpaces;
         } else {
           exportedDeclarationSpaces |= declarationSpaces;
@@ -28876,7 +28876,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     //
     const returnType = getTypeFromTypeNode(returnTypeNode);
 
-    if (languageVersion >= ScriptTarget.ES2015) {
+    if (languageVersion >= qt.ScriptTarget.ES2015) {
       if (returnType === errorType) {
         return;
       }
@@ -29408,13 +29408,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             break;
           }
           const symbol = getSymbolOfNode(member);
-          if (!symbol.isReferenced && (hasEffectiveModifier(member, ModifierFlags.Private) || (isNamedDeclaration(member) && isPrivateIdentifier(member.name))) && !(member.flags & NodeFlags.Ambient)) {
+          if (!symbol.isReferenced && (hasEffectiveModifier(member, qt.ModifierFlags.Private) || (isNamedDeclaration(member) && isPrivateIdentifier(member.name))) && !(member.flags & NodeFlags.Ambient)) {
             addDiagnostic(member, UnusedKind.Local, createDiagnosticForNode(member.name!, Diagnostics._0_is_declared_but_its_value_is_never_read, symbolToString(symbol)));
           }
           break;
         case qt.SyntaxKind.Constructor:
           for (const parameter of (<qt.ConstructorDeclaration>member).parameters) {
-            if (!parameter.symbol.isReferenced && hasSyntacticModifier(parameter, ModifierFlags.Private)) {
+            if (!parameter.symbol.isReferenced && qu.hasSyntacticModifier(parameter, qt.ModifierFlags.Private)) {
               addDiagnostic(parameter, UnusedKind.Local, createDiagnosticForNode(parameter.name, Diagnostics.Property_0_is_declared_but_its_value_is_never_read, symbolName(parameter.symbol)));
             }
           }
@@ -29495,8 +29495,8 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function checkUnusedLocalsAndParameters(nodeWithLocals: Node, addDiagnostic: AddUnusedDiagnostic): void {
     // Ideally we could use the ImportClause directly as a key, but must wait until we have full ES6 maps. So must store key along with value.
     const unusedImports = qc.createMap<[ImportClause, ImportedDeclaration[]]>();
-    const unusedDestructures = qc.createMap<[ObjectBindingPattern, BindingElement[]]>();
-    const unusedVariables = qc.createMap<[VariableDeclarationList, VariableDeclaration[]]>();
+    const unusedDestructures = qc.createMap<[ObjectBindingPattern, qt.BindingElement[]]>();
+    const unusedVariables = qc.createMap<[VariableDeclarationList, qt.VariableDeclaration[]]>();
     nodeWithLocals.locals!.forEach((local) => {
       // If it's purely a type parameter, ignore, will be checked in `checkUnusedTypeParameters`.
       // If it's a type parameter merged with a parameter, check if the parameter-side is used.
@@ -29566,7 +29566,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     });
   }
 
-  function bindingNameText(name: BindingName): string {
+  function bindingNameText(name: qt.BindingName): string {
     switch (name.kind) {
       case qt.SyntaxKind.Identifier:
         return idText(name);
@@ -29605,7 +29605,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function checkCollisionWithArgumentsInGeneratedCode(node: SignatureDeclaration) {
     // no rest parameters \ declaration context \ overload - no codegen impact
-    if (languageVersion >= ScriptTarget.ES2015 || compilerOptions.noEmit || !hasRestParameter(node) || node.flags & NodeFlags.Ambient || nodeIsMissing(node.body)) {
+    if (languageVersion >= qt.ScriptTarget.ES2015 || compilerOptions.noEmit || !hasRestParameter(node) || node.flags & NodeFlags.Ambient || nodeIsMissing(node.body)) {
       return;
     }
 
@@ -29702,7 +29702,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkCollisionWithGlobalPromiseInGeneratedCode(node: qt.Node, name: Identifier): void {
-    if (languageVersion >= ScriptTarget.ES2017 || compilerOptions.noEmit || !needCollisionCheckForIdentifier(node, name, 'Promise')) {
+    if (languageVersion >= qt.ScriptTarget.ES2017 || compilerOptions.noEmit || !needCollisionCheckForIdentifier(node, name, 'Promise')) {
       return;
     }
 
@@ -29719,7 +29719,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function checkVarDeclaredNamesNotShadowed(node: VariableDeclaration | BindingElement) {
+  function checkVarDeclaredNamesNotShadowed(node: qt.VariableDeclaration | qt.BindingElement) {
     // - ScriptBody : StatementList
     // It is a Syntax Error if any element of the LexicallyDeclaredNames of StatementList
     // also occurs in the VarDeclaredNames of StatementList.
@@ -29788,7 +29788,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   // Check variable, parameter, or property declaration
-  function checkVariableLikeDeclaration(node: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement) {
+  function checkVariableLikeDeclaration(node: ParameterDeclaration | PropertyDeclaration | PropertySignature | qt.VariableDeclaration | qt.BindingElement) {
     checkDecorators(node);
     if (!isBindingElement(node)) {
       checkSourceElement(node.type);
@@ -29810,7 +29810,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     if (node.kind === qt.SyntaxKind.BindingElement) {
-      if (node.parent.kind === qt.SyntaxKind.ObjectBindingPattern && languageVersion < ScriptTarget.ESNext) {
+      if (node.parent.kind === qt.SyntaxKind.ObjectBindingPattern && languageVersion < qt.ScriptTarget.ESNext) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.Rest);
       }
       // check computed properties inside property names of binding elements
@@ -29837,7 +29837,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     // For a binding pattern, check contained binding elements
     if (isBindingPattern(node.name)) {
-      if (node.name.kind === qt.SyntaxKind.ArrayBindingPattern && languageVersion < ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
+      if (node.name.kind === qt.SyntaxKind.ArrayBindingPattern && languageVersion < qt.ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
         checkExternalEmitHelpers(node, ExternalEmitHelpers.Read);
       }
 
@@ -29914,7 +29914,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       }
       checkCollisionWithRequireExportsInGeneratedCode(node, node.name);
       checkCollisionWithGlobalPromiseInGeneratedCode(node, node.name);
-      if (!compilerOptions.noEmit && languageVersion < ScriptTarget.ESNext && needCollisionCheckForIdentifier(node, node.name, 'WeakMap')) {
+      if (!compilerOptions.noEmit && languageVersion < qt.ScriptTarget.ESNext && needCollisionCheckForIdentifier(node, node.name, 'WeakMap')) {
         potentialWeakMapCollisions.push(node);
       }
     }
@@ -29940,17 +29940,17 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return false;
     }
 
-    const interestingFlags = ModifierFlags.Private | ModifierFlags.Protected | ModifierFlags.Async | ModifierFlags.Abstract | ModifierFlags.Readonly | ModifierFlags.Static;
+    const interestingFlags = qt.ModifierFlags.Private | qt.ModifierFlags.Protected | qt.ModifierFlags.Async | qt.ModifierFlags.Abstract | qt.ModifierFlags.Readonly | qt.ModifierFlags.Static;
 
     return getSelectedEffectiveModifierFlags(left, interestingFlags) === getSelectedEffectiveModifierFlags(right, interestingFlags);
   }
 
-  function checkVariableDeclaration(node: VariableDeclaration) {
+  function checkVariableDeclaration(node: qt.VariableDeclaration) {
     checkGrammarVariableDeclaration(node);
     return checkVariableLikeDeclaration(node);
   }
 
-  function checkBindingElement(node: BindingElement) {
+  function checkBindingElement(node: qt.BindingElement) {
     checkGrammarBindingElement(node);
     return checkVariableLikeDeclaration(node);
   }
@@ -30106,11 +30106,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     if (node.awaitModifier) {
       const functionFlags = getFunctionFlags(getContainingFunction(node));
-      if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Async)) === FunctionFlags.Async && languageVersion < ScriptTarget.ESNext) {
+      if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Async)) === FunctionFlags.Async && languageVersion < qt.ScriptTarget.ESNext) {
         // for..await..of in an async function or async generator function prior to ESNext requires the __asyncValues helper
         checkExternalEmitHelpers(node, ExternalEmitHelpers.ForAwaitOfIncludes);
       }
-    } else if (compilerOptions.downlevelIteration && languageVersion < ScriptTarget.ES2015) {
+    } else if (compilerOptions.downlevelIteration && languageVersion < qt.ScriptTarget.ES2015) {
       // for..of prior to ES2015 requires the __values helper when downlevelIteration is enabled
       checkExternalEmitHelpers(node, ExternalEmitHelpers.ForOfIncludes);
     }
@@ -30230,7 +30230,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return undefined;
     }
 
-    const uplevelIteration = languageVersion >= ScriptTarget.ES2015;
+    const uplevelIteration = languageVersion >= qt.ScriptTarget.ES2015;
     const downlevelIteration = !uplevelIteration && compilerOptions.downlevelIteration;
 
     // Get the iterated type of an `Iterable<T>` or `IterableIterator<T>` only in ES2015
@@ -30283,7 +30283,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
       hasStringConstituent = arrayType !== inputType;
       if (hasStringConstituent) {
-        if (languageVersion < ScriptTarget.ES5) {
+        if (languageVersion < qt.ScriptTarget.ES5) {
           if (errorNode) {
             error(errorNode, Diagnostics.Using_a_string_in_a_for_of_statement_is_only_supported_in_ECMAScript_5_and_higher);
             reportedError = true;
@@ -31061,7 +31061,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           // Only process instance properties with computed names here.
           // Static properties cannot be in conflict with indexers,
           // and properties with literal names were already checked.
-          if (!hasSyntacticModifier(member, ModifierFlags.Static) && hasNonBindableDynamicName(member)) {
+          if (!hasSyntacticModifier(member, qt.ModifierFlags.Static) && hasNonBindableDynamicName(member)) {
             const symbol = getSymbolOfNode(member);
             const propType = getTypeOfSymbol(symbol);
             checkIndexConstraintForProperty(symbol, propType, type, declaredStringIndexer, stringIndexType, IndexKind.String);
@@ -31147,7 +31147,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    * The name cannot be used as 'Object' of user defined types with special target.
    */
   function checkClassNameCollisionWithObject(name: Identifier): void {
-    if (languageVersion === ScriptTarget.ES5 && name.escapedText === 'Object' && moduleKind < ModuleKind.ES2015) {
+    if (languageVersion === qt.ScriptTarget.ES5 && name.escapedText === 'Object' && moduleKind < ModuleKind.ES2015) {
       error(name, Diagnostics.Class_name_cannot_be_Object_when_targeting_ES5_with_module_0, ModuleKind[moduleKind]); // https://github.com/Microsoft/TypeScript/issues/17494
     }
   }
@@ -31280,7 +31280,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkClassDeclaration(node: ClassDeclaration) {
-    if (!node.name && !hasSyntacticModifier(node, ModifierFlags.Default)) {
+    if (!node.name && !hasSyntacticModifier(node, qt.ModifierFlags.Default)) {
       grammarErrorOnFirstToken(node, Diagnostics.A_class_declaration_without_the_default_modifier_must_have_a_name);
     }
     checkClassLikeDeclaration(node);
@@ -31317,7 +31317,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const baseTypeNode = getEffectiveBaseTypeNode(node);
     if (baseTypeNode) {
       forEach(baseTypeNode.typeArguments, checkSourceElement);
-      if (languageVersion < ScriptTarget.ES2015) {
+      if (languageVersion < qt.ScriptTarget.ES2015) {
         checkExternalEmitHelpers(baseTypeNode.parent, ExternalEmitHelpers.Extends);
       }
       // check both @extends and extends if both are specified.
@@ -31424,7 +31424,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const signatures = getSignaturesOfType(type, SignatureKind.Construct);
     if (signatures.length) {
       const declaration = signatures[0].declaration;
-      if (declaration && hasEffectiveModifier(declaration, ModifierFlags.Private)) {
+      if (declaration && hasEffectiveModifier(declaration, qt.ModifierFlags.Private)) {
         const typeClassDeclaration = getClassLikeDeclarationOfSymbol(type.symbol)!;
         if (!isNodeWithinClass(node, typeClassDeclaration)) {
           error(node, Diagnostics.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, getFullyQualifiedName(type.symbol));
@@ -31485,7 +31485,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         // It is an error to inherit an abstract member without implementing it or being declared abstract.
         // If there is no declaration for the derived class (as in the case of class expressions),
         // then the class cannot be declared abstract.
-        if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !hasSyntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
+        if (baseDeclarationFlags & qt.ModifierFlags.Abstract && (!derivedClassDecl || !hasSyntacticModifier(derivedClassDecl, qt.ModifierFlags.Abstract))) {
           // Searches other base types for a declaration that would satisfy the inherited abstract member.
           // (The class may have more than one base type via declaration merging with an interface with the
           // same name.)
@@ -31507,7 +31507,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       } else {
         // derived overrides base.
         const derivedDeclarationFlags = getDeclarationModifierFlagsFromSymbol(derived);
-        if (baseDeclarationFlags & ModifierFlags.Private || derivedDeclarationFlags & ModifierFlags.Private) {
+        if (baseDeclarationFlags & qt.ModifierFlags.Private || derivedDeclarationFlags & qt.ModifierFlags.Private) {
           // either base or derived property is private - not override, skip it
           continue;
         }
@@ -31517,7 +31517,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         const derivedPropertyFlags = derived.flags & SymbolFlags.PropertyOrAccessor;
         if (basePropertyFlags && derivedPropertyFlags) {
           // property/accessor is overridden with property/accessor
-          if (!compilerOptions.useDefineForClassFields || (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && isPropertyDeclaration(base.valueDeclaration) && base.valueDeclaration.initializer)) || (base.valueDeclaration && base.valueDeclaration.parent.kind === qt.SyntaxKind.InterfaceDeclaration) || (derived.valueDeclaration && isBinaryExpression(derived.valueDeclaration))) {
+          if (!compilerOptions.useDefineForClassFields || (baseDeclarationFlags & qt.ModifierFlags.Abstract && !(base.valueDeclaration && isPropertyDeclaration(base.valueDeclaration) && base.valueDeclaration.initializer)) || (base.valueDeclaration && base.valueDeclaration.parent.kind === qt.SyntaxKind.InterfaceDeclaration) || (derived.valueDeclaration && isBinaryExpression(derived.valueDeclaration))) {
             // when the base property is abstract or from an interface, base/derived flags don't need to match
             // same when the derived property is from an assignment
             continue;
@@ -31530,7 +31530,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             error(getNameOfDeclaration(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, symbolToString(base), typeToString(baseType), typeToString(type));
           } else {
             const uninitialized = find(derived.declarations, (d) => d.kind === qt.SyntaxKind.PropertyDeclaration && !(d as PropertyDeclaration).initializer);
-            if (uninitialized && !(derived.flags & SymbolFlags.Transient) && !(baseDeclarationFlags & ModifierFlags.Abstract) && !(derivedDeclarationFlags & ModifierFlags.Abstract) && !derived.declarations.some((d) => !!(d.flags & NodeFlags.Ambient))) {
+            if (uninitialized && !(derived.flags & SymbolFlags.Transient) && !(baseDeclarationFlags & qt.ModifierFlags.Abstract) && !(derivedDeclarationFlags & qt.ModifierFlags.Abstract) && !derived.declarations.some((d) => !!(d.flags & NodeFlags.Ambient))) {
               const constructor = findConstructorDeclaration(getClassLikeDeclarationOfSymbol(type.symbol)!);
               const propName = uninitialized.name;
               if (uninitialized.exclamationToken || !constructor || !isIdentifier(propName) || !strictNullChecks || !isPropertyInitializedInConstructor(propName, type, constructor)) {
@@ -31630,7 +31630,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
     const constructor = findConstructorDeclaration(node);
     for (const member of node.members) {
-      if (getEffectiveModifierFlags(member) & ModifierFlags.Ambient) {
+      if (getEffectiveModifierFlags(member) & qt.ModifierFlags.Ambient) {
         continue;
       }
       if (isInstancePropertyWithoutInitializer(member)) {
@@ -31648,10 +31648,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isInstancePropertyWithoutInitializer(node: qt.Node) {
-    return node.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract) && !(<qt.PropertyDeclaration>node).exclamationToken && !(<qt.PropertyDeclaration>node).initializer;
+    return node.kind === qt.SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(node, qt.ModifierFlags.Static | qt.ModifierFlags.Abstract) && !(<qt.PropertyDeclaration>node).exclamationToken && !(<qt.PropertyDeclaration>node).initializer;
   }
 
-  function isPropertyInitializedInConstructor(propName: Identifier | PrivateIdentifier, propType: Type, constructor: ConstructorDeclaration) {
+  function isPropertyInitializedInConstructor(propName: Identifier | PrivateIdentifier, propType: Type, constructor: qt.ConstructorDeclaration) {
     const reference = createPropertyAccess(createThis(), propName);
     reference.expression.parent = reference;
     reference.parent = constructor;
@@ -32079,7 +32079,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         break;
       case qt.SyntaxKind.BindingElement:
       case qt.SyntaxKind.VariableDeclaration:
-        const name = (<VariableDeclaration | BindingElement>node).name;
+        const name = (<VariableDeclaration | qt.BindingElement>node).name;
         if (isBindingPattern(name)) {
           for (const el of name.elements) {
             // mark individual names in binding pattern
@@ -32232,7 +32232,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     checkGrammarDecoratorsAndModifiers(node);
     if (isInternalModuleImportEqualsDeclaration(node) || checkExternalImportOrExportDeclaration(node)) {
       checkImportBinding(node);
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         markExportAsReferenced(node);
       }
       if (node.moduleReference.kind !== qt.SyntaxKind.ExternalModuleReference) {
@@ -32268,7 +32268,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       grammarErrorOnFirstToken(node, Diagnostics.An_export_declaration_cannot_have_modifiers);
     }
 
-    if (node.moduleSpecifier && node.exportClause && isNamedExports(node.exportClause) && length(node.exportClause.elements) && languageVersion === ScriptTarget.ES3) {
+    if (node.moduleSpecifier && node.exportClause && isNamedExports(node.exportClause) && length(node.exportClause.elements) && languageVersion === qt.ScriptTarget.ES3) {
       checkExternalEmitHelpers(node, ExternalEmitHelpers.CreateBinding);
     }
 
@@ -32702,7 +32702,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
                         function f(a) {}
                     Because `a` will just be of type `number | undefined`. A synthetic `...args` will also be added, which *will* get an array type.
                     */
-        const lastParamDeclaration = lastOrUndefined(host.parameters);
+        const lastParamDeclaration = qc.lastOrUndefined(host.parameters);
         const symbol = getParameterSymbolFromJSDoc(paramTag);
         if (!lastParamDeclaration || (symbol && lastParamDeclaration.symbol === symbol && isRestParameter(lastParamDeclaration))) {
           return createArrayType(type);
@@ -32890,7 +32890,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       const currentGlobalDiagnostics = diagnostics.getGlobalDiagnostics();
       if (currentGlobalDiagnostics !== previousGlobalDiagnostics) {
         // If the arrays are not the same reference, new diagnostics were added.
-        const deferredGlobalDiagnostics = relativeComplement(previousGlobalDiagnostics, currentGlobalDiagnostics, compareDiagnostics);
+        const deferredGlobalDiagnostics = relativeComplement(previousGlobalDiagnostics, currentGlobalDiagnostics, qu.compareDiagnostics);
         return concatenate(deferredGlobalDiagnostics, semanticDiagnostics);
       } else if (previousGlobalDiagnosticsSize === 0 && currentGlobalDiagnostics.length > 0) {
         // If the arrays are the same reference, but the length has changed, a single
@@ -32982,7 +32982,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           copySymbol(argumentsSymbol, meaning);
         }
 
-        isStatic = hasSyntacticModifier(location, ModifierFlags.Static);
+        isStatic = qu.hasSyntacticModifier(location, qt.ModifierFlags.Static);
         location = location.parent;
       }
 
@@ -33486,7 +33486,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    */
   function getParentTypeOfClassElement(node: ClassElement) {
     const classSymbol = getSymbolOfNode(node.parent)!;
-    return hasSyntacticModifier(node, ModifierFlags.Static) ? getTypeOfSymbol(classSymbol) : getDeclaredTypeOfSymbol(classSymbol);
+    return qu.hasSyntacticModifier(node, qt.ModifierFlags.Static) ? getTypeOfSymbol(classSymbol) : getDeclaredTypeOfSymbol(classSymbol);
   }
 
   function getClassElementPropertyKeyType(element: ClassElement) {
@@ -33771,7 +33771,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         return true;
       }
       const target = getSymbolLinks(symbol).target; // TODO: GH#18217
-      if (target && getEffectiveModifierFlags(node) & ModifierFlags.Export && target.flags & SymbolFlags.Value && (compilerOptions.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(target))) {
+      if (target && getEffectiveModifierFlags(node) & qt.ModifierFlags.Export && target.flags & SymbolFlags.Value && (compilerOptions.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(target))) {
         // An `export import ... =` of a value symbol is always considered referenced
         return true;
       }
@@ -33808,11 +33808,11 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isRequiredInitializedParameter(parameter: ParameterDeclaration | JSDocParameterTag): boolean {
-    return !!strictNullChecks && !isOptionalParameter(parameter) && !isJSDocParameterTag(parameter) && !!parameter.initializer && !hasSyntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
+    return !!strictNullChecks && !isOptionalParameter(parameter) && !isJSDocParameterTag(parameter) && !!parameter.initializer && !hasSyntacticModifier(parameter, qt.ModifierFlags.ParameterPropertyModifier);
   }
 
   function isOptionalUninitializedParameterProperty(parameter: ParameterDeclaration) {
-    return strictNullChecks && isOptionalParameter(parameter) && !parameter.initializer && hasSyntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
+    return strictNullChecks && isOptionalParameter(parameter) && !parameter.initializer && qu.hasSyntacticModifier(parameter, qt.ModifierFlags.ParameterPropertyModifier);
   }
 
   function isExpandoFunctionDeclaration(node: Declaration): boolean {
@@ -34007,7 +34007,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return undefined;
   }
 
-  function isLiteralConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean {
+  function isLiteralConstDeclaration(node: qt.VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean {
     if (isDeclarationReadonly(node) || (isVariableDeclaration(node) && isVarConst(node))) {
       return isFreshLiteralType(getTypeOfSymbol(getSymbolOfNode(node)));
     }
@@ -34019,7 +34019,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return enumResult || createLiteral(type.value);
   }
 
-  function createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker) {
+  function createLiteralConstValue(node: qt.VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker) {
     const type = getTypeOfSymbol(getSymbolOfNode(node));
     return literalTypeToNode(type, node, tracker);
   }
@@ -34493,7 +34493,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     let lastStatic: Node | undefined, lastDeclare: Node | undefined, lastAsync: Node | undefined, lastReadonly: Node | undefined;
-    let flags = ModifierFlags.None;
+    let flags = qt.ModifierFlags.None;
     for (const modifier of node.modifiers!) {
       if (modifier.kind !== qt.SyntaxKind.ReadonlyKeyword) {
         if (node.kind === qt.SyntaxKind.PropertySignature || node.kind === qt.SyntaxKind.MethodSignature) {
@@ -34514,17 +34514,17 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         case qt.SyntaxKind.PrivateKeyword:
           const text = visibilityToString(modifierToFlag(modifier.kind));
 
-          if (flags & ModifierFlags.AccessibilityModifier) {
+          if (flags & qt.ModifierFlags.AccessibilityModifier) {
             return grammarErrorOnNode(modifier, Diagnostics.Accessibility_modifier_already_seen);
-          } else if (flags & ModifierFlags.Static) {
+          } else if (flags & qt.ModifierFlags.Static) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, text, 'static');
-          } else if (flags & ModifierFlags.Readonly) {
+          } else if (flags & qt.ModifierFlags.Readonly) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, text, 'readonly');
-          } else if (flags & ModifierFlags.Async) {
+          } else if (flags & qt.ModifierFlags.Async) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, text, 'async');
           } else if (node.parent.kind === qt.SyntaxKind.ModuleBlock || node.parent.kind === qt.SyntaxKind.SourceFile) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_module_or_namespace_element, text);
-          } else if (flags & ModifierFlags.Abstract) {
+          } else if (flags & qt.ModifierFlags.Abstract) {
             if (modifier.kind === qt.SyntaxKind.PrivateKeyword) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_1_modifier, text, 'abstract');
             } else {
@@ -34537,51 +34537,51 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           break;
 
         case qt.SyntaxKind.StaticKeyword:
-          if (flags & ModifierFlags.Static) {
+          if (flags & qt.ModifierFlags.Static) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'static');
-          } else if (flags & ModifierFlags.Readonly) {
+          } else if (flags & qt.ModifierFlags.Readonly) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, 'static', 'readonly');
-          } else if (flags & ModifierFlags.Async) {
+          } else if (flags & qt.ModifierFlags.Async) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, 'static', 'async');
           } else if (node.parent.kind === qt.SyntaxKind.ModuleBlock || node.parent.kind === qt.SyntaxKind.SourceFile) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_module_or_namespace_element, 'static');
           } else if (node.kind === qt.SyntaxKind.Parameter) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'static');
-          } else if (flags & ModifierFlags.Abstract) {
+          } else if (flags & qt.ModifierFlags.Abstract) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_1_modifier, 'static', 'abstract');
           } else if (isPrivateIdentifierPropertyDeclaration(node)) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_a_private_identifier, 'static');
           }
-          flags |= ModifierFlags.Static;
+          flags |= qt.ModifierFlags.Static;
           lastStatic = modifier;
           break;
 
         case qt.SyntaxKind.ReadonlyKeyword:
-          if (flags & ModifierFlags.Readonly) {
+          if (flags & qt.ModifierFlags.Readonly) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'readonly');
           } else if (node.kind !== qt.SyntaxKind.PropertyDeclaration && node.kind !== qt.SyntaxKind.PropertySignature && node.kind !== qt.SyntaxKind.IndexSignature && node.kind !== qt.SyntaxKind.Parameter) {
             // If node.kind === qt.SyntaxKind.Parameter, checkParameter report an error if it's not a parameter property.
             return grammarErrorOnNode(modifier, Diagnostics.readonly_modifier_can_only_appear_on_a_property_declaration_or_index_signature);
           }
-          flags |= ModifierFlags.Readonly;
+          flags |= qt.ModifierFlags.Readonly;
           lastReadonly = modifier;
           break;
 
         case qt.SyntaxKind.ExportKeyword:
-          if (flags & ModifierFlags.Export) {
+          if (flags & qt.ModifierFlags.Export) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'export');
-          } else if (flags & ModifierFlags.Ambient) {
+          } else if (flags & qt.ModifierFlags.Ambient) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, 'export', 'declare');
-          } else if (flags & ModifierFlags.Abstract) {
+          } else if (flags & qt.ModifierFlags.Abstract) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, 'export', 'abstract');
-          } else if (flags & ModifierFlags.Async) {
+          } else if (flags & qt.ModifierFlags.Async) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_must_precede_1_modifier, 'export', 'async');
           } else if (isClassLike(node.parent)) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_class_element, 'export');
           } else if (node.kind === qt.SyntaxKind.Parameter) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'export');
           }
-          flags |= ModifierFlags.Export;
+          flags |= qt.ModifierFlags.Export;
           break;
         case qt.SyntaxKind.DefaultKeyword:
           const container = node.parent.kind === qt.SyntaxKind.SourceFile ? node.parent : node.parent.parent;
@@ -34589,12 +34589,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             return grammarErrorOnNode(modifier, Diagnostics.A_default_export_can_only_be_used_in_an_ECMAScript_style_module);
           }
 
-          flags |= ModifierFlags.Default;
+          flags |= qt.ModifierFlags.Default;
           break;
         case qt.SyntaxKind.DeclareKeyword:
-          if (flags & ModifierFlags.Ambient) {
+          if (flags & qt.ModifierFlags.Ambient) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'declare');
-          } else if (flags & ModifierFlags.Async) {
+          } else if (flags & qt.ModifierFlags.Async) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_in_an_ambient_context, 'async');
           } else if (isClassLike(node.parent) && !isPropertyDeclaration(node)) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_class_element, 'declare');
@@ -34605,25 +34605,25 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           } else if (isPrivateIdentifierPropertyDeclaration(node)) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_a_private_identifier, 'declare');
           }
-          flags |= ModifierFlags.Ambient;
+          flags |= qt.ModifierFlags.Ambient;
           lastDeclare = modifier;
           break;
 
         case qt.SyntaxKind.AbstractKeyword:
-          if (flags & ModifierFlags.Abstract) {
+          if (flags & qt.ModifierFlags.Abstract) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'abstract');
           }
           if (node.kind !== qt.SyntaxKind.ClassDeclaration) {
             if (node.kind !== qt.SyntaxKind.MethodDeclaration && node.kind !== qt.SyntaxKind.PropertyDeclaration && node.kind !== qt.SyntaxKind.GetAccessor && node.kind !== qt.SyntaxKind.SetAccessor) {
               return grammarErrorOnNode(modifier, Diagnostics.abstract_modifier_can_only_appear_on_a_class_method_or_property_declaration);
             }
-            if (!(node.parent.kind === qt.SyntaxKind.ClassDeclaration && hasSyntacticModifier(node.parent, ModifierFlags.Abstract))) {
+            if (!(node.parent.kind === qt.SyntaxKind.ClassDeclaration && qu.hasSyntacticModifier(node.parent, qt.ModifierFlags.Abstract))) {
               return grammarErrorOnNode(modifier, Diagnostics.Abstract_methods_can_only_appear_within_an_abstract_class);
             }
-            if (flags & ModifierFlags.Static) {
+            if (flags & qt.ModifierFlags.Static) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_1_modifier, 'static', 'abstract');
             }
-            if (flags & ModifierFlags.Private) {
+            if (flags & qt.ModifierFlags.Private) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_1_modifier, 'private', 'abstract');
             }
           }
@@ -34631,43 +34631,43 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_a_private_identifier, 'abstract');
           }
 
-          flags |= ModifierFlags.Abstract;
+          flags |= qt.ModifierFlags.Abstract;
           break;
 
         case qt.SyntaxKind.AsyncKeyword:
-          if (flags & ModifierFlags.Async) {
+          if (flags & qt.ModifierFlags.Async) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'async');
-          } else if (flags & ModifierFlags.Ambient || node.parent.flags & NodeFlags.Ambient) {
+          } else if (flags & qt.ModifierFlags.Ambient || node.parent.flags & NodeFlags.Ambient) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_in_an_ambient_context, 'async');
           } else if (node.kind === qt.SyntaxKind.Parameter) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'async');
           }
-          flags |= ModifierFlags.Async;
+          flags |= qt.ModifierFlags.Async;
           lastAsync = modifier;
           break;
       }
     }
 
     if (node.kind === qt.SyntaxKind.Constructor) {
-      if (flags & ModifierFlags.Static) {
+      if (flags & qt.ModifierFlags.Static) {
         return grammarErrorOnNode(lastStatic!, Diagnostics._0_modifier_cannot_appear_on_a_constructor_declaration, 'static');
       }
-      if (flags & ModifierFlags.Abstract) {
+      if (flags & qt.ModifierFlags.Abstract) {
         return grammarErrorOnNode(lastStatic!, Diagnostics._0_modifier_cannot_appear_on_a_constructor_declaration, 'abstract'); // TODO: GH#18217
-      } else if (flags & ModifierFlags.Async) {
+      } else if (flags & qt.ModifierFlags.Async) {
         return grammarErrorOnNode(lastAsync!, Diagnostics._0_modifier_cannot_appear_on_a_constructor_declaration, 'async');
-      } else if (flags & ModifierFlags.Readonly) {
+      } else if (flags & qt.ModifierFlags.Readonly) {
         return grammarErrorOnNode(lastReadonly!, Diagnostics._0_modifier_cannot_appear_on_a_constructor_declaration, 'readonly');
       }
       return false;
-    } else if ((node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ImportEqualsDeclaration) && flags & ModifierFlags.Ambient) {
+    } else if ((node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ImportEqualsDeclaration) && flags & qt.ModifierFlags.Ambient) {
       return grammarErrorOnNode(lastDeclare!, Diagnostics.A_0_modifier_cannot_be_used_with_an_import_declaration, 'declare');
-    } else if (node.kind === qt.SyntaxKind.Parameter && flags & ModifierFlags.ParameterPropertyModifier && isBindingPattern((<qt.ParameterDeclaration>node).name)) {
+    } else if (node.kind === qt.SyntaxKind.Parameter && flags & qt.ModifierFlags.ParameterPropertyModifier && isBindingPattern((<qt.ParameterDeclaration>node).name)) {
       return grammarErrorOnNode(node, Diagnostics.A_parameter_property_may_not_be_declared_using_a_binding_pattern);
-    } else if (node.kind === qt.SyntaxKind.Parameter && flags & ModifierFlags.ParameterPropertyModifier && (<qt.ParameterDeclaration>node).dotDotDotToken) {
+    } else if (node.kind === qt.SyntaxKind.Parameter && flags & qt.ModifierFlags.ParameterPropertyModifier && (<qt.ParameterDeclaration>node).dotDotDotToken) {
       return grammarErrorOnNode(node, Diagnostics.A_parameter_property_cannot_be_declared_using_a_rest_parameter);
     }
-    if (flags & ModifierFlags.Async) {
+    if (flags & qt.ModifierFlags.Async) {
       return checkGrammarAsyncModifier(node, lastAsync!);
     }
     return false;
@@ -34790,7 +34790,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkGrammarForUseStrictSimpleParameterList(node: FunctionLikeDeclaration): boolean {
-    if (languageVersion >= ScriptTarget.ES2016) {
+    if (languageVersion >= qt.ScriptTarget.ES2016) {
       const useStrictDirective = node.body && isBlock(node.body) && findUseStrictPrologue(node.body.statements);
       if (useStrictDirective) {
         const nonSimpleParameters = getNonSimpleParameters(node.parameters);
@@ -35213,14 +35213,14 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function checkGrammarAccessor(accessor: AccessorDeclaration): boolean {
     if (!(accessor.flags & NodeFlags.Ambient)) {
-      if (languageVersion < ScriptTarget.ES5) {
+      if (languageVersion < qt.ScriptTarget.ES5) {
         return grammarErrorOnNode(accessor.name, Diagnostics.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher);
       }
-      if (accessor.body === undefined && !hasSyntacticModifier(accessor, ModifierFlags.Abstract)) {
+      if (accessor.body === undefined && !hasSyntacticModifier(accessor, qt.ModifierFlags.Abstract)) {
         return grammarErrorAtPos(accessor, accessor.end - 1, ';'.length, Diagnostics._0_expected, '{');
       }
     }
-    if (accessor.body && hasSyntacticModifier(accessor, ModifierFlags.Abstract)) {
+    if (accessor.body && qu.hasSyntacticModifier(accessor, qt.ModifierFlags.Abstract)) {
       return grammarErrorOnNode(accessor, Diagnostics.An_abstract_accessor_cannot_have_an_implementation);
     }
     if (accessor.typeParameters) {
@@ -35290,13 +35290,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           break;
 
         case qt.SyntaxKind.PropertyDeclaration:
-          if (!hasSyntacticModifier(parent, ModifierFlags.Static) || !hasEffectiveModifier(parent, ModifierFlags.Readonly)) {
+          if (!hasSyntacticModifier(parent, qt.ModifierFlags.Static) || !hasEffectiveModifier(parent, qt.ModifierFlags.Readonly)) {
             return grammarErrorOnNode(parent.name, Diagnostics.A_property_of_a_class_whose_type_is_a_unique_symbol_type_must_be_both_static_and_readonly);
           }
           break;
 
         case qt.SyntaxKind.PropertySignature:
-          if (!hasSyntacticModifier(parent, ModifierFlags.Readonly)) {
+          if (!hasSyntacticModifier(parent, qt.ModifierFlags.Readonly)) {
             return grammarErrorOnNode(parent.name, Diagnostics.A_property_of_an_interface_or_type_literal_whose_type_is_a_unique_symbol_type_must_be_readonly);
           }
           break;
@@ -35406,7 +35406,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function checkGrammarBindingElement(node: BindingElement) {
+  function checkGrammarBindingElement(node: qt.BindingElement) {
     if (node.dotDotDotToken) {
       const elements = node.parent.elements;
       if (node !== last(elements)) {
@@ -35439,7 +35439,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function checkAmbientInitializer(node: VariableDeclaration | PropertyDeclaration | PropertySignature) {
+  function checkAmbientInitializer(node: qt.VariableDeclaration | PropertyDeclaration | PropertySignature) {
     const { initializer } = node;
     if (initializer) {
       const isInvalidInitializer = !(isStringOrNumberLiteralExpression(initializer) || isSimpleLiteralEnumReference(initializer) || initializer.kind === qt.SyntaxKind.TrueKeyword || initializer.kind === qt.SyntaxKind.FalseKeyword || isBigIntLiteralExpression(initializer));
@@ -35457,7 +35457,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function checkGrammarVariableDeclaration(node: VariableDeclaration) {
+  function checkGrammarVariableDeclaration(node: qt.VariableDeclaration) {
     if (node.parent.parent.kind !== qt.SyntaxKind.ForInStatement && node.parent.parent.kind !== qt.SyntaxKind.ForOfStatement) {
       if (node.flags & NodeFlags.Ambient) {
         checkAmbientInitializer(node);
@@ -35477,7 +35477,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     const moduleKind = getEmitModuleKind(compilerOptions);
 
-    if (moduleKind < ModuleKind.ES2015 && moduleKind !== ModuleKind.System && !compilerOptions.noEmit && !(node.parent.parent.flags & NodeFlags.Ambient) && hasSyntacticModifier(node.parent.parent, ModifierFlags.Export)) {
+    if (moduleKind < ModuleKind.ES2015 && moduleKind !== ModuleKind.System && !compilerOptions.noEmit && !(node.parent.parent.flags & NodeFlags.Ambient) && qu.hasSyntacticModifier(node.parent.parent, qt.ModifierFlags.Export)) {
       checkESModuleMarker(node.name);
     }
 
@@ -35488,12 +35488,12 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // 2. ForDeclaration: ForDeclaration : LetOrConst ForBinding
     // It is a Syntax Error if the BoundNames of ForDeclaration contains "let".
 
-    // It is a SyntaxError if a VariableDeclaration or VariableDeclarationNoIn occurs within strict code
+    // It is a SyntaxError if a qt.VariableDeclaration or qt.VariableDeclarationNoIn occurs within strict code
     // and its Identifier is eval or arguments
     return checkLetConstNames && checkGrammarNameInLetOrConstDeclarations(node.name);
   }
 
-  function checkESModuleMarker(name: Identifier | BindingPattern): boolean {
+  function checkESModuleMarker(name: Identifier | qt.BindingPattern): boolean {
     if (name.kind === qt.SyntaxKind.Identifier) {
       if (idText(name) === '__esModule') {
         return grammarErrorOnNode(name, Diagnostics.Identifier_expected_esModule_is_reserved_as_an_exported_marker_when_transforming_ECMAScript_modules);
@@ -35509,7 +35509,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarNameInLetOrConstDeclarations(name: Identifier | BindingPattern): boolean {
+  function checkGrammarNameInLetOrConstDeclarations(name: Identifier | qt.BindingPattern): boolean {
     if (name.kind === qt.SyntaxKind.Identifier) {
       if (name.originalKeywordKind === qt.SyntaxKind.LetKeyword) {
         return grammarErrorOnNode(name, Diagnostics.let_is_not_allowed_to_be_used_as_a_name_in_let_or_const_declarations);
@@ -35525,7 +35525,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarVariableDeclarationList(declarationList: VariableDeclarationList): boolean {
+  function checkGrammarVariableDeclarationList(declarationList: qt.VariableDeclarationList): boolean {
     const declarations = declarationList.declarations;
     if (checkGrammarForDisallowedTrailingComma(declarationList.declarations)) {
       return true;
@@ -35612,7 +35612,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarConstructorTypeParameters(node: ConstructorDeclaration) {
+  function checkGrammarConstructorTypeParameters(node: qt.ConstructorDeclaration) {
     const jsdocTypeParameters = isInJSFile(node) ? getJSDocTypeParameterDeclarations(node) : undefined;
     const range = node.typeParameters || (jsdocTypeParameters && firstOrUndefined(jsdocTypeParameters));
     if (range) {
@@ -35621,7 +35621,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function checkGrammarConstructorTypeAnnotation(node: ConstructorDeclaration) {
+  function checkGrammarConstructorTypeAnnotation(node: qt.ConstructorDeclaration) {
     const type = getEffectiveReturnTypeNode(node);
     if (type) {
       return grammarErrorOnNode(type, Diagnostics.Type_annotation_cannot_appear_on_a_constructor_declaration);
@@ -35636,7 +35636,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       if (checkGrammarForInvalidDynamicName(node.name, Diagnostics.A_computed_property_name_in_a_class_property_declaration_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type)) {
         return true;
       }
-      if (languageVersion < ScriptTarget.ES2015 && isPrivateIdentifier(node.name)) {
+      if (languageVersion < qt.ScriptTarget.ES2015 && isPrivateIdentifier(node.name)) {
         return grammarErrorOnNode(node.name, Diagnostics.Private_identifiers_are_only_available_when_targeting_ECMAScript_2015_and_higher);
       }
     } else if (node.parent.kind === qt.SyntaxKind.InterfaceDeclaration) {
@@ -35659,7 +35659,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       checkAmbientInitializer(node);
     }
 
-    if (isPropertyDeclaration(node) && node.exclamationToken && (!isClassLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || hasSyntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))) {
+    if (isPropertyDeclaration(node) && node.exclamationToken && (!isClassLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || qu.hasSyntacticModifier(node, qt.ModifierFlags.Static | qt.ModifierFlags.Abstract))) {
       return grammarErrorOnNode(node.exclamationToken, Diagnostics.A_definite_assignment_assertion_is_not_permitted_in_this_context);
     }
   }
@@ -35677,7 +35677,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     //     export_opt   AmbientDeclaration
     //
     // TODO: The spec needs to be amended to reflect this grammar.
-    if (node.kind === qt.SyntaxKind.InterfaceDeclaration || node.kind === qt.SyntaxKind.TypeAliasDeclaration || node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ImportEqualsDeclaration || node.kind === qt.SyntaxKind.ExportDeclaration || node.kind === qt.SyntaxKind.ExportAssignment || node.kind === qt.SyntaxKind.NamespaceExportDeclaration || hasSyntacticModifier(node, ModifierFlags.Ambient | ModifierFlags.Export | ModifierFlags.Default)) {
+    if (node.kind === qt.SyntaxKind.InterfaceDeclaration || node.kind === qt.SyntaxKind.TypeAliasDeclaration || node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ImportEqualsDeclaration || node.kind === qt.SyntaxKind.ExportDeclaration || node.kind === qt.SyntaxKind.ExportAssignment || node.kind === qt.SyntaxKind.NamespaceExportDeclaration || qu.hasSyntacticModifier(node, qt.ModifierFlags.Ambient | qt.ModifierFlags.Export | qt.ModifierFlags.Default)) {
       return false;
     }
 
@@ -35731,7 +35731,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     // Grammar checking
     if (node.numericLiteralFlags & TokenFlags.Octal) {
       let diagnosticMessage: qt.DiagnosticMessage | undefined;
-      if (languageVersion >= ScriptTarget.ES5) {
+      if (languageVersion >= qt.ScriptTarget.ES5) {
         diagnosticMessage = Diagnostics.Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_Use_the_syntax_0;
       } else if (isChildOfNodeWithKind(node, qt.SyntaxKind.LiteralType)) {
         diagnosticMessage = Diagnostics.Octal_literal_types_must_use_ES2015_syntax_Use_the_syntax_0;
@@ -35774,7 +35774,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function checkGrammarBigIntLiteral(node: BigIntLiteral): boolean {
     const literalType = isLiteralTypeNode(node.parent) || (isPrefixUnaryExpression(node.parent) && isLiteralTypeNode(node.parent.parent));
     if (!literalType) {
-      if (languageVersion < ScriptTarget.ES2020) {
+      if (languageVersion < qt.ScriptTarget.ES2020) {
         if (grammarErrorOnNode(node, Diagnostics.BigInt_literals_are_not_available_when_targeting_lower_than_ES2020)) {
           return true;
         }

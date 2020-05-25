@@ -347,7 +347,7 @@ export function forEachChild<T>(node: qt.Node, cbNode: (node: qt.Node) => T | un
   }
 }
 
-/** @internal */
+
 /**
  * Invokes a callback for each child of the given node. The 'cbNode' callback is invoked for all child nodes
  * stored in properties. If a 'cbNodes' callback is specified, it is invoked for embedded arrays; additionally,
@@ -415,12 +415,12 @@ export function forEachChildRecursively<T>(rootNode: Node, cbNode: (node: qt.Nod
   }
 }
 
-export function createSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
+export function createSourceFile(fileName: string, sourceText: string, languageVersion: qt.ScriptTarget, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
   performance.mark('beforeParse');
   let result: SourceFile;
 
   perfLogger.logStartParseSourceFile(fileName);
-  if (languageVersion === ScriptTarget.JSON) {
+  if (languageVersion === qt.ScriptTarget.JSON) {
     result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, ScriptKind.JSON);
   } else {
     result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, scriptKind);
@@ -432,7 +432,7 @@ export function createSourceFile(fileName: string, sourceText: string, languageV
   return result;
 }
 
-export function parseIsolatedEntityName(text: string, languageVersion: ScriptTarget): EntityName | undefined {
+export function parseIsolatedEntityName(text: string, languageVersion: qt.ScriptTarget): EntityName | undefined {
   return Parser.parseIsolatedEntityName(text, languageVersion);
 }
 
@@ -459,7 +459,7 @@ export function isExternalModule(file: SourceFile): boolean {
 // from this SourceFile that are being held onto may change as a result (including
 // becoming detached from any SourceFile).  It is recommended that this SourceFile not
 // be used once 'update' is called on it.
-export function updateSourceFile(sourceFile: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks = false): SourceFile {
+export function updateSourceFile(sourceFile: SourceFile, newText: string, textChangeRange: qt.TextChangeRange, aggressiveChecks = false): SourceFile {
   const newSourceFile = IncrementalParser.updateSourceFile(sourceFile, newText, textChangeRange, aggressiveChecks);
   // Because new source file node is created, it may not have the flag PossiblyContainDynamicImport. This is the case if there is no new edit to add dynamic import.
   // We will manually port the flag to the new source file.
@@ -591,7 +591,7 @@ namespace Parser {
   // attached to the EOF token.
   let parseErrorBeforeNextFinishedNode = false;
 
-  export function parseSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, syntaxCursor: IncrementalParser.SyntaxCursor | undefined, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
+  export function parseSourceFile(fileName: string, sourceText: string, languageVersion: qt.ScriptTarget, syntaxCursor: IncrementalParser.SyntaxCursor | undefined, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
     scriptKind = ensureScriptKind(fileName, scriptKind);
     if (scriptKind === ScriptKind.JSON) {
       const result = parseJsonText(fileName, sourceText, languageVersion, syntaxCursor, setParentNodes);
@@ -614,7 +614,7 @@ namespace Parser {
     return result;
   }
 
-  export function parseIsolatedEntityName(content: string, languageVersion: ScriptTarget): EntityName | undefined {
+  export function parseIsolatedEntityName(content: string, languageVersion: qt.ScriptTarget): EntityName | undefined {
     // Choice of `isDeclarationFile` should be arbitrary
     initializeState(content, languageVersion, /*syntaxCursor*/ undefined, ScriptKind.JS);
     // Prime the scanner.
@@ -625,10 +625,10 @@ namespace Parser {
     return isInvalid ? entityName : undefined;
   }
 
-  export function parseJsonText(fileName: string, sourceText: string, languageVersion: ScriptTarget = ScriptTarget.ES2015, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile {
+  export function parseJsonText(fileName: string, sourceText: string, languageVersion: qt.ScriptTarget = qt.ScriptTarget.ES2015, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile {
     initializeState(sourceText, languageVersion, syntaxCursor, ScriptKind.JSON);
     // Set source file so that errors will be reported with this file name
-    sourceFile = createSourceFile(fileName, ScriptTarget.ES2015, ScriptKind.JSON, /*isDeclaration*/ false);
+    sourceFile = createSourceFile(fileName, qt.ScriptTarget.ES2015, ScriptKind.JSON, /*isDeclaration*/ false);
     sourceFile.flags = contextFlags;
 
     // Prime the scanner.
@@ -690,7 +690,7 @@ namespace Parser {
     return scriptKind === ScriptKind.TSX || scriptKind === ScriptKind.JSX || scriptKind === ScriptKind.JS || scriptKind === ScriptKind.JSON ? LanguageVariant.JSX : LanguageVariant.Standard;
   }
 
-  function initializeState(_sourceText: string, languageVersion: ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: ScriptKind) {
+  function initializeState(_sourceText: string, languageVersion: qt.ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: ScriptKind) {
     NodeConstructor = objectAllocator.getNodeConstructor();
     TokenConstructor = objectAllocator.getTokenConstructor();
     IdentifierConstructor = objectAllocator.getIdentifierConstructor();
@@ -743,7 +743,7 @@ namespace Parser {
     notParenthesizedArrow = undefined!;
   }
 
-  function parseSourceFileWorker(fileName: string, languageVersion: ScriptTarget, setParentNodes: boolean, scriptKind: ScriptKind): SourceFile {
+  function parseSourceFileWorker(fileName: string, languageVersion: qt.ScriptTarget, setParentNodes: boolean, scriptKind: ScriptKind): SourceFile {
     const isDeclarationFile = isDeclarationFileName(fileName);
     if (isDeclarationFile) {
       contextFlags |= NodeFlags.Ambient;
@@ -806,7 +806,7 @@ namespace Parser {
     }
   }
 
-  function createSourceFile(fileName: string, languageVersion: ScriptTarget, scriptKind: ScriptKind, isDeclarationFile: boolean): SourceFile {
+  function createSourceFile(fileName: string, languageVersion: qt.ScriptTarget, scriptKind: ScriptKind, isDeclarationFile: boolean): SourceFile {
     // code from createNode is inlined here so createNode won't have to deal with special case of creating source files
     // this is quite rare comparing to other nodes and createNode should be as fast as possible
     const sourceFile = <SourceFile>new SourceFileConstructor(SyntaxKind.SourceFile, /*pos*/ 0, /* end */ sourceText.length);
@@ -948,7 +948,7 @@ namespace Parser {
 
   function parseErrorAtPosition(start: number, length: number, message: qt.DiagnosticMessage, arg0?: any): void {
     // Don't report another error if it would just be at the same position as the last error.
-    const lastError = lastOrUndefined(parseDiagnostics);
+    const lastError = qc.lastOrUndefined(parseDiagnostics);
     if (!lastError || start !== lastError.start) {
       parseDiagnostics.push(createFileDiagnostic(sourceFile, start, length, message, arg0));
     }
@@ -2502,7 +2502,7 @@ namespace Parser {
     node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
 
     // FormalParameter [Yield,Await]:
-    //      BindingElement[?Yield,?Await]
+    //      qt.BindingElement[?Yield,?Await]
     node.name = parseIdentifierOrPattern(Diagnostics.Private_identifiers_cannot_be_used_as_parameters);
     if (getFullWidth(node.name) === 0 && !node.modifiers && isModifierKind(token())) {
       // in cases like
@@ -2561,11 +2561,11 @@ namespace Parser {
     //      FormalParameterList[?Yield,Await]
     //
     // FormalParameter[Yield,Await]: (modified)
-    //      BindingElement[?Yield,Await]
+    //      qt.BindingElement[?Yield,Await]
     //
-    // BindingElement [Yield,Await]: (modified)
+    // qt.BindingElement [Yield,Await]: (modified)
     //      SingleNameBinding[?Yield,?Await]
-    //      BindingPattern[?Yield,?Await]Initializer [In, ?Yield,?Await] opt
+    //      qt.BindingPattern[?Yield,?Await]Initializer [In, ?Yield,?Await] opt
     //
     // SingleNameBinding [Yield,Await]:
     //      BindingIdentifier[?Yield,?Await]Initializer [In, ?Yield,?Await] opt
@@ -4885,7 +4885,7 @@ namespace Parser {
 
     node.properties = parseDelimitedList(ParsingContext.ObjectLiteralMembers, parseObjectLiteralElement, /*considerSemicolonAsDelimiter*/ true);
     if (!parseExpected(SyntaxKind.CloseBraceToken)) {
-      const lastError = lastOrUndefined(parseDiagnostics);
+      const lastError = qc.lastOrUndefined(parseDiagnostics);
       if (lastError && lastError.code === Diagnostics._0_expected.code) {
         addRelatedInfo(lastError, createFileDiagnostic(sourceFile, openBracePosition, 1, Diagnostics.The_parser_expected_to_find_a_to_match_the_token_here));
       }
@@ -4972,7 +4972,7 @@ namespace Parser {
 
       node.statements = parseList(ParsingContext.BlockStatements, parseStatement);
       if (!parseExpected(SyntaxKind.CloseBraceToken)) {
-        const lastError = lastOrUndefined(parseDiagnostics);
+        const lastError = qc.lastOrUndefined(parseDiagnostics);
         if (lastError && lastError.code === Diagnostics._0_expected.code) {
           addRelatedInfo(lastError, createFileDiagnostic(sourceFile, openBracePosition, 1, Diagnostics.The_parser_expected_to_find_a_to_match_the_token_here));
         }
@@ -5059,7 +5059,7 @@ namespace Parser {
     const awaitToken = parseOptionalToken(SyntaxKind.AwaitKeyword);
     parseExpected(SyntaxKind.OpenParenToken);
 
-    let initializer!: VariableDeclarationList | Expression;
+    let initializer!: qt.VariableDeclarationList | Expression;
     if (token() !== qt.SyntaxKind.SemicolonToken) {
       if (token() === qt.SyntaxKind.VarKeyword || token() === qt.SyntaxKind.LetKeyword || token() === qt.SyntaxKind.ConstKeyword) {
         initializer = parseVariableDeclarationList(/*inForStatementInitializer*/ true);
@@ -5603,7 +5603,7 @@ namespace Parser {
     return finishNode(node);
   }
 
-  function parseObjectBindingElement(): BindingElement {
+  function parseObjectBindingElement(): qt.BindingElement {
     const node = <BindingElement>createNode(SyntaxKind.BindingElement);
     node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
     const tokenIsIdentifier = isIdentifier();
@@ -5639,7 +5639,7 @@ namespace Parser {
     return token() === qt.SyntaxKind.OpenBraceToken || token() === qt.SyntaxKind.OpenBracketToken || token() === qt.SyntaxKind.PrivateIdentifier || isIdentifier();
   }
 
-  function parseIdentifierOrPattern(privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier | BindingPattern {
+  function parseIdentifierOrPattern(privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier | qt.BindingPattern {
     if (token() === qt.SyntaxKind.OpenBracketToken) {
       return parseArrayBindingPattern();
     }
@@ -5653,7 +5653,7 @@ namespace Parser {
     return parseVariableDeclaration(/*allowExclamation*/ true);
   }
 
-  function parseVariableDeclaration(allowExclamation?: boolean): VariableDeclaration {
+  function parseVariableDeclaration(allowExclamation?: boolean): qt.VariableDeclaration {
     const node = <VariableDeclaration>createNode(SyntaxKind.VariableDeclaration);
     node.name = parseIdentifierOrPattern(Diagnostics.Private_identifiers_are_not_allowed_in_variable_declarations);
     if (allowExclamation && node.name.kind === qt.SyntaxKind.Identifier && token() === qt.SyntaxKind.ExclamationToken && !scanner.hasPrecedingLineBreak()) {
@@ -5666,7 +5666,7 @@ namespace Parser {
     return finishNode(node);
   }
 
-  function parseVariableDeclarationList(inForStatementInitializer: boolean): VariableDeclarationList {
+  function parseVariableDeclarationList(inForStatementInitializer: boolean): qt.VariableDeclarationList {
     const node = <VariableDeclarationList>createNode(SyntaxKind.VariableDeclarationList);
 
     switch (token()) {
@@ -5742,7 +5742,7 @@ namespace Parser {
     }
   }
 
-  function tryParseConstructorDeclaration(node: ConstructorDeclaration): ConstructorDeclaration | undefined {
+  function tryParseConstructorDeclaration(node: qt.ConstructorDeclaration): qt.ConstructorDeclaration | undefined {
     return tryParse(() => {
       if (parseConstructorName()) {
         node.kind = qt.SyntaxKind.Constructor;
@@ -6434,7 +6434,7 @@ namespace Parser {
     ClassMembers, // Members in class declaration
     EnumMembers, // Members in enum declaration
     HeritageClauseElement, // Elements in a heritage clause
-    VariableDeclarations, // Variable declarations in variable statement
+    qt.VariableDeclarations, // Variable declarations in variable statement
     ObjectBindingElements, // Binding elements in object binding list
     ArrayBindingElements, // Binding elements in array binding list
     ArgumentExpressions, // Expressions in argument list
@@ -6461,8 +6461,8 @@ namespace Parser {
 
   export namespace JSDocParser {
     export function parseJSDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { jsDocTypeExpression: JSDocTypeExpression; diagnostics: Diagnostic[] } | undefined {
-      initializeState(content, ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
-      sourceFile = createSourceFile('file.js', ScriptTarget.Latest, ScriptKind.JS, /*isDeclarationFile*/ false);
+      initializeState(content, qt.ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
+      sourceFile = createSourceFile('file.js', qt.ScriptTarget.Latest, ScriptKind.JS, /*isDeclarationFile*/ false);
       scanner.setText(content, start, length);
       currentToken = scanner.scan();
       const jsDocTypeExpression = parseJSDocTypeExpression();
@@ -6487,7 +6487,7 @@ namespace Parser {
     }
 
     export function parseIsolatedJSDocComment(content: string, start: number | undefined, length: number | undefined): { jsDoc: JSDoc; diagnostics: Diagnostic[] } | undefined {
-      initializeState(content, ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
+      initializeState(content, qt.ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
       sourceFile = <SourceFile>{ languageVariant: LanguageVariant.Standard, text: content };
       const jsDoc = doInsideOfContext(NodeFlags.JSDoc, () => parseJSDocCommentWorker(start, length));
       const diagnostics = parseDiagnostics;
@@ -7149,7 +7149,7 @@ namespace Parser {
             if (child.kind === qt.SyntaxKind.JSDocTypeTag) {
               if (childTypeTag) {
                 parseErrorAtCurrentToken(Diagnostics.A_JSDoc_typedef_comment_may_not_contain_multiple_type_tags);
-                const lastError = lastOrUndefined(parseDiagnostics);
+                const lastError = qc.lastOrUndefined(parseDiagnostics);
                 if (lastError) {
                   addRelatedInfo(lastError, createDiagnosticForNode(sourceFile, Diagnostics.The_tag_was_first_specified_here));
                 }
@@ -7391,7 +7391,7 @@ namespace Parser {
 }
 
 namespace IncrementalParser {
-  export function updateSourceFile(sourceFile: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean): SourceFile {
+  export function updateSourceFile(sourceFile: SourceFile, newText: string, textChangeRange: qt.TextChangeRange, aggressiveChecks: boolean): SourceFile {
     aggressiveChecks = aggressiveChecks || Debug.shouldAssert(AssertionLevel.Aggressive);
 
     checkChangeRange(sourceFile, newText, textChangeRange, aggressiveChecks);
@@ -7724,7 +7724,7 @@ namespace IncrementalParser {
     }
   }
 
-  function extendToAffectedRange(sourceFile: SourceFile, changeRange: TextChangeRange): TextChangeRange {
+  function extendToAffectedRange(sourceFile: SourceFile, changeRange: qt.TextChangeRange): qt.TextChangeRange {
     // Consider the following code:
     //      void foo() { /; }
     //
@@ -7838,7 +7838,7 @@ namespace IncrementalParser {
     }
   }
 
-  function checkChangeRange(sourceFile: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean) {
+  function checkChangeRange(sourceFile: SourceFile, newText: string, textChangeRange: qt.TextChangeRange, aggressiveChecks: boolean) {
     const oldText = sourceFile.text;
     if (textChangeRange) {
       Debug.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
@@ -7982,13 +7982,13 @@ namespace IncrementalParser {
   }
 }
 
-/** @internal */
+
 export function isDeclarationFileName(fileName: string): boolean {
   return fileExtensionIs(fileName, Extension.Dts);
 }
 
 export interface PragmaContext {
-  languageVersion: ScriptTarget;
+  languageVersion: qt.ScriptTarget;
   pragmas?: PragmaMap;
   checkJsDirective?: CheckJsDirective;
   referencedFiles: FileReference[];
@@ -8189,7 +8189,7 @@ function getNamedPragmaArguments(pragma: PragmaDefinition, text: string | undefi
   return argMap;
 }
 
-/** @internal */
+
 export function tagNamesAreEquivalent(lhs: JsxTagNameExpression, rhs: JsxTagNameExpression): boolean {
   if (lhs.kind !== rhs.kind) {
     return false;

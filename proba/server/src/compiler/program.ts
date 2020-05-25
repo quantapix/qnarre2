@@ -6,12 +6,12 @@ export function findConfigFile(searchPath: string, fileExists: (fileName: string
 }
 
 export function resolveTripleslashReference(moduleName: string, containingFile: string): string {
-  const basePath = getDirectoryPath(containingFile);
+  const basePath = qp.getDirectoryPath(containingFile);
   const referencedFileName = isRootedDiskPath(moduleName) ? moduleName : combinePaths(basePath, moduleName);
   return normalizePath(referencedFileName);
 }
 
-export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
+export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], currentDirectory: string, getCanonicalFileName: qc.GetCanonicalFileName): string {
   let commonPathComponents: string[] | undefined;
   const failed = forEach(fileNames, (sourceFile) => {
     // Each file contributes into common source file path
@@ -71,7 +71,7 @@ export function createCompilerHost(options: qt.CompilerOptions, setParentNodes?:
 export function createCompilerHostWorker(options: qt.CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
   const existingDirectories = qc.createMap<boolean>();
   const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
-  function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
+  function getSourceFile(fileName: string, languageVersion: qt.ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
     let text: string | undefined;
     try {
       performance.mark('beforeIORead');
@@ -157,7 +157,7 @@ export function createCompilerHostWorker(options: qt.CompilerOptions, setParentN
   }
 
   function getDefaultLibLocation(): string {
-    return getDirectoryPath(normalizePath(system.getExecutingFilePath()));
+    return qp.getDirectoryPath(normalizePath(system.getExecutingFilePath()));
   }
 
   const newLine = getNewLineCharacter(options, () => system.newLine);
@@ -342,7 +342,6 @@ export function formatDiagnostic(diagnostic: Diagnostic, host: FormatDiagnostics
   return errorMessage;
 }
 
-/** @internal */
 export enum ForegroundColorEscapeSequences {
   Grey = '\u001b[90m',
   Red = '\u001b[91m',
@@ -369,7 +368,6 @@ function getCategoryFormat(category: DiagnosticCategory): ForegroundColorEscapeS
   }
 }
 
-/** @internal */
 export function formatColorAndReset(text: string, formatStyle: string) {
   return formatStyle + text + resetEscapeSequence;
 }
@@ -713,7 +711,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   let skipDefaultLib = options.noLib;
   const getDefaultLibraryFileName = memoize(() => host.getDefaultLibFileName(options));
-  const defaultLibraryPath = host.getDefaultLibLocation ? host.getDefaultLibLocation() : getDirectoryPath(getDefaultLibraryFileName());
+  const defaultLibraryPath = host.getDefaultLibLocation ? host.getDefaultLibLocation() : qp.getDirectoryPath(getDefaultLibraryFileName());
   const programDiagnostics = createDiagnosticCollection();
   const currentDirectory = host.getCurrentDirectory();
   const supportedExtensions = getSupportedExtensions(options);
@@ -833,7 +831,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
     if (typeReferences.length) {
       // This containingFilename needs to match with the one used in managed-side
-      const containingDirectory = options.configFilePath ? getDirectoryPath(options.configFilePath) : host.getCurrentDirectory();
+      const containingDirectory = options.configFilePath ? qp.getDirectoryPath(options.configFilePath) : host.getCurrentDirectory();
       const containingFilename = combinePaths(containingDirectory, inferredTypesContainingFile);
       const resolutions = resolveTypeReferenceDirectiveNamesWorker(typeReferences, containingFilename);
       for (let i = 0; i < typeReferences.length; i++) {
@@ -969,7 +967,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function compareDefaultLibFiles(a: SourceFile, b: SourceFile) {
-    return compareValues(getDefaultLibFilePriority(a), getDefaultLibFilePriority(b));
+    return qc.compareValues(getDefaultLibFilePriority(a), getDefaultLibFilePriority(b));
   }
 
   function getDefaultLibFilePriority(a: SourceFile) {
@@ -999,7 +997,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         commonSourceDirectory = getNormalizedAbsolutePath(options.rootDir, currentDirectory);
       } else if (options.composite && options.configFilePath) {
         // Project compilations never infer their root from the input source paths
-        commonSourceDirectory = getDirectoryPath(normalizeSlashes(options.configFilePath));
+        commonSourceDirectory = qp.getDirectoryPath(normalizeSlashes(options.configFilePath));
         checkSourceFilesBelongToPath(emittedFiles, commonSourceDirectory);
       } else {
         commonSourceDirectory = computeCommonSourceDirectory(emittedFiles);
@@ -1504,7 +1502,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
     // If '--lib' is not specified, include default library file according to '--target'
     // otherwise, using options specified in '--lib' instead of '--target' default library file
-    const equalityComparer = host.useCaseSensitiveFileNames() ? equateStringsCaseSensitive : equateStringsCaseInsensitive;
+    const equalityComparer = host.useCaseSensitiveFileNames() ? qc.equateStringsCaseSensitive : qc.equateStringsCaseInsensitive;
     if (!options.lib) {
       return equalityComparer(file.fileName, getDefaultLibraryFileName());
     } else {
@@ -1778,7 +1776,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
           case qt.SyntaxKind.ArrowFunction:
           case qt.SyntaxKind.VariableDeclaration:
             // type annotation
-            if ((<FunctionLikeDeclaration | VariableDeclaration | ParameterDeclaration | PropertyDeclaration>parent).type === node) {
+            if ((<FunctionLikeDeclaration | qt.VariableDeclaration | ParameterDeclaration | PropertyDeclaration>parent).type === node) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_annotations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1976,7 +1974,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return sourceFile.isDeclarationFile ? [] : getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
   }
 
-  function getOptionsDiagnostics(): SortedReadonlyArray<Diagnostic> {
+  function getOptionsDiagnostics(): qpc.SortedReadonlyArray<Diagnostic> {
     return sortAndDeduplicateDiagnostics(concatenate(fileProcessingDiagnostics.getGlobalDiagnostics(), concatenate(programDiagnostics.getGlobalDiagnostics(), getOptionsDiagnosticsOfConfigFile())));
   }
 
@@ -1993,8 +1991,8 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return diagnostics;
   }
 
-  function getGlobalDiagnostics(): SortedReadonlyArray<Diagnostic> {
-    return rootNames.length ? sortAndDeduplicateDiagnostics(getDiagnosticsProducingTypeChecker().getGlobalDiagnostics().slice()) : ((emptyArray as any) as SortedReadonlyArray<Diagnostic>);
+  function getGlobalDiagnostics(): qpc.SortedReadonlyArray<Diagnostic> {
+    return rootNames.length ? sortAndDeduplicateDiagnostics(getDiagnosticsProducingTypeChecker().getGlobalDiagnostics().slice()) : ((emptyArray as any) as qpc.SortedReadonlyArray<Diagnostic>);
   }
 
   function getConfigFileParsingDiagnostics(): readonly Diagnostic[] {
@@ -2061,7 +2059,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
           imports = append(imports, moduleNameExpr);
         }
       } else if (isModuleDeclaration(node)) {
-        if (isAmbientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
+        if (isAmbientModule(node) && (inAmbientModule || qu.hasSyntacticModifier(node, qt.ModifierFlags.Ambient) || file.isDeclarationFile)) {
           const nameText = getTextOfIdentifierOrLiteral(node.name);
           // Ambient module declarations can be interpreted as augmentations for some existing external modules.
           // This will happen in two cases:
@@ -2236,7 +2234,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       // but the resolved real path may be the .d.ts from project reference
       // Note:: Currently we try the real path only if the
       // file is from node_modules to avoid having to run real path on all file paths
-      if (!source && host.realpath && options.preserveSymlinks && isDeclarationFileName(fileName) && stringContains(fileName, nodeModulesPathPart)) {
+      if (!source && host.realpath && options.preserveSymlinks && isDeclarationFileName(fileName) && qc.stringContains(fileName, nodeModulesPathPart)) {
         const realPath = host.realpath(fileName);
         if (realPath !== fileName) source = getSourceOfProjectReferenceRedirect(realPath);
       }
@@ -2615,7 +2613,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         processRootFile(combinePaths(defaultLibraryPath, libFileName), /*isDefaultLib*/ true, /*ignoreNoDefaultLib*/ true);
       } else {
         const unqualifiedLibName = removeSuffix(removePrefix(libName, 'lib.'), '.d.ts');
-        const suggestion = getSpellingSuggestion(unqualifiedLibName, libs, identity);
+        const suggestion = getSpellingSuggestion(unqualifiedLibName, libs, qc.identity);
         const message = suggestion ? Diagnostics.Cannot_find_lib_definition_for_0_Did_you_mean_1 : Diagnostics.Cannot_find_lib_definition_for_0;
         fileProcessingDiagnostics.add(createFileDiagnostic(file, libReference.pos, libReference.end - libReference.pos, message, libName, suggestion));
       }
@@ -2750,8 +2748,8 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       addFileToFilesByName(sourceFile, sourceFilePath, /*redirectedPath*/ undefined);
     } else {
       // An absolute path pointing to the containing directory of the config file
-      const basePath = getNormalizedAbsolutePath(getDirectoryPath(refPath), host.getCurrentDirectory());
-      sourceFile = host.getSourceFile(refPath, ScriptTarget.JSON);
+      const basePath = getNormalizedAbsolutePath(qp.getDirectoryPath(refPath), host.getCurrentDirectory());
+      sourceFile = host.getSourceFile(refPath, qt.ScriptTarget.JSON);
       addFileToFilesByName(sourceFile, sourceFilePath, /*redirectedPath*/ undefined);
       if (sourceFile === undefined) {
         projectReferenceRedirects.set(sourceFilePath, false);
@@ -2903,12 +2901,12 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'noImplicitUseStrict', 'alwaysStrict');
     }
 
-    const languageVersion = options.target || ScriptTarget.ES3;
+    const languageVersion = options.target || qt.ScriptTarget.ES3;
     const outFile = options.outFile || options.out;
 
     const firstNonAmbientExternalModuleSourceFile = find(files, (f) => isExternalModule(f) && !f.isDeclarationFile);
     if (options.isolatedModules) {
-      if (options.module === ModuleKind.None && languageVersion < ScriptTarget.ES2015) {
+      if (options.module === ModuleKind.None && languageVersion < qt.ScriptTarget.ES2015) {
         createDiagnosticForOptionName(Diagnostics.Option_isolatedModules_can_only_be_used_when_either_option_module_is_provided_or_option_target_is_ES2015_or_higher, 'isolatedModules', 'target');
       }
 
@@ -2917,7 +2915,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         const span = getErrorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programDiagnostics.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, Diagnostics.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
       }
-    } else if (firstNonAmbientExternalModuleSourceFile && languageVersion < ScriptTarget.ES2015 && options.module === ModuleKind.None) {
+    } else if (firstNonAmbientExternalModuleSourceFile && languageVersion < qt.ScriptTarget.ES2015 && options.module === ModuleKind.None) {
       // We cannot use createDiagnosticFromNode because nodes do not have parents yet
       const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
       programDiagnostics.add(createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none));
@@ -2961,7 +2959,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       }
     }
 
-    if (options.useDefineForClassFields && languageVersion === ScriptTarget.ES3) {
+    if (options.useDefineForClassFields && languageVersion === qt.ScriptTarget.ES3) {
       createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_when_option_target_is_ES3, 'useDefineForClassFields');
     }
 
@@ -3230,7 +3228,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function isSameFile(file1: string, file2: string) {
-    return comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
+    return comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
   }
 
   function getProbableSymlinks(): qpc.ReadonlyMap<string> {
@@ -3287,7 +3285,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
           if (!ref) return;
           const out = ref.commandLine.options.outFile || ref.commandLine.options.out;
           if (out) {
-            mapOfDeclarationDirectories!.set(getDirectoryPath(host.toPath(out)), true);
+            mapOfDeclarationDirectories!.set(qp.getDirectoryPath(host.toPath(out)), true);
           } else {
             // Set declaration's in different locations only, if they are next to source the directory present doesnt change
             const declarationDir = ref.commandLine.options.declarationDir || ref.commandLine.options.outDir;
@@ -3347,9 +3345,9 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
       (declDirPath) =>
         dirPath === declDirPath ||
         // Any parent directory of declaration dir
-        startsWith(declDirPath, dirPathWithTrailingDirectorySeparator) ||
+        qc.startsWith(declDirPath, dirPathWithTrailingDirectorySeparator) ||
         // Any directory inside declaration dir
-        startsWith(dirPath, `${declDirPath}/`)
+        qc.startsWith(dirPath, `${declDirPath}/`)
     );
   }
 
@@ -3357,7 +3355,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     if (!host.getResolvedProjectReferences()) return;
 
     // Because we already watch node_modules, handle symlinks in there
-    if (!originalRealpath || !stringContains(directory, nodeModulesPathPart)) return;
+    if (!originalRealpath || !qc.stringContains(directory, nodeModulesPathPart)) return;
     if (!symlinkedDirectories) symlinkedDirectories = createMap();
     const directoryPath = ensureTrailingDirectorySeparator(host.toPath(directory));
     if (symlinkedDirectories.has(directoryPath)) return;
@@ -3384,13 +3382,13 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
 
     if (!symlinkedDirectories) return false;
     const fileOrDirectoryPath = host.toPath(fileOrDirectory);
-    if (!stringContains(fileOrDirectoryPath, nodeModulesPathPart)) return false;
+    if (!qc.stringContains(fileOrDirectoryPath, nodeModulesPathPart)) return false;
     if (isFile && symlinkedFiles && symlinkedFiles.has(fileOrDirectoryPath)) return true;
 
     // If it contains node_modules check if its one of the symlinked path we know of
     return (
       firstDefinedIterator(symlinkedDirectories.entries(), ([directoryPath, symlinkedDirectory]) => {
-        if (!symlinkedDirectory || !startsWith(fileOrDirectoryPath, directoryPath)) return undefined;
+        if (!symlinkedDirectory || !qc.startsWith(fileOrDirectoryPath, directoryPath)) return undefined;
         const result = fileOrDirectoryExistsUsingSource(fileOrDirectoryPath.replace(directoryPath, symlinkedDirectory.realPath));
         if (isFile && result) {
           if (!symlinkedFiles) symlinkedFiles = createMap();

@@ -1,7 +1,13 @@
+/* eslint-disable no-case-declarations */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import * as qc from './corePublic';
+
+import * as qpc from './corePublic';
+import * as qc from './core';
 import * as qt from './types';
-import * as qd from './debug';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
 
 export type ErrorCallback = (message: qt.DiagnosticMessage, length: number) => void;
 
@@ -72,7 +78,7 @@ export interface Scanner {
   tryScan<T>(callback: () => T): T;
 }
 
-const textToKeywordObj: qc.MapLike<qt.KeywordSyntaxKind> = {
+const textToKeywordObj: qpc.MapLike<qt.KeywordSyntaxKind> = {
   abstract: qt.SyntaxKind.AbstractKeyword,
   any: qt.SyntaxKind.AnyKeyword,
   as: qt.SyntaxKind.AsKeyword,
@@ -151,9 +157,9 @@ const textToKeywordObj: qc.MapLike<qt.KeywordSyntaxKind> = {
   of: qt.SyntaxKind.OfKeyword,
 };
 
-const textToKeyword = createMapFromTemplate(textToKeywordObj);
+const textToKeyword = qc.createMapFromTemplate(textToKeywordObj);
 
-const textToToken = createMapFromTemplate<qt.SyntaxKind>({
+const textToToken = qc.createMapFromTemplate<qt.SyntaxKind>({
   ...textToKeywordObj,
   '{': qt.SyntaxKind.OpenBraceToken,
   '}': qt.SyntaxKind.CloseBraceToken,
@@ -259,23 +265,15 @@ function lookupInUnicodeMap(code: number, map: readonly number[]): boolean {
 
   return false;
 }
-export function isUnicodeIdentifierStart(code: number, languageVersion: qt.ScriptTarget | undefined) {
-  return languageVersion >= qt.ScriptTarget.ES2015
-    ? lookupInUnicodeMap(code, unicodeESNextIdentifierStart)
-    : languageVersion === qt.ScriptTarget.ES5
-    ? lookupInUnicodeMap(code, unicodeES5IdentifierStart)
-    : lookupInUnicodeMap(code, unicodeES3IdentifierStart);
+export function isUnicodeIdentifierStart(code: number, languageVersion = qt.ScriptTarget.Latest) {
+  return languageVersion >= qt.ScriptTarget.ES2015 ? lookupInUnicodeMap(code, unicodeESNextIdentifierStart) : languageVersion === qt.ScriptTarget.ES5 ? lookupInUnicodeMap(code, unicodeES5IdentifierStart) : lookupInUnicodeMap(code, unicodeES3IdentifierStart);
 }
 
-function isUnicodeIdentifierPart(code: number, languageVersion: qt.ScriptTarget | undefined) {
-  return languageVersion >= qt.ScriptTarget.ES2015
-    ? lookupInUnicodeMap(code, unicodeESNextIdentifierPart)
-    : languageVersion === qt.ScriptTarget.ES5
-    ? lookupInUnicodeMap(code, unicodeES5IdentifierPart)
-    : lookupInUnicodeMap(code, unicodeES3IdentifierPart);
+function isUnicodeIdentifierPart(code: number, languageVersion = qt.ScriptTarget.Latest) {
+  return languageVersion >= qt.ScriptTarget.ES2015 ? lookupInUnicodeMap(code, unicodeESNextIdentifierPart) : languageVersion === qt.ScriptTarget.ES5 ? lookupInUnicodeMap(code, unicodeES5IdentifierPart) : lookupInUnicodeMap(code, unicodeES3IdentifierPart);
 }
 
-function makeReverseMap(source: qc.Map<number>): string[] {
+function makeReverseMap(source: qpc.Map<number>): string[] {
   const result: string[] = [];
   source.forEach((value, name) => {
     result[value] = name;
@@ -322,9 +320,7 @@ export function computeLineStarts(text: string): number[] {
 export function getPositionOfLineAndCharacter(sourceFile: qt.SourceFileLike, line: number, character: number): number;
 export function getPositionOfLineAndCharacter(sourceFile: qt.SourceFileLike, line: number, character: number, allowEdits?: true): number; // eslint-disable-line @typescript-eslint/unified-signatures
 export function getPositionOfLineAndCharacter(sourceFile: qt.SourceFileLike, line: number, character: number, allowEdits?: true): number {
-  return sourceFile.getPositionOfLineAndCharacter
-    ? sourceFile.getPositionOfLineAndCharacter(line, character, allowEdits)
-    : computePositionOfLineAndCharacter(getLineStarts(sourceFile), line, character, sourceFile.text, allowEdits);
+  return sourceFile.getPositionOfLineAndCharacter ? sourceFile.getPositionOfLineAndCharacter(line, character, allowEdits) : computePositionOfLineAndCharacter(getLineStarts(sourceFile), line, character, sourceFile.text, allowEdits);
 }
 
 export function computePositionOfLineAndCharacter(lineStarts: readonly number[], line: number, character: number, debugText?: string, allowEdits?: true): number {
@@ -333,9 +329,7 @@ export function computePositionOfLineAndCharacter(lineStarts: readonly number[],
       // Clamp line to nearest allowable value
       line = line < 0 ? 0 : line >= lineStarts.length ? lineStarts.length - 1 : line;
     } else {
-      qd.fail(
-        `Bad line number. Line: ${line}, lineStarts.length: ${lineStarts.length} , line map is correct? ${debugText !== undefined ? arraysEqual(lineStarts, computeLineStarts(debugText)) : 'unknown'}`
-      );
+      Debug.fail(`Bad line number. Line: ${line}, lineStarts.length: ${lineStarts.length} , line map is correct? ${debugText !== undefined ? qc.arraysEqual(lineStarts, computeLineStarts(debugText)) : 'unknown'}`);
     }
   }
 
@@ -347,9 +341,9 @@ export function computePositionOfLineAndCharacter(lineStarts: readonly number[],
     return res > lineStarts[line + 1] ? lineStarts[line + 1] : typeof debugText === 'string' && res > debugText.length ? debugText.length : res;
   }
   if (line < lineStarts.length - 1) {
-    qd.assert(res < lineStarts[line + 1]);
+    Debug.assert(res < lineStarts[line + 1]);
   } else if (debugText !== undefined) {
-    qd.assert(res <= debugText.length); // Allow single character overflow for trailing newline
+    Debug.assert(res <= debugText.length); // Allow single character overflow for trailing newline
   }
   return res;
 }
@@ -358,7 +352,7 @@ export function getLineStarts(sourceFile: qt.SourceFileLike): readonly number[] 
   return sourceFile.lineMap || (sourceFile.lineMap = computeLineStarts(sourceFile.text));
 }
 
-export function computeLineAndCharacterOfPosition(lineStarts: readonly number[], position: number): LineAndCharacter {
+export function computeLineAndCharacterOfPosition(lineStarts: readonly number[], position: number): qt.LineAndCharacter {
   const lineNumber = computeLineOfPosition(lineStarts, position);
   return {
     line: lineNumber,
@@ -366,12 +360,8 @@ export function computeLineAndCharacterOfPosition(lineStarts: readonly number[],
   };
 }
 
-/**
- * @internal
- * We assume the first line starts at position 0 and 'position' is non-negative.
- */
 export function computeLineOfPosition(lineStarts: readonly number[], position: number, lowerBound?: number) {
-  let lineNumber = binarySearch(lineStarts, position, identity, compareValues, lowerBound);
+  let lineNumber = qc.binarySearch(lineStarts, position, qc.identity, qc.compareValues, lowerBound);
   if (lineNumber < 0) {
     // If the actual position was not found,
     // the binary search returns the 2's-complement of the next line start
@@ -381,7 +371,7 @@ export function computeLineOfPosition(lineStarts: readonly number[], position: n
     // We want the index of the previous line start, so we subtract 1.
     // Review 2's-complement if this is confusing.
     lineNumber = ~lineNumber - 1;
-    qd.assert(lineNumber !== -1, 'position cannot precede the beginning of the file');
+    Debug.assert(lineNumber !== -1, 'position cannot precede the beginning of the file');
   }
   return lineNumber;
 }
@@ -397,7 +387,7 @@ export function getLinesBetweenPositions(sourceFile: qt.SourceFileLike, pos1: nu
   return isNegative ? lowerLine - upperLine : upperLine - lowerLine;
 }
 
-export function getLineAndCharacterOfPosition(sourceFile: qt.SourceFileLike, position: number): LineAndCharacter {
+export function getLineAndCharacterOfPosition(sourceFile: qt.SourceFileLike, position: number): qt.LineAndCharacter {
   return computeLineAndCharacterOfPosition(getLineStarts(sourceFile), position);
 }
 
@@ -484,7 +474,7 @@ export function couldStartTrivia(text: string, pos: number): boolean {
 }
 
 export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boolean, stopAtComments = false): number {
-  if (positionIsSynthesized(pos)) {
+  if (qu.positionIsSynthesized(pos)) {
     return pos;
   }
 
@@ -569,7 +559,7 @@ export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boole
 const mergeConflictMarkerLength = '<<<<<<<'.length;
 
 function isConflictMarkerTrivia(text: string, pos: number) {
-  qd.assert(pos >= 0);
+  Debug.assert(pos >= 0);
 
   // Conflict markers must be at the start of a line.
   if (pos === 0 || isLineBreak(text.charCodeAt(pos - 1))) {
@@ -602,7 +592,7 @@ function scanConflictMarkerTrivia(text: string, pos: number, error?: (diag: qt.D
       pos++;
     }
   } else {
-    qd.assert(ch === qt.CharacterCodes.bar || ch === qt.CharacterCodes.equals);
+    Debug.assert(ch === qt.CharacterCodes.bar || ch === qt.CharacterCodes.equals);
     // Consume everything from the start of a ||||||| or ======= marker to the start
     // of the next ======= or >>>>>>> marker.
     while (pos < len) {
@@ -622,7 +612,7 @@ const shebangTriviaRegex = /^#!.*/;
 
 export function isShebangTrivia(text: string, pos: number) {
   // Shebangs check must only be done at the start of the file
-  qd.assert(pos === 0);
+  Debug.assert(pos === 0);
   return shebangTriviaRegex.test(text);
 }
 
@@ -652,15 +642,7 @@ export function scanShebangTrivia(text: string, pos: number) {
  * @returns If "reduce" is true, the accumulated value. If "reduce" is false, the first truthy
  *      return value of the callback.
  */
-function iterateCommentRanges<T, U>(
-  reduce: boolean,
-  text: string,
-  pos: number,
-  trailing: boolean,
-  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T, memo: U | undefined) => U,
-  state: T,
-  initial?: U
-): U | undefined {
+function iterateCommentRanges<T, U>(reduce: boolean, text: string, pos: number, trailing: boolean, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U): U | undefined {
   let pendingPos!: number;
   let pendingEnd!: number;
   let pendingKind!: qt.CommentKind;
@@ -765,48 +747,26 @@ function iterateCommentRanges<T, U>(
 }
 
 export function forEachLeadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-export function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-export function forEachLeadingCommentRange<T, U>(
-  text: string,
-  pos: number,
-  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U,
-  state?: T
-): U | undefined {
+export function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state: T): U | undefined;
+export function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
   return iterateCommentRanges(/*reduce*/ false, text, pos, /*trailing*/ false, cb, state);
 }
 
 export function forEachTrailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-export function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-export function forEachTrailingCommentRange<T, U>(
-  text: string,
-  pos: number,
-  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U,
-  state?: T
-): U | undefined {
+export function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined;
+export function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T) => U, state?: T): U | undefined {
   return iterateCommentRanges(/*reduce*/ false, text, pos, /*trailing*/ true, cb, state);
 }
 
-export function reduceEachLeadingCommentRange<T, U>(
-  text: string,
-  pos: number,
-  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U,
-  state: T,
-  initial: U
-) {
+export function reduceEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
   return iterateCommentRanges(/*reduce*/ true, text, pos, /*trailing*/ false, cb, state, initial);
 }
 
-export function reduceEachTrailingCommentRange<T, U>(
-  text: string,
-  pos: number,
-  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U,
-  state: T,
-  initial: U
-) {
+export function reduceEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state?: T, memo?: U) => U, state?: T, initial?: U) {
   return iterateCommentRanges(/*reduce*/ true, text, pos, /*trailing*/ true, cb, state, initial);
 }
 
-function appendCommentRange(pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, _state: any, comments: qt.CommentRange[]) {
+function appendCommentRange(pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, _state?: any, comments?: qt.CommentRange[]) {
   if (!comments) {
     comments = [];
   }
@@ -830,13 +790,7 @@ export function getShebang(text: string): string | undefined {
 }
 
 export function isIdentifierStart(ch: number, languageVersion: qt.ScriptTarget | undefined): boolean {
-  return (
-    (ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.Z) ||
-    (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) ||
-    ch === qt.CharacterCodes.$ ||
-    ch === qt.CharacterCodes._ ||
-    (ch > qt.CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierStart(ch, languageVersion))
-  );
+  return (ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.Z) || (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) || ch === qt.CharacterCodes.$ || ch === qt.CharacterCodes._ || (ch > qt.CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierStart(ch, languageVersion));
 }
 
 export function isIdentifierPart(ch: number, languageVersion: qt.ScriptTarget | undefined, identifierVariant?: qt.LanguageVariant): boolean {
@@ -868,15 +822,7 @@ export function isIdentifierText(name: string, languageVersion: qt.ScriptTarget 
 }
 
 // Creates a scanner over a (possibly unspecified) range of a piece of text.
-export function createScanner(
-  languageVersion: qt.ScriptTarget,
-  skipTrivia: boolean,
-  languageVariant = qt.LanguageVariant.Standard,
-  textInitial?: string,
-  onError?: ErrorCallback,
-  start?: number,
-  length?: number
-): Scanner {
+export function createScanner(languageVersion: qt.ScriptTarget, skipTrivia: boolean, languageVariant = qt.LanguageVariant.Standard, textInitial?: string, onError?: ErrorCallback, start?: number, length?: number): Scanner {
   let text = textInitial!;
 
   // Current position (end position of text of current token)
@@ -941,7 +887,7 @@ export function createScanner(
     scanRange,
   };
 
-  if (qd.isDebugging) {
+  if (Debug.isDebugging) {
     Object.defineProperty(scanner, '__debugShowCurrentPositionInText', {
       get: () => {
         const text = scanner.getText();
@@ -1039,7 +985,7 @@ export function createScanner(
       checkForIdentifierStartAfterNumericLiteral(start, decimalFragment === undefined && !!(tokenFlags & qt.TokenFlags.Scientific));
       return {
         type: qt.SyntaxKind.NumericLiteral,
-        value: '' + +result, // if value is not an integer, it can be safely coerced to a number
+        value: `${result}`,
       };
     } else {
       tokenValue = result;
@@ -1232,7 +1178,7 @@ export function createScanner(
       pos++;
     }
 
-    qd.assert(resultingToken !== undefined);
+    Debug.assert(resultingToken !== undefined);
 
     tokenValue = contents;
     return resultingToken;
@@ -1446,7 +1392,7 @@ export function createScanner(
     return result;
   }
 
-  function getIdentifierToken(): qt.SyntaxKind.Identifier | KeywordSyntaxKind {
+  function getIdentifierToken(): qt.SyntaxKind.Identifier | qt.KeywordSyntaxKind {
     // Reserved words are between 2 and 11 characters long and start with a lowercase letter
     const len = tokenValue.length;
     if (len >= 2 && len <= 11) {
@@ -1503,7 +1449,7 @@ export function createScanner(
       tokenValue += 'n';
       // Use base 10 instead of base 2 or base 8 for shorter literals
       if (tokenFlags & qt.TokenFlags.BinaryOrOctalSpecifier) {
-        tokenValue = parsePseudoBigInt(tokenValue) + 'n';
+        tokenValue = qu.parsePseudoBigInt(tokenValue) + 'n';
       }
       pos++;
       return qt.SyntaxKind.BigIntLiteral;
@@ -1516,7 +1462,7 @@ export function createScanner(
           : tokenFlags & qt.TokenFlags.OctalSpecifier
           ? parseInt(tokenValue.slice(2), 8) // skip "0o"
           : +tokenValue;
-      tokenValue = '' + numericValue;
+      tokenValue = `${numericValue}`;
       return qt.SyntaxKind.NumericLiteral;
     }
   }
@@ -1776,13 +1722,10 @@ export function createScanner(
           }
           // Try to parse as an octal
           if (pos + 1 < end && isOctalDigit(text.charCodeAt(pos + 1))) {
-            tokenValue = '' + scanOctalDigits();
+            tokenValue = `${scanOctalDigits()}`;
             tokenFlags |= qt.TokenFlags.Octal;
             return (token = qt.SyntaxKind.NumericLiteral);
           }
-        // This fall-through is a deviation from the EcmaScript grammar. The grammar says that a leading zero
-        // can only be followed by an octal digit, a dot, or the end of the number literal. However, we are being
-        // permissive and allowing decimal digits of the form 08* and 09* (which many browsers also do).
         // falls through
         case qt.CharacterCodes._1:
         case qt.CharacterCodes._2:
@@ -2053,7 +1996,7 @@ export function createScanner(
       return commentDirectives;
     }
 
-    return append(commentDirectives, {
+    return qc.append(commentDirectives, {
       range: { pos: lineStart, end: pos },
       type,
     });
@@ -2080,7 +2023,7 @@ export function createScanner(
    * Unconditionally back up and scan a template expression portion.
    */
   function reScanTemplateToken(isTaggedTemplate: boolean): qt.SyntaxKind {
-    qd.assert(token === qt.SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+    Debug.assert(token === qt.SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
     pos = tokenPos;
     return (token = scanTemplateAndSetTokenValue(isTaggedTemplate));
   }
@@ -2104,7 +2047,7 @@ export function createScanner(
   }
 
   function reScanQuestionToken(): qt.SyntaxKind {
-    qd.assert(token === qt.SyntaxKind.QuestionQuestionToken, "'reScanQuestionToken' should only be called on a '??'");
+    Debug.assert(token === qt.SyntaxKind.QuestionQuestionToken, "'reScanQuestionToken' should only be called on a '??'");
     pos = tokenPos + 1;
     return (token = qt.SyntaxKind.QuestionToken);
   }
@@ -2391,7 +2334,7 @@ export function createScanner(
   }
 
   function setTextPos(textPos: number) {
-    qd.assert(textPos >= 0);
+    Debug.assert(textPos >= 0);
     pos = textPos;
     startPos = textPos;
     tokenPos = textPos;
@@ -2438,7 +2381,7 @@ function charSize(ch: number) {
 
 // Derived from the 10.1.1 UTF16Encoding of the ES6 Spec.
 function utf16EncodeAsStringFallback(codePoint: number) {
-  qd.assert(0x0 <= codePoint && codePoint <= 0x10ffff);
+  Debug.assert(0x0 <= codePoint && codePoint <= 0x10ffff);
 
   if (codePoint <= 65535) {
     return String.fromCharCode(codePoint);

@@ -160,7 +160,7 @@ export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration> | u
     // exists in a different lexical scope. To address this, we move any binding patterns and initializers
     // in a parameter list to the body if we detect a variable being hoisted while visiting a parameter list
     // when the emit target is greater than ES2015.
-    if (context.getLexicalEnvironmentFlags() & LexicalEnvironmentFlags.VariablesHoistedInParameters && getEmitScriptTarget(context.getCompilerOptions()) >= ScriptTarget.ES2015) {
+    if (context.getLexicalEnvironmentFlags() & LexicalEnvironmentFlags.VariablesHoistedInParameters && getEmitScriptTarget(context.getCompilerOptions()) >= qt.ScriptTarget.ES2015) {
       updated = addDefaultValueAssignmentsIfNeeded(updated, context);
     }
     context.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, false);
@@ -198,7 +198,7 @@ function addDefaultValueAssignmentForBindingPattern(parameter: ParameterDeclarat
 
 function addDefaultValueAssignmentForInitializer(parameter: ParameterDeclaration, name: Identifier, initializer: Expression, context: TransformationContext) {
   context.addInitializationStatement(
-    createIf(createTypeCheck(getSynthesizedClone(name), 'undefined'), setEmitFlags(setTextRange(createBlock([createExpressionStatement(setEmitFlags(setTextRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)), parameter), EmitFlags.NoComments))]), parameter), EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments))
+    createIf(createTypeCheck(getSynthesizedClone(name), 'undefined'), setEmitFlags(setTextRange(createBlock([createExpressionStatement(setEmitFlags(setTextRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | qu.getEmitFlags(initializer) | EmitFlags.NoComments)), parameter), EmitFlags.NoComments))]), parameter), EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments))
   );
   return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dotDotDotToken, parameter.name, parameter.questionToken, parameter.type, /*initializer*/ undefined);
 }

@@ -318,7 +318,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
   compilerHost.writeLog = writeLog;
 
   // Cache for the module resolution
-  const resolutionCache = createResolutionCache(compilerHost, configFileName ? getDirectoryPath(getNormalizedAbsolutePath(configFileName, currentDirectory)) : currentDirectory, /*logChangesWhenResolvingModule*/ false);
+  const resolutionCache = createResolutionCache(compilerHost, configFileName ? qp.getDirectoryPath(getNormalizedAbsolutePath(configFileName, currentDirectory)) : currentDirectory, /*logChangesWhenResolvingModule*/ false);
   // Resolve module using host module resolution strategy if provided otherwise use resolution cache to resolve module names
   compilerHost.resolveModuleNames = host.resolveModuleNames ? (...args) => host.resolveModuleNames!(...args) : (moduleNames, containingFile, reusedNames, redirectedReference) => resolutionCache.resolveModuleNames(moduleNames, containingFile, reusedNames, redirectedReference);
   compilerHost.resolveTypeReferenceDirectives = host.resolveTypeReferenceDirectives ? (...args) => host.resolveTypeReferenceDirectives!(...args) : (typeDirectiveNames, containingFile, redirectedReference) => resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
@@ -461,7 +461,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     return directoryStructureHost.fileExists(fileName);
   }
 
-  function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined {
+  function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     // No source file on the host
     if (isFileMissingOnHost(hostSourceFile)) {
@@ -592,7 +592,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
 
   function reloadFileNamesFromConfigFile() {
     writeLog('Reloading new file names and options');
-    const result = getFileNamesFromConfigSpecs(configFileSpecs, getNormalizedAbsolutePath(getDirectoryPath(configFileName), currentDirectory), compilerOptions, parseConfigFileHost);
+    const result = getFileNamesFromConfigSpecs(configFileSpecs, getNormalizedAbsolutePath(qp.getDirectoryPath(configFileName), currentDirectory), compilerOptions, parseConfigFileHost);
     if (updateErrorForNoInputFiles(result, getNormalizedAbsolutePath(configFileName, currentDirectory), configFileSpecs, configFileParsingDiagnostics!, canConfigFileJsonReportNoInputFiles)) {
       hasChangedConfigFileParsingErrors = true;
     }
@@ -673,7 +673,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
 
   function watchConfigFileWildCardDirectories() {
     if (configFileSpecs) {
-      updateWatchingWildcardDirectories(watchedWildcardDirectories || (watchedWildcardDirectories = createMap()), createMapFromTemplate(configFileSpecs.wildcardDirectories), watchWildcardDirectory);
+      updateWatchingWildcardDirectories(watchedWildcardDirectories || (watchedWildcardDirectories = createMap()), qc.createMapFromTemplate(configFileSpecs.wildcardDirectories), watchWildcardDirectory);
     } else if (watchedWildcardDirectories) {
       clearMap(watchedWildcardDirectories, closeFileWatcherOf);
     }

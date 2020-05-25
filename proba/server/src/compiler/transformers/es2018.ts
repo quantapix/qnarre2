@@ -55,7 +55,7 @@ export function transformES2018(context: TransformationContext) {
   let hierarchyFacts: HierarchyFacts = 0;
 
   let currentSourceFile: SourceFile;
-  let taggedTemplateStringDeclarations: VariableDeclaration[];
+  let taggedTemplateStringDeclarations: qt.VariableDeclaration[];
 
   /** Keeps track of property names accessed on super (`super.x`) within async functions. */
   let capturedSuperProperties: qt.UnderscoreEscapedMap<true>;
@@ -363,7 +363,7 @@ export function transformES2018(context: TransformationContext) {
   }
 
   function visitVariableStatement(node: VariableStatement): VisitResult<VariableStatement> {
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       const savedExportedVariableStatement = exportedVariableStatement;
       exportedVariableStatement = true;
       const visited = visitEachChild(node, visitor, context);
@@ -374,11 +374,11 @@ export function transformES2018(context: TransformationContext) {
   }
 
   /**
-   * Visits a VariableDeclaration node with a binding pattern.
+   * Visits a qt.VariableDeclaration node with a binding pattern.
    *
-   * @param node A VariableDeclaration node.
+   * @param node A qt.VariableDeclaration node.
    */
-  function visitVariableDeclaration(node: VariableDeclaration): VisitResult<VariableDeclaration> {
+  function visitVariableDeclaration(node: qt.VariableDeclaration): VisitResult<VariableDeclaration> {
     if (exportedVariableStatement) {
       const savedExportedVariableStatement = exportedVariableStatement;
       exportedVariableStatement = false;
@@ -389,7 +389,7 @@ export function transformES2018(context: TransformationContext) {
     return visitVariableDeclarationWorker(node, /*exportedVariableStatement*/ false);
   }
 
-  function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
+  function visitVariableDeclarationWorker(node: qt.VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
     // If we are here it is because the name contains a binding pattern with a rest somewhere in it.
     if (isBindingPattern(node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, /*rval*/ undefined, exportedVariableStatement);
@@ -509,7 +509,7 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitConstructorDeclaration(node: ConstructorDeclaration) {
+  function visitConstructorDeclaration(node: qt.ConstructorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
     const updated = updateConstructor(node, /*decorators*/ undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
@@ -610,7 +610,7 @@ export function transformES2018(context: TransformationContext) {
 
     // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
     // This step isn't needed if we eventually transform this to ES5.
-    const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
+    const emitSuperHelpers = languageVersion >= qt.ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
 
     if (emitSuperHelpers) {
       enableSubstitutionForAsyncMethodsWithSuper();
@@ -638,7 +638,7 @@ export function transformES2018(context: TransformationContext) {
     return block;
   }
 
-  function transformFunctionBody(node: FunctionDeclaration | FunctionExpression | ConstructorDeclaration | MethodDeclaration | AccessorDeclaration): FunctionBody;
+  function transformFunctionBody(node: FunctionDeclaration | FunctionExpression | qt.ConstructorDeclaration | MethodDeclaration | AccessorDeclaration): FunctionBody;
   function transformFunctionBody(node: ArrowFunction): ConciseBody;
   function transformFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
     resumeLexicalEnvironment();
@@ -810,7 +810,7 @@ export const assignHelper: UnscopedEmitHelper = {
 };
 
 export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
-  if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) {
+  if (context.getCompilerOptions().target! >= qt.ScriptTarget.ES2015) {
     return createCall(createPropertyAccess(createIdentifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
   }
   context.requestEmitHelper(assignHelper);

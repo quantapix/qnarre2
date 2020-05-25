@@ -138,7 +138,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         break;
 
       case qt.SyntaxKind.VariableStatement:
-        if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+        if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
           for (const decl of node.declarationList.declarations) {
             exportedNames = collectExportedVariableInfo(decl, uniqueExports, exportedNames);
           }
@@ -146,8 +146,8 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         break;
 
       case qt.SyntaxKind.FunctionDeclaration:
-        if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-          if (hasSyntacticModifier(node, ModifierFlags.Default)) {
+        if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
+          if (hasSyntacticModifier(node, qt.ModifierFlags.Default)) {
             // export default function() { }
             if (!hasExportDefault) {
               multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), getDeclarationName(node));
@@ -166,8 +166,8 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         break;
 
       case qt.SyntaxKind.ClassDeclaration:
-        if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-          if (hasSyntacticModifier(node, ModifierFlags.Default)) {
+        if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
+          if (hasSyntacticModifier(node, qt.ModifierFlags.Default)) {
             // export default class { }
             if (!hasExportDefault) {
               multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), getDeclarationName(node));
@@ -195,7 +195,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
   return { externalImports, exportSpecifiers, exportEquals, hasExportStarsToExportValues, exportedBindings, exportedNames, externalHelpersImportDeclaration };
 }
 
-function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
+function collectExportedVariableInfo(decl: qt.VariableDeclaration | qt.BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
   if (isBindingPattern(decl.name)) {
     for (const element of decl.name.elements) {
       if (!isOmittedExpression(element)) {
@@ -282,7 +282,7 @@ export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssi
  * @param visitor The visitor to apply to each node added to the result array.
  * @returns index of the statement that follows super call
  */
-export function addPrologueDirectivesAndInitialSuperCall(ctor: ConstructorDeclaration, result: Statement[], visitor: Visitor): number {
+export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDeclaration, result: Statement[], visitor: Visitor): number {
   if (ctor.body) {
     const statements = ctor.body.statements;
     // add prologue directives to the list (if any)

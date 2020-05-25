@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-var-requires */
 import * as qpc from './corePublic';
 import * as qc from './core';
 
@@ -307,8 +309,8 @@ function createUseFsEventsOnParentDirectoryWatchFile(fsWatch: FsWatch, useCaseSe
   function nonPollingWatchFile(fileName: string, callback: FileWatcherCallback, _pollingInterval: PollingInterval, fallbackOptions: WatchOptions | undefined): FileWatcher {
     const filePath = toCanonicalName(fileName);
     fileWatcherCallbacks.add(filePath, callback);
-    const dirPath = getDirectoryPath(filePath) || '.';
-    const watcher = dirWatchers.get(dirPath) || createDirectoryWatcher(getDirectoryPath(fileName) || '.', dirPath, fallbackOptions);
+    const dirPath = qp.getDirectoryPath(filePath) || '.';
+    const watcher = dirWatchers.get(dirPath) || createDirectoryWatcher(qp.getDirectoryPath(fileName) || '.', dirPath, fallbackOptions);
     watcher.referenceCount++;
     return {
       close: () => {
@@ -444,7 +446,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
   const cacheToUpdateChildWatches = qc.createMap<{ dirName: string; options: WatchOptions | undefined }>();
   let timerToUpdateChildWatches: any;
 
-  const filePathComparer = getStringComparer(!host.useCaseSensitiveFileNames);
+  const filePathComparer = qc.getStringComparer(!host.useCaseSensitiveFileNames);
   const toCanonicalFilePath = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
 
   return (dirName, callback, recursive, options) => (recursive ? createDirectoryWatcher(dirName, options, callback) : host.watchDirectory(dirName, callback, recursive, options));
@@ -516,7 +518,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     // Call the actual callback
     callbackCache.forEach((callbacks, rootDirName) => {
       if (invokeMap && invokeMap.has(rootDirName)) return;
-      if (rootDirName === dirPath || (startsWith(dirPath, rootDirName) && dirPath[rootDirName.length] === directorySeparator)) {
+      if (rootDirName === dirPath || (qc.startsWith(dirPath, rootDirName) && dirPath[rootDirName.length] === directorySeparator)) {
         if (invokeMap) {
           invokeMap.set(rootDirName, true);
         } else {
@@ -610,7 +612,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
             const childFullName = getNormalizedAbsolutePath(child, parentDir);
             // Filter our the symbolic link directories since those arent included in recursive watch
             // which is same behaviour when recursive: true is passed to fs.watch
-            return !isIgnoredPath(childFullName) && filePathComparer(childFullName, normalizePath(host.realpath(childFullName))) === Comparison.EqualTo ? childFullName : undefined;
+            return !isIgnoredPath(childFullName) && filePathComparer(childFullName, normalizePath(host.realpath(childFullName))) === qpc.Comparison.EqualTo ? childFullName : undefined;
           })
         : emptyArray,
       existingChildWatches,
@@ -643,9 +645,9 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
   }
 
   function isInPath(path: string, searchPath: string) {
-    if (stringContains(path, searchPath)) return true;
+    if (qc.stringContains(path, searchPath)) return true;
     if (host.useCaseSensitiveFileNames) return false;
-    return stringContains(toCanonicalFilePath(path), searchPath);
+    return qc.stringContains(toCanonicalFilePath(path), searchPath);
   }
 }
 

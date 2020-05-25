@@ -130,7 +130,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     exit();
   }
 
-  function appendSourceMap(generatedLine: number, generatedCharacter: number, map: RawSourceMap, sourceMapPath: string, start?: LineAndCharacter, end?: LineAndCharacter) {
+  function appendSourceMap(generatedLine: number, generatedCharacter: number, map: RawSourceMap, sourceMapPath: string, start?: qt.LineAndCharacter, end?: qt.LineAndCharacter) {
     Debug.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
     Debug.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
     enter();
@@ -158,7 +158,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
           // Apply offsets to each position and fixup source entries
           const rawPath = map.sources[raw.sourceIndex];
           const relativePath = map.sourceRoot ? combinePaths(map.sourceRoot, rawPath) : rawPath;
-          const combinedPath = combinePaths(getDirectoryPath(sourceMapPath), relativePath);
+          const combinedPath = combinePaths(qp.getDirectoryPath(sourceMapPath), relativePath);
           sourceIndexToNewSourceIndexMap[raw.sourceIndex] = newSourceIndex = addSource(combinedPath);
           if (map.sourcesContent && typeof map.sourcesContent[raw.sourceIndex] === 'string') {
             setSourceContent(newSourceIndex, map.sourcesContent[raw.sourceIndex]);
@@ -559,11 +559,11 @@ function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedP
   // Compares sourcePosition without comparing sourceIndex
   // since the mappings are grouped by sourceIndex
   Debug.assert(left.sourceIndex === right.sourceIndex);
-  return compareValues(left.sourcePosition, right.sourcePosition);
+  return qc.compareValues(left.sourcePosition, right.sourcePosition);
 }
 
 function compareGeneratedPositions(left: MappedPosition, right: MappedPosition) {
-  return compareValues(left.generatedPosition, right.generatedPosition);
+  return qc.compareValues(left.generatedPosition, right.generatedPosition);
 }
 
 function getSourcePositionOfMapping(value: SourceMappedPosition) {
@@ -575,15 +575,15 @@ function getGeneratedPositionOfMapping(value: MappedPosition) {
 }
 
 export function createDocumentPositionMapper(host: DocumentPositionMapperHost, map: RawSourceMap, mapPath: string): DocumentPositionMapper {
-  const mapDirectory = getDirectoryPath(mapPath);
+  const mapDirectory = qp.getDirectoryPath(mapPath);
   const sourceRoot = map.sourceRoot ? getNormalizedAbsolutePath(map.sourceRoot, mapDirectory) : mapDirectory;
   const generatedAbsoluteFilePath = getNormalizedAbsolutePath(map.file, mapDirectory);
   const generatedFile = host.getSourceFileLike(generatedAbsoluteFilePath);
   const sourceFileAbsolutePaths = map.sources.map((source) => getNormalizedAbsolutePath(source, sourceRoot));
   const sourceToSourceIndexMap = createMapFromEntries(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
   let decodedMappings: readonly MappedPosition[] | undefined;
-  let generatedMappings: SortedReadonlyArray<MappedPosition> | undefined;
-  let sourceMappings: readonly SortedReadonlyArray<SourceMappedPosition>[] | undefined;
+  let generatedMappings: qpc.SortedReadonlyArray<MappedPosition> | undefined;
+  let sourceMappings: readonly qpc.SortedReadonlyArray<SourceMappedPosition>[] | undefined;
 
   return {
     getSourcePosition,
@@ -633,7 +633,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
         if (!list) lists[mapping.sourceIndex] = list = [];
         list.push(mapping);
       }
-      sourceMappings = lists.map((list) => sortAndDeduplicate<SourceMappedPosition>(list, compareSourcePositions, sameMappedPosition));
+      sourceMappings = lists.map((list) => qc.sortAndDeduplicate<SourceMappedPosition>(list, compareSourcePositions, sameMappedPosition));
     }
     return sourceMappings[sourceIndex];
   }
@@ -656,7 +656,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
     const sourceMappings = getSourceMappings(sourceIndex);
     if (!some(sourceMappings)) return loc;
 
-    let targetIndex = binarySearchKey(sourceMappings, loc.pos, getSourcePositionOfMapping, compareValues);
+    let targetIndex = qc.binarySearchKey(sourceMappings, loc.pos, getSourcePositionOfMapping, qc.compareValues);
     if (targetIndex < 0) {
       // if no exact match, closest is 2's complement of result
       targetIndex = ~targetIndex;
@@ -674,7 +674,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
     const generatedMappings = getGeneratedMappings();
     if (!some(generatedMappings)) return loc;
 
-    let targetIndex = binarySearchKey(generatedMappings, loc.pos, getGeneratedPositionOfMapping, compareValues);
+    let targetIndex = qc.binarySearchKey(generatedMappings, loc.pos, getGeneratedPositionOfMapping, qc.compareValues);
     if (targetIndex < 0) {
       // if no exact match, closest is 2's complement of result
       targetIndex = ~targetIndex;
@@ -689,7 +689,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
   }
 }
 
-export const identitySourceMapConsumer: DocumentPositionMapper = {
-  getSourcePosition: identity,
-  getGeneratedPosition: identity,
+export const qc.identitySourceMapConsumer: DocumentPositionMapper = {
+  getSourcePosition: qc.identity,
+  getGeneratedPosition: qc.identity,
 };

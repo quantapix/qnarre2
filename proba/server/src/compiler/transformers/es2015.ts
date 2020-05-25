@@ -253,7 +253,7 @@ export function transformES2015(context: TransformationContext) {
   let currentSourceFile: SourceFile;
   let currentText: string;
   let hierarchyFacts: HierarchyFacts;
-  let taggedTemplateStringDeclarations: VariableDeclaration[];
+  let taggedTemplateStringDeclarations: qt.VariableDeclaration[];
 
   function recordTaggedTemplateString(temp: Identifier) {
     taggedTemplateStringDeclarations = append(taggedTemplateStringDeclarations, createVariableDeclaration(temp));
@@ -318,7 +318,7 @@ export function transformES2015(context: TransformationContext) {
   }
 
   function shouldVisitNode(node: qt.Node): boolean {
-    return (node.transformFlags & TransformFlags.ContainsES2015) !== 0 || convertedLoopState !== undefined || (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (isStatement(node) || node.kind === qt.SyntaxKind.Block)) || (isIterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) || (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0;
+    return (node.transformFlags & TransformFlags.ContainsES2015) !== 0 || convertedLoopState !== undefined || (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (isStatement(node) || node.kind === qt.SyntaxKind.Block)) || (isIterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) || (qu.getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0;
   }
 
   function visitor(node: qt.Node): VisitResult<Node> {
@@ -638,14 +638,14 @@ export function transformES2015(context: TransformationContext) {
     statements.push(statement);
 
     // Add an `export default` statement for default exports (for `--target es5 --module es6`)
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-      const exportStatement = hasSyntacticModifier(node, ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
+      const exportStatement = qu.hasSyntacticModifier(node, qt.ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
 
       setOriginalNode(exportStatement, statement);
       statements.push(exportStatement);
     }
 
-    const emitFlags = getEmitFlags(node);
+    const emitFlags = qu.getEmitFlags(node);
     if ((emitFlags & EmitFlags.HasEndOfDeclarationMarker) === 0) {
       // Add a DeclarationMarker as a marker for the end of the declaration
       statements.push(createEndOfDeclarationMarker(node));
@@ -713,7 +713,7 @@ export function transformES2015(context: TransformationContext) {
     // To preserve the behavior of the old emitter, we explicitly indent
     // the body of the function here if it was requested in an earlier
     // transformation.
-    setEmitFlags(classFunction, (getEmitFlags(node) & EmitFlags.Indented) | EmitFlags.ReuseTempVariableScope);
+    setEmitFlags(classFunction, (qu.getEmitFlags(node) & EmitFlags.Indented) | EmitFlags.ReuseTempVariableScope);
 
     // "inner" and "outer" below are added purely to preserve source map locations from
     // the old emitter
@@ -810,7 +810,7 @@ export function transformES2015(context: TransformationContext) {
    * @param hasSynthesizedSuper A value indicating whether the constructor starts with a
    *                            synthesized `super` call.
    */
-  function transformConstructorParameters(constructor: ConstructorDeclaration | undefined, hasSynthesizedSuper: boolean) {
+  function transformConstructorParameters(constructor: qt.ConstructorDeclaration | undefined, hasSynthesizedSuper: boolean) {
     // If the TypeScript transformer needed to synthesize a constructor for property
     // initializers, it would have also added a synthetic `...args` parameter and
     // `super` call.
@@ -1009,7 +1009,7 @@ export function transformES2015(context: TransformationContext) {
     }
     // A block is covered if it has a last statement which is covered.
     else if (statement.kind === qt.SyntaxKind.Block) {
-      const lastStatement = lastOrUndefined(statement.statements);
+      const lastStatement = qc.lastOrUndefined(statement.statements);
       if (lastStatement && isSufficientlyCoveredByReturnStatements(lastStatement)) {
         return true;
       }
@@ -1091,7 +1091,7 @@ export function transformES2015(context: TransformationContext) {
    * @param name The name of the parameter.
    * @param initializer The initializer for the parameter.
    */
-  function insertDefaultValueAssignmentForBindingPattern(statements: Statement[], parameter: ParameterDeclaration, name: BindingPattern, initializer: Expression | undefined): boolean {
+  function insertDefaultValueAssignmentForBindingPattern(statements: Statement[], parameter: ParameterDeclaration, name: qt.BindingPattern, initializer: Expression | undefined): boolean {
     // In cases where a binding pattern is simply '[]' or '{}',
     // we usually don't want to emit a var declaration; however, in the presence
     // of an initializer, we must emit that expression to preserve side effects.
@@ -1117,7 +1117,7 @@ export function transformES2015(context: TransformationContext) {
     initializer = visitNode(initializer, visitor, isExpression);
     const statement = createIf(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
-      setEmitFlags(setTextRange(createBlock([createExpressionStatement(setEmitFlags(setTextRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)), parameter), EmitFlags.NoComments))]), parameter), EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments)
+      setEmitFlags(setTextRange(createBlock([createExpressionStatement(setEmitFlags(setTextRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | qu.getEmitFlags(initializer) | EmitFlags.NoComments)), parameter), EmitFlags.NoComments))]), parameter), EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments)
     );
 
     startOnNewLine(statement);
@@ -1149,7 +1149,7 @@ export function transformES2015(context: TransformationContext) {
    */
   function addRestParameterIfNeeded(statements: Statement[], node: FunctionLikeDeclaration, inConstructorWithSynthesizedSuper: boolean): boolean {
     const prologueStatements: Statement[] = [];
-    const parameter = lastOrUndefined(node.parameters);
+    const parameter = qc.lastOrUndefined(node.parameters);
     if (!shouldAddRestParameter(parameter, inConstructorWithSynthesizedSuper)) {
       return false;
     }
@@ -1439,7 +1439,7 @@ export function transformES2015(context: TransformationContext) {
    * @param node a FunctionExpression node.
    */
   function visitFunctionExpression(node: FunctionExpression): Expression {
-    const ancestorFacts = getEmitFlags(node) & EmitFlags.AsyncFunctionBody ? enterSubtree(HierarchyFacts.AsyncFunctionBodyExcludes, HierarchyFacts.AsyncFunctionBodyIncludes) : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
+    const ancestorFacts = qu.getEmitFlags(node) & EmitFlags.AsyncFunctionBody ? enterSubtree(HierarchyFacts.AsyncFunctionBodyExcludes, HierarchyFacts.AsyncFunctionBodyIncludes) : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
 
@@ -1480,7 +1480,7 @@ export function transformES2015(context: TransformationContext) {
   function transformFunctionLikeToExpression(node: FunctionLikeDeclaration, location: qt.TextRange | undefined, name: Identifier | undefined, container: Node | undefined): FunctionExpression {
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
-    const ancestorFacts = container && isClassLike(container) && !hasSyntacticModifier(node, ModifierFlags.Static) ? enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes | HierarchyFacts.NonStaticClassElement) : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
+    const ancestorFacts = container && isClassLike(container) && !hasSyntacticModifier(node, qt.ModifierFlags.Static) ? enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes | HierarchyFacts.NonStaticClassElement) : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
     const parameters = visitParameterList(node.parameters, visitor, context);
     const body = transformFunctionBody(node);
     if (hierarchyFacts & HierarchyFacts.NewTarget && !name && (node.kind === qt.SyntaxKind.FunctionDeclaration || node.kind === qt.SyntaxKind.FunctionExpression)) {
@@ -1656,11 +1656,11 @@ export function transformES2015(context: TransformationContext) {
   }
 
   function isVariableStatementOfTypeScriptClassWrapper(node: VariableStatement) {
-    return node.declarationList.declarations.length === 1 && !!node.declarationList.declarations[0].initializer && !!(getEmitFlags(node.declarationList.declarations[0].initializer) & EmitFlags.TypeScriptClassWrapper);
+    return node.declarationList.declarations.length === 1 && !!node.declarationList.declarations[0].initializer && !!(qu.getEmitFlags(node.declarationList.declarations[0].initializer) & EmitFlags.TypeScriptClassWrapper);
   }
 
   function visitVariableStatement(node: VariableStatement): Statement | undefined {
-    const ancestorFacts = enterSubtree(HierarchyFacts.None, hasSyntacticModifier(node, ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None);
+    const ancestorFacts = enterSubtree(HierarchyFacts.None, qu.hasSyntacticModifier(node, qt.ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None);
     let updated: Statement | undefined;
     if (convertedLoopState && (node.declarationList.flags & NodeFlags.BlockScoped) === 0 && !isVariableStatementOfTypeScriptClassWrapper(node)) {
       // we are inside a converted loop - hoist variable declarations
@@ -1694,11 +1694,11 @@ export function transformES2015(context: TransformationContext) {
   }
 
   /**
-   * Visits a VariableDeclarationList that is block scoped (e.g. `let` or `const`).
+   * Visits a qt.VariableDeclarationList that is block scoped (e.g. `let` or `const`).
    *
-   * @param node A VariableDeclarationList node.
+   * @param node A qt.VariableDeclarationList node.
    */
-  function visitVariableDeclarationList(node: VariableDeclarationList): VariableDeclarationList {
+  function visitVariableDeclarationList(node: qt.VariableDeclarationList): qt.VariableDeclarationList {
     if (node.flags & NodeFlags.BlockScoped || node.transformFlags & TransformFlags.ContainsBindingPattern) {
       if (node.flags & NodeFlags.BlockScoped) {
         enableSubstitutionsForBlockScopedBindings();
@@ -1738,9 +1738,9 @@ export function transformES2015(context: TransformationContext) {
    * Gets a value indicating whether we should emit an explicit initializer for a variable
    * declaration in a `let` declaration list.
    *
-   * @param node A VariableDeclaration node.
+   * @param node A qt.VariableDeclaration node.
    */
-  function shouldEmitExplicitInitializerForLetDeclaration(node: VariableDeclaration) {
+  function shouldEmitExplicitInitializerForLetDeclaration(node: qt.VariableDeclaration) {
     // Nested let bindings might need to be initialized explicitly to preserve
     // ES6 semantic:
     //
@@ -1792,11 +1792,11 @@ export function transformES2015(context: TransformationContext) {
   }
 
   /**
-   * Visits a VariableDeclaration in a `let` declaration list.
+   * Visits a qt.VariableDeclaration in a `let` declaration list.
    *
-   * @param node A VariableDeclaration node.
+   * @param node A qt.VariableDeclaration node.
    */
-  function visitVariableDeclarationInLetDeclarationList(node: VariableDeclaration) {
+  function visitVariableDeclarationInLetDeclarationList(node: qt.VariableDeclaration) {
     // For binding pattern names that lack initializers there is no point to emit
     // explicit initializer since downlevel codegen for destructuring will fail
     // in the absence of initializer so all binding elements will say uninitialized
@@ -1815,11 +1815,11 @@ export function transformES2015(context: TransformationContext) {
   }
 
   /**
-   * Visits a VariableDeclaration node with a binding pattern.
+   * Visits a qt.VariableDeclaration node with a binding pattern.
    *
-   * @param node A VariableDeclaration node.
+   * @param node A qt.VariableDeclaration node.
    */
-  function visitVariableDeclaration(node: VariableDeclaration): VisitResult<VariableDeclaration> {
+  function visitVariableDeclaration(node: qt.VariableDeclaration): VisitResult<VariableDeclaration> {
     const ancestorFacts = enterSubtree(HierarchyFacts.ExportedVariableStatement, HierarchyFacts.None);
     let updated: VisitResult<VariableDeclaration>;
     if (isBindingPattern(node.name)) {
@@ -1975,7 +1975,7 @@ export function transformES2015(context: TransformationContext) {
     const rhsReference = isIdentifier(expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
 
     // The old emitter does not emit source maps for the expression
-    setEmitFlags(expression, EmitFlags.NoSourceMap | getEmitFlags(expression));
+    setEmitFlags(expression, EmitFlags.NoSourceMap | qu.getEmitFlags(expression));
 
     const forStatement = setTextRange(
       createFor(
@@ -2090,7 +2090,7 @@ export function transformES2015(context: TransformationContext) {
   }
 
   interface ForStatementWithConvertibleInitializer extends ForStatement {
-    initializer: VariableDeclarationList;
+    initializer: qt.VariableDeclarationList;
   }
 
   interface ForStatementWithConvertibleCondition extends ForStatement {
@@ -2128,14 +2128,14 @@ export function transformES2015(context: TransformationContext) {
   /**
    * Records constituents of name for the given variable to be hoisted in the outer scope.
    */
-  function hoistVariableDeclarationDeclaredInConvertedLoop(state: ConvertedLoopState, node: VariableDeclaration): void {
+  function hoistVariableDeclarationDeclaredInConvertedLoop(state: ConvertedLoopState, node: qt.VariableDeclaration): void {
     if (!state.hoistedLocalVariables) {
       state.hoistedLocalVariables = [];
     }
 
     visit(node.name);
 
-    function visit(node: Identifier | BindingPattern) {
+    function visit(node: Identifier | qt.BindingPattern) {
       if (node.kind === qt.SyntaxKind.Identifier) {
         state.hoistedLocalVariables!.push(node);
       } else {
@@ -2245,7 +2245,7 @@ export function transformES2015(context: TransformationContext) {
   }
 
   function createConvertedLoopState(node: IterationStatement) {
-    let loopInitializer: VariableDeclarationList | undefined;
+    let loopInitializer: qt.VariableDeclarationList | undefined;
     switch (node.kind) {
       case qt.SyntaxKind.ForStatement:
       case qt.SyntaxKind.ForInStatement:
@@ -2292,7 +2292,7 @@ export function transformES2015(context: TransformationContext) {
   }
 
   function addExtraDeclarationsForConvertedLoop(statements: Statement[], state: ConvertedLoopState, outerState: ConvertedLoopState | undefined) {
-    let extraVariableDeclarations: VariableDeclaration[] | undefined;
+    let extraVariableDeclarations: qt.VariableDeclaration[] | undefined;
     // propagate state from the inner loop to the outer loop if necessary
     if (state.argumentsName) {
       // if alias for arguments is set
@@ -2617,7 +2617,7 @@ export function transformES2015(context: TransformationContext) {
     });
   }
 
-  function processLoopVariableDeclaration(container: IterationStatement, decl: VariableDeclaration | BindingElement, loopParameters: ParameterDeclaration[], loopOutParameters: LoopOutParameter[], hasCapturedBindingsInForInitializer: boolean) {
+  function processLoopVariableDeclaration(container: IterationStatement, decl: qt.VariableDeclaration | qt.BindingElement, loopParameters: ParameterDeclaration[], loopOutParameters: LoopOutParameter[], hasCapturedBindingsInForInitializer: boolean) {
     const name = decl.name;
     if (isBindingPattern(name)) {
       for (const element of name.elements) {
@@ -2771,7 +2771,7 @@ export function transformES2015(context: TransformationContext) {
     // Methods with computed property names are handled in visitObjectLiteralExpression.
     Debug.assert(!isComputedPropertyName(node.name));
     const functionExpression = transformFunctionLikeToExpression(node, /*location*/ moveRangePos(node, -1), /*name*/ undefined, /*container*/ undefined);
-    setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | getEmitFlags(functionExpression));
+    setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | qu.getEmitFlags(functionExpression));
     return setTextRange(createPropertyAssignment(node.name, functionExpression), /*location*/ node);
   }
 
@@ -2840,7 +2840,7 @@ export function transformES2015(context: TransformationContext) {
    * @param node a CallExpression.
    */
   function visitCallExpression(node: CallExpression) {
-    if (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) {
+    if (qu.getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) {
       return visitTypeScriptClassWrapper(node);
     }
 
@@ -3102,7 +3102,7 @@ export function transformES2015(context: TransformationContext) {
   }
 
   function isCallToHelper(firstSegment: Expression, helperName: qt.__String) {
-    return isCallExpression(firstSegment) && isIdentifier(firstSegment.expression) && getEmitFlags(firstSegment.expression) & EmitFlags.HelperName && firstSegment.expression.escapedText === helperName;
+    return isCallExpression(firstSegment) && isIdentifier(firstSegment.expression) && qu.getEmitFlags(firstSegment.expression) & EmitFlags.HelperName && firstSegment.expression.escapedText === helperName;
   }
 
   function partitionSpread(node: Expression) {
@@ -3286,7 +3286,7 @@ export function transformES2015(context: TransformationContext) {
   function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void) {
     if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && isFunctionLike(node)) {
       // If we are tracking a captured `this`, keep track of the enclosing function.
-      const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, getEmitFlags(node) & EmitFlags.CapturesThis ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis : HierarchyFacts.FunctionIncludes);
+      const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, qu.getEmitFlags(node) & EmitFlags.CapturesThis ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis : HierarchyFacts.FunctionIncludes);
       previousOnEmitNode(hint, node, emitCallback);
       exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
       return;
@@ -3447,10 +3447,10 @@ export function transformES2015(context: TransformationContext) {
   }
 
   function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
-    return hasSyntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : createPropertyAccess(getInternalName(node), 'prototype');
+    return qu.hasSyntacticModifier(member, qt.ModifierFlags.Static) ? getInternalName(node) : createPropertyAccess(getInternalName(node), 'prototype');
   }
 
-  function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
+  function hasSynthesizedDefaultSuperCall(constructor: qt.ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
     if (!constructor || !hasExtendsClause) {
       return false;
     }

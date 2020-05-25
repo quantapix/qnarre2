@@ -53,7 +53,7 @@ export function getTsBuildInfoEmitOutputFilePath(options: qt.CompilerOptions) {
   } else {
     if (!configFile) return undefined;
     const configFileExtensionLess = removeFileExtension(configFile);
-    buildInfoExtensionLess = options.outDir ? (options.rootDir ? resolvePath(options.outDir, getRelativePathFromDirectory(options.rootDir, configFileExtensionLess, /*ignoreCase*/ true)) : combinePaths(options.outDir, getBaseFileName(configFileExtensionLess))) : configFileExtensionLess;
+    buildInfoExtensionLess = options.outDir ? (options.rootDir ? qp.resolvePath(options.outDir, getRelativePathFromDirectory(options.rootDir, configFileExtensionLess, /*ignoreCase*/ true)) : combinePaths(options.outDir, getBaseFileName(configFileExtensionLess))) : configFileExtensionLess;
   }
   return buildInfoExtensionLess + Extension.TsBuildInfo;
 }
@@ -76,7 +76,7 @@ export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHos
     const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
     const isJsonFile = isJsonSourceFile(sourceFile);
     // If json file emits to the same location skip writing it, if emitDeclarationOnly skip writing it
-    const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
+    const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
     const jsFilePath = options.emitDeclarationOnly || isJsonEmittedToSameLocation ? undefined : ownOutputFilePath;
     const sourceMapFilePath = !jsFilePath || isJsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
     const declarationFilePath = forceDtsPaths || (getEmitDeclarations(options) && !isJsonFile) ? getDeclarationEmitOutputFilePath(sourceFile.fileName, host) : undefined;
@@ -112,11 +112,11 @@ export function getOutputExtension(sourceFile: SourceFile, options: qt.CompilerO
 }
 
 function rootDirOfOptions(configFile: ParsedCommandLine) {
-  return configFile.options.rootDir || getDirectoryPath(Debug.checkDefined(configFile.options.configFilePath));
+  return configFile.options.rootDir || qp.getDirectoryPath(Debug.checkDefined(configFile.options.configFilePath));
 }
 
 function getOutputPathWithoutChangingExt(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean, outputDir: string | undefined) {
-  return outputDir ? resolvePath(outputDir, getRelativePathFromDirectory(rootDirOfOptions(configFile), inputFileName, ignoreCase)) : inputFileName;
+  return outputDir ? qp.resolvePath(outputDir, getRelativePathFromDirectory(rootDirOfOptions(configFile), inputFileName, ignoreCase)) : inputFileName;
 }
 
 export function getOutputDeclarationFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
@@ -128,7 +128,7 @@ function getOutputJSFileName(inputFileName: string, configFile: ParsedCommandLin
   if (configFile.options.emitDeclarationOnly) return undefined;
   const isJsonFile = fileExtensionIs(inputFileName, Extension.Json);
   const outputFileName = changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir), isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.options.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js);
-  return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.options.configFilePath), ignoreCase) !== Comparison.EqualTo ? outputFileName : undefined;
+  return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.options.configFilePath), ignoreCase) !== qpc.Comparison.EqualTo ? outputFileName : undefined;
 }
 
 function createAddOutput() {
@@ -244,7 +244,7 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
   function emitSourceFileOrBundle({ jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath }: EmitFileNames, sourceFileOrBundle: SourceFile | Bundle | undefined) {
     let buildInfoDirectory: string | undefined;
     if (buildInfoPath && sourceFileOrBundle && isBundle(sourceFileOrBundle)) {
-      buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
+      buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
       bundleBuildInfo = {
         commonSourceDirectory: relativeToBuildInfo(host.getCommonSourceDirectory()),
         sourceFiles: sourceFileOrBundle.sourceFiles.map((file) => relativeToBuildInfo(getNormalizedAbsolutePath(file.fileName, host.getCurrentDirectory()))),
@@ -490,7 +490,7 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
       if (sourceFile) {
         // For modules or multiple emit files the mapRoot will have directory structure like the sources
         // So if src\a.ts and src\lib\b.ts are compiled together user would be moving the maps into mapRoot\a.js.map and mapRoot\lib\b.js.map
-        sourceMapDir = getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
+        sourceMapDir = qp.getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
       }
       if (getRootLength(sourceMapDir) === 0) {
         // The relative paths are relative to the common directory
@@ -498,7 +498,7 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
       }
       return sourceMapDir;
     }
-    return getDirectoryPath(normalizePath(filePath));
+    return qp.getDirectoryPath(normalizePath(filePath));
   }
 
   function getSourceMappingURL(mapOptions: SourceMapOptions, sourceMapGenerator: SourceMapGenerator, filePath: string, sourceMapFilePath: string | undefined, sourceFile: SourceFile | undefined) {
@@ -515,13 +515,13 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
       if (sourceFile) {
         // For modules or multiple emit files the mapRoot will have directory structure like the sources
         // So if src\a.ts and src\lib\b.ts are compiled together user would be moving the maps into mapRoot\a.js.map and mapRoot\lib\b.js.map
-        sourceMapDir = getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
+        sourceMapDir = qp.getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
       }
       if (getRootLength(sourceMapDir) === 0) {
         // The relative paths are relative to the common directory
         sourceMapDir = combinePaths(host.getCommonSourceDirectory(), sourceMapDir);
         return getRelativePathToDirectoryOrUrl(
-          getDirectoryPath(normalizePath(filePath)), // get the relative sourceMapDir path based on jsFilePath
+          qp.getDirectoryPath(normalizePath(filePath)), // get the relative sourceMapDir path based on jsFilePath
           combinePaths(sourceMapDir, sourceMapFile), // this is where user expects to see sourceMap
           host.getCurrentDirectory(),
           host.getCanonicalFileName,
@@ -639,7 +639,7 @@ export function emitUsingBuildInfo(config: ParsedCommandLine, host: EmitUsingBui
 
   const buildInfo = getBuildInfo(buildInfoText);
   if (!buildInfo.bundle || !buildInfo.bundle.js || (declarationText && !buildInfo.bundle.dts)) return buildInfoPath;
-  const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
+  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
   const ownPrependInput = createInputFiles(jsFileText, declarationText, sourceMapFilePath, sourceMapText, declarationMapPath, declarationMapText, jsFilePath, declarationFilePath, buildInfoPath, buildInfo, /*onlyOwnText*/ true);
   const outputFiles: OutputFile[] = [];
   const prependNodes = createPrependNodes(config.projectReferences, getCommandLine, (f) => host.readFile(f));
@@ -845,7 +845,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function updateOrPushBundleFileTextLike(pos: number, end: number, kind: BundleFileTextLikeKind) {
-    const last = lastOrUndefined(bundleFileInfo.sections);
+    const last = qc.lastOrUndefined(bundleFileInfo.sections);
     if (last && last.kind === kind) {
       last.end = end;
     } else {
@@ -1049,7 +1049,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const savedPreserveSourceNewlines = preserveSourceNewlines;
     lastNode = node;
     lastSubstitution = undefined;
-    if (preserveSourceNewlines && !!(getEmitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
+    if (preserveSourceNewlines && !!(qu.getEmitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
       preserveSourceNewlines = false;
     }
 
@@ -1820,7 +1820,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitSignatureAndBody(node, emitSignatureHead);
   }
 
-  function emitConstructor(node: ConstructorDeclaration) {
+  function emitConstructor(node: qt.ConstructorDeclaration) {
     emitModifiers(node, node.modifiers);
     writeKeyword('constructor');
     emitSignatureAndBody(node, emitSignatureHead);
@@ -1948,7 +1948,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitTypeLiteral(node: TypeLiteralNode) {
     writePunctuation('{');
-    const flags = getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
+    const flags = qu.getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
     emitList(node, node.members, flags | ListFormat.NoSpaceIfEmpty);
     writePunctuation('}');
   }
@@ -1966,7 +1966,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitTupleType(node: TupleTypeNode) {
     emitTokenWithComment(SyntaxKind.OpenBracketToken, node.pos, writePunctuation, node);
-    const flags = getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
+    const flags = qu.getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
     emitList(node, node.elements, flags | ListFormat.NoSpaceIfEmpty);
     emitTokenWithComment(SyntaxKind.CloseBracketToken, node.elements.end, writePunctuation, node);
   }
@@ -2039,7 +2039,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function emitMappedType(node: MappedTypeNode) {
-    const emitFlags = getEmitFlags(node);
+    const emitFlags = qu.getEmitFlags(node);
     writePunctuation('{');
     if (emitFlags & EmitFlags.SingleLine) {
       writeSpace();
@@ -2114,7 +2114,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writePunctuation(']');
   }
 
-  function emitBindingElement(node: BindingElement) {
+  function emitBindingElement(node: qt.BindingElement) {
     emit(node.dotDotDotToken);
     if (node.propertyName) {
       emit(node.propertyName);
@@ -2138,13 +2138,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitObjectLiteralExpression(node: ObjectLiteralExpression) {
     forEach(node.properties, generateMemberNames);
 
-    const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
+    const indentedFlag = qu.getEmitFlags(node) & EmitFlags.Indented;
     if (indentedFlag) {
       increaseIndent();
     }
 
     const preferNewLine = node.multiLine ? ListFormat.PreferNewLine : ListFormat.None;
-    const allowTrailingComma = currentSourceFile!.languageVersion >= ScriptTarget.ES5 && !isJsonSourceFile(currentSourceFile!) ? ListFormat.AllowTrailingComma : ListFormat.None;
+    const allowTrailingComma = currentSourceFile!.languageVersion >= qt.ScriptTarget.ES5 && !isJsonSourceFile(currentSourceFile!) ? ListFormat.AllowTrailingComma : ListFormat.None;
     emitList(node, node.properties, ListFormat.ObjectLiteralExpressionProperties | allowTrailingComma | preferNewLine);
 
     if (indentedFlag) {
@@ -2185,7 +2185,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       const text = getLiteralTextOfNode(expression, /*neverAsciiEscape*/ true, /*jsxAttributeEscape*/ false);
       // If he number will be printed verbatim and it doesn't already contain a dot, add one
       // if the expression doesn't have any comments that will be emitted.
-      return !expression.numericLiteralFlags && !stringContains(text, tokenToString(SyntaxKind.DotToken)!);
+      return !expression.numericLiteralFlags && !qc.stringContains(text, tokenToString(SyntaxKind.DotToken)!);
     } else if (isAccessExpression(expression)) {
       // check if constant enum value is integer
       const constantValue = getConstantValue(expression);
@@ -2479,7 +2479,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitBlockStatements(node: BlockLike, forceSingleLine: boolean) {
     emitTokenWithComment(SyntaxKind.OpenBraceToken, node.pos, writePunctuation, /*contextNode*/ node);
-    const format = forceSingleLine || getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
+    const format = forceSingleLine || qu.getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
     emitList(node, node.statements, format);
     emitTokenWithComment(SyntaxKind.CloseBraceToken, node.statements.end, writePunctuation, /*contextNode*/ node, /*indentLeading*/ !!(format & ListFormat.MultiLine));
   }
@@ -2594,7 +2594,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitEmbeddedStatement(node, node.statement);
   }
 
-  function emitForBinding(node: VariableDeclarationList | Expression | undefined) {
+  function emitForBinding(node: qt.VariableDeclarationList | Expression | undefined) {
     if (node !== undefined) {
       if (node.kind === qt.SyntaxKind.VariableDeclarationList) {
         emit(node);
@@ -2703,14 +2703,14 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   // Declarations
   //
 
-  function emitVariableDeclaration(node: VariableDeclaration) {
+  function emitVariableDeclaration(node: qt.VariableDeclaration) {
     emit(node.name);
     emit(node.exclamationToken);
     emitTypeAnnotation(node.type);
     emitInitializer(node.initializer, node.type ? node.type.end : node.name.end, node);
   }
 
-  function emitVariableDeclarationList(node: VariableDeclarationList) {
+  function emitVariableDeclarationList(node: qt.VariableDeclarationList) {
     writeKeyword(isLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
     writeSpace();
     emitList(node, node.declarations, ListFormat.VariableDeclarationList);
@@ -2738,7 +2738,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const body = node.body;
     if (body) {
       if (isBlock(body)) {
-        const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
+        const indentedFlag = qu.getEmitFlags(node) & EmitFlags.Indented;
         if (indentedFlag) {
           increaseIndent();
         }
@@ -2769,7 +2769,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitSignatureHead(node: FunctionDeclaration | FunctionExpression | MethodDeclaration | AccessorDeclaration | ConstructorDeclaration) {
+  function emitSignatureHead(node: FunctionDeclaration | FunctionExpression | MethodDeclaration | AccessorDeclaration | qt.ConstructorDeclaration) {
     emitTypeParameters(node, node.typeParameters);
     emitParameters(node, node.parameters);
     emitTypeAnnotation(node.type);
@@ -2784,7 +2784,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     // * A non-synthesized body's start and end position are on different lines.
     // * Any statement in the body starts on a new line.
 
-    if (getEmitFlags(body) & EmitFlags.SingleLine) {
+    if (qu.getEmitFlags(body) & EmitFlags.SingleLine) {
       return true;
     }
 
@@ -2862,7 +2862,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emitIdentifierName(node.name);
     }
 
-    const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
+    const indentedFlag = qu.getEmitFlags(node) & EmitFlags.Indented;
     if (indentedFlag) {
       increaseIndent();
     }
@@ -3262,7 +3262,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     // "comment1" is not considered to be leading comment for node.initializer
     // but rather a trailing comment on the previous node.
     const initializer = node.initializer;
-    if (emitTrailingCommentsOfPosition && (getEmitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
+    if (emitTrailingCommentsOfPosition && (qu.getEmitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
       const commentRange = getCommentRange(initializer);
       emitTrailingCommentsOfPosition(commentRange.pos);
     }
@@ -3715,7 +3715,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function emitEmbeddedStatement(parent: Node, node: Statement) {
-    if (isBlock(node) || getEmitFlags(parent) & EmitFlags.SingleLine) {
+    if (isBlock(node) || qu.getEmitFlags(parent) & EmitFlags.SingleLine) {
       writeSpace();
       emit(node);
     } else {
@@ -3941,7 +3941,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       //          2
       //          /* end of element 2 */
       //       ];
-      if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(getEmitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
+      if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(qu.getEmitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
         emitLeadingCommentsOfPosition(previousSibling.end);
       }
 
@@ -4061,7 +4061,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function writeLineOrSpace(node: qt.Node) {
-    if (getEmitFlags(node) & EmitFlags.SingleLine) {
+    if (qu.getEmitFlags(node) & EmitFlags.SingleLine) {
       writeSpace();
     } else {
       writeLine();
@@ -4116,7 +4116,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         // JsxText will be written with its leading whitespace, so don't add more manually.
         return 0;
       }
-      if (!positionIsSynthesized(parentNode.pos) && !nodeIsSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
+      if (!qu.positionIsSynthesized(parentNode.pos) && !nodeIsSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
         if (preserveSourceNewlines) {
           return getEffectiveLines((includeComments) => getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments));
         }
@@ -4157,11 +4157,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         return 1;
       }
 
-      const lastChild = lastOrUndefined(children);
+      const lastChild = qc.lastOrUndefined(children);
       if (lastChild === undefined) {
         return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
       }
-      if (!positionIsSynthesized(parentNode.pos) && !nodeIsSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
+      if (!qu.positionIsSynthesized(parentNode.pos) && !nodeIsSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
         if (preserveSourceNewlines) {
           return getEffectiveLines((includeComments) => getLinesBetweenPositionAndNextNonWhitespaceCharacter(lastChild.end, parentNode.end, currentSourceFile!, includeComments));
         }
@@ -4230,7 +4230,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function getLinesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
-    if (getEmitFlags(parent) & EmitFlags.NoIndentation) {
+    if (qu.getEmitFlags(parent) & EmitFlags.NoIndentation) {
       return 0;
     }
 
@@ -4284,7 +4284,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       const textSourceNode = node.textSourceNode!;
       if (isIdentifier(textSourceNode) || isNumericLiteral(textSourceNode)) {
         const text = isNumericLiteral(textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
-        return jsxAttributeEscape ? `"${escapeJsxAttributeString(text)}"` : neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? `"${escapeString(text)}"` : `"${escapeNonAsciiString(text)}"`;
+        return jsxAttributeEscape ? `"${escapeJsxAttributeString(text)}"` : neverAsciiEscape || qu.getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? `"${escapeString(text)}"` : `"${escapeNonAsciiString(text)}"`;
       } else {
         return getLiteralTextOfNode(textSourceNode, neverAsciiEscape, jsxAttributeEscape);
       }
@@ -4297,7 +4297,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Push a new name generation scope.
    */
   function pushNameGenerationScope(node: qt.Node | undefined) {
-    if (node && getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+    if (node && qu.getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
       return;
     }
     tempFlagsStack.push(tempFlags);
@@ -4309,7 +4309,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Pop the current name generation scope.
    */
   function popNameGenerationScope(node: qt.Node | undefined) {
-    if (node && getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+    if (node && qu.getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
       return;
     }
     tempFlags = tempFlagsStack.pop()!;
@@ -4317,7 +4317,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function reserveNameInNestedScopes(name: string) {
-    if (!reservedNames || reservedNames === lastOrUndefined(reservedNamesStack)) {
+    if (!reservedNames || reservedNames === qc.lastOrUndefined(reservedNamesStack)) {
       reservedNames = qc.createMap<true>();
     }
     reservedNames.set(name, true);
@@ -4378,7 +4378,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         break;
       case qt.SyntaxKind.FunctionDeclaration:
         generateNameIfNeeded((<qt.FunctionDeclaration>node).name);
-        if (getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+        if (qu.getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
           forEach((<qt.FunctionDeclaration>node).parameters, generateNames);
           generateNames((<qt.FunctionDeclaration>node).body);
         }
@@ -4672,7 +4672,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     Debug.assert(lastNode === node || lastSubstitution === node);
     enterComment();
     hasWrittenComment = false;
-    const emitFlags = getEmitFlags(node);
+    const emitFlags = qu.getEmitFlags(node);
     const { pos, end } = getCommentRange(node);
     const isEmittedNode = node.kind !== qt.SyntaxKind.NotEmittedStatement;
 
@@ -4773,7 +4773,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitBodyWithDetachedComments(node: qt.Node, detachedRange: qt.TextRange, emitCallback: (node: qt.Node) => void) {
     enterComment();
     const { pos, end } = detachedRange;
-    const emitFlags = getEmitFlags(node);
+    const emitFlags = qu.getEmitFlags(node);
     const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0;
     const skipTrailingComments = commentsDisabled || end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0;
     if (!skipLeadingComments) {
@@ -4983,7 +4983,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       pipelinePhase(hint, node);
     } else {
       const { pos, end, source = sourceMapSource } = getSourceMapRange(node);
-      const emitFlags = getEmitFlags(node);
+      const emitFlags = qu.getEmitFlags(node);
       if (node.kind !== qt.SyntaxKind.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
         emitSourcePos(source, skipSourceTrivia(source, pos));
       }
@@ -5019,7 +5019,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * @param pos The position.
    */
   function emitPos(pos: number) {
-    if (sourceMapsDisabled || positionIsSynthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
+    if (sourceMapsDisabled || qu.positionIsSynthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
       return;
     }
 

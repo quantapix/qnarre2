@@ -77,9 +77,9 @@ export class Version {
     //
     // https://semver.org/#spec-item-11
     // > Build metadata does not figure into precedence
-    if (this === other) return Comparison.EqualTo;
-    if (other === undefined) return Comparison.GreaterThan;
-    return compareValues(this.major, other.major) || compareValues(this.minor, other.minor) || compareValues(this.patch, other.patch) || comparePrerelaseIdentifiers(this.prerelease, other.prerelease);
+    if (this === other) return qpc.Comparison.EqualTo;
+    if (other === undefined) return qpc.Comparison.GreaterThan;
+    return qc.compareValues(this.major, other.major) || qc.compareValues(this.minor, other.minor) || qc.compareValues(this.patch, other.patch) || comparePrerelaseIdentifiers(this.prerelease, other.prerelease);
   }
 
   increment(field: 'major' | 'minor' | 'patch') {
@@ -123,9 +123,9 @@ function comparePrerelaseIdentifiers(left: readonly string[], right: readonly st
   // https://semver.org/#spec-item-11
   // > When major, minor, and patch are equal, a pre-release version has lower precedence
   // > than a normal version.
-  if (left === right) return Comparison.EqualTo;
-  if (left.length === 0) return right.length === 0 ? Comparison.EqualTo : Comparison.GreaterThan;
-  if (right.length === 0) return Comparison.LessThan;
+  if (left === right) return qpc.Comparison.EqualTo;
+  if (left.length === 0) return right.length === 0 ? qpc.Comparison.EqualTo : qpc.Comparison.GreaterThan;
+  if (right.length === 0) return qpc.Comparison.LessThan;
 
   // https://semver.org/#spec-item-11
   // > Precedence for two pre-release versions with the same major, minor, and patch version
@@ -142,16 +142,16 @@ function comparePrerelaseIdentifiers(left: readonly string[], right: readonly st
     if (leftIsNumeric || rightIsNumeric) {
       // https://semver.org/#spec-item-11
       // > Numeric identifiers always have lower precedence than non-numeric identifiers.
-      if (leftIsNumeric !== rightIsNumeric) return leftIsNumeric ? Comparison.LessThan : Comparison.GreaterThan;
+      if (leftIsNumeric !== rightIsNumeric) return leftIsNumeric ? qpc.Comparison.LessThan : qpc.Comparison.GreaterThan;
 
       // https://semver.org/#spec-item-11
       // > identifiers consisting of only digits are compared numerically
-      const result = compareValues(+leftIdentifier, +rightIdentifier);
+      const result = qc.compareValues(+leftIdentifier, +rightIdentifier);
       if (result) return result;
     } else {
       // https://semver.org/#spec-item-11
       // > identifiers with letters or hyphens are compared lexically in ASCII sort order.
-      const result = compareStringsCaseSensitive(leftIdentifier, rightIdentifier);
+      const result = qc.compareStringsCaseSensitive(leftIdentifier, rightIdentifier);
       if (result) return result;
     }
   }
@@ -159,7 +159,7 @@ function comparePrerelaseIdentifiers(left: readonly string[], right: readonly st
   // https://semver.org/#spec-item-11
   // > A larger set of pre-release fields has a higher precedence than a smaller set, if all
   // > of the preceding identifiers are equal.
-  return compareValues(left.length, right.length);
+  return qc.compareValues(left.length, right.length);
 }
 
 /**
@@ -254,13 +254,7 @@ function parsePartial(text: string) {
   if (!match) return undefined;
 
   const [, major, minor = '*', patch = '*', prerelease, build] = match;
-  const version = new Version(
-    isWildcard(major) ? 0 : parseInt(major, 10),
-    isWildcard(major) || isWildcard(minor) ? 0 : parseInt(minor, 10),
-    isWildcard(major) || isWildcard(minor) || isWildcard(patch) ? 0 : parseInt(patch, 10),
-    prerelease,
-    build
-  );
+  const version = new Version(isWildcard(major) ? 0 : parseInt(major, 10), isWildcard(major) || isWildcard(minor) ? 0 : parseInt(minor, 10), isWildcard(major) || isWildcard(minor) || isWildcard(patch) ? 0 : parseInt(patch, 10), prerelease, build);
 
   return { version, major, minor, patch };
 }
@@ -277,13 +271,7 @@ function parseHyphen(left: string, right: string, comparators: Comparator[]) {
   }
 
   if (!isWildcard(rightResult.major)) {
-    comparators.push(
-      isWildcard(rightResult.minor)
-        ? createComparator('<', rightResult.version.increment('major'))
-        : isWildcard(rightResult.patch)
-        ? createComparator('<', rightResult.version.increment('minor'))
-        : createComparator('<=', rightResult.version)
-    );
+    comparators.push(isWildcard(rightResult.minor) ? createComparator('<', rightResult.version.increment('major')) : isWildcard(rightResult.patch) ? createComparator('<', rightResult.version.increment('minor')) : createComparator('<=', rightResult.version));
   }
 
   return true;
@@ -310,13 +298,7 @@ function parseComparator(operator: string, text: string, comparators: Comparator
         break;
       case '<=':
       case '>':
-        comparators.push(
-          isWildcard(minor)
-            ? createComparator(operator === '<=' ? '<' : '>=', version.increment('major'))
-            : isWildcard(patch)
-            ? createComparator(operator === '<=' ? '<' : '>=', version.increment('minor'))
-            : createComparator(operator, version)
-        );
+        comparators.push(isWildcard(minor) ? createComparator(operator === '<=' ? '<' : '>=', version.increment('major')) : isWildcard(patch) ? createComparator(operator === '<=' ? '<' : '>=', version.increment('minor')) : createComparator(operator, version));
         break;
       case '=':
       case undefined:

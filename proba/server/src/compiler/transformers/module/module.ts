@@ -543,7 +543,7 @@ export function transformModule(context: TransformationContext) {
     const body = createBlock([createExpressionStatement(createCall(createIdentifier('require'), /*typeArguments*/ undefined, [createArrayLiteral([arg || createOmittedExpression()]), resolve, reject]))]);
 
     let func: FunctionExpression | ArrowFunction;
-    if (languageVersion >= ScriptTarget.ES2015) {
+    if (languageVersion >= qt.ScriptTarget.ES2015) {
       func = createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, parameters, /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, body);
     } else {
       func = createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, parameters, /*type*/ undefined, body);
@@ -578,7 +578,7 @@ export function transformModule(context: TransformationContext) {
     }
 
     let func: FunctionExpression | ArrowFunction;
-    if (languageVersion >= ScriptTarget.ES2015) {
+    if (languageVersion >= qt.ScriptTarget.ES2015) {
       func = createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, requireCall);
     } else {
       func = createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, createBlock([createReturn(requireCall)]));
@@ -595,7 +595,7 @@ export function transformModule(context: TransformationContext) {
   }
 
   function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
-    if (!compilerOptions.esModuleInterop || getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+    if (!compilerOptions.esModuleInterop || qu.getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
       return innerExpr;
     }
     if (getExportNeedsImportStarHelper(node)) {
@@ -606,7 +606,7 @@ export function transformModule(context: TransformationContext) {
   }
 
   function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: Expression) {
-    if (!compilerOptions.esModuleInterop || getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+    if (!compilerOptions.esModuleInterop || qu.getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
       return innerExpr;
     }
     if (getImportNeedsImportStarHelper(node)) {
@@ -633,7 +633,7 @@ export function transformModule(context: TransformationContext) {
         // import "mod";
         return setOriginalNode(setTextRange(createExpressionStatement(createRequireCall(node)), node), node);
       } else {
-        const variables: VariableDeclaration[] = [];
+        const variables: qt.VariableDeclaration[] = [];
         if (namespaceDeclaration && !isDefaultImport(node)) {
           // import * as n from "mod";
           variables.push(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getHelperExpressionForImport(node, createRequireCall(node))));
@@ -649,11 +649,11 @@ export function transformModule(context: TransformationContext) {
           }
         }
 
-        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), /*location*/ node), /*original*/ node));
+        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(variables, languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), /*location*/ node), /*original*/ node));
       }
     } else if (namespaceDeclaration && isDefaultImport(node)) {
       // import d, * as n from "mod";
-      statements = append(statements, createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([setOriginalNode(setTextRange(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)), /*location*/ node), /*original*/ node)], languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)));
+      statements = append(statements, createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([setOriginalNode(setTextRange(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)), /*location*/ node), /*original*/ node)], languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)));
     }
 
     if (hasAssociatedEndOfDeclarationMarker(node)) {
@@ -692,13 +692,13 @@ export function transformModule(context: TransformationContext) {
 
     let statements: Statement[] | undefined;
     if (moduleKind !== ModuleKind.AMD) {
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node));
       } else {
-        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(getSynthesizedClone(node.name), /*type*/ undefined, createRequireCall(node))], /*flags*/ languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node), node));
+        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(getSynthesizedClone(node.name), /*type*/ undefined, createRequireCall(node))], /*flags*/ languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node), node));
       }
     } else {
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(getExportName(node), getLocalName(node))), node), node));
       }
     }
@@ -735,7 +735,7 @@ export function transformModule(context: TransformationContext) {
         statements.push(setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(generatedName, /*type*/ undefined, createRequireCall(node))])), /*location*/ node), /* original */ node));
       }
       for (const specifier of node.exportClause.elements) {
-        if (languageVersion === ScriptTarget.ES3) {
+        if (languageVersion === qt.ScriptTarget.ES3) {
           statements.push(setOriginalNode(setTextRange(createExpressionStatement(createCreateBindingHelper(context, generatedName, createLiteral(specifier.propertyName || specifier.name), specifier.propertyName ? createLiteral(specifier.name) : undefined)), specifier), specifier));
         } else {
           const exportedValue = createPropertyAccess(generatedName, specifier.propertyName || specifier.name);
@@ -786,7 +786,7 @@ export function transformModule(context: TransformationContext) {
    */
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       statements = append(statements, setOriginalNode(setTextRange(createFunctionDeclaration(/*decorators*/ undefined, visitNodes(node.modifiers, modifierVisitor, isModifier), node.asteriskToken, getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true), /*typeParameters*/ undefined, visitNodes(node.parameters, moduleExpressionElementVisitor), /*type*/ undefined, visitEachChild(node.body, moduleExpressionElementVisitor, context)), /*location*/ node), /*original*/ node));
     } else {
       statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
@@ -810,7 +810,7 @@ export function transformModule(context: TransformationContext) {
    */
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       statements = append(statements, setOriginalNode(setTextRange(createClassDeclaration(/*decorators*/ undefined, visitNodes(node.modifiers, modifierVisitor, isModifier), getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true), /*typeParameters*/ undefined, visitNodes(node.heritageClauses, moduleExpressionElementVisitor), visitNodes(node.members, moduleExpressionElementVisitor)), node), node));
     } else {
       statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
@@ -834,10 +834,10 @@ export function transformModule(context: TransformationContext) {
    */
   function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    let variables: VariableDeclaration[] | undefined;
+    let variables: qt.VariableDeclaration[] | undefined;
     let expressions: Expression[] | undefined;
 
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       let modifiers: NodeArray<Modifier> | undefined;
 
       // If we're exporting these variables, then these just become assignments to 'exports.x'.
@@ -896,7 +896,7 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to transform.
    */
-  function transformInitializedVariable(node: VariableDeclaration): Expression {
+  function transformInitializedVariable(node: qt.VariableDeclaration): Expression {
     if (isBindingPattern(node.name)) {
       return flattenDestructuringAssignment(visitNode(node, moduleExpressionElementVisitor), /*visitor*/ undefined, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
     } else {
@@ -932,7 +932,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to test.
    */
   function hasAssociatedEndOfDeclarationMarker(node: qt.Node) {
-    return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
+    return (qu.getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
 
   /**
@@ -1036,7 +1036,7 @@ export function transformModule(context: TransformationContext) {
   }
 
   /**
-   * Appends the exports of a VariableDeclaration or BindingElement to a statement list,
+   * Appends the exports of a qt.VariableDeclaration or qt.BindingElement to a statement list,
    * returning the statement list.
    *
    * @param statements A statement list to which the down-level export statements are to be
@@ -1044,7 +1044,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param decl The declaration whose exports are to be recorded.
    */
-  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElement): Statement[] | undefined {
+  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElement): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) {
       return statements;
     }
@@ -1076,8 +1076,8 @@ export function transformModule(context: TransformationContext) {
       return statements;
     }
 
-    if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? createIdentifier('default') : getDeclarationName(decl);
+    if (hasSyntacticModifier(decl, qt.ModifierFlags.Export)) {
+      const exportName = qu.hasSyntacticModifier(decl, qt.ModifierFlags.Default) ? createIdentifier('default') : getDeclarationName(decl);
       statements = appendExportStatement(statements, exportName, getLocalName(decl), /*location*/ decl);
     }
 
@@ -1126,7 +1126,7 @@ export function transformModule(context: TransformationContext) {
 
   function createUnderscoreUnderscoreESModule() {
     let statement: Statement;
-    if (languageVersion === ScriptTarget.ES3) {
+    if (languageVersion === qt.ScriptTarget.ES3) {
       statement = createExpressionStatement(createExportExpression(createIdentifier('__esModule'), createLiteral(/*value*/ true)));
     } else {
       statement = createExpressionStatement(createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [createIdentifier('exports'), createLiteral('__esModule'), createObjectLiteral([createPropertyAssignment('value', createLiteral(/*value*/ true))])]));
@@ -1162,7 +1162,7 @@ export function transformModule(context: TransformationContext) {
    */
   function createExportExpression(name: Identifier, value: Expression, location?: qt.TextRange, liveBinding?: boolean) {
     return setTextRange(
-      liveBinding && languageVersion !== ScriptTarget.ES3
+      liveBinding && languageVersion !== qt.ScriptTarget.ES3
         ? createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
             createIdentifier('exports'),
             createLiteral(name),
@@ -1292,7 +1292,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to substitute.
    */
   function substituteExpressionIdentifier(node: Identifier): Expression {
-    if (getEmitFlags(node) & EmitFlags.HelperName) {
+    if (qu.getEmitFlags(node) & EmitFlags.HelperName) {
       const externalHelpersModuleName = getExternalHelpersModuleName(currentSourceFile);
       if (externalHelpersModuleName) {
         return createPropertyAccess(externalHelpersModuleName, node);

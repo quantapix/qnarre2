@@ -68,7 +68,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   }
 
   function getCachedFileSystemEntriesForBaseDir(path: Path): MutableFileSystemEntries | undefined {
-    return getCachedFileSystemEntries(getDirectoryPath(path));
+    return getCachedFileSystemEntries(qp.getDirectoryPath(path));
   }
 
   function getBaseNameOfFileName(fileName: string) {

@@ -316,7 +316,7 @@ export function setGetSourceFileAsHashVersioned(compilerHost: CompilerHost, host
  * Creates the watch compiler host that can be extended with config file or root file names and options host
  */
 export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(system: System, createProgram: CreateProgram<T> | undefined): ProgramHost<T> {
-  const getDefaultLibLocation = memoize(() => getDirectoryPath(normalizePath(system.getExecutingFilePath())));
+  const getDefaultLibLocation = memoize(() => qp.getDirectoryPath(normalizePath(system.getExecutingFilePath())));
   return {
     useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
     getNewLine: () => system.newLine,

@@ -290,7 +290,7 @@ export function transformJsx(context: TransformationContext) {
   }
 }
 
-const entities = createMapFromTemplate<number>({
+const entities = qc.createMapFromTemplate<number>({
   quot: 0x0022,
   amp: 0x0026,
   apos: 0x0027,

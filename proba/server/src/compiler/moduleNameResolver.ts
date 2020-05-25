@@ -102,7 +102,7 @@ interface ModuleResolutionState {
   host: ModuleResolutionHost;
   compilerOptions: qt.CompilerOptions;
   traceEnabled: boolean;
-  failedLookupLocations: Push<string>;
+  failedLookupLocations: qpc.Push<string>;
   resultFromCache?: ResolvedModuleWithFailedLookupLocations;
 }
 
@@ -245,7 +245,7 @@ export function getEffectiveTypeRoots(options: qt.CompilerOptions, host: GetEffe
 
   let currentDirectory: string | undefined;
   if (options.configFilePath) {
-    currentDirectory = getDirectoryPath(options.configFilePath);
+    currentDirectory = qp.getDirectoryPath(options.configFilePath);
   } else if (host.getCurrentDirectory) {
     currentDirectory = host.getCurrentDirectory();
   }
@@ -341,7 +341,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
       }
       return firstDefined(typeRoots, (typeRoot) => {
         const candidate = combinePaths(typeRoot, typeReferenceDirectiveName);
-        const candidateDirectory = getDirectoryPath(candidate);
+        const candidateDirectory = qp.getDirectoryPath(candidate);
         const directoryExists = directoryProbablyExists(candidateDirectory, host);
         if (!directoryExists && traceEnabled) {
           trace(host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, candidateDirectory);
@@ -356,7 +356,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
   }
 
   function secondaryLookup(): PathAndPackageId | undefined {
-    const initialLocationForSecondaryLookup = containingFile && getDirectoryPath(containingFile);
+    const initialLocationForSecondaryLookup = containingFile && qp.getDirectoryPath(containingFile);
 
     if (initialLocationForSecondaryLookup !== undefined) {
       // check secondary locations
@@ -505,7 +505,7 @@ export function createCacheWithRedirects<T>(options?: qt.CompilerOptions): Cache
   }
 }
 
-export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: CacheWithRedirects<Map<ResolvedModuleWithFailedLookupLocations>>, moduleNameToDirectoryMap: CacheWithRedirects<PerModuleNameCache>, currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): ModuleResolutionCache {
+export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: CacheWithRedirects<Map<ResolvedModuleWithFailedLookupLocations>>, moduleNameToDirectoryMap: CacheWithRedirects<PerModuleNameCache>, currentDirectory: string, getCanonicalFileName: qc.GetCanonicalFileName): ModuleResolutionCache {
   return { getOrCreateCacheForDirectory, getOrCreateCacheForModuleName, directoryToModuleNameMap, moduleNameToDirectoryMap };
 
   function getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: ResolvedProjectReference) {
@@ -566,7 +566,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
       const commonPrefix = resolvedFileName && getCommonPrefix(path, resolvedFileName);
       let current = path;
       while (current !== commonPrefix) {
-        const parent = getDirectoryPath(current);
+        const parent = qp.getDirectoryPath(current);
         if (parent === current || directoryPathMap.has(parent)) {
           break;
         }
@@ -576,7 +576,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
     }
 
     function getCommonPrefix(directory: Path, resolution: string) {
-      const resolutionDirectory = toPath(getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
+      const resolutionDirectory = toPath(qp.getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
 
       // find first position where directory and resolution differs
       let i = 0;
@@ -601,7 +601,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
 }
 
 export function resolveModuleNameFromCache(moduleName: string, containingFile: string, cache: ModuleResolutionCache): ResolvedModuleWithFailedLookupLocations | undefined {
-  const containingDirectory = getDirectoryPath(containingFile);
+  const containingDirectory = qp.getDirectoryPath(containingFile);
   const perFolderCache = cache && cache.getOrCreateCacheForDirectory(containingDirectory);
   return perFolderCache && perFolderCache.get(moduleName);
 }
@@ -617,7 +617,7 @@ export function resolveModuleName(moduleName: string, containingFile: string, co
       trace(host, Diagnostics.Using_compiler_options_of_project_reference_redirect_0, redirectedReference.sourceFile.fileName);
     }
   }
-  const containingDirectory = getDirectoryPath(containingFile);
+  const containingDirectory = qp.getDirectoryPath(containingFile);
   const perFolderCache = cache && cache.getOrCreateCacheForDirectory(containingDirectory, redirectedReference);
   let result = perFolderCache && perFolderCache.get(moduleName);
 
@@ -786,10 +786,10 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
     // in case of tsconfig.json this will happen automatically - compiler will expand relative names
     // using location of tsconfig.json as base location
     let normalizedRoot = normalizePath(rootDir);
-    if (!endsWith(normalizedRoot, directorySeparator)) {
+    if (!qc.endsWith(normalizedRoot, directorySeparator)) {
       normalizedRoot += directorySeparator;
     }
-    const isLongestMatchingPrefix = startsWith(candidate, normalizedRoot) && (matchedNormalizedPrefix === undefined || matchedNormalizedPrefix.length < normalizedRoot.length);
+    const isLongestMatchingPrefix = qc.startsWith(candidate, normalizedRoot) && (matchedNormalizedPrefix === undefined || matchedNormalizedPrefix.length < normalizedRoot.length);
 
     if (state.traceEnabled) {
       trace(state.host, Diagnostics.Checking_if_0_is_the_longest_matching_prefix_for_1_2, normalizedRoot, candidate, isLongestMatchingPrefix);
@@ -828,7 +828,7 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
       if (state.traceEnabled) {
         trace(state.host, Diagnostics.Loading_0_from_the_root_dir_1_candidate_location_2, suffix, rootDir, candidate);
       }
-      const baseDirectory = getDirectoryPath(candidate);
+      const baseDirectory = qp.getDirectoryPath(candidate);
       const resolvedFileName = loader(extensions, candidate, !directoryProbablyExists(baseDirectory, state.host), state);
       if (resolvedFileName) {
         return resolvedFileName;
@@ -853,7 +853,7 @@ function tryLoadModuleUsingBaseUrl(extensions: Extensions, moduleName: string, l
   if (state.traceEnabled) {
     trace(state.host, Diagnostics.Resolving_module_name_0_relative_to_base_url_1_2, moduleName, baseUrl, candidate);
   }
-  return loader(extensions, candidate, !directoryProbablyExists(getDirectoryPath(candidate), state.host), state);
+  return loader(extensions, candidate, !directoryProbablyExists(qp.getDirectoryPath(candidate), state.host), state);
 }
 
 /**
@@ -886,7 +886,7 @@ function tryResolveJSModuleWorker(moduleName: string, initialDir: string, host: 
 export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference): ResolvedModuleWithFailedLookupLocations;
 export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference, lookupConfig?: boolean): ResolvedModuleWithFailedLookupLocations; // eslint-disable-line @typescript-eslint/unified-signatures
 export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference, lookupConfig?: boolean): ResolvedModuleWithFailedLookupLocations {
-  return nodeModuleNameResolverWorker(moduleName, getDirectoryPath(containingFile), compilerOptions, host, cache, lookupConfig ? tsconfigExtensions : compilerOptions.resolveJsonModule ? tsPlusJsonExtensions : tsExtensions, redirectedReference);
+  return nodeModuleNameResolverWorker(moduleName, qp.getDirectoryPath(containingFile), compilerOptions, host, cache, lookupConfig ? tsconfigExtensions : compilerOptions.resolveJsonModule ? tsPlusJsonExtensions : tsExtensions, redirectedReference);
 }
 
 function nodeModuleNameResolverWorker(moduleName: string, containingDirectory: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache: ModuleResolutionCache | undefined, extensions: Extensions[], redirectedReference: ResolvedProjectReference | undefined): ResolvedModuleWithFailedLookupLocations {
@@ -948,7 +948,7 @@ function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string,
   }
   if (!hasTrailingDirectorySeparator(candidate)) {
     if (!onlyRecordFailures) {
-      const parentOfCandidate = getDirectoryPath(candidate);
+      const parentOfCandidate = qp.getDirectoryPath(candidate);
       if (!directoryProbablyExists(parentOfCandidate, state.host)) {
         if (state.traceEnabled) {
           trace(state.host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, parentOfCandidate);
@@ -977,7 +977,7 @@ function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string,
 
 export const nodeModulesPathPart = '/node_modules/';
 export function pathContainsNodeModules(path: string): boolean {
-  return stringContains(path, nodeModulesPathPart);
+  return qc.stringContains(path, nodeModulesPathPart);
 }
 
 /**
@@ -1046,7 +1046,7 @@ function loadModuleFromFile(extensions: Extensions, candidate: string, onlyRecor
 function tryAddingExtensions(candidate: string, extensions: Extensions, onlyRecordFailures: boolean, state: ModuleResolutionState): PathAndExtension | undefined {
   if (!onlyRecordFailures) {
     // check if containing folder exists - if it doesn't then just record failures for all supported extensions without disk probing
-    const directory = getDirectoryPath(candidate);
+    const directory = qp.getDirectoryPath(candidate);
     if (directory) {
       onlyRecordFailures = !directoryProbablyExists(directory, state.host);
     }
@@ -1163,7 +1163,7 @@ function loadNodeModuleFromDirectoryWorker(extensions: Extensions, candidate: st
     return nodeLoadModuleByRelativeName(nextExtensions, candidate, onlyRecordFailures, state, /*considerPackageJson*/ false);
   };
 
-  const onlyRecordFailuresForPackageFile = packageFile ? !directoryProbablyExists(getDirectoryPath(packageFile), state.host) : undefined;
+  const onlyRecordFailuresForPackageFile = packageFile ? !directoryProbablyExists(qp.getDirectoryPath(packageFile), state.host) : undefined;
   const onlyRecordFailuresForIndex = onlyRecordFailures || !directoryProbablyExists(candidate, state.host);
   const indexPath = combinePaths(candidate, extensions === Extensions.TSConfig ? 'tsconfig' : 'index');
 
@@ -1324,7 +1324,7 @@ function tryLoadModuleUsingPaths(extensions: Extensions, moduleName: string, bas
           return noPackageId({ path, ext: extension });
         }
       }
-      return loader(extensions, candidate, onlyRecordFailures || !directoryProbablyExists(getDirectoryPath(candidate), state.host), state);
+      return loader(extensions, candidate, onlyRecordFailures || !directoryProbablyExists(qp.getDirectoryPath(candidate), state.host), state);
     });
     return { value: resolved };
   }
@@ -1347,7 +1347,7 @@ export function getTypesPackageName(packageName: string): string {
 }
 
 export function mangleScopedPackageName(packageName: string): string {
-  if (startsWith(packageName, '@')) {
+  if (qc.startsWith(packageName, '@')) {
     const replaceSlash = packageName.replace(directorySeparator, mangledScopedPackageSeparator);
     if (replaceSlash !== packageName) {
       return replaceSlash.slice(1); // Take off the "@"
@@ -1365,7 +1365,7 @@ export function getPackageNameFromTypesPackageName(mangledName: string): string 
 }
 
 export function unmangleScopedPackageName(typesPackageName: string): string {
-  return stringContains(typesPackageName, mangledScopedPackageSeparator) ? '@' + typesPackageName.replace(mangledScopedPackageSeparator, directorySeparator) : typesPackageName;
+  return qc.stringContains(typesPackageName, mangledScopedPackageSeparator) ? '@' + typesPackageName.replace(mangledScopedPackageSeparator, directorySeparator) : typesPackageName;
 }
 
 function tryFindNonRelativeModuleNameInCache(cache: PerModuleNameCache | undefined, moduleName: string, containingDirectory: string, state: ModuleResolutionState): SearchResult<Resolved> {
@@ -1390,7 +1390,7 @@ export function classicNameResolver(moduleName: string, containingFile: string, 
   const traceEnabled = isTraceEnabled(compilerOptions, host);
   const failedLookupLocations: string[] = [];
   const state: ModuleResolutionState = { compilerOptions, host, traceEnabled, failedLookupLocations };
-  const containingDirectory = getDirectoryPath(containingFile);
+  const containingDirectory = qp.getDirectoryPath(containingFile);
 
   const resolved = tryResolve(Extensions.TypeScript) || tryResolve(Extensions.JavaScript);
   // No originalPath because classic resolution doesn't resolve realPath

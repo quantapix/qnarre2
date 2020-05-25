@@ -117,7 +117,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
    */
   function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (helperNameSubstitutions && isIdentifier(node) && getEmitFlags(node) & EmitFlags.HelperName) {
+    if (helperNameSubstitutions && isIdentifier(node) && qu.getEmitFlags(node) & EmitFlags.HelperName) {
       return substituteHelperName(node);
     }
 

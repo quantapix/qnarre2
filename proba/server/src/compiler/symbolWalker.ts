@@ -1,5 +1,3 @@
-/** @internal */
-
 export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: Signature) => Type,
   getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,

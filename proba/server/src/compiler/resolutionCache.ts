@@ -40,7 +40,7 @@ interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends 
 
 export interface ResolutionCacheHost extends ModuleResolutionHost {
   toPath(fileName: string): Path;
-  getCanonicalFileName: GetCanonicalFileName;
+  getCanonicalFileName: qc.GetCanonicalFileName;
   getCompilationSettings(): qt.CompilerOptions;
   watchDirectoryOfFailedLookupLocation(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
   onInvalidatedResolution(): void;
@@ -73,11 +73,11 @@ interface DirectoryOfFailedLookupWatch {
 
 export function removeIgnoredPath(path: Path): Path | undefined {
   // Consider whole staging folder as if node_modules changed.
-  if (endsWith(path, '/node_modules/.staging')) {
+  if (qc.endsWith(path, '/node_modules/.staging')) {
     return removeSuffix(path, '/.staging');
   }
 
-  return some(ignoredPaths, (searchPath) => stringContains(path, searchPath)) ? undefined : path;
+  return some(ignoredPaths, (searchPath) => qc.stringContains(path, searchPath)) ? undefined : path;
 }
 
 /**
@@ -205,7 +205,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     if (dir === undefined || file.length <= dir.length) {
       return false;
     }
-    return startsWith(file, dir) && file[dir.length] === directorySeparator;
+    return qc.startsWith(file, dir) && file[dir.length] === directorySeparator;
   }
 
   function clear() {
@@ -312,7 +312,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function resolveNamesWithLocalCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>({ names, containingFile, redirectedReference, cache, perDirectoryCacheWithRedirects, loader, getResolutionWithResolvedFileName, shouldRetryResolution, reusedNames, logChanges }: ResolveNamesWithLocalCacheInput<T, R>): (R | undefined)[] {
     const path = resolutionHost.toPath(containingFile);
     const resolutionsInFile = cache.get(path) || cache.set(path, createMap()).get(path)!;
-    const dirPath = getDirectoryPath(path);
+    const dirPath = qp.getDirectoryPath(path);
     const perDirectoryCache = perDirectoryCacheWithRedirects.getOrCreateMapOfCacheRedirects(redirectedReference);
     let perDirectoryResolution = perDirectoryCache.get(dirPath);
     if (!perDirectoryResolution) {
@@ -427,7 +427,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   }
 
   function isNodeModulesAtTypesDirectory(dirPath: Path) {
-    return endsWith(dirPath, '/node_modules/@types');
+    return qc.endsWith(dirPath, '/node_modules/@types');
   }
 
   function getDirectoryToWatchFailedLookupLocation(failedLookupLocation: string, failedLookupLocationPath: Path): DirectoryOfFailedLookupWatch | undefined {
@@ -453,19 +453,19 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       }
     }
 
-    return getDirectoryToWatchFromFailedLookupLocationDirectory(getDirectoryPath(getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory())), getDirectoryPath(failedLookupLocationPath));
+    return getDirectoryToWatchFromFailedLookupLocationDirectory(qp.getDirectoryPath(getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory())), qp.getDirectoryPath(failedLookupLocationPath));
   }
 
   function getDirectoryToWatchFromFailedLookupLocationDirectory(dir: string, dirPath: Path): DirectoryOfFailedLookupWatch | undefined {
     // If directory path contains node module, get the most parent node_modules directory for watching
     while (pathContainsNodeModules(dirPath)) {
-      dir = getDirectoryPath(dir);
-      dirPath = getDirectoryPath(dirPath);
+      dir = qp.getDirectoryPath(dir);
+      dirPath = qp.getDirectoryPath(dirPath);
     }
 
     // If the directory is node_modules use it to watch, always watch it recursively
     if (isNodeModulesDirectory(dirPath)) {
-      return canWatchDirectory(getDirectoryPath(dirPath)) ? { dir, dirPath } : undefined;
+      return canWatchDirectory(qp.getDirectoryPath(dirPath)) ? { dir, dirPath } : undefined;
     }
 
     let nonRecursive = true;
@@ -473,7 +473,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     let subDirectoryPath: Path | undefined, subDirectory: string | undefined;
     if (rootPath !== undefined) {
       while (!isInDirectoryPath(dirPath, rootPath)) {
-        const parentPath = getDirectoryPath(dirPath);
+        const parentPath = qp.getDirectoryPath(dirPath);
         if (parentPath === dirPath) {
           break;
         }
@@ -481,7 +481,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
         subDirectoryPath = dirPath;
         subDirectory = dir;
         dirPath = parentPath;
-        dir = getDirectoryPath(dir);
+        dir = qp.getDirectoryPath(dir);
       }
     }
 
@@ -672,7 +672,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     for (const containingFilePath of Debug.assertDefined(resolution.files)) {
       (filesWithInvalidatedResolutions || (filesWithInvalidatedResolutions = qc.createMap<true>())).set(containingFilePath, true);
       // When its a file with inferred types resolution, invalidate type reference directive resolution
-      changedInAutoTypeReferenced = changedInAutoTypeReferenced || containingFilePath.endsWith(inferredTypesContainingFile);
+      changedInAutoTypeReferenced = changedInAutoTypeReferenced || containingFilePath.qc.endsWith(inferredTypesContainingFile);
     }
     if (changedInAutoTypeReferenced) {
       resolutionHost.onChangedAutomaticTypeDirectiveNames();
@@ -709,12 +709,12 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
 
       // Some file or directory in the watching directory is created
       // Return early if it does not have any of the watching extension or not the custom failed lookup path
-      const dirOfFileOrDirectory = getDirectoryPath(fileOrDirectoryPath);
+      const dirOfFileOrDirectory = qp.getDirectoryPath(fileOrDirectoryPath);
       if (isNodeModulesAtTypesDirectory(fileOrDirectoryPath) || isNodeModulesDirectory(fileOrDirectoryPath) || isNodeModulesAtTypesDirectory(dirOfFileOrDirectory) || isNodeModulesDirectory(dirOfFileOrDirectory)) {
         // Invalidate any resolution from this directory
         isChangedFailedLookupLocation = (location) => {
           const locationPath = resolutionHost.toPath(location);
-          return locationPath === fileOrDirectoryPath || startsWith(resolutionHost.toPath(location), fileOrDirectoryPath);
+          return locationPath === fileOrDirectoryPath || qc.startsWith(resolutionHost.toPath(location), fileOrDirectoryPath);
         };
       } else {
         if (!isPathWithDefaultFailedLookupExtension(fileOrDirectoryPath) && !customFailedLookupPaths.has(fileOrDirectoryPath)) {
@@ -814,7 +814,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
    * Hence return true for all directories except root directories which are filtered from watching
    */
   function directoryExistsForTypeRootWatch(nodeTypesDirectory: string) {
-    const dir = getDirectoryPath(getDirectoryPath(nodeTypesDirectory));
+    const dir = qp.getDirectoryPath(qp.getDirectoryPath(nodeTypesDirectory));
     const dirPath = resolutionHost.toPath(dir);
     return dirPath === rootPath || canWatchDirectory(dirPath);
   }

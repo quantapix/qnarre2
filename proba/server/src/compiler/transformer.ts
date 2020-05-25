@@ -49,31 +49,31 @@ function getScriptTransformers(compilerOptions: qt.CompilerOptions, customTransf
     transformers.push(transformJsx);
   }
 
-  if (languageVersion < ScriptTarget.ESNext) {
+  if (languageVersion < qt.ScriptTarget.ESNext) {
     transformers.push(transformESNext);
   }
 
-  if (languageVersion < ScriptTarget.ES2020) {
+  if (languageVersion < qt.ScriptTarget.ES2020) {
     transformers.push(transformES2020);
   }
 
-  if (languageVersion < ScriptTarget.ES2019) {
+  if (languageVersion < qt.ScriptTarget.ES2019) {
     transformers.push(transformES2019);
   }
 
-  if (languageVersion < ScriptTarget.ES2018) {
+  if (languageVersion < qt.ScriptTarget.ES2018) {
     transformers.push(transformES2018);
   }
 
-  if (languageVersion < ScriptTarget.ES2017) {
+  if (languageVersion < qt.ScriptTarget.ES2017) {
     transformers.push(transformES2017);
   }
 
-  if (languageVersion < ScriptTarget.ES2016) {
+  if (languageVersion < qt.ScriptTarget.ES2016) {
     transformers.push(transformES2016);
   }
 
-  if (languageVersion < ScriptTarget.ES2015) {
+  if (languageVersion < qt.ScriptTarget.ES2015) {
     transformers.push(transformES2015);
     transformers.push(transformGenerators);
   }
@@ -82,7 +82,7 @@ function getScriptTransformers(compilerOptions: qt.CompilerOptions, customTransf
 
   // The ES5 transformer is last so that it can substitute expressions like `exports.default`
   // for ES3.
-  if (languageVersion < ScriptTarget.ES5) {
+  if (languageVersion < qt.ScriptTarget.ES5) {
     transformers.push(transformES5);
   }
 
@@ -119,7 +119,7 @@ function wrapScriptTransformerFactory(transformer: TransformerFactory<SourceFile
 }
 
 function wrapDeclarationTransformerFactory(transformer: TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
-  return wrapCustomTransformerFactory(transformer, identity);
+  return wrapCustomTransformerFactory(transformer, qc.identity);
 }
 
 export function noEmitSubstitution(_hint: EmitHint, node: qt.Node) {
@@ -142,11 +142,11 @@ export function noEmitNotification(hint: EmitHint, node: qt.Node, callback: (hin
  */
 export function transformNodes<T extends Node>(resolver: EmitResolver | undefined, host: EmitHost | undefined, options: qt.CompilerOptions, nodes: readonly T[], transformers: readonly TransformerFactory<T>[], allowDtsFiles: boolean): TransformationResult<T> {
   const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(SyntaxKind.Count);
-  let lexicalEnvironmentVariableDeclarations: VariableDeclaration[];
+  let lexicalEnvironmentVariableDeclarations: qt.VariableDeclaration[];
   let lexicalEnvironmentFunctionDeclarations: FunctionDeclaration[];
   let lexicalEnvironmentStatements: Statement[];
   let lexicalEnvironmentFlags = LexicalEnvironmentFlags.None;
-  let lexicalEnvironmentVariableDeclarationsStack: VariableDeclaration[][] = [];
+  let lexicalEnvironmentVariableDeclarationsStack: qt.VariableDeclaration[][] = [];
   let lexicalEnvironmentFunctionDeclarationsStack: FunctionDeclaration[][] = [];
   let lexicalEnvironmentStatementsStack: Statement[][] = [];
   let lexicalEnvironmentFlagsStack: LexicalEnvironmentFlags[] = [];
@@ -253,7 +253,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * Determines whether expression substitutions are enabled for the provided node.
    */
   function isSubstitutionEnabled(node: qt.Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
+    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.Substitution) !== 0 && (qu.getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
   }
 
   /**
@@ -281,7 +281,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * printer when it emits a node.
    */
   function isEmitNotificationEnabled(node: qt.Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qu.getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
   }
 
   /**

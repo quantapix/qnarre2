@@ -1,3 +1,4 @@
+/* eslint-disable no-debugger */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable no-inner-declarations */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -6,12 +7,14 @@ import * as qc from './core';
 import * as qt from './types';
 import * as qu from './utilities';
 import * as qpu from './utilitiesPublic';
+import * as qp from './path';
+import * as sys from './sys';
 
 export namespace Debug {
   let currentAssertionLevel = qc.AssertionLevel.None;
 
   // eslint-disable-next-line prefer-const
-  let isDebugging = false;
+  export let isDebugging = false;
 
   type AssertionKeys = qt.MatchingKeys<typeof Debug, qc.AnyFunction>;
 
@@ -253,39 +256,39 @@ export namespace Debug {
       }
     }
 
-    return qc.stableSort<[number, string]>(result, (x, y) => qc.compareValues(x[0], y[0]));
+    return qc.stableSort<[number, string]>(result, (x, y) => qc.qc.compareValues(x[0], y[0]));
   }
 
   export function formatSyntaxKind(kind: qt.SyntaxKind | undefined): string {
-    return formatEnum(kind, (<any>ts).SyntaxKind, /*isFlags*/ false);
+    return formatEnum(kind, qt.SyntaxKind, /*isFlags*/ false);
   }
 
   export function formatNodeFlags(flags: qt.NodeFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).NodeFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.NodeFlags, /*isFlags*/ true);
   }
 
   export function formatModifierFlags(flags: qt.ModifierFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).ModifierFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.ModifierFlags, /*isFlags*/ true);
   }
 
   export function formatTransformFlags(flags: qt.TransformFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).TransformFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.TransformFlags, /*isFlags*/ true);
   }
 
   export function formatEmitFlags(flags: qt.EmitFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).EmitFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.EmitFlags, /*isFlags*/ true);
   }
 
   export function formatSymbolFlags(flags: qt.SymbolFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).SymbolFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.SymbolFlags, /*isFlags*/ true);
   }
 
   export function formatTypeFlags(flags: qt.TypeFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).TypeFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.TypeFlags, /*isFlags*/ true);
   }
 
   export function formatObjectFlags(flags: qt.ObjectFlags | undefined): string {
-    return formatEnum(flags, (<any>ts).ObjectFlags, /*isFlags*/ true);
+    return formatEnum(flags, qt.ObjectFlags, /*isFlags*/ true);
   }
 
   let isDebugInfoEnabled = false;
@@ -349,17 +352,17 @@ export namespace Debug {
 
     Object.defineProperties(qu.objectAllocator.getTypeConstructor().prototype, {
       __debugFlags: {
-        get(this: Type) {
+        get(this: qt.Type) {
           return formatTypeFlags(this.flags);
         },
       },
       __debugObjectFlags: {
-        get(this: Type) {
+        get(this: qt.Type) {
           return this.flags & qt.TypeFlags.Object ? formatObjectFlags(this.objectFlags) : '';
         },
       },
       __debugTypeToString: {
-        value(this: Type) {
+        value(this: qt.Type) {
           return this.checker.typeToString(this);
         },
       },
@@ -382,7 +385,7 @@ export namespace Debug {
           },
           __debugModifierFlags: {
             get(this: qt.Node) {
-              return formatModifierFlags(getEffectiveModifierFlagsNoCache(this));
+              return formatModifierFlags(qu.getEffectiveModifierFlagsNoCache(this));
             },
           },
           __debugTransformFlags: {
@@ -392,12 +395,12 @@ export namespace Debug {
           },
           __debugIsParseTreeNode: {
             get(this: qt.Node) {
-              return isParseTreeNode(this);
+              return qpu.isParseTreeNode(this);
             },
           },
           __debugEmitFlags: {
             get(this: qt.Node) {
-              return formatEmitFlags(getEmitFlags(this));
+              return formatEmitFlags(qu.getEmitFlags(this));
             },
           },
           __debugGetText: {
@@ -415,7 +418,7 @@ export namespace Debug {
     // attempt to load extended debugging information
     try {
       if (sys && sys.require) {
-        const basePath = getDirectoryPath(resolvePath(sys.getExecutingFilePath()));
+        const basePath = qp.getDirectoryPath(qp.resolvePath(sys.getExecutingFilePath()));
         const result = sys.require(basePath, './compiler-debug');
         if (!result.error) {
           result.module.init(ts);

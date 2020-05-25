@@ -17,7 +17,7 @@ export const enum FlattenLevel {
 }
 
 /**
- * Flattens a DestructuringAssignment or a VariableDeclaration to an expression.
+ * Flattens a DestructuringAssignment or a qt.VariableDeclaration to an expression.
  *
  * @param node The node to flatten.
  * @param visitor An optional visitor used to visit initializers.
@@ -27,7 +27,7 @@ export const enum FlattenLevel {
  * the destructuring assignment is needed as part of a larger expression.
  * @param createAssignmentCallback An optional callback used to create the assignment expression.
  */
-export function flattenDestructuringAssignment(node: VariableDeclaration | DestructuringAssignment, visitor: ((node: qt.Node) => VisitResult<Node>) | undefined, context: TransformationContext, level: FlattenLevel, needsValue?: boolean, createAssignmentCallback?: (name: Identifier, value: Expression, location?: qt.TextRange) => Expression): Expression {
+export function flattenDestructuringAssignment(node: qt.VariableDeclaration | DestructuringAssignment, visitor: ((node: qt.Node) => VisitResult<Node>) | undefined, context: TransformationContext, level: FlattenLevel, needsValue?: boolean, createAssignmentCallback?: (name: Identifier, value: Expression, location?: qt.TextRange) => Expression): Expression {
   let location: qt.TextRange = node;
   let value: Expression | undefined;
   if (isDestructuringAssignment(node)) {
@@ -141,7 +141,7 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
 }
 
 /**
- * Flattens a VariableDeclaration or ParameterDeclaration to one or more variable declarations.
+ * Flattens a qt.VariableDeclaration or ParameterDeclaration to one or more variable declarations.
  *
  * @param node The node to flatten.
  * @param visitor An optional visitor used to visit initializers.
@@ -151,10 +151,10 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
  * @param hoistTempVariables Indicates whether temporary variables should not be recorded in-line.
  * @param level Indicates the extent to which flattening should occur.
  */
-export function flattenDestructuringBinding(node: VariableDeclaration | ParameterDeclaration, visitor: (node: qt.Node) => VisitResult<Node>, context: TransformationContext, level: FlattenLevel, rval?: Expression, hoistTempVariables = false, skipInitializer?: boolean): VariableDeclaration[] {
+export function flattenDestructuringBinding(node: qt.VariableDeclaration | ParameterDeclaration, visitor: (node: qt.Node) => VisitResult<Node>, context: TransformationContext, level: FlattenLevel, rval?: Expression, hoistTempVariables = false, skipInitializer?: boolean): qt.VariableDeclaration[] {
   let pendingExpressions: Expression[] | undefined;
-  const pendingDeclarations: { pendingExpressions?: Expression[]; name: BindingName; value: Expression; location?: qt.TextRange; original?: Node }[] = [];
-  const declarations: VariableDeclaration[] = [];
+  const pendingDeclarations: { pendingExpressions?: Expression[]; name: qt.BindingName; value: Expression; location?: qt.TextRange; original?: Node }[] = [];
+  const declarations: qt.VariableDeclaration[] = [];
   const flattenContext: FlattenContext = {
     context,
     level,

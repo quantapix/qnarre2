@@ -582,7 +582,7 @@ export function transformGenerators(context: TransformationContext) {
       return undefined;
     } else {
       // Do not hoist custom prologues.
-      if (getEmitFlags(node) & EmitFlags.CustomPrologue) {
+      if (qu.getEmitFlags(node) & EmitFlags.CustomPrologue) {
         return node;
       }
 
@@ -844,7 +844,7 @@ export function transformGenerators(context: TransformationContext) {
     const resumeLabel = defineLabel();
     const expression = visitNode(node.expression, visitor, isExpression);
     if (node.asteriskToken) {
-      const iterator = (getEmitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
+      const iterator = (qu.getEmitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
       emitYieldStar(iterator, /*location*/ node);
     } else {
       emitYield(expression, /*location*/ node);
@@ -1097,7 +1097,7 @@ export function transformGenerators(context: TransformationContext) {
     emitStatement(visitNode(node, visitor, isStatement));
   }
 
-  function transformAndEmitVariableDeclarationList(node: VariableDeclarationList): VariableDeclarationList | undefined {
+  function transformAndEmitVariableDeclarationList(node: qt.VariableDeclarationList): qt.VariableDeclarationList | undefined {
     for (const variable of node.declarations) {
       const name = getSynthesizedClone(variable.name);
       setCommentRange(name, variable.name);
@@ -1128,7 +1128,7 @@ export function transformGenerators(context: TransformationContext) {
     return undefined;
   }
 
-  function transformInitializedVariable(node: VariableDeclaration) {
+  function transformInitializedVariable(node: qt.VariableDeclaration) {
     return setSourceMapRange(createAssignment(setSourceMapRange(getSynthesizedClone(node.name), node.name), visitNode(node.initializer, visitor, isExpression)), node);
   }
 
@@ -1745,7 +1745,7 @@ export function transformGenerators(context: TransformationContext) {
   }
 
   function cacheExpression(node: Expression): Identifier {
-    if (isGeneratedIdentifier(node) || getEmitFlags(node) & EmitFlags.HelperName) {
+    if (isGeneratedIdentifier(node) || qu.getEmitFlags(node) & EmitFlags.HelperName) {
       return node;
     }
 
@@ -1822,7 +1822,7 @@ export function transformGenerators(context: TransformationContext) {
    * Gets the current open block.
    */
   function peekBlock() {
-    return lastOrUndefined(blockStack!);
+    return qc.lastOrUndefined(blockStack!);
   }
 
   /**
@@ -1881,7 +1881,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param variable The catch variable.
    */
-  function beginCatchBlock(variable: VariableDeclaration): void {
+  function beginCatchBlock(variable: qt.VariableDeclaration): void {
     Debug.assert(peekBlockKind() === CodeBlockKind.Exception);
 
     // generated identifiers should already be unique within a file

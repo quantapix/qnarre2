@@ -506,7 +506,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       hoistedStatements = append(hoistedStatements, updateFunctionDeclaration(node, node.decorators, visitNodes(node.modifiers, modifierVisitor, isModifier), node.asteriskToken, getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true), /*typeParameters*/ undefined, visitNodes(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration), /*type*/ undefined, visitNode(node.body, destructuringAndImportCallVisitor, isBlock)));
     } else {
       hoistedStatements = append(hoistedStatements, visitEachChild(node, destructuringAndImportCallVisitor, context));
@@ -561,7 +561,7 @@ export function transformSystemModule(context: TransformationContext) {
     }
 
     let expressions: Expression[] | undefined;
-    const isExportedDeclaration = hasSyntacticModifier(node, ModifierFlags.Export);
+    const isExportedDeclaration = qu.hasSyntacticModifier(node, qt.ModifierFlags.Export);
     const isMarkedDeclaration = hasAssociatedEndOfDeclarationMarker(node);
     for (const variable of node.declarationList.declarations) {
       if (variable.initializer) {
@@ -588,11 +588,11 @@ export function transformSystemModule(context: TransformationContext) {
   }
 
   /**
-   * Hoists the declared names of a VariableDeclaration or BindingElement.
+   * Hoists the declared names of a qt.VariableDeclaration or qt.BindingElement.
    *
    * @param node The declaration to hoist.
    */
-  function hoistBindingElement(node: VariableDeclaration | BindingElement): void {
+  function hoistBindingElement(node: qt.VariableDeclaration | qt.BindingElement): void {
     if (isBindingPattern(node.name)) {
       for (const element of node.name.elements) {
         if (!isOmittedExpression(element)) {
@@ -605,13 +605,13 @@ export function transformSystemModule(context: TransformationContext) {
   }
 
   /**
-   * Determines whether a VariableDeclarationList should be hoisted.
+   * Determines whether a qt.VariableDeclarationList should be hoisted.
    *
    * @param node The node to test.
    */
-  function shouldHoistVariableDeclarationList(node: VariableDeclarationList) {
+  function shouldHoistVariableDeclarationList(node: qt.VariableDeclarationList) {
     // hoist only non-block scoped declarations or block scoped declarations parented by source file
-    return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === qt.SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
+    return (qu.getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === qt.SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
   }
 
   /**
@@ -620,7 +620,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param node The node to transform.
    * @param isExportedDeclaration A value indicating whether the variable is exported.
    */
-  function transformInitializedVariable(node: VariableDeclaration, isExportedDeclaration: boolean): Expression {
+  function transformInitializedVariable(node: qt.VariableDeclaration, isExportedDeclaration: boolean): Expression {
     const createAssignment = isExportedDeclaration ? createExportedVariableAssignment : createNonExportedVariableAssignment;
     return isBindingPattern(node.name) ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAssignment) : node.initializer ? createAssignment(node.name, visitNode(node.initializer, destructuringAndImportCallVisitor, isExpression)) : node.name;
   }
@@ -676,7 +676,7 @@ export function transformSystemModule(context: TransformationContext) {
     // statement until we visit this declaration's `EndOfDeclarationMarker`.
     if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === qt.SyntaxKind.VariableStatement) {
       const id = getOriginalNodeId(node);
-      const isExportedDeclaration = hasSyntacticModifier(node.original!, ModifierFlags.Export);
+      const isExportedDeclaration = qu.hasSyntacticModifier(node.original!, qt.ModifierFlags.Export);
       deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], node.original, isExportedDeclaration);
     }
 
@@ -689,7 +689,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param node The node to test.
    */
   function hasAssociatedEndOfDeclarationMarker(node: qt.Node) {
-    return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
+    return (qu.getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
 
   /**
@@ -784,7 +784,7 @@ export function transformSystemModule(context: TransformationContext) {
    * appended. If `statements` is `undefined`, a new array is allocated if statements are
    * appended.
    * @param node The VariableStatement whose exports are to be recorded.
-   * @param exportSelf A value indicating whether to also export each VariableDeclaration of
+   * @param exportSelf A value indicating whether to also export each qt.VariableDeclaration of
    * `nodes` declaration list.
    */
   function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement, exportSelf: boolean): Statement[] | undefined {
@@ -802,7 +802,7 @@ export function transformSystemModule(context: TransformationContext) {
   }
 
   /**
-   * Appends the exports of a VariableDeclaration or BindingElement to a statement list,
+   * Appends the exports of a qt.VariableDeclaration or qt.BindingElement to a statement list,
    * returning the statement list.
    *
    * @param statements A statement list to which the down-level export statements are to be
@@ -811,7 +811,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param decl The declaration whose exports are to be recorded.
    * @param exportSelf A value indicating whether to also export the declaration itself.
    */
-  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElement, exportSelf: boolean): Statement[] | undefined {
+  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElement, exportSelf: boolean): Statement[] | undefined {
     if (moduleInfo.exportEquals) {
       return statements;
     }
@@ -850,8 +850,8 @@ export function transformSystemModule(context: TransformationContext) {
     }
 
     let excludeName: string | undefined;
-    if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? createLiteral('default') : decl.name!;
+    if (hasSyntacticModifier(decl, qt.ModifierFlags.Export)) {
+      const exportName = qu.hasSyntacticModifier(decl, qt.ModifierFlags.Default) ? createLiteral('default') : decl.name!;
       statements = appendExportStatement(statements, exportName, getLocalName(decl));
       excludeName = getTextOfIdentifierOrLiteral(exportName);
     }
@@ -930,7 +930,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function createExportExpression(name: Identifier | StringLiteral, value: Expression) {
     const exportName = isIdentifier(name) ? createLiteral(name) : name;
-    setEmitFlags(value, getEmitFlags(value) | EmitFlags.NoComments);
+    setEmitFlags(value, qu.getEmitFlags(value) | EmitFlags.NoComments);
     return setCommentRange(createCall(exportFunction, /*typeArguments*/ undefined, [exportName, value]), value);
   }
 
@@ -1058,7 +1058,7 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function shouldHoistForInitializer(node: ForInitializer): node is VariableDeclarationList {
+  function shouldHoistForInitializer(node: ForInitializer): node is qt.VariableDeclarationList {
     return isVariableDeclarationList(node) && shouldHoistVariableDeclarationList(node);
   }
 
@@ -1413,7 +1413,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param node The node to substitute.
    */
   function substituteExpressionIdentifier(node: Identifier): Expression {
-    if (getEmitFlags(node) & EmitFlags.HelperName) {
+    if (qu.getEmitFlags(node) & EmitFlags.HelperName) {
       const externalHelpersModuleName = getExternalHelpersModuleName(currentSourceFile);
       if (externalHelpersModuleName) {
         return createPropertyAccess(externalHelpersModuleName, node);

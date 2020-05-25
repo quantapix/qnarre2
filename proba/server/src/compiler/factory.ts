@@ -292,7 +292,7 @@ function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: bool
   }
 }
 
-export function createCallBinding(expression: Expression, recordTempVariable: (temp: Identifier) => void, languageVersion?: ScriptTarget, cacheIdentifiers = false): CallBinding {
+export function createCallBinding(expression: Expression, recordTempVariable: (temp: Identifier) => void, languageVersion?: qt.ScriptTarget, cacheIdentifiers = false): CallBinding {
   const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
   let thisArg: Expression;
   let target: LeftHandSideExpression;
@@ -301,8 +301,8 @@ export function createCallBinding(expression: Expression, recordTempVariable: (t
     target = callee;
   } else if (callee.kind === qt.SyntaxKind.SuperKeyword) {
     thisArg = createThis();
-    target = languageVersion < ScriptTarget.ES2015 ? setTextRange(createIdentifier('_super'), callee) : callee;
-  } else if (getEmitFlags(callee) & EmitFlags.HelperName) {
+    target = languageVersion < qt.ScriptTarget.ES2015 ? setTextRange(createIdentifier('_super'), callee) : callee;
+  } else if (qu.getEmitFlags(callee) & EmitFlags.HelperName) {
     thisArg = createVoidZero();
     target = parenthesizeForAccess(callee);
   } else {
@@ -492,7 +492,7 @@ export function getInternalName(node: Declaration, allowComments?: boolean, allo
  * Gets whether an identifier should only be referred to by its internal name.
  */
 export function isInternalName(node: Identifier) {
-  return (getEmitFlags(node) & EmitFlags.InternalName) !== 0;
+  return (qu.getEmitFlags(node) & EmitFlags.InternalName) !== 0;
 }
 
 /**
@@ -513,7 +513,7 @@ export function getLocalName(node: Declaration, allowComments?: boolean, allowSo
  * Gets whether an identifier should only be referred to by its local name.
  */
 export function isLocalName(node: Identifier) {
-  return (getEmitFlags(node) & EmitFlags.LocalName) !== 0;
+  return (qu.getEmitFlags(node) & EmitFlags.LocalName) !== 0;
 }
 
 /**
@@ -535,7 +535,7 @@ export function getExportName(node: Declaration, allowComments?: boolean, allowS
  * name points to an exported symbol.
  */
 export function isExportName(node: Identifier) {
-  return (getEmitFlags(node) & EmitFlags.ExportName) !== 0;
+  return (qu.getEmitFlags(node) & EmitFlags.ExportName) !== 0;
 }
 
 /**
@@ -553,7 +553,7 @@ function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: b
   const nodeName = getNameOfDeclaration(node);
   if (nodeName && isIdentifier(nodeName) && !isGeneratedIdentifier(nodeName)) {
     const name = getMutableClone(nodeName);
-    emitFlags |= getEmitFlags(nodeName);
+    emitFlags |= qu.getEmitFlags(nodeName);
     if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
     if (!allowComments) emitFlags |= EmitFlags.NoComments;
     if (emitFlags) setEmitFlags(name, emitFlags);
@@ -574,7 +574,7 @@ function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: b
  * @param allowSourceMaps A value indicating whether source maps may be emitted for the name.
  */
 export function getExternalModuleOrNamespaceExportName(ns: Identifier | undefined, node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean): Identifier | PropertyAccessExpression {
-  if (ns && hasSyntacticModifier(node, ModifierFlags.Export)) {
+  if (ns && qu.hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
     return getNamespaceMemberName(ns, getName(node), allowComments, allowSourceMaps);
   }
   return getExportName(node, allowComments, allowSourceMaps);
@@ -675,7 +675,7 @@ export function addCustomPrologue(target: Statement[], source: readonly Statemen
   const numStatements = source.length;
   while (statementOffset !== undefined && statementOffset < numStatements) {
     const statement = source[statementOffset];
-    if (getEmitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
+    if (qu.getEmitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
       append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
     } else {
       break;
@@ -776,8 +776,8 @@ function binaryOperandNeedsParentheses(binaryOperator: qt.SyntaxKind, operand: E
     return true;
   }
   const operandPrecedence = getExpressionPrecedence(emittedOperand);
-  switch (compareValues(operandPrecedence, binaryOperatorPrecedence)) {
-    case Comparison.LessThan:
+  switch (qc.compareValues(operandPrecedence, binaryOperatorPrecedence)) {
+    case qpc.Comparison.LessThan:
       // If the operand is the right side of a right-associative binary operation
       // and is a yield expression, then we do not need parentheses.
       if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === qt.SyntaxKind.YieldExpression) {
@@ -786,10 +786,10 @@ function binaryOperandNeedsParentheses(binaryOperator: qt.SyntaxKind, operand: E
 
       return true;
 
-    case Comparison.GreaterThan:
+    case qpc.Comparison.GreaterThan:
       return false;
 
-    case Comparison.EqualTo:
+    case qpc.Comparison.EqualTo:
       if (isLeftSideOfBinary) {
         // No need to parenthesize the left operand when the binary operator is
         // left associative:
@@ -895,7 +895,7 @@ export function parenthesizeForConditionalHead(condition: Expression) {
   const conditionalPrecedence = getOperatorPrecedence(SyntaxKind.ConditionalExpression, qt.SyntaxKind.QuestionToken);
   const emittedCondition = skipPartiallyEmittedExpressions(condition);
   const conditionPrecedence = getExpressionPrecedence(emittedCondition);
-  if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) {
+  if (qc.compareValues(conditionPrecedence, conditionalPrecedence) !== qpc.Comparison.GreaterThan) {
     return createParen(condition);
   }
   return condition;
@@ -1234,7 +1234,7 @@ export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: Sourc
           }
         }
         if (some(helperNames)) {
-          helperNames.sort(compareStringsCaseSensitive);
+          helperNames.sort(qc.compareStringsCaseSensitive);
           // Alias the imports if the names are used somewhere in the file.
           // NOTE: We don't need to care about global import collisions as this is a module.
           namedBindings = createNamedImports(map(helperNames, (name) => (isFileLevelUniqueName(sourceFile, name) ? createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name)) : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name)))));

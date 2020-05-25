@@ -1703,37 +1703,36 @@ export type OptionalChain = PropertyAccessChain | ElementAccessChain | CallChain
 
 export type OptionalChainRoot = PropertyAccessChainRoot | ElementAccessChainRoot | CallChainRoot;
 
-/** @internal */
 export interface WellKnownSymbolExpression extends PropertyAccessExpression {
   expression: Identifier & { escapedText: 'Symbol' };
   name: Identifier;
 }
-/** @internal */
+
 export type BindableObjectDefinePropertyCall = CallExpression & { arguments: { 0: BindableStaticNameExpression; 1: StringLiteralLike | NumericLiteral; 2: ObjectLiteralExpression } };
-/** @internal */
+
 export type BindableStaticNameExpression = EntityNameExpression | BindableStaticElementAccessExpression;
-/** @internal */
+
 export type LiteralLikeElementAccessExpression = ElementAccessExpression &
   Declaration & {
     argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression;
   };
-/** @internal */
+
 export type BindableStaticElementAccessExpression = LiteralLikeElementAccessExpression & {
   expression: BindableStaticNameExpression;
 };
-/** @internal */
+
 export type BindableElementAccessExpression = ElementAccessExpression & {
   expression: BindableStaticNameExpression;
 };
-/** @internal */
+
 export type BindableStaticAccessExpression = PropertyAccessEntityNameExpression | BindableStaticElementAccessExpression;
-/** @internal */
+
 export type BindableAccessExpression = PropertyAccessEntityNameExpression | BindableElementAccessExpression;
-/** @internal */
+
 export interface BindableStaticPropertyAssignmentExpression extends BinaryExpression {
   left: BindableStaticAccessExpression;
 }
-/** @internal */
+
 export interface BindablePropertyAssignmentExpression extends BinaryExpression {
   left: BindableAccessExpression;
 }

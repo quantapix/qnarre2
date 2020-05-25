@@ -1,4 +1,4 @@
-type SuperContainer = ClassDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration;
+type SuperContainer = ClassDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | qt.ConstructorDeclaration;
 
 const enum ES2017SubstitutionFlags {
   /** Enables substitutions for async methods with `super` calls. */
@@ -285,7 +285,7 @@ export function transformES2017(context: TransformationContext) {
     return updateArrowFunction(node, visitNodes(node.modifiers, visitor, isModifier), /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, node.equalsGreaterThanToken, getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context));
   }
 
-  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: qt.UnderscoreEscapedMap<true>) {
+  function recordDeclarationName({ name }: ParameterDeclaration | qt.VariableDeclaration | qt.BindingElement, names: qt.UnderscoreEscapedMap<true>) {
     if (isIdentifier(name)) {
       names.set(name.escapedText, true);
     } else {
@@ -297,11 +297,11 @@ export function transformES2017(context: TransformationContext) {
     }
   }
 
-  function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is VariableDeclarationList {
+  function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is qt.VariableDeclarationList {
     return !!node && isVariableDeclarationList(node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
   }
 
-  function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
+  function visitVariableDeclarationListWithCollidingNames(node: qt.VariableDeclarationList, hasReceiver: boolean) {
     hoistVariableDeclarationList(node);
 
     const variables = getInitializedVariables(node);
@@ -315,11 +315,11 @@ export function transformES2017(context: TransformationContext) {
     return inlineExpressions(map(variables, transformInitializedVariable));
   }
 
-  function hoistVariableDeclarationList(node: VariableDeclarationList) {
+  function hoistVariableDeclarationList(node: qt.VariableDeclarationList) {
     forEach(node.declarations, hoistVariable);
   }
 
-  function hoistVariable({ name }: VariableDeclaration | BindingElement) {
+  function hoistVariable({ name }: qt.VariableDeclaration | qt.BindingElement) {
     if (isIdentifier(name)) {
       hoistVariableDeclaration(name);
     } else {
@@ -331,12 +331,12 @@ export function transformES2017(context: TransformationContext) {
     }
   }
 
-  function transformInitializedVariable(node: VariableDeclaration) {
+  function transformInitializedVariable(node: qt.VariableDeclaration) {
     const converted = setSourceMapRange(createAssignment(convertToAssignmentElementTarget(node.name), node.initializer!), node);
     return visitNode(converted, visitor, isExpression);
   }
 
-  function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
+  function collidesWithParameterName({ name }: qt.VariableDeclaration | qt.BindingElement): boolean {
     if (isIdentifier(name)) {
       return enclosingFunctionParameterNames.has(name.escapedText);
     } else {
@@ -356,7 +356,7 @@ export function transformES2017(context: TransformationContext) {
 
     const original = getOriginalNode(node, isFunctionLike);
     const nodeType = original.type;
-    const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
+    const promiseConstructor = languageVersion < qt.ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
     const isArrowFunction = node.kind === qt.SyntaxKind.ArrowFunction;
     const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
 
@@ -389,7 +389,7 @@ export function transformES2017(context: TransformationContext) {
 
       // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
       // This step isn't needed if we eventually transform this to ES5.
-      const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
+      const emitSuperHelpers = languageVersion >= qt.ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
 
       if (emitSuperHelpers) {
         enableSubstitutionForAsyncMethodsWithSuper();

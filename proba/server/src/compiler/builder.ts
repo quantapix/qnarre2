@@ -165,7 +165,7 @@ function hasSameKeys<T, U>(map1: qpc.ReadonlyMap<T> | undefined, map2: qpc.Reado
 /**
  * Create the state so that we can iterate on changedFiles/affected files
  */
-function createBuilderProgramState(newProgram: Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderProgramState>): BuilderProgramState {
+function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc.GetCanonicalFileName, oldState?: Readonly<ReusableBuilderProgramState>): BuilderProgramState {
   const state = BuilderState.create(newProgram, getCanonicalFileName, oldState) as BuilderProgramState;
   state.program = newProgram;
   const compilerOptions = newProgram.getCompilerOptions();
@@ -261,9 +261,9 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: Ge
   return state;
 }
 
-function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: Program, getCanonicalFileName: GetCanonicalFileName): readonly Diagnostic[] {
+function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: Program, getCanonicalFileName: qc.GetCanonicalFileName): readonly Diagnostic[] {
   if (!diagnostics.length) return emptyArray;
-  const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory()));
+  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory()));
   return diagnostics.map((diagnostic) => {
     const result: Diagnostic = convertToDiagnosticRelatedInformation(diagnostic, newProgram, toPath);
     result.reportsUnnecessary = diagnostic.reportsUnnecessary;
@@ -661,10 +661,10 @@ export interface ProgramBuildInfo {
 /**
  * Gets the program information to be emitted in buildInfo so that we can use it to create new program
  */
-function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCanonicalFileName: GetCanonicalFileName): ProgramBuildInfo | undefined {
+function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCanonicalFileName: qc.GetCanonicalFileName): ProgramBuildInfo | undefined {
   if (state.compilerOptions.outFile || state.compilerOptions.out) return undefined;
   const currentDirectory = Debug.checkDefined(state.program).getCurrentDirectory();
-  const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory));
+  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory));
   const fileInfos: qpc.MapLike<BuilderState.FileInfo> = {};
   state.fileInfos.forEach((value, key) => {
     const signature = state.currentAffectedFilesSignatures && state.currentAffectedFilesSignatures.get(key);
@@ -677,27 +677,27 @@ function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCa
   };
   if (state.referencedMap) {
     const referencedMap: qpc.MapLike<string[]> = {};
-    for (const key of arrayFrom(state.referencedMap.keys()).sort(compareStringsCaseSensitive)) {
-      referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
+    for (const key of arrayFrom(state.referencedMap.keys()).sort(qc.compareStringsCaseSensitive)) {
+      referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
     }
     result.referencedMap = referencedMap;
   }
 
   if (state.exportedModulesMap) {
     const exportedModulesMap: qpc.MapLike<string[]> = {};
-    for (const key of arrayFrom(state.exportedModulesMap.keys()).sort(compareStringsCaseSensitive)) {
+    for (const key of arrayFrom(state.exportedModulesMap.keys()).sort(qc.compareStringsCaseSensitive)) {
       const newValue = state.currentAffectedFilesExportedModulesMap && state.currentAffectedFilesExportedModulesMap.get(key);
       // Not in temporary cache, use existing value
-      if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
+      if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
       // Value in cache and has updated value map, use that
-      else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
+      else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
     }
     result.exportedModulesMap = exportedModulesMap;
   }
 
   if (state.semanticDiagnosticsPerFile) {
     const semanticDiagnosticsPerFile: ProgramBuildInfoDiagnostic[] = [];
-    for (const key of arrayFrom(state.semanticDiagnosticsPerFile.keys()).sort(compareStringsCaseSensitive)) {
+    for (const key of arrayFrom(state.semanticDiagnosticsPerFile.keys()).sort(qc.compareStringsCaseSensitive)) {
       const value = state.semanticDiagnosticsPerFile.get(key)!;
       semanticDiagnosticsPerFile.push(value.length ? [relativeToBuildInfo(key), state.hasReusableDiagnostic ? (value as readonly ReusableDiagnostic[]) : convertToReusableDiagnostics(value as readonly Diagnostic[], relativeToBuildInfo)] : relativeToBuildInfo(key));
     }
@@ -818,7 +818,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   }
 
   /**
-   * Create the canonical file name for identity
+   * Create the canonical file name for qc.identity
    */
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
   /**
@@ -1049,7 +1049,7 @@ function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefin
 }
 
 export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInfo, buildInfoPath: string, host: ReadBuildProgramHost): EmitAndSemanticDiagnosticsBuilderProgram {
-  const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
+  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
   const fileInfos = qc.createMap<BuilderState.FileInfo>();

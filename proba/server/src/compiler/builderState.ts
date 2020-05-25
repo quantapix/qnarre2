@@ -103,14 +103,14 @@ export namespace BuilderState {
   /**
    * Gets the path to reference file from file name, it could be resolvedPath if present otherwise path
    */
-  function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: GetCanonicalFileName): Path {
+  function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: qc.GetCanonicalFileName): Path {
     return toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
   }
 
   /**
    * Gets the referenced files for a file from the program with values for the keys as referenced file's path to be true
    */
-  function getReferencedFiles(program: Program, sourceFile: SourceFile, getCanonicalFileName: GetCanonicalFileName): Map<true> | undefined {
+  function getReferencedFiles(program: Program, sourceFile: SourceFile, getCanonicalFileName: qc.GetCanonicalFileName): Map<true> | undefined {
     let referencedFiles: Map<true> | undefined;
 
     // We need to use a set here since the code can contain the same import twice,
@@ -126,7 +126,7 @@ export namespace BuilderState {
       }
     }
 
-    const sourceFileDirectory = getDirectoryPath(sourceFile.resolvedPath);
+    const sourceFileDirectory = qp.getDirectoryPath(sourceFile.resolvedPath);
     // Handle triple slash references
     if (sourceFile.referencedFiles && sourceFile.referencedFiles.length > 0) {
       for (const referencedFile of sourceFile.referencedFiles) {
@@ -202,7 +202,7 @@ export namespace BuilderState {
   /**
    * Creates the state of file references and signature for the new program from oldState if it is safe
    */
-  export function create(newProgram: Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
+  export function create(newProgram: Program, getCanonicalFileName: qc.GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
     const fileInfos = qc.createMap<FileInfo>();
     const referencedMap = newProgram.getCompilerOptions().module !== ModuleKind.None ? qc.createMap<ReferencedSet>() : undefined;
     const exportedModulesMap = referencedMap ? qc.createMap<ReferencedSet>() : undefined;

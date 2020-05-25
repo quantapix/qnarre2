@@ -687,7 +687,7 @@ function aggregateTransformFlagsForNodeArray(nodes: NodeArray<Node>): TransformF
 function aggregateTransformFlagsForSubtree(node: qt.Node): TransformFlags {
   // We do not transform ambient declarations or types, so there is no need to
   // recursively aggregate transform flags.
-  if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (isTypeNode(node) && node.kind !== qt.SyntaxKind.ExpressionWithTypeArguments)) {
+  if (hasSyntacticModifier(node, qt.ModifierFlags.Ambient) || (isTypeNode(node) && node.kind !== qt.SyntaxKind.ExpressionWithTypeArguments)) {
     return TransformFlags.None;
   }
 
