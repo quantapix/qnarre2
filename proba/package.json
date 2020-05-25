@@ -773,9 +773,11 @@
     "vscode-nls": ""
   },
   "devDependencies": {
+		"@types/markdown-it": "",
     "@types/command-line-args": "",
     "@types/fs-extra": "",
     "@types/glob": "",
+    "@types/highlight.js": "",
     "@types/mocha": "",
     "@types/vscode": "",
     "fs-extra": "",
@@ -786,8 +788,6 @@
     "source-map-support": "",
     "ts-loader": "",
     "vsce": "",
-    "vscode-test": "",
-    "@types/highlight.js": "",
-		"@types/markdown-it": ""
+    "vscode-test": ""
   }
 }
