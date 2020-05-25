@@ -1,11 +1,4 @@
-export function getFileEmitOutput(
-  program: Program,
-  sourceFile: SourceFile,
-  emitOnlyDtsFiles: boolean,
-  cancellationToken?: CancellationToken,
-  customTransformers?: CustomTransformers,
-  forceDtsEmit?: boolean
-): EmitOutput {
+export function getFileEmitOutput(program: Program, sourceFile: SourceFile, emitOnlyDtsFiles: boolean, cancellationToken?: CancellationToken, customTransformers?: CustomTransformers, forceDtsEmit?: boolean): EmitOutput {
   const outputFiles: OutputFile[] = [];
   const { emitSkipped, diagnostics, exportedModulesFromDeclarationEmit } = program.emit(sourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers, forceDtsEmit);
   return { outputFiles, emitSkipped, diagnostics, exportedModulesFromDeclarationEmit };
@@ -19,18 +12,18 @@ export interface ReusableBuilderState {
   /**
    * Information of the file eg. its version, signature etc
    */
-  fileInfos: ReadonlyMap<BuilderState.FileInfo>;
+  fileInfos: qpc.ReadonlyMap<BuilderState.FileInfo>;
   /**
    * Contains the map of ReferencedSet=Referenced files of the file if module emit is enabled
    * Otherwise undefined
    * Thus non undefined value indicates, module emit
    */
-  readonly referencedMap?: ReadonlyMap<BuilderState.ReferencedSet> | undefined;
+  readonly referencedMap?: qpc.ReadonlyMap<BuilderState.ReferencedSet> | undefined;
   /**
    * Contains the map of exported modules ReferencedSet=exported module files from the file if module emit is enabled
    * Otherwise undefined
    */
-  readonly exportedModulesMap?: ReadonlyMap<BuilderState.ReferencedSet> | undefined;
+  readonly exportedModulesMap?: qpc.ReadonlyMap<BuilderState.ReferencedSet> | undefined;
 }
 
 export interface BuilderState {
@@ -43,7 +36,7 @@ export interface BuilderState {
    * Otherwise undefined
    * Thus non undefined value indicates, module emit
    */
-  readonly referencedMap: ReadonlyMap<BuilderState.ReferencedSet> | undefined;
+  readonly referencedMap: qpc.ReadonlyMap<BuilderState.ReferencedSet> | undefined;
   /**
    * Contains the map of exported modules ReferencedSet=exported module files from the file if module emit is enabled
    * Otherwise undefined
@@ -77,7 +70,7 @@ export namespace BuilderState {
   /**
    * Referenced files with values for the keys as referenced file's path to be true
    */
-  export type ReferencedSet = ReadonlyMap<true>;
+  export type ReferencedSet = qpc.ReadonlyMap<true>;
   /**
    * Compute the hash to store the shape of the file
    */
@@ -202,7 +195,7 @@ export namespace BuilderState {
   /**
    * Returns true if oldState is reusable, that is the emitKind = module/non module has not changed
    */
-  export function canReuseOldState(newReferencedMap: ReadonlyMap<ReferencedSet> | undefined, oldState: Readonly<ReusableBuilderState> | undefined) {
+  export function canReuseOldState(newReferencedMap: qpc.ReadonlyMap<ReferencedSet> | undefined, oldState: Readonly<ReusableBuilderState> | undefined) {
     return oldState && !oldState.referencedMap === !newReferencedMap;
   }
 
@@ -272,15 +265,7 @@ export namespace BuilderState {
   /**
    * Gets the files affected by the path from the program
    */
-  export function getFilesAffectedBy(
-    state: BuilderState,
-    programOfThisState: Program,
-    path: Path,
-    cancellationToken: CancellationToken | undefined,
-    computeHash: ComputeHash,
-    cacheToUpdateSignature?: Map<string>,
-    exportedModulesMapCache?: ComputingExportedModulesMap
-  ): readonly SourceFile[] {
+  export function getFilesAffectedBy(state: BuilderState, programOfThisState: Program, path: Path, cancellationToken: CancellationToken | undefined, computeHash: ComputeHash, cacheToUpdateSignature?: Map<string>, exportedModulesMapCache?: ComputingExportedModulesMap): readonly SourceFile[] {
     // Since the operation could be cancelled, the signatures are always stored in the cache
     // They will be committed once it is safe to use them
     // eg when calling this api from tsserver, if there is no cancellation of the operation
@@ -295,15 +280,7 @@ export namespace BuilderState {
       return [sourceFile];
     }
 
-    const result = (state.referencedMap ? getFilesAffectedByUpdatedShapeWhenModuleEmit : getFilesAffectedByUpdatedShapeWhenNonModuleEmit)(
-      state,
-      programOfThisState,
-      sourceFile,
-      signatureCache,
-      cancellationToken,
-      computeHash,
-      exportedModulesMapCache
-    );
+    const result = (state.referencedMap ? getFilesAffectedByUpdatedShapeWhenModuleEmit : getFilesAffectedByUpdatedShapeWhenNonModuleEmit)(state, programOfThisState, sourceFile, signatureCache, cancellationToken, computeHash, exportedModulesMapCache);
     if (!cacheToUpdateSignature) {
       // Commit all the signatures in the signature cache
       updateSignaturesFromCache(state, signatureCache);
@@ -327,15 +304,7 @@ export namespace BuilderState {
   /**
    * Returns if the shape of the signature has changed since last emit
    */
-  export function updateShapeSignature(
-    state: Readonly<BuilderState>,
-    programOfThisState: Program,
-    sourceFile: SourceFile,
-    cacheToUpdateSignature: Map<string>,
-    cancellationToken: CancellationToken | undefined,
-    computeHash: ComputeHash,
-    exportedModulesMapCache?: ComputingExportedModulesMap
-  ) {
+  export function updateShapeSignature(state: Readonly<BuilderState>, programOfThisState: Program, sourceFile: SourceFile, cacheToUpdateSignature: Map<string>, cancellationToken: CancellationToken | undefined, computeHash: ComputeHash, exportedModulesMapCache?: ComputingExportedModulesMap) {
     Debug.assert(!!sourceFile);
     Debug.assert(!exportedModulesMapCache || !!state.exportedModulesMap, 'Compute visible to outside map only if visibleToOutsideReferencedMap present in the state');
 
@@ -358,20 +327,9 @@ export namespace BuilderState {
       }
     } else {
       const emitOutput = getFileEmitOutput(programOfThisState, sourceFile, /*emitOnlyDtsFiles*/ true, cancellationToken, /*customTransformers*/ undefined, /*forceDtsEmit*/ true);
-      const firstDts =
-        emitOutput.outputFiles && programOfThisState.getCompilerOptions().declarationMap
-          ? emitOutput.outputFiles.length > 1
-            ? emitOutput.outputFiles[1]
-            : undefined
-          : emitOutput.outputFiles.length > 0
-          ? emitOutput.outputFiles[0]
-          : undefined;
+      const firstDts = emitOutput.outputFiles && programOfThisState.getCompilerOptions().declarationMap ? (emitOutput.outputFiles.length > 1 ? emitOutput.outputFiles[1] : undefined) : emitOutput.outputFiles.length > 0 ? emitOutput.outputFiles[0] : undefined;
       if (firstDts) {
-        Debug.assert(
-          fileExtensionIs(firstDts.name, Extension.Dts),
-          'File extension for signature expected to be dts',
-          () => `Found: ${getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(emitOutput.outputFiles.map((f) => f.name))}`
-        );
+        Debug.assert(fileExtensionIs(firstDts.name, Extension.Dts), 'File extension for signature expected to be dts', () => `Found: ${getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(emitOutput.outputFiles.map((f) => f.name))}`);
         latestSignature = computeHash(firstDts.text);
         if (exportedModulesMapCache && latestSignature !== prevSignature) {
           updateExportedModules(sourceFile, emitOutput.exportedModulesFromDeclarationEmit, exportedModulesMapCache);
@@ -555,15 +513,7 @@ export namespace BuilderState {
   /**
    * When program emits modular code, gets the files affected by the sourceFile whose shape has changed
    */
-  function getFilesAffectedByUpdatedShapeWhenModuleEmit(
-    state: BuilderState,
-    programOfThisState: Program,
-    sourceFileWithUpdatedShape: SourceFile,
-    cacheToUpdateSignature: Map<string>,
-    cancellationToken: CancellationToken | undefined,
-    computeHash: ComputeHash | undefined,
-    exportedModulesMapCache: ComputingExportedModulesMap | undefined
-  ) {
+  function getFilesAffectedByUpdatedShapeWhenModuleEmit(state: BuilderState, programOfThisState: Program, sourceFileWithUpdatedShape: SourceFile, cacheToUpdateSignature: Map<string>, cancellationToken: CancellationToken | undefined, computeHash: ComputeHash | undefined, exportedModulesMapCache: ComputingExportedModulesMap | undefined) {
     if (isFileAffectingGlobalScope(sourceFileWithUpdatedShape)) {
       return getAllFilesExcludingDefaultLibraryFile(state, programOfThisState, sourceFileWithUpdatedShape);
     }
@@ -599,6 +549,6 @@ export namespace BuilderState {
   }
 }
 
-export function cloneMapOrUndefined<T>(map: ReadonlyMap<T> | undefined) {
+export function cloneMapOrUndefined<T>(map: qpc.ReadonlyMap<T> | undefined) {
   return map ? cloneMap(map) : undefined;
 }

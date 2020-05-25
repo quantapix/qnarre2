@@ -27,7 +27,7 @@ export function chainBundle(transformSourceFile: (x: SourceFile) => SourceFile):
   return transformSourceFileOrBundle;
 
   function transformSourceFileOrBundle(node: SourceFile | Bundle) {
-    return node.kind === SyntaxKind.SourceFile ? transformSourceFile(node) : transformBundle(node);
+    return node.kind === qt.SyntaxKind.SourceFile ? transformSourceFile(node) : transformBundle(node);
   }
 
   function transformBundle(node: Bundle) {
@@ -60,13 +60,10 @@ export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean
 
 export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): boolean {
   // Import default is needed if there's a default import or a default ref and no other refs (meaning an import star helper wasn't requested)
-  return (
-    !getImportNeedsImportStarHelper(node) &&
-    (isDefaultImport(node) || (!!node.importClause && isNamedImports(node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
-  ); // TODO: GH#18217
+  return !getImportNeedsImportStarHelper(node) && (isDefaultImport(node) || (!!node.importClause && isNamedImports(node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings))); // TODO: GH#18217
 }
 
-export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: CompilerOptions): ExternalModuleInfo {
+export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: qt.CompilerOptions): ExternalModuleInfo {
   const externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[] = [];
   const exportSpecifiers = createMultiMap<ExportSpecifier>();
   const exportedBindings: Identifier[][] = [];
@@ -80,7 +77,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
 
   for (const node of sourceFile.statements) {
     switch (node.kind) {
-      case SyntaxKind.ImportDeclaration:
+      case qt.SyntaxKind.ImportDeclaration:
         // import "mod"
         // import x from "mod"
         // import * as x from "mod"
@@ -94,15 +91,15 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
 
-      case SyntaxKind.ImportEqualsDeclaration:
-        if (node.moduleReference.kind === SyntaxKind.ExternalModuleReference) {
+      case qt.SyntaxKind.ImportEqualsDeclaration:
+        if (node.moduleReference.kind === qt.SyntaxKind.ExternalModuleReference) {
           // import x = require("mod")
           externalImports.push(node);
         }
 
         break;
 
-      case SyntaxKind.ExportDeclaration:
+      case qt.SyntaxKind.ExportDeclaration:
         if (node.moduleSpecifier) {
           if (!node.exportClause) {
             // export * from "mod"
@@ -133,14 +130,14 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
 
-      case SyntaxKind.ExportAssignment:
+      case qt.SyntaxKind.ExportAssignment:
         if (node.isExportEquals && !exportEquals) {
           // export = x
           exportEquals = node;
         }
         break;
 
-      case SyntaxKind.VariableStatement:
+      case qt.SyntaxKind.VariableStatement:
         if (hasSyntacticModifier(node, ModifierFlags.Export)) {
           for (const decl of node.declarationList.declarations) {
             exportedNames = collectExportedVariableInfo(decl, uniqueExports, exportedNames);
@@ -148,7 +145,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
 
-      case SyntaxKind.FunctionDeclaration:
+      case qt.SyntaxKind.FunctionDeclaration:
         if (hasSyntacticModifier(node, ModifierFlags.Export)) {
           if (hasSyntacticModifier(node, ModifierFlags.Default)) {
             // export default function() { }
@@ -168,7 +165,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
 
-      case SyntaxKind.ClassDeclaration:
+      case qt.SyntaxKind.ClassDeclaration:
         if (hasSyntacticModifier(node, ModifierFlags.Export)) {
           if (hasSyntacticModifier(node, ModifierFlags.Default)) {
             // export default class { }
@@ -232,7 +229,7 @@ function multiMapSparseArrayAdd<V>(map: V[][], key: number, value: V): V[] {
  *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
  */
 export function isSimpleCopiableExpression(expression: Expression) {
-  return isStringLiteralLike(expression) || expression.kind === SyntaxKind.NumericLiteral || isKeyword(expression.kind) || isIdentifier(expression);
+  return isStringLiteralLike(expression) || expression.kind === qt.SyntaxKind.NumericLiteral || isKeyword(expression.kind) || isIdentifier(expression);
 }
 
 /**
@@ -245,35 +242,35 @@ export function isSimpleInlineableExpression(expression: Expression) {
 }
 
 export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
-  return kind >= SyntaxKind.FirstCompoundAssignment && kind <= SyntaxKind.LastCompoundAssignment;
+  return kind >= qt.SyntaxKind.FirstCompoundAssignment && kind <= qt.SyntaxKind.LastCompoundAssignment;
 }
 
 export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssignmentOperator): BitwiseOperatorOrHigher {
   switch (kind) {
-    case SyntaxKind.PlusEqualsToken:
-      return SyntaxKind.PlusToken;
-    case SyntaxKind.MinusEqualsToken:
-      return SyntaxKind.MinusToken;
-    case SyntaxKind.AsteriskEqualsToken:
-      return SyntaxKind.AsteriskToken;
-    case SyntaxKind.AsteriskAsteriskEqualsToken:
-      return SyntaxKind.AsteriskAsteriskToken;
-    case SyntaxKind.SlashEqualsToken:
-      return SyntaxKind.SlashToken;
-    case SyntaxKind.PercentEqualsToken:
-      return SyntaxKind.PercentToken;
-    case SyntaxKind.LessThanLessThanEqualsToken:
-      return SyntaxKind.LessThanLessThanToken;
-    case SyntaxKind.GreaterThanGreaterThanEqualsToken:
-      return SyntaxKind.GreaterThanGreaterThanToken;
-    case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-      return SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
-    case SyntaxKind.AmpersandEqualsToken:
-      return SyntaxKind.AmpersandToken;
-    case SyntaxKind.BarEqualsToken:
-      return SyntaxKind.BarToken;
-    case SyntaxKind.CaretEqualsToken:
-      return SyntaxKind.CaretToken;
+    case qt.SyntaxKind.PlusEqualsToken:
+      return qt.SyntaxKind.PlusToken;
+    case qt.SyntaxKind.MinusEqualsToken:
+      return qt.SyntaxKind.MinusToken;
+    case qt.SyntaxKind.AsteriskEqualsToken:
+      return qt.SyntaxKind.AsteriskToken;
+    case qt.SyntaxKind.AsteriskAsteriskEqualsToken:
+      return qt.SyntaxKind.AsteriskAsteriskToken;
+    case qt.SyntaxKind.SlashEqualsToken:
+      return qt.SyntaxKind.SlashToken;
+    case qt.SyntaxKind.PercentEqualsToken:
+      return qt.SyntaxKind.PercentToken;
+    case qt.SyntaxKind.LessThanLessThanEqualsToken:
+      return qt.SyntaxKind.LessThanLessThanToken;
+    case qt.SyntaxKind.GreaterThanGreaterThanEqualsToken:
+      return qt.SyntaxKind.GreaterThanGreaterThanToken;
+    case qt.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+      return qt.SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
+    case qt.SyntaxKind.AmpersandEqualsToken:
+      return qt.SyntaxKind.AmpersandToken;
+    case qt.SyntaxKind.BarEqualsToken:
+      return qt.SyntaxKind.BarToken;
+    case qt.SyntaxKind.CaretEqualsToken:
+      return qt.SyntaxKind.CaretToken;
   }
 }
 
@@ -352,5 +349,5 @@ function isInitializedOrStaticProperty(member: ClassElement, requireInitializer:
  * @param isStatic A value indicating whether the member should be a static or instance member.
  */
 export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initializer: Expression } {
-  return member.kind === SyntaxKind.PropertyDeclaration && member.initializer !== undefined;
+  return member.kind === qt.SyntaxKind.PropertyDeclaration && member.initializer !== undefined;
 }

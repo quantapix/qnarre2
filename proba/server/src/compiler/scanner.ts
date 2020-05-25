@@ -1,20 +1,21 @@
-import { CharacterCodes, SyntaxKind } from './types';
-import { Debug } from './debug';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+import * as qc from './corePublic';
+import * as qt from './types';
+import * as qd from './debug';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-export type ErrorCallback = (message: DiagnosticMessage, length: number) => void;
+export type ErrorCallback = (message: qt.DiagnosticMessage, length: number) => void;
 
-export function tokenIsIdentifierOrKeyword(token: SyntaxKind): boolean {
-  return token >= SyntaxKind.Identifier;
+export function tokenIsIdentifierOrKeyword(token: qt.SyntaxKind): boolean {
+  return token >= qt.SyntaxKind.Identifier;
 }
 
-export function tokenIsIdentifierOrKeywordOrGreaterThan(token: SyntaxKind): boolean {
-  return token === SyntaxKind.GreaterThanToken || tokenIsIdentifierOrKeyword(token);
+export function tokenIsIdentifierOrKeywordOrGreaterThan(token: qt.SyntaxKind): boolean {
+  return token === qt.SyntaxKind.GreaterThanToken || tokenIsIdentifierOrKeyword(token);
 }
 
 export interface Scanner {
   getStartPos(): number;
-  getToken(): SyntaxKind;
+  getToken(): qt.SyntaxKind;
   getTextPos(): number;
   getTokenPos(): number;
   getTokenText(): string;
@@ -26,22 +27,22 @@ export interface Scanner {
   isReservedWord(): boolean;
   isUnterminated(): boolean;
 
-  getCommentDirectives(): CommentDirective[] | undefined;
+  getCommentDirectives(): qt.CommentDirective[] | undefined;
 
-  getTokenFlags(): TokenFlags;
-  reScanGreaterToken(): SyntaxKind;
-  reScanSlashToken(): SyntaxKind;
-  reScanTemplateToken(isTaggedTemplate: boolean): SyntaxKind;
-  reScanTemplateHeadOrNoSubstitutionTemplate(): SyntaxKind;
-  scanJsxIdentifier(): SyntaxKind;
-  scanJsxAttributeValue(): SyntaxKind;
-  reScanJsxAttributeValue(): SyntaxKind;
-  reScanJsxToken(): JsxTokenSyntaxKind;
-  reScanLessThanToken(): SyntaxKind;
-  reScanQuestionToken(): SyntaxKind;
-  scanJsxToken(): JsxTokenSyntaxKind;
-  scanJsDocToken(): JSDocSyntaxKind;
-  scan(): SyntaxKind;
+  getTokenFlags(): qt.TokenFlags;
+  reScanGreaterToken(): qt.SyntaxKind;
+  reScanSlashToken(): qt.SyntaxKind;
+  reScanTemplateToken(isTaggedTemplate: boolean): qt.SyntaxKind;
+  reScanTemplateHeadOrNoSubstitutionTemplate(): qt.SyntaxKind;
+  scanJsxIdentifier(): qt.SyntaxKind;
+  scanJsxAttributeValue(): qt.SyntaxKind;
+  reScanJsxAttributeValue(): qt.SyntaxKind;
+  reScanJsxToken(): qt.JsxTokenSyntaxKind;
+  reScanLessThanToken(): qt.SyntaxKind;
+  reScanQuestionToken(): qt.SyntaxKind;
+  scanJsxToken(): qt.JsxTokenSyntaxKind;
+  scanJsDocToken(): qt.JSDocSyntaxKind;
+  scan(): qt.SyntaxKind;
 
   getText(): string;
 
@@ -50,8 +51,8 @@ export interface Scanner {
   // can be provided to have the scanner only scan a portion of the text.
   setText(text: string | undefined, start?: number, length?: number): void;
   setOnError(onError: ErrorCallback | undefined): void;
-  setScriptTarget(scriptTarget: ScriptTarget): void;
-  setLanguageVariant(variant: LanguageVariant): void;
+  setScriptTarget(scriptTarget: qt.ScriptTarget): void;
+  setLanguageVariant(variant: qt.LanguageVariant): void;
   setTextPos(textPos: number): void;
 
   setInJSDocType(inType: boolean): void;
@@ -71,146 +72,146 @@ export interface Scanner {
   tryScan<T>(callback: () => T): T;
 }
 
-const textToKeywordObj: MapLike<KeywordSyntaxKind> = {
-  abstract: SyntaxKind.AbstractKeyword,
-  any: SyntaxKind.AnyKeyword,
-  as: SyntaxKind.AsKeyword,
-  asserts: SyntaxKind.AssertsKeyword,
-  bigint: SyntaxKind.BigIntKeyword,
-  boolean: SyntaxKind.BooleanKeyword,
-  break: SyntaxKind.BreakKeyword,
-  case: SyntaxKind.CaseKeyword,
-  catch: SyntaxKind.CatchKeyword,
-  class: SyntaxKind.ClassKeyword,
-  continue: SyntaxKind.ContinueKeyword,
-  const: SyntaxKind.ConstKeyword,
-  ['' + 'constructor']: SyntaxKind.ConstructorKeyword,
-  debugger: SyntaxKind.DebuggerKeyword,
-  declare: SyntaxKind.DeclareKeyword,
-  default: SyntaxKind.DefaultKeyword,
-  delete: SyntaxKind.DeleteKeyword,
-  do: SyntaxKind.DoKeyword,
-  else: SyntaxKind.ElseKeyword,
-  enum: SyntaxKind.EnumKeyword,
-  export: SyntaxKind.ExportKeyword,
-  extends: SyntaxKind.ExtendsKeyword,
-  false: SyntaxKind.FalseKeyword,
-  finally: SyntaxKind.FinallyKeyword,
-  for: SyntaxKind.ForKeyword,
-  from: SyntaxKind.FromKeyword,
-  function: SyntaxKind.FunctionKeyword,
-  get: SyntaxKind.GetKeyword,
-  if: SyntaxKind.IfKeyword,
-  implements: SyntaxKind.ImplementsKeyword,
-  import: SyntaxKind.ImportKeyword,
-  in: SyntaxKind.InKeyword,
-  infer: SyntaxKind.InferKeyword,
-  instanceof: SyntaxKind.InstanceOfKeyword,
-  interface: SyntaxKind.InterfaceKeyword,
-  is: SyntaxKind.IsKeyword,
-  keyof: SyntaxKind.KeyOfKeyword,
-  let: SyntaxKind.LetKeyword,
-  module: SyntaxKind.ModuleKeyword,
-  namespace: SyntaxKind.NamespaceKeyword,
-  never: SyntaxKind.NeverKeyword,
-  new: SyntaxKind.NewKeyword,
-  null: SyntaxKind.NullKeyword,
-  number: SyntaxKind.NumberKeyword,
-  object: SyntaxKind.ObjectKeyword,
-  package: SyntaxKind.PackageKeyword,
-  private: SyntaxKind.PrivateKeyword,
-  protected: SyntaxKind.ProtectedKeyword,
-  public: SyntaxKind.PublicKeyword,
-  readonly: SyntaxKind.ReadonlyKeyword,
-  require: SyntaxKind.RequireKeyword,
-  global: SyntaxKind.GlobalKeyword,
-  return: SyntaxKind.ReturnKeyword,
-  set: SyntaxKind.SetKeyword,
-  static: SyntaxKind.StaticKeyword,
-  string: SyntaxKind.StringKeyword,
-  super: SyntaxKind.SuperKeyword,
-  switch: SyntaxKind.SwitchKeyword,
-  symbol: SyntaxKind.SymbolKeyword,
-  this: SyntaxKind.ThisKeyword,
-  throw: SyntaxKind.ThrowKeyword,
-  true: SyntaxKind.TrueKeyword,
-  try: SyntaxKind.TryKeyword,
-  type: SyntaxKind.TypeKeyword,
-  typeof: SyntaxKind.TypeOfKeyword,
-  undefined: SyntaxKind.UndefinedKeyword,
-  unique: SyntaxKind.UniqueKeyword,
-  unknown: SyntaxKind.UnknownKeyword,
-  var: SyntaxKind.VarKeyword,
-  void: SyntaxKind.VoidKeyword,
-  while: SyntaxKind.WhileKeyword,
-  with: SyntaxKind.WithKeyword,
-  yield: SyntaxKind.YieldKeyword,
-  async: SyntaxKind.AsyncKeyword,
-  await: SyntaxKind.AwaitKeyword,
-  of: SyntaxKind.OfKeyword,
+const textToKeywordObj: qc.MapLike<qt.KeywordSyntaxKind> = {
+  abstract: qt.SyntaxKind.AbstractKeyword,
+  any: qt.SyntaxKind.AnyKeyword,
+  as: qt.SyntaxKind.AsKeyword,
+  asserts: qt.SyntaxKind.AssertsKeyword,
+  bigint: qt.SyntaxKind.BigIntKeyword,
+  boolean: qt.SyntaxKind.BooleanKeyword,
+  break: qt.SyntaxKind.BreakKeyword,
+  case: qt.SyntaxKind.CaseKeyword,
+  catch: qt.SyntaxKind.CatchKeyword,
+  class: qt.SyntaxKind.ClassKeyword,
+  continue: qt.SyntaxKind.ContinueKeyword,
+  const: qt.SyntaxKind.ConstKeyword,
+  ['' + 'constructor']: qt.SyntaxKind.ConstructorKeyword,
+  debugger: qt.SyntaxKind.DebuggerKeyword,
+  declare: qt.SyntaxKind.DeclareKeyword,
+  default: qt.SyntaxKind.DefaultKeyword,
+  delete: qt.SyntaxKind.DeleteKeyword,
+  do: qt.SyntaxKind.DoKeyword,
+  else: qt.SyntaxKind.ElseKeyword,
+  enum: qt.SyntaxKind.EnumKeyword,
+  export: qt.SyntaxKind.ExportKeyword,
+  extends: qt.SyntaxKind.ExtendsKeyword,
+  false: qt.SyntaxKind.FalseKeyword,
+  finally: qt.SyntaxKind.FinallyKeyword,
+  for: qt.SyntaxKind.ForKeyword,
+  from: qt.SyntaxKind.FromKeyword,
+  function: qt.SyntaxKind.FunctionKeyword,
+  get: qt.SyntaxKind.GetKeyword,
+  if: qt.SyntaxKind.IfKeyword,
+  implements: qt.SyntaxKind.ImplementsKeyword,
+  import: qt.SyntaxKind.ImportKeyword,
+  in: qt.SyntaxKind.InKeyword,
+  infer: qt.SyntaxKind.InferKeyword,
+  instanceof: qt.SyntaxKind.InstanceOfKeyword,
+  interface: qt.SyntaxKind.InterfaceKeyword,
+  is: qt.SyntaxKind.IsKeyword,
+  keyof: qt.SyntaxKind.KeyOfKeyword,
+  let: qt.SyntaxKind.LetKeyword,
+  module: qt.SyntaxKind.ModuleKeyword,
+  namespace: qt.SyntaxKind.NamespaceKeyword,
+  never: qt.SyntaxKind.NeverKeyword,
+  new: qt.SyntaxKind.NewKeyword,
+  null: qt.SyntaxKind.NullKeyword,
+  number: qt.SyntaxKind.NumberKeyword,
+  object: qt.SyntaxKind.ObjectKeyword,
+  package: qt.SyntaxKind.PackageKeyword,
+  private: qt.SyntaxKind.PrivateKeyword,
+  protected: qt.SyntaxKind.ProtectedKeyword,
+  public: qt.SyntaxKind.PublicKeyword,
+  readonly: qt.SyntaxKind.ReadonlyKeyword,
+  require: qt.SyntaxKind.RequireKeyword,
+  global: qt.SyntaxKind.GlobalKeyword,
+  return: qt.SyntaxKind.ReturnKeyword,
+  set: qt.SyntaxKind.SetKeyword,
+  static: qt.SyntaxKind.StaticKeyword,
+  string: qt.SyntaxKind.StringKeyword,
+  super: qt.SyntaxKind.SuperKeyword,
+  switch: qt.SyntaxKind.SwitchKeyword,
+  symbol: qt.SyntaxKind.SymbolKeyword,
+  this: qt.SyntaxKind.ThisKeyword,
+  throw: qt.SyntaxKind.ThrowKeyword,
+  true: qt.SyntaxKind.TrueKeyword,
+  try: qt.SyntaxKind.TryKeyword,
+  type: qt.SyntaxKind.TypeKeyword,
+  typeof: qt.SyntaxKind.TypeOfKeyword,
+  undefined: qt.SyntaxKind.UndefinedKeyword,
+  unique: qt.SyntaxKind.UniqueKeyword,
+  unknown: qt.SyntaxKind.UnknownKeyword,
+  var: qt.SyntaxKind.VarKeyword,
+  void: qt.SyntaxKind.VoidKeyword,
+  while: qt.SyntaxKind.WhileKeyword,
+  with: qt.SyntaxKind.WithKeyword,
+  yield: qt.SyntaxKind.YieldKeyword,
+  async: qt.SyntaxKind.AsyncKeyword,
+  await: qt.SyntaxKind.AwaitKeyword,
+  of: qt.SyntaxKind.OfKeyword,
 };
 
 const textToKeyword = createMapFromTemplate(textToKeywordObj);
 
-const textToToken = createMapFromTemplate<SyntaxKind>({
+const textToToken = createMapFromTemplate<qt.SyntaxKind>({
   ...textToKeywordObj,
-  '{': SyntaxKind.OpenBraceToken,
-  '}': SyntaxKind.CloseBraceToken,
-  '(': SyntaxKind.OpenParenToken,
-  ')': SyntaxKind.CloseParenToken,
-  '[': SyntaxKind.OpenBracketToken,
-  ']': SyntaxKind.CloseBracketToken,
-  '.': SyntaxKind.DotToken,
-  '...': SyntaxKind.DotDotDotToken,
-  ';': SyntaxKind.SemicolonToken,
-  ',': SyntaxKind.CommaToken,
-  '<': SyntaxKind.LessThanToken,
-  '>': SyntaxKind.GreaterThanToken,
-  '<=': SyntaxKind.LessThanEqualsToken,
-  '>=': SyntaxKind.GreaterThanEqualsToken,
-  '==': SyntaxKind.EqualsEqualsToken,
-  '!=': SyntaxKind.ExclamationEqualsToken,
-  '===': SyntaxKind.EqualsEqualsEqualsToken,
-  '!==': SyntaxKind.ExclamationEqualsEqualsToken,
-  '=>': SyntaxKind.EqualsGreaterThanToken,
-  '+': SyntaxKind.PlusToken,
-  '-': SyntaxKind.MinusToken,
-  '**': SyntaxKind.AsteriskAsteriskToken,
-  '*': SyntaxKind.AsteriskToken,
-  '/': SyntaxKind.SlashToken,
-  '%': SyntaxKind.PercentToken,
-  '++': SyntaxKind.PlusPlusToken,
-  '--': SyntaxKind.MinusMinusToken,
-  '<<': SyntaxKind.LessThanLessThanToken,
-  '</': SyntaxKind.LessThanSlashToken,
-  '>>': SyntaxKind.GreaterThanGreaterThanToken,
-  '>>>': SyntaxKind.GreaterThanGreaterThanGreaterThanToken,
-  '&': SyntaxKind.AmpersandToken,
-  '|': SyntaxKind.BarToken,
-  '^': SyntaxKind.CaretToken,
-  '!': SyntaxKind.ExclamationToken,
-  '~': SyntaxKind.TildeToken,
-  '&&': SyntaxKind.AmpersandAmpersandToken,
-  '||': SyntaxKind.BarBarToken,
-  '?': SyntaxKind.QuestionToken,
-  '??': SyntaxKind.QuestionQuestionToken,
-  '?.': SyntaxKind.QuestionDotToken,
-  ':': SyntaxKind.ColonToken,
-  '=': SyntaxKind.EqualsToken,
-  '+=': SyntaxKind.PlusEqualsToken,
-  '-=': SyntaxKind.MinusEqualsToken,
-  '*=': SyntaxKind.AsteriskEqualsToken,
-  '**=': SyntaxKind.AsteriskAsteriskEqualsToken,
-  '/=': SyntaxKind.SlashEqualsToken,
-  '%=': SyntaxKind.PercentEqualsToken,
-  '<<=': SyntaxKind.LessThanLessThanEqualsToken,
-  '>>=': SyntaxKind.GreaterThanGreaterThanEqualsToken,
-  '>>>=': SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
-  '&=': SyntaxKind.AmpersandEqualsToken,
-  '|=': SyntaxKind.BarEqualsToken,
-  '^=': SyntaxKind.CaretEqualsToken,
-  '@': SyntaxKind.AtToken,
-  '`': SyntaxKind.BacktickToken,
+  '{': qt.SyntaxKind.OpenBraceToken,
+  '}': qt.SyntaxKind.CloseBraceToken,
+  '(': qt.SyntaxKind.OpenParenToken,
+  ')': qt.SyntaxKind.CloseParenToken,
+  '[': qt.SyntaxKind.OpenBracketToken,
+  ']': qt.SyntaxKind.CloseBracketToken,
+  '.': qt.SyntaxKind.DotToken,
+  '...': qt.SyntaxKind.DotDotDotToken,
+  ';': qt.SyntaxKind.SemicolonToken,
+  ',': qt.SyntaxKind.CommaToken,
+  '<': qt.SyntaxKind.LessThanToken,
+  '>': qt.SyntaxKind.GreaterThanToken,
+  '<=': qt.SyntaxKind.LessThanEqualsToken,
+  '>=': qt.SyntaxKind.GreaterThanEqualsToken,
+  '==': qt.SyntaxKind.EqualsEqualsToken,
+  '!=': qt.SyntaxKind.ExclamationEqualsToken,
+  '===': qt.SyntaxKind.EqualsEqualsEqualsToken,
+  '!==': qt.SyntaxKind.ExclamationEqualsEqualsToken,
+  '=>': qt.SyntaxKind.EqualsGreaterThanToken,
+  '+': qt.SyntaxKind.PlusToken,
+  '-': qt.SyntaxKind.MinusToken,
+  '**': qt.SyntaxKind.AsteriskAsteriskToken,
+  '*': qt.SyntaxKind.AsteriskToken,
+  '/': qt.SyntaxKind.SlashToken,
+  '%': qt.SyntaxKind.PercentToken,
+  '++': qt.SyntaxKind.PlusPlusToken,
+  '--': qt.SyntaxKind.MinusMinusToken,
+  '<<': qt.SyntaxKind.LessThanLessThanToken,
+  '</': qt.SyntaxKind.LessThanSlashToken,
+  '>>': qt.SyntaxKind.GreaterThanGreaterThanToken,
+  '>>>': qt.SyntaxKind.GreaterThanGreaterThanGreaterThanToken,
+  '&': qt.SyntaxKind.AmpersandToken,
+  '|': qt.SyntaxKind.BarToken,
+  '^': qt.SyntaxKind.CaretToken,
+  '!': qt.SyntaxKind.ExclamationToken,
+  '~': qt.SyntaxKind.TildeToken,
+  '&&': qt.SyntaxKind.AmpersandAmpersandToken,
+  '||': qt.SyntaxKind.BarBarToken,
+  '?': qt.SyntaxKind.QuestionToken,
+  '??': qt.SyntaxKind.QuestionQuestionToken,
+  '?.': qt.SyntaxKind.QuestionDotToken,
+  ':': qt.SyntaxKind.ColonToken,
+  '=': qt.SyntaxKind.EqualsToken,
+  '+=': qt.SyntaxKind.PlusEqualsToken,
+  '-=': qt.SyntaxKind.MinusEqualsToken,
+  '*=': qt.SyntaxKind.AsteriskEqualsToken,
+  '**=': qt.SyntaxKind.AsteriskAsteriskEqualsToken,
+  '/=': qt.SyntaxKind.SlashEqualsToken,
+  '%=': qt.SyntaxKind.PercentEqualsToken,
+  '<<=': qt.SyntaxKind.LessThanLessThanEqualsToken,
+  '>>=': qt.SyntaxKind.GreaterThanGreaterThanEqualsToken,
+  '>>>=': qt.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
+  '&=': qt.SyntaxKind.AmpersandEqualsToken,
+  '|=': qt.SyntaxKind.BarEqualsToken,
+  '^=': qt.SyntaxKind.CaretEqualsToken,
+  '@': qt.SyntaxKind.AtToken,
+  '`': qt.SyntaxKind.BacktickToken,
 });
 
 // prettier-ignore
@@ -258,23 +259,23 @@ function lookupInUnicodeMap(code: number, map: readonly number[]): boolean {
 
   return false;
 }
-export function isUnicodeIdentifierStart(code: number, languageVersion: ScriptTarget | undefined) {
-  return languageVersion >= ScriptTarget.ES2015
+export function isUnicodeIdentifierStart(code: number, languageVersion: qt.ScriptTarget | undefined) {
+  return languageVersion >= qt.ScriptTarget.ES2015
     ? lookupInUnicodeMap(code, unicodeESNextIdentifierStart)
-    : languageVersion === ScriptTarget.ES5
+    : languageVersion === qt.ScriptTarget.ES5
     ? lookupInUnicodeMap(code, unicodeES5IdentifierStart)
     : lookupInUnicodeMap(code, unicodeES3IdentifierStart);
 }
 
-function isUnicodeIdentifierPart(code: number, languageVersion: ScriptTarget | undefined) {
-  return languageVersion >= ScriptTarget.ES2015
+function isUnicodeIdentifierPart(code: number, languageVersion: qt.ScriptTarget | undefined) {
+  return languageVersion >= qt.ScriptTarget.ES2015
     ? lookupInUnicodeMap(code, unicodeESNextIdentifierPart)
-    : languageVersion === ScriptTarget.ES5
+    : languageVersion === qt.ScriptTarget.ES5
     ? lookupInUnicodeMap(code, unicodeES5IdentifierPart)
     : lookupInUnicodeMap(code, unicodeES3IdentifierPart);
 }
 
-function makeReverseMap(source: Map<number>): string[] {
+function makeReverseMap(source: qc.Map<number>): string[] {
   const result: string[] = [];
   source.forEach((value, name) => {
     result[value] = name;
@@ -283,11 +284,11 @@ function makeReverseMap(source: Map<number>): string[] {
 }
 
 const tokenStrings = makeReverseMap(textToToken);
-export function tokenToString(t: SyntaxKind): string | undefined {
+export function tokenToString(t: qt.SyntaxKind): string | undefined {
   return tokenStrings[t];
 }
 
-export function stringToToken(s: string): SyntaxKind | undefined {
+export function stringToToken(s: string): qt.SyntaxKind | undefined {
   return textToToken.get(s);
 }
 
@@ -299,17 +300,15 @@ export function computeLineStarts(text: string): number[] {
     const ch = text.charCodeAt(pos);
     pos++;
     switch (ch) {
-      case CharacterCodes.carriageReturn:
-        if (text.charCodeAt(pos) === CharacterCodes.lineFeed) {
-          pos++;
-        }
+      case qt.CharacterCodes.carriageReturn:
+        if (text.charCodeAt(pos) === qt.CharacterCodes.lineFeed) pos++;
       // falls through
-      case CharacterCodes.lineFeed:
+      case qt.CharacterCodes.lineFeed:
         result.push(lineStart);
         lineStart = pos;
         break;
       default:
-        if (ch > CharacterCodes.maxAsciiCharacter && isLineBreak(ch)) {
+        if (ch > qt.CharacterCodes.maxAsciiCharacter && isLineBreak(ch)) {
           result.push(lineStart);
           lineStart = pos;
         }
@@ -320,9 +319,9 @@ export function computeLineStarts(text: string): number[] {
   return result;
 }
 
-export function getPositionOfLineAndCharacter(sourceFile: SourceFileLike, line: number, character: number): number;
-export function getPositionOfLineAndCharacter(sourceFile: SourceFileLike, line: number, character: number, allowEdits?: true): number; // eslint-disable-line @typescript-eslint/unified-signatures
-export function getPositionOfLineAndCharacter(sourceFile: SourceFileLike, line: number, character: number, allowEdits?: true): number {
+export function getPositionOfLineAndCharacter(sourceFile: qt.SourceFileLike, line: number, character: number): number;
+export function getPositionOfLineAndCharacter(sourceFile: qt.SourceFileLike, line: number, character: number, allowEdits?: true): number; // eslint-disable-line @typescript-eslint/unified-signatures
+export function getPositionOfLineAndCharacter(sourceFile: qt.SourceFileLike, line: number, character: number, allowEdits?: true): number {
   return sourceFile.getPositionOfLineAndCharacter
     ? sourceFile.getPositionOfLineAndCharacter(line, character, allowEdits)
     : computePositionOfLineAndCharacter(getLineStarts(sourceFile), line, character, sourceFile.text, allowEdits);
@@ -334,7 +333,7 @@ export function computePositionOfLineAndCharacter(lineStarts: readonly number[],
       // Clamp line to nearest allowable value
       line = line < 0 ? 0 : line >= lineStarts.length ? lineStarts.length - 1 : line;
     } else {
-      Debug.fail(
+      qd.fail(
         `Bad line number. Line: ${line}, lineStarts.length: ${lineStarts.length} , line map is correct? ${debugText !== undefined ? arraysEqual(lineStarts, computeLineStarts(debugText)) : 'unknown'}`
       );
     }
@@ -348,14 +347,14 @@ export function computePositionOfLineAndCharacter(lineStarts: readonly number[],
     return res > lineStarts[line + 1] ? lineStarts[line + 1] : typeof debugText === 'string' && res > debugText.length ? debugText.length : res;
   }
   if (line < lineStarts.length - 1) {
-    Debug.assert(res < lineStarts[line + 1]);
+    qd.assert(res < lineStarts[line + 1]);
   } else if (debugText !== undefined) {
-    Debug.assert(res <= debugText.length); // Allow single character overflow for trailing newline
+    qd.assert(res <= debugText.length); // Allow single character overflow for trailing newline
   }
   return res;
 }
 
-export function getLineStarts(sourceFile: SourceFileLike): readonly number[] {
+export function getLineStarts(sourceFile: qt.SourceFileLike): readonly number[] {
   return sourceFile.lineMap || (sourceFile.lineMap = computeLineStarts(sourceFile.text));
 }
 
@@ -382,12 +381,12 @@ export function computeLineOfPosition(lineStarts: readonly number[], position: n
     // We want the index of the previous line start, so we subtract 1.
     // Review 2's-complement if this is confusing.
     lineNumber = ~lineNumber - 1;
-    Debug.assert(lineNumber !== -1, 'position cannot precede the beginning of the file');
+    qd.assert(lineNumber !== -1, 'position cannot precede the beginning of the file');
   }
   return lineNumber;
 }
 
-export function getLinesBetweenPositions(sourceFile: SourceFileLike, pos1: number, pos2: number) {
+export function getLinesBetweenPositions(sourceFile: qt.SourceFileLike, pos1: number, pos2: number) {
   if (pos1 === pos2) return 0;
   const lineStarts = getLineStarts(sourceFile);
   const lower = Math.min(pos1, pos2);
@@ -398,7 +397,7 @@ export function getLinesBetweenPositions(sourceFile: SourceFileLike, pos1: numbe
   return isNegative ? lowerLine - upperLine : upperLine - lowerLine;
 }
 
-export function getLineAndCharacterOfPosition(sourceFile: SourceFileLike, position: number): LineAndCharacter {
+export function getLineAndCharacterOfPosition(sourceFile: qt.SourceFileLike, position: number): LineAndCharacter {
   return computeLineAndCharacterOfPosition(getLineStarts(sourceFile), position);
 }
 
@@ -411,18 +410,18 @@ export function isWhiteSpaceSingleLine(ch: number): boolean {
   // Note: nextLine is in the Zs space, and should be considered to be a whitespace.
   // It is explicitly not a line-break as it isn't in the exact set specified by EcmaScript.
   return (
-    ch === CharacterCodes.space ||
-    ch === CharacterCodes.tab ||
-    ch === CharacterCodes.verticalTab ||
-    ch === CharacterCodes.formFeed ||
-    ch === CharacterCodes.nonBreakingSpace ||
-    ch === CharacterCodes.nextLine ||
-    ch === CharacterCodes.ogham ||
-    (ch >= CharacterCodes.enQuad && ch <= CharacterCodes.zeroWidthSpace) ||
-    ch === CharacterCodes.narrowNoBreakSpace ||
-    ch === CharacterCodes.mathematicalSpace ||
-    ch === CharacterCodes.ideographicSpace ||
-    ch === CharacterCodes.byteOrderMark
+    ch === qt.CharacterCodes.space ||
+    ch === qt.CharacterCodes.tab ||
+    ch === qt.CharacterCodes.verticalTab ||
+    ch === qt.CharacterCodes.formFeed ||
+    ch === qt.CharacterCodes.nonBreakingSpace ||
+    ch === qt.CharacterCodes.nextLine ||
+    ch === qt.CharacterCodes.ogham ||
+    (ch >= qt.CharacterCodes.enQuad && ch <= qt.CharacterCodes.zeroWidthSpace) ||
+    ch === qt.CharacterCodes.narrowNoBreakSpace ||
+    ch === qt.CharacterCodes.mathematicalSpace ||
+    ch === qt.CharacterCodes.ideographicSpace ||
+    ch === qt.CharacterCodes.byteOrderMark
   );
 }
 
@@ -438,15 +437,15 @@ export function isLineBreak(ch: number): boolean {
   // Only the characters in Table 3 are treated as line terminators. Other new line or line
   // breaking characters are treated as white space but not as line terminators.
 
-  return ch === CharacterCodes.lineFeed || ch === CharacterCodes.carriageReturn || ch === CharacterCodes.lineSeparator || ch === CharacterCodes.paragraphSeparator;
+  return ch === qt.CharacterCodes.lineFeed || ch === qt.CharacterCodes.carriageReturn || ch === qt.CharacterCodes.lineSeparator || ch === qt.CharacterCodes.paragraphSeparator;
 }
 
 function isDigit(ch: number): boolean {
-  return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;
+  return ch >= qt.CharacterCodes._0 && ch <= qt.CharacterCodes._9;
 }
 
 function isHexDigit(ch: number): boolean {
-  return isDigit(ch) || (ch >= CharacterCodes.A && ch <= CharacterCodes.F) || (ch >= CharacterCodes.a && ch <= CharacterCodes.f);
+  return isDigit(ch) || (ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.F) || (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.f);
 }
 
 function isCodePoint(code: number): boolean {
@@ -454,33 +453,33 @@ function isCodePoint(code: number): boolean {
 }
 
 export function isOctalDigit(ch: number): boolean {
-  return ch >= CharacterCodes._0 && ch <= CharacterCodes._7;
+  return ch >= qt.CharacterCodes._0 && ch <= qt.CharacterCodes._7;
 }
 
 export function couldStartTrivia(text: string, pos: number): boolean {
   // Keep in sync with skipTrivia
   const ch = text.charCodeAt(pos);
   switch (ch) {
-    case CharacterCodes.carriageReturn:
-    case CharacterCodes.lineFeed:
-    case CharacterCodes.tab:
-    case CharacterCodes.verticalTab:
-    case CharacterCodes.formFeed:
-    case CharacterCodes.space:
-    case CharacterCodes.slash:
+    case qt.CharacterCodes.carriageReturn:
+    case qt.CharacterCodes.lineFeed:
+    case qt.CharacterCodes.tab:
+    case qt.CharacterCodes.verticalTab:
+    case qt.CharacterCodes.formFeed:
+    case qt.CharacterCodes.space:
+    case qt.CharacterCodes.slash:
     // starts of normal trivia
     // falls through
-    case CharacterCodes.lessThan:
-    case CharacterCodes.bar:
-    case CharacterCodes.equals:
-    case CharacterCodes.greaterThan:
+    case qt.CharacterCodes.lessThan:
+    case qt.CharacterCodes.bar:
+    case qt.CharacterCodes.equals:
+    case qt.CharacterCodes.greaterThan:
       // Starts of conflict marker trivia
       return true;
-    case CharacterCodes.hash:
+    case qt.CharacterCodes.hash:
       // Only if its the beginning can we have #! trivia
       return pos === 0;
     default:
-      return ch > CharacterCodes.maxAsciiCharacter;
+      return ch > qt.CharacterCodes.maxAsciiCharacter;
   }
 }
 
@@ -493,28 +492,28 @@ export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boole
   while (true) {
     const ch = text.charCodeAt(pos);
     switch (ch) {
-      case CharacterCodes.carriageReturn:
-        if (text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) {
+      case qt.CharacterCodes.carriageReturn:
+        if (text.charCodeAt(pos + 1) === qt.CharacterCodes.lineFeed) {
           pos++;
         }
       // falls through
-      case CharacterCodes.lineFeed:
+      case qt.CharacterCodes.lineFeed:
         pos++;
         if (stopAfterLineBreak) {
           return pos;
         }
         continue;
-      case CharacterCodes.tab:
-      case CharacterCodes.verticalTab:
-      case CharacterCodes.formFeed:
-      case CharacterCodes.space:
+      case qt.CharacterCodes.tab:
+      case qt.CharacterCodes.verticalTab:
+      case qt.CharacterCodes.formFeed:
+      case qt.CharacterCodes.space:
         pos++;
         continue;
-      case CharacterCodes.slash:
+      case qt.CharacterCodes.slash:
         if (stopAtComments) {
           break;
         }
-        if (text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+        if (text.charCodeAt(pos + 1) === qt.CharacterCodes.slash) {
           pos += 2;
           while (pos < text.length) {
             if (isLineBreak(text.charCodeAt(pos))) {
@@ -524,10 +523,10 @@ export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boole
           }
           continue;
         }
-        if (text.charCodeAt(pos + 1) === CharacterCodes.asterisk) {
+        if (text.charCodeAt(pos + 1) === qt.CharacterCodes.asterisk) {
           pos += 2;
           while (pos < text.length) {
-            if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+            if (text.charCodeAt(pos) === qt.CharacterCodes.asterisk && text.charCodeAt(pos + 1) === qt.CharacterCodes.slash) {
               pos += 2;
               break;
             }
@@ -537,17 +536,17 @@ export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boole
         }
         break;
 
-      case CharacterCodes.lessThan:
-      case CharacterCodes.bar:
-      case CharacterCodes.equals:
-      case CharacterCodes.greaterThan:
+      case qt.CharacterCodes.lessThan:
+      case qt.CharacterCodes.bar:
+      case qt.CharacterCodes.equals:
+      case qt.CharacterCodes.greaterThan:
         if (isConflictMarkerTrivia(text, pos)) {
           pos = scanConflictMarkerTrivia(text, pos);
           continue;
         }
         break;
 
-      case CharacterCodes.hash:
+      case qt.CharacterCodes.hash:
         if (pos === 0 && isShebangTrivia(text, pos)) {
           pos = scanShebangTrivia(text, pos);
           continue;
@@ -555,7 +554,7 @@ export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boole
         break;
 
       default:
-        if (ch > CharacterCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
+        if (ch > qt.CharacterCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
           pos++;
           continue;
         }
@@ -570,7 +569,7 @@ export function skipTrivia(text: string, pos: number, stopAfterLineBreak?: boole
 const mergeConflictMarkerLength = '<<<<<<<'.length;
 
 function isConflictMarkerTrivia(text: string, pos: number) {
-  Debug.assert(pos >= 0);
+  qd.assert(pos >= 0);
 
   // Conflict markers must be at the start of a line.
   if (pos === 0 || isLineBreak(text.charCodeAt(pos - 1))) {
@@ -583,14 +582,14 @@ function isConflictMarkerTrivia(text: string, pos: number) {
         }
       }
 
-      return ch === CharacterCodes.equals || text.charCodeAt(pos + mergeConflictMarkerLength) === CharacterCodes.space;
+      return ch === qt.CharacterCodes.equals || text.charCodeAt(pos + mergeConflictMarkerLength) === qt.CharacterCodes.space;
     }
   }
 
   return false;
 }
 
-function scanConflictMarkerTrivia(text: string, pos: number, error?: (diag: DiagnosticMessage, pos?: number, len?: number) => void) {
+function scanConflictMarkerTrivia(text: string, pos: number, error?: (diag: qt.DiagnosticMessage, pos?: number, len?: number) => void) {
   if (error) {
     error(Diagnostics.Merge_conflict_marker_encountered, pos, mergeConflictMarkerLength);
   }
@@ -598,17 +597,17 @@ function scanConflictMarkerTrivia(text: string, pos: number, error?: (diag: Diag
   const ch = text.charCodeAt(pos);
   const len = text.length;
 
-  if (ch === CharacterCodes.lessThan || ch === CharacterCodes.greaterThan) {
+  if (ch === qt.CharacterCodes.lessThan || ch === qt.CharacterCodes.greaterThan) {
     while (pos < len && !isLineBreak(text.charCodeAt(pos))) {
       pos++;
     }
   } else {
-    Debug.assert(ch === CharacterCodes.bar || ch === CharacterCodes.equals);
+    qd.assert(ch === qt.CharacterCodes.bar || ch === qt.CharacterCodes.equals);
     // Consume everything from the start of a ||||||| or ======= marker to the start
     // of the next ======= or >>>>>>> marker.
     while (pos < len) {
       const currentChar = text.charCodeAt(pos);
-      if ((currentChar === CharacterCodes.equals || currentChar === CharacterCodes.greaterThan) && currentChar !== ch && isConflictMarkerTrivia(text, pos)) {
+      if ((currentChar === qt.CharacterCodes.equals || currentChar === qt.CharacterCodes.greaterThan) && currentChar !== ch && isConflictMarkerTrivia(text, pos)) {
         break;
       }
 
@@ -623,7 +622,7 @@ const shebangTriviaRegex = /^#!.*/;
 
 export function isShebangTrivia(text: string, pos: number) {
   // Shebangs check must only be done at the start of the file
-  Debug.assert(pos === 0);
+  qd.assert(pos === 0);
   return shebangTriviaRegex.test(text);
 }
 
@@ -658,13 +657,13 @@ function iterateCommentRanges<T, U>(
   text: string,
   pos: number,
   trailing: boolean,
-  cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T, memo: U | undefined) => U,
+  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T, memo: U | undefined) => U,
   state: T,
   initial?: U
 ): U | undefined {
   let pendingPos!: number;
   let pendingEnd!: number;
-  let pendingKind!: CommentKind;
+  let pendingKind!: qt.CommentKind;
   let pendingHasTrailingNewLine!: boolean;
   let hasPendingCommentRange = false;
   let collecting = trailing;
@@ -679,12 +678,12 @@ function iterateCommentRanges<T, U>(
   scan: while (pos >= 0 && pos < text.length) {
     const ch = text.charCodeAt(pos);
     switch (ch) {
-      case CharacterCodes.carriageReturn:
-        if (text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) {
+      case qt.CharacterCodes.carriageReturn:
+        if (text.charCodeAt(pos + 1) === qt.CharacterCodes.lineFeed) {
           pos++;
         }
       // falls through
-      case CharacterCodes.lineFeed:
+      case qt.CharacterCodes.lineFeed:
         pos++;
         if (trailing) {
           break scan;
@@ -696,20 +695,20 @@ function iterateCommentRanges<T, U>(
         }
 
         continue;
-      case CharacterCodes.tab:
-      case CharacterCodes.verticalTab:
-      case CharacterCodes.formFeed:
-      case CharacterCodes.space:
+      case qt.CharacterCodes.tab:
+      case qt.CharacterCodes.verticalTab:
+      case qt.CharacterCodes.formFeed:
+      case qt.CharacterCodes.space:
         pos++;
         continue;
-      case CharacterCodes.slash:
+      case qt.CharacterCodes.slash:
         const nextChar = text.charCodeAt(pos + 1);
         let hasTrailingNewLine = false;
-        if (nextChar === CharacterCodes.slash || nextChar === CharacterCodes.asterisk) {
-          const kind = nextChar === CharacterCodes.slash ? SyntaxKind.SingleLineCommentTrivia : SyntaxKind.MultiLineCommentTrivia;
+        if (nextChar === qt.CharacterCodes.slash || nextChar === qt.CharacterCodes.asterisk) {
+          const kind = nextChar === qt.CharacterCodes.slash ? qt.SyntaxKind.SingleLineCommentTrivia : qt.SyntaxKind.MultiLineCommentTrivia;
           const startPos = pos;
           pos += 2;
-          if (nextChar === CharacterCodes.slash) {
+          if (nextChar === qt.CharacterCodes.slash) {
             while (pos < text.length) {
               if (isLineBreak(text.charCodeAt(pos))) {
                 hasTrailingNewLine = true;
@@ -719,7 +718,7 @@ function iterateCommentRanges<T, U>(
             }
           } else {
             while (pos < text.length) {
-              if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+              if (text.charCodeAt(pos) === qt.CharacterCodes.asterisk && text.charCodeAt(pos + 1) === qt.CharacterCodes.slash) {
                 pos += 2;
                 break;
               }
@@ -747,7 +746,7 @@ function iterateCommentRanges<T, U>(
         }
         break scan;
       default:
-        if (ch > CharacterCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
+        if (ch > qt.CharacterCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
           if (hasPendingCommentRange && isLineBreak(ch)) {
             pendingHasTrailingNewLine = true;
           }
@@ -765,22 +764,32 @@ function iterateCommentRanges<T, U>(
   return accumulator;
 }
 
-export function forEachLeadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-export function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-export function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state?: T): U | undefined {
+export function forEachLeadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+export function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+export function forEachLeadingCommentRange<T, U>(
+  text: string,
+  pos: number,
+  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U,
+  state?: T
+): U | undefined {
   return iterateCommentRanges(/*reduce*/ false, text, pos, /*trailing*/ false, cb, state);
 }
 
-export function forEachTrailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
-export function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
-export function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state?: T): U | undefined {
+export function forEachTrailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+export function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+export function forEachTrailingCommentRange<T, U>(
+  text: string,
+  pos: number,
+  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T) => U,
+  state?: T
+): U | undefined {
   return iterateCommentRanges(/*reduce*/ false, text, pos, /*trailing*/ true, cb, state);
 }
 
 export function reduceEachLeadingCommentRange<T, U>(
   text: string,
   pos: number,
-  cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U,
+  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U,
   state: T,
   initial: U
 ) {
@@ -790,14 +799,14 @@ export function reduceEachLeadingCommentRange<T, U>(
 export function reduceEachTrailingCommentRange<T, U>(
   text: string,
   pos: number,
-  cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U,
+  cb: (pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U,
   state: T,
   initial: U
 ) {
   return iterateCommentRanges(/*reduce*/ true, text, pos, /*trailing*/ true, cb, state, initial);
 }
 
-function appendCommentRange(pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, _state: any, comments: CommentRange[]) {
+function appendCommentRange(pos: number, end: number, kind: qt.CommentKind, hasTrailingNewLine: boolean, _state: any, comments: qt.CommentRange[]) {
   if (!comments) {
     comments = [];
   }
@@ -806,46 +815,44 @@ function appendCommentRange(pos: number, end: number, kind: CommentKind, hasTrai
   return comments;
 }
 
-export function getLeadingCommentRanges(text: string, pos: number): CommentRange[] | undefined {
+export function getLeadingCommentRanges(text: string, pos: number): qt.CommentRange[] | undefined {
   return reduceEachLeadingCommentRange(text, pos, appendCommentRange, /*state*/ undefined, /*initial*/ undefined);
 }
 
-export function getTrailingCommentRanges(text: string, pos: number): CommentRange[] | undefined {
+export function getTrailingCommentRanges(text: string, pos: number): qt.CommentRange[] | undefined {
   return reduceEachTrailingCommentRange(text, pos, appendCommentRange, /*state*/ undefined, /*initial*/ undefined);
 }
 
 /** Optionally, get the shebang */
 export function getShebang(text: string): string | undefined {
   const match = shebangTriviaRegex.exec(text);
-  if (match) {
-    return match[0];
-  }
+  return match ? match[0] : undefined;
 }
 
-export function isIdentifierStart(ch: number, languageVersion: ScriptTarget | undefined): boolean {
+export function isIdentifierStart(ch: number, languageVersion: qt.ScriptTarget | undefined): boolean {
   return (
-    (ch >= CharacterCodes.A && ch <= CharacterCodes.Z) ||
-    (ch >= CharacterCodes.a && ch <= CharacterCodes.z) ||
-    ch === CharacterCodes.$ ||
-    ch === CharacterCodes._ ||
-    (ch > CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierStart(ch, languageVersion))
+    (ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.Z) ||
+    (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) ||
+    ch === qt.CharacterCodes.$ ||
+    ch === qt.CharacterCodes._ ||
+    (ch > qt.CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierStart(ch, languageVersion))
   );
 }
 
-export function isIdentifierPart(ch: number, languageVersion: ScriptTarget | undefined, identifierVariant?: LanguageVariant): boolean {
+export function isIdentifierPart(ch: number, languageVersion: qt.ScriptTarget | undefined, identifierVariant?: qt.LanguageVariant): boolean {
   return (
-    (ch >= CharacterCodes.A && ch <= CharacterCodes.Z) ||
-    (ch >= CharacterCodes.a && ch <= CharacterCodes.z) ||
-    (ch >= CharacterCodes._0 && ch <= CharacterCodes._9) ||
-    ch === CharacterCodes.$ ||
-    ch === CharacterCodes._ ||
+    (ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.Z) ||
+    (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) ||
+    (ch >= qt.CharacterCodes._0 && ch <= qt.CharacterCodes._9) ||
+    ch === qt.CharacterCodes.$ ||
+    ch === qt.CharacterCodes._ ||
     // "-" and ":" are valid in JSX Identifiers
-    (identifierVariant === LanguageVariant.JSX ? ch === CharacterCodes.minus || ch === CharacterCodes.colon : false) ||
-    (ch > CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierPart(ch, languageVersion))
+    (identifierVariant === qt.LanguageVariant.JSX ? ch === qt.CharacterCodes.minus || ch === qt.CharacterCodes.colon : false) ||
+    (ch > qt.CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierPart(ch, languageVersion))
   );
 }
 
-export function isIdentifierText(name: string, languageVersion: ScriptTarget | undefined, identifierVariant?: LanguageVariant): boolean {
+export function isIdentifierText(name: string, languageVersion: qt.ScriptTarget | undefined, identifierVariant?: qt.LanguageVariant): boolean {
   let ch = codePointAt(name, 0);
   if (!isIdentifierStart(ch, languageVersion)) {
     return false;
@@ -862,9 +869,9 @@ export function isIdentifierText(name: string, languageVersion: ScriptTarget | u
 
 // Creates a scanner over a (possibly unspecified) range of a piece of text.
 export function createScanner(
-  languageVersion: ScriptTarget,
+  languageVersion: qt.ScriptTarget,
   skipTrivia: boolean,
-  languageVariant = LanguageVariant.Standard,
+  languageVariant = qt.LanguageVariant.Standard,
   textInitial?: string,
   onError?: ErrorCallback,
   start?: number,
@@ -884,11 +891,11 @@ export function createScanner(
   // Start position of text of current token
   let tokenPos: number;
 
-  let token: SyntaxKind;
+  let token: qt.SyntaxKind;
   let tokenValue!: string;
-  let tokenFlags: TokenFlags;
+  let tokenFlags: qt.TokenFlags;
 
-  let commentDirectives: CommentDirective[] | undefined;
+  let commentDirectives: qt.CommentDirective[] | undefined;
   let inJSDocType = 0;
 
   setText(text, start, length);
@@ -900,12 +907,12 @@ export function createScanner(
     getTokenPos: () => tokenPos,
     getTokenText: () => text.substring(tokenPos, pos),
     getTokenValue: () => tokenValue,
-    hasUnicodeEscape: () => (tokenFlags & TokenFlags.UnicodeEscape) !== 0,
-    hasExtendedUnicodeEscape: () => (tokenFlags & TokenFlags.ExtendedUnicodeEscape) !== 0,
-    hasPrecedingLineBreak: () => (tokenFlags & TokenFlags.PrecedingLineBreak) !== 0,
-    isIdentifier: () => token === SyntaxKind.Identifier || token > SyntaxKind.LastReservedWord,
-    isReservedWord: () => token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord,
-    isUnterminated: () => (tokenFlags & TokenFlags.Unterminated) !== 0,
+    hasUnicodeEscape: () => (tokenFlags & qt.TokenFlags.UnicodeEscape) !== 0,
+    hasExtendedUnicodeEscape: () => (tokenFlags & qt.TokenFlags.ExtendedUnicodeEscape) !== 0,
+    hasPrecedingLineBreak: () => (tokenFlags & qt.TokenFlags.PrecedingLineBreak) !== 0,
+    isIdentifier: () => token === qt.SyntaxKind.Identifier || token > qt.SyntaxKind.LastReservedWord,
+    isReservedWord: () => token >= qt.SyntaxKind.FirstReservedWord && token <= qt.SyntaxKind.LastReservedWord,
+    isUnterminated: () => (tokenFlags & qt.TokenFlags.Unterminated) !== 0,
     getCommentDirectives: () => commentDirectives,
     getTokenFlags: () => tokenFlags,
     reScanGreaterToken,
@@ -934,7 +941,7 @@ export function createScanner(
     scanRange,
   };
 
-  if (Debug.isDebugging) {
+  if (qd.isDebugging) {
     Object.defineProperty(scanner, '__debugShowCurrentPositionInText', {
       get: () => {
         const text = scanner.getText();
@@ -945,9 +952,9 @@ export function createScanner(
 
   return scanner;
 
-  function error(message: DiagnosticMessage): void;
-  function error(message: DiagnosticMessage, errPos: number, length: number): void;
-  function error(message: DiagnosticMessage, errPos: number = pos, length?: number): void {
+  function error(message: qt.DiagnosticMessage): void;
+  function error(message: qt.DiagnosticMessage, errPos: number, length: number): void;
+  function error(message: qt.DiagnosticMessage, errPos: number = pos, length?: number): void {
     if (onError) {
       const oldPos = pos;
       pos = errPos;
@@ -963,8 +970,8 @@ export function createScanner(
     let result = '';
     while (true) {
       const ch = text.charCodeAt(pos);
-      if (ch === CharacterCodes._) {
-        tokenFlags |= TokenFlags.ContainsSeparator;
+      if (ch === qt.CharacterCodes._) {
+        tokenFlags |= qt.TokenFlags.ContainsSeparator;
         if (allowSeparator) {
           allowSeparator = false;
           isPreviousTokenSeparator = true;
@@ -986,26 +993,26 @@ export function createScanner(
       }
       break;
     }
-    if (text.charCodeAt(pos - 1) === CharacterCodes._) {
+    if (text.charCodeAt(pos - 1) === qt.CharacterCodes._) {
       error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
     }
     return result + text.substring(start, pos);
   }
 
-  function scanNumber(): { type: SyntaxKind; value: string } {
+  function scanNumber(): { type: qt.SyntaxKind; value: string } {
     const start = pos;
     const mainFragment = scanNumberFragment();
     let decimalFragment: string | undefined;
     let scientificFragment: string | undefined;
-    if (text.charCodeAt(pos) === CharacterCodes.dot) {
+    if (text.charCodeAt(pos) === qt.CharacterCodes.dot) {
       pos++;
       decimalFragment = scanNumberFragment();
     }
     let end = pos;
-    if (text.charCodeAt(pos) === CharacterCodes.E || text.charCodeAt(pos) === CharacterCodes.e) {
+    if (text.charCodeAt(pos) === qt.CharacterCodes.E || text.charCodeAt(pos) === qt.CharacterCodes.e) {
       pos++;
-      tokenFlags |= TokenFlags.Scientific;
-      if (text.charCodeAt(pos) === CharacterCodes.plus || text.charCodeAt(pos) === CharacterCodes.minus) pos++;
+      tokenFlags |= qt.TokenFlags.Scientific;
+      if (text.charCodeAt(pos) === qt.CharacterCodes.plus || text.charCodeAt(pos) === qt.CharacterCodes.minus) pos++;
       const preNumericPart = pos;
       const finalFragment = scanNumberFragment();
       if (!finalFragment) {
@@ -1016,7 +1023,7 @@ export function createScanner(
       }
     }
     let result: string;
-    if (tokenFlags & TokenFlags.ContainsSeparator) {
+    if (tokenFlags & qt.TokenFlags.ContainsSeparator) {
       result = mainFragment;
       if (decimalFragment) {
         result += '.' + decimalFragment;
@@ -1028,10 +1035,10 @@ export function createScanner(
       result = text.substring(start, end); // No need to use all the fragments; no _ removal needed
     }
 
-    if (decimalFragment !== undefined || tokenFlags & TokenFlags.Scientific) {
-      checkForIdentifierStartAfterNumericLiteral(start, decimalFragment === undefined && !!(tokenFlags & TokenFlags.Scientific));
+    if (decimalFragment !== undefined || tokenFlags & qt.TokenFlags.Scientific) {
+      checkForIdentifierStartAfterNumericLiteral(start, decimalFragment === undefined && !!(tokenFlags & qt.TokenFlags.Scientific));
       return {
-        type: SyntaxKind.NumericLiteral,
+        type: qt.SyntaxKind.NumericLiteral,
         value: '' + +result, // if value is not an integer, it can be safely coerced to a number
       };
     } else {
@@ -1093,8 +1100,8 @@ export function createScanner(
     let isPreviousTokenSeparator = false;
     while (valueChars.length < minCount || scanAsManyAsPossible) {
       let ch = text.charCodeAt(pos);
-      if (canHaveSeparators && ch === CharacterCodes._) {
-        tokenFlags |= TokenFlags.ContainsSeparator;
+      if (canHaveSeparators && ch === qt.CharacterCodes._) {
+        tokenFlags |= qt.TokenFlags.ContainsSeparator;
         if (allowSeparator) {
           allowSeparator = false;
           isPreviousTokenSeparator = true;
@@ -1107,9 +1114,9 @@ export function createScanner(
         continue;
       }
       allowSeparator = canHaveSeparators;
-      if (ch >= CharacterCodes.A && ch <= CharacterCodes.F) {
-        ch += CharacterCodes.a - CharacterCodes.A; // standardize hex literals to lowercase
-      } else if (!((ch >= CharacterCodes._0 && ch <= CharacterCodes._9) || (ch >= CharacterCodes.a && ch <= CharacterCodes.f))) {
+      if (ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.F) {
+        ch += qt.CharacterCodes.a - qt.CharacterCodes.A; // standardize hex literals to lowercase
+      } else if (!((ch >= qt.CharacterCodes._0 && ch <= qt.CharacterCodes._9) || (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.f))) {
         break;
       }
       valueChars.push(ch);
@@ -1119,7 +1126,7 @@ export function createScanner(
     if (valueChars.length < minCount) {
       valueChars = [];
     }
-    if (text.charCodeAt(pos - 1) === CharacterCodes._) {
+    if (text.charCodeAt(pos - 1) === qt.CharacterCodes._) {
       error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
     }
     return String.fromCharCode(...valueChars);
@@ -1133,7 +1140,7 @@ export function createScanner(
     while (true) {
       if (pos >= end) {
         result += text.substring(start, pos);
-        tokenFlags |= TokenFlags.Unterminated;
+        tokenFlags |= qt.TokenFlags.Unterminated;
         error(Diagnostics.Unterminated_string_literal);
         break;
       }
@@ -1143,7 +1150,7 @@ export function createScanner(
         pos++;
         break;
       }
-      if (ch === CharacterCodes.backslash && !jsxAttributeString) {
+      if (ch === qt.CharacterCodes.backslash && !jsxAttributeString) {
         result += text.substring(start, pos);
         result += scanEscapeSequence();
         start = pos;
@@ -1151,7 +1158,7 @@ export function createScanner(
       }
       if (isLineBreak(ch) && !jsxAttributeString) {
         result += text.substring(start, pos);
-        tokenFlags |= TokenFlags.Unterminated;
+        tokenFlags |= qt.TokenFlags.Unterminated;
         error(Diagnostics.Unterminated_string_literal);
         break;
       }
@@ -1164,43 +1171,43 @@ export function createScanner(
    * Sets the current 'tokenValue' and returns a NoSubstitutionTemplateLiteral or
    * a literal component of a TemplateExpression.
    */
-  function scanTemplateAndSetTokenValue(isTaggedTemplate: boolean): SyntaxKind {
-    const startedWithBacktick = text.charCodeAt(pos) === CharacterCodes.backtick;
+  function scanTemplateAndSetTokenValue(isTaggedTemplate: boolean): qt.SyntaxKind {
+    const startedWithBacktick = text.charCodeAt(pos) === qt.CharacterCodes.backtick;
 
     pos++;
     let start = pos;
     let contents = '';
-    let resultingToken: SyntaxKind;
+    let resultingToken: qt.SyntaxKind;
 
     while (true) {
       if (pos >= end) {
         contents += text.substring(start, pos);
-        tokenFlags |= TokenFlags.Unterminated;
+        tokenFlags |= qt.TokenFlags.Unterminated;
         error(Diagnostics.Unterminated_template_literal);
-        resultingToken = startedWithBacktick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
+        resultingToken = startedWithBacktick ? qt.SyntaxKind.NoSubstitutionTemplateLiteral : qt.SyntaxKind.TemplateTail;
         break;
       }
 
       const currChar = text.charCodeAt(pos);
 
       // '`'
-      if (currChar === CharacterCodes.backtick) {
+      if (currChar === qt.CharacterCodes.backtick) {
         contents += text.substring(start, pos);
         pos++;
-        resultingToken = startedWithBacktick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
+        resultingToken = startedWithBacktick ? qt.SyntaxKind.NoSubstitutionTemplateLiteral : qt.SyntaxKind.TemplateTail;
         break;
       }
 
       // '${'
-      if (currChar === CharacterCodes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === CharacterCodes.openBrace) {
+      if (currChar === qt.CharacterCodes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === qt.CharacterCodes.openBrace) {
         contents += text.substring(start, pos);
         pos += 2;
-        resultingToken = startedWithBacktick ? SyntaxKind.TemplateHead : SyntaxKind.TemplateMiddle;
+        resultingToken = startedWithBacktick ? qt.SyntaxKind.TemplateHead : qt.SyntaxKind.TemplateMiddle;
         break;
       }
 
       // Escape character
-      if (currChar === CharacterCodes.backslash) {
+      if (currChar === qt.CharacterCodes.backslash) {
         contents += text.substring(start, pos);
         contents += scanEscapeSequence(isTaggedTemplate);
         start = pos;
@@ -1209,11 +1216,11 @@ export function createScanner(
 
       // Speculated ECMAScript 6 Spec 11.8.6.1:
       // <CR><LF> and <CR> LineTerminatorSequences are normalized to <LF> for Template Values
-      if (currChar === CharacterCodes.carriageReturn) {
+      if (currChar === qt.CharacterCodes.carriageReturn) {
         contents += text.substring(start, pos);
         pos++;
 
-        if (pos < end && text.charCodeAt(pos) === CharacterCodes.lineFeed) {
+        if (pos < end && text.charCodeAt(pos) === qt.CharacterCodes.lineFeed) {
           pos++;
         }
 
@@ -1225,7 +1232,7 @@ export function createScanner(
       pos++;
     }
 
-    Debug.assert(resultingToken !== undefined);
+    qd.assert(resultingToken !== undefined);
 
     tokenValue = contents;
     return resultingToken;
@@ -1241,48 +1248,48 @@ export function createScanner(
     const ch = text.charCodeAt(pos);
     pos++;
     switch (ch) {
-      case CharacterCodes._0:
+      case qt.CharacterCodes._0:
         // '\01'
         if (isTaggedTemplate && pos < end && isDigit(text.charCodeAt(pos))) {
           pos++;
-          tokenFlags |= TokenFlags.ContainsInvalidEscape;
+          tokenFlags |= qt.TokenFlags.ContainsInvalidEscape;
           return text.substring(start, pos);
         }
         return '\0';
-      case CharacterCodes.b:
+      case qt.CharacterCodes.b:
         return '\b';
-      case CharacterCodes.t:
+      case qt.CharacterCodes.t:
         return '\t';
-      case CharacterCodes.n:
+      case qt.CharacterCodes.n:
         return '\n';
-      case CharacterCodes.v:
+      case qt.CharacterCodes.v:
         return '\v';
-      case CharacterCodes.f:
+      case qt.CharacterCodes.f:
         return '\f';
-      case CharacterCodes.r:
+      case qt.CharacterCodes.r:
         return '\r';
-      case CharacterCodes.singleQuote:
+      case qt.CharacterCodes.singleQuote:
         return "'";
-      case CharacterCodes.doubleQuote:
+      case qt.CharacterCodes.doubleQuote:
         return '"';
-      case CharacterCodes.u:
+      case qt.CharacterCodes.u:
         if (isTaggedTemplate) {
           // '\u' or '\u0' or '\u00' or '\u000'
           for (let escapePos = pos; escapePos < pos + 4; escapePos++) {
-            if (escapePos < end && !isHexDigit(text.charCodeAt(escapePos)) && text.charCodeAt(escapePos) !== CharacterCodes.openBrace) {
+            if (escapePos < end && !isHexDigit(text.charCodeAt(escapePos)) && text.charCodeAt(escapePos) !== qt.CharacterCodes.openBrace) {
               pos = escapePos;
-              tokenFlags |= TokenFlags.ContainsInvalidEscape;
+              tokenFlags |= qt.TokenFlags.ContainsInvalidEscape;
               return text.substring(start, pos);
             }
           }
         }
         // '\u{DDDDDDDD}'
-        if (pos < end && text.charCodeAt(pos) === CharacterCodes.openBrace) {
+        if (pos < end && text.charCodeAt(pos) === qt.CharacterCodes.openBrace) {
           pos++;
 
           // '\u{'
           if (isTaggedTemplate && !isHexDigit(text.charCodeAt(pos))) {
-            tokenFlags |= TokenFlags.ContainsInvalidEscape;
+            tokenFlags |= qt.TokenFlags.ContainsInvalidEscape;
             return text.substring(start, pos);
           }
 
@@ -1292,29 +1299,29 @@ export function createScanner(
             const escapedValue = escapedValueString ? parseInt(escapedValueString, 16) : -1;
 
             // '\u{Not Code Point' or '\u{CodePoint'
-            if (!isCodePoint(escapedValue) || text.charCodeAt(pos) !== CharacterCodes.closeBrace) {
-              tokenFlags |= TokenFlags.ContainsInvalidEscape;
+            if (!isCodePoint(escapedValue) || text.charCodeAt(pos) !== qt.CharacterCodes.closeBrace) {
+              tokenFlags |= qt.TokenFlags.ContainsInvalidEscape;
               return text.substring(start, pos);
             } else {
               pos = savePos;
             }
           }
-          tokenFlags |= TokenFlags.ExtendedUnicodeEscape;
+          tokenFlags |= qt.TokenFlags.ExtendedUnicodeEscape;
           return scanExtendedUnicodeEscape();
         }
 
-        tokenFlags |= TokenFlags.UnicodeEscape;
+        tokenFlags |= qt.TokenFlags.UnicodeEscape;
         // '\uDDDD'
         return scanHexadecimalEscape(/*numDigits*/ 4);
 
-      case CharacterCodes.x:
+      case qt.CharacterCodes.x:
         if (isTaggedTemplate) {
           if (!isHexDigit(text.charCodeAt(pos))) {
-            tokenFlags |= TokenFlags.ContainsInvalidEscape;
+            tokenFlags |= qt.TokenFlags.ContainsInvalidEscape;
             return text.substring(start, pos);
           } else if (!isHexDigit(text.charCodeAt(pos + 1))) {
             pos++;
-            tokenFlags |= TokenFlags.ContainsInvalidEscape;
+            tokenFlags |= qt.TokenFlags.ContainsInvalidEscape;
             return text.substring(start, pos);
           }
         }
@@ -1323,14 +1330,14 @@ export function createScanner(
 
       // when encountering a LineContinuation (i.e. a backslash and a line terminator sequence),
       // the line terminator is interpreted to be "the empty code unit sequence".
-      case CharacterCodes.carriageReturn:
-        if (pos < end && text.charCodeAt(pos) === CharacterCodes.lineFeed) {
+      case qt.CharacterCodes.carriageReturn:
+        if (pos < end && text.charCodeAt(pos) === qt.CharacterCodes.lineFeed) {
           pos++;
         }
       // falls through
-      case CharacterCodes.lineFeed:
-      case CharacterCodes.lineSeparator:
-      case CharacterCodes.paragraphSeparator:
+      case qt.CharacterCodes.lineFeed:
+      case qt.CharacterCodes.lineSeparator:
+      case qt.CharacterCodes.paragraphSeparator:
         return '';
       default:
         return String.fromCharCode(ch);
@@ -1365,7 +1372,7 @@ export function createScanner(
     if (pos >= end) {
       error(Diagnostics.Unexpected_end_of_text);
       isInvalidExtendedEscape = true;
-    } else if (text.charCodeAt(pos) === CharacterCodes.closeBrace) {
+    } else if (text.charCodeAt(pos) === qt.CharacterCodes.closeBrace) {
       // Only swallow the following character up if it's a '}'.
       pos++;
     } else {
@@ -1383,7 +1390,7 @@ export function createScanner(
   // Current character is known to be a backslash. Check for Unicode escape of the form '\uXXXX'
   // and return code point value if valid Unicode escape is found. Otherwise return -1.
   function peekUnicodeEscape(): number {
-    if (pos + 5 < end && text.charCodeAt(pos + 1) === CharacterCodes.u) {
+    if (pos + 5 < end && text.charCodeAt(pos + 1) === qt.CharacterCodes.u) {
       const start = pos;
       pos += 2;
       const value = scanExactNumberOfHexDigits(4, /*canHaveSeparators*/ false);
@@ -1394,7 +1401,7 @@ export function createScanner(
   }
 
   function peekExtendedUnicodeEscape(): number {
-    if (languageVersion >= ScriptTarget.ES2015 && codePointAt(text, pos + 1) === CharacterCodes.u && codePointAt(text, pos + 2) === CharacterCodes.openBrace) {
+    if (languageVersion >= qt.ScriptTarget.ES2015 && codePointAt(text, pos + 1) === qt.CharacterCodes.u && codePointAt(text, pos + 2) === qt.CharacterCodes.openBrace) {
       const start = pos;
       pos += 3;
       const escapedValueString = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ false);
@@ -1412,11 +1419,11 @@ export function createScanner(
       let ch = codePointAt(text, pos);
       if (isIdentifierPart(ch, languageVersion)) {
         pos += charSize(ch);
-      } else if (ch === CharacterCodes.backslash) {
+      } else if (ch === qt.CharacterCodes.backslash) {
         ch = peekExtendedUnicodeEscape();
         if (ch >= 0 && isIdentifierPart(ch, languageVersion)) {
           pos += 3;
-          tokenFlags |= TokenFlags.ExtendedUnicodeEscape;
+          tokenFlags |= qt.TokenFlags.ExtendedUnicodeEscape;
           result += scanExtendedUnicodeEscape();
           start = pos;
           continue;
@@ -1425,7 +1432,7 @@ export function createScanner(
         if (!(ch >= 0 && isIdentifierPart(ch, languageVersion))) {
           break;
         }
-        tokenFlags |= TokenFlags.UnicodeEscape;
+        tokenFlags |= qt.TokenFlags.UnicodeEscape;
         result += text.substring(start, pos);
         result += utf16EncodeAsString(ch);
         // Valid Unicode escape is always six characters
@@ -1439,19 +1446,19 @@ export function createScanner(
     return result;
   }
 
-  function getIdentifierToken(): SyntaxKind.Identifier | KeywordSyntaxKind {
+  function getIdentifierToken(): qt.SyntaxKind.Identifier | KeywordSyntaxKind {
     // Reserved words are between 2 and 11 characters long and start with a lowercase letter
     const len = tokenValue.length;
     if (len >= 2 && len <= 11) {
       const ch = tokenValue.charCodeAt(0);
-      if (ch >= CharacterCodes.a && ch <= CharacterCodes.z) {
+      if (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) {
         const keyword = textToKeyword.get(tokenValue);
         if (keyword !== undefined) {
           return (token = keyword);
         }
       }
     }
-    return (token = SyntaxKind.Identifier);
+    return (token = qt.SyntaxKind.Identifier);
   }
 
   function scanBinaryOrOctalDigits(base: 2 | 8): string {
@@ -1463,8 +1470,8 @@ export function createScanner(
     while (true) {
       const ch = text.charCodeAt(pos);
       // Numeric separators are allowed anywhere within a numeric literal, except not at the beginning, or following another separator
-      if (ch === CharacterCodes._) {
-        tokenFlags |= TokenFlags.ContainsSeparator;
+      if (ch === qt.CharacterCodes._) {
+        tokenFlags |= qt.TokenFlags.ContainsSeparator;
         if (separatorAllowed) {
           separatorAllowed = false;
           isPreviousTokenSeparator = true;
@@ -1477,102 +1484,102 @@ export function createScanner(
         continue;
       }
       separatorAllowed = true;
-      if (!isDigit(ch) || ch - CharacterCodes._0 >= base) {
+      if (!isDigit(ch) || ch - qt.CharacterCodes._0 >= base) {
         break;
       }
       value += text[pos];
       pos++;
       isPreviousTokenSeparator = false;
     }
-    if (text.charCodeAt(pos - 1) === CharacterCodes._) {
+    if (text.charCodeAt(pos - 1) === qt.CharacterCodes._) {
       // Literal ends with underscore - not allowed
       error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
     }
     return value;
   }
 
-  function checkBigIntSuffix(): SyntaxKind {
-    if (text.charCodeAt(pos) === CharacterCodes.n) {
+  function checkBigIntSuffix(): qt.SyntaxKind {
+    if (text.charCodeAt(pos) === qt.CharacterCodes.n) {
       tokenValue += 'n';
       // Use base 10 instead of base 2 or base 8 for shorter literals
-      if (tokenFlags & TokenFlags.BinaryOrOctalSpecifier) {
+      if (tokenFlags & qt.TokenFlags.BinaryOrOctalSpecifier) {
         tokenValue = parsePseudoBigInt(tokenValue) + 'n';
       }
       pos++;
-      return SyntaxKind.BigIntLiteral;
+      return qt.SyntaxKind.BigIntLiteral;
     } else {
       // not a bigint, so can convert to number in simplified form
       // Number() may not support 0b or 0o, so use parseInt() instead
       const numericValue =
-        tokenFlags & TokenFlags.BinarySpecifier
+        tokenFlags & qt.TokenFlags.BinarySpecifier
           ? parseInt(tokenValue.slice(2), 2) // skip "0b"
-          : tokenFlags & TokenFlags.OctalSpecifier
+          : tokenFlags & qt.TokenFlags.OctalSpecifier
           ? parseInt(tokenValue.slice(2), 8) // skip "0o"
           : +tokenValue;
       tokenValue = '' + numericValue;
-      return SyntaxKind.NumericLiteral;
+      return qt.SyntaxKind.NumericLiteral;
     }
   }
 
-  function scan(): SyntaxKind {
+  function scan(): qt.SyntaxKind {
     startPos = pos;
-    tokenFlags = TokenFlags.None;
+    tokenFlags = qt.TokenFlags.None;
     let asteriskSeen = false;
     while (true) {
       tokenPos = pos;
       if (pos >= end) {
-        return (token = SyntaxKind.EndOfFileToken);
+        return (token = qt.SyntaxKind.EndOfFileToken);
       }
       let ch = codePointAt(text, pos);
 
       // Special handling for shebang
-      if (ch === CharacterCodes.hash && pos === 0 && isShebangTrivia(text, pos)) {
+      if (ch === qt.CharacterCodes.hash && pos === 0 && isShebangTrivia(text, pos)) {
         pos = scanShebangTrivia(text, pos);
         if (skipTrivia) {
           continue;
         } else {
-          return (token = SyntaxKind.ShebangTrivia);
+          return (token = qt.SyntaxKind.ShebangTrivia);
         }
       }
 
       switch (ch) {
-        case CharacterCodes.lineFeed:
-        case CharacterCodes.carriageReturn:
-          tokenFlags |= TokenFlags.PrecedingLineBreak;
+        case qt.CharacterCodes.lineFeed:
+        case qt.CharacterCodes.carriageReturn:
+          tokenFlags |= qt.TokenFlags.PrecedingLineBreak;
           if (skipTrivia) {
             pos++;
             continue;
           } else {
-            if (ch === CharacterCodes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) {
+            if (ch === qt.CharacterCodes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === qt.CharacterCodes.lineFeed) {
               // consume both CR and LF
               pos += 2;
             } else {
               pos++;
             }
-            return (token = SyntaxKind.NewLineTrivia);
+            return (token = qt.SyntaxKind.NewLineTrivia);
           }
-        case CharacterCodes.tab:
-        case CharacterCodes.verticalTab:
-        case CharacterCodes.formFeed:
-        case CharacterCodes.space:
-        case CharacterCodes.nonBreakingSpace:
-        case CharacterCodes.ogham:
-        case CharacterCodes.enQuad:
-        case CharacterCodes.emQuad:
-        case CharacterCodes.enSpace:
-        case CharacterCodes.emSpace:
-        case CharacterCodes.threePerEmSpace:
-        case CharacterCodes.fourPerEmSpace:
-        case CharacterCodes.sixPerEmSpace:
-        case CharacterCodes.figureSpace:
-        case CharacterCodes.punctuationSpace:
-        case CharacterCodes.thinSpace:
-        case CharacterCodes.hairSpace:
-        case CharacterCodes.zeroWidthSpace:
-        case CharacterCodes.narrowNoBreakSpace:
-        case CharacterCodes.mathematicalSpace:
-        case CharacterCodes.ideographicSpace:
-        case CharacterCodes.byteOrderMark:
+        case qt.CharacterCodes.tab:
+        case qt.CharacterCodes.verticalTab:
+        case qt.CharacterCodes.formFeed:
+        case qt.CharacterCodes.space:
+        case qt.CharacterCodes.nonBreakingSpace:
+        case qt.CharacterCodes.ogham:
+        case qt.CharacterCodes.enQuad:
+        case qt.CharacterCodes.emQuad:
+        case qt.CharacterCodes.enSpace:
+        case qt.CharacterCodes.emSpace:
+        case qt.CharacterCodes.threePerEmSpace:
+        case qt.CharacterCodes.fourPerEmSpace:
+        case qt.CharacterCodes.sixPerEmSpace:
+        case qt.CharacterCodes.figureSpace:
+        case qt.CharacterCodes.punctuationSpace:
+        case qt.CharacterCodes.thinSpace:
+        case qt.CharacterCodes.hairSpace:
+        case qt.CharacterCodes.zeroWidthSpace:
+        case qt.CharacterCodes.narrowNoBreakSpace:
+        case qt.CharacterCodes.mathematicalSpace:
+        case qt.CharacterCodes.ideographicSpace:
+        case qt.CharacterCodes.byteOrderMark:
           if (skipTrivia) {
             pos++;
             continue;
@@ -1580,95 +1587,95 @@ export function createScanner(
             while (pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos))) {
               pos++;
             }
-            return (token = SyntaxKind.WhitespaceTrivia);
+            return (token = qt.SyntaxKind.WhitespaceTrivia);
           }
-        case CharacterCodes.exclamation:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-              return (pos += 3), (token = SyntaxKind.ExclamationEqualsEqualsToken);
+        case qt.CharacterCodes.exclamation:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            if (text.charCodeAt(pos + 2) === qt.CharacterCodes.equals) {
+              return (pos += 3), (token = qt.SyntaxKind.ExclamationEqualsEqualsToken);
             }
-            return (pos += 2), (token = SyntaxKind.ExclamationEqualsToken);
+            return (pos += 2), (token = qt.SyntaxKind.ExclamationEqualsToken);
           }
           pos++;
-          return (token = SyntaxKind.ExclamationToken);
-        case CharacterCodes.doubleQuote:
-        case CharacterCodes.singleQuote:
+          return (token = qt.SyntaxKind.ExclamationToken);
+        case qt.CharacterCodes.doubleQuote:
+        case qt.CharacterCodes.singleQuote:
           tokenValue = scanString();
-          return (token = SyntaxKind.StringLiteral);
-        case CharacterCodes.backtick:
+          return (token = qt.SyntaxKind.StringLiteral);
+        case qt.CharacterCodes.backtick:
           return (token = scanTemplateAndSetTokenValue(/* isTaggedTemplate */ false));
-        case CharacterCodes.percent:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.PercentEqualsToken);
+        case qt.CharacterCodes.percent:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.PercentEqualsToken);
           }
           pos++;
-          return (token = SyntaxKind.PercentToken);
-        case CharacterCodes.ampersand:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.ampersand) {
-            return (pos += 2), (token = SyntaxKind.AmpersandAmpersandToken);
+          return (token = qt.SyntaxKind.PercentToken);
+        case qt.CharacterCodes.ampersand:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.ampersand) {
+            return (pos += 2), (token = qt.SyntaxKind.AmpersandAmpersandToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.AmpersandEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.AmpersandEqualsToken);
           }
           pos++;
-          return (token = SyntaxKind.AmpersandToken);
-        case CharacterCodes.openParen:
+          return (token = qt.SyntaxKind.AmpersandToken);
+        case qt.CharacterCodes.openParen:
           pos++;
-          return (token = SyntaxKind.OpenParenToken);
-        case CharacterCodes.closeParen:
+          return (token = qt.SyntaxKind.OpenParenToken);
+        case qt.CharacterCodes.closeParen:
           pos++;
-          return (token = SyntaxKind.CloseParenToken);
-        case CharacterCodes.asterisk:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.AsteriskEqualsToken);
+          return (token = qt.SyntaxKind.CloseParenToken);
+        case qt.CharacterCodes.asterisk:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.AsteriskEqualsToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.asterisk) {
-            if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-              return (pos += 3), (token = SyntaxKind.AsteriskAsteriskEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.asterisk) {
+            if (text.charCodeAt(pos + 2) === qt.CharacterCodes.equals) {
+              return (pos += 3), (token = qt.SyntaxKind.AsteriskAsteriskEqualsToken);
             }
-            return (pos += 2), (token = SyntaxKind.AsteriskAsteriskToken);
+            return (pos += 2), (token = qt.SyntaxKind.AsteriskAsteriskToken);
           }
           pos++;
-          if (inJSDocType && !asteriskSeen && tokenFlags & TokenFlags.PrecedingLineBreak) {
+          if (inJSDocType && !asteriskSeen && tokenFlags & qt.TokenFlags.PrecedingLineBreak) {
             // decoration at the start of a JSDoc comment line
             asteriskSeen = true;
             continue;
           }
-          return (token = SyntaxKind.AsteriskToken);
-        case CharacterCodes.plus:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.plus) {
-            return (pos += 2), (token = SyntaxKind.PlusPlusToken);
+          return (token = qt.SyntaxKind.AsteriskToken);
+        case qt.CharacterCodes.plus:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.plus) {
+            return (pos += 2), (token = qt.SyntaxKind.PlusPlusToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.PlusEqualsToken);
-          }
-          pos++;
-          return (token = SyntaxKind.PlusToken);
-        case CharacterCodes.comma:
-          pos++;
-          return (token = SyntaxKind.CommaToken);
-        case CharacterCodes.minus:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.minus) {
-            return (pos += 2), (token = SyntaxKind.MinusMinusToken);
-          }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.MinusEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.PlusEqualsToken);
           }
           pos++;
-          return (token = SyntaxKind.MinusToken);
-        case CharacterCodes.dot:
+          return (token = qt.SyntaxKind.PlusToken);
+        case qt.CharacterCodes.comma:
+          pos++;
+          return (token = qt.SyntaxKind.CommaToken);
+        case qt.CharacterCodes.minus:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.minus) {
+            return (pos += 2), (token = qt.SyntaxKind.MinusMinusToken);
+          }
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.MinusEqualsToken);
+          }
+          pos++;
+          return (token = qt.SyntaxKind.MinusToken);
+        case qt.CharacterCodes.dot:
           if (isDigit(text.charCodeAt(pos + 1))) {
             tokenValue = scanNumber().value;
-            return (token = SyntaxKind.NumericLiteral);
+            return (token = qt.SyntaxKind.NumericLiteral);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.dot && text.charCodeAt(pos + 2) === CharacterCodes.dot) {
-            return (pos += 3), (token = SyntaxKind.DotDotDotToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.dot && text.charCodeAt(pos + 2) === qt.CharacterCodes.dot) {
+            return (pos += 3), (token = qt.SyntaxKind.DotDotDotToken);
           }
           pos++;
-          return (token = SyntaxKind.DotToken);
-        case CharacterCodes.slash:
+          return (token = qt.SyntaxKind.DotToken);
+        case qt.CharacterCodes.slash:
           // Single-line comment
-          if (text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.slash) {
             pos += 2;
 
             while (pos < end) {
@@ -1683,14 +1690,14 @@ export function createScanner(
             if (skipTrivia) {
               continue;
             } else {
-              return (token = SyntaxKind.SingleLineCommentTrivia);
+              return (token = qt.SyntaxKind.SingleLineCommentTrivia);
             }
           }
           // Multi-line comment
-          if (text.charCodeAt(pos + 1) === CharacterCodes.asterisk) {
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.asterisk) {
             pos += 2;
-            if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) !== CharacterCodes.slash) {
-              tokenFlags |= TokenFlags.PrecedingJSDocComment;
+            if (text.charCodeAt(pos) === qt.CharacterCodes.asterisk && text.charCodeAt(pos + 1) !== qt.CharacterCodes.slash) {
+              tokenFlags |= qt.TokenFlags.PrecedingJSDocComment;
             }
 
             let commentClosed = false;
@@ -1698,7 +1705,7 @@ export function createScanner(
             while (pos < end) {
               const ch = text.charCodeAt(pos);
 
-              if (ch === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+              if (ch === qt.CharacterCodes.asterisk && text.charCodeAt(pos + 1) === qt.CharacterCodes.slash) {
                 pos += 2;
                 commentClosed = true;
                 break;
@@ -1708,7 +1715,7 @@ export function createScanner(
 
               if (isLineBreak(ch)) {
                 lastLineStart = pos;
-                tokenFlags |= TokenFlags.PrecedingLineBreak;
+                tokenFlags |= qt.TokenFlags.PrecedingLineBreak;
               }
             }
 
@@ -1722,21 +1729,21 @@ export function createScanner(
               continue;
             } else {
               if (!commentClosed) {
-                tokenFlags |= TokenFlags.Unterminated;
+                tokenFlags |= qt.TokenFlags.Unterminated;
               }
-              return (token = SyntaxKind.MultiLineCommentTrivia);
+              return (token = qt.SyntaxKind.MultiLineCommentTrivia);
             }
           }
 
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.SlashEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.SlashEqualsToken);
           }
 
           pos++;
-          return (token = SyntaxKind.SlashToken);
+          return (token = qt.SyntaxKind.SlashToken);
 
-        case CharacterCodes._0:
-          if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharacterCodes.X || text.charCodeAt(pos + 1) === CharacterCodes.x)) {
+        case qt.CharacterCodes._0:
+          if (pos + 2 < end && (text.charCodeAt(pos + 1) === qt.CharacterCodes.X || text.charCodeAt(pos + 1) === qt.CharacterCodes.x)) {
             pos += 2;
             tokenValue = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ true);
             if (!tokenValue) {
@@ -1744,9 +1751,9 @@ export function createScanner(
               tokenValue = '0';
             }
             tokenValue = '0x' + tokenValue;
-            tokenFlags |= TokenFlags.HexSpecifier;
+            tokenFlags |= qt.TokenFlags.HexSpecifier;
             return (token = checkBigIntSuffix());
-          } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharacterCodes.B || text.charCodeAt(pos + 1) === CharacterCodes.b)) {
+          } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === qt.CharacterCodes.B || text.charCodeAt(pos + 1) === qt.CharacterCodes.b)) {
             pos += 2;
             tokenValue = scanBinaryOrOctalDigits(/* base */ 2);
             if (!tokenValue) {
@@ -1754,9 +1761,9 @@ export function createScanner(
               tokenValue = '0';
             }
             tokenValue = '0b' + tokenValue;
-            tokenFlags |= TokenFlags.BinarySpecifier;
+            tokenFlags |= qt.TokenFlags.BinarySpecifier;
             return (token = checkBigIntSuffix());
-          } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharacterCodes.O || text.charCodeAt(pos + 1) === CharacterCodes.o)) {
+          } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === qt.CharacterCodes.O || text.charCodeAt(pos + 1) === qt.CharacterCodes.o)) {
             pos += 2;
             tokenValue = scanBinaryOrOctalDigits(/* base */ 8);
             if (!tokenValue) {
@@ -1764,151 +1771,151 @@ export function createScanner(
               tokenValue = '0';
             }
             tokenValue = '0o' + tokenValue;
-            tokenFlags |= TokenFlags.OctalSpecifier;
+            tokenFlags |= qt.TokenFlags.OctalSpecifier;
             return (token = checkBigIntSuffix());
           }
           // Try to parse as an octal
           if (pos + 1 < end && isOctalDigit(text.charCodeAt(pos + 1))) {
             tokenValue = '' + scanOctalDigits();
-            tokenFlags |= TokenFlags.Octal;
-            return (token = SyntaxKind.NumericLiteral);
+            tokenFlags |= qt.TokenFlags.Octal;
+            return (token = qt.SyntaxKind.NumericLiteral);
           }
         // This fall-through is a deviation from the EcmaScript grammar. The grammar says that a leading zero
         // can only be followed by an octal digit, a dot, or the end of the number literal. However, we are being
         // permissive and allowing decimal digits of the form 08* and 09* (which many browsers also do).
         // falls through
-        case CharacterCodes._1:
-        case CharacterCodes._2:
-        case CharacterCodes._3:
-        case CharacterCodes._4:
-        case CharacterCodes._5:
-        case CharacterCodes._6:
-        case CharacterCodes._7:
-        case CharacterCodes._8:
-        case CharacterCodes._9:
+        case qt.CharacterCodes._1:
+        case qt.CharacterCodes._2:
+        case qt.CharacterCodes._3:
+        case qt.CharacterCodes._4:
+        case qt.CharacterCodes._5:
+        case qt.CharacterCodes._6:
+        case qt.CharacterCodes._7:
+        case qt.CharacterCodes._8:
+        case qt.CharacterCodes._9:
           ({ type: token, value: tokenValue } = scanNumber());
           return token;
-        case CharacterCodes.colon:
+        case qt.CharacterCodes.colon:
           pos++;
-          return (token = SyntaxKind.ColonToken);
-        case CharacterCodes.semicolon:
+          return (token = qt.SyntaxKind.ColonToken);
+        case qt.CharacterCodes.semicolon:
           pos++;
-          return (token = SyntaxKind.SemicolonToken);
-        case CharacterCodes.lessThan:
+          return (token = qt.SyntaxKind.SemicolonToken);
+        case qt.CharacterCodes.lessThan:
           if (isConflictMarkerTrivia(text, pos)) {
             pos = scanConflictMarkerTrivia(text, pos, error);
             if (skipTrivia) {
               continue;
             } else {
-              return (token = SyntaxKind.ConflictMarkerTrivia);
+              return (token = qt.SyntaxKind.ConflictMarkerTrivia);
             }
           }
 
-          if (text.charCodeAt(pos + 1) === CharacterCodes.lessThan) {
-            if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-              return (pos += 3), (token = SyntaxKind.LessThanLessThanEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.lessThan) {
+            if (text.charCodeAt(pos + 2) === qt.CharacterCodes.equals) {
+              return (pos += 3), (token = qt.SyntaxKind.LessThanLessThanEqualsToken);
             }
-            return (pos += 2), (token = SyntaxKind.LessThanLessThanToken);
+            return (pos += 2), (token = qt.SyntaxKind.LessThanLessThanToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.LessThanEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.LessThanEqualsToken);
           }
-          if (languageVariant === LanguageVariant.JSX && text.charCodeAt(pos + 1) === CharacterCodes.slash && text.charCodeAt(pos + 2) !== CharacterCodes.asterisk) {
-            return (pos += 2), (token = SyntaxKind.LessThanSlashToken);
+          if (languageVariant === qt.LanguageVariant.JSX && text.charCodeAt(pos + 1) === qt.CharacterCodes.slash && text.charCodeAt(pos + 2) !== qt.CharacterCodes.asterisk) {
+            return (pos += 2), (token = qt.SyntaxKind.LessThanSlashToken);
           }
           pos++;
-          return (token = SyntaxKind.LessThanToken);
-        case CharacterCodes.equals:
+          return (token = qt.SyntaxKind.LessThanToken);
+        case qt.CharacterCodes.equals:
           if (isConflictMarkerTrivia(text, pos)) {
             pos = scanConflictMarkerTrivia(text, pos, error);
             if (skipTrivia) {
               continue;
             } else {
-              return (token = SyntaxKind.ConflictMarkerTrivia);
+              return (token = qt.SyntaxKind.ConflictMarkerTrivia);
             }
           }
 
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-              return (pos += 3), (token = SyntaxKind.EqualsEqualsEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            if (text.charCodeAt(pos + 2) === qt.CharacterCodes.equals) {
+              return (pos += 3), (token = qt.SyntaxKind.EqualsEqualsEqualsToken);
             }
-            return (pos += 2), (token = SyntaxKind.EqualsEqualsToken);
+            return (pos += 2), (token = qt.SyntaxKind.EqualsEqualsToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.greaterThan) {
-            return (pos += 2), (token = SyntaxKind.EqualsGreaterThanToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.greaterThan) {
+            return (pos += 2), (token = qt.SyntaxKind.EqualsGreaterThanToken);
           }
           pos++;
-          return (token = SyntaxKind.EqualsToken);
-        case CharacterCodes.greaterThan:
+          return (token = qt.SyntaxKind.EqualsToken);
+        case qt.CharacterCodes.greaterThan:
           if (isConflictMarkerTrivia(text, pos)) {
             pos = scanConflictMarkerTrivia(text, pos, error);
             if (skipTrivia) {
               continue;
             } else {
-              return (token = SyntaxKind.ConflictMarkerTrivia);
+              return (token = qt.SyntaxKind.ConflictMarkerTrivia);
             }
           }
 
           pos++;
-          return (token = SyntaxKind.GreaterThanToken);
-        case CharacterCodes.question:
+          return (token = qt.SyntaxKind.GreaterThanToken);
+        case qt.CharacterCodes.question:
           pos++;
-          if (text.charCodeAt(pos) === CharacterCodes.dot && !isDigit(text.charCodeAt(pos + 1))) {
+          if (text.charCodeAt(pos) === qt.CharacterCodes.dot && !isDigit(text.charCodeAt(pos + 1))) {
             pos++;
-            return (token = SyntaxKind.QuestionDotToken);
+            return (token = qt.SyntaxKind.QuestionDotToken);
           }
-          if (text.charCodeAt(pos) === CharacterCodes.question) {
+          if (text.charCodeAt(pos) === qt.CharacterCodes.question) {
             pos++;
-            return (token = SyntaxKind.QuestionQuestionToken);
+            return (token = qt.SyntaxKind.QuestionQuestionToken);
           }
-          return (token = SyntaxKind.QuestionToken);
-        case CharacterCodes.openBracket:
+          return (token = qt.SyntaxKind.QuestionToken);
+        case qt.CharacterCodes.openBracket:
           pos++;
-          return (token = SyntaxKind.OpenBracketToken);
-        case CharacterCodes.closeBracket:
+          return (token = qt.SyntaxKind.OpenBracketToken);
+        case qt.CharacterCodes.closeBracket:
           pos++;
-          return (token = SyntaxKind.CloseBracketToken);
-        case CharacterCodes.caret:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.CaretEqualsToken);
+          return (token = qt.SyntaxKind.CloseBracketToken);
+        case qt.CharacterCodes.caret:
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.CaretEqualsToken);
           }
           pos++;
-          return (token = SyntaxKind.CaretToken);
-        case CharacterCodes.openBrace:
+          return (token = qt.SyntaxKind.CaretToken);
+        case qt.CharacterCodes.openBrace:
           pos++;
-          return (token = SyntaxKind.OpenBraceToken);
-        case CharacterCodes.bar:
+          return (token = qt.SyntaxKind.OpenBraceToken);
+        case qt.CharacterCodes.bar:
           if (isConflictMarkerTrivia(text, pos)) {
             pos = scanConflictMarkerTrivia(text, pos, error);
             if (skipTrivia) {
               continue;
             } else {
-              return (token = SyntaxKind.ConflictMarkerTrivia);
+              return (token = qt.SyntaxKind.ConflictMarkerTrivia);
             }
           }
 
-          if (text.charCodeAt(pos + 1) === CharacterCodes.bar) {
-            return (pos += 2), (token = SyntaxKind.BarBarToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.bar) {
+            return (pos += 2), (token = qt.SyntaxKind.BarBarToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-            return (pos += 2), (token = SyntaxKind.BarEqualsToken);
+          if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+            return (pos += 2), (token = qt.SyntaxKind.BarEqualsToken);
           }
           pos++;
-          return (token = SyntaxKind.BarToken);
-        case CharacterCodes.closeBrace:
+          return (token = qt.SyntaxKind.BarToken);
+        case qt.CharacterCodes.closeBrace:
           pos++;
-          return (token = SyntaxKind.CloseBraceToken);
-        case CharacterCodes.tilde:
+          return (token = qt.SyntaxKind.CloseBraceToken);
+        case qt.CharacterCodes.tilde:
           pos++;
-          return (token = SyntaxKind.TildeToken);
-        case CharacterCodes.at:
+          return (token = qt.SyntaxKind.TildeToken);
+        case qt.CharacterCodes.at:
           pos++;
-          return (token = SyntaxKind.AtToken);
-        case CharacterCodes.backslash:
+          return (token = qt.SyntaxKind.AtToken);
+        case qt.CharacterCodes.backslash:
           const extendedCookedChar = peekExtendedUnicodeEscape();
           if (extendedCookedChar >= 0 && isIdentifierStart(extendedCookedChar, languageVersion)) {
             pos += 3;
-            tokenFlags |= TokenFlags.ExtendedUnicodeEscape;
+            tokenFlags |= qt.TokenFlags.ExtendedUnicodeEscape;
             tokenValue = scanExtendedUnicodeEscape() + scanIdentifierParts();
             return (token = getIdentifierToken());
           }
@@ -1916,39 +1923,39 @@ export function createScanner(
           const cookedChar = peekUnicodeEscape();
           if (cookedChar >= 0 && isIdentifierStart(cookedChar, languageVersion)) {
             pos += 6;
-            tokenFlags |= TokenFlags.UnicodeEscape;
+            tokenFlags |= qt.TokenFlags.UnicodeEscape;
             tokenValue = String.fromCharCode(cookedChar) + scanIdentifierParts();
             return (token = getIdentifierToken());
           }
 
           error(Diagnostics.Invalid_character);
           pos++;
-          return (token = SyntaxKind.Unknown);
-        case CharacterCodes.hash:
+          return (token = qt.SyntaxKind.Unknown);
+        case qt.CharacterCodes.hash:
           if (pos !== 0 && text[pos + 1] === '!') {
             error(Diagnostics.can_only_be_used_at_the_start_of_a_file);
             pos++;
-            return (token = SyntaxKind.Unknown);
+            return (token = qt.SyntaxKind.Unknown);
           }
           pos++;
           if (isIdentifierStart((ch = text.charCodeAt(pos)), languageVersion)) {
             pos++;
             while (pos < end && isIdentifierPart((ch = text.charCodeAt(pos)), languageVersion)) pos++;
             tokenValue = text.substring(tokenPos, pos);
-            if (ch === CharacterCodes.backslash) {
+            if (ch === qt.CharacterCodes.backslash) {
               tokenValue += scanIdentifierParts();
             }
           } else {
             tokenValue = '#';
             error(Diagnostics.Invalid_character);
           }
-          return (token = SyntaxKind.PrivateIdentifier);
+          return (token = qt.SyntaxKind.PrivateIdentifier);
         default:
           if (isIdentifierStart(ch, languageVersion)) {
             pos += charSize(ch);
             while (pos < end && isIdentifierPart((ch = codePointAt(text, pos)), languageVersion)) pos += charSize(ch);
             tokenValue = text.substring(tokenPos, pos);
-            if (ch === CharacterCodes.backslash) {
+            if (ch === qt.CharacterCodes.backslash) {
               tokenValue += scanIdentifierParts();
             }
             return (token = getIdentifierToken());
@@ -1956,42 +1963,42 @@ export function createScanner(
             pos += charSize(ch);
             continue;
           } else if (isLineBreak(ch)) {
-            tokenFlags |= TokenFlags.PrecedingLineBreak;
+            tokenFlags |= qt.TokenFlags.PrecedingLineBreak;
             pos += charSize(ch);
             continue;
           }
           error(Diagnostics.Invalid_character);
           pos += charSize(ch);
-          return (token = SyntaxKind.Unknown);
+          return (token = qt.SyntaxKind.Unknown);
       }
     }
   }
 
-  function reScanGreaterToken(): SyntaxKind {
-    if (token === SyntaxKind.GreaterThanToken) {
-      if (text.charCodeAt(pos) === CharacterCodes.greaterThan) {
-        if (text.charCodeAt(pos + 1) === CharacterCodes.greaterThan) {
-          if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-            return (pos += 3), (token = SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken);
+  function reScanGreaterToken(): qt.SyntaxKind {
+    if (token === qt.SyntaxKind.GreaterThanToken) {
+      if (text.charCodeAt(pos) === qt.CharacterCodes.greaterThan) {
+        if (text.charCodeAt(pos + 1) === qt.CharacterCodes.greaterThan) {
+          if (text.charCodeAt(pos + 2) === qt.CharacterCodes.equals) {
+            return (pos += 3), (token = qt.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken);
           }
-          return (pos += 2), (token = SyntaxKind.GreaterThanGreaterThanGreaterThanToken);
+          return (pos += 2), (token = qt.SyntaxKind.GreaterThanGreaterThanGreaterThanToken);
         }
-        if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-          return (pos += 2), (token = SyntaxKind.GreaterThanGreaterThanEqualsToken);
+        if (text.charCodeAt(pos + 1) === qt.CharacterCodes.equals) {
+          return (pos += 2), (token = qt.SyntaxKind.GreaterThanGreaterThanEqualsToken);
         }
         pos++;
-        return (token = SyntaxKind.GreaterThanGreaterThanToken);
+        return (token = qt.SyntaxKind.GreaterThanGreaterThanToken);
       }
-      if (text.charCodeAt(pos) === CharacterCodes.equals) {
+      if (text.charCodeAt(pos) === qt.CharacterCodes.equals) {
         pos++;
-        return (token = SyntaxKind.GreaterThanEqualsToken);
+        return (token = qt.SyntaxKind.GreaterThanEqualsToken);
       }
     }
     return token;
   }
 
-  function reScanSlashToken(): SyntaxKind {
-    if (token === SyntaxKind.SlashToken || token === SyntaxKind.SlashEqualsToken) {
+  function reScanSlashToken(): qt.SyntaxKind {
+    if (token === qt.SyntaxKind.SlashToken || token === qt.SyntaxKind.SlashEqualsToken) {
       let p = tokenPos + 1;
       let inEscape = false;
       let inCharacterClass = false;
@@ -1999,14 +2006,14 @@ export function createScanner(
         // If we reach the end of a file, or hit a newline, then this is an unterminated
         // regex.  Report error and return what we have so far.
         if (p >= end) {
-          tokenFlags |= TokenFlags.Unterminated;
+          tokenFlags |= qt.TokenFlags.Unterminated;
           error(Diagnostics.Unterminated_regular_expression_literal);
           break;
         }
 
         const ch = text.charCodeAt(p);
         if (isLineBreak(ch)) {
-          tokenFlags |= TokenFlags.Unterminated;
+          tokenFlags |= qt.TokenFlags.Unterminated;
           error(Diagnostics.Unterminated_regular_expression_literal);
           break;
         }
@@ -2015,16 +2022,16 @@ export function createScanner(
           // Parsing an escape character;
           // reset the flag and just advance to the next char.
           inEscape = false;
-        } else if (ch === CharacterCodes.slash && !inCharacterClass) {
+        } else if (ch === qt.CharacterCodes.slash && !inCharacterClass) {
           // A slash within a character class is permissible,
           // but in general it signals the end of the regexp literal.
           p++;
           break;
-        } else if (ch === CharacterCodes.openBracket) {
+        } else if (ch === qt.CharacterCodes.openBracket) {
           inCharacterClass = true;
-        } else if (ch === CharacterCodes.backslash) {
+        } else if (ch === qt.CharacterCodes.backslash) {
           inEscape = true;
-        } else if (ch === CharacterCodes.closeBracket) {
+        } else if (ch === qt.CharacterCodes.closeBracket) {
           inCharacterClass = false;
         }
         p++;
@@ -2035,12 +2042,12 @@ export function createScanner(
       }
       pos = p;
       tokenValue = text.substring(tokenPos, pos);
-      token = SyntaxKind.RegularExpressionLiteral;
+      token = qt.SyntaxKind.RegularExpressionLiteral;
     }
     return token;
   }
 
-  function appendIfCommentDirective(commentDirectives: CommentDirective[] | undefined, text: string, commentDirectiveRegEx: RegExp, lineStart: number) {
+  function appendIfCommentDirective(commentDirectives: qt.CommentDirective[] | undefined, text: string, commentDirectiveRegEx: RegExp, lineStart: number) {
     const type = getDirectiveFromComment(text, commentDirectiveRegEx);
     if (type === undefined) {
       return commentDirectives;
@@ -2060,10 +2067,10 @@ export function createScanner(
 
     switch (match[1]) {
       case 'ts-expect-error':
-        return CommentDirectiveType.ExpectError;
+        return qt.CommentDirectiveType.ExpectError;
 
       case 'ts-ignore':
-        return CommentDirectiveType.Ignore;
+        return qt.CommentDirectiveType.Ignore;
     }
 
     return undefined;
@@ -2072,56 +2079,56 @@ export function createScanner(
   /**
    * Unconditionally back up and scan a template expression portion.
    */
-  function reScanTemplateToken(isTaggedTemplate: boolean): SyntaxKind {
-    Debug.assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+  function reScanTemplateToken(isTaggedTemplate: boolean): qt.SyntaxKind {
+    qd.assert(token === qt.SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
     pos = tokenPos;
     return (token = scanTemplateAndSetTokenValue(isTaggedTemplate));
   }
 
-  function reScanTemplateHeadOrNoSubstitutionTemplate(): SyntaxKind {
+  function reScanTemplateHeadOrNoSubstitutionTemplate(): qt.SyntaxKind {
     pos = tokenPos;
     return (token = scanTemplateAndSetTokenValue(/* isTaggedTemplate */ true));
   }
 
-  function reScanJsxToken(): JsxTokenSyntaxKind {
+  function reScanJsxToken(): qt.JsxTokenSyntaxKind {
     pos = tokenPos = startPos;
     return (token = scanJsxToken());
   }
 
-  function reScanLessThanToken(): SyntaxKind {
-    if (token === SyntaxKind.LessThanLessThanToken) {
+  function reScanLessThanToken(): qt.SyntaxKind {
+    if (token === qt.SyntaxKind.LessThanLessThanToken) {
       pos = tokenPos + 1;
-      return (token = SyntaxKind.LessThanToken);
+      return (token = qt.SyntaxKind.LessThanToken);
     }
     return token;
   }
 
-  function reScanQuestionToken(): SyntaxKind {
-    Debug.assert(token === SyntaxKind.QuestionQuestionToken, "'reScanQuestionToken' should only be called on a '??'");
+  function reScanQuestionToken(): qt.SyntaxKind {
+    qd.assert(token === qt.SyntaxKind.QuestionQuestionToken, "'reScanQuestionToken' should only be called on a '??'");
     pos = tokenPos + 1;
-    return (token = SyntaxKind.QuestionToken);
+    return (token = qt.SyntaxKind.QuestionToken);
   }
 
-  function scanJsxToken(): JsxTokenSyntaxKind {
+  function scanJsxToken(): qt.JsxTokenSyntaxKind {
     startPos = tokenPos = pos;
 
     if (pos >= end) {
-      return (token = SyntaxKind.EndOfFileToken);
+      return (token = qt.SyntaxKind.EndOfFileToken);
     }
 
     let char = text.charCodeAt(pos);
-    if (char === CharacterCodes.lessThan) {
-      if (text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+    if (char === qt.CharacterCodes.lessThan) {
+      if (text.charCodeAt(pos + 1) === qt.CharacterCodes.slash) {
         pos += 2;
-        return (token = SyntaxKind.LessThanSlashToken);
+        return (token = qt.SyntaxKind.LessThanSlashToken);
       }
       pos++;
-      return (token = SyntaxKind.LessThanToken);
+      return (token = qt.SyntaxKind.LessThanToken);
     }
 
-    if (char === CharacterCodes.openBrace) {
+    if (char === qt.CharacterCodes.openBrace) {
       pos++;
-      return (token = SyntaxKind.OpenBraceToken);
+      return (token = qt.SyntaxKind.OpenBraceToken);
     }
 
     // First non-whitespace character on this line.
@@ -2139,20 +2146,20 @@ export function createScanner(
       }
 
       char = text.charCodeAt(pos);
-      if (char === CharacterCodes.openBrace) {
+      if (char === qt.CharacterCodes.openBrace) {
         break;
       }
-      if (char === CharacterCodes.lessThan) {
+      if (char === qt.CharacterCodes.lessThan) {
         if (isConflictMarkerTrivia(text, pos)) {
           pos = scanConflictMarkerTrivia(text, pos, error);
-          return (token = SyntaxKind.ConflictMarkerTrivia);
+          return (token = qt.SyntaxKind.ConflictMarkerTrivia);
         }
         break;
       }
-      if (char === CharacterCodes.greaterThan) {
+      if (char === qt.CharacterCodes.greaterThan) {
         error(Diagnostics.Unexpected_token_Did_you_mean_or_gt, pos, 1);
       }
-      if (char === CharacterCodes.closeBrace) {
+      if (char === qt.CharacterCodes.closeBrace) {
         error(Diagnostics.Unexpected_token_Did_you_mean_or_rbrace, pos, 1);
       }
 
@@ -2176,19 +2183,19 @@ export function createScanner(
     const endPosition = lastNonWhitespace === -1 ? pos : lastNonWhitespace;
     tokenValue = text.substring(startPos, endPosition);
 
-    return firstNonWhitespace === -1 ? SyntaxKind.JsxTextAllWhiteSpaces : SyntaxKind.JsxText;
+    return firstNonWhitespace === -1 ? qt.SyntaxKind.JsxTextAllWhiteSpaces : qt.SyntaxKind.JsxText;
   }
 
   // Scans a JSX identifier; these differ from normal identifiers in that
   // they allow dashes
-  function scanJsxIdentifier(): SyntaxKind {
+  function scanJsxIdentifier(): qt.SyntaxKind {
     if (tokenIsIdentifierOrKeyword(token)) {
       // An identifier or keyword has already been parsed - check for a `-` and then append it and everything after it to the token
       // Do note that this means that `scanJsxIdentifier` effectively _mutates_ the visible token without advancing to a new token
       // Any caller should be expecting this behavior and should only read the pos or token value after calling it.
       while (pos < end) {
         const ch = text.charCodeAt(pos);
-        if (ch === CharacterCodes.minus) {
+        if (ch === qt.CharacterCodes.minus) {
           tokenValue += '-';
           pos++;
           continue;
@@ -2203,77 +2210,77 @@ export function createScanner(
     return token;
   }
 
-  function scanJsxAttributeValue(): SyntaxKind {
+  function scanJsxAttributeValue(): qt.SyntaxKind {
     startPos = pos;
 
     switch (text.charCodeAt(pos)) {
-      case CharacterCodes.doubleQuote:
-      case CharacterCodes.singleQuote:
+      case qt.CharacterCodes.doubleQuote:
+      case qt.CharacterCodes.singleQuote:
         tokenValue = scanString(/*jsxAttributeString*/ true);
-        return (token = SyntaxKind.StringLiteral);
+        return (token = qt.SyntaxKind.StringLiteral);
       default:
         // If this scans anything other than `{`, it's a parse error.
         return scan();
     }
   }
 
-  function reScanJsxAttributeValue(): SyntaxKind {
+  function reScanJsxAttributeValue(): qt.SyntaxKind {
     pos = tokenPos = startPos;
     return scanJsxAttributeValue();
   }
 
-  function scanJsDocToken(): JSDocSyntaxKind {
+  function scanJsDocToken(): qt.JSDocSyntaxKind {
     startPos = tokenPos = pos;
-    tokenFlags = TokenFlags.None;
+    tokenFlags = qt.TokenFlags.None;
     if (pos >= end) {
-      return (token = SyntaxKind.EndOfFileToken);
+      return (token = qt.SyntaxKind.EndOfFileToken);
     }
 
     const ch = codePointAt(text, pos);
     pos += charSize(ch);
     switch (ch) {
-      case CharacterCodes.tab:
-      case CharacterCodes.verticalTab:
-      case CharacterCodes.formFeed:
-      case CharacterCodes.space:
+      case qt.CharacterCodes.tab:
+      case qt.CharacterCodes.verticalTab:
+      case qt.CharacterCodes.formFeed:
+      case qt.CharacterCodes.space:
         while (pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos))) {
           pos++;
         }
-        return (token = SyntaxKind.WhitespaceTrivia);
-      case CharacterCodes.at:
-        return (token = SyntaxKind.AtToken);
-      case CharacterCodes.lineFeed:
-      case CharacterCodes.carriageReturn:
-        tokenFlags |= TokenFlags.PrecedingLineBreak;
-        return (token = SyntaxKind.NewLineTrivia);
-      case CharacterCodes.asterisk:
-        return (token = SyntaxKind.AsteriskToken);
-      case CharacterCodes.openBrace:
-        return (token = SyntaxKind.OpenBraceToken);
-      case CharacterCodes.closeBrace:
-        return (token = SyntaxKind.CloseBraceToken);
-      case CharacterCodes.openBracket:
-        return (token = SyntaxKind.OpenBracketToken);
-      case CharacterCodes.closeBracket:
-        return (token = SyntaxKind.CloseBracketToken);
-      case CharacterCodes.lessThan:
-        return (token = SyntaxKind.LessThanToken);
-      case CharacterCodes.greaterThan:
-        return (token = SyntaxKind.GreaterThanToken);
-      case CharacterCodes.equals:
-        return (token = SyntaxKind.EqualsToken);
-      case CharacterCodes.comma:
-        return (token = SyntaxKind.CommaToken);
-      case CharacterCodes.dot:
-        return (token = SyntaxKind.DotToken);
-      case CharacterCodes.backtick:
-        return (token = SyntaxKind.BacktickToken);
-      case CharacterCodes.backslash:
+        return (token = qt.SyntaxKind.WhitespaceTrivia);
+      case qt.CharacterCodes.at:
+        return (token = qt.SyntaxKind.AtToken);
+      case qt.CharacterCodes.lineFeed:
+      case qt.CharacterCodes.carriageReturn:
+        tokenFlags |= qt.TokenFlags.PrecedingLineBreak;
+        return (token = qt.SyntaxKind.NewLineTrivia);
+      case qt.CharacterCodes.asterisk:
+        return (token = qt.SyntaxKind.AsteriskToken);
+      case qt.CharacterCodes.openBrace:
+        return (token = qt.SyntaxKind.OpenBraceToken);
+      case qt.CharacterCodes.closeBrace:
+        return (token = qt.SyntaxKind.CloseBraceToken);
+      case qt.CharacterCodes.openBracket:
+        return (token = qt.SyntaxKind.OpenBracketToken);
+      case qt.CharacterCodes.closeBracket:
+        return (token = qt.SyntaxKind.CloseBracketToken);
+      case qt.CharacterCodes.lessThan:
+        return (token = qt.SyntaxKind.LessThanToken);
+      case qt.CharacterCodes.greaterThan:
+        return (token = qt.SyntaxKind.GreaterThanToken);
+      case qt.CharacterCodes.equals:
+        return (token = qt.SyntaxKind.EqualsToken);
+      case qt.CharacterCodes.comma:
+        return (token = qt.SyntaxKind.CommaToken);
+      case qt.CharacterCodes.dot:
+        return (token = qt.SyntaxKind.DotToken);
+      case qt.CharacterCodes.backtick:
+        return (token = qt.SyntaxKind.BacktickToken);
+      case qt.CharacterCodes.backslash:
         pos--;
         const extendedCookedChar = peekExtendedUnicodeEscape();
         if (extendedCookedChar >= 0 && isIdentifierStart(extendedCookedChar, languageVersion)) {
           pos += 3;
-          tokenFlags |= TokenFlags.ExtendedUnicodeEscape;
+          tokenFlags |= qt.TokenFlags.ExtendedUnicodeEscape;
           tokenValue = scanExtendedUnicodeEscape() + scanIdentifierParts();
           return (token = getIdentifierToken());
         }
@@ -2281,24 +2288,24 @@ export function createScanner(
         const cookedChar = peekUnicodeEscape();
         if (cookedChar >= 0 && isIdentifierStart(cookedChar, languageVersion)) {
           pos += 6;
-          tokenFlags |= TokenFlags.UnicodeEscape;
+          tokenFlags |= qt.TokenFlags.UnicodeEscape;
           tokenValue = String.fromCharCode(cookedChar) + scanIdentifierParts();
           return (token = getIdentifierToken());
         }
         pos++;
-        return (token = SyntaxKind.Unknown);
+        return (token = qt.SyntaxKind.Unknown);
     }
 
     if (isIdentifierStart(ch, languageVersion)) {
       let char = ch;
-      while ((pos < end && isIdentifierPart((char = codePointAt(text, pos)), languageVersion)) || text.charCodeAt(pos) === CharacterCodes.minus) pos += charSize(char);
+      while ((pos < end && isIdentifierPart((char = codePointAt(text, pos)), languageVersion)) || text.charCodeAt(pos) === qt.CharacterCodes.minus) pos += charSize(char);
       tokenValue = text.substring(tokenPos, pos);
-      if (char === CharacterCodes.backslash) {
+      if (char === qt.CharacterCodes.backslash) {
         tokenValue += scanIdentifierParts();
       }
       return (token = getIdentifierToken());
     } else {
-      return (token = SyntaxKind.Unknown);
+      return (token = qt.SyntaxKind.Unknown);
     }
   }
 
@@ -2375,22 +2382,22 @@ export function createScanner(
     onError = errorCallback;
   }
 
-  function setScriptTarget(scriptTarget: ScriptTarget) {
+  function setScriptTarget(scriptTarget: qt.ScriptTarget) {
     languageVersion = scriptTarget;
   }
 
-  function setLanguageVariant(variant: LanguageVariant) {
+  function setLanguageVariant(variant: qt.LanguageVariant) {
     languageVariant = variant;
   }
 
   function setTextPos(textPos: number) {
-    Debug.assert(textPos >= 0);
+    qd.assert(textPos >= 0);
     pos = textPos;
     startPos = textPos;
     tokenPos = textPos;
-    token = SyntaxKind.Unknown;
+    token = qt.SyntaxKind.Unknown;
     tokenValue = undefined!;
-    tokenFlags = TokenFlags.None;
+    tokenFlags = qt.TokenFlags.None;
   }
 
   function setInJSDocType(inType: boolean) {
@@ -2431,7 +2438,7 @@ function charSize(ch: number) {
 
 // Derived from the 10.1.1 UTF16Encoding of the ES6 Spec.
 function utf16EncodeAsStringFallback(codePoint: number) {
-  Debug.assert(0x0 <= codePoint && codePoint <= 0x10ffff);
+  qd.assert(0x0 <= codePoint && codePoint <= 0x10ffff);
 
   if (codePoint <= 65535) {
     return String.fromCharCode(codePoint);

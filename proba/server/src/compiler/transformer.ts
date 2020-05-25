@@ -18,21 +18,21 @@ const enum TransformationState {
   Disposed,
 }
 
-const enum SyntaxKindFeatureFlags {
+const enum qt.SyntaxKindFeatureFlags {
   Substitution = 1 << 0,
   EmitNotifications = 1 << 1,
 }
 
 export const noTransformers: EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
 
-export function getTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
+export function getTransformers(compilerOptions: qt.CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
   return {
     scriptTransformers: getScriptTransformers(compilerOptions, customTransformers, emitOnlyDtsFiles),
     declarationTransformers: getDeclarationTransformers(customTransformers),
   };
 }
 
-function getScriptTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
+function getScriptTransformers(compilerOptions: qt.CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
   if (emitOnlyDtsFiles) return emptyArray;
 
   const jsx = compilerOptions.jsx;
@@ -107,10 +107,7 @@ function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bund
 /**
  * Wrap a transformer factory that may return a custom script or declaration transformer object.
  */
-function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
-  transformer: TransformerFactory<T> | CustomTransformerFactory,
-  handleDefault: (node: Transformer<T>) => Transformer<Bundle | SourceFile>
-): TransformerFactory<Bundle | SourceFile> {
+function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(transformer: TransformerFactory<T> | CustomTransformerFactory, handleDefault: (node: Transformer<T>) => Transformer<Bundle | SourceFile>): TransformerFactory<Bundle | SourceFile> {
   return (context) => {
     const customTransformer = transformer(context);
     return typeof customTransformer === 'function' ? handleDefault(customTransformer) : wrapCustomTransformer(customTransformer);
@@ -143,14 +140,7 @@ export function noEmitNotification(hint: EmitHint, node: Node, callback: (hint: 
  * @param transforms An array of `TransformerFactory` callbacks.
  * @param allowDtsFiles A value indicating whether to allow the transformation of .d.ts files.
  */
-export function transformNodes<T extends Node>(
-  resolver: EmitResolver | undefined,
-  host: EmitHost | undefined,
-  options: CompilerOptions,
-  nodes: readonly T[],
-  transformers: readonly TransformerFactory<T>[],
-  allowDtsFiles: boolean
-): TransformationResult<T> {
+export function transformNodes<T extends Node>(resolver: EmitResolver | undefined, host: EmitHost | undefined, options: qt.CompilerOptions, nodes: readonly T[], transformers: readonly TransformerFactory<T>[], allowDtsFiles: boolean): TransformationResult<T> {
   const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(SyntaxKind.Count);
   let lexicalEnvironmentVariableDeclarations: VariableDeclaration[];
   let lexicalEnvironmentFunctionDeclarations: FunctionDeclaration[];
@@ -252,18 +242,18 @@ export function transformNodes<T extends Node>(
   }
 
   /**
-   * Enables expression substitutions in the pretty printer for the provided SyntaxKind.
+   * Enables expression substitutions in the pretty printer for the provided qt.SyntaxKind.
    */
-  function enableSubstitution(kind: SyntaxKind) {
+  function enableSubstitution(kind: qt.SyntaxKind) {
     Debug.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
-    enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.Substitution;
+    enabledSyntaxKindFeatures[kind] |= qt.SyntaxKindFeatureFlags.Substitution;
   }
 
   /**
    * Determines whether expression substitutions are enabled for the provided node.
    */
   function isSubstitutionEnabled(node: Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
+    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
   }
 
   /**
@@ -279,11 +269,11 @@ export function transformNodes<T extends Node>(
   }
 
   /**
-   * Enables before/after emit notifications in the pretty printer for the provided SyntaxKind.
+   * Enables before/after emit notifications in the pretty printer for the provided qt.SyntaxKind.
    */
-  function enableEmitNotification(kind: SyntaxKind) {
+  function enableEmitNotification(kind: qt.SyntaxKind) {
     Debug.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
-    enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.EmitNotifications;
+    enabledSyntaxKindFeatures[kind] |= qt.SyntaxKindFeatureFlags.EmitNotifications;
   }
 
   /**
@@ -291,7 +281,7 @@ export function transformNodes<T extends Node>(
    * printer when it emits a node.
    */
   function isEmitNotificationEnabled(node: Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
   }
 
   /**

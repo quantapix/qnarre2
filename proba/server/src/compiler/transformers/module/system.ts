@@ -76,42 +76,14 @@ export function transformSystemModule(context: TransformationContext) {
     // Add the body of the module.
     const dependencyGroups = collectDependencyGroups(moduleInfo.externalImports);
     const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
-    const moduleBodyFunction = createFunctionExpression(
-      /*modifiers*/ undefined,
-      /*asteriskToken*/ undefined,
-      /*name*/ undefined,
-      /*typeParameters*/ undefined,
-      [
-        createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, exportFunction),
-        createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, contextObject),
-      ],
-      /*type*/ undefined,
-      moduleBodyBlock
-    );
+    const moduleBodyFunction = createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, exportFunction), createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, contextObject)], /*type*/ undefined, moduleBodyBlock);
 
     // Write the call to `System.register`
     // Clear the emit-helpers flag for later passes since we'll have already used it in the module body
     // So the helper will be emit at the correct position instead of at the top of the source-file
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
     const dependencies = createArrayLiteral(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
-    const updated = setEmitFlags(
-      updateSourceFileNode(
-        node,
-        setTextRange(
-          createNodeArray([
-            createExpressionStatement(
-              createCall(
-                createPropertyAccess(createIdentifier('System'), 'register'),
-                /*typeArguments*/ undefined,
-                moduleName ? [moduleName, dependencies, moduleBodyFunction] : [dependencies, moduleBodyFunction]
-              )
-            ),
-          ]),
-          node.statements
-        )
-      ),
-      EmitFlags.NoTrailingComments
-    );
+    const updated = setEmitFlags(updateSourceFileNode(node, setTextRange(createNodeArray([createExpressionStatement(createCall(createPropertyAccess(createIdentifier('System'), 'register'), /*typeArguments*/ undefined, moduleName ? [moduleName, dependencies, moduleBodyFunction] : [dependencies, moduleBodyFunction]))]), node.statements)), EmitFlags.NoTrailingComments);
 
     if (!(compilerOptions.outFile || compilerOptions.out)) {
       moveEmitHelpers(updated, moduleBodyBlock, (helper) => !helper.scoped);
@@ -220,12 +192,7 @@ export function transformSystemModule(context: TransformationContext) {
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElementVisitor);
 
     // var __moduleName = context_1 && context_1.id;
-    statements.push(
-      createVariableStatement(
-        /*modifiers*/ undefined,
-        createVariableDeclarationList([createVariableDeclaration('__moduleName', /*type*/ undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
-      )
-    );
+    statements.push(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration('__moduleName', /*type*/ undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])));
 
     // Visit the synthetic external helpers import declaration if present
     visitNode(moduleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement);
@@ -247,21 +214,7 @@ export function transformSystemModule(context: TransformationContext) {
 
     const exportStarFunction = addExportStarIfNeeded(statements)!; // TODO: GH#18217
     const modifiers = node.transformFlags & TransformFlags.ContainsAwait ? createModifiersFromModifierFlags(ModifierFlags.Async) : undefined;
-    const moduleObject = createObjectLiteral([
-      createPropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
-      createPropertyAssignment(
-        'execute',
-        createFunctionExpression(
-          modifiers,
-          /*asteriskToken*/ undefined,
-          /*name*/ undefined,
-          /*typeParameters*/ undefined,
-          /*parameters*/ [],
-          /*type*/ undefined,
-          createBlock(executeStatements, /*multiLine*/ true)
-        )
-      ),
-    ]);
+    const moduleObject = createObjectLiteral([createPropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)), createPropertyAssignment('execute', createFunctionExpression(modifiers, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, createBlock(executeStatements, /*multiLine*/ true)))]);
 
     moduleObject.multiLine = true;
     statements.push(createReturn(moduleObject));
@@ -289,7 +242,7 @@ export function transformSystemModule(context: TransformationContext) {
       // check if we have any non star export declarations.
       let hasExportDeclarationWithExportClause = false;
       for (const externalImport of moduleInfo.externalImports) {
-        if (externalImport.kind === SyntaxKind.ExportDeclaration && externalImport.exportClause) {
+        if (externalImport.kind === qt.SyntaxKind.ExportDeclaration && externalImport.exportClause) {
           hasExportDeclarationWithExportClause = true;
           break;
         }
@@ -316,7 +269,7 @@ export function transformSystemModule(context: TransformationContext) {
     }
 
     for (const externalImport of moduleInfo.externalImports) {
-      if (externalImport.kind !== SyntaxKind.ExportDeclaration) {
+      if (externalImport.kind !== qt.SyntaxKind.ExportDeclaration) {
         continue;
       }
 
@@ -336,12 +289,7 @@ export function transformSystemModule(context: TransformationContext) {
     }
 
     const exportedNamesStorageRef = createUniqueName('exportedNames');
-    statements.push(
-      createVariableStatement(
-        /*modifiers*/ undefined,
-        createVariableDeclarationList([createVariableDeclaration(exportedNamesStorageRef, /*type*/ undefined, createObjectLiteral(exportedNames, /*multiline*/ true))])
-      )
-    );
+    statements.push(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(exportedNamesStorageRef, /*type*/ undefined, createObjectLiteral(exportedNames, /*multiline*/ true))])));
 
     const exportStarFunction = createExportStarFunction(exportedNamesStorageRef);
     statements.push(exportStarFunction);
@@ -376,11 +324,7 @@ export function transformSystemModule(context: TransformationContext) {
       createBlock(
         [
           createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(exports, /*type*/ undefined, createObjectLiteral([]))])),
-          createForIn(
-            createVariableDeclarationList([createVariableDeclaration(n, /*type*/ undefined)]),
-            m,
-            createBlock([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
-          ),
+          createForIn(createVariableDeclarationList([createVariableDeclaration(n, /*type*/ undefined)]), m, createBlock([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])),
           createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [exports])),
         ],
         /*multiline*/ true
@@ -404,7 +348,7 @@ export function transformSystemModule(context: TransformationContext) {
       for (const entry of group.externalImports) {
         const importVariableName = getLocalNameForExternalImport(entry, currentSourceFile)!; // TODO: GH#18217
         switch (entry.kind) {
-          case SyntaxKind.ImportDeclaration:
+          case qt.SyntaxKind.ImportDeclaration:
             if (!entry.importClause) {
               // 'import "..."' case
               // module is imported only for side-effects, no emit required
@@ -412,13 +356,13 @@ export function transformSystemModule(context: TransformationContext) {
             }
           // falls through
 
-          case SyntaxKind.ImportEqualsDeclaration:
+          case qt.SyntaxKind.ImportEqualsDeclaration:
             Debug.assert(importVariableName !== undefined);
             // save import into the local
             statements.push(createExpressionStatement(createAssignment(importVariableName, parameterName)));
             break;
 
-          case SyntaxKind.ExportDeclaration:
+          case qt.SyntaxKind.ExportDeclaration:
             Debug.assert(importVariableName !== undefined);
             if (entry.exportClause) {
               if (isNamedExports(entry.exportClause)) {
@@ -451,17 +395,7 @@ export function transformSystemModule(context: TransformationContext) {
         }
       }
 
-      setters.push(
-        createFunctionExpression(
-          /*modifiers*/ undefined,
-          /*asteriskToken*/ undefined,
-          /*name*/ undefined,
-          /*typeParameters*/ undefined,
-          [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameterName)],
-          /*type*/ undefined,
-          createBlock(statements, /*multiLine*/ true)
-        )
-      );
+      setters.push(createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameterName)], /*type*/ undefined, createBlock(statements, /*multiLine*/ true)));
     }
 
     return createArrayLiteral(setters, /*multiLine*/ true);
@@ -478,16 +412,16 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function sourceElementVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.ImportDeclaration:
+      case qt.SyntaxKind.ImportDeclaration:
         return visitImportDeclaration(<ImportDeclaration>node);
 
-      case SyntaxKind.ImportEqualsDeclaration:
+      case qt.SyntaxKind.ImportEqualsDeclaration:
         return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
 
-      case SyntaxKind.ExportDeclaration:
+      case qt.SyntaxKind.ExportDeclaration:
         return visitExportDeclaration(<ExportDeclaration>node);
 
-      case SyntaxKind.ExportAssignment:
+      case qt.SyntaxKind.ExportAssignment:
         return visitExportAssignment(<ExportAssignment>node);
 
       default:
@@ -573,20 +507,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
     if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-      hoistedStatements = append(
-        hoistedStatements,
-        updateFunctionDeclaration(
-          node,
-          node.decorators,
-          visitNodes(node.modifiers, modifierVisitor, isModifier),
-          node.asteriskToken,
-          getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
-          /*typeParameters*/ undefined,
-          visitNodes(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration),
-          /*type*/ undefined,
-          visitNode(node.body, destructuringAndImportCallVisitor, isBlock)
-        )
-      );
+      hoistedStatements = append(hoistedStatements, updateFunctionDeclaration(node, node.decorators, visitNodes(node.modifiers, modifierVisitor, isModifier), node.asteriskToken, getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true), /*typeParameters*/ undefined, visitNodes(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration), /*type*/ undefined, visitNode(node.body, destructuringAndImportCallVisitor, isBlock)));
     } else {
       hoistedStatements = append(hoistedStatements, visitEachChild(node, destructuringAndImportCallVisitor, context));
     }
@@ -615,27 +536,7 @@ export function transformSystemModule(context: TransformationContext) {
     hoistVariableDeclaration(name);
 
     // Rewrite the class declaration into an assignment of a class expression.
-    statements = append(
-      statements,
-      setTextRange(
-        createExpressionStatement(
-          createAssignment(
-            name,
-            setTextRange(
-              createClassExpression(
-                /*modifiers*/ undefined,
-                node.name,
-                /*typeParameters*/ undefined,
-                visitNodes(node.heritageClauses, destructuringAndImportCallVisitor, isHeritageClause),
-                visitNodes(node.members, destructuringAndImportCallVisitor, isClassElement)
-              ),
-              node
-            )
-          )
-        ),
-        node
-      )
-    );
+    statements = append(statements, setTextRange(createExpressionStatement(createAssignment(name, setTextRange(createClassExpression(/*modifiers*/ undefined, node.name, /*typeParameters*/ undefined, visitNodes(node.heritageClauses, destructuringAndImportCallVisitor, isHeritageClause), visitNodes(node.members, destructuringAndImportCallVisitor, isClassElement)), node))), node));
 
     if (hasAssociatedEndOfDeclarationMarker(node)) {
       // Defer exports until we encounter an EndOfDeclarationMarker node
@@ -710,7 +611,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function shouldHoistVariableDeclarationList(node: VariableDeclarationList) {
     // hoist only non-block scoped declarations or block scoped declarations parented by source file
-    return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
+    return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === qt.SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
   }
 
   /**
@@ -721,11 +622,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function transformInitializedVariable(node: VariableDeclaration, isExportedDeclaration: boolean): Expression {
     const createAssignment = isExportedDeclaration ? createExportedVariableAssignment : createNonExportedVariableAssignment;
-    return isBindingPattern(node.name)
-      ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAssignment)
-      : node.initializer
-      ? createAssignment(node.name, visitNode(node.initializer, destructuringAndImportCallVisitor, isExpression))
-      : node.name;
+    return isBindingPattern(node.name) ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAssignment) : node.initializer ? createAssignment(node.name, visitNode(node.initializer, destructuringAndImportCallVisitor, isExpression)) : node.name;
   }
 
   /**
@@ -760,9 +657,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function createVariableAssignment(name: Identifier, value: Expression, location: TextRange | undefined, isExportedDeclaration: boolean) {
     hoistVariableDeclaration(getSynthesizedClone(name));
-    return isExportedDeclaration
-      ? createExportExpression(name, preventSubstitution(setTextRange(createAssignment(name, value), location)))
-      : preventSubstitution(setTextRange(createAssignment(name, value), location));
+    return isExportedDeclaration ? createExportExpression(name, preventSubstitution(setTextRange(createAssignment(name, value), location))) : preventSubstitution(setTextRange(createAssignment(name, value), location));
   }
 
   /**
@@ -779,7 +674,7 @@ export function transformSystemModule(context: TransformationContext) {
     //
     // To balance the declaration, we defer the exports of the elided variable
     // statement until we visit this declaration's `EndOfDeclarationMarker`.
-    if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === SyntaxKind.VariableStatement) {
+    if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === qt.SyntaxKind.VariableStatement) {
       const id = getOriginalNodeId(node);
       const isExportedDeclaration = hasSyntacticModifier(node.original!, ModifierFlags.Export);
       deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], node.original, isExportedDeclaration);
@@ -848,11 +743,11 @@ export function transformSystemModule(context: TransformationContext) {
     const namedBindings = importClause.namedBindings;
     if (namedBindings) {
       switch (namedBindings.kind) {
-        case SyntaxKind.NamespaceImport:
+        case qt.SyntaxKind.NamespaceImport:
           statements = appendExportsOfDeclaration(statements, namedBindings);
           break;
 
-        case SyntaxKind.NamedImports:
+        case qt.SyntaxKind.NamedImports:
           for (const importBinding of namedBindings.elements) {
             statements = appendExportsOfDeclaration(statements, importBinding);
           }
@@ -1050,61 +945,61 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function nestedElementVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.VariableStatement:
+      case qt.SyntaxKind.VariableStatement:
         return visitVariableStatement(<VariableStatement>node);
 
-      case SyntaxKind.FunctionDeclaration:
+      case qt.SyntaxKind.FunctionDeclaration:
         return visitFunctionDeclaration(<FunctionDeclaration>node);
 
-      case SyntaxKind.ClassDeclaration:
+      case qt.SyntaxKind.ClassDeclaration:
         return visitClassDeclaration(<ClassDeclaration>node);
 
-      case SyntaxKind.ForStatement:
+      case qt.SyntaxKind.ForStatement:
         return visitForStatement(<ForStatement>node);
 
-      case SyntaxKind.ForInStatement:
+      case qt.SyntaxKind.ForInStatement:
         return visitForInStatement(<ForInStatement>node);
 
-      case SyntaxKind.ForOfStatement:
+      case qt.SyntaxKind.ForOfStatement:
         return visitForOfStatement(<ForOfStatement>node);
 
-      case SyntaxKind.DoStatement:
+      case qt.SyntaxKind.DoStatement:
         return visitDoStatement(<DoStatement>node);
 
-      case SyntaxKind.WhileStatement:
+      case qt.SyntaxKind.WhileStatement:
         return visitWhileStatement(<WhileStatement>node);
 
-      case SyntaxKind.LabeledStatement:
+      case qt.SyntaxKind.LabeledStatement:
         return visitLabeledStatement(<LabeledStatement>node);
 
-      case SyntaxKind.WithStatement:
+      case qt.SyntaxKind.WithStatement:
         return visitWithStatement(<WithStatement>node);
 
-      case SyntaxKind.SwitchStatement:
+      case qt.SyntaxKind.SwitchStatement:
         return visitSwitchStatement(<SwitchStatement>node);
 
-      case SyntaxKind.CaseBlock:
+      case qt.SyntaxKind.CaseBlock:
         return visitCaseBlock(<CaseBlock>node);
 
-      case SyntaxKind.CaseClause:
+      case qt.SyntaxKind.CaseClause:
         return visitCaseClause(<CaseClause>node);
 
-      case SyntaxKind.DefaultClause:
+      case qt.SyntaxKind.DefaultClause:
         return visitDefaultClause(<DefaultClause>node);
 
-      case SyntaxKind.TryStatement:
+      case qt.SyntaxKind.TryStatement:
         return visitTryStatement(<TryStatement>node);
 
-      case SyntaxKind.CatchClause:
+      case qt.SyntaxKind.CatchClause:
         return visitCatchClause(<CatchClause>node);
 
-      case SyntaxKind.Block:
+      case qt.SyntaxKind.Block:
         return visitBlock(<Block>node);
 
-      case SyntaxKind.MergeDeclarationMarker:
+      case qt.SyntaxKind.MergeDeclarationMarker:
         return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
 
-      case SyntaxKind.EndOfDeclarationMarker:
+      case qt.SyntaxKind.EndOfDeclarationMarker:
         return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
 
       default:
@@ -1121,13 +1016,7 @@ export function transformSystemModule(context: TransformationContext) {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
 
-    node = updateFor(
-      node,
-      node.initializer && visitForInitializer(node.initializer),
-      visitNode(node.condition, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.incrementor, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.statement, nestedElementVisitor, isStatement)
-    );
+    node = updateFor(node, node.initializer && visitForInitializer(node.initializer), visitNode(node.condition, destructuringAndImportCallVisitor, isExpression), visitNode(node.incrementor, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement));
 
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1142,12 +1031,7 @@ export function transformSystemModule(context: TransformationContext) {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
 
-    node = updateForIn(
-      node,
-      visitForInitializer(node.initializer),
-      visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock)
-    );
+    node = updateForIn(node, visitForInitializer(node.initializer), visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
 
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1162,13 +1046,7 @@ export function transformSystemModule(context: TransformationContext) {
     const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
     enclosingBlockScopedContainer = node;
 
-    node = updateForOf(
-      node,
-      node.awaitModifier,
-      visitForInitializer(node.initializer),
-      visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-      visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock)
-    );
+    node = updateForOf(node, node.awaitModifier, visitForInitializer(node.initializer), visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
 
     enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
     return node;
@@ -1354,11 +1232,7 @@ export function transformSystemModule(context: TransformationContext) {
     //         }
     //     };
     // });
-    return createCall(
-      createPropertyAccess(contextObject, createIdentifier('import')),
-      /*typeArguments*/ undefined,
-      some(node.arguments) ? [visitNode(node.arguments[0], destructuringAndImportCallVisitor)] : []
-    );
+    return createCall(createPropertyAccess(contextObject, createIdentifier('import')), /*typeArguments*/ undefined, some(node.arguments) ? [visitNode(node.arguments[0], destructuringAndImportCallVisitor)] : []);
   }
 
   /**
@@ -1394,7 +1268,7 @@ export function transformSystemModule(context: TransformationContext) {
       return hasExportedReferenceInDestructuringTarget(node.initializer);
     } else if (isIdentifier(node)) {
       const container = resolver.getReferencedExportContainer(node);
-      return container !== undefined && container.kind === SyntaxKind.SourceFile;
+      return container !== undefined && container.kind === qt.SyntaxKind.SourceFile;
     } else {
       return false;
     }
@@ -1411,8 +1285,8 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function modifierVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.ExportKeyword:
-      case SyntaxKind.DefaultKeyword:
+      case qt.SyntaxKind.ExportKeyword:
+      case qt.SyntaxKind.DefaultKeyword:
         return undefined;
     }
     return node;
@@ -1430,7 +1304,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param emitCallback A callback used to emit the node in the printer.
    */
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
-    if (node.kind === SyntaxKind.SourceFile) {
+    if (node.kind === qt.SyntaxKind.SourceFile) {
       const id = getOriginalNodeId(node);
       currentSourceFile = <SourceFile>node;
       moduleInfo = moduleInfoMap[id];
@@ -1486,7 +1360,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function substituteUnspecified(node: Node) {
     switch (node.kind) {
-      case SyntaxKind.ShorthandPropertyAssignment:
+      case qt.SyntaxKind.ShorthandPropertyAssignment:
         return substituteShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
     }
     return node;
@@ -1503,18 +1377,9 @@ export function transformSystemModule(context: TransformationContext) {
       const importDeclaration = resolver.getReferencedImportDeclaration(name);
       if (importDeclaration) {
         if (isImportClause(importDeclaration)) {
-          return setTextRange(
-            createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))),
-            /*location*/ node
-          );
+          return setTextRange(createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))), /*location*/ node);
         } else if (isImportSpecifier(importDeclaration)) {
-          return setTextRange(
-            createPropertyAssignment(
-              getSynthesizedClone(name),
-              createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name))
-            ),
-            /*location*/ node
-          );
+          return setTextRange(createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name))), /*location*/ node);
         }
       }
     }
@@ -1528,14 +1393,14 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function substituteExpression(node: Expression) {
     switch (node.kind) {
-      case SyntaxKind.Identifier:
+      case qt.SyntaxKind.Identifier:
         return substituteExpressionIdentifier(node);
-      case SyntaxKind.BinaryExpression:
+      case qt.SyntaxKind.BinaryExpression:
         return substituteBinaryExpression(node);
-      case SyntaxKind.PrefixUnaryExpression:
-      case SyntaxKind.PostfixUnaryExpression:
+      case qt.SyntaxKind.PrefixUnaryExpression:
+      case qt.SyntaxKind.PostfixUnaryExpression:
         return substituteUnaryExpression(<PrefixUnaryExpression | PostfixUnaryExpression>node);
-      case SyntaxKind.MetaProperty:
+      case qt.SyntaxKind.MetaProperty:
         return substituteMetaProperty(node);
     }
 
@@ -1569,10 +1434,7 @@ export function transformSystemModule(context: TransformationContext) {
         if (isImportClause(importDeclaration)) {
           return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
         } else if (isImportSpecifier(importDeclaration)) {
-          return setTextRange(
-            createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
-            /*location*/ node
-          );
+          return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)), /*location*/ node);
         }
       }
     }
@@ -1625,23 +1487,17 @@ export function transformSystemModule(context: TransformationContext) {
     // - We do not substitute identifiers that were originally the name of an enum or
     //   namespace due to how they are transformed in TypeScript.
     // - We only substitute identifiers that are exported at the top level.
-    if (
-      (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken) &&
-      isIdentifier(node.operand) &&
-      !isGeneratedIdentifier(node.operand) &&
-      !isLocalName(node.operand) &&
-      !isDeclarationNameOfEnumOrNamespace(node.operand)
-    ) {
+    if ((node.operator === qt.SyntaxKind.PlusPlusToken || node.operator === qt.SyntaxKind.MinusMinusToken) && isIdentifier(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand) && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
       const exportedNames = getExports(node.operand);
       if (exportedNames) {
-        let expression: Expression = node.kind === SyntaxKind.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
+        let expression: Expression = node.kind === qt.SyntaxKind.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
 
         for (const exportName of exportedNames) {
           expression = createExportExpression(exportName, preventSubstitution(expression));
         }
 
-        if (node.kind === SyntaxKind.PostfixUnaryExpression) {
-          expression = node.operator === SyntaxKind.PlusPlusToken ? createSubtract(preventSubstitution(expression), createLiteral(1)) : createAdd(preventSubstitution(expression), createLiteral(1));
+        if (node.kind === qt.SyntaxKind.PostfixUnaryExpression) {
+          expression = node.operator === qt.SyntaxKind.PlusPlusToken ? createSubtract(preventSubstitution(expression), createLiteral(1)) : createAdd(preventSubstitution(expression), createLiteral(1));
         }
 
         return expression;
@@ -1670,7 +1526,7 @@ export function transformSystemModule(context: TransformationContext) {
 
       if (valueDeclaration) {
         const exportContainer = resolver.getReferencedExportContainer(name, /*prefixLocals*/ false);
-        if (exportContainer && exportContainer.kind === SyntaxKind.SourceFile) {
+        if (exportContainer && exportContainer.kind === qt.SyntaxKind.SourceFile) {
           exportedNames = append(exportedNames, getDeclarationName(valueDeclaration));
         }
 

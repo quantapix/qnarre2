@@ -3,7 +3,7 @@ export interface ReadBuildProgramHost {
   getCurrentDirectory(): string;
   readFile(fileName: string): string | undefined;
 }
-export function readBuilderProgram(compilerOptions: CompilerOptions, host: ReadBuildProgramHost) {
+export function readBuilderProgram(compilerOptions: qt.CompilerOptions, host: ReadBuildProgramHost) {
   if (compilerOptions.out || compilerOptions.outFile) return undefined;
   const buildInfoPath = getTsBuildInfoEmitOutputFilePath(compilerOptions);
   if (!buildInfoPath) return undefined;
@@ -15,7 +15,7 @@ export function readBuilderProgram(compilerOptions: CompilerOptions, host: ReadB
   return createBuildProgramUsingProgramBuildInfo(buildInfo.program, buildInfoPath, host);
 }
 
-export function createIncrementalCompilerHost(options: CompilerOptions, system = sys): CompilerHost {
+export function createIncrementalCompilerHost(options: qt.CompilerOptions, system = sys): CompilerHost {
   const host = createCompilerHostWorker(options, /*setParentNodes*/ undefined, system);
   host.createHash = maybeBind(system, system.createHash);
   setGetSourceFileAsHashVersioned(host, system);
@@ -25,47 +25,33 @@ export function createIncrementalCompilerHost(options: CompilerOptions, system =
 
 export interface IncrementalProgramOptions<T extends BuilderProgram> {
   rootNames: readonly string[];
-  options: CompilerOptions;
+  options: qt.CompilerOptions;
   configFileParsingDiagnostics?: readonly Diagnostic[];
   projectReferences?: readonly ProjectReference[];
   host?: CompilerHost;
   createProgram?: CreateProgram<T>;
 }
 
-export function createIncrementalProgram<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
-  rootNames,
-  options,
-  configFileParsingDiagnostics,
-  projectReferences,
-  host,
-  createProgram,
-}: IncrementalProgramOptions<T>): T {
+export function createIncrementalProgram<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({ rootNames, options, configFileParsingDiagnostics, projectReferences, host, createProgram }: IncrementalProgramOptions<T>): T {
   host = host || createIncrementalCompilerHost(options);
   createProgram = createProgram || ((createEmitAndSemanticDiagnosticsBuilderProgram as any) as CreateProgram<T>);
   const oldProgram = readBuilderProgram(options, host) as T;
   return createProgram(rootNames, options, host, oldProgram, configFileParsingDiagnostics, projectReferences);
 }
 
-export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, options: CompilerOptions, errorCount?: number) => void;
+export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, options: qt.CompilerOptions, errorCount?: number) => void;
 /** Create the program with rootNames and options, if they are undefined, oldProgram and new configFile diagnostics create new program */
-export type CreateProgram<T extends BuilderProgram> = (
-  rootNames: readonly string[] | undefined,
-  options: CompilerOptions | undefined,
-  host?: CompilerHost,
-  oldProgram?: T,
-  configFileParsingDiagnostics?: readonly Diagnostic[],
-  projectReferences?: readonly ProjectReference[] | undefined
-) => T;
+export type CreateProgram<T extends BuilderProgram> = (rootNames: readonly string[] | undefined, options: qt.CompilerOptions | undefined, host?: CompilerHost, oldProgram?: T, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly ProjectReference[] | undefined) => T;
 
 /** Host that has watch functionality used in --watch mode */
 export interface WatchHost {
   /** If provided, called with Diagnostic message that informs about change in watch status */
-  onWatchStatusChange?(diagnostic: Diagnostic, newLine: string, options: CompilerOptions, errorCount?: number): void;
+  onWatchStatusChange?(diagnostic: Diagnostic, newLine: string, options: qt.CompilerOptions, errorCount?: number): void;
 
   /** Used to watch changes in source files, missing files needed to update the program or config file */
-  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: CompilerOptions): FileWatcher;
+  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: qt.CompilerOptions): FileWatcher;
   /** Used to watch resolved module's failed lookup locations, config file specs, type roots where auto type reference directives are added */
-  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: CompilerOptions): FileWatcher;
+  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: qt.CompilerOptions): FileWatcher;
   /** If provided, will be used to set delayed compilation, so that multiple changes in short span are compiled together */
   setTimeout?(callback: (...args: any[]) => void, ms: number, ...args: any[]): any;
   /** If provided, will be used to reset existing delayed compilation */
@@ -81,7 +67,7 @@ export interface ProgramHost<T extends BuilderProgram> {
   useCaseSensitiveFileNames(): boolean;
   getNewLine(): string;
   getCurrentDirectory(): string;
-  getDefaultLibFileName(options: CompilerOptions): string;
+  getDefaultLibFileName(options: qt.CompilerOptions): string;
   getDefaultLibLocation?(): string;
   createHash?(data: string): string;
 
@@ -111,20 +97,9 @@ export interface ProgramHost<T extends BuilderProgram> {
   getEnvironmentVariable?(name: string): string | undefined;
 
   /** If provided, used to resolve the module names, otherwise typescript's default module resolution */
-  resolveModuleNames?(
-    moduleNames: string[],
-    containingFile: string,
-    reusedNames: string[] | undefined,
-    redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
-  ): (ResolvedModule | undefined)[];
+  resolveModuleNames?(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference: ResolvedProjectReference | undefined, options: qt.CompilerOptions): (ResolvedModule | undefined)[];
   /** If provided, used to resolve type reference directives, otherwise typescript's default resolution */
-  resolveTypeReferenceDirectives?(
-    typeReferenceDirectiveNames: string[],
-    containingFile: string,
-    redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
-  ): (ResolvedTypeReferenceDirective | undefined)[];
+  resolveTypeReferenceDirectives?(typeReferenceDirectiveNames: string[], containingFile: string, redirectedReference: ResolvedProjectReference | undefined, options: qt.CompilerOptions): (ResolvedTypeReferenceDirective | undefined)[];
 }
 /** Internal interface used to wire emit through same host */
 
@@ -150,7 +125,7 @@ export interface WatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderPro
   rootFiles: string[];
 
   /** Compiler options */
-  options: CompilerOptions;
+  options: qt.CompilerOptions;
 
   watchOptions?: WatchOptions;
 
@@ -166,7 +141,7 @@ export interface WatchCompilerHostOfConfigFile<T extends BuilderProgram> extends
   configFileName: string;
 
   /** Options to extend */
-  optionsToExtend?: CompilerOptions;
+  optionsToExtend?: qt.CompilerOptions;
 
   watchOptionsToExtend?: WatchOptions;
 
@@ -211,29 +186,11 @@ export interface WatchOfFilesAndCompilerOptions<T> extends Watch<T> {
 /**
  * Create the watch compiler host for either configFile or fileNames and its options
  */
-export function createWatchCompilerHost<T extends BuilderProgram>(
-  configFileName: string,
-  optionsToExtend: CompilerOptions | undefined,
-  system: System,
-  createProgram?: CreateProgram<T>,
-  reportDiagnostic?: DiagnosticReporter,
-  reportWatchStatus?: WatchStatusReporter,
-  watchOptionsToExtend?: WatchOptions,
-  extraFileExtensions?: readonly FileExtensionInfo[]
-): WatchCompilerHostOfConfigFile<T>;
-export function createWatchCompilerHost<T extends BuilderProgram>(
-  rootFiles: string[],
-  options: CompilerOptions,
-  system: System,
-  createProgram?: CreateProgram<T>,
-  reportDiagnostic?: DiagnosticReporter,
-  reportWatchStatus?: WatchStatusReporter,
-  projectReferences?: readonly ProjectReference[],
-  watchOptions?: WatchOptions
-): WatchCompilerHostOfFilesAndCompilerOptions<T>;
+export function createWatchCompilerHost<T extends BuilderProgram>(configFileName: string, optionsToExtend: qt.CompilerOptions | undefined, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, watchOptionsToExtend?: WatchOptions, extraFileExtensions?: readonly FileExtensionInfo[]): WatchCompilerHostOfConfigFile<T>;
+export function createWatchCompilerHost<T extends BuilderProgram>(rootFiles: string[], options: qt.CompilerOptions, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, projectReferences?: readonly ProjectReference[], watchOptions?: WatchOptions): WatchCompilerHostOfFilesAndCompilerOptions<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFilesOrConfigFileName: string | string[],
-  options: CompilerOptions | undefined,
+  options: qt.CompilerOptions | undefined,
   system: System,
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
@@ -274,9 +231,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
  * Creates the watch from the host for config file
  */
 export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfConfigFile<T>): WatchOfConfigFile<T>;
-export function createWatchProgram<T extends BuilderProgram>(
-  host: WatchCompilerHostOfFilesAndCompilerOptions<T> & WatchCompilerHostOfConfigFile<T>
-): WatchOfFilesAndCompilerOptions<T> | WatchOfConfigFile<T> {
+export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfFilesAndCompilerOptions<T> & WatchCompilerHostOfConfigFile<T>): WatchOfFilesAndCompilerOptions<T> | WatchOfConfigFile<T> {
   interface FilePresentOnHost {
     version: string;
     sourceFile: SourceFile;
@@ -363,18 +318,10 @@ export function createWatchProgram<T extends BuilderProgram>(
   compilerHost.writeLog = writeLog;
 
   // Cache for the module resolution
-  const resolutionCache = createResolutionCache(
-    compilerHost,
-    configFileName ? getDirectoryPath(getNormalizedAbsolutePath(configFileName, currentDirectory)) : currentDirectory,
-    /*logChangesWhenResolvingModule*/ false
-  );
+  const resolutionCache = createResolutionCache(compilerHost, configFileName ? getDirectoryPath(getNormalizedAbsolutePath(configFileName, currentDirectory)) : currentDirectory, /*logChangesWhenResolvingModule*/ false);
   // Resolve module using host module resolution strategy if provided otherwise use resolution cache to resolve module names
-  compilerHost.resolveModuleNames = host.resolveModuleNames
-    ? (...args) => host.resolveModuleNames!(...args)
-    : (moduleNames, containingFile, reusedNames, redirectedReference) => resolutionCache.resolveModuleNames(moduleNames, containingFile, reusedNames, redirectedReference);
-  compilerHost.resolveTypeReferenceDirectives = host.resolveTypeReferenceDirectives
-    ? (...args) => host.resolveTypeReferenceDirectives!(...args)
-    : (typeDirectiveNames, containingFile, redirectedReference) => resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
+  compilerHost.resolveModuleNames = host.resolveModuleNames ? (...args) => host.resolveModuleNames!(...args) : (moduleNames, containingFile, reusedNames, redirectedReference) => resolutionCache.resolveModuleNames(moduleNames, containingFile, reusedNames, redirectedReference);
+  compilerHost.resolveTypeReferenceDirectives = host.resolveTypeReferenceDirectives ? (...args) => host.resolveTypeReferenceDirectives!(...args) : (typeDirectiveNames, containingFile, redirectedReference) => resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
   const userProvidedResolution = !!host.resolveModuleNames || !!host.resolveTypeReferenceDirectives;
 
   builderProgram = readBuilderProgram(compilerOptions, compilerHost) as T;
@@ -383,9 +330,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   // Update the wild card directory watch
   watchConfigFileWildCardDirectories();
 
-  return configFileName
-    ? { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, close }
-    : { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, updateRootFileNames, close };
+  return configFileName ? { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, close } : { getCurrentProgram: getCurrentBuilderProgram, getProgram: updateProgram, updateRootFileNames, close };
 
   function close() {
     resolutionCache.clear();
@@ -571,7 +516,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     return !hostSourceFile || !hostSourceFile.version ? undefined : hostSourceFile.version;
   }
 
-  function onReleaseOldSourceFile(oldSourceFile: SourceFile, _oldOptions: CompilerOptions, hasSourceFileByPath: boolean) {
+  function onReleaseOldSourceFile(oldSourceFile: SourceFile, _oldOptions: qt.CompilerOptions, hasSourceFileByPath: boolean) {
     const hostSourceFileInfo = sourceFilesCache.get(oldSourceFile.resolvedPath);
     // If this is the source file thats in the cache and new program doesnt need it,
     // remove the cached entry.
@@ -673,9 +618,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   }
 
   function parseConfigFile() {
-    setConfigFileParsingResult(
-      getParsedCommandLineOfConfigFile(configFileName, optionsToExtendForConfigFile, parseConfigFileHost, /*extendedConfigCache*/ undefined, watchOptionsToExtend, extraFileExtensions)!
-    ); // TODO: GH#18217
+    setConfigFileParsingResult(getParsedCommandLineOfConfigFile(configFileName, optionsToExtendForConfigFile, parseConfigFileHost, /*extendedConfigCache*/ undefined, watchOptionsToExtend, extraFileExtensions)!); // TODO: GH#18217
   }
 
   function setConfigFileParsingResult(configFileParseResult: ParsedCommandLine) {

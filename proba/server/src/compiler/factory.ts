@@ -92,15 +92,7 @@ function createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, re
   return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
 }
 
-export function createExpressionForJsxElement(
-  jsxFactoryEntity: EntityName | undefined,
-  reactNamespace: string,
-  tagName: Expression,
-  props: Expression,
-  children: readonly Expression[],
-  parentElement: JsxOpeningLikeElement,
-  location: TextRange
-): LeftHandSideExpression {
+export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, tagName: Expression, props: Expression, children: readonly Expression[], parentElement: JsxOpeningLikeElement, location: TextRange): LeftHandSideExpression {
   const argumentsList = [tagName];
   if (props) {
     argumentsList.push(props);
@@ -124,13 +116,7 @@ export function createExpressionForJsxElement(
   return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
 }
 
-export function createExpressionForJsxFragment(
-  jsxFactoryEntity: EntityName | undefined,
-  reactNamespace: string,
-  children: readonly Expression[],
-  parentElement: JsxOpeningFragment,
-  location: TextRange
-): LeftHandSideExpression {
+export function createExpressionForJsxFragment(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, children: readonly Expression[], parentElement: JsxOpeningFragment, location: TextRange): LeftHandSideExpression {
   const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
 
   const argumentsList = [tagName];
@@ -271,11 +257,7 @@ export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement
   if (!outermostLabeledStatement) {
     return node;
   }
-  const updated = updateLabel(
-    outermostLabeledStatement,
-    outermostLabeledStatement.label,
-    outermostLabeledStatement.statement.kind === SyntaxKind.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node
-  );
+  const updated = updateLabel(outermostLabeledStatement, outermostLabeledStatement.label, outermostLabeledStatement.statement.kind === qt.SyntaxKind.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node);
   if (afterRestoreLabelCallback) {
     afterRestoreLabelCallback(outermostLabeledStatement);
   }
@@ -290,20 +272,20 @@ export interface CallBinding {
 function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
   const target = skipParentheses(node);
   switch (target.kind) {
-    case SyntaxKind.Identifier:
+    case qt.SyntaxKind.Identifier:
       return cacheIdentifiers;
-    case SyntaxKind.ThisKeyword:
-    case SyntaxKind.NumericLiteral:
-    case SyntaxKind.BigIntLiteral:
-    case SyntaxKind.StringLiteral:
+    case qt.SyntaxKind.ThisKeyword:
+    case qt.SyntaxKind.NumericLiteral:
+    case qt.SyntaxKind.BigIntLiteral:
+    case qt.SyntaxKind.StringLiteral:
       return false;
-    case SyntaxKind.ArrayLiteralExpression:
+    case qt.SyntaxKind.ArrayLiteralExpression:
       const elements = target.elements;
       if (elements.length === 0) {
         return false;
       }
       return true;
-    case SyntaxKind.ObjectLiteralExpression:
+    case qt.SyntaxKind.ObjectLiteralExpression:
       return target.properties.length > 0;
     default:
       return true;
@@ -317,7 +299,7 @@ export function createCallBinding(expression: Expression, recordTempVariable: (t
   if (isSuperProperty(callee)) {
     thisArg = createThis();
     target = callee;
-  } else if (callee.kind === SyntaxKind.SuperKeyword) {
+  } else if (callee.kind === qt.SyntaxKind.SuperKeyword) {
     thisArg = createThis();
     target = languageVersion < ScriptTarget.ES2015 ? setTextRange(createIdentifier('_super'), callee) : callee;
   } else if (getEmitFlags(callee) & EmitFlags.HelperName) {
@@ -325,7 +307,7 @@ export function createCallBinding(expression: Expression, recordTempVariable: (t
     target = parenthesizeForAccess(callee);
   } else {
     switch (callee.kind) {
-      case SyntaxKind.PropertyAccessExpression: {
+      case qt.SyntaxKind.PropertyAccessExpression: {
         if (shouldBeCapturedInTempVariable(callee.expression, cacheIdentifiers)) {
           // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
           thisArg = createTempVariable(recordTempVariable);
@@ -338,7 +320,7 @@ export function createCallBinding(expression: Expression, recordTempVariable: (t
         break;
       }
 
-      case SyntaxKind.ElementAccessExpression: {
+      case qt.SyntaxKind.ElementAccessExpression: {
         if (shouldBeCapturedInTempVariable(callee.expression, cacheIdentifiers)) {
           // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
           thisArg = createTempVariable(recordTempVariable);
@@ -395,24 +377,19 @@ export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralE
     Debug.failBadSyntaxKind(property.name, 'Private identifiers are not allowed in object literals.');
   }
   switch (property.kind) {
-    case SyntaxKind.GetAccessor:
-    case SyntaxKind.SetAccessor:
+    case qt.SyntaxKind.GetAccessor:
+    case qt.SyntaxKind.SetAccessor:
       return createExpressionForAccessorDeclaration(node.properties, property as typeof property & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver, !!node.multiLine);
-    case SyntaxKind.PropertyAssignment:
+    case qt.SyntaxKind.PropertyAssignment:
       return createExpressionForPropertyAssignment(property, receiver);
-    case SyntaxKind.ShorthandPropertyAssignment:
+    case qt.SyntaxKind.ShorthandPropertyAssignment:
       return createExpressionForShorthandPropertyAssignment(property, receiver);
-    case SyntaxKind.MethodDeclaration:
+    case qt.SyntaxKind.MethodDeclaration:
       return createExpressionForMethodDeclaration(property, receiver);
   }
 }
 
-function createExpressionForAccessorDeclaration(
-  properties: NodeArray<Declaration>,
-  property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> },
-  receiver: Expression,
-  multiLine: boolean
-) {
+function createExpressionForAccessorDeclaration(properties: NodeArray<Declaration>, property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver: Expression, multiLine: boolean) {
   const { firstAccessor, getAccessor, setAccessor } = getAllAccessorDeclarations(properties, property);
   if (property === firstAccessor) {
     const properties: ObjectLiteralElementLike[] = [];
@@ -451,14 +428,7 @@ function createExpressionForAccessorDeclaration(
     properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()));
     properties.push(createPropertyAssignment('configurable', createTrue()));
 
-    const expression = setTextRange(
-      createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
-        receiver,
-        createExpressionForPropertyName(property.name),
-        createObjectLiteral(properties, multiLine),
-      ]),
-      /*location*/ firstAccessor
-    );
+    const expression = setTextRange(createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [receiver, createExpressionForPropertyName(property.name), createObjectLiteral(properties, multiLine)]), /*location*/ firstAccessor);
 
     return aggregateTransformFlags(expression);
   }
@@ -467,18 +437,11 @@ function createExpressionForAccessorDeclaration(
 }
 
 function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
-  return aggregateTransformFlags(
-    setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), property.initializer), property), property)
-  );
+  return aggregateTransformFlags(setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), property.initializer), property), property));
 }
 
 function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
-  return aggregateTransformFlags(
-    setOriginalNode(
-      setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), getSynthesizedClone(property.name)), /*location*/ property),
-      /*original*/ property
-    )
-  );
+  return aggregateTransformFlags(setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), getSynthesizedClone(property.name)), /*location*/ property), /*original*/ property));
 }
 
 function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
@@ -707,20 +670,8 @@ export function addStandardPrologue(target: Statement[], source: readonly Statem
  * list of a source file, namespace, or function-like body.
  */
 export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;
-export function addCustomPrologue(
-  target: Statement[],
-  source: readonly Statement[],
-  statementOffset: number | undefined,
-  visitor?: (node: Node) => VisitResult<Node>,
-  filter?: (node: Node) => boolean
-): number | undefined;
-export function addCustomPrologue(
-  target: Statement[],
-  source: readonly Statement[],
-  statementOffset: number | undefined,
-  visitor?: (node: Node) => VisitResult<Node>,
-  filter: (node: Node) => boolean = returnTrue
-): number | undefined {
+export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number | undefined;
+export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: Node) => VisitResult<Node>, filter: (node: Node) => boolean = returnTrue): number | undefined {
   const numStatements = source.length;
   while (statementOffset !== undefined && statementOffset < numStatements) {
     const statement = source[statementOffset];
@@ -779,11 +730,11 @@ export function ensureUseStrict(statements: NodeArray<Statement>): NodeArray<Sta
  * @param isLeftSideOfBinary A value indicating whether the operand is the left side of the
  *                           BinaryExpression.
  */
-export function parenthesizeBinaryOperand(binaryOperator: SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
+export function parenthesizeBinaryOperand(binaryOperator: qt.SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
   const skipped = skipPartiallyEmittedExpressions(operand);
 
   // If the resulting expression is already parenthesized, we do not need to do any further processing.
-  if (skipped.kind === SyntaxKind.ParenthesizedExpression) {
+  if (skipped.kind === qt.SyntaxKind.ParenthesizedExpression) {
     return operand;
   }
 
@@ -798,7 +749,7 @@ export function parenthesizeBinaryOperand(binaryOperator: SyntaxKind, operand: E
  * @param isLeftSideOfBinary A value indicating whether the operand is the left side of the
  *                           BinaryExpression.
  */
-function binaryOperandNeedsParentheses(binaryOperator: SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
+function binaryOperandNeedsParentheses(binaryOperator: qt.SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
   // If the operand has lower precedence, then it needs to be parenthesized to preserve the
   // intent of the expression. For example, if the operand is `a + b` and the operator is
   // `*`, then we need to parenthesize the operand to preserve the intended order of
@@ -819,7 +770,7 @@ function binaryOperandNeedsParentheses(binaryOperator: SyntaxKind, operand: Expr
   const binaryOperatorPrecedence = getOperatorPrecedence(SyntaxKind.BinaryExpression, binaryOperator);
   const binaryOperatorAssociativity = getOperatorAssociativity(SyntaxKind.BinaryExpression, binaryOperator);
   const emittedOperand = skipPartiallyEmittedExpressions(operand);
-  if (!isLeftSideOfBinary && operand.kind === SyntaxKind.ArrowFunction && binaryOperatorPrecedence > 3) {
+  if (!isLeftSideOfBinary && operand.kind === qt.SyntaxKind.ArrowFunction && binaryOperatorPrecedence > 3) {
     // We need to parenthesize arrow functions on the right side to avoid it being
     // parsed as parenthesized expression: `a && (() => {})`
     return true;
@@ -829,7 +780,7 @@ function binaryOperandNeedsParentheses(binaryOperator: SyntaxKind, operand: Expr
     case Comparison.LessThan:
       // If the operand is the right side of a right-associative binary operation
       // and is a yield expression, then we do not need parentheses.
-      if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === SyntaxKind.YieldExpression) {
+      if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === qt.SyntaxKind.YieldExpression) {
         return false;
       }
 
@@ -868,8 +819,8 @@ function binaryOperandNeedsParentheses(binaryOperator: SyntaxKind, operand: Expr
           // the same kind (recursively).
           //  "a"+(1+2)       => "a"+(1+2)
           //  "a"+("b"+"c")   => "a"+"b"+"c"
-          if (binaryOperator === SyntaxKind.PlusToken) {
-            const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : SyntaxKind.Unknown;
+          if (binaryOperator === qt.SyntaxKind.PlusToken) {
+            const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : qt.SyntaxKind.Unknown;
             if (isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
               return false;
             }
@@ -896,7 +847,7 @@ function binaryOperandNeedsParentheses(binaryOperator: SyntaxKind, operand: Expr
  *
  * @param binaryOperator The binary operator.
  */
-function operatorHasAssociativeProperty(binaryOperator: SyntaxKind) {
+function operatorHasAssociativeProperty(binaryOperator: qt.SyntaxKind) {
   // The following operators are associative in JavaScript:
   //  (a*b)*c     -> a*(b*c)  -> a*b*c
   //  (a|b)|c     -> a|(b|c)  -> a|b|c
@@ -905,11 +856,11 @@ function operatorHasAssociativeProperty(binaryOperator: SyntaxKind) {
   //
   // While addition is associative in mathematics, JavaScript's `+` is not
   // guaranteed to be associative as it is overloaded with string concatenation.
-  return binaryOperator === SyntaxKind.AsteriskToken || binaryOperator === SyntaxKind.BarToken || binaryOperator === SyntaxKind.AmpersandToken || binaryOperator === SyntaxKind.CaretToken;
+  return binaryOperator === qt.SyntaxKind.AsteriskToken || binaryOperator === qt.SyntaxKind.BarToken || binaryOperator === qt.SyntaxKind.AmpersandToken || binaryOperator === qt.SyntaxKind.CaretToken;
 }
 
 interface BinaryPlusExpression extends BinaryExpression {
-  cachedLiteralKind: SyntaxKind;
+  cachedLiteralKind: qt.SyntaxKind;
 }
 
 /**
@@ -918,30 +869,30 @@ interface BinaryPlusExpression extends BinaryExpression {
  * It is used to determine whether the right-hand operand of a binary plus expression can be
  * emitted without parentheses.
  */
-function getLiteralKindOfBinaryPlusOperand(node: Expression): SyntaxKind {
+function getLiteralKindOfBinaryPlusOperand(node: Expression): qt.SyntaxKind {
   node = skipPartiallyEmittedExpressions(node);
 
   if (isLiteralKind(node.kind)) {
     return node.kind;
   }
 
-  if (node.kind === SyntaxKind.BinaryExpression && node.operatorToken.kind === SyntaxKind.PlusToken) {
+  if (node.kind === qt.SyntaxKind.BinaryExpression && node.operatorToken.kind === qt.SyntaxKind.PlusToken) {
     if ((<BinaryPlusExpression>node).cachedLiteralKind !== undefined) {
       return (<BinaryPlusExpression>node).cachedLiteralKind;
     }
 
     const leftKind = getLiteralKindOfBinaryPlusOperand(node.left);
-    const literalKind = isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(node.right) ? leftKind : SyntaxKind.Unknown;
+    const literalKind = isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(node.right) ? leftKind : qt.SyntaxKind.Unknown;
 
     (<BinaryPlusExpression>node).cachedLiteralKind = literalKind;
     return literalKind;
   }
 
-  return SyntaxKind.Unknown;
+  return qt.SyntaxKind.Unknown;
 }
 
 export function parenthesizeForConditionalHead(condition: Expression) {
-  const conditionalPrecedence = getOperatorPrecedence(SyntaxKind.ConditionalExpression, SyntaxKind.QuestionToken);
+  const conditionalPrecedence = getOperatorPrecedence(SyntaxKind.ConditionalExpression, qt.SyntaxKind.QuestionToken);
   const emittedCondition = skipPartiallyEmittedExpressions(condition);
   const conditionPrecedence = getExpressionPrecedence(emittedCondition);
   if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) {
@@ -974,8 +925,8 @@ export function parenthesizeDefaultExpression(e: Expression) {
   let needsParens = isCommaSequence(check);
   if (!needsParens) {
     switch (getLeftmostExpression(check, /*stopAtCallExpression*/ false).kind) {
-      case SyntaxKind.ClassExpression:
-      case SyntaxKind.FunctionExpression:
+      case qt.SyntaxKind.ClassExpression:
+      case qt.SyntaxKind.FunctionExpression:
         needsParens = true;
     }
   }
@@ -991,10 +942,10 @@ export function parenthesizeDefaultExpression(e: Expression) {
 export function parenthesizeForNew(expression: Expression): LeftHandSideExpression {
   const leftmostExpr = getLeftmostExpression(expression, /*stopAtCallExpressions*/ true);
   switch (leftmostExpr.kind) {
-    case SyntaxKind.CallExpression:
+    case qt.SyntaxKind.CallExpression:
       return createParen(expression);
 
-    case SyntaxKind.NewExpression:
+    case qt.SyntaxKind.NewExpression:
       return !leftmostExpr.arguments ? createParen(expression) : expression;
   }
 
@@ -1015,7 +966,7 @@ export function parenthesizeForAccess(expression: Expression): LeftHandSideExpre
   //       new C.x        -> not the same as (new C).x
   //
   const emittedExpression = skipPartiallyEmittedExpressions(expression);
-  if (isLeftHandSideExpression(emittedExpression) && (emittedExpression.kind !== SyntaxKind.NewExpression || emittedExpression.arguments)) {
+  if (isLeftHandSideExpression(emittedExpression) && (emittedExpression.kind !== qt.SyntaxKind.NewExpression || emittedExpression.arguments)) {
     return expression;
   }
 
@@ -1053,7 +1004,7 @@ export function parenthesizeListElements(elements: NodeArray<Expression>) {
 export function parenthesizeExpressionForList(expression: Expression) {
   const emittedExpression = skipPartiallyEmittedExpressions(expression);
   const expressionPrecedence = getExpressionPrecedence(emittedExpression);
-  const commaPrecedence = getOperatorPrecedence(SyntaxKind.BinaryExpression, SyntaxKind.CommaToken);
+  const commaPrecedence = getOperatorPrecedence(SyntaxKind.BinaryExpression, qt.SyntaxKind.CommaToken);
   return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
 }
 
@@ -1062,7 +1013,7 @@ export function parenthesizeExpressionForExpressionStatement(expression: Express
   if (isCallExpression(emittedExpression)) {
     const callee = emittedExpression.expression;
     const kind = skipPartiallyEmittedExpressions(callee).kind;
-    if (kind === SyntaxKind.FunctionExpression || kind === SyntaxKind.ArrowFunction) {
+    if (kind === qt.SyntaxKind.FunctionExpression || kind === qt.SyntaxKind.ArrowFunction) {
       const mutableCall = getMutableClone(emittedExpression);
       mutableCall.expression = setTextRange(createParen(callee), callee);
       return recreateOuterExpressions(expression, mutableCall, OuterExpressionKinds.PartiallyEmittedExpressions);
@@ -1070,7 +1021,7 @@ export function parenthesizeExpressionForExpressionStatement(expression: Express
   }
 
   const leftmostExpressionKind = getLeftmostExpression(emittedExpression, /*stopAtCallExpressions*/ false).kind;
-  if (leftmostExpressionKind === SyntaxKind.ObjectLiteralExpression || leftmostExpressionKind === SyntaxKind.FunctionExpression) {
+  if (leftmostExpressionKind === qt.SyntaxKind.ObjectLiteralExpression || leftmostExpressionKind === qt.SyntaxKind.FunctionExpression) {
     return setTextRange(createParen(expression), expression);
   }
 
@@ -1078,15 +1029,15 @@ export function parenthesizeExpressionForExpressionStatement(expression: Express
 }
 
 export function parenthesizeConditionalTypeMember(member: TypeNode) {
-  return member.kind === SyntaxKind.ConditionalType ? createParenthesizedType(member) : member;
+  return member.kind === qt.SyntaxKind.ConditionalType ? createParenthesizedType(member) : member;
 }
 
 export function parenthesizeElementTypeMember(member: TypeNode) {
   switch (member.kind) {
-    case SyntaxKind.UnionType:
-    case SyntaxKind.IntersectionType:
-    case SyntaxKind.FunctionType:
-    case SyntaxKind.ConstructorType:
+    case qt.SyntaxKind.UnionType:
+    case qt.SyntaxKind.IntersectionType:
+    case qt.SyntaxKind.FunctionType:
+    case qt.SyntaxKind.ConstructorType:
       return createParenthesizedType(member);
   }
   return parenthesizeConditionalTypeMember(member);
@@ -1094,9 +1045,9 @@ export function parenthesizeElementTypeMember(member: TypeNode) {
 
 export function parenthesizeArrayTypeMember(member: TypeNode) {
   switch (member.kind) {
-    case SyntaxKind.TypeQuery:
-    case SyntaxKind.TypeOperator:
-    case SyntaxKind.InferType:
+    case qt.SyntaxKind.TypeQuery:
+    case qt.SyntaxKind.TypeOperator:
+    case qt.SyntaxKind.InferType:
       return createParenthesizedType(member);
   }
   return parenthesizeElementTypeMember(member);
@@ -1121,32 +1072,32 @@ export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] |
 export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
   while (true) {
     switch (node.kind) {
-      case SyntaxKind.PostfixUnaryExpression:
+      case qt.SyntaxKind.PostfixUnaryExpression:
         node = node.operand;
         continue;
 
-      case SyntaxKind.BinaryExpression:
+      case qt.SyntaxKind.BinaryExpression:
         node = node.left;
         continue;
 
-      case SyntaxKind.ConditionalExpression:
+      case qt.SyntaxKind.ConditionalExpression:
         node = node.condition;
         continue;
 
-      case SyntaxKind.TaggedTemplateExpression:
+      case qt.SyntaxKind.TaggedTemplateExpression:
         node = node.tag;
         continue;
 
-      case SyntaxKind.CallExpression:
+      case qt.SyntaxKind.CallExpression:
         if (stopAtCallExpressions) {
           return node;
         }
       // falls through
-      case SyntaxKind.AsExpression:
-      case SyntaxKind.ElementAccessExpression:
-      case SyntaxKind.PropertyAccessExpression:
-      case SyntaxKind.NonNullExpression:
-      case SyntaxKind.PartiallyEmittedExpression:
+      case qt.SyntaxKind.AsExpression:
+      case qt.SyntaxKind.ElementAccessExpression:
+      case qt.SyntaxKind.PropertyAccessExpression:
+      case qt.SyntaxKind.NonNullExpression:
+      case qt.SyntaxKind.PartiallyEmittedExpression:
         node = (<CallExpression | PropertyAccessExpression | ElementAccessExpression | AsExpression | NonNullExpression | PartiallyEmittedExpression>node).expression;
         continue;
     }
@@ -1156,7 +1107,7 @@ export function getLeftmostExpression(node: Expression, stopAtCallExpressions: b
 }
 
 export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
-  if (!isBlock(body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === SyntaxKind.ObjectLiteralExpression)) {
+  if (!isBlock(body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === qt.SyntaxKind.ObjectLiteralExpression)) {
     return setTextRange(createParen(body), body);
   }
 
@@ -1164,7 +1115,7 @@ export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
 }
 
 export function isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<SyntaxKind.CommaToken> }) | CommaListExpression {
-  return (node.kind === SyntaxKind.BinaryExpression && node.operatorToken.kind === SyntaxKind.CommaToken) || node.kind === SyntaxKind.CommaListExpression;
+  return (node.kind === qt.SyntaxKind.BinaryExpression && node.operatorToken.kind === qt.SyntaxKind.CommaToken) || node.kind === qt.SyntaxKind.CommaListExpression;
 }
 
 export const enum OuterExpressionKinds {
@@ -1181,14 +1132,14 @@ export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpres
 
 export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
   switch (node.kind) {
-    case SyntaxKind.ParenthesizedExpression:
+    case qt.SyntaxKind.ParenthesizedExpression:
       return (kinds & OuterExpressionKinds.Parentheses) !== 0;
-    case SyntaxKind.TypeAssertionExpression:
-    case SyntaxKind.AsExpression:
+    case qt.SyntaxKind.TypeAssertionExpression:
+    case qt.SyntaxKind.AsExpression:
       return (kinds & OuterExpressionKinds.TypeAssertions) !== 0;
-    case SyntaxKind.NonNullExpression:
+    case qt.SyntaxKind.NonNullExpression:
       return (kinds & OuterExpressionKinds.NonNullAssertions) !== 0;
-    case SyntaxKind.PartiallyEmittedExpression:
+    case qt.SyntaxKind.PartiallyEmittedExpression:
       return (kinds & OuterExpressionKinds.PartiallyEmittedExpressions) !== 0;
   }
   return false;
@@ -1211,15 +1162,15 @@ export function skipAssertions(node: Node): Node {
 
 function updateOuterExpression(outerExpression: OuterExpression, expression: Expression) {
   switch (outerExpression.kind) {
-    case SyntaxKind.ParenthesizedExpression:
+    case qt.SyntaxKind.ParenthesizedExpression:
       return updateParen(outerExpression, expression);
-    case SyntaxKind.TypeAssertionExpression:
+    case qt.SyntaxKind.TypeAssertionExpression:
       return updateTypeAssertion(outerExpression, outerExpression.type, expression);
-    case SyntaxKind.AsExpression:
+    case qt.SyntaxKind.AsExpression:
       return updateAsExpression(outerExpression, expression, outerExpression.type);
-    case SyntaxKind.NonNullExpression:
+    case qt.SyntaxKind.NonNullExpression:
       return updateNonNullExpression(outerExpression, expression);
-    case SyntaxKind.PartiallyEmittedExpression:
+    case qt.SyntaxKind.PartiallyEmittedExpression:
       return updatePartiallyEmittedExpression(outerExpression, expression);
   }
 }
@@ -1239,14 +1190,7 @@ function updateOuterExpression(outerExpression: OuterExpression, expression: Exp
  * the containing expression is created/updated.
  */
 function isIgnorableParen(node: Expression) {
-  return (
-    node.kind === SyntaxKind.ParenthesizedExpression &&
-    nodeIsSynthesized(node) &&
-    nodeIsSynthesized(getSourceMapRange(node)) &&
-    nodeIsSynthesized(getCommentRange(node)) &&
-    !some(getSyntheticLeadingComments(node)) &&
-    !some(getSyntheticTrailingComments(node))
-  );
+  return node.kind === qt.SyntaxKind.ParenthesizedExpression && nodeIsSynthesized(node) && nodeIsSynthesized(getSourceMapRange(node)) && nodeIsSynthesized(getCommentRange(node)) && !some(getSyntheticLeadingComments(node)) && !some(getSyntheticTrailingComments(node));
 }
 
 export function recreateOuterExpressions(outerExpression: Expression | undefined, innerExpression: Expression, kinds = OuterExpressionKinds.All): Expression {
@@ -1272,13 +1216,7 @@ export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
   return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
 }
 
-export function createExternalHelpersImportDeclarationIfNeeded(
-  sourceFile: SourceFile,
-  compilerOptions: CompilerOptions,
-  hasExportStarsToExportValues?: boolean,
-  hasImportStar?: boolean,
-  hasImportDefault?: boolean
-) {
+export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: SourceFile, compilerOptions: qt.CompilerOptions, hasExportStarsToExportValues?: boolean, hasImportStar?: boolean, hasImportDefault?: boolean) {
   if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
     let namedBindings: NamedImportBindings | undefined;
     const moduleKind = getEmitModuleKind(compilerOptions);
@@ -1299,13 +1237,7 @@ export function createExternalHelpersImportDeclarationIfNeeded(
           helperNames.sort(compareStringsCaseSensitive);
           // Alias the imports if the names are used somewhere in the file.
           // NOTE: We don't need to care about global import collisions as this is a module.
-          namedBindings = createNamedImports(
-            map(helperNames, (name) =>
-              isFileLevelUniqueName(sourceFile, name)
-                ? createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name))
-                : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name))
-            )
-          );
+          namedBindings = createNamedImports(map(helperNames, (name) => (isFileLevelUniqueName(sourceFile, name) ? createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name)) : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name)))));
           const parseNode = getOriginalNode(sourceFile, isSourceFile);
           const emitNode = getOrCreateEmitNode(parseNode);
           emitNode.externalHelpers = true;
@@ -1319,19 +1251,14 @@ export function createExternalHelpersImportDeclarationIfNeeded(
       }
     }
     if (namedBindings) {
-      const externalHelpersImportDeclaration = createImportDeclaration(
-        /*decorators*/ undefined,
-        /*modifiers*/ undefined,
-        createImportClause(/*name*/ undefined, namedBindings),
-        createLiteral(externalHelpersModuleNameText)
-      );
+      const externalHelpersImportDeclaration = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*name*/ undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
       addEmitFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
       return externalHelpersImportDeclaration;
     }
   }
 }
 
-export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOptions: CompilerOptions, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
+export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOptions: qt.CompilerOptions, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
   if (compilerOptions.importHelpers && isEffectiveExternalModule(node, compilerOptions)) {
     const externalHelpersModuleName = getExternalHelpersModuleName(node);
     if (externalHelpersModuleName) {
@@ -1369,10 +1296,10 @@ export function getLocalNameForExternalImport(node: ImportDeclaration | ExportDe
     const name = namespaceDeclaration.name;
     return isGeneratedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
   }
-  if (node.kind === SyntaxKind.ImportDeclaration && node.importClause) {
+  if (node.kind === qt.SyntaxKind.ImportDeclaration && node.importClause) {
     return getGeneratedNameForNode(node);
   }
-  if (node.kind === SyntaxKind.ExportDeclaration && node.moduleSpecifier) {
+  if (node.kind === qt.SyntaxKind.ExportDeclaration && node.moduleSpecifier) {
     return getGeneratedNameForNode(node);
   }
   return undefined;
@@ -1386,18 +1313,10 @@ export function getLocalNameForExternalImport(node: ImportDeclaration | ExportDe
  *  3- The containing SourceFile has an entry in renamedDependencies for the import as requested by some module loaders (e.g. System).
  * Otherwise, a new StringLiteral node representing the module name will be returned.
  */
-export function getExternalModuleNameLiteral(
-  importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration,
-  sourceFile: SourceFile,
-  host: EmitHost,
-  resolver: EmitResolver,
-  compilerOptions: CompilerOptions
-) {
+export function getExternalModuleNameLiteral(importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile, host: EmitHost, resolver: EmitResolver, compilerOptions: qt.CompilerOptions) {
   const moduleName = getExternalModuleName(importNode)!; // TODO: GH#18217
-  if (moduleName.kind === SyntaxKind.StringLiteral) {
-    return (
-      tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOptions) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
-    );
+  if (moduleName.kind === qt.SyntaxKind.StringLiteral) {
+    return tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOptions) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName);
   }
 
   return undefined;
@@ -1419,7 +1338,7 @@ function tryRenameExternalModule(moduleName: LiteralExpression, sourceFile: Sour
  *  2. --out or --outFile is used, making the name relative to the rootDir
  * Otherwise, a new StringLiteral node representing the module name will be returned.
  */
-export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: EmitHost, options: CompilerOptions): StringLiteral | undefined {
+export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: EmitHost, options: qt.CompilerOptions): StringLiteral | undefined {
   if (!file) {
     return undefined;
   }
@@ -1432,7 +1351,7 @@ export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: Emi
   return undefined;
 }
 
-function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration, host: EmitHost, resolver: EmitResolver, compilerOptions: CompilerOptions) {
+function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration, host: EmitHost, resolver: EmitResolver, compilerOptions: qt.CompilerOptions) {
   return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
 }
 
@@ -1503,7 +1422,7 @@ export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrA
 
   if (isObjectLiteralElementLike(bindingElement)) {
     switch (bindingElement.kind) {
-      case SyntaxKind.PropertyAssignment:
+      case qt.SyntaxKind.PropertyAssignment:
         // `b` in `({ a: b } = ...)`
         // `b` in `({ a: b = 1 } = ...)`
         // `{b}` in `({ a: {b} } = ...)`
@@ -1516,12 +1435,12 @@ export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrA
         // `b[0]` in `({ a: b[0] = 1 } = ...)`
         return getTargetOfBindingOrAssignmentElement(bindingElement.initializer);
 
-      case SyntaxKind.ShorthandPropertyAssignment:
+      case qt.SyntaxKind.ShorthandPropertyAssignment:
         // `a` in `({ a } = ...)`
         // `a` in `({ a = 1 } = ...)`
         return bindingElement.name;
 
-      case SyntaxKind.SpreadAssignment:
+      case qt.SyntaxKind.SpreadAssignment:
         // `a` in `({ ...a } = ...)`
         return getTargetOfBindingOrAssignmentElement(bindingElement.expression);
     }
@@ -1557,13 +1476,13 @@ export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrA
  */
 export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementRestIndicator | undefined {
   switch (bindingElement.kind) {
-    case SyntaxKind.Parameter:
-    case SyntaxKind.BindingElement:
+    case qt.SyntaxKind.Parameter:
+    case qt.SyntaxKind.BindingElement:
       // `...` in `let [...a] = ...`
       return bindingElement.dotDotDotToken;
 
-    case SyntaxKind.SpreadElement:
-    case SyntaxKind.SpreadAssignment:
+    case qt.SyntaxKind.SpreadElement:
+    case qt.SyntaxKind.SpreadAssignment:
       // `...` in `[...a] = ...`
       return bindingElement;
   }
@@ -1582,7 +1501,7 @@ export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: Bind
 
 export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
   switch (bindingElement.kind) {
-    case SyntaxKind.BindingElement:
+    case qt.SyntaxKind.BindingElement:
       // `a` in `let { a: b } = ...`
       // `[a]` in `let { [a]: b } = ...`
       // `"a"` in `let { "a": b } = ...`
@@ -1597,7 +1516,7 @@ export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: B
 
       break;
 
-    case SyntaxKind.PropertyAssignment:
+    case qt.SyntaxKind.PropertyAssignment:
       // `a` in `({ a: b } = ...)`
       // `[a]` in `({ [a]: b } = ...)`
       // `"a"` in `({ "a": b } = ...)`
@@ -1612,7 +1531,7 @@ export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: B
 
       break;
 
-    case SyntaxKind.SpreadAssignment:
+    case qt.SyntaxKind.SpreadAssignment:
       // `a` in `({ ...a } = ...)`
       if (bindingElement.name && isPrivateIdentifier(bindingElement.name)) {
         return Debug.failBadSyntaxKind(bindingElement.name);
@@ -1628,7 +1547,7 @@ export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: B
 
 function isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLiteral {
   const kind = node.kind;
-  return kind === SyntaxKind.StringLiteral || kind === SyntaxKind.NumericLiteral;
+  return kind === qt.SyntaxKind.StringLiteral || kind === qt.SyntaxKind.NumericLiteral;
 }
 
 /**
@@ -1636,14 +1555,14 @@ function isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLi
  */
 export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
   switch (name.kind) {
-    case SyntaxKind.ObjectBindingPattern:
-    case SyntaxKind.ArrayBindingPattern:
-    case SyntaxKind.ArrayLiteralExpression:
+    case qt.SyntaxKind.ObjectBindingPattern:
+    case qt.SyntaxKind.ArrayBindingPattern:
+    case qt.SyntaxKind.ArrayLiteralExpression:
       // `a` in `{a}`
       // `a` in `[a]`
       return <readonly BindingOrAssignmentElement[]>name.elements;
 
-    case SyntaxKind.ObjectLiteralExpression:
+    case qt.SyntaxKind.ObjectLiteralExpression:
       // `a` in `{a}`
       return <readonly BindingOrAssignmentElement[]>name.properties;
   }
@@ -1681,12 +1600,12 @@ export function convertToObjectAssignmentElement(element: BindingOrAssignmentEle
 
 export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): AssignmentPattern {
   switch (node.kind) {
-    case SyntaxKind.ArrayBindingPattern:
-    case SyntaxKind.ArrayLiteralExpression:
+    case qt.SyntaxKind.ArrayBindingPattern:
+    case qt.SyntaxKind.ArrayLiteralExpression:
       return convertToArrayAssignmentPattern(node);
 
-    case SyntaxKind.ObjectBindingPattern:
-    case SyntaxKind.ObjectLiteralExpression:
+    case qt.SyntaxKind.ObjectBindingPattern:
+    case qt.SyntaxKind.ObjectLiteralExpression:
       return convertToObjectAssignmentPattern(node);
   }
 }

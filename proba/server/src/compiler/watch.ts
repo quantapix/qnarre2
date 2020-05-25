@@ -33,7 +33,7 @@ export function createDiagnosticReporter(system: System, pretty?: boolean): Diag
 /**
  * @returns Whether the screen was cleared.
  */
-function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, options: CompilerOptions): boolean {
+function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, options: qt.CompilerOptions): boolean {
   if (system.clearScreen && !options.preserveWatchOutput && !options.extendedDiagnostics && !options.diagnostics && contains(screenStartingMessageCodes, diagnostic.code)) {
     system.clearScreen();
     return true;
@@ -81,13 +81,7 @@ export function createWatchStatusReporter(system: System, pretty?: boolean): Wat
 }
 
 /** Parses config file using System interface */
-export function parseConfigFileWithSystem(
-  configFileName: string,
-  optionsToExtend: CompilerOptions,
-  watchOptionsToExtend: WatchOptions | undefined,
-  system: System,
-  reportDiagnostic: DiagnosticReporter
-) {
+export function parseConfigFileWithSystem(configFileName: string, optionsToExtend: qt.CompilerOptions, watchOptionsToExtend: WatchOptions | undefined, system: System, reportDiagnostic: DiagnosticReporter) {
   const host: ParseConfigFileHost = <any>system;
   host.onUnRecoverableConfigFileDiagnostic = (diagnostic) => reportUnrecoverableDiagnostic(system, reportDiagnostic, diagnostic);
   const result = getParsedCommandLineOfConfigFile(configFileName, optionsToExtend, host, /*extendedConfigCache*/ undefined, watchOptionsToExtend);
@@ -114,7 +108,7 @@ export function getErrorSummaryText(errorCount: number, newLine: string) {
  */
 export interface ProgramToEmitFilesAndReportErrors {
   getCurrentDirectory(): string;
-  getCompilerOptions(): CompilerOptions;
+  getCompilerOptions(): qt.CompilerOptions;
   getSourceFiles(): readonly SourceFile[];
   getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
   getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
@@ -136,16 +130,7 @@ export function listFiles(program: ProgramToEmitFilesAndReportErrors, writeFileN
 /**
  * Helper that emit files, report diagnostics and lists emitted and/or source files depending on compiler options
  */
-export function emitFilesAndReportErrors(
-  program: ProgramToEmitFilesAndReportErrors,
-  reportDiagnostic: DiagnosticReporter,
-  writeFileName?: (s: string) => void,
-  reportSummary?: ReportEmitErrorSummary,
-  writeFile?: WriteFileCallback,
-  cancellationToken?: CancellationToken,
-  emitOnlyDtsFiles?: boolean,
-  customTransformers?: CustomTransformers
-) {
+export function emitFilesAndReportErrors(program: ProgramToEmitFilesAndReportErrors, reportDiagnostic: DiagnosticReporter, writeFileName?: (s: string) => void, reportSummary?: ReportEmitErrorSummary, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers) {
   const isListFilesOnly = !!program.getCompilerOptions().listFilesOnly;
 
   // First get and report any syntactic errors.
@@ -168,9 +153,7 @@ export function emitFilesAndReportErrors(
   }
 
   // Emit and report any errors we ran into.
-  const emitResult = isListFilesOnly
-    ? { emitSkipped: true, diagnostics: emptyArray }
-    : program.emit(/*targetSourceFile*/ undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
+  const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: emptyArray } : program.emit(/*targetSourceFile*/ undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
   const { emittedFiles, diagnostics: emitDiagnostics } = emitResult;
   addRange(allDiagnostics, emitDiagnostics);
 
@@ -195,16 +178,7 @@ export function emitFilesAndReportErrors(
   };
 }
 
-export function emitFilesAndReportErrorsAndGetExitStatus(
-  program: ProgramToEmitFilesAndReportErrors,
-  reportDiagnostic: DiagnosticReporter,
-  writeFileName?: (s: string) => void,
-  reportSummary?: ReportEmitErrorSummary,
-  writeFile?: WriteFileCallback,
-  cancellationToken?: CancellationToken,
-  emitOnlyDtsFiles?: boolean,
-  customTransformers?: CustomTransformers
-) {
+export function emitFilesAndReportErrorsAndGetExitStatus(program: ProgramToEmitFilesAndReportErrors, reportDiagnostic: DiagnosticReporter, writeFileName?: (s: string) => void, reportSummary?: ReportEmitErrorSummary, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers) {
   const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
 
   if (emitResult.emitSkipped && diagnostics.length > 0) {
@@ -262,7 +236,7 @@ export function createWatchFactory<Y = undefined>(host: { trace?(s: string): voi
   return result;
 }
 
-export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOptions: () => CompilerOptions, directoryStructureHost: DirectoryStructureHost = host): CompilerHost {
+export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOptions: () => qt.CompilerOptions, directoryStructureHost: DirectoryStructureHost = host): CompilerHost {
   const useCaseSensitiveFileNames = host.useCaseSensitiveFileNames();
   const hostGetNewLine = memoize(() => host.getNewLine());
   return {
@@ -367,12 +341,7 @@ export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiag
 /**
  * Creates the watch compiler host that can be extended with config file or root file names and options host
  */
-function createWatchCompilerHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(
-  system = sys,
-  createProgram: CreateProgram<T> | undefined,
-  reportDiagnostic: DiagnosticReporter,
-  reportWatchStatus?: WatchStatusReporter
-): WatchCompilerHost<T> {
+function createWatchCompilerHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(system = sys, createProgram: CreateProgram<T> | undefined, reportDiagnostic: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter): WatchCompilerHost<T> {
   const writeFileName = (s: string) => system.write(s + system.newLine);
   const result = createProgramHost(system, createProgram);
   copyProperties(result, createWatchHost(system, reportWatchStatus));
@@ -380,9 +349,7 @@ function createWatchCompilerHost<T extends BuilderProgram = EmitAndSemanticDiagn
     const compilerOptions = builderProgram.getCompilerOptions();
     const newLine = getNewLineCharacter(compilerOptions, () => system.newLine);
 
-    emitFilesAndReportErrors(builderProgram, reportDiagnostic, writeFileName, (errorCount) =>
-      result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryDiagnosticMessage(errorCount), errorCount), newLine, compilerOptions, errorCount)
-    );
+    emitFilesAndReportErrors(builderProgram, reportDiagnostic, writeFileName, (errorCount) => result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryDiagnosticMessage(errorCount), errorCount), newLine, compilerOptions, errorCount));
   };
   return result;
 }
@@ -404,23 +371,14 @@ export interface CreateWatchCompilerHostInput<T extends BuilderProgram> {
 
 export interface CreateWatchCompilerHostOfConfigFileInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   configFileName: string;
-  optionsToExtend?: CompilerOptions;
+  optionsToExtend?: qt.CompilerOptions;
   watchOptionsToExtend?: WatchOptions;
   extraFileExtensions?: readonly FileExtensionInfo[];
 }
 /**
  * Creates the watch compiler host from system for config file in watch mode
  */
-export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
-  configFileName,
-  optionsToExtend,
-  watchOptionsToExtend,
-  extraFileExtensions,
-  system,
-  createProgram,
-  reportDiagnostic,
-  reportWatchStatus,
-}: CreateWatchCompilerHostOfConfigFileInput<T>): WatchCompilerHostOfConfigFile<T> {
+export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({ configFileName, optionsToExtend, watchOptionsToExtend, extraFileExtensions, system, createProgram, reportDiagnostic, reportWatchStatus }: CreateWatchCompilerHostOfConfigFileInput<T>): WatchCompilerHostOfConfigFile<T> {
   const diagnosticReporter = reportDiagnostic || createDiagnosticReporter(system);
   const host = createWatchCompilerHost(system, createProgram, diagnosticReporter, reportWatchStatus);
   host.onUnRecoverableConfigFileDiagnostic = (diagnostic) => reportUnrecoverableDiagnostic(system, diagnosticReporter, diagnostic);
@@ -433,23 +391,14 @@ export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = E
 
 export interface CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   rootFiles: string[];
-  options: CompilerOptions;
+  options: qt.CompilerOptions;
   watchOptions: WatchOptions | undefined;
   projectReferences?: readonly ProjectReference[];
 }
 /**
  * Creates the watch compiler host from system for compiling root files and options in watch mode
  */
-export function createWatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
-  rootFiles,
-  options,
-  watchOptions,
-  projectReferences,
-  system,
-  createProgram,
-  reportDiagnostic,
-  reportWatchStatus,
-}: CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T>): WatchCompilerHostOfFilesAndCompilerOptions<T> {
+export function createWatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({ rootFiles, options, watchOptions, projectReferences, system, createProgram, reportDiagnostic, reportWatchStatus }: CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T>): WatchCompilerHostOfFilesAndCompilerOptions<T> {
   const host = createWatchCompilerHost(system, createProgram, reportDiagnostic || createDiagnosticReporter(system), reportWatchStatus);
   host.rootFiles = rootFiles;
   host.options = options;
@@ -460,7 +409,7 @@ export function createWatchCompilerHostOfFilesAndCompilerOptions<T extends Build
 
 export interface IncrementalCompilationOptions {
   rootNames: readonly string[];
-  options: CompilerOptions;
+  options: qt.CompilerOptions;
   configFileParsingDiagnostics?: readonly Diagnostic[];
   projectReferences?: readonly ProjectReference[];
   host?: CompilerHost;
@@ -473,12 +422,7 @@ export function performIncrementalCompilation(input: IncrementalCompilationOptio
   const system = input.system || sys;
   const host = input.host || (input.host = createIncrementalCompilerHost(input.options, system));
   const builderProgram = createIncrementalProgram(input);
-  const exitStatus = emitFilesAndReportErrorsAndGetExitStatus(
-    builderProgram,
-    input.reportDiagnostic || createDiagnosticReporter(system),
-    (s) => host.trace && host.trace(s),
-    input.reportErrorSummary || input.options.pretty ? (errorCount) => system.write(getErrorSummaryText(errorCount, system.newLine)) : undefined
-  );
+  const exitStatus = emitFilesAndReportErrorsAndGetExitStatus(builderProgram, input.reportDiagnostic || createDiagnosticReporter(system), (s) => host.trace && host.trace(s), input.reportErrorSummary || input.options.pretty ? (errorCount) => system.write(getErrorSummaryText(errorCount, system.newLine)) : undefined);
   if (input.afterProgramEmitAndDiagnostics) input.afterProgramEmitAndDiagnostics(builderProgram);
   return exitStatus;
 }

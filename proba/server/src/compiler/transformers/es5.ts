@@ -42,9 +42,9 @@ export function transformES5(context: TransformationContext) {
    */
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (emitContext: EmitHint, node: Node) => void) {
     switch (node.kind) {
-      case SyntaxKind.JsxOpeningElement:
-      case SyntaxKind.JsxClosingElement:
-      case SyntaxKind.JsxSelfClosingElement:
+      case qt.SyntaxKind.JsxOpeningElement:
+      case qt.SyntaxKind.JsxClosingElement:
+      case qt.SyntaxKind.JsxSelfClosingElement:
         const tagName = (<JsxOpeningElement | JsxClosingElement | JsxSelfClosingElement>node).tagName;
         noSubstitution[getOriginalNodeId(tagName)] = true;
         break;
@@ -109,7 +109,7 @@ export function transformES5(context: TransformationContext) {
    */
   function trySubstituteReservedName(name: Identifier) {
     const token = name.originalKeywordKind || (nodeIsSynthesized(name) ? stringToToken(idText(name)) : undefined);
-    if (token !== undefined && token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord) {
+    if (token !== undefined && token >= qt.SyntaxKind.FirstReservedWord && token <= qt.SyntaxKind.LastReservedWord) {
       return setTextRange(createLiteral(name), name);
     }
     return undefined;

@@ -27,14 +27,7 @@ export const enum FlattenLevel {
  * the destructuring assignment is needed as part of a larger expression.
  * @param createAssignmentCallback An optional callback used to create the assignment expression.
  */
-export function flattenDestructuringAssignment(
-  node: VariableDeclaration | DestructuringAssignment,
-  visitor: ((node: Node) => VisitResult<Node>) | undefined,
-  context: TransformationContext,
-  level: FlattenLevel,
-  needsValue?: boolean,
-  createAssignmentCallback?: (name: Identifier, value: Expression, location?: TextRange) => Expression
-): Expression {
+export function flattenDestructuringAssignment(node: VariableDeclaration | DestructuringAssignment, visitor: ((node: Node) => VisitResult<Node>) | undefined, context: TransformationContext, level: FlattenLevel, needsValue?: boolean, createAssignmentCallback?: (name: Identifier, value: Expression, location?: TextRange) => Expression): Expression {
   let location: TextRange = node;
   let value: Expression | undefined;
   if (isDestructuringAssignment(node)) {
@@ -108,15 +101,13 @@ export function flattenDestructuringAssignment(
 
   function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange, original: Node) {
     Debug.assertNode(target, createAssignmentCallback ? isIdentifier : isExpression);
-    const expression = createAssignmentCallback
-      ? createAssignmentCallback(<Identifier>target, value, location)
-      : setTextRange(createAssignment(visitNode(<Expression>target, visitor, isExpression), value), location);
+    const expression = createAssignmentCallback ? createAssignmentCallback(target, value, location) : setTextRange(createAssignment(visitNode(target, visitor, isExpression), value), location);
     expression.original = original;
     emitExpression(expression);
   }
 }
 
-function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escapedName: __String): boolean {
+function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escapedName: qt.__String): boolean {
   const target = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
   if (isBindingOrAssignmentPattern(target)) {
     return bindingOrAssignmentPatternAssignsToName(target, escapedName);
@@ -126,7 +117,7 @@ function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentEle
   return false;
 }
 
-function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escapedName: __String): boolean {
+function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escapedName: qt.__String): boolean {
   const elements = getElementsOfBindingOrAssignmentPattern(pattern);
   for (const element of elements) {
     if (bindingOrAssignmentElementAssignsToName(element, escapedName)) {
@@ -160,15 +151,7 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
  * @param hoistTempVariables Indicates whether temporary variables should not be recorded in-line.
  * @param level Indicates the extent to which flattening should occur.
  */
-export function flattenDestructuringBinding(
-  node: VariableDeclaration | ParameterDeclaration,
-  visitor: (node: Node) => VisitResult<Node>,
-  context: TransformationContext,
-  level: FlattenLevel,
-  rval?: Expression,
-  hoistTempVariables = false,
-  skipInitializer?: boolean
-): VariableDeclaration[] {
+export function flattenDestructuringBinding(node: VariableDeclaration | ParameterDeclaration, visitor: (node: Node) => VisitResult<Node>, context: TransformationContext, level: FlattenLevel, rval?: Expression, hoistTempVariables = false, skipInitializer?: boolean): VariableDeclaration[] {
   let pendingExpressions: Expression[] | undefined;
   const pendingDeclarations: { pendingExpressions?: Expression[]; name: BindingName; value: Expression; location?: TextRange; original?: Node }[] = [];
   const declarations: VariableDeclaration[] = [];
@@ -256,11 +239,11 @@ function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, eleme
   }
   const bindingTarget = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
   if (isObjectBindingOrAssignmentPattern(bindingTarget)) {
-    flattenObjectBindingOrAssignmentPattern(flattenContext, element, bindingTarget, value!, location);
+    flattenObjectBindingOrAssignmentPattern(flattenContext, element, bindingTarget, value, location);
   } else if (isArrayBindingOrAssignmentPattern(bindingTarget)) {
-    flattenArrayBindingOrAssignmentPattern(flattenContext, element, bindingTarget, value!, location);
+    flattenArrayBindingOrAssignmentPattern(flattenContext, element, bindingTarget, value, location);
   } else {
-    flattenContext.emitBindingOrAssignment(bindingTarget, value!, location, /*original*/ element); // TODO: GH#18217
+    flattenContext.emitBindingOrAssignment(bindingTarget, value, location, /*original*/ element); // TODO: GH#18217
   }
 }
 
@@ -273,13 +256,7 @@ function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, eleme
  * @param value The current RHS value to assign to the element.
  * @param location The location to use for source maps and comments.
  */
-function flattenObjectBindingOrAssignmentPattern(
-  flattenContext: FlattenContext,
-  parent: BindingOrAssignmentElement,
-  pattern: ObjectBindingOrAssignmentPattern,
-  value: Expression,
-  location: TextRange
-) {
+function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElement, pattern: ObjectBindingOrAssignmentPattern, value: Expression, location: TextRange) {
   const elements = getElementsOfBindingOrAssignmentPattern(pattern);
   const numElements = elements.length;
   if (numElements !== 1) {
@@ -296,12 +273,7 @@ function flattenObjectBindingOrAssignmentPattern(
     const element = elements[i];
     if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
       const propertyName = getPropertyNameOfBindingOrAssignmentElement(element)!;
-      if (
-        flattenContext.level >= FlattenLevel.ObjectRest &&
-        !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-        !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-        !isComputedPropertyName(propertyName)
-      ) {
+      if (flattenContext.level >= FlattenLevel.ObjectRest && !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) && !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) && !isComputedPropertyName(propertyName)) {
         bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
       } else {
         if (bindingElements) {
@@ -310,7 +282,7 @@ function flattenObjectBindingOrAssignmentPattern(
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
         if (isComputedPropertyName(propertyName)) {
-          computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElementAccessExpression).argumentExpression);
+          computedTempVariables = append<Expression>(computedTempVariables, rhsValue.argumentExpression);
         }
         flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, /*location*/ element);
       }
@@ -342,12 +314,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
   const numElements = elements.length;
   if (flattenContext.level < FlattenLevel.ObjectRest && flattenContext.downlevelIteration) {
     // Read the elements of the iterable into an array
-    value = ensureIdentifier(
-      flattenContext,
-      createReadHelper(flattenContext.context, value, numElements > 0 && getRestIndicatorOfBindingOrAssignmentElement(elements[numElements - 1]) ? undefined : numElements, location),
-      /*reuseIdentifierExpressions*/ false,
-      location
-    );
+    value = ensureIdentifier(flattenContext, createReadHelper(flattenContext.context, value, numElements > 0 && getRestIndicatorOfBindingOrAssignmentElement(elements[numElements - 1]) ? undefined : numElements, location), /*reuseIdentifierExpressions*/ false, location);
   } else if ((numElements !== 1 && (flattenContext.level < FlattenLevel.ObjectRest || numElements === 0)) || every(elements, isOmittedExpression)) {
     // For anything other than a single-element destructuring we need to generate a temporary
     // to ensure value is evaluated exactly once. Additionally, if we have zero elements
@@ -461,7 +428,7 @@ function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reu
 
 function makeArrayBindingPattern(elements: BindingOrAssignmentElement[]) {
   Debug.assertEachNode(elements, isArrayBindingElement);
-  return createArrayBindingPattern(<ArrayBindingElement[]>elements);
+  return createArrayBindingPattern(elements);
 }
 
 function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
@@ -470,7 +437,7 @@ function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
 
 function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
   Debug.assertEachNode(elements, isBindingElement);
-  return createObjectBindingPattern(<BindingElement[]>elements);
+  return createObjectBindingPattern(elements);
 }
 
 function makeObjectAssignmentPattern(elements: BindingOrAssignmentElement[]) {
@@ -506,13 +473,7 @@ export const restHelper: UnscopedEmitHelper = {
 /** Given value: o, propName: p, pattern: { a, b, ...p } from the original statement
  * `{ a, b, ...p } = o`, create `p = __rest(o, ["a", "b"]);`
  */
-function createRestCall(
-  context: TransformationContext,
-  value: Expression,
-  elements: readonly BindingOrAssignmentElement[],
-  computedTempVariables: readonly Expression[],
-  location: TextRange
-): Expression {
+function createRestCall(context: TransformationContext, value: Expression, elements: readonly BindingOrAssignmentElement[], computedTempVariables: readonly Expression[], location: TextRange): Expression {
   context.requestEmitHelper(restHelper);
   const propertyNames: Expression[] = [];
   let computedTempVariableOffset = 0;

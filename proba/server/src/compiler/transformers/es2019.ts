@@ -14,7 +14,7 @@ export function transformES2019(context: TransformationContext) {
       return node;
     }
     switch (node.kind) {
-      case SyntaxKind.CatchClause:
+      case qt.SyntaxKind.CatchClause:
         return visitCatchClause(node as CatchClause);
       default:
         return visitEachChild(node, visitor, context);

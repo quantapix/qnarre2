@@ -41,7 +41,7 @@ interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends 
 export interface ResolutionCacheHost extends ModuleResolutionHost {
   toPath(fileName: string): Path;
   getCanonicalFileName: GetCanonicalFileName;
-  getCompilationSettings(): CompilerOptions;
+  getCompilationSettings(): qt.CompilerOptions;
   watchDirectoryOfFailedLookupLocation(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
   onInvalidatedResolution(): void;
   watchTypeRootsDirectory(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
@@ -131,15 +131,12 @@ export function canWatchDirectory(dirPath: Path) {
   return true;
 }
 
-type GetResolutionWithResolvedFileName<
-  T extends ResolutionWithFailedLookupLocations = ResolutionWithFailedLookupLocations,
-  R extends ResolutionWithResolvedFileName = ResolutionWithResolvedFileName
-> = (resolution: T) => R | undefined;
+type GetResolutionWithResolvedFileName<T extends ResolutionWithFailedLookupLocations = ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName = ResolutionWithResolvedFileName> = (resolution: T) => R | undefined;
 
 export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootDirForResolution: string | undefined, logChangesWhenResolvingModule: boolean): ResolutionCache {
   let filesWithChangedSetOfUnresolvedImports: Path[] | undefined;
   let filesWithInvalidatedResolutions: Map<true> | undefined;
-  let filesWithInvalidatedNonRelativeUnresolvedImports: ReadonlyMap<readonly string[]> | undefined;
+  let filesWithInvalidatedNonRelativeUnresolvedImports: qpc.ReadonlyMap<readonly string[]> | undefined;
   const nonRelativeExternalModuleResolutions = createMultiMap<ResolutionWithFailedLookupLocations>();
 
   const resolutionsWithFailedLookups: ResolutionWithFailedLookupLocations[] = [];
@@ -275,13 +272,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     });
   }
 
-  function resolveModuleName(
-    moduleName: string,
-    containingFile: string,
-    compilerOptions: CompilerOptions,
-    host: ModuleResolutionHost,
-    redirectedReference?: ResolvedProjectReference
-  ): CachedResolvedModuleWithFailedLookupLocations {
+  function resolveModuleName(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference): CachedResolvedModuleWithFailedLookupLocations {
     const primaryResult = ts.resolveModuleName(moduleName, containingFile, compilerOptions, host, moduleResolutionCache, redirectedReference);
     // return result immediately only if global cache support is not enabled or if it is .ts, .tsx or .d.ts
     if (!resolutionHost.getGlobalCache) {
@@ -293,13 +284,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     if (globalCache !== undefined && !isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
       // create different collection of failed lookup locations for second pass
       // if it will fail and we've already found something during the first pass - we don't want to pollute its results
-      const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
-        Debug.checkDefined(resolutionHost.globalCacheResolutionModuleName)(moduleName),
-        resolutionHost.projectName,
-        compilerOptions,
-        host,
-        globalCache
-      );
+      const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(Debug.checkDefined(resolutionHost.globalCacheResolutionModuleName)(moduleName), resolutionHost.projectName, compilerOptions, host, globalCache);
       if (resolvedModule) {
         // Modify existing resolution so its saved in the directory cache as well
         (primaryResult.resolvedModule as any) = resolvedModule;
@@ -318,24 +303,13 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     redirectedReference: ResolvedProjectReference | undefined;
     cache: Map<Map<T>>;
     perDirectoryCacheWithRedirects: CacheWithRedirects<Map<T>>;
-    loader: (name: string, containingFile: string, options: CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference) => T;
+    loader: (name: string, containingFile: string, options: qt.CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference) => T;
     getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>;
     shouldRetryResolution: (t: T) => boolean;
     reusedNames?: readonly string[];
     logChanges?: boolean;
   }
-  function resolveNamesWithLocalCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>({
-    names,
-    containingFile,
-    redirectedReference,
-    cache,
-    perDirectoryCacheWithRedirects,
-    loader,
-    getResolutionWithResolvedFileName,
-    shouldRetryResolution,
-    reusedNames,
-    logChanges,
-  }: ResolveNamesWithLocalCacheInput<T, R>): (R | undefined)[] {
+  function resolveNamesWithLocalCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>({ names, containingFile, redirectedReference, cache, perDirectoryCacheWithRedirects, loader, getResolutionWithResolvedFileName, shouldRetryResolution, reusedNames, logChanges }: ResolveNamesWithLocalCacheInput<T, R>): (R | undefined)[] {
     const path = resolutionHost.toPath(containingFile);
     const resolutionsInFile = cache.get(path) || cache.set(path, createMap()).get(path)!;
     const dirPath = getDirectoryPath(path);
@@ -518,12 +492,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     return fileExtensionIsOneOf(path, failedLookupDefaultExtensions);
   }
 
-  function watchFailedLookupLocationsOfExternalModuleResolutions<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
-    name: string,
-    resolution: T,
-    filePath: Path,
-    getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
-  ) {
+  function watchFailedLookupLocationsOfExternalModuleResolutions<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(name: string, resolution: T, filePath: Path, getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>) {
     if (resolution.refCount) {
       resolution.refCount++;
       Debug.assertDefined(resolution.files);
@@ -594,11 +563,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     }
   }
 
-  function stopWatchFailedLookupLocationOfResolution<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
-    resolution: T,
-    filePath: Path,
-    getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
-  ) {
+  function stopWatchFailedLookupLocationOfResolution<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(resolution: T, filePath: Path, getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>) {
     unorderedRemoveItem(Debug.assertDefined(resolution.files), filePath);
     resolution.refCount!--;
     if (resolution.refCount) {
@@ -667,11 +632,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     );
   }
 
-  function removeResolutionsOfFileFromCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
-    cache: Map<Map<T>>,
-    filePath: Path,
-    getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
-  ) {
+  function removeResolutionsOfFileFromCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(cache: Map<Map<T>>, filePath: Path, getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>) {
     // Deleted file, stop watching failed lookups for all the resolutions in the file
     const resolutions = cache.get(filePath);
     if (resolutions) {
@@ -724,7 +685,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     forEach(resolvedFileToResolution.get(filePath), invalidateResolution);
   }
 
-  function setFilesWithInvalidatedNonRelativeUnresolvedImports(filesMap: ReadonlyMap<readonly string[]>) {
+  function setFilesWithInvalidatedNonRelativeUnresolvedImports(filesMap: qpc.ReadonlyMap<readonly string[]>) {
     Debug.assert(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
     filesWithInvalidatedNonRelativeUnresolvedImports = filesMap;
   }
@@ -749,12 +710,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       // Some file or directory in the watching directory is created
       // Return early if it does not have any of the watching extension or not the custom failed lookup path
       const dirOfFileOrDirectory = getDirectoryPath(fileOrDirectoryPath);
-      if (
-        isNodeModulesAtTypesDirectory(fileOrDirectoryPath) ||
-        isNodeModulesDirectory(fileOrDirectoryPath) ||
-        isNodeModulesAtTypesDirectory(dirOfFileOrDirectory) ||
-        isNodeModulesDirectory(dirOfFileOrDirectory)
-      ) {
+      if (isNodeModulesAtTypesDirectory(fileOrDirectoryPath) || isNodeModulesDirectory(fileOrDirectoryPath) || isNodeModulesAtTypesDirectory(dirOfFileOrDirectory) || isNodeModulesDirectory(dirOfFileOrDirectory)) {
         // Invalidate any resolution from this directory
         isChangedFailedLookupLocation = (location) => {
           const locationPath = resolutionHost.toPath(location);

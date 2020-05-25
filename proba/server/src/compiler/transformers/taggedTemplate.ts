@@ -3,14 +3,7 @@ export enum ProcessLevel {
   All,
 }
 
-export function processTaggedTemplateExpression(
-  context: TransformationContext,
-  node: TaggedTemplateExpression,
-  visitor: Visitor,
-  currentSourceFile: SourceFile,
-  recordTaggedTemplateString: (temp: Identifier) => void,
-  level: ProcessLevel
-) {
+export function processTaggedTemplateExpression(context: TransformationContext, node: TaggedTemplateExpression, visitor: Visitor, currentSourceFile: SourceFile, recordTaggedTemplateString: (temp: Identifier) => void, level: ProcessLevel) {
   // Visit the tag expression
   const tag = visitNode(node.tag, visitor, isExpression);
 
@@ -76,7 +69,7 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
     // thus we need to remove those characters.
     // First template piece starts with "`", others with "}"
     // Last template piece ends with "`", others with "${"
-    const isLast = node.kind === SyntaxKind.NoSubstitutionTemplateLiteral || node.kind === SyntaxKind.TemplateTail;
+    const isLast = node.kind === qt.SyntaxKind.NoSubstitutionTemplateLiteral || node.kind === qt.SyntaxKind.TemplateTail;
     text = text.substring(1, text.length - (isLast ? 1 : 2));
   }
 

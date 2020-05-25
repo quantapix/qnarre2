@@ -3,7 +3,7 @@ export function trace(host: ModuleResolutionHost): void {
   host.trace!(formatMessage.apply(undefined, arguments));
 }
 
-export function isTraceEnabled(compilerOptions: CompilerOptions, host: ModuleResolutionHost): boolean {
+export function isTraceEnabled(compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost): boolean {
   return !!compilerOptions.traceResolution && host.trace !== undefined;
 }
 
@@ -81,12 +81,7 @@ function resolvedTypeScriptOnly(resolved: Resolved | undefined): PathAndPackageI
   return { fileName: resolved.path, packageId: resolved.packageId };
 }
 
-function createResolvedModuleWithFailedLookupLocations(
-  resolved: Resolved | undefined,
-  isExternalLibraryImport: boolean | undefined,
-  failedLookupLocations: string[],
-  resultFromCache: ResolvedModuleWithFailedLookupLocations | undefined
-): ResolvedModuleWithFailedLookupLocations {
+function createResolvedModuleWithFailedLookupLocations(resolved: Resolved | undefined, isExternalLibraryImport: boolean | undefined, failedLookupLocations: string[], resultFromCache: ResolvedModuleWithFailedLookupLocations | undefined): ResolvedModuleWithFailedLookupLocations {
   if (resultFromCache) {
     resultFromCache.failedLookupLocations.push(...failedLookupLocations);
     return resultFromCache;
@@ -105,7 +100,7 @@ function createResolvedModuleWithFailedLookupLocations(
 
 interface ModuleResolutionState {
   host: ModuleResolutionHost;
-  compilerOptions: CompilerOptions;
+  compilerOptions: qt.CompilerOptions;
   traceEnabled: boolean;
   failedLookupLocations: Push<string>;
   resultFromCache?: ResolvedModuleWithFailedLookupLocations;
@@ -115,7 +110,7 @@ interface ModuleResolutionState {
 interface PackageJsonPathFields {
   typings?: string;
   types?: string;
-  typesVersions?: MapLike<MapLike<string[]>>;
+  typesVersions?: qpc.MapLike<MapLike<string[]>>;
   main?: string;
   tsconfig?: string;
 }
@@ -125,18 +120,8 @@ interface PackageJson extends PackageJsonPathFields {
   version?: string;
 }
 
-function readPackageJsonField<TMatch, K extends MatchingKeys<PackageJson, string | undefined>>(
-  jsonContent: PackageJson,
-  fieldName: K,
-  typeOfTag: 'string',
-  state: ModuleResolutionState
-): PackageJson[K] | undefined;
-function readPackageJsonField<K extends MatchingKeys<PackageJson, object | undefined>>(
-  jsonContent: PackageJson,
-  fieldName: K,
-  typeOfTag: 'object',
-  state: ModuleResolutionState
-): PackageJson[K] | undefined;
+function readPackageJsonField<TMatch, K extends MatchingKeys<PackageJson, string | undefined>>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'string', state: ModuleResolutionState): PackageJson[K] | undefined;
+function readPackageJsonField<K extends MatchingKeys<PackageJson, object | undefined>>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'object', state: ModuleResolutionState): PackageJson[K] | undefined;
 function readPackageJsonField<K extends keyof PackageJson>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'string' | 'object', state: ModuleResolutionState): PackageJson[K] | undefined {
   if (!hasProperty(jsonContent, fieldName)) {
     if (state.traceEnabled) {
@@ -156,12 +141,7 @@ function readPackageJsonField<K extends keyof PackageJson>(jsonContent: PackageJ
   return value;
 }
 
-function readPackageJsonPathField<K extends 'typings' | 'types' | 'main' | 'tsconfig'>(
-  jsonContent: PackageJson,
-  fieldName: K,
-  baseDirectory: string,
-  state: ModuleResolutionState
-): PackageJson[K] | undefined {
+function readPackageJsonPathField<K extends 'typings' | 'types' | 'main' | 'tsconfig'>(jsonContent: PackageJson, fieldName: K, baseDirectory: string, state: ModuleResolutionState): PackageJson[K] | undefined {
   const fileName = readPackageJsonField(jsonContent, fieldName, 'string', state);
   if (fileName === undefined) {
     return;
@@ -204,7 +184,7 @@ function readPackageJsonTypesVersionsField(jsonContent: PackageJson, state: Modu
 
 interface VersionPaths {
   version: string;
-  paths: MapLike<string[]>;
+  paths: qpc.MapLike<string[]>;
 }
 
 function readPackageJsonTypesVersionPaths(jsonContent: PackageJson, state: ModuleResolutionState): VersionPaths | undefined {
@@ -240,7 +220,7 @@ function readPackageJsonTypesVersionPaths(jsonContent: PackageJson, state: Modul
 
 let typeScriptVersion: Version | undefined;
 
-export function getPackageJsonTypesVersionsPaths(typesVersions: MapLike<MapLike<string[]>>) {
+export function getPackageJsonTypesVersionsPaths(typesVersions: qpc.MapLike<MapLike<string[]>>) {
   if (!typeScriptVersion) typeScriptVersion = new Version(version);
 
   for (const key in typesVersions) {
@@ -258,7 +238,7 @@ export function getPackageJsonTypesVersionsPaths(typesVersions: MapLike<MapLike<
   }
 }
 
-export function getEffectiveTypeRoots(options: CompilerOptions, host: GetEffectiveTypeRootsHost): string[] | undefined {
+export function getEffectiveTypeRoots(options: qt.CompilerOptions, host: GetEffectiveTypeRootsHost): string[] | undefined {
   if (options.typeRoots) {
     return options.typeRoots;
   }
@@ -302,13 +282,7 @@ const nodeModulesAtTypes = combinePaths('node_modules', '@types');
  * This is possible in case if resolution is performed for directives specified via 'types' parameter. In this case initial path for secondary lookups
  * is assumed to be the same as root directory of the project.
  */
-export function resolveTypeReferenceDirective(
-  typeReferenceDirectiveName: string,
-  containingFile: string | undefined,
-  options: CompilerOptions,
-  host: ModuleResolutionHost,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
+export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string, containingFile: string | undefined, options: qt.CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference): ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(options, host);
   if (redirectedReference) {
     options = redirectedReference.commandLine.options;
@@ -349,14 +323,7 @@ export function resolveTypeReferenceDirective(
     const resolvedFileName = options.preserveSymlinks ? fileName : realPath(fileName, host, traceEnabled);
     if (traceEnabled) {
       if (packageId) {
-        trace(
-          host,
-          Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_with_Package_ID_2_primary_Colon_3,
-          typeReferenceDirectiveName,
-          resolvedFileName,
-          packageIdToString(packageId),
-          primary
-        );
+        trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_with_Package_ID_2_primary_Colon_3, typeReferenceDirectiveName, resolvedFileName, packageIdToString(packageId), primary);
       } else {
         trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_primary_Colon_2, typeReferenceDirectiveName, resolvedFileName, primary);
       }
@@ -398,14 +365,7 @@ export function resolveTypeReferenceDirective(
       }
       let result: Resolved | undefined;
       if (!isExternalModuleNameRelative(typeReferenceDirectiveName)) {
-        const searchResult = loadModuleFromNearestNodeModulesDirectory(
-          Extensions.DtsOnly,
-          typeReferenceDirectiveName,
-          initialLocationForSecondaryLookup,
-          moduleResolutionState,
-          /*cache*/ undefined,
-          /*redirectedReference*/ undefined
-        );
+        const searchResult = loadModuleFromNearestNodeModulesDirectory(Extensions.DtsOnly, typeReferenceDirectiveName, initialLocationForSecondaryLookup, moduleResolutionState, /*cache*/ undefined, /*redirectedReference*/ undefined);
         result = searchResult && searchResult.value;
       } else {
         const { path: candidate } = normalizePathAndParts(combinePaths(initialLocationForSecondaryLookup, typeReferenceDirectiveName));
@@ -432,7 +392,7 @@ export function resolveTypeReferenceDirective(
  * More type directives might appear in the program later as a result of loading actual source files;
  *   this list is only the set of defaults that are implicitly included.
  */
-export function getAutomaticTypeDirectiveNames(options: CompilerOptions, host: ModuleResolutionHost): string[] {
+export function getAutomaticTypeDirectiveNames(options: qt.CompilerOptions, host: ModuleResolutionHost): string[] {
   // Use explicit type list from tsconfig.json
   if (options.types) {
     return options.types;
@@ -492,7 +452,7 @@ export interface PerModuleNameCache {
   set(directory: string, result: ResolvedModuleWithFailedLookupLocations): void;
 }
 
-export function createModuleResolutionCache(currentDirectory: string, getCanonicalFileName: (s: string) => string, options?: CompilerOptions): ModuleResolutionCache {
+export function createModuleResolutionCache(currentDirectory: string, getCanonicalFileName: (s: string) => string, options?: qt.CompilerOptions): ModuleResolutionCache {
   return createModuleResolutionCacheWithMaps(createCacheWithRedirects(options), createCacheWithRedirects(options), currentDirectory, getCanonicalFileName);
 }
 
@@ -501,11 +461,11 @@ export interface CacheWithRedirects<T> {
   redirectsMap: Map<Map<T>>;
   getOrCreateMapOfCacheRedirects(redirectedReference: ResolvedProjectReference | undefined): Map<T>;
   clear(): void;
-  setOwnOptions(newOptions: CompilerOptions): void;
+  setOwnOptions(newOptions: qt.CompilerOptions): void;
   setOwnMap(newOwnMap: Map<T>): void;
 }
 
-export function createCacheWithRedirects<T>(options?: CompilerOptions): CacheWithRedirects<T> {
+export function createCacheWithRedirects<T>(options?: qt.CompilerOptions): CacheWithRedirects<T> {
   let ownMap: Map<T> = createMap();
   const redirectsMap: Map<Map<T>> = createMap();
   return {
@@ -517,7 +477,7 @@ export function createCacheWithRedirects<T>(options?: CompilerOptions): CacheWit
     setOwnMap,
   };
 
-  function setOwnOptions(newOptions: CompilerOptions) {
+  function setOwnOptions(newOptions: qt.CompilerOptions) {
     options = newOptions;
   }
 
@@ -545,12 +505,7 @@ export function createCacheWithRedirects<T>(options?: CompilerOptions): CacheWit
   }
 }
 
-export function createModuleResolutionCacheWithMaps(
-  directoryToModuleNameMap: CacheWithRedirects<Map<ResolvedModuleWithFailedLookupLocations>>,
-  moduleNameToDirectoryMap: CacheWithRedirects<PerModuleNameCache>,
-  currentDirectory: string,
-  getCanonicalFileName: GetCanonicalFileName
-): ModuleResolutionCache {
+export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: CacheWithRedirects<Map<ResolvedModuleWithFailedLookupLocations>>, moduleNameToDirectoryMap: CacheWithRedirects<PerModuleNameCache>, currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): ModuleResolutionCache {
   return { getOrCreateCacheForDirectory, getOrCreateCacheForModuleName, directoryToModuleNameMap, moduleNameToDirectoryMap };
 
   function getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: ResolvedProjectReference) {
@@ -651,14 +606,7 @@ export function resolveModuleNameFromCache(moduleName: string, containingFile: s
   return perFolderCache && perFolderCache.get(moduleName);
 }
 
-export function resolveModuleName(
-  moduleName: string,
-  containingFile: string,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedModuleWithFailedLookupLocations {
+export function resolveModuleName(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference): ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOptions, host);
   if (redirectedReference) {
     compilerOptions = redirectedReference.commandLine.options;
@@ -757,7 +705,7 @@ type ResolutionKindSpecificLoader = (extensions: Extensions, candidate: string, 
  *    ...
  *    pattern-n: [...substitutions]
  * }
- * Pattern here is a string that can contain zero or one '*' character. During module resolution module name will be matched against
+ * qc.Pattern here is a string that can contain zero or one '*' character. During module resolution module name will be matched against
  * all patterns in the list. Matching for patterns that don't contain '*' means that module name must be equal to pattern respecting the case.
  * If pattern contains '*' then to match pattern "<prefix>*<suffix>" module name must start with the <prefix> and end with <suffix>.
  * <MatchedStar> denotes part of the module name between <prefix> and <suffix>.
@@ -798,13 +746,7 @@ type ResolutionKindSpecificLoader = (extensions: Extensions, candidate: string, 
  * be converted to a path relative to found rootDir entry './content/protocols/file2' (*). As a last step compiler will check all remaining
  * entries in 'rootDirs', use them to build absolute path out of (*) and try to resolve module from this location.
  */
-function tryLoadModuleUsingOptionalResolutionSettings(
-  extensions: Extensions,
-  moduleName: string,
-  containingDirectory: string,
-  loader: ResolutionKindSpecificLoader,
-  state: ModuleResolutionState
-): Resolved | undefined {
+function tryLoadModuleUsingOptionalResolutionSettings(extensions: Extensions, moduleName: string, containingDirectory: string, loader: ResolutionKindSpecificLoader, state: ModuleResolutionState): Resolved | undefined {
   const resolved = tryLoadModuleUsingPathsIfEligible(extensions, moduleName, loader, state);
   if (resolved) return resolved.value;
 
@@ -938,63 +880,16 @@ const tsExtensions = [Extensions.TypeScript, Extensions.JavaScript];
 const tsPlusJsonExtensions = [...tsExtensions, Extensions.Json];
 const tsconfigExtensions = [Extensions.TSConfig];
 function tryResolveJSModuleWorker(moduleName: string, initialDir: string, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
-  return nodeModuleNameResolverWorker(
-    moduleName,
-    initialDir,
-    { moduleResolution: ModuleResolutionKind.NodeJs, allowJs: true },
-    host,
-    /*cache*/ undefined,
-    jsOnlyExtensions,
-    /*redirectedReferences*/ undefined
-  );
+  return nodeModuleNameResolverWorker(moduleName, initialDir, { moduleResolution: ModuleResolutionKind.NodeJs, allowJs: true }, host, /*cache*/ undefined, jsOnlyExtensions, /*redirectedReferences*/ undefined);
 }
 
-export function nodeModuleNameResolver(
-  moduleName: string,
-  containingFile: string,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedModuleWithFailedLookupLocations;
-export function nodeModuleNameResolver(
-  moduleName: string,
-  containingFile: string,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference,
-  lookupConfig?: boolean
-): ResolvedModuleWithFailedLookupLocations; // eslint-disable-line @typescript-eslint/unified-signatures
-export function nodeModuleNameResolver(
-  moduleName: string,
-  containingFile: string,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  cache?: ModuleResolutionCache,
-  redirectedReference?: ResolvedProjectReference,
-  lookupConfig?: boolean
-): ResolvedModuleWithFailedLookupLocations {
-  return nodeModuleNameResolverWorker(
-    moduleName,
-    getDirectoryPath(containingFile),
-    compilerOptions,
-    host,
-    cache,
-    lookupConfig ? tsconfigExtensions : compilerOptions.resolveJsonModule ? tsPlusJsonExtensions : tsExtensions,
-    redirectedReference
-  );
+export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference): ResolvedModuleWithFailedLookupLocations;
+export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference, lookupConfig?: boolean): ResolvedModuleWithFailedLookupLocations; // eslint-disable-line @typescript-eslint/unified-signatures
+export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference, lookupConfig?: boolean): ResolvedModuleWithFailedLookupLocations {
+  return nodeModuleNameResolverWorker(moduleName, getDirectoryPath(containingFile), compilerOptions, host, cache, lookupConfig ? tsconfigExtensions : compilerOptions.resolveJsonModule ? tsPlusJsonExtensions : tsExtensions, redirectedReference);
 }
 
-function nodeModuleNameResolverWorker(
-  moduleName: string,
-  containingDirectory: string,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  cache: ModuleResolutionCache | undefined,
-  extensions: Extensions[],
-  redirectedReference: ResolvedProjectReference | undefined
-): ResolvedModuleWithFailedLookupLocations {
+function nodeModuleNameResolverWorker(moduleName: string, containingDirectory: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache: ModuleResolutionCache | undefined, extensions: Extensions[], redirectedReference: ResolvedProjectReference | undefined): ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOptions, host);
 
   const failedLookupLocations: string[] = [];
@@ -1004,8 +899,7 @@ function nodeModuleNameResolverWorker(
   return createResolvedModuleWithFailedLookupLocations(result?.value?.resolved, result?.value?.isExternalLibraryImport, failedLookupLocations, state.resultFromCache);
 
   function tryResolve(extensions: Extensions): SearchResult<{ resolved: Resolved; isExternalLibraryImport: boolean }> {
-    const loader: ResolutionKindSpecificLoader = (extensions, candidate, onlyRecordFailures, state) =>
-      nodeLoadModuleByRelativeName(extensions, candidate, onlyRecordFailures, state, /*considerPackageJson*/ true);
+    const loader: ResolutionKindSpecificLoader = (extensions, candidate, onlyRecordFailures, state) => nodeLoadModuleByRelativeName(extensions, candidate, onlyRecordFailures, state, /*considerPackageJson*/ true);
     const resolved = tryLoadModuleUsingOptionalResolutionSettings(extensions, moduleName, containingDirectory, loader, state);
     if (resolved) {
       return toSearchResult({ resolved, isExternalLibraryImport: pathContainsNodeModules(resolved.path) });
@@ -1228,14 +1122,7 @@ function getPackageJsonInfo(packageDirectory: string, onlyRecordFailures: boolea
   }
 }
 
-function loadNodeModuleFromDirectoryWorker(
-  extensions: Extensions,
-  candidate: string,
-  onlyRecordFailures: boolean,
-  state: ModuleResolutionState,
-  jsonContent: PackageJsonPathFields | undefined,
-  versionPaths: VersionPaths | undefined
-): PathAndExtension | undefined {
+function loadNodeModuleFromDirectoryWorker(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState, jsonContent: PackageJsonPathFields | undefined, versionPaths: VersionPaths | undefined): PathAndExtension | undefined {
   let packageFile: string | undefined;
   if (jsonContent) {
     switch (extensions) {
@@ -1327,14 +1214,7 @@ export function parsePackageName(moduleName: string): { packageName: string; res
   return idx === -1 ? { packageName: moduleName, rest: '' } : { packageName: moduleName.slice(0, idx), rest: moduleName.slice(idx + 1) };
 }
 
-function loadModuleFromNearestNodeModulesDirectory(
-  extensions: Extensions,
-  moduleName: string,
-  directory: string,
-  state: ModuleResolutionState,
-  cache: NonRelativeModuleNameResolutionCache | undefined,
-  redirectedReference: ResolvedProjectReference | undefined
-): SearchResult<Resolved> {
+function loadModuleFromNearestNodeModulesDirectory(extensions: Extensions, moduleName: string, directory: string, state: ModuleResolutionState, cache: NonRelativeModuleNameResolutionCache | undefined, redirectedReference: ResolvedProjectReference | undefined): SearchResult<Resolved> {
   return loadModuleFromNearestNodeModulesDirectoryWorker(extensions, moduleName, directory, state, /*typesScopeOnly*/ false, cache, redirectedReference);
 }
 
@@ -1343,15 +1223,7 @@ function loadModuleFromNearestNodeModulesDirectoryTypesScope(moduleName: string,
   return loadModuleFromNearestNodeModulesDirectoryWorker(Extensions.DtsOnly, moduleName, directory, state, /*typesScopeOnly*/ true, /*cache*/ undefined, /*redirectedReference*/ undefined);
 }
 
-function loadModuleFromNearestNodeModulesDirectoryWorker(
-  extensions: Extensions,
-  moduleName: string,
-  directory: string,
-  state: ModuleResolutionState,
-  typesScopeOnly: boolean,
-  cache: NonRelativeModuleNameResolutionCache | undefined,
-  redirectedReference: ResolvedProjectReference | undefined
-): SearchResult<Resolved> {
+function loadModuleFromNearestNodeModulesDirectoryWorker(extensions: Extensions, moduleName: string, directory: string, state: ModuleResolutionState, typesScopeOnly: boolean, cache: NonRelativeModuleNameResolutionCache | undefined, redirectedReference: ResolvedProjectReference | undefined): SearchResult<Resolved> {
   const perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName, redirectedReference);
   return forEachAncestorDirectory(normalizeSlashes(directory), (ancestorDirectory) => {
     if (getBaseFileName(ancestorDirectory) !== 'node_modules') {
@@ -1388,13 +1260,7 @@ function loadModuleFromImmediateNodeModulesDirectory(extensions: Extensions, mod
   }
 }
 
-function loadModuleFromSpecificNodeModulesDirectory(
-  extensions: Extensions,
-  moduleName: string,
-  nodeModulesDirectory: string,
-  nodeModulesDirectoryExists: boolean,
-  state: ModuleResolutionState
-): Resolved | undefined {
+function loadModuleFromSpecificNodeModulesDirectory(extensions: Extensions, moduleName: string, nodeModulesDirectory: string, nodeModulesDirectoryExists: boolean, state: ModuleResolutionState): Resolved | undefined {
   const candidate = normalizePath(combinePaths(nodeModulesDirectory, moduleName));
 
   // First look for a nested package.json, as in `node_modules/foo/bar/package.json`.
@@ -1410,9 +1276,7 @@ function loadModuleFromSpecificNodeModulesDirectory(
   }
 
   const loader: ResolutionKindSpecificLoader = (extensions, candidate, onlyRecordFailures, state) => {
-    const pathAndExtension =
-      loadModuleFromFile(extensions, candidate, onlyRecordFailures, state) ||
-      loadNodeModuleFromDirectoryWorker(extensions, candidate, onlyRecordFailures, state, packageInfo && packageInfo.packageJsonContent, packageInfo && packageInfo.versionPaths);
+    const pathAndExtension = loadModuleFromFile(extensions, candidate, onlyRecordFailures, state) || loadNodeModuleFromDirectoryWorker(extensions, candidate, onlyRecordFailures, state, packageInfo && packageInfo.packageJsonContent, packageInfo && packageInfo.versionPaths);
     return withPackageId(packageInfo, pathAndExtension);
   };
 
@@ -1425,13 +1289,7 @@ function loadModuleFromSpecificNodeModulesDirectory(
     packageInfo = getPackageJsonInfo(packageDirectory, !nodeModulesDirectoryExists, state);
     if (packageInfo && packageInfo.versionPaths) {
       if (state.traceEnabled) {
-        trace(
-          state.host,
-          Diagnostics.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2,
-          packageInfo.versionPaths.version,
-          version,
-          rest
-        );
+        trace(state.host, Diagnostics.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2, packageInfo.versionPaths.version, version, rest);
       }
       const packageDirectoryExists = nodeModulesDirectoryExists && directoryProbablyExists(packageDirectory, state.host);
       const fromPaths = tryLoadModuleUsingPaths(extensions, rest, packageDirectory, packageInfo.versionPaths.paths, loader, !packageDirectoryExists, state);
@@ -1444,15 +1302,7 @@ function loadModuleFromSpecificNodeModulesDirectory(
   return loader(extensions, candidate, !nodeModulesDirectoryExists, state);
 }
 
-function tryLoadModuleUsingPaths(
-  extensions: Extensions,
-  moduleName: string,
-  baseDirectory: string,
-  paths: MapLike<string[]>,
-  loader: ResolutionKindSpecificLoader,
-  onlyRecordFailures: boolean,
-  state: ModuleResolutionState
-): SearchResult<Resolved> {
+function tryLoadModuleUsingPaths(extensions: Extensions, moduleName: string, baseDirectory: string, paths: qpc.MapLike<string[]>, loader: ResolutionKindSpecificLoader, onlyRecordFailures: boolean, state: ModuleResolutionState): SearchResult<Resolved> {
   const matchedPattern = matchPatternOrExact(getOwnKeys(paths), moduleName);
   if (matchedPattern) {
     const matchedStar = isString(matchedPattern) ? undefined : matchedText(matchedPattern, moduleName);
@@ -1536,14 +1386,7 @@ function tryFindNonRelativeModuleNameInCache(cache: PerModuleNameCache | undefin
   }
 }
 
-export function classicNameResolver(
-  moduleName: string,
-  containingFile: string,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  cache?: NonRelativeModuleNameResolutionCache,
-  redirectedReference?: ResolvedProjectReference
-): ResolvedModuleWithFailedLookupLocations {
+export function classicNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: NonRelativeModuleNameResolutionCache, redirectedReference?: ResolvedProjectReference): ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOptions, host);
   const failedLookupLocations: string[] = [];
   const state: ModuleResolutionState = { compilerOptions, host, traceEnabled, failedLookupLocations };
@@ -1589,13 +1432,7 @@ export function classicNameResolver(
  * This is the minumum code needed to expose that functionality; the rest is in the host.
  */
 
-export function loadModuleFromGlobalCache(
-  moduleName: string,
-  projectName: string | undefined,
-  compilerOptions: CompilerOptions,
-  host: ModuleResolutionHost,
-  globalCache: string
-): ResolvedModuleWithFailedLookupLocations {
+export function loadModuleFromGlobalCache(moduleName: string, projectName: string | undefined, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, globalCache: string): ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOptions, host);
   if (traceEnabled) {
     trace(host, Diagnostics.Auto_discovery_for_typings_is_enabled_in_project_0_Running_extra_resolution_pass_for_module_1_using_cache_location_2, projectName, moduleName, globalCache);

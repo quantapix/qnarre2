@@ -1,12 +1,24 @@
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+/* eslint-disable no-extra-boolean-cast */
+/* eslint-disable no-useless-escape */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-for-in-array */
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/unbound-method */
+
+import * as qpc from './corePublic';
+import * as qt from './types';
+import { Debug } from './debug';
+
 export const emptyArray: never[] = [] as never[];
 
 /** Create a new map. */
-export function createMap<T>(): Map<T> {
-  return new Map<T>();
+export function createMap<T>(): qpc.Map<T> {
+  return new qpc.Map<T>();
 }
 
 /** Create a new map from an array of entries. */
-export function createMapFromEntries<T>(entries: [string, T][]): Map<T> {
+export function createMapFromEntries<T>(entries: [string, T][]): qpc.Map<T> {
   const map = createMap<T>();
   for (const [key, value] of entries) {
     map.set(key, value);
@@ -15,8 +27,8 @@ export function createMapFromEntries<T>(entries: [string, T][]): Map<T> {
 }
 
 /** Create a new map from a template object is provided, the map will copy entries from it. */
-export function createMapFromTemplate<T>(template: MapLike<T>): Map<T> {
-  const map: Map<T> = new Map<T>();
+export function createMapFromTemplate<T>(template: qpc.MapLike<T>): qpc.Map<T> {
+  const map: qpc.Map<T> = new qpc.Map<T>();
 
   // Copies keys/values from template. Note that for..in will not throw if
   // template is undefined, and instead will just exit the loop.
@@ -116,7 +128,7 @@ export function zipToIterator<T, U>(arrayA: readonly T[], arrayB: readonly U[]):
   };
 }
 
-export function zipToMap<T>(keys: readonly string[], values: readonly T[]): Map<T> {
+export function zipToMap<T>(keys: readonly string[], values: readonly T[]): qpc.Map<T> {
   Debug.assert(keys.length === values.length);
   const map = createMap<T>();
   for (let i = 0; i < keys.length; ++i) {
@@ -216,7 +228,7 @@ export function findMap<T, U>(array: readonly T[], callback: (element: T, index:
   return Debug.fail();
 }
 
-export function contains<T>(array: readonly T[] | undefined, value: T, equalityComparer: EqualityComparer<T> = equateValues): boolean {
+export function contains<T>(array: readonly T[] | undefined, value: T, equalityComparer: qpc.EqualityComparer<T> = equateValues): boolean {
   if (array) {
     for (const v of array) {
       if (equalityComparer(v, value)) {
@@ -227,7 +239,7 @@ export function contains<T>(array: readonly T[] | undefined, value: T, equalityC
   return false;
 }
 
-export function arraysEqual<T>(a: readonly T[], b: readonly T[], equalityComparer: EqualityComparer<T> = equateValues): boolean {
+export function arraysEqual<T>(a: readonly T[], b: readonly T[], equalityComparer: qpc.EqualityComparer<T> = equateValues): boolean {
   return a.length === b.length && a.every((x, i) => equalityComparer(x, b[i]));
 }
 
@@ -505,7 +517,7 @@ export function mapDefinedIterator<T, U>(iter: Iterator<T>, mapFn: (x: T) => U |
   };
 }
 
-export function mapDefinedMap<T, U>(map: ReadonlyMap<T>, mapValue: (value: T, key: string) => U | undefined, mapKey: (key: string) => string = identity): Map<U> {
+export function mapDefinedMap<T, U>(map: qpc.ReadonlyMap<T>, mapValue: (value: T, key: string) => U | undefined, mapKey: (key: string) => string = identity): qpc.Map<U> {
   const result = createMap<U>();
   map.forEach((value, key) => {
     const mapped = mapValue(value, key);
@@ -577,9 +589,9 @@ export function spanMap<T, K, U>(array: readonly T[] | undefined, keyfn: (x: T, 
   return result;
 }
 
-export function mapEntries<T, U>(map: ReadonlyMap<T>, f: (key: string, value: T) => [string, U]): Map<U>;
-export function mapEntries<T, U>(map: ReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): Map<U> | undefined;
-export function mapEntries<T, U>(map: ReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): Map<U> | undefined {
+export function mapEntries<T, U>(map: qpc.ReadonlyMap<T>, f: (key: string, value: T) => [string, U]): qpc.Map<U>;
+export function mapEntries<T, U>(map: qpc.ReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): qpc.Map<U> | undefined;
+export function mapEntries<T, U>(map: qpc.ReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): qpc.Map<U> | undefined {
   if (!map) {
     return undefined;
   }
@@ -642,7 +654,7 @@ export function indicesOf(array: readonly unknown[]): number[] {
   return array.map(selectIndex);
 }
 
-function deduplicateRelational<T>(array: readonly T[], equalityComparer: EqualityComparer<T>, comparer: Comparer<T>) {
+function deduplicateRelational<T>(array: readonly T[], equalityComparer: qpc.EqualityComparer<T>, comparer: qpc.Comparer<T>) {
   // Perform a stable sort of the array. This ensures the first entry in a list of
   // duplicates remains the first entry in the result.
   const indices = indicesOf(array);
@@ -664,7 +676,7 @@ function deduplicateRelational<T>(array: readonly T[], equalityComparer: Equalit
   return deduplicated.map((i) => array[i]);
 }
 
-function deduplicateEquality<T>(array: readonly T[], equalityComparer: EqualityComparer<T>) {
+function deduplicateEquality<T>(array: readonly T[], equalityComparer: qpc.EqualityComparer<T>) {
   const result: T[] = [];
   for (const item of array) {
     pushIfUnique(result, item, equalityComparer);
@@ -678,15 +690,15 @@ function deduplicateEquality<T>(array: readonly T[], equalityComparer: EqualityC
  * @param comparer An optional `Comparer` used to sort entries before comparison, though the
  * result will remain in the original order in `array`.
  */
-export function deduplicate<T>(array: readonly T[], equalityComparer: EqualityComparer<T>, comparer?: Comparer<T>): T[] {
+export function deduplicate<T>(array: readonly T[], equalityComparer: qpc.EqualityComparer<T>, comparer?: qpc.Comparer<T>): T[] {
   return array.length === 0 ? [] : array.length === 1 ? array.slice() : comparer ? deduplicateRelational(array, equalityComparer, comparer) : deduplicateEquality(array, equalityComparer);
 }
 
 /**
  * Deduplicates an array that has already been sorted.
  */
-function deduplicateSorted<T>(array: SortedReadonlyArray<T>, comparer: EqualityComparer<T> | Comparer<T>): SortedReadonlyArray<T> {
-  if (array.length === 0) return (emptyArray as any) as SortedReadonlyArray<T>;
+function deduplicateSorted<T>(array: qpc.SortedReadonlyArray<T>, comparer: qpc.EqualityComparer<T> | qpc.Comparer<T>): qpc.SortedReadonlyArray<T> {
+  if (array.length === 0) return (emptyArray as any) as qpc.SortedReadonlyArray<T>;
 
   let last = array[0];
   const deduplicated: T[] = [last];
@@ -698,10 +710,10 @@ function deduplicateSorted<T>(array: SortedReadonlyArray<T>, comparer: EqualityC
 
       // relational comparison
       // falls through
-      case Comparison.EqualTo:
+      case qpc.Comparison.EqualTo:
         continue;
 
-      case Comparison.LessThan:
+      case qpc.Comparison.LessThan:
         // If `array` is sorted, `next` should **never** be less than `last`.
         return Debug.fail('Array is unsorted.');
     }
@@ -709,10 +721,10 @@ function deduplicateSorted<T>(array: SortedReadonlyArray<T>, comparer: EqualityC
     deduplicated.push((last = next));
   }
 
-  return (deduplicated as any) as SortedReadonlyArray<T>;
+  return (deduplicated as any) as qpc.SortedReadonlyArray<T>;
 }
 
-export function insertSorted<T>(array: SortedArray<T>, insert: T, compare: Comparer<T>): void {
+export function insertSorted<T>(array: qpc.SortedArray<T>, insert: T, compare: qpc.Comparer<T>): void {
   if (array.length === 0) {
     array.push(insert);
     return;
@@ -724,10 +736,10 @@ export function insertSorted<T>(array: SortedArray<T>, insert: T, compare: Compa
   }
 }
 
-export function sortAndDeduplicate<T>(array: readonly string[]): SortedReadonlyArray<string>;
-export function sortAndDeduplicate<T>(array: readonly T[], comparer: Comparer<T>, equalityComparer?: EqualityComparer<T>): SortedReadonlyArray<T>;
-export function sortAndDeduplicate<T>(array: readonly T[], comparer?: Comparer<T>, equalityComparer?: EqualityComparer<T>): SortedReadonlyArray<T> {
-  return deduplicateSorted(sort(array, comparer), equalityComparer || comparer || ((compareStringsCaseSensitive as any) as Comparer<T>));
+export function sortAndDeduplicate<T>(array: readonly string[]): qpc.SortedReadonlyArray<string>;
+export function sortAndDeduplicate<T>(array: readonly T[], comparer: qpc.Comparer<T>, equalityComparer?: qpc.EqualityComparer<T>): qpc.SortedReadonlyArray<T>;
+export function sortAndDeduplicate<T>(array: readonly T[], comparer?: qpc.Comparer<T>, equalityComparer?: qpc.EqualityComparer<T>): qpc.SortedReadonlyArray<T> {
+  return deduplicateSorted(sort(array, comparer), equalityComparer || comparer || ((compareStringsCaseSensitive as any) as qpc.Comparer<T>));
 }
 
 export function arrayIsEqualTo<T>(array1: readonly T[] | undefined, array2: readonly T[] | undefined, equalityComparer: (a: T, b: T, index: number) => boolean = equateValues): boolean {
@@ -779,35 +791,35 @@ export function compact<T>(array: T[]): T[] {
  * are not present in `arrayA` but are present in `arrayB`. Assumes both arrays are sorted
  * based on the provided comparer.
  */
-export function relativeComplement<T>(arrayA: T[] | undefined, arrayB: T[] | undefined, comparer: Comparer<T>): T[] | undefined {
+export function relativeComplement<T>(arrayA: T[] | undefined, arrayB: T[] | undefined, comparer: qpc.Comparer<T>): T[] | undefined {
   if (!arrayB || !arrayA || arrayB.length === 0 || arrayA.length === 0) return arrayB;
   const result: T[] = [];
   loopB: for (let offsetA = 0, offsetB = 0; offsetB < arrayB.length; offsetB++) {
     if (offsetB > 0) {
       // Ensure `arrayB` is properly sorted.
-      Debug.assertGreaterThanOrEqual(comparer(arrayB[offsetB], arrayB[offsetB - 1]), Comparison.EqualTo);
+      Debug.assertGreaterThanOrEqual(comparer(arrayB[offsetB], arrayB[offsetB - 1]), qpc.Comparison.EqualTo);
     }
 
     loopA: for (const startA = offsetA; offsetA < arrayA.length; offsetA++) {
       if (offsetA > startA) {
         // Ensure `arrayA` is properly sorted. We only need to perform this check if
         // `offsetA` has changed since we entered the loop.
-        Debug.assertGreaterThanOrEqual(comparer(arrayA[offsetA], arrayA[offsetA - 1]), Comparison.EqualTo);
+        Debug.assertGreaterThanOrEqual(comparer(arrayA[offsetA], arrayA[offsetA - 1]), qpc.Comparison.EqualTo);
       }
 
       switch (comparer(arrayB[offsetB], arrayA[offsetA])) {
-        case Comparison.LessThan:
+        case qpc.Comparison.LessThan:
           // If B is less than A, B does not exist in arrayA. Add B to the result and
           // move to the next element in arrayB without changing the current position
           // in arrayA.
           result.push(arrayB[offsetB]);
           continue loopB;
-        case Comparison.EqualTo:
+        case qpc.Comparison.EqualTo:
           // If B is equal to A, B exists in arrayA. Move to the next element in
           // arrayB without adding B to the result or changing the current position
           // in arrayA.
           continue loopB;
-        case Comparison.GreaterThan:
+        case qpc.Comparison.GreaterThan:
           // If B is greater than A, we need to keep looking for B in arrayA. Move to
           // the next element in arrayA and recheck.
           continue loopA;
@@ -833,14 +845,11 @@ export function sum<T extends Record<K, number>, K extends string>(array: readon
  * @param value The value to append to the array. If `value` is `undefined`, nothing is
  * appended.
  */
-export function append<TArray extends any[] | undefined, TValue extends NonNullable<TArray>[number] | undefined>(
-  to: TArray,
-  value: TValue
-): [undefined, undefined] extends [TArray, TValue] ? TArray : NonNullable<TArray>[number][];
+export function append<TArray extends any[] | undefined, TValue extends NonNullable<TArray>[number] | undefined>(to: TArray, value: TValue): [undefined, undefined] extends [TArray, TValue] ? TArray : NonNullable<TArray>[number][];
 export function append<T>(to: T[], value: T | undefined): T[];
 export function append<T>(to: T[] | undefined, value: T): T[];
 export function append<T>(to: T[] | undefined, value: T | undefined): T[] | undefined;
-export function append<T>(to: Push<T>, value: T | undefined): void;
+export function append<T>(to: qpc.Push<T>, value: T | undefined): void;
 export function append<T>(to: T[], value: T | undefined): T[] | undefined {
   if (value === undefined) return to;
   if (to === undefined) return [value];
@@ -906,7 +915,7 @@ export function addRange<T>(to: T[] | undefined, from: readonly T[] | undefined,
 /**
  * @return Whether the value was added.
  */
-export function pushIfUnique<T>(array: T[], toAdd: T, equalityComparer?: EqualityComparer<T>): boolean {
+export function pushIfUnique<T>(array: T[], toAdd: T, equalityComparer?: qpc.EqualityComparer<T>): boolean {
   if (contains(array, toAdd, equalityComparer)) {
     return false;
   } else {
@@ -918,7 +927,7 @@ export function pushIfUnique<T>(array: T[], toAdd: T, equalityComparer?: Equalit
 /**
  * Unlike `pushIfUnique`, this can take `undefined` as an input, and returns a new array.
  */
-export function appendIfUnique<T>(array: T[] | undefined, toAdd: T, equalityComparer?: EqualityComparer<T>): T[] {
+export function appendIfUnique<T>(array: T[] | undefined, toAdd: T, equalityComparer?: qpc.EqualityComparer<T>): T[] {
   if (array) {
     pushIfUnique(array, toAdd, equalityComparer);
     return array;
@@ -927,7 +936,7 @@ export function appendIfUnique<T>(array: T[] | undefined, toAdd: T, equalityComp
   }
 }
 
-function stableSortIndices<T>(array: readonly T[], indices: number[], comparer: Comparer<T>) {
+function stableSortIndices<T>(array: readonly T[], indices: number[], comparer: qpc.Comparer<T>) {
   // sort indices by value then position
   indices.sort((x, y) => comparer(array[x], array[y]) || compareValues(x, y));
 }
@@ -935,8 +944,8 @@ function stableSortIndices<T>(array: readonly T[], indices: number[], comparer: 
 /**
  * Returns a new sorted array.
  */
-export function sort<T>(array: readonly T[], comparer?: Comparer<T>): SortedReadonlyArray<T> {
-  return (array.length === 0 ? array : array.slice().sort(comparer)) as SortedReadonlyArray<T>;
+export function sort<T>(array: readonly T[], comparer?: qpc.Comparer<T>): qpc.SortedReadonlyArray<T> {
+  return (array.length === 0 ? array : array.slice().sort(comparer)) as qpc.SortedReadonlyArray<T>;
 }
 
 export function arrayIterator<T>(array: readonly T[]): Iterator<T> {
@@ -970,10 +979,10 @@ export function arrayReverseIterator<T>(array: readonly T[]): Iterator<T> {
 /**
  * Stable sort of an array. Elements equal to each other maintain their relative position in the array.
  */
-export function stableSort<T>(array: readonly T[], comparer: Comparer<T>): SortedReadonlyArray<T> {
+export function stableSort<T>(array: readonly T[], comparer: qpc.Comparer<T>): qpc.SortedReadonlyArray<T> {
   const indices = indicesOf(array);
   stableSortIndices(array, indices, comparer);
-  return (indices.map((i) => array[i]) as SortedArray<T>) as SortedReadonlyArray<T>;
+  return (indices.map((i) => array[i]) as qpc.SortedArray<T>) as qpc.SortedReadonlyArray<T>;
 }
 
 export function rangeEquals<T>(array1: readonly T[], array2: readonly T[], pos: number, end: number) {
@@ -1060,7 +1069,7 @@ export function replaceElement<T>(array: readonly T[], index: number, value: T):
  * @param keyComparer A callback used to compare two keys in a sorted array.
  * @param offset An offset into `array` at which to start the search.
  */
-export function binarySearch<T, U>(array: readonly T[], value: T, keySelector: (v: T) => U, keyComparer: Comparer<U>, offset?: number): number {
+export function binarySearch<T, U>(array: readonly T[], value: T, keySelector: (v: T) => U, keyComparer: qpc.Comparer<U>, offset?: number): number {
   return binarySearchKey(array, keySelector(value), keySelector, keyComparer, offset);
 }
 
@@ -1074,7 +1083,7 @@ export function binarySearch<T, U>(array: readonly T[], value: T, keySelector: (
  * @param keyComparer A callback used to compare two keys in a sorted array.
  * @param offset An offset into `array` at which to start the search.
  */
-export function binarySearchKey<T, U>(array: readonly T[], key: U, keySelector: (v: T) => U, keyComparer: Comparer<U>, offset?: number): number {
+export function binarySearchKey<T, U>(array: readonly T[], key: U, keySelector: (v: T) => U, keyComparer: qpc.Comparer<U>, offset?: number): number {
   if (!some(array)) {
     return -1;
   }
@@ -1085,12 +1094,12 @@ export function binarySearchKey<T, U>(array: readonly T[], key: U, keySelector: 
     const middle = low + ((high - low) >> 1);
     const midKey = keySelector(array[middle]);
     switch (keyComparer(midKey, key)) {
-      case Comparison.LessThan:
+      case qpc.Comparison.LessThan:
         low = middle + 1;
         break;
-      case Comparison.EqualTo:
+      case qpc.Comparison.EqualTo:
         return middle;
-      case Comparison.GreaterThan:
+      case qpc.Comparison.GreaterThan:
         high = middle - 1;
         break;
     }
@@ -1132,7 +1141,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
  * @param map A map-like.
  * @param key A property key.
  */
-export function hasProperty(map: MapLike<any>, key: string): boolean {
+export function hasProperty(map: qpc.MapLike<any>, key: string): boolean {
   return hasOwnProperty.call(map, key);
 }
 
@@ -1142,14 +1151,14 @@ export function hasProperty(map: MapLike<any>, key: string): boolean {
  * @param map A map-like.
  * @param key A property key.
  */
-export function getProperty<T>(map: MapLike<T>, key: string): T | undefined {
+export function getProperty<T>(map: qpc.MapLike<T>, key: string): T | undefined {
   return hasOwnProperty.call(map, key) ? map[key] : undefined;
 }
 
 /**
  * Gets the owned, enumerable property keys of a map-like.
  */
-export function getOwnKeys<T>(map: MapLike<T>): string[] {
+export function getOwnKeys<T>(map: qpc.MapLike<T>): string[] {
   const keys: string[] = [];
   for (const key in map) {
     if (hasOwnProperty.call(map, key)) {
@@ -1211,7 +1220,7 @@ export function assign<T extends object>(t: T, ...args: (T | undefined)[]) {
  * @param left A map-like whose properties should be compared.
  * @param right A map-like whose properties should be compared.
  */
-export function equalOwnProperties<T>(left: MapLike<T> | undefined, right: MapLike<T> | undefined, equalityComparer: EqualityComparer<T> = equateValues) {
+export function equalOwnProperties<T>(left: qpc.MapLike<T> | undefined, right: qpc.MapLike<T> | undefined, equalityComparer: qpc.EqualityComparer<T> = equateValues) {
   if (left === right) return true;
   if (!left || !right) return false;
   for (const key in left) {
@@ -1240,9 +1249,9 @@ export function equalOwnProperties<T>(left: MapLike<T> | undefined, right: MapLi
  * the same key with the given 'makeKey' function, then the element with the higher
  * index in the array will be the one associated with the produced key.
  */
-export function arrayToMap<T>(array: readonly T[], makeKey: (value: T) => string | undefined): Map<T>;
-export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => U): Map<U>;
-export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => T | U = identity): Map<T | U> {
+export function arrayToMap<T>(array: readonly T[], makeKey: (value: T) => string | undefined): qpc.Map<T>;
+export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => U): qpc.Map<U>;
+export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => T | U = identity): qpc.Map<T | U> {
   const result = createMap<T | U>();
   for (const value of array) {
     const key = makeKey(value);
@@ -1321,15 +1330,15 @@ export function maybeBind<T, A extends any[], R>(obj: T, fn: ((this: T, ...args:
   return fn ? fn.bind(obj) : undefined;
 }
 
-export function mapMap<T, U>(map: Map<T>, f: (t: T, key: string) => [string, U]): Map<U>;
-export function mapMap<T, U>(map: UnderscoreEscapedMap<T>, f: (t: T, key: __String) => [string, U]): Map<U>;
-export function mapMap<T, U>(map: Map<T> | UnderscoreEscapedMap<T>, f: ((t: T, key: string) => [string, U]) | ((t: T, key: __String) => [string, U])): Map<U> {
+export function mapMap<T, U>(map: qpc.Map<T>, f: (t: T, key: string) => [string, U]): qpc.Map<U>;
+export function mapMap<T, U>(map: qt.UnderscoreEscapedMap<T>, f: (t: T, key: qt.__String) => [string, U]): qpc.Map<U>;
+export function mapMap<T, U>(map: qpc.Map<T> | qt.UnderscoreEscapedMap<T>, f: ((t: T, key: string) => [string, U]) | ((t: T, key: qt.__String) => [string, U])): qpc.Map<U> {
   const result = createMap<U>();
-  map.forEach((t: T, key: string & __String) => result.set(...f(t, key)));
+  map.forEach((t: T, key: string & qt.__String) => result.set(...f(t, key)));
   return result;
 }
 
-export interface MultiMap<T> extends Map<T[]> {
+export interface MultiMap<T> extends qpc.Map<T[]> {
   /**
    * Adds the value to an array of values associated with the key, and returns the array.
    * Creates the array if it does not already exist.
@@ -1368,18 +1377,18 @@ function multiMapRemove<T>(this: MultiMap<T>, key: string, value: T) {
   }
 }
 
-export interface UnderscoreEscapedMultiMap<T> extends UnderscoreEscapedMap<T[]> {
+export interface UnderscoreEscapedMultiMap<T> extends qt.UnderscoreEscapedMap<T[]> {
   /**
    * Adds the value to an array of values associated with the key, and returns the array.
    * Creates the array if it does not already exist.
    */
-  add(key: __String, value: T): T[];
+  add(key: qt.__String, value: T): T[];
   /**
    * Removes a value from an array of values associated with the key.
    * Does not preserve the order of those values.
    * Does nothing if `key` is not in `map`, or `value` is not in `map[key]`.
    */
-  remove(key: __String, value: T): void;
+  remove(key: qt.__String, value: T): void;
 }
 
 export function createUnderscoreEscapedMultiMap<T>(): UnderscoreEscapedMultiMap<T> {
@@ -1571,29 +1580,29 @@ export function equateStringsCaseSensitive(a: string, b: string) {
   return equateValues(a, b);
 }
 
-function compareComparableValues(a: string | undefined, b: string | undefined): Comparison;
-function compareComparableValues(a: number | undefined, b: number | undefined): Comparison;
+function compareComparableValues(a: string | undefined, b: string | undefined): qpc.Comparison;
+function compareComparableValues(a: number | undefined, b: number | undefined): qpc.Comparison;
 function compareComparableValues(a: string | number | undefined, b: string | number | undefined) {
-  return a === b ? Comparison.EqualTo : a === undefined ? Comparison.LessThan : b === undefined ? Comparison.GreaterThan : a < b ? Comparison.LessThan : Comparison.GreaterThan;
+  return a === b ? qpc.Comparison.EqualTo : a === undefined ? qpc.Comparison.LessThan : b === undefined ? qpc.Comparison.GreaterThan : a < b ? qpc.Comparison.LessThan : qpc.Comparison.GreaterThan;
 }
 
 /**
  * Compare two numeric values for their order relative to each other.
  * To compare strings, use any of the `compareStrings` functions.
  */
-export function compareValues(a: number | undefined, b: number | undefined): Comparison {
+export function compareValues(a: number | undefined, b: number | undefined): qpc.Comparison {
   return compareComparableValues(a, b);
 }
 
 /**
  * Compare two TextSpans, first by `start`, then by `length`.
  */
-export function compareTextSpans(a: Partial<TextSpan> | undefined, b: Partial<TextSpan> | undefined): Comparison {
+export function compareTextSpans(a: Partial<qt.TextSpan> | undefined, b: Partial<qt.TextSpan> | undefined): qpc.Comparison {
   return compareValues(a?.start, b?.start) || compareValues(a?.length, b?.length);
 }
 
-export function min<T>(a: T, b: T, compare: Comparer<T>): T {
-  return compare(a, b) === Comparison.LessThan ? a : b;
+export function min<T>(a: T, b: T, compare: qpc.Comparer<T>): T {
+  return compare(a, b) === qpc.Comparison.LessThan ? a : b;
 }
 
 /**
@@ -1609,12 +1618,12 @@ export function min<T>(a: T, b: T, compare: Comparer<T>): T {
  * lowercase (such as `áºž` (German sharp capital s)).
  */
 export function compareStringsCaseInsensitive(a: string, b: string) {
-  if (a === b) return Comparison.EqualTo;
-  if (a === undefined) return Comparison.LessThan;
-  if (b === undefined) return Comparison.GreaterThan;
+  if (a === b) return qpc.Comparison.EqualTo;
+  if (a === undefined) return qpc.Comparison.LessThan;
+  if (b === undefined) return qpc.Comparison.GreaterThan;
   a = a.toUpperCase();
   b = b.toUpperCase();
-  return a < b ? Comparison.LessThan : a > b ? Comparison.GreaterThan : Comparison.EqualTo;
+  return a < b ? qpc.Comparison.LessThan : a > b ? qpc.Comparison.GreaterThan : qpc.Comparison.EqualTo;
 }
 
 /**
@@ -1627,7 +1636,7 @@ export function compareStringsCaseInsensitive(a: string, b: string) {
  * Case-sensitive comparisons compare both strings one code-point at a time using the integer
  * value of each code-point.
  */
-export function compareStringsCaseSensitive(a: string | undefined, b: string | undefined): Comparison {
+export function compareStringsCaseSensitive(a: string | undefined, b: string | undefined): qpc.Comparison {
   return compareComparableValues(a, b);
 }
 
@@ -1639,28 +1648,28 @@ export function getStringComparer(ignoreCase?: boolean) {
  * Creates a string comparer for use with string collation in the UI.
  */
 const createUIStringComparer = (() => {
-  let defaultComparer: Comparer<string> | undefined;
-  let enUSComparer: Comparer<string> | undefined;
+  let defaultComparer: qpc.Comparer<string> | undefined;
+  let enUSComparer: qpc.Comparer<string> | undefined;
 
   const stringComparerFactory = getStringComparerFactory();
   return createStringComparer;
 
   function compareWithCallback(a: string | undefined, b: string | undefined, comparer: (a: string, b: string) => number) {
-    if (a === b) return Comparison.EqualTo;
-    if (a === undefined) return Comparison.LessThan;
-    if (b === undefined) return Comparison.GreaterThan;
+    if (a === b) return qpc.Comparison.EqualTo;
+    if (a === undefined) return qpc.Comparison.LessThan;
+    if (b === undefined) return qpc.Comparison.GreaterThan;
     const value = comparer(a, b);
-    return value < 0 ? Comparison.LessThan : value > 0 ? Comparison.GreaterThan : Comparison.EqualTo;
+    return value < 0 ? qpc.Comparison.LessThan : value > 0 ? qpc.Comparison.GreaterThan : qpc.Comparison.EqualTo;
   }
 
-  function createIntlCollatorStringComparer(locale: string | undefined): Comparer<string> {
+  function createIntlCollatorStringComparer(locale: string | undefined): qpc.Comparer<string> {
     // Intl.Collator.prototype.compare is bound to the collator. See NOTE in
     // http://www.ecma-international.org/ecma-402/2.0/#sec-Intl.Collator.prototype.compare
     const comparer = new Intl.Collator(locale, { usage: 'sort', sensitivity: 'variant' }).compare;
     return (a, b) => compareWithCallback(a, b, comparer);
   }
 
-  function createLocaleCompareStringComparer(locale: string | undefined): Comparer<string> {
+  function createLocaleCompareStringComparer(locale: string | undefined): qpc.Comparer<string> {
     // if the locale is not the default locale (`undefined`), use the fallback comparer.
     if (locale !== undefined) return createFallbackStringComparer();
 
@@ -1671,7 +1680,7 @@ const createUIStringComparer = (() => {
     }
   }
 
-  function createFallbackStringComparer(): Comparer<string> {
+  function createFallbackStringComparer(): qpc.Comparer<string> {
     // An ordinal comparison puts "A" after "b", but for the UI we want "A" before "b".
     // We first sort case insensitively.  So "Aaa" will come before "baa".
     // Then we sort case sensitively, so "aaa" will come before "Aaa".
@@ -1686,7 +1695,7 @@ const createUIStringComparer = (() => {
     }
 
     function compareStrings(a: string, b: string) {
-      return a < b ? Comparison.LessThan : a > b ? Comparison.GreaterThan : Comparison.EqualTo;
+      return a < b ? qpc.Comparison.LessThan : a > b ? qpc.Comparison.GreaterThan : qpc.Comparison.EqualTo;
     }
   }
 
@@ -1719,7 +1728,7 @@ const createUIStringComparer = (() => {
   }
 })();
 
-let uiComparerCaseSensitive: Comparer<string> | undefined;
+let uiComparerCaseSensitive: qpc.Comparer<string> | undefined;
 let uiLocale: string | undefined;
 
 export function getUILocale() {
@@ -1748,12 +1757,12 @@ export function compareStringsCaseSensitiveUI(a: string, b: string) {
   return comparer(a, b);
 }
 
-export function compareProperties<T, K extends keyof T>(a: T | undefined, b: T | undefined, key: K, comparer: Comparer<T[K]>): Comparison {
-  return a === b ? Comparison.EqualTo : a === undefined ? Comparison.LessThan : b === undefined ? Comparison.GreaterThan : comparer(a[key], b[key]);
+export function compareProperties<T, K extends keyof T>(a: T | undefined, b: T | undefined, key: K, comparer: qpc.Comparer<T[K]>): qpc.Comparison {
+  return a === b ? qpc.Comparison.EqualTo : a === undefined ? qpc.Comparison.LessThan : b === undefined ? qpc.Comparison.GreaterThan : comparer(a[key], b[key]);
 }
 
 /** True is greater than false. */
-export function compareBooleans(a: boolean, b: boolean): Comparison {
+export function compareBooleans(a: boolean, b: boolean): qpc.Comparison {
   return compareValues(a ? 1 : 0, b ? 1 : 0);
 }
 
@@ -2006,14 +2015,7 @@ export function singleElementArray<T>(t: T | undefined): T[] | undefined {
   return t === undefined ? undefined : [t];
 }
 
-export function enumerateInsertsAndDeletes<T, U>(
-  newItems: readonly T[],
-  oldItems: readonly U[],
-  comparer: (a: T, b: U) => Comparison,
-  inserted: (newItem: T) => void,
-  deleted: (oldItem: U) => void,
-  unchanged?: (oldItem: U, newItem: T) => void
-) {
+export function enumerateInsertsAndDeletes<T, U>(newItems: readonly T[], oldItems: readonly U[], comparer: (a: T, b: U) => qpc.Comparison, inserted: (newItem: T) => void, deleted: (oldItem: U) => void, unchanged?: (oldItem: U, newItem: T) => void) {
   unchanged = unchanged || noop;
   let newIndex = 0;
   let oldIndex = 0;
@@ -2023,10 +2025,10 @@ export function enumerateInsertsAndDeletes<T, U>(
     const newItem = newItems[newIndex];
     const oldItem = oldItems[oldIndex];
     const compareResult = comparer(newItem, oldItem);
-    if (compareResult === Comparison.LessThan) {
+    if (compareResult === qpc.Comparison.LessThan) {
       inserted(newItem);
       newIndex++;
-    } else if (compareResult === Comparison.GreaterThan) {
+    } else if (compareResult === qpc.Comparison.GreaterThan) {
       deleted(oldItem);
       oldIndex++;
     } else {

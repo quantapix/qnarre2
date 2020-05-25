@@ -20,7 +20,7 @@ interface PrivateIdentifierInstanceField {
 /**
  * A mapping of private names to information needed for transformation.
  */
-type PrivateIdentifierEnvironment = UnderscoreEscapedMap<PrivateIdentifierInfo>;
+type PrivateIdentifierEnvironment = qt.UnderscoreEscapedMap<PrivateIdentifierInfo>;
 
 /**
  * Transforms ECMAScript Class Syntax.
@@ -75,32 +75,32 @@ export function transformClassFields(context: TransformationContext) {
     if (!(node.transformFlags & TransformFlags.ContainsClassFields)) return node;
 
     switch (node.kind) {
-      case SyntaxKind.ClassExpression:
-      case SyntaxKind.ClassDeclaration:
+      case qt.SyntaxKind.ClassExpression:
+      case qt.SyntaxKind.ClassDeclaration:
         return visitClassLike(node as ClassLikeDeclaration);
-      case SyntaxKind.PropertyDeclaration:
+      case qt.SyntaxKind.PropertyDeclaration:
         return visitPropertyDeclaration(node as PropertyDeclaration);
-      case SyntaxKind.VariableStatement:
+      case qt.SyntaxKind.VariableStatement:
         return visitVariableStatement(node as VariableStatement);
-      case SyntaxKind.ComputedPropertyName:
+      case qt.SyntaxKind.ComputedPropertyName:
         return visitComputedPropertyName(node as ComputedPropertyName);
-      case SyntaxKind.PropertyAccessExpression:
+      case qt.SyntaxKind.PropertyAccessExpression:
         return visitPropertyAccessExpression(node as PropertyAccessExpression);
-      case SyntaxKind.PrefixUnaryExpression:
+      case qt.SyntaxKind.PrefixUnaryExpression:
         return visitPrefixUnaryExpression(node as PrefixUnaryExpression);
-      case SyntaxKind.PostfixUnaryExpression:
+      case qt.SyntaxKind.PostfixUnaryExpression:
         return visitPostfixUnaryExpression(node as PostfixUnaryExpression, /*valueIsDiscarded*/ false);
-      case SyntaxKind.CallExpression:
+      case qt.SyntaxKind.CallExpression:
         return visitCallExpression(node as CallExpression);
-      case SyntaxKind.BinaryExpression:
+      case qt.SyntaxKind.BinaryExpression:
         return visitBinaryExpression(node as BinaryExpression);
-      case SyntaxKind.PrivateIdentifier:
+      case qt.SyntaxKind.PrivateIdentifier:
         return visitPrivateIdentifier(node as PrivateIdentifier);
-      case SyntaxKind.ExpressionStatement:
+      case qt.SyntaxKind.ExpressionStatement:
         return visitExpressionStatement(node as ExpressionStatement);
-      case SyntaxKind.ForStatement:
+      case qt.SyntaxKind.ForStatement:
         return visitForStatement(node as ForStatement);
-      case SyntaxKind.TaggedTemplateExpression:
+      case qt.SyntaxKind.TaggedTemplateExpression:
         return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
     }
     return visitEachChild(node, visitor, context);
@@ -108,8 +108,8 @@ export function transformClassFields(context: TransformationContext) {
 
   function visitorDestructuringTarget(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.ObjectLiteralExpression:
-      case SyntaxKind.ArrayLiteralExpression:
+      case qt.SyntaxKind.ObjectLiteralExpression:
+      case qt.SyntaxKind.ArrayLiteralExpression:
         return visitAssignmentPattern(node as AssignmentPattern);
       default:
         return visitor(node);
@@ -134,24 +134,24 @@ export function transformClassFields(context: TransformationContext) {
    */
   function classElementVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.Constructor:
+      case qt.SyntaxKind.Constructor:
         // Constructors for classes using class fields are transformed in
         // `visitClassDeclaration` or `visitClassExpression`.
         return undefined;
 
-      case SyntaxKind.GetAccessor:
-      case SyntaxKind.SetAccessor:
-      case SyntaxKind.MethodDeclaration:
+      case qt.SyntaxKind.GetAccessor:
+      case qt.SyntaxKind.SetAccessor:
+      case qt.SyntaxKind.MethodDeclaration:
         // Visit the name of the member (if it's a computed property name).
         return visitEachChild(node, classElementVisitor, context);
 
-      case SyntaxKind.PropertyDeclaration:
+      case qt.SyntaxKind.PropertyDeclaration:
         return visitPropertyDeclaration(node as PropertyDeclaration);
 
-      case SyntaxKind.ComputedPropertyName:
+      case qt.SyntaxKind.ComputedPropertyName:
         return visitComputedPropertyName(node as ComputedPropertyName);
 
-      case SyntaxKind.SemicolonClassElement:
+      case qt.SyntaxKind.SemicolonClassElement:
         return node;
 
       default:
@@ -185,15 +185,7 @@ export function transformClassFields(context: TransformationContext) {
     Debug.assert(!some(node.decorators));
     if (!shouldTransformPrivateFields && isPrivateIdentifier(node.name)) {
       // Initializer is elided as the field is initialized in transformConstructor.
-      return updateProperty(
-        node,
-        /*decorators*/ undefined,
-        visitNodes(node.modifiers, visitor, isModifier),
-        node.name,
-        /*questionOrExclamationToken*/ undefined,
-        /*type*/ undefined,
-        /*initializer*/ undefined
-      );
+      return updateProperty(node, /*decorators*/ undefined, visitNodes(node.modifiers, visitor, isModifier), node.name, /*questionOrExclamationToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined);
     }
     // Create a temporary variable to store a computed property name (if necessary).
     // If it's not inlineable, then we emit an expression after the class which assigns
@@ -227,7 +219,7 @@ export function transformClassFields(context: TransformationContext) {
 
   function visitPrefixUnaryExpression(node: PrefixUnaryExpression) {
     if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
-      const operator = node.operator === SyntaxKind.PlusPlusToken ? SyntaxKind.PlusToken : node.operator === SyntaxKind.MinusMinusToken ? SyntaxKind.MinusToken : undefined;
+      const operator = node.operator === qt.SyntaxKind.PlusPlusToken ? qt.SyntaxKind.PlusToken : node.operator === qt.SyntaxKind.MinusMinusToken ? qt.SyntaxKind.MinusToken : undefined;
       let info: PrivateIdentifierInfo | undefined;
       if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
         const receiver = visitNode(node.operand.expression, visitor, isExpression);
@@ -235,7 +227,7 @@ export function transformClassFields(context: TransformationContext) {
 
         const existingValue = createPrefix(SyntaxKind.PlusToken, createPrivateIdentifierAccess(info, readExpression));
 
-        return setOriginalNode(createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(existingValue, operator, createLiteral(1)), SyntaxKind.EqualsToken), node);
+        return setOriginalNode(createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(existingValue, operator, createLiteral(1)), qt.SyntaxKind.EqualsToken), node);
       }
     }
     return visitEachChild(node, visitor, context);
@@ -243,7 +235,7 @@ export function transformClassFields(context: TransformationContext) {
 
   function visitPostfixUnaryExpression(node: PostfixUnaryExpression, valueIsDiscarded: boolean) {
     if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
-      const operator = node.operator === SyntaxKind.PlusPlusToken ? SyntaxKind.PlusToken : node.operator === SyntaxKind.MinusMinusToken ? SyntaxKind.MinusToken : undefined;
+      const operator = node.operator === qt.SyntaxKind.PlusPlusToken ? qt.SyntaxKind.PlusToken : node.operator === qt.SyntaxKind.MinusMinusToken ? qt.SyntaxKind.MinusToken : undefined;
       let info: PrivateIdentifierInfo | undefined;
       if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
         const receiver = visitNode(node.operand.expression, visitor, isExpression);
@@ -256,15 +248,7 @@ export function transformClassFields(context: TransformationContext) {
 
         return setOriginalNode(
           inlineExpressions(
-            compact<Expression>([
-              createPrivateIdentifierAssignment(
-                info,
-                initializeExpression || readExpression,
-                createBinary(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, createLiteral(1)),
-                SyntaxKind.EqualsToken
-              ),
-              returnValue,
-            ])
+            compact<Expression>([createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, createLiteral(1)), qt.SyntaxKind.EqualsToken), returnValue])
           ),
           node
         );
@@ -275,13 +259,7 @@ export function transformClassFields(context: TransformationContext) {
 
   function visitForStatement(node: ForStatement) {
     if (node.incrementor && isPostfixUnaryExpression(node.incrementor)) {
-      return updateFor(
-        node,
-        visitNode(node.initializer, visitor, isForInitializer),
-        visitNode(node.condition, visitor, isExpression),
-        visitPostfixUnaryExpression(node.incrementor, /*valueIsDiscarded*/ true),
-        visitNode(node.statement, visitor, isStatement)
-      );
+      return updateFor(node, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.condition, visitor, isExpression), visitPostfixUnaryExpression(node.incrementor, /*valueIsDiscarded*/ true), visitNode(node.statement, visitor, isStatement));
     }
     return visitEachChild(node, visitor, context);
   }
@@ -307,10 +285,7 @@ export function transformClassFields(context: TransformationContext) {
     if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.expression)) {
       // Transform call expressions of private names to properly bind the `this` parameter.
       const { thisArg, target } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion);
-      return updateCall(node, createPropertyAccess(visitNode(target, visitor), 'call'), /*typeArguments*/ undefined, [
-        visitNode(thisArg, visitor, isExpression),
-        ...visitNodes(node.arguments, visitor, isExpression),
-      ]);
+      return updateCall(node, createPropertyAccess(visitNode(target, visitor), 'call'), /*typeArguments*/ undefined, [visitNode(thisArg, visitor, isExpression), ...visitNodes(node.arguments, visitor, isExpression)]);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -319,11 +294,7 @@ export function transformClassFields(context: TransformationContext) {
     if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.tag)) {
       // Bind the `this` correctly for tagged template literals when the tag is a private identifier property access.
       const { thisArg, target } = createCallBinding(node.tag, hoistVariableDeclaration, languageVersion);
-      return updateTaggedTemplate(
-        node,
-        createCall(createPropertyAccess(visitNode(target, visitor), 'bind'), /*typeArguments*/ undefined, [visitNode(thisArg, visitor, isExpression)]),
-        visitNode(node.template, visitor, isTemplateLiteral)
-      );
+      return updateTaggedTemplate(node, createCall(createPropertyAccess(visitNode(target, visitor), 'bind'), /*typeArguments*/ undefined, [visitNode(thisArg, visitor, isExpression)]), visitNode(node.template, visitor, isTemplateLiteral));
     }
     return visitEachChild(node, visitor, context);
   }
@@ -363,12 +334,7 @@ export function transformClassFields(context: TransformationContext) {
     right = visitNode(right, visitor, isExpression);
     if (isCompoundAssignment(operator)) {
       const { readExpression, initializeExpression } = createCopiableReceiverExpr(receiver);
-      return createClassPrivateFieldSetHelper(
-        context,
-        initializeExpression || readExpression,
-        info.weakMapName,
-        createBinary(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right)
-      );
+      return createClassPrivateFieldSetHelper(context, initializeExpression || readExpression, info.weakMapName, createBinary(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right));
     } else {
       return createClassPrivateFieldSetHelper(context, receiver, info.weakMapName, right);
     }
@@ -403,19 +369,9 @@ export function transformClassFields(context: TransformationContext) {
     }
 
     const extendsClauseElement = getEffectiveBaseTypeNode(node);
-    const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== SyntaxKind.NullKeyword);
+    const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== qt.SyntaxKind.NullKeyword);
 
-    const statements: Statement[] = [
-      updateClassDeclaration(
-        node,
-        /*decorators*/ undefined,
-        node.modifiers,
-        node.name,
-        /*typeParameters*/ undefined,
-        visitNodes(node.heritageClauses, visitor, isHeritageClause),
-        transformClassMembers(node, isDerivedClass)
-      ),
-    ];
+    const statements: Statement[] = [updateClassDeclaration(node, /*decorators*/ undefined, node.modifiers, node.name, /*typeParameters*/ undefined, visitNodes(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass))];
 
     // Write any pending expressions from elided or moved computed property names
     if (some(pendingExpressions)) {
@@ -451,16 +407,9 @@ export function transformClassFields(context: TransformationContext) {
 
     const staticProperties = getProperties(node, /*requireInitializer*/ true, /*isStatic*/ true);
     const extendsClauseElement = getEffectiveBaseTypeNode(node);
-    const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== SyntaxKind.NullKeyword);
+    const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== qt.SyntaxKind.NullKeyword);
 
-    const classExpression = updateClassExpression(
-      node,
-      node.modifiers,
-      node.name,
-      /*typeParameters*/ undefined,
-      visitNodes(node.heritageClauses, visitor, isHeritageClause),
-      transformClassMembers(node, isDerivedClass)
-    );
+    const classExpression = updateClassExpression(node, node.modifiers, node.name, /*typeParameters*/ undefined, visitNodes(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass));
 
     if (some(staticProperties) || some(pendingExpressions)) {
       if (isDecoratedClassDeclaration) {
@@ -607,10 +556,7 @@ export function transformClassFields(context: TransformationContext) {
 
     statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
-    return setTextRange(
-      createBlock(setTextRange(createNodeArray(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
-      /*location*/ constructor ? constructor.body : undefined
-    );
+    return setTextRange(createBlock(setTextRange(createNodeArray(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true), /*location*/ constructor ? constructor.body : undefined);
   }
 
   /**
@@ -665,10 +611,7 @@ export function transformClassFields(context: TransformationContext) {
   function transformProperty(property: PropertyDeclaration, receiver: LeftHandSideExpression) {
     // We generate a name here in order to reuse the value cached by the relocated computed name expression (which uses the same generated name)
     const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
-    const propertyName =
-      isComputedPropertyName(property.name) && !isSimpleInlineableExpression(property.name.expression)
-        ? updateComputedPropertyName(property.name, getGeneratedNameForNode(property.name))
-        : property.name;
+    const propertyName = isComputedPropertyName(property.name) && !isSimpleInlineableExpression(property.name.expression) ? updateComputedPropertyName(property.name, getGeneratedNameForNode(property.name)) : property.name;
 
     if (shouldTransformPrivateFields && isPrivateIdentifier(propertyName)) {
       const privateIdentifierInfo = accessPrivateIdentifier(propertyName);
@@ -691,22 +634,13 @@ export function transformClassFields(context: TransformationContext) {
     }
 
     const propertyOriginalNode = getOriginalNode(property);
-    const initializer =
-      property.initializer || emitAssignment
-        ? visitNode(property.initializer, visitor, isExpression)
-        : isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && isIdentifier(propertyName)
-        ? propertyName
-        : createVoidZero();
+    const initializer = property.initializer || emitAssignment ? visitNode(property.initializer, visitor, isExpression) : isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && isIdentifier(propertyName) ? propertyName : createVoidZero();
 
     if (emitAssignment || isPrivateIdentifier(propertyName)) {
       const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ propertyName);
       return createAssignment(memberAccess, initializer);
     } else {
-      const name = isComputedPropertyName(propertyName)
-        ? propertyName.expression
-        : isIdentifier(propertyName)
-        ? createStringLiteral(unescapeLeadingUnderscores(propertyName.escapedText))
-        : propertyName;
+      const name = isComputedPropertyName(propertyName) ? propertyName.expression : isIdentifier(propertyName) ? createStringLiteral(unescapeLeadingUnderscores(propertyName.escapedText)) : propertyName;
       const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
       return createObjectDefinePropertyCall(receiver, name, descriptor);
     }
@@ -741,7 +675,7 @@ export function transformClassFields(context: TransformationContext) {
 
   function substituteExpression(node: Expression) {
     switch (node.kind) {
-      case SyntaxKind.Identifier:
+      case qt.SyntaxKind.Identifier:
         return substituteExpressionIdentifier(node);
     }
     return node;
@@ -848,21 +782,11 @@ export function transformClassFields(context: TransformationContext) {
     if (isThisProperty(node) || isSuperProperty(node) || !isSimpleCopiableExpression(node.expression)) {
       receiver = createTempVariable(hoistVariableDeclaration);
       receiver.autoGenerateFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
-      (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, SyntaxKind.EqualsToken, node.expression));
+      (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, qt.SyntaxKind.EqualsToken, node.expression));
     }
     return createPropertyAccess(
       // Explicit parens required because of v8 regression (https://bugs.chromium.org/p/v8/issues/detail?id=9560)
-      createParen(
-        createObjectLiteral([
-          createSetAccessor(
-            /*decorators*/ undefined,
-            /*modifiers*/ undefined,
-            'value',
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)],
-            createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, SyntaxKind.EqualsToken))])
-          ),
-        ])
-      ),
+      createParen(createObjectLiteral([createSetAccessor(/*decorators*/ undefined, /*modifiers*/ undefined, 'value', [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)], createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, qt.SyntaxKind.EqualsToken))]))])),
       'value'
     );
   }

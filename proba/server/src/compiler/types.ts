@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/ban-types */
+import * as qpc from './corePublic';
+import * as qc from './core';
+import { ProgramBuildInfo } from './builder';
+
 export type Path = string & { __pathBrand: any };
 
 export type MatchingKeys<TRecord, TMatch, K extends keyof TRecord = keyof TRecord> = K extends (TRecord[K] extends TMatch ? K : never) ? K : never;
@@ -7,25 +12,7 @@ export interface TextRange {
   end: number;
 }
 
-export type JSDocSyntaxKind =
-  | SyntaxKind.EndOfFileToken
-  | SyntaxKind.WhitespaceTrivia
-  | SyntaxKind.AtToken
-  | SyntaxKind.NewLineTrivia
-  | SyntaxKind.AsteriskToken
-  | SyntaxKind.OpenBraceToken
-  | SyntaxKind.CloseBraceToken
-  | SyntaxKind.LessThanToken
-  | SyntaxKind.GreaterThanToken
-  | SyntaxKind.OpenBracketToken
-  | SyntaxKind.CloseBracketToken
-  | SyntaxKind.EqualsToken
-  | SyntaxKind.CommaToken
-  | SyntaxKind.DotToken
-  | SyntaxKind.Identifier
-  | SyntaxKind.BacktickToken
-  | SyntaxKind.Unknown
-  | KeywordSyntaxKind;
+export type JSDocSyntaxKind = SyntaxKind.EndOfFileToken | SyntaxKind.WhitespaceTrivia | SyntaxKind.AtToken | SyntaxKind.NewLineTrivia | SyntaxKind.AsteriskToken | SyntaxKind.OpenBraceToken | SyntaxKind.CloseBraceToken | SyntaxKind.LessThanToken | SyntaxKind.GreaterThanToken | SyntaxKind.OpenBracketToken | SyntaxKind.CloseBracketToken | SyntaxKind.EqualsToken | SyntaxKind.CommaToken | SyntaxKind.DotToken | SyntaxKind.Identifier | SyntaxKind.BacktickToken | SyntaxKind.Unknown | KeywordSyntaxKind;
 
 export type KeywordSyntaxKind =
   | SyntaxKind.AbstractKeyword
@@ -105,14 +92,7 @@ export type KeywordSyntaxKind =
   | SyntaxKind.AwaitKeyword
   | SyntaxKind.OfKeyword;
 
-export type JsxTokenSyntaxKind =
-  | SyntaxKind.LessThanSlashToken
-  | SyntaxKind.EndOfFileToken
-  | SyntaxKind.ConflictMarkerTrivia
-  | SyntaxKind.JsxText
-  | SyntaxKind.JsxTextAllWhiteSpaces
-  | SyntaxKind.OpenBraceToken
-  | SyntaxKind.LessThanToken;
+export type JsxTokenSyntaxKind = SyntaxKind.LessThanSlashToken | SyntaxKind.EndOfFileToken | SyntaxKind.ConflictMarkerTrivia | SyntaxKind.JsxText | SyntaxKind.JsxTextAllWhiteSpaces | SyntaxKind.OpenBraceToken | SyntaxKind.LessThanToken;
 
 // token > SyntaxKind.Identifier => token is a keyword
 // Also, If you add a new SyntaxKind be sure to keep the `Markers` section at the bottom in sync
@@ -699,23 +679,7 @@ export type HasJSDoc =
   | NamedTupleMember
   | EndOfFileToken;
 
-export type HasType =
-  | SignatureDeclaration
-  | VariableDeclaration
-  | ParameterDeclaration
-  | PropertySignature
-  | PropertyDeclaration
-  | TypePredicateNode
-  | ParenthesizedTypeNode
-  | TypeOperatorNode
-  | MappedTypeNode
-  | AssertionExpression
-  | TypeAliasDeclaration
-  | JSDocTypeExpression
-  | JSDocNonNullableType
-  | JSDocNullableType
-  | JSDocOptionalType
-  | JSDocVariadicType;
+export type HasType = SignatureDeclaration | VariableDeclaration | ParameterDeclaration | PropertySignature | PropertyDeclaration | TypePredicateNode | ParenthesizedTypeNode | TypeOperatorNode | MappedTypeNode | AssertionExpression | TypeAliasDeclaration | JSDocTypeExpression | JSDocNonNullableType | JSDocNullableType | JSDocOptionalType | JSDocVariadicType;
 
 export type HasTypeArguments = CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElement | JsxSelfClosingElement;
 
@@ -750,18 +714,7 @@ export type PlusToken = Token<SyntaxKind.PlusToken>;
 export type MinusToken = Token<SyntaxKind.MinusToken>;
 export type AssertsToken = Token<SyntaxKind.AssertsKeyword>;
 
-export type Modifier =
-  | Token<SyntaxKind.AbstractKeyword>
-  | Token<SyntaxKind.AsyncKeyword>
-  | Token<SyntaxKind.ConstKeyword>
-  | Token<SyntaxKind.DeclareKeyword>
-  | Token<SyntaxKind.DefaultKeyword>
-  | Token<SyntaxKind.ExportKeyword>
-  | Token<SyntaxKind.PublicKeyword>
-  | Token<SyntaxKind.PrivateKeyword>
-  | Token<SyntaxKind.ProtectedKeyword>
-  | Token<SyntaxKind.ReadonlyKeyword>
-  | Token<SyntaxKind.StaticKeyword>;
+export type Modifier = Token<SyntaxKind.AbstractKeyword> | Token<SyntaxKind.AsyncKeyword> | Token<SyntaxKind.ConstKeyword> | Token<SyntaxKind.DeclareKeyword> | Token<SyntaxKind.DefaultKeyword> | Token<SyntaxKind.ExportKeyword> | Token<SyntaxKind.PublicKeyword> | Token<SyntaxKind.PrivateKeyword> | Token<SyntaxKind.ProtectedKeyword> | Token<SyntaxKind.ReadonlyKeyword> | Token<SyntaxKind.StaticKeyword>;
 
 export type ModifiersArray = NodeArray<Modifier>;
 
@@ -895,20 +848,7 @@ export interface SignatureDeclarationBase extends NamedDeclaration, JSDocContain
   typeArguments?: NodeArray<TypeNode>; // Used for quick info, replaces typeParameters for instantiated signatures
 }
 
-export type SignatureDeclaration =
-  | CallSignatureDeclaration
-  | ConstructSignatureDeclaration
-  | MethodSignature
-  | IndexSignatureDeclaration
-  | FunctionTypeNode
-  | ConstructorTypeNode
-  | JSDocFunctionType
-  | FunctionDeclaration
-  | MethodDeclaration
-  | ConstructorDeclaration
-  | AccessorDeclaration
-  | FunctionExpression
-  | ArrowFunction;
+export type SignatureDeclaration = CallSignatureDeclaration | ConstructSignatureDeclaration | MethodSignature | IndexSignatureDeclaration | FunctionTypeNode | ConstructorTypeNode | JSDocFunctionType | FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression | ArrowFunction;
 
 export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
   kind: SyntaxKind.CallSignature;
@@ -1012,18 +952,7 @@ export interface SpreadAssignment extends ObjectLiteralElement, JSDocContainer {
   expression: Expression;
 }
 
-export type VariableLikeDeclaration =
-  | VariableDeclaration
-  | ParameterDeclaration
-  | BindingElement
-  | PropertyDeclaration
-  | PropertyAssignment
-  | PropertySignature
-  | JsxAttribute
-  | ShorthandPropertyAssignment
-  | EnumMember
-  | JSDocPropertyTag
-  | JSDocParameterTag;
+export type VariableLikeDeclaration = VariableDeclaration | ParameterDeclaration | BindingElement | PropertyDeclaration | PropertyAssignment | PropertySignature | JsxAttribute | ShorthandPropertyAssignment | EnumMember | JSDocPropertyTag | JSDocParameterTag;
 
 export interface PropertyLikeDeclaration extends NamedDeclaration {
   name: PropertyName;
@@ -1138,20 +1067,7 @@ export interface TypeNode extends Node {
 }
 
 export interface KeywordTypeNode extends TypeNode {
-  kind:
-    | SyntaxKind.AnyKeyword
-    | SyntaxKind.UnknownKeyword
-    | SyntaxKind.NumberKeyword
-    | SyntaxKind.BigIntKeyword
-    | SyntaxKind.ObjectKeyword
-    | SyntaxKind.BooleanKeyword
-    | SyntaxKind.StringKeyword
-    | SyntaxKind.SymbolKeyword
-    | SyntaxKind.ThisKeyword
-    | SyntaxKind.VoidKeyword
-    | SyntaxKind.UndefinedKeyword
-    | SyntaxKind.NullKeyword
-    | SyntaxKind.NeverKeyword;
+  kind: SyntaxKind.AnyKeyword | SyntaxKind.UnknownKeyword | SyntaxKind.NumberKeyword | SyntaxKind.BigIntKeyword | SyntaxKind.ObjectKeyword | SyntaxKind.BooleanKeyword | SyntaxKind.StringKeyword | SyntaxKind.SymbolKeyword | SyntaxKind.ThisKeyword | SyntaxKind.VoidKeyword | SyntaxKind.UndefinedKeyword | SyntaxKind.NullKeyword | SyntaxKind.NeverKeyword;
 }
 
 export interface ImportTypeNode extends NodeWithTypeArguments {
@@ -1446,13 +1362,7 @@ export type ShiftOperator = SyntaxKind.LessThanLessThanToken | SyntaxKind.Greate
 export type ShiftOperatorOrHigher = AdditiveOperatorOrHigher | ShiftOperator;
 
 // see: https://tc39.github.io/ecma262/#prod-RelationalExpression
-export type RelationalOperator =
-  | SyntaxKind.LessThanToken
-  | SyntaxKind.LessThanEqualsToken
-  | SyntaxKind.GreaterThanToken
-  | SyntaxKind.GreaterThanEqualsToken
-  | SyntaxKind.InstanceOfKeyword
-  | SyntaxKind.InKeyword;
+export type RelationalOperator = SyntaxKind.LessThanToken | SyntaxKind.LessThanEqualsToken | SyntaxKind.GreaterThanToken | SyntaxKind.GreaterThanEqualsToken | SyntaxKind.InstanceOfKeyword | SyntaxKind.InKeyword;
 
 // see: https://tc39.github.io/ecma262/#prod-RelationalExpression
 export type RelationalOperatorOrHigher = ShiftOperatorOrHigher | RelationalOperator;
@@ -1482,19 +1392,7 @@ export type LogicalOperator = SyntaxKind.AmpersandAmpersandToken | SyntaxKind.Ba
 export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
 
 // see: https://tc39.github.io/ecma262/#prod-AssignmentOperator
-export type CompoundAssignmentOperator =
-  | SyntaxKind.PlusEqualsToken
-  | SyntaxKind.MinusEqualsToken
-  | SyntaxKind.AsteriskAsteriskEqualsToken
-  | SyntaxKind.AsteriskEqualsToken
-  | SyntaxKind.SlashEqualsToken
-  | SyntaxKind.PercentEqualsToken
-  | SyntaxKind.AmpersandEqualsToken
-  | SyntaxKind.BarEqualsToken
-  | SyntaxKind.CaretEqualsToken
-  | SyntaxKind.LessThanLessThanEqualsToken
-  | SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken
-  | SyntaxKind.GreaterThanGreaterThanEqualsToken;
+export type CompoundAssignmentOperator = SyntaxKind.PlusEqualsToken | SyntaxKind.MinusEqualsToken | SyntaxKind.AsteriskAsteriskEqualsToken | SyntaxKind.AsteriskEqualsToken | SyntaxKind.SlashEqualsToken | SyntaxKind.PercentEqualsToken | SyntaxKind.AmpersandEqualsToken | SyntaxKind.BarEqualsToken | SyntaxKind.CaretEqualsToken | SyntaxKind.LessThanLessThanEqualsToken | SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken | SyntaxKind.GreaterThanGreaterThanEqualsToken;
 
 // see: https://tc39.github.io/ecma262/#prod-AssignmentExpression
 export type AssignmentOperator = SyntaxKind.EqualsToken | CompoundAssignmentOperator;
@@ -2781,7 +2679,7 @@ export interface SourceFile extends Declaration {
 
   // this map is used by transpiler to supply alternative names for dependencies (i.e. in case of bundling)
 
-  renamedDependencies?: ReadonlyMap<string>;
+  renamedDependencies?: qpc.ReadonlyMap<string>;
 
   /**
    * lib.d.ts should have a reference comment like
@@ -2807,7 +2705,7 @@ export interface SourceFile extends Declaration {
   // JS identifier-declarations that are intended to merge with globals
   jsGlobalAugmentations?: SymbolTable;
 
-  identifiers: Map<string>; // Map from a string to an interned string
+  identifiers: qpc.Map<string>; // Map from a string to an interned string
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
@@ -2835,8 +2733,8 @@ export interface SourceFile extends Declaration {
   // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
   // It is used to resolve module names in the checker.
   // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
-  resolvedModules?: Map<ResolvedModuleFull | undefined>;
-  resolvedTypeReferenceDirectiveNames: Map<ResolvedTypeReferenceDirective | undefined>;
+  resolvedModules?: qpc.Map<ResolvedModuleFull | undefined>;
+  resolvedTypeReferenceDirectiveNames: qpc.Map<ResolvedTypeReferenceDirective | undefined>;
   imports: readonly StringLiteralLike[];
   // Identifier only if `declare global`
   moduleAugmentations: readonly (StringLiteral | Identifier)[];
@@ -3035,9 +2933,9 @@ export interface Program extends ScriptReferenceHost {
 
   getMissingFilePaths(): readonly Path[];
 
-  getRefFileMap(): MultiMap<RefFile> | undefined;
+  getRefFileMap(): qc.MultiMap<RefFile> | undefined;
 
-  getFilesByNameMap(): Map<SourceFile | false | undefined>;
+  getFilesByNameMap(): qpc.Map<SourceFile | false | undefined>;
 
   /**
    * Emits the JavaScript and declaration files.  If targetSourceFile is not specified, then
@@ -3051,14 +2949,7 @@ export interface Program extends ScriptReferenceHost {
    */
   emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
 
-  emit(
-    targetSourceFile?: SourceFile,
-    writeFile?: WriteFileCallback,
-    cancellationToken?: CancellationToken,
-    emitOnlyDtsFiles?: boolean,
-    customTransformers?: CustomTransformers,
-    forceDtsEmit?: boolean
-  ): EmitResult; // eslint-disable-line @typescript-eslint/unified-signatures
+  emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers, forceDtsEmit?: boolean): EmitResult; // eslint-disable-line @typescript-eslint/unified-signatures
 
   getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
@@ -3094,7 +2985,7 @@ export interface Program extends ScriptReferenceHost {
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
 
   getFileProcessingDiagnostics(): DiagnosticCollection;
-  getResolvedTypeReferenceDirectives(): Map<ResolvedTypeReferenceDirective | undefined>;
+  getResolvedTypeReferenceDirectives(): qpc.Map<ResolvedTypeReferenceDirective | undefined>;
   isSourceFileFromExternalLibrary(file: SourceFile): boolean;
   isSourceFileDefaultLibrary(file: SourceFile): boolean;
 
@@ -3105,9 +2996,9 @@ export interface Program extends ScriptReferenceHost {
   getLibFileFromReference(ref: FileReference): SourceFile | undefined;
 
   /** Given a source file, get the name of the package it was imported from. */
-  sourceFileToPackageName: Map<string>;
+  sourceFileToPackageName: qpc.Map<string>;
   /** Set of all source files that some other source file redirects to. */
-  redirectTargetsMap: MultiMap<string>;
+  redirectTargetsMap: qc.MultiMap<string>;
   /** Is the file emitted file */
   isEmittedFile(file: string): boolean;
 
@@ -3122,7 +3013,7 @@ export interface Program extends ScriptReferenceHost {
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
   getProgramBuildInfo?(): ProgramBuildInfo | undefined;
   emitBuildInfo(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
-  getProbableSymlinks(): ReadonlyMap<string>;
+  getProbableSymlinks(): qpc.ReadonlyMap<string>;
   /**
    * This implementation handles file exists to be true if file is source of project reference redirect when program is created using useSourceOfProjectReferenceRedirect
    */
@@ -3131,7 +3022,7 @@ export interface Program extends ScriptReferenceHost {
 
 export interface Program extends TypeCheckerHost, ModuleSpecifierResolutionHost {}
 
-export type RedirectTargetsMap = ReadonlyMap<readonly string[]>;
+export type RedirectTargetsMap = qpc.ReadonlyMap<readonly string[]>;
 
 export interface ResolvedProjectReference {
   commandLine: ParsedCommandLine;
@@ -3223,7 +3114,7 @@ export interface TypeCheckerHost extends ModuleSpecifierResolutionHost {
 
   getSourceFiles(): readonly SourceFile[];
   getSourceFile(fileName: string): SourceFile | undefined;
-  getResolvedTypeReferenceDirectives(): ReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
+  getResolvedTypeReferenceDirectives(): qpc.ReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
   getProjectReferenceRedirect(fileName: string): string | undefined;
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
 
@@ -3264,28 +3155,11 @@ export interface TypeChecker {
   typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): TypeNode | undefined;
   typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker?: SymbolTracker): TypeNode | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
   /** Note that the resulting nodes cannot be checked. */
-  signatureToSignatureDeclaration(
-    signature: Signature,
-    kind: SyntaxKind,
-    enclosingDeclaration: Node | undefined,
-    flags: NodeBuilderFlags | undefined
-  ): (SignatureDeclaration & { typeArguments?: NodeArray<TypeNode> }) | undefined;
-  signatureToSignatureDeclaration(
-    signature: Signature,
-    kind: SyntaxKind,
-    enclosingDeclaration: Node | undefined,
-    flags: NodeBuilderFlags | undefined,
-    tracker?: SymbolTracker
-  ): (SignatureDeclaration & { typeArguments?: NodeArray<TypeNode> }) | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
+  signatureToSignatureDeclaration(signature: Signature, kind: SyntaxKind, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): (SignatureDeclaration & { typeArguments?: NodeArray<TypeNode> }) | undefined;
+  signatureToSignatureDeclaration(signature: Signature, kind: SyntaxKind, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker?: SymbolTracker): (SignatureDeclaration & { typeArguments?: NodeArray<TypeNode> }) | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
   /** Note that the resulting nodes cannot be checked. */
   indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: IndexKind, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): IndexSignatureDeclaration | undefined;
-  indexInfoToIndexSignatureDeclaration(
-    indexInfo: IndexInfo,
-    kind: IndexKind,
-    enclosingDeclaration: Node | undefined,
-    flags: NodeBuilderFlags | undefined,
-    tracker?: SymbolTracker
-  ): IndexSignatureDeclaration | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
+  indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: IndexKind, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker?: SymbolTracker): IndexSignatureDeclaration | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
   /** Note that the resulting nodes cannot be checked. */
   symbolToEntityName(symbol: Symbol, meaning: SymbolFlags, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): EntityName | undefined;
   /** Note that the resulting nodes cannot be checked. */
@@ -3406,24 +3280,8 @@ export interface TypeChecker {
   createPromiseType(type: Type): Type;
 
   isTypeAssignableTo(source: Type, target: Type): boolean;
-  createAnonymousType(
-    symbol: Symbol | undefined,
-    members: SymbolTable,
-    callSignatures: Signature[],
-    constructSignatures: Signature[],
-    stringIndexInfo: IndexInfo | undefined,
-    numberIndexInfo: IndexInfo | undefined
-  ): Type;
-  createSignature(
-    declaration: SignatureDeclaration,
-    typeParameters: TypeParameter[] | undefined,
-    thisParameter: Symbol | undefined,
-    parameters: Symbol[],
-    resolvedReturnType: Type,
-    typePredicate: TypePredicate | undefined,
-    minArgumentCount: number,
-    flags: SignatureFlags
-  ): Signature;
+  createAnonymousType(symbol: Symbol | undefined, members: SymbolTable, callSignatures: Signature[], constructSignatures: Signature[], stringIndexInfo: IndexInfo | undefined, numberIndexInfo: IndexInfo | undefined): Type;
+  createSignature(declaration: SignatureDeclaration, typeParameters: TypeParameter[] | undefined, thisParameter: Symbol | undefined, parameters: Symbol[], resolvedReturnType: Type, typePredicate: TypePredicate | undefined, minArgumentCount: number, flags: SignatureFlags): Signature;
   createSymbol(flags: SymbolFlags, name: __String): TransientSymbol;
   createIndexInfo(type: Type, isReadonly: boolean, declaration?: SignatureDeclaration): IndexInfo;
   isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
@@ -3547,13 +3405,7 @@ export const enum NodeBuilderFlags {
   AllowNodeModulesRelativePaths = 1 << 26,
   DoNotIncludeSymbolChain = 1 << 27, // Skip looking up and printing an accessible symbol chain
 
-  IgnoreErrors = AllowThisInObjectLiteral |
-    AllowQualifedNameInPlaceOfIdentifier |
-    AllowAnonymousIdentifier |
-    AllowEmptyUnionOrIntersection |
-    AllowEmptyTuple |
-    AllowEmptyIndexInfoType |
-    AllowNodeModulesRelativePaths,
+  IgnoreErrors = AllowThisInObjectLiteral | AllowQualifedNameInPlaceOfIdentifier | AllowAnonymousIdentifier | AllowEmptyUnionOrIntersection | AllowEmptyTuple | AllowEmptyIndexInfoType | AllowNodeModulesRelativePaths,
 
   // State
   InObjectTypeLiteral = 1 << 22,
@@ -3599,21 +3451,7 @@ export const enum TypeFormatFlags {
 
   /** @deprecated */ WriteOwnNameForAnyLike = 0, // Does nothing
 
-  NodeBuilderFlagsMask = NoTruncation |
-    WriteArrayAsGenericType |
-    UseStructuralFallback |
-    WriteTypeArgumentsOfSignature |
-    UseFullyQualifiedType |
-    SuppressAnyReturnType |
-    MultilineObjectLiterals |
-    WriteClassExpressionAsTypeLiteral |
-    UseTypeOfFunction |
-    OmitParameterModifiers |
-    UseAliasDefinedOutsideCurrentScope |
-    AllowUniqueESSymbolType |
-    InTypeAlias |
-    UseSingleQuotesForStringLiteralType |
-    NoTypeReduction,
+  NodeBuilderFlagsMask = NoTruncation | WriteArrayAsGenericType | UseStructuralFallback | WriteTypeArgumentsOfSignature | UseFullyQualifiedType | SuppressAnyReturnType | MultilineObjectLiterals | WriteClassExpressionAsTypeLiteral | UseTypeOfFunction | OmitParameterModifiers | UseAliasDefinedOutsideCurrentScope | AllowUniqueESSymbolType | InTypeAlias | UseSingleQuotesForStringLiteralType | NoTypeReduction,
 }
 
 export const enum SymbolFormatFlags {
@@ -3726,11 +3564,7 @@ export interface ValidImportTypeNode extends ImportTypeNode {
   argument: LiteralTypeNode & { literal: StringLiteral };
 }
 
-export type AnyValidImportOrReExport =
-  | ((ImportDeclaration | ExportDeclaration) & { moduleSpecifier: StringLiteral })
-  | (ImportEqualsDeclaration & { moduleReference: ExternalModuleReference & { expression: StringLiteral } })
-  | RequireOrImportCall
-  | ValidImportTypeNode;
+export type AnyValidImportOrReExport = ((ImportDeclaration | ExportDeclaration) & { moduleSpecifier: StringLiteral }) | (ImportEqualsDeclaration & { moduleReference: ExternalModuleReference & { expression: StringLiteral } }) | RequireOrImportCall | ValidImportTypeNode;
 
 export type RequireOrImportCall = CallExpression & { expression: Identifier; arguments: [StringLiteralLike] };
 
@@ -3738,15 +3572,7 @@ export interface RequireVariableDeclaration extends VariableDeclaration {
   initializer: RequireOrImportCall;
 }
 
-export type LateVisibilityPaintedStatement =
-  | AnyImportSyntax
-  | VariableStatement
-  | ClassDeclaration
-  | FunctionDeclaration
-  | ModuleDeclaration
-  | TypeAliasDeclaration
-  | InterfaceDeclaration
-  | EnumDeclaration;
+export type LateVisibilityPaintedStatement = AnyImportSyntax | VariableStatement | ClassDeclaration | FunctionDeclaration | ModuleDeclaration | TypeAliasDeclaration | InterfaceDeclaration | EnumDeclaration;
 
 export interface SymbolVisibilityResult {
   accessibility: SymbolAccessibility;
@@ -3827,13 +3653,7 @@ export interface EmitResolver {
   isOptionalUninitializedParameterProperty(node: ParameterDeclaration): boolean;
   isExpandoFunctionDeclaration(node: FunctionDeclaration): boolean;
   getPropertiesOfContainerFunction(node: Declaration): Symbol[];
-  createTypeOfDeclaration(
-    declaration: AccessorDeclaration | VariableLikeDeclaration | PropertyAccessExpression,
-    enclosingDeclaration: Node,
-    flags: NodeBuilderFlags,
-    tracker: SymbolTracker,
-    addUndefined?: boolean
-  ): TypeNode | undefined;
+  createTypeOfDeclaration(declaration: AccessorDeclaration | VariableLikeDeclaration | PropertyAccessExpression, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker, addUndefined?: boolean): TypeNode | undefined;
   createReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker): TypeNode | undefined;
   createTypeOfExpression(expr: Expression, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker): TypeNode | undefined;
   createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker): Expression;
@@ -3889,32 +3709,7 @@ export const enum SymbolFlags {
   Assignment = 1 << 26, // Assignment treated as declaration (eg `this.prop = 1`)
   ModuleExports = 1 << 27, // Symbol for CommonJS `module` of `module.exports`
 
-  All = FunctionScopedVariable |
-    BlockScopedVariable |
-    Property |
-    EnumMember |
-    Function |
-    Class |
-    Interface |
-    ConstEnum |
-    RegularEnum |
-    ValueModule |
-    NamespaceModule |
-    TypeLiteral |
-    ObjectLiteral |
-    Method |
-    Constructor |
-    GetAccessor |
-    SetAccessor |
-    Signature |
-    TypeParameter |
-    TypeAlias |
-    ExportValue |
-    Alias |
-    Prototype |
-    ExportStar |
-    Optional |
-    Transient,
+  All = FunctionScopedVariable | BlockScopedVariable | Property | EnumMember | Function | Class | Interface | ConstEnum | RegularEnum | ValueModule | NamespaceModule | TypeLiteral | ObjectLiteral | Method | Constructor | GetAccessor | SetAccessor | Signature | TypeParameter | TypeAlias | ExportValue | Alias | Prototype | ExportStar | Optional | Transient,
 
   Enum = RegularEnum | ConstEnum,
   Variable = FunctionScopedVariable | BlockScopedVariable,
@@ -3986,7 +3781,7 @@ export interface Symbol {
   isReferenced?: SymbolFlags; // True if the symbol is referenced elsewhere. Keeps track of the meaning of a reference in case a symbol is both a type parameter and parameter.
   isReplaceableByMethod?: boolean; // Can this Javascript class property be replaced by a method symbol?
   isAssigned?: boolean; // True if the symbol is a parameter with assignments
-  assignmentDeclarationMembers?: Map<Declaration>; // detected late-bound assignment declarations associated with the symbol
+  assignmentDeclarationMembers?: qpc.Map<Declaration>; // detected late-bound assignment declarations associated with the symbol
 }
 
 export interface SymbolLinks {
@@ -3998,8 +3793,8 @@ export interface SymbolLinks {
   declaredType?: Type; // Type of class, interface, enum, type alias, or type parameter
   typeParameters?: TypeParameter[]; // Type parameters of type alias (undefined if non-generic)
   outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-  instantiations?: Map<Type>; // Instantiations of generic type alias (undefined if non-generic)
-  inferredClassSymbol?: Map<TransientSymbol>; // Symbol of an inferred ES5 constructor function
+  instantiations?: qpc.Map<Type>; // Instantiations of generic type alias (undefined if non-generic)
+  inferredClassSymbol?: qpc.Map<TransientSymbol>; // Symbol of an inferred ES5 constructor function
   mapper?: TypeMapper; // Type mapper for instantiation alias
   referenced?: boolean; // True if alias symbol has been referenced as a value that can be emitted
   constEnumReferenced?: boolean; // True if alias symbol resolves to a const enum and is referenced as a value ('referenced' will be false)
@@ -4018,9 +3813,9 @@ export interface SymbolLinks {
   enumKind?: EnumKind; // Enum declaration classification
   originatingImport?: ImportDeclaration | ImportCall; // Import declaration which produced the symbol, present if the symbol is marked as uncallable but had call signatures in `resolveESModuleSymbol`
   lateSymbol?: Symbol; // Late-bound symbol for a computed property
-  specifierCache?: Map<string>; // For symbols corresponding to external modules, a cache of incoming path -> module specifier name mappings
+  specifierCache?: qpc.Map<string>; // For symbols corresponding to external modules, a cache of incoming path -> module specifier name mappings
   extendedContainers?: Symbol[]; // Containers (other than the parent) which this symbol is aliased in
-  extendedContainersByFile?: Map<Symbol[]>; // Containers (other than the parent) which this symbol is aliased in
+  extendedContainersByFile?: qpc.Map<Symbol[]>; // Containers (other than the parent) which this symbol is aliased in
   variances?: VarianceFlags[]; // Alias symbol type argument variance cache
   deferralConstituents?: Type[]; // Calculated list of constituents for a deferred type
   deferralParent?: Type; // Source union/intersection of a deferred type
@@ -4129,7 +3924,7 @@ export type SymbolTable = UnderscoreEscapedMap<Symbol>;
 
 /** Used to track a `declare module "foo*"`-like declaration. */
 export interface PatternAmbientModule {
-  pattern: Pattern;
+  pattern: qc.Pattern;
   symbol: Symbol;
 }
 
@@ -4178,10 +3973,10 @@ export interface NodeLinks {
   switchTypes?: Type[]; // Cached array of switch case expression types
   jsxNamespace?: Symbol | false; // Resolved jsx namespace symbol for this node
   contextFreeType?: Type; // Cached context-free type used by the first pass of inference; used when a function's return is partially contextually sensitive
-  deferredNodes?: Map<Node>; // Set of nodes whose checking has been deferred
+  deferredNodes?: qpc.Map<Node>; // Set of nodes whose checking has been deferred
   capturedBlockScopeBindings?: Symbol[]; // Block-scoped bindings captured beneath this part of an IterationStatement
   outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-  instantiations?: Map<Type>; // Instantiations of generic type alias (undefined if non-generic)
+  instantiations?: qpc.Map<Type>; // Instantiations of generic type alias (undefined if non-generic)
   isExhaustive?: boolean; // Is node an exhaustive switch statement
   skipDirectInference?: true; // Flag set by the API `getContextualType` call on a node when `Completions` is passed to force the checker to skip making inferences to a node's type
   declarationRequiresScopeChange?: boolean; // Set by `useOuterVariableScopeInParameter` in checker when downlevel emit would change the name resolution scope inside of a parameter.
@@ -4471,7 +4266,7 @@ export const enum VarianceFlags {
 
 // Generic class and interface types
 export interface GenericType extends InterfaceType, TypeReference {
-  instantiations: Map<TypeReference>; // Generic instantiation cache
+  instantiations: qpc.Map<TypeReference>; // Generic instantiation cache
 
   variances?: VarianceFlags[]; // Variance of each type parameter
 }
@@ -4636,7 +4431,7 @@ export interface ConditionalRoot {
   isDistributive: boolean;
   inferTypeParameters?: TypeParameter[];
   outerTypeParameters?: TypeParameter[];
-  instantiations?: Map<Type>;
+  instantiations?: qpc.Map<Type>;
   aliasSymbol?: Symbol;
   aliasTypeArguments?: Type[];
 }
@@ -4729,7 +4524,7 @@ export interface Signature {
 
   isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
 
-  instantiations?: Map<Signature>; // Generic signature instantiation cache
+  instantiations?: qpc.Map<Signature>; // Generic signature instantiation cache
 }
 
 export const enum IndexKind {
@@ -4751,11 +4546,7 @@ export const enum TypeMapKind {
   Merged,
 }
 
-export type TypeMapper =
-  | { kind: TypeMapKind.Simple; source: Type; target: Type }
-  | { kind: TypeMapKind.Array; sources: readonly Type[]; targets: readonly Type[] | undefined }
-  | { kind: TypeMapKind.Function; func: (t: Type) => Type }
-  | { kind: TypeMapKind.Composite | TypeMapKind.Merged; mapper1: TypeMapper; mapper2: TypeMapper };
+export type TypeMapper = { kind: TypeMapKind.Simple; source: Type; target: Type } | { kind: TypeMapKind.Array; sources: readonly Type[]; targets: readonly Type[] | undefined } | { kind: TypeMapKind.Function; func: (t: Type) => Type } | { kind: TypeMapKind.Composite | TypeMapKind.Merged; mapper1: TypeMapper; mapper2: TypeMapper };
 
 export const enum InferencePriority {
   NakedTypeVariable = 1 << 0, // Naked type variable in union or intersection type
@@ -4953,7 +4744,7 @@ export enum PollingWatchKind {
   DynamicPriority,
 }
 
-export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
+export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | qpc.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
 
 export interface CompilerOptions {
   all?: boolean;
@@ -5026,7 +4817,7 @@ export interface CompilerOptions {
   out?: string;
   outDir?: string;
   outFile?: string;
-  paths?: MapLike<string[]>;
+  paths?: qpc.MapLike<string[]>;
   plugins?: PluginImport[];
   preserveConstEnums?: boolean;
   preserveSymlinks?: boolean;
@@ -5175,7 +4966,7 @@ export interface ParsedCommandLine {
   watchOptions?: WatchOptions;
   raw?: any;
   errors: Diagnostic[];
-  wildcardDirectories?: MapLike<WatchDirectoryFlags>;
+  wildcardDirectories?: qpc.MapLike<WatchDirectoryFlags>;
   compileOnSave?: boolean;
   configFileSpecs?: ConfigFileSpecs;
 }
@@ -5197,12 +4988,12 @@ export interface ConfigFileSpecs {
   excludeSpecs?: readonly string[];
   validatedIncludeSpecs?: readonly string[];
   validatedExcludeSpecs?: readonly string[];
-  wildcardDirectories: MapLike<WatchDirectoryFlags>;
+  wildcardDirectories: qpc.MapLike<WatchDirectoryFlags>;
 }
 
 export interface ExpandResult {
   fileNames: string[];
-  wildcardDirectories: MapLike<WatchDirectoryFlags>;
+  wildcardDirectories: qpc.MapLike<WatchDirectoryFlags>;
   spec: ConfigFileSpecs;
 }
 
@@ -5219,7 +5010,7 @@ export interface CreateProgramOptions {
 
 export interface CommandLineOptionBase {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'object' | 'list' | Map<number | string>; // a value of a primitive type, or an object literal mapping named values to actual values
+  type: 'string' | 'number' | 'boolean' | 'object' | 'list' | qpc.Map<number | string>; // a value of a primitive type, or an object literal mapping named values to actual values
   isFilePath?: boolean; // True if option value is a path or fileName
   shortName?: string; // A short mnemonic for convenience - for instance, 'h' can be used in place of 'help'
   description?: DiagnosticMessage; // The message describing what the command line switch does
@@ -5242,7 +5033,7 @@ export interface CommandLineOptionOfPrimitiveType extends CommandLineOptionBase 
 }
 
 export interface CommandLineOptionOfCustomType extends CommandLineOptionBase {
-  type: Map<number | string>; // an object literal mapping named values to actual values
+  type: qpc.Map<number | string>; // an object literal mapping named values to actual values
 }
 
 export interface DidYouMeanOptionsDiagnostics {
@@ -5253,7 +5044,7 @@ export interface DidYouMeanOptionsDiagnostics {
 
 export interface TsConfigOnlyOption extends CommandLineOptionBase {
   type: 'object';
-  elementOptions?: Map<CommandLineOption>;
+  elementOptions?: qpc.Map<CommandLineOption>;
   extraKeyDiagnostics?: DidYouMeanOptionsDiagnostics;
 }
 
@@ -5520,22 +5311,11 @@ export interface CompilerHost extends ModuleResolutionHost {
    * If resolveModuleNames is implemented then implementation for members from ModuleResolutionHost can be just
    * 'throw new Error("NotImplemented")'
    */
-  resolveModuleNames?(
-    moduleNames: string[],
-    containingFile: string,
-    reusedNames: string[] | undefined,
-    redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
-  ): (ResolvedModule | undefined)[];
+  resolveModuleNames?(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference: ResolvedProjectReference | undefined, options: CompilerOptions): (ResolvedModule | undefined)[];
   /**
    * This method is a companion for 'resolveModuleNames' and is used to resolve 'types' references to actual type declaration files
    */
-  resolveTypeReferenceDirectives?(
-    typeReferenceDirectiveNames: string[],
-    containingFile: string,
-    redirectedReference: ResolvedProjectReference | undefined,
-    options: CompilerOptions
-  ): (ResolvedTypeReferenceDirective | undefined)[];
+  resolveTypeReferenceDirectives?(typeReferenceDirectiveNames: string[], containingFile: string, redirectedReference: ResolvedProjectReference | undefined, options: CompilerOptions): (ResolvedTypeReferenceDirective | undefined)[];
   getEnvironmentVariable?(name: string): string | undefined;
   onReleaseOldSourceFile?(oldSourceFile: SourceFile, oldOptions: CompilerOptions, hasSourceFileByPath: boolean): void;
   hasInvalidatedResolution?: HasInvalidatedResolution;
@@ -5546,7 +5326,7 @@ export interface CompilerHost extends ModuleResolutionHost {
 
   // TODO: later handle this in better way in builder host instead once the api for tsbuild finalizes and doesn't use compilerHost as base
   createDirectory?(directory: string): void;
-  getSymlinks?(): ReadonlyMap<string>;
+  getSymlinks?(): qpc.ReadonlyMap<string>;
 }
 
 /** true if --out otherwise source file name */
@@ -5615,39 +5395,10 @@ export const enum TransformFlags {
   OuterExpressionExcludes = HasComputedFlags,
   PropertyAccessExcludes = OuterExpressionExcludes,
   NodeExcludes = PropertyAccessExcludes,
-  ArrowFunctionExcludes = NodeExcludes |
-    ContainsTypeScriptClassSyntax |
-    ContainsBlockScopedBinding |
-    ContainsYield |
-    ContainsAwait |
-    ContainsHoistedDeclarationOrCompletion |
-    ContainsBindingPattern |
-    ContainsObjectRestOrSpread,
-  FunctionExcludes = NodeExcludes |
-    ContainsTypeScriptClassSyntax |
-    ContainsLexicalThis |
-    ContainsBlockScopedBinding |
-    ContainsYield |
-    ContainsAwait |
-    ContainsHoistedDeclarationOrCompletion |
-    ContainsBindingPattern |
-    ContainsObjectRestOrSpread,
-  ConstructorExcludes = NodeExcludes |
-    ContainsLexicalThis |
-    ContainsBlockScopedBinding |
-    ContainsYield |
-    ContainsAwait |
-    ContainsHoistedDeclarationOrCompletion |
-    ContainsBindingPattern |
-    ContainsObjectRestOrSpread,
-  MethodOrAccessorExcludes = NodeExcludes |
-    ContainsLexicalThis |
-    ContainsBlockScopedBinding |
-    ContainsYield |
-    ContainsAwait |
-    ContainsHoistedDeclarationOrCompletion |
-    ContainsBindingPattern |
-    ContainsObjectRestOrSpread,
+  ArrowFunctionExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsBlockScopedBinding | ContainsYield | ContainsAwait | ContainsHoistedDeclarationOrCompletion | ContainsBindingPattern | ContainsObjectRestOrSpread,
+  FunctionExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsLexicalThis | ContainsBlockScopedBinding | ContainsYield | ContainsAwait | ContainsHoistedDeclarationOrCompletion | ContainsBindingPattern | ContainsObjectRestOrSpread,
+  ConstructorExcludes = NodeExcludes | ContainsLexicalThis | ContainsBlockScopedBinding | ContainsYield | ContainsAwait | ContainsHoistedDeclarationOrCompletion | ContainsBindingPattern | ContainsObjectRestOrSpread,
+  MethodOrAccessorExcludes = NodeExcludes | ContainsLexicalThis | ContainsBlockScopedBinding | ContainsYield | ContainsAwait | ContainsHoistedDeclarationOrCompletion | ContainsBindingPattern | ContainsObjectRestOrSpread,
   PropertyExcludes = NodeExcludes | ContainsLexicalThis,
   ClassExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsComputedPropertyName,
   ModuleExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsLexicalThis | ContainsBlockScopedBinding | ContainsHoistedDeclarationOrCompletion,
@@ -6149,13 +5900,7 @@ export interface PrintHandlers {
    */
   substituteNode?(hint: EmitHint, node: Node): Node;
   onEmitSourceMapOfNode?: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
-  onEmitSourceMapOfToken?: (
-    node: Node | undefined,
-    token: SyntaxKind,
-    writer: (s: string) => void,
-    pos: number,
-    emitCallback: (token: SyntaxKind, writer: (s: string) => void, pos: number) => number
-  ) => number;
+  onEmitSourceMapOfToken?: (node: Node | undefined, token: SyntaxKind, writer: (s: string) => void, pos: number, emitCallback: (token: SyntaxKind, writer: (s: string) => void, pos: number) => number) => number;
   onEmitSourceMapOfPosition?: (pos: number) => void;
   onSetSourceFile?: (node: SourceFile) => void;
   onBeforeEmitNodeArray?: (nodes: NodeArray<any> | undefined) => void;
@@ -6279,7 +6024,7 @@ export interface ModuleSpecifierResolutionHost {
   fileExists(path: string): boolean;
   getCurrentDirectory(): string;
   readFile?(path: string): string | undefined;
-  getProbableSymlinks?(files: readonly SourceFile[]): ReadonlyMap<string>;
+  getProbableSymlinks?(files: readonly SourceFile[]): qpc.ReadonlyMap<string>;
   getGlobalTypingsCacheLocation?(): string | undefined;
 
   getSourceFiles(): readonly SourceFile[];
@@ -6453,11 +6198,7 @@ interface PragmaArgumentSpecification<TName extends string> {
 }
 
 export interface PragmaDefinition<T1 extends string = string, T2 extends string = string, T3 extends string = string, T4 extends string = string> {
-  args?:
-    | readonly [PragmaArgumentSpecification<T1>]
-    | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>]
-    | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>, PragmaArgumentSpecification<T3>]
-    | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>, PragmaArgumentSpecification<T3>, PragmaArgumentSpecification<T4>];
+  args?: readonly [PragmaArgumentSpecification<T1>] | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>] | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>, PragmaArgumentSpecification<T3>] | readonly [PragmaArgumentSpecification<T1>, PragmaArgumentSpecification<T2>, PragmaArgumentSpecification<T3>, PragmaArgumentSpecification<T4>];
   // If not present, defaults to PragmaKindFlags.Default
   kind?: PragmaKindFlags;
 }
@@ -6507,9 +6248,7 @@ type ArgumentDefinitionToFieldUnion<T extends readonly PragmaArgumentSpecificati
 /**
  * Maps a pragma definition into the desired shape for its arguments object
  */
-type PragmaArgumentType<KPrag extends keyof ConcretePragmaSpecs> = ConcretePragmaSpecs[KPrag] extends { args: readonly PragmaArgumentSpecification<any>[] }
-  ? UnionToIntersection<ArgumentDefinitionToFieldUnion<ConcretePragmaSpecs[KPrag]['args']>>
-  : never;
+type PragmaArgumentType<KPrag extends keyof ConcretePragmaSpecs> = ConcretePragmaSpecs[KPrag] extends { args: readonly PragmaArgumentSpecification<any>[] } ? UnionToIntersection<ArgumentDefinitionToFieldUnion<ConcretePragmaSpecs[KPrag]['args']>> : never;
 
 type ConcretePragmaSpecs = typeof commentPragmas;
 
@@ -6517,7 +6256,7 @@ export type PragmaPseudoMap = { [K in keyof ConcretePragmaSpecs]: { arguments: P
 
 export type PragmaPseudoMapEntry = { [K in keyof PragmaPseudoMap]: { name: K; args: PragmaPseudoMap[K] } }[keyof PragmaPseudoMap];
 
-export interface ReadonlyPragmaMap extends ReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
+export interface ReadonlyPragmaMap extends qpc.ReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
   get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
   forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;
 }
@@ -6527,7 +6266,7 @@ export interface ReadonlyPragmaMap extends ReadonlyMap<PragmaPseudoMap[keyof Pra
  * value (if only one was found), or an array of multiple argument values if the pragma is present
  * in multiple places
  */
-export interface PragmaMap extends Map<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
+export interface PragmaMap extends qpc.Map<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
   set<TKey extends keyof PragmaPseudoMap>(key: TKey, value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][]): this;
   get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
   forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;

@@ -16,7 +16,7 @@ export function transformES2016(context: TransformationContext) {
       return node;
     }
     switch (node.kind) {
-      case SyntaxKind.BinaryExpression:
+      case qt.SyntaxKind.BinaryExpression:
         return visitBinaryExpression(<BinaryExpression>node);
       default:
         return visitEachChild(node, visitor, context);
@@ -25,9 +25,9 @@ export function transformES2016(context: TransformationContext) {
 
   function visitBinaryExpression(node: BinaryExpression): Expression {
     switch (node.operatorToken.kind) {
-      case SyntaxKind.AsteriskAsteriskEqualsToken:
+      case qt.SyntaxKind.AsteriskAsteriskEqualsToken:
         return visitExponentiationAssignmentExpression(node);
-      case SyntaxKind.AsteriskAsteriskToken:
+      case qt.SyntaxKind.AsteriskAsteriskToken:
         return visitExponentiationExpression(node);
       default:
         return visitEachChild(node, visitor, context);
@@ -43,13 +43,7 @@ export function transformES2016(context: TransformationContext) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
-      target = setTextRange(
-        createElementAccess(
-          setTextRange(createAssignment(expressionTemp, left.expression), left.expression),
-          setTextRange(createAssignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
-        ),
-        left
-      );
+      target = setTextRange(createElementAccess(setTextRange(createAssignment(expressionTemp, left.expression), left.expression), setTextRange(createAssignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)), left);
       value = setTextRange(createElementAccess(expressionTemp, argumentExpressionTemp), left);
     } else if (isPropertyAccessExpression(left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`

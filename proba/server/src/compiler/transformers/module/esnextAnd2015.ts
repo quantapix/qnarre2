@@ -42,12 +42,12 @@ export function transformECMAScriptModule(context: TransformationContext) {
 
   function visitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.ImportEqualsDeclaration:
+      case qt.SyntaxKind.ImportEqualsDeclaration:
         // Elide `import=` as it is not legal with --module ES6
         return undefined;
-      case SyntaxKind.ExportAssignment:
+      case qt.SyntaxKind.ExportAssignment:
         return visitExportAssignment(<ExportAssignment>node);
-      case SyntaxKind.ExportDeclaration:
+      case qt.SyntaxKind.ExportDeclaration:
         const exportDecl = node as ExportDeclaration;
         return visitExportDeclaration(exportDecl);
     }

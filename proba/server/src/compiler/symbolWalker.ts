@@ -178,7 +178,7 @@ export function createGetSymbolWalker(
         //  (their type resolved directly to the member deeply referenced)
         // So to get the intervening symbols, we need to check if there's a type
         // query node on any of the symbol's declarations and get symbols there
-        if (d.type && d.type.kind === SyntaxKind.TypeQuery) {
+        if (d.type && d.type.kind === qt.SyntaxKind.TypeQuery) {
           const query = d.type as TypeQueryNode;
           const entity = getResolvedSymbol(getFirstIdentifier(query.exprName));
           visitSymbol(entity);

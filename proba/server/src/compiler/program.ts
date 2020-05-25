@@ -63,12 +63,12 @@ interface OutputFingerprint {
   mtime: Date;
 }
 
-export function createCompilerHost(options: CompilerOptions, setParentNodes?: boolean): CompilerHost {
+export function createCompilerHost(options: qt.CompilerOptions, setParentNodes?: boolean): CompilerHost {
   return createCompilerHostWorker(options, setParentNodes);
 }
 
 // TODO(shkamat): update this after reworking ts build API
-export function createCompilerHostWorker(options: CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
+export function createCompilerHostWorker(options: qt.CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
   const existingDirectories = createMap<boolean>();
   const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
   function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
@@ -498,12 +498,7 @@ export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageCha
   return result;
 }
 
-export function loadWithLocalCache<T>(
-  names: string[],
-  containingFile: string,
-  redirectedReference: ResolvedProjectReference | undefined,
-  loader: (name: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => T
-): T[] {
+export function loadWithLocalCache<T>(names: string[], containingFile: string, redirectedReference: ResolvedProjectReference | undefined, loader: (name: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => T): T[] {
   if (names.length === 0) {
     return [];
   }
@@ -538,16 +533,7 @@ interface RefFile extends TextRange {
  * Determines if program structure is upto date or needs to be recreated
  */
 
-export function isProgramUptoDate(
-  program: Program | undefined,
-  rootFileNames: string[],
-  newOptions: CompilerOptions,
-  getSourceVersion: (path: Path, fileName: string) => string | undefined,
-  fileExists: (fileName: string) => boolean,
-  hasInvalidatedResolution: HasInvalidatedResolution,
-  hasChangedAutomaticTypeDirectiveNames: boolean,
-  projectReferences: readonly ProjectReference[] | undefined
-): boolean {
+export function isProgramUptoDate(program: Program | undefined, rootFileNames: string[], newOptions: qt.CompilerOptions, getSourceVersion: (path: Path, fileName: string) => string | undefined, fileExists: (fileName: string) => boolean, hasInvalidatedResolution: HasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames: boolean, projectReferences: readonly ProjectReference[] | undefined): boolean {
   // If we haven't created a program yet or have changed automatic type directives, then it is not up-to-date
   if (!program || hasChangedAutomaticTypeDirectiveNames) {
     return false;
@@ -636,7 +622,7 @@ export function getConfigFileParsingDiagnostics(configFileParseResult: ParsedCom
 /**
  * Determine if source file needs to be re-created even if its text hasn't changed
  */
-function shouldProgramCreateNewSourceFiles(program: Program | undefined, newOptions: CompilerOptions): boolean {
+function shouldProgramCreateNewSourceFiles(program: Program | undefined, newOptions: qt.CompilerOptions): boolean {
   if (!program) return false;
   // If any compiler options change, we can't reuse old source file even if version match
   // The change in options like these could result in change in syntax tree or `sourceFile.bindDiagnostics`.
@@ -644,13 +630,7 @@ function shouldProgramCreateNewSourceFiles(program: Program | undefined, newOpti
   return !!sourceFileAffectingCompilerOptions.some((option) => !isJsonEqual(getCompilerOptionValue(oldOptions, option), getCompilerOptionValue(newOptions, option)));
 }
 
-function createCreateProgramOptions(
-  rootNames: readonly string[],
-  options: CompilerOptions,
-  host?: CompilerHost,
-  oldProgram?: Program,
-  configFileParsingDiagnostics?: readonly Diagnostic[]
-): CreateProgramOptions {
+function createCreateProgramOptions(rootNames: readonly string[], options: qt.CompilerOptions, host?: CompilerHost, oldProgram?: Program, configFileParsingDiagnostics?: readonly Diagnostic[]): CreateProgramOptions {
   return {
     rootNames,
     options,
@@ -685,14 +665,8 @@ export function createProgram(createProgramOptions: CreateProgramOptions): Progr
  * @param configFileParsingDiagnostics - error during config file parsing
  * @returns A 'Program' object.
  */
-export function createProgram(rootNames: readonly string[], options: CompilerOptions, host?: CompilerHost, oldProgram?: Program, configFileParsingDiagnostics?: readonly Diagnostic[]): Program;
-export function createProgram(
-  rootNamesOrOptions: readonly string[] | CreateProgramOptions,
-  _options?: CompilerOptions,
-  _host?: CompilerHost,
-  _oldProgram?: Program,
-  _configFileParsingDiagnostics?: readonly Diagnostic[]
-): Program {
+export function createProgram(rootNames: readonly string[], options: qt.CompilerOptions, host?: CompilerHost, oldProgram?: Program, configFileParsingDiagnostics?: readonly Diagnostic[]): Program;
+export function createProgram(rootNamesOrOptions: readonly string[] | CreateProgramOptions, _options?: qt.CompilerOptions, _host?: CompilerHost, _oldProgram?: Program, _configFileParsingDiagnostics?: readonly Diagnostic[]): Program {
   const createProgramOptions = isArray(rootNamesOrOptions) ? createCreateProgramOptions(rootNamesOrOptions, _options, _host, _oldProgram, _configFileParsingDiagnostics) : rootNamesOrOptions; // TODO: GH#18217
   const { rootNames, options, configFileParsingDiagnostics, projectReferences } = createProgramOptions;
   let { oldProgram } = createProgramOptions;
@@ -700,11 +674,11 @@ export function createProgram(
   let processingDefaultLibFiles: SourceFile[] | undefined;
   let processingOtherFiles: SourceFile[] | undefined;
   let files: SourceFile[];
-  let symlinks: ReadonlyMap<string> | undefined;
+  let symlinks: qpc.ReadonlyMap<string> | undefined;
   let commonSourceDirectory: string;
   let diagnosticsProducingTypeChecker: TypeChecker;
   let noDiagnosticsTypeChecker: TypeChecker;
-  let classifiableNames: UnderscoreEscapedMap<true>;
+  let classifiableNames: qt.UnderscoreEscapedMap<true>;
   const ambientModuleNameToUnmodifiedFileName = createMap<string>();
   // Todo:: Use this to report why file was included in --extendedDiagnostics
   let refFileMap: MultiMap<ts.RefFile> | undefined;
@@ -765,25 +739,16 @@ export function createProgram(
       });
   } else {
     moduleResolutionCache = createModuleResolutionCache(currentDirectory, (x) => host.getCanonicalFileName(x), options);
-    const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) =>
-      resolveModuleName(moduleName, containingFile, options, host, moduleResolutionCache, redirectedReference).resolvedModule!; // TODO: GH#18217
-    actualResolveModuleNamesWorker = (moduleNames, containingFile, _reusedNames, redirectedReference) =>
-      loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+    const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => resolveModuleName(moduleName, containingFile, options, host, moduleResolutionCache, redirectedReference).resolvedModule!; // TODO: GH#18217
+    actualResolveModuleNamesWorker = (moduleNames, containingFile, _reusedNames, redirectedReference) => loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
 
-  let actualResolveTypeReferenceDirectiveNamesWorker: (
-    typeDirectiveNames: string[],
-    containingFile: string,
-    redirectedReference?: ResolvedProjectReference
-  ) => (ResolvedTypeReferenceDirective | undefined)[];
+  let actualResolveTypeReferenceDirectiveNamesWorker: (typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference) => (ResolvedTypeReferenceDirective | undefined)[];
   if (host.resolveTypeReferenceDirectives) {
-    actualResolveTypeReferenceDirectiveNamesWorker = (typeDirectiveNames, containingFile, redirectedReference) =>
-      host.resolveTypeReferenceDirectives!(Debug.checkEachDefined(typeDirectiveNames), containingFile, redirectedReference, options);
+    actualResolveTypeReferenceDirectiveNamesWorker = (typeDirectiveNames, containingFile, redirectedReference) => host.resolveTypeReferenceDirectives!(Debug.checkEachDefined(typeDirectiveNames), containingFile, redirectedReference, options);
   } else {
-    const loader = (typesRef: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) =>
-      resolveTypeReferenceDirective(typesRef, containingFile, options, host, redirectedReference).resolvedTypeReferenceDirective!; // TODO: GH#18217
-    actualResolveTypeReferenceDirectiveNamesWorker = (typeReferenceDirectiveNames, containingFile, redirectedReference) =>
-      loadWithLocalCache<ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
+    const loader = (typesRef: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => resolveTypeReferenceDirective(typesRef, containingFile, options, host, redirectedReference).resolvedTypeReferenceDirective!; // TODO: GH#18217
+    actualResolveTypeReferenceDirectiveNamesWorker = (typeReferenceDirectiveNames, containingFile, redirectedReference) => loadWithLocalCache<ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
   }
 
   // Map from a stringified PackageId to the source file with that id.
@@ -852,12 +817,7 @@ export function createProgram(
             } else if (getEmitModuleKind(parsedRef.commandLine.options) === ModuleKind.None) {
               for (const fileName of parsedRef.commandLine.fileNames) {
                 if (!fileExtensionIs(fileName, Extension.Dts) && !fileExtensionIs(fileName, Extension.Json)) {
-                  processSourceFile(
-                    getOutputDeclarationFileName(fileName, parsedRef.commandLine, !host.useCaseSensitiveFileNames()),
-                    /*isDefaultLib*/ false,
-                    /*ignoreNoDefaultLib*/ false,
-                    /*packageId*/ undefined
-                  );
+                  processSourceFile(getOutputDeclarationFileName(fileName, parsedRef.commandLine, !host.useCaseSensitiveFileNames()), /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false, /*packageId*/ undefined);
                 }
               }
             }
@@ -1150,10 +1110,7 @@ export function createProgram(
       }
     }
 
-    const resolutions =
-      unknownModuleNames && unknownModuleNames.length
-        ? resolveModuleNamesWorker(unknownModuleNames, containingFile, reusedNames, getResolvedProjectReferenceToRedirect(file.originalFileName))
-        : emptyArray;
+    const resolutions = unknownModuleNames && unknownModuleNames.length ? resolveModuleNamesWorker(unknownModuleNames, containingFile, reusedNames, getResolvedProjectReferenceToRedirect(file.originalFileName)) : emptyArray;
 
     // Combine results of resolutions and predicted results
     if (!result) {
@@ -1281,9 +1238,7 @@ export function createProgram(
     const seenPackageNames = createMap<SeenPackageName>();
 
     for (const oldSourceFile of oldSourceFiles) {
-      let newSourceFile = host.getSourceFileByPath
-        ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.resolvedPath, options.target!, /*onError*/ undefined, shouldCreateNewSourceFile)
-        : host.getSourceFile(oldSourceFile.fileName, options.target!, /*onError*/ undefined, shouldCreateNewSourceFile); // TODO: GH#18217
+      let newSourceFile = host.getSourceFileByPath ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.resolvedPath, options.target!, /*onError*/ undefined, shouldCreateNewSourceFile) : host.getSourceFile(oldSourceFile.fileName, options.target!, /*onError*/ undefined, shouldCreateNewSourceFile); // TODO: GH#18217
 
       if (!newSourceFile) {
         return (oldProgram.structureIsReused = StructureIsReused.Not);
@@ -1507,14 +1462,7 @@ export function createProgram(
   function emitBuildInfo(writeFileCallback?: WriteFileCallback): EmitResult {
     Debug.assert(!options.out && !options.outFile);
     performance.mark('beforeEmit');
-    const emitResult = emitFiles(
-      notImplementedResolver,
-      getEmitHost(writeFileCallback),
-      /*targetSourceFile*/ undefined,
-      /*transformers*/ noTransformers,
-      /*emitOnlyDtsFiles*/ false,
-      /*onlyBuildInfo*/ true
-    );
+    const emitResult = emitFiles(notImplementedResolver, getEmitHost(writeFileCallback), /*targetSourceFile*/ undefined, /*transformers*/ noTransformers, /*emitOnlyDtsFiles*/ false, /*onlyBuildInfo*/ true);
 
     performance.mark('afterEmit');
     performance.measure('Emit', 'beforeEmit', 'afterEmit');
@@ -1576,14 +1524,7 @@ export function createProgram(
     return noDiagnosticsTypeChecker || (noDiagnosticsTypeChecker = createTypeChecker(program, /*produceDiagnostics:*/ false));
   }
 
-  function emit(
-    sourceFile?: SourceFile,
-    writeFileCallback?: WriteFileCallback,
-    cancellationToken?: CancellationToken,
-    emitOnlyDtsFiles?: boolean,
-    transformers?: CustomTransformers,
-    forceDtsEmit?: boolean
-  ): EmitResult {
+  function emit(sourceFile?: SourceFile, writeFileCallback?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, transformers?: CustomTransformers, forceDtsEmit?: boolean): EmitResult {
     return runWithCancellationToken(() => emitWorker(program, sourceFile, writeFileCallback, cancellationToken, emitOnlyDtsFiles, transformers, forceDtsEmit));
   }
 
@@ -1591,15 +1532,7 @@ export function createProgram(
     return hasEmitBlockingDiagnostics.has(toPath(emitFileName));
   }
 
-  function emitWorker(
-    program: Program,
-    sourceFile: SourceFile | undefined,
-    writeFileCallback: WriteFileCallback | undefined,
-    cancellationToken: CancellationToken | undefined,
-    emitOnlyDtsFiles?: boolean,
-    customTransformers?: CustomTransformers,
-    forceDtsEmit?: boolean
-  ): EmitResult {
+  function emitWorker(program: Program, sourceFile: SourceFile | undefined, writeFileCallback: WriteFileCallback | undefined, cancellationToken: CancellationToken | undefined, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers, forceDtsEmit?: boolean): EmitResult {
     if (!forceDtsEmit) {
       const result = handleNoEmitOptions(program, sourceFile, cancellationToken);
       if (result) return result;
@@ -1617,15 +1550,7 @@ export function createProgram(
 
     performance.mark('beforeEmit');
 
-    const emitResult = emitFiles(
-      emitResolver,
-      getEmitHost(writeFileCallback),
-      sourceFile,
-      getTransformers(options, customTransformers, emitOnlyDtsFiles),
-      emitOnlyDtsFiles,
-      /*onlyBuildInfo*/ false,
-      forceDtsEmit
-    );
+    const emitResult = emitFiles(emitResolver, getEmitHost(writeFileCallback), sourceFile, getTransformers(options, customTransformers, emitOnlyDtsFiles), emitOnlyDtsFiles, /*onlyBuildInfo*/ false, forceDtsEmit);
 
     performance.mark('afterEmit');
     performance.measure('Emit', 'beforeEmit', 'afterEmit');
@@ -1640,11 +1565,7 @@ export function createProgram(
     return filesByName.get(path) || undefined;
   }
 
-  function getDiagnosticsHelper<T extends Diagnostic>(
-    sourceFile: SourceFile | undefined,
-    getDiagnostics: (sourceFile: SourceFile, cancellationToken: CancellationToken | undefined) => readonly T[],
-    cancellationToken: CancellationToken | undefined
-  ): readonly T[] {
+  function getDiagnosticsHelper<T extends Diagnostic>(sourceFile: SourceFile | undefined, getDiagnostics: (sourceFile: SourceFile, cancellationToken: CancellationToken | undefined) => readonly T[], cancellationToken: CancellationToken | undefined): readonly T[] {
     if (sourceFile) {
       return getDiagnostics(sourceFile, cancellationToken);
     }
@@ -1755,13 +1676,7 @@ export function createProgram(
       const isCheckJs = isCheckJsEnabledForFile(sourceFile, options);
       const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
       // By default, only type-check .ts, .tsx, 'Deferred' and 'External' files (external files are added by plugins)
-      const includeBindAndCheckDiagnostics =
-        !isTsNoCheck &&
-        (sourceFile.scriptKind === ScriptKind.TS ||
-          sourceFile.scriptKind === ScriptKind.TSX ||
-          sourceFile.scriptKind === ScriptKind.External ||
-          isCheckJs ||
-          sourceFile.scriptKind === ScriptKind.Deferred);
+      const includeBindAndCheckDiagnostics = !isTsNoCheck && (sourceFile.scriptKind === ScriptKind.TS || sourceFile.scriptKind === ScriptKind.TSX || sourceFile.scriptKind === ScriptKind.External || isCheckJs || sourceFile.scriptKind === ScriptKind.Deferred);
       const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : emptyArray;
       const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancellationToken) : emptyArray;
 
@@ -1846,22 +1761,22 @@ export function createProgram(
         // Otherwise break to visit each child
 
         switch (parent.kind) {
-          case SyntaxKind.Parameter:
-          case SyntaxKind.PropertyDeclaration:
-          case SyntaxKind.MethodDeclaration:
+          case qt.SyntaxKind.Parameter:
+          case qt.SyntaxKind.PropertyDeclaration:
+          case qt.SyntaxKind.MethodDeclaration:
             if ((<ParameterDeclaration | PropertyDeclaration | MethodDeclaration>parent).questionToken === node) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
               return 'skip';
             }
           // falls through
-          case SyntaxKind.MethodSignature:
-          case SyntaxKind.Constructor:
-          case SyntaxKind.GetAccessor:
-          case SyntaxKind.SetAccessor:
-          case SyntaxKind.FunctionExpression:
-          case SyntaxKind.FunctionDeclaration:
-          case SyntaxKind.ArrowFunction:
-          case SyntaxKind.VariableDeclaration:
+          case qt.SyntaxKind.MethodSignature:
+          case qt.SyntaxKind.Constructor:
+          case qt.SyntaxKind.GetAccessor:
+          case qt.SyntaxKind.SetAccessor:
+          case qt.SyntaxKind.FunctionExpression:
+          case qt.SyntaxKind.FunctionDeclaration:
+          case qt.SyntaxKind.ArrowFunction:
+          case qt.SyntaxKind.VariableDeclaration:
             // type annotation
             if ((<FunctionLikeDeclaration | VariableDeclaration | ParameterDeclaration | PropertyDeclaration>parent).type === node) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_annotations_can_only_be_used_in_TypeScript_files));
@@ -1870,82 +1785,77 @@ export function createProgram(
         }
 
         switch (node.kind) {
-          case SyntaxKind.ImportClause:
+          case qt.SyntaxKind.ImportClause:
             if ((node as ImportClause).isTypeOnly) {
               diagnostics.push(createDiagnosticForNode(node.parent, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
               return 'skip';
             }
             break;
-          case SyntaxKind.ExportDeclaration:
+          case qt.SyntaxKind.ExportDeclaration:
             if ((node as ExportDeclaration).isTypeOnly) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
               return 'skip';
             }
             break;
-          case SyntaxKind.ImportEqualsDeclaration:
+          case qt.SyntaxKind.ImportEqualsDeclaration:
             diagnostics.push(createDiagnosticForNode(node, Diagnostics.import_can_only_be_used_in_TypeScript_files));
             return 'skip';
-          case SyntaxKind.ExportAssignment:
+          case qt.SyntaxKind.ExportAssignment:
             if ((<ExportAssignment>node).isExportEquals) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.export_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
-          case SyntaxKind.HeritageClause:
+          case qt.SyntaxKind.HeritageClause:
             const heritageClause = <HeritageClause>node;
-            if (heritageClause.token === SyntaxKind.ImplementsKeyword) {
+            if (heritageClause.token === qt.SyntaxKind.ImplementsKeyword) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.implements_clauses_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
-          case SyntaxKind.InterfaceDeclaration:
+          case qt.SyntaxKind.InterfaceDeclaration:
             const interfaceKeyword = tokenToString(SyntaxKind.InterfaceKeyword);
             Debug.assertIsDefined(interfaceKeyword);
             diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
             return 'skip';
-          case SyntaxKind.ModuleDeclaration:
+          case qt.SyntaxKind.ModuleDeclaration:
             const moduleKeyword = node.flags & NodeFlags.Namespace ? tokenToString(SyntaxKind.NamespaceKeyword) : tokenToString(SyntaxKind.ModuleKeyword);
             Debug.assertIsDefined(moduleKeyword);
             diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
             return 'skip';
-          case SyntaxKind.TypeAliasDeclaration:
+          case qt.SyntaxKind.TypeAliasDeclaration:
             diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_aliases_can_only_be_used_in_TypeScript_files));
             return 'skip';
-          case SyntaxKind.EnumDeclaration:
+          case qt.SyntaxKind.EnumDeclaration:
             const enumKeyword = Debug.checkDefined(tokenToString(SyntaxKind.EnumKeyword));
             diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
             return 'skip';
-          case SyntaxKind.NonNullExpression:
+          case qt.SyntaxKind.NonNullExpression:
             diagnostics.push(createDiagnosticForNode(node, Diagnostics.Non_null_assertions_can_only_be_used_in_TypeScript_files));
             return 'skip';
-          case SyntaxKind.AsExpression:
+          case qt.SyntaxKind.AsExpression:
             diagnostics.push(createDiagnosticForNode((node as AsExpression).type, Diagnostics.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
             return 'skip';
-          case SyntaxKind.TypeAssertionExpression:
+          case qt.SyntaxKind.TypeAssertionExpression:
             Debug.fail(); // Won't parse these in a JS file anyway, as they are interpreted as JSX.
         }
       }
 
       function walkArray(nodes: NodeArray<Node>, parent: Node) {
         if (parent.decorators === nodes && !options.experimentalDecorators) {
-          diagnostics.push(
-            createDiagnosticForNode(
-              parent,
-              Diagnostics.Experimental_support_for_decorators_is_a_feature_that_is_subject_to_change_in_a_future_release_Set_the_experimentalDecorators_option_in_your_tsconfig_or_jsconfig_to_remove_this_warning
-            )
-          );
+          diagnostics.push(createDiagnosticForNode(parent, Diagnostics.Experimental_support_for_decorators_is_a_feature_that_is_subject_to_change_in_a_future_release_Set_the_experimentalDecorators_option_in_your_tsconfig_or_jsconfig_to_remove_this_warning));
         }
 
         switch (parent.kind) {
-          case SyntaxKind.ClassDeclaration:
-          case SyntaxKind.ClassExpression:
-          case SyntaxKind.MethodDeclaration:
-          case SyntaxKind.Constructor:
-          case SyntaxKind.GetAccessor:
-          case SyntaxKind.SetAccessor:
-          case SyntaxKind.FunctionExpression:
-          case SyntaxKind.FunctionDeclaration:
-          case SyntaxKind.ArrowFunction:
+          case qt.SyntaxKind.ClassDeclaration:
+          case qt.SyntaxKind.ClassExpression:
+          case qt.SyntaxKind.MethodDeclaration:
+          case qt.SyntaxKind.Constructor:
+          case qt.SyntaxKind.GetAccessor:
+          case qt.SyntaxKind.SetAccessor:
+          case qt.SyntaxKind.FunctionExpression:
+          case qt.SyntaxKind.FunctionDeclaration:
+          case qt.SyntaxKind.ArrowFunction:
             // Check type parameters
             if (nodes === (<DeclarationWithTypeParameterChildren>parent).typeParameters) {
               diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
@@ -1953,37 +1863,37 @@ export function createProgram(
             }
           // falls through
 
-          case SyntaxKind.VariableStatement:
+          case qt.SyntaxKind.VariableStatement:
             // Check modifiers
             if (nodes === parent.modifiers) {
-              checkModifiers(parent.modifiers, parent.kind === SyntaxKind.VariableStatement);
+              checkModifiers(parent.modifiers, parent.kind === qt.SyntaxKind.VariableStatement);
               return 'skip';
             }
             break;
-          case SyntaxKind.PropertyDeclaration:
+          case qt.SyntaxKind.PropertyDeclaration:
             // Check modifiers of property declaration
             if (nodes === (<PropertyDeclaration>parent).modifiers) {
               for (const modifier of nodes) {
-                if (modifier.kind !== SyntaxKind.StaticKeyword) {
+                if (modifier.kind !== qt.SyntaxKind.StaticKeyword) {
                   diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, tokenToString(modifier.kind)));
                 }
               }
               return 'skip';
             }
             break;
-          case SyntaxKind.Parameter:
+          case qt.SyntaxKind.Parameter:
             // Check modifiers of parameter declaration
             if (nodes === (<ParameterDeclaration>parent).modifiers) {
               diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
-          case SyntaxKind.CallExpression:
-          case SyntaxKind.NewExpression:
-          case SyntaxKind.ExpressionWithTypeArguments:
-          case SyntaxKind.JsxSelfClosingElement:
-          case SyntaxKind.JsxOpeningElement:
-          case SyntaxKind.TaggedTemplateExpression:
+          case qt.SyntaxKind.CallExpression:
+          case qt.SyntaxKind.NewExpression:
+          case qt.SyntaxKind.ExpressionWithTypeArguments:
+          case qt.SyntaxKind.JsxSelfClosingElement:
+          case qt.SyntaxKind.JsxOpeningElement:
+          case qt.SyntaxKind.TaggedTemplateExpression:
             // Check type arguments
             if (nodes === (<NodeWithTypeArguments>parent).typeArguments) {
               diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Type_arguments_can_only_be_used_in_TypeScript_files));
@@ -1996,25 +1906,25 @@ export function createProgram(
       function checkModifiers(modifiers: NodeArray<Modifier>, isConstValid: boolean) {
         for (const modifier of modifiers) {
           switch (modifier.kind) {
-            case SyntaxKind.ConstKeyword:
+            case qt.SyntaxKind.ConstKeyword:
               if (isConstValid) {
                 continue;
               }
             // to report error,
             // falls through
-            case SyntaxKind.PublicKeyword:
-            case SyntaxKind.PrivateKeyword:
-            case SyntaxKind.ProtectedKeyword:
-            case SyntaxKind.ReadonlyKeyword:
-            case SyntaxKind.DeclareKeyword:
-            case SyntaxKind.AbstractKeyword:
+            case qt.SyntaxKind.PublicKeyword:
+            case qt.SyntaxKind.PrivateKeyword:
+            case qt.SyntaxKind.ProtectedKeyword:
+            case qt.SyntaxKind.ReadonlyKeyword:
+            case qt.SyntaxKind.DeclareKeyword:
+            case qt.SyntaxKind.AbstractKeyword:
               diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, tokenToString(modifier.kind)));
               break;
 
             // These are all legal modifiers.
-            case SyntaxKind.StaticKeyword:
-            case SyntaxKind.ExportKeyword:
-            case SyntaxKind.DefaultKeyword:
+            case qt.SyntaxKind.StaticKeyword:
+            case qt.SyntaxKind.ExportKeyword:
+            case qt.SyntaxKind.DefaultKeyword:
           }
         }
       }
@@ -2044,12 +1954,7 @@ export function createProgram(
     });
   }
 
-  function getAndCacheDiagnostics<T extends SourceFile | undefined, U extends Diagnostic>(
-    sourceFile: T,
-    cancellationToken: CancellationToken | undefined,
-    cache: DiagnosticCache<U>,
-    getDiagnostics: (sourceFile: T, cancellationToken: CancellationToken | undefined) => readonly U[]
-  ): readonly U[] {
+  function getAndCacheDiagnostics<T extends SourceFile | undefined, U extends Diagnostic>(sourceFile: T, cancellationToken: CancellationToken | undefined, cache: DiagnosticCache<U>, getDiagnostics: (sourceFile: T, cancellationToken: CancellationToken | undefined) => readonly U[]): readonly U[] {
     const cachedResult = sourceFile ? cache.perFile && cache.perFile.get(sourceFile.path) : cache.allDiagnostics;
 
     if (cachedResult) {
@@ -2105,7 +2010,7 @@ export function createProgram(
   }
 
   function moduleNameIsEqualTo(a: StringLiteralLike | Identifier, b: StringLiteralLike | Identifier): boolean {
-    return a.kind === SyntaxKind.Identifier ? b.kind === SyntaxKind.Identifier && a.escapedText === b.escapedText : b.kind === SyntaxKind.StringLiteral && a.text === b.text;
+    return a.kind === qt.SyntaxKind.Identifier ? b.kind === qt.SyntaxKind.Identifier && a.escapedText === b.escapedText : b.kind === qt.SyntaxKind.StringLiteral && a.text === b.text;
   }
 
   function collectExternalModuleReferences(file: SourceFile): void {
@@ -2208,7 +2113,7 @@ export function createProgram(
     function getNodeAtPosition(sourceFile: SourceFile, position: number): Node {
       let current: Node = sourceFile;
       const getContainingChild = (child: Node) => {
-        if (child.pos <= position && (position < child.end || (position === child.end && child.kind === SyntaxKind.EndOfFileToken))) {
+        if (child.pos <= position && (position < child.end || (position === child.end && child.kind === qt.SyntaxKind.EndOfFileToken))) {
           return child;
         }
       };
@@ -2235,12 +2140,7 @@ export function createProgram(
     return getSourceFileFromReferenceWorker(resolveTripleslashReference(ref.fileName, referencingFile.fileName), (fileName) => filesByName.get(toPath(fileName)) || undefined);
   }
 
-  function getSourceFileFromReferenceWorker(
-    fileName: string,
-    getSourceFile: (fileName: string) => SourceFile | undefined,
-    fail?: (diagnostic: DiagnosticMessage, ...argument: string[]) => void,
-    refFile?: SourceFile
-  ): SourceFile | undefined {
+  function getSourceFileFromReferenceWorker(fileName: string, getSourceFile: (fileName: string) => SourceFile | undefined, fail?: (diagnostic: DiagnosticMessage, ...argument: string[]) => void, refFile?: SourceFile): SourceFile | undefined {
     if (hasExtension(fileName)) {
       const canonicalFileName = host.getCanonicalFileName(fileName);
       if (!options.allowNonTsExtensions && !forEach(supportedExtensionsWithJsonIfResolveJsonModule, (extension) => fileExtensionIs(canonicalFileName, extension))) {
@@ -2296,11 +2196,7 @@ export function createProgram(
   function reportFileNamesDifferOnlyInCasingError(fileName: string, existingFile: SourceFile, refFile: RefFile | undefined): void {
     const refs = !refFile ? refFileMap && refFileMap.get(existingFile.path) : undefined;
     const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
-    fileProcessingDiagnostics.add(
-      refToReportErrorOn
-        ? createFileDiagnosticAtReference(refToReportErrorOn, Diagnostics.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName)
-        : createRefFileDiagnostic(refFile, Diagnostics.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName)
-    );
+    fileProcessingDiagnostics.add(refToReportErrorOn ? createFileDiagnosticAtReference(refToReportErrorOn, Diagnostics.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName) : createRefFileDiagnostic(refFile, Diagnostics.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName));
   }
 
   function createRedirectSourceFile(redirectTarget: SourceFile, unredirected: SourceFile, fileName: string, path: Path, resolvedPath: Path, originalFileName: string): SourceFile {
@@ -2416,12 +2312,7 @@ export function createProgram(
     }
 
     // We haven't looked for this file, do so now and cache result
-    const file = host.getSourceFile(
-      fileName,
-      options.target!,
-      (hostErrorMessage) => fileProcessingDiagnostics.add(createRefFileDiagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage)),
-      shouldCreateNewSourceFile
-    );
+    const file = host.getSourceFile(fileName, options.target!, (hostErrorMessage) => fileProcessingDiagnostics.add(createRefFileDiagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage)), shouldCreateNewSourceFile);
 
     if (packageId) {
       const packageIdKey = packageIdToString(packageId);
@@ -2580,12 +2471,7 @@ export function createProgram(
     return useSourceOfProjectReferenceRedirect && !!getResolvedProjectReferenceToRedirect(fileName);
   }
 
-  function forEachProjectReference<T>(
-    projectReferences: readonly ProjectReference[] | undefined,
-    resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined,
-    cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined,
-    cbRef?: (projectReferences: readonly ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined
-  ): T | undefined {
+  function forEachProjectReference<T>(projectReferences: readonly ProjectReference[] | undefined, resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined, cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined, cbRef?: (projectReferences: readonly ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined): T | undefined {
     let seenResolvedRefs: ResolvedProjectReference[] | undefined;
 
     return worker(projectReferences, resolvedProjectReferences, /*parent*/ undefined, cbResolvedRef, cbRef);
@@ -2697,20 +2583,8 @@ export function createProgram(
               const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
               fileProcessingDiagnostics.add(
                 refToReportErrorOn
-                  ? createFileDiagnosticAtReference(
-                      refToReportErrorOn,
-                      Diagnostics.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
-                      typeReferenceDirective,
-                      resolvedTypeReferenceDirective.resolvedFileName,
-                      previousResolution.resolvedFileName
-                    )
-                  : createRefFileDiagnostic(
-                      refFile,
-                      Diagnostics.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
-                      typeReferenceDirective,
-                      resolvedTypeReferenceDirective.resolvedFileName,
-                      previousResolution.resolvedFileName
-                    )
+                  ? createFileDiagnosticAtReference(refToReportErrorOn, Diagnostics.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict, typeReferenceDirective, resolvedTypeReferenceDirective.resolvedFileName, previousResolution.resolvedFileName)
+                  : createRefFileDiagnostic(refFile, Diagnostics.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict, typeReferenceDirective, resolvedTypeReferenceDirective.resolvedFileName, previousResolution.resolvedFileName)
               );
             }
           }
@@ -2792,14 +2666,7 @@ export function createProgram(
         const elideImport = isJsFileFromNodeModules && currentNodeModulesDepth > maxNodeModuleJsDepth;
         // Don't add the file if it has a bad extension (e.g. 'tsx' if we don't have '--allowJs')
         // This may still end up being an untyped module -- the file won't be included but imports will be allowed.
-        const shouldAddFile =
-          resolvedFileName &&
-          !getResolutionDiagnostic(options, resolution) &&
-          !options.noResolve &&
-          i < file.imports.length &&
-          !elideImport &&
-          !(isJsFile && !options.allowJs) &&
-          (isInJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.JSDoc));
+        const shouldAddFile = resolvedFileName && !getResolutionDiagnostic(options, resolution) && !options.noResolve && i < file.imports.length && !elideImport && !(isJsFile && !options.allowJs) && (isInJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.JSDoc));
 
         if (elideImport) {
           modulesWithElidedImports.set(file.path, true);
@@ -2962,13 +2829,7 @@ export function createProgram(
       for (const file of files) {
         // Ignore file that is not emitted
         if (sourceFileMayBeEmitted(file, program) && !rootPaths.has(file.path)) {
-          addProgramDiagnosticAtRefPath(
-            file,
-            rootPaths,
-            Diagnostics.File_0_is_not_listed_within_the_file_list_of_project_1_Projects_must_list_all_files_or_use_an_include_pattern,
-            file.fileName,
-            options.configFilePath || ''
-          );
+          addProgramDiagnosticAtRefPath(file, rootPaths, Diagnostics.File_0_is_not_listed_within_the_file_list_of_project_1_Projects_must_list_all_files_or_use_an_include_pattern, file.fileName, options.configFilePath || '');
         }
       }
     }
@@ -3059,9 +2920,7 @@ export function createProgram(
     } else if (firstNonAmbientExternalModuleSourceFile && languageVersion < ScriptTarget.ES2015 && options.module === ModuleKind.None) {
       // We cannot use createDiagnosticFromNode because nodes do not have parents yet
       const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
-      programDiagnostics.add(
-        createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none)
-      );
+      programDiagnostics.add(createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none));
     }
 
     // Cannot specify module gen that isn't amd or system with --out
@@ -3070,15 +2929,7 @@ export function createProgram(
         createDiagnosticForOptionName(Diagnostics.Only_amd_and_system_modules_are_supported_alongside_0, options.out ? 'out' : 'outFile', 'module');
       } else if (options.module === undefined && firstNonAmbientExternalModuleSourceFile) {
         const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
-        programDiagnostics.add(
-          createFileDiagnostic(
-            firstNonAmbientExternalModuleSourceFile,
-            span.start,
-            span.length,
-            Diagnostics.Cannot_compile_modules_using_option_0_unless_the_module_flag_is_amd_or_system,
-            options.out ? 'out' : 'outFile'
-          )
-        );
+        programDiagnostics.add(createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_compile_modules_using_option_0_unless_the_module_flag_is_amd_or_system, options.out ? 'out' : 'outFile'));
       }
     }
 
@@ -3164,10 +3015,7 @@ export function createProgram(
           let chain: DiagnosticMessageChain | undefined;
           if (!options.configFilePath) {
             // The program is from either an inferred project or an external project
-            chain = chainDiagnosticMessages(
-              /*details*/ undefined,
-              Diagnostics.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig
-            );
+            chain = chainDiagnosticMessages(/*details*/ undefined, Diagnostics.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig);
           }
           chain = chainDiagnosticMessages(chain, Diagnostics.Cannot_write_file_0_because_it_would_overwrite_input_file, emitFileName);
           blockEmittingOfFile(emitFileName, createCompilerDiagnosticFromMessageChain(chain));
@@ -3300,9 +3148,7 @@ export function createProgram(
   }
 
   function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number) {
-    const referencesSyntax = firstDefined(getTsConfigPropArray(sourceFile || options.configFile, 'references'), (property) =>
-      isArrayLiteralExpression(property.initializer) ? property.initializer : undefined
-    );
+    const referencesSyntax = firstDefined(getTsConfigPropArray(sourceFile || options.configFile, 'references'), (property) => (isArrayLiteralExpression(property.initializer) ? property.initializer : undefined));
     if (referencesSyntax && referencesSyntax.elements.length > index) {
       programDiagnostics.add(createDiagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elements[index], message, arg0, arg1));
     } else {
@@ -3312,8 +3158,7 @@ export function createProgram(
 
   function createDiagnosticForOption(onKey: boolean, option1: string, option2: string | undefined, message: DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number) {
     const compilerOptionsObjectLiteralSyntax = getCompilerOptionsObjectLiteralSyntax();
-    const needCompilerDiagnostic =
-      !compilerOptionsObjectLiteralSyntax || !createOptionDiagnosticInObjectLiteralSyntax(compilerOptionsObjectLiteralSyntax, onKey, option1, option2, message, arg0, arg1, arg2);
+    const needCompilerDiagnostic = !compilerOptionsObjectLiteralSyntax || !createOptionDiagnosticInObjectLiteralSyntax(compilerOptionsObjectLiteralSyntax, onKey, option1, option2, message, arg0, arg1, arg2);
 
     if (needCompilerDiagnostic) {
       programDiagnostics.add(createCompilerDiagnostic(message, arg0, arg1, arg2));
@@ -3336,16 +3181,7 @@ export function createProgram(
     return _compilerOptionsObjectLiteralSyntax;
   }
 
-  function createOptionDiagnosticInObjectLiteralSyntax(
-    objectLiteral: ObjectLiteralExpression,
-    onKey: boolean,
-    key1: string,
-    key2: string | undefined,
-    message: DiagnosticMessage,
-    arg0: string | number,
-    arg1?: string | number,
-    arg2?: string | number
-  ): boolean {
+  function createOptionDiagnosticInObjectLiteralSyntax(objectLiteral: ObjectLiteralExpression, onKey: boolean, key1: string, key2: string | undefined, message: DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number): boolean {
     const props = getPropertyAssignment(objectLiteral, key1, key2);
     for (const prop of props) {
       programDiagnostics.add(createDiagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initializer, message, arg0, arg1, arg2));
@@ -3397,7 +3233,7 @@ export function createProgram(
     return comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
   }
 
-  function getProbableSymlinks(): ReadonlyMap<string> {
+  function getProbableSymlinks(): qpc.ReadonlyMap<string> {
     if (host.getSymlinks) {
       return host.getSymlinks();
     }
@@ -3469,8 +3305,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
   if (originalGetDirectories) {
     // Call getDirectories only if directory actually present on the host
     // This is needed to ensure that we arent getting directories that we fake about presence for
-    host.compilerHost.getDirectories = (path) =>
-      !host.getResolvedProjectReferences() || (originalDirectoryExists && originalDirectoryExists.call(host.compilerHost, path)) ? originalGetDirectories.call(host.compilerHost, path) : [];
+    host.compilerHost.getDirectories = (path) => (!host.getResolvedProjectReferences() || (originalDirectoryExists && originalDirectoryExists.call(host.compilerHost, path)) ? originalGetDirectories.call(host.compilerHost, path) : []);
   }
 
   // This is something we keep for life time of the host
@@ -3579,12 +3414,7 @@ export function handleNoEmitOptions(program: ProgramToEmitFilesAndReportErrors, 
   // immediately bail out.  Note that we pass 'undefined' for 'sourceFile' so that we
   // get any preEmit diagnostics, not just the ones
   if (!options.noEmitOnError) return undefined;
-  let diagnostics: readonly Diagnostic[] = [
-    ...program.getOptionsDiagnostics(cancellationToken),
-    ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
-    ...program.getGlobalDiagnostics(cancellationToken),
-    ...program.getSemanticDiagnostics(sourceFile, cancellationToken),
-  ];
+  let diagnostics: readonly Diagnostic[] = [...program.getOptionsDiagnostics(cancellationToken), ...program.getSyntacticDiagnostics(sourceFile, cancellationToken), ...program.getGlobalDiagnostics(cancellationToken), ...program.getSemanticDiagnostics(sourceFile, cancellationToken)];
 
   if (diagnostics.length === 0 && getEmitDeclarations(program.getCompilerOptions())) {
     diagnostics = program.getDeclarationDiagnostics(/*sourceFile*/ undefined, cancellationToken);
@@ -3623,11 +3453,7 @@ export function parseConfigHostFromCompilerHostLike(host: CompilerHostLike, dire
   fileExists(fileName: string): boolean;
 }
 
-export function createPrependNodes(
-  projectReferences: readonly ProjectReference[] | undefined,
-  getCommandLine: (ref: ProjectReference, index: number) => ParsedCommandLine | undefined,
-  readFile: (path: string) => string | undefined
-) {
+export function createPrependNodes(projectReferences: readonly ProjectReference[] | undefined, getCommandLine: (ref: ProjectReference, index: number) => ParsedCommandLine | undefined, readFile: (path: string) => string | undefined) {
   if (!projectReferences) return emptyArray;
   let nodes: InputFiles[] | undefined;
   for (let i = 0; i < projectReferences.length; i++) {
@@ -3661,7 +3487,7 @@ export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePa
  * The DiagnosticMessage's parameters are the imported module name, and the filename it resolved to.
  * This returns a diagnostic even if the module will be an untyped module.
  */
-export function getResolutionDiagnostic(options: CompilerOptions, { extension }: ResolvedModuleFull): DiagnosticMessage | undefined {
+export function getResolutionDiagnostic(options: qt.CompilerOptions, { extension }: ResolvedModuleFull): DiagnosticMessage | undefined {
   switch (extension) {
     case Extension.Ts:
     case Extension.Dts:
@@ -3691,7 +3517,7 @@ export function getResolutionDiagnostic(options: CompilerOptions, { extension }:
 function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] {
   const res = imports.map((i) => i.text);
   for (const aug of moduleAugmentations) {
-    if (aug.kind === SyntaxKind.StringLiteral) {
+    if (aug.kind === qt.SyntaxKind.StringLiteral) {
       res.push(aug.text);
     }
     // Do nothing if it's an Identifier; we don't need to do module resolution for `declare global`.

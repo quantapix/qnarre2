@@ -30,16 +30,16 @@ export function transformJsx(context: TransformationContext) {
 
   function visitorWorker(node: Node): VisitResult<Node> {
     switch (node.kind) {
-      case SyntaxKind.JsxElement:
+      case qt.SyntaxKind.JsxElement:
         return visitJsxElement(<JsxElement>node, /*isChild*/ false);
 
-      case SyntaxKind.JsxSelfClosingElement:
+      case qt.SyntaxKind.JsxSelfClosingElement:
         return visitJsxSelfClosingElement(<JsxSelfClosingElement>node, /*isChild*/ false);
 
-      case SyntaxKind.JsxFragment:
+      case qt.SyntaxKind.JsxFragment:
         return visitJsxFragment(<JsxFragment>node, /*isChild*/ false);
 
-      case SyntaxKind.JsxExpression:
+      case qt.SyntaxKind.JsxExpression:
         return visitJsxExpression(<JsxExpression>node);
 
       default:
@@ -49,19 +49,19 @@ export function transformJsx(context: TransformationContext) {
 
   function transformJsxChildToExpression(node: JsxChild): Expression | undefined {
     switch (node.kind) {
-      case SyntaxKind.JsxText:
+      case qt.SyntaxKind.JsxText:
         return visitJsxText(node);
 
-      case SyntaxKind.JsxExpression:
+      case qt.SyntaxKind.JsxExpression:
         return visitJsxExpression(node);
 
-      case SyntaxKind.JsxElement:
+      case qt.SyntaxKind.JsxElement:
         return visitJsxElement(node, /*isChild*/ true);
 
-      case SyntaxKind.JsxSelfClosingElement:
+      case qt.SyntaxKind.JsxSelfClosingElement:
         return visitJsxSelfClosingElement(node, /*isChild*/ true);
 
-      case SyntaxKind.JsxFragment:
+      case qt.SyntaxKind.JsxFragment:
         return visitJsxFragment(node, /*isChild*/ true);
 
       default:
@@ -91,11 +91,7 @@ export function transformJsx(context: TransformationContext) {
     } else {
       // Map spans of JsxAttribute nodes into object literals and spans
       // of JsxSpreadAttribute nodes into expressions.
-      const segments = flatten<Expression | ObjectLiteralExpression>(
-        spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
-          isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
-        )
-      );
+      const segments = flatten<Expression | ObjectLiteralExpression>(spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) => (isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement)))));
 
       if (isJsxSpreadAttribute(attrs[0])) {
         // We must always emit at least one object literal before a spread
@@ -157,13 +153,13 @@ export function transformJsx(context: TransformationContext) {
   function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
     if (node === undefined) {
       return createTrue();
-    } else if (node.kind === SyntaxKind.StringLiteral) {
+    } else if (node.kind === qt.SyntaxKind.StringLiteral) {
       // Always recreate the literal to escape any escape sequences or newlines which may be in the original jsx string and which
       // Need to be escaped to be handled correctly in a normal string
       const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
       literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
       return setTextRange(literal, node);
-    } else if (node.kind === SyntaxKind.JsxExpression) {
+    } else if (node.kind === qt.SyntaxKind.JsxExpression) {
       if (node.expression === undefined) {
         return createTrue();
       }
@@ -262,7 +258,7 @@ export function transformJsx(context: TransformationContext) {
   }
 
   function getTagName(node: JsxElement | JsxOpeningLikeElement): Expression {
-    if (node.kind === SyntaxKind.JsxElement) {
+    if (node.kind === qt.SyntaxKind.JsxElement) {
       return getTagName(node.openingElement);
     } else {
       const name = node.tagName;

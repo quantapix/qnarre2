@@ -58,7 +58,7 @@ export function transformES2018(context: TransformationContext) {
   let taggedTemplateStringDeclarations: VariableDeclaration[];
 
   /** Keeps track of property names accessed on super (`super.x`) within async functions. */
-  let capturedSuperProperties: UnderscoreEscapedMap<true>;
+  let capturedSuperProperties: qt.UnderscoreEscapedMap<true>;
   /** Whether the async function contains an element access on super (`super[x]`). */
   let hasSuperElementAccess: boolean;
   /** A set of node IDs for generated super accessors. */
@@ -117,7 +117,7 @@ export function transformES2018(context: TransformationContext) {
   }
 
   function visitorNoAsyncModifier(node: Node): VisitResult<Node> {
-    if (node.kind === SyntaxKind.AsyncKeyword) {
+    if (node.kind === qt.SyntaxKind.AsyncKeyword) {
       return undefined;
     }
     return node;
@@ -142,68 +142,68 @@ export function transformES2018(context: TransformationContext) {
       return node;
     }
     switch (node.kind) {
-      case SyntaxKind.AwaitExpression:
+      case qt.SyntaxKind.AwaitExpression:
         return visitAwaitExpression(node as AwaitExpression);
-      case SyntaxKind.YieldExpression:
+      case qt.SyntaxKind.YieldExpression:
         return visitYieldExpression(node as YieldExpression);
-      case SyntaxKind.ReturnStatement:
+      case qt.SyntaxKind.ReturnStatement:
         return visitReturnStatement(node as ReturnStatement);
-      case SyntaxKind.LabeledStatement:
+      case qt.SyntaxKind.LabeledStatement:
         return visitLabeledStatement(node as LabeledStatement);
-      case SyntaxKind.ObjectLiteralExpression:
+      case qt.SyntaxKind.ObjectLiteralExpression:
         return visitObjectLiteralExpression(node as ObjectLiteralExpression);
-      case SyntaxKind.BinaryExpression:
+      case qt.SyntaxKind.BinaryExpression:
         return visitBinaryExpression(node as BinaryExpression, noDestructuringValue);
-      case SyntaxKind.CatchClause:
+      case qt.SyntaxKind.CatchClause:
         return visitCatchClause(node as CatchClause);
-      case SyntaxKind.VariableStatement:
+      case qt.SyntaxKind.VariableStatement:
         return visitVariableStatement(node as VariableStatement);
-      case SyntaxKind.VariableDeclaration:
+      case qt.SyntaxKind.VariableDeclaration:
         return visitVariableDeclaration(node as VariableDeclaration);
-      case SyntaxKind.DoStatement:
-      case SyntaxKind.WhileStatement:
-      case SyntaxKind.ForInStatement:
+      case qt.SyntaxKind.DoStatement:
+      case qt.SyntaxKind.WhileStatement:
+      case qt.SyntaxKind.ForInStatement:
         return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
-      case SyntaxKind.ForOfStatement:
+      case qt.SyntaxKind.ForOfStatement:
         return visitForOfStatement(node as ForOfStatement, /*outermostLabeledStatement*/ undefined);
-      case SyntaxKind.ForStatement:
+      case qt.SyntaxKind.ForStatement:
         return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
-      case SyntaxKind.VoidExpression:
+      case qt.SyntaxKind.VoidExpression:
         return visitVoidExpression(node as VoidExpression);
-      case SyntaxKind.Constructor:
+      case qt.SyntaxKind.Constructor:
         return doWithHierarchyFacts(visitConstructorDeclaration, node as ConstructorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-      case SyntaxKind.MethodDeclaration:
+      case qt.SyntaxKind.MethodDeclaration:
         return doWithHierarchyFacts(visitMethodDeclaration, node as MethodDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-      case SyntaxKind.GetAccessor:
+      case qt.SyntaxKind.GetAccessor:
         return doWithHierarchyFacts(visitGetAccessorDeclaration, node as GetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-      case SyntaxKind.SetAccessor:
+      case qt.SyntaxKind.SetAccessor:
         return doWithHierarchyFacts(visitSetAccessorDeclaration, node as SetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-      case SyntaxKind.FunctionDeclaration:
+      case qt.SyntaxKind.FunctionDeclaration:
         return doWithHierarchyFacts(visitFunctionDeclaration, node as FunctionDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-      case SyntaxKind.FunctionExpression:
+      case qt.SyntaxKind.FunctionExpression:
         return doWithHierarchyFacts(visitFunctionExpression, node as FunctionExpression, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-      case SyntaxKind.ArrowFunction:
+      case qt.SyntaxKind.ArrowFunction:
         return doWithHierarchyFacts(visitArrowFunction, node as ArrowFunction, HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
-      case SyntaxKind.Parameter:
+      case qt.SyntaxKind.Parameter:
         return visitParameter(node as ParameterDeclaration);
-      case SyntaxKind.ExpressionStatement:
+      case qt.SyntaxKind.ExpressionStatement:
         return visitExpressionStatement(node as ExpressionStatement);
-      case SyntaxKind.ParenthesizedExpression:
+      case qt.SyntaxKind.ParenthesizedExpression:
         return visitParenthesizedExpression(node as ParenthesizedExpression, noDestructuringValue);
-      case SyntaxKind.TaggedTemplateExpression:
+      case qt.SyntaxKind.TaggedTemplateExpression:
         return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
-      case SyntaxKind.PropertyAccessExpression:
-        if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === SyntaxKind.SuperKeyword) {
+      case qt.SyntaxKind.PropertyAccessExpression:
+        if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === qt.SyntaxKind.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
-      case SyntaxKind.ElementAccessExpression:
-        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === SyntaxKind.SuperKeyword) {
+      case qt.SyntaxKind.ElementAccessExpression:
+        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === qt.SyntaxKind.SuperKeyword) {
           hasSuperElementAccess = true;
         }
         return visitEachChild(node, visitor, context);
-      case SyntaxKind.ClassDeclaration:
-      case SyntaxKind.ClassExpression:
+      case qt.SyntaxKind.ClassDeclaration:
+      case qt.SyntaxKind.ClassExpression:
         return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       default:
         return visitEachChild(node, visitor, context);
@@ -222,13 +222,7 @@ export function transformES2018(context: TransformationContext) {
       if (node.asteriskToken) {
         const expression = visitNode(node.expression, visitor, isExpression);
 
-        return setOriginalNode(
-          setTextRange(
-            createYield(createAwaitHelper(context, updateYield(node, node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))),
-            node
-          ),
-          node
-        );
+        return setOriginalNode(setTextRange(createYield(createAwaitHelper(context, updateYield(node, node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))), node), node);
       }
 
       return setOriginalNode(setTextRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())), node), node);
@@ -248,7 +242,7 @@ export function transformES2018(context: TransformationContext) {
   function visitLabeledStatement(node: LabeledStatement) {
     if (enclosingFunctionFlags & FunctionFlags.Async) {
       const statement = unwrapInnermostStatementOfLabel(node);
-      if (statement.kind === SyntaxKind.ForOfStatement && statement.awaitModifier) {
+      if (statement.kind === qt.SyntaxKind.ForOfStatement && statement.awaitModifier) {
         return visitForOfStatement(statement, node);
       }
       return restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node);
@@ -260,7 +254,7 @@ export function transformES2018(context: TransformationContext) {
     let chunkObject: ObjectLiteralElementLike[] | undefined;
     const objects: Expression[] = [];
     for (const e of elements) {
-      if (e.kind === SyntaxKind.SpreadAssignment) {
+      if (e.kind === qt.SyntaxKind.SpreadAssignment) {
         if (chunkObject) {
           objects.push(createObjectLiteral(chunkObject));
           chunkObject = undefined;
@@ -268,10 +262,7 @@ export function transformES2018(context: TransformationContext) {
         const target = e.expression;
         objects.push(visitNode(target, visitor, isExpression));
       } else {
-        chunkObject = append(
-          chunkObject,
-          e.kind === SyntaxKind.PropertyAssignment ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
-        );
+        chunkObject = append(chunkObject, e.kind === qt.SyntaxKind.PropertyAssignment ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike));
       }
     }
     if (chunkObject) {
@@ -305,7 +296,7 @@ export function transformES2018(context: TransformationContext) {
       // If we translate the above to `__assign({}, k, l)`, the `l` will evaluate before `k` is spread and we
       // end up with `{ a: 1, b: 2, c: 3 }`
       const objects = chunkObjectLiteralElements(node.properties);
-      if (objects.length && objects[0].kind !== SyntaxKind.ObjectLiteralExpression) {
+      if (objects.length && objects[0].kind !== qt.SyntaxKind.ObjectLiteralExpression) {
         objects.unshift(createObjectLiteral());
       }
       let expression: Expression = objects[0];
@@ -330,16 +321,10 @@ export function transformES2018(context: TransformationContext) {
   }
 
   function visitSourceFile(node: SourceFile): SourceFile {
-    const ancestorFacts = enterSubtree(
-      HierarchyFacts.SourceFileExcludes,
-      isEffectiveStrictModeSourceFile(node, compilerOptions) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes
-    );
+    const ancestorFacts = enterSubtree(HierarchyFacts.SourceFileExcludes, isEffectiveStrictModeSourceFile(node, compilerOptions) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes);
     exportedVariableStatement = false;
     const visited = visitEachChild(node, visitor, context);
-    const statement = concatenate(
-      visited.statements,
-      taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
-    );
+    const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]);
     const result = updateSourceFileNode(visited, setTextRange(createNodeArray(statement), node.statements));
     exitSubtree(ancestorFacts);
     return result;
@@ -357,7 +342,7 @@ export function transformES2018(context: TransformationContext) {
   function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
     if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
-    } else if (node.operatorToken.kind === SyntaxKind.CommaToken) {
+    } else if (node.operatorToken.kind === qt.SyntaxKind.CommaToken) {
       return updateBinary(node, visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
     }
     return visitEachChild(node, visitor, context);
@@ -413,13 +398,7 @@ export function transformES2018(context: TransformationContext) {
   }
 
   function visitForStatement(node: ForStatement): VisitResult<Statement> {
-    return updateFor(
-      node,
-      visitNode(node.initializer, visitorNoDestructuringValue, isForInitializer),
-      visitNode(node.condition, visitor, isExpression),
-      visitNode(node.incrementor, visitor, isExpression),
-      visitNode(node.statement, visitor, isStatement)
-    );
+    return updateFor(node, visitNode(node.initializer, visitorNoDestructuringValue, isForInitializer), visitNode(node.condition, visitor, isExpression), visitNode(node.incrementor, visitor, isExpression), visitNode(node.statement, visitor, isStatement));
   }
 
   function visitVoidExpression(node: VoidExpression) {
@@ -436,9 +415,7 @@ export function transformES2018(context: TransformationContext) {
     if (node.initializer.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       node = transformForOfStatementWithObjectRest(node);
     }
-    const result = node.awaitModifier
-      ? transformForAwaitOfStatement(node, outermostLabeledStatement, ancestorFacts)
-      : restoreEnclosingLabel(visitEachChild(node, visitor, context), outermostLabeledStatement);
+    const result = node.awaitModifier ? transformForAwaitOfStatement(node, outermostLabeledStatement, ancestorFacts) : restoreEnclosingLabel(visitEachChild(node, visitor, context), outermostLabeledStatement);
     exitSubtree(ancestorFacts);
     return result;
   }
@@ -459,13 +436,7 @@ export function transformES2018(context: TransformationContext) {
         bodyLocation = node.statement;
         statementsLocation = node.statement;
       }
-      return updateForOf(
-        node,
-        node.awaitModifier,
-        setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
-        node.expression,
-        setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
-      );
+      return updateForOf(node, node.awaitModifier, setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer), node.expression, setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation));
     }
     return node;
   }
@@ -485,10 +456,7 @@ export function transformES2018(context: TransformationContext) {
       statements.push(statement);
     }
 
-    return setEmitFlags(
-      setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation),
-      EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps
-    );
+    return setEmitFlags(setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
   }
 
   function createDownlevelAwait(expression: Expression) {
@@ -515,41 +483,16 @@ export function transformES2018(context: TransformationContext) {
     const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), callValues]) : callValues;
 
     const forStatement = setEmitFlags(
-      setTextRange(
-        createFor(
-          /*initializer*/ setEmitFlags(
-            setTextRange(
-              createVariableDeclarationList([setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression), createVariableDeclaration(result)]),
-              node.expression
-            ),
-            EmitFlags.NoHoisting
-          ),
-          /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), createLogicalNot(getDone)),
-          /*incrementor*/ undefined,
-          /*statement*/ convertForOfStatementHead(node, getValue)
-        ),
-        /*location*/ node
-      ),
+      setTextRange(createFor(/*initializer*/ setEmitFlags(setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression), EmitFlags.NoHoisting), /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), createLogicalNot(getDone)), /*incrementor*/ undefined, /*statement*/ convertForOfStatementHead(node, getValue)), /*location*/ node),
       EmitFlags.NoTokenTrailingSourceMaps
     );
 
     return createTry(
       createBlock([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
-      createCatchClause(
-        createVariableDeclaration(catchVariable),
-        setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
-      ),
+      createCatchClause(createVariableDeclaration(catchVariable), setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)),
       createBlock([
         createTry(
-          /*tryBlock*/ createBlock([
-            setEmitFlags(
-              createIf(
-                createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
-                createExpressionStatement(createDownlevelAwait(callReturn))
-              ),
-              EmitFlags.SingleLine
-            ),
-          ]),
+          /*tryBlock*/ createBlock([setEmitFlags(createIf(createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))), createExpressionStatement(createDownlevelAwait(callReturn))), EmitFlags.SingleLine)]),
           /*catchClause*/ undefined,
           /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
         ),
@@ -561,16 +504,7 @@ export function transformES2018(context: TransformationContext) {
     if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       // Binding patterns are converted into a generated name and are
       // evaluated inside the function body.
-      return updateParameter(
-        node,
-        /*decorators*/ undefined,
-        /*modifiers*/ undefined,
-        node.dotDotDotToken,
-        getGeneratedNameForNode(node),
-        /*questionToken*/ undefined,
-        /*type*/ undefined,
-        visitNode(node.initializer, visitor, isExpression)
-      );
+      return updateParameter(node, /*decorators*/ undefined, /*modifiers*/ undefined, node.dotDotDotToken, getGeneratedNameForNode(node), /*questionToken*/ undefined, /*type*/ undefined, visitNode(node.initializer, visitor, isExpression));
     }
     return visitEachChild(node, visitor, context);
   }
@@ -586,15 +520,7 @@ export function transformES2018(context: TransformationContext) {
   function visitGetAccessorDeclaration(node: GetAccessorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = updateGetAccessor(
-      node,
-      /*decorators*/ undefined,
-      node.modifiers,
-      visitNode(node.name, visitor, isPropertyName),
-      visitParameterList(node.parameters, visitor, context),
-      /*type*/ undefined,
-      transformFunctionBody(node)
-    );
+    const updated = updateGetAccessor(node, /*decorators*/ undefined, node.modifiers, visitNode(node.name, visitor, isPropertyName), visitParameterList(node.parameters, visitor, context), /*type*/ undefined, transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
@@ -602,14 +528,7 @@ export function transformES2018(context: TransformationContext) {
   function visitSetAccessorDeclaration(node: SetAccessorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = updateSetAccessor(
-      node,
-      /*decorators*/ undefined,
-      node.modifiers,
-      visitNode(node.name, visitor, isPropertyName),
-      visitParameterList(node.parameters, visitor, context),
-      transformFunctionBody(node)
-    );
+    const updated = updateSetAccessor(node, /*decorators*/ undefined, node.modifiers, visitNode(node.name, visitor, isPropertyName), visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
@@ -654,15 +573,7 @@ export function transformES2018(context: TransformationContext) {
   function visitArrowFunction(node: ArrowFunction) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = getFunctionFlags(node);
-    const updated = updateArrowFunction(
-      node,
-      node.modifiers,
-      /*typeParameters*/ undefined,
-      visitParameterList(node.parameters, visitor, context),
-      /*type*/ undefined,
-      node.equalsGreaterThanToken,
-      transformFunctionBody(node)
-    );
+    const updated = updateArrowFunction(node, node.modifiers, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, node.equalsGreaterThanToken, transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
@@ -695,21 +606,7 @@ export function transformES2018(context: TransformationContext) {
     capturedSuperProperties = createUnderscoreEscapedMap<true>();
     hasSuperElementAccess = false;
 
-    const returnStatement = createReturn(
-      createAsyncGeneratorHelper(
-        context,
-        createFunctionExpression(
-          /*modifiers*/ undefined,
-          createToken(SyntaxKind.AsteriskToken),
-          node.name && getGeneratedNameForNode(node.name),
-          /*typeParameters*/ undefined,
-          /*parameters*/ [],
-          /*type*/ undefined,
-          updateBlock(node.body!, visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))
-        ),
-        !!(hierarchyFacts & HierarchyFacts.HasLexicalThis)
-      )
-    );
+    const returnStatement = createReturn(createAsyncGeneratorHelper(context, createFunctionExpression(/*modifiers*/ undefined, createToken(SyntaxKind.AsteriskToken), node.name && getGeneratedNameForNode(node.name), /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, updateBlock(node.body!, visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))), !!(hierarchyFacts & HierarchyFacts.HasLexicalThis)));
 
     // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
     // This step isn't needed if we eventually transform this to ES5.
@@ -846,25 +743,25 @@ export function transformES2018(context: TransformationContext) {
 
   function substituteExpression(node: Expression) {
     switch (node.kind) {
-      case SyntaxKind.PropertyAccessExpression:
+      case qt.SyntaxKind.PropertyAccessExpression:
         return substitutePropertyAccessExpression(node);
-      case SyntaxKind.ElementAccessExpression:
+      case qt.SyntaxKind.ElementAccessExpression:
         return substituteElementAccessExpression(node);
-      case SyntaxKind.CallExpression:
+      case qt.SyntaxKind.CallExpression:
         return substituteCallExpression(node);
     }
     return node;
   }
 
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+    if (node.expression.kind === qt.SyntaxKind.SuperKeyword) {
       return setTextRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
     }
     return node;
   }
 
   function substituteElementAccessExpression(node: ElementAccessExpression) {
-    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+    if (node.expression.kind === qt.SyntaxKind.SuperKeyword) {
       return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
     }
     return node;
@@ -881,7 +778,7 @@ export function transformES2018(context: TransformationContext) {
 
   function isSuperContainer(node: Node) {
     const kind = node.kind;
-    return kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.Constructor || kind === SyntaxKind.MethodDeclaration || kind === SyntaxKind.GetAccessor || kind === SyntaxKind.SetAccessor;
+    return kind === qt.SyntaxKind.ClassDeclaration || kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor;
   }
 
   function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {

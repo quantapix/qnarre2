@@ -18,10 +18,9 @@ interface Preferences {
   readonly ending: Ending;
 }
 
-function getPreferences({ importModuleSpecifierPreference, importModuleSpecifierEnding }: UserPreferences, compilerOptions: CompilerOptions, importingSourceFile: SourceFile): Preferences {
+function getPreferences({ importModuleSpecifierPreference, importModuleSpecifierEnding }: UserPreferences, compilerOptions: qt.CompilerOptions, importingSourceFile: SourceFile): Preferences {
   return {
-    relativePreference:
-      importModuleSpecifierPreference === 'relative' ? RelativePreference.Relative : importModuleSpecifierPreference === 'non-relative' ? RelativePreference.NonRelative : RelativePreference.Auto,
+    relativePreference: importModuleSpecifierPreference === 'relative' ? RelativePreference.Relative : importModuleSpecifierPreference === 'non-relative' ? RelativePreference.NonRelative : RelativePreference.Auto,
     ending: getEnding(),
   };
   function getEnding(): Ending {
@@ -38,63 +37,38 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
   }
 }
 
-function getPreferencesForUpdate(compilerOptions: CompilerOptions, oldImportSpecifier: string): Preferences {
+function getPreferencesForUpdate(compilerOptions: qt.CompilerOptions, oldImportSpecifier: string): Preferences {
   return {
     relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
-    ending: hasJSFileExtension(oldImportSpecifier)
-      ? Ending.JsExtension
-      : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index')
-      ? Ending.Index
-      : Ending.Minimal,
+    ending: hasJSFileExtension(oldImportSpecifier) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index') ? Ending.Index : Ending.Minimal,
   };
 }
 
-export function updateModuleSpecifier(
-  compilerOptions: CompilerOptions,
-  importingSourceFileName: Path,
-  toFileName: string,
-  host: ModuleSpecifierResolutionHost,
-  oldImportSpecifier: string
-): string | undefined {
+export function updateModuleSpecifier(compilerOptions: qt.CompilerOptions, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, oldImportSpecifier: string): string | undefined {
   const res = getModuleSpecifierWorker(compilerOptions, importingSourceFileName, toFileName, host, getPreferencesForUpdate(compilerOptions, oldImportSpecifier));
   if (res === oldImportSpecifier) return undefined;
   return res;
 }
 
 // Note: importingSourceFile is just for usesJsExtensionOnImports
-export function getModuleSpecifier(
-  compilerOptions: CompilerOptions,
-  importingSourceFile: SourceFile,
-  importingSourceFileName: Path,
-  toFileName: string,
-  host: ModuleSpecifierResolutionHost,
-  preferences: UserPreferences = {}
-): string {
+export function getModuleSpecifier(compilerOptions: qt.CompilerOptions, importingSourceFile: SourceFile, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: UserPreferences = {}): string {
   return getModuleSpecifierWorker(compilerOptions, importingSourceFileName, toFileName, host, getPreferences(preferences, compilerOptions, importingSourceFile));
 }
 
-export function getNodeModulesPackageName(compilerOptions: CompilerOptions, importingSourceFileName: Path, nodeModulesFileName: string, host: ModuleSpecifierResolutionHost): string | undefined {
+export function getNodeModulesPackageName(compilerOptions: qt.CompilerOptions, importingSourceFileName: Path, nodeModulesFileName: string, host: ModuleSpecifierResolutionHost): string | undefined {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, nodeModulesFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions, /*packageNameOnly*/ true));
 }
 
-function getModuleSpecifierWorker(compilerOptions: CompilerOptions, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: Preferences): string {
+function getModuleSpecifierWorker(compilerOptions: qt.CompilerOptions, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: Preferences): string {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, toFileName, host);
-  return (
-    firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions)) || getLocalModuleSpecifier(toFileName, info, compilerOptions, preferences)
-  );
+  return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions)) || getLocalModuleSpecifier(toFileName, info, compilerOptions, preferences);
 }
 
 /** Returns an import for each symlink and for the realpath. */
-export function getModuleSpecifiers(
-  moduleSymbol: Symbol,
-  compilerOptions: CompilerOptions,
-  importingSourceFile: SourceFile,
-  host: ModuleSpecifierResolutionHost,
-  userPreferences: UserPreferences
-): readonly string[] {
+export function getModuleSpecifiers(moduleSymbol: symbol, compilerOptions: qt.CompilerOptions, importingSourceFile: SourceFile, host: ModuleSpecifierResolutionHost, userPreferences: UserPreferences): readonly string[] {
   const ambient = tryGetModuleNameFromAmbientModule(moduleSymbol);
   if (ambient) return [ambient];
 
@@ -118,12 +92,10 @@ function getInfo(importingSourceFileName: Path, host: ModuleSpecifierResolutionH
   return { getCanonicalFileName, sourceDirectory };
 }
 
-function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, compilerOptions: CompilerOptions, { ending, relativePreference }: Preferences): string {
+function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, compilerOptions: qt.CompilerOptions, { ending, relativePreference }: Preferences): string {
   const { baseUrl, paths, rootDirs } = compilerOptions;
 
-  const relativePath =
-    (rootDirs && tryGetModuleNameFromRootDirs(rootDirs, moduleFileName, sourceDirectory, getCanonicalFileName, ending, compilerOptions)) ||
-    removeExtensionAndIndexPostFix(ensurePathIsNonModuleName(getRelativePathFromDirectory(sourceDirectory, moduleFileName, getCanonicalFileName)), ending, compilerOptions);
+  const relativePath = (rootDirs && tryGetModuleNameFromRootDirs(rootDirs, moduleFileName, sourceDirectory, getCanonicalFileName, ending, compilerOptions)) || removeExtensionAndIndexPostFix(ensurePathIsNonModuleName(getRelativePathFromDirectory(sourceDirectory, moduleFileName, getCanonicalFileName)), ending, compilerOptions);
   if (!baseUrl || relativePreference === RelativePreference.Relative) {
     return relativePath;
   }
@@ -168,13 +140,7 @@ function comparePathsByNumberOfDirectorySeparators(a: string, b: string) {
   return compareValues(numberOfDirectorySeparators(a), numberOfDirectorySeparators(b));
 }
 
-export function forEachFileNameOfModule<T>(
-  importingFileName: string,
-  importedFileName: string,
-  host: ModuleSpecifierResolutionHost,
-  preferSymlinks: boolean,
-  cb: (fileName: string) => T | undefined
-): T | undefined {
+export function forEachFileNameOfModule<T>(importingFileName: string, importedFileName: string, host: ModuleSpecifierResolutionHost, preferSymlinks: boolean, cb: (fileName: string) => T | undefined): T | undefined {
   const getCanonicalFileName = hostGetCanonicalFileName(host);
   const cwd = host.getCurrentDirectory();
   const referenceRedirect = host.isSourceOfProjectReferenceRedirect(importedFileName) ? host.getProjectReferenceRedirect(importedFileName) : undefined;
@@ -253,16 +219,14 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
   return sortedPaths;
 }
 
-function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
-  const decl = find(moduleSymbol.declarations, (d) => isNonGlobalAmbientModule(d) && (!isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))) as
-    | (ModuleDeclaration & { name: StringLiteral })
-    | undefined;
+function tryGetModuleNameFromAmbientModule(moduleSymbol: symbol): string | undefined {
+  const decl = find(moduleSymbol.declarations, (d) => isNonGlobalAmbientModule(d) && (!isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
   if (decl) {
     return decl.name.text;
   }
 }
 
-function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeToBaseUrl: string, paths: MapLike<readonly string[]>): string | undefined {
+function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeToBaseUrl: string, paths: qpc.MapLike<readonly string[]>): string | undefined {
   for (const key in paths) {
     for (const patternText of paths[key]) {
       const pattern = removeFileExtension(normalizePath(patternText));
@@ -270,10 +234,7 @@ function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeT
       if (indexOfStar !== -1) {
         const prefix = pattern.substr(0, indexOfStar);
         const suffix = pattern.substr(indexOfStar + 1);
-        if (
-          (relativeToBaseUrl.length >= prefix.length + suffix.length && startsWith(relativeToBaseUrl, prefix) && endsWith(relativeToBaseUrl, suffix)) ||
-          (!suffix && relativeToBaseUrl === removeTrailingDirectorySeparator(prefix))
-        ) {
+        if ((relativeToBaseUrl.length >= prefix.length + suffix.length && startsWith(relativeToBaseUrl, prefix) && endsWith(relativeToBaseUrl, suffix)) || (!suffix && relativeToBaseUrl === removeTrailingDirectorySeparator(prefix))) {
           const matchedStar = relativeToBaseUrl.substr(prefix.length, relativeToBaseUrl.length - suffix.length);
           return key.replace('*', matchedStar);
         }
@@ -284,32 +245,18 @@ function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeT
   }
 }
 
-function tryGetModuleNameFromRootDirs(
-  rootDirs: readonly string[],
-  moduleFileName: string,
-  sourceDirectory: string,
-  getCanonicalFileName: (file: string) => string,
-  ending: Ending,
-  compilerOptions: CompilerOptions
-): string | undefined {
+function tryGetModuleNameFromRootDirs(rootDirs: readonly string[], moduleFileName: string, sourceDirectory: string, getCanonicalFileName: (file: string) => string, ending: Ending, compilerOptions: qt.CompilerOptions): string | undefined {
   const normalizedTargetPath = getPathRelativeToRootDirs(moduleFileName, rootDirs, getCanonicalFileName);
   if (normalizedTargetPath === undefined) {
     return undefined;
   }
 
   const normalizedSourcePath = getPathRelativeToRootDirs(sourceDirectory, rootDirs, getCanonicalFileName);
-  const relativePath =
-    normalizedSourcePath !== undefined ? ensurePathIsNonModuleName(getRelativePathFromDirectory(normalizedSourcePath, normalizedTargetPath, getCanonicalFileName)) : normalizedTargetPath;
+  const relativePath = normalizedSourcePath !== undefined ? ensurePathIsNonModuleName(getRelativePathFromDirectory(normalizedSourcePath, normalizedTargetPath, getCanonicalFileName)) : normalizedTargetPath;
   return getEmitModuleResolutionKind(compilerOptions) === ModuleResolutionKind.NodeJs ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOptions) : removeFileExtension(relativePath);
 }
 
-function tryGetModuleNameAsNodeModule(
-  moduleFileName: string,
-  { getCanonicalFileName, sourceDirectory }: Info,
-  host: ModuleSpecifierResolutionHost,
-  options: CompilerOptions,
-  packageNameOnly?: boolean
-): string | undefined {
+function tryGetModuleNameAsNodeModule(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, host: ModuleSpecifierResolutionHost, options: qt.CompilerOptions, packageNameOnly?: boolean): string | undefined {
   if (!host.fileExists || !host.readFile) {
     return undefined;
   }
@@ -389,10 +336,7 @@ function tryGetModuleNameAsNodeModule(
 
     // If the file is /index, it can be imported by its directory name
     // IFF there is not _also_ a file by the same name
-    if (
-      getCanonicalFileName(fullModulePathWithoutExtension.substring(parts.fileNameIndex)) === '/index' &&
-      !tryGetAnyFileFromPath(host, fullModulePathWithoutExtension.substring(0, parts.fileNameIndex))
-    ) {
+    if (getCanonicalFileName(fullModulePathWithoutExtension.substring(parts.fileNameIndex)) === '/index' && !tryGetAnyFileFromPath(host, fullModulePathWithoutExtension.substring(0, parts.fileNameIndex))) {
       return fullModulePathWithoutExtension.substring(0, parts.fileNameIndex);
     }
 
@@ -484,7 +428,7 @@ function getPathRelativeToRootDirs(path: string, rootDirs: readonly string[], ge
   });
 }
 
-function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, options: CompilerOptions): string {
+function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, options: qt.CompilerOptions): string {
   if (fileExtensionIs(fileName, Extension.Json)) return fileName;
   const noExtension = removeFileExtension(fileName);
   switch (ending) {
@@ -499,7 +443,7 @@ function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, option
   }
 }
 
-function getJSExtensionForFile(fileName: string, options: CompilerOptions): Extension {
+function getJSExtensionForFile(fileName: string, options: qt.CompilerOptions): Extension {
   const ext = extensionFromPath(fileName);
   switch (ext) {
     case Extension.Ts:

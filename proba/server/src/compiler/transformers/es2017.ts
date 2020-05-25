@@ -29,12 +29,12 @@ export function transformES2017(context: TransformationContext) {
    */
   let enclosingSuperContainerFlags: NodeCheckFlags = 0;
 
-  let enclosingFunctionParameterNames: UnderscoreEscapedMap<true>;
+  let enclosingFunctionParameterNames: qt.UnderscoreEscapedMap<true>;
 
   /**
    * Keeps track of property names accessed on super (`super.x`) within async functions.
    */
-  let capturedSuperProperties: UnderscoreEscapedMap<true>;
+  let capturedSuperProperties: qt.UnderscoreEscapedMap<true>;
   /** Whether the async function contains an element access on super (`super[x]`). */
   let hasSuperElementAccess: boolean;
   /** A set of node IDs for generated super accessors (variable statements). */
@@ -100,42 +100,42 @@ export function transformES2017(context: TransformationContext) {
       return node;
     }
     switch (node.kind) {
-      case SyntaxKind.AsyncKeyword:
+      case qt.SyntaxKind.AsyncKeyword:
         // ES2017 async modifier should be elided for targets < ES2017
         return undefined;
 
-      case SyntaxKind.AwaitExpression:
+      case qt.SyntaxKind.AwaitExpression:
         return visitAwaitExpression(<AwaitExpression>node);
 
-      case SyntaxKind.MethodDeclaration:
+      case qt.SyntaxKind.MethodDeclaration:
         return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitMethodDeclaration, <MethodDeclaration>node);
 
-      case SyntaxKind.FunctionDeclaration:
+      case qt.SyntaxKind.FunctionDeclaration:
         return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionDeclaration, <FunctionDeclaration>node);
 
-      case SyntaxKind.FunctionExpression:
+      case qt.SyntaxKind.FunctionExpression:
         return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionExpression, <FunctionExpression>node);
 
-      case SyntaxKind.ArrowFunction:
+      case qt.SyntaxKind.ArrowFunction:
         return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
 
-      case SyntaxKind.PropertyAccessExpression:
-        if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === SyntaxKind.SuperKeyword) {
+      case qt.SyntaxKind.PropertyAccessExpression:
+        if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === qt.SyntaxKind.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
 
-      case SyntaxKind.ElementAccessExpression:
-        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === SyntaxKind.SuperKeyword) {
+      case qt.SyntaxKind.ElementAccessExpression:
+        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === qt.SyntaxKind.SuperKeyword) {
           hasSuperElementAccess = true;
         }
         return visitEachChild(node, visitor, context);
 
-      case SyntaxKind.GetAccessor:
-      case SyntaxKind.SetAccessor:
-      case SyntaxKind.Constructor:
-      case SyntaxKind.ClassDeclaration:
-      case SyntaxKind.ClassExpression:
+      case qt.SyntaxKind.GetAccessor:
+      case qt.SyntaxKind.SetAccessor:
+      case qt.SyntaxKind.Constructor:
+      case qt.SyntaxKind.ClassDeclaration:
+      case qt.SyntaxKind.ClassExpression:
         return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitDefault, node);
 
       default:
@@ -146,27 +146,27 @@ export function transformES2017(context: TransformationContext) {
   function asyncBodyVisitor(node: Node): VisitResult<Node> {
     if (isNodeWithPossibleHoistedDeclaration(node)) {
       switch (node.kind) {
-        case SyntaxKind.VariableStatement:
+        case qt.SyntaxKind.VariableStatement:
           return visitVariableStatementInAsyncBody(node);
-        case SyntaxKind.ForStatement:
+        case qt.SyntaxKind.ForStatement:
           return visitForStatementInAsyncBody(node);
-        case SyntaxKind.ForInStatement:
+        case qt.SyntaxKind.ForInStatement:
           return visitForInStatementInAsyncBody(node);
-        case SyntaxKind.ForOfStatement:
+        case qt.SyntaxKind.ForOfStatement:
           return visitForOfStatementInAsyncBody(node);
-        case SyntaxKind.CatchClause:
+        case qt.SyntaxKind.CatchClause:
           return visitCatchClauseInAsyncBody(node);
-        case SyntaxKind.Block:
-        case SyntaxKind.SwitchStatement:
-        case SyntaxKind.CaseBlock:
-        case SyntaxKind.CaseClause:
-        case SyntaxKind.DefaultClause:
-        case SyntaxKind.TryStatement:
-        case SyntaxKind.DoStatement:
-        case SyntaxKind.WhileStatement:
-        case SyntaxKind.IfStatement:
-        case SyntaxKind.WithStatement:
-        case SyntaxKind.LabeledStatement:
+        case qt.SyntaxKind.Block:
+        case qt.SyntaxKind.SwitchStatement:
+        case qt.SyntaxKind.CaseBlock:
+        case qt.SyntaxKind.CaseClause:
+        case qt.SyntaxKind.DefaultClause:
+        case qt.SyntaxKind.TryStatement:
+        case qt.SyntaxKind.DoStatement:
+        case qt.SyntaxKind.WhileStatement:
+        case qt.SyntaxKind.IfStatement:
+        case qt.SyntaxKind.WithStatement:
+        case qt.SyntaxKind.LabeledStatement:
           return visitEachChild(node, asyncBodyVisitor, context);
         default:
           return Debug.assertNever(node, 'Unhandled node.');
@@ -180,7 +180,7 @@ export function transformES2017(context: TransformationContext) {
     recordDeclarationName(node.variableDeclaration!, catchClauseNames); // TODO: GH#18217
 
     // names declared in a catch variable are block scoped
-    let catchClauseUnshadowedNames: UnderscoreEscapedMap<true> | undefined;
+    let catchClauseUnshadowedNames: qt.UnderscoreEscapedMap<true> | undefined;
     catchClauseNames.forEach((_, escapedName) => {
       if (enclosingFunctionParameterNames.has(escapedName)) {
         if (!catchClauseUnshadowedNames) {
@@ -210,39 +210,16 @@ export function transformES2017(context: TransformationContext) {
   }
 
   function visitForInStatementInAsyncBody(node: ForInStatement) {
-    return updateForIn(
-      node,
-      isVariableDeclarationListWithCollidingName(node.initializer)
-        ? visitVariableDeclarationListWithCollidingNames(node.initializer, /*hasReceiver*/ true)!
-        : visitNode(node.initializer, visitor, isForInitializer),
-      visitNode(node.expression, visitor, isExpression),
-      visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
-    );
+    return updateForIn(node, isVariableDeclarationListWithCollidingName(node.initializer) ? visitVariableDeclarationListWithCollidingNames(node.initializer, /*hasReceiver*/ true)! : visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock));
   }
 
   function visitForOfStatementInAsyncBody(node: ForOfStatement) {
-    return updateForOf(
-      node,
-      visitNode(node.awaitModifier, visitor, isToken),
-      isVariableDeclarationListWithCollidingName(node.initializer)
-        ? visitVariableDeclarationListWithCollidingNames(node.initializer, /*hasReceiver*/ true)!
-        : visitNode(node.initializer, visitor, isForInitializer),
-      visitNode(node.expression, visitor, isExpression),
-      visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
-    );
+    return updateForOf(node, visitNode(node.awaitModifier, visitor, isToken), isVariableDeclarationListWithCollidingName(node.initializer) ? visitVariableDeclarationListWithCollidingNames(node.initializer, /*hasReceiver*/ true)! : visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock));
   }
 
   function visitForStatementInAsyncBody(node: ForStatement) {
     const initializer = node.initializer!; // TODO: GH#18217
-    return updateFor(
-      node,
-      isVariableDeclarationListWithCollidingName(initializer)
-        ? visitVariableDeclarationListWithCollidingNames(initializer, /*hasReceiver*/ false)
-        : visitNode(node.initializer, visitor, isForInitializer),
-      visitNode(node.condition, visitor, isExpression),
-      visitNode(node.incrementor, visitor, isExpression),
-      visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
-    );
+    return updateFor(node, isVariableDeclarationListWithCollidingName(initializer) ? visitVariableDeclarationListWithCollidingNames(initializer, /*hasReceiver*/ false) : visitNode(node.initializer, visitor, isForInitializer), visitNode(node.condition, visitor, isExpression), visitNode(node.incrementor, visitor, isExpression), visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock));
   }
 
   /**
@@ -269,18 +246,7 @@ export function transformES2017(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitMethodDeclaration(node: MethodDeclaration) {
-    return updateMethod(
-      node,
-      /*decorators*/ undefined,
-      visitNodes(node.modifiers, visitor, isModifier),
-      node.asteriskToken,
-      node.name,
-      /*questionToken*/ undefined,
-      /*typeParameters*/ undefined,
-      visitParameterList(node.parameters, visitor, context),
-      /*type*/ undefined,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
-    );
+    return updateMethod(node, /*decorators*/ undefined, visitNodes(node.modifiers, visitor, isModifier), node.asteriskToken, node.name, /*questionToken*/ undefined, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context));
   }
 
   /**
@@ -292,17 +258,7 @@ export function transformES2017(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
-    return updateFunctionDeclaration(
-      node,
-      /*decorators*/ undefined,
-      visitNodes(node.modifiers, visitor, isModifier),
-      node.asteriskToken,
-      node.name,
-      /*typeParameters*/ undefined,
-      visitParameterList(node.parameters, visitor, context),
-      /*type*/ undefined,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
-    );
+    return updateFunctionDeclaration(node, /*decorators*/ undefined, visitNodes(node.modifiers, visitor, isModifier), node.asteriskToken, node.name, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context));
   }
 
   /**
@@ -314,16 +270,7 @@ export function transformES2017(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitFunctionExpression(node: FunctionExpression): Expression {
-    return updateFunctionExpression(
-      node,
-      visitNodes(node.modifiers, visitor, isModifier),
-      node.asteriskToken,
-      node.name,
-      /*typeParameters*/ undefined,
-      visitParameterList(node.parameters, visitor, context),
-      /*type*/ undefined,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
-    );
+    return updateFunctionExpression(node, visitNodes(node.modifiers, visitor, isModifier), node.asteriskToken, node.name, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context));
   }
 
   /**
@@ -335,18 +282,10 @@ export function transformES2017(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitArrowFunction(node: ArrowFunction) {
-    return updateArrowFunction(
-      node,
-      visitNodes(node.modifiers, visitor, isModifier),
-      /*typeParameters*/ undefined,
-      visitParameterList(node.parameters, visitor, context),
-      /*type*/ undefined,
-      node.equalsGreaterThanToken,
-      getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
-    );
+    return updateArrowFunction(node, visitNodes(node.modifiers, visitor, isModifier), /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, node.equalsGreaterThanToken, getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context));
   }
 
-  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: UnderscoreEscapedMap<true>) {
+  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: qt.UnderscoreEscapedMap<true>) {
     if (isIdentifier(name)) {
       names.set(name.escapedText, true);
     } else {
@@ -418,7 +357,7 @@ export function transformES2017(context: TransformationContext) {
     const original = getOriginalNode(node, isFunctionLike);
     const nodeType = original.type;
     const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
-    const isArrowFunction = node.kind === SyntaxKind.ArrowFunction;
+    const isArrowFunction = node.kind === qt.SyntaxKind.ArrowFunction;
     const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
 
     // An async function is emit as an outer function that calls an inner
@@ -583,25 +522,25 @@ export function transformES2017(context: TransformationContext) {
 
   function substituteExpression(node: Expression) {
     switch (node.kind) {
-      case SyntaxKind.PropertyAccessExpression:
+      case qt.SyntaxKind.PropertyAccessExpression:
         return substitutePropertyAccessExpression(node);
-      case SyntaxKind.ElementAccessExpression:
+      case qt.SyntaxKind.ElementAccessExpression:
         return substituteElementAccessExpression(node);
-      case SyntaxKind.CallExpression:
+      case qt.SyntaxKind.CallExpression:
         return substituteCallExpression(node);
     }
     return node;
   }
 
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+    if (node.expression.kind === qt.SyntaxKind.SuperKeyword) {
       return setTextRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
     }
     return node;
   }
 
   function substituteElementAccessExpression(node: ElementAccessExpression) {
-    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+    if (node.expression.kind === qt.SyntaxKind.SuperKeyword) {
       return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
     }
     return node;
@@ -618,7 +557,7 @@ export function transformES2017(context: TransformationContext) {
 
   function isSuperContainer(node: Node): node is SuperContainer {
     const kind = node.kind;
-    return kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.Constructor || kind === SyntaxKind.MethodDeclaration || kind === SyntaxKind.GetAccessor || kind === SyntaxKind.SetAccessor;
+    return kind === qt.SyntaxKind.ClassDeclaration || kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor;
   }
 
   function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
@@ -631,7 +570,7 @@ export function transformES2017(context: TransformationContext) {
 }
 
 /** Creates a variable named `_super` with accessor properties for the given property names. */
-export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: UnderscoreEscapedMap<true>) {
+export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: qt.UnderscoreEscapedMap<true>) {
   // Create a variable declaration with a getter/setter (if binding) definition for each name:
   //   const _super = Object.create(null, { x: { get: () => super.x, set: (v) => super.x = v }, ... });
   const hasBinding = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) !== 0;
@@ -639,19 +578,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
   names.forEach((_, key) => {
     const name = unescapeLeadingUnderscores(key);
     const getterAndSetter: PropertyAssignment[] = [];
-    getterAndSetter.push(
-      createPropertyAssignment(
-        'get',
-        createArrowFunction(
-          /* modifiers */ undefined,
-          /* typeParameters */ undefined,
-          /* parameters */ [],
-          /* type */ undefined,
-          /* equalsGreaterThanToken */ undefined,
-          setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution)
-        )
-      )
-    );
+    getterAndSetter.push(createPropertyAssignment('get', createArrowFunction(/* modifiers */ undefined, /* typeParameters */ undefined, /* parameters */ [], /* type */ undefined, /* equalsGreaterThanToken */ undefined, setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution))));
     if (hasBinding) {
       getterAndSetter.push(
         createPropertyAssignment(
@@ -659,17 +586,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
           createArrowFunction(
             /* modifiers */ undefined,
             /* typeParameters */ undefined,
-            /* parameters */ [
-              createParameter(
-                /* decorators */ undefined,
-                /* modifiers */ undefined,
-                /* dotDotDotToken */ undefined,
-                'v',
-                /* questionToken */ undefined,
-                /* type */ undefined,
-                /* initializer */ undefined
-              ),
-            ],
+            /* parameters */ [createParameter(/* decorators */ undefined, /* modifiers */ undefined, /* dotDotDotToken */ undefined, 'v', /* questionToken */ undefined, /* type */ undefined, /* initializer */ undefined)],
             /* type */ undefined,
             /* equalsGreaterThanToken */ undefined,
             createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), createIdentifier('v'))
@@ -679,19 +596,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
     }
     accessors.push(createPropertyAssignment(name, createObjectLiteral(getterAndSetter)));
   });
-  return createVariableStatement(
-    /* modifiers */ undefined,
-    createVariableDeclarationList(
-      [
-        createVariableDeclaration(
-          createFileLevelUniqueName('_super'),
-          /* type */ undefined,
-          createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)])
-        ),
-      ],
-      NodeFlags.Const
-    )
-  );
+  return createVariableStatement(/* modifiers */ undefined, createVariableDeclarationList([createVariableDeclaration(createFileLevelUniqueName('_super'), /* type */ undefined, createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)]))], NodeFlags.Const));
 }
 
 export const awaiterHelper: UnscopedEmitHelper = {
@@ -714,25 +619,12 @@ export const awaiterHelper: UnscopedEmitHelper = {
 function createAwaiterHelper(context: TransformationContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
   context.requestEmitHelper(awaiterHelper);
 
-  const generatorFunc = createFunctionExpression(
-    /*modifiers*/ undefined,
-    createToken(SyntaxKind.AsteriskToken),
-    /*name*/ undefined,
-    /*typeParameters*/ undefined,
-    /*parameters*/ [],
-    /*type*/ undefined,
-    body
-  );
+  const generatorFunc = createFunctionExpression(/*modifiers*/ undefined, createToken(SyntaxKind.AsteriskToken), /*name*/ undefined, /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, body);
 
   // Mark this node as originally an async function
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
-  return createCall(getUnscopedHelperName('__awaiter'), /*typeArguments*/ undefined, [
-    hasLexicalThis ? createThis() : createVoidZero(),
-    hasLexicalArguments ? createIdentifier('arguments') : createVoidZero(),
-    promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : createVoidZero(),
-    generatorFunc,
-  ]);
+  return createCall(getUnscopedHelperName('__awaiter'), /*typeArguments*/ undefined, [hasLexicalThis ? createThis() : createVoidZero(), hasLexicalArguments ? createIdentifier('arguments') : createVoidZero(), promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : createVoidZero(), generatorFunc]);
 }
 
 export const asyncSuperHelper: EmitHelper = {
