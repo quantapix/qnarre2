@@ -870,7 +870,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param elements The elements to visit.
    * @param multiLine Whether array literals created should be emitted on multiple lines.
    */
-  function visitElements(elements: NodeArray<Expression>, leadingElement?: Expression, location?: qt.TextRange, multiLine?: boolean) {
+  function visitElements(elements: qt.NodeArray<Expression>, leadingElement?: Expression, location?: qt.TextRange, multiLine?: boolean) {
     // [source]
     //      ar = [1, yield, 2];
     //
@@ -1698,7 +1698,7 @@ export function transformGenerators(context: TransformationContext) {
     return !!node && (node.transformFlags & TransformFlags.ContainsYield) !== 0;
   }
 
-  function countInitialNodesWithoutYield(nodes: NodeArray<Node>) {
+  function countInitialNodesWithoutYield(nodes: qt.NodeArray<Node>) {
     const numNodes = nodes.length;
     for (let i = 0; i < numNodes; i++) {
       if (containsYield(nodes[i])) {

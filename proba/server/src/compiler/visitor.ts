@@ -8,7 +8,7 @@ function reduceNode<T>(node: qt.Node | undefined, f: (memo: T, node: qt.Node) =>
   return node ? f(initial, node) : initial;
 }
 
-function reduceNodeArray<T>(nodes: NodeArray<Node> | undefined, f: (memo: T, nodes: NodeArray<Node>) => T, initial: T) {
+function reduceNodeArray<T>(nodes: qt.NodeArray<Node> | undefined, f: (memo: T, nodes: qt.NodeArray<Node>) => T, initial: T) {
   return nodes ? f(initial, nodes) : initial;
 }
 
@@ -20,12 +20,12 @@ function reduceNodeArray<T>(nodes: NodeArray<Node> | undefined, f: (memo: T, nod
  * @param initial The initial value to supply to the reduction.
  * @param f The callback function
  */
-export function reduceEachChild<T>(node: qt.Node | undefined, initial: T, cbNode: (memo: T, node: qt.Node) => T, cbNodeArray?: (memo: T, nodes: NodeArray<Node>) => T): T {
+export function reduceEachChild<T>(node: qt.Node | undefined, initial: T, cbNode: (memo: T, node: qt.Node) => T, cbNodeArray?: (memo: T, nodes: qt.NodeArray<Node>) => T): T {
   if (node === undefined) {
     return initial;
   }
 
-  const reduceNodes: (nodes: NodeArray<Node> | undefined, f: ((memo: T, node: qt.Node) => T) | ((memo: T, node: qt.NodeArray<Node>) => T), initial: T) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
+  const reduceNodes: (nodes: qt.NodeArray<Node> | undefined, f: ((memo: T, node: qt.Node) => T) | ((memo: T, node: qt.NodeArray<Node>) => T), initial: T) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
   const cbNodes = cbNodeArray || cbNode;
   const kind = node.kind;
 
@@ -535,12 +535,12 @@ function findSpanEnd<T>(array: readonly T[], test: (value: T) => boolean, start:
 /**
  * Merges generated lexical declarations into a new statement list.
  */
-export function mergeLexicalEnvironment(statements: NodeArray<Statement>, declarations: readonly Statement[] | undefined): NodeArray<Statement>;
+export function mergeLexicalEnvironment(statements: qt.NodeArray<Statement>, declarations: readonly Statement[] | undefined): qt.NodeArray<Statement>;
 /**
  * Appends generated lexical declarations to an array of statements.
  */
 export function mergeLexicalEnvironment(statements: Statement[], declarations: readonly Statement[] | undefined): Statement[];
-export function mergeLexicalEnvironment(statements: Statement[] | NodeArray<Statement>, declarations: readonly Statement[] | undefined) {
+export function mergeLexicalEnvironment(statements: Statement[] | qt.NodeArray<Statement>, declarations: readonly Statement[] | undefined) {
   if (!some(declarations)) {
     return statements;
   }
@@ -667,7 +667,7 @@ function aggregateTransformFlagsForNode(node: qt.Node): TransformFlags {
   return computeTransformFlagsForNode(node, subtreeFlags);
 }
 
-function aggregateTransformFlagsForNodeArray(nodes: NodeArray<Node>): TransformFlags {
+function aggregateTransformFlagsForNodeArray(nodes: qt.NodeArray<Node>): TransformFlags {
   if (nodes === undefined) {
     return TransformFlags.None;
   }
@@ -703,6 +703,6 @@ function aggregateTransformFlagsForChildNode(transformFlags: TransformFlags, nod
   return transformFlags | aggregateTransformFlagsForNode(node);
 }
 
-function aggregateTransformFlagsForChildNodes(transformFlags: TransformFlags, nodes: NodeArray<Node>): TransformFlags {
+function aggregateTransformFlagsForChildNodes(transformFlags: TransformFlags, nodes: qt.NodeArray<Node>): TransformFlags {
   return transformFlags | aggregateTransformFlagsForNodeArray(nodes);
 }

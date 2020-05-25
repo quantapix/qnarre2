@@ -838,7 +838,7 @@ export function transformModule(context: TransformationContext) {
     let expressions: Expression[] | undefined;
 
     if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
-      let modifiers: NodeArray<Modifier> | undefined;
+      let modifiers: qt.NodeArray<Modifier> | undefined;
 
       // If we're exporting these variables, then these just become assignments to 'exports.x'.
       for (const variable of node.declarationList.declarations) {

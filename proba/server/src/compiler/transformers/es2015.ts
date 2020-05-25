@@ -3057,7 +3057,7 @@ export function transformES2015(context: TransformationContext) {
    * @param needsUniqueCopy A value indicating whether to ensure that the result is a fresh array.
    * @param multiLine A value indicating whether the result should be emitted on multiple lines.
    */
-  function transformAndSpreadElements(elements: NodeArray<Expression>, needsUniqueCopy: boolean, multiLine: boolean, hasTrailingComma: boolean): Expression {
+  function transformAndSpreadElements(elements: qt.NodeArray<Expression>, needsUniqueCopy: boolean, multiLine: boolean, hasTrailingComma: boolean): Expression {
     // [source]
     //      [a, ...b, c]
     //

@@ -54,7 +54,7 @@ export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor 
  * @param start An optional value indicating the starting offset at which to start visiting.
  * @param count An optional value indicating the maximum number of nodes to visit.
  */
-export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): NodeArray<T>;
+export function visitNodes<T extends Node>(nodes: qt.NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): qt.NodeArray<T>;
 
 /**
  * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -65,7 +65,7 @@ export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visi
  * @param start An optional value indicating the starting offset at which to start visiting.
  * @param count An optional value indicating the maximum number of nodes to visit.
  */
-export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
+export function visitNodes<T extends Node>(nodes: qt.NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): qt.NodeArray<T> | undefined;
 
 /**
  * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -76,7 +76,7 @@ export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visi
  * @param start An optional value indicating the starting offset at which to start visiting.
  * @param count An optional value indicating the maximum number of nodes to visit.
  */
-export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
+export function visitNodes<T extends Node>(nodes: qt.NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): qt.NodeArray<T> | undefined {
   if (nodes === undefined || visitor === undefined) {
     return nodes;
   }
@@ -134,7 +134,7 @@ export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visi
  * Starts a new lexical environment and visits a statement list, ending the lexical environment
  * and merging hoisted declarations upon completion.
  */
-export function visitLexicalEnvironment(statements: NodeArray<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
+export function visitLexicalEnvironment(statements: qt.NodeArray<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
   context.startLexicalEnvironment();
   statements = visitNodes(statements, visitor, isStatement, start);
   if (ensureUseStrict) statements = ts.ensureUseStrict(statements); // eslint-disable-line @typescript-eslint/no-unnecessary-qualifier
@@ -145,10 +145,10 @@ export function visitLexicalEnvironment(statements: NodeArray<Statement>, visito
  * Starts a new lexical environment and visits a parameter list, suspending the lexical
  * environment upon completion.
  */
-export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration>, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: NodeArray<T>, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number) => NodeArray<T>): NodeArray<qt.ParameterDeclaration>;
-export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number) => NodeArray<T> | undefined): NodeArray<qt.ParameterDeclaration> | undefined;
-export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes) {
-  let updated: NodeArray<qt.ParameterDeclaration> | undefined;
+export function visitParameterList(nodes: qt.NodeArray<qt.ParameterDeclaration>, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: qt.NodeArray<T>, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number) => qt.NodeArray<T>): qt.NodeArray<qt.ParameterDeclaration>;
+export function visitParameterList(nodes: qt.NodeArray<qt.ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: qt.NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number) => qt.NodeArray<T> | undefined): qt.NodeArray<qt.ParameterDeclaration> | undefined;
+export function visitParameterList(nodes: qt.NodeArray<qt.ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes) {
+  let updated: qt.NodeArray<qt.ParameterDeclaration> | undefined;
   context.startLexicalEnvironment();
   if (nodes) {
     context.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
@@ -169,7 +169,7 @@ export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration> | u
   return updated;
 }
 
-function addDefaultValueAssignmentsIfNeeded(parameters: NodeArray<qt.ParameterDeclaration>, context: TransformationContext) {
+function addDefaultValueAssignmentsIfNeeded(parameters: qt.NodeArray<qt.ParameterDeclaration>, context: TransformationContext) {
   let result: ParameterDeclaration[] | undefined;
   for (let i = 0; i < parameters.length; i++) {
     const parameter = parameters[i];

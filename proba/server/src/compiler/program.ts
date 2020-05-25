@@ -1839,7 +1839,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         }
       }
 
-      function walkArray(nodes: NodeArray<Node>, parent: Node) {
+      function walkArray(nodes: qt.NodeArray<Node>, parent: Node) {
         if (parent.decorators === nodes && !options.experimentalDecorators) {
           diagnostics.push(createDiagnosticForNode(parent, Diagnostics.Experimental_support_for_decorators_is_a_feature_that_is_subject_to_change_in_a_future_release_Set_the_experimentalDecorators_option_in_your_tsconfig_or_jsconfig_to_remove_this_warning));
         }
@@ -1901,7 +1901,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         }
       }
 
-      function checkModifiers(modifiers: NodeArray<Modifier>, isConstValid: boolean) {
+      function checkModifiers(modifiers: qt.NodeArray<Modifier>, isConstValid: boolean) {
         for (const modifier of modifiers) {
           switch (modifier.kind) {
             case qt.SyntaxKind.ConstKeyword:
@@ -1927,7 +1927,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         }
       }
 
-      function createDiagnosticForNodeArray(nodes: NodeArray<Node>, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): qt.DiagnosticWithLocation {
+      function createDiagnosticForNodeArray(nodes: qt.NodeArray<Node>, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): qt.DiagnosticWithLocation {
         const start = nodes.pos;
         return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2);
       }

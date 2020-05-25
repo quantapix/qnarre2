@@ -1672,7 +1672,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
     return result;
   }
 
-  function convertArrayLiteralExpressionToJson(elements: NodeArray<Expression>, elementOption: CommandLineOption | undefined): any[] | void {
+  function convertArrayLiteralExpressionToJson(elements: qt.NodeArray<Expression>, elementOption: CommandLineOption | undefined): any[] | void {
     if (!returnValue) {
       return elements.forEach((element) => convertPropertyValueToJson(element, elementOption));
     }

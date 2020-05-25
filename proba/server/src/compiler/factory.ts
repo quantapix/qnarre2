@@ -389,7 +389,7 @@ export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralE
   }
 }
 
-function createExpressionForAccessorDeclaration(properties: NodeArray<Declaration>, property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver: Expression, multiLine: boolean) {
+function createExpressionForAccessorDeclaration(properties: qt.NodeArray<Declaration>, property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver: Expression, multiLine: boolean) {
   const { firstAccessor, getAccessor, setAccessor } = getAllAccessorDeclarations(properties, property);
   if (property === firstAccessor) {
     const properties: ObjectLiteralElementLike[] = [];
@@ -708,7 +708,7 @@ export function startsWithUseStrict(statements: readonly Statement[]) {
  *
  * @param statements An array of statements
  */
-export function ensureUseStrict(statements: NodeArray<Statement>): NodeArray<Statement> {
+export function ensureUseStrict(statements: qt.NodeArray<Statement>): qt.NodeArray<Statement> {
   const foundUseStrict = findUseStrictPrologue(statements);
 
   if (!foundUseStrict) {
@@ -981,7 +981,7 @@ export function parenthesizePrefixOperand(operand: Expression) {
   return isUnaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
 }
 
-export function parenthesizeListElements(elements: NodeArray<Expression>) {
+export function parenthesizeListElements(elements: qt.NodeArray<Expression>) {
   let result: Expression[] | undefined;
   for (let i = 0; i < elements.length; i++) {
     const element = parenthesizeExpressionForList(elements[i]);

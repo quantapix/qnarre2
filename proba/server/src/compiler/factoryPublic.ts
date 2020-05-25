@@ -14,11 +14,11 @@ export function updateNode<T extends Node>(updated: T, original: T): T {
 }
 
 export function createNodeArray<T extends Node>(elements?: T[], hasTrailingComma?: boolean): MutableNodeArray<T>;
-export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): NodeArray<T>;
+export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): qt.NodeArray<T>;
 /**
  * Make `elements` into a `NodeArray<T>`. If `elements` is `undefined`, returns an empty `NodeArray<T>`.
  */
-export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): NodeArray<T> {
+export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): qt.NodeArray<T> {
   if (!elements || elements === emptyArray) {
     elements = [];
   } else if (isNodeArray(elements)) {
@@ -139,8 +139,8 @@ export function createIdentifier(text: string, typeArguments?: readonly (TypeNod
 
 export function updateIdentifier(node: Identifier): Identifier;
 
-export function updateIdentifier(node: Identifier, typeArguments: NodeArray<TypeNode | TypeParameterDeclaration> | undefined): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
-export function updateIdentifier(node: Identifier, typeArguments?: NodeArray<TypeNode | TypeParameterDeclaration> | undefined): Identifier {
+export function updateIdentifier(node: Identifier, typeArguments: qt.NodeArray<TypeNode | TypeParameterDeclaration> | undefined): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
+export function updateIdentifier(node: Identifier, typeArguments?: qt.NodeArray<TypeNode | TypeParameterDeclaration> | undefined): Identifier {
   return node.typeArguments !== typeArguments ? updateNode(createIdentifier(idText(node), typeArguments), node) : node;
 }
 
@@ -407,7 +407,7 @@ export function createMethodSignature(typeParameters: readonly TypeParameterDecl
   return node;
 }
 
-export function updateMethodSignature(node: MethodSignature, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined, name: PropertyName, questionToken: QuestionToken | undefined) {
+export function updateMethodSignature(node: MethodSignature, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined, name: PropertyName, questionToken: QuestionToken | undefined) {
   return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.name !== name || node.questionToken !== questionToken ? updateNode(createMethodSignature(typeParameters, parameters, type, name, questionToken), node) : node;
 }
 
@@ -514,7 +514,7 @@ export function createCallSignature(typeParameters: readonly TypeParameterDeclar
   return createSignatureDeclaration(SyntaxKind.CallSignature, typeParameters, parameters, type);
 }
 
-export function updateCallSignature(node: CallSignatureDeclaration, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateCallSignature(node: CallSignatureDeclaration, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -522,7 +522,7 @@ export function createConstructSignature(typeParameters: readonly TypeParameterD
   return createSignatureDeclaration(SyntaxKind.ConstructSignature, typeParameters, parameters, type);
 }
 
-export function updateConstructSignature(node: ConstructSignatureDeclaration, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateConstructSignature(node: ConstructSignatureDeclaration, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -548,7 +548,7 @@ export function createSignatureDeclaration(kind: qt.SyntaxKind, typeParameters: 
   return node;
 }
 
-function updateSignatureDeclaration<T extends SignatureDeclaration>(node: T, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined): T {
+function updateSignatureDeclaration<T extends SignatureDeclaration>(node: T, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined): T {
   return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? updateNode(<T>createSignatureDeclaration(node.kind, typeParameters, parameters, type), node) : node;
 }
 
@@ -585,7 +585,7 @@ export function createTypeReferenceNode(typeName: string | EntityName, typeArgum
   return node;
 }
 
-export function updateTypeReferenceNode(node: TypeReferenceNode, typeName: EntityName, typeArguments: NodeArray<TypeNode> | undefined) {
+export function updateTypeReferenceNode(node: TypeReferenceNode, typeName: EntityName, typeArguments: qt.NodeArray<TypeNode> | undefined) {
   return node.typeName !== typeName || node.typeArguments !== typeArguments ? updateNode(createTypeReferenceNode(typeName, typeArguments), node) : node;
 }
 
@@ -593,7 +593,7 @@ export function createFunctionTypeNode(typeParameters: readonly TypeParameterDec
   return createSignatureDeclaration(SyntaxKind.FunctionType, typeParameters, parameters, type);
 }
 
-export function updateFunctionTypeNode(node: FunctionTypeNode, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateFunctionTypeNode(node: FunctionTypeNode, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -601,7 +601,7 @@ export function createConstructorTypeNode(typeParameters: readonly TypeParameter
   return createSignatureDeclaration(SyntaxKind.ConstructorType, typeParameters, parameters, type);
 }
 
-export function updateConstructorTypeNode(node: ConstructorTypeNode, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateConstructorTypeNode(node: ConstructorTypeNode, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -621,7 +621,7 @@ export function createTypeLiteralNode(members: readonly TypeElement[] | undefine
   return node;
 }
 
-export function updateTypeLiteralNode(node: TypeLiteralNode, members: NodeArray<TypeElement>) {
+export function updateTypeLiteralNode(node: TypeLiteralNode, members: qt.NodeArray<TypeElement>) {
   return node.members !== members ? updateNode(createTypeLiteralNode(members), node) : node;
 }
 
@@ -669,7 +669,7 @@ export function createUnionTypeNode(types: readonly TypeNode[]): UnionTypeNode {
   return <UnionTypeNode>createUnionOrIntersectionTypeNode(SyntaxKind.UnionType, types);
 }
 
-export function updateUnionTypeNode(node: UnionTypeNode, types: NodeArray<TypeNode>) {
+export function updateUnionTypeNode(node: UnionTypeNode, types: qt.NodeArray<TypeNode>) {
   return updateUnionOrIntersectionTypeNode(node, types);
 }
 
@@ -677,7 +677,7 @@ export function createIntersectionTypeNode(types: readonly TypeNode[]): Intersec
   return <IntersectionTypeNode>createUnionOrIntersectionTypeNode(SyntaxKind.IntersectionType, types);
 }
 
-export function updateIntersectionTypeNode(node: IntersectionTypeNode, types: NodeArray<TypeNode>) {
+export function updateIntersectionTypeNode(node: IntersectionTypeNode, types: qt.NodeArray<TypeNode>) {
   return updateUnionOrIntersectionTypeNode(node, types);
 }
 
@@ -687,7 +687,7 @@ export function createUnionOrIntersectionTypeNode(kind: qt.SyntaxKind.UnionType 
   return node;
 }
 
-function updateUnionOrIntersectionTypeNode<T extends UnionOrIntersectionTypeNode>(node: T, types: NodeArray<TypeNode>): T {
+function updateUnionOrIntersectionTypeNode<T extends UnionOrIntersectionTypeNode>(node: T, types: qt.NodeArray<TypeNode>): T {
   return node.types !== types ? updateNode(<T>createUnionOrIntersectionTypeNode(node.kind, types), node) : node;
 }
 
@@ -1914,7 +1914,7 @@ export function createJSDocClassTag(comment?: string): JSDocClassTag {
   return createJSDocTag<JSDocClassTag>(SyntaxKind.JSDocClassTag, 'class', comment);
 }
 
-export function createJSDocComment(comment?: string | undefined, tags?: NodeArray<JSDocTag> | undefined) {
+export function createJSDocComment(comment?: string | undefined, tags?: qt.NodeArray<JSDocTag> | undefined) {
   const node = createSynthesizedNode(SyntaxKind.JSDocComment) as JSDoc;
   node.comment = comment;
   node.tags = tags;
@@ -2774,9 +2774,9 @@ function asExpression<T extends Expression | undefined>(value: string | number |
   return typeof value === 'string' ? createStringLiteral(value) : typeof value === 'number' ? createNumericLiteral('' + value) : typeof value === 'boolean' ? (value ? createTrue() : createFalse()) : value;
 }
 
-function asNodeArray<T extends Node>(array: readonly T[]): NodeArray<T>;
-function asNodeArray<T extends Node>(array: readonly T[] | undefined): NodeArray<T> | undefined;
-function asNodeArray<T extends Node>(array: readonly T[] | undefined): NodeArray<T> | undefined {
+function asNodeArray<T extends Node>(array: readonly T[]): qt.NodeArray<T>;
+function asNodeArray<T extends Node>(array: readonly T[] | undefined): qt.NodeArray<T> | undefined;
+function asNodeArray<T extends Node>(array: readonly T[] | undefined): qt.NodeArray<T> | undefined {
   return array ? createNodeArray(array) : undefined;
 }
 

@@ -1,3 +1,11 @@
+/* eslint-disable no-inner-declarations */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+import * as qpc from './corePublic';
+import * as qc from './core';
+
+import * as qt from './types';
+import { Debug } from './debug';
+
 const enum SignatureFlags {
   None = 0,
   Yield = 1 << 0,
@@ -7,13 +15,13 @@ const enum SignatureFlags {
   JSDoc = 1 << 5,
 }
 
-let NodeConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => Node;
-let TokenConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => Node;
-let IdentifierConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => Node;
-let PrivateIdentifierConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => Node;
-let SourceFileConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => Node;
+let NodeConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => qt.Node;
+let TokenConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => qt.Node;
+let IdentifierConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => qt.Node;
+let PrivateIdentifierConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => qt.Node;
+let SourceFileConstructor: new (kind: qt.SyntaxKind, pos?: number, end?: number) => qt.Node;
 
-export function createNode(kind: qt.SyntaxKind, pos?: number, end?: number): Node {
+export function createNode(kind: qt.SyntaxKind, pos?: number, end?: number): qt.Node {
   if (kind === qt.SyntaxKind.SourceFile) {
     return new (SourceFileConstructor || (SourceFileConstructor = objectAllocator.getSourceFileConstructor()))(kind, pos, end);
   } else if (kind === qt.SyntaxKind.Identifier) {
@@ -31,7 +39,7 @@ function visitNode<T>(cbNode: (node: qt.Node) => T, node: qt.Node | undefined): 
   return node && cbNode(node);
 }
 
-function visitNodes<T>(cbNode: (node: qt.Node) => T, cbNodes: ((node: qt.NodeArray<Node>) => T | undefined) | undefined, nodes: NodeArray<Node> | undefined): T | undefined {
+function visitNodes<T>(cbNode: (node: qt.Node) => T, cbNodes: ((node: qt.NodeArray<qt.Node>) => T | undefined) | undefined, nodes: qt.NodeArray<qt.Node> | undefined): T | undefined {
   if (nodes) {
     if (cbNodes) {
       return cbNodes(nodes);
@@ -62,7 +70,7 @@ export function isJSDocLikeText(text: string, start: number) {
  * @remarks `forEachChild` must visit the children of a node in the order
  * that they appear in the source code. The language service depends on this property to locate nodes by position.
  */
-export function forEachChild<T>(node: qt.Node, cbNode: (node: qt.Node) => T | undefined, cbNodes?: (nodes: NodeArray<Node>) => T | undefined): T | undefined {
+export function forEachChild<T>(node: qt.Node, cbNode: (_: qt.Node) => T | undefined, cbNodes?: (_: qt.NodeArray<qt.Node>) => T | undefined): T | undefined {
   if (!node || node.kind <= qt.SyntaxKind.LastToken) {
     return;
   }
@@ -347,7 +355,6 @@ export function forEachChild<T>(node: qt.Node, cbNode: (node: qt.Node) => T | un
   }
 }
 
-
 /**
  * Invokes a callback for each child of the given node. The 'cbNode' callback is invoked for all child nodes
  * stored in properties. If a 'cbNodes' callback is specified, it is invoked for embedded arrays; additionally,
@@ -361,8 +368,8 @@ export function forEachChild<T>(node: qt.Node, cbNode: (node: qt.Node) => T | un
  * @remarks Unlike `forEachChild`, `forEachChildRecursively` handles recursively invoking the traversal on each child node found,
  * and while doing so, handles traversing the structure without relying on the callstack to encode the tree structure.
  */
-export function forEachChildRecursively<T>(rootNode: Node, cbNode: (node: qt.Node, parent: Node) => T | 'skip' | undefined, cbNodes?: (nodes: NodeArray<Node>, parent: Node) => T | 'skip' | undefined): T | undefined {
-  const stack: Node[] = [rootNode];
+export function forEachChildRecursively<T>(rootNode: qt.Node, cbNode: (node: qt.Node, parent: qt.Node) => T | 'skip' | undefined, cbNodes?: (nodes: qt.NodeArray<qt.Node>, parent: qt.Node) => T | 'skip' | undefined): T | undefined {
+  const stack: qt.Node[] = [rootNode];
   while (stack.length) {
     const parent = stack.pop()!;
     const res = visitAllPossibleChildren(parent, gatherPossibleChildren(parent));
@@ -374,16 +381,16 @@ export function forEachChildRecursively<T>(rootNode: Node, cbNode: (node: qt.Nod
   return;
 
   function gatherPossibleChildren(node: qt.Node) {
-    const children: (Node | NodeArray<Node>)[] = [];
+    const children: (qt.Node | qt.NodeArray<qt.Node>)[] = [];
     forEachChild(node, addWorkItem, addWorkItem); // By using a stack above and `unshift` here, we emulate a depth-first preorder traversal
     return children;
 
-    function addWorkItem(n: Node | NodeArray<Node>) {
+    function addWorkItem(n: qt.Node | qt.NodeArray<qt.Node>) {
       children.unshift(n);
     }
   }
 
-  function visitAllPossibleChildren(parent: Node, children: readonly (Node | NodeArray<Node>)[]) {
+  function visitAllPossibleChildren(parent: qt.Node, children: readonly (qt.Node | qt.NodeArray<qt.Node>)[]) {
     for (const child of children) {
       if (isArray(child)) {
         if (cbNodes) {
@@ -421,7 +428,7 @@ export function createSourceFile(fileName: string, sourceText: string, languageV
 
   perfLogger.logStartParseSourceFile(fileName);
   if (languageVersion === qt.ScriptTarget.JSON) {
-    result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, ScriptKind.JSON);
+    result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, qt.ScriptKind.JSON);
   } else {
     result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, scriptKind);
   }
@@ -463,7 +470,7 @@ export function updateSourceFile(sourceFile: SourceFile, newText: string, textCh
   const newSourceFile = IncrementalParser.updateSourceFile(sourceFile, newText, textChangeRange, aggressiveChecks);
   // Because new source file node is created, it may not have the flag PossiblyContainDynamicImport. This is the case if there is no new edit to add dynamic import.
   // We will manually port the flag to the new source file.
-  newSourceFile.flags |= sourceFile.flags & NodeFlags.PermanentlySetIncrementalFlags;
+  newSourceFile.flags |= sourceFile.flags & qt.NodeFlags.PermanentlySetIncrementalFlags;
   return newSourceFile;
 }
 
@@ -486,18 +493,18 @@ export function parseJSDocTypeExpressionForTests(content: string, start?: number
 // Implement the parser as a singleton module.  We do this for perf reasons because creating
 // parser instances can actually be expensive enough to impact us on projects with many source
 // files.
-namespace Parser {
+export namespace Parser {
   // Share a single scanner across all calls to parse a source file.  This helps speed things
   // up by avoiding the cost of creating/compiling scanners over and over again.
   const scanner = createScanner(ScriptTarget.Latest, /*skipTrivia*/ true);
-  const disallowInAndDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
+  const disallowInAndDecoratorContext = qt.NodeFlags.DisallowInContext | qt.NodeFlags.DecoratorContext;
 
   // capture constructors in 'initializeState' to avoid null checks
-  let NodeConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => Node;
-  let TokenConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => Node;
-  let IdentifierConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => Node;
-  let PrivateIdentifierConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => Node;
-  let SourceFileConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => Node;
+  let NodeConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => qt.Node;
+  let TokenConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => qt.Node;
+  let IdentifierConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => qt.Node;
+  let PrivateIdentifierConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => qt.Node;
+  let SourceFileConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => qt.Node;
 
   let sourceFile: SourceFile;
   let parseDiagnostics: qt.DiagnosticWithLocation[];
@@ -560,7 +567,7 @@ namespace Parser {
   // Note: it should not be necessary to save/restore these flags during speculative/lookahead
   // parsing.  These context flags are naturally stored and restored through normal recursive
   // descent parsing and unwinding.
-  let contextFlags: NodeFlags;
+  let contextFlags: qt.NodeFlags;
 
   // Whether or not we've had a parse error since creating the last AST node.  If we have
   // encountered an error, it will be stored on the next AST node we create.  Parse errors
@@ -593,7 +600,7 @@ namespace Parser {
 
   export function parseSourceFile(fileName: string, sourceText: string, languageVersion: qt.ScriptTarget, syntaxCursor: IncrementalParser.SyntaxCursor | undefined, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
     scriptKind = ensureScriptKind(fileName, scriptKind);
-    if (scriptKind === ScriptKind.JSON) {
+    if (scriptKind === qt.ScriptKind.JSON) {
       const result = parseJsonText(fileName, sourceText, languageVersion, syntaxCursor, setParentNodes);
       convertToObjectWorker(result, result.parseDiagnostics, /*returnValue*/ false, /*knownRootOptions*/ undefined, /*jsonConversionNotifier*/ undefined);
       result.referencedFiles = emptyArray;
@@ -616,7 +623,7 @@ namespace Parser {
 
   export function parseIsolatedEntityName(content: string, languageVersion: qt.ScriptTarget): EntityName | undefined {
     // Choice of `isDeclarationFile` should be arbitrary
-    initializeState(content, languageVersion, /*syntaxCursor*/ undefined, ScriptKind.JS);
+    initializeState(content, languageVersion, /*syntaxCursor*/ undefined, qt.ScriptKind.JS);
     // Prime the scanner.
     nextToken();
     const entityName = parseEntityName(/*allowReservedWords*/ true);
@@ -626,9 +633,9 @@ namespace Parser {
   }
 
   export function parseJsonText(fileName: string, sourceText: string, languageVersion: qt.ScriptTarget = qt.ScriptTarget.ES2015, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile {
-    initializeState(sourceText, languageVersion, syntaxCursor, ScriptKind.JSON);
+    initializeState(sourceText, languageVersion, syntaxCursor, qt.ScriptKind.JSON);
     // Set source file so that errors will be reported with this file name
-    sourceFile = createSourceFile(fileName, qt.ScriptTarget.ES2015, ScriptKind.JSON, /*isDeclaration*/ false);
+    sourceFile = createSourceFile(fileName, qt.ScriptTarget.ES2015, qt.ScriptKind.JSON, /*isDeclaration*/ false);
     sourceFile.flags = contextFlags;
 
     // Prime the scanner.
@@ -638,7 +645,7 @@ namespace Parser {
       sourceFile.statements = createNodeArray([], pos, pos);
       sourceFile.endOfFileToken = parseTokenNode<EndOfFileToken>();
     } else {
-      const statement = createNode(SyntaxKind.ExpressionStatement) as JsonObjectExpressionStatement;
+      const statement = createNode(qt.SyntaxKind.ExpressionStatement) as JsonObjectExpressionStatement;
       switch (token()) {
         case qt.SyntaxKind.OpenBracketToken:
           statement.expression = parseArrayLiteralExpression();
@@ -668,7 +675,7 @@ namespace Parser {
       }
       finishNode(statement);
       sourceFile.statements = createNodeArray([statement], pos);
-      sourceFile.endOfFileToken = parseExpectedToken(SyntaxKind.EndOfFileToken, Diagnostics.Unexpected_token);
+      sourceFile.endOfFileToken = parseExpectedToken(qt.SyntaxKind.EndOfFileToken, Diagnostics.Unexpected_token);
     }
 
     if (setParentNodes) {
@@ -687,13 +694,13 @@ namespace Parser {
 
   function getLanguageVariant(scriptKind: ScriptKind) {
     // .tsx and .jsx files are treated as jsx language variant.
-    return scriptKind === ScriptKind.TSX || scriptKind === ScriptKind.JSX || scriptKind === ScriptKind.JS || scriptKind === ScriptKind.JSON ? LanguageVariant.JSX : LanguageVariant.Standard;
+    return scriptKind === qt.ScriptKind.TSX || scriptKind === qt.ScriptKind.JSX || scriptKind === qt.ScriptKind.JS || scriptKind === qt.ScriptKind.JSON ? LanguageVariant.JSX : LanguageVariant.Standard;
   }
 
   function initializeState(_sourceText: string, languageVersion: qt.ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: ScriptKind) {
     NodeConstructor = objectAllocator.getNodeConstructor();
     TokenConstructor = objectAllocator.getTokenConstructor();
-    IdentifierConstructor = objectAllocator.getIdentifierConstructor();
+    qt.IdentifierConstructor = objectAllocator.getIdentifierConstructor();
     PrivateIdentifierConstructor = objectAllocator.getPrivateIdentifierConstructor();
     SourceFileConstructor = objectAllocator.getSourceFileConstructor();
 
@@ -708,15 +715,15 @@ namespace Parser {
     nodeCount = 0;
 
     switch (scriptKind) {
-      case ScriptKind.JS:
-      case ScriptKind.JSX:
-        contextFlags = NodeFlags.JavaScriptFile;
+      case qt.ScriptKind.JS:
+      case qt.ScriptKind.JSX:
+        contextFlags = qt.NodeFlags.JavaScriptFile;
         break;
-      case ScriptKind.JSON:
-        contextFlags = NodeFlags.JavaScriptFile | NodeFlags.JsonFile;
+      case qt.ScriptKind.JSON:
+        contextFlags = qt.NodeFlags.JavaScriptFile | qt.NodeFlags.JsonFile;
         break;
       default:
-        contextFlags = NodeFlags.None;
+        contextFlags = qt.NodeFlags.None;
         break;
     }
     parseErrorBeforeNextFinishedNode = false;
@@ -746,7 +753,7 @@ namespace Parser {
   function parseSourceFileWorker(fileName: string, languageVersion: qt.ScriptTarget, setParentNodes: boolean, scriptKind: ScriptKind): SourceFile {
     const isDeclarationFile = isDeclarationFileName(fileName);
     if (isDeclarationFile) {
-      contextFlags |= NodeFlags.Ambient;
+      contextFlags |= qt.NodeFlags.Ambient;
     }
 
     sourceFile = createSourceFile(fileName, languageVersion, scriptKind, isDeclarationFile);
@@ -788,14 +795,14 @@ namespace Parser {
     return node;
   }
 
-  export function fixupParentReferences(rootNode: Node) {
+  export function fixupParentReferences(rootNode: qt.Node) {
     // normally parent references are set during binding. However, for clients that only need
     // a syntax tree, and no semantic features, then the binding process is an unnecessary
     // overhead.  This functions allows us to set all the parents, without all the expense of
     // binding.
     forEachChildRecursively(rootNode, bindParentToChild);
 
-    function bindParentToChild(child: Node, parent: Node) {
+    function bindParentToChild(child: qt.Node, parent: qt.Node) {
       child.parent = parent;
       if (hasJSDocNodes(child)) {
         for (const doc of child.jsDoc!) {
@@ -809,7 +816,7 @@ namespace Parser {
   function createSourceFile(fileName: string, languageVersion: qt.ScriptTarget, scriptKind: ScriptKind, isDeclarationFile: boolean): SourceFile {
     // code from createNode is inlined here so createNode won't have to deal with special case of creating source files
     // this is quite rare comparing to other nodes and createNode should be as fast as possible
-    const sourceFile = <SourceFile>new SourceFileConstructor(SyntaxKind.SourceFile, /*pos*/ 0, /* end */ sourceText.length);
+    const sourceFile = <SourceFile>new SourceFileConstructor(qt.SyntaxKind.SourceFile, /*pos*/ 0, /* end */ sourceText.length);
     nodeCount++;
 
     sourceFile.text = sourceText;
@@ -824,7 +831,7 @@ namespace Parser {
     return sourceFile;
   }
 
-  function setContextFlag(val: boolean, flag: NodeFlags) {
+  function setContextFlag(val: boolean, flag: qt.NodeFlags) {
     if (val) {
       contextFlags |= flag;
     } else {
@@ -833,22 +840,22 @@ namespace Parser {
   }
 
   function setDisallowInContext(val: boolean) {
-    setContextFlag(val, NodeFlags.DisallowInContext);
+    setContextFlag(val, qt.NodeFlags.DisallowInContext);
   }
 
   function setYieldContext(val: boolean) {
-    setContextFlag(val, NodeFlags.YieldContext);
+    setContextFlag(val, qt.NodeFlags.YieldContext);
   }
 
   function setDecoratorContext(val: boolean) {
-    setContextFlag(val, NodeFlags.DecoratorContext);
+    setContextFlag(val, qt.NodeFlags.DecoratorContext);
   }
 
   function setAwaitContext(val: boolean) {
-    setContextFlag(val, NodeFlags.AwaitContext);
+    setContextFlag(val, qt.NodeFlags.AwaitContext);
   }
 
-  function doOutsideOfContext<T>(context: NodeFlags, func: () => T): T {
+  function doOutsideOfContext<T>(context: qt.NodeFlags, func: () => T): T {
     // contextFlagsToClear will contain only the context flags that are
     // currently set that we need to temporarily clear
     // We don't just blindly reset to the previous flags to ensure
@@ -869,7 +876,7 @@ namespace Parser {
     return func();
   }
 
-  function doInsideOfContext<T>(context: NodeFlags, func: () => T): T {
+  function doInsideOfContext<T>(context: qt.NodeFlags, func: () => T): T {
     // contextFlagsToSet will contain only the context flags that
     // are not currently set that we need to temporarily enable.
     // We don't just blindly reset to the previous flags to ensure
@@ -891,55 +898,55 @@ namespace Parser {
   }
 
   function allowInAnd<T>(func: () => T): T {
-    return doOutsideOfContext(NodeFlags.DisallowInContext, func);
+    return doOutsideOfContext(qt.NodeFlags.DisallowInContext, func);
   }
 
   function disallowInAnd<T>(func: () => T): T {
-    return doInsideOfContext(NodeFlags.DisallowInContext, func);
+    return doInsideOfContext(qt.NodeFlags.DisallowInContext, func);
   }
 
   function doInYieldContext<T>(func: () => T): T {
-    return doInsideOfContext(NodeFlags.YieldContext, func);
+    return doInsideOfContext(qt.NodeFlags.YieldContext, func);
   }
 
   function doInDecoratorContext<T>(func: () => T): T {
-    return doInsideOfContext(NodeFlags.DecoratorContext, func);
+    return doInsideOfContext(qt.NodeFlags.DecoratorContext, func);
   }
 
   function doInAwaitContext<T>(func: () => T): T {
-    return doInsideOfContext(NodeFlags.AwaitContext, func);
+    return doInsideOfContext(qt.NodeFlags.AwaitContext, func);
   }
 
   function doOutsideOfAwaitContext<T>(func: () => T): T {
-    return doOutsideOfContext(NodeFlags.AwaitContext, func);
+    return doOutsideOfContext(qt.NodeFlags.AwaitContext, func);
   }
 
   function doInYieldAndAwaitContext<T>(func: () => T): T {
-    return doInsideOfContext(NodeFlags.YieldContext | NodeFlags.AwaitContext, func);
+    return doInsideOfContext(qt.NodeFlags.YieldContext | qt.NodeFlags.AwaitContext, func);
   }
 
   function doOutsideOfYieldAndAwaitContext<T>(func: () => T): T {
-    return doOutsideOfContext(NodeFlags.YieldContext | NodeFlags.AwaitContext, func);
+    return doOutsideOfContext(qt.NodeFlags.YieldContext | qt.NodeFlags.AwaitContext, func);
   }
 
-  function inContext(flags: NodeFlags) {
+  function inContext(flags: qt.NodeFlags) {
     return (contextFlags & flags) !== 0;
   }
 
   function inYieldContext() {
-    return inContext(NodeFlags.YieldContext);
+    return inContext(qt.NodeFlags.YieldContext);
   }
 
   function inDisallowInContext() {
-    return inContext(NodeFlags.DisallowInContext);
+    return inContext(qt.NodeFlags.DisallowInContext);
   }
 
   function inDecoratorContext() {
-    return inContext(NodeFlags.DecoratorContext);
+    return inContext(qt.NodeFlags.DecoratorContext);
   }
 
   function inAwaitContext() {
-    return inContext(NodeFlags.AwaitContext);
+    return inContext(qt.NodeFlags.AwaitContext);
   }
 
   function parseErrorAtCurrentToken(message: qt.DiagnosticMessage, arg0?: any): void {
@@ -997,7 +1004,7 @@ namespace Parser {
     return nextTokenWithoutCheck();
   }
 
-  function nextTokenJSDoc(): JSDocSyntaxKind {
+  function nextTokenJSDoc(): qt.JSDocSyntaxKind {
     return (currentToken = scanner.scanJsDocToken());
   }
 
@@ -1119,7 +1126,7 @@ namespace Parser {
     return false;
   }
 
-  function parseExpectedJSDoc(kind: JSDocSyntaxKind) {
+  function parseExpectedJSDoc(kind: qt.JSDocSyntaxKind) {
     if (token() === kind) {
       nextTokenJSDoc();
       return true;
@@ -1136,39 +1143,39 @@ namespace Parser {
     return false;
   }
 
-  function parseOptionalToken<TKind extends qt.SyntaxKind>(t: TKind): Token<TKind>;
-  function parseOptionalToken(t: qt.SyntaxKind): Node | undefined {
+  function parseOptionalToken<TKind extends qt.SyntaxKind>(t: TKind): qt.Token<TKind>;
+  function parseOptionalToken(t: qt.SyntaxKind): qt.Node | undefined {
     if (token() === t) {
       return parseTokenNode();
     }
     return undefined;
   }
 
-  function parseOptionalTokenJSDoc<TKind extends JSDocSyntaxKind>(t: TKind): Token<TKind>;
-  function parseOptionalTokenJSDoc(t: JSDocSyntaxKind): Node | undefined {
+  function parseOptionalTokenJSDoc<TKind extends qt.JSDocSyntaxKind>(t: TKind): qt.Token<TKind>;
+  function parseOptionalTokenJSDoc(t: qt.JSDocSyntaxKind): qt.Node | undefined {
     if (token() === t) {
       return parseTokenNodeJSDoc();
     }
     return undefined;
   }
 
-  function parseExpectedToken<TKind extends qt.SyntaxKind>(t: TKind, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): Token<TKind>;
-  function parseExpectedToken(t: qt.SyntaxKind, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): Node {
+  function parseExpectedToken<TKind extends qt.SyntaxKind>(t: TKind, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): qt.Token<TKind>;
+  function parseExpectedToken(t: qt.SyntaxKind, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): qt.Node {
     return parseOptionalToken(t) || createMissingNode(t, /*reportAtCurrentPosition*/ false, diagnosticMessage || Diagnostics._0_expected, arg0 || tokenToString(t));
   }
 
-  function parseExpectedTokenJSDoc<TKind extends JSDocSyntaxKind>(t: TKind): Token<TKind>;
-  function parseExpectedTokenJSDoc(t: JSDocSyntaxKind): Node {
+  function parseExpectedTokenJSDoc<TKind extends qt.JSDocSyntaxKind>(t: TKind): qt.Token<TKind>;
+  function parseExpectedTokenJSDoc(t: qt.JSDocSyntaxKind): qt.Node {
     return parseOptionalTokenJSDoc(t) || createMissingNode(t, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, tokenToString(t));
   }
 
-  function parseTokenNode<T extends Node>(): T {
+  function parseTokenNode<T extends qt.Node>(): T {
     const node = <T>createNode(token());
     nextToken();
     return finishNode(node);
   }
 
-  function parseTokenNodeJSDoc<T extends Node>(): T {
+  function parseTokenNodeJSDoc<T extends qt.Node>(): T {
     const node = <T>createNode(token());
     nextTokenJSDoc();
     return finishNode(node);
@@ -1193,17 +1200,17 @@ namespace Parser {
 
       return true;
     } else {
-      return parseExpected(SyntaxKind.SemicolonToken);
+      return parseExpected(qt.SyntaxKind.SemicolonToken);
     }
   }
 
-  function createNode(kind: qt.SyntaxKind, pos?: number): Node {
+  function createNode(kind: qt.SyntaxKind, pos?: number): qt.Node {
     nodeCount++;
     const p = pos! >= 0 ? pos! : scanner.getStartPos();
-    return isNodeKind(kind) || kind === qt.SyntaxKind.Unknown ? new NodeConstructor(kind, p, p) : kind === qt.SyntaxKind.Identifier ? new IdentifierConstructor(kind, p, p) : kind === qt.SyntaxKind.PrivateIdentifier ? new PrivateIdentifierConstructor(kind, p, p) : new TokenConstructor(kind, p, p);
+    return isNodeKind(kind) || kind === qt.SyntaxKind.Unknown ? new NodeConstructor(kind, p, p) : kind === qt.SyntaxKind.Identifier ? new qt.IdentifierConstructor(kind, p, p) : kind === qt.SyntaxKind.PrivateIdentifier ? new PrivateIdentifierConstructor(kind, p, p) : new TokenConstructor(kind, p, p);
   }
 
-  function createNodeWithJSDoc(kind: qt.SyntaxKind, pos?: number): Node {
+  function createNodeWithJSDoc(kind: qt.SyntaxKind, pos?: number): qt.Node {
     const node = createNode(kind, pos);
     if (scanner.getTokenFlags() & TokenFlags.PrecedingJSDocComment && (kind !== qt.SyntaxKind.ExpressionStatement || token() !== qt.SyntaxKind.OpenParenToken)) {
       addJSDocComment(<HasJSDoc>node);
@@ -1211,7 +1218,7 @@ namespace Parser {
     return node;
   }
 
-  function createNodeArray<T extends Node>(elements: T[], pos: number, end?: number): NodeArray<T> {
+  function createNodeArray<T extends qt.Node>(elements: T[], pos: number, end?: number): qt.NodeArray<T> {
     // Since the element list of a node array is typically created by starting with an empty array and
     // repeatedly calling push(), the list may not have the optimal memory layout. We invoke slice() for
     // small arrays (1 to 4 elements) to give the VM a chance to allocate an optimal representation.
@@ -1222,7 +1229,7 @@ namespace Parser {
     return array;
   }
 
-  function finishNode<T extends Node>(node: T, end?: number): T {
+  function finishNode<T extends qt.Node>(node: T, end?: number): T {
     node.end = end === undefined ? scanner.getStartPos() : end;
 
     if (contextFlags) {
@@ -1234,15 +1241,15 @@ namespace Parser {
     // flag so that we don't mark any subsequent nodes.
     if (parseErrorBeforeNextFinishedNode) {
       parseErrorBeforeNextFinishedNode = false;
-      node.flags |= NodeFlags.ThisNodeHasError;
+      node.flags |= qt.NodeFlags.ThisNodeHasError;
     }
 
     return node;
   }
 
-  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: false, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): T;
-  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: qt.DiagnosticMessage, arg0?: any): T;
-  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: qt.DiagnosticMessage, arg0?: any): T {
+  function createMissingNode<T extends qt.Node>(kind: T['kind'], reportAtCurrentPosition: false, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): T;
+  function createMissingNode<T extends qt.Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: qt.DiagnosticMessage, arg0?: any): T;
+  function createMissingNode<T extends qt.Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: qt.DiagnosticMessage, arg0?: any): T {
     if (reportAtCurrentPosition) {
       parseErrorAtPosition(scanner.getStartPos(), 0, diagnosticMessage, arg0);
     } else if (diagnosticMessage) {
@@ -1252,7 +1259,7 @@ namespace Parser {
     const result = createNode(kind);
 
     if (kind === qt.SyntaxKind.Identifier) {
-      (result as Identifier).escapedText = '' as qt.__String;
+      (result as qt.Identifier).escapedText = '' as qt.__String;
     } else if (isLiteralKind(kind) || isTemplateLiteralKind(kind)) {
       (result as LiteralLikeNode).text = '';
     }
@@ -1271,12 +1278,12 @@ namespace Parser {
   // An identifier that starts with two underscores has an extra underscore character prepended to it to avoid issues
   // with magic property names like '__proto__'. The 'identifiers' object is used to share a single string instance for
   // each identifier in order to reduce memory consumption.
-  function createIdentifier(isIdentifier: boolean, diagnosticMessage?: qt.DiagnosticMessage, privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier {
+  function createIdentifier(isIdentifier: boolean, diagnosticMessage?: qt.DiagnosticMessage, privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): qt.Identifier {
     identifierCount++;
     if (isIdentifier) {
-      const node = <Identifier>createNode(SyntaxKind.Identifier);
+      const node = <qt.Identifier>createNode(qt.SyntaxKind.Identifier);
 
-      // Store original token kind if it is not just an Identifier so we can report appropriate error later in type checker
+      // Store original token kind if it is not just an qt.Identifier so we can report appropriate error later in type checker
       if (token() !== qt.SyntaxKind.Identifier) {
         node.originalKeywordKind = token();
       }
@@ -1298,14 +1305,14 @@ namespace Parser {
 
     const defaultMessage = isReservedWord ? Diagnostics.Identifier_expected_0_is_a_reserved_word_that_cannot_be_used_here : Diagnostics.Identifier_expected;
 
-    return createMissingNode<Identifier>(SyntaxKind.Identifier, reportAtCurrentPosition, diagnosticMessage || defaultMessage, msgArg);
+    return createMissingNode<qt.Identifier>(qt.SyntaxKind.Identifier, reportAtCurrentPosition, diagnosticMessage || defaultMessage, msgArg);
   }
 
-  function parseIdentifier(diagnosticMessage?: qt.DiagnosticMessage, privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier {
+  function parseIdentifier(diagnosticMessage?: qt.DiagnosticMessage, privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): qt.Identifier {
     return createIdentifier(isIdentifier(), diagnosticMessage, privateIdentifierDiagnosticMessage);
   }
 
-  function parseIdentifierName(diagnosticMessage?: qt.DiagnosticMessage): Identifier {
+  function parseIdentifierName(diagnosticMessage?: qt.DiagnosticMessage): qt.Identifier {
     return createIdentifier(tokenIsIdentifierOrKeyword(token()), diagnosticMessage);
   }
 
@@ -1336,15 +1343,15 @@ namespace Parser {
     // PropertyName [Yield]:
     //      LiteralPropertyName
     //      ComputedPropertyName[?Yield]
-    const node = <ComputedPropertyName>createNode(SyntaxKind.ComputedPropertyName);
-    parseExpected(SyntaxKind.OpenBracketToken);
+    const node = <ComputedPropertyName>createNode(qt.SyntaxKind.ComputedPropertyName);
+    parseExpected(qt.SyntaxKind.OpenBracketToken);
 
     // We parse any expression (including a comma expression). But the grammar
     // says that only an assignment expression is allowed, so the grammar checker
     // will error if it sees a comma expression.
     node.expression = allowInAnd(parseExpression);
 
-    parseExpected(SyntaxKind.CloseBracketToken);
+    parseExpected(qt.SyntaxKind.CloseBracketToken);
     return finishNode(node);
   }
 
@@ -1357,7 +1364,7 @@ namespace Parser {
   }
 
   function parsePrivateIdentifier(): PrivateIdentifier {
-    const node = createNode(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
+    const node = createNode(qt.SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
     node.escapedText = escapeLeadingUnderscores(internPrivateIdentifier(scanner.getTokenText()));
     nextToken();
     return finishNode(node);
@@ -1661,7 +1668,7 @@ namespace Parser {
   }
 
   // Parses a list of elements
-  function parseList<T extends Node>(kind: ParsingContext, parseElement: () => T): NodeArray<T> {
+  function parseList<T extends qt.Node>(kind: ParsingContext, parseElement: () => T): qt.NodeArray<T> {
     const saveParsingContext = parsingContext;
     parsingContext |= 1 << kind;
     const list = [];
@@ -1684,7 +1691,7 @@ namespace Parser {
     return createNodeArray(list, listPos);
   }
 
-  function parseListElement<T extends Node>(parsingContext: ParsingContext, parseElement: () => T): T {
+  function parseListElement<T extends qt.Node>(parsingContext: ParsingContext, parseElement: () => T): T {
     const node = currentNode(parsingContext);
     if (node) {
       return <T>consumeNode(node);
@@ -1693,7 +1700,7 @@ namespace Parser {
     return parseElement();
   }
 
-  function currentNode(parsingContext: ParsingContext): Node | undefined {
+  function currentNode(parsingContext: ParsingContext): qt.Node | undefined {
     // If we don't have a cursor or the parsing context isn't reusable, there's nothing to reuse.
     //
     // If there is an outstanding parse error that we've encountered, but not attached to
@@ -1728,7 +1735,7 @@ namespace Parser {
     // differently depending on what mode it is in.
     //
     // This also applies to all our other context flags as well.
-    const nodeContextFlags = node.flags & NodeFlags.ContextFlags;
+    const nodeContextFlags = node.flags & qt.NodeFlags.ContextFlags;
     if (nodeContextFlags !== contextFlags) {
       return undefined;
     }
@@ -2042,7 +2049,7 @@ namespace Parser {
   }
 
   // Parses a comma-delimited list of elements
-  function parseDelimitedList<T extends Node>(kind: ParsingContext, parseElement: () => T, considerSemicolonAsDelimiter?: boolean): NodeArray<T> {
+  function parseDelimitedList<T extends qt.Node>(kind: ParsingContext, parseElement: () => T, considerSemicolonAsDelimiter?: boolean): qt.NodeArray<T> {
     const saveParsingContext = parsingContext;
     parsingContext |= 1 << kind;
     const list = [];
@@ -2055,7 +2062,7 @@ namespace Parser {
         list.push(parseListElement(kind, parseElement));
         commaStart = scanner.getTokenPos();
 
-        if (parseOptional(SyntaxKind.CommaToken)) {
+        if (parseOptional(qt.SyntaxKind.CommaToken)) {
           // No need to check for a zero length node since we know we parsed a comma
           continue;
         }
@@ -2067,7 +2074,7 @@ namespace Parser {
 
         // We didn't get a comma, and the list wasn't terminated, explicitly parse
         // out a comma so we give a good error message.
-        parseExpected(SyntaxKind.CommaToken, getExpectedCommaDiagnostic(kind));
+        parseExpected(qt.SyntaxKind.CommaToken, getExpectedCommaDiagnostic(kind));
 
         // If the token was a semicolon, and the caller allows that, then skip it and
         // continue.  This ensures we get back on track and don't result in tons of
@@ -2114,21 +2121,21 @@ namespace Parser {
     return kind === ParsingContext.EnumMembers ? Diagnostics.An_enum_member_name_must_be_followed_by_a_or : undefined;
   }
 
-  interface MissingList<T extends Node> extends NodeArray<T> {
+  interface MissingList<T extends qt.Node> extends qt.NodeArray<T> {
     isMissingList: true;
   }
 
-  function createMissingList<T extends Node>(): MissingList<T> {
+  function createMissingList<T extends qt.Node>(): MissingList<T> {
     const list = createNodeArray<T>([], getNodePos()) as MissingList<T>;
     list.isMissingList = true;
     return list;
   }
 
-  function isMissingList(arr: NodeArray<Node>): boolean {
-    return !!(arr as MissingList<Node>).isMissingList;
+  function isMissingList(arr: qt.NodeArray<qt.Node>): boolean {
+    return !!(arr as MissingList<qt.Node>).isMissingList;
   }
 
-  function parseBracketedList<T extends Node>(kind: ParsingContext, parseElement: () => T, open: qt.SyntaxKind, close: qt.SyntaxKind): NodeArray<T> {
+  function parseBracketedList<T extends qt.Node>(kind: ParsingContext, parseElement: () => T, open: qt.SyntaxKind, close: qt.SyntaxKind): qt.NodeArray<T> {
     if (parseExpected(open)) {
       const result = parseDelimitedList(kind, parseElement);
       parseExpected(close);
@@ -2141,26 +2148,26 @@ namespace Parser {
   function parseEntityName(allowReservedWords: boolean, diagnosticMessage?: qt.DiagnosticMessage): EntityName {
     let entity: EntityName = allowReservedWords ? parseIdentifierName(diagnosticMessage) : parseIdentifier(diagnosticMessage);
     let dotPos = scanner.getStartPos();
-    while (parseOptional(SyntaxKind.DotToken)) {
+    while (parseOptional(qt.SyntaxKind.DotToken)) {
       if (token() === qt.SyntaxKind.LessThanToken) {
         // the entity is part of a JSDoc-style generic, so record the trailing dot for later error reporting
         entity.jsdocDotPos = dotPos;
         break;
       }
       dotPos = scanner.getStartPos();
-      entity = createQualifiedName(entity, parseRightSideOfDot(allowReservedWords, /* allowPrivateIdentifiers */ false) as Identifier);
+      entity = createQualifiedName(entity, parseRightSideOfDot(allowReservedWords, /* allowPrivateIdentifiers */ false) as qt.Identifier);
     }
     return entity;
   }
 
-  function createQualifiedName(entity: EntityName, name: Identifier): QualifiedName {
-    const node = createNode(SyntaxKind.QualifiedName, entity.pos) as QualifiedName;
+  function createQualifiedName(entity: EntityName, name: qt.Identifier): QualifiedName {
+    const node = createNode(qt.SyntaxKind.QualifiedName, entity.pos) as QualifiedName;
     node.left = entity;
     node.right = name;
     return finishNode(node);
   }
 
-  function parseRightSideOfDot(allowIdentifierNames: boolean, allowPrivateIdentifiers: boolean): Identifier | PrivateIdentifier {
+  function parseRightSideOfDot(allowIdentifierNames: boolean, allowPrivateIdentifiers: boolean): qt.Identifier | PrivateIdentifier {
     // Technically a keyword is valid here as all identifiers and keywords are identifier names.
     // However, often we'll encounter this in error situations when the identifier or keyword
     // is actually starting another valid construct.
@@ -2187,20 +2194,20 @@ namespace Parser {
         // Report that we need an identifier.  However, report it right after the dot,
         // and not on the next token.  This is because the next token might actually
         // be an identifier and the error would be quite confusing.
-        return createMissingNode<Identifier>(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.Identifier_expected);
+        return createMissingNode<qt.Identifier>(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.Identifier_expected);
       }
     }
 
     if (token() === qt.SyntaxKind.PrivateIdentifier) {
       const node = parsePrivateIdentifier();
-      return allowPrivateIdentifiers ? node : createMissingNode<Identifier>(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.Identifier_expected);
+      return allowPrivateIdentifiers ? node : createMissingNode<qt.Identifier>(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.Identifier_expected);
     }
 
     return allowIdentifierNames ? parseIdentifierName() : parseIdentifier();
   }
 
   function parseTemplateExpression(isTaggedTemplate: boolean): TemplateExpression {
-    const template = <TemplateExpression>createNode(SyntaxKind.TemplateExpression);
+    const template = <TemplateExpression>createNode(qt.SyntaxKind.TemplateExpression);
 
     template.head = parseTemplateHead(isTaggedTemplate);
     Debug.assert(template.head.kind === qt.SyntaxKind.TemplateHead, 'Template head has wrong token kind');
@@ -2218,7 +2225,7 @@ namespace Parser {
   }
 
   function parseTemplateSpan(isTaggedTemplate: boolean): TemplateSpan {
-    const span = <TemplateSpan>createNode(SyntaxKind.TemplateSpan);
+    const span = <TemplateSpan>createNode(qt.SyntaxKind.TemplateSpan);
     span.expression = allowInAnd(parseExpression);
 
     let literal: TemplateMiddle | TemplateTail;
@@ -2226,7 +2233,7 @@ namespace Parser {
       reScanTemplateToken(isTaggedTemplate);
       literal = parseTemplateMiddleOrTemplateTail();
     } else {
-      literal = parseExpectedToken(SyntaxKind.TemplateTail, Diagnostics._0_expected, tokenToString(SyntaxKind.CloseBraceToken));
+      literal = parseExpectedToken(qt.SyntaxKind.TemplateTail, Diagnostics._0_expected, tokenToString(qt.SyntaxKind.CloseBraceToken));
     }
 
     span.literal = literal;
@@ -2249,7 +2256,7 @@ namespace Parser {
   function parseTemplateMiddleOrTemplateTail(): TemplateMiddle | TemplateTail {
     const fragment = parseLiteralLikeNode(token());
     Debug.assert(fragment.kind === qt.SyntaxKind.TemplateMiddle || fragment.kind === qt.SyntaxKind.TemplateTail, 'Template fragment has wrong token kind');
-    return <TemplateMiddle | TemplateTail>fragment;
+    return fragment;
   }
 
   function parseLiteralLikeNode(kind: qt.SyntaxKind): LiteralLikeNode {
@@ -2297,7 +2304,7 @@ namespace Parser {
   // TYPES
 
   function parseTypeReference(): TypeReferenceNode {
-    const node = <TypeReferenceNode>createNode(SyntaxKind.TypeReference);
+    const node = <TypeReferenceNode>createNode(qt.SyntaxKind.TypeReference);
     node.typeName = parseEntityName(/*allowReservedWords*/ true, Diagnostics.Type_expected);
     if (!scanner.hasPrecedingLineBreak() && reScanLessThanToken() === qt.SyntaxKind.LessThanToken) {
       node.typeArguments = parseBracketedList(ParsingContext.TypeArguments, parseType, qt.SyntaxKind.LessThanToken, qt.SyntaxKind.GreaterThanToken);
@@ -2324,22 +2331,22 @@ namespace Parser {
 
   function parseThisTypePredicate(lhs: ThisTypeNode): TypePredicateNode {
     nextToken();
-    const node = createNode(SyntaxKind.TypePredicate, lhs.pos) as TypePredicateNode;
+    const node = createNode(qt.SyntaxKind.TypePredicate, lhs.pos) as TypePredicateNode;
     node.parameterName = lhs;
     node.type = parseType();
     return finishNode(node);
   }
 
   function parseThisTypeNode(): ThisTypeNode {
-    const node = createNode(SyntaxKind.ThisType) as ThisTypeNode;
+    const node = createNode(qt.SyntaxKind.ThisType) as ThisTypeNode;
     nextToken();
     return finishNode(node);
   }
 
   function parseJSDocAllType(postFixEquals: boolean): JSDocAllType | JSDocOptionalType {
-    const result = createNode(SyntaxKind.JSDocAllType) as JSDocAllType;
+    const result = createNode(qt.SyntaxKind.JSDocAllType) as JSDocAllType;
     if (postFixEquals) {
-      return createPostfixType(SyntaxKind.JSDocOptionalType, result) as JSDocOptionalType;
+      return createPostfixType(qt.SyntaxKind.JSDocOptionalType, result) as JSDocOptionalType;
     } else {
       nextToken();
     }
@@ -2347,7 +2354,7 @@ namespace Parser {
   }
 
   function parseJSDocNonNullableType(): TypeNode {
-    const result = createNode(SyntaxKind.JSDocNonNullableType) as JSDocNonNullableType;
+    const result = createNode(qt.SyntaxKind.JSDocNonNullableType) as JSDocNonNullableType;
     nextToken();
     result.type = parseNonArrayType();
     return finishNode(result);
@@ -2369,10 +2376,10 @@ namespace Parser {
     //      Foo(?=
     //      (?|
     if (token() === qt.SyntaxKind.CommaToken || token() === qt.SyntaxKind.CloseBraceToken || token() === qt.SyntaxKind.CloseParenToken || token() === qt.SyntaxKind.GreaterThanToken || token() === qt.SyntaxKind.EqualsToken || token() === qt.SyntaxKind.BarToken) {
-      const result = <JSDocUnknownType>createNode(SyntaxKind.JSDocUnknownType, pos);
+      const result = <JSDocUnknownType>createNode(qt.SyntaxKind.JSDocUnknownType, pos);
       return finishNode(result);
     } else {
-      const result = <JSDocNullableType>createNode(SyntaxKind.JSDocNullableType, pos);
+      const result = <JSDocNullableType>createNode(qt.SyntaxKind.JSDocNullableType, pos);
       result.type = parseType();
       return finishNode(result);
     }
@@ -2380,21 +2387,21 @@ namespace Parser {
 
   function parseJSDocFunctionType(): JSDocFunctionType | TypeReferenceNode {
     if (lookAhead(nextTokenIsOpenParen)) {
-      const result = <JSDocFunctionType>createNodeWithJSDoc(SyntaxKind.JSDocFunctionType);
+      const result = <JSDocFunctionType>createNodeWithJSDoc(qt.SyntaxKind.JSDocFunctionType);
       nextToken();
-      fillSignature(SyntaxKind.ColonToken, SignatureFlags.Type | SignatureFlags.JSDoc, result);
+      fillSignature(qt.SyntaxKind.ColonToken, SignatureFlags.Type | SignatureFlags.JSDoc, result);
       return finishNode(result);
     }
-    const node = <TypeReferenceNode>createNode(SyntaxKind.TypeReference);
+    const node = <TypeReferenceNode>createNode(qt.SyntaxKind.TypeReference);
     node.typeName = parseIdentifierName();
     return finishNode(node);
   }
 
   function parseJSDocParameter(): ParameterDeclaration {
-    const parameter = createNode(SyntaxKind.Parameter) as ParameterDeclaration;
+    const parameter = createNode(qt.SyntaxKind.Parameter) as ParameterDeclaration;
     if (token() === qt.SyntaxKind.ThisKeyword || token() === qt.SyntaxKind.NewKeyword) {
       parameter.name = parseIdentifierName();
-      parseExpected(SyntaxKind.ColonToken);
+      parseExpected(qt.SyntaxKind.ColonToken);
     }
     parameter.type = parseJSDocType();
     return finishNode(parameter);
@@ -2402,9 +2409,9 @@ namespace Parser {
 
   function parseJSDocType(): TypeNode {
     scanner.setInJSDocType(true);
-    const moduleSpecifier = parseOptionalToken(SyntaxKind.ModuleKeyword);
+    const moduleSpecifier = parseOptionalToken(qt.SyntaxKind.ModuleKeyword);
     if (moduleSpecifier) {
-      const moduleTag = createNode(SyntaxKind.JSDocNamepathType, moduleSpecifier.pos) as JSDocNamepathType;
+      const moduleTag = createNode(qt.SyntaxKind.JSDocNamepathType, moduleSpecifier.pos) as JSDocNamepathType;
       terminate: while (true) {
         switch (token()) {
           case qt.SyntaxKind.CloseBraceToken:
@@ -2421,31 +2428,31 @@ namespace Parser {
       return finishNode(moduleTag);
     }
 
-    const dotdotdot = parseOptionalToken(SyntaxKind.DotDotDotToken);
+    const dotdotdot = parseOptionalToken(qt.SyntaxKind.DotDotDotToken);
     let type = parseTypeOrTypePredicate();
     scanner.setInJSDocType(false);
     if (dotdotdot) {
-      const variadic = createNode(SyntaxKind.JSDocVariadicType, dotdotdot.pos) as JSDocVariadicType;
+      const variadic = createNode(qt.SyntaxKind.JSDocVariadicType, dotdotdot.pos) as JSDocVariadicType;
       variadic.type = type;
       type = finishNode(variadic);
     }
     if (token() === qt.SyntaxKind.EqualsToken) {
-      return createPostfixType(SyntaxKind.JSDocOptionalType, type);
+      return createPostfixType(qt.SyntaxKind.JSDocOptionalType, type);
     }
     return type;
   }
 
   function parseTypeQuery(): TypeQueryNode {
-    const node = <TypeQueryNode>createNode(SyntaxKind.TypeQuery);
-    parseExpected(SyntaxKind.TypeOfKeyword);
+    const node = <TypeQueryNode>createNode(qt.SyntaxKind.TypeQuery);
+    parseExpected(qt.SyntaxKind.TypeOfKeyword);
     node.exprName = parseEntityName(/*allowReservedWords*/ true);
     return finishNode(node);
   }
 
   function parseTypeParameter(): TypeParameterDeclaration {
-    const node = <TypeParameterDeclaration>createNode(SyntaxKind.TypeParameter);
+    const node = <TypeParameterDeclaration>createNode(qt.SyntaxKind.TypeParameter);
     node.name = parseIdentifier();
-    if (parseOptional(SyntaxKind.ExtendsKeyword)) {
+    if (parseOptional(qt.SyntaxKind.ExtendsKeyword)) {
       // It's not uncommon for people to write improper constraints to a generic.  If the
       // user writes a constraint that is an expression and not an actual type, then parse
       // it out as an expression (so we can recover well), but report that a type is needed
@@ -2464,21 +2471,21 @@ namespace Parser {
       }
     }
 
-    if (parseOptional(SyntaxKind.EqualsToken)) {
+    if (parseOptional(qt.SyntaxKind.EqualsToken)) {
       node.default = parseType();
     }
 
     return finishNode(node);
   }
 
-  function parseTypeParameters(): NodeArray<TypeParameterDeclaration> | undefined {
+  function parseTypeParameters(): qt.NodeArray<TypeParameterDeclaration> | undefined {
     if (token() === qt.SyntaxKind.LessThanToken) {
       return parseBracketedList(ParsingContext.TypeParameters, parseTypeParameter, qt.SyntaxKind.LessThanToken, qt.SyntaxKind.GreaterThanToken);
     }
   }
 
   function parseParameterType(): TypeNode | undefined {
-    if (parseOptional(SyntaxKind.ColonToken)) {
+    if (parseOptional(qt.SyntaxKind.ColonToken)) {
       return parseType();
     }
 
@@ -2490,7 +2497,7 @@ namespace Parser {
   }
 
   function parseParameter(): ParameterDeclaration {
-    const node = <qt.ParameterDeclaration>createNodeWithJSDoc(SyntaxKind.Parameter);
+    const node = <qt.ParameterDeclaration>createNodeWithJSDoc(qt.SyntaxKind.Parameter);
     if (token() === qt.SyntaxKind.ThisKeyword) {
       node.name = createIdentifier(/*isIdentifier*/ true);
       node.type = parseParameterType();
@@ -2499,7 +2506,7 @@ namespace Parser {
 
     node.decorators = parseDecorators();
     node.modifiers = parseModifiers();
-    node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+    node.dotDotDotToken = parseOptionalToken(qt.SyntaxKind.DotDotDotToken);
 
     // FormalParameter [Yield,Await]:
     //      qt.BindingElement[?Yield,?Await]
@@ -2516,7 +2523,7 @@ namespace Parser {
       nextToken();
     }
 
-    node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
+    node.questionToken = parseOptionalToken(qt.SyntaxKind.QuestionToken);
     node.type = parseParameterType();
     node.initializer = parseInitializer();
 
@@ -2543,11 +2550,11 @@ namespace Parser {
     if (returnToken === qt.SyntaxKind.EqualsGreaterThanToken) {
       parseExpected(returnToken);
       return true;
-    } else if (parseOptional(SyntaxKind.ColonToken)) {
+    } else if (parseOptional(qt.SyntaxKind.ColonToken)) {
       return true;
     } else if (isType && token() === qt.SyntaxKind.EqualsGreaterThanToken) {
       // This is easy to get backward, especially in type contexts, so parse the type anyway
-      parseErrorAtCurrentToken(Diagnostics._0_expected, tokenToString(SyntaxKind.ColonToken));
+      parseErrorAtCurrentToken(Diagnostics._0_expected, tokenToString(qt.SyntaxKind.ColonToken));
       nextToken();
       return true;
     }
@@ -2569,7 +2576,7 @@ namespace Parser {
     //
     // SingleNameBinding [Yield,Await]:
     //      BindingIdentifier[?Yield,?Await]Initializer [In, ?Yield,?Await] opt
-    if (!parseExpected(SyntaxKind.OpenParenToken)) {
+    if (!parseExpected(qt.SyntaxKind.OpenParenToken)) {
       signature.parameters = createMissingList<qt.ParameterDeclaration>();
       return false;
     }
@@ -2585,13 +2592,13 @@ namespace Parser {
     setYieldContext(savedYieldContext);
     setAwaitContext(savedAwaitContext);
 
-    return parseExpected(SyntaxKind.CloseParenToken);
+    return parseExpected(qt.SyntaxKind.CloseParenToken);
   }
 
   function parseTypeMemberSemicolon() {
     // We allow type members to be separated by commas or (possibly ASI) semicolons.
     // First check if it was a comma.  If so, we're done with the member.
-    if (parseOptional(SyntaxKind.CommaToken)) {
+    if (parseOptional(qt.SyntaxKind.CommaToken)) {
       return;
     }
 
@@ -2602,9 +2609,9 @@ namespace Parser {
   function parseSignatureMember(kind: qt.SyntaxKind.CallSignature | qt.SyntaxKind.ConstructSignature): CallSignatureDeclaration | ConstructSignatureDeclaration {
     const node = <CallSignatureDeclaration | ConstructSignatureDeclaration>createNodeWithJSDoc(kind);
     if (kind === qt.SyntaxKind.ConstructSignature) {
-      parseExpected(SyntaxKind.NewKeyword);
+      parseExpected(qt.SyntaxKind.NewKeyword);
     }
-    fillSignature(SyntaxKind.ColonToken, SignatureFlags.Type, node);
+    fillSignature(qt.SyntaxKind.ColonToken, SignatureFlags.Type, node);
     parseTypeMemberSemicolon();
     return finishNode(node);
   }
@@ -2676,12 +2683,12 @@ namespace Parser {
 
   function parsePropertyOrMethodSignature(node: PropertySignature | MethodSignature): PropertySignature | MethodSignature {
     node.name = parsePropertyName();
-    node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
+    node.questionToken = parseOptionalToken(qt.SyntaxKind.QuestionToken);
     if (token() === qt.SyntaxKind.OpenParenToken || token() === qt.SyntaxKind.LessThanToken) {
       node.kind = qt.SyntaxKind.MethodSignature;
       // Method signatures don't exist in expression contexts.  So they have neither
       // [Yield] nor [Await]
-      fillSignature(SyntaxKind.ColonToken, SignatureFlags.Type, <MethodSignature>node);
+      fillSignature(qt.SyntaxKind.ColonToken, SignatureFlags.Type, <MethodSignature>node);
     } else {
       node.kind = qt.SyntaxKind.PropertySignature;
       node.type = parseTypeAnnotation();
@@ -2726,12 +2733,12 @@ namespace Parser {
 
   function parseTypeMember(): TypeElement {
     if (token() === qt.SyntaxKind.OpenParenToken || token() === qt.SyntaxKind.LessThanToken) {
-      return parseSignatureMember(SyntaxKind.CallSignature);
+      return parseSignatureMember(qt.SyntaxKind.CallSignature);
     }
     if (token() === qt.SyntaxKind.NewKeyword && lookAhead(nextTokenIsOpenParenOrLessThan)) {
-      return parseSignatureMember(SyntaxKind.ConstructSignature);
+      return parseSignatureMember(qt.SyntaxKind.ConstructSignature);
     }
-    const node = <TypeElement>createNodeWithJSDoc(SyntaxKind.Unknown);
+    const node = <TypeElement>createNodeWithJSDoc(qt.SyntaxKind.Unknown);
     node.modifiers = parseModifiers();
     if (isIndexSignature()) {
       return parseIndexSignatureDeclaration(node);
@@ -2759,16 +2766,16 @@ namespace Parser {
   }
 
   function parseTypeLiteral(): TypeLiteralNode {
-    const node = <TypeLiteralNode>createNode(SyntaxKind.TypeLiteral);
+    const node = <TypeLiteralNode>createNode(qt.SyntaxKind.TypeLiteral);
     node.members = parseObjectTypeMembers();
     return finishNode(node);
   }
 
-  function parseObjectTypeMembers(): NodeArray<TypeElement> {
-    let members: NodeArray<TypeElement>;
-    if (parseExpected(SyntaxKind.OpenBraceToken)) {
+  function parseObjectTypeMembers(): qt.NodeArray<TypeElement> {
+    let members: qt.NodeArray<TypeElement>;
+    if (parseExpected(qt.SyntaxKind.OpenBraceToken)) {
       members = parseList(ParsingContext.TypeMembers, parseTypeMember);
-      parseExpected(SyntaxKind.CloseBraceToken);
+      parseExpected(qt.SyntaxKind.CloseBraceToken);
     } else {
       members = createMissingList<TypeElement>();
     }
@@ -2788,46 +2795,46 @@ namespace Parser {
   }
 
   function parseMappedTypeParameter() {
-    const node = <TypeParameterDeclaration>createNode(SyntaxKind.TypeParameter);
+    const node = <TypeParameterDeclaration>createNode(qt.SyntaxKind.TypeParameter);
     node.name = parseIdentifier();
-    parseExpected(SyntaxKind.InKeyword);
+    parseExpected(qt.SyntaxKind.InKeyword);
     node.constraint = parseType();
     return finishNode(node);
   }
 
   function parseMappedType() {
-    const node = <MappedTypeNode>createNode(SyntaxKind.MappedType);
-    parseExpected(SyntaxKind.OpenBraceToken);
+    const node = <MappedTypeNode>createNode(qt.SyntaxKind.MappedType);
+    parseExpected(qt.SyntaxKind.OpenBraceToken);
     if (token() === qt.SyntaxKind.ReadonlyKeyword || token() === qt.SyntaxKind.PlusToken || token() === qt.SyntaxKind.MinusToken) {
       node.readonlyToken = parseTokenNode<ReadonlyToken | PlusToken | MinusToken>();
       if (node.readonlyToken.kind !== qt.SyntaxKind.ReadonlyKeyword) {
-        parseExpectedToken(SyntaxKind.ReadonlyKeyword);
+        parseExpectedToken(qt.SyntaxKind.ReadonlyKeyword);
       }
     }
-    parseExpected(SyntaxKind.OpenBracketToken);
+    parseExpected(qt.SyntaxKind.OpenBracketToken);
     node.typeParameter = parseMappedTypeParameter();
-    parseExpected(SyntaxKind.CloseBracketToken);
+    parseExpected(qt.SyntaxKind.CloseBracketToken);
     if (token() === qt.SyntaxKind.QuestionToken || token() === qt.SyntaxKind.PlusToken || token() === qt.SyntaxKind.MinusToken) {
       node.questionToken = parseTokenNode<QuestionToken | PlusToken | MinusToken>();
       if (node.questionToken.kind !== qt.SyntaxKind.QuestionToken) {
-        parseExpectedToken(SyntaxKind.QuestionToken);
+        parseExpectedToken(qt.SyntaxKind.QuestionToken);
       }
     }
     node.type = parseTypeAnnotation();
     parseSemicolon();
-    parseExpected(SyntaxKind.CloseBraceToken);
+    parseExpected(qt.SyntaxKind.CloseBraceToken);
     return finishNode(node);
   }
 
   function parseTupleElementType() {
     const pos = getNodePos();
-    if (parseOptional(SyntaxKind.DotDotDotToken)) {
-      const node = <RestTypeNode>createNode(SyntaxKind.RestType, pos);
+    if (parseOptional(qt.SyntaxKind.DotDotDotToken)) {
+      const node = <RestTypeNode>createNode(qt.SyntaxKind.RestType, pos);
       node.type = parseType();
       return finishNode(node);
     }
     const type = parseType();
-    if (!(contextFlags & NodeFlags.JSDoc) && type.kind === qt.SyntaxKind.JSDocNullableType && type.pos === type.type.pos) {
+    if (!(contextFlags & qt.NodeFlags.JSDoc) && type.kind === qt.SyntaxKind.JSDocNullableType && type.pos === type.type.pos) {
       type.kind = qt.SyntaxKind.OptionalType;
     }
     return type;
@@ -2846,11 +2853,11 @@ namespace Parser {
 
   function parseTupleElementNameOrTupleElementType() {
     if (lookAhead(isTupleElementName)) {
-      const node = <NamedTupleMember>createNode(SyntaxKind.NamedTupleMember);
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+      const node = <NamedTupleMember>createNode(qt.SyntaxKind.NamedTupleMember);
+      node.dotDotDotToken = parseOptionalToken(qt.SyntaxKind.DotDotDotToken);
       node.name = parseIdentifierName();
-      node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
-      parseExpected(SyntaxKind.ColonToken);
+      node.questionToken = parseOptionalToken(qt.SyntaxKind.QuestionToken);
+      parseExpected(qt.SyntaxKind.ColonToken);
       node.type = parseTupleElementType();
       return addJSDocComment(finishNode(node));
     }
@@ -2858,24 +2865,24 @@ namespace Parser {
   }
 
   function parseTupleType(): TupleTypeNode {
-    const node = <TupleTypeNode>createNode(SyntaxKind.TupleType);
+    const node = <TupleTypeNode>createNode(qt.SyntaxKind.TupleType);
     node.elements = parseBracketedList(ParsingContext.TupleElementTypes, parseTupleElementNameOrTupleElementType, qt.SyntaxKind.OpenBracketToken, qt.SyntaxKind.CloseBracketToken);
     return finishNode(node);
   }
 
   function parseParenthesizedType(): TypeNode {
-    const node = <ParenthesizedTypeNode>createNode(SyntaxKind.ParenthesizedType);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <ParenthesizedTypeNode>createNode(qt.SyntaxKind.ParenthesizedType);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.type = parseType();
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
     return finishNode(node);
   }
 
   function parseFunctionOrConstructorType(): TypeNode {
     const pos = getNodePos();
-    const kind = parseOptional(SyntaxKind.NewKeyword) ? qt.SyntaxKind.ConstructorType : qt.SyntaxKind.FunctionType;
+    const kind = parseOptional(qt.SyntaxKind.NewKeyword) ? qt.SyntaxKind.ConstructorType : qt.SyntaxKind.FunctionType;
     const node = <FunctionOrConstructorTypeNode>createNodeWithJSDoc(kind, pos);
-    fillSignature(SyntaxKind.EqualsGreaterThanToken, SignatureFlags.Type, node);
+    fillSignature(qt.SyntaxKind.EqualsGreaterThanToken, SignatureFlags.Type, node);
     return finishNode(node);
   }
 
@@ -2885,10 +2892,10 @@ namespace Parser {
   }
 
   function parseLiteralTypeNode(negative?: boolean): LiteralTypeNode {
-    const node = createNode(SyntaxKind.LiteralType) as LiteralTypeNode;
+    const node = createNode(qt.SyntaxKind.LiteralType) as LiteralTypeNode;
     let unaryMinusExpression!: PrefixUnaryExpression;
     if (negative) {
-      unaryMinusExpression = createNode(SyntaxKind.PrefixUnaryExpression) as PrefixUnaryExpression;
+      unaryMinusExpression = createNode(qt.SyntaxKind.PrefixUnaryExpression) as PrefixUnaryExpression;
       unaryMinusExpression.operator = qt.SyntaxKind.MinusToken;
       nextToken();
     }
@@ -2908,16 +2915,16 @@ namespace Parser {
   }
 
   function parseImportType(): ImportTypeNode {
-    sourceFile.flags |= NodeFlags.PossiblyContainsDynamicImport;
-    const node = createNode(SyntaxKind.ImportType) as ImportTypeNode;
-    if (parseOptional(SyntaxKind.TypeOfKeyword)) {
+    sourceFile.flags |= qt.NodeFlags.PossiblyContainsDynamicImport;
+    const node = createNode(qt.SyntaxKind.ImportType) as ImportTypeNode;
+    if (parseOptional(qt.SyntaxKind.TypeOfKeyword)) {
       node.isTypeOf = true;
     }
-    parseExpected(SyntaxKind.ImportKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    parseExpected(qt.SyntaxKind.ImportKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.argument = parseType();
-    parseExpected(SyntaxKind.CloseParenToken);
-    if (parseOptional(SyntaxKind.DotToken)) {
+    parseExpected(qt.SyntaxKind.CloseParenToken);
+    if (parseOptional(qt.SyntaxKind.DotToken)) {
       node.qualifier = parseEntityName(/*allowReservedWords*/ true, Diagnostics.Type_expected);
     }
     if (!scanner.hasPrecedingLineBreak() && reScanLessThanToken() === qt.SyntaxKind.LessThanToken) {
@@ -3056,27 +3063,27 @@ namespace Parser {
     while (!scanner.hasPrecedingLineBreak()) {
       switch (token()) {
         case qt.SyntaxKind.ExclamationToken:
-          type = createPostfixType(SyntaxKind.JSDocNonNullableType, type);
+          type = createPostfixType(qt.SyntaxKind.JSDocNonNullableType, type);
           break;
         case qt.SyntaxKind.QuestionToken:
           // If not in JSDoc and next token is start of a type we have a conditional type
-          if (!(contextFlags & NodeFlags.JSDoc) && lookAhead(nextTokenIsStartOfType)) {
+          if (!(contextFlags & qt.NodeFlags.JSDoc) && lookAhead(nextTokenIsStartOfType)) {
             return type;
           }
-          type = createPostfixType(SyntaxKind.JSDocNullableType, type);
+          type = createPostfixType(qt.SyntaxKind.JSDocNullableType, type);
           break;
         case qt.SyntaxKind.OpenBracketToken:
-          parseExpected(SyntaxKind.OpenBracketToken);
+          parseExpected(qt.SyntaxKind.OpenBracketToken);
           if (isStartOfType()) {
-            const node = createNode(SyntaxKind.IndexedAccessType, type.pos) as IndexedAccessTypeNode;
+            const node = createNode(qt.SyntaxKind.IndexedAccessType, type.pos) as IndexedAccessTypeNode;
             node.objectType = type;
             node.indexType = parseType();
-            parseExpected(SyntaxKind.CloseBracketToken);
+            parseExpected(qt.SyntaxKind.CloseBracketToken);
             type = finishNode(node);
           } else {
-            const node = createNode(SyntaxKind.ArrayType, type.pos) as ArrayTypeNode;
+            const node = createNode(qt.SyntaxKind.ArrayType, type.pos) as ArrayTypeNode;
             node.elementType = type;
-            parseExpected(SyntaxKind.CloseBracketToken);
+            parseExpected(qt.SyntaxKind.CloseBracketToken);
             type = finishNode(node);
           }
           break;
@@ -3095,7 +3102,7 @@ namespace Parser {
   }
 
   function parseTypeOperator(operator: qt.SyntaxKind.KeyOfKeyword | qt.SyntaxKind.UniqueKeyword | qt.SyntaxKind.ReadonlyKeyword) {
-    const node = <TypeOperatorNode>createNode(SyntaxKind.TypeOperator);
+    const node = <TypeOperatorNode>createNode(qt.SyntaxKind.TypeOperator);
     parseExpected(operator);
     node.operator = operator;
     node.type = parseTypeOperatorOrHigher();
@@ -3103,9 +3110,9 @@ namespace Parser {
   }
 
   function parseInferType(): InferTypeNode {
-    const node = <InferTypeNode>createNode(SyntaxKind.InferType);
-    parseExpected(SyntaxKind.InferKeyword);
-    const typeParameter = <TypeParameterDeclaration>createNode(SyntaxKind.TypeParameter);
+    const node = <InferTypeNode>createNode(qt.SyntaxKind.InferType);
+    parseExpected(qt.SyntaxKind.InferKeyword);
+    const typeParameter = <TypeParameterDeclaration>createNode(qt.SyntaxKind.TypeParameter);
     typeParameter.name = parseIdentifier();
     node.typeParameter = finishNode(typeParameter);
     return finishNode(node);
@@ -3141,11 +3148,11 @@ namespace Parser {
   }
 
   function parseIntersectionTypeOrHigher(): TypeNode {
-    return parseUnionOrIntersectionType(SyntaxKind.IntersectionType, parseTypeOperatorOrHigher, qt.SyntaxKind.AmpersandToken);
+    return parseUnionOrIntersectionType(qt.SyntaxKind.IntersectionType, parseTypeOperatorOrHigher, qt.SyntaxKind.AmpersandToken);
   }
 
   function parseUnionTypeOrHigher(): TypeNode {
-    return parseUnionOrIntersectionType(SyntaxKind.UnionType, parseIntersectionTypeOrHigher, qt.SyntaxKind.BarToken);
+    return parseUnionOrIntersectionType(qt.SyntaxKind.UnionType, parseIntersectionTypeOrHigher, qt.SyntaxKind.BarToken);
   }
 
   function isStartOfFunctionType(): boolean {
@@ -3205,7 +3212,7 @@ namespace Parser {
     const typePredicateVariable = isIdentifier() && tryParse(parseTypePredicatePrefix);
     const type = parseType();
     if (typePredicateVariable) {
-      const node = <TypePredicateNode>createNode(SyntaxKind.TypePredicate, typePredicateVariable.pos);
+      const node = <TypePredicateNode>createNode(qt.SyntaxKind.TypePredicate, typePredicateVariable.pos);
       node.assertsModifier = undefined;
       node.parameterName = typePredicateVariable;
       node.type = type;
@@ -3224,17 +3231,17 @@ namespace Parser {
   }
 
   function parseAssertsTypePredicate(): TypeNode {
-    const node = <TypePredicateNode>createNode(SyntaxKind.TypePredicate);
-    node.assertsModifier = parseExpectedToken(SyntaxKind.AssertsKeyword);
+    const node = <TypePredicateNode>createNode(qt.SyntaxKind.TypePredicate);
+    node.assertsModifier = parseExpectedToken(qt.SyntaxKind.AssertsKeyword);
     node.parameterName = token() === qt.SyntaxKind.ThisKeyword ? parseThisTypeNode() : parseIdentifier();
-    node.type = parseOptional(SyntaxKind.IsKeyword) ? parseType() : undefined;
+    node.type = parseOptional(qt.SyntaxKind.IsKeyword) ? parseType() : undefined;
     return finishNode(node);
   }
 
   function parseType(): TypeNode {
     // The rules about 'yield' only apply to actual code/expression contexts.  They don't
     // apply to 'type' contexts.  So we disable these parameters here before moving on.
-    return doOutsideOfContext(NodeFlags.TypeExcludesFlags, parseTypeWorker);
+    return doOutsideOfContext(qt.NodeFlags.TypeExcludesFlags, parseTypeWorker);
   }
 
   function parseTypeWorker(noConditionalTypes?: boolean): TypeNode {
@@ -3242,14 +3249,14 @@ namespace Parser {
       return parseFunctionOrConstructorType();
     }
     const type = parseUnionTypeOrHigher();
-    if (!noConditionalTypes && !scanner.hasPrecedingLineBreak() && parseOptional(SyntaxKind.ExtendsKeyword)) {
-      const node = <ConditionalTypeNode>createNode(SyntaxKind.ConditionalType, type.pos);
+    if (!noConditionalTypes && !scanner.hasPrecedingLineBreak() && parseOptional(qt.SyntaxKind.ExtendsKeyword)) {
+      const node = <ConditionalTypeNode>createNode(qt.SyntaxKind.ConditionalType, type.pos);
       node.checkType = type;
       // The type following 'extends' is not permitted to be another conditional type
       node.extendsType = parseTypeWorker(/*noConditionalTypes*/ true);
-      parseExpected(SyntaxKind.QuestionToken);
+      parseExpected(qt.SyntaxKind.QuestionToken);
       node.trueType = parseTypeWorker();
-      parseExpected(SyntaxKind.ColonToken);
+      parseExpected(qt.SyntaxKind.ColonToken);
       node.falseType = parseTypeWorker();
       return finishNode(node);
     }
@@ -3257,7 +3264,7 @@ namespace Parser {
   }
 
   function parseTypeAnnotation(): TypeNode | undefined {
-    return parseOptional(SyntaxKind.ColonToken) ? parseType() : undefined;
+    return parseOptional(qt.SyntaxKind.ColonToken) ? parseType() : undefined;
   }
 
   // EXPRESSIONS
@@ -3344,7 +3351,7 @@ namespace Parser {
 
     let expr = parseAssignmentExpressionOrHigher();
     let operatorToken: BinaryOperatorToken;
-    while ((operatorToken = parseOptionalToken(SyntaxKind.CommaToken))) {
+    while ((operatorToken = parseOptionalToken(qt.SyntaxKind.CommaToken))) {
       expr = makeBinaryExpression(expr, operatorToken, parseAssignmentExpressionOrHigher());
     }
 
@@ -3355,7 +3362,7 @@ namespace Parser {
   }
 
   function parseInitializer(): Expression | undefined {
-    return parseOptional(SyntaxKind.EqualsToken) ? parseAssignmentExpressionOrHigher() : undefined;
+    return parseOptional(qt.SyntaxKind.EqualsToken) ? parseAssignmentExpressionOrHigher() : undefined;
   }
 
   function parseAssignmentExpressionOrHigher(): Expression {
@@ -3457,7 +3464,7 @@ namespace Parser {
   }
 
   function parseYieldExpression(): YieldExpression {
-    const node = <YieldExpression>createNode(SyntaxKind.YieldExpression);
+    const node = <YieldExpression>createNode(qt.SyntaxKind.YieldExpression);
 
     // YieldExpression[In] :
     //      yield
@@ -3466,7 +3473,7 @@ namespace Parser {
     nextToken();
 
     if (!scanner.hasPrecedingLineBreak() && (token() === qt.SyntaxKind.AsteriskToken || isStartOfExpression())) {
-      node.asteriskToken = parseOptionalToken(SyntaxKind.AsteriskToken);
+      node.asteriskToken = parseOptionalToken(qt.SyntaxKind.AsteriskToken);
       node.expression = parseAssignmentExpressionOrHigher();
       return finishNode(node);
     } else {
@@ -3476,24 +3483,24 @@ namespace Parser {
     }
   }
 
-  function parseSimpleArrowFunctionExpression(identifier: Identifier, asyncModifier?: NodeArray<Modifier> | undefined): ArrowFunction {
+  function parseSimpleArrowFunctionExpression(identifier: qt.Identifier, asyncModifier?: qt.NodeArray<Modifier> | undefined): ArrowFunction {
     Debug.assert(token() === qt.SyntaxKind.EqualsGreaterThanToken, 'parseSimpleArrowFunctionExpression should only have been called if we had a =>');
 
     let node: ArrowFunction;
     if (asyncModifier) {
-      node = <ArrowFunction>createNode(SyntaxKind.ArrowFunction, asyncModifier.pos);
+      node = <ArrowFunction>createNode(qt.SyntaxKind.ArrowFunction, asyncModifier.pos);
       node.modifiers = asyncModifier;
     } else {
-      node = <ArrowFunction>createNode(SyntaxKind.ArrowFunction, identifier.pos);
+      node = <ArrowFunction>createNode(qt.SyntaxKind.ArrowFunction, identifier.pos);
     }
 
-    const parameter = <qt.ParameterDeclaration>createNode(SyntaxKind.Parameter, identifier.pos);
+    const parameter = <qt.ParameterDeclaration>createNode(qt.SyntaxKind.Parameter, identifier.pos);
     parameter.name = identifier;
     finishNode(parameter);
 
     node.parameters = createNodeArray<qt.ParameterDeclaration>([parameter], parameter.pos, parameter.end);
 
-    node.equalsGreaterThanToken = parseExpectedToken(SyntaxKind.EqualsGreaterThanToken);
+    node.equalsGreaterThanToken = parseExpectedToken(qt.SyntaxKind.EqualsGreaterThanToken);
     node.body = parseArrowFunctionExpressionBody(/*isAsync*/ !!asyncModifier);
 
     return addJSDocComment(finishNode(node));
@@ -3522,7 +3529,7 @@ namespace Parser {
     // If we have an arrow, then try to parse the body. Even if not, try to parse if we
     // have an opening brace, just in case we're in an error state.
     const lastToken = token();
-    arrowFunction.equalsGreaterThanToken = parseExpectedToken(SyntaxKind.EqualsGreaterThanToken);
+    arrowFunction.equalsGreaterThanToken = parseExpectedToken(qt.SyntaxKind.EqualsGreaterThanToken);
     arrowFunction.body = lastToken === qt.SyntaxKind.EqualsGreaterThanToken || lastToken === qt.SyntaxKind.OpenBraceToken ? parseArrowFunctionExpressionBody(isAsync) : parseIdentifier();
 
     return finishNode(arrowFunction);
@@ -3717,7 +3724,7 @@ namespace Parser {
   }
 
   function parseParenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): ArrowFunction | undefined {
-    const node = <ArrowFunction>createNodeWithJSDoc(SyntaxKind.ArrowFunction);
+    const node = <ArrowFunction>createNodeWithJSDoc(qt.SyntaxKind.ArrowFunction);
     node.modifiers = parseModifiersForArrowFunction();
     const isAsync = hasModifierOfKind(node, qt.SyntaxKind.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
     // Arrow functions are never generators.
@@ -3727,7 +3734,7 @@ namespace Parser {
     // a => (b => c)
     // And think that "(b =>" was actually a parenthesized arrow function with a missing
     // close paren.
-    if (!fillSignature(SyntaxKind.ColonToken, isAsync, node) && !allowAmbiguity) {
+    if (!fillSignature(qt.SyntaxKind.ColonToken, isAsync, node) && !allowAmbiguity) {
       return undefined;
     }
 
@@ -3777,19 +3784,19 @@ namespace Parser {
 
   function parseConditionalExpressionRest(leftOperand: Expression): Expression {
     // Note: we are passed in an expression which was produced from parseBinaryExpressionOrHigher.
-    const questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
+    const questionToken = parseOptionalToken(qt.SyntaxKind.QuestionToken);
     if (!questionToken) {
       return leftOperand;
     }
 
     // Note: we explicitly 'allowIn' in the whenTrue part of the condition expression, and
     // we do not that for the 'whenFalse' part.
-    const node = <ConditionalExpression>createNode(SyntaxKind.ConditionalExpression, leftOperand.pos);
+    const node = <ConditionalExpression>createNode(qt.SyntaxKind.ConditionalExpression, leftOperand.pos);
     node.condition = leftOperand;
     node.questionToken = questionToken;
     node.whenTrue = doOutsideOfContext(disallowInAndDecoratorContext, parseAssignmentExpressionOrHigher);
-    node.colonToken = parseExpectedToken(SyntaxKind.ColonToken);
-    node.whenFalse = nodeIsPresent(node.colonToken) ? parseAssignmentExpressionOrHigher() : createMissingNode(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, tokenToString(SyntaxKind.ColonToken));
+    node.colonToken = parseExpectedToken(qt.SyntaxKind.ColonToken);
+    node.whenFalse = nodeIsPresent(node.colonToken) ? parseAssignmentExpressionOrHigher() : createMissingNode(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, tokenToString(qt.SyntaxKind.ColonToken));
     return finishNode(node);
   }
 
@@ -3870,7 +3877,7 @@ namespace Parser {
   }
 
   function makeBinaryExpression(left: Expression, operatorToken: BinaryOperatorToken, right: Expression): BinaryExpression {
-    const node = <BinaryExpression>createNode(SyntaxKind.BinaryExpression, left.pos);
+    const node = <BinaryExpression>createNode(qt.SyntaxKind.BinaryExpression, left.pos);
     node.left = left;
     node.operatorToken = operatorToken;
     node.right = right;
@@ -3878,14 +3885,14 @@ namespace Parser {
   }
 
   function makeAsExpression(left: Expression, right: TypeNode): AsExpression {
-    const node = <AsExpression>createNode(SyntaxKind.AsExpression, left.pos);
+    const node = <AsExpression>createNode(qt.SyntaxKind.AsExpression, left.pos);
     node.expression = left;
     node.type = right;
     return finishNode(node);
   }
 
   function parsePrefixUnaryExpression() {
-    const node = <PrefixUnaryExpression>createNode(SyntaxKind.PrefixUnaryExpression);
+    const node = <PrefixUnaryExpression>createNode(qt.SyntaxKind.PrefixUnaryExpression);
     node.operator = token();
     nextToken();
     node.operand = parseSimpleUnaryExpression();
@@ -3894,21 +3901,21 @@ namespace Parser {
   }
 
   function parseDeleteExpression() {
-    const node = <DeleteExpression>createNode(SyntaxKind.DeleteExpression);
+    const node = <DeleteExpression>createNode(qt.SyntaxKind.DeleteExpression);
     nextToken();
     node.expression = parseSimpleUnaryExpression();
     return finishNode(node);
   }
 
   function parseTypeOfExpression() {
-    const node = <TypeOfExpression>createNode(SyntaxKind.TypeOfExpression);
+    const node = <TypeOfExpression>createNode(qt.SyntaxKind.TypeOfExpression);
     nextToken();
     node.expression = parseSimpleUnaryExpression();
     return finishNode(node);
   }
 
   function parseVoidExpression() {
-    const node = <VoidExpression>createNode(SyntaxKind.VoidExpression);
+    const node = <VoidExpression>createNode(qt.SyntaxKind.VoidExpression);
     nextToken();
     node.expression = parseSimpleUnaryExpression();
     return finishNode(node);
@@ -3928,7 +3935,7 @@ namespace Parser {
   }
 
   function parseAwaitExpression() {
-    const node = <AwaitExpression>createNode(SyntaxKind.AwaitExpression);
+    const node = <AwaitExpression>createNode(qt.SyntaxKind.AwaitExpression);
     nextToken();
     node.expression = parseSimpleUnaryExpression();
     return finishNode(node);
@@ -4071,7 +4078,7 @@ namespace Parser {
    */
   function parseUpdateExpression(): UpdateExpression {
     if (token() === qt.SyntaxKind.PlusPlusToken || token() === qt.SyntaxKind.MinusMinusToken) {
-      const node = <PrefixUnaryExpression>createNode(SyntaxKind.PrefixUnaryExpression);
+      const node = <PrefixUnaryExpression>createNode(qt.SyntaxKind.PrefixUnaryExpression);
       node.operator = token();
       nextToken();
       node.operand = parseLeftHandSideExpressionOrHigher();
@@ -4085,7 +4092,7 @@ namespace Parser {
 
     Debug.assert(isLeftHandSideExpression(expression));
     if ((token() === qt.SyntaxKind.PlusPlusToken || token() === qt.SyntaxKind.MinusMinusToken) && !scanner.hasPrecedingLineBreak()) {
-      const node = <PostfixUnaryExpression>createNode(SyntaxKind.PostfixUnaryExpression, expression.pos);
+      const node = <PostfixUnaryExpression>createNode(qt.SyntaxKind.PostfixUnaryExpression, expression.pos);
       node.operand = expression;
       node.operator = token();
       nextToken();
@@ -4135,19 +4142,19 @@ namespace Parser {
         //      var foo3 = require("subfolder
         //      import * as foo1 from "module-from-node
         // We want this import to be a statement rather than import call expression
-        sourceFile.flags |= NodeFlags.PossiblyContainsDynamicImport;
+        sourceFile.flags |= qt.NodeFlags.PossiblyContainsDynamicImport;
         expression = parseTokenNode<PrimaryExpression>();
       } else if (lookAhead(nextTokenIsDot)) {
         // This is an 'import.*' metaproperty (i.e. 'import.meta')
         const fullStart = scanner.getStartPos();
         nextToken(); // advance past the 'import'
         nextToken(); // advance past the dot
-        const node = createNode(SyntaxKind.MetaProperty, fullStart) as MetaProperty;
+        const node = createNode(qt.SyntaxKind.MetaProperty, fullStart) as MetaProperty;
         node.keywordToken = qt.SyntaxKind.ImportKeyword;
         node.name = parseIdentifierName();
         expression = finishNode(node);
 
-        sourceFile.flags |= NodeFlags.PossiblyContainsImportMeta;
+        sourceFile.flags |= qt.NodeFlags.PossiblyContainsImportMeta;
       } else {
         expression = parseMemberExpressionOrHigher();
       }
@@ -4168,7 +4175,7 @@ namespace Parser {
     //
     //   PrimaryExpression : See 11.1
     //      this
-    //      Identifier
+    //      qt.Identifier
     //      Literal
     //      ArrayLiteral
     //      ObjectLiteral
@@ -4229,9 +4236,9 @@ namespace Parser {
 
     // If we have seen "super" it must be followed by '(' or '.'.
     // If it wasn't then just try to parse out a '.' and report an error.
-    const node = <PropertyAccessExpression>createNode(SyntaxKind.PropertyAccessExpression, expression.pos);
+    const node = <PropertyAccessExpression>createNode(qt.SyntaxKind.PropertyAccessExpression, expression.pos);
     node.expression = expression;
-    parseExpectedToken(SyntaxKind.DotToken, Diagnostics.super_must_be_followed_by_an_argument_list_or_member_access);
+    parseExpectedToken(qt.SyntaxKind.DotToken, Diagnostics.super_must_be_followed_by_an_argument_list_or_member_access);
     // private names will never work with `super` (`super.#foo`), but that's a semantic error, not syntactic
     node.name = parseRightSideOfDot(/*allowIdentifierNames*/ true, /*allowPrivateIdentifiers*/ true);
     return finishNode(node);
@@ -4241,7 +4248,7 @@ namespace Parser {
     const opening = parseJsxOpeningOrSelfClosingElementOrOpeningFragment(inExpressionContext);
     let result: JsxElement | JsxSelfClosingElement | JsxFragment;
     if (opening.kind === qt.SyntaxKind.JsxOpeningElement) {
-      const node = <JsxElement>createNode(SyntaxKind.JsxElement, opening.pos);
+      const node = <JsxElement>createNode(qt.SyntaxKind.JsxElement, opening.pos);
       node.openingElement = opening;
 
       node.children = parseJsxChildren(node.openingElement);
@@ -4253,7 +4260,7 @@ namespace Parser {
 
       result = finishNode(node);
     } else if (opening.kind === qt.SyntaxKind.JsxOpeningFragment) {
-      const node = <JsxFragment>createNode(SyntaxKind.JsxFragment, opening.pos);
+      const node = <JsxFragment>createNode(qt.SyntaxKind.JsxFragment, opening.pos);
       node.openingFragment = opening;
       node.children = parseJsxChildren(node.openingFragment);
       node.closingFragment = parseJsxClosingFragment(inExpressionContext);
@@ -4276,13 +4283,13 @@ namespace Parser {
       const invalidElement = tryParse(() => parseJsxElementOrSelfClosingElementOrFragment(/*inExpressionContext*/ true));
       if (invalidElement) {
         parseErrorAtCurrentToken(Diagnostics.JSX_expressions_must_have_one_parent_element);
-        const badNode = <BinaryExpression>createNode(SyntaxKind.BinaryExpression, result.pos);
+        const badNode = <BinaryExpression>createNode(qt.SyntaxKind.BinaryExpression, result.pos);
         badNode.end = invalidElement.end;
         badNode.left = result;
         badNode.right = invalidElement;
-        badNode.operatorToken = createMissingNode(SyntaxKind.CommaToken, /*reportAtCurrentPosition*/ false);
+        badNode.operatorToken = createMissingNode(qt.SyntaxKind.CommaToken, /*reportAtCurrentPosition*/ false);
         badNode.operatorToken.pos = badNode.operatorToken.end = badNode.right.pos;
-        return <JsxElement>(<Node>badNode);
+        return <JsxElement>(<qt.Node>badNode);
       }
     }
 
@@ -4290,7 +4297,7 @@ namespace Parser {
   }
 
   function parseJsxText(): JsxText {
-    const node = <JsxText>createNode(SyntaxKind.JsxText);
+    const node = <JsxText>createNode(qt.SyntaxKind.JsxText);
     node.text = scanner.getTokenValue();
     node.containsOnlyTriviaWhiteSpaces = currentToken === qt.SyntaxKind.JsxTextAllWhiteSpaces;
     currentToken = scanner.scanJsxToken();
@@ -4327,7 +4334,7 @@ namespace Parser {
     }
   }
 
-  function parseJsxChildren(openingTag: JsxOpeningElement | JsxOpeningFragment): NodeArray<JsxChild> {
+  function parseJsxChildren(openingTag: JsxOpeningElement | JsxOpeningFragment): qt.NodeArray<JsxChild> {
     const list = [];
     const listPos = getNodePos();
     const saveParsingContext = parsingContext;
@@ -4344,7 +4351,7 @@ namespace Parser {
   }
 
   function parseJsxAttributes(): JsxAttributes {
-    const jsxAttributes = <JsxAttributes>createNode(SyntaxKind.JsxAttributes);
+    const jsxAttributes = <JsxAttributes>createNode(qt.SyntaxKind.JsxAttributes);
     jsxAttributes.properties = parseList(ParsingContext.JsxAttributes, parseJsxAttribute);
     return finishNode(jsxAttributes);
   }
@@ -4352,11 +4359,11 @@ namespace Parser {
   function parseJsxOpeningOrSelfClosingElementOrOpeningFragment(inExpressionContext: boolean): JsxOpeningElement | JsxSelfClosingElement | JsxOpeningFragment {
     const fullStart = scanner.getStartPos();
 
-    parseExpected(SyntaxKind.LessThanToken);
+    parseExpected(qt.SyntaxKind.LessThanToken);
 
     if (token() === qt.SyntaxKind.GreaterThanToken) {
       // See below for explanation of scanJsxText
-      const node: JsxOpeningFragment = <JsxOpeningFragment>createNode(SyntaxKind.JsxOpeningFragment, fullStart);
+      const node: JsxOpeningFragment = <JsxOpeningFragment>createNode(qt.SyntaxKind.JsxOpeningFragment, fullStart);
       scanJsxText();
       return finishNode(node);
     }
@@ -4371,17 +4378,17 @@ namespace Parser {
       // Closing tag, so scan the immediately-following text with the JSX scanning instead
       // of regular scanning to avoid treating illegal characters (e.g. '#') as immediate
       // scanning errors
-      node = <JsxOpeningElement>createNode(SyntaxKind.JsxOpeningElement, fullStart);
+      node = <JsxOpeningElement>createNode(qt.SyntaxKind.JsxOpeningElement, fullStart);
       scanJsxText();
     } else {
-      parseExpected(SyntaxKind.SlashToken);
+      parseExpected(qt.SyntaxKind.SlashToken);
       if (inExpressionContext) {
-        parseExpected(SyntaxKind.GreaterThanToken);
+        parseExpected(qt.SyntaxKind.GreaterThanToken);
       } else {
-        parseExpected(SyntaxKind.GreaterThanToken, /*diagnostic*/ undefined, /*shouldAdvance*/ false);
+        parseExpected(qt.SyntaxKind.GreaterThanToken, /*diagnostic*/ undefined, /*shouldAdvance*/ false);
         scanJsxText();
       }
-      node = <JsxSelfClosingElement>createNode(SyntaxKind.JsxSelfClosingElement, fullStart);
+      node = <JsxSelfClosingElement>createNode(qt.SyntaxKind.JsxSelfClosingElement, fullStart);
     }
 
     node.tagName = tagName;
@@ -4399,8 +4406,8 @@ namespace Parser {
     // We can't just simply use parseLeftHandSideExpressionOrHigher because then we will start consider class,function etc as a keyword
     // We only want to consider "this" as a primaryExpression
     let expression: JsxTagNameExpression = token() === qt.SyntaxKind.ThisKeyword ? parseTokenNode<ThisExpression>() : parseIdentifierName();
-    while (parseOptional(SyntaxKind.DotToken)) {
-      const propertyAccess: JsxTagNamePropertyAccess = <JsxTagNamePropertyAccess>createNode(SyntaxKind.PropertyAccessExpression, expression.pos);
+    while (parseOptional(qt.SyntaxKind.DotToken)) {
+      const propertyAccess: JsxTagNamePropertyAccess = <JsxTagNamePropertyAccess>createNode(qt.SyntaxKind.PropertyAccessExpression, expression.pos);
       propertyAccess.expression = expression;
       propertyAccess.name = parseRightSideOfDot(/*allowIdentifierNames*/ true, /*allowPrivateIdentifiers*/ false);
       expression = finishNode(propertyAccess);
@@ -4409,23 +4416,23 @@ namespace Parser {
   }
 
   function parseJsxExpression(inExpressionContext: boolean): JsxExpression | undefined {
-    const node = <JsxExpression>createNode(SyntaxKind.JsxExpression);
+    const node = <JsxExpression>createNode(qt.SyntaxKind.JsxExpression);
 
-    if (!parseExpected(SyntaxKind.OpenBraceToken)) {
+    if (!parseExpected(qt.SyntaxKind.OpenBraceToken)) {
       return undefined;
     }
 
     if (token() !== qt.SyntaxKind.CloseBraceToken) {
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+      node.dotDotDotToken = parseOptionalToken(qt.SyntaxKind.DotDotDotToken);
       // Only an AssignmentExpression is valid here per the JSX spec,
       // but we can unambiguously parse a comma sequence and provide
       // a better error message in grammar checking.
       node.expression = parseExpression();
     }
     if (inExpressionContext) {
-      parseExpected(SyntaxKind.CloseBraceToken);
+      parseExpected(qt.SyntaxKind.CloseBraceToken);
     } else {
-      if (parseExpected(SyntaxKind.CloseBraceToken, /*message*/ undefined, /*shouldAdvance*/ false)) {
+      if (parseExpected(qt.SyntaxKind.CloseBraceToken, /*message*/ undefined, /*shouldAdvance*/ false)) {
         scanJsxText();
       }
     }
@@ -4439,7 +4446,7 @@ namespace Parser {
     }
 
     scanJsxIdentifier();
-    const node = <JsxAttribute>createNode(SyntaxKind.JsxAttribute);
+    const node = <JsxAttribute>createNode(qt.SyntaxKind.JsxAttribute);
     node.name = parseIdentifierName();
     if (token() === qt.SyntaxKind.EqualsToken) {
       switch (scanJsxAttributeValue()) {
@@ -4455,47 +4462,47 @@ namespace Parser {
   }
 
   function parseJsxSpreadAttribute(): JsxSpreadAttribute {
-    const node = <JsxSpreadAttribute>createNode(SyntaxKind.JsxSpreadAttribute);
-    parseExpected(SyntaxKind.OpenBraceToken);
-    parseExpected(SyntaxKind.DotDotDotToken);
+    const node = <JsxSpreadAttribute>createNode(qt.SyntaxKind.JsxSpreadAttribute);
+    parseExpected(qt.SyntaxKind.OpenBraceToken);
+    parseExpected(qt.SyntaxKind.DotDotDotToken);
     node.expression = parseExpression();
-    parseExpected(SyntaxKind.CloseBraceToken);
+    parseExpected(qt.SyntaxKind.CloseBraceToken);
     return finishNode(node);
   }
 
   function parseJsxClosingElement(inExpressionContext: boolean): JsxClosingElement {
-    const node = <JsxClosingElement>createNode(SyntaxKind.JsxClosingElement);
-    parseExpected(SyntaxKind.LessThanSlashToken);
+    const node = <JsxClosingElement>createNode(qt.SyntaxKind.JsxClosingElement);
+    parseExpected(qt.SyntaxKind.LessThanSlashToken);
     node.tagName = parseJsxElementName();
     if (inExpressionContext) {
-      parseExpected(SyntaxKind.GreaterThanToken);
+      parseExpected(qt.SyntaxKind.GreaterThanToken);
     } else {
-      parseExpected(SyntaxKind.GreaterThanToken, /*diagnostic*/ undefined, /*shouldAdvance*/ false);
+      parseExpected(qt.SyntaxKind.GreaterThanToken, /*diagnostic*/ undefined, /*shouldAdvance*/ false);
       scanJsxText();
     }
     return finishNode(node);
   }
 
   function parseJsxClosingFragment(inExpressionContext: boolean): JsxClosingFragment {
-    const node = <JsxClosingFragment>createNode(SyntaxKind.JsxClosingFragment);
-    parseExpected(SyntaxKind.LessThanSlashToken);
+    const node = <JsxClosingFragment>createNode(qt.SyntaxKind.JsxClosingFragment);
+    parseExpected(qt.SyntaxKind.LessThanSlashToken);
     if (tokenIsIdentifierOrKeyword(token())) {
       parseErrorAtRange(parseJsxElementName(), Diagnostics.Expected_corresponding_closing_tag_for_JSX_fragment);
     }
     if (inExpressionContext) {
-      parseExpected(SyntaxKind.GreaterThanToken);
+      parseExpected(qt.SyntaxKind.GreaterThanToken);
     } else {
-      parseExpected(SyntaxKind.GreaterThanToken, /*diagnostic*/ undefined, /*shouldAdvance*/ false);
+      parseExpected(qt.SyntaxKind.GreaterThanToken, /*diagnostic*/ undefined, /*shouldAdvance*/ false);
       scanJsxText();
     }
     return finishNode(node);
   }
 
   function parseTypeAssertion(): TypeAssertion {
-    const node = <TypeAssertion>createNode(SyntaxKind.TypeAssertionExpression);
-    parseExpected(SyntaxKind.LessThanToken);
+    const node = <TypeAssertion>createNode(qt.SyntaxKind.TypeAssertionExpression);
+    parseExpected(qt.SyntaxKind.LessThanToken);
     node.type = parseType();
-    parseExpected(SyntaxKind.GreaterThanToken);
+    parseExpected(qt.SyntaxKind.GreaterThanToken);
     node.expression = parseSimpleUnaryExpression();
     return finishNode(node);
   }
@@ -4510,19 +4517,19 @@ namespace Parser {
   }
 
   function tryReparseOptionalChain(node: Expression) {
-    if (node.flags & NodeFlags.OptionalChain) {
+    if (node.flags & qt.NodeFlags.OptionalChain) {
       return true;
     }
     // check for an optional chain in a non-null expression
     if (isNonNullExpression(node)) {
       let expr = node.expression;
-      while (isNonNullExpression(expr) && !(expr.flags & NodeFlags.OptionalChain)) {
+      while (isNonNullExpression(expr) && !(expr.flags & qt.NodeFlags.OptionalChain)) {
         expr = expr.expression;
       }
-      if (expr.flags & NodeFlags.OptionalChain) {
+      if (expr.flags & qt.NodeFlags.OptionalChain) {
         // this is part of an optional chain. Walk down from `node` to `expression` and set the flag.
         while (isNonNullExpression(node)) {
-          node.flags |= NodeFlags.OptionalChain;
+          node.flags |= qt.NodeFlags.OptionalChain;
           node = node.expression;
         }
         return true;
@@ -4532,12 +4539,12 @@ namespace Parser {
   }
 
   function parsePropertyAccessExpressionRest(expression: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined) {
-    const propertyAccess = <PropertyAccessExpression>createNode(SyntaxKind.PropertyAccessExpression, expression.pos);
+    const propertyAccess = <PropertyAccessExpression>createNode(qt.SyntaxKind.PropertyAccessExpression, expression.pos);
     propertyAccess.expression = expression;
     propertyAccess.questionDotToken = questionDotToken;
     propertyAccess.name = parseRightSideOfDot(/*allowIdentifierNames*/ true, /*allowPrivateIdentifiers*/ true);
     if (questionDotToken || tryReparseOptionalChain(expression)) {
-      propertyAccess.flags |= NodeFlags.OptionalChain;
+      propertyAccess.flags |= qt.NodeFlags.OptionalChain;
       if (isPrivateIdentifier(propertyAccess.name)) {
         parseErrorAtRange(propertyAccess.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
       }
@@ -4546,12 +4553,12 @@ namespace Parser {
   }
 
   function parseElementAccessExpressionRest(expression: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined) {
-    const indexedAccess = <ElementAccessExpression>createNode(SyntaxKind.ElementAccessExpression, expression.pos);
+    const indexedAccess = <ElementAccessExpression>createNode(qt.SyntaxKind.ElementAccessExpression, expression.pos);
     indexedAccess.expression = expression;
     indexedAccess.questionDotToken = questionDotToken;
 
     if (token() === qt.SyntaxKind.CloseBracketToken) {
-      indexedAccess.argumentExpression = createMissingNode(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.An_element_access_expression_should_take_an_argument);
+      indexedAccess.argumentExpression = createMissingNode(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.An_element_access_expression_should_take_an_argument);
     } else {
       const argument = allowInAnd(parseExpression);
       if (isStringOrNumericLiteralLike(argument)) {
@@ -4560,9 +4567,9 @@ namespace Parser {
       indexedAccess.argumentExpression = argument;
     }
 
-    parseExpected(SyntaxKind.CloseBracketToken);
+    parseExpected(qt.SyntaxKind.CloseBracketToken);
     if (questionDotToken || tryReparseOptionalChain(expression)) {
-      indexedAccess.flags |= NodeFlags.OptionalChain;
+      indexedAccess.flags |= qt.NodeFlags.OptionalChain;
     }
     return finishNode(indexedAccess);
   }
@@ -4572,10 +4579,10 @@ namespace Parser {
       let questionDotToken: QuestionDotToken | undefined;
       let isPropertyAccess = false;
       if (allowOptionalChain && isStartOfOptionalPropertyOrElementAccessChain()) {
-        questionDotToken = parseExpectedToken(SyntaxKind.QuestionDotToken);
+        questionDotToken = parseExpectedToken(qt.SyntaxKind.QuestionDotToken);
         isPropertyAccess = tokenIsIdentifierOrKeyword(token());
       } else {
-        isPropertyAccess = parseOptional(SyntaxKind.DotToken);
+        isPropertyAccess = parseOptional(qt.SyntaxKind.DotToken);
       }
 
       if (isPropertyAccess) {
@@ -4585,14 +4592,14 @@ namespace Parser {
 
       if (!questionDotToken && token() === qt.SyntaxKind.ExclamationToken && !scanner.hasPrecedingLineBreak()) {
         nextToken();
-        const nonNullExpression = <NonNullExpression>createNode(SyntaxKind.NonNullExpression, expression.pos);
+        const nonNullExpression = <NonNullExpression>createNode(qt.SyntaxKind.NonNullExpression, expression.pos);
         nonNullExpression.expression = expression;
         expression = finishNode(nonNullExpression);
         continue;
       }
 
       // when in the [Decorator] context, we do not parse ElementAccess as it could be part of a ComputedPropertyName
-      if ((questionDotToken || !inDecoratorContext()) && parseOptional(SyntaxKind.OpenBracketToken)) {
+      if ((questionDotToken || !inDecoratorContext()) && parseOptional(qt.SyntaxKind.OpenBracketToken)) {
         expression = parseElementAccessExpressionRest(expression, questionDotToken);
         continue;
       }
@@ -4610,14 +4617,14 @@ namespace Parser {
     return token() === qt.SyntaxKind.NoSubstitutionTemplateLiteral || token() === qt.SyntaxKind.TemplateHead;
   }
 
-  function parseTaggedTemplateRest(tag: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined, typeArguments: NodeArray<TypeNode> | undefined) {
-    const tagExpression = <TaggedTemplateExpression>createNode(SyntaxKind.TaggedTemplateExpression, tag.pos);
+  function parseTaggedTemplateRest(tag: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined, typeArguments: qt.NodeArray<TypeNode> | undefined) {
+    const tagExpression = <TaggedTemplateExpression>createNode(qt.SyntaxKind.TaggedTemplateExpression, tag.pos);
     tagExpression.tag = tag;
     tagExpression.questionDotToken = questionDotToken;
     tagExpression.typeArguments = typeArguments;
     tagExpression.template = token() === qt.SyntaxKind.NoSubstitutionTemplateLiteral ? (reScanTemplateHeadOrNoSubstitutionTemplate(), parseLiteralNode()) : parseTemplateExpression(/*isTaggedTemplate*/ true);
-    if (questionDotToken || tag.flags & NodeFlags.OptionalChain) {
-      tagExpression.flags |= NodeFlags.OptionalChain;
+    if (questionDotToken || tag.flags & qt.NodeFlags.OptionalChain) {
+      tagExpression.flags |= qt.NodeFlags.OptionalChain;
     }
     return finishNode(tagExpression);
   }
@@ -4625,7 +4632,7 @@ namespace Parser {
   function parseCallExpressionRest(expression: LeftHandSideExpression): LeftHandSideExpression {
     while (true) {
       expression = parseMemberExpressionRest(expression, /*allowOptionalChain*/ true);
-      const questionDotToken = parseOptionalToken(SyntaxKind.QuestionDotToken);
+      const questionDotToken = parseOptionalToken(qt.SyntaxKind.QuestionDotToken);
 
       // handle 'foo<<T>()'
       if (token() === qt.SyntaxKind.LessThanToken || token() === qt.SyntaxKind.LessThanLessThanToken) {
@@ -4640,35 +4647,35 @@ namespace Parser {
             continue;
           }
 
-          const callExpr = <CallExpression>createNode(SyntaxKind.CallExpression, expression.pos);
+          const callExpr = <CallExpression>createNode(qt.SyntaxKind.CallExpression, expression.pos);
           callExpr.expression = expression;
           callExpr.questionDotToken = questionDotToken;
           callExpr.typeArguments = typeArguments;
           callExpr.arguments = parseArgumentList();
           if (questionDotToken || tryReparseOptionalChain(expression)) {
-            callExpr.flags |= NodeFlags.OptionalChain;
+            callExpr.flags |= qt.NodeFlags.OptionalChain;
           }
           expression = finishNode(callExpr);
           continue;
         }
       } else if (token() === qt.SyntaxKind.OpenParenToken) {
-        const callExpr = <CallExpression>createNode(SyntaxKind.CallExpression, expression.pos);
+        const callExpr = <CallExpression>createNode(qt.SyntaxKind.CallExpression, expression.pos);
         callExpr.expression = expression;
         callExpr.questionDotToken = questionDotToken;
         callExpr.arguments = parseArgumentList();
         if (questionDotToken || tryReparseOptionalChain(expression)) {
-          callExpr.flags |= NodeFlags.OptionalChain;
+          callExpr.flags |= qt.NodeFlags.OptionalChain;
         }
         expression = finishNode(callExpr);
         continue;
       }
       if (questionDotToken) {
         // We failed to parse anything, so report a missing identifier here.
-        const propertyAccess = createNode(SyntaxKind.PropertyAccessExpression, expression.pos) as PropertyAccessExpression;
+        const propertyAccess = createNode(qt.SyntaxKind.PropertyAccessExpression, expression.pos) as PropertyAccessExpression;
         propertyAccess.expression = expression;
         propertyAccess.questionDotToken = questionDotToken;
-        propertyAccess.name = createMissingNode(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ false, Diagnostics.Identifier_expected);
-        propertyAccess.flags |= NodeFlags.OptionalChain;
+        propertyAccess.name = createMissingNode(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ false, Diagnostics.Identifier_expected);
+        propertyAccess.flags |= qt.NodeFlags.OptionalChain;
         expression = finishNode(propertyAccess);
       }
       break;
@@ -4677,9 +4684,9 @@ namespace Parser {
   }
 
   function parseArgumentList() {
-    parseExpected(SyntaxKind.OpenParenToken);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     const result = parseDelimitedList(ParsingContext.ArgumentExpressions, parseArgumentExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
     return result;
   }
 
@@ -4690,7 +4697,7 @@ namespace Parser {
     nextToken();
 
     const typeArguments = parseDelimitedList(ParsingContext.TypeArguments, parseType);
-    if (!parseExpected(SyntaxKind.GreaterThanToken)) {
+    if (!parseExpected(qt.SyntaxKind.GreaterThanToken)) {
       // If it doesn't have the closing `>` then it's definitely not an type argument list.
       return undefined;
     }
@@ -4791,22 +4798,22 @@ namespace Parser {
   }
 
   function parseParenthesizedExpression(): ParenthesizedExpression {
-    const node = <ParenthesizedExpression>createNodeWithJSDoc(SyntaxKind.ParenthesizedExpression);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <ParenthesizedExpression>createNodeWithJSDoc(qt.SyntaxKind.ParenthesizedExpression);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
     return finishNode(node);
   }
 
   function parseSpreadElement(): Expression {
-    const node = <SpreadElement>createNode(SyntaxKind.SpreadElement);
-    parseExpected(SyntaxKind.DotDotDotToken);
+    const node = <SpreadElement>createNode(qt.SyntaxKind.SpreadElement);
+    parseExpected(qt.SyntaxKind.DotDotDotToken);
     node.expression = parseAssignmentExpressionOrHigher();
     return finishNode(node);
   }
 
   function parseArgumentOrArrayLiteralElement(): Expression {
-    return token() === qt.SyntaxKind.DotDotDotToken ? parseSpreadElement() : token() === qt.SyntaxKind.CommaToken ? <Expression>createNode(SyntaxKind.OmittedExpression) : parseAssignmentExpressionOrHigher();
+    return token() === qt.SyntaxKind.DotDotDotToken ? parseSpreadElement() : token() === qt.SyntaxKind.CommaToken ? <Expression>createNode(qt.SyntaxKind.OmittedExpression) : parseAssignmentExpressionOrHigher();
   }
 
   function parseArgumentExpression(): Expression {
@@ -4814,20 +4821,20 @@ namespace Parser {
   }
 
   function parseArrayLiteralExpression(): ArrayLiteralExpression {
-    const node = <ArrayLiteralExpression>createNode(SyntaxKind.ArrayLiteralExpression);
-    parseExpected(SyntaxKind.OpenBracketToken);
+    const node = <ArrayLiteralExpression>createNode(qt.SyntaxKind.ArrayLiteralExpression);
+    parseExpected(qt.SyntaxKind.OpenBracketToken);
     if (scanner.hasPrecedingLineBreak()) {
       node.multiLine = true;
     }
     node.elements = parseDelimitedList(ParsingContext.ArrayLiteralMembers, parseArgumentOrArrayLiteralElement);
-    parseExpected(SyntaxKind.CloseBracketToken);
+    parseExpected(qt.SyntaxKind.CloseBracketToken);
     return finishNode(node);
   }
 
   function parseObjectLiteralElement(): ObjectLiteralElementLike {
-    const node = <ObjectLiteralElementLike>createNodeWithJSDoc(SyntaxKind.Unknown);
+    const node = <ObjectLiteralElementLike>createNodeWithJSDoc(qt.SyntaxKind.Unknown);
 
-    if (parseOptionalToken(SyntaxKind.DotDotDotToken)) {
+    if (parseOptionalToken(qt.SyntaxKind.DotDotDotToken)) {
       node.kind = qt.SyntaxKind.SpreadAssignment;
       node.expression = parseAssignmentExpressionOrHigher();
       return finishNode(node);
@@ -4836,19 +4843,19 @@ namespace Parser {
     node.decorators = parseDecorators();
     node.modifiers = parseModifiers();
 
-    if (parseContextualModifier(SyntaxKind.GetKeyword)) {
+    if (parseContextualModifier(qt.SyntaxKind.GetKeyword)) {
       return parseAccessorDeclaration(node, qt.SyntaxKind.GetAccessor);
     }
-    if (parseContextualModifier(SyntaxKind.SetKeyword)) {
+    if (parseContextualModifier(qt.SyntaxKind.SetKeyword)) {
       return parseAccessorDeclaration(node, qt.SyntaxKind.SetAccessor);
     }
 
-    const asteriskToken = parseOptionalToken(SyntaxKind.AsteriskToken);
+    const asteriskToken = parseOptionalToken(qt.SyntaxKind.AsteriskToken);
     const tokenIsIdentifier = isIdentifier();
     node.name = parsePropertyName();
     // Disallowing of optional property assignments and definite assignment assertion happens in the grammar checker.
-    node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
-    node.exclamationToken = parseOptionalToken(SyntaxKind.ExclamationToken);
+    node.questionToken = parseOptionalToken(qt.SyntaxKind.QuestionToken);
+    node.exclamationToken = parseOptionalToken(qt.SyntaxKind.ExclamationToken);
 
     if (asteriskToken || token() === qt.SyntaxKind.OpenParenToken || token() === qt.SyntaxKind.LessThanToken) {
       return parseMethodDeclaration(node, asteriskToken);
@@ -4857,34 +4864,34 @@ namespace Parser {
     // check if it is short-hand property assignment or normal property assignment
     // NOTE: if token is EqualsToken it is interpreted as CoverInitializedName production
     // CoverInitializedName[Yield] :
-    //     IdentifierReference[?Yield] Initializer[In, ?Yield]
+    //     qt.IdentifierReference[?Yield] Initializer[In, ?Yield]
     // this is necessary because ObjectLiteral productions are also used to cover grammar for ObjectAssignmentPattern
     const isShorthandPropertyAssignment = tokenIsIdentifier && token() !== qt.SyntaxKind.ColonToken;
     if (isShorthandPropertyAssignment) {
       node.kind = qt.SyntaxKind.ShorthandPropertyAssignment;
-      const equalsToken = parseOptionalToken(SyntaxKind.EqualsToken);
+      const equalsToken = parseOptionalToken(qt.SyntaxKind.EqualsToken);
       if (equalsToken) {
         node.equalsToken = equalsToken;
         node.objectAssignmentInitializer = allowInAnd(parseAssignmentExpressionOrHigher);
       }
     } else {
       node.kind = qt.SyntaxKind.PropertyAssignment;
-      parseExpected(SyntaxKind.ColonToken);
+      parseExpected(qt.SyntaxKind.ColonToken);
       node.initializer = allowInAnd(parseAssignmentExpressionOrHigher);
     }
     return finishNode(node);
   }
 
   function parseObjectLiteralExpression(): ObjectLiteralExpression {
-    const node = <ObjectLiteralExpression>createNode(SyntaxKind.ObjectLiteralExpression);
+    const node = <ObjectLiteralExpression>createNode(qt.SyntaxKind.ObjectLiteralExpression);
     const openBracePosition = scanner.getTokenPos();
-    parseExpected(SyntaxKind.OpenBraceToken);
+    parseExpected(qt.SyntaxKind.OpenBraceToken);
     if (scanner.hasPrecedingLineBreak()) {
       node.multiLine = true;
     }
 
     node.properties = parseDelimitedList(ParsingContext.ObjectLiteralMembers, parseObjectLiteralElement, /*considerSemicolonAsDelimiter*/ true);
-    if (!parseExpected(SyntaxKind.CloseBraceToken)) {
+    if (!parseExpected(qt.SyntaxKind.CloseBraceToken)) {
       const lastError = qc.lastOrUndefined(parseDiagnostics);
       if (lastError && lastError.code === Diagnostics._0_expected.code) {
         addRelatedInfo(lastError, createFileDiagnostic(sourceFile, openBracePosition, 1, Diagnostics.The_parser_expected_to_find_a_to_match_the_token_here));
@@ -4904,16 +4911,16 @@ namespace Parser {
       setDecoratorContext(/*val*/ false);
     }
 
-    const node = <qt.FunctionExpression>createNodeWithJSDoc(SyntaxKind.FunctionExpression);
+    const node = <qt.FunctionExpression>createNodeWithJSDoc(qt.SyntaxKind.FunctionExpression);
     node.modifiers = parseModifiers();
-    parseExpected(SyntaxKind.FunctionKeyword);
-    node.asteriskToken = parseOptionalToken(SyntaxKind.AsteriskToken);
+    parseExpected(qt.SyntaxKind.FunctionKeyword);
+    node.asteriskToken = parseOptionalToken(qt.SyntaxKind.AsteriskToken);
 
     const isGenerator = node.asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
     const isAsync = hasModifierOfKind(node, qt.SyntaxKind.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
     node.name = isGenerator && isAsync ? doInYieldAndAwaitContext(parseOptionalIdentifier) : isGenerator ? doInYieldContext(parseOptionalIdentifier) : isAsync ? doInAwaitContext(parseOptionalIdentifier) : parseOptionalIdentifier();
 
-    fillSignature(SyntaxKind.ColonToken, isGenerator | isAsync, node);
+    fillSignature(qt.SyntaxKind.ColonToken, isGenerator | isAsync, node);
     node.body = parseFunctionBlock(isGenerator | isAsync);
 
     if (saveDecoratorContext) {
@@ -4923,15 +4930,15 @@ namespace Parser {
     return finishNode(node);
   }
 
-  function parseOptionalIdentifier(): Identifier | undefined {
+  function parseOptionalIdentifier(): qt.Identifier | undefined {
     return isIdentifier() ? parseIdentifier() : undefined;
   }
 
   function parseNewExpressionOrNewDotTarget(): NewExpression | MetaProperty {
     const fullStart = scanner.getStartPos();
-    parseExpected(SyntaxKind.NewKeyword);
-    if (parseOptional(SyntaxKind.DotToken)) {
-      const node = <MetaProperty>createNode(SyntaxKind.MetaProperty, fullStart);
+    parseExpected(qt.SyntaxKind.NewKeyword);
+    if (parseOptional(qt.SyntaxKind.DotToken)) {
+      const node = <MetaProperty>createNode(qt.SyntaxKind.MetaProperty, fullStart);
       node.keywordToken = qt.SyntaxKind.NewKeyword;
       node.name = parseIdentifierName();
       return finishNode(node);
@@ -4950,7 +4957,7 @@ namespace Parser {
       break;
     }
 
-    const node = <NewExpression>createNode(SyntaxKind.NewExpression, fullStart);
+    const node = <NewExpression>createNode(qt.SyntaxKind.NewExpression, fullStart);
     node.expression = expression;
     node.typeArguments = typeArguments;
     if (token() === qt.SyntaxKind.OpenParenToken) {
@@ -4963,15 +4970,15 @@ namespace Parser {
 
   // STATEMENTS
   function parseBlock(ignoreMissingOpenBrace: boolean, diagnosticMessage?: qt.DiagnosticMessage): Block {
-    const node = <Block>createNode(SyntaxKind.Block);
+    const node = <Block>createNode(qt.SyntaxKind.Block);
     const openBracePosition = scanner.getTokenPos();
-    if (parseExpected(SyntaxKind.OpenBraceToken, diagnosticMessage) || ignoreMissingOpenBrace) {
+    if (parseExpected(qt.SyntaxKind.OpenBraceToken, diagnosticMessage) || ignoreMissingOpenBrace) {
       if (scanner.hasPrecedingLineBreak()) {
         node.multiLine = true;
       }
 
       node.statements = parseList(ParsingContext.BlockStatements, parseStatement);
-      if (!parseExpected(SyntaxKind.CloseBraceToken)) {
+      if (!parseExpected(qt.SyntaxKind.CloseBraceToken)) {
         const lastError = qc.lastOrUndefined(parseDiagnostics);
         if (lastError && lastError.code === Diagnostics._0_expected.code) {
           addRelatedInfo(lastError, createFileDiagnostic(sourceFile, openBracePosition, 1, Diagnostics.The_parser_expected_to_find_a_to_match_the_token_here));
@@ -5010,54 +5017,54 @@ namespace Parser {
   }
 
   function parseEmptyStatement(): Statement {
-    const node = <Statement>createNode(SyntaxKind.EmptyStatement);
-    parseExpected(SyntaxKind.SemicolonToken);
+    const node = <Statement>createNode(qt.SyntaxKind.EmptyStatement);
+    parseExpected(qt.SyntaxKind.SemicolonToken);
     return finishNode(node);
   }
 
   function parseIfStatement(): IfStatement {
-    const node = <IfStatement>createNode(SyntaxKind.IfStatement);
-    parseExpected(SyntaxKind.IfKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <IfStatement>createNode(qt.SyntaxKind.IfStatement);
+    parseExpected(qt.SyntaxKind.IfKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
     node.thenStatement = parseStatement();
-    node.elseStatement = parseOptional(SyntaxKind.ElseKeyword) ? parseStatement() : undefined;
+    node.elseStatement = parseOptional(qt.SyntaxKind.ElseKeyword) ? parseStatement() : undefined;
     return finishNode(node);
   }
 
   function parseDoStatement(): DoStatement {
-    const node = <DoStatement>createNode(SyntaxKind.DoStatement);
-    parseExpected(SyntaxKind.DoKeyword);
+    const node = <DoStatement>createNode(qt.SyntaxKind.DoStatement);
+    parseExpected(qt.SyntaxKind.DoKeyword);
     node.statement = parseStatement();
-    parseExpected(SyntaxKind.WhileKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    parseExpected(qt.SyntaxKind.WhileKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
 
     // From: https://mail.mozilla.org/pipermail/es-discuss/2011-August/016188.html
     // 157 min --- All allen at wirfs-brock.com CONF --- "do{;}while(false)false" prohibited in
     // spec but allowed in consensus reality. Approved -- this is the de-facto standard whereby
     //  do;while(0)x will have a semicolon inserted before x.
-    parseOptional(SyntaxKind.SemicolonToken);
+    parseOptional(qt.SyntaxKind.SemicolonToken);
     return finishNode(node);
   }
 
   function parseWhileStatement(): WhileStatement {
-    const node = <WhileStatement>createNode(SyntaxKind.WhileStatement);
-    parseExpected(SyntaxKind.WhileKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <WhileStatement>createNode(qt.SyntaxKind.WhileStatement);
+    parseExpected(qt.SyntaxKind.WhileKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
     node.statement = parseStatement();
     return finishNode(node);
   }
 
   function parseForOrForInOrForOfStatement(): Statement {
     const pos = getNodePos();
-    parseExpected(SyntaxKind.ForKeyword);
-    const awaitToken = parseOptionalToken(SyntaxKind.AwaitKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    parseExpected(qt.SyntaxKind.ForKeyword);
+    const awaitToken = parseOptionalToken(qt.SyntaxKind.AwaitKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
 
     let initializer!: qt.VariableDeclarationList | Expression;
     if (token() !== qt.SyntaxKind.SemicolonToken) {
@@ -5068,31 +5075,31 @@ namespace Parser {
       }
     }
     let forOrForInOrForOfStatement: IterationStatement;
-    if (awaitToken ? parseExpected(SyntaxKind.OfKeyword) : parseOptional(SyntaxKind.OfKeyword)) {
-      const forOfStatement = <ForOfStatement>createNode(SyntaxKind.ForOfStatement, pos);
+    if (awaitToken ? parseExpected(qt.SyntaxKind.OfKeyword) : parseOptional(qt.SyntaxKind.OfKeyword)) {
+      const forOfStatement = <ForOfStatement>createNode(qt.SyntaxKind.ForOfStatement, pos);
       forOfStatement.awaitModifier = awaitToken;
       forOfStatement.initializer = initializer;
       forOfStatement.expression = allowInAnd(parseAssignmentExpressionOrHigher);
-      parseExpected(SyntaxKind.CloseParenToken);
+      parseExpected(qt.SyntaxKind.CloseParenToken);
       forOrForInOrForOfStatement = forOfStatement;
-    } else if (parseOptional(SyntaxKind.InKeyword)) {
-      const forInStatement = <ForInStatement>createNode(SyntaxKind.ForInStatement, pos);
+    } else if (parseOptional(qt.SyntaxKind.InKeyword)) {
+      const forInStatement = <ForInStatement>createNode(qt.SyntaxKind.ForInStatement, pos);
       forInStatement.initializer = initializer;
       forInStatement.expression = allowInAnd(parseExpression);
-      parseExpected(SyntaxKind.CloseParenToken);
+      parseExpected(qt.SyntaxKind.CloseParenToken);
       forOrForInOrForOfStatement = forInStatement;
     } else {
-      const forStatement = <ForStatement>createNode(SyntaxKind.ForStatement, pos);
+      const forStatement = <ForStatement>createNode(qt.SyntaxKind.ForStatement, pos);
       forStatement.initializer = initializer;
-      parseExpected(SyntaxKind.SemicolonToken);
+      parseExpected(qt.SyntaxKind.SemicolonToken);
       if (token() !== qt.SyntaxKind.SemicolonToken && token() !== qt.SyntaxKind.CloseParenToken) {
         forStatement.condition = allowInAnd(parseExpression);
       }
-      parseExpected(SyntaxKind.SemicolonToken);
+      parseExpected(qt.SyntaxKind.SemicolonToken);
       if (token() !== qt.SyntaxKind.CloseParenToken) {
         forStatement.incrementor = allowInAnd(parseExpression);
       }
-      parseExpected(SyntaxKind.CloseParenToken);
+      parseExpected(qt.SyntaxKind.CloseParenToken);
       forOrForInOrForOfStatement = forStatement;
     }
 
@@ -5114,9 +5121,9 @@ namespace Parser {
   }
 
   function parseReturnStatement(): ReturnStatement {
-    const node = <ReturnStatement>createNode(SyntaxKind.ReturnStatement);
+    const node = <ReturnStatement>createNode(qt.SyntaxKind.ReturnStatement);
 
-    parseExpected(SyntaxKind.ReturnKeyword);
+    parseExpected(qt.SyntaxKind.ReturnKeyword);
     if (!canParseSemicolon()) {
       node.expression = allowInAnd(parseExpression);
     }
@@ -5126,28 +5133,28 @@ namespace Parser {
   }
 
   function parseWithStatement(): WithStatement {
-    const node = <WithStatement>createNode(SyntaxKind.WithStatement);
-    parseExpected(SyntaxKind.WithKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <WithStatement>createNode(qt.SyntaxKind.WithStatement);
+    parseExpected(qt.SyntaxKind.WithKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
-    node.statement = doInsideOfContext(NodeFlags.InWithStatement, parseStatement);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
+    node.statement = doInsideOfContext(qt.NodeFlags.InWithStatement, parseStatement);
     return finishNode(node);
   }
 
   function parseCaseClause(): CaseClause {
-    const node = <CaseClause>createNode(SyntaxKind.CaseClause);
-    parseExpected(SyntaxKind.CaseKeyword);
+    const node = <CaseClause>createNode(qt.SyntaxKind.CaseClause);
+    parseExpected(qt.SyntaxKind.CaseKeyword);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.ColonToken);
+    parseExpected(qt.SyntaxKind.ColonToken);
     node.statements = parseList(ParsingContext.SwitchClauseStatements, parseStatement);
     return finishNode(node);
   }
 
   function parseDefaultClause(): DefaultClause {
-    const node = <DefaultClause>createNode(SyntaxKind.DefaultClause);
-    parseExpected(SyntaxKind.DefaultKeyword);
-    parseExpected(SyntaxKind.ColonToken);
+    const node = <DefaultClause>createNode(qt.SyntaxKind.DefaultClause);
+    parseExpected(qt.SyntaxKind.DefaultKeyword);
+    parseExpected(qt.SyntaxKind.ColonToken);
     node.statements = parseList(ParsingContext.SwitchClauseStatements, parseStatement);
     return finishNode(node);
   }
@@ -5157,15 +5164,15 @@ namespace Parser {
   }
 
   function parseSwitchStatement(): SwitchStatement {
-    const node = <SwitchStatement>createNode(SyntaxKind.SwitchStatement);
-    parseExpected(SyntaxKind.SwitchKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <SwitchStatement>createNode(qt.SyntaxKind.SwitchStatement);
+    parseExpected(qt.SyntaxKind.SwitchKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = allowInAnd(parseExpression);
-    parseExpected(SyntaxKind.CloseParenToken);
-    const caseBlock = <CaseBlock>createNode(SyntaxKind.CaseBlock);
-    parseExpected(SyntaxKind.OpenBraceToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
+    const caseBlock = <CaseBlock>createNode(qt.SyntaxKind.CaseBlock);
+    parseExpected(qt.SyntaxKind.OpenBraceToken);
     caseBlock.clauses = parseList(ParsingContext.SwitchClauses, parseCaseOrDefaultClause);
-    parseExpected(SyntaxKind.CloseBraceToken);
+    parseExpected(qt.SyntaxKind.CloseBraceToken);
     node.caseBlock = finishNode(caseBlock);
     return finishNode(node);
   }
@@ -5179,8 +5186,8 @@ namespace Parser {
     // directly as that might consume an expression on the following line.
     // We just return 'undefined' in that case.  The actual error will be reported in the
     // grammar walker.
-    const node = <ThrowStatement>createNode(SyntaxKind.ThrowStatement);
-    parseExpected(SyntaxKind.ThrowKeyword);
+    const node = <ThrowStatement>createNode(qt.SyntaxKind.ThrowStatement);
+    parseExpected(qt.SyntaxKind.ThrowKeyword);
     node.expression = scanner.hasPrecedingLineBreak() ? undefined : allowInAnd(parseExpression);
     parseSemicolon();
     return finishNode(node);
@@ -5188,16 +5195,16 @@ namespace Parser {
 
   // TODO: Review for error recovery
   function parseTryStatement(): TryStatement {
-    const node = <TryStatement>createNode(SyntaxKind.TryStatement);
+    const node = <TryStatement>createNode(qt.SyntaxKind.TryStatement);
 
-    parseExpected(SyntaxKind.TryKeyword);
+    parseExpected(qt.SyntaxKind.TryKeyword);
     node.tryBlock = parseBlock(/*ignoreMissingOpenBrace*/ false);
     node.catchClause = token() === qt.SyntaxKind.CatchKeyword ? parseCatchClause() : undefined;
 
     // If we don't have a catch clause, then we must have a finally clause.  Try to parse
     // one out no matter what.
     if (!node.catchClause || token() === qt.SyntaxKind.FinallyKeyword) {
-      parseExpected(SyntaxKind.FinallyKeyword);
+      parseExpected(qt.SyntaxKind.FinallyKeyword);
       node.finallyBlock = parseBlock(/*ignoreMissingOpenBrace*/ false);
     }
 
@@ -5205,12 +5212,12 @@ namespace Parser {
   }
 
   function parseCatchClause(): CatchClause {
-    const result = <CatchClause>createNode(SyntaxKind.CatchClause);
-    parseExpected(SyntaxKind.CatchKeyword);
+    const result = <CatchClause>createNode(qt.SyntaxKind.CatchClause);
+    parseExpected(qt.SyntaxKind.CatchKeyword);
 
-    if (parseOptional(SyntaxKind.OpenParenToken)) {
+    if (parseOptional(qt.SyntaxKind.OpenParenToken)) {
       result.variableDeclaration = parseVariableDeclaration();
-      parseExpected(SyntaxKind.CloseParenToken);
+      parseExpected(qt.SyntaxKind.CloseParenToken);
     } else {
       // Keep shape of node to avoid degrading performance.
       result.variableDeclaration = undefined;
@@ -5221,8 +5228,8 @@ namespace Parser {
   }
 
   function parseDebuggerStatement(): Statement {
-    const node = <Statement>createNode(SyntaxKind.DebuggerStatement);
-    parseExpected(SyntaxKind.DebuggerKeyword);
+    const node = <Statement>createNode(qt.SyntaxKind.DebuggerStatement);
+    parseExpected(qt.SyntaxKind.DebuggerKeyword);
     parseSemicolon();
     return finishNode(node);
   }
@@ -5233,7 +5240,7 @@ namespace Parser {
     // a colon.
     const node = <ExpressionStatement | LabeledStatement>createNodeWithJSDoc(token() === qt.SyntaxKind.Identifier ? qt.SyntaxKind.Unknown : qt.SyntaxKind.ExpressionStatement);
     const expression = allowInAnd(parseExpression);
-    if (expression.kind === qt.SyntaxKind.Identifier && parseOptional(SyntaxKind.ColonToken)) {
+    if (expression.kind === qt.SyntaxKind.Identifier && parseOptional(qt.SyntaxKind.ColonToken)) {
       node.kind = qt.SyntaxKind.LabeledStatement;
       (<LabeledStatement>node).label = expression;
       (<LabeledStatement>node).statement = parseStatement();
@@ -5425,16 +5432,16 @@ namespace Parser {
       case qt.SyntaxKind.OpenBraceToken:
         return parseBlock(/*ignoreMissingOpenBrace*/ false);
       case qt.SyntaxKind.VarKeyword:
-        return parseVariableStatement(<VariableStatement>createNodeWithJSDoc(SyntaxKind.VariableDeclaration));
+        return parseVariableStatement(<VariableStatement>createNodeWithJSDoc(qt.SyntaxKind.VariableDeclaration));
       case qt.SyntaxKind.LetKeyword:
         if (isLetDeclaration()) {
-          return parseVariableStatement(<VariableStatement>createNodeWithJSDoc(SyntaxKind.VariableDeclaration));
+          return parseVariableStatement(<VariableStatement>createNodeWithJSDoc(qt.SyntaxKind.VariableDeclaration));
         }
         break;
       case qt.SyntaxKind.FunctionKeyword:
-        return parseFunctionDeclaration(<qt.FunctionDeclaration>createNodeWithJSDoc(SyntaxKind.FunctionDeclaration));
+        return parseFunctionDeclaration(<qt.FunctionDeclaration>createNodeWithJSDoc(qt.SyntaxKind.FunctionDeclaration));
       case qt.SyntaxKind.ClassKeyword:
-        return parseClassDeclaration(<ClassDeclaration>createNodeWithJSDoc(SyntaxKind.ClassDeclaration));
+        return parseClassDeclaration(<ClassDeclaration>createNodeWithJSDoc(qt.SyntaxKind.ClassDeclaration));
       case qt.SyntaxKind.IfKeyword:
         return parseIfStatement();
       case qt.SyntaxKind.DoKeyword:
@@ -5444,9 +5451,9 @@ namespace Parser {
       case qt.SyntaxKind.ForKeyword:
         return parseForOrForInOrForOfStatement();
       case qt.SyntaxKind.ContinueKeyword:
-        return parseBreakOrContinueStatement(SyntaxKind.ContinueStatement);
+        return parseBreakOrContinueStatement(qt.SyntaxKind.ContinueStatement);
       case qt.SyntaxKind.BreakKeyword:
-        return parseBreakOrContinueStatement(SyntaxKind.BreakStatement);
+        return parseBreakOrContinueStatement(qt.SyntaxKind.BreakStatement);
       case qt.SyntaxKind.ReturnKeyword:
         return parseReturnStatement();
       case qt.SyntaxKind.WithKeyword:
@@ -5507,21 +5514,21 @@ namespace Parser {
       }
     }
 
-    const node = <Statement>createNodeWithJSDoc(SyntaxKind.Unknown);
+    const node = <Statement>createNodeWithJSDoc(qt.SyntaxKind.Unknown);
     node.decorators = parseDecorators();
     node.modifiers = parseModifiers();
     if (isAmbient) {
       for (const m of node.modifiers!) {
-        m.flags |= NodeFlags.Ambient;
+        m.flags |= qt.NodeFlags.Ambient;
       }
-      return doInsideOfContext(NodeFlags.Ambient, () => parseDeclarationWorker(node));
+      return doInsideOfContext(qt.NodeFlags.Ambient, () => parseDeclarationWorker(node));
     } else {
       return parseDeclarationWorker(node);
     }
   }
 
   function tryReuseAmbientDeclaration(): Statement | undefined {
-    return doInsideOfContext(NodeFlags.Ambient, () => {
+    return doInsideOfContext(qt.NodeFlags.Ambient, () => {
       const node = currentNode(parsingContext);
       if (node) {
         return consumeNode(node);
@@ -5566,7 +5573,7 @@ namespace Parser {
         if (node.decorators || node.modifiers) {
           // We reached this point because we encountered decorators and/or modifiers and assumed a declaration
           // would follow. For recovery and error reporting purposes, return an incomplete declaration.
-          const missing = createMissingNode<Statement>(SyntaxKind.MissingDeclaration, /*reportAtCurrentPosition*/ true, Diagnostics.Declaration_expected);
+          const missing = createMissingNode<Statement>(qt.SyntaxKind.MissingDeclaration, /*reportAtCurrentPosition*/ true, Diagnostics.Declaration_expected);
           missing.pos = node.pos;
           missing.decorators = node.decorators;
           missing.modifiers = node.modifiers;
@@ -5594,24 +5601,24 @@ namespace Parser {
 
   function parseArrayBindingElement(): ArrayBindingElement {
     if (token() === qt.SyntaxKind.CommaToken) {
-      return <OmittedExpression>createNode(SyntaxKind.OmittedExpression);
+      return <OmittedExpression>createNode(qt.SyntaxKind.OmittedExpression);
     }
-    const node = <BindingElement>createNode(SyntaxKind.BindingElement);
-    node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+    const node = <BindingElement>createNode(qt.SyntaxKind.BindingElement);
+    node.dotDotDotToken = parseOptionalToken(qt.SyntaxKind.DotDotDotToken);
     node.name = parseIdentifierOrPattern();
     node.initializer = parseInitializer();
     return finishNode(node);
   }
 
   function parseObjectBindingElement(): qt.BindingElement {
-    const node = <BindingElement>createNode(SyntaxKind.BindingElement);
-    node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+    const node = <BindingElement>createNode(qt.SyntaxKind.BindingElement);
+    node.dotDotDotToken = parseOptionalToken(qt.SyntaxKind.DotDotDotToken);
     const tokenIsIdentifier = isIdentifier();
     const propertyName = parsePropertyName();
     if (tokenIsIdentifier && token() !== qt.SyntaxKind.ColonToken) {
       node.name = propertyName;
     } else {
-      parseExpected(SyntaxKind.ColonToken);
+      parseExpected(qt.SyntaxKind.ColonToken);
       node.propertyName = propertyName;
       node.name = parseIdentifierOrPattern();
     }
@@ -5620,18 +5627,18 @@ namespace Parser {
   }
 
   function parseObjectBindingPattern(): ObjectBindingPattern {
-    const node = <ObjectBindingPattern>createNode(SyntaxKind.ObjectBindingPattern);
-    parseExpected(SyntaxKind.OpenBraceToken);
+    const node = <ObjectBindingPattern>createNode(qt.SyntaxKind.ObjectBindingPattern);
+    parseExpected(qt.SyntaxKind.OpenBraceToken);
     node.elements = parseDelimitedList(ParsingContext.ObjectBindingElements, parseObjectBindingElement);
-    parseExpected(SyntaxKind.CloseBraceToken);
+    parseExpected(qt.SyntaxKind.CloseBraceToken);
     return finishNode(node);
   }
 
   function parseArrayBindingPattern(): ArrayBindingPattern {
-    const node = <ArrayBindingPattern>createNode(SyntaxKind.ArrayBindingPattern);
-    parseExpected(SyntaxKind.OpenBracketToken);
+    const node = <ArrayBindingPattern>createNode(qt.SyntaxKind.ArrayBindingPattern);
+    parseExpected(qt.SyntaxKind.OpenBracketToken);
     node.elements = parseDelimitedList(ParsingContext.ArrayBindingElements, parseArrayBindingElement);
-    parseExpected(SyntaxKind.CloseBracketToken);
+    parseExpected(qt.SyntaxKind.CloseBracketToken);
     return finishNode(node);
   }
 
@@ -5639,7 +5646,7 @@ namespace Parser {
     return token() === qt.SyntaxKind.OpenBraceToken || token() === qt.SyntaxKind.OpenBracketToken || token() === qt.SyntaxKind.PrivateIdentifier || isIdentifier();
   }
 
-  function parseIdentifierOrPattern(privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier | qt.BindingPattern {
+  function parseIdentifierOrPattern(privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): qt.Identifier | qt.BindingPattern {
     if (token() === qt.SyntaxKind.OpenBracketToken) {
       return parseArrayBindingPattern();
     }
@@ -5654,7 +5661,7 @@ namespace Parser {
   }
 
   function parseVariableDeclaration(allowExclamation?: boolean): qt.VariableDeclaration {
-    const node = <VariableDeclaration>createNode(SyntaxKind.VariableDeclaration);
+    const node = <VariableDeclaration>createNode(qt.SyntaxKind.VariableDeclaration);
     node.name = parseIdentifierOrPattern(Diagnostics.Private_identifiers_are_not_allowed_in_variable_declarations);
     if (allowExclamation && node.name.kind === qt.SyntaxKind.Identifier && token() === qt.SyntaxKind.ExclamationToken && !scanner.hasPrecedingLineBreak()) {
       node.exclamationToken = parseTokenNode<Token<SyntaxKind.ExclamationToken>>();
@@ -5667,16 +5674,16 @@ namespace Parser {
   }
 
   function parseVariableDeclarationList(inForStatementInitializer: boolean): qt.VariableDeclarationList {
-    const node = <VariableDeclarationList>createNode(SyntaxKind.VariableDeclarationList);
+    const node = <VariableDeclarationList>createNode(qt.SyntaxKind.VariableDeclarationList);
 
     switch (token()) {
       case qt.SyntaxKind.VarKeyword:
         break;
       case qt.SyntaxKind.LetKeyword:
-        node.flags |= NodeFlags.Let;
+        node.flags |= qt.NodeFlags.Let;
         break;
       case qt.SyntaxKind.ConstKeyword:
-        node.flags |= NodeFlags.Const;
+        node.flags |= qt.NodeFlags.Const;
         break;
       default:
         Debug.fail();
@@ -5720,19 +5727,19 @@ namespace Parser {
 
   function parseFunctionDeclaration(node: FunctionDeclaration): FunctionDeclaration {
     node.kind = qt.SyntaxKind.FunctionDeclaration;
-    parseExpected(SyntaxKind.FunctionKeyword);
-    node.asteriskToken = parseOptionalToken(SyntaxKind.AsteriskToken);
+    parseExpected(qt.SyntaxKind.FunctionKeyword);
+    node.asteriskToken = parseOptionalToken(qt.SyntaxKind.AsteriskToken);
     node.name = hasModifierOfKind(node, qt.SyntaxKind.DefaultKeyword) ? parseOptionalIdentifier() : parseIdentifier();
     const isGenerator = node.asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
     const isAsync = hasModifierOfKind(node, qt.SyntaxKind.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
-    fillSignature(SyntaxKind.ColonToken, isGenerator | isAsync, node);
+    fillSignature(qt.SyntaxKind.ColonToken, isGenerator | isAsync, node);
     node.body = parseFunctionBlockOrSemicolon(isGenerator | isAsync, Diagnostics.or_expected);
     return finishNode(node);
   }
 
   function parseConstructorName() {
     if (token() === qt.SyntaxKind.ConstructorKeyword) {
-      return parseExpected(SyntaxKind.ConstructorKeyword);
+      return parseExpected(qt.SyntaxKind.ConstructorKeyword);
     }
     if (token() === qt.SyntaxKind.StringLiteral && lookAhead(nextToken) === qt.SyntaxKind.OpenParenToken) {
       return tryParse(() => {
@@ -5746,7 +5753,7 @@ namespace Parser {
     return tryParse(() => {
       if (parseConstructorName()) {
         node.kind = qt.SyntaxKind.Constructor;
-        fillSignature(SyntaxKind.ColonToken, SignatureFlags.None, node);
+        fillSignature(qt.SyntaxKind.ColonToken, SignatureFlags.None, node);
         node.body = parseFunctionBlockOrSemicolon(SignatureFlags.None, Diagnostics.or_expected);
         return finishNode(node);
       }
@@ -5758,7 +5765,7 @@ namespace Parser {
     node.asteriskToken = asteriskToken;
     const isGenerator = asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
     const isAsync = hasModifierOfKind(node, qt.SyntaxKind.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
-    fillSignature(SyntaxKind.ColonToken, isGenerator | isAsync, node);
+    fillSignature(qt.SyntaxKind.ColonToken, isGenerator | isAsync, node);
     node.body = parseFunctionBlockOrSemicolon(isGenerator | isAsync, diagnosticMessage);
     return finishNode(node);
   }
@@ -5769,18 +5776,18 @@ namespace Parser {
       node.exclamationToken = parseTokenNode<Token<SyntaxKind.ExclamationToken>>();
     }
     node.type = parseTypeAnnotation();
-    node.initializer = doOutsideOfContext(NodeFlags.YieldContext | NodeFlags.AwaitContext | NodeFlags.DisallowInContext, parseInitializer);
+    node.initializer = doOutsideOfContext(qt.NodeFlags.YieldContext | qt.NodeFlags.AwaitContext | qt.NodeFlags.DisallowInContext, parseInitializer);
 
     parseSemicolon();
     return finishNode(node);
   }
 
   function parsePropertyOrMethodDeclaration(node: PropertyDeclaration | MethodDeclaration): PropertyDeclaration | MethodDeclaration {
-    const asteriskToken = parseOptionalToken(SyntaxKind.AsteriskToken);
+    const asteriskToken = parseOptionalToken(qt.SyntaxKind.AsteriskToken);
     node.name = parsePropertyName();
     // Note: this is not legal as per the grammar.  But we allow it in the parser and
     // report an error in the grammar checker.
-    node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
+    node.questionToken = parseOptionalToken(qt.SyntaxKind.QuestionToken);
     if (asteriskToken || token() === qt.SyntaxKind.OpenParenToken || token() === qt.SyntaxKind.LessThanToken) {
       return parseMethodDeclaration(<qt.MethodDeclaration>node, asteriskToken, Diagnostics.or_expected);
     }
@@ -5790,7 +5797,7 @@ namespace Parser {
   function parseAccessorDeclaration(node: AccessorDeclaration, kind: AccessorDeclaration['kind']): AccessorDeclaration {
     node.kind = kind;
     node.name = parsePropertyName();
-    fillSignature(SyntaxKind.ColonToken, SignatureFlags.None, node);
+    fillSignature(qt.SyntaxKind.ColonToken, SignatureFlags.None, node);
     node.body = parseFunctionBlockOrSemicolon(SignatureFlags.None);
     return finishNode(node);
   }
@@ -5864,15 +5871,15 @@ namespace Parser {
     return false;
   }
 
-  function parseDecorators(): NodeArray<qt.Decorator> | undefined {
+  function parseDecorators(): qt.NodeArray<qt.Decorator> | undefined {
     let list: Decorator[] | undefined;
     const listPos = getNodePos();
     while (true) {
       const decoratorStart = getNodePos();
-      if (!parseOptional(SyntaxKind.AtToken)) {
+      if (!parseOptional(qt.SyntaxKind.AtToken)) {
         break;
       }
-      const decorator = <qt.Decorator>createNode(SyntaxKind.Decorator, decoratorStart);
+      const decorator = <qt.Decorator>createNode(qt.SyntaxKind.Decorator, decoratorStart);
       decorator.expression = doInDecoratorContext(parseLeftHandSideExpressionOrHigher);
       finishNode(decorator);
       (list || (list = [])).push(decorator);
@@ -5887,7 +5894,7 @@ namespace Parser {
    *
    * In such situations, 'permitInvalidConstAsModifier' should be set to true.
    */
-  function parseModifiers(permitInvalidConstAsModifier?: boolean): NodeArray<Modifier> | undefined {
+  function parseModifiers(permitInvalidConstAsModifier?: boolean): qt.NodeArray<Modifier> | undefined {
     let list: Modifier[] | undefined;
     const listPos = getNodePos();
     while (true) {
@@ -5912,8 +5919,8 @@ namespace Parser {
     return list && createNodeArray(list, listPos);
   }
 
-  function parseModifiersForArrowFunction(): NodeArray<Modifier> | undefined {
-    let modifiers: NodeArray<Modifier> | undefined;
+  function parseModifiersForArrowFunction(): qt.NodeArray<Modifier> | undefined {
+    let modifiers: qt.NodeArray<Modifier> | undefined;
     if (token() === qt.SyntaxKind.AsyncKeyword) {
       const modifierStart = scanner.getStartPos();
       const modifierKind = token();
@@ -5926,20 +5933,20 @@ namespace Parser {
 
   function parseClassElement(): ClassElement {
     if (token() === qt.SyntaxKind.SemicolonToken) {
-      const result = <SemicolonClassElement>createNode(SyntaxKind.SemicolonClassElement);
+      const result = <SemicolonClassElement>createNode(qt.SyntaxKind.SemicolonClassElement);
       nextToken();
       return finishNode(result);
     }
 
-    const node = <ClassElement>createNodeWithJSDoc(SyntaxKind.Unknown);
+    const node = <ClassElement>createNodeWithJSDoc(qt.SyntaxKind.Unknown);
     node.decorators = parseDecorators();
     node.modifiers = parseModifiers(/*permitInvalidConstAsModifier*/ true);
 
-    if (parseContextualModifier(SyntaxKind.GetKeyword)) {
+    if (parseContextualModifier(qt.SyntaxKind.GetKeyword)) {
       return parseAccessorDeclaration(node, qt.SyntaxKind.GetAccessor);
     }
 
-    if (parseContextualModifier(SyntaxKind.SetKeyword)) {
+    if (parseContextualModifier(qt.SyntaxKind.SetKeyword)) {
       return parseAccessorDeclaration(node, qt.SyntaxKind.SetAccessor);
     }
 
@@ -5960,9 +5967,9 @@ namespace Parser {
       const isAmbient = node.modifiers && some(node.modifiers, isDeclareModifier);
       if (isAmbient) {
         for (const m of node.modifiers!) {
-          m.flags |= NodeFlags.Ambient;
+          m.flags |= qt.NodeFlags.Ambient;
         }
-        return doInsideOfContext(NodeFlags.Ambient, () => parsePropertyOrMethodDeclaration(node as PropertyDeclaration | MethodDeclaration));
+        return doInsideOfContext(qt.NodeFlags.Ambient, () => parsePropertyOrMethodDeclaration(node as PropertyDeclaration | MethodDeclaration));
       } else {
         return parsePropertyOrMethodDeclaration(node as PropertyDeclaration | MethodDeclaration);
       }
@@ -5970,7 +5977,7 @@ namespace Parser {
 
     if (node.decorators || node.modifiers) {
       // treat this as a property declaration with a missing name.
-      node.name = createMissingNode<Identifier>(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.Declaration_expected);
+      node.name = createMissingNode<qt.Identifier>(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ true, Diagnostics.Declaration_expected);
       return parsePropertyDeclaration(node);
     }
 
@@ -5979,7 +5986,7 @@ namespace Parser {
   }
 
   function parseClassExpression(): ClassExpression {
-    return parseClassDeclarationOrExpression(<ClassLikeDeclaration>createNodeWithJSDoc(SyntaxKind.Unknown), qt.SyntaxKind.ClassExpression);
+    return parseClassDeclarationOrExpression(<ClassLikeDeclaration>createNodeWithJSDoc(qt.SyntaxKind.Unknown), qt.SyntaxKind.ClassExpression);
   }
 
   function parseClassDeclaration(node: ClassLikeDeclaration): ClassDeclaration {
@@ -5988,16 +5995,16 @@ namespace Parser {
 
   function parseClassDeclarationOrExpression(node: ClassLikeDeclaration, kind: ClassLikeDeclaration['kind']): ClassLikeDeclaration {
     node.kind = kind;
-    parseExpected(SyntaxKind.ClassKeyword);
+    parseExpected(qt.SyntaxKind.ClassKeyword);
     node.name = parseNameOfClassDeclarationOrExpression();
     node.typeParameters = parseTypeParameters();
     node.heritageClauses = parseHeritageClauses();
 
-    if (parseExpected(SyntaxKind.OpenBraceToken)) {
+    if (parseExpected(qt.SyntaxKind.OpenBraceToken)) {
       // ClassTail[Yield,Await] : (Modified) See 14.5
       //      ClassHeritage[?Yield,?Await]opt { ClassBody[?Yield,?Await]opt }
       node.members = parseClassMembers();
-      parseExpected(SyntaxKind.CloseBraceToken);
+      parseExpected(qt.SyntaxKind.CloseBraceToken);
     } else {
       node.members = createMissingList<ClassElement>();
     }
@@ -6005,7 +6012,7 @@ namespace Parser {
     return finishNode(node);
   }
 
-  function parseNameOfClassDeclarationOrExpression(): Identifier | undefined {
+  function parseNameOfClassDeclarationOrExpression(): qt.Identifier | undefined {
     // implements is a future reserved word so
     // 'class implements' might mean either
     // - class expression with omitted name, 'implements' starts heritage clause
@@ -6018,7 +6025,7 @@ namespace Parser {
     return token() === qt.SyntaxKind.ImplementsKeyword && lookAhead(nextTokenIsIdentifierOrKeyword);
   }
 
-  function parseHeritageClauses(): NodeArray<HeritageClause> | undefined {
+  function parseHeritageClauses(): qt.NodeArray<HeritageClause> | undefined {
     // ClassTail[Yield,Await] : (Modified) See 14.5
     //      ClassHeritage[?Yield,?Await]opt { ClassBody[?Yield,?Await]opt }
 
@@ -6032,7 +6039,7 @@ namespace Parser {
   function parseHeritageClause(): HeritageClause {
     const tok = token();
     Debug.assert(tok === qt.SyntaxKind.ExtendsKeyword || tok === qt.SyntaxKind.ImplementsKeyword); // isListElement() should ensure this.
-    const node = <HeritageClause>createNode(SyntaxKind.HeritageClause);
+    const node = <HeritageClause>createNode(qt.SyntaxKind.HeritageClause);
     node.token = tok;
     nextToken();
     node.types = parseDelimitedList(ParsingContext.HeritageClauseElement, parseExpressionWithTypeArguments);
@@ -6040,13 +6047,13 @@ namespace Parser {
   }
 
   function parseExpressionWithTypeArguments(): ExpressionWithTypeArguments {
-    const node = <ExpressionWithTypeArguments>createNode(SyntaxKind.ExpressionWithTypeArguments);
+    const node = <ExpressionWithTypeArguments>createNode(qt.SyntaxKind.ExpressionWithTypeArguments);
     node.expression = parseLeftHandSideExpressionOrHigher();
     node.typeArguments = tryParseTypeArguments();
     return finishNode(node);
   }
 
-  function tryParseTypeArguments(): NodeArray<TypeNode> | undefined {
+  function tryParseTypeArguments(): qt.NodeArray<TypeNode> | undefined {
     return token() === qt.SyntaxKind.LessThanToken ? parseBracketedList(ParsingContext.TypeArguments, parseType, qt.SyntaxKind.LessThanToken, qt.SyntaxKind.GreaterThanToken) : undefined;
   }
 
@@ -6054,13 +6061,13 @@ namespace Parser {
     return token() === qt.SyntaxKind.ExtendsKeyword || token() === qt.SyntaxKind.ImplementsKeyword;
   }
 
-  function parseClassMembers(): NodeArray<ClassElement> {
+  function parseClassMembers(): qt.NodeArray<ClassElement> {
     return parseList(ParsingContext.ClassMembers, parseClassElement);
   }
 
   function parseInterfaceDeclaration(node: InterfaceDeclaration): InterfaceDeclaration {
     node.kind = qt.SyntaxKind.InterfaceDeclaration;
-    parseExpected(SyntaxKind.InterfaceKeyword);
+    parseExpected(qt.SyntaxKind.InterfaceKeyword);
     node.name = parseIdentifier();
     node.typeParameters = parseTypeParameters();
     node.heritageClauses = parseHeritageClauses();
@@ -6070,10 +6077,10 @@ namespace Parser {
 
   function parseTypeAliasDeclaration(node: TypeAliasDeclaration): TypeAliasDeclaration {
     node.kind = qt.SyntaxKind.TypeAliasDeclaration;
-    parseExpected(SyntaxKind.TypeKeyword);
+    parseExpected(qt.SyntaxKind.TypeKeyword);
     node.name = parseIdentifier();
     node.typeParameters = parseTypeParameters();
-    parseExpected(SyntaxKind.EqualsToken);
+    parseExpected(qt.SyntaxKind.EqualsToken);
     node.type = parseType();
     parseSemicolon();
     return finishNode(node);
@@ -6084,7 +6091,7 @@ namespace Parser {
   // ConstantEnumMemberSection, which starts at the beginning of an enum declaration
   // or any time an integer literal initializer is encountered.
   function parseEnumMember(): EnumMember {
-    const node = <EnumMember>createNodeWithJSDoc(SyntaxKind.EnumMember);
+    const node = <EnumMember>createNodeWithJSDoc(qt.SyntaxKind.EnumMember);
     node.name = parsePropertyName();
     node.initializer = allowInAnd(parseInitializer);
     return finishNode(node);
@@ -6092,11 +6099,11 @@ namespace Parser {
 
   function parseEnumDeclaration(node: EnumDeclaration): EnumDeclaration {
     node.kind = qt.SyntaxKind.EnumDeclaration;
-    parseExpected(SyntaxKind.EnumKeyword);
+    parseExpected(qt.SyntaxKind.EnumKeyword);
     node.name = parseIdentifier();
-    if (parseExpected(SyntaxKind.OpenBraceToken)) {
+    if (parseExpected(qt.SyntaxKind.OpenBraceToken)) {
       node.members = doOutsideOfYieldAndAwaitContext(() => parseDelimitedList(ParsingContext.EnumMembers, parseEnumMember));
-      parseExpected(SyntaxKind.CloseBraceToken);
+      parseExpected(qt.SyntaxKind.CloseBraceToken);
     } else {
       node.members = createMissingList<EnumMember>();
     }
@@ -6104,24 +6111,24 @@ namespace Parser {
   }
 
   function parseModuleBlock(): ModuleBlock {
-    const node = <ModuleBlock>createNode(SyntaxKind.ModuleBlock);
-    if (parseExpected(SyntaxKind.OpenBraceToken)) {
+    const node = <ModuleBlock>createNode(qt.SyntaxKind.ModuleBlock);
+    if (parseExpected(qt.SyntaxKind.OpenBraceToken)) {
       node.statements = parseList(ParsingContext.BlockStatements, parseStatement);
-      parseExpected(SyntaxKind.CloseBraceToken);
+      parseExpected(qt.SyntaxKind.CloseBraceToken);
     } else {
       node.statements = createMissingList<Statement>();
     }
     return finishNode(node);
   }
 
-  function parseModuleOrNamespaceDeclaration(node: ModuleDeclaration, flags: NodeFlags): ModuleDeclaration {
+  function parseModuleOrNamespaceDeclaration(node: ModuleDeclaration, flags: qt.NodeFlags): ModuleDeclaration {
     node.kind = qt.SyntaxKind.ModuleDeclaration;
     // If we are parsing a dotted namespace name, we want to
     // propagate the 'Namespace' flag across the names if set.
-    const namespaceFlag = flags & NodeFlags.Namespace;
+    const namespaceFlag = flags & qt.NodeFlags.Namespace;
     node.flags |= flags;
     node.name = parseIdentifier();
-    node.body = parseOptional(SyntaxKind.DotToken) ? parseModuleOrNamespaceDeclaration(<ModuleDeclaration>createNode(SyntaxKind.Unknown), NodeFlags.NestedNamespace | namespaceFlag) : parseModuleBlock();
+    node.body = parseOptional(qt.SyntaxKind.DotToken) ? parseModuleOrNamespaceDeclaration(<ModuleDeclaration>createNode(qt.SyntaxKind.Unknown), qt.NodeFlags.NestedNamespace | namespaceFlag) : parseModuleBlock();
     return finishNode(node);
   }
 
@@ -6130,7 +6137,7 @@ namespace Parser {
     if (token() === qt.SyntaxKind.GlobalKeyword) {
       // parse 'global' as name of global scope augmentation
       node.name = parseIdentifier();
-      node.flags |= NodeFlags.GlobalAugmentation;
+      node.flags |= qt.NodeFlags.GlobalAugmentation;
     } else {
       node.name = parseLiteralNode();
       node.name.text = internIdentifier(node.name.text);
@@ -6144,14 +6151,14 @@ namespace Parser {
   }
 
   function parseModuleDeclaration(node: ModuleDeclaration): ModuleDeclaration {
-    let flags: NodeFlags = 0;
+    let flags: qt.NodeFlags = 0;
     if (token() === qt.SyntaxKind.GlobalKeyword) {
       // global augmentation
       return parseAmbientExternalModuleDeclaration(node);
-    } else if (parseOptional(SyntaxKind.NamespaceKeyword)) {
-      flags |= NodeFlags.Namespace;
+    } else if (parseOptional(qt.SyntaxKind.NamespaceKeyword)) {
+      flags |= qt.NodeFlags.Namespace;
     } else {
-      parseExpected(SyntaxKind.ModuleKeyword);
+      parseExpected(qt.SyntaxKind.ModuleKeyword);
       if (token() === qt.SyntaxKind.StringLiteral) {
         return parseAmbientExternalModuleDeclaration(node);
       }
@@ -6173,18 +6180,18 @@ namespace Parser {
 
   function parseNamespaceExportDeclaration(node: NamespaceExportDeclaration): NamespaceExportDeclaration {
     node.kind = qt.SyntaxKind.NamespaceExportDeclaration;
-    parseExpected(SyntaxKind.AsKeyword);
-    parseExpected(SyntaxKind.NamespaceKeyword);
+    parseExpected(qt.SyntaxKind.AsKeyword);
+    parseExpected(qt.SyntaxKind.NamespaceKeyword);
     node.name = parseIdentifier();
     parseSemicolon();
     return finishNode(node);
   }
 
   function parseImportDeclarationOrImportEqualsDeclaration(node: ImportEqualsDeclaration | ImportDeclaration): ImportEqualsDeclaration | ImportDeclaration {
-    parseExpected(SyntaxKind.ImportKeyword);
+    parseExpected(qt.SyntaxKind.ImportKeyword);
     const afterImportPos = scanner.getStartPos();
 
-    let identifier: Identifier | undefined;
+    let identifier: qt.Identifier | undefined;
     if (isIdentifier()) {
       identifier = parseIdentifier();
     }
@@ -6210,7 +6217,7 @@ namespace Parser {
       token() === qt.SyntaxKind.OpenBraceToken // import {
     ) {
       (<ImportDeclaration>node).importClause = parseImportClause(identifier, afterImportPos, isTypeOnly);
-      parseExpected(SyntaxKind.FromKeyword);
+      parseExpected(qt.SyntaxKind.FromKeyword);
     }
 
     (<ImportDeclaration>node).moduleSpecifier = parseModuleSpecifier();
@@ -6228,10 +6235,10 @@ namespace Parser {
     return token() === qt.SyntaxKind.CommaToken || token() === qt.SyntaxKind.FromKeyword;
   }
 
-  function parseImportEqualsDeclaration(node: ImportEqualsDeclaration, identifier: Identifier, isTypeOnly: boolean): ImportEqualsDeclaration {
+  function parseImportEqualsDeclaration(node: ImportEqualsDeclaration, identifier: qt.Identifier, isTypeOnly: boolean): ImportEqualsDeclaration {
     node.kind = qt.SyntaxKind.ImportEqualsDeclaration;
     node.name = identifier;
-    parseExpected(SyntaxKind.EqualsToken);
+    parseExpected(qt.SyntaxKind.EqualsToken);
     node.moduleReference = parseModuleReference();
     parseSemicolon();
     const finished = finishNode(node);
@@ -6241,7 +6248,7 @@ namespace Parser {
     return finished;
   }
 
-  function parseImportClause(identifier: Identifier | undefined, fullStart: number, isTypeOnly: boolean) {
+  function parseImportClause(identifier: qt.Identifier | undefined, fullStart: number, isTypeOnly: boolean) {
     // ImportClause:
     //  ImportedDefaultBinding
     //  NameSpaceImport
@@ -6249,7 +6256,7 @@ namespace Parser {
     //  ImportedDefaultBinding, NameSpaceImport
     //  ImportedDefaultBinding, NamedImports
 
-    const importClause = <ImportClause>createNode(SyntaxKind.ImportClause, fullStart);
+    const importClause = <ImportClause>createNode(qt.SyntaxKind.ImportClause, fullStart);
     importClause.isTypeOnly = isTypeOnly;
 
     if (identifier) {
@@ -6260,8 +6267,8 @@ namespace Parser {
 
     // If there was no default import or if there is comma token after default import
     // parse namespace or named imports
-    if (!importClause.name || parseOptional(SyntaxKind.CommaToken)) {
-      importClause.namedBindings = token() === qt.SyntaxKind.AsteriskToken ? parseNamespaceImport() : parseNamedImportsOrExports(SyntaxKind.NamedImports);
+    if (!importClause.name || parseOptional(qt.SyntaxKind.CommaToken)) {
+      importClause.namedBindings = token() === qt.SyntaxKind.AsteriskToken ? parseNamespaceImport() : parseNamedImportsOrExports(qt.SyntaxKind.NamedImports);
     }
 
     return finishNode(importClause);
@@ -6272,11 +6279,11 @@ namespace Parser {
   }
 
   function parseExternalModuleReference() {
-    const node = <ExternalModuleReference>createNode(SyntaxKind.ExternalModuleReference);
-    parseExpected(SyntaxKind.RequireKeyword);
-    parseExpected(SyntaxKind.OpenParenToken);
+    const node = <ExternalModuleReference>createNode(qt.SyntaxKind.ExternalModuleReference);
+    parseExpected(qt.SyntaxKind.RequireKeyword);
+    parseExpected(qt.SyntaxKind.OpenParenToken);
     node.expression = parseModuleSpecifier();
-    parseExpected(SyntaxKind.CloseParenToken);
+    parseExpected(qt.SyntaxKind.CloseParenToken);
     return finishNode(node);
   }
 
@@ -6296,9 +6303,9 @@ namespace Parser {
   function parseNamespaceImport(): NamespaceImport {
     // NameSpaceImport:
     //  * as ImportedBinding
-    const namespaceImport = <NamespaceImport>createNode(SyntaxKind.NamespaceImport);
-    parseExpected(SyntaxKind.AsteriskToken);
-    parseExpected(SyntaxKind.AsKeyword);
+    const namespaceImport = <NamespaceImport>createNode(qt.SyntaxKind.NamespaceImport);
+    parseExpected(qt.SyntaxKind.AsteriskToken);
+    parseExpected(qt.SyntaxKind.AsKeyword);
     namespaceImport.name = parseIdentifier();
     return finishNode(namespaceImport);
   }
@@ -6316,33 +6323,33 @@ namespace Parser {
     // ImportsList:
     //  ImportSpecifier
     //  ImportsList, ImportSpecifier
-    node.elements = <NodeArray<ImportSpecifier> | NodeArray<ExportSpecifier>>parseBracketedList(ParsingContext.ImportOrExportSpecifiers, kind === qt.SyntaxKind.NamedImports ? parseImportSpecifier : parseExportSpecifier, qt.SyntaxKind.OpenBraceToken, qt.SyntaxKind.CloseBraceToken);
+    node.elements = <NodeArray<ImportSpecifier> | qt.NodeArray<ExportSpecifier>>parseBracketedList(ParsingContext.ImportOrExportSpecifiers, kind === qt.SyntaxKind.NamedImports ? parseImportSpecifier : parseExportSpecifier, qt.SyntaxKind.OpenBraceToken, qt.SyntaxKind.CloseBraceToken);
     return finishNode(node);
   }
 
   function parseExportSpecifier() {
-    return parseImportOrExportSpecifier(SyntaxKind.ExportSpecifier);
+    return parseImportOrExportSpecifier(qt.SyntaxKind.ExportSpecifier);
   }
 
   function parseImportSpecifier() {
-    return parseImportOrExportSpecifier(SyntaxKind.ImportSpecifier);
+    return parseImportOrExportSpecifier(qt.SyntaxKind.ImportSpecifier);
   }
 
   function parseImportOrExportSpecifier(kind: qt.SyntaxKind): ImportOrExportSpecifier {
     const node = <ImportSpecifier>createNode(kind);
     // ImportSpecifier:
     //   BindingIdentifier
-    //   IdentifierName as BindingIdentifier
+    //   qt.IdentifierName as BindingIdentifier
     // ExportSpecifier:
-    //   IdentifierName
-    //   IdentifierName as IdentifierName
+    //   qt.IdentifierName
+    //   qt.IdentifierName as qt.IdentifierName
     let checkIdentifierIsKeyword = isKeyword(token()) && !isIdentifier();
     let checkIdentifierStart = scanner.getTokenPos();
     let checkIdentifierEnd = scanner.getTextPos();
     const identifierName = parseIdentifierName();
     if (token() === qt.SyntaxKind.AsKeyword) {
       node.propertyName = identifierName;
-      parseExpected(SyntaxKind.AsKeyword);
+      parseExpected(qt.SyntaxKind.AsKeyword);
       checkIdentifierIsKeyword = isKeyword(token()) && !isIdentifier();
       checkIdentifierStart = scanner.getTokenPos();
       checkIdentifierEnd = scanner.getTextPos();
@@ -6357,28 +6364,28 @@ namespace Parser {
   }
 
   function parseNamespaceExport(pos: number): NamespaceExport {
-    const node = <NamespaceExport>createNode(SyntaxKind.NamespaceExport, pos);
+    const node = <NamespaceExport>createNode(qt.SyntaxKind.NamespaceExport, pos);
     node.name = parseIdentifier();
     return finishNode(node);
   }
 
   function parseExportDeclaration(node: ExportDeclaration): ExportDeclaration {
     node.kind = qt.SyntaxKind.ExportDeclaration;
-    node.isTypeOnly = parseOptional(SyntaxKind.TypeKeyword);
+    node.isTypeOnly = parseOptional(qt.SyntaxKind.TypeKeyword);
     const namespaceExportPos = scanner.getStartPos();
-    if (parseOptional(SyntaxKind.AsteriskToken)) {
-      if (parseOptional(SyntaxKind.AsKeyword)) {
+    if (parseOptional(qt.SyntaxKind.AsteriskToken)) {
+      if (parseOptional(qt.SyntaxKind.AsKeyword)) {
         node.exportClause = parseNamespaceExport(namespaceExportPos);
       }
-      parseExpected(SyntaxKind.FromKeyword);
+      parseExpected(qt.SyntaxKind.FromKeyword);
       node.moduleSpecifier = parseModuleSpecifier();
     } else {
-      node.exportClause = parseNamedImportsOrExports(SyntaxKind.NamedExports);
+      node.exportClause = parseNamedImportsOrExports(qt.SyntaxKind.NamedExports);
       // It is not uncommon to accidentally omit the 'from' keyword. Additionally, in editing scenarios,
       // the 'from' keyword can be parsed as a named export when the export clause is unterminated (i.e. `export { from "moduleName";`)
       // If we don't have a 'from' keyword, see if we have a string literal such that ASI won't take effect.
       if (token() === qt.SyntaxKind.FromKeyword || (token() === qt.SyntaxKind.StringLiteral && !scanner.hasPrecedingLineBreak())) {
-        parseExpected(SyntaxKind.FromKeyword);
+        parseExpected(qt.SyntaxKind.FromKeyword);
         node.moduleSpecifier = parseModuleSpecifier();
       }
     }
@@ -6388,10 +6395,10 @@ namespace Parser {
 
   function parseExportAssignment(node: ExportAssignment): ExportAssignment {
     node.kind = qt.SyntaxKind.ExportAssignment;
-    if (parseOptional(SyntaxKind.EqualsToken)) {
+    if (parseOptional(qt.SyntaxKind.EqualsToken)) {
       node.isExportEquals = true;
     } else {
-      parseExpected(SyntaxKind.DefaultKeyword);
+      parseExpected(qt.SyntaxKind.DefaultKeyword);
     }
     node.expression = parseAssignmentExpressionOrHigher();
     parseSemicolon();
@@ -6409,10 +6416,10 @@ namespace Parser {
   }
 
   function getImportMetaIfNecessary(sourceFile: SourceFile) {
-    return sourceFile.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(sourceFile) : undefined;
+    return sourceFile.flags & qt.NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(sourceFile) : undefined;
   }
 
-  function walkTreeForExternalModuleIndicators(node: qt.Node): Node | undefined {
+  function walkTreeForExternalModuleIndicators(node: qt.Node): qt.Node | undefined {
     return isImportMeta(node) ? node : forEachChild(node, walkTreeForExternalModuleIndicators);
   }
 
@@ -6434,7 +6441,7 @@ namespace Parser {
     ClassMembers, // Members in class declaration
     EnumMembers, // Members in enum declaration
     HeritageClauseElement, // Elements in a heritage clause
-    qt.VariableDeclarations, // Variable declarations in variable statement
+    VariableDeclarations, // Variable declarations in variable statement
     ObjectBindingElements, // Binding elements in object binding list
     ArrayBindingElements, // Binding elements in array binding list
     ArgumentExpressions, // Expressions in argument list
@@ -6461,8 +6468,8 @@ namespace Parser {
 
   export namespace JSDocParser {
     export function parseJSDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { jsDocTypeExpression: JSDocTypeExpression; diagnostics: Diagnostic[] } | undefined {
-      initializeState(content, qt.ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
-      sourceFile = createSourceFile('file.js', qt.ScriptTarget.Latest, ScriptKind.JS, /*isDeclarationFile*/ false);
+      initializeState(content, qt.ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, qt.ScriptKind.JS);
+      sourceFile = createSourceFile('file.js', qt.ScriptTarget.Latest, qt.ScriptKind.JS, /*isDeclarationFile*/ false);
       scanner.setText(content, start, length);
       currentToken = scanner.scan();
       const jsDocTypeExpression = parseJSDocTypeExpression();
@@ -6474,12 +6481,12 @@ namespace Parser {
 
     // Parses out a JSDoc type expression.
     export function parseJSDocTypeExpression(mayOmitBraces?: boolean): JSDocTypeExpression {
-      const result = <JSDocTypeExpression>createNode(SyntaxKind.JSDocTypeExpression);
+      const result = <JSDocTypeExpression>createNode(qt.SyntaxKind.JSDocTypeExpression);
 
-      const hasBrace = (mayOmitBraces ? parseOptional : parseExpected)(SyntaxKind.OpenBraceToken);
-      result.type = doInsideOfContext(NodeFlags.JSDoc, parseJSDocType);
+      const hasBrace = (mayOmitBraces ? parseOptional : parseExpected)(qt.SyntaxKind.OpenBraceToken);
+      result.type = doInsideOfContext(qt.NodeFlags.JSDoc, parseJSDocType);
       if (!mayOmitBraces || hasBrace) {
-        parseExpectedJSDoc(SyntaxKind.CloseBraceToken);
+        parseExpectedJSDoc(qt.SyntaxKind.CloseBraceToken);
       }
 
       fixupParentReferences(result);
@@ -6487,9 +6494,9 @@ namespace Parser {
     }
 
     export function parseIsolatedJSDocComment(content: string, start: number | undefined, length: number | undefined): { jsDoc: JSDoc; diagnostics: Diagnostic[] } | undefined {
-      initializeState(content, qt.ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
+      initializeState(content, qt.ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, qt.ScriptKind.JS);
       sourceFile = <SourceFile>{ languageVariant: LanguageVariant.Standard, text: content };
-      const jsDoc = doInsideOfContext(NodeFlags.JSDoc, () => parseJSDocCommentWorker(start, length));
+      const jsDoc = doInsideOfContext(qt.NodeFlags.JSDoc, () => parseJSDocCommentWorker(start, length));
       const diagnostics = parseDiagnostics;
       clearState();
 
@@ -6501,12 +6508,12 @@ namespace Parser {
       const saveParseDiagnosticsLength = parseDiagnostics.length;
       const saveParseErrorBeforeNextFinishedNode = parseErrorBeforeNextFinishedNode;
 
-      const comment = doInsideOfContext(NodeFlags.JSDoc, () => parseJSDocCommentWorker(start, length));
+      const comment = doInsideOfContext(qt.NodeFlags.JSDoc, () => parseJSDocCommentWorker(start, length));
       if (comment) {
         comment.parent = parent;
       }
 
-      if (contextFlags & NodeFlags.JavaScriptFile) {
+      if (contextFlags & qt.NodeFlags.JavaScriptFile) {
         if (!sourceFile.jsDocDiagnostics) {
           sourceFile.jsDocDiagnostics = [];
         }
@@ -6568,8 +6575,8 @@ namespace Parser {
         }
 
         nextTokenJSDoc();
-        while (parseOptionalJsdoc(SyntaxKind.WhitespaceTrivia));
-        if (parseOptionalJsdoc(SyntaxKind.NewLineTrivia)) {
+        while (parseOptionalJsdoc(qt.SyntaxKind.WhitespaceTrivia));
+        if (parseOptionalJsdoc(qt.SyntaxKind.NewLineTrivia)) {
           state = JSDocState.BeginningOfLine;
           indent = 0;
         }
@@ -6645,7 +6652,7 @@ namespace Parser {
       }
 
       function createJSDocComment(): JSDoc {
-        const result = <JSDoc>createNode(SyntaxKind.JSDocComment, start);
+        const result = <JSDoc>createNode(qt.SyntaxKind.JSDocComment, start);
         result.tags = tags && createNodeArray(tags, tagsPos, tagsEnd);
         result.comment = comments.length ? comments.join('') : undefined;
         return finishNode(result, end);
@@ -6869,8 +6876,8 @@ namespace Parser {
         return comments.length === 0 ? undefined : comments.join('');
       }
 
-      function parseUnknownTag(start: number, tagName: Identifier) {
-        const result = <JSDocTag>createNode(SyntaxKind.JSDocTag, start);
+      function parseUnknownTag(start: number, tagName: qt.Identifier) {
+        const result = <JSDocTag>createNode(qt.SyntaxKind.JSDocTag, start);
         result.tagName = tagName;
         return finishNode(result);
       }
@@ -6895,24 +6902,24 @@ namespace Parser {
 
       function parseBracketNameInPropertyAndParamTag(): { name: EntityName; isBracketed: boolean } {
         // Looking for something like '[foo]', 'foo', '[foo.bar]' or 'foo.bar'
-        const isBracketed = parseOptionalJsdoc(SyntaxKind.OpenBracketToken);
+        const isBracketed = parseOptionalJsdoc(qt.SyntaxKind.OpenBracketToken);
         if (isBracketed) {
           skipWhitespace();
         }
         // a markdown-quoted name: `arg` is not legal jsdoc, but occurs in the wild
-        const isBackquoted = parseOptionalJsdoc(SyntaxKind.BacktickToken);
+        const isBackquoted = parseOptionalJsdoc(qt.SyntaxKind.BacktickToken);
         const name = parseJSDocEntityName();
         if (isBackquoted) {
-          parseExpectedTokenJSDoc(SyntaxKind.BacktickToken);
+          parseExpectedTokenJSDoc(qt.SyntaxKind.BacktickToken);
         }
         if (isBracketed) {
           skipWhitespace();
           // May have an optional default, e.g. '[foo = 42]'
-          if (parseOptionalToken(SyntaxKind.EqualsToken)) {
+          if (parseOptionalToken(qt.SyntaxKind.EqualsToken)) {
             parseExpression();
           }
 
-          parseExpected(SyntaxKind.CloseBracketToken);
+          parseExpected(qt.SyntaxKind.CloseBracketToken);
         }
 
         return { name, isBracketed };
@@ -6929,7 +6936,7 @@ namespace Parser {
         }
       }
 
-      function parseParameterOrPropertyTag(start: number, tagName: Identifier, target: PropertyLikeParse, indent: number): JSDocParameterTag | JSDocPropertyTag {
+      function parseParameterOrPropertyTag(start: number, tagName: qt.Identifier, target: PropertyLikeParse, indent: number): JSDocParameterTag | JSDocPropertyTag {
         let typeExpression = tryParseTypeExpression();
         let isNameFirst = !typeExpression;
         skipWhitespaceOrAsterisk();
@@ -6941,7 +6948,7 @@ namespace Parser {
           typeExpression = tryParseTypeExpression();
         }
 
-        const result = target === PropertyLikeParse.Property ? <JSDocPropertyTag>createNode(SyntaxKind.JSDocPropertyTag, start) : <JSDocParameterTag>createNode(SyntaxKind.JSDocParameterTag, start);
+        const result = target === PropertyLikeParse.Property ? <JSDocPropertyTag>createNode(qt.SyntaxKind.JSDocPropertyTag, start) : <JSDocParameterTag>createNode(qt.SyntaxKind.JSDocParameterTag, start);
         const comment = parseTagComments(indent + scanner.getStartPos() - start);
         const nestedTypeLiteral = target !== PropertyLikeParse.CallbackParameter && parseNestedTypeLiteral(typeExpression, name, target, indent);
         if (nestedTypeLiteral) {
@@ -6959,7 +6966,7 @@ namespace Parser {
 
       function parseNestedTypeLiteral(typeExpression: JSDocTypeExpression | undefined, name: EntityName, target: PropertyLikeParse, indent: number) {
         if (typeExpression && isObjectOrObjectArrayTypeReference(typeExpression.type)) {
-          const typeLiteralExpression = <JSDocTypeExpression>createNode(SyntaxKind.JSDocTypeExpression, scanner.getTokenPos());
+          const typeLiteralExpression = <JSDocTypeExpression>createNode(qt.SyntaxKind.JSDocTypeExpression, scanner.getTokenPos());
           let child: JSDocPropertyLikeTag | JSDocTypeTag | false;
           let jsdocTypeLiteral: JSDocTypeLiteral;
           const start = scanner.getStartPos();
@@ -6970,7 +6977,7 @@ namespace Parser {
             }
           }
           if (children) {
-            jsdocTypeLiteral = <JSDocTypeLiteral>createNode(SyntaxKind.JSDocTypeLiteral, start);
+            jsdocTypeLiteral = <JSDocTypeLiteral>createNode(qt.SyntaxKind.JSDocTypeLiteral, start);
             jsdocTypeLiteral.jsDocPropertyTags = children;
             if (typeExpression.type.kind === qt.SyntaxKind.ArrayType) {
               jsdocTypeLiteral.isArrayType = true;
@@ -6981,30 +6988,30 @@ namespace Parser {
         }
       }
 
-      function parseReturnTag(start: number, tagName: Identifier): JSDocReturnTag {
+      function parseReturnTag(start: number, tagName: qt.Identifier): JSDocReturnTag {
         if (some(tags, isJSDocReturnTag)) {
           parseErrorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
         }
 
-        const result = <JSDocReturnTag>createNode(SyntaxKind.JSDocReturnTag, start);
+        const result = <JSDocReturnTag>createNode(qt.SyntaxKind.JSDocReturnTag, start);
         result.tagName = tagName;
         result.typeExpression = tryParseTypeExpression();
         return finishNode(result);
       }
 
-      function parseTypeTag(start: number, tagName: Identifier): JSDocTypeTag {
+      function parseTypeTag(start: number, tagName: qt.Identifier): JSDocTypeTag {
         if (some(tags, isJSDocTypeTag)) {
           parseErrorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
         }
 
-        const result = <JSDocTypeTag>createNode(SyntaxKind.JSDocTypeTag, start);
+        const result = <JSDocTypeTag>createNode(qt.SyntaxKind.JSDocTypeTag, start);
         result.tagName = tagName;
         result.typeExpression = parseJSDocTypeExpression(/*mayOmitBraces*/ true);
         return finishNode(result);
       }
 
-      function parseAuthorTag(start: number, tagName: Identifier, indent: number): JSDocAuthorTag {
-        const result = <JSDocAuthorTag>createNode(SyntaxKind.JSDocAuthorTag, start);
+      function parseAuthorTag(start: number, tagName: qt.Identifier, indent: number): JSDocAuthorTag {
+        const result = <JSDocAuthorTag>createNode(qt.SyntaxKind.JSDocAuthorTag, start);
         result.tagName = tagName;
 
         const authorInfoWithEmail = tryParse(() => tryParseAuthorNameAndEmail());
@@ -7066,36 +7073,36 @@ namespace Parser {
         }
       }
 
-      function parseImplementsTag(start: number, tagName: Identifier): JSDocImplementsTag {
-        const result = <JSDocImplementsTag>createNode(SyntaxKind.JSDocImplementsTag, start);
+      function parseImplementsTag(start: number, tagName: qt.Identifier): JSDocImplementsTag {
+        const result = <JSDocImplementsTag>createNode(qt.SyntaxKind.JSDocImplementsTag, start);
         result.tagName = tagName;
         result.class = parseExpressionWithTypeArgumentsForAugments();
         return finishNode(result);
       }
 
-      function parseAugmentsTag(start: number, tagName: Identifier): JSDocAugmentsTag {
-        const result = <JSDocAugmentsTag>createNode(SyntaxKind.JSDocAugmentsTag, start);
+      function parseAugmentsTag(start: number, tagName: qt.Identifier): JSDocAugmentsTag {
+        const result = <JSDocAugmentsTag>createNode(qt.SyntaxKind.JSDocAugmentsTag, start);
         result.tagName = tagName;
         result.class = parseExpressionWithTypeArgumentsForAugments();
         return finishNode(result);
       }
 
-      function parseExpressionWithTypeArgumentsForAugments(): ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression } {
-        const usedBrace = parseOptional(SyntaxKind.OpenBraceToken);
-        const node = createNode(SyntaxKind.ExpressionWithTypeArguments) as ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
+      function parseExpressionWithTypeArgumentsForAugments(): ExpressionWithTypeArguments & { expression: qt.Identifier | PropertyAccessEntityNameExpression } {
+        const usedBrace = parseOptional(qt.SyntaxKind.OpenBraceToken);
+        const node = createNode(qt.SyntaxKind.ExpressionWithTypeArguments) as ExpressionWithTypeArguments & { expression: qt.Identifier | PropertyAccessEntityNameExpression };
         node.expression = parsePropertyAccessEntityNameExpression();
         node.typeArguments = tryParseTypeArguments();
         const res = finishNode(node);
         if (usedBrace) {
-          parseExpected(SyntaxKind.CloseBraceToken);
+          parseExpected(qt.SyntaxKind.CloseBraceToken);
         }
         return res;
       }
 
       function parsePropertyAccessEntityNameExpression() {
-        let node: Identifier | PropertyAccessEntityNameExpression = parseJSDocIdentifierName();
-        while (parseOptional(SyntaxKind.DotToken)) {
-          const prop: PropertyAccessEntityNameExpression = createNode(SyntaxKind.PropertyAccessExpression, node.pos) as PropertyAccessEntityNameExpression;
+        let node: qt.Identifier | PropertyAccessEntityNameExpression = parseJSDocIdentifierName();
+        while (parseOptional(qt.SyntaxKind.DotToken)) {
+          const prop: PropertyAccessEntityNameExpression = createNode(qt.SyntaxKind.PropertyAccessExpression, node.pos) as PropertyAccessEntityNameExpression;
           prop.expression = node;
           prop.name = parseJSDocIdentifierName();
           node = finishNode(prop);
@@ -7103,33 +7110,33 @@ namespace Parser {
         return node;
       }
 
-      function parseSimpleTag(start: number, kind: qt.SyntaxKind, tagName: Identifier): JSDocTag {
+      function parseSimpleTag(start: number, kind: qt.SyntaxKind, tagName: qt.Identifier): JSDocTag {
         const tag = <JSDocTag>createNode(kind, start);
         tag.tagName = tagName;
         return finishNode(tag);
       }
 
-      function parseThisTag(start: number, tagName: Identifier): JSDocThisTag {
-        const tag = <JSDocThisTag>createNode(SyntaxKind.JSDocThisTag, start);
+      function parseThisTag(start: number, tagName: qt.Identifier): JSDocThisTag {
+        const tag = <JSDocThisTag>createNode(qt.SyntaxKind.JSDocThisTag, start);
         tag.tagName = tagName;
         tag.typeExpression = parseJSDocTypeExpression(/*mayOmitBraces*/ true);
         skipWhitespace();
         return finishNode(tag);
       }
 
-      function parseEnumTag(start: number, tagName: Identifier): JSDocEnumTag {
-        const tag = <JSDocEnumTag>createNode(SyntaxKind.JSDocEnumTag, start);
+      function parseEnumTag(start: number, tagName: qt.Identifier): JSDocEnumTag {
+        const tag = <JSDocEnumTag>createNode(qt.SyntaxKind.JSDocEnumTag, start);
         tag.tagName = tagName;
         tag.typeExpression = parseJSDocTypeExpression(/*mayOmitBraces*/ true);
         skipWhitespace();
         return finishNode(tag);
       }
 
-      function parseTypedefTag(start: number, tagName: Identifier, indent: number): JSDocTypedefTag {
+      function parseTypedefTag(start: number, tagName: qt.Identifier, indent: number): JSDocTypedefTag {
         const typeExpression = tryParseTypeExpression();
         skipWhitespaceOrAsterisk();
 
-        const typedefTag = <JSDocTypedefTag>createNode(SyntaxKind.JSDocTypedefTag, start);
+        const typedefTag = <JSDocTypedefTag>createNode(qt.SyntaxKind.JSDocTypedefTag, start);
         typedefTag.tagName = tagName;
         typedefTag.fullName = parseJSDocTypeNameWithNamespace();
         typedefTag.name = getJSDocTypeAliasName(typedefTag.fullName);
@@ -7144,7 +7151,7 @@ namespace Parser {
           let childTypeTag: JSDocTypeTag | undefined;
           while ((child = tryParse(() => parseChildPropertyTag(indent)))) {
             if (!jsdocTypeLiteral) {
-              jsdocTypeLiteral = <JSDocTypeLiteral>createNode(SyntaxKind.JSDocTypeLiteral, start);
+              jsdocTypeLiteral = <JSDocTypeLiteral>createNode(qt.SyntaxKind.JSDocTypeLiteral, start);
             }
             if (child.kind === qt.SyntaxKind.JSDocTypeTag) {
               if (childTypeTag) {
@@ -7180,10 +7187,10 @@ namespace Parser {
           return undefined;
         }
         const typeNameOrNamespaceName = parseJSDocIdentifierName();
-        if (parseOptional(SyntaxKind.DotToken)) {
-          const jsDocNamespaceNode = <JSDocNamespaceDeclaration>createNode(SyntaxKind.ModuleDeclaration, pos);
+        if (parseOptional(qt.SyntaxKind.DotToken)) {
+          const jsDocNamespaceNode = <JSDocNamespaceDeclaration>createNode(qt.SyntaxKind.ModuleDeclaration, pos);
           if (nested) {
-            jsDocNamespaceNode.flags |= NodeFlags.NestedNamespace;
+            jsDocNamespaceNode.flags |= qt.NodeFlags.NestedNamespace;
           }
           jsDocNamespaceNode.name = typeNameOrNamespaceName;
           jsDocNamespaceNode.body = parseJSDocTypeNameWithNamespace(/*nested*/ true);
@@ -7196,8 +7203,8 @@ namespace Parser {
         return typeNameOrNamespaceName;
       }
 
-      function parseCallbackTag(start: number, tagName: Identifier, indent: number): JSDocCallbackTag {
-        const callbackTag = createNode(SyntaxKind.JSDocCallbackTag, start) as JSDocCallbackTag;
+      function parseCallbackTag(start: number, tagName: qt.Identifier, indent: number): JSDocCallbackTag {
+        const callbackTag = createNode(qt.SyntaxKind.JSDocCallbackTag, start) as JSDocCallbackTag;
         callbackTag.tagName = tagName;
         callbackTag.fullName = parseJSDocTypeNameWithNamespace();
         callbackTag.name = getJSDocTypeAliasName(callbackTag.fullName);
@@ -7205,13 +7212,13 @@ namespace Parser {
         callbackTag.comment = parseTagComments(indent);
 
         let child: JSDocParameterTag | false;
-        const jsdocSignature = createNode(SyntaxKind.JSDocSignature, start) as JSDocSignature;
+        const jsdocSignature = createNode(qt.SyntaxKind.JSDocSignature, start) as JSDocSignature;
         jsdocSignature.parameters = [];
         while ((child = tryParse(() => parseChildParameterOrPropertyTag(PropertyLikeParse.CallbackParameter, indent) as JSDocParameterTag))) {
           jsdocSignature.parameters = append(jsdocSignature.parameters, child);
         }
         const returnTag = tryParse(() => {
-          if (parseOptionalJsdoc(SyntaxKind.AtToken)) {
+          if (parseOptionalJsdoc(qt.SyntaxKind.AtToken)) {
             const tag = parseTag(indent);
             if (tag && tag.kind === qt.SyntaxKind.JSDocReturnTag) {
               return tag as JSDocReturnTag;
@@ -7316,7 +7323,7 @@ namespace Parser {
         return parseParameterOrPropertyTag(start, tagName, target, indent);
       }
 
-      function parseTemplateTag(start: number, tagName: Identifier): JSDocTemplateTag {
+      function parseTemplateTag(start: number, tagName: qt.Identifier): JSDocTemplateTag {
         // the template tag looks like '@template {Constraint} T,U,V'
         let constraint: JSDocTypeExpression | undefined;
         if (token() === qt.SyntaxKind.OpenBraceToken) {
@@ -7327,14 +7334,14 @@ namespace Parser {
         const typeParametersPos = getNodePos();
         do {
           skipWhitespace();
-          const typeParameter = <TypeParameterDeclaration>createNode(SyntaxKind.TypeParameter);
+          const typeParameter = <TypeParameterDeclaration>createNode(qt.SyntaxKind.TypeParameter);
           typeParameter.name = parseJSDocIdentifierName(Diagnostics.Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces);
           finishNode(typeParameter);
           skipWhitespaceOrAsterisk();
           typeParameters.push(typeParameter);
-        } while (parseOptionalJsdoc(SyntaxKind.CommaToken));
+        } while (parseOptionalJsdoc(qt.SyntaxKind.CommaToken));
 
-        const result = <JSDocTemplateTag>createNode(SyntaxKind.JSDocTemplateTag, start);
+        const result = <JSDocTemplateTag>createNode(qt.SyntaxKind.JSDocTemplateTag, start);
         result.tagName = tagName;
         result.constraint = constraint;
         result.typeParameters = createNodeArray(typeParameters, typeParametersPos);
@@ -7342,7 +7349,7 @@ namespace Parser {
         return result;
       }
 
-      function parseOptionalJsdoc(t: JSDocSyntaxKind): boolean {
+      function parseOptionalJsdoc(t: qt.JSDocSyntaxKind): boolean {
         if (token() === t) {
           nextTokenJSDoc();
           return true;
@@ -7352,31 +7359,31 @@ namespace Parser {
 
       function parseJSDocEntityName(): EntityName {
         let entity: EntityName = parseJSDocIdentifierName();
-        if (parseOptional(SyntaxKind.OpenBracketToken)) {
-          parseExpected(SyntaxKind.CloseBracketToken);
+        if (parseOptional(qt.SyntaxKind.OpenBracketToken)) {
+          parseExpected(qt.SyntaxKind.CloseBracketToken);
           // Note that y[] is accepted as an entity name, but the postfix brackets are not saved for checking.
           // Technically usejsdoc.org requires them for specifying a property of a type equivalent to Array<{ x: ...}>
           // but it's not worth it to enforce that restriction.
         }
-        while (parseOptional(SyntaxKind.DotToken)) {
+        while (parseOptional(qt.SyntaxKind.DotToken)) {
           const name = parseJSDocIdentifierName();
-          if (parseOptional(SyntaxKind.OpenBracketToken)) {
-            parseExpected(SyntaxKind.CloseBracketToken);
+          if (parseOptional(qt.SyntaxKind.OpenBracketToken)) {
+            parseExpected(qt.SyntaxKind.CloseBracketToken);
           }
           entity = createQualifiedName(entity, name);
         }
         return entity;
       }
 
-      function parseJSDocIdentifierName(message?: qt.DiagnosticMessage): Identifier {
+      function parseJSDocIdentifierName(message?: qt.DiagnosticMessage): qt.Identifier {
         if (!tokenIsIdentifierOrKeyword(token())) {
-          return createMissingNode<Identifier>(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ !message, message || Diagnostics.Identifier_expected);
+          return createMissingNode<qt.Identifier>(qt.SyntaxKind.Identifier, /*reportAtCurrentPosition*/ !message, message || Diagnostics.Identifier_expected);
         }
 
         identifierCount++;
         const pos = scanner.getTokenPos();
         const end = scanner.getTextPos();
-        const result = <Identifier>createNode(SyntaxKind.Identifier, pos);
+        const result = <qt.Identifier>createNode(qt.SyntaxKind.Identifier, pos);
         if (token() !== qt.SyntaxKind.Identifier) {
           result.originalKeywordKind = token();
         }
@@ -7412,7 +7419,7 @@ namespace IncrementalParser {
     // This is because we do incremental parsing in-place.  i.e. we take nodes from the old
     // tree and give them new positions and parents.  From that point on, trusting the old
     // tree at all is not possible as far too much of it may violate invariants.
-    const incrementalSourceFile = <IncrementalNode>(<Node>sourceFile);
+    const incrementalSourceFile = <IncrementalNode>(<qt.Node>sourceFile);
     Debug.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
     incrementalSourceFile.hasBeenIncrementallyParsed = true;
     const oldText = sourceFile.text;
@@ -7538,7 +7545,7 @@ namespace IncrementalParser {
       forEachChild(node, visitNode, visitArray);
       if (hasJSDocNodes(node)) {
         for (const jsDocComment of node.jsDoc!) {
-          visitNode(<IncrementalNode>(<Node>jsDocComment));
+          visitNode(<IncrementalNode>(<qt.Node>jsDocComment));
         }
       }
       checkNodePositions(node, aggressiveChecks);
@@ -7643,7 +7650,7 @@ namespace IncrementalParser {
   function checkNodePositions(node: qt.Node, aggressiveChecks: boolean) {
     if (aggressiveChecks) {
       let pos = node.pos;
-      const visitNode = (child: Node) => {
+      const visitNode = (child: qt.Node) => {
         Debug.assert(child.pos >= pos);
         pos = child.end;
       };
@@ -7683,7 +7690,7 @@ namespace IncrementalParser {
         forEachChild(child, visitNode, visitArray);
         if (hasJSDocNodes(child)) {
           for (const jsDocComment of child.jsDoc!) {
-            visitNode(<IncrementalNode>(<Node>jsDocComment));
+            visitNode(<IncrementalNode>(<qt.Node>jsDocComment));
           }
         }
         checkNodePositions(child, aggressiveChecks);
@@ -7756,9 +7763,9 @@ namespace IncrementalParser {
     return createTextChangeRange(finalSpan, finalLength);
   }
 
-  function findNearestNodeStartingBeforeOrAtPosition(sourceFile: SourceFile, position: number): Node {
-    let bestResult: Node = sourceFile;
-    let lastNodeEntirelyBeforePosition: Node | undefined;
+  function findNearestNodeStartingBeforeOrAtPosition(sourceFile: SourceFile, position: number): qt.Node {
+    let bestResult: qt.Node = sourceFile;
+    let lastNodeEntirelyBeforePosition: qt.Node | undefined;
 
     forEachChild(sourceFile, visit);
 
@@ -7771,7 +7778,7 @@ namespace IncrementalParser {
 
     return bestResult;
 
-    function getLastDescendant(node: qt.Node): Node {
+    function getLastDescendant(node: qt.Node): qt.Node {
       while (true) {
         const lastChild = getLastChild(node);
         if (lastChild) {
@@ -7782,7 +7789,7 @@ namespace IncrementalParser {
       }
     }
 
-    function visit(child: Node) {
+    function visit(child: qt.Node) {
       if (nodeIsMissing(child)) {
         // Missing nodes are effectively invisible to us.  We never even consider them
         // When trying to find the nearest node before us.
@@ -7856,17 +7863,17 @@ namespace IncrementalParser {
   }
 
   interface IncrementalElement extends qt.TextRange {
-    parent: Node;
+    parent: qt.Node;
     intersectsChange: boolean;
     length?: number;
-    _children: Node[] | undefined;
+    _children: qt.Node[] | undefined;
   }
 
-  export interface IncrementalNode extends Node, IncrementalElement {
+  export interface IncrementalNode extends qt.Node, IncrementalElement {
     hasBeenIncrementallyParsed: boolean;
   }
 
-  interface IncrementalNodeArray extends NodeArray<IncrementalNode>, IncrementalElement {
+  interface IncrementalNodeArray extends qt.NodeArray<IncrementalNode>, IncrementalElement {
     length: number;
   }
 
@@ -7878,7 +7885,7 @@ namespace IncrementalParser {
   }
 
   function createSyntaxCursor(sourceFile: SourceFile): SyntaxCursor {
-    let currentArray: NodeArray<Node> = sourceFile.statements;
+    let currentArray: qt.NodeArray<qt.Node> = sourceFile.statements;
     let currentArrayIndex = 0;
 
     Debug.assert(currentArrayIndex < currentArray.length);
@@ -7946,7 +7953,7 @@ namespace IncrementalParser {
         return false;
       }
 
-      function visitArray(array: NodeArray<Node>) {
+      function visitArray(array: qt.NodeArray<qt.Node>) {
         if (position >= array.pos && position < array.end) {
           // position was in this array.  Search through this array to see if we find a
           // viable element.
@@ -7981,7 +7988,6 @@ namespace IncrementalParser {
     Value = -1,
   }
 }
-
 
 export function isDeclarationFileName(fileName: string): boolean {
   return fileExtensionIs(fileName, Extension.Dts);
@@ -8188,7 +8194,6 @@ function getNamedPragmaArguments(pragma: PragmaDefinition, text: string | undefi
   }
   return argMap;
 }
-
 
 export function tagNamesAreEquivalent(lhs: JsxTagNameExpression, rhs: JsxTagNameExpression): boolean {
   if (lhs.kind !== rhs.kind) {

@@ -4802,7 +4802,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     function typeParametersToTypeParameterDeclarations(symbol: symbol, context: NodeBuilderContext) {
-      let typeParameterNodes: NodeArray<TypeParameterDeclaration> | undefined;
+      let typeParameterNodes: qt.NodeArray<TypeParameterDeclaration> | undefined;
       const targetSymbol = getTargetSymbol(symbol);
       if (targetSymbol.flags & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeAlias)) {
         typeParameterNodes = createNodeArray(map(getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol), (tp) => typeParameterToDeclaration(tp, context)));
@@ -4938,7 +4938,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         const lastId = isIdentifier(entityName) ? entityName : entityName.right;
         const lastTypeArgs = lastId.typeArguments;
         lastId.typeArguments = undefined;
-        return createTypeReferenceNode(entityName, lastTypeArgs as NodeArray<TypeNode>);
+        return createTypeReferenceNode(entityName, lastTypeArgs as qt.NodeArray<TypeNode>);
       }
 
       function createAccessFromSymbolChain(chain: symbol[], index: number, stopper: number): EntityName | IndexedAccessTypeNode {
@@ -9506,7 +9506,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function isTypeInvalidDueToUnionDiscriminant(contextualType: Type, obj: ObjectLiteralExpression | JsxAttributes): boolean {
-    const list = obj.properties as NodeArray<ObjectLiteralElementLike | JsxAttributeLike>;
+    const list = obj.properties as qt.NodeArray<ObjectLiteralElementLike | JsxAttributeLike>;
     return list.some((property) => {
       const nameType = property.name && getLiteralTypeFromPropertyName(property.name);
       const name = nameType && isTypeUsableAsPropertyName(nameType) ? getPropertyNameFromType(nameType) : undefined;
@@ -13946,7 +13946,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
   }
 
-  function getSemanticJsxChildren(children: NodeArray<JsxChild>) {
+  function getSemanticJsxChildren(children: qt.NodeArray<JsxChild>) {
     return filter(children, (i) => !isJsxText(i) || !i.containsOnlyTriviaWhiteSpaces);
   }
 
@@ -23338,7 +23338,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return true;
   }
 
-  function hasCorrectTypeArgumentArity(signature: Signature, typeArguments: NodeArray<TypeNode> | undefined) {
+  function hasCorrectTypeArgumentArity(signature: Signature, typeArguments: qt.NodeArray<TypeNode> | undefined) {
     // If the user supplied type arguments, but the number of type arguments does not match
     // the declared number of type parameters, the call has an incorrect arity.
     const numTypeParameters = length(signature.typeParameters);
@@ -23862,7 +23862,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       argCount--;
     }
 
-    let spanArray: NodeArray<Node>;
+    let spanArray: qt.NodeArray<Node>;
     let related: qt.DiagnosticWithLocation | undefined;
 
     const error = hasRestParameter || hasSpreadArgument ? (hasRestParameter && hasSpreadArgument ? Diagnostics.Expected_at_least_0_arguments_but_got_1_or_more : hasRestParameter ? Diagnostics.Expected_at_least_0_arguments_but_got_1 : Diagnostics.Expected_0_arguments_but_got_1_or_more) : Diagnostics.Expected_0_arguments_but_got_1;
@@ -23901,7 +23901,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return related ? addRelatedInfo(diagnostic, related) : diagnostic;
   }
 
-  function getTypeArgumentArityError(node: qt.Node, signatures: readonly Signature[], typeArguments: NodeArray<TypeNode>) {
+  function getTypeArgumentArityError(node: qt.Node, signatures: readonly Signature[], typeArguments: qt.NodeArray<TypeNode>) {
     const argCount = typeArguments.length;
     // No overloads exist
     if (signatures.length === 1) {
@@ -23934,7 +23934,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     const isJsxOpeningOrSelfClosingElement = isJsxOpeningLikeElement(node);
     const reportErrors = !candidatesOutArray;
 
-    let typeArguments: NodeArray<TypeNode> | undefined;
+    let typeArguments: qt.NodeArray<TypeNode> | undefined;
 
     if (!isDecorator) {
       typeArguments = node.typeArguments;
@@ -26263,7 +26263,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   /** Note: If property cannot be a SpreadAssignment, then allProperties does not need to be provided */
-  function checkObjectLiteralDestructuringPropertyAssignment(node: ObjectLiteralExpression, objectLiteralType: Type, propertyIndex: number, allProperties?: NodeArray<ObjectLiteralElementLike>, rightIsThis = false) {
+  function checkObjectLiteralDestructuringPropertyAssignment(node: ObjectLiteralExpression, objectLiteralType: Type, propertyIndex: number, allProperties?: qt.NodeArray<ObjectLiteralElementLike>, rightIsThis = false) {
     const properties = node.properties;
     const property = properties[propertyIndex];
     if (property.kind === qt.SyntaxKind.PropertyAssignment || property.kind === qt.SyntaxKind.ShorthandPropertyAssignment) {
@@ -34736,14 +34736,14 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return grammarErrorOnNode(asyncModifier, Diagnostics._0_modifier_cannot_be_used_here, 'async');
   }
 
-  function checkGrammarForDisallowedTrailingComma(list: NodeArray<Node> | undefined, diag = Diagnostics.Trailing_comma_not_allowed): boolean {
+  function checkGrammarForDisallowedTrailingComma(list: qt.NodeArray<Node> | undefined, diag = Diagnostics.Trailing_comma_not_allowed): boolean {
     if (list && list.hasTrailingComma) {
       return grammarErrorAtPos(list[0], list.end - ','.length, ','.length, diag);
     }
     return false;
   }
 
-  function checkGrammarTypeParameterList(typeParameters: NodeArray<TypeParameterDeclaration> | undefined, file: SourceFile): boolean {
+  function checkGrammarTypeParameterList(typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, file: SourceFile): boolean {
     if (typeParameters && typeParameters.length === 0) {
       const start = typeParameters.pos - '<'.length;
       const end = skipTrivia(file.text, typeParameters.end) + '>'.length;
@@ -34752,7 +34752,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarParameterList(parameters: NodeArray<qt.ParameterDeclaration>) {
+  function checkGrammarParameterList(parameters: qt.NodeArray<qt.ParameterDeclaration>) {
     let seenOptionalParameter = false;
     const parameterCount = parameters.length;
 
@@ -34879,7 +34879,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return checkGrammarDecoratorsAndModifiers(node) || checkGrammarIndexSignatureParameters(node);
   }
 
-  function checkGrammarForAtLeastOneTypeArgument(node: qt.Node, typeArguments: NodeArray<TypeNode> | undefined): boolean {
+  function checkGrammarForAtLeastOneTypeArgument(node: qt.Node, typeArguments: qt.NodeArray<TypeNode> | undefined): boolean {
     if (typeArguments && typeArguments.length === 0) {
       const sourceFile = getSourceFileOfNode(node);
       const start = typeArguments.pos - '<'.length;
@@ -34889,7 +34889,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarTypeArguments(node: qt.Node, typeArguments: NodeArray<TypeNode> | undefined): boolean {
+  function checkGrammarTypeArguments(node: qt.Node, typeArguments: qt.NodeArray<TypeNode> | undefined): boolean {
     return checkGrammarForDisallowedTrailingComma(typeArguments) || checkGrammarForAtLeastOneTypeArgument(node, typeArguments);
   }
 
@@ -34900,7 +34900,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarForOmittedArgument(args: NodeArray<Expression> | undefined): boolean {
+  function checkGrammarForOmittedArgument(args: qt.NodeArray<Expression> | undefined): boolean {
     if (args) {
       for (const arg of args) {
         if (arg.kind === qt.SyntaxKind.OmittedExpression) {
@@ -34911,7 +34911,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function checkGrammarArguments(args: NodeArray<Expression> | undefined): boolean {
+  function checkGrammarArguments(args: qt.NodeArray<Expression> | undefined): boolean {
     return checkGrammarForOmittedArgument(args);
   }
 

@@ -796,7 +796,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return endPrint();
   }
 
-  function printList<T extends Node>(format: ListFormat, nodes: NodeArray<T>, sourceFile: SourceFile) {
+  function printList<T extends Node>(format: ListFormat, nodes: qt.NodeArray<T>, sourceFile: SourceFile) {
     writeList(format, nodes, sourceFile, beginPrint());
     return endPrint();
   }
@@ -829,7 +829,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writer = previousWriter;
   }
 
-  function writeList<T extends Node>(format: ListFormat, nodes: NodeArray<T>, sourceFile: SourceFile | undefined, output: qt.EmitTextWriter) {
+  function writeList<T extends Node>(format: ListFormat, nodes: qt.NodeArray<T>, sourceFile: SourceFile | undefined, output: qt.EmitTextWriter) {
     const previousWriter = writer;
     setWriter(output, /*_sourceMapGenerator*/ undefined);
     if (sourceFile) {
@@ -3210,7 +3210,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitCaseOrDefaultClauseRest(node, node.statements, pos);
   }
 
-  function emitCaseOrDefaultClauseRest(parentNode: Node, statements: NodeArray<Statement>, colonPos: number) {
+  function emitCaseOrDefaultClauseRest(parentNode: Node, statements: qt.NodeArray<Statement>, colonPos: number) {
     const emitAsSingleStatement =
       statements.length === 1 &&
       // treat synthesized nodes as located on the same line for emit purposes
@@ -3662,7 +3662,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     write = savedWrite;
   }
 
-  function emitModifiers(node: qt.Node, modifiers: NodeArray<Modifier> | undefined) {
+  function emitModifiers(node: qt.Node, modifiers: qt.NodeArray<Modifier> | undefined) {
     if (modifiers && modifiers.length) {
       emitList(node, modifiers, ListFormat.Modifiers);
       writeSpace();
@@ -3730,15 +3730,15 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitDecorators(parentNode: Node, decorators: NodeArray<qt.Decorator> | undefined) {
+  function emitDecorators(parentNode: Node, decorators: qt.NodeArray<qt.Decorator> | undefined) {
     emitList(parentNode, decorators, ListFormat.Decorators);
   }
 
-  function emitTypeArguments(parentNode: Node, typeArguments: NodeArray<TypeNode> | undefined) {
+  function emitTypeArguments(parentNode: Node, typeArguments: qt.NodeArray<TypeNode> | undefined) {
     emitList(parentNode, typeArguments, ListFormat.TypeArguments);
   }
 
-  function emitTypeParameters(parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression, typeParameters: NodeArray<TypeParameterDeclaration> | undefined) {
+  function emitTypeParameters(parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined) {
     if (isFunctionLike(parentNode) && parentNode.typeArguments) {
       // Quick info uses type arguments in place of type parameters on instantiated signatures
       return emitTypeArguments(parentNode, parentNode.typeArguments);
@@ -3746,11 +3746,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitList(parentNode, typeParameters, ListFormat.TypeParameters);
   }
 
-  function emitParameters(parentNode: Node, parameters: NodeArray<qt.ParameterDeclaration>) {
+  function emitParameters(parentNode: Node, parameters: qt.NodeArray<qt.ParameterDeclaration>) {
     emitList(parentNode, parameters, ListFormat.Parameters);
   }
 
-  function canEmitSimpleArrowHead(parentNode: FunctionTypeNode | ArrowFunction, parameters: NodeArray<qt.ParameterDeclaration>) {
+  function canEmitSimpleArrowHead(parentNode: FunctionTypeNode | ArrowFunction, parameters: qt.NodeArray<qt.ParameterDeclaration>) {
     const parameter = singleOrUndefined(parameters);
     return (
       parameter &&
@@ -3770,7 +3770,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     ); // parameter name must be identifier
   }
 
-  function emitParametersForArrow(parentNode: FunctionTypeNode | ArrowFunction, parameters: NodeArray<qt.ParameterDeclaration>) {
+  function emitParametersForArrow(parentNode: FunctionTypeNode | ArrowFunction, parameters: qt.NodeArray<qt.ParameterDeclaration>) {
     if (canEmitSimpleArrowHead(parentNode, parameters)) {
       emitList(parentNode, parameters, ListFormat.Parameters & ~ListFormat.Parenthesis);
     } else {
@@ -3778,15 +3778,15 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitParametersForIndexSignature(parentNode: Node, parameters: NodeArray<qt.ParameterDeclaration>) {
+  function emitParametersForIndexSignature(parentNode: Node, parameters: qt.NodeArray<qt.ParameterDeclaration>) {
     emitList(parentNode, parameters, ListFormat.IndexSignatureParameters);
   }
 
-  function emitList(parentNode: qt.TextRange, children: NodeArray<Node> | undefined, format: ListFormat, start?: number, count?: number) {
+  function emitList(parentNode: qt.TextRange, children: qt.NodeArray<Node> | undefined, format: ListFormat, start?: number, count?: number) {
     emitNodeList(emit, parentNode, children, format, start, count);
   }
 
-  function emitExpressionList(parentNode: qt.TextRange, children: NodeArray<Node> | undefined, format: ListFormat, start?: number, count?: number) {
+  function emitExpressionList(parentNode: qt.TextRange, children: qt.NodeArray<Node> | undefined, format: ListFormat, start?: number, count?: number) {
     emitNodeList(emitExpression as (node: qt.Node) => void, parentNode, children, format, start, count); // TODO: GH#18217
   }
 
@@ -3813,7 +3813,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitNodeList(emit: (node: qt.Node) => void, parentNode: qt.TextRange, children: NodeArray<Node> | undefined, format: ListFormat, start = 0, count = children ? children.length - start : 0) {
+  function emitNodeList(emit: (node: qt.Node) => void, parentNode: qt.TextRange, children: qt.NodeArray<Node> | undefined, format: ListFormat, start = 0, count = children ? children.length - start : 0) {
     const isUndefined = children === undefined;
     if (isUndefined && format & ListFormat.OptionalIfUndefined) {
       return;

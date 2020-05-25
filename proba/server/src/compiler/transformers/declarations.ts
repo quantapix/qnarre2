@@ -262,7 +262,7 @@ export function transformDeclarations(context: TransformationContext) {
     const references: FileReference[] = [];
     const outputFilePath = qp.getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
     const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
-    let combinedStatements: NodeArray<Statement>;
+    let combinedStatements: qt.NodeArray<Statement>;
     if (isSourceFileJS(currentSourceFile)) {
       combinedStatements = createNodeArray(transformDeclarationsForJS(node));
       refs.forEach(referenceVisitor);
@@ -508,7 +508,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
 
-  function updateParamsList(node: qt.Node, params: NodeArray<qt.ParameterDeclaration>, modifierMask?: qt.ModifierFlags) {
+  function updateParamsList(node: qt.Node, params: qt.NodeArray<qt.ParameterDeclaration>, modifierMask?: qt.ModifierFlags) {
     if (hasEffectiveModifier(node, qt.ModifierFlags.Private)) {
       return undefined!; // TODO: GH#18217
     }
@@ -544,7 +544,7 @@ export function transformDeclarations(context: TransformationContext) {
     return createNodeArray(newParams || emptyArray);
   }
 
-  function ensureTypeParams(node: qt.Node, params: NodeArray<TypeParameterDeclaration> | undefined) {
+  function ensureTypeParams(node: qt.Node, params: qt.NodeArray<TypeParameterDeclaration> | undefined) {
     return hasEffectiveModifier(node, qt.ModifierFlags.Private) ? undefined : visitNodes(params, visitDeclarationSubtree);
   }
 
@@ -627,7 +627,7 @@ export function transformDeclarations(context: TransformationContext) {
     // Nothing visible
   }
 
-  function transformAndReplaceLatePaintedStatements(statements: NodeArray<Statement>): NodeArray<Statement> {
+  function transformAndReplaceLatePaintedStatements(statements: qt.NodeArray<Statement>): qt.NodeArray<Statement> {
     // This is a `while` loop because `handleSymbolAccessibilityError` can see additional import aliases marked as visible during
     // error handling which must now be included in the output and themselves checked for errors.
     // For example:
@@ -1247,7 +1247,7 @@ export function transformDeclarations(context: TransformationContext) {
     return accessorType;
   }
 
-  function transformHeritageClauses(nodes: NodeArray<HeritageClause> | undefined) {
+  function transformHeritageClauses(nodes: qt.NodeArray<HeritageClause> | undefined) {
     return createNodeArray(
       filter(
         map(nodes, (clause) =>

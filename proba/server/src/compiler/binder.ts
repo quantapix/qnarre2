@@ -692,12 +692,12 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindEachFunctionsFirst(nodes: NodeArray<Node> | undefined): void {
+  function bindEachFunctionsFirst(nodes: qt.NodeArray<Node> | undefined): void {
     bindEach(nodes, (n) => (n.kind === qt.SyntaxKind.FunctionDeclaration ? bind(n) : undefined));
     bindEach(nodes, (n) => (n.kind !== qt.SyntaxKind.FunctionDeclaration ? bind(n) : undefined));
   }
 
-  function bindEach(nodes: NodeArray<Node> | undefined, bindFunction: (node: qt.Node) => void = bind): void {
+  function bindEach(nodes: qt.NodeArray<Node> | undefined, bindFunction: (node: qt.Node) => void = bind): void {
     if (nodes === undefined) {
       return;
     }
@@ -2327,7 +2327,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function updateStrictModeStatementList(statements: NodeArray<Statement>) {
+  function updateStrictModeStatementList(statements: qt.NodeArray<Statement>) {
     if (!inStrictMode) {
       for (const statement of statements) {
         if (!isPrologueDirective(statement)) {
