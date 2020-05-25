@@ -28,3 +28,6 @@
 [submodule "dev-libs/tokenizers"]
 	path = dev-libs/tokenizers
 	url = https://github.com/huggingface/tokenizers.git
+[submodule "dev-libs/pyright"]
+	path = dev-libs/pyright
+	url = https://github.com/microsoft/pyright.git

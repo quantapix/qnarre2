@@ -1,3 +1,6 @@
 rxjs @ 5baa104
 spaCy @ 5b5528f
 vscode @ a7fb3ef303
+Typescript @ 3e0d58f4d2
+pyright @ 998304dc
+
