@@ -69,7 +69,7 @@ export function createCompilerHost(options: qt.CompilerOptions, setParentNodes?:
 
 // TODO(shkamat): update this after reworking ts build API
 export function createCompilerHostWorker(options: qt.CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
-  const existingDirectories = createMap<boolean>();
+  const existingDirectories = qc.createMap<boolean>();
   const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
   function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
     let text: string | undefined;
@@ -131,7 +131,7 @@ export function createCompilerHostWorker(options: qt.CompilerOptions, setParentN
     }
 
     if (!outputFingerprints) {
-      outputFingerprints = createMap<OutputFingerprint>();
+      outputFingerprints = qc.createMap<OutputFingerprint>();
     }
 
     const hash = system.createHash(data);
@@ -199,10 +199,10 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
   const originalDirectoryExists = host.directoryExists;
   const originalCreateDirectory = host.createDirectory;
   const originalWriteFile = host.writeFile;
-  const readFileCache = createMap<string | false>();
-  const fileExistsCache = createMap<boolean>();
-  const directoryExistsCache = createMap<boolean>();
-  const sourceFileCache = createMap<SourceFile>();
+  const readFileCache = qc.createMap<string | false>();
+  const fileExistsCache = qc.createMap<boolean>();
+  const directoryExistsCache = qc.createMap<boolean>();
+  const sourceFileCache = qc.createMap<SourceFile>();
 
   const readFileWithCache = (fileName: string): string | undefined => {
     const key = toPath(fileName);
@@ -474,7 +474,7 @@ export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagn
   return output;
 }
 
-export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageChain | undefined, newLine: string, indent = 0): string {
+export function flattenDiagnosticMessageText(diag: string | qt.DiagnosticMessageChain | undefined, newLine: string, indent = 0): string {
   if (isString(diag)) {
     return diag;
   } else if (diag === undefined) {
@@ -503,7 +503,7 @@ export function loadWithLocalCache<T>(names: string[], containingFile: string, r
     return [];
   }
   const resolutions: T[] = [];
-  const cache = createMap<T>();
+  const cache = qc.createMap<T>();
   for (const name of names) {
     let result: T;
     if (cache.has(name)) {
@@ -523,7 +523,7 @@ interface DiagnosticCache<T extends Diagnostic> {
   allDiagnostics?: readonly T[];
 }
 
-interface RefFile extends TextRange {
+interface RefFile extends qt.TextRange {
   kind: RefFileKind;
   index: number;
   file: SourceFile;
@@ -679,14 +679,14 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   let diagnosticsProducingTypeChecker: TypeChecker;
   let noDiagnosticsTypeChecker: TypeChecker;
   let classifiableNames: qt.UnderscoreEscapedMap<true>;
-  const ambientModuleNameToUnmodifiedFileName = createMap<string>();
+  const ambientModuleNameToUnmodifiedFileName = qc.createMap<string>();
   // Todo:: Use this to report why file was included in --extendedDiagnostics
   let refFileMap: MultiMap<ts.RefFile> | undefined;
 
   const cachedBindAndCheckDiagnosticsForFile: DiagnosticCache<Diagnostic> = {};
   const cachedDeclarationDiagnosticsForFile: DiagnosticCache<DiagnosticWithLocation> = {};
 
-  let resolvedTypeReferenceDirectives = createMap<ResolvedTypeReferenceDirective | undefined>();
+  let resolvedTypeReferenceDirectives = qc.createMap<ResolvedTypeReferenceDirective | undefined>();
   let fileProcessingDiagnostics = createDiagnosticCollection();
 
   // The below settings are to track if a .js file should be add to the program if loaded via searching under node_modules.
@@ -701,10 +701,10 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   // If a module has some of its imports skipped due to being at the depth limit under node_modules, then track
   // this, as it may be imported at a shallower depth later, and then it will need its skipped imports processed.
-  const modulesWithElidedImports = createMap<boolean>();
+  const modulesWithElidedImports = qc.createMap<boolean>();
 
   // Track source files that are source files found by searching under node_modules, as these shouldn't be compiled.
-  const sourceFilesFoundSearchingNodeModules = createMap<boolean>();
+  const sourceFilesFoundSearchingNodeModules = qc.createMap<boolean>();
 
   performance.mark('beforeProgram');
 
@@ -720,18 +720,18 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   const supportedExtensionsWithJsonIfResolveJsonModule = getSuppoertedExtensionsWithJsonIfResolveJsonModule(options, supportedExtensions);
 
   // Map storing if there is emit blocking diagnostics for given input
-  const hasEmitBlockingDiagnostics = createMap<boolean>();
+  const hasEmitBlockingDiagnostics = qc.createMap<boolean>();
   let _compilerOptionsObjectLiteralSyntax: ObjectLiteralExpression | null | undefined;
 
   let moduleResolutionCache: ModuleResolutionCache | undefined;
-  let actualResolveModuleNamesWorker: (moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: ResolvedProjectReference) => ResolvedModuleFull[];
+  let actualResolveModuleNamesWorker: (moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: ResolvedProjectReference) => qt.ResolvedModuleFull[];
   const hasInvalidatedResolution = host.hasInvalidatedResolution || returnFalse;
   if (host.resolveModuleNames) {
     actualResolveModuleNamesWorker = (moduleNames, containingFile, reusedNames, redirectedReference) =>
       host.resolveModuleNames!(Debug.checkEachDefined(moduleNames), containingFile, reusedNames, redirectedReference, options).map((resolved) => {
         // An older host may have omitted extension, in which case we should infer it from the file extension of resolvedFileName.
-        if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) {
-          return resolved as ResolvedModuleFull;
+        if (!resolved || (resolved as qt.ResolvedModuleFull).extension !== undefined) {
+          return resolved as qt.ResolvedModuleFull;
         }
         const withExtension = clone(resolved);
         withExtension.extension = extensionFromPath(resolved.resolvedFileName);
@@ -740,7 +740,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   } else {
     moduleResolutionCache = createModuleResolutionCache(currentDirectory, (x) => host.getCanonicalFileName(x), options);
     const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => resolveModuleName(moduleName, containingFile, options, host, moduleResolutionCache, redirectedReference).resolvedModule!; // TODO: GH#18217
-    actualResolveModuleNamesWorker = (moduleNames, containingFile, _reusedNames, redirectedReference) => loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+    actualResolveModuleNamesWorker = (moduleNames, containingFile, _reusedNames, redirectedReference) => loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
 
   let actualResolveTypeReferenceDirectiveNamesWorker: (typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference) => (ResolvedTypeReferenceDirective | undefined)[];
@@ -754,11 +754,11 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   // Map from a stringified PackageId to the source file with that id.
   // Only one source file may have a given packageId. Others become redirects (see createRedirectSourceFile).
   // `packageIdToSourceFile` is only used while building the program, while `sourceFileToPackageName` and `isSourceFileTargetOfRedirect` are kept around.
-  const packageIdToSourceFile = createMap<SourceFile>();
+  const packageIdToSourceFile = qc.createMap<SourceFile>();
   // Maps from a SourceFile's `.path` to the name of the package it was imported with.
-  let sourceFileToPackageName = createMap<string>();
+  let sourceFileToPackageName = qc.createMap<string>();
   // Key is a file name. Value is the (non-empty, or undefined) list of files that redirect to it.
-  let redirectTargetsMap = createMultiMap<string>();
+  let redirectTargetsMap = qc.createMultiMap<string>();
 
   /**
    * map with
@@ -766,11 +766,11 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
    * - false if sourceFile missing for source of project reference redirect
    * - undefined otherwise
    */
-  const filesByName = createMap<SourceFile | false | undefined>();
+  const filesByName = qc.createMap<SourceFile | false | undefined>();
   let missingFilePaths: readonly Path[] | undefined;
   // stores 'filename -> file association' ignoring case
   // used to track cases when two file names differ only in casing
-  const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createMap<SourceFile>() : undefined;
+  const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? qc.createMap<SourceFile>() : undefined;
 
   // A parallel array to projectReferences storing the results of reading in the referenced tsconfig files
   let resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined;
@@ -1046,7 +1046,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       // which per above occurred during the current program creation.
       // Since we assume the filesystem does not change during program creation,
       // it is safe to reuse resolutions from the earlier call.
-      const result: ResolvedModuleFull[] = [];
+      const result: qt.ResolvedModuleFull[] = [];
       for (const moduleName of moduleNames) {
         const resolvedModule = file.resolvedModules.get(moduleName)!;
         result.push(resolvedModule);
@@ -1067,12 +1067,12 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
      * * undefined: needs to be recomputed,
      * * predictedToResolveToAmbientModuleMarker: known to be an ambient module.
      * Needs to be reset to undefined before returning,
-     * * ResolvedModuleFull instance: can be reused.
+     * * qt.ResolvedModuleFull instance: can be reused.
      */
-    let result: ResolvedModuleFull[] | undefined;
+    let result: qt.ResolvedModuleFull[] | undefined;
     let reusedNames: string[] | undefined;
     /** A transient placeholder used to mark predicted resolution in the result list. */
-    const predictedToResolveToAmbientModuleMarker: ResolvedModuleFull = <any>{};
+    const predictedToResolveToAmbientModuleMarker: qt.ResolvedModuleFull = <any>{};
 
     for (let i = 0; i < moduleNames.length; i++) {
       const moduleName = moduleNames[i];
@@ -1122,7 +1122,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     let j = 0;
     for (let i = 0; i < result.length; i++) {
       if (result[i]) {
-        // `result[i]` is either a `ResolvedModuleFull` or a marker.
+        // `result[i]` is either a `qt.ResolvedModuleFull` or a marker.
         // If it is the former, we can leave it as is.
         if (result[i] === predictedToResolveToAmbientModuleMarker) {
           result[i] = undefined!; // TODO: GH#18217
@@ -1235,7 +1235,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       Exists,
       Modified,
     }
-    const seenPackageNames = createMap<SeenPackageName>();
+    const seenPackageNames = qc.createMap<SeenPackageName>();
 
     for (const oldSourceFile of oldSourceFiles) {
       let newSourceFile = host.getSourceFileByPath ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.resolvedPath, options.target!, /*onError*/ undefined, shouldCreateNewSourceFile) : host.getSourceFile(oldSourceFile.fileName, options.target!, /*onError*/ undefined, shouldCreateNewSourceFile); // TODO: GH#18217
@@ -1579,7 +1579,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     );
   }
 
-  function getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qt.DiagnosticWithLocation[] {
     return getDiagnosticsHelper(sourceFile, getSyntacticDiagnosticsForFile, cancellationToken);
   }
 
@@ -1611,7 +1611,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics).diagnostics;
   }
 
-  function getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qt.DiagnosticWithLocation[] {
     const options = program.getCompilerOptions();
     // collect diagnostics from the program only once if either no source file was specified or out/outFile is set (bundled emit)
     if (!sourceFile || options.out || options.outFile) {
@@ -1621,7 +1621,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function getSyntacticDiagnosticsForFile(sourceFile: SourceFile): readonly DiagnosticWithLocation[] {
+  function getSyntacticDiagnosticsForFile(sourceFile: SourceFile): readonly qt.DiagnosticWithLocation[] {
     // For JavaScript files, we report semantic errors for using TypeScript-only
     // constructs from within a JavaScript file as syntactic errors.
     if (isSourceFileJS(sourceFile)) {
@@ -1712,7 +1712,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return { diagnostics, directives };
   }
 
-  function getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly qt.DiagnosticWithLocation[] {
     return runWithCancellationToken(() => {
       return getDiagnosticsProducingTypeChecker().getSuggestionDiagnostics(sourceFile, cancellationToken);
     });
@@ -1748,15 +1748,15 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return -1;
   }
 
-  function getJSSyntacticDiagnosticsForFile(sourceFile: SourceFile): DiagnosticWithLocation[] {
+  function getJSSyntacticDiagnosticsForFile(sourceFile: SourceFile): qt.DiagnosticWithLocation[] {
     return runWithCancellationToken(() => {
-      const diagnostics: DiagnosticWithLocation[] = [];
+      const diagnostics: qt.DiagnosticWithLocation[] = [];
       walk(sourceFile, sourceFile);
       forEachChildRecursively(sourceFile, walk, walkArray);
 
       return diagnostics;
 
-      function walk(node: Node, parent: Node) {
+      function walk(node: qt.Node, parent: Node) {
         // Return directly from the case if the given node doesnt want to visit each child
         // Otherwise break to visit each child
 
@@ -1786,13 +1786,13 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
         switch (node.kind) {
           case qt.SyntaxKind.ImportClause:
-            if ((node as ImportClause).isTypeOnly) {
+            if (node.isTypeOnly) {
               diagnostics.push(createDiagnosticForNode(node.parent, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
               return 'skip';
             }
             break;
           case qt.SyntaxKind.ExportDeclaration:
-            if ((node as ExportDeclaration).isTypeOnly) {
+            if (node.isTypeOnly) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
               return 'skip';
             }
@@ -1801,13 +1801,13 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             diagnostics.push(createDiagnosticForNode(node, Diagnostics.import_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case qt.SyntaxKind.ExportAssignment:
-            if ((<ExportAssignment>node).isExportEquals) {
+            if (node.isExportEquals) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.export_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case qt.SyntaxKind.HeritageClause:
-            const heritageClause = <HeritageClause>node;
+            const heritageClause = node;
             if (heritageClause.token === qt.SyntaxKind.ImplementsKeyword) {
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.implements_clauses_can_only_be_used_in_TypeScript_files));
               return 'skip';
@@ -1834,7 +1834,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             diagnostics.push(createDiagnosticForNode(node, Diagnostics.Non_null_assertions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case qt.SyntaxKind.AsExpression:
-            diagnostics.push(createDiagnosticForNode((node as AsExpression).type, Diagnostics.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(createDiagnosticForNode(node.type, Diagnostics.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case qt.SyntaxKind.TypeAssertionExpression:
             Debug.fail(); // Won't parse these in a JS file anyway, as they are interpreted as JSX.
@@ -1872,7 +1872,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             break;
           case qt.SyntaxKind.PropertyDeclaration:
             // Check modifiers of property declaration
-            if (nodes === (<PropertyDeclaration>parent).modifiers) {
+            if (nodes === (<qt.PropertyDeclaration>parent).modifiers) {
               for (const modifier of nodes) {
                 if (modifier.kind !== qt.SyntaxKind.StaticKeyword) {
                   diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, tokenToString(modifier.kind)));
@@ -1883,7 +1883,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             break;
           case qt.SyntaxKind.Parameter:
             // Check modifiers of parameter declaration
-            if (nodes === (<ParameterDeclaration>parent).modifiers) {
+            if (nodes === (<qt.ParameterDeclaration>parent).modifiers) {
               diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
@@ -1929,24 +1929,24 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         }
       }
 
-      function createDiagnosticForNodeArray(nodes: NodeArray<Node>, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+      function createDiagnosticForNodeArray(nodes: NodeArray<Node>, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): qt.DiagnosticWithLocation {
         const start = nodes.pos;
         return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2);
       }
 
       // Since these are syntactic diagnostics, parent might not have been set
       // this means the sourceFile cannot be infered from the node
-      function createDiagnosticForNode(node: Node, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+      function createDiagnosticForNode(node: qt.Node, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): qt.DiagnosticWithLocation {
         return createDiagnosticForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2);
       }
     });
   }
 
-  function getDeclarationDiagnosticsWorker(sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnosticsWorker(sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): readonly qt.DiagnosticWithLocation[] {
     return getAndCacheDiagnostics(sourceFile, cancellationToken, cachedDeclarationDiagnosticsForFile, getDeclarationDiagnosticsForFileNoCache);
   }
 
-  function getDeclarationDiagnosticsForFileNoCache(sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnosticsForFileNoCache(sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): readonly qt.DiagnosticWithLocation[] {
     return runWithCancellationToken(() => {
       const resolver = getDiagnosticsProducingTypeChecker().getEmitResolver(sourceFile, cancellationToken);
       // Don't actually write any files since we're just getting diagnostics.
@@ -1972,7 +1972,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return result;
   }
 
-  function getDeclarationDiagnosticsForFile(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly DiagnosticWithLocation[] {
+  function getDeclarationDiagnosticsForFile(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly qt.DiagnosticWithLocation[] {
     return sourceFile.isDeclarationFile ? [] : getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
   }
 
@@ -2140,7 +2140,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return getSourceFileFromReferenceWorker(resolveTripleslashReference(ref.fileName, referencingFile.fileName), (fileName) => filesByName.get(toPath(fileName)) || undefined);
   }
 
-  function getSourceFileFromReferenceWorker(fileName: string, getSourceFile: (fileName: string) => SourceFile | undefined, fail?: (diagnostic: DiagnosticMessage, ...argument: string[]) => void, refFile?: SourceFile): SourceFile | undefined {
+  function getSourceFileFromReferenceWorker(fileName: string, getSourceFile: (fileName: string) => SourceFile | undefined, fail?: (diagnostic: qt.DiagnosticMessage, ...argument: string[]) => void, refFile?: SourceFile): SourceFile | undefined {
     if (hasExtension(fileName)) {
       const canonicalFileName = host.getCanonicalFileName(fileName);
       if (!options.allowNonTsExtensions && !forEach(supportedExtensionsWithJsonIfResolveJsonModule, (extension) => fileExtensionIs(canonicalFileName, extension))) {
@@ -2556,7 +2556,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function processTypeReferenceDirective(typeReferenceDirective: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective, refFile?: RefFile): void {
+  function processTypeReferenceDirective(typeReferenceDirective: string, resolvedTypeReferenceDirective?: qt.ResolvedTypeReferenceDirective, refFile?: RefFile): void {
     // If we already found this library as a primary reference - nothing to do
     const previousResolution = resolvedTypeReferenceDirectives.get(typeReferenceDirective);
     if (previousResolution && previousResolution.primary) {
@@ -2622,7 +2622,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     });
   }
 
-  function createRefFileDiagnostic(refFile: RefFile | undefined, message: DiagnosticMessage, ...args: any[]): Diagnostic {
+  function createRefFileDiagnostic(refFile: RefFile | undefined, message: qt.DiagnosticMessage, ...args: any[]): Diagnostic {
     if (!refFile) {
       return createCompilerDiagnostic(message, ...args);
     } else {
@@ -2725,7 +2725,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   function parseProjectReferenceConfigFile(ref: ProjectReference): ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
-      projectReferenceRedirects = createMap<ResolvedProjectReference | false>();
+      projectReferenceRedirects = qc.createMap<ResolvedProjectReference | false>();
     }
 
     // The actual filename (i.e. add "/tsconfig.json" if necessary)
@@ -2997,7 +2997,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     // If the emit is enabled make sure that every output file is unique and not overwriting any of the input files
     if (!options.noEmit && !options.suppressOutputPathCheck) {
       const emitHost = getEmitHost();
-      const emitFilesSeen = createMap<true>();
+      const emitFilesSeen = qc.createMap<true>();
       forEachEmittedFile(emitHost, (emitFileNames) => {
         if (!options.emitDeclarationOnly) {
           verifyEmitFilePath(emitFileNames.jsFilePath, emitFilesSeen);
@@ -3012,7 +3012,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         const emitFilePath = toPath(emitFileName);
         // Report error if the output overwrites input file
         if (filesByName.has(emitFilePath)) {
-          let chain: DiagnosticMessageChain | undefined;
+          let chain: qt.DiagnosticMessageChain | undefined;
           if (!options.configFilePath) {
             // The program is from either an inferred project or an external project
             chain = chainDiagnosticMessages(/*details*/ undefined, Diagnostics.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig);
@@ -3033,7 +3033,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function createFileDiagnosticAtReference(refPathToReportErrorOn: ts.RefFile, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
+  function createFileDiagnosticAtReference(refPathToReportErrorOn: ts.RefFile, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]) {
     const refFile = Debug.checkDefined(getSourceFileByPath(refPathToReportErrorOn.file));
     const { kind, index } = refPathToReportErrorOn;
     let pos: number, end: number;
@@ -3054,7 +3054,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return createFileDiagnostic(refFile, pos, end - pos, message, ...args);
   }
 
-  function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
+  function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
     const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elementAt(refPaths, 0);
     programDiagnostics.add(refPathToReportErrorOn ? createFileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
@@ -3094,7 +3094,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     });
   }
 
-  function createDiagnosticForOptionPathKeyValue(key: string, valueIndex: number, message: DiagnosticMessage, arg0: string | number, arg1: string | number, arg2?: string | number) {
+  function createDiagnosticForOptionPathKeyValue(key: string, valueIndex: number, message: qt.DiagnosticMessage, arg0: string | number, arg1: string | number, arg2?: string | number) {
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
@@ -3114,7 +3114,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function createDiagnosticForOptionPaths(onKey: boolean, key: string, message: DiagnosticMessage, arg0: string | number) {
+  function createDiagnosticForOptionPaths(onKey: boolean, key: string, message: qt.DiagnosticMessage, arg0: string | number) {
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
@@ -3139,15 +3139,15 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return (getOptionsSyntaxByName('paths') as PropertyAssignment[]) || emptyArray;
   }
 
-  function createDiagnosticForOptionName(message: DiagnosticMessage, option1: string, option2?: string, option3?: string) {
+  function createDiagnosticForOptionName(message: qt.DiagnosticMessage, option1: string, option2?: string, option3?: string) {
     createDiagnosticForOption(/*onKey*/ true, option1, option2, message, option1, option2, option3);
   }
 
-  function createOptionValueDiagnostic(option1: string, message: DiagnosticMessage, arg0: string) {
+  function createOptionValueDiagnostic(option1: string, message: qt.DiagnosticMessage, arg0: string) {
     createDiagnosticForOption(/*onKey*/ false, option1, /*option2*/ undefined, message, arg0);
   }
 
-  function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number) {
+  function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number) {
     const referencesSyntax = firstDefined(getTsConfigPropArray(sourceFile || options.configFile, 'references'), (property) => (isArrayLiteralExpression(property.initializer) ? property.initializer : undefined));
     if (referencesSyntax && referencesSyntax.elements.length > index) {
       programDiagnostics.add(createDiagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elements[index], message, arg0, arg1));
@@ -3156,7 +3156,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function createDiagnosticForOption(onKey: boolean, option1: string, option2: string | undefined, message: DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number) {
+  function createDiagnosticForOption(onKey: boolean, option1: string, option2: string | undefined, message: qt.DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number) {
     const compilerOptionsObjectLiteralSyntax = getCompilerOptionsObjectLiteralSyntax();
     const needCompilerDiagnostic = !compilerOptionsObjectLiteralSyntax || !createOptionDiagnosticInObjectLiteralSyntax(compilerOptionsObjectLiteralSyntax, onKey, option1, option2, message, arg0, arg1, arg2);
 
@@ -3181,7 +3181,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return _compilerOptionsObjectLiteralSyntax;
   }
 
-  function createOptionDiagnosticInObjectLiteralSyntax(objectLiteral: ObjectLiteralExpression, onKey: boolean, key1: string, key2: string | undefined, message: DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number): boolean {
+  function createOptionDiagnosticInObjectLiteralSyntax(objectLiteral: ObjectLiteralExpression, onKey: boolean, key1: string, key2: string | undefined, message: qt.DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number): boolean {
     const props = getPropertyAssignment(objectLiteral, key1, key2);
     for (const prop of props) {
       programDiagnostics.add(createDiagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initializer, message, arg0, arg1, arg2));
@@ -3483,11 +3483,11 @@ export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePa
 }
 
 /**
- * Returns a DiagnosticMessage if we won't include a resolved module due to its extension.
- * The DiagnosticMessage's parameters are the imported module name, and the filename it resolved to.
+ * Returns a qt.DiagnosticMessage if we won't include a resolved module due to its extension.
+ * The qt.DiagnosticMessage's parameters are the imported module name, and the filename it resolved to.
  * This returns a diagnostic even if the module will be an untyped module.
  */
-export function getResolutionDiagnostic(options: qt.CompilerOptions, { extension }: ResolvedModuleFull): DiagnosticMessage | undefined {
+export function getResolutionDiagnostic(options: qt.CompilerOptions, { extension }: qt.ResolvedModuleFull): qt.DiagnosticMessage | undefined {
   switch (extension) {
     case Extension.Ts:
     case Extension.Dts:

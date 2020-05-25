@@ -11,13 +11,13 @@ export function transformES2016(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if ((node.transformFlags & TransformFlags.ContainsES2016) === 0) {
       return node;
     }
     switch (node.kind) {
       case qt.SyntaxKind.BinaryExpression:
-        return visitBinaryExpression(<BinaryExpression>node);
+        return visitBinaryExpression(node);
       default:
         return visitEachChild(node, visitor, context);
     }

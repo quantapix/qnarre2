@@ -9,7 +9,7 @@ export function transformESNext(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if ((node.transformFlags & TransformFlags.ContainsESNext) === 0) {
       return node;
     }

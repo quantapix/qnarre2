@@ -30,7 +30,7 @@ export function createTypeCheck(value: Expression, tag: TypeOfTag) {
   return tag === 'undefined' ? createStrictEquality(value, createVoidZero()) : createStrictEquality(createTypeOf(value), createLiteral(tag));
 }
 
-export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
+export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: qt.TextRange): MemberExpression {
   if (isComputedPropertyName(memberName)) {
     return setTextRange(createElementAccess(target, memberName.expression), location);
   } else {
@@ -40,11 +40,11 @@ export function createMemberAccessForPropertyName(target: Expression, memberName
   }
 }
 
-export function createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
+export function createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: qt.TextRange) {
   return setTextRange(createCall(createPropertyAccess(func, 'call'), /*typeArguments*/ undefined, [thisArg, ...argumentsList]), location);
 }
 
-export function createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
+export function createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: qt.TextRange) {
   return setTextRange(createCall(createPropertyAccess(func, 'apply'), /*typeArguments*/ undefined, [thisArg, argumentsExpression]), location);
 }
 
@@ -61,7 +61,7 @@ export function createArrayConcat(array: Expression, values: readonly Expression
   return createCall(createPropertyAccess(array, 'concat'), /*typeArguments*/ undefined, values);
 }
 
-export function createMathPow(left: Expression, right: Expression, location?: TextRange) {
+export function createMathPow(left: Expression, right: Expression, location?: qt.TextRange) {
   return setTextRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), /*typeArguments*/ undefined, [left, right]), location);
 }
 
@@ -92,7 +92,7 @@ function createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, re
   return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
 }
 
-export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, tagName: Expression, props: Expression, children: readonly Expression[], parentElement: JsxOpeningLikeElement, location: TextRange): LeftHandSideExpression {
+export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, tagName: Expression, props: Expression, children: readonly Expression[], parentElement: JsxOpeningLikeElement, location: qt.TextRange): LeftHandSideExpression {
   const argumentsList = [tagName];
   if (props) {
     argumentsList.push(props);
@@ -116,7 +116,7 @@ export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | und
   return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
 }
 
-export function createExpressionForJsxFragment(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, children: readonly Expression[], parentElement: JsxOpeningFragment, location: TextRange): LeftHandSideExpression {
+export function createExpressionForJsxFragment(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, children: readonly Expression[], parentElement: JsxOpeningFragment, location: qt.TextRange): LeftHandSideExpression {
   const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
 
   const argumentsList = [tagName];
@@ -163,7 +163,7 @@ export const valuesHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
+export function createValuesHelper(context: TransformationContext, expression: Expression, location?: qt.TextRange) {
   context.requestEmitHelper(valuesHelper);
   return setTextRange(createCall(getUnscopedHelperName('__values'), /*typeArguments*/ undefined, [expression]), location);
 }
@@ -191,7 +191,7 @@ export const readHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
+export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: qt.TextRange) {
   context.requestEmitHelper(readHelper);
   return setTextRange(createCall(getUnscopedHelperName('__read'), /*typeArguments*/ undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
 }
@@ -208,7 +208,7 @@ export const spreadHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createSpreadHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
+export function createSpreadHelper(context: TransformationContext, argumentList: readonly Expression[], location?: qt.TextRange) {
   context.requestEmitHelper(spreadHelper);
   return setTextRange(createCall(getUnscopedHelperName('__spread'), /*typeArguments*/ undefined, argumentList), location);
 }
@@ -227,7 +227,7 @@ export const spreadArraysHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
+export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly Expression[], location?: qt.TextRange) {
   context.requestEmitHelper(spreadArraysHelper);
   return setTextRange(createCall(getUnscopedHelperName('__spreadArrays'), /*typeArguments*/ undefined, argumentList), location);
 }
@@ -629,7 +629,7 @@ function isUseStrictPrologue(node: ExpressionStatement): boolean {
  * @param ensureUseStrict: boolean determining whether the function need to add prologue-directives
  * @param visitor: Optional callback used to visit any custom prologue directives.
  */
-export function addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Node) => VisitResult<Node>): number {
+export function addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: qt.Node) => VisitResult<Node>): number {
   const offset = addStandardPrologue(target, source, ensureUseStrict);
   return addCustomPrologue(target, source, offset, visitor);
 }
@@ -669,9 +669,9 @@ export function addStandardPrologue(target: Statement[], source: readonly Statem
  * This function needs to be called whenever we transform the statement
  * list of a source file, namespace, or function-like body.
  */
-export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;
-export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number | undefined;
-export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: Node) => VisitResult<Node>, filter: (node: Node) => boolean = returnTrue): number | undefined {
+export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: qt.Node) => VisitResult<Node>, filter?: (node: qt.Node) => boolean): number;
+export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: qt.Node) => VisitResult<Node>, filter?: (node: qt.Node) => boolean): number | undefined;
+export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: qt.Node) => VisitResult<Node>, filter: (node: qt.Node) => boolean = returnTrue): number | undefined {
   const numStatements = source.length;
   while (statementOffset !== undefined && statementOffset < numStatements) {
     const statement = source[statementOffset];
@@ -1130,7 +1130,7 @@ export const enum OuterExpressionKinds {
 
 export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
 
-export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
+export function isOuterExpression(node: qt.Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
   switch (node.kind) {
     case qt.SyntaxKind.ParenthesizedExpression:
       return (kinds & OuterExpressionKinds.Parentheses) !== 0;
@@ -1146,8 +1146,8 @@ export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All):
 }
 
 export function skipOuterExpressions(node: Expression, kinds?: OuterExpressionKinds): Expression;
-export function skipOuterExpressions(node: Node, kinds?: OuterExpressionKinds): Node;
-export function skipOuterExpressions(node: Node, kinds = OuterExpressionKinds.All) {
+export function skipOuterExpressions(node: qt.Node, kinds?: OuterExpressionKinds): Node;
+export function skipOuterExpressions(node: qt.Node, kinds = OuterExpressionKinds.All) {
   while (isOuterExpression(node, kinds)) {
     node = node.expression;
   }
@@ -1155,8 +1155,8 @@ export function skipOuterExpressions(node: Node, kinds = OuterExpressionKinds.Al
 }
 
 export function skipAssertions(node: Expression): Expression;
-export function skipAssertions(node: Node): Node;
-export function skipAssertions(node: Node): Node {
+export function skipAssertions(node: qt.Node): Node;
+export function skipAssertions(node: qt.Node): Node {
   return skipOuterExpressions(node, OuterExpressionKinds.Assertions);
 }
 
@@ -1545,7 +1545,7 @@ export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: B
   }
 }
 
-function isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLiteral {
+function isStringOrNumericLiteral(node: qt.Node): node is StringLiteral | NumericLiteral {
   const kind = node.kind;
   return kind === qt.SyntaxKind.StringLiteral || kind === qt.SyntaxKind.NumericLiteral;
 }

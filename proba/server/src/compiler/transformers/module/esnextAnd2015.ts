@@ -40,15 +40,15 @@ export function transformECMAScriptModule(context: TransformationContext) {
     }
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.ImportEqualsDeclaration:
         // Elide `import=` as it is not legal with --module ES6
         return undefined;
       case qt.SyntaxKind.ExportAssignment:
-        return visitExportAssignment(<ExportAssignment>node);
+        return visitExportAssignment(node);
       case qt.SyntaxKind.ExportDeclaration:
-        const exportDecl = node as ExportDeclaration;
+        const exportDecl = node;
         return visitExportDeclaration(exportDecl);
     }
 
@@ -93,10 +93,10 @@ export function transformECMAScriptModule(context: TransformationContext) {
    * @param node The node to emit.
    * @param emit A callback used to emit the node in the printer.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void): void {
     if (isSourceFile(node)) {
       if ((isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
-        helperNameSubstitutions = createMap<Identifier>();
+        helperNameSubstitutions = qc.createMap<Identifier>();
       }
       previousOnEmitNode(hint, node, emitCallback);
       helperNameSubstitutions = undefined;
@@ -115,7 +115,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
    * @param hint A hint as to the intended usage of the node.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (helperNameSubstitutions && isIdentifier(node) && getEmitFlags(node) & EmitFlags.HelperName) {
       return substituteHelperName(node);

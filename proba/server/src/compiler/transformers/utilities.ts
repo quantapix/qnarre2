@@ -1,4 +1,4 @@
-export function getOriginalNodeId(node: Node) {
+export function getOriginalNodeId(node: qt.Node) {
   node = getOriginalNode(node);
   return node ? getNodeId(node) : 0;
 }
@@ -65,9 +65,9 @@ export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): bool
 
 export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: qt.CompilerOptions): ExternalModuleInfo {
   const externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[] = [];
-  const exportSpecifiers = createMultiMap<ExportSpecifier>();
+  const exportSpecifiers = qc.createMultiMap<ExportSpecifier>();
   const exportedBindings: Identifier[][] = [];
-  const uniqueExports = createMap<boolean>();
+  const uniqueExports = qc.createMap<boolean>();
   let exportedNames: Identifier[] | undefined;
   let hasExportDefault = false;
   let exportEquals: ExportAssignment | undefined;

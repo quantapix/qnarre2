@@ -7,7 +7,7 @@ export function createGetSymbolWalker(
   getBaseTypes: (type: Type) => Type[],
   resolveStructuredTypeMembers: (type: ObjectType) => ResolvedType,
   getTypeOfSymbol: (sym: symbol) => Type,
-  getResolvedSymbol: (node: Node) => symbol,
+  getResolvedSymbol: (node: qt.Node) => symbol,
   getIndexTypeOfStructuredType: (type: Type, kind: IndexKind) => Type | undefined,
   getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
   getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,

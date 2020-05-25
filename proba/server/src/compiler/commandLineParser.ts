@@ -1073,8 +1073,8 @@ export interface OptionsNameMap {
 }
 
 export function createOptionNameMap(optionDeclarations: readonly CommandLineOption[]): OptionsNameMap {
-  const optionsNameMap = createMap<CommandLineOption>();
-  const shortOptionNames = createMap<string>();
+  const optionsNameMap = qc.createMap<CommandLineOption>();
+  const shortOptionNames = qc.createMap<string>();
   forEach(optionDeclarations, (option) => {
     optionsNameMap.set(option.name.toLowerCase(), option);
     if (option.shortName) {
@@ -1116,7 +1116,7 @@ export function createCompilerDiagnosticForInvalidCustomType(opt: CommandLineOpt
   return createDiagnosticForInvalidCustomType(opt, createCompilerDiagnostic);
 }
 
-function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType, createDiagnostic: (message: DiagnosticMessage, arg0: string, arg1: string) => Diagnostic): Diagnostic {
+function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType, createDiagnostic: (message: qt.DiagnosticMessage, arg0: string, arg1: string) => Diagnostic): Diagnostic {
   const namesOfType = arrayFrom(opt.type.keys())
     .map((key) => `'${key}'`)
     .join(', ');
@@ -1152,14 +1152,14 @@ export interface OptionsBase {
 
 export interface ParseCommandLineWorkerDiagnostics extends DidYouMeanOptionsDiagnostics {
   getOptionsNameMap: () => OptionsNameMap;
-  optionTypeMismatchDiagnostic: DiagnosticMessage;
+  optionTypeMismatchDiagnostic: qt.DiagnosticMessage;
 }
 
 function getOptionName(option: CommandLineOption) {
   return option.name;
 }
 
-function createUnknownOptionError(unknownOption: string, diagnostics: DidYouMeanOptionsDiagnostics, createDiagnostics: (message: DiagnosticMessage, arg0: string, arg1?: string) => Diagnostic, unknownOptionErrorText?: string) {
+function createUnknownOptionError(unknownOption: string, diagnostics: DidYouMeanOptionsDiagnostics, createDiagnostics: (message: qt.DiagnosticMessage, arg0: string, arg1?: string) => Diagnostic, unknownOptionErrorText?: string) {
   const possibleOption = getSpellingSuggestion(unknownOption, diagnostics.optionDeclarations, getOptionName);
   return possibleOption ? createDiagnostics(diagnostics.unknownDidYouMeanDiagnostic, unknownOptionErrorText || unknownOption, possibleOption.name) : createDiagnostics(diagnostics.unknownOptionDiagnostic, unknownOptionErrorText || unknownOption);
 }
@@ -1183,10 +1183,10 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
     while (i < args.length) {
       const s = args[i];
       i++;
-      if (s.charCodeAt(0) === CharacterCodes.at) {
+      if (s.charCodeAt(0) === qt.CharacterCodes.at) {
         parseResponseFile(s.slice(1));
-      } else if (s.charCodeAt(0) === CharacterCodes.minus) {
-        const inputOptionName = s.slice(s.charCodeAt(1) === CharacterCodes.minus ? 2 : 1);
+      } else if (s.charCodeAt(0) === qt.CharacterCodes.minus) {
+        const inputOptionName = s.slice(s.charCodeAt(1) === qt.CharacterCodes.minus ? 2 : 1);
         const opt = getOptionDeclarationFromName(diagnostics.getOptionsNameMap, inputOptionName, /*allowShort*/ true);
         if (opt) {
           i = parseOptionValue(args, i, diagnostics, opt, options, errors);
@@ -1214,12 +1214,12 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
     const args: string[] = [];
     let pos = 0;
     while (true) {
-      while (pos < text.length && text.charCodeAt(pos) <= CharacterCodes.space) pos++;
+      while (pos < text.length && text.charCodeAt(pos) <= qt.CharacterCodes.space) pos++;
       if (pos >= text.length) break;
       const start = pos;
-      if (text.charCodeAt(start) === CharacterCodes.doubleQuote) {
+      if (text.charCodeAt(start) === qt.CharacterCodes.doubleQuote) {
         pos++;
-        while (pos < text.length && text.charCodeAt(pos) !== CharacterCodes.doubleQuote) pos++;
+        while (pos < text.length && text.charCodeAt(pos) !== qt.CharacterCodes.doubleQuote) pos++;
         if (pos < text.length) {
           args.push(text.substring(start + 1, pos));
           pos++;
@@ -1227,7 +1227,7 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
           errors.push(createCompilerDiagnostic(Diagnostics.Unterminated_quoted_string_in_response_file_0, fileName));
         }
       } else {
-        while (text.charCodeAt(pos) > CharacterCodes.space) pos++;
+        while (text.charCodeAt(pos) > qt.CharacterCodes.space) pos++;
         args.push(text.substring(start, pos));
       }
     }
@@ -1374,7 +1374,7 @@ export function parseBuildCommand(args: readonly string[]): ParsedBuildCommand {
   return { buildOptions, watchOptions, projects, errors };
 }
 
-export function getDiagnosticText(_message: DiagnosticMessage, ..._args: any[]): string {
+export function getDiagnosticText(_message: qt.DiagnosticMessage, ..._args: any[]): string {
   const diagnostic = createCompilerDiagnostic.apply(undefined, arguments);
   return <string>diagnostic.messageText;
 }
@@ -1763,7 +1763,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: Push<D
     }
   }
 
-  function isDoubleQuotedString(node: Node): boolean {
+  function isDoubleQuotedString(node: qt.Node): boolean {
     return isStringLiteral(node) && isStringDoubleQuoted(node, sourceFile);
   }
 }
@@ -1904,7 +1904,7 @@ function serializeWatchOptions(options: WatchOptions) {
 }
 
 function serializeOptionBaseObject(options: OptionsBase, { optionsNameMap }: OptionsNameMap, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): Map<CompilerOptionsValue> {
-  const result = createMap<CompilerOptionsValue>();
+  const result = qc.createMap<CompilerOptionsValue>();
   const getCanonicalFileName = pathOptions && createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
 
   for (const name in options) {
@@ -1985,7 +1985,7 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
 
   function writeConfigurations() {
     // Filter applicable options to place in the file
-    const categorizedOptions = createMultiMap<CommandLineOption>();
+    const categorizedOptions = qc.createMultiMap<CommandLineOption>();
     for (const option of optionDeclarations) {
       const { category } = option;
 
@@ -2228,7 +2228,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
     return result;
   }
 
-  function createCompilerDiagnosticOnlyIfJson(message: DiagnosticMessage, arg0?: string, arg1?: string) {
+  function createCompilerDiagnosticOnlyIfJson(message: qt.DiagnosticMessage, arg0?: string, arg1?: string) {
     if (!sourceFile) {
       errors.push(createCompilerDiagnostic(message, arg0, arg1));
     }
@@ -2405,7 +2405,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
   return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
 }
 
-function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, basePath: string, errors: Push<Diagnostic>, createDiagnostic: (message: DiagnosticMessage, arg1?: string) => Diagnostic) {
+function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, basePath: string, errors: Push<Diagnostic>, createDiagnostic: (message: qt.DiagnosticMessage, arg1?: string) => Diagnostic) {
   extendedConfig = normalizeSlashes(extendedConfig);
   if (isRootedDiskPath(extendedConfig) || startsWith(extendedConfig, './') || startsWith(extendedConfig, '../')) {
     let extendedConfigPath = getNormalizedAbsolutePath(extendedConfig, basePath);
@@ -2721,17 +2721,17 @@ export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: str
   // Literal file names (provided via the "files" array in tsconfig.json) are stored in a
   // file map with a possibly case insensitive key. We use this map later when when including
   // wildcard paths.
-  const literalFileMap = createMap<string>();
+  const literalFileMap = qc.createMap<string>();
 
   // Wildcard paths (provided via the "includes" array in tsconfig.json) are stored in a
   // file map with a possibly case insensitive key. We use this map to store paths matched
   // via wildcard, and to handle extension priority.
-  const wildcardFileMap = createMap<string>();
+  const wildcardFileMap = qc.createMap<string>();
 
   // Wildcard paths of json files (provided via the "includes" array in tsconfig.json) are stored in a
   // file map with a possibly case insensitive key. We use this map to store paths matched
   // via wildcard of *.json kind
-  const wildCardJsonFileMap = createMap<string>();
+  const wildCardJsonFileMap = qc.createMap<string>();
   const { filesSpecs, validatedIncludeSpecs, validatedExcludeSpecs, wildcardDirectories } = spec;
 
   // Rather than requery this for each file and filespec, we query the supported extensions
@@ -2809,13 +2809,13 @@ function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allow
     return diag === undefined;
   });
 
-  function createDiagnostic(message: DiagnosticMessage, spec: string): Diagnostic {
+  function createDiagnostic(message: qt.DiagnosticMessage, spec: string): Diagnostic {
     const element = getTsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
     return element ? createDiagnosticForNodeInSourceFile(jsonSourceFile, element, message, spec) : createCompilerDiagnostic(message, spec);
   }
 }
 
-function specToDiagnostic(spec: string, allowTrailingRecursion: boolean): DiagnosticMessage | undefined {
+function specToDiagnostic(spec: string, allowTrailingRecursion: boolean): qt.DiagnosticMessage | undefined {
   if (!allowTrailingRecursion && invalidTrailingRecursionPattern.test(spec)) {
     return Diagnostics.File_specification_cannot_end_in_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
   } else if (invalidDotDotAfterRecursiveWildcardPattern.test(spec)) {

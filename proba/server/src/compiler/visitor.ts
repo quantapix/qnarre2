@@ -1,4 +1,10 @@
-function reduceNode<T>(node: Node | undefined, f: (memo: T, node: Node) => T, initial: T) {
+import * as qpc from './corePublic';
+import * as qpu from './utilitiesPublic';
+import * as qc from './core';
+import * as qt from './types';
+import { Debug } from './debug';
+
+function reduceNode<T>(node: qt.Node | undefined, f: (memo: T, node: qt.Node) => T, initial: T) {
   return node ? f(initial, node) : initial;
 }
 
@@ -14,12 +20,12 @@ function reduceNodeArray<T>(nodes: NodeArray<Node> | undefined, f: (memo: T, nod
  * @param initial The initial value to supply to the reduction.
  * @param f The callback function
  */
-export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (memo: T, node: Node) => T, cbNodeArray?: (memo: T, nodes: NodeArray<Node>) => T): T {
+export function reduceEachChild<T>(node: qt.Node | undefined, initial: T, cbNode: (memo: T, node: qt.Node) => T, cbNodeArray?: (memo: T, nodes: NodeArray<Node>) => T): T {
   if (node === undefined) {
     return initial;
   }
 
-  const reduceNodes: (nodes: NodeArray<Node> | undefined, f: ((memo: T, node: Node) => T) | ((memo: T, node: NodeArray<Node>) => T), initial: T) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
+  const reduceNodes: (nodes: NodeArray<Node> | undefined, f: ((memo: T, node: qt.Node) => T) | ((memo: T, node: qt.NodeArray<Node>) => T), initial: T) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
   const cbNodes = cbNodeArray || cbNode;
   const kind = node.kind;
 
@@ -56,65 +62,65 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
 
     // Signature elements
     case qt.SyntaxKind.Parameter:
-      result = reduceNodes((<ParameterDeclaration>node).decorators, cbNodes, result);
-      result = reduceNodes((<ParameterDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNode((<ParameterDeclaration>node).name, cbNode, result);
-      result = reduceNode((<ParameterDeclaration>node).type, cbNode, result);
-      result = reduceNode((<ParameterDeclaration>node).initializer, cbNode, result);
+      result = reduceNodes((<qt.ParameterDeclaration>node).decorators, cbNodes, result);
+      result = reduceNodes((<qt.ParameterDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.ParameterDeclaration>node).name, cbNode, result);
+      result = reduceNode((<qt.ParameterDeclaration>node).type, cbNode, result);
+      result = reduceNode((<qt.ParameterDeclaration>node).initializer, cbNode, result);
       break;
 
     case qt.SyntaxKind.Decorator:
-      result = reduceNode((<Decorator>node).expression, cbNode, result);
+      result = reduceNode((<qt.Decorator>node).expression, cbNode, result);
       break;
 
     // Type member
     case qt.SyntaxKind.PropertySignature:
-      result = reduceNodes((<PropertySignature>node).modifiers, cbNodes, result);
-      result = reduceNode((<PropertySignature>node).name, cbNode, result);
-      result = reduceNode((<PropertySignature>node).questionToken, cbNode, result);
-      result = reduceNode((<PropertySignature>node).type, cbNode, result);
-      result = reduceNode((<PropertySignature>node).initializer, cbNode, result);
+      result = reduceNodes((<qt.PropertySignature>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.PropertySignature>node).name, cbNode, result);
+      result = reduceNode((<qt.PropertySignature>node).questionToken, cbNode, result);
+      result = reduceNode((<qt.PropertySignature>node).type, cbNode, result);
+      result = reduceNode((<qt.PropertySignature>node).initializer, cbNode, result);
       break;
 
     case qt.SyntaxKind.PropertyDeclaration:
-      result = reduceNodes((<PropertyDeclaration>node).decorators, cbNodes, result);
-      result = reduceNodes((<PropertyDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNode((<PropertyDeclaration>node).name, cbNode, result);
-      result = reduceNode((<PropertyDeclaration>node).type, cbNode, result);
-      result = reduceNode((<PropertyDeclaration>node).initializer, cbNode, result);
+      result = reduceNodes((<qt.PropertyDeclaration>node).decorators, cbNodes, result);
+      result = reduceNodes((<qt.PropertyDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.PropertyDeclaration>node).name, cbNode, result);
+      result = reduceNode((<qt.PropertyDeclaration>node).type, cbNode, result);
+      result = reduceNode((<qt.PropertyDeclaration>node).initializer, cbNode, result);
       break;
 
     case qt.SyntaxKind.MethodDeclaration:
-      result = reduceNodes((<MethodDeclaration>node).decorators, cbNodes, result);
-      result = reduceNodes((<MethodDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNode((<MethodDeclaration>node).name, cbNode, result);
-      result = reduceNodes((<MethodDeclaration>node).typeParameters, cbNodes, result);
-      result = reduceNodes((<MethodDeclaration>node).parameters, cbNodes, result);
-      result = reduceNode((<MethodDeclaration>node).type, cbNode, result);
-      result = reduceNode((<MethodDeclaration>node).body, cbNode, result);
+      result = reduceNodes((<qt.MethodDeclaration>node).decorators, cbNodes, result);
+      result = reduceNodes((<qt.MethodDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.MethodDeclaration>node).name, cbNode, result);
+      result = reduceNodes((<qt.MethodDeclaration>node).typeParameters, cbNodes, result);
+      result = reduceNodes((<qt.MethodDeclaration>node).parameters, cbNodes, result);
+      result = reduceNode((<qt.MethodDeclaration>node).type, cbNode, result);
+      result = reduceNode((<qt.MethodDeclaration>node).body, cbNode, result);
       break;
 
     case qt.SyntaxKind.Constructor:
-      result = reduceNodes((<ConstructorDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNodes((<ConstructorDeclaration>node).parameters, cbNodes, result);
-      result = reduceNode((<ConstructorDeclaration>node).body, cbNode, result);
+      result = reduceNodes((<qt.ConstructorDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNodes((<qt.ConstructorDeclaration>node).parameters, cbNodes, result);
+      result = reduceNode((<qt.ConstructorDeclaration>node).body, cbNode, result);
       break;
 
     case qt.SyntaxKind.GetAccessor:
-      result = reduceNodes((<GetAccessorDeclaration>node).decorators, cbNodes, result);
-      result = reduceNodes((<GetAccessorDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNode((<GetAccessorDeclaration>node).name, cbNode, result);
-      result = reduceNodes((<GetAccessorDeclaration>node).parameters, cbNodes, result);
-      result = reduceNode((<GetAccessorDeclaration>node).type, cbNode, result);
-      result = reduceNode((<GetAccessorDeclaration>node).body, cbNode, result);
+      result = reduceNodes((<qt.GetAccessorDeclaration>node).decorators, cbNodes, result);
+      result = reduceNodes((<qt.GetAccessorDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.GetAccessorDeclaration>node).name, cbNode, result);
+      result = reduceNodes((<qt.GetAccessorDeclaration>node).parameters, cbNodes, result);
+      result = reduceNode((<qt.GetAccessorDeclaration>node).type, cbNode, result);
+      result = reduceNode((<qt.GetAccessorDeclaration>node).body, cbNode, result);
       break;
 
     case qt.SyntaxKind.SetAccessor:
-      result = reduceNodes((<GetAccessorDeclaration>node).decorators, cbNodes, result);
-      result = reduceNodes((<GetAccessorDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNode((<GetAccessorDeclaration>node).name, cbNode, result);
-      result = reduceNodes((<GetAccessorDeclaration>node).parameters, cbNodes, result);
-      result = reduceNode((<GetAccessorDeclaration>node).body, cbNode, result);
+      result = reduceNodes((<qt.GetAccessorDeclaration>node).decorators, cbNodes, result);
+      result = reduceNodes((<qt.GetAccessorDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.GetAccessorDeclaration>node).name, cbNode, result);
+      result = reduceNodes((<qt.GetAccessorDeclaration>node).parameters, cbNodes, result);
+      result = reduceNode((<qt.GetAccessorDeclaration>node).body, cbNode, result);
       break;
 
     // Binding patterns
@@ -172,12 +178,12 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
       break;
 
     case qt.SyntaxKind.FunctionExpression:
-      result = reduceNodes((<FunctionExpression>node).modifiers, cbNodes, result);
-      result = reduceNode((<FunctionExpression>node).name, cbNode, result);
-      result = reduceNodes((<FunctionExpression>node).typeParameters, cbNodes, result);
-      result = reduceNodes((<FunctionExpression>node).parameters, cbNodes, result);
-      result = reduceNode((<FunctionExpression>node).type, cbNode, result);
-      result = reduceNode((<FunctionExpression>node).body, cbNode, result);
+      result = reduceNodes((<qt.FunctionExpression>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.FunctionExpression>node).name, cbNode, result);
+      result = reduceNodes((<qt.FunctionExpression>node).typeParameters, cbNodes, result);
+      result = reduceNodes((<qt.FunctionExpression>node).parameters, cbNodes, result);
+      result = reduceNode((<qt.FunctionExpression>node).type, cbNode, result);
+      result = reduceNode((<qt.FunctionExpression>node).body, cbNode, result);
       break;
 
     case qt.SyntaxKind.ArrowFunction:
@@ -196,12 +202,12 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
     case qt.SyntaxKind.YieldExpression:
     case qt.SyntaxKind.SpreadElement:
     case qt.SyntaxKind.NonNullExpression:
-      result = reduceNode((<ParenthesizedExpression | DeleteExpression | TypeOfExpression | VoidExpression | AwaitExpression | YieldExpression | SpreadElement | NonNullExpression>node).expression, cbNode, result);
+      result = reduceNode(node.expression, cbNode, result);
       break;
 
     case qt.SyntaxKind.PrefixUnaryExpression:
     case qt.SyntaxKind.PostfixUnaryExpression:
-      result = reduceNode((<PrefixUnaryExpression | PostfixUnaryExpression>node).operand, cbNode, result);
+      result = reduceNode(node.operand, cbNode, result);
       break;
 
     case qt.SyntaxKind.BinaryExpression:
@@ -271,8 +277,8 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
 
     case qt.SyntaxKind.WhileStatement:
     case qt.SyntaxKind.WithStatement:
-      result = reduceNode((<WhileStatement | WithStatement>node).expression, cbNode, result);
-      result = reduceNode((<WhileStatement | WithStatement>node).statement, cbNode, result);
+      result = reduceNode(node.expression, cbNode, result);
+      result = reduceNode(node.statement, cbNode, result);
       break;
 
     case qt.SyntaxKind.ForStatement:
@@ -321,13 +327,13 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
       break;
 
     case qt.SyntaxKind.FunctionDeclaration:
-      result = reduceNodes((<FunctionDeclaration>node).decorators, cbNodes, result);
-      result = reduceNodes((<FunctionDeclaration>node).modifiers, cbNodes, result);
-      result = reduceNode((<FunctionDeclaration>node).name, cbNode, result);
-      result = reduceNodes((<FunctionDeclaration>node).typeParameters, cbNodes, result);
-      result = reduceNodes((<FunctionDeclaration>node).parameters, cbNodes, result);
-      result = reduceNode((<FunctionDeclaration>node).type, cbNode, result);
-      result = reduceNode((<FunctionDeclaration>node).body, cbNode, result);
+      result = reduceNodes((<qt.FunctionDeclaration>node).decorators, cbNodes, result);
+      result = reduceNodes((<qt.FunctionDeclaration>node).modifiers, cbNodes, result);
+      result = reduceNode((<qt.FunctionDeclaration>node).name, cbNode, result);
+      result = reduceNodes((<qt.FunctionDeclaration>node).typeParameters, cbNodes, result);
+      result = reduceNodes((<qt.FunctionDeclaration>node).parameters, cbNodes, result);
+      result = reduceNode((<qt.FunctionDeclaration>node).type, cbNode, result);
+      result = reduceNode((<qt.FunctionDeclaration>node).body, cbNode, result);
       break;
 
     case qt.SyntaxKind.ClassDeclaration:
@@ -390,13 +396,13 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
 
     case qt.SyntaxKind.NamedImports:
     case qt.SyntaxKind.NamedExports:
-      result = reduceNodes((<NamedImports | NamedExports>node).elements, cbNodes, result);
+      result = reduceNodes(node.elements, cbNodes, result);
       break;
 
     case qt.SyntaxKind.ImportSpecifier:
     case qt.SyntaxKind.ExportSpecifier:
-      result = reduceNode((<ImportSpecifier | ExportSpecifier>node).propertyName, cbNode, result);
-      result = reduceNode((<ImportSpecifier | ExportSpecifier>node).name, cbNode, result);
+      result = reduceNode(node.propertyName, cbNode, result);
+      result = reduceNode(node.name, cbNode, result);
       break;
 
     case qt.SyntaxKind.ExportAssignment:
@@ -432,9 +438,9 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
 
     case qt.SyntaxKind.JsxSelfClosingElement:
     case qt.SyntaxKind.JsxOpeningElement:
-      result = reduceNode((<JsxSelfClosingElement | JsxOpeningElement>node).tagName, cbNode, result);
-      result = reduceNodes((<JsxSelfClosingElement | JsxOpeningElement>node).typeArguments, cbNode, result);
-      result = reduceNode((<JsxSelfClosingElement | JsxOpeningElement>node).attributes, cbNode, result);
+      result = reduceNode(node.tagName, cbNode, result);
+      result = reduceNodes(node.typeArguments, cbNode, result);
+      result = reduceNode(node.attributes, cbNode, result);
       break;
 
     case qt.SyntaxKind.JsxAttributes:
@@ -464,7 +470,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (
     // falls through
 
     case qt.SyntaxKind.DefaultClause:
-      result = reduceNodes((<CaseClause | DefaultClause>node).statements, cbNodes, result);
+      result = reduceNodes(node.statements, cbNodes, result);
       break;
 
     case qt.SyntaxKind.HeritageClause:
@@ -604,7 +610,7 @@ export function mergeLexicalEnvironment(statements: Statement[] | NodeArray<Stat
     if (leftStandardPrologueEnd === 0) {
       left.splice(0, 0, ...declarations.slice(0, rightStandardPrologueEnd));
     } else {
-      const leftPrologues = createMap<boolean>();
+      const leftPrologues = qc.createMap<boolean>();
       for (let i = 0; i < leftStandardPrologueEnd; i++) {
         const leftPrologue = statements[i] as PrologueDirective;
         leftPrologues.set(leftPrologue.expression.text, true);
@@ -650,7 +656,7 @@ export function aggregateTransformFlags<T extends Node>(node: T): T {
  * returned, excluding any flags that should not be included in its parent node's subtree
  * flags.
  */
-function aggregateTransformFlagsForNode(node: Node): TransformFlags {
+function aggregateTransformFlagsForNode(node: qt.Node): TransformFlags {
   if (node === undefined) {
     return TransformFlags.None;
   }
@@ -678,7 +684,7 @@ function aggregateTransformFlagsForNodeArray(nodes: NodeArray<Node>): TransformF
 /**
  * Aggregates the transform flags for the subtree of a node.
  */
-function aggregateTransformFlagsForSubtree(node: Node): TransformFlags {
+function aggregateTransformFlagsForSubtree(node: qt.Node): TransformFlags {
   // We do not transform ambient declarations or types, so there is no need to
   // recursively aggregate transform flags.
   if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (isTypeNode(node) && node.kind !== qt.SyntaxKind.ExpressionWithTypeArguments)) {
@@ -693,7 +699,7 @@ function aggregateTransformFlagsForSubtree(node: Node): TransformFlags {
  * Aggregates the TransformFlags of a child node with the TransformFlags of its
  * siblings.
  */
-function aggregateTransformFlagsForChildNode(transformFlags: TransformFlags, node: Node): TransformFlags {
+function aggregateTransformFlagsForChildNode(transformFlags: TransformFlags, node: qt.Node): TransformFlags {
   return transformFlags | aggregateTransformFlagsForNode(node);
 }
 

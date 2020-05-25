@@ -14,7 +14,7 @@ export interface ReusableDiagnosticRelatedInformation {
   messageText: string | ReusableDiagnosticMessageChain;
 }
 
-export type ReusableDiagnosticMessageChain = DiagnosticMessageChain;
+export type ReusableDiagnosticMessageChain = qt.DiagnosticMessageChain;
 
 export interface ReusableBuilderProgramState extends ReusableBuilderState {
   /**
@@ -172,9 +172,9 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: Ge
   state.compilerOptions = compilerOptions;
   // With --out or --outFile, any change affects all semantic diagnostics so no need to cache them
   if (!compilerOptions.outFile && !compilerOptions.out) {
-    state.semanticDiagnosticsPerFile = createMap<readonly Diagnostic[]>();
+    state.semanticDiagnosticsPerFile = qc.createMap<readonly Diagnostic[]>();
   }
-  state.changedFilesSet = createMap<true>();
+  state.changedFilesSet = qc.createMap<true>();
 
   const useOldState = BuilderState.canReuseOldState(state.referencedMap, oldState);
   const oldCompilerOptions = useOldState ? oldState!.compilerOptions : undefined;
@@ -240,7 +240,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: Ge
       if (diagnostics) {
         state.semanticDiagnosticsPerFile.set(sourceFilePath, oldState!.hasReusableDiagnostic ? convertToDiagnostics(diagnostics as readonly ReusableDiagnostic[], newProgram, getCanonicalFileName) : (diagnostics as readonly Diagnostic[]));
         if (!state.semanticDiagnosticsFromOldState) {
-          state.semanticDiagnosticsFromOldState = createMap<true>();
+          state.semanticDiagnosticsFromOldState = qc.createMap<true>();
         }
         state.semanticDiagnosticsFromOldState.set(sourceFilePath, true);
       }
@@ -254,7 +254,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: Ge
     // Add all files to affectedFilesPendingEmit since emit changed
     newProgram.getSourceFiles().forEach((f) => addToAffectedFilesPendingEmit(state, f.resolvedPath, BuilderFileEmit.Full));
     Debug.assert(!state.seenAffectedFiles || !state.seenAffectedFiles.size);
-    state.seenAffectedFiles = state.seenAffectedFiles || createMap<true>();
+    state.seenAffectedFiles = state.seenAffectedFiles || qc.createMap<true>();
   }
 
   state.emittedBuildInfo = !state.changedFilesSet.size && !state.affectedFilesPendingEmit;
@@ -378,12 +378,12 @@ function getNextAffectedFile(state: BuilderProgramState, cancellationToken: Canc
     // Get next batch of affected files
     state.currentAffectedFilesSignatures = state.currentAffectedFilesSignatures || createMap();
     if (state.exportedModulesMap) {
-      state.currentAffectedFilesExportedModulesMap = state.currentAffectedFilesExportedModulesMap || createMap<BuilderState.ReferencedSet | false>();
+      state.currentAffectedFilesExportedModulesMap = state.currentAffectedFilesExportedModulesMap || qc.createMap<BuilderState.ReferencedSet | false>();
     }
     state.affectedFiles = BuilderState.getFilesAffectedBy(state, program, nextKey.value, cancellationToken, computeHash, state.currentAffectedFilesSignatures, state.currentAffectedFilesExportedModulesMap);
     state.currentChangedFilePath = nextKey.value;
     state.affectedFilesIndex = 0;
-    state.seenAffectedFiles = state.seenAffectedFiles || createMap<true>();
+    state.seenAffectedFiles = state.seenAffectedFiles || qc.createMap<true>();
   }
 }
 
@@ -496,7 +496,7 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
   // Since isolated modules dont change js files, files affected by change in signature is itself
   // But we need to cleanup semantic diagnostics and queue dts emit for affected files
   if (state.compilerOptions.isolatedModules) {
-    const seenFileNamesMap = createMap<true>();
+    const seenFileNamesMap = qc.createMap<true>();
     seenFileNamesMap.set(affectedFile.resolvedPath, true);
     const queue = BuilderState.getReferencedByPaths(state, affectedFile.resolvedPath);
     while (queue.length > 0) {
@@ -513,7 +513,7 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
   }
 
   Debug.assert(!!state.currentAffectedFilesExportedModulesMap);
-  const seenFileAndExportsOfFile = createMap<true>();
+  const seenFileAndExportsOfFile = qc.createMap<true>();
   // Go through exported modules from cache first
   // If exported modules has path, all files referencing file exported from are affected
   if (forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
@@ -1037,7 +1037,7 @@ function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFileP
 
 function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefined, toPath: (path: string) => Path): qpc.ReadonlyMap<BuilderState.ReferencedSet> | undefined {
   if (!mapLike) return undefined;
-  const map = createMap<BuilderState.ReferencedSet>();
+  const map = qc.createMap<BuilderState.ReferencedSet>();
   // Copies keys/values from template. Note that for..in will not throw if
   // template is undefined, and instead will just exit the loop.
   for (const key in mapLike) {
@@ -1052,7 +1052,7 @@ export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInf
   const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
   const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
-  const fileInfos = createMap<BuilderState.FileInfo>();
+  const fileInfos = qc.createMap<BuilderState.FileInfo>();
   for (const key in program.fileInfos) {
     if (hasProperty(program.fileInfos, key)) {
       fileInfos.set(toPath(key), program.fileInfos[key]);

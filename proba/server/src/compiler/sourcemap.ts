@@ -1,3 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+import * as qpc from './corePublic';
+import * as qpu from './utilitiesPublic';
+import * as qc from './core';
+import * as qt from './types';
+import { Debug } from './debug';
+
 export interface SourceMapGeneratorOptions {
   extendedDiagnostics?: boolean;
 }
@@ -8,7 +15,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
   // Current source map file and its index in the sources list
   const rawSources: string[] = [];
   const sources: string[] = [];
-  const sourceToSourceIndexMap = createMap<number>();
+  const sourceToSourceIndexMap = qc.createMap<number>();
   let sourcesContent: (string | null)[] | undefined;
 
   const names: string[] = [];
@@ -60,7 +67,6 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     return sourceIndex;
   }
 
-  /* eslint-disable boolean-trivia, no-null/no-null */
   function setSourceContent(sourceIndex: number, content: string | null) {
     enter();
     if (content !== null) {
@@ -72,7 +78,6 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     }
     exit();
   }
-  /* eslint-enable boolean-trivia, no-null/no-null */
 
   function addName(name: string) {
     enter();
@@ -92,13 +97,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
   }
 
   function isBacktrackingSourcePosition(sourceIndex: number | undefined, sourceLine: number | undefined, sourceCharacter: number | undefined) {
-    return (
-      sourceIndex !== undefined &&
-      sourceLine !== undefined &&
-      sourceCharacter !== undefined &&
-      pendingSourceIndex === sourceIndex &&
-      (pendingSourceLine > sourceLine || (pendingSourceLine === sourceLine && pendingSourceCharacter > sourceCharacter))
-    );
+    return sourceIndex !== undefined && sourceLine !== undefined && sourceCharacter !== undefined && pendingSourceIndex === sourceIndex && (pendingSourceLine > sourceLine || (pendingSourceLine === sourceLine && pendingSourceCharacter > sourceCharacter));
   }
 
   function addMapping(generatedLine: number, generatedCharacter: number, sourceIndex?: number, sourceLine?: number, sourceCharacter?: number, nameIndex?: number) {
@@ -187,15 +186,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
   }
 
   function shouldCommitMapping() {
-    return (
-      !hasLast ||
-      lastGeneratedLine !== pendingGeneratedLine ||
-      lastGeneratedCharacter !== pendingGeneratedCharacter ||
-      lastSourceIndex !== pendingSourceIndex ||
-      lastSourceLine !== pendingSourceLine ||
-      lastSourceCharacter !== pendingSourceCharacter ||
-      lastNameIndex !== pendingNameIndex
-    );
+    return !hasLast || lastGeneratedLine !== pendingGeneratedLine || lastGeneratedCharacter !== pendingGeneratedCharacter || lastSourceIndex !== pendingSourceIndex || lastSourceLine !== pendingSourceLine || lastSourceCharacter !== pendingSourceCharacter || lastNameIndex !== pendingNameIndex;
   }
 
   function commitPendingMapping() {
@@ -296,7 +287,6 @@ export function tryGetSourceMappingURL(lineInfo: LineInfo) {
   }
 }
 
-/* eslint-disable no-null/no-null */
 function isStringOrNull(x: any) {
   return typeof x === 'string' || x === null;
 }
@@ -315,7 +305,6 @@ export function isRawSourceMap(x: any): x is RawSourceMap {
     (x.names === undefined || x.names === null || (isArray(x.names) && every(x.names, isString)))
   );
 }
-/* eslint-enable no-null/no-null */
 
 export function tryParseRawSourceMap(text: string) {
   try {
@@ -375,7 +364,7 @@ export function decodeMappings(mappings: string): MappingsDecoder {
     next() {
       while (!done && pos < mappings.length) {
         const ch = mappings.charCodeAt(pos);
-        if (ch === CharacterCodes.semicolon) {
+        if (ch === qt.CharacterCodes.semicolon) {
           // new line
           generatedLine++;
           generatedCharacter = 0;
@@ -383,7 +372,7 @@ export function decodeMappings(mappings: string): MappingsDecoder {
           continue;
         }
 
-        if (ch === CharacterCodes.comma) {
+        if (ch === qt.CharacterCodes.comma) {
           // Next entry is on same line - no action needed
           pos++;
           continue;
@@ -464,7 +453,7 @@ export function decodeMappings(mappings: string): MappingsDecoder {
   }
 
   function isSourceMappingSegmentEnd() {
-    return pos === mappings.length || mappings.charCodeAt(pos) === CharacterCodes.comma || mappings.charCodeAt(pos) === CharacterCodes.semicolon;
+    return pos === mappings.length || mappings.charCodeAt(pos) === qt.CharacterCodes.comma || mappings.charCodeAt(pos) === qt.CharacterCodes.semicolon;
   }
 
   function base64VLQFormatDecode(): number {
@@ -502,15 +491,7 @@ export function decodeMappings(mappings: string): MappingsDecoder {
 }
 
 export function sameMapping<T extends Mapping>(left: T, right: T) {
-  return (
-    left === right ||
-    (left.generatedLine === right.generatedLine &&
-      left.generatedCharacter === right.generatedCharacter &&
-      left.sourceIndex === right.sourceIndex &&
-      left.sourceLine === right.sourceLine &&
-      left.sourceCharacter === right.sourceCharacter &&
-      left.nameIndex === right.nameIndex)
-  );
+  return left === right || (left.generatedLine === right.generatedLine && left.generatedCharacter === right.generatedCharacter && left.sourceIndex === right.sourceIndex && left.sourceLine === right.sourceLine && left.sourceCharacter === right.sourceCharacter && left.nameIndex === right.nameIndex);
 }
 
 export function isSourceMapping(mapping: Mapping): mapping is SourceMapping {
@@ -518,31 +499,11 @@ export function isSourceMapping(mapping: Mapping): mapping is SourceMapping {
 }
 
 function base64FormatEncode(value: number) {
-  return value >= 0 && value < 26
-    ? CharacterCodes.A + value
-    : value >= 26 && value < 52
-    ? CharacterCodes.a + value - 26
-    : value >= 52 && value < 62
-    ? CharacterCodes._0 + value - 52
-    : value === 62
-    ? CharacterCodes.plus
-    : value === 63
-    ? CharacterCodes.slash
-    : Debug.fail(`${value}: not a base64 value`);
+  return value >= 0 && value < 26 ? qt.CharacterCodes.A + value : value >= 26 && value < 52 ? qt.CharacterCodes.a + value - 26 : value >= 52 && value < 62 ? qt.CharacterCodes._0 + value - 52 : value === 62 ? qt.CharacterCodes.plus : value === 63 ? qt.CharacterCodes.slash : Debug.fail(`${value}: not a base64 value`);
 }
 
 function base64FormatDecode(ch: number) {
-  return ch >= CharacterCodes.A && ch <= CharacterCodes.Z
-    ? ch - CharacterCodes.A
-    : ch >= CharacterCodes.a && ch <= CharacterCodes.z
-    ? ch - CharacterCodes.a + 26
-    : ch >= CharacterCodes._0 && ch <= CharacterCodes._9
-    ? ch - CharacterCodes._0 + 52
-    : ch === CharacterCodes.plus
-    ? 62
-    : ch === CharacterCodes.slash
-    ? 63
-    : -1;
+  return ch >= qt.CharacterCodes.A && ch <= qt.CharacterCodes.Z ? ch - qt.CharacterCodes.A : ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z ? ch - qt.CharacterCodes.a + 26 : ch >= qt.CharacterCodes._0 && ch <= qt.CharacterCodes._9 ? ch - qt.CharacterCodes._0 + 52 : ch === qt.CharacterCodes.plus ? 62 : ch === qt.CharacterCodes.slash ? 63 : -1;
 }
 
 function base64VLQFormatEncode(inValue: number) {

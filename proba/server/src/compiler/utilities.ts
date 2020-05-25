@@ -1,11 +1,11 @@
 import * as qpc from './corePublic';
+import * as qpu from './utilitiesPublic';
 import * as qc from './core';
-
 import * as qt from './types';
 import {Debug} from './debug';
 
 export const resolvingEmptyArray: never[] = [] as never[];
-export const emptyMap = createMap<never>() as qpc.ReadonlyMap<never> & qt.ReadonlyPragmaMap;
+export const emptyMap = qc.createMap<never>() as qpc.ReadonlyMap<never> & qt.ReadonlyPragmaMap;
 export const emptyUnderscoreEscapedMap: qt.ReadonlyUnderscoreEscapedMap<never> = emptyMap as qt.ReadonlyUnderscoreEscapedMap<never>;
 
 export const externalHelpersModuleNameText = 'tslib';
@@ -36,7 +36,7 @@ export function hasEntries(map: qt.ReadonlyUnderscoreEscapedMap<any> | undefined
 }
 
 export function createSymbolTable(symbols?: readonly qt.Symbol[]): qt.SymbolTable {
-  const result = createMap<Symbol>() as qt.SymbolTable;
+  const result = qc.createMap<Symbol>() as qt.SymbolTable;
   if (symbols) {
     for (const symbol of symbols) {
       result.set(symbol.escapedName, symbol);
@@ -186,7 +186,7 @@ export function cloneMap(map: qt.SymbolTable): qt.SymbolTable;
 export function cloneMap<T>(map: qpc.ReadonlyMap<T>): qpc.Map<T>;
 export function cloneMap<T>(map: qt.ReadonlyUnderscoreEscapedMap<T>): qt.UnderscoreEscapedMap<T>;
 export function cloneMap<T>(map: qpc.ReadonlyMap<T> | qt.ReadonlyUnderscoreEscapedMap<T> | qt.SymbolTable): qpc.Map<T> | qt.UnderscoreEscapedMap<T> | qt.SymbolTable {
-  const clone = createMap<T>();
+  const clone = qc.createMap<T>();
   copyEntries(map as qpc.Map<T>, clone);
   return clone;
 }
@@ -206,21 +206,21 @@ export function getFullWidth(node: qt.Node) {
   return node.end - node.pos;
 }
 
-export function getResolvedModule(sourceFile: SourceFile | undefined, moduleNameText: string): ResolvedModuleFull | undefined {
+export function getResolvedModule(sourceFile: qt.SourceFile | undefined, moduleNameText: string): qt.ResolvedModuleFull | undefined {
   return sourceFile && sourceFile.resolvedModules && sourceFile.resolvedModules.get(moduleNameText);
 }
 
-export function setResolvedModule(sourceFile: SourceFile, moduleNameText: string, resolvedModule: ResolvedModuleFull): void {
+export function setResolvedModule(sourceFile: qt.SourceFile, moduleNameText: string, resolvedModule: qt.ResolvedModuleFull): void {
   if (!sourceFile.resolvedModules) {
-    sourceFile.resolvedModules = createMap<ResolvedModuleFull>();
+    sourceFile.resolvedModules = qc.createMap<qt.ResolvedModuleFull>();
   }
 
   sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
 }
 
-export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective): void {
+export function setResolvedTypeReferenceDirective(sourceFile: qt.SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective?: qt.ResolvedTypeReferenceDirective): void {
   if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
-    sourceFile.resolvedTypeReferenceDirectiveNames = createMap<ResolvedTypeReferenceDirective | undefined>();
+    sourceFile.resolvedTypeReferenceDirectiveNames = qc.createMap<qt.ResolvedTypeReferenceDirective | undefined>();
   }
 
   sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
@@ -230,7 +230,7 @@ export function projectReferenceIsEqualTo(oldRef: ProjectReference, newRef: Proj
   return oldRef.path === newRef.path && !oldRef.prepend === !newRef.prepend && !oldRef.circular === !newRef.circular;
 }
 
-export function moduleResolutionIsEqualTo(oldResolution: ResolvedModuleFull, newResolution: ResolvedModuleFull): boolean {
+export function moduleResolutionIsEqualTo(oldResolution: qt.ResolvedModuleFull, newResolution: qt.ResolvedModuleFull): boolean {
   return (
     oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport &&
     oldResolution.extension === newResolution.extension &&
@@ -249,7 +249,7 @@ export function packageIdToString({ name, subModuleName, version }: PackageId): 
   return `${fullName}@${version}`;
 }
 
-export function typeDirectiveIsEqualTo(oldResolution: ResolvedTypeReferenceDirective, newResolution: ResolvedTypeReferenceDirective): boolean {
+export function typeDirectiveIsEqualTo(oldResolution: qt.ResolvedTypeReferenceDirective, newResolution: qt.ResolvedTypeReferenceDirective): boolean {
   return oldResolution.resolvedFileName === newResolution.resolvedFileName && oldResolution.primary === newResolution.primary;
 }
 
@@ -297,13 +297,13 @@ function aggregateChildData(node: qt.Node): void {
   }
 }
 
-export function getSourceFileOfNode(node: qt.Node): SourceFile;
-export function getSourceFileOfNode(node: qt.Node | undefined): SourceFile | undefined;
-export function getSourceFileOfNode(node: qt.Node): SourceFile {
+export function getSourceFileOfNode(node: qt.Node): qt.SourceFile;
+export function getSourceFileOfNode(node: qt.Node | undefined): qt.SourceFile | undefined;
+export function getSourceFileOfNode(node: qt.Node): qt.SourceFile {
   while (node && node.kind !== qt.SyntaxKind.SourceFile) {
     node = node.parent;
   }
-  return <SourceFile>node;
+  return <qt.SourceFile>node;
 }
 
 export function isStatementWithLocals(node: qt.Node) {
@@ -318,7 +318,7 @@ export function isStatementWithLocals(node: qt.Node) {
   return false;
 }
 
-export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
+export function getStartPositionOfLine(line: number, sourceFile: qt.SourceFileLike): number {
   Debug.assert(line >= 0);
   return getLineStarts(sourceFile)[line];
 }
@@ -330,7 +330,7 @@ export function nodePosToString(node: qt.Node): string {
   return `${file.fileName}(${loc.line + 1},${loc.character + 1})`;
 }
 
-export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
+export function getEndLinePosition(line: number, sourceFile: qt.SourceFileLike): number {
   Debug.assert(line >= 0);
   const lineStarts = getLineStarts(sourceFile);
 
@@ -360,7 +360,7 @@ export function getEndLinePosition(line: number, sourceFile: SourceFileLike): nu
  * Returns a value indicating whether a name is unique globally or within the current file.
  * Note: This does not consider whether a name appears as a free identifier or not, so at the expression `x.y` this includes both `x` and `y`.
  */
-export function isFileLevelUniqueName(sourceFile: SourceFile, name: string, hasGlobalName?: PrintHandlers['hasGlobalName']): boolean {
+export function isFileLevelUniqueName(sourceFile: qt.SourceFile, name: string, hasGlobalName?: PrintHandlers['hasGlobalName']): boolean {
   return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);
 }
 
@@ -448,7 +448,7 @@ export function insertStatementAfterCustomPrologue<T extends Statement>(to: T[],
 export function isRecognizedTripleSlashComment(text: string, commentPos: number, commentEnd: number) {
   // Verify this is /// comment, but do the regexp match only when we first can find /// in the comment text
   // so that we don't end up computing comment string and doing match for all // comments
-  if (text.charCodeAt(commentPos + 1) === CharacterCodes.slash && commentPos + 2 < commentEnd && text.charCodeAt(commentPos + 2) === CharacterCodes.slash) {
+  if (text.charCodeAt(commentPos + 1) === qt.CharacterCodes.slash && commentPos + 2 < commentEnd && text.charCodeAt(commentPos + 2) === qt.CharacterCodes.slash) {
     const textSubStr = text.substring(commentPos, commentEnd);
     return textSubStr.match(fullTripleSlashReferencePathRegEx) ||
       textSubStr.match(fullTripleSlashAMDReferencePathRegEx) ||
@@ -461,13 +461,13 @@ export function isRecognizedTripleSlashComment(text: string, commentPos: number,
 }
 
 export function isPinnedComment(text: string, start: number) {
-  return text.charCodeAt(start + 1) === CharacterCodes.asterisk && text.charCodeAt(start + 2) === CharacterCodes.exclamation;
+  return text.charCodeAt(start + 1) === qt.CharacterCodes.asterisk && text.charCodeAt(start + 2) === qt.CharacterCodes.exclamation;
 }
 
-export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
+export function createCommentDirectivesMap(sourceFile: qt.SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
   const directivesByLine = createMapFromEntries(commentDirectives.map((commentDirective) => [`${getLineAndCharacterOfPosition(sourceFile, commentDirective.range.end).line}`, commentDirective]));
 
-  const usedLines = createMap<boolean>();
+  const usedLines = qc.createMap<boolean>();
 
   return { getUnusedExpectations, markUsed };
 
@@ -487,7 +487,7 @@ export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirect
   }
 }
 
-export function getTokenPosOfNode(node: qt.Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
+export function getTokenPosOfNode(node: qt.Node, sourceFile?: qt.SourceFileLike, includeJsDoc?: boolean): number {
   // With nodes that have no width (i.e. 'Missing' nodes), we actually *don't*
   // want to skip trivia because this will launch us forward to the next token.
   if (nodeIsMissing(node)) {
@@ -513,7 +513,7 @@ export function getTokenPosOfNode(node: qt.Node, sourceFile?: SourceFileLike, in
   return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
 }
 
-export function getNonDecoratorTokenPosOfNode(node: qt.Node, sourceFile?: SourceFileLike): number {
+export function getNonDecoratorTokenPosOfNode(node: qt.Node, sourceFile?: qt.SourceFileLike): number {
   if (nodeIsMissing(node) || !node.decorators) {
     return getTokenPosOfNode(node, sourceFile);
   }
@@ -521,7 +521,7 @@ export function getNonDecoratorTokenPosOfNode(node: qt.Node, sourceFile?: Source
   return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
 }
 
-export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: qt.Node, includeTrivia = false): string {
+export function getSourceTextOfNodeFromSourceFile(sourceFile: qt.SourceFile, node: qt.Node, includeTrivia = false): string {
   return getTextOfNodeFromSourceText(sourceFile.text, node, includeTrivia);
 }
 
@@ -568,7 +568,7 @@ export function getEmitFlags(node: qt.Node): EmitFlags {
   return (emitNode && emitNode.flags) || 0;
 }
 
-export function getLiteralText(node: LiteralLikeNode, sourceFile: SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
+export function getLiteralText(node: LiteralLikeNode, sourceFile: qt.SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
   // If we don't need to downlevel and we can reach the original source text using
   // the node's parent reference, then simply get the text as it was originally written.
   if (!nodeIsSynthesized(node) && node.parent && !((isNumericLiteral(node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || isBigIntLiteral(node))) {
@@ -581,9 +581,9 @@ export function getLiteralText(node: LiteralLikeNode, sourceFile: SourceFile, ne
     case qt.SyntaxKind.StringLiteral: {
       const escapeText = jsxAttributeEscape ? escapeJsxAttributeString : neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
       if ((<StringLiteral>node).singleQuote) {
-        return "'" + escapeText(node.text, CharacterCodes.singleQuote) + "'";
+        return "'" + escapeText(node.text, qt.CharacterCodes.singleQuote) + "'";
       } else {
-        return '"' + escapeText(node.text, CharacterCodes.doubleQuote) + '"';
+        return '"' + escapeText(node.text, qt.CharacterCodes.doubleQuote) + '"';
       }
     }
     case qt.SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -594,7 +594,7 @@ export function getLiteralText(node: LiteralLikeNode, sourceFile: SourceFile, ne
       // had to include a backslash: `not \${a} substitution`.
       const escapeText = neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
 
-      const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, CharacterCodes.backtick));
+      const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, qt.CharacterCodes.backtick));
       switch (node.kind) {
         case qt.SyntaxKind.NoSubstitutionTemplateLiteral:
           return '`' + rawText + '`';
@@ -696,14 +696,14 @@ export function getNonAugmentationDeclaration(symbol: qt.Symbol) {
   return find(symbol.declarations, (d) => !isExternalModuleAugmentation(d) && !(isModuleDeclaration(d) && isGlobalScopeAugmentation(d)));
 }
 
-export function isEffectiveExternalModule(node: SourceFile, compilerOptions: qt.CompilerOptions) {
+export function isEffectiveExternalModule(node: qt.SourceFile, compilerOptions: qt.CompilerOptions) {
   return isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
 }
 
 /**
  * Returns whether the source file will be treated as if it were in strict mode at runtime.
  */
-export function isEffectiveStrictModeSourceFile(node: SourceFile, compilerOptions: qt.CompilerOptions) {
+export function isEffectiveStrictModeSourceFile(node: qt.SourceFile, compilerOptions: qt.CompilerOptions) {
   // We can only verify strict mode for JS/TS files
   switch (node.scriptKind) {
     case ScriptKind.JS:
@@ -897,43 +897,43 @@ export function entityNameToString(name: EntityNameOrEntityNameExpression | JsxT
 
 export function createDiagnosticForNode(
   node: qt.Node,
-  message: DiagnosticMessage,
+  message: qt.DiagnosticMessage,
   arg0?: string | number,
   arg1?: string | number,
   arg2?: string | number,
   arg3?: string | number
-): DiagnosticWithLocation {
+): qt.DiagnosticWithLocation {
   const sourceFile = getSourceFileOfNode(node);
   return createDiagnosticForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2, arg3);
 }
 
 export function createDiagnosticForNodeArray(
-  sourceFile: SourceFile,
-  nodes: qt.NodeArray<Node>,
-  message: DiagnosticMessage,
+  sourceFile: qt.SourceFile,
+  nodes: qt.NodeArray<qt.Node>,
+  message: qt.DiagnosticMessage,
   arg0?: string | number,
   arg1?: string | number,
   arg2?: string | number,
   arg3?: string | number
-): DiagnosticWithLocation {
+): qt.DiagnosticWithLocation {
   const start = skipTrivia(sourceFile.text, nodes.pos);
   return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
 }
 
 export function createDiagnosticForNodeInSourceFile(
-  sourceFile: SourceFile,
+  sourceFile: qt.SourceFile,
   node: qt.Node,
-  message: DiagnosticMessage,
+  message: qt.DiagnosticMessage,
   arg0?: string | number,
   arg1?: string | number,
   arg2?: string | number,
   arg3?: string | number
-): DiagnosticWithLocation {
+): qt.DiagnosticWithLocation {
   const span = getErrorSpanForNode(sourceFile, node);
   return createFileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2, arg3);
 }
 
-export function createDiagnosticForNodeFromMessageChain(node: qt.Node, messageChain: DiagnosticMessageChain, relatedInformation?: DiagnosticRelatedInformation[]): DiagnosticWithLocation {
+export function createDiagnosticForNodeFromMessageChain(node: qt.Node, messageChain: qt.DiagnosticMessageChain, relatedInformation?: DiagnosticRelatedInformation[]): qt.DiagnosticWithLocation {
   const sourceFile = getSourceFileOfNode(node);
   const span = getErrorSpanForNode(sourceFile, node);
   return {
@@ -947,7 +947,7 @@ export function createDiagnosticForNodeFromMessageChain(node: qt.Node, messageCh
   };
 }
 
-export function createDiagnosticForRange(sourceFile: SourceFile, range: TextRange, message: DiagnosticMessage): DiagnosticWithLocation {
+export function createDiagnosticForRange(sourceFile: qt.SourceFile, range: qt.TextRange, message: qt.DiagnosticMessage): qt.DiagnosticWithLocation {
   return {
     file: sourceFile,
     start: range.pos,
@@ -958,14 +958,14 @@ export function createDiagnosticForRange(sourceFile: SourceFile, range: TextRang
   };
 }
 
-export function getSpanOfTokenAtPosition(sourceFile: SourceFile, pos: number): TextSpan {
+export function getSpanOfTokenAtPosition(sourceFile: qt.SourceFile, pos: number): qt.TextSpan {
   const scanner = createScanner(sourceFile.languageVersion, /*skipTrivia*/ true, sourceFile.languageVariant, sourceFile.text, /*onError:*/ undefined, pos);
   scanner.scan();
   const start = scanner.getTokenPos();
   return createTextSpanFromBounds(start, scanner.getTextPos());
 }
 
-function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): TextSpan {
+function getErrorSpanForArrowFunction(sourceFile: qt.SourceFile, node: ArrowFunction): qt.TextSpan {
   const pos = skipTrivia(sourceFile.text, node.pos);
   if (node.body && node.body.kind === qt.SyntaxKind.Block) {
     const { line: startLine } = getLineAndCharacterOfPosition(sourceFile, node.body.pos);
@@ -979,7 +979,7 @@ function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunctio
   return createTextSpanFromBounds(pos, node.end);
 }
 
-export function getErrorSpanForNode(sourceFile: SourceFile, node: qt.Node): TextSpan {
+export function getErrorSpanForNode(sourceFile: qt.SourceFile, node: qt.Node): qt.TextSpan {
   let errorNode: qt.Node | undefined = node;
   switch (node.kind) {
     case qt.SyntaxKind.SourceFile:
@@ -1041,11 +1041,11 @@ export function getErrorSpanForNode(sourceFile: SourceFile, node: qt.Node): Text
   return createTextSpanFromBounds(pos, errorNode.end);
 }
 
-export function isExternalOrCommonJsModule(file: SourceFile): boolean {
+export function isExternalOrCommonJsModule(file: qt.SourceFile): boolean {
   return (file.externalModuleIndicator || file.commonJsModuleIndicator) !== undefined;
 }
 
-export function isJsonSourceFile(file: SourceFile): file is JsonSourceFile {
+export function isJsonSourceFile(file: qt.SourceFile): file is JsonSourceFile {
   return file.scriptKind === ScriptKind.JSON;
 }
 
@@ -1101,7 +1101,7 @@ export function isHoistedVariableStatement(node: Statement) {
   return isCustomPrologue(node) && isVariableStatement(node) && every(node.declarationList.declarations, isHoistedVariable);
 }
 
-export function getLeadingCommentRangesOfNode(node: qt.Node, sourceFileOfNode: SourceFile) {
+export function getLeadingCommentRangesOfNode(node: qt.Node, sourceFileOfNode: qt.SourceFile) {
   return node.kind !== qt.SyntaxKind.JsxText ? getLeadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
 }
 
@@ -1118,7 +1118,7 @@ export function getJSDocCommentRanges(node: qt.Node, text: string) {
   return filter(
     commentRanges,
     (comment) =>
-      text.charCodeAt(comment.pos + 1) === CharacterCodes.asterisk && text.charCodeAt(comment.pos + 2) === CharacterCodes.asterisk && text.charCodeAt(comment.pos + 3) !== CharacterCodes.slash
+      text.charCodeAt(comment.pos + 1) === qt.CharacterCodes.asterisk && text.charCodeAt(comment.pos + 2) === qt.CharacterCodes.asterisk && text.charCodeAt(comment.pos + 3) !== qt.CharacterCodes.slash
   );
 }
 
@@ -1453,7 +1453,7 @@ export function getThisContainer(node: qt.Node, includeArrowFunctions: boolean):
   while (true) {
     node = node.parent;
     if (!node) {
-      return Debug.fail(); // If we never pass in a SourceFile, this should be unreachable, since we'll stop when we reach that.
+      return Debug.fail(); // If we never pass in a qt.SourceFile, this should be unreachable, since we'll stop when we reach that.
     }
     switch (node.kind) {
       case qt.SyntaxKind.ComputedPropertyName:
@@ -1623,7 +1623,7 @@ export function getEntityNameFromTypeNode(node: TypeNode): EntityNameOrEntityNam
 
     case qt.SyntaxKind.Identifier:
     case qt.SyntaxKind.QualifiedName:
-      return <EntityName>(<Node>node);
+      return <EntityName>(<qt.Node>node);
   }
 
   return undefined;
@@ -1841,11 +1841,11 @@ export function isInternalModuleImportEqualsDeclaration(node: qt.Node): node is 
   return node.kind === qt.SyntaxKind.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind !== qt.SyntaxKind.ExternalModuleReference;
 }
 
-export function isSourceFileJS(file: SourceFile): boolean {
+export function isSourceFileJS(file: qt.SourceFile): boolean {
   return isInJSFile(file);
 }
 
-export function isSourceFileNotJS(file: SourceFile): boolean {
+export function isSourceFileNotJS(file: qt.SourceFile): boolean {
   return !isInJSFile(file);
 }
 
@@ -1857,7 +1857,7 @@ export function isInJsonFile(node: qt.Node | undefined): boolean {
   return !!node && !!(node.flags & qt.NodeFlags.JsonFile);
 }
 
-export function isSourceFileNotJson(file: SourceFile) {
+export function isSourceFileNotJson(file: qt.SourceFile) {
   return !isJsonSourceFile(file);
 }
 
@@ -1915,11 +1915,11 @@ export function isRequireVariableDeclarationStatement(node: qt.Node, requireStri
 }
 
 export function isSingleOrDoubleQuote(charCode: number) {
-  return charCode === CharacterCodes.singleQuote || charCode === CharacterCodes.doubleQuote;
+  return charCode === qt.CharacterCodes.singleQuote || charCode === qt.CharacterCodes.doubleQuote;
 }
 
-export function isStringDoubleQuoted(str: StringLiteralLike, sourceFile: SourceFile): boolean {
-  return getSourceTextOfNodeFromSourceFile(sourceFile, str).charCodeAt(0) === CharacterCodes.doubleQuote;
+export function isStringDoubleQuoted(str: StringLiteralLike, sourceFile: qt.SourceFile): boolean {
+  return getSourceTextOfNodeFromSourceFile(sourceFile, str).charCodeAt(0) === qt.CharacterCodes.doubleQuote;
 }
 
 export function getDeclarationOfExpando(node: qt.Node): qt.Node | undefined {
@@ -2617,7 +2617,7 @@ export function isAssignmentTarget(node: qt.Node): boolean {
   return getAssignmentTargetKind(node) !== AssignmentKind.None;
 }
 
-export type qt.NodeWithPossibleHoistedDeclaration =
+export type NodeWithPossibleHoistedDeclaration =
   | Block
   | VariableStatement
   | WithStatement
@@ -3145,11 +3145,11 @@ export function nodeStartsNewLexicalEnvironment(node: qt.Node): boolean {
   );
 }
 
-export function nodeIsSynthesized(range: TextRange): boolean {
+export function nodeIsSynthesized(range: qt.TextRange): boolean {
   return positionIsSynthesized(range.pos) || positionIsSynthesized(range.end);
 }
 
-export function getOriginalSourceFile(sourceFile: SourceFile) {
+export function getOriginalSourceFile(sourceFile: qt.SourceFile) {
   return getParseTreeNode(sourceFile, isSourceFile) || sourceFile;
 }
 
@@ -3354,7 +3354,7 @@ export function getBinaryOperatorPrecedence(kind: qt.SyntaxKind): number {
 export function createDiagnosticCollection(): DiagnosticCollection {
   let nonFileDiagnostics = ([] as Diagnostic[]) as SortedArray<Diagnostic>; // See GH#19873
   const filesWithDiagnostics = ([] as string[]) as SortedArray<string>;
-  const fileDiagnostics = createMap<SortedArray<DiagnosticWithLocation>>();
+  const fileDiagnostics = qc.createMap<SortedArray<DiagnosticWithLocation>>();
   let hasReadNonFileDiagnostics = false;
 
   return {
@@ -3365,7 +3365,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     reattachFileDiagnostics,
   };
 
-  function reattachFileDiagnostics(newFile: SourceFile): void {
+  function reattachFileDiagnostics(newFile: qt.SourceFile): void {
     forEach(fileDiagnostics.get(newFile.fileName), (diagnostic) => (diagnostic.file = newFile));
   }
 
@@ -3413,7 +3413,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     return nonFileDiagnostics;
   }
 
-  function getDiagnostics(fileName: string): DiagnosticWithLocation[];
+  function getDiagnostics(fileName: string): qt.DiagnosticWithLocation[];
   function getDiagnostics(): Diagnostic[];
   function getDiagnostics(fileName?: string): Diagnostic[] {
     if (fileName) {
@@ -3471,9 +3471,9 @@ function encodeUtf16EscapeSequence(charCode: number): string {
 }
 
 function getReplacement(c: string, offset: number, input: string) {
-  if (c.charCodeAt(0) === CharacterCodes.nullCharacter) {
+  if (c.charCodeAt(0) === qt.CharacterCodes.nullCharacter) {
     const lookAhead = input.charCodeAt(offset + c.length);
-    if (lookAhead >= CharacterCodes._0 && lookAhead <= CharacterCodes._9) {
+    if (lookAhead >= qt.CharacterCodes._0 && lookAhead <= qt.CharacterCodes._9) {
       // If the null character is followed by digits, print as a hex escape to prevent the result from parsing as an octal (which is forbidden in strict mode)
       return '\\x00';
     }
@@ -3488,14 +3488,14 @@ function getReplacement(c: string, offset: number, input: string) {
  * but augmented for a few select characters (e.g. lineSeparator, paragraphSeparator, nextLine)
  * Note that this doesn't actually wrap the input in double quotes.
  */
-export function escapeString(s: string, quoteChar?: CharacterCodes.doubleQuote | CharacterCodes.singleQuote | CharacterCodes.backtick): string {
+export function escapeString(s: string, quoteChar?: qt.CharacterCodes.doubleQuote | qt.CharacterCodes.singleQuote | qt.CharacterCodes.backtick): string {
   const escapedCharsRegExp =
-    quoteChar === CharacterCodes.backtick ? backtickQuoteEscapedCharsRegExp : quoteChar === CharacterCodes.singleQuote ? singleQuoteEscapedCharsRegExp : doubleQuoteEscapedCharsRegExp;
+    quoteChar === qt.CharacterCodes.backtick ? backtickQuoteEscapedCharsRegExp : quoteChar === qt.CharacterCodes.singleQuote ? singleQuoteEscapedCharsRegExp : doubleQuoteEscapedCharsRegExp;
   return s.replace(escapedCharsRegExp, getReplacement);
 }
 
 const nonAsciiCharacters = /[^\u0000-\u007F]/g;
-export function escapeNonAsciiString(s: string, quoteChar?: CharacterCodes.doubleQuote | CharacterCodes.singleQuote | CharacterCodes.backtick): string {
+export function escapeNonAsciiString(s: string, quoteChar?: qt.CharacterCodes.doubleQuote | qt.CharacterCodes.singleQuote | qt.CharacterCodes.backtick): string {
   s = escapeString(s, quoteChar);
   // Replace non-ASCII characters with '\uNNNN' escapes if any exist.
   // Otherwise just return the original string.
@@ -3519,14 +3519,14 @@ function encodeJsxCharacterEntity(charCode: number): string {
 }
 
 function getJsxAttributeStringReplacement(c: string) {
-  if (c.charCodeAt(0) === CharacterCodes.nullCharacter) {
+  if (c.charCodeAt(0) === qt.CharacterCodes.nullCharacter) {
     return '&#0;';
   }
   return jsxEscapedCharsMap.get(c) || encodeJsxCharacterEntity(c.charCodeAt(0));
 }
 
-export function escapeJsxAttributeString(s: string, quoteChar?: CharacterCodes.doubleQuote | CharacterCodes.singleQuote) {
-  const escapedCharsRegExp = quoteChar === CharacterCodes.singleQuote ? jsxSingleQuoteEscapedCharsRegExp : jsxDoubleQuoteEscapedCharsRegExp;
+export function escapeJsxAttributeString(s: string, quoteChar?: qt.CharacterCodes.doubleQuote | qt.CharacterCodes.singleQuote) {
+  const escapedCharsRegExp = quoteChar === qt.CharacterCodes.singleQuote ? jsxSingleQuoteEscapedCharsRegExp : jsxDoubleQuoteEscapedCharsRegExp;
   return s.replace(escapedCharsRegExp, getJsxAttributeStringReplacement);
 }
 
@@ -3544,12 +3544,12 @@ export function stripQuotes(name: string) {
 }
 
 function isQuoteOrBacktick(charCode: number) {
-  return charCode === CharacterCodes.singleQuote || charCode === CharacterCodes.doubleQuote || charCode === CharacterCodes.backtick;
+  return charCode === qt.CharacterCodes.singleQuote || charCode === qt.CharacterCodes.doubleQuote || charCode === qt.CharacterCodes.backtick;
 }
 
 export function isIntrinsicJsxName(name: qt.__String | string) {
   const ch = (name as string).charCodeAt(0);
-  return (ch >= CharacterCodes.a && ch <= CharacterCodes.z) || stringContains(name as string, '-');
+  return (ch >= qt.CharacterCodes.a && ch <= qt.CharacterCodes.z) || stringContains(name as string, '-');
 }
 
 const indentStrings: string[] = ['', '    '];
@@ -3765,7 +3765,7 @@ export interface ResolveModuleNameResolutionHost {
   getCurrentDirectory(): string;
 }
 
-export function getResolvedExternalModuleName(host: ResolveModuleNameResolutionHost, file: SourceFile, referenceFile?: SourceFile): string {
+export function getResolvedExternalModuleName(host: ResolveModuleNameResolutionHost, file: qt.SourceFile, referenceFile?: qt.SourceFile): string {
   return file.moduleName || getExternalModuleNameFromPath(host, file.fileName, referenceFile && referenceFile.fileName);
 }
 
@@ -3839,7 +3839,7 @@ export interface EmitFileNames {
  * @param host An EmitHost.
  * @param targetSourceFile An optional target source file to emit.
  */
-export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFile, forceDtsEmit?: boolean): readonly SourceFile[] {
+export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: qt.SourceFile, forceDtsEmit?: boolean): readonly qt.SourceFile[] {
   const options = host.getCompilerOptions();
   if (options.outFile || options.out) {
     const moduleKind = getEmitModuleKind(options);
@@ -3853,7 +3853,7 @@ export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFi
 }
 
 /** Don't call this for `--outFile`, just for `--outDir` or plain emit. `--outFile` needs additional checks. */
-export function sourceFileMayBeEmitted(sourceFile: SourceFile, host: SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
+export function sourceFileMayBeEmitted(sourceFile: qt.SourceFile, host: qt.SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
   const options = host.getCompilerOptions();
   return (
     !(options.noEmitForJsFiles && isSourceFileJS(sourceFile)) &&
@@ -3875,7 +3875,7 @@ export function getSourceFilePathInNewDirWorker(fileName: string, newDirPath: st
   return combinePaths(newDirPath, sourceFilePath);
 }
 
-export function writeFile(host: { writeFile: WriteFileCallback }, diagnostics: DiagnosticCollection, fileName: string, data: string, writeByteOrderMark: boolean, sourceFiles?: readonly SourceFile[]) {
+export function writeFile(host: { writeFile: WriteFileCallback }, diagnostics: DiagnosticCollection, fileName: string, data: string, writeByteOrderMark: boolean, sourceFiles?: readonly qt.SourceFile[]) {
   host.writeFile(
     fileName,
     data,
@@ -3913,7 +3913,7 @@ export function writeFileEnsuringDirectories(
   }
 }
 
-export function getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
+export function getLineOfLocalPosition(sourceFile: qt.SourceFile, pos: number) {
   const lineStarts = getLineStarts(sourceFile);
   return computeLineOfPosition(lineStarts, pos);
 }
@@ -4049,7 +4049,7 @@ export function getEffectiveSetAccessorTypeAnnotationNode(node: SetAccessorDecla
   return parameter && getEffectiveTypeAnnotationNode(parameter);
 }
 
-export function emitNewLineBeforeLeadingComments(lineMap: readonly number[], writer: qt.EmitTextWriter, node: TextRange, leadingComments: readonly CommentRange[] | undefined) {
+export function emitNewLineBeforeLeadingComments(lineMap: readonly number[], writer: qt.EmitTextWriter, node: qt.TextRange, leadingComments: readonly CommentRange[] | undefined) {
   emitNewLineBeforeLeadingCommentsOfPosition(lineMap, writer, node.pos, leadingComments);
 }
 
@@ -4117,7 +4117,7 @@ export function emitDetachedComments(
   lineMap: readonly number[],
   writer: qt.EmitTextWriter,
   writeComment: (text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void,
-  node: TextRange,
+  node: qt.TextRange,
   newLine: string,
   removeComments: boolean
 ) {
@@ -4181,7 +4181,7 @@ export function emitDetachedComments(
 }
 
 export function writeCommentRange(text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) {
-  if (text.charCodeAt(commentPos + 1) === CharacterCodes.asterisk) {
+  if (text.charCodeAt(commentPos + 1) === qt.CharacterCodes.asterisk) {
     const firstCommentLineAndCharacter = computeLineAndCharacterOfPosition(lineMap, commentPos);
     const lineCount = lineMap.length;
     let firstCommentLineIndent: number | undefined;
@@ -4259,7 +4259,7 @@ function writeTrimmedCurrentLine(text: string, commentEnd: number, writer: qt.Em
 function calculateIndent(text: string, pos: number, end: number) {
   let currentLineIndent = 0;
   for (; pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
-    if (text.charCodeAt(pos) === CharacterCodes.tab) {
+    if (text.charCodeAt(pos) === qt.CharacterCodes.tab) {
       // Tabs = TabSize = indent size and go to next tabStop
       currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
     } else {
@@ -4709,122 +4709,122 @@ export function getNewLineCharacter(options: qt.CompilerOptions | PrinterOptions
 }
 
 /**
- * Creates a new TextRange from the provided pos and end.
+ * Creates a new qt.TextRange from the provided pos and end.
  *
  * @param pos The start position.
  * @param end The end position.
  */
-export function createRange(pos: number, end: number = pos): TextRange {
+export function createRange(pos: number, end: number = pos): qt.TextRange {
   Debug.assert(end >= pos || end === -1);
   return { pos, end };
 }
 
 /**
- * Creates a new TextRange from a provided range with a new end position.
+ * Creates a new qt.TextRange from a provided range with a new end position.
  *
- * @param range A TextRange.
+ * @param range A qt.TextRange.
  * @param end The new end position.
  */
-export function moveRangeEnd(range: TextRange, end: number): TextRange {
+export function moveRangeEnd(range: qt.TextRange, end: number): qt.TextRange {
   return createRange(range.pos, end);
 }
 
 /**
- * Creates a new TextRange from a provided range with a new start position.
+ * Creates a new qt.TextRange from a provided range with a new start position.
  *
- * @param range A TextRange.
+ * @param range A qt.TextRange.
  * @param pos The new Start position.
  */
-export function moveRangePos(range: TextRange, pos: number): TextRange {
+export function moveRangePos(range: qt.TextRange, pos: number): qt.TextRange {
   return createRange(pos, range.end);
 }
 
 /**
  * Moves the start position of a range past any decorators.
  */
-export function moveRangePastDecorators(node: qt.Node): TextRange {
+export function moveRangePastDecorators(node: qt.Node): qt.TextRange {
   return node.decorators && node.decorators.length > 0 ? moveRangePos(node, node.decorators.end) : node;
 }
 
 /**
  * Moves the start position of a range past any decorators or modifiers.
  */
-export function moveRangePastModifiers(node: qt.Node): TextRange {
+export function moveRangePastModifiers(node: qt.Node): qt.TextRange {
   return node.modifiers && node.modifiers.length > 0 ? moveRangePos(node, node.modifiers.end) : moveRangePastDecorators(node);
 }
 
 /**
- * Determines whether a TextRange has the same start and end positions.
+ * Determines whether a qt.TextRange has the same start and end positions.
  *
- * @param range A TextRange.
+ * @param range A qt.TextRange.
  */
-export function isCollapsedRange(range: TextRange) {
+export function isCollapsedRange(range: qt.TextRange) {
   return range.pos === range.end;
 }
 
 /**
- * Creates a new TextRange for a token at the provides start position.
+ * Creates a new qt.TextRange for a token at the provides start position.
  *
  * @param pos The start position.
  * @param token The token.
  */
-export function createTokenRange(pos: number, token: qt.SyntaxKind): TextRange {
+export function createTokenRange(pos: number, token: qt.SyntaxKind): qt.TextRange {
   return createRange(pos, pos + tokenToString(token)!.length);
 }
 
-export function rangeIsOnSingleLine(range: TextRange, sourceFile: SourceFile) {
+export function rangeIsOnSingleLine(range: qt.TextRange, sourceFile: qt.SourceFile) {
   return rangeStartIsOnSameLineAsRangeEnd(range, range, sourceFile);
 }
 
-export function rangeStartPositionsAreOnSameLine(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
+export function rangeStartPositionsAreOnSameLine(range1: qt.TextRange, range2: qt.TextRange, sourceFile: qt.SourceFile) {
   return positionsAreOnSameLine(getStartPositionOfRange(range1, sourceFile, /*includeComments*/ false), getStartPositionOfRange(range2, sourceFile, /*includeComments*/ false), sourceFile);
 }
 
-export function rangeEndPositionsAreOnSameLine(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
+export function rangeEndPositionsAreOnSameLine(range1: qt.TextRange, range2: qt.TextRange, sourceFile: qt.SourceFile) {
   return positionsAreOnSameLine(range1.end, range2.end, sourceFile);
 }
 
-export function rangeStartIsOnSameLineAsRangeEnd(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
+export function rangeStartIsOnSameLineAsRangeEnd(range1: qt.TextRange, range2: qt.TextRange, sourceFile: qt.SourceFile) {
   return positionsAreOnSameLine(getStartPositionOfRange(range1, sourceFile, /*includeComments*/ false), range2.end, sourceFile);
 }
 
-export function rangeEndIsOnSameLineAsRangeStart(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
+export function rangeEndIsOnSameLineAsRangeStart(range1: qt.TextRange, range2: qt.TextRange, sourceFile: qt.SourceFile) {
   return positionsAreOnSameLine(range1.end, getStartPositionOfRange(range2, sourceFile, /*includeComments*/ false), sourceFile);
 }
 
-export function getLinesBetweenRangeEndAndRangeStart(range1: TextRange, range2: TextRange, sourceFile: SourceFile, includeSecondRangeComments: boolean) {
+export function getLinesBetweenRangeEndAndRangeStart(range1: qt.TextRange, range2: qt.TextRange, sourceFile: qt.SourceFile, includeSecondRangeComments: boolean) {
   const range2Start = getStartPositionOfRange(range2, sourceFile, includeSecondRangeComments);
   return getLinesBetweenPositions(sourceFile, range1.end, range2Start);
 }
 
-export function getLinesBetweenRangeEndPositions(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
+export function getLinesBetweenRangeEndPositions(range1: qt.TextRange, range2: qt.TextRange, sourceFile: qt.SourceFile) {
   return getLinesBetweenPositions(sourceFile, range1.end, range2.end);
 }
 
-export function isNodeArrayMultiLine(list: qt.NodeArray<Node>, sourceFile: SourceFile): boolean {
+export function isNodeArrayMultiLine(list: qt.NodeArray<qt.Node>, sourceFile: qt.SourceFile): boolean {
   return !positionsAreOnSameLine(list.pos, list.end, sourceFile);
 }
 
-export function positionsAreOnSameLine(pos1: number, pos2: number, sourceFile: SourceFile) {
+export function positionsAreOnSameLine(pos1: number, pos2: number, sourceFile: qt.SourceFile) {
   return getLinesBetweenPositions(sourceFile, pos1, pos2) === 0;
 }
 
-export function getStartPositionOfRange(range: TextRange, sourceFile: SourceFile, includeComments: boolean) {
+export function getStartPositionOfRange(range: qt.TextRange, sourceFile: qt.SourceFile, includeComments: boolean) {
   return positionIsSynthesized(range.pos) ? -1 : skipTrivia(sourceFile.text, range.pos, /*stopAfterLineBreak*/ false, includeComments);
 }
 
-export function getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(pos: number, stopPos: number, sourceFile: SourceFile, includeComments?: boolean) {
+export function getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(pos: number, stopPos: number, sourceFile: qt.SourceFile, includeComments?: boolean) {
   const startPos = skipTrivia(sourceFile.text, pos, /*stopAfterLineBreak*/ false, includeComments);
   const prevPos = getPreviousNonWhitespacePosition(startPos, stopPos, sourceFile);
   return getLinesBetweenPositions(sourceFile, prevPos ?? stopPos, startPos);
 }
 
-export function getLinesBetweenPositionAndNextNonWhitespaceCharacter(pos: number, stopPos: number, sourceFile: SourceFile, includeComments?: boolean) {
+export function getLinesBetweenPositionAndNextNonWhitespaceCharacter(pos: number, stopPos: number, sourceFile: qt.SourceFile, includeComments?: boolean) {
   const nextPos = skipTrivia(sourceFile.text, pos, /*stopAfterLineBreak*/ false, includeComments);
   return getLinesBetweenPositions(sourceFile, pos, Math.min(stopPos, nextPos));
 }
 
-function getPreviousNonWhitespacePosition(pos: number, stopPos = 0, sourceFile: SourceFile) {
+function getPreviousNonWhitespacePosition(pos: number, stopPos = 0, sourceFile: qt.SourceFile) {
   while (pos-- > stopPos) {
     if (!isWhiteSpaceLike(sourceFile.text.charCodeAt(pos))) {
       return pos;
@@ -5171,14 +5171,14 @@ export interface ObjectAllocator {
   getTokenConstructor(): new <TKind extends qt.SyntaxKind>(kind: TKind, pos?: number, end?: number) => Token<TKind>;
   getIdentifierConstructor(): new (kind: qt.SyntaxKind.Identifier, pos?: number, end?: number) => Identifier;
   getPrivateIdentifierConstructor(): new (kind: qt.SyntaxKind.PrivateIdentifier, pos?: number, end?: number) => PrivateIdentifier;
-  getSourceFileConstructor(): new (kind: qt.SyntaxKind.SourceFile, pos?: number, end?: number) => SourceFile;
+  getSourceFileConstructor(): new (kind: qt.SyntaxKind.SourceFile, pos?: number, end?: number) => qt.SourceFile;
   getSymbolConstructor(): new (flags: qt.SymbolFlags, name: qt.__String) => qt.Symbol;
   getTypeConstructor(): new (checker: TypeChecker, flags: TypeFlags) => Type;
   getSignatureConstructor(): new (checker: TypeChecker, flags: SignatureFlags) => Signature;
   getSourceMapSourceConstructor(): new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
 }
 
-function qt.Symbol(this: qt.Symbol, flags: qt.SymbolFlags, name: qt.__String) {
+function Symbol(this: qt.Symbol, flags: qt.SymbolFlags, name: qt.__String) {
   this.flags = flags;
   this.escapedName = name;
   this.declarations = undefined!;
@@ -5202,7 +5202,7 @@ function Signature(this: Signature, checker: TypeChecker, flags: SignatureFlags)
   }
 }
 
-function qt.Node(this: qt.Node, kind: qt.SyntaxKind, pos: number, end: number) {
+function Node(this: qt.Node, kind: qt.SyntaxKind, pos: number, end: number) {
   this.pos = pos;
   this.end = end;
   this.kind = kind;
@@ -5269,12 +5269,12 @@ export function setLocalizedDiagnosticMessages(messages: typeof localizedDiagnos
   localizedDiagnosticMessages = messages;
 }
 
-export function getLocaleSpecificMessage(message: DiagnosticMessage) {
+export function getLocaleSpecificMessage(message: qt.DiagnosticMessage) {
   return (localizedDiagnosticMessages && localizedDiagnosticMessages[message.key]) || message.message;
 }
 
-export function createFileDiagnostic(file: SourceFile, start: number, length: number, message: DiagnosticMessage, ...args: (string | number | undefined)[]): DiagnosticWithLocation;
-export function createFileDiagnostic(file: SourceFile, start: number, length: number, message: DiagnosticMessage): DiagnosticWithLocation {
+export function createFileDiagnostic(file: qt.SourceFile, start: number, length: number, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]): qt.DiagnosticWithLocation;
+export function createFileDiagnostic(file: qt.SourceFile, start: number, length: number, message: qt.DiagnosticMessage): qt.DiagnosticWithLocation {
   Debug.assertGreaterThanOrEqual(start, 0);
   Debug.assertGreaterThanOrEqual(length, 0);
 
@@ -5301,8 +5301,8 @@ export function createFileDiagnostic(file: SourceFile, start: number, length: nu
   };
 }
 
-export function formatMessage(_dummy: any, message: DiagnosticMessage, ...args: (string | number | undefined)[]): string;
-export function formatMessage(_dummy: any, message: DiagnosticMessage): string {
+export function formatMessage(_dummy: any, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]): string;
+export function formatMessage(_dummy: any, message: qt.DiagnosticMessage): string {
   let text = getLocaleSpecificMessage(message);
 
   if (arguments.length > 2) {
@@ -5312,8 +5312,8 @@ export function formatMessage(_dummy: any, message: DiagnosticMessage): string {
   return text;
 }
 
-export function createCompilerDiagnostic(message: DiagnosticMessage, ...args: (string | number | undefined)[]): Diagnostic;
-export function createCompilerDiagnostic(message: DiagnosticMessage): Diagnostic {
+export function createCompilerDiagnostic(message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]): Diagnostic;
+export function createCompilerDiagnostic(message: qt.DiagnosticMessage): Diagnostic {
   let text = getLocaleSpecificMessage(message);
 
   if (arguments.length > 1) {
@@ -5332,7 +5332,7 @@ export function createCompilerDiagnostic(message: DiagnosticMessage): Diagnostic
   };
 }
 
-export function createCompilerDiagnosticFromMessageChain(chain: DiagnosticMessageChain): Diagnostic {
+export function createCompilerDiagnosticFromMessageChain(chain: qt.DiagnosticMessageChain): Diagnostic {
   return {
     file: undefined,
     start: undefined,
@@ -5345,11 +5345,11 @@ export function createCompilerDiagnosticFromMessageChain(chain: DiagnosticMessag
 }
 
 export function chainDiagnosticMessages(
-  details: DiagnosticMessageChain | DiagnosticMessageChain[] | undefined,
-  message: DiagnosticMessage,
+  details: qt.DiagnosticMessageChain | qt.DiagnosticMessageChain[] | undefined,
+  message: qt.DiagnosticMessage,
   ...args: (string | number | undefined)[]
-): DiagnosticMessageChain;
-export function chainDiagnosticMessages(details: DiagnosticMessageChain | DiagnosticMessageChain[] | undefined, message: DiagnosticMessage): DiagnosticMessageChain {
+): qt.DiagnosticMessageChain;
+export function chainDiagnosticMessages(details: qt.DiagnosticMessageChain | qt.DiagnosticMessageChain[] | undefined, message: qt.DiagnosticMessage): qt.DiagnosticMessageChain {
   let text = getLocaleSpecificMessage(message);
 
   if (arguments.length > 2) {
@@ -5365,7 +5365,7 @@ export function chainDiagnosticMessages(details: DiagnosticMessageChain | Diagno
   };
 }
 
-export function concatenateDiagnosticMessageChains(headChain: DiagnosticMessageChain, tailChain: DiagnosticMessageChain): void {
+export function concatenateDiagnosticMessageChains(headChain: qt.DiagnosticMessageChain, tailChain: qt.DiagnosticMessageChain): void {
   let lastChain = headChain;
   while (lastChain.next) {
     lastChain = lastChain.next[0];
@@ -5410,7 +5410,7 @@ function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
   return d1.relatedInformation ? Comparison.LessThan : Comparison.GreaterThan;
 }
 
-function compareMessageText(t1: string | DiagnosticMessageChain, t2: string | DiagnosticMessageChain): Comparison {
+function compareMessageText(t1: string | qt.DiagnosticMessageChain, t2: string | qt.DiagnosticMessageChain): Comparison {
   if (typeof t1 === 'string' && typeof t2 === 'string') {
     return compareStringsCaseSensitive(t1, t2);
   } else if (typeof t1 === 'string') {
@@ -5521,7 +5521,7 @@ export function getCompilerOptionValue(options: qt.CompilerOptions, option: Comm
 export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
   let seenAsterisk = false;
   for (let i = 0; i < str.length; i++) {
-    if (str.charCodeAt(i) === CharacterCodes.asterisk) {
+    if (str.charCodeAt(i) === qt.CharacterCodes.asterisk) {
       if (!seenAsterisk) {
         seenAsterisk = true;
       } else {
@@ -5533,8 +5533,8 @@ export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
   return true;
 }
 
-export function discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): qpc.ReadonlyMap<string> {
-  const result = createMap<string>();
+export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): qpc.ReadonlyMap<string> {
+  const result = qc.createMap<string>();
   const symlinks = flatten<readonly [string, string]>(
     mapDefined(
       files,
@@ -5596,7 +5596,7 @@ function escapeRegExpCharacter(match: string) {
   return '\\' + match;
 }
 
-const wildcardCharCodes = [CharacterCodes.asterisk, CharacterCodes.question];
+const wildcardCharCodes = [CharacterCodes.asterisk, qt.CharacterCodes.question];
 
 export const commonPackageFolders: readonly string[] = ['node_modules', 'bower_components', 'jspm_packages'];
 
@@ -5715,10 +5715,10 @@ function getSubPatternFromSpec(
         // The * and ? wildcards should not match directories or files that start with . if they
         // appear first in a component. Dotted directories and files can be included explicitly
         // like so: **/.*/.*
-        if (component.charCodeAt(0) === CharacterCodes.asterisk) {
+        if (component.charCodeAt(0) === qt.CharacterCodes.asterisk) {
           componentPattern += '([^./]' + singleAsteriskRegexFragment + ')?';
           component = component.substr(1);
-        } else if (component.charCodeAt(0) === CharacterCodes.question) {
+        } else if (component.charCodeAt(0) === qt.CharacterCodes.question) {
           componentPattern += '[^./]';
           component = component.substr(1);
         }
@@ -5820,7 +5820,7 @@ export function matchFiles(
   // Associate an array of results with each include regex. This keeps results in order of the "include" order.
   // If there are no "includes", then just put everything in results[0].
   const results: string[][] = includeFileRegexes ? includeFileRegexes.map(() => []) : [[]];
-  const visited = createMap<true>();
+  const visited = qc.createMap<true>();
   const toCanonical = createGetCanonicalFileName(useCaseSensitiveFileNames);
   for (const basePath of patterns.basePaths) {
     visitDirectory(basePath, combinePaths(currentDirectory, basePath), depth);
@@ -6120,7 +6120,7 @@ export function tryGetExtensionFromPath(path: string): Extension | undefined {
   return find<Extension>(extensionsToRemove, (e) => fileExtensionIs(path, e));
 }
 
-export function isCheckJsEnabledForFile(sourceFile: SourceFile, compilerOptions: qt.CompilerOptions) {
+export function isCheckJsEnabledForFile(sourceFile: qt.SourceFile, compilerOptions: qt.CompilerOptions) {
   return sourceFile.checkJsDirective ? sourceFile.checkJsDirective.enabled : compilerOptions.checkJs;
 }
 
@@ -6190,8 +6190,8 @@ export interface ReadonlyNodeSet<TNode extends qt.Node> {
   some(pred: (node: TNode) => boolean): boolean;
 }
 
-export class qt.NodeSet<TNode extends qt.Node> implements ReadonlyNodeSet<TNode> {
-  private map = createMap<TNode>();
+export class NodeSet<TNode extends qt.Node> implements ReadonlyNodeSet<TNode> {
+  private map = qc.createMap<TNode>();
 
   add(node: TNode): void {
     this.map.set(String(getNodeId(node)), node);
@@ -6217,8 +6217,8 @@ export interface ReadonlyNodeMap<TNode extends qt.Node, TValue> {
   has(node: TNode): boolean;
 }
 
-export class qt.NodeMap<TNode extends qt.Node, TValue> implements ReadonlyNodeMap<TNode, TValue> {
-  private map = createMap<{ node: TNode; value: TValue }>();
+export class NodeMap<TNode extends qt.Node, TValue> implements ReadonlyNodeMap<TNode, TValue> {
+  private map = qc.createMap<{ node: TNode; value: TValue }>();
 
   get(node: TNode): TValue | undefined {
     const res = this.map.get(String(getNodeId(node)));
@@ -6246,11 +6246,11 @@ export class qt.NodeMap<TNode extends qt.Node, TValue> implements ReadonlyNodeMa
   }
 }
 
-export function rangeOfNode(node: qt.Node): TextRange {
+export function rangeOfNode(node: qt.Node): qt.TextRange {
   return { pos: getTokenPosOfNode(node), end: node.end };
 }
 
-export function rangeOfTypeParameters(typeParameters: qt.NodeArray<TypeParameterDeclaration>): TextRange {
+export function rangeOfTypeParameters(typeParameters: qt.NodeArray<TypeParameterDeclaration>): qt.TextRange {
   // Include the `<>`
   return { pos: typeParameters.pos - 1, end: typeParameters.end + 1 };
 }
@@ -6258,7 +6258,7 @@ export function rangeOfTypeParameters(typeParameters: qt.NodeArray<TypeParameter
 export interface HostWithIsSourceOfProjectReferenceRedirect {
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
 }
-export function skipTypeChecking(sourceFile: SourceFile, options: qt.CompilerOptions, host: HostWithIsSourceOfProjectReferenceRedirect) {
+export function skipTypeChecking(sourceFile: qt.SourceFile, options: qt.CompilerOptions, host: HostWithIsSourceOfProjectReferenceRedirect) {
   // If skipLibCheck is enabled, skip reporting errors if file is a declaration file.
   // If skipDefaultLibCheck is enabled, skip reporting errors if file contains a
   // '/// <reference no-default-lib="true"/>' directive.
@@ -6290,16 +6290,16 @@ export function parsePseudoBigInt(stringValue: string): string {
   switch (
     stringValue.charCodeAt(1) // "x" in "0x123"
   ) {
-    case CharacterCodes.b:
-    case CharacterCodes.B: // 0b or 0B
+    case qt.CharacterCodes.b:
+    case qt.CharacterCodes.B: // 0b or 0B
       log2Base = 1;
       break;
-    case CharacterCodes.o:
-    case CharacterCodes.O: // 0o or 0O
+    case qt.CharacterCodes.o:
+    case qt.CharacterCodes.O: // 0o or 0O
       log2Base = 3;
       break;
-    case CharacterCodes.x:
-    case CharacterCodes.X: // 0x or 0X
+    case qt.CharacterCodes.x:
+    case qt.CharacterCodes.X: // 0x or 0X
       log2Base = 4;
       break;
     default:
@@ -6307,7 +6307,7 @@ export function parsePseudoBigInt(stringValue: string): string {
       const nIndex = stringValue.length - 1;
       // Skip leading 0s
       let nonZeroStart = 0;
-      while (stringValue.charCodeAt(nonZeroStart) === CharacterCodes._0) {
+      while (stringValue.charCodeAt(nonZeroStart) === qt.CharacterCodes._0) {
         nonZeroStart++;
       }
       return stringValue.slice(nonZeroStart, nIndex) || '0';
@@ -6325,7 +6325,7 @@ export function parsePseudoBigInt(stringValue: string): string {
     const segment = bitOffset >>> 4;
     const digitChar = stringValue.charCodeAt(i);
     // Find character range: 0-9 < A-F < a-f
-    const digit = digitChar <= CharacterCodes._9 ? digitChar - CharacterCodes._0 : 10 + digitChar - (digitChar <= CharacterCodes.F ? CharacterCodes.A : CharacterCodes.a);
+    const digit = digitChar <= qt.CharacterCodes._9 ? digitChar - qt.CharacterCodes._0 : 10 + digitChar - (digitChar <= qt.CharacterCodes.F ? qt.CharacterCodes.A : qt.CharacterCodes.a);
     const shiftedDigit = digit << (bitOffset & 15);
     segments[segment] |= shiftedDigit;
     const residual = shiftedDigit >>> 16;

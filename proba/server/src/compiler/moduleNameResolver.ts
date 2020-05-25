@@ -1,4 +1,4 @@
-export function trace(host: ModuleResolutionHost, message: DiagnosticMessage, ...args: any[]): void;
+export function trace(host: ModuleResolutionHost, message: qt.DiagnosticMessage, ...args: any[]): void;
 export function trace(host: ModuleResolutionHost): void {
   host.trace!(formatMessage.apply(undefined, arguments));
 }
@@ -282,7 +282,7 @@ const nodeModulesAtTypes = combinePaths('node_modules', '@types');
  * This is possible in case if resolution is performed for directives specified via 'types' parameter. In this case initial path for secondary lookups
  * is assumed to be the same as root directory of the project.
  */
-export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string, containingFile: string | undefined, options: qt.CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference): ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
+export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string, containingFile: string | undefined, options: qt.CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference): qt.ResolvedTypeReferenceDirectiveWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(options, host);
   if (redirectedReference) {
     options = redirectedReference.commandLine.options;
@@ -317,7 +317,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
     primary = false;
   }
 
-  let resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective | undefined;
+  let resolvedTypeReferenceDirective: qt.ResolvedTypeReferenceDirective | undefined;
   if (resolved) {
     const { fileName, packageId } = resolved;
     const resolvedFileName = options.preserveSymlinks ? fileName : realPath(fileName, host, traceEnabled);
@@ -416,7 +416,7 @@ export function getAutomaticTypeDirectiveNames(options: qt.CompilerOptions, host
               const baseFileName = getBaseFileName(normalized);
 
               // At this stage, skip results with leading dot.
-              if (baseFileName.charCodeAt(0) !== CharacterCodes.dot) {
+              if (baseFileName.charCodeAt(0) !== qt.CharacterCodes.dot) {
                 // Return just the type directive names
                 result.push(baseFileName);
               }
@@ -529,7 +529,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
   }
 
   function createPerModuleNameCache(): PerModuleNameCache {
-    const directoryPathMap = createMap<ResolvedModuleWithFailedLookupLocations>();
+    const directoryPathMap = qc.createMap<ResolvedModuleWithFailedLookupLocations>();
 
     return { get, set };
 
@@ -999,7 +999,7 @@ function parseNodeModuleFromPath(resolved: PathAndExtension): string | undefined
 
   const indexAfterNodeModules = idx + nodeModulesPathPart.length;
   let indexAfterPackageName = moveToNextDirectorySeparatorIfAvailable(path, indexAfterNodeModules);
-  if (path.charCodeAt(indexAfterNodeModules) === CharacterCodes.at) {
+  if (path.charCodeAt(indexAfterNodeModules) === qt.CharacterCodes.at) {
     indexAfterPackageName = moveToNextDirectorySeparatorIfAvailable(path, indexAfterPackageName);
   }
   return path.slice(0, indexAfterPackageName);

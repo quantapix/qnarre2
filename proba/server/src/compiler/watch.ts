@@ -114,7 +114,7 @@ export interface ProgramToEmitFilesAndReportErrors {
   getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
   getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
+  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qt.DiagnosticWithLocation[];
   getConfigFileParsingDiagnostics(): readonly Diagnostic[];
   emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
 }

@@ -8,7 +8,7 @@ const isTypeNodeOrTypeParameterDeclaration = or(isTypeNode, isTypeParameterDecla
  * @param test A callback to execute to verify the Node is valid.
  * @param lift An optional callback to execute to lift a NodeArray into a valid Node.
  */
-export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T;
+export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: qt.Node) => boolean, lift?: (node: qt.NodeArray<Node>) => T): T;
 
 /**
  * Visits a Node using the supplied visitor, possibly returning a new Node in its place.
@@ -18,9 +18,9 @@ export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor 
  * @param test A callback to execute to verify the Node is valid.
  * @param lift An optional callback to execute to lift a NodeArray into a valid Node.
  */
-export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T | undefined;
+export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: qt.Node) => boolean, lift?: (node: qt.NodeArray<Node>) => T): T | undefined;
 
-export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T | undefined {
+export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: qt.Node) => boolean, lift?: (node: qt.NodeArray<Node>) => T): T | undefined {
   if (node === undefined || visitor === undefined) {
     return node;
   }
@@ -54,7 +54,7 @@ export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor 
  * @param start An optional value indicating the starting offset at which to start visiting.
  * @param count An optional value indicating the maximum number of nodes to visit.
  */
-export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T>;
+export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): NodeArray<T>;
 
 /**
  * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -65,7 +65,7 @@ export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visi
  * @param start An optional value indicating the starting offset at which to start visiting.
  * @param count An optional value indicating the maximum number of nodes to visit.
  */
-export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
+export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
 
 /**
  * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -76,7 +76,7 @@ export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visi
  * @param start An optional value indicating the starting offset at which to start visiting.
  * @param count An optional value indicating the maximum number of nodes to visit.
  */
-export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
+export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
   if (nodes === undefined || visitor === undefined) {
     return nodes;
   }
@@ -145,10 +145,10 @@ export function visitLexicalEnvironment(statements: NodeArray<Statement>, visito
  * Starts a new lexical environment and visits a parameter list, suspending the lexical
  * environment upon completion.
  */
-export function visitParameterList(nodes: NodeArray<ParameterDeclaration>, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: NodeArray<T>, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T>): NodeArray<ParameterDeclaration>;
-export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T> | undefined): NodeArray<ParameterDeclaration> | undefined;
-export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes) {
-  let updated: NodeArray<ParameterDeclaration> | undefined;
+export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration>, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: NodeArray<T>, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number) => NodeArray<T>): NodeArray<qt.ParameterDeclaration>;
+export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: <T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: qt.Node) => boolean, start?: number, count?: number) => NodeArray<T> | undefined): NodeArray<qt.ParameterDeclaration> | undefined;
+export function visitParameterList(nodes: NodeArray<qt.ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes) {
+  let updated: NodeArray<qt.ParameterDeclaration> | undefined;
   context.startLexicalEnvironment();
   if (nodes) {
     context.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
@@ -169,7 +169,7 @@ export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | unde
   return updated;
 }
 
-function addDefaultValueAssignmentsIfNeeded(parameters: NodeArray<ParameterDeclaration>, context: TransformationContext) {
+function addDefaultValueAssignmentsIfNeeded(parameters: NodeArray<qt.ParameterDeclaration>, context: TransformationContext) {
   let result: ParameterDeclaration[] | undefined;
   for (let i = 0; i < parameters.length; i++) {
     const parameter = parameters[i];
@@ -248,7 +248,7 @@ export function visitEachChild<T extends Node>(node: T, visitor: Visitor, contex
  */
 export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof visitNodes, tokenVisitor?: Visitor): T | undefined;
 
-export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes, tokenVisitor?: Visitor): Node | undefined {
+export function visitEachChild(node: qt.Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes, tokenVisitor?: Visitor): Node | undefined {
   if (node === undefined) {
     return undefined;
   }
@@ -278,33 +278,33 @@ export function visitEachChild(node: Node | undefined, visitor: Visitor, context
 
     case qt.SyntaxKind.Parameter:
       return updateParameter(
-        <ParameterDeclaration>node,
-        nodesVisitor((<ParameterDeclaration>node).decorators, visitor, isDecorator),
-        nodesVisitor((<ParameterDeclaration>node).modifiers, visitor, isModifier),
-        visitNode((<ParameterDeclaration>node).dotDotDotToken, tokenVisitor, isToken),
-        visitNode((<ParameterDeclaration>node).name, visitor, isBindingName),
-        visitNode((<ParameterDeclaration>node).questionToken, tokenVisitor, isToken),
-        visitNode((<ParameterDeclaration>node).type, visitor, isTypeNode),
-        visitNode((<ParameterDeclaration>node).initializer, visitor, isExpression)
+        <qt.ParameterDeclaration>node,
+        nodesVisitor((<qt.ParameterDeclaration>node).decorators, visitor, isDecorator),
+        nodesVisitor((<qt.ParameterDeclaration>node).modifiers, visitor, isModifier),
+        visitNode((<qt.ParameterDeclaration>node).dotDotDotToken, tokenVisitor, isToken),
+        visitNode((<qt.ParameterDeclaration>node).name, visitor, isBindingName),
+        visitNode((<qt.ParameterDeclaration>node).questionToken, tokenVisitor, isToken),
+        visitNode((<qt.ParameterDeclaration>node).type, visitor, isTypeNode),
+        visitNode((<qt.ParameterDeclaration>node).initializer, visitor, isExpression)
       );
 
     case qt.SyntaxKind.Decorator:
-      return updateDecorator(<Decorator>node, visitNode((<Decorator>node).expression, visitor, isExpression));
+      return updateDecorator(<qt.Decorator>node, visitNode((<qt.Decorator>node).expression, visitor, isExpression));
 
     // Type elements
     case qt.SyntaxKind.PropertySignature:
-      return updatePropertySignature(<PropertySignature>node, nodesVisitor((<PropertySignature>node).modifiers, visitor, isToken), visitNode((<PropertySignature>node).name, visitor, isPropertyName), visitNode((<PropertySignature>node).questionToken, tokenVisitor, isToken), visitNode((<PropertySignature>node).type, visitor, isTypeNode), visitNode((<PropertySignature>node).initializer, visitor, isExpression));
+      return updatePropertySignature(<qt.PropertySignature>node, nodesVisitor((<qt.PropertySignature>node).modifiers, visitor, isToken), visitNode((<qt.PropertySignature>node).name, visitor, isPropertyName), visitNode((<qt.PropertySignature>node).questionToken, tokenVisitor, isToken), visitNode((<qt.PropertySignature>node).type, visitor, isTypeNode), visitNode((<qt.PropertySignature>node).initializer, visitor, isExpression));
 
     case qt.SyntaxKind.PropertyDeclaration:
       return updateProperty(
-        <PropertyDeclaration>node,
-        nodesVisitor((<PropertyDeclaration>node).decorators, visitor, isDecorator),
-        nodesVisitor((<PropertyDeclaration>node).modifiers, visitor, isModifier),
-        visitNode((<PropertyDeclaration>node).name, visitor, isPropertyName),
+        <qt.PropertyDeclaration>node,
+        nodesVisitor((<qt.PropertyDeclaration>node).decorators, visitor, isDecorator),
+        nodesVisitor((<qt.PropertyDeclaration>node).modifiers, visitor, isModifier),
+        visitNode((<qt.PropertyDeclaration>node).name, visitor, isPropertyName),
         // QuestionToken and ExclamationToken is uniqued in Property Declaration and the signature of 'updateProperty' is that too
-        visitNode((<PropertyDeclaration>node).questionToken || (<PropertyDeclaration>node).exclamationToken, tokenVisitor, isToken),
-        visitNode((<PropertyDeclaration>node).type, visitor, isTypeNode),
-        visitNode((<PropertyDeclaration>node).initializer, visitor, isExpression)
+        visitNode((<qt.PropertyDeclaration>node).questionToken || (<qt.PropertyDeclaration>node).exclamationToken, tokenVisitor, isToken),
+        visitNode((<qt.PropertyDeclaration>node).type, visitor, isTypeNode),
+        visitNode((<qt.PropertyDeclaration>node).initializer, visitor, isExpression)
       );
 
     case qt.SyntaxKind.MethodSignature:
@@ -312,30 +312,30 @@ export function visitEachChild(node: Node | undefined, visitor: Visitor, context
 
     case qt.SyntaxKind.MethodDeclaration:
       return updateMethod(
-        <MethodDeclaration>node,
-        nodesVisitor((<MethodDeclaration>node).decorators, visitor, isDecorator),
-        nodesVisitor((<MethodDeclaration>node).modifiers, visitor, isModifier),
-        visitNode((<MethodDeclaration>node).asteriskToken, tokenVisitor, isToken),
-        visitNode((<MethodDeclaration>node).name, visitor, isPropertyName),
-        visitNode((<MethodDeclaration>node).questionToken, tokenVisitor, isToken),
-        nodesVisitor((<MethodDeclaration>node).typeParameters, visitor, isTypeParameterDeclaration),
-        visitParameterList((<MethodDeclaration>node).parameters, visitor, context, nodesVisitor),
-        visitNode((<MethodDeclaration>node).type, visitor, isTypeNode),
-        visitFunctionBody((<MethodDeclaration>node).body!, visitor, context)
+        <qt.MethodDeclaration>node,
+        nodesVisitor((<qt.MethodDeclaration>node).decorators, visitor, isDecorator),
+        nodesVisitor((<qt.MethodDeclaration>node).modifiers, visitor, isModifier),
+        visitNode((<qt.MethodDeclaration>node).asteriskToken, tokenVisitor, isToken),
+        visitNode((<qt.MethodDeclaration>node).name, visitor, isPropertyName),
+        visitNode((<qt.MethodDeclaration>node).questionToken, tokenVisitor, isToken),
+        nodesVisitor((<qt.MethodDeclaration>node).typeParameters, visitor, isTypeParameterDeclaration),
+        visitParameterList((<qt.MethodDeclaration>node).parameters, visitor, context, nodesVisitor),
+        visitNode((<qt.MethodDeclaration>node).type, visitor, isTypeNode),
+        visitFunctionBody((<qt.MethodDeclaration>node).body!, visitor, context)
       );
 
     case qt.SyntaxKind.Constructor:
-      return updateConstructor(<ConstructorDeclaration>node, nodesVisitor((<ConstructorDeclaration>node).decorators, visitor, isDecorator), nodesVisitor((<ConstructorDeclaration>node).modifiers, visitor, isModifier), visitParameterList((<ConstructorDeclaration>node).parameters, visitor, context, nodesVisitor), visitFunctionBody((<ConstructorDeclaration>node).body!, visitor, context));
+      return updateConstructor(<qt.ConstructorDeclaration>node, nodesVisitor((<qt.ConstructorDeclaration>node).decorators, visitor, isDecorator), nodesVisitor((<qt.ConstructorDeclaration>node).modifiers, visitor, isModifier), visitParameterList((<qt.ConstructorDeclaration>node).parameters, visitor, context, nodesVisitor), visitFunctionBody((<qt.ConstructorDeclaration>node).body!, visitor, context));
 
     case qt.SyntaxKind.GetAccessor:
       return updateGetAccessor(
-        <GetAccessorDeclaration>node,
-        nodesVisitor((<GetAccessorDeclaration>node).decorators, visitor, isDecorator),
-        nodesVisitor((<GetAccessorDeclaration>node).modifiers, visitor, isModifier),
-        visitNode((<GetAccessorDeclaration>node).name, visitor, isPropertyName),
-        visitParameterList((<GetAccessorDeclaration>node).parameters, visitor, context, nodesVisitor),
-        visitNode((<GetAccessorDeclaration>node).type, visitor, isTypeNode),
-        visitFunctionBody((<GetAccessorDeclaration>node).body!, visitor, context)
+        <qt.GetAccessorDeclaration>node,
+        nodesVisitor((<qt.GetAccessorDeclaration>node).decorators, visitor, isDecorator),
+        nodesVisitor((<qt.GetAccessorDeclaration>node).modifiers, visitor, isModifier),
+        visitNode((<qt.GetAccessorDeclaration>node).name, visitor, isPropertyName),
+        visitParameterList((<qt.GetAccessorDeclaration>node).parameters, visitor, context, nodesVisitor),
+        visitNode((<qt.GetAccessorDeclaration>node).type, visitor, isTypeNode),
+        visitFunctionBody((<qt.GetAccessorDeclaration>node).body!, visitor, context)
       );
 
     case qt.SyntaxKind.SetAccessor:
@@ -463,14 +463,14 @@ export function visitEachChild(node: Node | undefined, visitor: Visitor, context
 
     case qt.SyntaxKind.FunctionExpression:
       return updateFunctionExpression(
-        <FunctionExpression>node,
-        nodesVisitor((<FunctionExpression>node).modifiers, visitor, isModifier),
-        visitNode((<FunctionExpression>node).asteriskToken, tokenVisitor, isToken),
-        visitNode((<FunctionExpression>node).name, visitor, isIdentifier),
-        nodesVisitor((<FunctionExpression>node).typeParameters, visitor, isTypeParameterDeclaration),
-        visitParameterList((<FunctionExpression>node).parameters, visitor, context, nodesVisitor),
-        visitNode((<FunctionExpression>node).type, visitor, isTypeNode),
-        visitFunctionBody((<FunctionExpression>node).body, visitor, context)
+        <qt.FunctionExpression>node,
+        nodesVisitor((<qt.FunctionExpression>node).modifiers, visitor, isModifier),
+        visitNode((<qt.FunctionExpression>node).asteriskToken, tokenVisitor, isToken),
+        visitNode((<qt.FunctionExpression>node).name, visitor, isIdentifier),
+        nodesVisitor((<qt.FunctionExpression>node).typeParameters, visitor, isTypeParameterDeclaration),
+        visitParameterList((<qt.FunctionExpression>node).parameters, visitor, context, nodesVisitor),
+        visitNode((<qt.FunctionExpression>node).type, visitor, isTypeNode),
+        visitFunctionBody((<qt.FunctionExpression>node).body, visitor, context)
       );
 
     case qt.SyntaxKind.ArrowFunction:
@@ -596,15 +596,15 @@ export function visitEachChild(node: Node | undefined, visitor: Visitor, context
 
     case qt.SyntaxKind.FunctionDeclaration:
       return updateFunctionDeclaration(
-        <FunctionDeclaration>node,
-        nodesVisitor((<FunctionDeclaration>node).decorators, visitor, isDecorator),
-        nodesVisitor((<FunctionDeclaration>node).modifiers, visitor, isModifier),
-        visitNode((<FunctionDeclaration>node).asteriskToken, tokenVisitor, isToken),
-        visitNode((<FunctionDeclaration>node).name, visitor, isIdentifier),
-        nodesVisitor((<FunctionDeclaration>node).typeParameters, visitor, isTypeParameterDeclaration),
-        visitParameterList((<FunctionDeclaration>node).parameters, visitor, context, nodesVisitor),
-        visitNode((<FunctionDeclaration>node).type, visitor, isTypeNode),
-        visitFunctionBody((<FunctionExpression>node).body, visitor, context)
+        <qt.FunctionDeclaration>node,
+        nodesVisitor((<qt.FunctionDeclaration>node).decorators, visitor, isDecorator),
+        nodesVisitor((<qt.FunctionDeclaration>node).modifiers, visitor, isModifier),
+        visitNode((<qt.FunctionDeclaration>node).asteriskToken, tokenVisitor, isToken),
+        visitNode((<qt.FunctionDeclaration>node).name, visitor, isIdentifier),
+        nodesVisitor((<qt.FunctionDeclaration>node).typeParameters, visitor, isTypeParameterDeclaration),
+        visitParameterList((<qt.FunctionDeclaration>node).parameters, visitor, context, nodesVisitor),
+        visitNode((<qt.FunctionDeclaration>node).type, visitor, isTypeNode),
+        visitFunctionBody((<qt.FunctionExpression>node).body, visitor, context)
       );
 
     case qt.SyntaxKind.ClassDeclaration:

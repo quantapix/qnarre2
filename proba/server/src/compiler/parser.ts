@@ -27,11 +27,11 @@ export function createNode(kind: qt.SyntaxKind, pos?: number, end?: number): Nod
   }
 }
 
-function visitNode<T>(cbNode: (node: Node) => T, node: Node | undefined): T | undefined {
+function visitNode<T>(cbNode: (node: qt.Node) => T, node: qt.Node | undefined): T | undefined {
   return node && cbNode(node);
 }
 
-function visitNodes<T>(cbNode: (node: Node) => T, cbNodes: ((node: NodeArray<Node>) => T | undefined) | undefined, nodes: NodeArray<Node> | undefined): T | undefined {
+function visitNodes<T>(cbNode: (node: qt.Node) => T, cbNodes: ((node: qt.NodeArray<Node>) => T | undefined) | undefined, nodes: NodeArray<Node> | undefined): T | undefined {
   if (nodes) {
     if (cbNodes) {
       return cbNodes(nodes);
@@ -46,7 +46,7 @@ function visitNodes<T>(cbNode: (node: Node) => T, cbNodes: ((node: NodeArray<Nod
 }
 
 export function isJSDocLikeText(text: string, start: number) {
-  return text.charCodeAt(start + 1) === CharacterCodes.asterisk && text.charCodeAt(start + 2) === CharacterCodes.asterisk && text.charCodeAt(start + 3) !== CharacterCodes.slash;
+  return text.charCodeAt(start + 1) === qt.CharacterCodes.asterisk && text.charCodeAt(start + 2) === qt.CharacterCodes.asterisk && text.charCodeAt(start + 3) !== qt.CharacterCodes.slash;
 }
 
 /**
@@ -62,37 +62,37 @@ export function isJSDocLikeText(text: string, start: number) {
  * @remarks `forEachChild` must visit the children of a node in the order
  * that they appear in the source code. The language service depends on this property to locate nodes by position.
  */
-export function forEachChild<T>(node: Node, cbNode: (node: Node) => T | undefined, cbNodes?: (nodes: NodeArray<Node>) => T | undefined): T | undefined {
+export function forEachChild<T>(node: qt.Node, cbNode: (node: qt.Node) => T | undefined, cbNodes?: (nodes: NodeArray<Node>) => T | undefined): T | undefined {
   if (!node || node.kind <= qt.SyntaxKind.LastToken) {
     return;
   }
   switch (node.kind) {
     case qt.SyntaxKind.QualifiedName:
-      return visitNode(cbNode, (<QualifiedName>node).left) || visitNode(cbNode, (<QualifiedName>node).right);
+      return visitNode(cbNode, node.left) || visitNode(cbNode, node.right);
     case qt.SyntaxKind.TypeParameter:
-      return visitNode(cbNode, (<TypeParameterDeclaration>node).name) || visitNode(cbNode, (<TypeParameterDeclaration>node).constraint) || visitNode(cbNode, (<TypeParameterDeclaration>node).default) || visitNode(cbNode, (<TypeParameterDeclaration>node).expression);
+      return visitNode(cbNode, node.name) || visitNode(cbNode, node.constraint) || visitNode(cbNode, node.default) || visitNode(cbNode, node.expression);
     case qt.SyntaxKind.ShorthandPropertyAssignment:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ShorthandPropertyAssignment>node).name) || visitNode(cbNode, (<ShorthandPropertyAssignment>node).questionToken) || visitNode(cbNode, (<ShorthandPropertyAssignment>node).exclamationToken) || visitNode(cbNode, (<ShorthandPropertyAssignment>node).equalsToken) || visitNode(cbNode, (<ShorthandPropertyAssignment>node).objectAssignmentInitializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.exclamationToken) || visitNode(cbNode, node.equalsToken) || visitNode(cbNode, node.objectAssignmentInitializer);
     case qt.SyntaxKind.SpreadAssignment:
-      return visitNode(cbNode, (<SpreadAssignment>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.Parameter:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ParameterDeclaration>node).dotDotDotToken) || visitNode(cbNode, (<ParameterDeclaration>node).name) || visitNode(cbNode, (<ParameterDeclaration>node).questionToken) || visitNode(cbNode, (<ParameterDeclaration>node).type) || visitNode(cbNode, (<ParameterDeclaration>node).initializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.dotDotDotToken) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.type) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.PropertyDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<PropertyDeclaration>node).name) || visitNode(cbNode, (<PropertyDeclaration>node).questionToken) || visitNode(cbNode, (<PropertyDeclaration>node).exclamationToken) || visitNode(cbNode, (<PropertyDeclaration>node).type) || visitNode(cbNode, (<PropertyDeclaration>node).initializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.exclamationToken) || visitNode(cbNode, node.type) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.PropertySignature:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<PropertySignature>node).name) || visitNode(cbNode, (<PropertySignature>node).questionToken) || visitNode(cbNode, (<PropertySignature>node).type) || visitNode(cbNode, (<PropertySignature>node).initializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.type) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.PropertyAssignment:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<PropertyAssignment>node).name) || visitNode(cbNode, (<PropertyAssignment>node).questionToken) || visitNode(cbNode, (<PropertyAssignment>node).initializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.VariableDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<VariableDeclaration>node).name) || visitNode(cbNode, (<VariableDeclaration>node).exclamationToken) || visitNode(cbNode, (<VariableDeclaration>node).type) || visitNode(cbNode, (<VariableDeclaration>node).initializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.exclamationToken) || visitNode(cbNode, node.type) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.BindingElement:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<BindingElement>node).dotDotDotToken) || visitNode(cbNode, (<BindingElement>node).propertyName) || visitNode(cbNode, (<BindingElement>node).name) || visitNode(cbNode, (<BindingElement>node).initializer);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.dotDotDotToken) || visitNode(cbNode, node.propertyName) || visitNode(cbNode, node.name) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.FunctionType:
     case qt.SyntaxKind.ConstructorType:
     case qt.SyntaxKind.CallSignature:
     case qt.SyntaxKind.ConstructSignature:
     case qt.SyntaxKind.IndexSignature:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNodes(cbNode, cbNodes, (<SignatureDeclaration>node).typeParameters) || visitNodes(cbNode, cbNodes, (<SignatureDeclaration>node).parameters) || visitNode(cbNode, (<SignatureDeclaration>node).type);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNodes(cbNode, cbNodes, node.typeParameters) || visitNodes(cbNode, cbNodes, node.parameters) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.MethodDeclaration:
     case qt.SyntaxKind.MethodSignature:
     case qt.SyntaxKind.Constructor:
@@ -101,215 +101,203 @@ export function forEachChild<T>(node: Node, cbNode: (node: Node) => T | undefine
     case qt.SyntaxKind.FunctionExpression:
     case qt.SyntaxKind.FunctionDeclaration:
     case qt.SyntaxKind.ArrowFunction:
-      return (
-        visitNodes(cbNode, cbNodes, node.decorators) ||
-        visitNodes(cbNode, cbNodes, node.modifiers) ||
-        visitNode(cbNode, (<FunctionLikeDeclaration>node).asteriskToken) ||
-        visitNode(cbNode, (<FunctionLikeDeclaration>node).name) ||
-        visitNode(cbNode, (<FunctionLikeDeclaration>node).questionToken) ||
-        visitNode(cbNode, (<FunctionLikeDeclaration>node).exclamationToken) ||
-        visitNodes(cbNode, cbNodes, (<FunctionLikeDeclaration>node).typeParameters) ||
-        visitNodes(cbNode, cbNodes, (<FunctionLikeDeclaration>node).parameters) ||
-        visitNode(cbNode, (<FunctionLikeDeclaration>node).type) ||
-        visitNode(cbNode, (<ArrowFunction>node).equalsGreaterThanToken) ||
-        visitNode(cbNode, (<FunctionLikeDeclaration>node).body)
-      );
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.asteriskToken) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.exclamationToken) || visitNodes(cbNode, cbNodes, node.typeParameters) || visitNodes(cbNode, cbNodes, node.parameters) || visitNode(cbNode, node.type) || visitNode(cbNode, node.equalsGreaterThanToken) || visitNode(cbNode, node.body);
     case qt.SyntaxKind.TypeReference:
-      return visitNode(cbNode, (<TypeReferenceNode>node).typeName) || visitNodes(cbNode, cbNodes, (<TypeReferenceNode>node).typeArguments);
+      return visitNode(cbNode, node.typeName) || visitNodes(cbNode, cbNodes, node.typeArguments);
     case qt.SyntaxKind.TypePredicate:
-      return visitNode(cbNode, (<TypePredicateNode>node).assertsModifier) || visitNode(cbNode, (<TypePredicateNode>node).parameterName) || visitNode(cbNode, (<TypePredicateNode>node).type);
+      return visitNode(cbNode, node.assertsModifier) || visitNode(cbNode, node.parameterName) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.TypeQuery:
-      return visitNode(cbNode, (<TypeQueryNode>node).exprName);
+      return visitNode(cbNode, node.exprName);
     case qt.SyntaxKind.TypeLiteral:
-      return visitNodes(cbNode, cbNodes, (<TypeLiteralNode>node).members);
+      return visitNodes(cbNode, cbNodes, node.members);
     case qt.SyntaxKind.ArrayType:
-      return visitNode(cbNode, (<ArrayTypeNode>node).elementType);
+      return visitNode(cbNode, node.elementType);
     case qt.SyntaxKind.TupleType:
-      return visitNodes(cbNode, cbNodes, (<TupleTypeNode>node).elements);
+      return visitNodes(cbNode, cbNodes, node.elements);
     case qt.SyntaxKind.UnionType:
     case qt.SyntaxKind.IntersectionType:
-      return visitNodes(cbNode, cbNodes, (<UnionOrIntersectionTypeNode>node).types);
+      return visitNodes(cbNode, cbNodes, node.types);
     case qt.SyntaxKind.ConditionalType:
-      return visitNode(cbNode, (<ConditionalTypeNode>node).checkType) || visitNode(cbNode, (<ConditionalTypeNode>node).extendsType) || visitNode(cbNode, (<ConditionalTypeNode>node).trueType) || visitNode(cbNode, (<ConditionalTypeNode>node).falseType);
+      return visitNode(cbNode, node.checkType) || visitNode(cbNode, node.extendsType) || visitNode(cbNode, node.trueType) || visitNode(cbNode, node.falseType);
     case qt.SyntaxKind.InferType:
-      return visitNode(cbNode, (<InferTypeNode>node).typeParameter);
+      return visitNode(cbNode, node.typeParameter);
     case qt.SyntaxKind.ImportType:
-      return visitNode(cbNode, (<ImportTypeNode>node).argument) || visitNode(cbNode, (<ImportTypeNode>node).qualifier) || visitNodes(cbNode, cbNodes, (<ImportTypeNode>node).typeArguments);
+      return visitNode(cbNode, node.argument) || visitNode(cbNode, node.qualifier) || visitNodes(cbNode, cbNodes, node.typeArguments);
     case qt.SyntaxKind.ParenthesizedType:
     case qt.SyntaxKind.TypeOperator:
       return visitNode(cbNode, (<ParenthesizedTypeNode | TypeOperatorNode>node).type);
     case qt.SyntaxKind.IndexedAccessType:
-      return visitNode(cbNode, (<IndexedAccessTypeNode>node).objectType) || visitNode(cbNode, (<IndexedAccessTypeNode>node).indexType);
+      return visitNode(cbNode, node.objectType) || visitNode(cbNode, node.indexType);
     case qt.SyntaxKind.MappedType:
-      return visitNode(cbNode, (<MappedTypeNode>node).readonlyToken) || visitNode(cbNode, (<MappedTypeNode>node).typeParameter) || visitNode(cbNode, (<MappedTypeNode>node).questionToken) || visitNode(cbNode, (<MappedTypeNode>node).type);
+      return visitNode(cbNode, node.readonlyToken) || visitNode(cbNode, node.typeParameter) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.LiteralType:
-      return visitNode(cbNode, (<LiteralTypeNode>node).literal);
+      return visitNode(cbNode, node.literal);
     case qt.SyntaxKind.NamedTupleMember:
-      return visitNode(cbNode, (<NamedTupleMember>node).dotDotDotToken) || visitNode(cbNode, (<NamedTupleMember>node).name) || visitNode(cbNode, (<NamedTupleMember>node).questionToken) || visitNode(cbNode, (<NamedTupleMember>node).type);
+      return visitNode(cbNode, node.dotDotDotToken) || visitNode(cbNode, node.name) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.ObjectBindingPattern:
     case qt.SyntaxKind.ArrayBindingPattern:
-      return visitNodes(cbNode, cbNodes, (<BindingPattern>node).elements);
+      return visitNodes(cbNode, cbNodes, node.elements);
     case qt.SyntaxKind.ArrayLiteralExpression:
-      return visitNodes(cbNode, cbNodes, (<ArrayLiteralExpression>node).elements);
+      return visitNodes(cbNode, cbNodes, node.elements);
     case qt.SyntaxKind.ObjectLiteralExpression:
-      return visitNodes(cbNode, cbNodes, (<ObjectLiteralExpression>node).properties);
+      return visitNodes(cbNode, cbNodes, node.properties);
     case qt.SyntaxKind.PropertyAccessExpression:
-      return visitNode(cbNode, (<PropertyAccessExpression>node).expression) || visitNode(cbNode, (<PropertyAccessExpression>node).questionDotToken) || visitNode(cbNode, (<PropertyAccessExpression>node).name);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.questionDotToken) || visitNode(cbNode, node.name);
     case qt.SyntaxKind.ElementAccessExpression:
-      return visitNode(cbNode, (<ElementAccessExpression>node).expression) || visitNode(cbNode, (<ElementAccessExpression>node).questionDotToken) || visitNode(cbNode, (<ElementAccessExpression>node).argumentExpression);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.questionDotToken) || visitNode(cbNode, node.argumentExpression);
     case qt.SyntaxKind.CallExpression:
     case qt.SyntaxKind.NewExpression:
-      return visitNode(cbNode, (<CallExpression>node).expression) || visitNode(cbNode, (<CallExpression>node).questionDotToken) || visitNodes(cbNode, cbNodes, (<CallExpression>node).typeArguments) || visitNodes(cbNode, cbNodes, (<CallExpression>node).arguments);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.questionDotToken) || visitNodes(cbNode, cbNodes, node.typeArguments) || visitNodes(cbNode, cbNodes, node.arguments);
     case qt.SyntaxKind.TaggedTemplateExpression:
-      return visitNode(cbNode, (<TaggedTemplateExpression>node).tag) || visitNode(cbNode, (<TaggedTemplateExpression>node).questionDotToken) || visitNodes(cbNode, cbNodes, (<TaggedTemplateExpression>node).typeArguments) || visitNode(cbNode, (<TaggedTemplateExpression>node).template);
+      return visitNode(cbNode, node.tag) || visitNode(cbNode, node.questionDotToken) || visitNodes(cbNode, cbNodes, node.typeArguments) || visitNode(cbNode, node.template);
     case qt.SyntaxKind.TypeAssertionExpression:
-      return visitNode(cbNode, (<TypeAssertion>node).type) || visitNode(cbNode, (<TypeAssertion>node).expression);
+      return visitNode(cbNode, node.type) || visitNode(cbNode, node.expression);
     case qt.SyntaxKind.ParenthesizedExpression:
-      return visitNode(cbNode, (<ParenthesizedExpression>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.DeleteExpression:
-      return visitNode(cbNode, (<DeleteExpression>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.TypeOfExpression:
-      return visitNode(cbNode, (<TypeOfExpression>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.VoidExpression:
-      return visitNode(cbNode, (<VoidExpression>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.PrefixUnaryExpression:
-      return visitNode(cbNode, (<PrefixUnaryExpression>node).operand);
+      return visitNode(cbNode, node.operand);
     case qt.SyntaxKind.YieldExpression:
-      return visitNode(cbNode, (<YieldExpression>node).asteriskToken) || visitNode(cbNode, (<YieldExpression>node).expression);
+      return visitNode(cbNode, node.asteriskToken) || visitNode(cbNode, node.expression);
     case qt.SyntaxKind.AwaitExpression:
-      return visitNode(cbNode, (<AwaitExpression>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.PostfixUnaryExpression:
-      return visitNode(cbNode, (<PostfixUnaryExpression>node).operand);
+      return visitNode(cbNode, node.operand);
     case qt.SyntaxKind.BinaryExpression:
-      return visitNode(cbNode, (<BinaryExpression>node).left) || visitNode(cbNode, (<BinaryExpression>node).operatorToken) || visitNode(cbNode, (<BinaryExpression>node).right);
+      return visitNode(cbNode, node.left) || visitNode(cbNode, node.operatorToken) || visitNode(cbNode, node.right);
     case qt.SyntaxKind.AsExpression:
-      return visitNode(cbNode, (<AsExpression>node).expression) || visitNode(cbNode, (<AsExpression>node).type);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.NonNullExpression:
-      return visitNode(cbNode, (<NonNullExpression>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.MetaProperty:
-      return visitNode(cbNode, (<MetaProperty>node).name);
+      return visitNode(cbNode, node.name);
     case qt.SyntaxKind.ConditionalExpression:
-      return visitNode(cbNode, (<ConditionalExpression>node).condition) || visitNode(cbNode, (<ConditionalExpression>node).questionToken) || visitNode(cbNode, (<ConditionalExpression>node).whenTrue) || visitNode(cbNode, (<ConditionalExpression>node).colonToken) || visitNode(cbNode, (<ConditionalExpression>node).whenFalse);
+      return visitNode(cbNode, node.condition) || visitNode(cbNode, node.questionToken) || visitNode(cbNode, node.whenTrue) || visitNode(cbNode, node.colonToken) || visitNode(cbNode, node.whenFalse);
     case qt.SyntaxKind.SpreadElement:
-      return visitNode(cbNode, (<SpreadElement>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.Block:
     case qt.SyntaxKind.ModuleBlock:
-      return visitNodes(cbNode, cbNodes, (<Block>node).statements);
+      return visitNodes(cbNode, cbNodes, node.statements);
     case qt.SyntaxKind.SourceFile:
-      return visitNodes(cbNode, cbNodes, (<SourceFile>node).statements) || visitNode(cbNode, (<SourceFile>node).endOfFileToken);
+      return visitNodes(cbNode, cbNodes, node.statements) || visitNode(cbNode, node.endOfFileToken);
     case qt.SyntaxKind.VariableStatement:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<VariableStatement>node).declarationList);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.declarationList);
     case qt.SyntaxKind.VariableDeclarationList:
-      return visitNodes(cbNode, cbNodes, (<VariableDeclarationList>node).declarations);
+      return visitNodes(cbNode, cbNodes, node.declarations);
     case qt.SyntaxKind.ExpressionStatement:
-      return visitNode(cbNode, (<ExpressionStatement>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.IfStatement:
-      return visitNode(cbNode, (<IfStatement>node).expression) || visitNode(cbNode, (<IfStatement>node).thenStatement) || visitNode(cbNode, (<IfStatement>node).elseStatement);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.thenStatement) || visitNode(cbNode, node.elseStatement);
     case qt.SyntaxKind.DoStatement:
-      return visitNode(cbNode, (<DoStatement>node).statement) || visitNode(cbNode, (<DoStatement>node).expression);
+      return visitNode(cbNode, node.statement) || visitNode(cbNode, node.expression);
     case qt.SyntaxKind.WhileStatement:
-      return visitNode(cbNode, (<WhileStatement>node).expression) || visitNode(cbNode, (<WhileStatement>node).statement);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.statement);
     case qt.SyntaxKind.ForStatement:
-      return visitNode(cbNode, (<ForStatement>node).initializer) || visitNode(cbNode, (<ForStatement>node).condition) || visitNode(cbNode, (<ForStatement>node).incrementor) || visitNode(cbNode, (<ForStatement>node).statement);
+      return visitNode(cbNode, node.initializer) || visitNode(cbNode, node.condition) || visitNode(cbNode, node.incrementor) || visitNode(cbNode, node.statement);
     case qt.SyntaxKind.ForInStatement:
-      return visitNode(cbNode, (<ForInStatement>node).initializer) || visitNode(cbNode, (<ForInStatement>node).expression) || visitNode(cbNode, (<ForInStatement>node).statement);
+      return visitNode(cbNode, node.initializer) || visitNode(cbNode, node.expression) || visitNode(cbNode, node.statement);
     case qt.SyntaxKind.ForOfStatement:
-      return visitNode(cbNode, (<ForOfStatement>node).awaitModifier) || visitNode(cbNode, (<ForOfStatement>node).initializer) || visitNode(cbNode, (<ForOfStatement>node).expression) || visitNode(cbNode, (<ForOfStatement>node).statement);
+      return visitNode(cbNode, node.awaitModifier) || visitNode(cbNode, node.initializer) || visitNode(cbNode, node.expression) || visitNode(cbNode, node.statement);
     case qt.SyntaxKind.ContinueStatement:
     case qt.SyntaxKind.BreakStatement:
-      return visitNode(cbNode, (<BreakOrContinueStatement>node).label);
+      return visitNode(cbNode, node.label);
     case qt.SyntaxKind.ReturnStatement:
-      return visitNode(cbNode, (<ReturnStatement>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.WithStatement:
-      return visitNode(cbNode, (<WithStatement>node).expression) || visitNode(cbNode, (<WithStatement>node).statement);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.statement);
     case qt.SyntaxKind.SwitchStatement:
-      return visitNode(cbNode, (<SwitchStatement>node).expression) || visitNode(cbNode, (<SwitchStatement>node).caseBlock);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.caseBlock);
     case qt.SyntaxKind.CaseBlock:
-      return visitNodes(cbNode, cbNodes, (<CaseBlock>node).clauses);
+      return visitNodes(cbNode, cbNodes, node.clauses);
     case qt.SyntaxKind.CaseClause:
-      return visitNode(cbNode, (<CaseClause>node).expression) || visitNodes(cbNode, cbNodes, (<CaseClause>node).statements);
+      return visitNode(cbNode, node.expression) || visitNodes(cbNode, cbNodes, node.statements);
     case qt.SyntaxKind.DefaultClause:
-      return visitNodes(cbNode, cbNodes, (<DefaultClause>node).statements);
+      return visitNodes(cbNode, cbNodes, node.statements);
     case qt.SyntaxKind.LabeledStatement:
-      return visitNode(cbNode, (<LabeledStatement>node).label) || visitNode(cbNode, (<LabeledStatement>node).statement);
+      return visitNode(cbNode, node.label) || visitNode(cbNode, node.statement);
     case qt.SyntaxKind.ThrowStatement:
-      return visitNode(cbNode, (<ThrowStatement>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.TryStatement:
-      return visitNode(cbNode, (<TryStatement>node).tryBlock) || visitNode(cbNode, (<TryStatement>node).catchClause) || visitNode(cbNode, (<TryStatement>node).finallyBlock);
+      return visitNode(cbNode, node.tryBlock) || visitNode(cbNode, node.catchClause) || visitNode(cbNode, node.finallyBlock);
     case qt.SyntaxKind.CatchClause:
-      return visitNode(cbNode, (<CatchClause>node).variableDeclaration) || visitNode(cbNode, (<CatchClause>node).block);
+      return visitNode(cbNode, node.variableDeclaration) || visitNode(cbNode, node.block);
     case qt.SyntaxKind.Decorator:
-      return visitNode(cbNode, (<Decorator>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.ClassDeclaration:
     case qt.SyntaxKind.ClassExpression:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ClassLikeDeclaration>node).name) || visitNodes(cbNode, cbNodes, (<ClassLikeDeclaration>node).typeParameters) || visitNodes(cbNode, cbNodes, (<ClassLikeDeclaration>node).heritageClauses) || visitNodes(cbNode, cbNodes, (<ClassLikeDeclaration>node).members);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNodes(cbNode, cbNodes, node.typeParameters) || visitNodes(cbNode, cbNodes, node.heritageClauses) || visitNodes(cbNode, cbNodes, node.members);
     case qt.SyntaxKind.InterfaceDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<InterfaceDeclaration>node).name) || visitNodes(cbNode, cbNodes, (<InterfaceDeclaration>node).typeParameters) || visitNodes(cbNode, cbNodes, (<ClassDeclaration>node).heritageClauses) || visitNodes(cbNode, cbNodes, (<InterfaceDeclaration>node).members);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNodes(cbNode, cbNodes, node.typeParameters) || visitNodes(cbNode, cbNodes, node.heritageClauses) || visitNodes(cbNode, cbNodes, node.members);
     case qt.SyntaxKind.TypeAliasDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<TypeAliasDeclaration>node).name) || visitNodes(cbNode, cbNodes, (<TypeAliasDeclaration>node).typeParameters) || visitNode(cbNode, (<TypeAliasDeclaration>node).type);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNodes(cbNode, cbNodes, node.typeParameters) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.EnumDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<EnumDeclaration>node).name) || visitNodes(cbNode, cbNodes, (<EnumDeclaration>node).members);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNodes(cbNode, cbNodes, node.members);
     case qt.SyntaxKind.EnumMember:
-      return visitNode(cbNode, (<EnumMember>node).name) || visitNode(cbNode, (<EnumMember>node).initializer);
+      return visitNode(cbNode, node.name) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.ModuleDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ModuleDeclaration>node).name) || visitNode(cbNode, (<ModuleDeclaration>node).body);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.body);
     case qt.SyntaxKind.ImportEqualsDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ImportEqualsDeclaration>node).name) || visitNode(cbNode, (<ImportEqualsDeclaration>node).moduleReference);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.name) || visitNode(cbNode, node.moduleReference);
     case qt.SyntaxKind.ImportDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ImportDeclaration>node).importClause) || visitNode(cbNode, (<ImportDeclaration>node).moduleSpecifier);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.importClause) || visitNode(cbNode, node.moduleSpecifier);
     case qt.SyntaxKind.ImportClause:
-      return visitNode(cbNode, (<ImportClause>node).name) || visitNode(cbNode, (<ImportClause>node).namedBindings);
+      return visitNode(cbNode, node.name) || visitNode(cbNode, node.namedBindings);
     case qt.SyntaxKind.NamespaceExportDeclaration:
-      return visitNode(cbNode, (<NamespaceExportDeclaration>node).name);
+      return visitNode(cbNode, node.name);
 
     case qt.SyntaxKind.NamespaceImport:
-      return visitNode(cbNode, (<NamespaceImport>node).name);
+      return visitNode(cbNode, node.name);
     case qt.SyntaxKind.NamespaceExport:
-      return visitNode(cbNode, (<NamespaceExport>node).name);
+      return visitNode(cbNode, node.name);
     case qt.SyntaxKind.NamedImports:
     case qt.SyntaxKind.NamedExports:
-      return visitNodes(cbNode, cbNodes, (<NamedImportsOrExports>node).elements);
+      return visitNodes(cbNode, cbNodes, node.elements);
     case qt.SyntaxKind.ExportDeclaration:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ExportDeclaration>node).exportClause) || visitNode(cbNode, (<ExportDeclaration>node).moduleSpecifier);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.exportClause) || visitNode(cbNode, node.moduleSpecifier);
     case qt.SyntaxKind.ImportSpecifier:
     case qt.SyntaxKind.ExportSpecifier:
-      return visitNode(cbNode, (<ImportOrExportSpecifier>node).propertyName) || visitNode(cbNode, (<ImportOrExportSpecifier>node).name);
+      return visitNode(cbNode, node.propertyName) || visitNode(cbNode, node.name);
     case qt.SyntaxKind.ExportAssignment:
-      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ExportAssignment>node).expression);
+      return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, node.expression);
     case qt.SyntaxKind.TemplateExpression:
-      return visitNode(cbNode, (<TemplateExpression>node).head) || visitNodes(cbNode, cbNodes, (<TemplateExpression>node).templateSpans);
+      return visitNode(cbNode, node.head) || visitNodes(cbNode, cbNodes, node.templateSpans);
     case qt.SyntaxKind.TemplateSpan:
-      return visitNode(cbNode, (<TemplateSpan>node).expression) || visitNode(cbNode, (<TemplateSpan>node).literal);
+      return visitNode(cbNode, node.expression) || visitNode(cbNode, node.literal);
     case qt.SyntaxKind.ComputedPropertyName:
-      return visitNode(cbNode, (<ComputedPropertyName>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.HeritageClause:
-      return visitNodes(cbNode, cbNodes, (<HeritageClause>node).types);
+      return visitNodes(cbNode, cbNodes, node.types);
     case qt.SyntaxKind.ExpressionWithTypeArguments:
-      return visitNode(cbNode, (<ExpressionWithTypeArguments>node).expression) || visitNodes(cbNode, cbNodes, (<ExpressionWithTypeArguments>node).typeArguments);
+      return visitNode(cbNode, node.expression) || visitNodes(cbNode, cbNodes, node.typeArguments);
     case qt.SyntaxKind.ExternalModuleReference:
-      return visitNode(cbNode, (<ExternalModuleReference>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.MissingDeclaration:
       return visitNodes(cbNode, cbNodes, node.decorators);
     case qt.SyntaxKind.CommaListExpression:
-      return visitNodes(cbNode, cbNodes, (<CommaListExpression>node).elements);
+      return visitNodes(cbNode, cbNodes, node.elements);
 
     case qt.SyntaxKind.JsxElement:
-      return visitNode(cbNode, (<JsxElement>node).openingElement) || visitNodes(cbNode, cbNodes, (<JsxElement>node).children) || visitNode(cbNode, (<JsxElement>node).closingElement);
+      return visitNode(cbNode, node.openingElement) || visitNodes(cbNode, cbNodes, node.children) || visitNode(cbNode, node.closingElement);
     case qt.SyntaxKind.JsxFragment:
-      return visitNode(cbNode, (<JsxFragment>node).openingFragment) || visitNodes(cbNode, cbNodes, (<JsxFragment>node).children) || visitNode(cbNode, (<JsxFragment>node).closingFragment);
+      return visitNode(cbNode, node.openingFragment) || visitNodes(cbNode, cbNodes, node.children) || visitNode(cbNode, node.closingFragment);
     case qt.SyntaxKind.JsxSelfClosingElement:
     case qt.SyntaxKind.JsxOpeningElement:
-      return visitNode(cbNode, (<JsxOpeningLikeElement>node).tagName) || visitNodes(cbNode, cbNodes, (<JsxOpeningLikeElement>node).typeArguments) || visitNode(cbNode, (<JsxOpeningLikeElement>node).attributes);
+      return visitNode(cbNode, node.tagName) || visitNodes(cbNode, cbNodes, node.typeArguments) || visitNode(cbNode, node.attributes);
     case qt.SyntaxKind.JsxAttributes:
-      return visitNodes(cbNode, cbNodes, (<JsxAttributes>node).properties);
+      return visitNodes(cbNode, cbNodes, node.properties);
     case qt.SyntaxKind.JsxAttribute:
-      return visitNode(cbNode, (<JsxAttribute>node).name) || visitNode(cbNode, (<JsxAttribute>node).initializer);
+      return visitNode(cbNode, node.name) || visitNode(cbNode, node.initializer);
     case qt.SyntaxKind.JsxSpreadAttribute:
-      return visitNode(cbNode, (<JsxSpreadAttribute>node).expression);
+      return visitNode(cbNode, node.expression);
     case qt.SyntaxKind.JsxExpression:
-      return visitNode(cbNode, (node as JsxExpression).dotDotDotToken) || visitNode(cbNode, (node as JsxExpression).expression);
+      return visitNode(cbNode, node.dotDotDotToken) || visitNode(cbNode, node.expression);
     case qt.SyntaxKind.JsxClosingElement:
-      return visitNode(cbNode, (<JsxClosingElement>node).tagName);
+      return visitNode(cbNode, node.tagName);
 
     case qt.SyntaxKind.OptionalType:
     case qt.SyntaxKind.RestType:
@@ -320,42 +308,42 @@ export function forEachChild<T>(node: Node, cbNode: (node: Node) => T | undefine
     case qt.SyntaxKind.JSDocVariadicType:
       return visitNode(cbNode, (<OptionalTypeNode | RestTypeNode | JSDocTypeExpression | JSDocTypeReferencingNode>node).type);
     case qt.SyntaxKind.JSDocFunctionType:
-      return visitNodes(cbNode, cbNodes, (<JSDocFunctionType>node).parameters) || visitNode(cbNode, (<JSDocFunctionType>node).type);
+      return visitNodes(cbNode, cbNodes, node.parameters) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.JSDocComment:
-      return visitNodes(cbNode, cbNodes, (<JSDoc>node).tags);
+      return visitNodes(cbNode, cbNodes, node.tags);
     case qt.SyntaxKind.JSDocParameterTag:
     case qt.SyntaxKind.JSDocPropertyTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || ((node as JSDocPropertyLikeTag).isNameFirst ? visitNode(cbNode, (<JSDocPropertyLikeTag>node).name) || visitNode(cbNode, (<JSDocPropertyLikeTag>node).typeExpression) : visitNode(cbNode, (<JSDocPropertyLikeTag>node).typeExpression) || visitNode(cbNode, (<JSDocPropertyLikeTag>node).name));
+      return visitNode(cbNode, node.tagName) || (node.isNameFirst ? visitNode(cbNode, node.name) || visitNode(cbNode, node.typeExpression) : visitNode(cbNode, node.typeExpression) || visitNode(cbNode, node.name));
     case qt.SyntaxKind.JSDocAuthorTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName);
+      return visitNode(cbNode, node.tagName);
     case qt.SyntaxKind.JSDocImplementsTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (<JSDocImplementsTag>node).class);
+      return visitNode(cbNode, node.tagName) || visitNode(cbNode, node.class);
     case qt.SyntaxKind.JSDocAugmentsTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (<JSDocAugmentsTag>node).class);
+      return visitNode(cbNode, node.tagName) || visitNode(cbNode, node.class);
     case qt.SyntaxKind.JSDocTemplateTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (<JSDocTemplateTag>node).constraint) || visitNodes(cbNode, cbNodes, (<JSDocTemplateTag>node).typeParameters);
+      return visitNode(cbNode, node.tagName) || visitNode(cbNode, node.constraint) || visitNodes(cbNode, cbNodes, node.typeParameters);
     case qt.SyntaxKind.JSDocTypedefTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || ((node as JSDocTypedefTag).typeExpression && (node as JSDocTypedefTag).typeExpression!.kind === qt.SyntaxKind.JSDocTypeExpression ? visitNode(cbNode, (<JSDocTypedefTag>node).typeExpression) || visitNode(cbNode, (<JSDocTypedefTag>node).fullName) : visitNode(cbNode, (<JSDocTypedefTag>node).fullName) || visitNode(cbNode, (<JSDocTypedefTag>node).typeExpression));
+      return visitNode(cbNode, node.tagName) || (node.typeExpression && node.typeExpression!.kind === qt.SyntaxKind.JSDocTypeExpression ? visitNode(cbNode, node.typeExpression) || visitNode(cbNode, node.fullName) : visitNode(cbNode, node.fullName) || visitNode(cbNode, node.typeExpression));
     case qt.SyntaxKind.JSDocCallbackTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (node as JSDocCallbackTag).fullName) || visitNode(cbNode, (node as JSDocCallbackTag).typeExpression);
+      return visitNode(cbNode, node.tagName) || visitNode(cbNode, node.fullName) || visitNode(cbNode, node.typeExpression);
     case qt.SyntaxKind.JSDocReturnTag:
     case qt.SyntaxKind.JSDocTypeTag:
     case qt.SyntaxKind.JSDocThisTag:
     case qt.SyntaxKind.JSDocEnumTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (node as JSDocReturnTag | JSDocTypeTag | JSDocThisTag | JSDocEnumTag).typeExpression);
+      return visitNode(cbNode, node.tagName) || visitNode(cbNode, (node as JSDocReturnTag | JSDocTypeTag | JSDocThisTag | JSDocEnumTag).typeExpression);
     case qt.SyntaxKind.JSDocSignature:
-      return forEach((<JSDocSignature>node).typeParameters, cbNode) || forEach((<JSDocSignature>node).parameters, cbNode) || visitNode(cbNode, (<JSDocSignature>node).type);
+      return forEach(node.typeParameters, cbNode) || forEach(node.parameters, cbNode) || visitNode(cbNode, node.type);
     case qt.SyntaxKind.JSDocTypeLiteral:
-      return forEach((node as JSDocTypeLiteral).jsDocPropertyTags, cbNode);
+      return forEach(node.jsDocPropertyTags, cbNode);
     case qt.SyntaxKind.JSDocTag:
     case qt.SyntaxKind.JSDocClassTag:
     case qt.SyntaxKind.JSDocPublicTag:
     case qt.SyntaxKind.JSDocPrivateTag:
     case qt.SyntaxKind.JSDocProtectedTag:
     case qt.SyntaxKind.JSDocReadonlyTag:
-      return visitNode(cbNode, (node as JSDocTag).tagName);
+      return visitNode(cbNode, node.tagName);
     case qt.SyntaxKind.PartiallyEmittedExpression:
-      return visitNode(cbNode, (<PartiallyEmittedExpression>node).expression);
+      return visitNode(cbNode, node.expression);
   }
 }
 
@@ -373,7 +361,7 @@ export function forEachChild<T>(node: Node, cbNode: (node: Node) => T | undefine
  * @remarks Unlike `forEachChild`, `forEachChildRecursively` handles recursively invoking the traversal on each child node found,
  * and while doing so, handles traversing the structure without relying on the callstack to encode the tree structure.
  */
-export function forEachChildRecursively<T>(rootNode: Node, cbNode: (node: Node, parent: Node) => T | 'skip' | undefined, cbNodes?: (nodes: NodeArray<Node>, parent: Node) => T | 'skip' | undefined): T | undefined {
+export function forEachChildRecursively<T>(rootNode: Node, cbNode: (node: qt.Node, parent: Node) => T | 'skip' | undefined, cbNodes?: (nodes: NodeArray<Node>, parent: Node) => T | 'skip' | undefined): T | undefined {
   const stack: Node[] = [rootNode];
   while (stack.length) {
     const parent = stack.pop()!;
@@ -385,7 +373,7 @@ export function forEachChildRecursively<T>(rootNode: Node, cbNode: (node: Node, 
 
   return;
 
-  function gatherPossibleChildren(node: Node) {
+  function gatherPossibleChildren(node: qt.Node) {
     const children: (Node | NodeArray<Node>)[] = [];
     forEachChild(node, addWorkItem, addWorkItem); // By using a stack above and `unshift` here, we emulate a depth-first preorder traversal
     return children;
@@ -512,7 +500,7 @@ namespace Parser {
   let SourceFileConstructor: new (kind: qt.SyntaxKind, pos: number, end: number) => Node;
 
   let sourceFile: SourceFile;
-  let parseDiagnostics: DiagnosticWithLocation[];
+  let parseDiagnostics: qt.DiagnosticWithLocation[];
   let syntaxCursor: IncrementalParser.SyntaxCursor | undefined;
 
   let currentToken: qt.SyntaxKind;
@@ -714,8 +702,8 @@ namespace Parser {
 
     parseDiagnostics = [];
     parsingContext = 0;
-    identifiers = createMap<string>();
-    privateIdentifiers = createMap<string>();
+    identifiers = qc.createMap<string>();
+    privateIdentifiers = qc.createMap<string>();
     identifierCount = 0;
     nodeCount = 0;
 
@@ -788,7 +776,7 @@ namespace Parser {
 
     return sourceFile;
 
-    function reportPragmaDiagnostic(pos: number, end: number, diagnostic: DiagnosticMessage) {
+    function reportPragmaDiagnostic(pos: number, end: number, diagnostic: qt.DiagnosticMessage) {
       parseDiagnostics.push(createFileDiagnostic(sourceFile, pos, end, diagnostic));
     }
   }
@@ -954,11 +942,11 @@ namespace Parser {
     return inContext(NodeFlags.AwaitContext);
   }
 
-  function parseErrorAtCurrentToken(message: DiagnosticMessage, arg0?: any): void {
+  function parseErrorAtCurrentToken(message: qt.DiagnosticMessage, arg0?: any): void {
     parseErrorAt(scanner.getTokenPos(), scanner.getTextPos(), message, arg0);
   }
 
-  function parseErrorAtPosition(start: number, length: number, message: DiagnosticMessage, arg0?: any): void {
+  function parseErrorAtPosition(start: number, length: number, message: qt.DiagnosticMessage, arg0?: any): void {
     // Don't report another error if it would just be at the same position as the last error.
     const lastError = lastOrUndefined(parseDiagnostics);
     if (!lastError || start !== lastError.start) {
@@ -970,15 +958,15 @@ namespace Parser {
     parseErrorBeforeNextFinishedNode = true;
   }
 
-  function parseErrorAt(start: number, end: number, message: DiagnosticMessage, arg0?: any): void {
+  function parseErrorAt(start: number, end: number, message: qt.DiagnosticMessage, arg0?: any): void {
     parseErrorAtPosition(start, end - start, message, arg0);
   }
 
-  function parseErrorAtRange(range: TextRange, message: DiagnosticMessage, arg0?: any): void {
+  function parseErrorAtRange(range: qt.TextRange, message: qt.DiagnosticMessage, arg0?: any): void {
     parseErrorAt(range.pos, range.end, message, arg0);
   }
 
-  function scanError(message: DiagnosticMessage, length: number): void {
+  function scanError(message: qt.DiagnosticMessage, length: number): void {
     parseErrorAtPosition(scanner.getTextPos(), length, message);
   }
 
@@ -1114,7 +1102,7 @@ namespace Parser {
     return token() > qt.SyntaxKind.LastReservedWord;
   }
 
-  function parseExpected(kind: qt.SyntaxKind, diagnosticMessage?: DiagnosticMessage, shouldAdvance = true): boolean {
+  function parseExpected(kind: qt.SyntaxKind, diagnosticMessage?: qt.DiagnosticMessage, shouldAdvance = true): boolean {
     if (token() === kind) {
       if (shouldAdvance) {
         nextToken();
@@ -1164,8 +1152,8 @@ namespace Parser {
     return undefined;
   }
 
-  function parseExpectedToken<TKind extends qt.SyntaxKind>(t: TKind, diagnosticMessage?: DiagnosticMessage, arg0?: any): Token<TKind>;
-  function parseExpectedToken(t: qt.SyntaxKind, diagnosticMessage?: DiagnosticMessage, arg0?: any): Node {
+  function parseExpectedToken<TKind extends qt.SyntaxKind>(t: TKind, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): Token<TKind>;
+  function parseExpectedToken(t: qt.SyntaxKind, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): Node {
     return parseOptionalToken(t) || createMissingNode(t, /*reportAtCurrentPosition*/ false, diagnosticMessage || Diagnostics._0_expected, arg0 || tokenToString(t));
   }
 
@@ -1252,9 +1240,9 @@ namespace Parser {
     return node;
   }
 
-  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: false, diagnosticMessage?: DiagnosticMessage, arg0?: any): T;
-  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: DiagnosticMessage, arg0?: any): T;
-  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: DiagnosticMessage, arg0?: any): T {
+  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: false, diagnosticMessage?: qt.DiagnosticMessage, arg0?: any): T;
+  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: qt.DiagnosticMessage, arg0?: any): T;
+  function createMissingNode<T extends Node>(kind: T['kind'], reportAtCurrentPosition: boolean, diagnosticMessage: qt.DiagnosticMessage, arg0?: any): T {
     if (reportAtCurrentPosition) {
       parseErrorAtPosition(scanner.getStartPos(), 0, diagnosticMessage, arg0);
     } else if (diagnosticMessage) {
@@ -1283,7 +1271,7 @@ namespace Parser {
   // An identifier that starts with two underscores has an extra underscore character prepended to it to avoid issues
   // with magic property names like '__proto__'. The 'identifiers' object is used to share a single string instance for
   // each identifier in order to reduce memory consumption.
-  function createIdentifier(isIdentifier: boolean, diagnosticMessage?: DiagnosticMessage, privateIdentifierDiagnosticMessage?: DiagnosticMessage): Identifier {
+  function createIdentifier(isIdentifier: boolean, diagnosticMessage?: qt.DiagnosticMessage, privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier {
     identifierCount++;
     if (isIdentifier) {
       const node = <Identifier>createNode(SyntaxKind.Identifier);
@@ -1313,11 +1301,11 @@ namespace Parser {
     return createMissingNode<Identifier>(SyntaxKind.Identifier, reportAtCurrentPosition, diagnosticMessage || defaultMessage, msgArg);
   }
 
-  function parseIdentifier(diagnosticMessage?: DiagnosticMessage, privateIdentifierDiagnosticMessage?: DiagnosticMessage): Identifier {
+  function parseIdentifier(diagnosticMessage?: qt.DiagnosticMessage, privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier {
     return createIdentifier(isIdentifier(), diagnosticMessage, privateIdentifierDiagnosticMessage);
   }
 
-  function parseIdentifierName(diagnosticMessage?: DiagnosticMessage): Identifier {
+  function parseIdentifierName(diagnosticMessage?: qt.DiagnosticMessage): Identifier {
     return createIdentifier(tokenIsIdentifierOrKeyword(token()), diagnosticMessage);
   }
 
@@ -1759,7 +1747,7 @@ namespace Parser {
     return node;
   }
 
-  function consumeNode(node: Node) {
+  function consumeNode(node: qt.Node) {
     // Move the scanner so it is after the node we just consumed.
     scanner.setTextPos(node.end);
     nextToken();
@@ -1783,7 +1771,7 @@ namespace Parser {
     return false;
   }
 
-  function canReuseNode(node: Node, parsingContext: ParsingContext): boolean {
+  function canReuseNode(node: qt.Node, parsingContext: ParsingContext): boolean {
     switch (parsingContext) {
       case ParsingContext.ClassMembers:
         return isReusableClassMember(node);
@@ -1861,7 +1849,7 @@ namespace Parser {
     return false;
   }
 
-  function isReusableClassMember(node: Node) {
+  function isReusableClassMember(node: qt.Node) {
     if (node) {
       switch (node.kind) {
         case qt.SyntaxKind.Constructor:
@@ -1875,7 +1863,7 @@ namespace Parser {
           // Method declarations are not necessarily reusable.  An object-literal
           // may have a method calls "constructor(...)" and we must reparse that
           // into an actual .ConstructorDeclaration.
-          const methodDeclaration = <MethodDeclaration>node;
+          const methodDeclaration = node;
           const nameIsConstructor = methodDeclaration.name.kind === qt.SyntaxKind.Identifier && methodDeclaration.name.originalKeywordKind === qt.SyntaxKind.ConstructorKeyword;
 
           return !nameIsConstructor;
@@ -1885,7 +1873,7 @@ namespace Parser {
     return false;
   }
 
-  function isReusableSwitchClause(node: Node) {
+  function isReusableSwitchClause(node: qt.Node) {
     if (node) {
       switch (node.kind) {
         case qt.SyntaxKind.CaseClause:
@@ -1897,7 +1885,7 @@ namespace Parser {
     return false;
   }
 
-  function isReusableStatement(node: Node) {
+  function isReusableStatement(node: qt.Node) {
     if (node) {
       switch (node.kind) {
         case qt.SyntaxKind.FunctionDeclaration:
@@ -1936,11 +1924,11 @@ namespace Parser {
     return false;
   }
 
-  function isReusableEnumMember(node: Node) {
+  function isReusableEnumMember(node: qt.Node) {
     return node.kind === qt.SyntaxKind.EnumMember;
   }
 
-  function isReusableTypeMember(node: Node) {
+  function isReusableTypeMember(node: qt.Node) {
     if (node) {
       switch (node.kind) {
         case qt.SyntaxKind.ConstructSignature:
@@ -1955,7 +1943,7 @@ namespace Parser {
     return false;
   }
 
-  function isReusableVariableDeclaration(node: Node) {
+  function isReusableVariableDeclaration(node: qt.Node) {
     if (node.kind !== qt.SyntaxKind.VariableDeclaration) {
       return false;
     }
@@ -1974,17 +1962,17 @@ namespace Parser {
     //
     // In order to prevent this, we do not allow a variable declarator to be reused if it
     // has an initializer.
-    const variableDeclarator = <VariableDeclaration>node;
+    const variableDeclarator = node;
     return variableDeclarator.initializer === undefined;
   }
 
-  function isReusableParameter(node: Node) {
+  function isReusableParameter(node: qt.Node) {
     if (node.kind !== qt.SyntaxKind.Parameter) {
       return false;
     }
 
     // See the comment in isReusableVariableDeclaration for why we do this.
-    const parameter = <ParameterDeclaration>node;
+    const parameter = node;
     return parameter.initializer === undefined;
   }
 
@@ -1999,7 +1987,7 @@ namespace Parser {
     return false;
   }
 
-  function parsingContextErrors(context: ParsingContext): DiagnosticMessage {
+  function parsingContextErrors(context: ParsingContext): qt.DiagnosticMessage {
     switch (context) {
       case ParsingContext.SourceElements:
         return Diagnostics.Declaration_or_statement_expected;
@@ -2150,7 +2138,7 @@ namespace Parser {
     return createMissingList<T>();
   }
 
-  function parseEntityName(allowReservedWords: boolean, diagnosticMessage?: DiagnosticMessage): EntityName {
+  function parseEntityName(allowReservedWords: boolean, diagnosticMessage?: qt.DiagnosticMessage): EntityName {
     let entity: EntityName = allowReservedWords ? parseIdentifierName(diagnosticMessage) : parseIdentifier(diagnosticMessage);
     let dotPos = scanner.getStartPos();
     while (parseOptional(SyntaxKind.DotToken)) {
@@ -2502,7 +2490,7 @@ namespace Parser {
   }
 
   function parseParameter(): ParameterDeclaration {
-    const node = <ParameterDeclaration>createNodeWithJSDoc(SyntaxKind.Parameter);
+    const node = <qt.ParameterDeclaration>createNodeWithJSDoc(SyntaxKind.Parameter);
     if (token() === qt.SyntaxKind.ThisKeyword) {
       node.name = createIdentifier(/*isIdentifier*/ true);
       node.type = parseParameterType();
@@ -2582,7 +2570,7 @@ namespace Parser {
     // SingleNameBinding [Yield,Await]:
     //      BindingIdentifier[?Yield,?Await]Initializer [In, ?Yield,?Await] opt
     if (!parseExpected(SyntaxKind.OpenParenToken)) {
-      signature.parameters = createMissingList<ParameterDeclaration>();
+      signature.parameters = createMissingList<qt.ParameterDeclaration>();
       return false;
     }
 
@@ -2701,7 +2689,7 @@ namespace Parser {
         // Although type literal properties cannot not have initializers, we attempt
         // to parse an initializer so we can report in the checker that an interface
         // property or type literal property cannot have an initializer.
-        (<PropertySignature>node).initializer = parseInitializer();
+        (<qt.PropertySignature>node).initializer = parseInitializer();
       }
     }
     parseTypeMemberSemicolon();
@@ -3499,11 +3487,11 @@ namespace Parser {
       node = <ArrowFunction>createNode(SyntaxKind.ArrowFunction, identifier.pos);
     }
 
-    const parameter = <ParameterDeclaration>createNode(SyntaxKind.Parameter, identifier.pos);
+    const parameter = <qt.ParameterDeclaration>createNode(SyntaxKind.Parameter, identifier.pos);
     parameter.name = identifier;
     finishNode(parameter);
 
-    node.parameters = createNodeArray<ParameterDeclaration>([parameter], parameter.pos, parameter.end);
+    node.parameters = createNodeArray<qt.ParameterDeclaration>([parameter], parameter.pos, parameter.end);
 
     node.equalsGreaterThanToken = parseExpectedToken(SyntaxKind.EqualsGreaterThanToken);
     node.body = parseArrowFunctionExpressionBody(/*isAsync*/ !!asyncModifier);
@@ -4916,7 +4904,7 @@ namespace Parser {
       setDecoratorContext(/*val*/ false);
     }
 
-    const node = <FunctionExpression>createNodeWithJSDoc(SyntaxKind.FunctionExpression);
+    const node = <qt.FunctionExpression>createNodeWithJSDoc(SyntaxKind.FunctionExpression);
     node.modifiers = parseModifiers();
     parseExpected(SyntaxKind.FunctionKeyword);
     node.asteriskToken = parseOptionalToken(SyntaxKind.AsteriskToken);
@@ -4974,7 +4962,7 @@ namespace Parser {
   }
 
   // STATEMENTS
-  function parseBlock(ignoreMissingOpenBrace: boolean, diagnosticMessage?: DiagnosticMessage): Block {
+  function parseBlock(ignoreMissingOpenBrace: boolean, diagnosticMessage?: qt.DiagnosticMessage): Block {
     const node = <Block>createNode(SyntaxKind.Block);
     const openBracePosition = scanner.getTokenPos();
     if (parseExpected(SyntaxKind.OpenBraceToken, diagnosticMessage) || ignoreMissingOpenBrace) {
@@ -4995,7 +4983,7 @@ namespace Parser {
     return finishNode(node);
   }
 
-  function parseFunctionBlock(flags: SignatureFlags, diagnosticMessage?: DiagnosticMessage): Block {
+  function parseFunctionBlock(flags: SignatureFlags, diagnosticMessage?: qt.DiagnosticMessage): Block {
     const savedYieldContext = inYieldContext();
     setYieldContext(!!(flags & SignatureFlags.Yield));
 
@@ -5444,7 +5432,7 @@ namespace Parser {
         }
         break;
       case qt.SyntaxKind.FunctionKeyword:
-        return parseFunctionDeclaration(<FunctionDeclaration>createNodeWithJSDoc(SyntaxKind.FunctionDeclaration));
+        return parseFunctionDeclaration(<qt.FunctionDeclaration>createNodeWithJSDoc(SyntaxKind.FunctionDeclaration));
       case qt.SyntaxKind.ClassKeyword:
         return parseClassDeclaration(<ClassDeclaration>createNodeWithJSDoc(SyntaxKind.ClassDeclaration));
       case qt.SyntaxKind.IfKeyword:
@@ -5536,7 +5524,7 @@ namespace Parser {
     return doInsideOfContext(NodeFlags.Ambient, () => {
       const node = currentNode(parsingContext);
       if (node) {
-        return consumeNode(node) as Statement;
+        return consumeNode(node);
       }
     });
   }
@@ -5593,7 +5581,7 @@ namespace Parser {
     return !scanner.hasPrecedingLineBreak() && (isIdentifier() || token() === qt.SyntaxKind.StringLiteral);
   }
 
-  function parseFunctionBlockOrSemicolon(flags: SignatureFlags, diagnosticMessage?: DiagnosticMessage): Block | undefined {
+  function parseFunctionBlockOrSemicolon(flags: SignatureFlags, diagnosticMessage?: qt.DiagnosticMessage): Block | undefined {
     if (token() !== qt.SyntaxKind.OpenBraceToken && canParseSemicolon()) {
       parseSemicolon();
       return;
@@ -5651,7 +5639,7 @@ namespace Parser {
     return token() === qt.SyntaxKind.OpenBraceToken || token() === qt.SyntaxKind.OpenBracketToken || token() === qt.SyntaxKind.PrivateIdentifier || isIdentifier();
   }
 
-  function parseIdentifierOrPattern(privateIdentifierDiagnosticMessage?: DiagnosticMessage): Identifier | BindingPattern {
+  function parseIdentifierOrPattern(privateIdentifierDiagnosticMessage?: qt.DiagnosticMessage): Identifier | BindingPattern {
     if (token() === qt.SyntaxKind.OpenBracketToken) {
       return parseArrayBindingPattern();
     }
@@ -5765,7 +5753,7 @@ namespace Parser {
     });
   }
 
-  function parseMethodDeclaration(node: MethodDeclaration, asteriskToken: AsteriskToken, diagnosticMessage?: DiagnosticMessage): MethodDeclaration {
+  function parseMethodDeclaration(node: MethodDeclaration, asteriskToken: AsteriskToken, diagnosticMessage?: qt.DiagnosticMessage): MethodDeclaration {
     node.kind = qt.SyntaxKind.MethodDeclaration;
     node.asteriskToken = asteriskToken;
     const isGenerator = asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
@@ -5794,9 +5782,9 @@ namespace Parser {
     // report an error in the grammar checker.
     node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
     if (asteriskToken || token() === qt.SyntaxKind.OpenParenToken || token() === qt.SyntaxKind.LessThanToken) {
-      return parseMethodDeclaration(<MethodDeclaration>node, asteriskToken, Diagnostics.or_expected);
+      return parseMethodDeclaration(<qt.MethodDeclaration>node, asteriskToken, Diagnostics.or_expected);
     }
-    return parsePropertyDeclaration(<PropertyDeclaration>node);
+    return parsePropertyDeclaration(<qt.PropertyDeclaration>node);
   }
 
   function parseAccessorDeclaration(node: AccessorDeclaration, kind: AccessorDeclaration['kind']): AccessorDeclaration {
@@ -5876,7 +5864,7 @@ namespace Parser {
     return false;
   }
 
-  function parseDecorators(): NodeArray<Decorator> | undefined {
+  function parseDecorators(): NodeArray<qt.Decorator> | undefined {
     let list: Decorator[] | undefined;
     const listPos = getNodePos();
     while (true) {
@@ -5884,7 +5872,7 @@ namespace Parser {
       if (!parseOptional(SyntaxKind.AtToken)) {
         break;
       }
-      const decorator = <Decorator>createNode(SyntaxKind.Decorator, decoratorStart);
+      const decorator = <qt.Decorator>createNode(SyntaxKind.Decorator, decoratorStart);
       decorator.expression = doInDecoratorContext(parseLeftHandSideExpressionOrHigher);
       finishNode(decorator);
       (list || (list = [])).push(decorator);
@@ -6416,24 +6404,24 @@ namespace Parser {
     sourceFile.externalModuleIndicator = forEach(sourceFile.statements, isAnExternalModuleIndicatorNode) || getImportMetaIfNecessary(sourceFile);
   }
 
-  function isAnExternalModuleIndicatorNode(node: Node) {
-    return hasModifierOfKind(node, qt.SyntaxKind.ExportKeyword) || (node.kind === qt.SyntaxKind.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind === qt.SyntaxKind.ExternalModuleReference) || node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ExportAssignment || node.kind === qt.SyntaxKind.ExportDeclaration ? node : undefined;
+  function isAnExternalModuleIndicatorNode(node: qt.Node) {
+    return hasModifierOfKind(node, qt.SyntaxKind.ExportKeyword) || (node.kind === qt.SyntaxKind.ImportEqualsDeclaration && node.moduleReference.kind === qt.SyntaxKind.ExternalModuleReference) || node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ExportAssignment || node.kind === qt.SyntaxKind.ExportDeclaration ? node : undefined;
   }
 
   function getImportMetaIfNecessary(sourceFile: SourceFile) {
     return sourceFile.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(sourceFile) : undefined;
   }
 
-  function walkTreeForExternalModuleIndicators(node: Node): Node | undefined {
+  function walkTreeForExternalModuleIndicators(node: qt.Node): Node | undefined {
     return isImportMeta(node) ? node : forEachChild(node, walkTreeForExternalModuleIndicators);
   }
 
   /** Do not use hasModifier inside the parser; it relies on parent pointers. Use this instead. */
-  function hasModifierOfKind(node: Node, kind: qt.SyntaxKind) {
+  function hasModifierOfKind(node: qt.Node, kind: qt.SyntaxKind) {
     return some(node.modifiers, (m) => m.kind === kind);
   }
 
-  function isImportMeta(node: Node): boolean {
+  function isImportMeta(node: qt.Node): boolean {
     return isMetaProperty(node) && node.keywordToken === qt.SyntaxKind.ImportKeyword && node.name.escapedText === 'meta';
   }
 
@@ -7380,7 +7368,7 @@ namespace Parser {
         return entity;
       }
 
-      function parseJSDocIdentifierName(message?: DiagnosticMessage): Identifier {
+      function parseJSDocIdentifierName(message?: qt.DiagnosticMessage): Identifier {
         if (!tokenIsIdentifierOrKeyword(token())) {
           return createMissingNode<Identifier>(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ !message, message || Diagnostics.Identifier_expected);
         }
@@ -7567,7 +7555,7 @@ namespace IncrementalParser {
     }
   }
 
-  function shouldCheckNode(node: Node) {
+  function shouldCheckNode(node: qt.Node) {
     switch (node.kind) {
       case qt.SyntaxKind.StringLiteral:
       case qt.SyntaxKind.NumericLiteral:
@@ -7652,7 +7640,7 @@ namespace IncrementalParser {
     }
   }
 
-  function checkNodePositions(node: Node, aggressiveChecks: boolean) {
+  function checkNodePositions(node: qt.Node, aggressiveChecks: boolean) {
     if (aggressiveChecks) {
       let pos = node.pos;
       const visitNode = (child: Node) => {
@@ -7783,7 +7771,7 @@ namespace IncrementalParser {
 
     return bestResult;
 
-    function getLastDescendant(node: Node): Node {
+    function getLastDescendant(node: qt.Node): Node {
       while (true) {
         const lastChild = getLastChild(node);
         if (lastChild) {
@@ -7867,7 +7855,7 @@ namespace IncrementalParser {
     }
   }
 
-  interface IncrementalElement extends TextRange {
+  interface IncrementalElement extends qt.TextRange {
     parent: Node;
     intersectsChange: boolean;
     length?: number;
@@ -7945,7 +7933,7 @@ namespace IncrementalParser {
       forEachChild(sourceFile, visitNode, visitArray);
       return;
 
-      function visitNode(node: Node) {
+      function visitNode(node: qt.Node) {
         if (position >= node.pos && position < node.end) {
           // Position was within this node.  Keep searching deeper to find the node.
           forEachChild(node, visitNode, visitArray);
@@ -8034,7 +8022,7 @@ export function processCommentPragmas(context: PragmaContext, sourceText: string
   }
 }
 
-type PragmaDiagnosticReporter = (pos: number, length: number, message: DiagnosticMessage) => void;
+type PragmaDiagnosticReporter = (pos: number, length: number, message: qt.DiagnosticMessage) => void;
 
 export function processPragmasIntoFields(context: PragmaContext, reportDiagnostic: PragmaDiagnosticReporter): void {
   context.checkJsDirective = undefined;
@@ -8108,7 +8096,7 @@ export function processPragmasIntoFields(context: PragmaContext, reportDiagnosti
   });
 }
 
-const namedArgRegExCache = createMap<RegExp>();
+const namedArgRegExCache = qc.createMap<RegExp>();
 function getNamedArgRegEx(name: string): RegExp {
   if (namedArgRegExCache.has(name)) {
     return namedArgRegExCache.get(name)!;

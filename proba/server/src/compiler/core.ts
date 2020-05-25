@@ -1595,7 +1595,7 @@ export function compareValues(a: number | undefined, b: number | undefined): qpc
 }
 
 /**
- * Compare two TextSpans, first by `start`, then by `length`.
+ * Compare two qt.TextSpans, first by `start`, then by `length`.
  */
 export function compareTextSpans(a: Partial<qt.TextSpan> | undefined, b: Partial<qt.TextSpan> | undefined): qpc.Comparison {
   return compareValues(a?.start, b?.start) || compareValues(a?.length, b?.length);

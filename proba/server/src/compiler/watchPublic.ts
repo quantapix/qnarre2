@@ -251,7 +251,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
   let watchedWildcardDirectories: Map<WildcardDirectoryWatcher>; // map of watchers for the wild card directories in the config file
   let timerToUpdateProgram: any; // timer callback to recompile the program
 
-  const sourceFilesCache = createMap<HostFileInfo>(); // Cache that stores the source file and version info
+  const sourceFilesCache = qc.createMap<HostFileInfo>(); // Cache that stores the source file and version info
   let missingFilePathsRequestedForRelease: Path[] | undefined; // These paths are held temparirly so that we can remove the entry from source file cache if the file is not tracked by missing files
   let hasChangedCompilerOptions = false; // True if the compiler options have changed between compilations
   let hasChangedAutomaticTypeDirectiveNames = false; // True if the automatic type directives have changed
@@ -538,7 +538,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     }
   }
 
-  function reportWatchDiagnostic(message: DiagnosticMessage) {
+  function reportWatchDiagnostic(message: qt.DiagnosticMessage) {
     if (host.onWatchStatusChange) {
       host.onWatchStatusChange(createCompilerDiagnostic(message), newLine, compilerOptions || optionsToExtendForConfigFile);
     }

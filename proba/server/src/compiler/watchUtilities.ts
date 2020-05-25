@@ -42,7 +42,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     return undefined;
   }
 
-  const cachedReadDirectoryResult = createMap<MutableFileSystemEntries>();
+  const cachedReadDirectoryResult = qc.createMap<MutableFileSystemEntries>();
   const getCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
   return {
     useCaseSensitiveFileNames,
@@ -277,11 +277,7 @@ export interface WildcardDirectoryWatcher {
  * Note that there is no need to call this function when the program is updated with additional files without reloading config files,
  * as wildcard directories wont change unless reloading config file
  */
-export function updateWatchingWildcardDirectories(
-  existingWatchedForWildcards: Map<WildcardDirectoryWatcher>,
-  wildcardDirectories: Map<WatchDirectoryFlags>,
-  watchDirectory: (directory: string, flags: WatchDirectoryFlags) => FileWatcher
-) {
+export function updateWatchingWildcardDirectories(existingWatchedForWildcards: Map<WildcardDirectoryWatcher>, wildcardDirectories: Map<WatchDirectoryFlags>, watchDirectory: (directory: string, flags: WatchDirectoryFlags) => FileWatcher) {
   mutateMap(existingWatchedForWildcards, wildcardDirectories, {
     // Create new watch and recursive info
     createNewValue: createWildcardDirectoryWatcher,
@@ -330,35 +326,10 @@ export interface WatchFileHost {
 export interface WatchDirectoryHost {
   watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: WatchOptions): FileWatcher;
 }
-export type WatchFile<X, Y> = (
-  host: WatchFileHost,
-  file: string,
-  callback: FileWatcherCallback,
-  pollingInterval: PollingInterval,
-  options: WatchOptions | undefined,
-  detailInfo1: X,
-  detailInfo2?: Y
-) => FileWatcher;
+export type WatchFile<X, Y> = (host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
 export type FilePathWatcherCallback = (fileName: string, eventKind: FileWatcherEventKind, filePath: Path) => void;
-export type WatchFilePath<X, Y> = (
-  host: WatchFileHost,
-  file: string,
-  callback: FilePathWatcherCallback,
-  pollingInterval: PollingInterval,
-  options: WatchOptions | undefined,
-  path: Path,
-  detailInfo1: X,
-  detailInfo2?: Y
-) => FileWatcher;
-export type WatchDirectory<X, Y> = (
-  host: WatchDirectoryHost,
-  directory: string,
-  callback: DirectoryWatcherCallback,
-  flags: WatchDirectoryFlags,
-  options: WatchOptions | undefined,
-  detailInfo1: X,
-  detailInfo2?: Y
-) => FileWatcher;
+export type WatchFilePath<X, Y> = (host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, path: Path, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
+export type WatchDirectory<X, Y> = (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
 
 export interface WatchFactory<X, Y> {
   watchFile: WatchFile<X, Y>;
@@ -384,12 +355,9 @@ function getWatchFactoryWith<X, Y = undefined>(
     setSysLog((s) => log(s));
   }
   return {
-    watchFile: (host, file, callback, pollingInterval, options, detailInfo1, detailInfo2) =>
-      createFileWatcher(host, file, callback, pollingInterval, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
-    watchFilePath: (host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2) =>
-      createFilePathWatcher(host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
-    watchDirectory: (host, directory, callback, flags, options, detailInfo1, detailInfo2) =>
-      createDirectoryWatcher(host, directory, callback, flags, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
+    watchFile: (host, file, callback, pollingInterval, options, detailInfo1, detailInfo2) => createFileWatcher(host, file, callback, pollingInterval, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
+    watchFilePath: (host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2) => createFilePathWatcher(host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
+    watchDirectory: (host, directory, callback, flags, options, detailInfo1, detailInfo2) => createDirectoryWatcher(host, directory, callback, flags, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
   };
 }
 
@@ -406,32 +374,10 @@ function watchDirectory(host: WatchDirectoryHost, directory: string, callback: D
 }
 
 type WatchCallback<T, U> = (fileName: string, cbOptional?: T, passThrough?: U) => void;
-type AddWatch<H, T, U, V> = (
-  host: H,
-  file: string,
-  cb: WatchCallback<U, V>,
-  flags: T,
-  options: WatchOptions | undefined,
-  passThrough?: V,
-  detailInfo1?: undefined,
-  detailInfo2?: undefined
-) => FileWatcher;
+type AddWatch<H, T, U, V> = (host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough?: V, detailInfo1?: undefined, detailInfo2?: undefined) => FileWatcher;
 export type GetDetailWatchInfo<X, Y> = (detailInfo1: X, detailInfo2: Y | undefined) => string;
 
-type CreateFileWatcher<H, T, U, V, X, Y> = (
-  host: H,
-  file: string,
-  cb: WatchCallback<U, V>,
-  flags: T,
-  options: WatchOptions | undefined,
-  passThrough: V | undefined,
-  detailInfo1: X | undefined,
-  detailInfo2: Y | undefined,
-  addWatch: AddWatch<H, T, U, V>,
-  log: (s: string) => void,
-  watchCaption: string,
-  getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
-) => FileWatcher;
+type CreateFileWatcher<H, T, U, V, X, Y> = (host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) => FileWatcher;
 function getCreateFileWatcher<H, T, U, V, X, Y>(watchLogLevel: WatchLogLevel, addWatch: AddWatch<H, T, U, V>): CreateFileWatcher<H, T, U, V, X, Y> {
   switch (watchLogLevel) {
     case WatchLogLevel.None:
@@ -443,20 +389,7 @@ function getCreateFileWatcher<H, T, U, V, X, Y>(watchLogLevel: WatchLogLevel, ad
   }
 }
 
-function createFileWatcherWithLogging<H, T, U, V, X, Y>(
-  host: H,
-  file: string,
-  cb: WatchCallback<U, V>,
-  flags: T,
-  options: WatchOptions | undefined,
-  passThrough: V | undefined,
-  detailInfo1: X | undefined,
-  detailInfo2: Y | undefined,
-  addWatch: AddWatch<H, T, U, V>,
-  log: (s: string) => void,
-  watchCaption: string,
-  getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
-): FileWatcher {
+function createFileWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
   log(`${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
   const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, options, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
   return {
@@ -467,20 +400,7 @@ function createFileWatcherWithLogging<H, T, U, V, X, Y>(
   };
 }
 
-function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(
-  host: H,
-  file: string,
-  cb: WatchCallback<U, V>,
-  flags: T,
-  options: WatchOptions | undefined,
-  passThrough: V | undefined,
-  detailInfo1: X | undefined,
-  detailInfo2: Y | undefined,
-  addWatch: AddWatch<H, T, U, V>,
-  log: (s: string) => void,
-  watchCaption: string,
-  getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
-): FileWatcher {
+function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
   const watchInfo = `${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
   log(watchInfo);
   const start = timestamp();
@@ -499,32 +419,12 @@ function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(
   };
 }
 
-function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(
-  host: H,
-  file: string,
-  cb: WatchCallback<U, V>,
-  flags: T,
-  options: WatchOptions | undefined,
-  passThrough: V | undefined,
-  detailInfo1: X | undefined,
-  detailInfo2: Y | undefined,
-  addWatch: AddWatch<H, T, U, V>,
-  log: (s: string) => void,
-  watchCaption: string,
-  getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
-): FileWatcher {
+function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
   return addWatch(
     host,
     file,
     (fileName, cbOptional) => {
-      const triggerredInfo = `${watchCaption}:: Triggered with ${fileName} ${cbOptional !== undefined ? cbOptional : ''}:: ${getWatchInfo(
-        file,
-        flags,
-        options,
-        detailInfo1,
-        detailInfo2,
-        getDetailWatchInfo
-      )}`;
+      const triggerredInfo = `${watchCaption}:: Triggered with ${fileName} ${cbOptional !== undefined ? cbOptional : ''}:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
       log(triggerredInfo);
       const start = timestamp();
       cb(fileName, cbOptional, passThrough);
@@ -544,9 +444,7 @@ export function getFallbackOptions(options: WatchOptions | undefined): WatchOpti
 }
 
 function getWatchInfo<T, X, Y>(file: string, flags: T, options: WatchOptions | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
-  return `WatchInfo: ${file} ${flags} ${JSON.stringify(options)} ${
-    getDetailWatchInfo ? getDetailWatchInfo(detailInfo1, detailInfo2) : detailInfo2 === undefined ? detailInfo1 : `${detailInfo1} ${detailInfo2}`
-  }`;
+  return `WatchInfo: ${file} ${flags} ${JSON.stringify(options)} ${getDetailWatchInfo ? getDetailWatchInfo(detailInfo1, detailInfo2) : detailInfo2 === undefined ? detailInfo1 : `${detailInfo1} ${detailInfo2}`}`;
 }
 
 export function closeFileWatcherOf<T extends { watcher: FileWatcher }>(objWithWatcher: T) {

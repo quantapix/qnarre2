@@ -2,7 +2,7 @@ export type GetSymbolAccessibilityDiagnostic = (symbolAccessibilityResult: Symbo
 
 export interface SymbolAccessibilityDiagnostic {
   errorNode: Node;
-  diagnosticMessage: DiagnosticMessage;
+  diagnosticMessage: qt.DiagnosticMessage;
   typeName?: DeclarationName | QualifiedName;
 }
 
@@ -27,7 +27,7 @@ export type DeclarationDiagnosticProducing =
   | IndexSignatureDeclaration
   | PropertyAccessExpression;
 
-export function canProduceDiagnostics(node: Node): node is DeclarationDiagnosticProducing {
+export function canProduceDiagnostics(node: qt.Node): node is DeclarationDiagnosticProducing {
   return (
     isVariableDeclaration(node) ||
     isPropertyDeclaration(node) ||
@@ -157,7 +157,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   }
 
   function getAccessorDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qt.DiagnosticMessage;
     if (node.kind === qt.SyntaxKind.SetAccessor) {
       // Getters can infer the return type from the returned expression, but setters cannot, so the
       // "_from_external_module_1_but_cannot_be_named" case cannot occur.
@@ -185,7 +185,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   }
 
   function getReturnTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qt.DiagnosticMessage;
     switch (node.kind) {
       case qt.SyntaxKind.ConstructSignature:
         // Interfaces cannot have return types that cannot be named
@@ -233,7 +233,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   }
 
   function getParameterDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
-    const diagnosticMessage: DiagnosticMessage = getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult);
+    const diagnosticMessage: qt.DiagnosticMessage = getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult);
     return diagnosticMessage !== undefined
       ? {
           diagnosticMessage,
@@ -243,7 +243,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       : undefined;
   }
 
-  function getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult): DiagnosticMessage {
+  function getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult): qt.DiagnosticMessage {
     switch (node.parent.kind) {
       case qt.SyntaxKind.Constructor:
         return symbolAccessibilityResult.errorModuleName ? (symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed ? Diagnostics.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named : Diagnostics.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2) : Diagnostics.Parameter_0_of_constructor_from_exported_class_has_or_is_using_private_name_1;
@@ -286,7 +286,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
 
   function getTypeParameterConstraintVisibilityError(): SymbolAccessibilityDiagnostic {
     // Type parameter constraints are named by user so we should always be able to name it
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qt.DiagnosticMessage;
     switch (node.parent.kind) {
       case qt.SyntaxKind.ClassDeclaration:
         diagnosticMessage = Diagnostics.Type_parameter_0_of_exported_class_has_or_is_using_private_name_1;
@@ -341,7 +341,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
   }
 
   function getHeritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qt.DiagnosticMessage;
     // Heritage clause is written by user so it can always be named
     if (node.parent.parent.kind === qt.SyntaxKind.ClassDeclaration) {
       // Class or Interface implemented/extended is inaccessible

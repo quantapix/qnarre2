@@ -122,7 +122,7 @@ function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName,
 export function countPathComponents(path: string): number {
   let count = 0;
   for (let i = startsWith(path, './') ? 2 : 0; i < path.length; i++) {
-    if (path.charCodeAt(i) === CharacterCodes.slash) count++;
+    if (path.charCodeAt(i) === qt.CharacterCodes.slash) count++;
   }
   return count;
 }
@@ -179,7 +179,7 @@ export function forEachFileNameOfModule<T>(importingFileName: string, importedFi
 function getAllModulePaths(importingFileName: string, importedFileName: string, host: ModuleSpecifierResolutionHost): readonly string[] {
   const cwd = host.getCurrentDirectory();
   const getCanonicalFileName = hostGetCanonicalFileName(host);
-  const allFileNames = createMap<string>();
+  const allFileNames = qc.createMap<string>();
   let importedFileFromNodeModules = false;
   forEachFileNameOfModule(importingFileName, importedFileName, host, /*preferSymlinks*/ true, (path) => {
     // dont return value, so we collect everything

@@ -3,7 +3,7 @@ export interface ResolutionCache {
   startRecordingFilesWithChangedResolutions(): void;
   finishRecordingFilesWithChangedResolutions(): Path[] | undefined;
 
-  resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (ResolvedModuleFull | undefined)[];
+  resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (qt.ResolvedModuleFull | undefined)[];
   getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): CachedResolvedModuleWithFailedLookupLocations | undefined;
   resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[];
 
@@ -36,7 +36,7 @@ interface ResolutionWithResolvedFileName {
 
 interface CachedResolvedModuleWithFailedLookupLocations extends ResolvedModuleWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
 
-interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends ResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
+interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends qt.ResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
 
 export interface ResolutionCacheHost extends ModuleResolutionHost {
   toPath(fileName: string): Path;
@@ -100,7 +100,7 @@ export function canWatchDirectory(dirPath: Path) {
   }
 
   let pathPartForUserCheck = dirPath.substring(rootLength, nextDirectorySeparator + 1);
-  const isNonDirectorySeparatorRoot = rootLength > 1 || dirPath.charCodeAt(0) !== CharacterCodes.slash;
+  const isNonDirectorySeparatorRoot = rootLength > 1 || dirPath.charCodeAt(0) !== qt.CharacterCodes.slash;
   if (
     isNonDirectorySeparatorRoot &&
     dirPath.search(/[a-zA-Z]:/) !== 0 && // Non dos style paths
@@ -137,10 +137,10 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   let filesWithChangedSetOfUnresolvedImports: Path[] | undefined;
   let filesWithInvalidatedResolutions: Map<true> | undefined;
   let filesWithInvalidatedNonRelativeUnresolvedImports: qpc.ReadonlyMap<readonly string[]> | undefined;
-  const nonRelativeExternalModuleResolutions = createMultiMap<ResolutionWithFailedLookupLocations>();
+  const nonRelativeExternalModuleResolutions = qc.createMultiMap<ResolutionWithFailedLookupLocations>();
 
   const resolutionsWithFailedLookups: ResolutionWithFailedLookupLocations[] = [];
-  const resolvedFileToResolution = createMultiMap<ResolutionWithFailedLookupLocations>();
+  const resolvedFileToResolution = qc.createMultiMap<ResolutionWithFailedLookupLocations>();
 
   const getCurrentDirectory = memoize(() => resolutionHost.getCurrentDirectory!()); // TODO: GH#18217
   const cachedDirectoryStructureHost = resolutionHost.getCachedDirectoryStructureHost();
@@ -148,12 +148,12 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   // The resolvedModuleNames and resolvedTypeReferenceDirectives are the cache of resolutions per file.
   // The key in the map is source file's path.
   // The values are Map of resolutions with key being name lookedup.
-  const resolvedModuleNames = createMap<Map<CachedResolvedModuleWithFailedLookupLocations>>();
+  const resolvedModuleNames = qc.createMap<Map<CachedResolvedModuleWithFailedLookupLocations>>();
   const perDirectoryResolvedModuleNames: CacheWithRedirects<Map<CachedResolvedModuleWithFailedLookupLocations>> = createCacheWithRedirects();
   const nonRelativeModuleNameCache: CacheWithRedirects<PerModuleNameCache> = createCacheWithRedirects();
   const moduleResolutionCache = createModuleResolutionCacheWithMaps(perDirectoryResolvedModuleNames, nonRelativeModuleNameCache, getCurrentDirectory(), resolutionHost.getCanonicalFileName);
 
-  const resolvedTypeReferenceDirectives = createMap<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
+  const resolvedTypeReferenceDirectives = qc.createMap<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
   const perDirectoryResolvedTypeReferenceDirectives: CacheWithRedirects<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>> = createCacheWithRedirects();
 
   /**
@@ -163,15 +163,15 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
    * Note that .d.ts file also has .d.ts extension hence will be part of default extensions
    */
   const failedLookupDefaultExtensions = [Extension.Ts, Extension.Tsx, Extension.Js, Extension.Jsx, Extension.Json];
-  const customFailedLookupPaths = createMap<number>();
+  const customFailedLookupPaths = qc.createMap<number>();
 
-  const directoryWatchesOfFailedLookups = createMap<DirectoryWatchesOfFailedLookup>();
+  const directoryWatchesOfFailedLookups = qc.createMap<DirectoryWatchesOfFailedLookup>();
   const rootDir = rootDirForResolution && removeTrailingDirectorySeparator(getNormalizedAbsolutePath(rootDirForResolution, getCurrentDirectory()));
   const rootPath = (rootDir && resolutionHost.toPath(rootDir)) as Path; // TODO: GH#18217
   const rootSplitLength = rootPath !== undefined ? rootPath.split(directorySeparator).length : 0;
 
   // TypeRoot watches for the types that get added as part of getAutomaticTypeDirectiveNames
-  const typeRootsWatches = createMap<FileWatcher>();
+  const typeRootsWatches = qc.createMap<FileWatcher>();
 
   return {
     startRecordingFilesWithChangedResolutions,
@@ -328,7 +328,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const oldRedirect = program && program.getResolvedProjectReferenceToRedirect(containingFile);
     const unmatchedRedirects = oldRedirect ? !redirectedReference || redirectedReference.sourceFile.path !== oldRedirect.sourceFile.path : !!redirectedReference;
 
-    const seenNamesInFile = createMap<true>();
+    const seenNamesInFile = qc.createMap<true>();
     for (const name of names) {
       let resolution = resolutionsInFile.get(name);
       // Resolution is valid if it is present and not invalidated
@@ -394,7 +394,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   }
 
   function resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[] {
-    return resolveNamesWithLocalCache<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolvedTypeReferenceDirective>({
+    return resolveNamesWithLocalCache<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations, qt.ResolvedTypeReferenceDirective>({
       names: typeDirectiveNames,
       containingFile,
       redirectedReference,
@@ -406,8 +406,8 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     });
   }
 
-  function resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (ResolvedModuleFull | undefined)[] {
-    return resolveNamesWithLocalCache<CachedResolvedModuleWithFailedLookupLocations, ResolvedModuleFull>({
+  function resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (qt.ResolvedModuleFull | undefined)[] {
+    return resolveNamesWithLocalCache<CachedResolvedModuleWithFailedLookupLocations, qt.ResolvedModuleFull>({
       names: moduleNames,
       containingFile,
       redirectedReference,
@@ -670,7 +670,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     resolution.isInvalidated = true;
     let changedInAutoTypeReferenced = false;
     for (const containingFilePath of Debug.assertDefined(resolution.files)) {
-      (filesWithInvalidatedResolutions || (filesWithInvalidatedResolutions = createMap<true>())).set(containingFilePath, true);
+      (filesWithInvalidatedResolutions || (filesWithInvalidatedResolutions = qc.createMap<true>())).set(containingFilePath, true);
       // When its a file with inferred types resolution, invalidate type reference directive resolution
       changedInAutoTypeReferenced = changedInAutoTypeReferenced || containingFilePath.endsWith(inferredTypesContainingFile);
     }

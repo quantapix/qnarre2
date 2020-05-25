@@ -200,9 +200,9 @@ export function createFileLevelUniqueName(text: string): Identifier {
 }
 
 /** Create a unique name generated for a node. */
-export function getGeneratedNameForNode(node: Node | undefined): Identifier;
-export function getGeneratedNameForNode(node: Node | undefined, flags: GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
-export function getGeneratedNameForNode(node: Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
+export function getGeneratedNameForNode(node: qt.Node | undefined): Identifier;
+export function getGeneratedNameForNode(node: qt.Node | undefined, flags: GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
+export function getGeneratedNameForNode(node: qt.Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
   const name = createIdentifier(node && isIdentifier(node) ? idText(node) : '');
   name.autoGenerateFlags = GeneratedIdentifierFlags.Node | flags;
   name.autoGenerateId = nextAutoGenerateId;
@@ -335,7 +335,7 @@ export function updateTypeParameterDeclaration(node: TypeParameterDeclaration, n
 }
 
 export function createParameter(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, dotDotDotToken: DotDotDotToken | undefined, name: string | BindingName, questionToken?: QuestionToken, type?: TypeNode, initializer?: Expression) {
-  const node = <ParameterDeclaration>createSynthesizedNode(SyntaxKind.Parameter);
+  const node = <qt.ParameterDeclaration>createSynthesizedNode(SyntaxKind.Parameter);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.dotDotDotToken = dotDotDotToken;
@@ -351,7 +351,7 @@ export function updateParameter(node: ParameterDeclaration, decorators: readonly
 }
 
 export function createDecorator(expression: Expression) {
-  const node = <Decorator>createSynthesizedNode(SyntaxKind.Decorator);
+  const node = <qt.Decorator>createSynthesizedNode(SyntaxKind.Decorator);
   node.expression = parenthesizeForAccess(expression);
   return node;
 }
@@ -377,7 +377,7 @@ export function updatePropertySignature(node: PropertySignature, modifiers: read
 }
 
 export function createProperty(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, questionOrExclamationToken: QuestionToken | ExclamationToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined) {
-  const node = <PropertyDeclaration>createSynthesizedNode(SyntaxKind.PropertyDeclaration);
+  const node = <qt.PropertyDeclaration>createSynthesizedNode(SyntaxKind.PropertyDeclaration);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.name = asName(name);
@@ -407,12 +407,12 @@ export function createMethodSignature(typeParameters: readonly TypeParameterDecl
   return node;
 }
 
-export function updateMethodSignature(node: MethodSignature, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<ParameterDeclaration>, type: TypeNode | undefined, name: PropertyName, questionToken: QuestionToken | undefined) {
+export function updateMethodSignature(node: MethodSignature, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined, name: PropertyName, questionToken: QuestionToken | undefined) {
   return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.name !== name || node.questionToken !== questionToken ? updateNode(createMethodSignature(typeParameters, parameters, type, name, questionToken), node) : node;
 }
 
 export function createMethod(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, asteriskToken: AsteriskToken | undefined, name: string | PropertyName, questionToken: QuestionToken | undefined, typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined, body: Block | undefined) {
-  const node = <MethodDeclaration>createSynthesizedNode(SyntaxKind.MethodDeclaration);
+  const node = <qt.MethodDeclaration>createSynthesizedNode(SyntaxKind.MethodDeclaration);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.asteriskToken = asteriskToken;
@@ -465,7 +465,7 @@ export function updateMethod(node: MethodDeclaration, decorators: readonly Decor
 }
 
 export function createConstructor(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, parameters: readonly ParameterDeclaration[], body: Block | undefined) {
-  const node = <ConstructorDeclaration>createSynthesizedNode(SyntaxKind.Constructor);
+  const node = <qt.ConstructorDeclaration>createSynthesizedNode(SyntaxKind.Constructor);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.typeParameters = undefined;
@@ -480,7 +480,7 @@ export function updateConstructor(node: ConstructorDeclaration, decorators: read
 }
 
 export function createGetAccessor(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined, body: Block | undefined) {
-  const node = <GetAccessorDeclaration>createSynthesizedNode(SyntaxKind.GetAccessor);
+  const node = <qt.GetAccessorDeclaration>createSynthesizedNode(SyntaxKind.GetAccessor);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.name = asName(name);
@@ -514,7 +514,7 @@ export function createCallSignature(typeParameters: readonly TypeParameterDeclar
   return createSignatureDeclaration(SyntaxKind.CallSignature, typeParameters, parameters, type);
 }
 
-export function updateCallSignature(node: CallSignatureDeclaration, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateCallSignature(node: CallSignatureDeclaration, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -522,7 +522,7 @@ export function createConstructSignature(typeParameters: readonly TypeParameterD
   return createSignatureDeclaration(SyntaxKind.ConstructSignature, typeParameters, parameters, type);
 }
 
-export function updateConstructSignature(node: ConstructSignatureDeclaration, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateConstructSignature(node: ConstructSignatureDeclaration, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -548,7 +548,7 @@ export function createSignatureDeclaration(kind: qt.SyntaxKind, typeParameters: 
   return node;
 }
 
-function updateSignatureDeclaration<T extends SignatureDeclaration>(node: T, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<ParameterDeclaration>, type: TypeNode | undefined): T {
+function updateSignatureDeclaration<T extends SignatureDeclaration>(node: T, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined): T {
   return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? updateNode(<T>createSignatureDeclaration(node.kind, typeParameters, parameters, type), node) : node;
 }
 
@@ -593,7 +593,7 @@ export function createFunctionTypeNode(typeParameters: readonly TypeParameterDec
   return createSignatureDeclaration(SyntaxKind.FunctionType, typeParameters, parameters, type);
 }
 
-export function updateFunctionTypeNode(node: FunctionTypeNode, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateFunctionTypeNode(node: FunctionTypeNode, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -601,7 +601,7 @@ export function createConstructorTypeNode(typeParameters: readonly TypeParameter
   return createSignatureDeclaration(SyntaxKind.ConstructorType, typeParameters, parameters, type);
 }
 
-export function updateConstructorTypeNode(node: ConstructorTypeNode, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<ParameterDeclaration>, type: TypeNode | undefined) {
+export function updateConstructorTypeNode(node: ConstructorTypeNode, typeParameters: NodeArray<TypeParameterDeclaration> | undefined, parameters: NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined) {
   return updateSignatureDeclaration(node, typeParameters, parameters, type);
 }
 
@@ -1009,7 +1009,7 @@ export function updateParen(node: ParenthesizedExpression, expression: Expressio
 }
 
 export function createFunctionExpression(modifiers: readonly Modifier[] | undefined, asteriskToken: AsteriskToken | undefined, name: string | Identifier | undefined, typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[] | undefined, type: TypeNode | undefined, body: Block) {
-  const node = <FunctionExpression>createSynthesizedNode(SyntaxKind.FunctionExpression);
+  const node = <qt.FunctionExpression>createSynthesizedNode(SyntaxKind.FunctionExpression);
   node.modifiers = asNodeArray(modifiers);
   node.asteriskToken = asteriskToken;
   node.name = asName(name);
@@ -1594,7 +1594,7 @@ export function updateVariableDeclarationList(node: VariableDeclarationList, dec
 }
 
 export function createFunctionDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, asteriskToken: AsteriskToken | undefined, name: string | Identifier | undefined, typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined, body: Block | undefined) {
-  const node = <FunctionDeclaration>createSynthesizedNode(SyntaxKind.FunctionDeclaration);
+  const node = <qt.FunctionDeclaration>createSynthesizedNode(SyntaxKind.FunctionDeclaration);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.asteriskToken = asteriskToken;
@@ -2611,7 +2611,7 @@ export function createInputFiles(javascriptText: string, declarationText: string
 export function createInputFiles(javascriptTextOrReadFileText: string | ((path: string) => string | undefined), declarationTextOrJavascriptPath: string, javascriptMapPath?: string, javascriptMapTextOrDeclarationPath?: string, declarationMapPath?: string, declarationMapTextOrBuildInfoPath?: string, javascriptPath?: string | undefined, declarationPath?: string | undefined, buildInfoPath?: string | undefined, buildInfo?: BuildInfo, oldFileOfCurrentEmit?: boolean): InputFiles {
   const node = createNode(SyntaxKind.InputFiles);
   if (!isString(javascriptTextOrReadFileText)) {
-    const cache = createMap<string | false>();
+    const cache = qc.createMap<string | false>();
     const textGetter = (path: string | undefined) => {
       if (path === undefined) return undefined;
       let value = cache.get(path);
@@ -2816,7 +2816,7 @@ export function disposeEmitNodes(sourceFile: SourceFile) {
  * various transient transformation properties.
  */
 
-export function getOrCreateEmitNode(node: Node): EmitNode {
+export function getOrCreateEmitNode(node: qt.Node): EmitNode {
   if (!node.emitNode) {
     if (isParseTreeNode(node)) {
       // To avoid holding onto transformation artifacts, we keep track of any
@@ -2848,7 +2848,7 @@ export function removeAllComments<T extends Node>(node: T): T {
   return node;
 }
 
-export function setTextRange<T extends TextRange>(range: T, location: TextRange | undefined): T {
+export function setTextRange<T extends qt.TextRange>(range: T, location: qt.TextRange | undefined): T {
   if (location) {
     range.pos = location.pos;
     range.end = location.end;
@@ -2877,7 +2877,7 @@ export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
 /**
  * Gets a custom text range to use when emitting source maps.
  */
-export function getSourceMapRange(node: Node): SourceMapRange {
+export function getSourceMapRange(node: qt.Node): SourceMapRange {
   const emitNode = node.emitNode;
   return (emitNode && emitNode.sourceMapRange) || node;
 }
@@ -2900,16 +2900,16 @@ export function createSourceMapSource(fileName: string, text: string, skipTrivia
 }
 
 /**
- * Gets the TextRange to use for source maps for a token of a node.
+ * Gets the qt.TextRange to use for source maps for a token of a node.
  */
-export function getTokenSourceMapRange(node: Node, token: qt.SyntaxKind): SourceMapRange | undefined {
+export function getTokenSourceMapRange(node: qt.Node, token: qt.SyntaxKind): SourceMapRange | undefined {
   const emitNode = node.emitNode;
   const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
   return tokenSourceMapRanges && tokenSourceMapRanges[token];
 }
 
 /**
- * Sets the TextRange to use for source maps for a token of a node.
+ * Sets the qt.TextRange to use for source maps for a token of a node.
  */
 export function setTokenSourceMapRange<T extends Node>(node: T, token: qt.SyntaxKind, range: SourceMapRange | undefined) {
   const emitNode = getOrCreateEmitNode(node);
@@ -2921,7 +2921,7 @@ export function setTokenSourceMapRange<T extends Node>(node: T, token: qt.Syntax
 /**
  * Gets a custom text range to use when emitting comments.
  */
-export function getStartsOnNewLine(node: Node) {
+export function getStartsOnNewLine(node: qt.Node) {
   const emitNode = node.emitNode;
   return emitNode && emitNode.startsOnNewLine;
 }
@@ -2937,7 +2937,7 @@ export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
 /**
  * Gets a custom text range to use when emitting comments.
  */
-export function getCommentRange(node: Node) {
+export function getCommentRange(node: qt.Node) {
   const emitNode = node.emitNode;
   return (emitNode && emitNode.commentRange) || node;
 }
@@ -2945,12 +2945,12 @@ export function getCommentRange(node: Node) {
 /**
  * Sets a custom text range to use when emitting comments.
  */
-export function setCommentRange<T extends Node>(node: T, range: TextRange) {
+export function setCommentRange<T extends Node>(node: T, range: qt.TextRange) {
   getOrCreateEmitNode(node).commentRange = range;
   return node;
 }
 
-export function getSyntheticLeadingComments(node: Node): SynthesizedComment[] | undefined {
+export function getSyntheticLeadingComments(node: qt.Node): SynthesizedComment[] | undefined {
   const emitNode = node.emitNode;
   return emitNode && emitNode.leadingComments;
 }
@@ -2967,7 +2967,7 @@ export function addSyntheticLeadingComment<T extends Node>(node: T, kind: qt.Syn
   );
 }
 
-export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
+export function getSyntheticTrailingComments(node: qt.Node): SynthesizedComment[] | undefined {
   const emitNode = node.emitNode;
   return emitNode && emitNode.trailingComments;
 }
@@ -3041,7 +3041,7 @@ export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | 
 /**
  * Removes an EmitHelper from a node.
  */
-export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
+export function removeEmitHelper(node: qt.Node, helper: EmitHelper): boolean {
   const emitNode = node.emitNode;
   if (emitNode) {
     const helpers = emitNode.helpers;
@@ -3055,7 +3055,7 @@ export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
 /**
  * Gets the EmitHelpers of a node.
  */
-export function getEmitHelpers(node: Node): EmitHelper[] | undefined {
+export function getEmitHelpers(node: qt.Node): EmitHelper[] | undefined {
   const emitNode = node.emitNode;
   return emitNode && emitNode.helpers;
 }

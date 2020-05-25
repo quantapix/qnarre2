@@ -91,11 +91,11 @@ export function transformES2017(context: TransformationContext) {
     return cb(value);
   }
 
-  function visitDefault(node: Node): VisitResult<Node> {
+  function visitDefault(node: qt.Node): VisitResult<Node> {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if ((node.transformFlags & TransformFlags.ContainsES2017) === 0) {
       return node;
     }
@@ -105,19 +105,19 @@ export function transformES2017(context: TransformationContext) {
         return undefined;
 
       case qt.SyntaxKind.AwaitExpression:
-        return visitAwaitExpression(<AwaitExpression>node);
+        return visitAwaitExpression(node);
 
       case qt.SyntaxKind.MethodDeclaration:
-        return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitMethodDeclaration, <MethodDeclaration>node);
+        return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitMethodDeclaration, node);
 
       case qt.SyntaxKind.FunctionDeclaration:
-        return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionDeclaration, <FunctionDeclaration>node);
+        return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionDeclaration, node);
 
       case qt.SyntaxKind.FunctionExpression:
-        return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionExpression, <FunctionExpression>node);
+        return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionExpression, node);
 
       case qt.SyntaxKind.ArrowFunction:
-        return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
+        return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, node);
 
       case qt.SyntaxKind.PropertyAccessExpression:
         if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === qt.SyntaxKind.SuperKeyword) {
@@ -126,7 +126,7 @@ export function transformES2017(context: TransformationContext) {
         return visitEachChild(node, visitor, context);
 
       case qt.SyntaxKind.ElementAccessExpression:
-        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === qt.SyntaxKind.SuperKeyword) {
+        if (capturedSuperProperties && node.expression.kind === qt.SyntaxKind.SuperKeyword) {
           hasSuperElementAccess = true;
         }
         return visitEachChild(node, visitor, context);
@@ -143,7 +143,7 @@ export function transformES2017(context: TransformationContext) {
     }
   }
 
-  function asyncBodyVisitor(node: Node): VisitResult<Node> {
+  function asyncBodyVisitor(node: qt.Node): VisitResult<Node> {
     if (isNodeWithPossibleHoistedDeclaration(node)) {
       switch (node.kind) {
         case qt.SyntaxKind.VariableStatement:
@@ -481,7 +481,7 @@ export function transformES2017(context: TransformationContext) {
    * @param node The node to emit.
    * @param emit A callback used to emit the node in the printer.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void): void {
     // If we need to support substitutions for `super` in an async method,
     // we should track it here.
     if (enabledSubstitutions & ES2017SubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
@@ -511,10 +511,10 @@ export function transformES2017(context: TransformationContext) {
    * @param hint A hint as to the intended usage of the node.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (hint === EmitHint.Expression && enclosingSuperContainerFlags) {
-      return substituteExpression(<Expression>node);
+      return substituteExpression(node);
     }
 
     return node;
@@ -555,12 +555,12 @@ export function transformES2017(context: TransformationContext) {
     return node;
   }
 
-  function isSuperContainer(node: Node): node is SuperContainer {
+  function isSuperContainer(node: qt.Node): node is SuperContainer {
     const kind = node.kind;
     return kind === qt.SyntaxKind.ClassDeclaration || kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor;
   }
 
-  function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
+  function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: qt.TextRange): LeftHandSideExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
       return setTextRange(createPropertyAccess(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
     } else {

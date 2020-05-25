@@ -108,15 +108,15 @@ export function transformES2018(context: TransformationContext) {
     return visited;
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     return visitorWorker(node, /*noDestructuringValue*/ false);
   }
 
-  function visitorNoDestructuringValue(node: Node): VisitResult<Node> {
+  function visitorNoDestructuringValue(node: qt.Node): VisitResult<Node> {
     return visitorWorker(node, /*noDestructuringValue*/ true);
   }
 
-  function visitorNoAsyncModifier(node: Node): VisitResult<Node> {
+  function visitorNoAsyncModifier(node: qt.Node): VisitResult<Node> {
     if (node.kind === qt.SyntaxKind.AsyncKeyword) {
       return undefined;
     }
@@ -133,72 +133,72 @@ export function transformES2018(context: TransformationContext) {
     return cb(value);
   }
 
-  function visitDefault(node: Node): VisitResult<Node> {
+  function visitDefault(node: qt.Node): VisitResult<Node> {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitorWorker(node: Node, noDestructuringValue: boolean): VisitResult<Node> {
+  function visitorWorker(node: qt.Node, noDestructuringValue: boolean): VisitResult<Node> {
     if ((node.transformFlags & TransformFlags.ContainsES2018) === 0) {
       return node;
     }
     switch (node.kind) {
       case qt.SyntaxKind.AwaitExpression:
-        return visitAwaitExpression(node as AwaitExpression);
+        return visitAwaitExpression(node);
       case qt.SyntaxKind.YieldExpression:
-        return visitYieldExpression(node as YieldExpression);
+        return visitYieldExpression(node);
       case qt.SyntaxKind.ReturnStatement:
-        return visitReturnStatement(node as ReturnStatement);
+        return visitReturnStatement(node);
       case qt.SyntaxKind.LabeledStatement:
-        return visitLabeledStatement(node as LabeledStatement);
+        return visitLabeledStatement(node);
       case qt.SyntaxKind.ObjectLiteralExpression:
-        return visitObjectLiteralExpression(node as ObjectLiteralExpression);
+        return visitObjectLiteralExpression(node);
       case qt.SyntaxKind.BinaryExpression:
-        return visitBinaryExpression(node as BinaryExpression, noDestructuringValue);
+        return visitBinaryExpression(node, noDestructuringValue);
       case qt.SyntaxKind.CatchClause:
-        return visitCatchClause(node as CatchClause);
+        return visitCatchClause(node);
       case qt.SyntaxKind.VariableStatement:
-        return visitVariableStatement(node as VariableStatement);
+        return visitVariableStatement(node);
       case qt.SyntaxKind.VariableDeclaration:
-        return visitVariableDeclaration(node as VariableDeclaration);
+        return visitVariableDeclaration(node);
       case qt.SyntaxKind.DoStatement:
       case qt.SyntaxKind.WhileStatement:
       case qt.SyntaxKind.ForInStatement:
         return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
       case qt.SyntaxKind.ForOfStatement:
-        return visitForOfStatement(node as ForOfStatement, /*outermostLabeledStatement*/ undefined);
+        return visitForOfStatement(node, /*outermostLabeledStatement*/ undefined);
       case qt.SyntaxKind.ForStatement:
-        return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
+        return doWithHierarchyFacts(visitForStatement, node, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
       case qt.SyntaxKind.VoidExpression:
-        return visitVoidExpression(node as VoidExpression);
+        return visitVoidExpression(node);
       case qt.SyntaxKind.Constructor:
-        return doWithHierarchyFacts(visitConstructorDeclaration, node as ConstructorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
+        return doWithHierarchyFacts(visitConstructorDeclaration, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case qt.SyntaxKind.MethodDeclaration:
-        return doWithHierarchyFacts(visitMethodDeclaration, node as MethodDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
+        return doWithHierarchyFacts(visitMethodDeclaration, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case qt.SyntaxKind.GetAccessor:
-        return doWithHierarchyFacts(visitGetAccessorDeclaration, node as GetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
+        return doWithHierarchyFacts(visitGetAccessorDeclaration, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case qt.SyntaxKind.SetAccessor:
-        return doWithHierarchyFacts(visitSetAccessorDeclaration, node as SetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
+        return doWithHierarchyFacts(visitSetAccessorDeclaration, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case qt.SyntaxKind.FunctionDeclaration:
-        return doWithHierarchyFacts(visitFunctionDeclaration, node as FunctionDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
+        return doWithHierarchyFacts(visitFunctionDeclaration, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case qt.SyntaxKind.FunctionExpression:
-        return doWithHierarchyFacts(visitFunctionExpression, node as FunctionExpression, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
+        return doWithHierarchyFacts(visitFunctionExpression, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
       case qt.SyntaxKind.ArrowFunction:
-        return doWithHierarchyFacts(visitArrowFunction, node as ArrowFunction, HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
+        return doWithHierarchyFacts(visitArrowFunction, node, HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
       case qt.SyntaxKind.Parameter:
-        return visitParameter(node as ParameterDeclaration);
+        return visitParameter(node);
       case qt.SyntaxKind.ExpressionStatement:
-        return visitExpressionStatement(node as ExpressionStatement);
+        return visitExpressionStatement(node);
       case qt.SyntaxKind.ParenthesizedExpression:
-        return visitParenthesizedExpression(node as ParenthesizedExpression, noDestructuringValue);
+        return visitParenthesizedExpression(node, noDestructuringValue);
       case qt.SyntaxKind.TaggedTemplateExpression:
-        return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
+        return visitTaggedTemplateExpression(node);
       case qt.SyntaxKind.PropertyAccessExpression:
         if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === qt.SyntaxKind.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
       case qt.SyntaxKind.ElementAccessExpression:
-        if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === qt.SyntaxKind.SuperKeyword) {
+        if (capturedSuperProperties && node.expression.kind === qt.SyntaxKind.SuperKeyword) {
           hasSuperElementAccess = true;
         }
         return visitEachChild(node, visitor, context);
@@ -423,8 +423,8 @@ export function transformES2018(context: TransformationContext) {
   function transformForOfStatementWithObjectRest(node: ForOfStatement) {
     const initializerWithoutParens = skipParentheses(node.initializer);
     if (isVariableDeclarationList(initializerWithoutParens) || isAssignmentPattern(initializerWithoutParens)) {
-      let bodyLocation: TextRange | undefined;
-      let statementsLocation: TextRange | undefined;
+      let bodyLocation: qt.TextRange | undefined;
+      let statementsLocation: qt.TextRange | undefined;
       const temp = createTempVariable(/*recordTempVariable*/ undefined);
       const statements: Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
       if (isBlock(node.statement)) {
@@ -444,8 +444,8 @@ export function transformES2018(context: TransformationContext) {
   function convertForOfStatementHead(node: ForOfStatement, boundValue: Expression) {
     const binding = createForOfBindingStatement(node.initializer, boundValue);
 
-    let bodyLocation: TextRange | undefined;
-    let statementsLocation: TextRange | undefined;
+    let bodyLocation: qt.TextRange | undefined;
+    let statementsLocation: qt.TextRange | undefined;
     const statements: Statement[] = [visitNode(binding, visitor, isStatement)];
     const statement = visitNode(node.statement, visitor, isStatement);
     if (isBlock(statement)) {
@@ -702,7 +702,7 @@ export function transformES2018(context: TransformationContext) {
    * @param node The node to be printed.
    * @param emitCallback The callback used to emit the node.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void) {
     // If we need to support substitutions for `super` in an async method,
     // we should track it here.
     if (enabledSubstitutions & ESNextSubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
@@ -733,10 +733,10 @@ export function transformES2018(context: TransformationContext) {
    * @param hint The context for the emitter.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (hint === EmitHint.Expression && enclosingSuperContainerFlags) {
-      return substituteExpression(<Expression>node);
+      return substituteExpression(node);
     }
     return node;
   }
@@ -776,12 +776,12 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
 
-  function isSuperContainer(node: Node) {
+  function isSuperContainer(node: qt.Node) {
     const kind = node.kind;
     return kind === qt.SyntaxKind.ClassDeclaration || kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor;
   }
 
-  function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
+  function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: qt.TextRange): LeftHandSideExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
       return setTextRange(createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
     } else {
@@ -871,7 +871,7 @@ export const asyncDelegator: UnscopedEmitHelper = {
             };`,
 };
 
-function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
+function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: qt.TextRange) {
   context.requestEmitHelper(asyncDelegator);
   return setTextRange(createCall(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
 }
@@ -890,7 +890,7 @@ export const asyncValues: UnscopedEmitHelper = {
             };`,
 };
 
-function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
+function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: qt.TextRange) {
   context.requestEmitHelper(asyncValues);
   return setTextRange(createCall(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
 }

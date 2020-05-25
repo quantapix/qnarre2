@@ -313,15 +313,15 @@ export function transformES2015(context: TransformationContext) {
     hierarchyFacts = (((hierarchyFacts & ~excludeFacts) | includeFacts) & HierarchyFacts.SubtreeFactsMask) | ancestorFacts;
   }
 
-  function isReturnVoidStatementInConstructorWithCapturedSuper(node: Node): boolean {
-    return (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper) !== 0 && node.kind === qt.SyntaxKind.ReturnStatement && !(<ReturnStatement>node).expression;
+  function isReturnVoidStatementInConstructorWithCapturedSuper(node: qt.Node): boolean {
+    return (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper) !== 0 && node.kind === qt.SyntaxKind.ReturnStatement && !node.expression;
   }
 
-  function shouldVisitNode(node: Node): boolean {
+  function shouldVisitNode(node: qt.Node): boolean {
     return (node.transformFlags & TransformFlags.ContainsES2015) !== 0 || convertedLoopState !== undefined || (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (isStatement(node) || node.kind === qt.SyntaxKind.Block)) || (isIterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) || (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0;
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if (shouldVisitNode(node)) {
       return visitJavaScript(node);
     } else {
@@ -329,127 +329,127 @@ export function transformES2015(context: TransformationContext) {
     }
   }
 
-  function callExpressionVisitor(node: Node): VisitResult<Node> {
+  function callExpressionVisitor(node: qt.Node): VisitResult<Node> {
     if (node.kind === qt.SyntaxKind.SuperKeyword) {
       return visitSuperKeyword(/*isExpressionOfCall*/ true);
     }
     return visitor(node);
   }
 
-  function visitJavaScript(node: Node): VisitResult<Node> {
+  function visitJavaScript(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.StaticKeyword:
         return undefined; // elide static keyword
 
       case qt.SyntaxKind.ClassDeclaration:
-        return visitClassDeclaration(<ClassDeclaration>node);
+        return visitClassDeclaration(node);
 
       case qt.SyntaxKind.ClassExpression:
-        return visitClassExpression(<ClassExpression>node);
+        return visitClassExpression(node);
 
       case qt.SyntaxKind.Parameter:
-        return visitParameter(<ParameterDeclaration>node);
+        return visitParameter(node);
 
       case qt.SyntaxKind.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(node);
 
       case qt.SyntaxKind.ArrowFunction:
-        return visitArrowFunction(<ArrowFunction>node);
+        return visitArrowFunction(node);
 
       case qt.SyntaxKind.FunctionExpression:
-        return visitFunctionExpression(<FunctionExpression>node);
+        return visitFunctionExpression(node);
 
       case qt.SyntaxKind.VariableDeclaration:
-        return visitVariableDeclaration(<VariableDeclaration>node);
+        return visitVariableDeclaration(node);
 
       case qt.SyntaxKind.Identifier:
-        return visitIdentifier(<Identifier>node);
+        return visitIdentifier(node);
 
       case qt.SyntaxKind.VariableDeclarationList:
-        return visitVariableDeclarationList(<VariableDeclarationList>node);
+        return visitVariableDeclarationList(node);
 
       case qt.SyntaxKind.SwitchStatement:
-        return visitSwitchStatement(<SwitchStatement>node);
+        return visitSwitchStatement(node);
 
       case qt.SyntaxKind.CaseBlock:
-        return visitCaseBlock(<CaseBlock>node);
+        return visitCaseBlock(node);
 
       case qt.SyntaxKind.Block:
-        return visitBlock(<Block>node, /*isFunctionBody*/ false);
+        return visitBlock(node, /*isFunctionBody*/ false);
 
       case qt.SyntaxKind.BreakStatement:
       case qt.SyntaxKind.ContinueStatement:
-        return visitBreakOrContinueStatement(<BreakOrContinueStatement>node);
+        return visitBreakOrContinueStatement(node);
 
       case qt.SyntaxKind.LabeledStatement:
-        return visitLabeledStatement(<LabeledStatement>node);
+        return visitLabeledStatement(node);
 
       case qt.SyntaxKind.DoStatement:
       case qt.SyntaxKind.WhileStatement:
         return visitDoOrWhileStatement(<DoStatement | WhileStatement>node, /*outermostLabeledStatement*/ undefined);
 
       case qt.SyntaxKind.ForStatement:
-        return visitForStatement(<ForStatement>node, /*outermostLabeledStatement*/ undefined);
+        return visitForStatement(node, /*outermostLabeledStatement*/ undefined);
 
       case qt.SyntaxKind.ForInStatement:
-        return visitForInStatement(<ForInStatement>node, /*outermostLabeledStatement*/ undefined);
+        return visitForInStatement(node, /*outermostLabeledStatement*/ undefined);
 
       case qt.SyntaxKind.ForOfStatement:
-        return visitForOfStatement(<ForOfStatement>node, /*outermostLabeledStatement*/ undefined);
+        return visitForOfStatement(node, /*outermostLabeledStatement*/ undefined);
 
       case qt.SyntaxKind.ExpressionStatement:
-        return visitExpressionStatement(<ExpressionStatement>node);
+        return visitExpressionStatement(node);
 
       case qt.SyntaxKind.ObjectLiteralExpression:
-        return visitObjectLiteralExpression(<ObjectLiteralExpression>node);
+        return visitObjectLiteralExpression(node);
 
       case qt.SyntaxKind.CatchClause:
-        return visitCatchClause(<CatchClause>node);
+        return visitCatchClause(node);
 
       case qt.SyntaxKind.ShorthandPropertyAssignment:
-        return visitShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
+        return visitShorthandPropertyAssignment(node);
 
       case qt.SyntaxKind.ComputedPropertyName:
-        return visitComputedPropertyName(<ComputedPropertyName>node);
+        return visitComputedPropertyName(node);
 
       case qt.SyntaxKind.ArrayLiteralExpression:
-        return visitArrayLiteralExpression(<ArrayLiteralExpression>node);
+        return visitArrayLiteralExpression(node);
 
       case qt.SyntaxKind.CallExpression:
-        return visitCallExpression(<CallExpression>node);
+        return visitCallExpression(node);
 
       case qt.SyntaxKind.NewExpression:
-        return visitNewExpression(<NewExpression>node);
+        return visitNewExpression(node);
 
       case qt.SyntaxKind.ParenthesizedExpression:
-        return visitParenthesizedExpression(<ParenthesizedExpression>node, /*needsDestructuringValue*/ true);
+        return visitParenthesizedExpression(node, /*needsDestructuringValue*/ true);
 
       case qt.SyntaxKind.BinaryExpression:
-        return visitBinaryExpression(<BinaryExpression>node, /*needsDestructuringValue*/ true);
+        return visitBinaryExpression(node, /*needsDestructuringValue*/ true);
 
       case qt.SyntaxKind.NoSubstitutionTemplateLiteral:
       case qt.SyntaxKind.TemplateHead:
       case qt.SyntaxKind.TemplateMiddle:
       case qt.SyntaxKind.TemplateTail:
-        return visitTemplateLiteral(<LiteralExpression>node);
+        return visitTemplateLiteral(node);
 
       case qt.SyntaxKind.StringLiteral:
-        return visitStringLiteral(<StringLiteral>node);
+        return visitStringLiteral(node);
 
       case qt.SyntaxKind.NumericLiteral:
-        return visitNumericLiteral(<NumericLiteral>node);
+        return visitNumericLiteral(node);
 
       case qt.SyntaxKind.TaggedTemplateExpression:
-        return visitTaggedTemplateExpression(<TaggedTemplateExpression>node);
+        return visitTaggedTemplateExpression(node);
 
       case qt.SyntaxKind.TemplateExpression:
-        return visitTemplateExpression(<TemplateExpression>node);
+        return visitTemplateExpression(node);
 
       case qt.SyntaxKind.YieldExpression:
-        return visitYieldExpression(<YieldExpression>node);
+        return visitYieldExpression(node);
 
       case qt.SyntaxKind.SpreadElement:
-        return visitSpreadElement(<SpreadElement>node);
+        return visitSpreadElement(node);
 
       case qt.SyntaxKind.SuperKeyword:
         return visitSuperKeyword(/*isExpressionOfCall*/ false);
@@ -458,20 +458,20 @@ export function transformES2015(context: TransformationContext) {
         return visitThisKeyword(node);
 
       case qt.SyntaxKind.MetaProperty:
-        return visitMetaProperty(<MetaProperty>node);
+        return visitMetaProperty(node);
 
       case qt.SyntaxKind.MethodDeclaration:
-        return visitMethodDeclaration(<MethodDeclaration>node);
+        return visitMethodDeclaration(node);
 
       case qt.SyntaxKind.GetAccessor:
       case qt.SyntaxKind.SetAccessor:
-        return visitAccessorDeclaration(<AccessorDeclaration>node);
+        return visitAccessorDeclaration(node);
 
       case qt.SyntaxKind.VariableStatement:
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(node);
 
       case qt.SyntaxKind.ReturnStatement:
-        return visitReturnStatement(<ReturnStatement>node);
+        return visitReturnStatement(node);
 
       default:
         return visitEachChild(node, visitor, context);
@@ -514,7 +514,7 @@ export function transformES2015(context: TransformationContext) {
     return updated;
   }
 
-  function returnCapturedThis(node: Node): ReturnStatement {
+  function returnCapturedThis(node: qt.Node): ReturnStatement {
     return setOriginalNode(createReturn(createFileLevelUniqueName('_this')), node);
   }
 
@@ -531,7 +531,7 @@ export function transformES2015(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitThisKeyword(node: Node): Node {
+  function visitThisKeyword(node: qt.Node): Node {
     if (hierarchyFacts & HierarchyFacts.ArrowFunction) {
       hierarchyFacts |= HierarchyFacts.CapturedLexicalThis;
     }
@@ -1196,7 +1196,7 @@ export function transformES2015(context: TransformationContext) {
    * @param statements The statements for the new function body.
    * @param node A node.
    */
-  function insertCaptureThisForNodeIfNeeded(statements: Statement[], node: Node): boolean {
+  function insertCaptureThisForNodeIfNeeded(statements: Statement[], node: qt.Node): boolean {
     if (hierarchyFacts & HierarchyFacts.CapturedLexicalThis && node.kind !== qt.SyntaxKind.ArrowFunction) {
       insertCaptureThisForNode(statements, node, createThis());
       return true;
@@ -1204,7 +1204,7 @@ export function transformES2015(context: TransformationContext) {
     return false;
   }
 
-  function insertCaptureThisForNode(statements: Statement[], node: Node, initializer: Expression | undefined): void {
+  function insertCaptureThisForNode(statements: Statement[], node: qt.Node, initializer: Expression | undefined): void {
     enableSubstitutionsForCapturedThis();
     const captureThisStatement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(createFileLevelUniqueName('_this'), /*type*/ undefined, initializer)]));
     setEmitFlags(captureThisStatement, EmitFlags.NoComments | EmitFlags.CustomPrologue);
@@ -1273,7 +1273,7 @@ export function transformES2015(context: TransformationContext) {
           break;
 
         case qt.SyntaxKind.MethodDeclaration:
-          statements.push(transformClassMethodDeclarationToStatement(getClassMemberPrefix(node, member), <MethodDeclaration>member, node));
+          statements.push(transformClassMethodDeclarationToStatement(getClassMemberPrefix(node, member), <qt.MethodDeclaration>member, node));
           break;
 
         case qt.SyntaxKind.GetAccessor:
@@ -1477,7 +1477,7 @@ export function transformES2015(context: TransformationContext) {
    * @param location The source-map location for the new FunctionExpression.
    * @param name The name of the new FunctionExpression.
    */
-  function transformFunctionLikeToExpression(node: FunctionLikeDeclaration, location: TextRange | undefined, name: Identifier | undefined, container: Node | undefined): FunctionExpression {
+  function transformFunctionLikeToExpression(node: FunctionLikeDeclaration, location: qt.TextRange | undefined, name: Identifier | undefined, container: Node | undefined): FunctionExpression {
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
     const ancestorFacts = container && isClassLike(container) && !hasSyntacticModifier(node, ModifierFlags.Static) ? enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes | HierarchyFacts.NonStaticClassElement) : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
@@ -1500,8 +1500,8 @@ export function transformES2015(context: TransformationContext) {
   function transformFunctionBody(node: FunctionLikeDeclaration) {
     let multiLine = false; // indicates whether the block *must* be emitted as multiple lines
     let singleLine = false; // indicates whether the block *may* be emitted as a single line
-    let statementsLocation: TextRange;
-    let closeBraceLocation: TextRange | undefined;
+    let statementsLocation: qt.TextRange;
+    let closeBraceLocation: qt.TextRange | undefined;
 
     const prologue: Statement[] = [];
     const statements: Statement[] = [];
@@ -1722,7 +1722,7 @@ export function transformES2015(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function getRangeUnion(declarations: readonly Node[]): TextRange {
+  function getRangeUnion(declarations: readonly Node[]): qt.TextRange {
     // declarations may not be sorted by position.
     // pos should be the minimum* position over all nodes (that's not -1), end should be the maximum end over all nodes.
     let pos = -1,
@@ -1842,7 +1842,7 @@ export function transformES2015(context: TransformationContext) {
 
   function visitLabeledStatement(node: LabeledStatement): VisitResult<Statement> {
     if (convertedLoopState && !convertedLoopState.labels) {
-      convertedLoopState.labels = createMap<boolean>();
+      convertedLoopState.labels = qc.createMap<boolean>();
     }
     const statement = unwrapInnermostStatementOfLabel(node, convertedLoopState && recordLabel);
     return isIterationStatement(statement, /*lookInLabeledStatements*/ false) ? visitIterationStatement(statement, /*outermostLabeledStatement*/ node) : restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node, convertedLoopState && resetLabel);
@@ -2101,7 +2101,7 @@ export function transformES2015(context: TransformationContext) {
     incrementor: Expression;
   }
 
-  function shouldConvertPartOfIterationStatement(node: Node) {
+  function shouldConvertPartOfIterationStatement(node: qt.Node) {
     return (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ContainsCapturedBlockScopeBinding) !== 0;
   }
 
@@ -2586,12 +2586,12 @@ export function transformES2015(context: TransformationContext) {
   function setLabeledJump(state: ConvertedLoopState, isBreak: boolean, labelText: string, labelMarker: string): void {
     if (isBreak) {
       if (!state.labeledNonLocalBreaks) {
-        state.labeledNonLocalBreaks = createMap<string>();
+        state.labeledNonLocalBreaks = qc.createMap<string>();
       }
       state.labeledNonLocalBreaks.set(labelText, labelMarker);
     } else {
       if (!state.labeledNonLocalContinues) {
-        state.labeledNonLocalContinues = createMap<string>();
+        state.labeledNonLocalContinues = qc.createMap<string>();
       }
       state.labeledNonLocalContinues.set(labelText, labelMarker);
     }
@@ -3283,7 +3283,7 @@ export function transformES2015(context: TransformationContext) {
    * @param node The node to be printed.
    * @param emitCallback The callback used to emit the node.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void) {
     if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && isFunctionLike(node)) {
       // If we are tracking a captured `this`, keep track of the enclosing function.
       const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, getEmitFlags(node) & EmitFlags.CapturesThis ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis : HierarchyFacts.FunctionIncludes);
@@ -3329,7 +3329,7 @@ export function transformES2015(context: TransformationContext) {
    * @param hint The context for the emitter.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
 
     if (hint === EmitHint.Expression) {
@@ -3382,13 +3382,13 @@ export function transformES2015(context: TransformationContext) {
    *
    * @param node An Expression node.
    */
-  function substituteExpression(node: Node) {
+  function substituteExpression(node: qt.Node) {
     switch (node.kind) {
       case qt.SyntaxKind.Identifier:
-        return substituteExpressionIdentifier(<Identifier>node);
+        return substituteExpressionIdentifier(node);
 
       case qt.SyntaxKind.ThisKeyword:
-        return substituteThisKeyword(<PrimaryExpression>node);
+        return substituteThisKeyword(node);
     }
 
     return node;

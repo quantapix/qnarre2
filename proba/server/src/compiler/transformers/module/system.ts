@@ -109,7 +109,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param externalImports The imports for the file.
    */
   function collectDependencyGroups(externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[]) {
-    const groupIndices = createMap<number>();
+    const groupIndices = qc.createMap<number>();
     const dependencyGroups: DependencyGroup[] = [];
     for (const externalImport of externalImports) {
       const externalModuleName = getExternalModuleNameLiteral(externalImport, currentSourceFile, host, resolver, compilerOptions);
@@ -410,19 +410,19 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function sourceElementVisitor(node: Node): VisitResult<Node> {
+  function sourceElementVisitor(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.ImportDeclaration:
-        return visitImportDeclaration(<ImportDeclaration>node);
+        return visitImportDeclaration(node);
 
       case qt.SyntaxKind.ImportEqualsDeclaration:
-        return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
+        return visitImportEqualsDeclaration(node);
 
       case qt.SyntaxKind.ExportDeclaration:
-        return visitExportDeclaration(<ExportDeclaration>node);
+        return visitExportDeclaration(node);
 
       case qt.SyntaxKind.ExportAssignment:
-        return visitExportAssignment(<ExportAssignment>node);
+        return visitExportAssignment(node);
 
       default:
         return nestedElementVisitor(node);
@@ -632,7 +632,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param value The value of the variable's initializer.
    * @param location The source map location for the assignment.
    */
-  function createExportedVariableAssignment(name: Identifier, value: Expression, location?: TextRange) {
+  function createExportedVariableAssignment(name: Identifier, value: Expression, location?: qt.TextRange) {
     return createVariableAssignment(name, value, location, /*isExportedDeclaration*/ true);
   }
 
@@ -643,7 +643,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param value The value of the variable's initializer.
    * @param location The source map location for the assignment.
    */
-  function createNonExportedVariableAssignment(name: Identifier, value: Expression, location?: TextRange) {
+  function createNonExportedVariableAssignment(name: Identifier, value: Expression, location?: qt.TextRange) {
     return createVariableAssignment(name, value, location, /*isExportedDeclaration*/ false);
   }
 
@@ -655,7 +655,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param location The source map location for the assignment.
    * @param isExportedDeclaration A value indicating whether the variable is exported.
    */
-  function createVariableAssignment(name: Identifier, value: Expression, location: TextRange | undefined, isExportedDeclaration: boolean) {
+  function createVariableAssignment(name: Identifier, value: Expression, location: qt.TextRange | undefined, isExportedDeclaration: boolean) {
     hoistVariableDeclaration(getSynthesizedClone(name));
     return isExportedDeclaration ? createExportExpression(name, preventSubstitution(setTextRange(createAssignment(name, value), location))) : preventSubstitution(setTextRange(createAssignment(name, value), location));
   }
@@ -688,7 +688,7 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function hasAssociatedEndOfDeclarationMarker(node: Node) {
+  function hasAssociatedEndOfDeclarationMarker(node: qt.Node) {
     return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
 
@@ -943,64 +943,64 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function nestedElementVisitor(node: Node): VisitResult<Node> {
+  function nestedElementVisitor(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.VariableStatement:
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(node);
 
       case qt.SyntaxKind.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(node);
 
       case qt.SyntaxKind.ClassDeclaration:
-        return visitClassDeclaration(<ClassDeclaration>node);
+        return visitClassDeclaration(node);
 
       case qt.SyntaxKind.ForStatement:
-        return visitForStatement(<ForStatement>node);
+        return visitForStatement(node);
 
       case qt.SyntaxKind.ForInStatement:
-        return visitForInStatement(<ForInStatement>node);
+        return visitForInStatement(node);
 
       case qt.SyntaxKind.ForOfStatement:
-        return visitForOfStatement(<ForOfStatement>node);
+        return visitForOfStatement(node);
 
       case qt.SyntaxKind.DoStatement:
-        return visitDoStatement(<DoStatement>node);
+        return visitDoStatement(node);
 
       case qt.SyntaxKind.WhileStatement:
-        return visitWhileStatement(<WhileStatement>node);
+        return visitWhileStatement(node);
 
       case qt.SyntaxKind.LabeledStatement:
-        return visitLabeledStatement(<LabeledStatement>node);
+        return visitLabeledStatement(node);
 
       case qt.SyntaxKind.WithStatement:
-        return visitWithStatement(<WithStatement>node);
+        return visitWithStatement(node);
 
       case qt.SyntaxKind.SwitchStatement:
-        return visitSwitchStatement(<SwitchStatement>node);
+        return visitSwitchStatement(node);
 
       case qt.SyntaxKind.CaseBlock:
-        return visitCaseBlock(<CaseBlock>node);
+        return visitCaseBlock(node);
 
       case qt.SyntaxKind.CaseClause:
-        return visitCaseClause(<CaseClause>node);
+        return visitCaseClause(node);
 
       case qt.SyntaxKind.DefaultClause:
-        return visitDefaultClause(<DefaultClause>node);
+        return visitDefaultClause(node);
 
       case qt.SyntaxKind.TryStatement:
-        return visitTryStatement(<TryStatement>node);
+        return visitTryStatement(node);
 
       case qt.SyntaxKind.CatchClause:
-        return visitCatchClause(<CatchClause>node);
+        return visitCatchClause(node);
 
       case qt.SyntaxKind.Block:
-        return visitBlock(<Block>node);
+        return visitBlock(node);
 
       case qt.SyntaxKind.MergeDeclarationMarker:
-        return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
+        return visitMergeDeclarationMarker(node);
 
       case qt.SyntaxKind.EndOfDeclarationMarker:
-        return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
+        return visitEndOfDeclarationMarker(node);
 
       default:
         return destructuringAndImportCallVisitor(node);
@@ -1209,7 +1209,7 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function destructuringAndImportCallVisitor(node: Node): VisitResult<Node> {
+  function destructuringAndImportCallVisitor(node: qt.Node): VisitResult<Node> {
     if (isDestructuringAssignment(node)) {
       return visitDestructuringAssignment(node);
     } else if (isImportCall(node)) {
@@ -1283,7 +1283,7 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function modifierVisitor(node: Node): VisitResult<Node> {
+  function modifierVisitor(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.ExportKeyword:
       case qt.SyntaxKind.DefaultKeyword:
@@ -1303,10 +1303,10 @@ export function transformSystemModule(context: TransformationContext) {
    * @param node The node to emit.
    * @param emitCallback A callback used to emit the node in the printer.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void): void {
     if (node.kind === qt.SyntaxKind.SourceFile) {
       const id = getOriginalNodeId(node);
-      currentSourceFile = <SourceFile>node;
+      currentSourceFile = node;
       moduleInfo = moduleInfoMap[id];
       exportFunction = exportFunctionsMap[id];
       noSubstitution = noSubstitutionMap[id];
@@ -1338,14 +1338,14 @@ export function transformSystemModule(context: TransformationContext) {
    * @param hint A hint as to the intended usage of the node.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (isSubstitutionPrevented(node)) {
       return node;
     }
 
     if (hint === EmitHint.Expression) {
-      return substituteExpression(<Expression>node);
+      return substituteExpression(node);
     } else if (hint === EmitHint.Unspecified) {
       return substituteUnspecified(node);
     }
@@ -1358,10 +1358,10 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to substitute.
    */
-  function substituteUnspecified(node: Node) {
+  function substituteUnspecified(node: qt.Node) {
     switch (node.kind) {
       case qt.SyntaxKind.ShorthandPropertyAssignment:
-        return substituteShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
+        return substituteShorthandPropertyAssignment(node);
     }
     return node;
   }
@@ -1553,7 +1553,7 @@ export function transformSystemModule(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function isSubstitutionPrevented(node: Node) {
+  function isSubstitutionPrevented(node: qt.Node) {
     return noSubstitution && node.id && noSubstitution[node.id];
   }
 }

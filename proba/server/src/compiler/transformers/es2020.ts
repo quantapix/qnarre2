@@ -11,7 +11,7 @@ export function transformES2020(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if ((node.transformFlags & TransformFlags.ContainsES2020) === 0) {
       return node;
     }
@@ -20,18 +20,18 @@ export function transformES2020(context: TransformationContext) {
       case qt.SyntaxKind.ElementAccessExpression:
       case qt.SyntaxKind.CallExpression:
         if (node.flags & NodeFlags.OptionalChain) {
-          const updated = visitOptionalExpression(node as OptionalChain, /*captureThisArg*/ false, /*isDelete*/ false);
+          const updated = visitOptionalExpression(node, /*captureThisArg*/ false, /*isDelete*/ false);
           Debug.assertNotNode(updated, isSyntheticReference);
           return updated;
         }
         return visitEachChild(node, visitor, context);
       case qt.SyntaxKind.BinaryExpression:
-        if ((<BinaryExpression>node).operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) {
-          return transformNullishCoalescingExpression(<BinaryExpression>node);
+        if (node.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) {
+          return transformNullishCoalescingExpression(node);
         }
         return visitEachChild(node, visitor, context);
       case qt.SyntaxKind.DeleteExpression:
-        return visitDeleteExpression(node as DeleteExpression);
+        return visitDeleteExpression(node);
       default:
         return visitEachChild(node, visitor, context);
     }

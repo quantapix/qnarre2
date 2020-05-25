@@ -109,9 +109,9 @@ export function forEachMeasure(cb: (measureName: string, duration: number) => vo
 
 /** Enables (and resets) performance measurements for the compiler. */
 export function enable() {
-  counts = createMap<number>();
-  marks = createMap<number>();
-  measures = createMap<number>();
+  counts = qc.createMap<number>();
+  marks = qc.createMap<number>();
+  measures = qc.createMap<number>();
   enabled = true;
   profilerStart = timestamp();
 }

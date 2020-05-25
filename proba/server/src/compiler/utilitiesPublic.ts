@@ -1,3 +1,9 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+
+import * as qt from './types';
+import { Debug } from './debug';
+
 export function isExternalModuleNameRelative(moduleName: string): boolean {
   // TypeScript 1.0 spec (April 2014): 11.2.1
   // An external module name is "relative" if the first term is "." or "..".
@@ -30,41 +36,41 @@ export function getDefaultLibFileName(options: qt.CompilerOptions): string {
   }
 }
 
-export function textSpanEnd(span: TextSpan) {
+export function textSpanEnd(span: qt.TextSpan) {
   return span.start + span.length;
 }
 
-export function textSpanIsEmpty(span: TextSpan) {
+export function textSpanIsEmpty(span: qt.TextSpan) {
   return span.length === 0;
 }
 
-export function textSpanContainsPosition(span: TextSpan, position: number) {
+export function textSpanContainsPosition(span: qt.TextSpan, position: number) {
   return position >= span.start && position < textSpanEnd(span);
 }
 
-export function textRangeContainsPositionInclusive(span: TextRange, position: number): boolean {
+export function textRangeContainsPositionInclusive(span: qt.TextRange, position: number): boolean {
   return position >= span.pos && position <= span.end;
 }
 
 // Returns true if 'span' contains 'other'.
-export function textSpanContainsTextSpan(span: TextSpan, other: TextSpan) {
+export function textSpanContainsTextSpan(span: qt.TextSpan, other: qt.TextSpan) {
   return other.start >= span.start && textSpanEnd(other) <= textSpanEnd(span);
 }
 
-export function textSpanOverlapsWith(span: TextSpan, other: TextSpan) {
+export function textSpanOverlapsWith(span: qt.TextSpan, other: qt.TextSpan) {
   return textSpanOverlap(span, other) !== undefined;
 }
 
-export function textSpanOverlap(span1: TextSpan, span2: TextSpan): TextSpan | undefined {
+export function textSpanOverlap(span1: qt.TextSpan, span2: qt.TextSpan): qt.TextSpan | undefined {
   const overlap = textSpanIntersection(span1, span2);
   return overlap && overlap.length === 0 ? undefined : overlap;
 }
 
-export function textSpanIntersectsWithTextSpan(span: TextSpan, other: TextSpan) {
+export function textSpanIntersectsWithTextSpan(span: qt.TextSpan, other: qt.TextSpan) {
   return decodedTextSpanIntersectsWith(span.start, span.length, other.start, other.length);
 }
 
-export function textSpanIntersectsWith(span: TextSpan, start: number, length: number) {
+export function textSpanIntersectsWith(span: qt.TextSpan, start: number, length: number) {
   return decodedTextSpanIntersectsWith(span.start, span.length, start, length);
 }
 
@@ -74,17 +80,17 @@ export function decodedTextSpanIntersectsWith(start1: number, length1: number, s
   return start2 <= end1 && end2 >= start1;
 }
 
-export function textSpanIntersectsWithPosition(span: TextSpan, position: number) {
+export function textSpanIntersectsWithPosition(span: qt.TextSpan, position: number) {
   return position <= textSpanEnd(span) && position >= span.start;
 }
 
-export function textSpanIntersection(span1: TextSpan, span2: TextSpan): TextSpan | undefined {
+export function textSpanIntersection(span1: qt.TextSpan, span2: qt.TextSpan): qt.TextSpan | undefined {
   const start = Math.max(span1.start, span2.start);
   const end = Math.min(textSpanEnd(span1), textSpanEnd(span2));
   return start <= end ? createTextSpanFromBounds(start, end) : undefined;
 }
 
-export function createTextSpan(start: number, length: number): TextSpan {
+export function createTextSpan(start: number, length: number): qt.TextSpan {
   if (start < 0) {
     throw new Error('start < 0');
   }
@@ -107,7 +113,7 @@ export function textChangeRangeIsUnchanged(range: TextChangeRange) {
   return textSpanIsEmpty(range.span) && range.newLength === 0;
 }
 
-export function createTextChangeRange(span: TextSpan, newLength: number): TextChangeRange {
+export function createTextChangeRange(span: qt.TextSpan, newLength: number): TextChangeRange {
   if (newLength < 0) {
     throw new Error('newLength < 0');
   }
@@ -251,8 +257,8 @@ export function getTypeParameterOwner(d: Declaration): Declaration | undefined {
   }
 }
 
-export type ParameterPropertyDeclaration = ParameterDeclaration & { parent: ConstructorDeclaration; name: Identifier };
-export function isParameterPropertyDeclaration(node: Node, parent: Node): node is ParameterPropertyDeclaration {
+export type ParameterPropertyDeclaration = qt.ParameterDeclaration & { parent: ConstructorDeclaration; name: Identifier };
+export function isParameterPropertyDeclaration(node: qt.Node, parent: Node): node is ParameterPropertyDeclaration {
   return hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier) && parent.kind === qt.SyntaxKind.Constructor;
 }
 
@@ -270,7 +276,7 @@ export function isEmptyBindingElement(node: BindingElement): boolean {
   return isEmptyBindingPattern(node.name);
 }
 
-export function walkUpBindingElementsAndPatterns(binding: BindingElement): VariableDeclaration | ParameterDeclaration {
+export function walkUpBindingElementsAndPatterns(binding: BindingElement): VariableDeclaration | qt.ParameterDeclaration {
   let node = binding.parent;
   while (isBindingElement(node.parent)) {
     node = node.parent.parent;
@@ -278,19 +284,19 @@ export function walkUpBindingElementsAndPatterns(binding: BindingElement): Varia
   return node.parent;
 }
 
-function getCombinedFlags(node: Node, getFlags: (n: Node) => number): number {
+function getCombinedFlags(node: qt.Node, getFlags: (n: Node) => number): number {
   if (isBindingElement(node)) {
     node = walkUpBindingElementsAndPatterns(node);
   }
   let flags = getFlags(node);
-  if (node.kind === qt.SyntaxKind.VariableDeclaration) {
+  if (n.kind === qt.SyntaxKind.VariableDeclaration) {
     node = node.parent;
   }
-  if (node && node.kind === qt.SyntaxKind.VariableDeclarationList) {
+  if (node && n.kind === qt.SyntaxKind.VariableDeclarationList) {
     flags |= getFlags(node);
     node = node.parent;
   }
-  if (node && node.kind === qt.SyntaxKind.VariableStatement) {
+  if (node && n.kind === qt.SyntaxKind.VariableStatement) {
     flags |= getFlags(node);
   }
   return flags;
@@ -307,7 +313,7 @@ export function getCombinedModifierFlags(node: Declaration): ModifierFlags {
 // (if it has one).  Similarly, flags for let/const are store on the variable declaration
 // list.  By calling this function, all those flags are combined so that the client can treat
 // the node as if it actually had those flags.
-export function getCombinedNodeFlags(node: Node): NodeFlags {
+export function getCombinedNodeFlags(node: qt.Node): NodeFlags {
   return getCombinedFlags(node, (n) => n.flags);
 }
 
@@ -377,11 +383,11 @@ export function validateLocaleAndSetLanguage(locale: string, sys: { getExecuting
   }
 }
 
-export function getOriginalNode(node: Node): Node;
-export function getOriginalNode<T extends Node>(node: Node, nodeTest: (node: Node) => node is T): T;
-export function getOriginalNode(node: Node | undefined): Node | undefined;
-export function getOriginalNode<T extends Node>(node: Node | undefined, nodeTest: (node: Node | undefined) => node is T): T | undefined;
-export function getOriginalNode(node: Node | undefined, nodeTest?: (node: Node | undefined) => boolean): Node | undefined {
+export function getOriginalNode(node: qt.Node): Node;
+export function getOriginalNode<T extends Node>(node: qt.Node, nodeTest: (node: qt.Node) => node is T): T;
+export function getOriginalNode(node: qt.Node | undefined): Node | undefined;
+export function getOriginalNode<T extends Node>(node: qt.Node | undefined, nodeTest: (node: qt.Node | undefined) => node is T): T | undefined;
+export function getOriginalNode(node: qt.Node | undefined, nodeTest?: (node: qt.Node | undefined) => boolean): Node | undefined {
   if (node) {
     while (node.original !== undefined) {
       node = node.original;
@@ -396,8 +402,8 @@ export function getOriginalNode(node: Node | undefined, nodeTest?: (node: Node |
  *
  * @param node The node to test.
  */
-export function isParseTreeNode(node: Node): boolean {
-  return (node.flags & NodeFlags.Synthesized) === 0;
+export function isParseTreeNode(node: qt.Node): boolean {
+  return (node.flags & qt.NodeFlags.Synthesized) === 0;
 }
 
 /**
@@ -406,7 +412,7 @@ export function isParseTreeNode(node: Node): boolean {
  * @param node The original node.
  * @returns The original parse tree node if found; otherwise, undefined.
  */
-export function getParseTreeNode(node: Node): Node;
+export function getParseTreeNode(node: qt.Node): Node;
 
 /**
  * Gets the original parse tree node for a node.
@@ -415,8 +421,8 @@ export function getParseTreeNode(node: Node): Node;
  * @param nodeTest A callback used to ensure the correct type of parse tree node is returned.
  * @returns The original parse tree node if found; otherwise, undefined.
  */
-export function getParseTreeNode<T extends Node>(node: Node | undefined, nodeTest?: (node: Node) => node is T): T | undefined;
-export function getParseTreeNode(node: Node | undefined, nodeTest?: (node: Node) => boolean): Node | undefined {
+export function getParseTreeNode<T extends Node>(node: qt.Node | undefined, nodeTest?: (node: qt.Node) => node is T): T | undefined;
+export function getParseTreeNode(node: qt.Node | undefined, nodeTest?: (node: qt.Node) => boolean): Node | undefined {
   if (node === undefined || isParseTreeNode(node)) {
     return node;
   }
@@ -432,7 +438,7 @@ export function getParseTreeNode(node: Node | undefined, nodeTest?: (node: Node)
 
 /** Add an extra underscore to identifiers that start with two underscores to avoid issues with magic names like '__proto__' */
 export function escapeLeadingUnderscores(identifier: string): qt.__String {
-  return (identifier.length >= 2 && identifier.charCodeAt(0) === CharacterCodes._ && identifier.charCodeAt(1) === CharacterCodes._ ? '_' + identifier : identifier) as qt.__String;
+  return (identifier.length >= 2 && identifier.charCodeAt(0) === qt.CharacterCodes._ && identifier.charCodeAt(1) === qt.CharacterCodes._ ? '_' + identifier : identifier) as qt.__String;
 }
 
 /**
@@ -443,7 +449,7 @@ export function escapeLeadingUnderscores(identifier: string): qt.__String {
  */
 export function unescapeLeadingUnderscores(identifier: qt.__String): string {
   const id = identifier as string;
-  return id.length >= 3 && id.charCodeAt(0) === CharacterCodes._ && id.charCodeAt(1) === CharacterCodes._ && id.charCodeAt(2) === CharacterCodes._ ? id.substr(1) : id;
+  return id.length >= 3 && id.charCodeAt(0) === qt.CharacterCodes._ && id.charCodeAt(1) === qt.CharacterCodes._ && id.charCodeAt(2) === qt.CharacterCodes._ ? id.substr(1) : id;
 }
 
 export function idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {
@@ -525,8 +531,8 @@ export function getNameOfJSDocTypedef(declaration: JSDocTypedefTag): Identifier 
 }
 
 /** @internal */
-export function isNamedDeclaration(node: Node): node is NamedDeclaration & { name: DeclarationName } {
-  return !!(node as NamedDeclaration).name; // A 'name' property should always be a DeclarationName.
+export function isNamedDeclaration(n: qt.Node): n is qt.NamedDeclaration & { name: DeclarationName } {
+  return !!node.name; // A 'name' property should always be a DeclarationName.
 }
 
 /** @internal */
@@ -581,7 +587,7 @@ export function getNameOfDeclaration(declaration: Declaration | Expression): Dec
   return getNonAssignedNameOfDeclaration(declaration) || (isFunctionExpression(declaration) || isClassExpression(declaration) ? getAssignedName(declaration) : undefined);
 }
 
-function getAssignedName(node: Node): DeclarationName | undefined {
+function getAssignedName(node: qt.Node): DeclarationName | undefined {
   if (!node.parent) {
     return undefined;
   } else if (isPropertyAssignment(node.parent) || isBindingElement(node.parent)) {
@@ -597,11 +603,11 @@ function getAssignedName(node: Node): DeclarationName | undefined {
   }
 }
 
-function getJSDocParameterTagsWorker(param: ParameterDeclaration, noCache?: boolean): readonly JSDocParameterTag[] {
+function getJSDocParameterTagsWorker(param: qt.ParameterDeclaration, noCache?: boolean): readonly qt.JSDocParameterTag[] {
   if (param.name) {
     if (isIdentifier(param.name)) {
       const name = param.name.escapedText;
-      return getJSDocTagsWorker(param.parent, noCache).filter((tag): tag is JSDocParameterTag => isJSDocParameterTag(tag) && isIdentifier(tag.name) && tag.name.escapedText === name);
+      return getJSDocTagsWorker(param.parent, noCache).filter((tag): tag is qt.JSDocParameterTag => isJSDocParameterTag(tag) && isIdentifier(tag.name) && tag.name.escapedText === name);
     } else {
       const i = param.parent.parameters.indexOf(param);
       Debug.assert(i > -1, "Parameters should always be in their parents' parameter list");
@@ -627,17 +633,17 @@ function getJSDocParameterTagsWorker(param: ParameterDeclaration, noCache?: bool
  *
  * For binding patterns, parameter tags are matched by position.
  */
-export function getJSDocParameterTags(param: ParameterDeclaration): readonly JSDocParameterTag[] {
+export function getJSDocParameterTags(param: qt.ParameterDeclaration): readonly qt.JSDocParameterTag[] {
   return getJSDocParameterTagsWorker(param, /*noCache*/ false);
 }
 
-export function getJSDocParameterTagsNoCache(param: ParameterDeclaration): readonly JSDocParameterTag[] {
+export function getJSDocParameterTagsNoCache(param: qt.ParameterDeclaration): readonly qt.JSDocParameterTag[] {
   return getJSDocParameterTagsWorker(param, /*noCache*/ true);
 }
 
-function getJSDocTypeParameterTagsWorker(param: TypeParameterDeclaration, noCache?: boolean): readonly JSDocTemplateTag[] {
+function getJSDocTypeParameterTagsWorker(param: qt.TypeParameterDeclaration, noCache?: boolean): readonly qt.JSDocTemplateTag[] {
   const name = param.name.escapedText;
-  return getJSDocTagsWorker(param.parent, noCache).filter((tag): tag is JSDocTemplateTag => isJSDocTemplateTag(tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
+  return getJSDocTagsWorker(param.parent, noCache).filter((tag): tag is qt.JSDocTemplateTag => isJSDocTemplateTag(tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
 }
 
 /**
@@ -650,11 +656,11 @@ function getJSDocTypeParameterTagsWorker(param: TypeParameterDeclaration, noCach
  * node are returned first, so in the previous example, the template
  * tag on the containing function expression would be first.
  */
-export function getJSDocTypeParameterTags(param: TypeParameterDeclaration): readonly JSDocTemplateTag[] {
+export function getJSDocTypeParameterTags(param: qt.TypeParameterDeclaration): readonly qt.JSDocTemplateTag[] {
   return getJSDocTypeParameterTagsWorker(param, /*noCache*/ false);
 }
 
-export function getJSDocTypeParameterTagsNoCache(param: TypeParameterDeclaration): readonly JSDocTemplateTag[] {
+export function getJSDocTypeParameterTagsNoCache(param: qt.TypeParameterDeclaration): readonly qt.JSDocTemplateTag[] {
   return getJSDocTypeParameterTagsWorker(param, /*noCache*/ true);
 }
 
@@ -669,78 +675,78 @@ export function hasJSDocParameterTags(node: FunctionLikeDeclaration | SignatureD
 }
 
 /** Gets the JSDoc augments tag for the node if present */
-export function getJSDocAugmentsTag(node: Node): JSDocAugmentsTag | undefined {
+export function getJSDocAugmentsTag(node: qt.Node): qt.JSDocAugmentsTag | undefined {
   return getFirstJSDocTag(node, isJSDocAugmentsTag);
 }
 
 /** Gets the JSDoc implements tags for the node if present */
-export function getJSDocImplementsTags(node: Node): readonly JSDocImplementsTag[] {
+export function getJSDocImplementsTags(node: qt.Node): readonly qt.JSDocImplementsTag[] {
   return getAllJSDocTags(node, isJSDocImplementsTag);
 }
 
 /** Gets the JSDoc class tag for the node if present */
-export function getJSDocClassTag(node: Node): JSDocClassTag | undefined {
+export function getJSDocClassTag(node: qt.Node): qt.JSDocClassTag | undefined {
   return getFirstJSDocTag(node, isJSDocClassTag);
 }
 
 /** Gets the JSDoc public tag for the node if present */
-export function getJSDocPublicTag(node: Node): JSDocPublicTag | undefined {
+export function getJSDocPublicTag(node: qt.Node): qt.JSDocPublicTag | undefined {
   return getFirstJSDocTag(node, isJSDocPublicTag);
 }
 
-export function getJSDocPublicTagNoCache(node: Node): JSDocPublicTag | undefined {
+export function getJSDocPublicTagNoCache(node: qt.Node): qt.JSDocPublicTag | undefined {
   return getFirstJSDocTag(node, isJSDocPublicTag, /*noCache*/ true);
 }
 
 /** Gets the JSDoc private tag for the node if present */
-export function getJSDocPrivateTag(node: Node): JSDocPrivateTag | undefined {
+export function getJSDocPrivateTag(node: qt.Node): qt.JSDocPrivateTag | undefined {
   return getFirstJSDocTag(node, isJSDocPrivateTag);
 }
 
-export function getJSDocPrivateTagNoCache(node: Node): JSDocPrivateTag | undefined {
+export function getJSDocPrivateTagNoCache(node: qt.Node): qt.JSDocPrivateTag | undefined {
   return getFirstJSDocTag(node, isJSDocPrivateTag, /*noCache*/ true);
 }
 
 /** Gets the JSDoc protected tag for the node if present */
-export function getJSDocProtectedTag(node: Node): JSDocProtectedTag | undefined {
+export function getJSDocProtectedTag(node: qt.Node): qt.JSDocProtectedTag | undefined {
   return getFirstJSDocTag(node, isJSDocProtectedTag);
 }
 
-export function getJSDocProtectedTagNoCache(node: Node): JSDocProtectedTag | undefined {
+export function getJSDocProtectedTagNoCache(node: qt.Node): qt.JSDocProtectedTag | undefined {
   return getFirstJSDocTag(node, isJSDocProtectedTag, /*noCache*/ true);
 }
 
 /** Gets the JSDoc protected tag for the node if present */
-export function getJSDocReadonlyTag(node: Node): JSDocReadonlyTag | undefined {
+export function getJSDocReadonlyTag(node: qt.Node): JSDocReadonlyTag | undefined {
   return getFirstJSDocTag(node, isJSDocReadonlyTag);
 }
 
-export function getJSDocReadonlyTagNoCache(node: Node): JSDocReadonlyTag | undefined {
+export function getJSDocReadonlyTagNoCache(node: qt.Node): JSDocReadonlyTag | undefined {
   return getFirstJSDocTag(node, isJSDocReadonlyTag, /*noCache*/ true);
 }
 
 /** Gets the JSDoc enum tag for the node if present */
-export function getJSDocEnumTag(node: Node): JSDocEnumTag | undefined {
+export function getJSDocEnumTag(node: qt.Node): JSDocEnumTag | undefined {
   return getFirstJSDocTag(node, isJSDocEnumTag);
 }
 
 /** Gets the JSDoc this tag for the node if present */
-export function getJSDocThisTag(node: Node): JSDocThisTag | undefined {
+export function getJSDocThisTag(node: qt.Node): JSDocThisTag | undefined {
   return getFirstJSDocTag(node, isJSDocThisTag);
 }
 
 /** Gets the JSDoc return tag for the node if present */
-export function getJSDocReturnTag(node: Node): JSDocReturnTag | undefined {
+export function getJSDocReturnTag(node: qt.Node): JSDocReturnTag | undefined {
   return getFirstJSDocTag(node, isJSDocReturnTag);
 }
 
 /** Gets the JSDoc template tag for the node if present */
-export function getJSDocTemplateTag(node: Node): JSDocTemplateTag | undefined {
+export function getJSDocTemplateTag(node: qt.Node): qt.JSDocTemplateTag | undefined {
   return getFirstJSDocTag(node, isJSDocTemplateTag);
 }
 
 /** Gets the JSDoc type tag for the node if present and valid */
-export function getJSDocTypeTag(node: Node): JSDocTypeTag | undefined {
+export function getJSDocTypeTag(node: qt.Node): JSDocTypeTag | undefined {
   // We should have already issued an error if there were multiple type jsdocs, so just use the first one.
   const tag = getFirstJSDocTag(node, isJSDocTypeTag);
   if (tag && tag.typeExpression && tag.typeExpression.type) {
@@ -760,8 +766,8 @@ export function getJSDocTypeTag(node: Node): JSDocTypeTag | undefined {
  * node are examined first, so in the previous example, the type
  * tag directly on the node would be returned.
  */
-export function getJSDocType(node: Node): TypeNode | undefined {
-  let tag: JSDocTypeTag | JSDocParameterTag | undefined = getFirstJSDocTag(node, isJSDocTypeTag);
+export function getJSDocType(node: qt.Node): TypeNode | undefined {
+  let tag: JSDocTypeTag | qt.JSDocParameterTag | undefined = getFirstJSDocTag(node, isJSDocTypeTag);
   if (!tag && isParameter(node)) {
     tag = find(getJSDocParameterTags(node), (tag) => !!tag.typeExpression);
   }
@@ -775,7 +781,7 @@ export function getJSDocType(node: Node): TypeNode | undefined {
  * @remarks `getJSDocReturnTag` just gets the whole JSDoc tag. This function
  * gets the type from inside the braces, after the fat arrow, etc.
  */
-export function getJSDocReturnType(node: Node): TypeNode | undefined {
+export function getJSDocReturnType(node: qt.Node): TypeNode | undefined {
   const returnTag = getJSDocReturnTag(node);
   if (returnTag && returnTag.typeExpression) {
     return returnTag.typeExpression.type;
@@ -793,7 +799,7 @@ export function getJSDocReturnType(node: Node): TypeNode | undefined {
   }
 }
 
-function getJSDocTagsWorker(node: Node, noCache?: boolean): readonly JSDocTag[] {
+function getJSDocTagsWorker(node: qt.Node, noCache?: boolean): readonly JSDocTag[] {
   let tags = (node as JSDocContainer).jsDocCache;
   // If cache is 'null', that means we did the work of searching for JSDoc tags and came up with nothing.
   if (tags === undefined || noCache) {
@@ -808,26 +814,26 @@ function getJSDocTagsWorker(node: Node, noCache?: boolean): readonly JSDocTag[] 
 }
 
 /** Get all JSDoc tags related to a node, including those on parent nodes. */
-export function getJSDocTags(node: Node): readonly JSDocTag[] {
+export function getJSDocTags(node: qt.Node): readonly JSDocTag[] {
   return getJSDocTagsWorker(node, /*noCache*/ false);
 }
 
-export function getJSDocTagsNoCache(node: Node): readonly JSDocTag[] {
+export function getJSDocTagsNoCache(node: qt.Node): readonly JSDocTag[] {
   return getJSDocTagsWorker(node, /*noCache*/ true);
 }
 
 /** Get the first JSDoc tag of a specified kind, or undefined if not present. */
-function getFirstJSDocTag<T extends JSDocTag>(node: Node, predicate: (tag: JSDocTag) => tag is T, noCache?: boolean): T | undefined {
+function getFirstJSDocTag<T extends JSDocTag>(node: qt.Node, predicate: (tag: JSDocTag) => tag is T, noCache?: boolean): T | undefined {
   return find(getJSDocTagsWorker(node, noCache), predicate);
 }
 
 /** Gets all JSDoc tags that match a specified predicate */
-export function getAllJSDocTags<T extends JSDocTag>(node: Node, predicate: (tag: JSDocTag) => tag is T): readonly T[] {
+export function getAllJSDocTags<T extends JSDocTag>(node: qt.Node, predicate: (tag: JSDocTag) => tag is T): readonly T[] {
   return getJSDocTags(node).filter(predicate);
 }
 
 /** Gets all JSDoc tags of a specified kind */
-export function getAllJSDocTagsOfKind(node: Node, kind: qt.SyntaxKind): readonly JSDocTag[] {
+export function getAllJSDocTagsOfKind(node: qt.Node, kind: qt.SyntaxKind): readonly JSDocTag[] {
   return getJSDocTags(node).filter((doc) => doc.kind === kind);
 }
 
@@ -835,7 +841,7 @@ export function getAllJSDocTagsOfKind(node: Node, kind: qt.SyntaxKind): readonly
  * Gets the effective type parameters. If the node was parsed in a
  * JavaScript file, gets the type parameters from the `@template` tag from JSDoc.
  */
-export function getEffectiveTypeParameterDeclarations(node: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
+export function getEffectiveTypeParameterDeclarations(node: DeclarationWithTypeParameters): readonly qt.TypeParameterDeclaration[] {
   if (isJSDocSignature(node)) {
     return emptyArray;
   }
@@ -859,265 +865,265 @@ export function getEffectiveTypeParameterDeclarations(node: DeclarationWithTypeP
   return emptyArray;
 }
 
-export function getEffectiveConstraintOfTypeParameter(node: TypeParameterDeclaration): TypeNode | undefined {
+export function getEffectiveConstraintOfTypeParameter(node: qt.TypeParameterDeclaration): TypeNode | undefined {
   return node.constraint ? node.constraint : isJSDocTemplateTag(node.parent) && node === node.parent.typeParameters[0] ? node.parent.constraint : undefined;
 }
 
 // #region
-// Simple node tests of the form `node.kind === qt.SyntaxKind.Foo`.
+// Simple node tests of the form `n.kind === qt.SyntaxKind.Foo`.
 // Literals
-export function isNumericLiteral(node: Node): node is NumericLiteral {
-  return node.kind === qt.SyntaxKind.NumericLiteral;
+export function isNumericLiteral(n: qt.Node): n is qt.NumericLiteral {
+  return n.kind === qt.SyntaxKind.NumericLiteral;
 }
 
-export function isBigIntLiteral(node: Node): node is BigIntLiteral {
-  return node.kind === qt.SyntaxKind.BigIntLiteral;
+export function isBigIntLiteral(n: qt.Node): n is qt.BigIntLiteral {
+  return n.kind === qt.SyntaxKind.BigIntLiteral;
 }
 
-export function isStringLiteral(node: Node): node is StringLiteral {
-  return node.kind === qt.SyntaxKind.StringLiteral;
+export function isStringLiteral(n: qt.Node): n is qt.StringLiteral {
+  return n.kind === qt.SyntaxKind.StringLiteral;
 }
 
-export function isJsxText(node: Node): node is JsxText {
-  return node.kind === qt.SyntaxKind.JsxText;
+export function isJsxText(n: qt.Node): n is qt.JsxText {
+  return n.kind === qt.SyntaxKind.JsxText;
 }
 
-export function isRegularExpressionLiteral(node: Node): node is RegularExpressionLiteral {
-  return node.kind === qt.SyntaxKind.RegularExpressionLiteral;
+export function isRegularExpressionLiteral(n: qt.Node): n is qt.RegularExpressionLiteral {
+  return n.kind === qt.SyntaxKind.RegularExpressionLiteral;
 }
 
-export function isNoSubstitutionTemplateLiteral(node: Node): node is NoSubstitutionTemplateLiteral {
-  return node.kind === qt.SyntaxKind.NoSubstitutionTemplateLiteral;
+export function isNoSubstitutionTemplateLiteral(n: qt.Node): n is qt.NoSubstitutionTemplateLiteral {
+  return n.kind === qt.SyntaxKind.NoSubstitutionTemplateLiteral;
 }
 
 // Pseudo-literals
 
-export function isTemplateHead(node: Node): node is TemplateHead {
-  return node.kind === qt.SyntaxKind.TemplateHead;
+export function isTemplateHead(n: qt.Node): n is qt.TemplateHead {
+  return n.kind === qt.SyntaxKind.TemplateHead;
 }
 
-export function isTemplateMiddle(node: Node): node is TemplateMiddle {
-  return node.kind === qt.SyntaxKind.TemplateMiddle;
+export function isTemplateMiddle(n: qt.Node): n is qt.TemplateMiddle {
+  return n.kind === qt.SyntaxKind.TemplateMiddle;
 }
 
-export function isTemplateTail(node: Node): node is TemplateTail {
-  return node.kind === qt.SyntaxKind.TemplateTail;
+export function isTemplateTail(n: qt.Node): n is qt.TemplateTail {
+  return n.kind === qt.SyntaxKind.TemplateTail;
 }
 
-export function isIdentifier(node: Node): node is Identifier {
-  return node.kind === qt.SyntaxKind.Identifier;
+export function isIdentifier(n: qt.Node): n is qt.Identifier {
+  return n.kind === qt.SyntaxKind.Identifier;
 }
 
 // Names
 
-export function isQualifiedName(node: Node): node is QualifiedName {
-  return node.kind === qt.SyntaxKind.QualifiedName;
+export function isQualifiedName(n: qt.Node): n is qt.QualifiedName {
+  return n.kind === qt.SyntaxKind.QualifiedName;
 }
 
-export function isComputedPropertyName(node: Node): node is ComputedPropertyName {
-  return node.kind === qt.SyntaxKind.ComputedPropertyName;
+export function isComputedPropertyName(n: qt.Node): n is qt.ComputedPropertyName {
+  return n.kind === qt.SyntaxKind.ComputedPropertyName;
 }
 
-export function isPrivateIdentifier(node: Node): node is PrivateIdentifier {
-  return node.kind === qt.SyntaxKind.PrivateIdentifier;
+export function isPrivateIdentifier(n: qt.Node): n is qt.PrivateIdentifier {
+  return n.kind === qt.SyntaxKind.PrivateIdentifier;
 }
 
-export function isIdentifierOrPrivateIdentifier(node: Node): node is Identifier | PrivateIdentifier {
-  return node.kind === qt.SyntaxKind.Identifier || node.kind === qt.SyntaxKind.PrivateIdentifier;
+export function isIdentifierOrPrivateIdentifier(n: qt.Node): n is qt.Identifier | PrivateIdentifier {
+  return n.kind === qt.SyntaxKind.Identifier || n.kind === qt.SyntaxKind.PrivateIdentifier;
 }
 
 // Signature elements
 
-export function isTypeParameterDeclaration(node: Node): node is TypeParameterDeclaration {
-  return node.kind === qt.SyntaxKind.TypeParameter;
+export function isTypeParameterDeclaration(n: qt.Node): n is qt.TypeParameterDeclaration {
+  return n.kind === qt.SyntaxKind.TypeParameter;
 }
 
-export function isParameter(node: Node): node is ParameterDeclaration {
-  return node.kind === qt.SyntaxKind.Parameter;
+export function isParameter(n: qt.Node): n is qt.ParameterDeclaration {
+  return n.kind === qt.SyntaxKind.Parameter;
 }
 
-export function isDecorator(node: Node): node is Decorator {
-  return node.kind === qt.SyntaxKind.Decorator;
+export function isDecorator(n: qt.Node): n is qt.Decorator {
+  return n.kind === qt.SyntaxKind.Decorator;
 }
 
 // TypeMember
 
-export function isPropertySignature(node: Node): node is PropertySignature {
-  return node.kind === qt.SyntaxKind.PropertySignature;
+export function isPropertySignature(n: qt.Node): n is qt.PropertySignature {
+  return n.kind === qt.SyntaxKind.PropertySignature;
 }
 
-export function isPropertyDeclaration(node: Node): node is PropertyDeclaration {
-  return node.kind === qt.SyntaxKind.PropertyDeclaration;
+export function isPropertyDeclaration(n: qt.Node): n is qt.PropertyDeclaration {
+  return n.kind === qt.SyntaxKind.PropertyDeclaration;
 }
 
-export function isMethodSignature(node: Node): node is MethodSignature {
-  return node.kind === qt.SyntaxKind.MethodSignature;
+export function isMethodSignature(n: qt.Node): n is qt.MethodSignature {
+  return n.kind === qt.SyntaxKind.MethodSignature;
 }
 
-export function isMethodDeclaration(node: Node): node is MethodDeclaration {
-  return node.kind === qt.SyntaxKind.MethodDeclaration;
+export function isMethodDeclaration(n: qt.Node): n is qt.MethodDeclaration {
+  return n.kind === qt.SyntaxKind.MethodDeclaration;
 }
 
-export function isConstructorDeclaration(node: Node): node is ConstructorDeclaration {
-  return node.kind === qt.SyntaxKind.Constructor;
+export function isConstructorDeclaration(n: qt.Node): n is qt.ConstructorDeclaration {
+  return n.kind === qt.SyntaxKind.Constructor;
 }
 
-export function isGetAccessorDeclaration(node: Node): node is GetAccessorDeclaration {
-  return node.kind === qt.SyntaxKind.GetAccessor;
+export function isGetAccessorDeclaration(n: qt.Node): n is qt.GetAccessorDeclaration {
+  return n.kind === qt.SyntaxKind.GetAccessor;
 }
 
-export function isSetAccessorDeclaration(node: Node): node is SetAccessorDeclaration {
-  return node.kind === qt.SyntaxKind.SetAccessor;
+export function isSetAccessorDeclaration(n: qt.Node): n is qt.SetAccessorDeclaration {
+  return n.kind === qt.SyntaxKind.SetAccessor;
 }
 
-export function isCallSignatureDeclaration(node: Node): node is CallSignatureDeclaration {
-  return node.kind === qt.SyntaxKind.CallSignature;
+export function isCallSignatureDeclaration(n: qt.Node): n is qt.CallSignatureDeclaration {
+  return n.kind === qt.SyntaxKind.CallSignature;
 }
 
-export function isConstructSignatureDeclaration(node: Node): node is ConstructSignatureDeclaration {
-  return node.kind === qt.SyntaxKind.ConstructSignature;
+export function isConstructSignatureDeclaration(n: qt.Node): n is qt.ConstructSignatureDeclaration {
+  return n.kind === qt.SyntaxKind.ConstructSignature;
 }
 
-export function isIndexSignatureDeclaration(node: Node): node is IndexSignatureDeclaration {
-  return node.kind === qt.SyntaxKind.IndexSignature;
+export function isIndexSignatureDeclaration(n: qt.Node): n is qt.IndexSignatureDeclaration {
+  return n.kind === qt.SyntaxKind.IndexSignature;
 }
 
-export function isGetOrSetAccessorDeclaration(node: Node): node is AccessorDeclaration {
-  return node.kind === qt.SyntaxKind.SetAccessor || node.kind === qt.SyntaxKind.GetAccessor;
+export function isGetOrSetAccessorDeclaration(n: qt.Node): n is qt.AccessorDeclaration {
+  return n.kind === qt.SyntaxKind.SetAccessor || n.kind === qt.SyntaxKind.GetAccessor;
 }
 
 // Type
 
-export function isTypePredicateNode(node: Node): node is TypePredicateNode {
-  return node.kind === qt.SyntaxKind.TypePredicate;
+export function isTypePredicateNode(n: qt.Node): n is qt.TypePredicateNode {
+  return n.kind === qt.SyntaxKind.TypePredicate;
 }
 
-export function isTypeReferenceNode(node: Node): node is TypeReferenceNode {
-  return node.kind === qt.SyntaxKind.TypeReference;
+export function isTypeReferenceNode(n: qt.Node): n is qt.TypeReferenceNode {
+  return n.kind === qt.SyntaxKind.TypeReference;
 }
 
-export function isFunctionTypeNode(node: Node): node is FunctionTypeNode {
-  return node.kind === qt.SyntaxKind.FunctionType;
+export function isFunctionTypeNode(n: qt.Node): n is qt.FunctionTypeNode {
+  return n.kind === qt.SyntaxKind.FunctionType;
 }
 
-export function isConstructorTypeNode(node: Node): node is ConstructorTypeNode {
-  return node.kind === qt.SyntaxKind.ConstructorType;
+export function isConstructorTypeNode(n: qt.Node): n is qt.ConstructorTypeNode {
+  return n.kind === qt.SyntaxKind.ConstructorType;
 }
 
-export function isTypeQueryNode(node: Node): node is TypeQueryNode {
-  return node.kind === qt.SyntaxKind.TypeQuery;
+export function isTypeQueryNode(n: qt.Node): n is qt.TypeQueryNode {
+  return n.kind === qt.SyntaxKind.TypeQuery;
 }
 
-export function isTypeLiteralNode(node: Node): node is TypeLiteralNode {
-  return node.kind === qt.SyntaxKind.TypeLiteral;
+export function isTypeLiteralNode(n: qt.Node): n is qt.TypeLiteralNode {
+  return n.kind === qt.SyntaxKind.TypeLiteral;
 }
 
-export function isArrayTypeNode(node: Node): node is ArrayTypeNode {
-  return node.kind === qt.SyntaxKind.ArrayType;
+export function isArrayTypeNode(n: qt.Node): n is qt.ArrayTypeNode {
+  return n.kind === qt.SyntaxKind.ArrayType;
 }
 
-export function isTupleTypeNode(node: Node): node is TupleTypeNode {
-  return node.kind === qt.SyntaxKind.TupleType;
+export function isTupleTypeNode(n: qt.Node): n is qt.TupleTypeNode {
+  return n.kind === qt.SyntaxKind.TupleType;
 }
 
-export function isUnionTypeNode(node: Node): node is UnionTypeNode {
-  return node.kind === qt.SyntaxKind.UnionType;
+export function isUnionTypeNode(n: qt.Node): n is qt.UnionTypeNode {
+  return n.kind === qt.SyntaxKind.UnionType;
 }
 
-export function isIntersectionTypeNode(node: Node): node is IntersectionTypeNode {
-  return node.kind === qt.SyntaxKind.IntersectionType;
+export function isIntersectionTypeNode(n: qt.Node): n is qt.IntersectionTypeNode {
+  return n.kind === qt.SyntaxKind.IntersectionType;
 }
 
-export function isConditionalTypeNode(node: Node): node is ConditionalTypeNode {
-  return node.kind === qt.SyntaxKind.ConditionalType;
+export function isConditionalTypeNode(n: qt.Node): n is qt.ConditionalTypeNode {
+  return n.kind === qt.SyntaxKind.ConditionalType;
 }
 
-export function isInferTypeNode(node: Node): node is InferTypeNode {
-  return node.kind === qt.SyntaxKind.InferType;
+export function isInferTypeNode(n: qt.Node): n is qt.InferTypeNode {
+  return n.kind === qt.SyntaxKind.InferType;
 }
 
-export function isParenthesizedTypeNode(node: Node): node is ParenthesizedTypeNode {
-  return node.kind === qt.SyntaxKind.ParenthesizedType;
+export function isParenthesizedTypeNode(n: qt.Node): n is qt.ParenthesizedTypeNode {
+  return n.kind === qt.SyntaxKind.ParenthesizedType;
 }
 
-export function isThisTypeNode(node: Node): node is ThisTypeNode {
-  return node.kind === qt.SyntaxKind.ThisType;
+export function isThisTypeNode(n: qt.Node): n is qt.ThisTypeNode {
+  return n.kind === qt.SyntaxKind.ThisType;
 }
 
-export function isTypeOperatorNode(node: Node): node is TypeOperatorNode {
-  return node.kind === qt.SyntaxKind.TypeOperator;
+export function isTypeOperatorNode(n: qt.Node): n is qt.TypeOperatorNode {
+  return n.kind === qt.SyntaxKind.TypeOperator;
 }
 
-export function isIndexedAccessTypeNode(node: Node): node is IndexedAccessTypeNode {
-  return node.kind === qt.SyntaxKind.IndexedAccessType;
+export function isIndexedAccessTypeNode(n: qt.Node): n is qt.IndexedAccessTypeNode {
+  return n.kind === qt.SyntaxKind.IndexedAccessType;
 }
 
-export function isMappedTypeNode(node: Node): node is MappedTypeNode {
-  return node.kind === qt.SyntaxKind.MappedType;
+export function isMappedTypeNode(n: qt.Node): n is qt.MappedTypeNode {
+  return n.kind === qt.SyntaxKind.MappedType;
 }
 
-export function isLiteralTypeNode(node: Node): node is LiteralTypeNode {
-  return node.kind === qt.SyntaxKind.LiteralType;
+export function isLiteralTypeNode(n: qt.Node): n is qt.LiteralTypeNode {
+  return n.kind === qt.SyntaxKind.LiteralType;
 }
 
-export function isImportTypeNode(node: Node): node is ImportTypeNode {
-  return node.kind === qt.SyntaxKind.ImportType;
+export function isImportTypeNode(n: qt.Node): n is qt.ImportTypeNode {
+  return n.kind === qt.SyntaxKind.ImportType;
 }
 
 // Binding patterns
 
-export function isObjectBindingPattern(node: Node): node is ObjectBindingPattern {
-  return node.kind === qt.SyntaxKind.ObjectBindingPattern;
+export function isObjectBindingPattern(n: qt.Node): n is qt.ObjectBindingPattern {
+  return n.kind === qt.SyntaxKind.ObjectBindingPattern;
 }
 
-export function isArrayBindingPattern(node: Node): node is ArrayBindingPattern {
-  return node.kind === qt.SyntaxKind.ArrayBindingPattern;
+export function isArrayBindingPattern(n: qt.Node): n is qt.ArrayBindingPattern {
+  return n.kind === qt.SyntaxKind.ArrayBindingPattern;
 }
 
-export function isBindingElement(node: Node): node is BindingElement {
-  return node.kind === qt.SyntaxKind.BindingElement;
+export function isBindingElement(n: qt.Node): n is qt.BindingElement {
+  return n.kind === qt.SyntaxKind.BindingElement;
 }
 
 // Expression
 
-export function isArrayLiteralExpression(node: Node): node is ArrayLiteralExpression {
-  return node.kind === qt.SyntaxKind.ArrayLiteralExpression;
+export function isArrayLiteralExpression(n: qt.Node): n is qt.ArrayLiteralExpression {
+  return n.kind === qt.SyntaxKind.ArrayLiteralExpression;
 }
 
-export function isObjectLiteralExpression(node: Node): node is ObjectLiteralExpression {
-  return node.kind === qt.SyntaxKind.ObjectLiteralExpression;
+export function isObjectLiteralExpression(n: qt.Node): n is qt.ObjectLiteralExpression {
+  return n.kind === qt.SyntaxKind.ObjectLiteralExpression;
 }
 
-export function isPropertyAccessExpression(node: Node): node is PropertyAccessExpression {
-  return node.kind === qt.SyntaxKind.PropertyAccessExpression;
+export function isPropertyAccessExpression(n: qt.Node): n is qt.PropertyAccessExpression {
+  return n.kind === qt.SyntaxKind.PropertyAccessExpression;
 }
 
-export function isPropertyAccessChain(node: Node): node is PropertyAccessChain {
-  return isPropertyAccessExpression(node) && !!(node.flags & NodeFlags.OptionalChain);
+export function isPropertyAccessChain(n: qt.Node): n is qt.PropertyAccessChain {
+  return isPropertyAccessExpression(node) && !!(node.flags & qt.NodeFlags.OptionalChain);
 }
 
-export function isElementAccessExpression(node: Node): node is ElementAccessExpression {
-  return node.kind === qt.SyntaxKind.ElementAccessExpression;
+export function isElementAccessExpression(n: qt.Node): n is qt.ElementAccessExpression {
+  return n.kind === qt.SyntaxKind.ElementAccessExpression;
 }
 
-export function isElementAccessChain(node: Node): node is ElementAccessChain {
-  return isElementAccessExpression(node) && !!(node.flags & NodeFlags.OptionalChain);
+export function isElementAccessChain(n: qt.Node): n is qt.ElementAccessChain {
+  return isElementAccessExpression(node) && !!(node.flags & qt.NodeFlags.OptionalChain);
 }
 
-export function isCallExpression(node: Node): node is CallExpression {
-  return node.kind === qt.SyntaxKind.CallExpression;
+export function isCallExpression(n: qt.Node): n is qt.CallExpression {
+  return n.kind === qt.SyntaxKind.CallExpression;
 }
 
-export function isCallChain(node: Node): node is CallChain {
-  return isCallExpression(node) && !!(node.flags & NodeFlags.OptionalChain);
+export function isCallChain(n: qt.Node): n is qt.CallChain {
+  return isCallExpression(node) && !!(node.flags & qt.NodeFlags.OptionalChain);
 }
 
-export function isOptionalChain(node: Node): node is PropertyAccessChain | ElementAccessChain | CallChain | NonNullChain {
+export function isOptionalChain(n: qt.Node): n is qt.PropertyAccessChain | ElementAccessChain | CallChain | NonNullChain {
   const kind = node.kind;
-  return !!(node.flags & NodeFlags.OptionalChain) && (kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.ElementAccessExpression || kind === qt.SyntaxKind.CallExpression || kind === qt.SyntaxKind.NonNullExpression);
+  return !!(node.flags & qt.NodeFlags.OptionalChain) && (kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.ElementAccessExpression || kind === qt.SyntaxKind.CallExpression || kind === qt.SyntaxKind.NonNullExpression);
 }
 
-export function isOptionalChainRoot(node: Node): node is OptionalChainRoot {
+export function isOptionalChainRoot(n: qt.Node): n is qt.OptionalChainRoot {
   return isOptionalChain(node) && !isNonNullExpression(node) && !!node.questionDotToken;
 }
 
@@ -1125,7 +1131,7 @@ export function isOptionalChainRoot(node: Node): node is OptionalChainRoot {
  * Determines whether a node is the expression preceding an optional chain (i.e. `a` in `a?.b`).
  */
 
-export function isExpressionOfOptionalChainRoot(node: Node): node is Expression & { parent: OptionalChainRoot } {
+export function isExpressionOfOptionalChainRoot(n: qt.Node): n is qt.Expression & { parent: OptionalChainRoot } {
   return isOptionalChainRoot(node.parent) && node.parent.expression === node;
 }
 
@@ -1149,412 +1155,412 @@ export function isOutermostOptionalChain(node: OptionalChain) {
   ); // case 5
 }
 
-export function isNullishCoalesce(node: Node) {
-  return node.kind === qt.SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken;
+export function isNullishCoalesce(node: qt.Node) {
+  return n.kind === qt.SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken;
 }
 
-export function isNewExpression(node: Node): node is NewExpression {
-  return node.kind === qt.SyntaxKind.NewExpression;
+export function isNewExpression(n: qt.Node): n is qt.NewExpression {
+  return n.kind === qt.SyntaxKind.NewExpression;
 }
 
-export function isTaggedTemplateExpression(node: Node): node is TaggedTemplateExpression {
-  return node.kind === qt.SyntaxKind.TaggedTemplateExpression;
+export function isTaggedTemplateExpression(n: qt.Node): n is qt.TaggedTemplateExpression {
+  return n.kind === qt.SyntaxKind.TaggedTemplateExpression;
 }
 
-export function isTypeAssertion(node: Node): node is TypeAssertion {
-  return node.kind === qt.SyntaxKind.TypeAssertionExpression;
+export function isTypeAssertion(n: qt.Node): n is qt.TypeAssertion {
+  return n.kind === qt.SyntaxKind.TypeAssertionExpression;
 }
 
-export function isConstTypeReference(node: Node) {
+export function isConstTypeReference(node: qt.Node) {
   return isTypeReferenceNode(node) && isIdentifier(node.typeName) && node.typeName.escapedText === 'const' && !node.typeArguments;
 }
 
-export function isParenthesizedExpression(node: Node): node is ParenthesizedExpression {
-  return node.kind === qt.SyntaxKind.ParenthesizedExpression;
+export function isParenthesizedExpression(n: qt.Node): n is qt.ParenthesizedExpression {
+  return n.kind === qt.SyntaxKind.ParenthesizedExpression;
 }
 
 export function skipPartiallyEmittedExpressions(node: Expression): Expression;
-export function skipPartiallyEmittedExpressions(node: Node): Node;
-export function skipPartiallyEmittedExpressions(node: Node) {
+export function skipPartiallyEmittedExpressions(node: qt.Node): Node;
+export function skipPartiallyEmittedExpressions(node: qt.Node) {
   return skipOuterExpressions(node, OuterExpressionKinds.PartiallyEmittedExpressions);
 }
 
-export function isFunctionExpression(node: Node): node is FunctionExpression {
-  return node.kind === qt.SyntaxKind.FunctionExpression;
+export function isFunctionExpression(n: qt.Node): n is qt.FunctionExpression {
+  return n.kind === qt.SyntaxKind.FunctionExpression;
 }
 
-export function isArrowFunction(node: Node): node is ArrowFunction {
-  return node.kind === qt.SyntaxKind.ArrowFunction;
+export function isArrowFunction(n: qt.Node): n is qt.ArrowFunction {
+  return n.kind === qt.SyntaxKind.ArrowFunction;
 }
 
-export function isDeleteExpression(node: Node): node is DeleteExpression {
-  return node.kind === qt.SyntaxKind.DeleteExpression;
+export function isDeleteExpression(n: qt.Node): n is qt.DeleteExpression {
+  return n.kind === qt.SyntaxKind.DeleteExpression;
 }
 
-export function isTypeOfExpression(node: Node): node is TypeOfExpression {
-  return node.kind === qt.SyntaxKind.TypeOfExpression;
+export function isTypeOfExpression(n: qt.Node): n is qt.TypeOfExpression {
+  return n.kind === qt.SyntaxKind.TypeOfExpression;
 }
 
-export function isVoidExpression(node: Node): node is VoidExpression {
-  return node.kind === qt.SyntaxKind.VoidExpression;
+export function isVoidExpression(n: qt.Node): n is qt.VoidExpression {
+  return n.kind === qt.SyntaxKind.VoidExpression;
 }
 
-export function isAwaitExpression(node: Node): node is AwaitExpression {
-  return node.kind === qt.SyntaxKind.AwaitExpression;
+export function isAwaitExpression(n: qt.Node): n is qt.AwaitExpression {
+  return n.kind === qt.SyntaxKind.AwaitExpression;
 }
 
-export function isPrefixUnaryExpression(node: Node): node is PrefixUnaryExpression {
-  return node.kind === qt.SyntaxKind.PrefixUnaryExpression;
+export function isPrefixUnaryExpression(n: qt.Node): n is qt.PrefixUnaryExpression {
+  return n.kind === qt.SyntaxKind.PrefixUnaryExpression;
 }
 
-export function isPostfixUnaryExpression(node: Node): node is PostfixUnaryExpression {
-  return node.kind === qt.SyntaxKind.PostfixUnaryExpression;
+export function isPostfixUnaryExpression(n: qt.Node): n is qt.PostfixUnaryExpression {
+  return n.kind === qt.SyntaxKind.PostfixUnaryExpression;
 }
 
-export function isBinaryExpression(node: Node): node is BinaryExpression {
-  return node.kind === qt.SyntaxKind.BinaryExpression;
+export function isBinaryExpression(n: qt.Node): n is qt.BinaryExpression {
+  return n.kind === qt.SyntaxKind.BinaryExpression;
 }
 
-export function isConditionalExpression(node: Node): node is ConditionalExpression {
-  return node.kind === qt.SyntaxKind.ConditionalExpression;
+export function isConditionalExpression(n: qt.Node): n is qt.ConditionalExpression {
+  return n.kind === qt.SyntaxKind.ConditionalExpression;
 }
 
-export function isTemplateExpression(node: Node): node is TemplateExpression {
-  return node.kind === qt.SyntaxKind.TemplateExpression;
+export function isTemplateExpression(n: qt.Node): n is qt.TemplateExpression {
+  return n.kind === qt.SyntaxKind.TemplateExpression;
 }
 
-export function isYieldExpression(node: Node): node is YieldExpression {
-  return node.kind === qt.SyntaxKind.YieldExpression;
+export function isYieldExpression(n: qt.Node): n is qt.YieldExpression {
+  return n.kind === qt.SyntaxKind.YieldExpression;
 }
 
-export function isSpreadElement(node: Node): node is SpreadElement {
-  return node.kind === qt.SyntaxKind.SpreadElement;
+export function isSpreadElement(n: qt.Node): n is qt.SpreadElement {
+  return n.kind === qt.SyntaxKind.SpreadElement;
 }
 
-export function isClassExpression(node: Node): node is ClassExpression {
-  return node.kind === qt.SyntaxKind.ClassExpression;
+export function isClassExpression(n: qt.Node): n is qt.ClassExpression {
+  return n.kind === qt.SyntaxKind.ClassExpression;
 }
 
-export function isOmittedExpression(node: Node): node is OmittedExpression {
-  return node.kind === qt.SyntaxKind.OmittedExpression;
+export function isOmittedExpression(n: qt.Node): n is qt.OmittedExpression {
+  return n.kind === qt.SyntaxKind.OmittedExpression;
 }
 
-export function isExpressionWithTypeArguments(node: Node): node is ExpressionWithTypeArguments {
-  return node.kind === qt.SyntaxKind.ExpressionWithTypeArguments;
+export function isExpressionWithTypeArguments(n: qt.Node): n is qt.ExpressionWithTypeArguments {
+  return n.kind === qt.SyntaxKind.ExpressionWithTypeArguments;
 }
 
-export function isAsExpression(node: Node): node is AsExpression {
-  return node.kind === qt.SyntaxKind.AsExpression;
+export function isAsExpression(n: qt.Node): n is qt.AsExpression {
+  return n.kind === qt.SyntaxKind.AsExpression;
 }
 
-export function isNonNullExpression(node: Node): node is NonNullExpression {
-  return node.kind === qt.SyntaxKind.NonNullExpression;
+export function isNonNullExpression(n: qt.Node): n is qt.NonNullExpression {
+  return n.kind === qt.SyntaxKind.NonNullExpression;
 }
 
-export function isNonNullChain(node: Node): node is NonNullChain {
-  return isNonNullExpression(node) && !!(node.flags & NodeFlags.OptionalChain);
+export function isNonNullChain(n: qt.Node): n is qt.NonNullChain {
+  return isNonNullExpression(node) && !!(node.flags & qt.NodeFlags.OptionalChain);
 }
 
-export function isMetaProperty(node: Node): node is MetaProperty {
-  return node.kind === qt.SyntaxKind.MetaProperty;
+export function isMetaProperty(n: qt.Node): n is qt.MetaProperty {
+  return n.kind === qt.SyntaxKind.MetaProperty;
 }
 
 // Misc
 
-export function isTemplateSpan(node: Node): node is TemplateSpan {
-  return node.kind === qt.SyntaxKind.TemplateSpan;
+export function isTemplateSpan(n: qt.Node): n is qt.TemplateSpan {
+  return n.kind === qt.SyntaxKind.TemplateSpan;
 }
 
-export function isSemicolonClassElement(node: Node): node is SemicolonClassElement {
-  return node.kind === qt.SyntaxKind.SemicolonClassElement;
+export function isSemicolonClassElement(n: qt.Node): n is qt.SemicolonClassElement {
+  return n.kind === qt.SyntaxKind.SemicolonClassElement;
 }
 
 // Block
 
-export function isBlock(node: Node): node is Block {
-  return node.kind === qt.SyntaxKind.Block;
+export function isBlock(n: qt.Node): n is qt.Block {
+  return n.kind === qt.SyntaxKind.Block;
 }
 
-export function isVariableStatement(node: Node): node is VariableStatement {
-  return node.kind === qt.SyntaxKind.VariableStatement;
+export function isVariableStatement(n: qt.Node): n is qt.VariableStatement {
+  return n.kind === qt.SyntaxKind.VariableStatement;
 }
 
-export function isEmptyStatement(node: Node): node is EmptyStatement {
-  return node.kind === qt.SyntaxKind.EmptyStatement;
+export function isEmptyStatement(n: qt.Node): n is qt.EmptyStatement {
+  return n.kind === qt.SyntaxKind.EmptyStatement;
 }
 
-export function isExpressionStatement(node: Node): node is ExpressionStatement {
-  return node.kind === qt.SyntaxKind.ExpressionStatement;
+export function isExpressionStatement(n: qt.Node): n is qt.ExpressionStatement {
+  return n.kind === qt.SyntaxKind.ExpressionStatement;
 }
 
-export function isIfStatement(node: Node): node is IfStatement {
-  return node.kind === qt.SyntaxKind.IfStatement;
+export function isIfStatement(n: qt.Node): n is qt.IfStatement {
+  return n.kind === qt.SyntaxKind.IfStatement;
 }
 
-export function isDoStatement(node: Node): node is DoStatement {
-  return node.kind === qt.SyntaxKind.DoStatement;
+export function isDoStatement(n: qt.Node): n is qt.DoStatement {
+  return n.kind === qt.SyntaxKind.DoStatement;
 }
 
-export function isWhileStatement(node: Node): node is WhileStatement {
-  return node.kind === qt.SyntaxKind.WhileStatement;
+export function isWhileStatement(n: qt.Node): n is qt.WhileStatement {
+  return n.kind === qt.SyntaxKind.WhileStatement;
 }
 
-export function isForStatement(node: Node): node is ForStatement {
-  return node.kind === qt.SyntaxKind.ForStatement;
+export function isForStatement(n: qt.Node): n is qt.ForStatement {
+  return n.kind === qt.SyntaxKind.ForStatement;
 }
 
-export function isForInStatement(node: Node): node is ForInStatement {
-  return node.kind === qt.SyntaxKind.ForInStatement;
+export function isForInStatement(n: qt.Node): n is qt.ForInStatement {
+  return n.kind === qt.SyntaxKind.ForInStatement;
 }
 
-export function isForOfStatement(node: Node): node is ForOfStatement {
-  return node.kind === qt.SyntaxKind.ForOfStatement;
+export function isForOfStatement(n: qt.Node): n is qt.ForOfStatement {
+  return n.kind === qt.SyntaxKind.ForOfStatement;
 }
 
-export function isContinueStatement(node: Node): node is ContinueStatement {
-  return node.kind === qt.SyntaxKind.ContinueStatement;
+export function isContinueStatement(n: qt.Node): n is qt.ContinueStatement {
+  return n.kind === qt.SyntaxKind.ContinueStatement;
 }
 
-export function isBreakStatement(node: Node): node is BreakStatement {
-  return node.kind === qt.SyntaxKind.BreakStatement;
+export function isBreakStatement(n: qt.Node): n is qt.BreakStatement {
+  return n.kind === qt.SyntaxKind.BreakStatement;
 }
 
-export function isBreakOrContinueStatement(node: Node): node is BreakOrContinueStatement {
-  return node.kind === qt.SyntaxKind.BreakStatement || node.kind === qt.SyntaxKind.ContinueStatement;
+export function isBreakOrContinueStatement(n: qt.Node): n is qt.BreakOrContinueStatement {
+  return n.kind === qt.SyntaxKind.BreakStatement || n.kind === qt.SyntaxKind.ContinueStatement;
 }
 
-export function isReturnStatement(node: Node): node is ReturnStatement {
-  return node.kind === qt.SyntaxKind.ReturnStatement;
+export function isReturnStatement(n: qt.Node): n is qt.ReturnStatement {
+  return n.kind === qt.SyntaxKind.ReturnStatement;
 }
 
-export function isWithStatement(node: Node): node is WithStatement {
-  return node.kind === qt.SyntaxKind.WithStatement;
+export function isWithStatement(n: qt.Node): n is qt.WithStatement {
+  return n.kind === qt.SyntaxKind.WithStatement;
 }
 
-export function isSwitchStatement(node: Node): node is SwitchStatement {
-  return node.kind === qt.SyntaxKind.SwitchStatement;
+export function isSwitchStatement(n: qt.Node): n is qt.SwitchStatement {
+  return n.kind === qt.SyntaxKind.SwitchStatement;
 }
 
-export function isLabeledStatement(node: Node): node is LabeledStatement {
-  return node.kind === qt.SyntaxKind.LabeledStatement;
+export function isLabeledStatement(n: qt.Node): n is qt.LabeledStatement {
+  return n.kind === qt.SyntaxKind.LabeledStatement;
 }
 
-export function isThrowStatement(node: Node): node is ThrowStatement {
-  return node.kind === qt.SyntaxKind.ThrowStatement;
+export function isThrowStatement(n: qt.Node): n is qt.ThrowStatement {
+  return n.kind === qt.SyntaxKind.ThrowStatement;
 }
 
-export function isTryStatement(node: Node): node is TryStatement {
-  return node.kind === qt.SyntaxKind.TryStatement;
+export function isTryStatement(n: qt.Node): n is qt.TryStatement {
+  return n.kind === qt.SyntaxKind.TryStatement;
 }
 
-export function isDebuggerStatement(node: Node): node is DebuggerStatement {
-  return node.kind === qt.SyntaxKind.DebuggerStatement;
+export function isDebuggerStatement(n: qt.Node): n is qt.DebuggerStatement {
+  return n.kind === qt.SyntaxKind.DebuggerStatement;
 }
 
-export function isVariableDeclaration(node: Node): node is VariableDeclaration {
-  return node.kind === qt.SyntaxKind.VariableDeclaration;
+export function isVariableDeclaration(n: qt.Node): n is qt.VariableDeclaration {
+  return n.kind === qt.SyntaxKind.VariableDeclaration;
 }
 
-export function isVariableDeclarationList(node: Node): node is VariableDeclarationList {
-  return node.kind === qt.SyntaxKind.VariableDeclarationList;
+export function isVariableDeclarationList(n: qt.Node): n is qt.VariableDeclarationList {
+  return n.kind === qt.SyntaxKind.VariableDeclarationList;
 }
 
-export function isFunctionDeclaration(node: Node): node is FunctionDeclaration {
-  return node.kind === qt.SyntaxKind.FunctionDeclaration;
+export function isFunctionDeclaration(n: qt.Node): n is qt.FunctionDeclaration {
+  return n.kind === qt.SyntaxKind.FunctionDeclaration;
 }
 
-export function isClassDeclaration(node: Node): node is ClassDeclaration {
-  return node.kind === qt.SyntaxKind.ClassDeclaration;
+export function isClassDeclaration(n: qt.Node): n is qt.ClassDeclaration {
+  return n.kind === qt.SyntaxKind.ClassDeclaration;
 }
 
-export function isInterfaceDeclaration(node: Node): node is InterfaceDeclaration {
-  return node.kind === qt.SyntaxKind.InterfaceDeclaration;
+export function isInterfaceDeclaration(n: qt.Node): n is qt.InterfaceDeclaration {
+  return n.kind === qt.SyntaxKind.InterfaceDeclaration;
 }
 
-export function isTypeAliasDeclaration(node: Node): node is TypeAliasDeclaration {
-  return node.kind === qt.SyntaxKind.TypeAliasDeclaration;
+export function isTypeAliasDeclaration(n: qt.Node): n is qt.TypeAliasDeclaration {
+  return n.kind === qt.SyntaxKind.TypeAliasDeclaration;
 }
 
-export function isEnumDeclaration(node: Node): node is EnumDeclaration {
-  return node.kind === qt.SyntaxKind.EnumDeclaration;
+export function isEnumDeclaration(n: qt.Node): n is qt.EnumDeclaration {
+  return n.kind === qt.SyntaxKind.EnumDeclaration;
 }
 
-export function isModuleDeclaration(node: Node): node is ModuleDeclaration {
-  return node.kind === qt.SyntaxKind.ModuleDeclaration;
+export function isModuleDeclaration(n: qt.Node): n is qt.ModuleDeclaration {
+  return n.kind === qt.SyntaxKind.ModuleDeclaration;
 }
 
-export function isModuleBlock(node: Node): node is ModuleBlock {
-  return node.kind === qt.SyntaxKind.ModuleBlock;
+export function isModuleBlock(n: qt.Node): n is qt.ModuleBlock {
+  return n.kind === qt.SyntaxKind.ModuleBlock;
 }
 
-export function isCaseBlock(node: Node): node is CaseBlock {
-  return node.kind === qt.SyntaxKind.CaseBlock;
+export function isCaseBlock(n: qt.Node): n is qt.CaseBlock {
+  return n.kind === qt.SyntaxKind.CaseBlock;
 }
 
-export function isNamespaceExportDeclaration(node: Node): node is NamespaceExportDeclaration {
-  return node.kind === qt.SyntaxKind.NamespaceExportDeclaration;
+export function isNamespaceExportDeclaration(n: qt.Node): n is qt.NamespaceExportDeclaration {
+  return n.kind === qt.SyntaxKind.NamespaceExportDeclaration;
 }
 
-export function isImportEqualsDeclaration(node: Node): node is ImportEqualsDeclaration {
-  return node.kind === qt.SyntaxKind.ImportEqualsDeclaration;
+export function isImportEqualsDeclaration(n: qt.Node): n is qt.ImportEqualsDeclaration {
+  return n.kind === qt.SyntaxKind.ImportEqualsDeclaration;
 }
 
-export function isImportDeclaration(node: Node): node is ImportDeclaration {
-  return node.kind === qt.SyntaxKind.ImportDeclaration;
+export function isImportDeclaration(n: qt.Node): n is qt.ImportDeclaration {
+  return n.kind === qt.SyntaxKind.ImportDeclaration;
 }
 
-export function isImportClause(node: Node): node is ImportClause {
-  return node.kind === qt.SyntaxKind.ImportClause;
+export function isImportClause(n: qt.Node): n is qt.ImportClause {
+  return n.kind === qt.SyntaxKind.ImportClause;
 }
 
-export function isNamespaceImport(node: Node): node is NamespaceImport {
-  return node.kind === qt.SyntaxKind.NamespaceImport;
+export function isNamespaceImport(n: qt.Node): n is qt.NamespaceImport {
+  return n.kind === qt.SyntaxKind.NamespaceImport;
 }
 
-export function isNamespaceExport(node: Node): node is NamespaceExport {
-  return node.kind === qt.SyntaxKind.NamespaceExport;
+export function isNamespaceExport(n: qt.Node): n is qt.NamespaceExport {
+  return n.kind === qt.SyntaxKind.NamespaceExport;
 }
 
-export function isNamedExportBindings(node: Node): node is NamedExportBindings {
-  return node.kind === qt.SyntaxKind.NamespaceExport || node.kind === qt.SyntaxKind.NamedExports;
+export function isNamedExportBindings(n: qt.Node): n is qt.NamedExportBindings {
+  return n.kind === qt.SyntaxKind.NamespaceExport || n.kind === qt.SyntaxKind.NamedExports;
 }
 
-export function isNamedImports(node: Node): node is NamedImports {
-  return node.kind === qt.SyntaxKind.NamedImports;
+export function isNamedImports(n: qt.Node): n is qt.NamedImports {
+  return n.kind === qt.SyntaxKind.NamedImports;
 }
 
-export function isImportSpecifier(node: Node): node is ImportSpecifier {
-  return node.kind === qt.SyntaxKind.ImportSpecifier;
+export function isImportSpecifier(n: qt.Node): n is qt.ImportSpecifier {
+  return n.kind === qt.SyntaxKind.ImportSpecifier;
 }
 
-export function isExportAssignment(node: Node): node is ExportAssignment {
-  return node.kind === qt.SyntaxKind.ExportAssignment;
+export function isExportAssignment(n: qt.Node): n is qt.ExportAssignment {
+  return n.kind === qt.SyntaxKind.ExportAssignment;
 }
 
-export function isExportDeclaration(node: Node): node is ExportDeclaration {
-  return node.kind === qt.SyntaxKind.ExportDeclaration;
+export function isExportDeclaration(n: qt.Node): n is qt.ExportDeclaration {
+  return n.kind === qt.SyntaxKind.ExportDeclaration;
 }
 
-export function isNamedExports(node: Node): node is NamedExports {
-  return node.kind === qt.SyntaxKind.NamedExports;
+export function isNamedExports(n: qt.Node): n is qt.NamedExports {
+  return n.kind === qt.SyntaxKind.NamedExports;
 }
 
-export function isExportSpecifier(node: Node): node is ExportSpecifier {
-  return node.kind === qt.SyntaxKind.ExportSpecifier;
+export function isExportSpecifier(n: qt.Node): n is qt.ExportSpecifier {
+  return n.kind === qt.SyntaxKind.ExportSpecifier;
 }
 
-export function isMissingDeclaration(node: Node): node is MissingDeclaration {
-  return node.kind === qt.SyntaxKind.MissingDeclaration;
+export function isMissingDeclaration(n: qt.Node): n is qt.MissingDeclaration {
+  return n.kind === qt.SyntaxKind.MissingDeclaration;
 }
 
 // Module References
 
-export function isExternalModuleReference(node: Node): node is ExternalModuleReference {
-  return node.kind === qt.SyntaxKind.ExternalModuleReference;
+export function isExternalModuleReference(n: qt.Node): n is qt.ExternalModuleReference {
+  return n.kind === qt.SyntaxKind.ExternalModuleReference;
 }
 
 // JSX
 
-export function isJsxElement(node: Node): node is JsxElement {
-  return node.kind === qt.SyntaxKind.JsxElement;
+export function isJsxElement(n: qt.Node): n is qt.JsxElement {
+  return n.kind === qt.SyntaxKind.JsxElement;
 }
 
-export function isJsxSelfClosingElement(node: Node): node is JsxSelfClosingElement {
-  return node.kind === qt.SyntaxKind.JsxSelfClosingElement;
+export function isJsxSelfClosingElement(n: qt.Node): n is qt.JsxSelfClosingElement {
+  return n.kind === qt.SyntaxKind.JsxSelfClosingElement;
 }
 
-export function isJsxOpeningElement(node: Node): node is JsxOpeningElement {
-  return node.kind === qt.SyntaxKind.JsxOpeningElement;
+export function isJsxOpeningElement(n: qt.Node): n is qt.JsxOpeningElement {
+  return n.kind === qt.SyntaxKind.JsxOpeningElement;
 }
 
-export function isJsxClosingElement(node: Node): node is JsxClosingElement {
-  return node.kind === qt.SyntaxKind.JsxClosingElement;
+export function isJsxClosingElement(n: qt.Node): n is qt.JsxClosingElement {
+  return n.kind === qt.SyntaxKind.JsxClosingElement;
 }
 
-export function isJsxFragment(node: Node): node is JsxFragment {
-  return node.kind === qt.SyntaxKind.JsxFragment;
+export function isJsxFragment(n: qt.Node): n is qt.JsxFragment {
+  return n.kind === qt.SyntaxKind.JsxFragment;
 }
 
-export function isJsxOpeningFragment(node: Node): node is JsxOpeningFragment {
-  return node.kind === qt.SyntaxKind.JsxOpeningFragment;
+export function isJsxOpeningFragment(n: qt.Node): n is qt.JsxOpeningFragment {
+  return n.kind === qt.SyntaxKind.JsxOpeningFragment;
 }
 
-export function isJsxClosingFragment(node: Node): node is JsxClosingFragment {
-  return node.kind === qt.SyntaxKind.JsxClosingFragment;
+export function isJsxClosingFragment(n: qt.Node): n is qt.JsxClosingFragment {
+  return n.kind === qt.SyntaxKind.JsxClosingFragment;
 }
 
-export function isJsxAttribute(node: Node): node is JsxAttribute {
-  return node.kind === qt.SyntaxKind.JsxAttribute;
+export function isJsxAttribute(n: qt.Node): n is qt.JsxAttribute {
+  return n.kind === qt.SyntaxKind.JsxAttribute;
 }
 
-export function isJsxAttributes(node: Node): node is JsxAttributes {
-  return node.kind === qt.SyntaxKind.JsxAttributes;
+export function isJsxAttributes(n: qt.Node): n is qt.JsxAttributes {
+  return n.kind === qt.SyntaxKind.JsxAttributes;
 }
 
-export function isJsxSpreadAttribute(node: Node): node is JsxSpreadAttribute {
-  return node.kind === qt.SyntaxKind.JsxSpreadAttribute;
+export function isJsxSpreadAttribute(n: qt.Node): n is qt.JsxSpreadAttribute {
+  return n.kind === qt.SyntaxKind.JsxSpreadAttribute;
 }
 
-export function isJsxExpression(node: Node): node is JsxExpression {
-  return node.kind === qt.SyntaxKind.JsxExpression;
+export function isJsxExpression(n: qt.Node): n is qt.JsxExpression {
+  return n.kind === qt.SyntaxKind.JsxExpression;
 }
 
 // Clauses
 
-export function isCaseClause(node: Node): node is CaseClause {
-  return node.kind === qt.SyntaxKind.CaseClause;
+export function isCaseClause(n: qt.Node): n is qt.CaseClause {
+  return n.kind === qt.SyntaxKind.CaseClause;
 }
 
-export function isDefaultClause(node: Node): node is DefaultClause {
-  return node.kind === qt.SyntaxKind.DefaultClause;
+export function isDefaultClause(n: qt.Node): n is qt.DefaultClause {
+  return n.kind === qt.SyntaxKind.DefaultClause;
 }
 
-export function isHeritageClause(node: Node): node is HeritageClause {
-  return node.kind === qt.SyntaxKind.HeritageClause;
+export function isHeritageClause(n: qt.Node): n is qt.HeritageClause {
+  return n.kind === qt.SyntaxKind.HeritageClause;
 }
 
-export function isCatchClause(node: Node): node is CatchClause {
-  return node.kind === qt.SyntaxKind.CatchClause;
+export function isCatchClause(n: qt.Node): n is qt.CatchClause {
+  return n.kind === qt.SyntaxKind.CatchClause;
 }
 
 // Property assignments
 
-export function isPropertyAssignment(node: Node): node is PropertyAssignment {
-  return node.kind === qt.SyntaxKind.PropertyAssignment;
+export function isPropertyAssignment(n: qt.Node): n is qt.PropertyAssignment {
+  return n.kind === qt.SyntaxKind.PropertyAssignment;
 }
 
-export function isShorthandPropertyAssignment(node: Node): node is ShorthandPropertyAssignment {
-  return node.kind === qt.SyntaxKind.ShorthandPropertyAssignment;
+export function isShorthandPropertyAssignment(n: qt.Node): n is qt.ShorthandPropertyAssignment {
+  return n.kind === qt.SyntaxKind.ShorthandPropertyAssignment;
 }
 
-export function isSpreadAssignment(node: Node): node is SpreadAssignment {
-  return node.kind === qt.SyntaxKind.SpreadAssignment;
+export function isSpreadAssignment(n: qt.Node): n is qt.SpreadAssignment {
+  return n.kind === qt.SyntaxKind.SpreadAssignment;
 }
 
 // Enum
 
-export function isEnumMember(node: Node): node is EnumMember {
-  return node.kind === qt.SyntaxKind.EnumMember;
+export function isEnumMember(n: qt.Node): n is qt.EnumMember {
+  return n.kind === qt.SyntaxKind.EnumMember;
 }
 
 // Top-level nodes
-export function isSourceFile(node: Node): node is SourceFile {
-  return node.kind === qt.SyntaxKind.SourceFile;
+export function isSourceFile(n: qt.Node): n is qt.SourceFile {
+  return n.kind === qt.SyntaxKind.SourceFile;
 }
 
-export function isBundle(node: Node): node is Bundle {
-  return node.kind === qt.SyntaxKind.Bundle;
+export function isBundle(n: qt.Node): n is qt.Bundle {
+  return n.kind === qt.SyntaxKind.Bundle;
 }
 
-export function isUnparsedSource(node: Node): node is UnparsedSource {
-  return node.kind === qt.SyntaxKind.UnparsedSource;
+export function isUnparsedSource(n: qt.Node): n is qt.UnparsedSource {
+  return n.kind === qt.SyntaxKind.UnparsedSource;
 }
 
-export function isUnparsedPrepend(node: Node): node is UnparsedPrepend {
-  return node.kind === qt.SyntaxKind.UnparsedPrepend;
+export function isUnparsedPrepend(n: qt.Node): n is qt.UnparsedPrepend {
+  return n.kind === qt.SyntaxKind.UnparsedPrepend;
 }
 
-export function isUnparsedTextLike(node: Node): node is UnparsedTextLike {
+export function isUnparsedTextLike(n: qt.Node): n is qt.UnparsedTextLike {
   switch (node.kind) {
     case qt.SyntaxKind.UnparsedText:
     case qt.SyntaxKind.UnparsedInternalText:
@@ -1564,126 +1570,126 @@ export function isUnparsedTextLike(node: Node): node is UnparsedTextLike {
   }
 }
 
-export function isUnparsedNode(node: Node): node is UnparsedNode {
-  return isUnparsedTextLike(node) || node.kind === qt.SyntaxKind.UnparsedPrologue || node.kind === qt.SyntaxKind.UnparsedSyntheticReference;
+export function isUnparsedNode(n: qt.Node): n is qt.UnparsedNode {
+  return isUnparsedTextLike(node) || n.kind === qt.SyntaxKind.UnparsedPrologue || n.kind === qt.SyntaxKind.UnparsedSyntheticReference;
 }
 
 // JSDoc
 
-export function isJSDocTypeExpression(node: Node): node is JSDocTypeExpression {
-  return node.kind === qt.SyntaxKind.JSDocTypeExpression;
+export function isJSDocTypeExpression(n: qt.Node): n is qt.JSDocTypeExpression {
+  return n.kind === qt.SyntaxKind.JSDocTypeExpression;
 }
 
-export function isJSDocAllType(node: Node): node is JSDocAllType {
-  return node.kind === qt.SyntaxKind.JSDocAllType;
+export function isJSDocAllType(n: qt.Node): n is qt.JSDocAllType {
+  return n.kind === qt.SyntaxKind.JSDocAllType;
 }
 
-export function isJSDocUnknownType(node: Node): node is JSDocUnknownType {
-  return node.kind === qt.SyntaxKind.JSDocUnknownType;
+export function isJSDocUnknownType(n: qt.Node): n is qt.JSDocUnknownType {
+  return n.kind === qt.SyntaxKind.JSDocUnknownType;
 }
 
-export function isJSDocNullableType(node: Node): node is JSDocNullableType {
-  return node.kind === qt.SyntaxKind.JSDocNullableType;
+export function isJSDocNullableType(n: qt.Node): n is qt.JSDocNullableType {
+  return n.kind === qt.SyntaxKind.JSDocNullableType;
 }
 
-export function isJSDocNonNullableType(node: Node): node is JSDocNonNullableType {
-  return node.kind === qt.SyntaxKind.JSDocNonNullableType;
+export function isJSDocNonNullableType(n: qt.Node): n is qt.JSDocNonNullableType {
+  return n.kind === qt.SyntaxKind.JSDocNonNullableType;
 }
 
-export function isJSDocOptionalType(node: Node): node is JSDocOptionalType {
-  return node.kind === qt.SyntaxKind.JSDocOptionalType;
+export function isJSDocOptionalType(n: qt.Node): n is qt.JSDocOptionalType {
+  return n.kind === qt.SyntaxKind.JSDocOptionalType;
 }
 
-export function isJSDocFunctionType(node: Node): node is JSDocFunctionType {
-  return node.kind === qt.SyntaxKind.JSDocFunctionType;
+export function isJSDocFunctionType(n: qt.Node): n is qt.JSDocFunctionType {
+  return n.kind === qt.SyntaxKind.JSDocFunctionType;
 }
 
-export function isJSDocVariadicType(node: Node): node is JSDocVariadicType {
-  return node.kind === qt.SyntaxKind.JSDocVariadicType;
+export function isJSDocVariadicType(n: qt.Node): n is qt.JSDocVariadicType {
+  return n.kind === qt.SyntaxKind.JSDocVariadicType;
 }
 
-export function isJSDoc(node: Node): node is JSDoc {
-  return node.kind === qt.SyntaxKind.JSDocComment;
+export function isJSDoc(n: qt.Node): n is qt.JSDoc {
+  return n.kind === qt.SyntaxKind.JSDocComment;
 }
 
-export function isJSDocAuthorTag(node: Node): node is JSDocAuthorTag {
-  return node.kind === qt.SyntaxKind.JSDocAuthorTag;
+export function isJSDocAuthorTag(n: qt.Node): n is qt.JSDocAuthorTag {
+  return n.kind === qt.SyntaxKind.JSDocAuthorTag;
 }
 
-export function isJSDocAugmentsTag(node: Node): node is JSDocAugmentsTag {
-  return node.kind === qt.SyntaxKind.JSDocAugmentsTag;
+export function isJSDocAugmentsTag(n: qt.Node): n is qt.JSDocAugmentsTag {
+  return n.kind === qt.SyntaxKind.JSDocAugmentsTag;
 }
 
-export function isJSDocImplementsTag(node: Node): node is JSDocImplementsTag {
-  return node.kind === qt.SyntaxKind.JSDocImplementsTag;
+export function isJSDocImplementsTag(n: qt.Node): n is qt.JSDocImplementsTag {
+  return n.kind === qt.SyntaxKind.JSDocImplementsTag;
 }
 
-export function isJSDocClassTag(node: Node): node is JSDocClassTag {
-  return node.kind === qt.SyntaxKind.JSDocClassTag;
+export function isJSDocClassTag(n: qt.Node): n is qt.JSDocClassTag {
+  return n.kind === qt.SyntaxKind.JSDocClassTag;
 }
 
-export function isJSDocPublicTag(node: Node): node is JSDocPublicTag {
-  return node.kind === qt.SyntaxKind.JSDocPublicTag;
+export function isJSDocPublicTag(n: qt.Node): n is qt.JSDocPublicTag {
+  return n.kind === qt.SyntaxKind.JSDocPublicTag;
 }
 
-export function isJSDocPrivateTag(node: Node): node is JSDocPrivateTag {
-  return node.kind === qt.SyntaxKind.JSDocPrivateTag;
+export function isJSDocPrivateTag(n: qt.Node): n is qt.JSDocPrivateTag {
+  return n.kind === qt.SyntaxKind.JSDocPrivateTag;
 }
 
-export function isJSDocProtectedTag(node: Node): node is JSDocProtectedTag {
-  return node.kind === qt.SyntaxKind.JSDocProtectedTag;
+export function isJSDocProtectedTag(n: qt.Node): n is qt.JSDocProtectedTag {
+  return n.kind === qt.SyntaxKind.JSDocProtectedTag;
 }
 
-export function isJSDocReadonlyTag(node: Node): node is JSDocReadonlyTag {
-  return node.kind === qt.SyntaxKind.JSDocReadonlyTag;
+export function isJSDocReadonlyTag(n: qt.Node): n is qt.JSDocReadonlyTag {
+  return n.kind === qt.SyntaxKind.JSDocReadonlyTag;
 }
 
-export function isJSDocEnumTag(node: Node): node is JSDocEnumTag {
-  return node.kind === qt.SyntaxKind.JSDocEnumTag;
+export function isJSDocEnumTag(n: qt.Node): n is qt.JSDocEnumTag {
+  return n.kind === qt.SyntaxKind.JSDocEnumTag;
 }
 
-export function isJSDocThisTag(node: Node): node is JSDocThisTag {
-  return node.kind === qt.SyntaxKind.JSDocThisTag;
+export function isJSDocThisTag(n: qt.Node): n is qt.JSDocThisTag {
+  return n.kind === qt.SyntaxKind.JSDocThisTag;
 }
 
-export function isJSDocParameterTag(node: Node): node is JSDocParameterTag {
-  return node.kind === qt.SyntaxKind.JSDocParameterTag;
+export function isJSDocParameterTag(n: qt.Node): n is qt.JSDocParameterTag {
+  return n.kind === qt.SyntaxKind.JSDocParameterTag;
 }
 
-export function isJSDocReturnTag(node: Node): node is JSDocReturnTag {
-  return node.kind === qt.SyntaxKind.JSDocReturnTag;
+export function isJSDocReturnTag(n: qt.Node): n is qt.JSDocReturnTag {
+  return n.kind === qt.SyntaxKind.JSDocReturnTag;
 }
 
-export function isJSDocTypeTag(node: Node): node is JSDocTypeTag {
-  return node.kind === qt.SyntaxKind.JSDocTypeTag;
+export function isJSDocTypeTag(n: qt.Node): n is qt.JSDocTypeTag {
+  return n.kind === qt.SyntaxKind.JSDocTypeTag;
 }
 
-export function isJSDocTemplateTag(node: Node): node is JSDocTemplateTag {
-  return node.kind === qt.SyntaxKind.JSDocTemplateTag;
+export function isJSDocTemplateTag(n: qt.Node): n is qt.JSDocTemplateTag {
+  return n.kind === qt.SyntaxKind.JSDocTemplateTag;
 }
 
-export function isJSDocTypedefTag(node: Node): node is JSDocTypedefTag {
-  return node.kind === qt.SyntaxKind.JSDocTypedefTag;
+export function isJSDocTypedefTag(n: qt.Node): n is qt.JSDocTypedefTag {
+  return n.kind === qt.SyntaxKind.JSDocTypedefTag;
 }
 
-export function isJSDocPropertyTag(node: Node): node is JSDocPropertyTag {
-  return node.kind === qt.SyntaxKind.JSDocPropertyTag;
+export function isJSDocPropertyTag(n: qt.Node): n is qt.JSDocPropertyTag {
+  return n.kind === qt.SyntaxKind.JSDocPropertyTag;
 }
 
-export function isJSDocPropertyLikeTag(node: Node): node is JSDocPropertyLikeTag {
-  return node.kind === qt.SyntaxKind.JSDocPropertyTag || node.kind === qt.SyntaxKind.JSDocParameterTag;
+export function isJSDocPropertyLikeTag(n: qt.Node): n is qt.JSDocPropertyLikeTag {
+  return n.kind === qt.SyntaxKind.JSDocPropertyTag || n.kind === qt.SyntaxKind.JSDocParameterTag;
 }
 
-export function isJSDocTypeLiteral(node: Node): node is JSDocTypeLiteral {
-  return node.kind === qt.SyntaxKind.JSDocTypeLiteral;
+export function isJSDocTypeLiteral(n: qt.Node): n is qt.JSDocTypeLiteral {
+  return n.kind === qt.SyntaxKind.JSDocTypeLiteral;
 }
 
-export function isJSDocCallbackTag(node: Node): node is JSDocCallbackTag {
-  return node.kind === qt.SyntaxKind.JSDocCallbackTag;
+export function isJSDocCallbackTag(n: qt.Node): n is qt.JSDocCallbackTag {
+  return n.kind === qt.SyntaxKind.JSDocCallbackTag;
 }
 
-export function isJSDocSignature(node: Node): node is JSDocSignature {
-  return node.kind === qt.SyntaxKind.JSDocSignature;
+export function isJSDocSignature(n: qt.Node): n is qt.JSDocSignature {
+  return n.kind === qt.SyntaxKind.JSDocSignature;
 }
 
 // #endregion
@@ -1694,11 +1700,11 @@ export function isJSDocSignature(node: Node): node is JSDocSignature {
 // All node tests in the following list should *not* reference parent pointers so that
 // they may be used with transformations.
 
-export function isSyntaxList(n: Node): n is SyntaxList {
+export function isSyntaxList(n: qt.Node): n is qt.SyntaxList {
   return n.kind === qt.SyntaxKind.SyntaxList;
 }
 
-export function isNode(node: Node) {
+export function isNode(node: qt.Node) {
   return isNodeKind(node.kind);
 }
 
@@ -1711,7 +1717,7 @@ export function isNodeKind(kind: qt.SyntaxKind) {
  * For example, this is true for an IfKeyword but not for an IfStatement.
  * Literals are considered tokens, except TemplateLiteral, but does include TemplateHead/Middle/Tail.
  */
-export function isToken(n: Node): boolean {
+export function isToken(n: qt.Node): boolean {
   return n.kind >= qt.SyntaxKind.FirstToken && n.kind <= qt.SyntaxKind.LastToken;
 }
 
@@ -1727,7 +1733,7 @@ export function isLiteralKind(kind: qt.SyntaxKind): boolean {
   return qt.SyntaxKind.FirstLiteralToken <= kind && kind <= qt.SyntaxKind.LastLiteralToken;
 }
 
-export function isLiteralExpression(node: Node): node is LiteralExpression {
+export function isLiteralExpression(n: qt.Node): n is qt.LiteralExpression {
   return isLiteralKind(node.kind);
 }
 
@@ -1738,49 +1744,49 @@ export function isTemplateLiteralKind(kind: qt.SyntaxKind): boolean {
 }
 
 export type TemplateLiteralToken = NoSubstitutionTemplateLiteral | TemplateHead | TemplateMiddle | TemplateTail;
-export function isTemplateLiteralToken(node: Node): node is TemplateLiteralToken {
-  return isTemplateLiteralKind(node.kind);
+export function isTemplateLiteralToken(n: qt.Node): n is TemplateLiteralToken {
+  return isTemplateLiteralKind(n.kind);
 }
 
-export function isTemplateMiddleOrTemplateTail(node: Node): node is TemplateMiddle | TemplateTail {
-  const kind = node.kind;
+export function isTemplateMiddleOrTemplateTail(n: qt.Node): n is qt.TemplateMiddle | qt.TemplateTail {
+  const kind = n.kind;
   return kind === qt.SyntaxKind.TemplateMiddle || kind === qt.SyntaxKind.TemplateTail;
 }
 
-export function isImportOrExportSpecifier(node: Node): node is ImportSpecifier | ExportSpecifier {
-  return isImportSpecifier(node) || isExportSpecifier(node);
+export function isImportOrExportSpecifier(n: qt.Node): n is qt.ImportSpecifier | qt.ExportSpecifier {
+  return isImportSpecifier(n) || isExportSpecifier(n);
 }
 
-export function isTypeOnlyImportOrExportDeclaration(node: Node): node is TypeOnlyCompatibleAliasDeclaration {
+export function isTypeOnlyImportOrExportDeclaration(n: qt.Node): n is qt.TypeOnlyCompatibleAliasDeclaration {
   switch (node.kind) {
     case qt.SyntaxKind.ImportSpecifier:
     case qt.SyntaxKind.ExportSpecifier:
-      return (node as ImportOrExportSpecifier).parent.parent.isTypeOnly;
+      return node.parent.parent.isTypeOnly;
     case qt.SyntaxKind.NamespaceImport:
-      return (node as NamespaceImport).parent.isTypeOnly;
+      return node.parent.isTypeOnly;
     case qt.SyntaxKind.ImportClause:
-      return (node as ImportClause).isTypeOnly;
+      return node.isTypeOnly;
     default:
       return false;
   }
 }
 
-export function isStringTextContainingNode(node: Node): node is StringLiteral | TemplateLiteralToken {
-  return node.kind === qt.SyntaxKind.StringLiteral || isTemplateLiteralKind(node.kind);
+export function isStringTextContainingNode(n: qt.Node): n is qt.StringLiteral | TemplateLiteralToken {
+  return n.kind === qt.SyntaxKind.StringLiteral || isTemplateLiteralKind(node.kind);
 }
 
 // Identifiers
 
-export function isGeneratedIdentifier(node: Node): node is GeneratedIdentifier {
+export function isGeneratedIdentifier(n: qt.Node): n is qt.GeneratedIdentifier {
   return isIdentifier(node) && (node.autoGenerateFlags! & GeneratedIdentifierFlags.KindMask) > GeneratedIdentifierFlags.None;
 }
 
 // Private Identifiers
-export function isPrivateIdentifierPropertyDeclaration(node: Node): node is PrivateIdentifierPropertyDeclaration {
+export function isPrivateIdentifierPropertyDeclaration(n: qt.Node): n is qt.PrivateIdentifierPropertyDeclaration {
   return isPropertyDeclaration(node) && isPrivateIdentifier(node.name);
 }
 
-export function isPrivateIdentifierPropertyAccessExpression(node: Node): node is PrivateIdentifierPropertyAccessExpression {
+export function isPrivateIdentifierPropertyAccessExpression(n: qt.Node): n is qt.PrivateIdentifierPropertyAccessExpression {
   return isPropertyAccessExpression(node) && isPrivateIdentifier(node.name);
 }
 
@@ -1812,32 +1818,32 @@ export function isClassMemberModifier(idToken: qt.SyntaxKind): boolean {
   return isParameterPropertyModifier(idToken) || idToken === qt.SyntaxKind.StaticKeyword;
 }
 
-export function isModifier(node: Node): node is Modifier {
+export function isModifier(n: qt.Node): n is qt.Modifier {
   return isModifierKind(node.kind);
 }
 
-export function isEntityName(node: Node): node is EntityName {
+export function isEntityName(n: qt.Node): n is qt.EntityName {
   const kind = node.kind;
   return kind === qt.SyntaxKind.QualifiedName || kind === qt.SyntaxKind.Identifier;
 }
 
-export function isPropertyName(node: Node): node is PropertyName {
+export function isPropertyName(n: qt.Node): n is qt.PropertyName {
   const kind = node.kind;
   return kind === qt.SyntaxKind.Identifier || kind === qt.SyntaxKind.PrivateIdentifier || kind === qt.SyntaxKind.StringLiteral || kind === qt.SyntaxKind.NumericLiteral || kind === qt.SyntaxKind.ComputedPropertyName;
 }
 
-export function isBindingName(node: Node): node is BindingName {
+export function isBindingName(n: qt.Node): n is qt.BindingName {
   const kind = node.kind;
   return kind === qt.SyntaxKind.Identifier || kind === qt.SyntaxKind.ObjectBindingPattern || kind === qt.SyntaxKind.ArrayBindingPattern;
 }
 
 // Functions
 
-export function isFunctionLike(node: Node): node is SignatureDeclaration {
+export function isFunctionLike(n: qt.Node): n is qt.SignatureDeclaration {
   return node && isFunctionLikeKind(node.kind);
 }
 
-export function isFunctionLikeDeclaration(node: Node): node is FunctionLikeDeclaration {
+export function isFunctionLikeDeclaration(n: qt.Node): n is qt.FunctionLikeDeclaration {
   return node && isFunctionLikeDeclarationKind(node.kind);
 }
 
@@ -1872,25 +1878,25 @@ export function isFunctionLikeKind(kind: qt.SyntaxKind): boolean {
   }
 }
 
-export function isFunctionOrModuleBlock(node: Node): boolean {
+export function isFunctionOrModuleBlock(node: qt.Node): boolean {
   return isSourceFile(node) || isModuleBlock(node) || (isBlock(node) && isFunctionLike(node.parent));
 }
 
 // Classes
-export function isClassElement(node: Node): node is ClassElement {
+export function isClassElement(n: qt.Node): n is qt.ClassElement {
   const kind = node.kind;
   return kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.PropertyDeclaration || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor || kind === qt.SyntaxKind.IndexSignature || kind === qt.SyntaxKind.SemicolonClassElement;
 }
 
-export function isClassLike(node: Node): node is ClassLikeDeclaration {
-  return node && (node.kind === qt.SyntaxKind.ClassDeclaration || node.kind === qt.SyntaxKind.ClassExpression);
+export function isClassLike(n: qt.Node): n is qt.ClassLikeDeclaration {
+  return node && (n.kind === qt.SyntaxKind.ClassDeclaration || n.kind === qt.SyntaxKind.ClassExpression);
 }
 
-export function isAccessor(node: Node): node is AccessorDeclaration {
-  return node && (node.kind === qt.SyntaxKind.GetAccessor || node.kind === qt.SyntaxKind.SetAccessor);
+export function isAccessor(n: qt.Node): n is qt.AccessorDeclaration {
+  return node && (n.kind === qt.SyntaxKind.GetAccessor || n.kind === qt.SyntaxKind.SetAccessor);
 }
 
-export function isMethodOrAccessor(node: Node): node is MethodDeclaration | AccessorDeclaration {
+export function isMethodOrAccessor(n: qt.Node): n is qt.MethodDeclaration | AccessorDeclaration {
   switch (node.kind) {
     case qt.SyntaxKind.MethodDeclaration:
     case qt.SyntaxKind.GetAccessor:
@@ -1903,16 +1909,16 @@ export function isMethodOrAccessor(node: Node): node is MethodDeclaration | Acce
 
 // Type members
 
-export function isTypeElement(node: Node): node is TypeElement {
+export function isTypeElement(n: qt.Node): n is qt.TypeElement {
   const kind = node.kind;
   return kind === qt.SyntaxKind.ConstructSignature || kind === qt.SyntaxKind.CallSignature || kind === qt.SyntaxKind.PropertySignature || kind === qt.SyntaxKind.MethodSignature || kind === qt.SyntaxKind.IndexSignature;
 }
 
-export function isClassOrTypeElement(node: Node): node is ClassElement | TypeElement {
+export function isClassOrTypeElement(n: qt.Node): n is qt.ClassElement | TypeElement {
   return isTypeElement(node) || isClassElement(node);
 }
 
-export function isObjectLiteralElementLike(node: Node): node is ObjectLiteralElementLike {
+export function isObjectLiteralElementLike(n: qt.Node): n is qt.ObjectLiteralElementLike {
   const kind = node.kind;
   return kind === qt.SyntaxKind.PropertyAssignment || kind === qt.SyntaxKind.ShorthandPropertyAssignment || kind === qt.SyntaxKind.SpreadAssignment || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor;
 }
@@ -1924,11 +1930,11 @@ export function isObjectLiteralElementLike(node: Node): node is ObjectLiteralEle
  * This differs from the `isPartOfTypeNode` function which determines whether a node is *part*
  * of a TypeNode.
  */
-export function isTypeNode(node: Node): node is TypeNode {
+export function isTypeNode(n: qt.Node): n is qt.TypeNode {
   return isTypeNodeKind(node.kind);
 }
 
-export function isFunctionOrConstructorTypeNode(node: Node): node is FunctionTypeNode | ConstructorTypeNode {
+export function isFunctionOrConstructorTypeNode(n: qt.Node): n is qt.FunctionTypeNode | ConstructorTypeNode {
   switch (node.kind) {
     case qt.SyntaxKind.FunctionType:
     case qt.SyntaxKind.ConstructorType:
@@ -1940,7 +1946,7 @@ export function isFunctionOrConstructorTypeNode(node: Node): node is FunctionTyp
 
 // Binding patterns
 
-export function isBindingPattern(node: Node | undefined): node is BindingPattern {
+export function isBindingPattern(node: qt.Node | undefined): node is BindingPattern {
   if (node) {
     const kind = node.kind;
     return kind === qt.SyntaxKind.ArrayBindingPattern || kind === qt.SyntaxKind.ObjectBindingPattern;
@@ -1949,12 +1955,12 @@ export function isBindingPattern(node: Node | undefined): node is BindingPattern
   return false;
 }
 
-export function isAssignmentPattern(node: Node): node is AssignmentPattern {
+export function isAssignmentPattern(n: qt.Node): n is qt.AssignmentPattern {
   const kind = node.kind;
   return kind === qt.SyntaxKind.ArrayLiteralExpression || kind === qt.SyntaxKind.ObjectLiteralExpression;
 }
 
-export function isArrayBindingElement(node: Node): node is ArrayBindingElement {
+export function isArrayBindingElement(n: qt.Node): n is qt.ArrayBindingElement {
   const kind = node.kind;
   return kind === qt.SyntaxKind.BindingElement || kind === qt.SyntaxKind.OmittedExpression;
 }
@@ -1963,7 +1969,7 @@ export function isArrayBindingElement(node: Node): node is ArrayBindingElement {
  * Determines whether the BindingOrAssignmentElement is a BindingElement-like declaration
  */
 
-export function isDeclarationBindingElement(bindingElement: BindingOrAssignmentElement): bindingElement is VariableDeclaration | ParameterDeclaration | BindingElement {
+export function isDeclarationBindingElement(bindingElement: BindingOrAssignmentElement): bindingElement is VariableDeclaration | qt.ParameterDeclaration | BindingElement {
   switch (bindingElement.kind) {
     case qt.SyntaxKind.VariableDeclaration:
     case qt.SyntaxKind.Parameter:
@@ -2010,19 +2016,19 @@ export function isArrayBindingOrAssignmentPattern(node: BindingOrAssignmentEleme
   return false;
 }
 
-export function isPropertyAccessOrQualifiedNameOrImportTypeNode(node: Node): node is PropertyAccessExpression | QualifiedName | ImportTypeNode {
+export function isPropertyAccessOrQualifiedNameOrImportTypeNode(n: qt.Node): n is qt.PropertyAccessExpression | QualifiedName | ImportTypeNode {
   const kind = node.kind;
   return kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.QualifiedName || kind === qt.SyntaxKind.ImportType;
 }
 
 // Expression
 
-export function isPropertyAccessOrQualifiedName(node: Node): node is PropertyAccessExpression | QualifiedName {
+export function isPropertyAccessOrQualifiedName(n: qt.Node): n is qt.PropertyAccessExpression | QualifiedName {
   const kind = node.kind;
   return kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.QualifiedName;
 }
 
-export function isCallLikeExpression(node: Node): node is CallLikeExpression {
+export function isCallLikeExpression(n: qt.Node): n is qt.CallLikeExpression {
   switch (node.kind) {
     case qt.SyntaxKind.JsxOpeningElement:
     case qt.SyntaxKind.JsxSelfClosingElement:
@@ -2036,16 +2042,16 @@ export function isCallLikeExpression(node: Node): node is CallLikeExpression {
   }
 }
 
-export function isCallOrNewExpression(node: Node): node is CallExpression | NewExpression {
-  return node.kind === qt.SyntaxKind.CallExpression || node.kind === qt.SyntaxKind.NewExpression;
+export function isCallOrNewExpression(n: qt.Node): n is qt.CallExpression | NewExpression {
+  return n.kind === qt.SyntaxKind.CallExpression || n.kind === qt.SyntaxKind.NewExpression;
 }
 
-export function isTemplateLiteral(node: Node): node is TemplateLiteral {
+export function isTemplateLiteral(n: qt.Node): n is qt.TemplateLiteral {
   const kind = node.kind;
   return kind === qt.SyntaxKind.TemplateExpression || kind === qt.SyntaxKind.NoSubstitutionTemplateLiteral;
 }
 
-export function isLeftHandSideExpression(node: Node): node is LeftHandSideExpression {
+export function isLeftHandSideExpression(n: qt.Node): n is qt.LeftHandSideExpression {
   return isLeftHandSideExpressionKind(skipPartiallyEmittedExpressions(node).kind);
 }
 
@@ -2085,7 +2091,7 @@ function isLeftHandSideExpressionKind(kind: qt.SyntaxKind): boolean {
   }
 }
 
-export function isUnaryExpression(node: Node): node is UnaryExpression {
+export function isUnaryExpression(n: qt.Node): n is qt.UnaryExpression {
   return isUnaryExpressionKind(skipPartiallyEmittedExpressions(node).kind);
 }
 
@@ -2119,7 +2125,7 @@ export function isUnaryExpressionWithWrite(expr: Node): expr is PrefixUnaryExpre
  * Determines whether a node is an expression based only on its kind.
  * Use `isExpressionNode` if not in transforms.
  */
-export function isExpression(node: Node): node is Expression {
+export function isExpression(n: qt.Node): n is qt.Expression {
   return isExpressionKind(skipPartiallyEmittedExpressions(node).kind);
 }
 
@@ -2140,32 +2146,32 @@ function isExpressionKind(kind: qt.SyntaxKind): boolean {
   }
 }
 
-export function isAssertionExpression(node: Node): node is AssertionExpression {
+export function isAssertionExpression(n: qt.Node): n is qt.AssertionExpression {
   const kind = node.kind;
   return kind === qt.SyntaxKind.TypeAssertionExpression || kind === qt.SyntaxKind.AsExpression;
 }
 
-export function isPartiallyEmittedExpression(node: Node): node is PartiallyEmittedExpression {
-  return node.kind === qt.SyntaxKind.PartiallyEmittedExpression;
+export function isPartiallyEmittedExpression(n: qt.Node): n is qt.PartiallyEmittedExpression {
+  return n.kind === qt.SyntaxKind.PartiallyEmittedExpression;
 }
 
-export function isNotEmittedStatement(node: Node): node is NotEmittedStatement {
-  return node.kind === qt.SyntaxKind.NotEmittedStatement;
+export function isNotEmittedStatement(n: qt.Node): n is qt.NotEmittedStatement {
+  return n.kind === qt.SyntaxKind.NotEmittedStatement;
 }
 
-export function isSyntheticReference(node: Node): node is SyntheticReferenceExpression {
-  return node.kind === qt.SyntaxKind.SyntheticReferenceExpression;
+export function isSyntheticReference(n: qt.Node): n is qt.SyntheticReferenceExpression {
+  return n.kind === qt.SyntaxKind.SyntheticReferenceExpression;
 }
 
-export function isNotEmittedOrPartiallyEmittedNode(node: Node): node is NotEmittedStatement | PartiallyEmittedExpression {
+export function isNotEmittedOrPartiallyEmittedNode(n: qt.Node): n is qt.NotEmittedStatement | PartiallyEmittedExpression {
   return isNotEmittedStatement(node) || isPartiallyEmittedExpression(node);
 }
 
 // Statement
 
-export function isIterationStatement(node: Node, lookInLabeledStatements: false): node is IterationStatement;
-export function isIterationStatement(node: Node, lookInLabeledStatements: boolean): node is IterationStatement | LabeledStatement;
-export function isIterationStatement(node: Node, lookInLabeledStatements: boolean): node is IterationStatement {
+export function isIterationStatement(node: qt.Node, lookInLabeledStatements: false): node is IterationStatement;
+export function isIterationStatement(node: qt.Node, lookInLabeledStatements: boolean): node is IterationStatement | LabeledStatement;
+export function isIterationStatement(node: qt.Node, lookInLabeledStatements: boolean): node is IterationStatement {
   switch (node.kind) {
     case qt.SyntaxKind.ForStatement:
     case qt.SyntaxKind.ForInStatement:
@@ -2180,7 +2186,7 @@ export function isIterationStatement(node: Node, lookInLabeledStatements: boolea
   return false;
 }
 
-export function isScopeMarker(node: Node) {
+export function isScopeMarker(node: qt.Node) {
   return isExportAssignment(node) || isExportDeclaration(node);
 }
 
@@ -2197,46 +2203,46 @@ export function isExternalModuleIndicator(result: Statement) {
   return isAnyImportOrReExport(result) || isExportAssignment(result) || hasSyntacticModifier(result, ModifierFlags.Export);
 }
 
-export function isForInOrOfStatement(node: Node): node is ForInOrOfStatement {
-  return node.kind === qt.SyntaxKind.ForInStatement || node.kind === qt.SyntaxKind.ForOfStatement;
+export function isForInOrOfStatement(n: qt.Node): n is qt.ForInOrOfStatement {
+  return n.kind === qt.SyntaxKind.ForInStatement || n.kind === qt.SyntaxKind.ForOfStatement;
 }
 
 // Element
 
-export function isConciseBody(node: Node): node is ConciseBody {
+export function isConciseBody(n: qt.Node): n is qt.ConciseBody {
   return isBlock(node) || isExpression(node);
 }
 
-export function isFunctionBody(node: Node): node is FunctionBody {
+export function isFunctionBody(n: qt.Node): n is qt.FunctionBody {
   return isBlock(node);
 }
 
-export function isForInitializer(node: Node): node is ForInitializer {
+export function isForInitializer(n: qt.Node): n is qt.ForInitializer {
   return isVariableDeclarationList(node) || isExpression(node);
 }
 
-export function isModuleBody(node: Node): node is ModuleBody {
+export function isModuleBody(n: qt.Node): n is qt.ModuleBody {
   const kind = node.kind;
   return kind === qt.SyntaxKind.ModuleBlock || kind === qt.SyntaxKind.ModuleDeclaration || kind === qt.SyntaxKind.Identifier;
 }
 
-export function isNamespaceBody(node: Node): node is NamespaceBody {
+export function isNamespaceBody(n: qt.Node): n is qt.NamespaceBody {
   const kind = node.kind;
   return kind === qt.SyntaxKind.ModuleBlock || kind === qt.SyntaxKind.ModuleDeclaration;
 }
 
-export function isJSDocNamespaceBody(node: Node): node is JSDocNamespaceBody {
+export function isJSDocNamespaceBody(n: qt.Node): n is qt.JSDocNamespaceBody {
   const kind = node.kind;
   return kind === qt.SyntaxKind.Identifier || kind === qt.SyntaxKind.ModuleDeclaration;
 }
 
-export function isNamedImportBindings(node: Node): node is NamedImportBindings {
+export function isNamedImportBindings(n: qt.Node): n is qt.NamedImportBindings {
   const kind = node.kind;
   return kind === qt.SyntaxKind.NamedImports || kind === qt.SyntaxKind.NamespaceImport;
 }
 
-export function isModuleOrEnumDeclaration(node: Node): node is ModuleDeclaration | EnumDeclaration {
-  return node.kind === qt.SyntaxKind.ModuleDeclaration || node.kind === qt.SyntaxKind.EnumDeclaration;
+export function isModuleOrEnumDeclaration(n: qt.Node): n is qt.ModuleDeclaration | EnumDeclaration {
+  return n.kind === qt.SyntaxKind.ModuleDeclaration || n.kind === qt.SyntaxKind.EnumDeclaration;
 }
 
 function isDeclarationKind(kind: qt.SyntaxKind) {
@@ -2321,15 +2327,15 @@ function isStatementKindButNotDeclarationKind(kind: qt.SyntaxKind) {
   );
 }
 
-export function isDeclaration(node: Node): node is NamedDeclaration {
-  if (node.kind === qt.SyntaxKind.TypeParameter) {
+export function isDeclaration(n: qt.Node): n is qt.NamedDeclaration {
+  if (n.kind === qt.SyntaxKind.TypeParameter) {
     return (node.parent && node.parent.kind !== qt.SyntaxKind.JSDocTemplateTag) || isInJSFile(node);
   }
 
   return isDeclarationKind(node.kind);
 }
 
-export function isDeclarationStatement(node: Node): node is DeclarationStatement {
+export function isDeclarationStatement(n: qt.Node): n is qt.DeclarationStatement {
   return isDeclarationStatementKind(node.kind);
 }
 
@@ -2337,16 +2343,16 @@ export function isDeclarationStatement(node: Node): node is DeclarationStatement
  * Determines whether the node is a statement that is not also a declaration
  */
 
-export function isStatementButNotDeclaration(node: Node): node is Statement {
+export function isStatementButNotDeclaration(n: qt.Node): n is qt.Statement {
   return isStatementKindButNotDeclarationKind(node.kind);
 }
 
-export function isStatement(node: Node): node is Statement {
+export function isStatement(n: qt.Node): n is qt.Statement {
   const kind = node.kind;
   return isStatementKindButNotDeclarationKind(kind) || isDeclarationStatementKind(kind) || isBlockStatement(node);
 }
 
-function isBlockStatement(node: Node): node is Block {
+function isBlockStatement(n: qt.Node): n is qt.Block {
   if (node.kind !== qt.SyntaxKind.Block) return false;
   if (node.parent !== undefined) {
     if (node.parent.kind === qt.SyntaxKind.TryStatement || node.parent.kind === qt.SyntaxKind.CatchClause) {
@@ -2358,41 +2364,41 @@ function isBlockStatement(node: Node): node is Block {
 
 // Module references
 
-export function isModuleReference(node: Node): node is ModuleReference {
+export function isModuleReference(n: qt.Node): n is qt.ModuleReference {
   const kind = node.kind;
   return kind === qt.SyntaxKind.ExternalModuleReference || kind === qt.SyntaxKind.QualifiedName || kind === qt.SyntaxKind.Identifier;
 }
 
 // JSX
 
-export function isJsxTagNameExpression(node: Node): node is JsxTagNameExpression {
+export function isJsxTagNameExpression(n: qt.Node): n is qt.JsxTagNameExpression {
   const kind = node.kind;
   return kind === qt.SyntaxKind.ThisKeyword || kind === qt.SyntaxKind.Identifier || kind === qt.SyntaxKind.PropertyAccessExpression;
 }
 
-export function isJsxChild(node: Node): node is JsxChild {
+export function isJsxChild(n: qt.Node): n is qt.JsxChild {
   const kind = node.kind;
   return kind === qt.SyntaxKind.JsxElement || kind === qt.SyntaxKind.JsxExpression || kind === qt.SyntaxKind.JsxSelfClosingElement || kind === qt.SyntaxKind.JsxText || kind === qt.SyntaxKind.JsxFragment;
 }
 
-export function isJsxAttributeLike(node: Node): node is JsxAttributeLike {
+export function isJsxAttributeLike(n: qt.Node): n is qt.JsxAttributeLike {
   const kind = node.kind;
   return kind === qt.SyntaxKind.JsxAttribute || kind === qt.SyntaxKind.JsxSpreadAttribute;
 }
 
-export function isStringLiteralOrJsxExpression(node: Node): node is StringLiteral | JsxExpression {
+export function isStringLiteralOrJsxExpression(n: qt.Node): n is qt.StringLiteral | JsxExpression {
   const kind = node.kind;
   return kind === qt.SyntaxKind.StringLiteral || kind === qt.SyntaxKind.JsxExpression;
 }
 
-export function isJsxOpeningLikeElement(node: Node): node is JsxOpeningLikeElement {
+export function isJsxOpeningLikeElement(n: qt.Node): n is qt.JsxOpeningLikeElement {
   const kind = node.kind;
   return kind === qt.SyntaxKind.JsxOpeningElement || kind === qt.SyntaxKind.JsxSelfClosingElement;
 }
 
 // Clauses
 
-export function isCaseOrDefaultClause(node: Node): node is CaseOrDefaultClause {
+export function isCaseOrDefaultClause(n: qt.Node): n is qt.CaseOrDefaultClause {
   const kind = node.kind;
   return kind === qt.SyntaxKind.CaseClause || kind === qt.SyntaxKind.DefaultClause;
 }
@@ -2401,51 +2407,51 @@ export function isCaseOrDefaultClause(node: Node): node is CaseOrDefaultClause {
 
 /** True if node is of some JSDoc syntax kind. */
 
-export function isJSDocNode(node: Node): boolean {
+export function isJSDocNode(node: qt.Node): boolean {
   return node.kind >= qt.SyntaxKind.FirstJSDocNode && node.kind <= qt.SyntaxKind.LastJSDocNode;
 }
 
 /** True if node is of a kind that may contain comment text. */
-export function isJSDocCommentContainingNode(node: Node): boolean {
-  return node.kind === qt.SyntaxKind.JSDocComment || node.kind === qt.SyntaxKind.JSDocNamepathType || isJSDocTag(node) || isJSDocTypeLiteral(node) || isJSDocSignature(node);
+export function isJSDocCommentContainingNode(node: qt.Node): boolean {
+  return n.kind === qt.SyntaxKind.JSDocComment || n.kind === qt.SyntaxKind.JSDocNamepathType || isJSDocTag(node) || isJSDocTypeLiteral(node) || isJSDocSignature(node);
 }
 
 // TODO: determine what this does before making it public.
 
-export function isJSDocTag(node: Node): node is JSDocTag {
+export function isJSDocTag(n: qt.Node): n is qt.JSDocTag {
   return node.kind >= qt.SyntaxKind.FirstJSDocTagNode && node.kind <= qt.SyntaxKind.LastJSDocTagNode;
 }
 
-export function isSetAccessor(node: Node): node is SetAccessorDeclaration {
-  return node.kind === qt.SyntaxKind.SetAccessor;
+export function isSetAccessor(n: qt.Node): n is qt.SetAccessorDeclaration {
+  return n.kind === qt.SyntaxKind.SetAccessor;
 }
 
-export function isGetAccessor(node: Node): node is GetAccessorDeclaration {
-  return node.kind === qt.SyntaxKind.GetAccessor;
+export function isGetAccessor(n: qt.Node): n is qt.GetAccessorDeclaration {
+  return n.kind === qt.SyntaxKind.GetAccessor;
 }
 
 /** True if has jsdoc nodes attached to it. */
 
 // TODO: GH#19856 Would like to return `node is Node & { jsDoc: JSDoc[] }` but it causes long compile times
-export function hasJSDocNodes(node: Node): node is HasJSDoc {
-  const { jsDoc } = node as JSDocContainer;
+export function hasJSDocNodes(n: qt.Node): n is qt.HasJSDoc {
+  const { jsDoc } = node;
   return !!jsDoc && jsDoc.length > 0;
 }
 
 /** True if has type node attached to it. */
 
-export function hasType(node: Node): node is HasType {
-  return !!(node as HasType).type;
+export function hasType(n: qt.Node): n is qt.HasType {
+  return !!node.type;
 }
 
 /** True if has initializer node attached to it. */
 
-export function hasInitializer(node: Node): node is HasInitializer {
-  return !!(node as HasInitializer).initializer;
+export function hasInitializer(n: qt.Node): n is qt.HasInitializer {
+  return !!node.initializer;
 }
 
 /** True if has initializer node attached to it. */
-export function hasOnlyExpressionInitializer(node: Node): node is HasExpressionInitializer {
+export function hasOnlyExpressionInitializer(n: qt.Node): n is qt.HasExpressionInitializer {
   switch (node.kind) {
     case qt.SyntaxKind.VariableDeclaration:
     case qt.SyntaxKind.Parameter:
@@ -2460,12 +2466,12 @@ export function hasOnlyExpressionInitializer(node: Node): node is HasExpressionI
   }
 }
 
-export function isObjectLiteralElement(node: Node): node is ObjectLiteralElement {
-  return node.kind === qt.SyntaxKind.JsxAttribute || node.kind === qt.SyntaxKind.JsxSpreadAttribute || isObjectLiteralElementLike(node);
+export function isObjectLiteralElement(n: qt.Node): n is qt.ObjectLiteralElement {
+  return n.kind === qt.SyntaxKind.JsxAttribute || n.kind === qt.SyntaxKind.JsxSpreadAttribute || isObjectLiteralElementLike(node);
 }
 
-export function isTypeReferenceType(node: Node): node is TypeReferenceType {
-  return node.kind === qt.SyntaxKind.TypeReference || node.kind === qt.SyntaxKind.ExpressionWithTypeArguments;
+export function isTypeReferenceType(n: qt.Node): n is qt.TypeReferenceType {
+  return n.kind === qt.SyntaxKind.TypeReference || n.kind === qt.SyntaxKind.ExpressionWithTypeArguments;
 }
 
 const MAX_SMI_X86 = 0x3fff_ffff;
@@ -2492,8 +2498,8 @@ export function guessIndentation(lines: string[]) {
   return indentation === MAX_SMI_X86 ? undefined : indentation;
 }
 
-export function isStringLiteralLike(node: Node): node is StringLiteralLike {
-  return node.kind === qt.SyntaxKind.StringLiteral || node.kind === qt.SyntaxKind.NoSubstitutionTemplateLiteral;
+export function isStringLiteralLike(n: qt.Node): n is qt.StringLiteralLike {
+  return n.kind === qt.SyntaxKind.StringLiteral || n.kind === qt.SyntaxKind.NoSubstitutionTemplateLiteral;
 }
 
 // #endregion

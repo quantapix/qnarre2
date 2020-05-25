@@ -285,7 +285,7 @@ function createSolutionBuilderState<T extends BuilderProgram>(watch: boolean, ho
   const moduleResolutionCache = !compilerHost.resolveModuleNames ? createModuleResolutionCache(currentDirectory, getCanonicalFileName) : undefined;
   if (!compilerHost.resolveModuleNames) {
     const loader = (moduleName: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => resolveModuleName(moduleName, containingFile, state.projectCompilerOptions, compilerHost, moduleResolutionCache, redirectedReference).resolvedModule!;
-    compilerHost.resolveModuleNames = (moduleNames, containingFile, _reusedNames, redirectedReference) => loadWithLocalCache<ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
+    compilerHost.resolveModuleNames = (moduleNames, containingFile, _reusedNames, redirectedReference) => loadWithLocalCache<qt.ResolvedModuleFull>(Debug.checkEachDefined(moduleNames), containingFile, redirectedReference, loader);
   }
 
   const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<ResolvedConfigFileName>(hostWithWatch, options);
@@ -496,7 +496,7 @@ function enableCache(state: SolutionBuilderState) {
     (...args) => originalGetSourceFile.call(compilerHost, ...args)
   );
   state.readFileWithCache = readFileWithCache;
-  compilerHost.getSourceFile = getSourceFileWithCache!;
+  compilerHost.getSourceFile = getSourceFileWithCache;
 
   state.cache = {
     originalReadFile,
@@ -1304,7 +1304,7 @@ function getUpToDateStatus(state: SolutionBuilderState, project: ParsedCommandLi
   return actual;
 }
 
-function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedCommandLine, priorNewestUpdateTime: Date, verboseMessage: DiagnosticMessage, skipOutputs?: FileMap<string>) {
+function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedCommandLine, priorNewestUpdateTime: Date, verboseMessage: qt.DiagnosticMessage, skipOutputs?: FileMap<string>) {
   const { host } = state;
   const outputs = getAllProjectOutputs(proj, !host.useCaseSensitiveFileNames());
   if (!skipOutputs || outputs.length !== skipOutputs.size) {
@@ -1668,11 +1668,11 @@ function relName(state: SolutionBuilderState, path: string): string {
   return convertToRelativePath(path, state.currentDirectory, (f) => state.getCanonicalFileName(f));
 }
 
-function reportStatus(state: SolutionBuilderState, message: DiagnosticMessage, ...args: string[]) {
+function reportStatus(state: SolutionBuilderState, message: qt.DiagnosticMessage, ...args: string[]) {
   state.host.reportSolutionBuilderStatus(createCompilerDiagnostic(message, ...args));
 }
 
-function reportWatchStatus(state: SolutionBuilderState, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
+function reportWatchStatus(state: SolutionBuilderState, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]) {
   if (state.hostWithWatch.onWatchStatusChange) {
     state.hostWithWatch.onWatchStatusChange(createCompilerDiagnostic(message, ...args), state.host.getNewLine(), state.baseCompilerOptions);
   }

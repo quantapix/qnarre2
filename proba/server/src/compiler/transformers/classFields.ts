@@ -71,46 +71,46 @@ export function transformClassFields(context: TransformationContext) {
     return visited;
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if (!(node.transformFlags & TransformFlags.ContainsClassFields)) return node;
 
     switch (node.kind) {
       case qt.SyntaxKind.ClassExpression:
       case qt.SyntaxKind.ClassDeclaration:
-        return visitClassLike(node as ClassLikeDeclaration);
+        return visitClassLike(node);
       case qt.SyntaxKind.PropertyDeclaration:
-        return visitPropertyDeclaration(node as PropertyDeclaration);
+        return visitPropertyDeclaration(node);
       case qt.SyntaxKind.VariableStatement:
-        return visitVariableStatement(node as VariableStatement);
+        return visitVariableStatement(node);
       case qt.SyntaxKind.ComputedPropertyName:
-        return visitComputedPropertyName(node as ComputedPropertyName);
+        return visitComputedPropertyName(node);
       case qt.SyntaxKind.PropertyAccessExpression:
-        return visitPropertyAccessExpression(node as PropertyAccessExpression);
+        return visitPropertyAccessExpression(node);
       case qt.SyntaxKind.PrefixUnaryExpression:
-        return visitPrefixUnaryExpression(node as PrefixUnaryExpression);
+        return visitPrefixUnaryExpression(node);
       case qt.SyntaxKind.PostfixUnaryExpression:
-        return visitPostfixUnaryExpression(node as PostfixUnaryExpression, /*valueIsDiscarded*/ false);
+        return visitPostfixUnaryExpression(node, /*valueIsDiscarded*/ false);
       case qt.SyntaxKind.CallExpression:
-        return visitCallExpression(node as CallExpression);
+        return visitCallExpression(node);
       case qt.SyntaxKind.BinaryExpression:
-        return visitBinaryExpression(node as BinaryExpression);
+        return visitBinaryExpression(node);
       case qt.SyntaxKind.PrivateIdentifier:
-        return visitPrivateIdentifier(node as PrivateIdentifier);
+        return visitPrivateIdentifier(node);
       case qt.SyntaxKind.ExpressionStatement:
-        return visitExpressionStatement(node as ExpressionStatement);
+        return visitExpressionStatement(node);
       case qt.SyntaxKind.ForStatement:
-        return visitForStatement(node as ForStatement);
+        return visitForStatement(node);
       case qt.SyntaxKind.TaggedTemplateExpression:
-        return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
+        return visitTaggedTemplateExpression(node);
     }
     return visitEachChild(node, visitor, context);
   }
 
-  function visitorDestructuringTarget(node: Node): VisitResult<Node> {
+  function visitorDestructuringTarget(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.ObjectLiteralExpression:
       case qt.SyntaxKind.ArrayLiteralExpression:
-        return visitAssignmentPattern(node as AssignmentPattern);
+        return visitAssignmentPattern(node);
       default:
         return visitor(node);
     }
@@ -132,7 +132,7 @@ export function transformClassFields(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function classElementVisitor(node: Node): VisitResult<Node> {
+  function classElementVisitor(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.Constructor:
         // Constructors for classes using class fields are transformed in
@@ -146,10 +146,10 @@ export function transformClassFields(context: TransformationContext) {
         return visitEachChild(node, classElementVisitor, context);
 
       case qt.SyntaxKind.PropertyDeclaration:
-        return visitPropertyDeclaration(node as PropertyDeclaration);
+        return visitPropertyDeclaration(node);
 
       case qt.SyntaxKind.ComputedPropertyName:
-        return visitComputedPropertyName(node as ComputedPropertyName);
+        return visitComputedPropertyName(node);
 
       case qt.SyntaxKind.SemicolonClassElement:
         return node;
@@ -665,10 +665,10 @@ export function transformClassFields(context: TransformationContext) {
    * @param hint The context for the emitter.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (hint === EmitHint.Expression) {
-      return substituteExpression(node as Expression);
+      return substituteExpression(node);
     }
     return node;
   }

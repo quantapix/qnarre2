@@ -20,7 +20,7 @@ export function transformJsx(context: TransformationContext) {
     return visited;
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if (node.transformFlags & TransformFlags.ContainsJsx) {
       return visitorWorker(node);
     } else {
@@ -28,19 +28,19 @@ export function transformJsx(context: TransformationContext) {
     }
   }
 
-  function visitorWorker(node: Node): VisitResult<Node> {
+  function visitorWorker(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.JsxElement:
-        return visitJsxElement(<JsxElement>node, /*isChild*/ false);
+        return visitJsxElement(node, /*isChild*/ false);
 
       case qt.SyntaxKind.JsxSelfClosingElement:
-        return visitJsxSelfClosingElement(<JsxSelfClosingElement>node, /*isChild*/ false);
+        return visitJsxSelfClosingElement(node, /*isChild*/ false);
 
       case qt.SyntaxKind.JsxFragment:
-        return visitJsxFragment(<JsxFragment>node, /*isChild*/ false);
+        return visitJsxFragment(node, /*isChild*/ false);
 
       case qt.SyntaxKind.JsxExpression:
-        return visitJsxExpression(<JsxExpression>node);
+        return visitJsxExpression(node);
 
       default:
         return visitEachChild(node, visitor, context);
@@ -81,7 +81,7 @@ export function transformJsx(context: TransformationContext) {
     return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, /*location*/ node);
   }
 
-  function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
+  function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: qt.TextRange) {
     const tagName = getTagName(node);
     let objectProperties: Expression | undefined;
     const attrs = node.attributes.properties;
@@ -124,7 +124,7 @@ export function transformJsx(context: TransformationContext) {
     return element;
   }
 
-  function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
+  function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: qt.TextRange) {
     const element = createExpressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOptions.reactNamespace!, // TODO: GH#18217

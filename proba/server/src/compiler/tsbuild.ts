@@ -27,18 +27,7 @@ export enum UpToDateStatusType {
   ContainerOnly,
 }
 
-export type UpToDateStatus =
-  | Status.Unbuildable
-  | Status.UpToDate
-  | Status.OutOfDateWithPrepend
-  | Status.OutputMissing
-  | Status.OutOfDateWithSelf
-  | Status.OutOfDateWithUpstream
-  | Status.UpstreamOutOfDate
-  | Status.UpstreamBlocked
-  | Status.ComputingUpstream
-  | Status.TsVersionOutOfDate
-  | Status.ContainerOnly;
+export type UpToDateStatus = Status.Unbuildable | Status.UpToDate | Status.OutOfDateWithPrepend | Status.OutputMissing | Status.OutOfDateWithSelf | Status.OutOfDateWithUpstream | Status.UpstreamOutOfDate | Status.UpstreamBlocked | Status.ComputingUpstream | Status.TsVersionOutOfDate | Status.ContainerOnly;
 
 export namespace Status {
   /**

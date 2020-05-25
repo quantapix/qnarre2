@@ -7,7 +7,7 @@ export function transformES5(context: TransformationContext) {
   const compilerOptions = context.getCompilerOptions();
 
   // enable emit notification only if using --jsx preserve or react-native
-  let previousOnEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
+  let previousOnEmitNode: (hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void) => void;
   let noSubstitution: boolean[];
   if (compilerOptions.jsx === JsxEmit.Preserve || compilerOptions.jsx === JsxEmit.ReactNative) {
     previousOnEmitNode = context.onEmitNode;
@@ -40,7 +40,7 @@ export function transformES5(context: TransformationContext) {
    * @param node The node to emit.
    * @param emitCallback A callback used to emit the node.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (emitContext: EmitHint, node: Node) => void) {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (emitContext: EmitHint, node: qt.Node) => void) {
     switch (node.kind) {
       case qt.SyntaxKind.JsxOpeningElement:
       case qt.SyntaxKind.JsxClosingElement:
@@ -59,7 +59,7 @@ export function transformES5(context: TransformationContext) {
    * @param hint A hint as to the intended usage of the node.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     if (node.id && noSubstitution && noSubstitution[node.id]) {
       return previousOnSubstituteNode(hint, node);
     }

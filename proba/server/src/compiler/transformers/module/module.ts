@@ -392,34 +392,34 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function sourceElementVisitor(node: Node): VisitResult<Node> {
+  function sourceElementVisitor(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.ImportDeclaration:
-        return visitImportDeclaration(<ImportDeclaration>node);
+        return visitImportDeclaration(node);
 
       case qt.SyntaxKind.ImportEqualsDeclaration:
-        return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
+        return visitImportEqualsDeclaration(node);
 
       case qt.SyntaxKind.ExportDeclaration:
-        return visitExportDeclaration(<ExportDeclaration>node);
+        return visitExportDeclaration(node);
 
       case qt.SyntaxKind.ExportAssignment:
-        return visitExportAssignment(<ExportAssignment>node);
+        return visitExportAssignment(node);
 
       case qt.SyntaxKind.VariableStatement:
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(node);
 
       case qt.SyntaxKind.FunctionDeclaration:
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(node);
 
       case qt.SyntaxKind.ClassDeclaration:
-        return visitClassDeclaration(<ClassDeclaration>node);
+        return visitClassDeclaration(node);
 
       case qt.SyntaxKind.MergeDeclarationMarker:
-        return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
+        return visitMergeDeclarationMarker(node);
 
       case qt.SyntaxKind.EndOfDeclarationMarker:
-        return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
+        return visitEndOfDeclarationMarker(node);
 
       default:
         return visitEachChild(node, moduleExpressionElementVisitor, context);
@@ -875,7 +875,7 @@ export function transformModule(context: TransformationContext) {
     return singleOrMany(statements);
   }
 
-  function createAllExportExpressions(name: Identifier, value: Expression, location?: TextRange) {
+  function createAllExportExpressions(name: Identifier, value: Expression, location?: qt.TextRange) {
     const exportedNames = getExports(name);
     if (exportedNames) {
       // For each additional export of the declaration, apply an export assignment.
@@ -931,7 +931,7 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function hasAssociatedEndOfDeclarationMarker(node: Node) {
+  function hasAssociatedEndOfDeclarationMarker(node: qt.Node) {
     return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
 
@@ -1119,7 +1119,7 @@ export function transformModule(context: TransformationContext) {
    * @param location The location to use for source maps and comments for the export.
    * @param allowComments Whether to allow comments on the export.
    */
-  function appendExportStatement(statements: Statement[] | undefined, exportName: Identifier, expression: Expression, location?: TextRange, allowComments?: boolean, liveBinding?: boolean): Statement[] | undefined {
+  function appendExportStatement(statements: Statement[] | undefined, exportName: Identifier, expression: Expression, location?: qt.TextRange, allowComments?: boolean, liveBinding?: boolean): Statement[] | undefined {
     statements = append(statements, createExportStatement(exportName, expression, location, allowComments, liveBinding));
     return statements;
   }
@@ -1143,7 +1143,7 @@ export function transformModule(context: TransformationContext) {
    * @param location The location to use for source maps and comments for the export.
    * @param allowComments An optional value indicating whether to emit comments for the statement.
    */
-  function createExportStatement(name: Identifier, value: Expression, location?: TextRange, allowComments?: boolean, liveBinding?: boolean) {
+  function createExportStatement(name: Identifier, value: Expression, location?: qt.TextRange, allowComments?: boolean, liveBinding?: boolean) {
     const statement = setTextRange(createExpressionStatement(createExportExpression(name, value, /* location */ undefined, liveBinding)), location);
     startOnNewLine(statement);
     if (!allowComments) {
@@ -1160,7 +1160,7 @@ export function transformModule(context: TransformationContext) {
    * @param value The exported value.
    * @param location The location to use for source maps and comments for the export.
    */
-  function createExportExpression(name: Identifier, value: Expression, location?: TextRange, liveBinding?: boolean) {
+  function createExportExpression(name: Identifier, value: Expression, location?: qt.TextRange, liveBinding?: boolean) {
     return setTextRange(
       liveBinding && languageVersion !== ScriptTarget.ES3
         ? createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
@@ -1182,7 +1182,7 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function modifierVisitor(node: Node): VisitResult<Node> {
+  function modifierVisitor(node: qt.Node): VisitResult<Node> {
     // Elide module-specific modifiers.
     switch (node.kind) {
       case qt.SyntaxKind.ExportKeyword:
@@ -1204,9 +1204,9 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to emit.
    * @param emit A callback used to emit the node in the printer.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void): void {
     if (node.kind === qt.SyntaxKind.SourceFile) {
-      currentSourceFile = <SourceFile>node;
+      currentSourceFile = node;
       currentModuleInfo = moduleInfoMap[getOriginalNodeId(currentSourceFile)];
       noSubstitution = [];
 
@@ -1230,14 +1230,14 @@ export function transformModule(context: TransformationContext) {
    * @param hint A hint as to the intended usage of the node.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (node.id && noSubstitution[node.id]) {
       return node;
     }
 
     if (hint === EmitHint.Expression) {
-      return substituteExpression(<Expression>node);
+      return substituteExpression(node);
     } else if (isShorthandPropertyAssignment(node)) {
       return substituteShorthandPropertyAssignment(node);
     }

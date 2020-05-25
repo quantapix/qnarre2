@@ -9,13 +9,13 @@ export function transformES2019(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     if ((node.transformFlags & TransformFlags.ContainsES2019) === 0) {
       return node;
     }
     switch (node.kind) {
       case qt.SyntaxKind.CatchClause:
-        return visitCatchClause(node as CatchClause);
+        return visitCatchClause(node);
       default:
         return visitEachChild(node, visitor, context);
     }

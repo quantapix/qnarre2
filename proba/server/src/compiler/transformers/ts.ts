@@ -122,7 +122,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function saveStateAndInvoke<T>(node: Node, f: (node: Node) => T): T {
+  function saveStateAndInvoke<T>(node: qt.Node, f: (node: qt.Node) => T): T {
     // Save state
     const savedCurrentScope = currentLexicalScope;
     const savedCurrentNameScope = currentNameScope;
@@ -150,7 +150,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function onBeforeVisitNode(node: Node) {
+  function onBeforeVisitNode(node: qt.Node) {
     switch (node.kind) {
       case qt.SyntaxKind.SourceFile:
       case qt.SyntaxKind.CaseBlock:
@@ -190,7 +190,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitor(node: Node): VisitResult<Node> {
+  function visitor(node: qt.Node): VisitResult<Node> {
     return saveStateAndInvoke(node, visitorWorker);
   }
 
@@ -199,7 +199,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitorWorker(node: Node): VisitResult<Node> {
+  function visitorWorker(node: qt.Node): VisitResult<Node> {
     if (node.transformFlags & TransformFlags.ContainsTypeScript) {
       return visitTypeScript(node);
     }
@@ -211,7 +211,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function sourceElementVisitor(node: Node): VisitResult<Node> {
+  function sourceElementVisitor(node: qt.Node): VisitResult<Node> {
     return saveStateAndInvoke(node, sourceElementVisitorWorker);
   }
 
@@ -220,7 +220,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function sourceElementVisitorWorker(node: Node): VisitResult<Node> {
+  function sourceElementVisitorWorker(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.ImportDeclaration:
       case qt.SyntaxKind.ImportEqualsDeclaration:
@@ -265,7 +265,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function namespaceElementVisitor(node: Node): VisitResult<Node> {
+  function namespaceElementVisitor(node: qt.Node): VisitResult<Node> {
     return saveStateAndInvoke(node, namespaceElementVisitorWorker);
   }
 
@@ -274,8 +274,8 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function namespaceElementVisitorWorker(node: Node): VisitResult<Node> {
-    if (node.kind === qt.SyntaxKind.ExportDeclaration || node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ImportClause || (node.kind === qt.SyntaxKind.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind === qt.SyntaxKind.ExternalModuleReference)) {
+  function namespaceElementVisitorWorker(node: qt.Node): VisitResult<Node> {
+    if (node.kind === qt.SyntaxKind.ExportDeclaration || node.kind === qt.SyntaxKind.ImportDeclaration || node.kind === qt.SyntaxKind.ImportClause || (node.kind === qt.SyntaxKind.ImportEqualsDeclaration && node.moduleReference.kind === qt.SyntaxKind.ExternalModuleReference)) {
       // do not emit ES6 imports and exports since they are illegal inside a namespace
       return undefined;
     } else if (node.transformFlags & TransformFlags.ContainsTypeScript || hasSyntacticModifier(node, ModifierFlags.Export)) {
@@ -290,7 +290,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function classElementVisitor(node: Node): VisitResult<Node> {
+  function classElementVisitor(node: qt.Node): VisitResult<Node> {
     return saveStateAndInvoke(node, classElementVisitorWorker);
   }
 
@@ -299,15 +299,15 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function classElementVisitorWorker(node: Node): VisitResult<Node> {
+  function classElementVisitorWorker(node: qt.Node): VisitResult<Node> {
     switch (node.kind) {
       case qt.SyntaxKind.Constructor:
-        return visitConstructor(node as ConstructorDeclaration);
+        return visitConstructor(node);
 
       case qt.SyntaxKind.PropertyDeclaration:
         // Property declarations are not TypeScript syntax, but they must be visited
         // for the decorator transformation.
-        return visitPropertyDeclaration(node as PropertyDeclaration);
+        return visitPropertyDeclaration(node);
       case qt.SyntaxKind.IndexSignature:
       case qt.SyntaxKind.GetAccessor:
       case qt.SyntaxKind.SetAccessor:
@@ -323,7 +323,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
 
-  function modifierVisitor(node: Node): VisitResult<Node> {
+  function modifierVisitor(node: qt.Node): VisitResult<Node> {
     if (modifierToFlag(node.kind) & ModifierFlags.TypeScriptModifier) {
       return undefined;
     } else if (currentNamespace && node.kind === qt.SyntaxKind.ExportKeyword) {
@@ -338,7 +338,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitTypeScript(node: Node): VisitResult<Node> {
+  function visitTypeScript(node: qt.Node): VisitResult<Node> {
     if (isStatement(node) && hasSyntacticModifier(node, ModifierFlags.Ambient)) {
       // TypeScript ambient declarations are elided, but some comments may be preserved.
       // See the implementation of `getLeadingComments` in comments.ts for more details.
@@ -405,14 +405,14 @@ export function transformTypeScript(context: TransformationContext) {
 
       case qt.SyntaxKind.PropertyDeclaration:
         // TypeScript property declarations are elided. However their names are still visited, and can potentially be retained if they could have sideeffects
-        return visitPropertyDeclaration(node as PropertyDeclaration);
+        return visitPropertyDeclaration(node);
 
       case qt.SyntaxKind.NamespaceExportDeclaration:
         // TypeScript namespace export declarations are elided.
         return undefined;
 
       case qt.SyntaxKind.Constructor:
-        return visitConstructor(<ConstructorDeclaration>node);
+        return visitConstructor(node);
 
       case qt.SyntaxKind.InterfaceDeclaration:
         // TypeScript interfaces are elided, but some comments may be preserved.
@@ -428,7 +428,7 @@ export function transformTypeScript(context: TransformationContext) {
         // - parameter property assignments in the constructor
         // - index signatures
         // - method overload signatures
-        return visitClassDeclaration(<ClassDeclaration>node);
+        return visitClassDeclaration(node);
 
       case qt.SyntaxKind.ClassExpression:
         // This may be a class expression with TypeScript syntax extensions.
@@ -439,43 +439,43 @@ export function transformTypeScript(context: TransformationContext) {
         // - parameter property assignments in the constructor
         // - index signatures
         // - method overload signatures
-        return visitClassExpression(<ClassExpression>node);
+        return visitClassExpression(node);
 
       case qt.SyntaxKind.HeritageClause:
         // This may be a heritage clause with TypeScript syntax extensions.
         //
         // TypeScript heritage clause extensions include:
         // - `implements` clause
-        return visitHeritageClause(<HeritageClause>node);
+        return visitHeritageClause(node);
 
       case qt.SyntaxKind.ExpressionWithTypeArguments:
         // TypeScript supports type arguments on an expression in an `extends` heritage clause.
-        return visitExpressionWithTypeArguments(<ExpressionWithTypeArguments>node);
+        return visitExpressionWithTypeArguments(node);
 
       case qt.SyntaxKind.MethodDeclaration:
         // TypeScript method declarations may have decorators, modifiers
         // or type annotations.
-        return visitMethodDeclaration(<MethodDeclaration>node);
+        return visitMethodDeclaration(node);
 
       case qt.SyntaxKind.GetAccessor:
         // Get Accessors can have TypeScript modifiers, decorators, and type annotations.
-        return visitGetAccessor(<GetAccessorDeclaration>node);
+        return visitGetAccessor(node);
 
       case qt.SyntaxKind.SetAccessor:
         // Set Accessors can have TypeScript modifiers and type annotations.
-        return visitSetAccessor(<SetAccessorDeclaration>node);
+        return visitSetAccessor(node);
 
       case qt.SyntaxKind.FunctionDeclaration:
         // Typescript function declarations can have modifiers, decorators, and type annotations.
-        return visitFunctionDeclaration(<FunctionDeclaration>node);
+        return visitFunctionDeclaration(node);
 
       case qt.SyntaxKind.FunctionExpression:
         // TypeScript function expressions can have modifiers and type annotations.
-        return visitFunctionExpression(<FunctionExpression>node);
+        return visitFunctionExpression(node);
 
       case qt.SyntaxKind.ArrowFunction:
         // TypeScript arrow functions can have modifiers and type annotations.
-        return visitArrowFunction(<ArrowFunction>node);
+        return visitArrowFunction(node);
 
       case qt.SyntaxKind.Parameter:
         // This may be a parameter declaration with TypeScript syntax extensions.
@@ -486,55 +486,55 @@ export function transformTypeScript(context: TransformationContext) {
         // - the question mark (?) token for optional parameters
         // - type annotations
         // - this parameters
-        return visitParameter(<ParameterDeclaration>node);
+        return visitParameter(node);
 
       case qt.SyntaxKind.ParenthesizedExpression:
         // ParenthesizedExpressions are TypeScript if their expression is a
         // TypeAssertion or AsExpression
-        return visitParenthesizedExpression(<ParenthesizedExpression>node);
+        return visitParenthesizedExpression(node);
 
       case qt.SyntaxKind.TypeAssertionExpression:
       case qt.SyntaxKind.AsExpression:
         // TypeScript type assertions are removed, but their subtrees are preserved.
-        return visitAssertionExpression(<AssertionExpression>node);
+        return visitAssertionExpression(node);
 
       case qt.SyntaxKind.CallExpression:
-        return visitCallExpression(<CallExpression>node);
+        return visitCallExpression(node);
 
       case qt.SyntaxKind.NewExpression:
-        return visitNewExpression(<NewExpression>node);
+        return visitNewExpression(node);
 
       case qt.SyntaxKind.TaggedTemplateExpression:
-        return visitTaggedTemplateExpression(<TaggedTemplateExpression>node);
+        return visitTaggedTemplateExpression(node);
 
       case qt.SyntaxKind.NonNullExpression:
         // TypeScript non-null expressions are removed, but their subtrees are preserved.
-        return visitNonNullExpression(<NonNullExpression>node);
+        return visitNonNullExpression(node);
 
       case qt.SyntaxKind.EnumDeclaration:
         // TypeScript enum declarations do not exist in ES6 and must be rewritten.
-        return visitEnumDeclaration(<EnumDeclaration>node);
+        return visitEnumDeclaration(node);
 
       case qt.SyntaxKind.VariableStatement:
         // TypeScript namespace exports for variable statements must be transformed.
-        return visitVariableStatement(<VariableStatement>node);
+        return visitVariableStatement(node);
 
       case qt.SyntaxKind.VariableDeclaration:
-        return visitVariableDeclaration(<VariableDeclaration>node);
+        return visitVariableDeclaration(node);
 
       case qt.SyntaxKind.ModuleDeclaration:
         // TypeScript namespace declarations must be transformed.
-        return visitModuleDeclaration(<ModuleDeclaration>node);
+        return visitModuleDeclaration(node);
 
       case qt.SyntaxKind.ImportEqualsDeclaration:
         // TypeScript namespace or external module import.
-        return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
+        return visitImportEqualsDeclaration(node);
 
       case qt.SyntaxKind.JsxSelfClosingElement:
-        return visitJsxSelfClosingElement(<JsxSelfClosingElement>node);
+        return visitJsxSelfClosingElement(node);
 
       case qt.SyntaxKind.JsxOpeningElement:
-        return visitJsxJsxOpeningElement(<JsxOpeningElement>node);
+        return visitJsxJsxOpeningElement(node);
 
       default:
         // node contains some other TypeScript syntax
@@ -585,7 +585,7 @@ export function transformTypeScript(context: TransformationContext) {
     return facts;
   }
 
-  function hasTypeScriptClassSyntax(node: Node) {
+  function hasTypeScriptClassSyntax(node: qt.Node) {
     return !!(node.transformFlags & TransformFlags.ContainsTypeScriptClassSyntax);
   }
 
@@ -1318,14 +1318,14 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node that should have its type serialized.
    */
-  function serializeTypeOfNode(node: Node): SerializedTypeNode {
+  function serializeTypeOfNode(node: qt.Node): SerializedTypeNode {
     switch (node.kind) {
       case qt.SyntaxKind.PropertyDeclaration:
       case qt.SyntaxKind.Parameter:
         return serializeTypeNode((<PropertyDeclaration | ParameterDeclaration | GetAccessorDeclaration>node).type);
       case qt.SyntaxKind.SetAccessor:
       case qt.SyntaxKind.GetAccessor:
-        return serializeTypeNode(getAccessorTypeNode(node as AccessorDeclaration));
+        return serializeTypeNode(getAccessorTypeNode(node));
       case qt.SyntaxKind.ClassDeclaration:
       case qt.SyntaxKind.ClassExpression:
       case qt.SyntaxKind.MethodDeclaration:
@@ -1340,8 +1340,8 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node that should have its parameter types serialized.
    */
-  function serializeParameterTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
-    const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike(node) && nodeIsPresent((node as FunctionLikeDeclaration).body) ? node : undefined;
+  function serializeParameterTypesOfNode(node: qt.Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
+    const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike(node) && nodeIsPresent(node.body) ? node : undefined;
 
     const expressions: SerializedTypeNode[] = [];
     if (valueDeclaration) {
@@ -1378,7 +1378,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node that should have its return type serialized.
    */
-  function serializeReturnTypeOfNode(node: Node): SerializedTypeNode {
+  function serializeReturnTypeOfNode(node: qt.Node): SerializedTypeNode {
     if (isFunctionLike(node) && node.type) {
       return serializeTypeNode(node.type);
     } else if (isAsyncFunction(node)) {
@@ -2180,7 +2180,7 @@ export function transformTypeScript(context: TransformationContext) {
    * Determines whether an exported declaration will have a qualified export name (e.g. `f.x`
    * or `exports.x`).
    */
-  function hasNamespaceQualifiedExportName(node: Node) {
+  function hasNamespaceQualifiedExportName(node: qt.Node) {
     return isExportOfNamespace(node) || (isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System);
   }
 
@@ -2360,11 +2360,11 @@ export function transformTypeScript(context: TransformationContext) {
     const statements: Statement[] = [];
     startLexicalEnvironment();
 
-    let statementsLocation: TextRange | undefined;
-    let blockLocation: TextRange | undefined;
+    let statementsLocation: qt.TextRange | undefined;
+    let blockLocation: qt.TextRange | undefined;
     if (node.body) {
       if (node.body.kind === qt.SyntaxKind.ModuleBlock) {
-        saveStateAndInvoke(node.body, (body) => addRange(statements, visitNodes((<ModuleBlock>body).statements, namespaceElementVisitor, isStatement)));
+        saveStateAndInvoke(node.body, (body) => addRange(statements, visitNodes(body.statements, namespaceElementVisitor, isStatement)));
         statementsLocation = node.body.statements;
         blockLocation = node.body;
       } else {
@@ -2604,7 +2604,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function isExportOfNamespace(node: Node) {
+  function isExportOfNamespace(node: qt.Node) {
     return currentNamespace !== undefined && hasSyntacticModifier(node, ModifierFlags.Export);
   }
 
@@ -2613,7 +2613,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function isExternalModuleExport(node: Node) {
+  function isExternalModuleExport(node: qt.Node) {
     return currentNamespace === undefined && hasSyntacticModifier(node, ModifierFlags.Export);
   }
 
@@ -2622,7 +2622,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function isNamedExternalModuleExport(node: Node) {
+  function isNamedExternalModuleExport(node: qt.Node) {
     return isExternalModuleExport(node) && !hasSyntacticModifier(node, ModifierFlags.Default);
   }
 
@@ -2631,7 +2631,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The node to test.
    */
-  function isDefaultExternalModuleExport(node: Node) {
+  function isDefaultExternalModuleExport(node: qt.Node) {
     return isExternalModuleExport(node) && hasSyntacticModifier(node, ModifierFlags.Default);
   }
 
@@ -2651,11 +2651,11 @@ export function transformTypeScript(context: TransformationContext) {
     statements.push(statement);
   }
 
-  function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
+  function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: qt.TextRange) {
     return setTextRange(createExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, /*allowComments*/ false, /*allowSourceMaps*/ true), exportValue)), location);
   }
 
-  function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: TextRange) {
+  function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: qt.TextRange) {
     return setTextRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(exportName), exportValue), location);
   }
 
@@ -2737,11 +2737,11 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
 
-  function isTransformedModuleDeclaration(node: Node): boolean {
+  function isTransformedModuleDeclaration(node: qt.Node): boolean {
     return getOriginalNode(node).kind === qt.SyntaxKind.ModuleDeclaration;
   }
 
-  function isTransformedEnumDeclaration(node: Node): boolean {
+  function isTransformedEnumDeclaration(node: qt.Node): boolean {
     return getOriginalNode(node).kind === qt.SyntaxKind.EnumDeclaration;
   }
 
@@ -2752,7 +2752,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param node The node to emit.
    * @param emit A callback used to emit the node in the printer.
    */
-  function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
+  function onEmitNode(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void): void {
     const savedApplicableSubstitutions = applicableSubstitutions;
     const savedCurrentSourceFile = currentSourceFile;
 
@@ -2780,10 +2780,10 @@ export function transformTypeScript(context: TransformationContext) {
    * @param hint A hint as to the intended usage of the node.
    * @param node The node to substitute.
    */
-  function onSubstituteNode(hint: EmitHint, node: Node) {
+  function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
     if (hint === EmitHint.Expression) {
-      return substituteExpression(<Expression>node);
+      return substituteExpression(node);
     } else if (isShorthandPropertyAssignment(node)) {
       return substituteShorthandPropertyAssignment(node);
     }
@@ -2894,7 +2894,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node;
   }
 
-  function tryGetConstEnumValue(node: Node): string | number | undefined {
+  function tryGetConstEnumValue(node: qt.Node): string | number | undefined {
     if (compilerOptions.isolatedModules) {
       return undefined;
     }
@@ -2903,7 +2903,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
 }
 
-function createDecorateHelper(context: TransformationContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: TextRange) {
+function createDecorateHelper(context: TransformationContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: qt.TextRange) {
   const argumentsArray: Expression[] = [];
   argumentsArray.push(createArrayLiteral(decoratorExpressions, /*multiLine*/ true));
   argumentsArray.push(target);
@@ -2948,7 +2948,7 @@ export const metadataHelper: UnscopedEmitHelper = {
             };`,
 };
 
-function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: TextRange) {
+function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: qt.TextRange) {
   context.requestEmitHelper(paramHelper);
   return setTextRange(createCall(getUnscopedHelperName('__param'), /*typeArguments*/ undefined, [createLiteral(parameterOffset), expression]), location);
 }

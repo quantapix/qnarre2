@@ -186,7 +186,7 @@ export namespace BuilderState {
 
     function addReferencedFile(referencedPath: Path) {
       if (!referencedFiles) {
-        referencedFiles = createMap<true>();
+        referencedFiles = qc.createMap<true>();
       }
       referencedFiles.set(referencedPath, true);
     }
@@ -203,10 +203,10 @@ export namespace BuilderState {
    * Creates the state of file references and signature for the new program from oldState if it is safe
    */
   export function create(newProgram: Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
-    const fileInfos = createMap<FileInfo>();
-    const referencedMap = newProgram.getCompilerOptions().module !== ModuleKind.None ? createMap<ReferencedSet>() : undefined;
-    const exportedModulesMap = referencedMap ? createMap<ReferencedSet>() : undefined;
-    const hasCalledUpdateShapeSignature = createMap<true>();
+    const fileInfos = qc.createMap<FileInfo>();
+    const referencedMap = newProgram.getCompilerOptions().module !== ModuleKind.None ? qc.createMap<ReferencedSet>() : undefined;
+    const exportedModulesMap = referencedMap ? qc.createMap<ReferencedSet>() : undefined;
+    const hasCalledUpdateShapeSignature = qc.createMap<true>();
     const useOldState = canReuseOldState(referencedMap, oldState);
 
     // Create the reference map, and set the file infos
@@ -249,7 +249,7 @@ export namespace BuilderState {
    * Creates a clone of the state
    */
   export function clone(state: Readonly<BuilderState>): BuilderState {
-    const fileInfos = createMap<FileInfo>();
+    const fileInfos = qc.createMap<FileInfo>();
     state.fileInfos.forEach((value, key) => {
       fileInfos.set(key, { ...value });
     });
@@ -359,7 +359,7 @@ export namespace BuilderState {
     function addExportedModule(exportedModulePath: Path | undefined) {
       if (exportedModulePath) {
         if (!exportedModules) {
-          exportedModules = createMap<true>();
+          exportedModules = qc.createMap<true>();
         }
         exportedModules.set(exportedModulePath, true);
       }
@@ -399,7 +399,7 @@ export namespace BuilderState {
     }
 
     // Get the references, traversing deep from the referenceMap
-    const seenMap = createMap<true>();
+    const seenMap = qc.createMap<true>();
     const queue = [sourceFile.resolvedPath];
     while (queue.length) {
       const path = queue.pop()!;
@@ -526,7 +526,7 @@ export namespace BuilderState {
     // Now we need to if each file in the referencedBy list has a shape change as well.
     // Because if so, its own referencedBy files need to be saved as well to make the
     // emitting result consistent with files on disk.
-    const seenFileNamesMap = createMap<SourceFile>();
+    const seenFileNamesMap = qc.createMap<SourceFile>();
 
     // Start with the paths this file was referenced by
     seenFileNamesMap.set(sourceFileWithUpdatedShape.resolvedPath, sourceFileWithUpdatedShape);

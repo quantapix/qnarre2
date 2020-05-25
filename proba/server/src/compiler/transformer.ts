@@ -122,11 +122,11 @@ function wrapDeclarationTransformerFactory(transformer: TransformerFactory<Bundl
   return wrapCustomTransformerFactory(transformer, identity);
 }
 
-export function noEmitSubstitution(_hint: EmitHint, node: Node) {
+export function noEmitSubstitution(_hint: EmitHint, node: qt.Node) {
   return node;
 }
 
-export function noEmitNotification(hint: EmitHint, node: Node, callback: (hint: EmitHint, node: Node) => void) {
+export function noEmitNotification(hint: EmitHint, node: qt.Node, callback: (hint: EmitHint, node: qt.Node) => void) {
   callback(hint, node);
 }
 
@@ -156,7 +156,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
   let onSubstituteNode: TransformationContext['onSubstituteNode'] = noEmitSubstitution;
   let onEmitNode: TransformationContext['onEmitNode'] = noEmitNotification;
   let state = TransformationState.Uninitialized;
-  const diagnostics: DiagnosticWithLocation[] = [];
+  const diagnostics: qt.DiagnosticWithLocation[] = [];
 
   // The transformation context is provided to each transformer as part of transformer
   // initialization.
@@ -252,7 +252,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
   /**
    * Determines whether expression substitutions are enabled for the provided node.
    */
-  function isSubstitutionEnabled(node: Node) {
+  function isSubstitutionEnabled(node: qt.Node) {
     return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
   }
 
@@ -263,7 +263,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * @param node The node to emit.
    * @param emitCallback The callback used to emit the node or its substitute.
    */
-  function substituteNode(hint: EmitHint, node: Node) {
+  function substituteNode(hint: EmitHint, node: qt.Node) {
     Debug.assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
     return (node && isSubstitutionEnabled(node) && onSubstituteNode(hint, node)) || node;
   }
@@ -280,7 +280,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * Determines whether before/after emit notifications should be raised in the pretty
    * printer when it emits a node.
    */
-  function isEmitNotificationEnabled(node: Node) {
+  function isEmitNotificationEnabled(node: qt.Node) {
     return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
   }
 
@@ -291,7 +291,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * @param node The node to emit.
    * @param emitCallback The callback used to emit the node.
    */
-  function emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
+  function emitNodeWithNotification(hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void) {
     Debug.assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
     if (node) {
       // TODO: Remove check and unconditionally use onEmitNode when API is breakingly changed
