@@ -135,7 +135,7 @@ export function reduceEachChild<T>(node: qt.Node | undefined, initial: T, cbNode
       result = reduceNode((<BindingElement>node).initializer, cbNode, result);
       break;
 
-    // Expression
+    // qt.Expression
     case qt.SyntaxKind.ArrayLiteralExpression:
       result = reduceNodes((<ArrayLiteralExpression>node).elements, cbNodes, result);
       break;
@@ -535,12 +535,12 @@ function findSpanEnd<T>(array: readonly T[], test: (value: T) => boolean, start:
 /**
  * Merges generated lexical declarations into a new statement list.
  */
-export function mergeLexicalEnvironment(statements: qt.NodeArray<Statement>, declarations: readonly Statement[] | undefined): qt.NodeArray<Statement>;
+export function mergeLexicalEnvironment(statements: qt.NodeArray<Statement>, declarations: readonly qt.Statement[] | undefined): qt.NodeArray<Statement>;
 /**
  * Appends generated lexical declarations to an array of statements.
  */
-export function mergeLexicalEnvironment(statements: Statement[], declarations: readonly Statement[] | undefined): Statement[];
-export function mergeLexicalEnvironment(statements: Statement[] | qt.NodeArray<Statement>, declarations: readonly Statement[] | undefined) {
+export function mergeLexicalEnvironment(statements: qt.Statement[], declarations: readonly qt.Statement[] | undefined): qt.Statement[];
+export function mergeLexicalEnvironment(statements: qt.Statement[] | qt.NodeArray<Statement>, declarations: readonly qt.Statement[] | undefined) {
   if (!some(declarations)) {
     return statements;
   }
@@ -632,11 +632,11 @@ export function mergeLexicalEnvironment(statements: Statement[] | qt.NodeArray<S
 }
 
 /**
- * Lifts a NodeArray containing only Statement nodes to a block.
+ * Lifts a NodeArray containing only qt.Statement nodes to a block.
  *
  * @param nodes The NodeArray.
  */
-export function liftToBlock(nodes: readonly Node[]): Statement {
+export function liftToBlock(nodes: readonly Node[]): qt.Statement {
   Debug.assert(every(nodes, isStatement), 'Cannot lift nodes to a Block.');
   return singleOrUndefined(nodes) || createBlock(<NodeArray<Statement>>nodes);
 }

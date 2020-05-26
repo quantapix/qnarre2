@@ -78,7 +78,7 @@ export function transformES5(context: TransformationContext) {
    *
    * @param node A PropertyAccessExpression
    */
-  function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
+  function substitutePropertyAccessExpression(node: PropertyAccessExpression): qt.Expression {
     if (isPrivateIdentifier(node.name)) {
       return node;
     }

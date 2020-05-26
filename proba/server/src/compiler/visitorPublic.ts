@@ -196,9 +196,12 @@ function addDefaultValueAssignmentForBindingPattern(parameter: ParameterDeclarat
   return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dotDotDotToken, getGeneratedNameForNode(parameter), parameter.questionToken, parameter.type, /*initializer*/ undefined);
 }
 
-function addDefaultValueAssignmentForInitializer(parameter: ParameterDeclaration, name: Identifier, initializer: Expression, context: TransformationContext) {
+function addDefaultValueAssignmentForInitializer(parameter: ParameterDeclaration, name: Identifier, initializer: qt.Expression, context: TransformationContext) {
   context.addInitializationStatement(
-    createIf(createTypeCheck(getSynthesizedClone(name), 'undefined'), setEmitFlags(setTextRange(createBlock([createExpressionStatement(setEmitFlags(setTextRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | qu.getEmitFlags(initializer) | EmitFlags.NoComments)), parameter), EmitFlags.NoComments))]), parameter), EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments))
+    createIf(
+      createTypeCheck(getSynthesizedClone(name), 'undefined'),
+      setEmitFlags(setTextRange(createBlock([createExpressionStatement(setEmitFlags(setTextRange(createAssignment(setEmitFlags(getMutableClone(name), qt.EmitFlags.NoSourceMap), setEmitFlags(initializer, qt.EmitFlags.NoSourceMap | qu.getEmitFlags(initializer) | qt.EmitFlags.NoComments)), parameter), qt.EmitFlags.NoComments))]), parameter), qt.EmitFlags.SingleLine | qt.EmitFlags.NoTrailingSourceMap | qt.EmitFlags.NoTokenSourceMaps | qt.EmitFlags.NoComments)
+    )
   );
   return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dotDotDotToken, parameter.name, parameter.questionToken, parameter.type, /*initializer*/ undefined);
 }
@@ -424,7 +427,7 @@ export function visitEachChild(node: qt.Node | undefined, visitor: Visitor, cont
     case qt.SyntaxKind.BindingElement:
       return updateBindingElement(<BindingElement>node, visitNode((<BindingElement>node).dotDotDotToken, tokenVisitor, isToken), visitNode((<BindingElement>node).propertyName, visitor, isPropertyName), visitNode((<BindingElement>node).name, visitor, isBindingName), visitNode((<BindingElement>node).initializer, visitor, isExpression));
 
-    // Expression
+    // qt.Expression
     case qt.SyntaxKind.ArrayLiteralExpression:
       return updateArrayLiteral(<ArrayLiteralExpression>node, nodesVisitor((<ArrayLiteralExpression>node).elements, visitor, isExpression));
 

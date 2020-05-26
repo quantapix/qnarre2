@@ -74,7 +74,7 @@ export const libs = libEntries.map((entry) => entry[0]);
  * option as well as for resolving lib reference directives.
  */
 
-export const libMap = createMapFromEntries(libEntries);
+export const libMap = qc.createMapFromEntries(libEntries);
 
 // Watch related options
 
@@ -1112,12 +1112,13 @@ export function convertEnableAutoDiscoveryToEnable(typeAcquisition: TypeAcquisit
   return typeAcquisition;
 }
 
-export function createCompilerDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType): Diagnostic {
-  return createDiagnosticForInvalidCustomType(opt, createCompilerDiagnostic);
+export function qu.createCompilerDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType): Diagnostic {
+  return createDiagnosticForInvalidCustomType(opt, qu.createCompilerDiagnostic);
 }
 
 function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType, createDiagnostic: (message: qt.DiagnosticMessage, arg0: string, arg1: string) => Diagnostic): Diagnostic {
-  const namesOfType = arrayFrom(opt.type.keys())
+  const namesOfType = qc
+    .arrayFrom(opt.type.keys())
     .map((key) => `'${key}'`)
     .join(', ');
   return createDiagnostic(Diagnostics.Argument_for_0_option_must_be_Colon_1, `--${opt.name}`, namesOfType);
@@ -1195,7 +1196,7 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
           if (watchOpt) {
             i = parseOptionValue(args, i, watchOptionsDidYouMeanDiagnostics, watchOpt, watchOptions || (watchOptions = {}), errors);
           } else {
-            errors.push(createUnknownOptionError(inputOptionName, diagnostics, createCompilerDiagnostic, s));
+            errors.push(createUnknownOptionError(inputOptionName, diagnostics, qu.createCompilerDiagnostic, s));
           }
         }
       } else {
@@ -1374,7 +1375,7 @@ export function parseBuildCommand(args: readonly string[]): ParsedBuildCommand {
 }
 
 export function getDiagnosticText(_message: qt.DiagnosticMessage, ..._args: any[]): string {
-  const diagnostic = createCompilerDiagnostic.apply(undefined, arguments);
+  const diagnostic = qu.createCompilerDiagnostic.apply(undefined, arguments);
   return <string>diagnostic.messageText;
 }
 
@@ -1450,9 +1451,9 @@ export function tryReadFile(fileName: string, readFile: (path: string) => string
   try {
     text = readFile(fileName);
   } catch (e) {
-    return createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, e.message);
+    return qu.createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, e.message);
   }
-  return text === undefined ? createCompilerDiagnostic(Diagnostics.Cannot_read_file_0, fileName) : text;
+  return text === undefined ? qu.createCompilerDiagnostic(Diagnostics.Cannot_read_file_0, fileName) : text;
 }
 
 function commandLineOptionsToMap(options: readonly CommandLineOption[]) {
@@ -1581,7 +1582,7 @@ interface JsonConversionNotifier {
    * @param value computed value of the key
    * @param ValueNode node corresponding to value in the source file
    */
-  onSetValidOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: Expression): void;
+  onSetValidOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression): void;
   /**
    * Notify when unknown root key value option is being set
    * @param key option key
@@ -1589,7 +1590,7 @@ interface JsonConversionNotifier {
    * @param value computed value of the key
    * @param ValueNode node corresponding to value in the source file
    */
-  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: Expression): void;
+  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression): void;
 }
 
 /**
@@ -1684,7 +1685,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
     );
   }
 
-  function convertPropertyValueToJson(valueExpression: Expression, option: CommandLineOption | undefined): any {
+  function convertPropertyValueToJson(valueExpression: qt.Expression, option: CommandLineOption | undefined): any {
     switch (valueExpression.kind) {
       case qt.SyntaxKind.TrueKeyword:
         reportInvalidOptionValue(option && option.type !== 'boolean');
@@ -1789,7 +1790,7 @@ export interface TSConfig {
   exclude?: readonly string[];
   files: readonly string[] | undefined;
   include?: readonly string[];
-  references: readonly ProjectReference[] | undefined;
+  references: readonly qt.ProjectReference[] | undefined;
 }
 
 export interface ConvertToTSConfigHost {
@@ -2130,7 +2131,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
 
   options.configFilePath = configFileName && normalizeSlashes(configFileName);
   setConfigFileInOptions(options, sourceFile);
-  let projectReferences: ProjectReference[] | undefined;
+  let projectReferences: qt.ProjectReference[] | undefined;
   const { fileNames, wildcardDirectories, spec } = getFileNames();
   return {
     options,
@@ -2158,14 +2159,14 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
             const fileName = configFileName || 'tsconfig.json';
             const diagnosticMessage = Diagnostics.The_files_list_in_config_file_0_is_empty;
             const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initializer);
-            const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
+            const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : qu.createCompilerDiagnostic(diagnosticMessage, fileName);
             errors.push(error);
           } else {
-            createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
+            qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
           }
         }
       } else {
-        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'files', 'Array');
+        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'files', 'Array');
       }
     }
 
@@ -2174,7 +2175,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
       if (isArray(raw.include)) {
         includeSpecs = <readonly string[]>raw.include;
       } else {
-        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'include', 'Array');
+        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'include', 'Array');
       }
     }
 
@@ -2183,7 +2184,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
       if (isArray(raw.exclude)) {
         excludeSpecs = <readonly string[]>raw.exclude;
       } else {
-        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
+        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
       }
     } else if (raw.compilerOptions) {
       const outDir = raw.compilerOptions.outDir;
@@ -2207,7 +2208,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
       if (isArray(raw.references)) {
         for (const ref of raw.references) {
           if (typeof ref.path !== 'string') {
-            createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
+            qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
           } else {
             (projectReferences || (projectReferences = [])).push({
               path: getNormalizedAbsolutePath(ref.path, basePath),
@@ -2218,14 +2219,14 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
           }
         }
       } else {
-        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'references', 'Array');
+        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'references', 'Array');
       }
     }
 
     return result;
   }
 
-  function createCompilerDiagnosticOnlyIfJson(message: qt.DiagnosticMessage, arg0?: string, arg1?: string) {
+  function qu.createCompilerDiagnosticOnlyIfJson(message: qt.DiagnosticMessage, arg0?: string, arg1?: string) {
     if (!sourceFile) {
       errors.push(createCompilerDiagnostic(message, arg0, arg1));
     }
@@ -2237,7 +2238,7 @@ function isErrorNoInputFiles(error: Diagnostic) {
 }
 
 function getErrorForNoInputFiles({ includeSpecs, excludeSpecs }: ConfigFileSpecs, configFileName: string | undefined) {
-  return createCompilerDiagnostic(Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2, configFileName || 'tsconfig.json', JSON.stringify(includeSpecs || []), JSON.stringify(excludeSpecs || []));
+  return qu.createCompilerDiagnostic(Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2, configFileName || 'tsconfig.json', JSON.stringify(includeSpecs || []), JSON.stringify(excludeSpecs || []));
 }
 
 function shouldReportNoInputFiles(result: ExpandResult, canJsonReportNoInutFiles: boolean, resolutionStack?: Path[]) {
@@ -2334,7 +2335,7 @@ function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string
       errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'extends', 'string'));
     } else {
       const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
-      extendedConfigPath = getExtendsConfigPath(json.extends, host, newBase, errors, createCompilerDiagnostic);
+      extendedConfigPath = getExtendsConfigPath(json.extends, host, newBase, errors, qu.createCompilerDiagnostic);
     }
   }
   return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
@@ -2368,7 +2369,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
 
       currentOption[option.name] = normalizeOptionValue(option, basePath, value);
     },
-    onSetValidOptionKeyValueInRoot(key: string, _keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: Expression) {
+    onSetValidOptionKeyValueInRoot(key: string, _keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression) {
       switch (key) {
         case 'extends':
           const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
@@ -2376,7 +2377,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
           return;
       }
     },
-    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: qt.CompilerOptionsValue, _valueNode: Expression) {
+    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: qt.CompilerOptionsValue, _valueNode: qt.Expression) {
       if (key === 'excludes') {
         errors.push(createDiagnosticForNodeInSourceFile(sourceFile, keyNode, Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
       }
@@ -2537,7 +2538,7 @@ function convertOptionsFromJson(optionsNameMap: Map<CommandLineOption>, jsonOpti
     if (opt) {
       (defaultOptions || (defaultOptions = {}))[opt.name] = convertJsonOption(opt, jsonOptions[id], basePath, errors);
     } else {
-      errors.push(createUnknownOptionError(id, diagnostics, createCompilerDiagnostic));
+      errors.push(createUnknownOptionError(id, diagnostics, qu.createCompilerDiagnostic));
     }
   }
   return defaultOptions;
@@ -2787,11 +2788,11 @@ export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: str
     }
   }
 
-  const literalFiles = arrayFrom(literalFileMap.values());
-  const wildcardFiles = arrayFrom(wildcardFileMap.values());
+  const literalFiles = qc.arrayFrom(literalFileMap.values());
+  const wildcardFiles = qc.arrayFrom(wildcardFileMap.values());
 
   return {
-    fileNames: literalFiles.concat(wildcardFiles, arrayFrom(wildCardJsonFileMap.values())),
+    fileNames: literalFiles.concat(wildcardFiles, qc.arrayFrom(wildCardJsonFileMap.values())),
     wildcardDirectories,
     spec,
   };
@@ -2808,7 +2809,7 @@ function validateSpecs(specs: readonly string[], errors: qpc.Push<Diagnostic>, a
 
   function createDiagnostic(message: qt.DiagnosticMessage, spec: string): Diagnostic {
     const element = getTsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
-    return element ? createDiagnosticForNodeInSourceFile(jsonSourceFile, element, message, spec) : createCompilerDiagnostic(message, spec);
+    return element ? createDiagnosticForNodeInSourceFile(jsonSourceFile, element, message, spec) : qu.createCompilerDiagnostic(message, spec);
   }
 }
 

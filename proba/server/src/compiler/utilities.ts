@@ -2,7 +2,7 @@ import * as qpc from './corePublic';
 import * as qpu from './utilitiesPublic';
 import * as qc from './core';
 import * as qt from './types';
-import {Debug} from './debug';
+import { Debug } from './debug';
 
 export const resolvingEmptyArray: never[] = [] as never[];
 export const emptyMap = qc.createMap<never>() as qpc.ReadonlyMap<never> & qt.ReadonlyPragmaMap;
@@ -36,7 +36,7 @@ export function hasEntries(map: qt.ReadonlyUnderscoreEscapedMap<any> | undefined
 }
 
 export function createSymbolTable(symbols?: readonly qt.Symbol[]): qt.SymbolTable {
-  const result = qc.createMap<Symbol>() as qt.SymbolTable;
+  const result = qc.createMap<symbol>() as qt.SymbolTable;
   if (symbols) {
     for (const symbol of symbols) {
       result.set(symbol.escapedName, symbol);
@@ -226,25 +226,19 @@ export function setResolvedTypeReferenceDirective(sourceFile: qt.SourceFile, typ
   sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
 }
 
-export function projectReferenceIsEqualTo(oldRef: ProjectReference, newRef: ProjectReference) {
+export function projectReferenceIsEqualTo(oldRef: qt.ProjectReference, newRef: qt.ProjectReference) {
   return oldRef.path === newRef.path && !oldRef.prepend === !newRef.prepend && !oldRef.circular === !newRef.circular;
 }
 
 export function moduleResolutionIsEqualTo(oldResolution: qt.ResolvedModuleFull, newResolution: qt.ResolvedModuleFull): boolean {
-  return (
-    oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport &&
-    oldResolution.extension === newResolution.extension &&
-    oldResolution.resolvedFileName === newResolution.resolvedFileName &&
-    oldResolution.originalPath === newResolution.originalPath &&
-    packageIdIsEqual(oldResolution.packageId, newResolution.packageId)
-  );
+  return oldResolution.isExternalLibraryImport === newResolution.isExternalLibraryImport && oldResolution.extension === newResolution.extension && oldResolution.resolvedFileName === newResolution.resolvedFileName && oldResolution.originalPath === newResolution.originalPath && packageIdIsEqual(oldResolution.packageId, newResolution.packageId);
 }
 
-function packageIdIsEqual(a: PackageId | undefined, b: PackageId | undefined): boolean {
+function packageIdIsEqual(a: qt.PackageId | undefined, b: qt.PackageId | undefined): boolean {
   return a === b || (!!a && !!b && a.name === b.name && a.subModuleName === b.subModuleName && a.version === b.version);
 }
 
-export function packageIdToString({ name, subModuleName, version }: PackageId): string {
+export function packageIdToString({ name, subModuleName, version }: qt.PackageId): string {
   const fullName = subModuleName ? `${name}/${subModuleName}` : name;
   return `${fullName}@${version}`;
 }
@@ -253,12 +247,7 @@ export function typeDirectiveIsEqualTo(oldResolution: qt.ResolvedTypeReferenceDi
   return oldResolution.resolvedFileName === newResolution.resolvedFileName && oldResolution.primary === newResolution.primary;
 }
 
-export function hasChangesInResolutions<T>(
-  names: readonly string[],
-  newResolutions: readonly T[],
-  oldResolutions: qpc.ReadonlyMap<T> | undefined,
-  comparer: (oldResolution: T, newResolution: T) => boolean
-): boolean {
+export function hasChangesInResolutions<T>(names: readonly string[], newResolutions: readonly T[], oldResolutions: qpc.ReadonlyMap<T> | undefined, comparer: (oldResolution: T, newResolution: T) => boolean): boolean {
   Debug.assert(names.length === newResolutions.length);
 
   for (let i = 0; i < names.length; i++) {
@@ -388,7 +377,7 @@ export function nodeIsPresent(node: qt.Node | undefined): boolean {
   return !nodeIsMissing(node);
 }
 
-function insertStatementsAfterPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: qt.Node) => boolean): T[] {
+function insertStatementsAfterPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: qt.Node) => boolean): T[] {
   if (from === undefined || from.length === 0) return to;
   let statementIndex = 0;
   // skip all prologue directives to insert at the correct position
@@ -401,7 +390,7 @@ function insertStatementsAfterPrologue<T extends Statement>(to: T[], from: reado
   return to;
 }
 
-function insertStatementAfterPrologue<T extends Statement>(to: T[], statement: T | undefined, isPrologueDirective: (node: qt.Node) => boolean): T[] {
+function insertStatementAfterPrologue<T extends qt.Statement>(to: T[], statement: T | undefined, isPrologueDirective: (node: qt.Node) => boolean): T[] {
   if (statement === undefined) return to;
   let statementIndex = 0;
   // skip all prologue directives to insert at the correct position
@@ -415,28 +404,28 @@ function insertStatementAfterPrologue<T extends Statement>(to: T[], statement: T
 }
 
 function isAnyPrologueDirective(node: qt.Node) {
-  return isPrologueDirective(node) || !!(getEmitFlags(node) & EmitFlags.CustomPrologue);
+  return isPrologueDirective(node) || !!(getEmitFlags(node) & qt.EmitFlags.CustomPrologue);
 }
 
 /**
  * Prepends statements to an array while taking care of prologue directives.
  */
-export function insertStatementsAfterStandardPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
+export function insertStatementsAfterStandardPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined): T[] {
   return insertStatementsAfterPrologue(to, from, isPrologueDirective);
 }
 
-export function insertStatementsAfterCustomPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
+export function insertStatementsAfterCustomPrologue<T extends qt.Statement>(to: T[], from: readonly T[] | undefined): T[] {
   return insertStatementsAfterPrologue(to, from, isAnyPrologueDirective);
 }
 
 /**
  * Prepends statements to an array while taking care of prologue directives.
  */
-export function insertStatementAfterStandardPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
+export function insertStatementAfterStandardPrologue<T extends qt.Statement>(to: T[], statement: T | undefined): T[] {
   return insertStatementAfterPrologue(to, statement, isPrologueDirective);
 }
 
-export function insertStatementAfterCustomPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
+export function insertStatementAfterCustomPrologue<T extends qt.Statement>(to: T[], statement: T | undefined): T[] {
   return insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
 }
 
@@ -450,12 +439,7 @@ export function isRecognizedTripleSlashComment(text: string, commentPos: number,
   // so that we don't end up computing comment string and doing match for all // comments
   if (text.charCodeAt(commentPos + 1) === qt.CharacterCodes.slash && commentPos + 2 < commentEnd && text.charCodeAt(commentPos + 2) === qt.CharacterCodes.slash) {
     const textSubStr = text.substring(commentPos, commentEnd);
-    return textSubStr.match(fullTripleSlashReferencePathRegEx) ||
-      textSubStr.match(fullTripleSlashAMDReferencePathRegEx) ||
-      textSubStr.match(fullTripleSlashReferenceTypeReferenceDirectiveRegEx) ||
-      textSubStr.match(defaultLibReferenceRegEx)
-      ? true
-      : false;
+    return textSubStr.match(fullTripleSlashReferencePathRegEx) || textSubStr.match(fullTripleSlashAMDReferencePathRegEx) || textSubStr.match(fullTripleSlashReferenceTypeReferenceDirectiveRegEx) || textSubStr.match(defaultLibReferenceRegEx) ? true : false;
   }
   return false;
 }
@@ -464,16 +448,17 @@ export function isPinnedComment(text: string, start: number) {
   return text.charCodeAt(start + 1) === qt.CharacterCodes.asterisk && text.charCodeAt(start + 2) === qt.CharacterCodes.exclamation;
 }
 
-export function createCommentDirectivesMap(sourceFile: qt.SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
-  const directivesByLine = createMapFromEntries(commentDirectives.map((commentDirective) => [`${getLineAndCharacterOfPosition(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+export function createCommentDirectivesMap(sourceFile: qt.SourceFile, commentDirectives: qt.CommentDirective[]): qt.CommentDirectivesMap {
+  const directivesByLine = qc.createMapFromEntries(commentDirectives.map((commentDirective) => [`${getLineAndCharacterOfPosition(sourceFile, commentDirective.range.end).line}`, commentDirective]));
 
   const usedLines = qc.createMap<boolean>();
 
   return { getUnusedExpectations, markUsed };
 
   function getUnusedExpectations() {
-    return arrayFrom(directivesByLine.entries())
-      .filter(([line, directive]) => directive.type === CommentDirectiveType.ExpectError && !usedLines.get(line))
+    return qc
+      .arrayFrom(directivesByLine.entries())
+      .filter(([line, directive]) => directive.type === qt.CommentDirectiveType.ExpectError && !usedLines.get(line))
       .map(([_, directive]) => directive);
   }
 
@@ -506,8 +491,8 @@ export function getTokenPosOfNode(node: qt.Node, sourceFile?: qt.SourceFileLike,
   // the syntax list itself considers them as normal trivia. Therefore if we simply skip
   // trivia for the list, we may have skipped the JSDocComment as well. So we should process its
   // first child to determine the actual position of its first token.
-  if (node.kind === qt.SyntaxKind.SyntaxList && (<SyntaxList>node)._children.length > 0) {
-    return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
+  if (node.kind === qt.SyntaxKind.SyntaxList && (<qt.SyntaxList>node)._children.length > 0) {
+    return getTokenPosOfNode((<qt.SyntaxList>node)._children[0], sourceFile, includeJsDoc);
   }
 
   return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
@@ -563,12 +548,12 @@ export function indexOfNode(nodeArray: readonly qt.Node[], node: qt.Node) {
 /**
  * Gets flags that control emit behavior of a node.
  */
-export function getEmitFlags(node: qt.Node): EmitFlags {
+export function getEmitFlags(node: qt.Node): qt.EmitFlags {
   const emitNode = node.emitNode;
   return (emitNode && emitNode.flags) || 0;
 }
 
-export function getLiteralText(node: LiteralLikeNode, sourceFile: qt.SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
+export function getLiteralText(node: qt.LiteralLikeNode, sourceFile: qt.SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
   // If we don't need to downlevel and we can reach the original source text using
   // the node's parent reference, then simply get the text as it was originally written.
   if (!nodeIsSynthesized(node) && node.parent && !((isNumericLiteral(node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || isBigIntLiteral(node))) {
@@ -579,8 +564,8 @@ export function getLiteralText(node: LiteralLikeNode, sourceFile: qt.SourceFile,
   // or a (possibly escaped) quoted form of the original text if it's string-like.
   switch (node.kind) {
     case qt.SyntaxKind.StringLiteral: {
-      const escapeText = jsxAttributeEscape ? escapeJsxAttributeString : neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
-      if ((<StringLiteral>node).singleQuote) {
+      const escapeText = jsxAttributeEscape ? escapeJsxAttributeString : neverAsciiEscape || getEmitFlags(node) & qt.EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
+      if (node.singleQuote) {
         return "'" + escapeText(node.text, qt.CharacterCodes.singleQuote) + "'";
       } else {
         return '"' + escapeText(node.text, qt.CharacterCodes.doubleQuote) + '"';
@@ -592,9 +577,9 @@ export function getLiteralText(node: LiteralLikeNode, sourceFile: qt.SourceFile,
     case qt.SyntaxKind.TemplateTail: {
       // If a NoSubstitutionTemplateLiteral appears to have a substitution in it, the original text
       // had to include a backslash: `not \${a} substitution`.
-      const escapeText = neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
+      const escapeText = neverAsciiEscape || getEmitFlags(node) & qt.EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
 
-      const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, qt.CharacterCodes.backtick));
+      const rawText = node.rawText || escapeTemplateSubstitution(escapeText(node.text, qt.CharacterCodes.backtick));
       switch (node.kind) {
         case qt.SyntaxKind.NoSubstitutionTemplateLiteral:
           return '`' + rawText + '`';
@@ -846,7 +831,7 @@ export function getEnclosingBlockScopeContainer(node: qt.Node): qt.Node {
 // Return display name of an identifier
 // Computed property names will just be emitted as "[<expr>]", where <expr> is the source
 // text of the expression in the computed property.
-export function declarationNameToString(name: qt.DeclarationName | QualifiedName | undefined) {
+export function declarationNameToString(name: qt.DeclarationName | qt.QualifiedName | undefined) {
   return !name || getFullWidth(name) === 0 ? '(Missing)' : getTextOfNode(name);
 }
 
@@ -895,40 +880,17 @@ export function entityNameToString(name: EntityNameOrEntityNameExpression | JsxT
   }
 }
 
-export function createDiagnosticForNode(
-  node: qt.Node,
-  message: qt.DiagnosticMessage,
-  arg0?: string | number,
-  arg1?: string | number,
-  arg2?: string | number,
-  arg3?: string | number
-): qt.DiagnosticWithLocation {
+export function createDiagnosticForNode(node: qt.Node, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qt.DiagnosticWithLocation {
   const sourceFile = getSourceFileOfNode(node);
   return createDiagnosticForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2, arg3);
 }
 
-export function createDiagnosticForNodeArray(
-  sourceFile: qt.SourceFile,
-  nodes: qt.NodeArray<qt.Node>,
-  message: qt.DiagnosticMessage,
-  arg0?: string | number,
-  arg1?: string | number,
-  arg2?: string | number,
-  arg3?: string | number
-): qt.DiagnosticWithLocation {
+export function createDiagnosticForNodeArray(sourceFile: qt.SourceFile, nodes: qt.NodeArray<qt.Node>, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qt.DiagnosticWithLocation {
   const start = skipTrivia(sourceFile.text, nodes.pos);
   return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
 }
 
-export function createDiagnosticForNodeInSourceFile(
-  sourceFile: qt.SourceFile,
-  node: qt.Node,
-  message: qt.DiagnosticMessage,
-  arg0?: string | number,
-  arg1?: string | number,
-  arg2?: string | number,
-  arg3?: string | number
-): qt.DiagnosticWithLocation {
+export function createDiagnosticForNodeInSourceFile(sourceFile: qt.SourceFile, node: qt.Node, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): qt.DiagnosticWithLocation {
   const span = getErrorSpanForNode(sourceFile, node);
   return createFileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2, arg3);
 }
@@ -1049,7 +1011,7 @@ export function isJsonSourceFile(file: qt.SourceFile): file is JsonSourceFile {
   return file.scriptKind === ScriptKind.JSON;
 }
 
-export function isEnumConst(node: EnumDeclaration): boolean {
+export function isEnumConst(node: qt.EnumDeclaration): boolean {
   return !!(getCombinedModifierFlags(node) & qt.ModifierFlags.Const);
 }
 
@@ -1085,11 +1047,11 @@ export function isPrologueDirective(node: qt.Node): node is PrologueDirective {
   return node.kind === qt.SyntaxKind.ExpressionStatement && (<ExpressionStatement>node).expression.kind === qt.SyntaxKind.StringLiteral;
 }
 
-export function isCustomPrologue(node: Statement) {
-  return !!(getEmitFlags(node) & EmitFlags.CustomPrologue);
+export function isCustomPrologue(node: qt.Statement) {
+  return !!(getEmitFlags(node) & qt.EmitFlags.CustomPrologue);
 }
 
-export function isHoistedFunction(node: Statement) {
+export function isHoistedFunction(node: qt.Statement) {
   return isCustomPrologue(node) && isFunctionDeclaration(node);
 }
 
@@ -1097,7 +1059,7 @@ function isHoistedVariable(node: qt.VariableDeclaration) {
   return isIdentifier(node.name) && !node.initializer;
 }
 
-export function isHoistedVariableStatement(node: Statement) {
+export function isHoistedVariableStatement(node: qt.Statement) {
   return isCustomPrologue(node) && isVariableStatement(node) && every(node.declarationList.declarations, isHoistedVariable);
 }
 
@@ -1106,20 +1068,9 @@ export function getLeadingCommentRangesOfNode(node: qt.Node, sourceFileOfNode: q
 }
 
 export function getJSDocCommentRanges(node: qt.Node, text: string) {
-  const commentRanges =
-    node.kind === qt.SyntaxKind.Parameter ||
-    node.kind === qt.SyntaxKind.TypeParameter ||
-    node.kind === qt.SyntaxKind.FunctionExpression ||
-    node.kind === qt.SyntaxKind.ArrowFunction ||
-    node.kind === qt.SyntaxKind.ParenthesizedExpression
-      ? concatenate(getTrailingCommentRanges(text, node.pos), getLeadingCommentRanges(text, node.pos))
-      : getLeadingCommentRanges(text, node.pos);
+  const commentRanges = node.kind === qt.SyntaxKind.Parameter || node.kind === qt.SyntaxKind.TypeParameter || node.kind === qt.SyntaxKind.FunctionExpression || node.kind === qt.SyntaxKind.ArrowFunction || node.kind === qt.SyntaxKind.ParenthesizedExpression ? concatenate(getTrailingCommentRanges(text, node.pos), getLeadingCommentRanges(text, node.pos)) : getLeadingCommentRanges(text, node.pos);
   // True if the comment starts with '/**' but not if it is '/**/'
-  return filter(
-    commentRanges,
-    (comment) =>
-      text.charCodeAt(comment.pos + 1) === qt.CharacterCodes.asterisk && text.charCodeAt(comment.pos + 2) === qt.CharacterCodes.asterisk && text.charCodeAt(comment.pos + 3) !== qt.CharacterCodes.slash
-  );
+  return filter(commentRanges, (comment) => text.charCodeAt(comment.pos + 1) === qt.CharacterCodes.asterisk && text.charCodeAt(comment.pos + 2) === qt.CharacterCodes.asterisk && text.charCodeAt(comment.pos + 3) !== qt.CharacterCodes.slash);
 }
 
 export const fullTripleSlashReferencePathRegEx = /^(\/\/\/\s*<reference\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
@@ -1161,10 +1112,7 @@ export function isPartOfTypeNode(node: qt.Node): boolean {
         node = node.parent;
       }
       // At this point, node is either a qualified name or an identifier
-      Debug.assert(
-        node.kind === qt.SyntaxKind.Identifier || node.kind === qt.SyntaxKind.QualifiedName || node.kind === qt.SyntaxKind.PropertyAccessExpression,
-        "'node' was expected to be a qualified name, identifier or property access in 'isPartOfTypeNode'."
-      );
+      Debug.assert(node.kind === qt.SyntaxKind.Identifier || node.kind === qt.SyntaxKind.QualifiedName || node.kind === qt.SyntaxKind.PropertyAccessExpression, "'node' was expected to be a qualified name, identifier or property access in 'isPartOfTypeNode'.");
     // falls through
 
     case qt.SyntaxKind.QualifiedName:
@@ -1175,7 +1123,7 @@ export function isPartOfTypeNode(node: qt.Node): boolean {
         return false;
       }
       if (parent.kind === qt.SyntaxKind.ImportType) {
-        return !(parent as ImportTypeNode).isTypeOf;
+        return !(parent as qt.ImportTypeNode).isTypeOf;
       }
       // Do not recursively call isPartOfTypeNode on the parent. In the example:
       //
@@ -1354,12 +1302,8 @@ export function isVariableDeclarationInVariableStatement(node: qt.VariableDeclar
   return node.parent.kind === qt.SyntaxKind.VariableDeclarationList && node.parent.parent.kind === qt.SyntaxKind.VariableStatement;
 }
 
-export function isValidESSymbolDeclaration(node: qt.Node): node is qt.VariableDeclaration | PropertyDeclaration | SignatureDeclaration {
-  return isVariableDeclaration(node)
-    ? isVarConst(node) && isIdentifier(node.name) && isVariableDeclarationInVariableStatement(node)
-    : isPropertyDeclaration(node)
-    ? hasEffectiveReadonlyModifier(node) && hasStaticModifier(node)
-    : isPropertySignature(node) && hasEffectiveReadonlyModifier(node);
+export function isValidESSymbolDeclaration(node: qt.Node): node is qt.VariableDeclaration | PropertyDeclaration | qt.SignatureDeclaration {
+  return isVariableDeclaration(node) ? isVarConst(node) && isIdentifier(node.name) && isVariableDeclarationInVariableStatement(node) : isPropertyDeclaration(node) ? hasEffectiveReadonlyModifier(node) && hasStaticModifier(node) : isPropertySignature(node) && hasEffectiveReadonlyModifier(node);
 }
 
 export function introducesArgumentsExoticObject(node: qt.Node) {
@@ -1376,7 +1320,7 @@ export function introducesArgumentsExoticObject(node: qt.Node) {
   return false;
 }
 
-export function unwrapInnermostStatementOfLabel(node: LabeledStatement, beforeUnwrapLabelCallback?: (node: LabeledStatement) => void): Statement {
+export function unwrapInnermostStatementOfLabel(node: LabeledStatement, beforeUnwrapLabelCallback?: (node: LabeledStatement) => void): qt.Statement {
   while (true) {
     if (beforeUnwrapLabelCallback) {
       beforeUnwrapLabelCallback(node);
@@ -1384,7 +1328,7 @@ export function unwrapInnermostStatementOfLabel(node: LabeledStatement, beforeUn
     if (node.statement.kind !== qt.SyntaxKind.LabeledStatement) {
       return node.statement;
     }
-    node = <LabeledStatement>node.statement;
+    node = node.statement;
   }
 }
 
@@ -1426,9 +1370,7 @@ export function getTsConfigObjectLiteralExpression(tsConfigSourceFile: TsConfigS
 }
 
 export function getTsConfigPropArrayElementValue(tsConfigSourceFile: TsConfigSourceFile | undefined, propKey: string, elementValue: string): StringLiteral | undefined {
-  return firstDefined(getTsConfigPropArray(tsConfigSourceFile, propKey), (property) =>
-    isArrayLiteralExpression(property.initializer) ? find(property.initializer.elements, (element): element is StringLiteral => isStringLiteral(element) && element.text === elementValue) : undefined
-  );
+  return firstDefined(getTsConfigPropArray(tsConfigSourceFile, propKey), (property) => (isArrayLiteralExpression(property.initializer) ? find(property.initializer.elements, (element): element is StringLiteral => isStringLiteral(element) && element.text === elementValue) : undefined));
 }
 
 export function getTsConfigPropArray(tsConfigSourceFile: TsConfigSourceFile | undefined, propKey: string): readonly PropertyAssignment[] {
@@ -1436,11 +1378,11 @@ export function getTsConfigPropArray(tsConfigSourceFile: TsConfigSourceFile | un
   return jsonObjectLiteral ? getPropertyAssignment(jsonObjectLiteral, propKey) : emptyArray;
 }
 
-export function getContainingFunction(node: qt.Node): SignatureDeclaration | undefined {
+export function getContainingFunction(node: qt.Node): qt.SignatureDeclaration | undefined {
   return findAncestor(node.parent, isFunctionLike);
 }
 
-export function getContainingFunctionDeclaration(node: qt.Node): FunctionLikeDeclaration | undefined {
+export function getContainingFunctionDeclaration(node: qt.Node): qt.FunctionLikeDeclaration | undefined {
   return findAncestor(node.parent, isFunctionLikeDeclaration);
 }
 
@@ -1596,10 +1538,7 @@ export function isSuperOrSuperProperty(node: qt.Node): node is SuperExpression |
  */
 export function isSuperProperty(node: qt.Node): node is SuperProperty {
   const kind = node.kind;
-  return (
-    (kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.ElementAccessExpression) &&
-    (<PropertyAccessExpression | ElementAccessExpression>node).expression.kind === qt.SyntaxKind.SuperKeyword
-  );
+  return (kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.ElementAccessExpression) && (<PropertyAccessExpression | qt.ElementAccessExpression>node).expression.kind === qt.SyntaxKind.SuperKeyword;
 }
 
 /**
@@ -1607,19 +1546,16 @@ export function isSuperProperty(node: qt.Node): node is SuperProperty {
  */
 export function isThisProperty(node: qt.Node): boolean {
   const kind = node.kind;
-  return (
-    (kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.ElementAccessExpression) &&
-    (<PropertyAccessExpression | ElementAccessExpression>node).expression.kind === qt.SyntaxKind.ThisKeyword
-  );
+  return (kind === qt.SyntaxKind.PropertyAccessExpression || kind === qt.SyntaxKind.ElementAccessExpression) && (<PropertyAccessExpression | qt.ElementAccessExpression>node).expression.kind === qt.SyntaxKind.ThisKeyword;
 }
 
 export function getEntityNameFromTypeNode(node: TypeNode): EntityNameOrEntityNameExpression | undefined {
   switch (node.kind) {
     case qt.SyntaxKind.TypeReference:
-      return (<TypeReferenceNode>node).typeName;
+      return node.typeName;
 
     case qt.SyntaxKind.ExpressionWithTypeArguments:
-      return isEntityNameExpression((<ExpressionWithTypeArguments>node).expression) ? <EntityNameExpression>(<ExpressionWithTypeArguments>node).expression : undefined;
+      return isEntityNameExpression(node.expression) ? node.expression : undefined;
 
     case qt.SyntaxKind.Identifier:
     case qt.SyntaxKind.QualifiedName:
@@ -1629,7 +1565,7 @@ export function getEntityNameFromTypeNode(node: TypeNode): EntityNameOrEntityNam
   return undefined;
 }
 
-export function getInvokedExpression(node: CallLikeExpression): Expression {
+export function getInvokedExpression(node: CallLikeExpression): qt.Expression {
   switch (node.kind) {
     case qt.SyntaxKind.TaggedTemplateExpression:
       return node.tag;
@@ -1666,11 +1602,7 @@ export function nodeCanBeDecorated(node: qt.Node, parent?: qt.Node, grandparent?
 
     case qt.SyntaxKind.Parameter:
       // if the parameter's parent has a body and its grandparent is a class declaration, this is a valid target;
-      return (
-        (<FunctionLikeDeclaration>parent).body !== undefined &&
-        (parent!.kind === qt.SyntaxKind.Constructor || parent!.kind === qt.SyntaxKind.MethodDeclaration || parent!.kind === qt.SyntaxKind.SetAccessor) &&
-        grandparent!.kind === qt.SyntaxKind.ClassDeclaration
-      );
+      return (<FunctionLikeDeclaration>parent).body !== undefined && (parent!.kind === qt.SyntaxKind.Constructor || parent!.kind === qt.SyntaxKind.MethodDeclaration || parent!.kind === qt.SyntaxKind.SetAccessor) && grandparent!.kind === qt.SyntaxKind.ClassDeclaration;
   }
 
   return false;
@@ -1834,7 +1766,7 @@ export function isExternalModuleImportEqualsDeclaration(node: qt.Node): node is 
 
 export function getExternalModuleImportEqualsDeclarationExpression(node: qt.Node) {
   Debug.assert(isExternalModuleImportEqualsDeclaration(node));
-  return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
+  return (<ImportEqualsDeclaration>node).moduleReference.expression;
 }
 
 export function isInternalModuleImportEqualsDeclaration(node: qt.Node): node is ImportEqualsDeclaration {
@@ -1865,15 +1797,8 @@ export function isInJSDoc(node: qt.Node | undefined): boolean {
   return !!node && !!(node.flags & qt.NodeFlags.JSDoc);
 }
 
-export function isJSDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
-  return (
-    isTypeReferenceNode(node) &&
-    isIdentifier(node.typeName) &&
-    node.typeName.escapedText === 'Object' &&
-    node.typeArguments &&
-    node.typeArguments.length === 2 &&
-    (node.typeArguments[0].kind === qt.SyntaxKind.StringKeyword || node.typeArguments[0].kind === qt.SyntaxKind.NumberKeyword)
-  );
+export function isJSDocIndexSignature(node: TypeReferenceNode | qt.ExpressionWithTypeArguments) {
+  return isTypeReferenceNode(node) && isIdentifier(node.typeName) && node.typeName.escapedText === 'Object' && node.typeArguments && node.typeArguments.length === 2 && (node.typeArguments[0].kind === qt.SyntaxKind.StringKeyword || node.typeArguments[0].kind === qt.SyntaxKind.NumberKeyword);
 }
 
 /**
@@ -1889,7 +1814,7 @@ export function isRequireCall(callExpression: qt.Node, requireStringLiteralLikeA
   }
   const { expression, arguments: args } = callExpression as CallExpression;
 
-  if (expression.kind !== qt.SyntaxKind.Identifier || (expression as Identifier).escapedText !== 'require') {
+  if (expression.kind !== qt.SyntaxKind.Identifier || expression.escapedText !== 'require') {
     return false;
   }
 
@@ -1926,7 +1851,7 @@ export function getDeclarationOfExpando(node: qt.Node): qt.Node | undefined {
   if (!node.parent) {
     return undefined;
   }
-  let name: Expression | qt.BindingName | undefined;
+  let name: qt.Expression | qt.BindingName | undefined;
   let decl: qt.Node | undefined;
   if (isVariableDeclaration(node.parent) && node.parent.initializer === node) {
     if (!isInJSFile(node) && !isVarConst(node.parent)) {
@@ -1967,15 +1892,7 @@ export function isAssignmentDeclaration(decl: qt.Declaration) {
 
 /** Get the initializer, taking into account defaulted Javascript initializers */
 export function getEffectiveInitializer(node: HasExpressionInitializer) {
-  if (
-    isInJSFile(node) &&
-    node.initializer &&
-    isBinaryExpression(node.initializer) &&
-    (node.initializer.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.initializer.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) &&
-    node.name &&
-    isEntityNameExpression(node.name) &&
-    isSameEntityName(node.name, node.initializer.left)
-  ) {
+  if (isInJSFile(node) && node.initializer && isBinaryExpression(node.initializer) && (node.initializer.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.initializer.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) && node.name && isEntityNameExpression(node.name) && isSameEntityName(node.name, node.initializer.left)) {
     return node.initializer.right;
   }
   return node.initializer;
@@ -1988,17 +1905,14 @@ export function getDeclaredExpandoInitializer(node: HasExpressionInitializer) {
 }
 
 function hasExpandoValueProperty(node: ObjectLiteralExpression, isPrototypeAssignment: boolean) {
-  return forEach(
-    node.properties,
-    (p) => isPropertyAssignment(p) && isIdentifier(p.name) && p.name.escapedText === 'value' && p.initializer && getExpandoInitializer(p.initializer, isPrototypeAssignment)
-  );
+  return forEach(node.properties, (p) => isPropertyAssignment(p) && isIdentifier(p.name) && p.name.escapedText === 'value' && p.initializer && getExpandoInitializer(p.initializer, isPrototypeAssignment));
 }
 
 /**
  * Get the assignment 'initializer' -- the righthand side-- when the initializer is container-like (See getExpandoInitializer).
  * We treat the right hand side of assignments with container-like initializers as declarations.
  */
-export function getAssignedExpandoInitializer(node: qt.Node | undefined): Expression | undefined {
+export function getAssignedExpandoInitializer(node: qt.Node | undefined): qt.Expression | undefined {
   if (node && node.parent && isBinaryExpression(node.parent) && node.parent.operatorToken.kind === qt.SyntaxKind.EqualsToken) {
     const isPrototypeAssignment = isPrototypeAccess(node.parent.left);
     return getExpandoInitializer(node.parent.right, isPrototypeAssignment) || getDefaultedExpandoInitializer(node.parent.left, node.parent.right, isPrototypeAssignment);
@@ -2021,13 +1935,13 @@ export function getAssignedExpandoInitializer(node: qt.Node | undefined): Expres
  *
  * This function returns the provided initializer, or undefined if it is not valid.
  */
-export function getExpandoInitializer(initializer: qt.Node, isPrototypeAssignment: boolean): Expression | undefined {
+export function getExpandoInitializer(initializer: qt.Node, isPrototypeAssignment: boolean): qt.Expression | undefined {
   if (isCallExpression(initializer)) {
     const e = skipParentheses(initializer.expression);
     return e.kind === qt.SyntaxKind.FunctionExpression || e.kind === qt.SyntaxKind.ArrowFunction ? initializer : undefined;
   }
   if (initializer.kind === qt.SyntaxKind.FunctionExpression || initializer.kind === qt.SyntaxKind.ClassExpression || initializer.kind === qt.SyntaxKind.ArrowFunction) {
-    return initializer as Expression;
+    return initializer as qt.Expression;
   }
   if (isObjectLiteralExpression(initializer) && (initializer.properties.length === 0 || isPrototypeAssignment)) {
     return initializer;
@@ -2042,17 +1956,14 @@ export function getExpandoInitializer(initializer: qt.Node, isPrototypeAssignmen
  * The second Lhs is required to be the same as the first except that it may be prefixed with
  * 'window.', 'global.' or 'self.' The second Lhs is otherwise ignored by the binder and checker.
  */
-function getDefaultedExpandoInitializer(name: Expression, initializer: Expression, isPrototypeAssignment: boolean) {
-  const e =
-    isBinaryExpression(initializer) &&
-    (initializer.operatorToken.kind === qt.SyntaxKind.BarBarToken || initializer.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) &&
-    getExpandoInitializer(initializer.right, isPrototypeAssignment);
-  if (e && isSameEntityName(name, (initializer as BinaryExpression).left)) {
+function getDefaultedExpandoInitializer(name: qt.Expression, initializer: qt.Expression, isPrototypeAssignment: boolean) {
+  const e = isBinaryExpression(initializer) && (initializer.operatorToken.kind === qt.SyntaxKind.BarBarToken || initializer.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) && getExpandoInitializer(initializer.right, isPrototypeAssignment);
+  if (e && isSameEntityName(name, initializer.left)) {
     return e;
   }
 }
 
-export function isDefaultedExpandoInitializer(node: BinaryExpression) {
+export function isDefaultedExpandoInitializer(node: qt.BinaryExpression) {
   const name = isVariableDeclaration(node.parent) ? node.parent.name : isBinaryExpression(node.parent) && node.parent.operatorToken.kind === qt.SyntaxKind.EqualsToken ? node.parent.left : undefined;
   return name && getExpandoInitializer(node.right, isPrototypeAccess(name)) && isEntityNameExpression(name) && isSameEntityName(name, node.left);
 }
@@ -2060,10 +1971,7 @@ export function isDefaultedExpandoInitializer(node: BinaryExpression) {
 /** Given an expando initializer, return its declaration name, or the left-hand side of the assignment if it's part of an assignment declaration. */
 export function getNameOfExpando(node: qt.Declaration): qt.DeclarationName | undefined {
   if (isBinaryExpression(node.parent)) {
-    const parent =
-      (node.parent.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.parent.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) && isBinaryExpression(node.parent.parent)
-        ? node.parent.parent
-        : node.parent;
+    const parent = (node.parent.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.parent.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) && isBinaryExpression(node.parent.parent) ? node.parent.parent : node.parent;
     if (parent.operatorToken.kind === qt.SyntaxKind.EqualsToken && isIdentifier(parent.left)) {
       return parent.left;
     }
@@ -2081,16 +1989,11 @@ export function getNameOfExpando(node: qt.Declaration): qt.DeclarationName | und
  * var min = window.min || {}
  * my.app = self.my.app || class { }
  */
-function isSameEntityName(name: Expression, initializer: Expression): boolean {
+function isSameEntityName(name: qt.Expression, initializer: qt.Expression): boolean {
   if (isPropertyNameLiteral(name) && isPropertyNameLiteral(initializer)) {
     return getTextOfIdentifierOrLiteral(name) === getTextOfIdentifierOrLiteral(name);
   }
-  if (
-    isIdentifier(name) &&
-    isLiteralLikeAccess(initializer) &&
-    (initializer.expression.kind === qt.SyntaxKind.ThisKeyword ||
-      (isIdentifier(initializer.expression) && (initializer.expression.escapedText === 'window' || initializer.expression.escapedText === 'self' || initializer.expression.escapedText === 'global')))
-  ) {
+  if (isIdentifier(name) && isLiteralLikeAccess(initializer) && (initializer.expression.kind === qt.SyntaxKind.ThisKeyword || (isIdentifier(initializer.expression) && (initializer.expression.escapedText === 'window' || initializer.expression.escapedText === 'self' || initializer.expression.escapedText === 'global')))) {
     const nameOrArgument = getNameOrArgument(initializer);
     if (isPrivateIdentifier(nameOrArgument)) {
       Debug.fail('Unexpected PrivateIdentifier in name expression with literal-like access.');
@@ -2103,7 +2006,7 @@ function isSameEntityName(name: Expression, initializer: Expression): boolean {
   return false;
 }
 
-export function getRightMostAssignedExpression(node: Expression): Expression {
+export function getRightMostAssignedExpression(node: qt.Expression): qt.Expression {
   while (isAssignmentExpression(node, /*excludeCompoundAssignments*/ true)) {
     node = node.right;
   }
@@ -2122,23 +2025,15 @@ export function isModuleExportsAccessExpression(node: qt.Node): node is LiteralL
   return (isPropertyAccessExpression(node) || isLiteralLikeElementAccess(node)) && isModuleIdentifier(node.expression) && getElementOrPropertyAccessName(node) === 'exports';
 }
 
-/// Given a BinaryExpression, returns SpecialPropertyAssignmentKind for the various kinds of property
+/// Given a qt.BinaryExpression, returns SpecialPropertyAssignmentKind for the various kinds of property
 /// assignments we treat as special in the binder
-export function getAssignmentDeclarationKind(expr: BinaryExpression | CallExpression): AssignmentDeclarationKind {
+export function getAssignmentDeclarationKind(expr: qt.BinaryExpression | CallExpression): qt.AssignmentDeclarationKind {
   const special = getAssignmentDeclarationKindWorker(expr);
-  return special === AssignmentDeclarationKind.Property || isInJSFile(expr) ? special : AssignmentDeclarationKind.None;
+  return special === qt.AssignmentDeclarationKind.Property || isInJSFile(expr) ? special : qt.AssignmentDeclarationKind.None;
 }
 
-export function isBindableObjectDefinePropertyCall(expr: CallExpression): expr is BindableObjectDefinePropertyCall {
-  return (
-    length(expr.arguments) === 3 &&
-    isPropertyAccessExpression(expr.expression) &&
-    isIdentifier(expr.expression.expression) &&
-    idText(expr.expression.expression) === 'Object' &&
-    idText(expr.expression.name) === 'defineProperty' &&
-    isStringOrNumericLiteralLike(expr.arguments[1]) &&
-    isBindableStaticNameExpression(expr.arguments[0], /*excludeThisKeyword*/ true)
-  );
+export function isBindableObjectDefinePropertyCall(expr: CallExpression): expr is qt.BindableObjectDefinePropertyCall {
+  return length(expr.arguments) === 3 && isPropertyAccessExpression(expr.expression) && isIdentifier(expr.expression.expression) && idText(expr.expression.expression) === 'Object' && idText(expr.expression.name) === 'defineProperty' && isStringOrNumericLiteralLike(expr.arguments[1]) && isBindableStaticNameExpression(expr.arguments[0], /*excludeThisKeyword*/ true);
 }
 
 /** x.y OR x[0] */
@@ -2153,21 +2048,12 @@ export function isLiteralLikeElementAccess(node: qt.Node): node is LiteralLikeEl
 
 /** Any series of property and element accesses. */
 export function isBindableStaticAccessExpression(node: qt.Node, excludeThisKeyword?: boolean): node is BindableStaticAccessExpression {
-  return (
-    (isPropertyAccessExpression(node) &&
-      ((!excludeThisKeyword && node.expression.kind === qt.SyntaxKind.ThisKeyword) || (isIdentifier(node.name) && isBindableStaticNameExpression(node.expression, /*excludeThisKeyword*/ true)))) ||
-    isBindableStaticElementAccessExpression(node, excludeThisKeyword)
-  );
+  return (isPropertyAccessExpression(node) && ((!excludeThisKeyword && node.expression.kind === qt.SyntaxKind.ThisKeyword) || (isIdentifier(node.name) && isBindableStaticNameExpression(node.expression, /*excludeThisKeyword*/ true)))) || isBindableStaticElementAccessExpression(node, excludeThisKeyword);
 }
 
 /** Any series of property and element accesses, ending in a literal element access */
 export function isBindableStaticElementAccessExpression(node: qt.Node, excludeThisKeyword?: boolean): node is BindableStaticElementAccessExpression {
-  return (
-    isLiteralLikeElementAccess(node) &&
-    ((!excludeThisKeyword && node.expression.kind === qt.SyntaxKind.ThisKeyword) ||
-      isEntityNameExpression(node.expression) ||
-      isBindableStaticAccessExpression(node.expression, /*excludeThisKeyword*/ true))
-  );
+  return isLiteralLikeElementAccess(node) && ((!excludeThisKeyword && node.expression.kind === qt.SyntaxKind.ThisKeyword) || isEntityNameExpression(node.expression) || isBindableStaticAccessExpression(node.expression, /*excludeThisKeyword*/ true));
 }
 
 export function isBindableStaticNameExpression(node: qt.Node, excludeThisKeyword?: boolean): node is BindableStaticNameExpression {
@@ -2181,30 +2067,26 @@ export function getNameOrArgument(expr: PropertyAccessExpression | LiteralLikeEl
   return expr.argumentExpression;
 }
 
-function getAssignmentDeclarationKindWorker(expr: BinaryExpression | CallExpression): AssignmentDeclarationKind {
+function getAssignmentDeclarationKindWorker(expr: qt.BinaryExpression | CallExpression): qt.AssignmentDeclarationKind {
   if (isCallExpression(expr)) {
     if (!isBindableObjectDefinePropertyCall(expr)) {
-      return AssignmentDeclarationKind.None;
+      return qt.AssignmentDeclarationKind.None;
     }
     const entityName = expr.arguments[0];
     if (isExportsIdentifier(entityName) || isModuleExportsAccessExpression(entityName)) {
-      return AssignmentDeclarationKind.ObjectDefinePropertyExports;
+      return qt.AssignmentDeclarationKind.ObjectDefinePropertyExports;
     }
     if (isBindableStaticAccessExpression(entityName) && getElementOrPropertyAccessName(entityName) === 'prototype') {
-      return AssignmentDeclarationKind.ObjectDefinePrototypeProperty;
+      return qt.AssignmentDeclarationKind.ObjectDefinePrototypeProperty;
     }
-    return AssignmentDeclarationKind.ObjectDefinePropertyValue;
+    return qt.AssignmentDeclarationKind.ObjectDefinePropertyValue;
   }
   if (expr.operatorToken.kind !== qt.SyntaxKind.EqualsToken || !isAccessExpression(expr.left)) {
-    return AssignmentDeclarationKind.None;
+    return qt.AssignmentDeclarationKind.None;
   }
-  if (
-    isBindableStaticNameExpression(expr.left.expression, /*excludeThisKeyword*/ true) &&
-    getElementOrPropertyAccessName(expr.left) === 'prototype' &&
-    isObjectLiteralExpression(getInitializerOfBinaryExpression(expr))
-  ) {
+  if (isBindableStaticNameExpression(expr.left.expression, /*excludeThisKeyword*/ true) && getElementOrPropertyAccessName(expr.left) === 'prototype' && isObjectLiteralExpression(getInitializerOfBinaryExpression(expr))) {
     // F.prototype = { ... }
-    return AssignmentDeclarationKind.Prototype;
+    return qt.AssignmentDeclarationKind.Prototype;
   }
   return getAssignmentDeclarationPropertyAccessKind(expr.left);
 }
@@ -2214,7 +2096,7 @@ function getAssignmentDeclarationKindWorker(expr: BinaryExpression | CallExpress
  * throughout late binding handling as well, which is awkward (but ultimately probably doable if there is demand)
  */
 
-export function getElementOrPropertyAccessArgumentExpressionOrName(node: AccessExpression): Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ElementAccessExpression | undefined {
+export function getElementOrPropertyAccessArgumentExpressionOrName(node: AccessExpression): Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | qt.ElementAccessExpression | undefined {
   if (isPropertyAccessExpression(node)) {
     return node.name;
   }
@@ -2238,21 +2120,21 @@ export function getElementOrPropertyAccessName(node: AccessExpression): qt.__Str
     }
   }
   if (isElementAccessExpression(node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
-    return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>node.argumentExpression).name));
+    return getPropertyNameForKnownSymbolName(idText(node.argumentExpression.name));
   }
   return undefined;
 }
 
-export function getAssignmentDeclarationPropertyAccessKind(lhs: AccessExpression): AssignmentDeclarationKind {
+export function getAssignmentDeclarationPropertyAccessKind(lhs: AccessExpression): qt.AssignmentDeclarationKind {
   if (lhs.expression.kind === qt.SyntaxKind.ThisKeyword) {
-    return AssignmentDeclarationKind.ThisProperty;
+    return qt.AssignmentDeclarationKind.ThisProperty;
   } else if (isModuleExportsAccessExpression(lhs)) {
     // module.exports = expr
-    return AssignmentDeclarationKind.ModuleExports;
+    return qt.AssignmentDeclarationKind.ModuleExports;
   } else if (isBindableStaticNameExpression(lhs.expression, /*excludeThisKeyword*/ true)) {
     if (isPrototypeAccess(lhs.expression)) {
       // F.G....prototype.x = expr
-      return AssignmentDeclarationKind.PrototypeProperty;
+      return qt.AssignmentDeclarationKind.PrototypeProperty;
     }
 
     let nextToLast = lhs;
@@ -2266,18 +2148,18 @@ export function getAssignmentDeclarationPropertyAccessKind(lhs: AccessExpression
       isBindableStaticAccessExpression(lhs)
     ) {
       // exports.name = expr OR module.exports.name = expr OR exports["name"] = expr ...
-      return AssignmentDeclarationKind.ExportsProperty;
+      return qt.AssignmentDeclarationKind.ExportsProperty;
     }
     if (isBindableStaticNameExpression(lhs, /*excludeThisKeyword*/ true) || (isElementAccessExpression(lhs) && isDynamicName(lhs))) {
       // F.G...x = expr
-      return AssignmentDeclarationKind.Property;
+      return qt.AssignmentDeclarationKind.Property;
     }
   }
 
-  return AssignmentDeclarationKind.None;
+  return qt.AssignmentDeclarationKind.None;
 }
 
-export function getInitializerOfBinaryExpression(expr: BinaryExpression) {
+export function getInitializerOfBinaryExpression(expr: qt.BinaryExpression) {
   while (isBinaryExpression(expr.right)) {
     expr = expr.right;
   }
@@ -2285,22 +2167,16 @@ export function getInitializerOfBinaryExpression(expr: BinaryExpression) {
 }
 
 export function isPrototypePropertyAssignment(node: qt.Node): boolean {
-  return isBinaryExpression(node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.PrototypeProperty;
+  return isBinaryExpression(node) && getAssignmentDeclarationKind(node) === qt.AssignmentDeclarationKind.PrototypeProperty;
 }
 
-export function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
-  return (
-    isInJSFile(expr) && expr.parent && expr.parent.kind === qt.SyntaxKind.ExpressionStatement && (!isElementAccessExpression(expr) || isLiteralLikeElementAccess(expr)) && !!getJSDocTypeTag(expr.parent)
-  );
+export function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | qt.ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
+  return isInJSFile(expr) && expr.parent && expr.parent.kind === qt.SyntaxKind.ExpressionStatement && (!isElementAccessExpression(expr) || isLiteralLikeElementAccess(expr)) && !!getJSDocTypeTag(expr.parent);
 }
 
 export function setValueDeclaration(symbol: qt.Symbol, node: qt.Declaration): void {
   const { valueDeclaration } = symbol;
-  if (
-    !valueDeclaration ||
-    (!(node.flags & qt.NodeFlags.Ambient && !(valueDeclaration.flags & qt.NodeFlags.Ambient)) && isAssignmentDeclaration(valueDeclaration) && !isAssignmentDeclaration(node)) ||
-    (valueDeclaration.kind !== node.kind && isEffectiveModuleDeclaration(valueDeclaration))
-  ) {
+  if (!valueDeclaration || (!(node.flags & qt.NodeFlags.Ambient && !(valueDeclaration.flags & qt.NodeFlags.Ambient)) && isAssignmentDeclaration(valueDeclaration) && !isAssignmentDeclaration(node)) || (valueDeclaration.kind !== node.kind && isEffectiveModuleDeclaration(valueDeclaration))) {
     // other kinds of value declarations take precedence over modules and assignment declarations
     symbol.valueDeclaration = node;
   }
@@ -2322,11 +2198,11 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyVal
   switch (node.parent.kind) {
     case qt.SyntaxKind.ImportDeclaration:
     case qt.SyntaxKind.ExportDeclaration:
-      return node.parent as AnyValidImportOrReExport;
+      return node.parent;
     case qt.SyntaxKind.ExternalModuleReference:
-      return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
+      return node.parent.parent;
     case qt.SyntaxKind.CallExpression:
-      return isImportCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
+      return isImportCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? node.parent : undefined;
     case qt.SyntaxKind.LiteralType:
       Debug.assert(isStringLiteral(node));
       return tryCast(node.parent.parent, isImportTypeNode) as ValidImportTypeNode | undefined;
@@ -2335,7 +2211,7 @@ export function tryGetImportFromModuleSpecifier(node: StringLiteralLike): AnyVal
   }
 }
 
-export function getExternalModuleName(node: AnyImportOrReExport | ImportTypeNode): Expression | undefined {
+export function getExternalModuleName(node: AnyImportOrReExport | qt.ImportTypeNode): qt.Expression | undefined {
   switch (node.kind) {
     case qt.SyntaxKind.ImportDeclaration:
     case qt.SyntaxKind.ExportDeclaration:
@@ -2409,22 +2285,14 @@ export function isTypeAlias(node: qt.Node): node is JSDocTypedefTag | JSDocCallb
 }
 
 function getSourceOfAssignment(node: qt.Node): qt.Node | undefined {
-  return isExpressionStatement(node) && isBinaryExpression(node.expression) && node.expression.operatorToken.kind === qt.SyntaxKind.EqualsToken
-    ? getRightMostAssignedExpression(node.expression)
-    : undefined;
+  return isExpressionStatement(node) && isBinaryExpression(node.expression) && node.expression.operatorToken.kind === qt.SyntaxKind.EqualsToken ? getRightMostAssignedExpression(node.expression) : undefined;
 }
 
 function getSourceOfDefaultedAssignment(node: qt.Node): qt.Node | undefined {
-  return isExpressionStatement(node) &&
-    isBinaryExpression(node.expression) &&
-    getAssignmentDeclarationKind(node.expression) !== AssignmentDeclarationKind.None &&
-    isBinaryExpression(node.expression.right) &&
-    (node.expression.right.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.expression.right.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken)
-    ? node.expression.right.right
-    : undefined;
+  return isExpressionStatement(node) && isBinaryExpression(node.expression) && getAssignmentDeclarationKind(node.expression) !== qt.AssignmentDeclarationKind.None && isBinaryExpression(node.expression.right) && (node.expression.right.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.expression.right.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) ? node.expression.right.right : undefined;
 }
 
-export function getSingleInitializerOfVariableStatementOrPropertyDeclaration(node: qt.Node): Expression | undefined {
+export function getSingleInitializerOfVariableStatementOrPropertyDeclaration(node: qt.Node): qt.Expression | undefined {
   switch (node.kind) {
     case qt.SyntaxKind.VariableStatement:
       const v = getSingleVariableOfVariableStatement(node);
@@ -2448,7 +2316,7 @@ export function getJSDocCommentsAndTags(hostNode: qt.Node, noCache?: boolean): r
   let result: (JSDoc | JSDocTag)[] | undefined;
   // Pull parameter comments from declaring function as well
   if (isVariableLike(hostNode) && hasInitializer(hostNode) && hasJSDocNodes(hostNode.initializer!)) {
-    result = append(result, last((hostNode.initializer as HasJSDoc).jsDoc!));
+    result = append(result, last(hostNode.initializer.jsDoc!));
   }
 
   let node: qt.Node | undefined = hostNode;
@@ -2472,14 +2340,7 @@ export function getJSDocCommentsAndTags(hostNode: qt.Node, noCache?: boolean): r
 
 function getNextJSDocCommentLocation(node: qt.Node) {
   const parent = node.parent;
-  if (
-    parent.kind === qt.SyntaxKind.PropertyAssignment ||
-    parent.kind === qt.SyntaxKind.ExportAssignment ||
-    parent.kind === qt.SyntaxKind.PropertyDeclaration ||
-    (parent.kind === qt.SyntaxKind.ExpressionStatement && node.kind === qt.SyntaxKind.PropertyAccessExpression) ||
-    getNestedModuleDeclaration(parent) ||
-    (isBinaryExpression(node) && node.operatorToken.kind === qt.SyntaxKind.EqualsToken)
-  ) {
+  if (parent.kind === qt.SyntaxKind.PropertyAssignment || parent.kind === qt.SyntaxKind.ExportAssignment || parent.kind === qt.SyntaxKind.PropertyDeclaration || (parent.kind === qt.SyntaxKind.ExpressionStatement && node.kind === qt.SyntaxKind.PropertyAccessExpression) || getNestedModuleDeclaration(parent) || (isBinaryExpression(node) && node.operatorToken.kind === qt.SyntaxKind.EqualsToken)) {
     return parent;
   }
   // Try to recognize this pattern when node is initializer of variable declaration and JSDoc comments are on containing variable statement.
@@ -2490,13 +2351,7 @@ function getNextJSDocCommentLocation(node: qt.Node) {
   // var x = function(name) { return name.length; }
   else if (parent.parent && (getSingleVariableOfVariableStatement(parent.parent) === node || (isBinaryExpression(parent) && parent.operatorToken.kind === qt.SyntaxKind.EqualsToken))) {
     return parent.parent;
-  } else if (
-    parent.parent &&
-    parent.parent.parent &&
-    (getSingleVariableOfVariableStatement(parent.parent.parent) ||
-      getSingleInitializerOfVariableStatementOrPropertyDeclaration(parent.parent.parent) === node ||
-      getSourceOfDefaultedAssignment(parent.parent.parent))
-  ) {
+  } else if (parent.parent && parent.parent.parent && (getSingleVariableOfVariableStatement(parent.parent.parent) || getSingleInitializerOfVariableStatementOrPropertyDeclaration(parent.parent.parent) === node || getSourceOfDefaultedAssignment(parent.parent.parent))) {
     return parent.parent.parent;
   }
 }
@@ -2518,20 +2373,14 @@ export function getParameterSymbolFromJSDoc(node: JSDocParameterTag): qt.Symbol 
   return parameter && parameter.symbol;
 }
 
-export function getHostSignatureFromJSDoc(node: qt.Node): SignatureDeclaration | undefined {
+export function getHostSignatureFromJSDoc(node: qt.Node): qt.SignatureDeclaration | undefined {
   const host = getEffectiveJSDocHost(node);
   return host && isFunctionLike(host) ? host : undefined;
 }
 
 export function getEffectiveJSDocHost(node: qt.Node): qt.Node | undefined {
   const host = getJSDocHost(node);
-  const decl =
-    getSourceOfDefaultedAssignment(host) ||
-    getSourceOfAssignment(host) ||
-    getSingleInitializerOfVariableStatementOrPropertyDeclaration(host) ||
-    getSingleVariableOfVariableStatement(host) ||
-    getNestedModuleDeclaration(host) ||
-    host;
+  const decl = getSourceOfDefaultedAssignment(host) || getSourceOfAssignment(host) || getSingleInitializerOfVariableStatementOrPropertyDeclaration(host) || getSingleVariableOfVariableStatement(host) || getNestedModuleDeclaration(host) || host;
   return decl;
 }
 
@@ -2542,11 +2391,11 @@ export function getJSDocHost(node: qt.Node): HasJSDoc {
 
 export function getTypeParameterFromJsDoc(node: TypeParameterDeclaration & { parent: JSDocTemplateTag }): TypeParameterDeclaration | undefined {
   const name = node.name.escapedText;
-  const { typeParameters } = node.parent.parent.parent as SignatureDeclaration | InterfaceDeclaration | ClassDeclaration;
+  const { typeParameters } = node.parent.parent.parent;
   return typeParameters && find(typeParameters, (p) => p.name.escapedText === name);
 }
 
-export function hasRestParameter(s: SignatureDeclaration | JSDocSignature): boolean {
+export function hasRestParameter(s: qt.SignatureDeclaration | JSDocSignature): boolean {
   const last = qc.lastOrUndefined<ParameterDeclaration | JSDocParameterTag>(s.parameters);
   return !!last && isRestParameter(last);
 }
@@ -2572,14 +2421,10 @@ export function getAssignmentTargetKind(node: qt.Node): AssignmentKind {
     switch (parent.kind) {
       case qt.SyntaxKind.BinaryExpression:
         const binaryOperator = (<BinaryExpression>parent).operatorToken.kind;
-        return isAssignmentOperator(binaryOperator) && (<BinaryExpression>parent).left === node
-          ? binaryOperator === qt.SyntaxKind.EqualsToken
-            ? AssignmentKind.Definite
-            : AssignmentKind.Compound
-          : AssignmentKind.None;
+        return isAssignmentOperator(binaryOperator) && (<BinaryExpression>parent).left === node ? (binaryOperator === qt.SyntaxKind.EqualsToken ? AssignmentKind.Definite : AssignmentKind.Compound) : AssignmentKind.None;
       case qt.SyntaxKind.PrefixUnaryExpression:
       case qt.SyntaxKind.PostfixUnaryExpression:
-        const unaryOperator = (<PrefixUnaryExpression | PostfixUnaryExpression>parent).operator;
+        const unaryOperator = (<PrefixUnaryExpression | qt.PostfixUnaryExpression>parent).operator;
         return unaryOperator === qt.SyntaxKind.PlusPlusToken || unaryOperator === qt.SyntaxKind.MinusMinusToken ? AssignmentKind.Compound : AssignmentKind.None;
       case qt.SyntaxKind.ForInStatement:
       case qt.SyntaxKind.ForOfStatement:
@@ -2617,23 +2462,7 @@ export function isAssignmentTarget(node: qt.Node): boolean {
   return getAssignmentTargetKind(node) !== AssignmentKind.None;
 }
 
-export type NodeWithPossibleHoistedDeclaration =
-  | Block
-  | VariableStatement
-  | WithStatement
-  | IfStatement
-  | SwitchStatement
-  | CaseBlock
-  | CaseClause
-  | DefaultClause
-  | LabeledStatement
-  | ForStatement
-  | ForInStatement
-  | ForOfStatement
-  | DoStatement
-  | WhileStatement
-  | TryStatement
-  | CatchClause;
+export type NodeWithPossibleHoistedDeclaration = Block | VariableStatement | WithStatement | IfStatement | SwitchStatement | CaseBlock | CaseClause | DefaultClause | LabeledStatement | ForStatement | ForInStatement | ForOfStatement | DoStatement | WhileStatement | TryStatement | CatchClause;
 
 /**
  * Indicates whether a node could contain a `var` qt.VariableDeclarationList that contributes to
@@ -2683,7 +2512,7 @@ export function walkUpParenthesizedExpressions(node: qt.Node) {
   return walkUp(node, qt.SyntaxKind.ParenthesizedExpression);
 }
 
-export function skipParentheses(node: Expression): Expression;
+export function skipParentheses(node: qt.Expression): qt.Expression;
 export function skipParentheses(node: qt.Node): qt.Node;
 export function skipParentheses(node: qt.Node): qt.Node {
   return skipOuterExpressions(node, OuterExpressionKinds.Parentheses);
@@ -2735,9 +2564,7 @@ export function getDeclarationFromName(name: qt.Node): qt.Declaration | undefine
         return isJSDocParameterTag(tag) && tag.name === parent ? tag : undefined;
       } else {
         const binExp = parent.parent;
-        return isBinaryExpression(binExp) && getAssignmentDeclarationKind(binExp) !== AssignmentDeclarationKind.None && (binExp.left.symbol || binExp.symbol) && getNameOfDeclaration(binExp) === name
-          ? binExp
-          : undefined;
+        return isBinaryExpression(binExp) && getAssignmentDeclarationKind(binExp) !== qt.AssignmentDeclarationKind.None && (binExp.left.symbol || binExp.symbol) && getNameOfDeclaration(binExp) === name ? binExp : undefined;
       }
     case qt.SyntaxKind.PrivateIdentifier:
       return isDeclaration(parent) && parent.name === name ? parent : undefined;
@@ -2767,7 +2594,7 @@ export function isIdentifierName(node: Identifier): boolean {
       return (<NamedDeclaration | PropertyAccessExpression>parent).name === node;
     case qt.SyntaxKind.QualifiedName:
       // Name on right hand side of dot in a type query or type reference
-      if ((<QualifiedName>parent).right === node) {
+      if (parent.right === node) {
         while (parent.kind === qt.SyntaxKind.QualifiedName) {
           parent = parent.parent;
         }
@@ -2808,12 +2635,8 @@ export function isAliasSymbolDeclaration(node: qt.Node): boolean {
     node.kind === qt.SyntaxKind.ImportSpecifier ||
     node.kind === qt.SyntaxKind.ExportSpecifier ||
     (node.kind === qt.SyntaxKind.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
-    (isBinaryExpression(node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
-    (isPropertyAccessExpression(node) &&
-      isBinaryExpression(node.parent) &&
-      node.parent.left === node &&
-      node.parent.operatorToken.kind === qt.SyntaxKind.EqualsToken &&
-      isAliasableExpression(node.parent.right)) ||
+    (isBinaryExpression(node) && getAssignmentDeclarationKind(node) === qt.AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
+    (isPropertyAccessExpression(node) && isBinaryExpression(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === qt.SyntaxKind.EqualsToken && isAliasableExpression(node.parent.right)) ||
     node.kind === qt.SyntaxKind.ShorthandPropertyAssignment ||
     (node.kind === qt.SyntaxKind.PropertyAssignment && isAliasableExpression((node as PropertyAssignment).initializer))
   );
@@ -2830,27 +2653,27 @@ export function getAliasDeclarationFromName(node: EntityName): qt.Declaration | 
       return node.parent as qt.Declaration;
     case qt.SyntaxKind.QualifiedName:
       do {
-        node = node.parent as QualifiedName;
+        node = node.parent;
       } while (node.parent.kind === qt.SyntaxKind.QualifiedName);
       return getAliasDeclarationFromName(node);
   }
 }
 
-export function isAliasableExpression(e: Expression) {
+export function isAliasableExpression(e: qt.Expression) {
   return isEntityNameExpression(e) || isClassExpression(e);
 }
 
-export function exportAssignmentIsAlias(node: ExportAssignment | BinaryExpression): boolean {
+export function exportAssignmentIsAlias(node: qt.ExportAssignment | qt.BinaryExpression): boolean {
   const e = getExportAssignmentExpression(node);
   return isAliasableExpression(e);
 }
 
-export function getExportAssignmentExpression(node: ExportAssignment | BinaryExpression): Expression {
+export function getExportAssignmentExpression(node: qt.ExportAssignment | qt.BinaryExpression): qt.Expression {
   return isExportAssignment(node) ? node.expression : node.right;
 }
 
-export function getPropertyAssignmentAliasLikeExpression(node: PropertyAssignment | ShorthandPropertyAssignment | PropertyAccessExpression): Expression {
-  return node.kind === qt.SyntaxKind.ShorthandPropertyAssignment ? node.name : node.kind === qt.SyntaxKind.PropertyAssignment ? node.initializer : (node.parent as BinaryExpression).right;
+export function getPropertyAssignmentAliasLikeExpression(node: PropertyAssignment | ShorthandPropertyAssignment | PropertyAccessExpression): qt.Expression {
+  return node.kind === qt.SyntaxKind.ShorthandPropertyAssignment ? node.name : node.kind === qt.SyntaxKind.PropertyAssignment ? node.initializer : (node.parent as qt.BinaryExpression).right;
 }
 
 export function getEffectiveBaseTypeNode(node: ClassLikeDeclaration | InterfaceDeclaration) {
@@ -2870,7 +2693,7 @@ export function getClassExtendsHeritageElement(node: ClassLikeDeclaration | Inte
   return heritageClause && heritageClause.types.length > 0 ? heritageClause.types[0] : undefined;
 }
 
-export function getEffectiveImplementsTypeNodes(node: ClassLikeDeclaration): undefined | readonly ExpressionWithTypeArguments[] {
+export function getEffectiveImplementsTypeNodes(node: ClassLikeDeclaration): undefined | readonly qt.ExpressionWithTypeArguments[] {
   if (isInJSFile(node)) {
     return getJSDocImplementsTags(node).map((n) => n.class);
   } else {
@@ -2881,11 +2704,7 @@ export function getEffectiveImplementsTypeNodes(node: ClassLikeDeclaration): und
 
 /** Returns the node in an `extends` or `implements` clause of a class or interface. */
 export function getAllSuperTypeNodes(node: qt.Node): readonly TypeNode[] {
-  return isInterfaceDeclaration(node)
-    ? getInterfaceBaseTypeNodes(node) || emptyArray
-    : isClassLike(node)
-    ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray
-    : emptyArray;
+  return isInterfaceDeclaration(node) ? getInterfaceBaseTypeNodes(node) || emptyArray : isClassLike(node) ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray : emptyArray;
 }
 
 export function getInterfaceBaseTypeNodes(node: InterfaceDeclaration) {
@@ -2945,13 +2764,7 @@ export function isIdentifierANonContextualKeyword({ originalKeywordKind }: Ident
   return !!originalKeywordKind && !isContextualKeyword(originalKeywordKind);
 }
 
-export type TriviaKind =
-  | qt.SyntaxKind.SingleLineCommentTrivia
-  | qt.SyntaxKind.MultiLineCommentTrivia
-  | qt.SyntaxKind.NewLineTrivia
-  | qt.SyntaxKind.WhitespaceTrivia
-  | qt.SyntaxKind.ShebangTrivia
-  | qt.SyntaxKind.ConflictMarkerTrivia;
+export type TriviaKind = qt.SyntaxKind.SingleLineCommentTrivia | qt.SyntaxKind.MultiLineCommentTrivia | qt.SyntaxKind.NewLineTrivia | qt.SyntaxKind.WhitespaceTrivia | qt.SyntaxKind.ShebangTrivia | qt.SyntaxKind.ConflictMarkerTrivia;
 export function isTrivia(token: qt.SyntaxKind): token is TriviaKind {
   return qt.SyntaxKind.FirstTriviaToken <= token && token <= qt.SyntaxKind.LastTriviaToken;
 }
@@ -2964,7 +2777,7 @@ export const enum FunctionFlags {
   AsyncGenerator = Async | Generator, // Function is an async generator function
 }
 
-export function getFunctionFlags(node: SignatureDeclaration | undefined) {
+export function getFunctionFlags(node: qt.SignatureDeclaration | undefined) {
   if (!node) {
     return FunctionFlags.Invalid;
   }
@@ -2986,7 +2799,7 @@ export function getFunctionFlags(node: SignatureDeclaration | undefined) {
       break;
   }
 
-  if (!(node as FunctionLikeDeclaration).body) {
+  if (!(node as qt.FunctionLikeDeclaration).body) {
     flags |= FunctionFlags.Invalid;
   }
 
@@ -3008,7 +2821,7 @@ export function isStringOrNumericLiteralLike(node: qt.Node): node is StringLiter
   return isStringLiteralLike(node) || isNumericLiteral(node);
 }
 
-export function isSignedNumericLiteral(node: qt.Node): node is PrefixUnaryExpression & { operand: NumericLiteral } {
+export function isSignedNumericLiteral(node: qt.Node): node is qt.PrefixUnaryExpression & { operand: NumericLiteral } {
   return isPrefixUnaryExpression(node) && (node.operator === qt.SyntaxKind.PlusToken || node.operator === qt.SyntaxKind.MinusToken) && isNumericLiteral(node.operand);
 }
 
@@ -3056,7 +2869,7 @@ export function getPropertyNameForPropertyNameNode(name: PropertyName): qt.__Str
     case qt.SyntaxKind.ComputedPropertyName:
       const nameExpression = name.expression;
       if (isWellKnownSymbolSyntactically(nameExpression)) {
-        return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
+        return getPropertyNameForKnownSymbolName(idText(nameExpression.name));
       } else if (isStringOrNumericLiteralLike(nameExpression)) {
         return escapeLeadingUnderscores(nameExpression.text);
       } else if (isSignedNumericLiteral(nameExpression)) {
@@ -3132,17 +2945,7 @@ export function getRootDeclaration(node: qt.Node): qt.Node {
 
 export function nodeStartsNewLexicalEnvironment(node: qt.Node): boolean {
   const kind = node.kind;
-  return (
-    kind === qt.SyntaxKind.Constructor ||
-    kind === qt.SyntaxKind.FunctionExpression ||
-    kind === qt.SyntaxKind.FunctionDeclaration ||
-    kind === qt.SyntaxKind.ArrowFunction ||
-    kind === qt.SyntaxKind.MethodDeclaration ||
-    kind === qt.SyntaxKind.GetAccessor ||
-    kind === qt.SyntaxKind.SetAccessor ||
-    kind === qt.SyntaxKind.ModuleDeclaration ||
-    kind === qt.SyntaxKind.SourceFile
-  );
+  return kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.FunctionExpression || kind === qt.SyntaxKind.FunctionDeclaration || kind === qt.SyntaxKind.ArrowFunction || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor || kind === qt.SyntaxKind.ModuleDeclaration || kind === qt.SyntaxKind.SourceFile;
 }
 
 export function nodeIsSynthesized(range: qt.TextRange): boolean {
@@ -3158,9 +2961,9 @@ export const enum Associativity {
   Right,
 }
 
-export function getExpressionAssociativity(expression: Expression) {
+export function getExpressionAssociativity(expression: qt.Expression) {
   const operator = getOperator(expression);
-  const hasArguments = expression.kind === qt.SyntaxKind.NewExpression && (<NewExpression>expression).arguments !== undefined;
+  const hasArguments = expression.kind === qt.SyntaxKind.NewExpression && expression.arguments !== undefined;
   return getOperatorAssociativity(expression.kind, operator, hasArguments);
 }
 
@@ -3200,17 +3003,17 @@ export function getOperatorAssociativity(kind: qt.SyntaxKind, operator: qt.Synta
   return Associativity.Left;
 }
 
-export function getExpressionPrecedence(expression: Expression) {
+export function getExpressionPrecedence(expression: qt.Expression) {
   const operator = getOperator(expression);
-  const hasArguments = expression.kind === qt.SyntaxKind.NewExpression && (<NewExpression>expression).arguments !== undefined;
+  const hasArguments = expression.kind === qt.SyntaxKind.NewExpression && expression.arguments !== undefined;
   return getOperatorPrecedence(expression.kind, operator, hasArguments);
 }
 
-export function getOperator(expression: Expression): qt.SyntaxKind {
+export function getOperator(expression: qt.Expression): qt.SyntaxKind {
   if (expression.kind === qt.SyntaxKind.BinaryExpression) {
-    return (<BinaryExpression>expression).operatorToken.kind;
+    return expression.operatorToken.kind;
   } else if (expression.kind === qt.SyntaxKind.PrefixUnaryExpression || expression.kind === qt.SyntaxKind.PostfixUnaryExpression) {
-    return (<PrefixUnaryExpression | PostfixUnaryExpression>expression).operator;
+    return (<PrefixUnaryExpression | qt.PostfixUnaryExpression>expression).operator;
   } else {
     return expression.kind;
   }
@@ -3399,7 +3202,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
       // If we've already read the non-file diagnostics, do not modify the existing array.
       if (hasReadNonFileDiagnostics) {
         hasReadNonFileDiagnostics = false;
-        nonFileDiagnostics = nonFileDiagnostics.slice() as SortedArray<Diagnostic>;
+        nonFileDiagnostics = nonFileDiagnostics.slice();
       }
 
       diagnostics = nonFileDiagnostics;
@@ -3433,7 +3236,6 @@ const templateSubstitutionRegExp = /\$\{/g;
 function escapeTemplateSubstitution(str: string): string {
   return str.replace(templateSubstitutionRegExp, '\\${');
 }
-
 
 export function hasInvalidEscape(template: TemplateLiteral): boolean {
   return template && !!(isNoSubstitutionTemplateLiteral(template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
@@ -3489,8 +3291,7 @@ function getReplacement(c: string, offset: number, input: string) {
  * Note that this doesn't actually wrap the input in double quotes.
  */
 export function escapeString(s: string, quoteChar?: qt.CharacterCodes.doubleQuote | qt.CharacterCodes.singleQuote | qt.CharacterCodes.backtick): string {
-  const escapedCharsRegExp =
-    quoteChar === qt.CharacterCodes.backtick ? backtickQuoteEscapedCharsRegExp : quoteChar === qt.CharacterCodes.singleQuote ? singleQuoteEscapedCharsRegExp : doubleQuoteEscapedCharsRegExp;
+  const escapedCharsRegExp = quoteChar === qt.CharacterCodes.backtick ? backtickQuoteEscapedCharsRegExp : quoteChar === qt.CharacterCodes.singleQuote ? singleQuoteEscapedCharsRegExp : doubleQuoteEscapedCharsRegExp;
   return s.replace(escapedCharsRegExp, getReplacement);
 }
 
@@ -3769,11 +3570,7 @@ export function getResolvedExternalModuleName(host: ResolveModuleNameResolutionH
   return file.moduleName || getExternalModuleNameFromPath(host, file.fileName, referenceFile && referenceFile.fileName);
 }
 
-export function getExternalModuleNameFromDeclaration(
-  host: ResolveModuleNameResolutionHost,
-  resolver: EmitResolver,
-  declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode
-): string | undefined {
+export function getExternalModuleNameFromDeclaration(host: ResolveModuleNameResolutionHost, resolver: EmitResolver, declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | qt.ImportTypeNode): string | undefined {
   const file = resolver.getExternalModuleFileFromDeclaration(declaration);
   if (!file || file.isDeclarationFile) {
     return undefined;
@@ -3809,13 +3606,7 @@ export function getDeclarationEmitOutputFilePath(fileName: string, host: EmitHos
   return getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOptions(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), (f) => host.getCanonicalFileName(f));
 }
 
-export function getDeclarationEmitOutputFilePathWorker(
-  fileName: string,
-  options: qt.CompilerOptions,
-  currentDirectory: string,
-  commonSourceDirectory: string,
-  getCanonicalFileName: qc.GetCanonicalFileName
-): string {
+export function getDeclarationEmitOutputFilePathWorker(fileName: string, options: qt.CompilerOptions, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: qc.GetCanonicalFileName): string {
   const outputDir = options.declarationDir || options.outDir; // Prefer declaration folder if specified
 
   const path = outputDir ? getSourceFilePathInNewDirWorker(fileName, outputDir, currentDirectory, commonSourceDirectory, getCanonicalFileName) : fileName;
@@ -3855,13 +3646,7 @@ export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: qt.Sourc
 /** Don't call this for `--outFile`, just for `--outDir` or plain emit. `--outFile` needs additional checks. */
 export function sourceFileMayBeEmitted(sourceFile: qt.SourceFile, host: qt.SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
   const options = host.getCompilerOptions();
-  return (
-    !(options.noEmitForJsFiles && isSourceFileJS(sourceFile)) &&
-    !sourceFile.isDeclarationFile &&
-    !host.isSourceFileFromExternalLibrary(sourceFile) &&
-    !(isJsonSourceFile(sourceFile) && host.getResolvedProjectReferenceToRedirect(sourceFile.fileName)) &&
-    (forceDtsEmit || !host.isSourceOfProjectReferenceRedirect(sourceFile.fileName))
-  );
+  return !(options.noEmitForJsFiles && isSourceFileJS(sourceFile)) && !sourceFile.isDeclarationFile && !host.isSourceFileFromExternalLibrary(sourceFile) && !(isJsonSourceFile(sourceFile) && host.getResolvedProjectReferenceToRedirect(sourceFile.fileName)) && (forceDtsEmit || !host.isSourceOfProjectReferenceRedirect(sourceFile.fileName));
 }
 
 export function getSourceFilePathInNewDir(fileName: string, host: EmitHost, newDirPath: string): string {
@@ -3895,14 +3680,7 @@ function ensureDirectoriesExist(directoryPath: string, createDirectory: (path: s
   }
 }
 
-export function writeFileEnsuringDirectories(
-  path: string,
-  data: string,
-  writeByteOrderMark: boolean,
-  writeFile: (path: string, data: string, writeByteOrderMark: boolean) => void,
-  createDirectory: (path: string) => void,
-  directoryExists: (path: string) => boolean
-): void {
+export function writeFileEnsuringDirectories(path: string, data: string, writeByteOrderMark: boolean, writeFile: (path: string, data: string, writeByteOrderMark: boolean) => void, createDirectory: (path: string) => void, directoryExists: (path: string) => boolean): void {
   // PERF: Checking for directory existence is expensive.  Instead, assume the directory exists
   // and fall back to creating it if the file write fails.
   try {
@@ -3939,7 +3717,7 @@ export function getSetAccessorTypeAnnotationNode(accessor: SetAccessorDeclaratio
   return parameter && parameter.type;
 }
 
-export function getThisParameter(signature: SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
+export function getThisParameter(signature: qt.SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
   // callback tags do not currently support this parameters
   if (signature.parameters.length && !isJSDocSignature(signature)) {
     const thisParameter = signature.parameters[0];
@@ -4027,7 +3805,7 @@ export function getTypeAnnotationNode(node: qt.Node): TypeNode | undefined {
  * Gets the effective return type annotation of a signature. If the node was parsed in a
  * JavaScript file, gets the return type annotation from JSDoc.
  */
-export function getEffectiveReturnTypeNode(node: SignatureDeclaration | JSDocSignature): TypeNode | undefined {
+export function getEffectiveReturnTypeNode(node: qt.SignatureDeclaration | JSDocSignature): TypeNode | undefined {
   return isJSDocSignature(node) ? node.type && node.type.typeExpression && node.type.typeExpression.type : node.type || (isInJSFile(node) ? getJSDocReturnType(node) : undefined);
 }
 
@@ -4055,12 +3833,7 @@ export function emitNewLineBeforeLeadingComments(lineMap: readonly number[], wri
 
 export function emitNewLineBeforeLeadingCommentsOfPosition(lineMap: readonly number[], writer: qt.EmitTextWriter, pos: number, leadingComments: readonly CommentRange[] | undefined) {
   // If the leading comments start on different line than the start of node, write new line
-  if (
-    leadingComments &&
-    leadingComments.length &&
-    pos !== leadingComments[0].pos &&
-    getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, leadingComments[0].pos)
-  ) {
+  if (leadingComments && leadingComments.length && pos !== leadingComments[0].pos && getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, leadingComments[0].pos)) {
     writer.writeLine();
   }
 }
@@ -4072,16 +3845,7 @@ export function emitNewLineBeforeLeadingCommentOfPosition(lineMap: readonly numb
   }
 }
 
-export function emitComments(
-  text: string,
-  lineMap: readonly number[],
-  writer: qt.EmitTextWriter,
-  comments: readonly CommentRange[] | undefined,
-  leadingSeparator: boolean,
-  trailingSeparator: boolean,
-  newLine: string,
-  writeComment: (text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void
-) {
+export function emitComments(text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, comments: readonly CommentRange[] | undefined, leadingSeparator: boolean, trailingSeparator: boolean, newLine: string, writeComment: (text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void) {
   if (comments && comments.length > 0) {
     if (leadingSeparator) {
       writer.writeSpace(' ');
@@ -4112,15 +3876,7 @@ export function emitComments(
  * Detached comment is a comment at the top of file or function body that is separated from
  * the next statement by space.
  */
-export function emitDetachedComments(
-  text: string,
-  lineMap: readonly number[],
-  writer: qt.EmitTextWriter,
-  writeComment: (text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void,
-  node: qt.TextRange,
-  newLine: string,
-  removeComments: boolean
-) {
+export function emitDetachedComments(text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, writeComment: (text: string, lineMap: readonly number[], writer: qt.EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void, node: qt.TextRange, newLine: string, removeComments: boolean) {
   let leadingComments: CommentRange[] | undefined;
   let currentDetachedCommentInfo: { nodePos: number; detachedCommentEndPos: number } | undefined;
   if (removeComments) {
@@ -4416,7 +4172,7 @@ export function isAssignmentOperator(token: qt.SyntaxKind): boolean {
   return token >= qt.SyntaxKind.FirstAssignment && token <= qt.SyntaxKind.LastAssignment;
 }
 
-/** Get `C` given `N` if `N` is in the position `class C extends N` where `N` is an ExpressionWithTypeArguments. */
+/** Get `C` given `N` if `N` is in the position `class C extends N` where `N` is an qt.ExpressionWithTypeArguments. */
 export function tryGetClassExtendingExpressionWithTypeArguments(node: qt.Node): ClassLikeDeclaration | undefined {
   const cls = tryGetClassImplementingOrExtendingExpressionWithTypeArguments(node);
   return cls && !cls.isImplements ? cls.class : undefined;
@@ -4427,17 +4183,13 @@ export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
   readonly isImplements: boolean;
 }
 export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(node: qt.Node): ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
-  return isExpressionWithTypeArguments(node) && isHeritageClause(node.parent) && isClassLike(node.parent.parent)
-    ? { class: node.parent.parent, isImplements: node.parent.token === qt.SyntaxKind.ImplementsKeyword }
-    : undefined;
+  return isExpressionWithTypeArguments(node) && isHeritageClause(node.parent) && isClassLike(node.parent.parent) ? { class: node.parent.parent, isImplements: node.parent.token === qt.SyntaxKind.ImplementsKeyword } : undefined;
 }
 
 export function isAssignmentExpression(node: qt.Node, excludeCompoundAssignment: true): node is AssignmentExpression<EqualsToken>;
 export function isAssignmentExpression(node: qt.Node, excludeCompoundAssignment?: false): node is AssignmentExpression<AssignmentOperatorToken>;
 export function isAssignmentExpression(node: qt.Node, excludeCompoundAssignment?: boolean): node is AssignmentExpression<AssignmentOperatorToken> {
-  return (
-    isBinaryExpression(node) && (excludeCompoundAssignment ? node.operatorToken.kind === qt.SyntaxKind.EqualsToken : isAssignmentOperator(node.operatorToken.kind)) && isLeftHandSideExpression(node.left)
-  );
+  return isBinaryExpression(node) && (excludeCompoundAssignment ? node.operatorToken.kind === qt.SyntaxKind.EqualsToken : isAssignmentOperator(node.operatorToken.kind)) && isLeftHandSideExpression(node.left);
 }
 
 export function isDestructuringAssignment(node: qt.Node): node is DestructuringAssignment {
@@ -4449,7 +4201,7 @@ export function isDestructuringAssignment(node: qt.Node): node is DestructuringA
   return false;
 }
 
-export function isExpressionWithTypeArgumentsInClassExtendsClause(node: qt.Node): node is ExpressionWithTypeArguments {
+export function isExpressionWithTypeArgumentsInClassExtendsClause(node: qt.Node): node is qt.ExpressionWithTypeArguments {
   return tryGetClassExtendingExpressionWithTypeArguments(node) !== undefined;
 }
 
@@ -4474,21 +4226,15 @@ export function getFirstIdentifier(node: EntityNameOrEntityNameExpression): Iden
   }
 }
 
-export function isDottedName(node: Expression): boolean {
-  return (
-    node.kind === qt.SyntaxKind.Identifier ||
-    node.kind === qt.SyntaxKind.ThisKeyword ||
-    node.kind === qt.SyntaxKind.SuperKeyword ||
-    (node.kind === qt.SyntaxKind.PropertyAccessExpression && isDottedName((<PropertyAccessExpression>node).expression)) ||
-    (node.kind === qt.SyntaxKind.ParenthesizedExpression && isDottedName((<ParenthesizedExpression>node).expression))
-  );
+export function isDottedName(node: qt.Expression): boolean {
+  return node.kind === qt.SyntaxKind.Identifier || node.kind === qt.SyntaxKind.ThisKeyword || node.kind === qt.SyntaxKind.SuperKeyword || (node.kind === qt.SyntaxKind.PropertyAccessExpression && isDottedName(node.expression)) || (node.kind === qt.SyntaxKind.ParenthesizedExpression && isDottedName(node.expression));
 }
 
 export function isPropertyAccessEntityNameExpression(node: qt.Node): node is PropertyAccessEntityNameExpression {
   return isPropertyAccessExpression(node) && isIdentifier(node.name) && isEntityNameExpression(node.expression);
 }
 
-export function tryGetPropertyAccessOrIdentifierToString(expr: Expression): string | undefined {
+export function tryGetPropertyAccessOrIdentifierToString(expr: qt.Expression): string | undefined {
   if (isPropertyAccessExpression(expr)) {
     const baseStr = tryGetPropertyAccessOrIdentifierToString(expr.expression);
     if (baseStr !== undefined) {
@@ -4505,10 +4251,7 @@ export function isPrototypeAccess(node: qt.Node): node is BindableStaticAccessEx
 }
 
 export function isRightSideOfQualifiedNameOrPropertyAccess(node: qt.Node) {
-  return (
-    (node.parent.kind === qt.SyntaxKind.QualifiedName && (<QualifiedName>node.parent).right === node) ||
-    (node.parent.kind === qt.SyntaxKind.PropertyAccessExpression && (<PropertyAccessExpression>node.parent).name === node)
-  );
+  return (node.parent.kind === qt.SyntaxKind.QualifiedName && (<QualifiedName>node.parent).right === node) || (node.parent.kind === qt.SyntaxKind.PropertyAccessExpression && (<PropertyAccessExpression>node.parent).name === node);
 }
 
 export function isEmptyObjectLiteral(expression: qt.Node): boolean {
@@ -4920,10 +4663,10 @@ function accessKind(node: qt.Node): AccessKind {
       return accessKind(parent);
     case qt.SyntaxKind.PostfixUnaryExpression:
     case qt.SyntaxKind.PrefixUnaryExpression:
-      const { operator } = parent as PrefixUnaryExpression | PostfixUnaryExpression;
+      const { operator } = parent as qt.PrefixUnaryExpression | qt.PostfixUnaryExpression;
       return operator === qt.SyntaxKind.PlusPlusToken || operator === qt.SyntaxKind.MinusMinusToken ? writeOrReadWrite() : AccessKind.Read;
     case qt.SyntaxKind.BinaryExpression:
-      const { left, operatorToken } = parent as BinaryExpression;
+      const { left, operatorToken } = parent as qt.BinaryExpression;
       return left === node && isAssignmentOperator(operatorToken.kind) ? (operatorToken.kind === qt.SyntaxKind.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
     case qt.SyntaxKind.PropertyAccessExpression:
       return (parent as PropertyAccessExpression).name !== node ? AccessKind.Read : accessKind(parent);
@@ -4942,7 +4685,7 @@ function accessKind(node: qt.Node): AccessKind {
   }
 
   function writeOrReadWrite(): AccessKind {
-    // If grandparent is not an ExpressionStatement, this is used as an expression in addition to having a side effect.
+    // If grandparent is not an qt.ExpressionStatement, this is used as an expression in addition to having a side effect.
     return parent.parent && skipParenthesesUp(parent.parent).kind === qt.SyntaxKind.ExpressionStatement ? AccessKind.Write : AccessKind.ReadWrite;
   }
 }
@@ -5058,7 +4801,7 @@ export function getClassLikeDeclarationOfSymbol(symbol: qt.Symbol): ClassLikeDec
 }
 
 export function getObjectFlags(type: Type): ObjectFlags {
-  return type.flags & TypeFlags.ObjectFlagsType ? (<ObjectFlagsType>type).objectFlags : 0;
+  return type.flags & TypeFlags.ObjectFlagsType ? type.objectFlags : 0;
 }
 
 export function typeHasCallOrConstructSignatures(type: Type, checker: TypeChecker) {
@@ -5244,15 +4987,15 @@ function SourceMapSource(this: SourceMapSource, fileName: string, text: string, 
 
 // eslint-disable-next-line prefer-const
 export let objectAllocator: ObjectAllocator = {
-  getNodeConstructor: () => <any>Node,
-  getTokenConstructor: () => <any>Token,
-  getIdentifierConstructor: () => <any>Identifier,
-  getPrivateIdentifierConstructor: () => <any>Node,
-  getSourceFileConstructor: () => <any>Node,
-  getSymbolConstructor: () => <any>Symbol,
-  getTypeConstructor: () => <any>Type,
-  getSignatureConstructor: () => <any>Signature,
-  getSourceMapSourceConstructor: () => <any>SourceMapSource,
+  getNodeConstructor: () => qt.Node,
+  getTokenConstructor: () => qt.Token,
+  getIdentifierConstructor: () => qt.Identifier,
+  getPrivateIdentifierConstructor: () => qt.Node,
+  getSourceFileConstructor: () => qt.Node as any,
+  getSymbolConstructor: () => qt.Symbol,
+  getTypeConstructor: () => qt.Type,
+  getSignatureConstructor: () => qt.Signature,
+  getSourceMapSourceConstructor: () => qt.SourceMapSource,
 };
 
 export function setObjectAllocator(alloc: ObjectAllocator) {
@@ -5344,11 +5087,7 @@ export function createCompilerDiagnosticFromMessageChain(chain: qt.DiagnosticMes
   };
 }
 
-export function chainDiagnosticMessages(
-  details: qt.DiagnosticMessageChain | qt.DiagnosticMessageChain[] | undefined,
-  message: qt.DiagnosticMessage,
-  ...args: (string | number | undefined)[]
-): qt.DiagnosticMessageChain;
+export function chainDiagnosticMessages(details: qt.DiagnosticMessageChain | qt.DiagnosticMessageChain[] | undefined, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]): qt.DiagnosticMessageChain;
 export function chainDiagnosticMessages(details: qt.DiagnosticMessageChain | qt.DiagnosticMessageChain[] | undefined, message: qt.DiagnosticMessage): qt.DiagnosticMessageChain {
   let text = getLocaleSpecificMessage(message);
 
@@ -5383,14 +5122,7 @@ export function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): Comparison {
 }
 
 export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
-  return (
-    qc.compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
-    qc.compareValues(d1.start, d2.start) ||
-    qc.compareValues(d1.length, d2.length) ||
-    qc.compareValues(d1.code, d2.code) ||
-    compareMessageText(d1.messageText, d2.messageText) ||
-    qpc.Comparison.EqualTo
-  );
+  return qc.compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) || qc.compareValues(d1.start, d2.start) || qc.compareValues(d1.length, d2.length) || qc.compareValues(d1.code, d2.code) || compareMessageText(d1.messageText, d2.messageText) || qpc.Comparison.EqualTo;
 }
 
 function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
@@ -5535,18 +5267,7 @@ export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
 
 export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCanonicalFileName: qc.GetCanonicalFileName, cwd: string): qpc.ReadonlyMap<string> {
   const result = qc.createMap<string>();
-  const symlinks = flatten<readonly [string, string]>(
-    mapDefined(
-      files,
-      (sf) =>
-        sf.resolvedModules &&
-        compact(
-          arrayFrom(
-            mapIterator(sf.resolvedModules.values(), (res) => (res && res.originalPath && res.resolvedFileName !== res.originalPath ? ([res.resolvedFileName, res.originalPath] as const) : undefined))
-          )
-        )
-    )
-  );
+  const symlinks = flatten<readonly [string, string]>(mapDefined(files, (sf) => sf.resolvedModules && compact(arrayFrom(mapIterator(sf.resolvedModules.values(), (res) => (res && res.originalPath && res.resolvedFileName !== res.originalPath ? ([res.resolvedFileName, res.originalPath] as const) : undefined))))));
   for (const [resolvedPath, originalPath] of symlinks) {
     const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, getCanonicalFileName);
     result.set(commonOriginal, commonResolved);
@@ -5557,11 +5278,7 @@ export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCan
 function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: qc.GetCanonicalFileName): [string, string] {
   const aParts = getPathComponents(toPath(a, cwd, getCanonicalFileName));
   const bParts = getPathComponents(toPath(b, cwd, getCanonicalFileName));
-  while (
-    !isNodeModulesOrScopedPackageDirectory(aParts[aParts.length - 2], getCanonicalFileName) &&
-    !isNodeModulesOrScopedPackageDirectory(bParts[bParts.length - 2], getCanonicalFileName) &&
-    getCanonicalFileName(aParts[aParts.length - 1]) === getCanonicalFileName(bParts[bParts.length - 1])
-  ) {
+  while (!isNodeModulesOrScopedPackageDirectory(aParts[aParts.length - 2], getCanonicalFileName) && !isNodeModulesOrScopedPackageDirectory(bParts[bParts.length - 2], getCanonicalFileName) && getCanonicalFileName(aParts[aParts.length - 1]) === getCanonicalFileName(bParts[bParts.length - 1])) {
     aParts.pop();
     bParts.pop();
   }
@@ -5674,12 +5391,7 @@ export function isImplicitGlob(lastPathComponent: string): boolean {
   return !/[.*?]/.test(lastPathComponent);
 }
 
-function getSubPatternFromSpec(
-  spec: string,
-  basePath: string,
-  usage: 'files' | 'directories' | 'exclude',
-  { singleAsteriskRegexFragment, doubleAsteriskRegexFragment, replaceWildcardCharacter }: WildcardMatcher
-): string | undefined {
+function getSubPatternFromSpec(spec: string, basePath: string, usage: 'files' | 'directories' | 'exclude', { singleAsteriskRegexFragment, doubleAsteriskRegexFragment, replaceWildcardCharacter }: WildcardMatcher): string | undefined {
   let subpattern = '';
   let hasWrittenComponent = false;
   const components = getNormalizedPathComponents(spec, basePath);
@@ -5772,13 +5484,7 @@ export interface FileMatcherPatterns {
 }
 
 /** @param path directory of the tsconfig.json */
-export function getFileMatcherPatterns(
-  path: string,
-  excludes: readonly string[] | undefined,
-  includes: readonly string[] | undefined,
-  useCaseSensitiveFileNames: boolean,
-  currentDirectory: string
-): FileMatcherPatterns {
+export function getFileMatcherPatterns(path: string, excludes: readonly string[] | undefined, includes: readonly string[] | undefined, useCaseSensitiveFileNames: boolean, currentDirectory: string): FileMatcherPatterns {
   path = normalizePath(path);
   currentDirectory = normalizePath(currentDirectory);
   const absolutePath = combinePaths(currentDirectory, path);
@@ -5797,17 +5503,7 @@ export function getRegexFromPattern(pattern: string, useCaseSensitiveFileNames: 
 }
 
 /** @param path directory of the tsconfig.json */
-export function matchFiles(
-  path: string,
-  extensions: readonly string[] | undefined,
-  excludes: readonly string[] | undefined,
-  includes: readonly string[] | undefined,
-  useCaseSensitiveFileNames: boolean,
-  currentDirectory: string,
-  depth: number | undefined,
-  getFileSystemEntries: (path: string) => FileSystemEntries,
-  realpath: (path: string) => string
-): string[] {
+export function matchFiles(path: string, extensions: readonly string[] | undefined, excludes: readonly string[] | undefined, includes: readonly string[] | undefined, useCaseSensitiveFileNames: boolean, currentDirectory: string, depth: number | undefined, getFileSystemEntries: (path: string) => FileSystemEntries, realpath: (path: string) => string): string[] {
   path = normalizePath(path);
   currentDirectory = normalizePath(currentDirectory);
 
@@ -5879,7 +5575,7 @@ function getBasePaths(path: string, includes: readonly string[] | undefined, use
     for (const include of includes) {
       // We also need to check the relative paths by converting them to absolute and normalizing
       // in case they escape the base path (e.g "..\somedirectory")
-      const absolute: string = isRootedDiskPath(include) ? include : normalizePath(combinePaths(path, include));
+      const absolute: string = qp.isRootedDiskPath(include) ? include : normalizePath(combinePaths(path, include));
       // Append the literal and canonical candidate base paths.
       includeBasePaths.push(getIncludeBasePath(absolute));
     }
@@ -5957,10 +5653,7 @@ export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileEx
     return needJsExtensions ? allSupportedExtensions : supportedTSExtensions;
   }
 
-  const extensions = [
-    ...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions),
-    ...mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined)),
-  ];
+  const extensions = [...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions), ...mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined))];
 
   return deduplicate<string>(extensions, qc.equateStringsCaseSensitive, qc.compareStringsCaseSensitive);
 }
@@ -6011,8 +5704,7 @@ export function isSupportedSourceFileName(fileName: string, compilerOptions?: qt
  */
 export const enum ExtensionPriority {
   TypeScriptFiles = 0,
-  qt.DeclarationAndJavaScriptFiles = 2,
-
+  DeclarationAndJavaScriptFiles = 2,
   Highest = TypeScriptFiles,
   Lowest = qt.DeclarationAndJavaScriptFiles,
 }
@@ -6358,13 +6050,7 @@ export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt): s
 }
 
 export function isValidTypeOnlyAliasUseSite(useSite: qt.Node): boolean {
-  return (
-    !!(useSite.flags & qt.NodeFlags.Ambient) ||
-    isPartOfTypeQuery(useSite) ||
-    isIdentifierInNonEmittingHeritageClause(useSite) ||
-    isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(useSite) ||
-    !isExpressionNode(useSite)
-  );
+  return !!(useSite.flags & qt.NodeFlags.Ambient) || isPartOfTypeQuery(useSite) || isIdentifierInNonEmittingHeritageClause(useSite) || isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(useSite) || !isExpressionNode(useSite);
 }
 
 export function typeOnlyDeclarationIsExport(typeOnlyDeclaration: qt.Node) {

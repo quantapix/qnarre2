@@ -621,7 +621,7 @@ function createSourceFilesFromBundleBuildInfo(bundle: BundleBuildInfo, buildInfo
   return sourceFiles;
 }
 
-export function emitUsingBuildInfo(config: ParsedCommandLine, host: EmitUsingBuildInfoHost, getCommandLine: (ref: ProjectReference) => ParsedCommandLine | undefined, customTransformers?: CustomTransformers): EmitUsingBuildInfoResult {
+export function emitUsingBuildInfo(config: ParsedCommandLine, host: EmitUsingBuildInfoHost, getCommandLine: (ref: qt.ProjectReference) => ParsedCommandLine | undefined, customTransformers?: CustomTransformers): EmitUsingBuildInfoResult {
   const { buildInfoPath, jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath } = getOutputPathsForBundle(config.options, /*forceDtsPaths*/ false);
   const buildInfoText = host.readFile(Debug.checkDefined(buildInfoPath));
   if (!buildInfoText) return buildInfoPath;
@@ -781,7 +781,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         Debug.assert(isIdentifier(node), 'Expected an Identifier node.');
         break;
       case EmitHint.Expression:
-        Debug.assert(isExpression(node), 'Expected an Expression node.');
+        Debug.assert(isExpression(node), 'Expected an qt.Expression node.');
         break;
     }
     switch (node.kind) {
@@ -1032,14 +1032,14 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return pipelineEmit(EmitHint.IdentifierName, node);
   }
 
-  function emitExpression(node: Expression): Node;
-  function emitExpression(node: Expression | undefined): Node | undefined;
-  function emitExpression(node: Expression | undefined): Node | undefined {
+  function emitExpression(node: qt.Expression): Node;
+  function emitExpression(node: qt.Expression | undefined): Node | undefined;
+  function emitExpression(node: qt.Expression | undefined): Node | undefined {
     if (node === undefined) return;
     return pipelineEmit(EmitHint.Expression, node);
   }
 
-  function emitJsxAttributeValue(node: StringLiteral | JsxExpression): Node {
+  function emitJsxAttributeValue(node: StringLiteral | qt.JsxExpression): Node {
     return pipelineEmit(isStringLiteral(node) ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
   }
 
@@ -1049,7 +1049,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const savedPreserveSourceNewlines = preserveSourceNewlines;
     lastNode = node;
     lastSubstitution = undefined;
-    if (preserveSourceNewlines && !!(qu.getEmitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
+    if (preserveSourceNewlines && !!(qu.getEmitFlags(node) & qt.EmitFlags.IgnoreSourceNewlines)) {
       preserveSourceNewlines = false;
     }
 
@@ -1266,7 +1266,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         case qt.SyntaxKind.SemicolonClassElement:
           return emitSemicolonClassElement();
 
-        // Statements
+        // qt.Statements
         case qt.SyntaxKind.Block:
           return emitBlock(node);
         case qt.SyntaxKind.VariableStatement:
@@ -1465,7 +1465,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           writeTokenNode(node, writeKeyword);
           return;
 
-        // Expressions
+        // qt.Expressions
         case qt.SyntaxKind.ArrayLiteralExpression:
           return emitArrayLiteralExpression(node);
         case qt.SyntaxKind.ObjectLiteralExpression:
@@ -1646,7 +1646,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   // qt.SyntaxKind.TemplateHead
   // qt.SyntaxKind.TemplateMiddle
   // qt.SyntaxKind.TemplateTail
-  function emitLiteral(node: LiteralLikeNode, jsxAttributeEscape: boolean) {
+  function emitLiteral(node: qt.LiteralLikeNode, jsxAttributeEscape: boolean) {
     const text = getLiteralTextOfNode(node, printerOptions.neverAsciiEscape, jsxAttributeEscape);
     if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === qt.SyntaxKind.StringLiteral || isTemplateLiteralKind(node.kind))) {
       writeLiteral(text);
@@ -1714,7 +1714,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeText(getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
   }
 
-  function emitQualifiedName(node: QualifiedName) {
+  function emitQualifiedName(node: qt.QualifiedName) {
     emitEntityName(node.left);
     writePunctuation('.');
     emit(node.right);
@@ -1948,7 +1948,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitTypeLiteral(node: TypeLiteralNode) {
     writePunctuation('{');
-    const flags = qu.getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
+    const flags = qu.getEmitFlags(node) & qt.EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
     emitList(node, node.members, flags | ListFormat.NoSpaceIfEmpty);
     writePunctuation('}');
   }
@@ -1966,7 +1966,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitTupleType(node: TupleTypeNode) {
     emitTokenWithComment(SyntaxKind.OpenBracketToken, node.pos, writePunctuation, node);
-    const flags = qu.getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
+    const flags = qu.getEmitFlags(node) & qt.EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
     emitList(node, node.elements, flags | ListFormat.NoSpaceIfEmpty);
     emitTokenWithComment(SyntaxKind.CloseBracketToken, node.elements.end, writePunctuation, node);
   }
@@ -2041,7 +2041,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitMappedType(node: MappedTypeNode) {
     const emitFlags = qu.getEmitFlags(node);
     writePunctuation('{');
-    if (emitFlags & EmitFlags.SingleLine) {
+    if (emitFlags & qt.EmitFlags.SingleLine) {
       writeSpace();
     } else {
       writeLine();
@@ -2069,7 +2069,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeSpace();
     emit(node.type);
     writeTrailingSemicolon();
-    if (emitFlags & EmitFlags.SingleLine) {
+    if (emitFlags & qt.EmitFlags.SingleLine) {
       writeSpace();
     } else {
       writeLine();
@@ -2082,7 +2082,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.literal);
   }
 
-  function emitImportTypeNode(node: ImportTypeNode) {
+  function emitImportTypeNode(node: qt.ImportTypeNode) {
     if (node.isTypeOf) {
       writeKeyword('typeof');
       writeSpace();
@@ -2126,7 +2126,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   //
-  // Expressions
+  // qt.Expressions
   //
 
   function emitArrayLiteralExpression(node: ArrayLiteralExpression) {
@@ -2138,7 +2138,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitObjectLiteralExpression(node: ObjectLiteralExpression) {
     forEach(node.properties, generateMemberNames);
 
-    const indentedFlag = qu.getEmitFlags(node) & EmitFlags.Indented;
+    const indentedFlag = qu.getEmitFlags(node) & qt.EmitFlags.Indented;
     if (indentedFlag) {
       increaseIndent();
     }
@@ -2178,7 +2178,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   // 1..toString is a valid property access, emit a dot after the literal
   // Also emit a dot if expression is a integer const enum value - it will appear in generated code as numeric literal
-  function mayNeedDotDotForPropertyAccess(expression: Expression) {
+  function mayNeedDotDotForPropertyAccess(expression: qt.Expression) {
     expression = skipPartiallyEmittedExpressions(expression);
     if (isNumericLiteral(expression)) {
       // check if numeric literal is a decimal literal that was originally written with a dot
@@ -2186,7 +2186,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       // If he number will be printed verbatim and it doesn't already contain a dot, add one
       // if the expression doesn't have any comments that will be emitted.
       return !expression.numericLiteralFlags && !qc.stringContains(text, tokenToString(SyntaxKind.DotToken)!);
-    } else if (isAccessExpression(expression)) {
+    } else if (qu.isAccessExpression(expression)) {
       // check if constant enum value is integer
       const constantValue = getConstantValue(expression);
       // isFinite handles cases when constantValue is undefined
@@ -2194,7 +2194,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitElementAccessExpression(node: ElementAccessExpression) {
+  function emitElementAccessExpression(node: qt.ElementAccessExpression) {
     emitExpression(node.expression);
     emit(node.questionDotToken);
     emitTokenWithComment(SyntaxKind.OpenBracketToken, node.expression.end, writePunctuation, node);
@@ -2283,7 +2283,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.expression);
   }
 
-  function emitPrefixUnaryExpression(node: PrefixUnaryExpression) {
+  function emitPrefixUnaryExpression(node: qt.PrefixUnaryExpression) {
     writeTokenText(node.operator, writeOperator);
     if (shouldEmitWhitespaceBeforeOperand(node)) {
       writeSpace();
@@ -2291,7 +2291,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.operand);
   }
 
-  function shouldEmitWhitespaceBeforeOperand(node: PrefixUnaryExpression) {
+  function shouldEmitWhitespaceBeforeOperand(node: qt.PrefixUnaryExpression) {
     // In some cases, we need to emit a space between the operator and the operand. One obvious case
     // is when the operator is an identifier, like delete or typeof. We also need to do this for plus
     // and minus expressions in certain cases. Specifically, consider the following two cases (parens
@@ -2308,7 +2308,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return operand.kind === qt.SyntaxKind.PrefixUnaryExpression && ((node.operator === qt.SyntaxKind.PlusToken && (operand.operator === qt.SyntaxKind.PlusToken || operand.operator === qt.SyntaxKind.PlusPlusToken)) || (node.operator === qt.SyntaxKind.MinusToken && (operand.operator === qt.SyntaxKind.MinusToken || operand.operator === qt.SyntaxKind.MinusMinusToken)));
   }
 
-  function emitPostfixUnaryExpression(node: PostfixUnaryExpression) {
+  function emitPostfixUnaryExpression(node: qt.PostfixUnaryExpression) {
     emitExpression(node.operand);
     writeTokenText(node.operator, writeOperator);
   }
@@ -2324,7 +2324,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * as possible without creating any additional stack frames. This can only be done when the emit pipeline does
    * not require notification/substitution/comment/sourcemap decorations.
    */
-  function emitBinaryExpression(node: BinaryExpression) {
+  function emitBinaryExpression(node: qt.BinaryExpression) {
     const nodeStack = [node];
     const stateStack = [EmitBinaryExpressionState.EmitLeft];
     let stackIndex = 0;
@@ -2359,7 +2359,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       }
     }
 
-    function maybePipelineEmitExpression(next: Expression) {
+    function maybePipelineEmitExpression(next: qt.Expression) {
       // Advance the state of this unit of work,
       stateStack[stackIndex]++;
 
@@ -2434,7 +2434,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitClassDeclarationOrExpression(node);
   }
 
-  function emitExpressionWithTypeArguments(node: ExpressionWithTypeArguments) {
+  function emitExpressionWithTypeArguments(node: qt.ExpressionWithTypeArguments) {
     emitExpression(node.expression);
     emitTypeArguments(node, node.typeArguments);
   }
@@ -2470,7 +2470,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   //
-  // Statements
+  // qt.Statements
   //
 
   function emitBlock(node: Block) {
@@ -2479,7 +2479,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitBlockStatements(node: BlockLike, forceSingleLine: boolean) {
     emitTokenWithComment(SyntaxKind.OpenBraceToken, node.pos, writePunctuation, /*contextNode*/ node);
-    const format = forceSingleLine || qu.getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
+    const format = forceSingleLine || qu.getEmitFlags(node) & qt.EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
     emitList(node, node.statements, format);
     emitTokenWithComment(SyntaxKind.CloseBraceToken, node.statements.end, writePunctuation, /*contextNode*/ node, /*indentLeading*/ !!(format & ListFormat.MultiLine));
   }
@@ -2500,7 +2500,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitExpressionStatement(node: ExpressionStatement) {
+  function emitExpressionStatement(node: qt.ExpressionStatement) {
     emitExpression(node.expression);
     // Emit semicolon in non json files
     // or if json file that created synthesized expression(eg.define expression statement when --out and amd code generation)
@@ -2594,7 +2594,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitEmbeddedStatement(node, node.statement);
   }
 
-  function emitForBinding(node: qt.VariableDeclarationList | Expression | undefined) {
+  function emitForBinding(node: qt.VariableDeclarationList | qt.Expression | undefined) {
     if (node !== undefined) {
       if (node.kind === qt.SyntaxKind.VariableDeclarationList) {
         emit(node);
@@ -2734,11 +2734,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitBlockFunctionBody(<Block>body);
   }
 
-  function emitSignatureAndBody(node: FunctionLikeDeclaration, emitSignatureHead: (node: SignatureDeclaration) => void) {
+  function emitSignatureAndBody(node: qt.FunctionLikeDeclaration, emitSignatureHead: (node: qt.SignatureDeclaration) => void) {
     const body = node.body;
     if (body) {
       if (isBlock(body)) {
-        const indentedFlag = qu.getEmitFlags(node) & EmitFlags.Indented;
+        const indentedFlag = qu.getEmitFlags(node) & qt.EmitFlags.Indented;
         if (indentedFlag) {
           increaseIndent();
         }
@@ -2784,7 +2784,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     // * A non-synthesized body's start and end position are on different lines.
     // * Any statement in the body starts on a new line.
 
-    if (qu.getEmitFlags(body) & EmitFlags.SingleLine) {
+    if (qu.getEmitFlags(body) & qt.EmitFlags.SingleLine) {
       return true;
     }
 
@@ -2800,7 +2800,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       return false;
     }
 
-    let previousStatement: Statement | undefined;
+    let previousStatement: qt.Statement | undefined;
     for (const statement of body.statements) {
       if (getSeparatingLineTerminatorCount(previousStatement, statement, ListFormat.PreserveLines) > 0) {
         return false;
@@ -2862,7 +2862,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emitIdentifierName(node.name);
     }
 
-    const indentedFlag = qu.getEmitFlags(node) & EmitFlags.Indented;
+    const indentedFlag = qu.getEmitFlags(node) & qt.EmitFlags.Indented;
     if (indentedFlag) {
       increaseIndent();
     }
@@ -2908,7 +2908,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeTrailingSemicolon();
   }
 
-  function emitEnumDeclaration(node: EnumDeclaration) {
+  function emitEnumDeclaration(node: qt.EnumDeclaration) {
     emitModifiers(node, node.modifiers);
     writeKeyword('enum');
     writeSpace();
@@ -3016,7 +3016,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitImportOrExportSpecifier(node);
   }
 
-  function emitExportAssignment(node: ExportAssignment) {
+  function emitExportAssignment(node: qt.ExportAssignment) {
     const nextPos = emitTokenWithComment(SyntaxKind.ExportKeyword, node.pos, writeKeyword, node);
     writeSpace();
     if (node.isExportEquals) {
@@ -3176,7 +3176,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writePunctuation('}');
   }
 
-  function emitJsxExpression(node: JsxExpression) {
+  function emitJsxExpression(node: qt.JsxExpression) {
     if (node.expression) {
       writePunctuation('{');
       emit(node.dotDotDotToken);
@@ -3262,7 +3262,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     // "comment1" is not considered to be leading comment for node.initializer
     // but rather a trailing comment on the previous node.
     const initializer = node.initializer;
-    if (emitTrailingCommentsOfPosition && (qu.getEmitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
+    if (emitTrailingCommentsOfPosition && (qu.getEmitFlags(initializer) & qt.EmitFlags.NoLeadingComments) === 0) {
       const commentRange = getCommentRange(initializer);
       emitTrailingCommentsOfPosition(commentRange.pos);
     }
@@ -3530,7 +3530,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   // Transformation nodes
 
-  function emitPartiallyEmittedExpression(node: PartiallyEmittedExpression) {
+  function emitPartiallyEmittedExpression(node: qt.PartiallyEmittedExpression) {
     emitExpression(node.expression);
   }
 
@@ -3539,7 +3539,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   /**
-   * Emits any prologue directives at the start of a Statement list, returning the
+   * Emits any prologue directives at the start of a qt.Statement list, returning the
    * number of prologue directives written to the output.
    */
   function emitPrologueDirectives(statements: readonly Node[], sourceFile?: SourceFile, seenPrologueDirectives?: Map<true>, recordBundleFileSection?: true): number {
@@ -3677,7 +3677,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitInitializer(node: Expression | undefined, equalCommentStartPos: number, container: Node) {
+  function emitInitializer(node: qt.Expression | undefined, equalCommentStartPos: number, container: Node) {
     if (node) {
       writeSpace();
       emitTokenWithComment(SyntaxKind.EqualsToken, equalCommentStartPos, writeOperator, container);
@@ -3700,7 +3700,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitExpressionWithLeadingSpace(node: Expression | undefined) {
+  function emitExpressionWithLeadingSpace(node: qt.Expression | undefined) {
     if (node) {
       writeSpace();
       emitExpression(node);
@@ -3714,8 +3714,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function emitEmbeddedStatement(parent: Node, node: Statement) {
-    if (isBlock(node) || qu.getEmitFlags(parent) & EmitFlags.SingleLine) {
+  function emitEmbeddedStatement(parent: Node, node: qt.Statement) {
+    if (isBlock(node) || qu.getEmitFlags(parent) & qt.EmitFlags.SingleLine) {
       writeSpace();
       emit(node);
     } else {
@@ -3738,7 +3738,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitList(parentNode, typeArguments, ListFormat.TypeArguments);
   }
 
-  function emitTypeParameters(parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined) {
+  function emitTypeParameters(parentNode: qt.SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined) {
     if (isFunctionLike(parentNode) && parentNode.typeArguments) {
       // Quick info uses type arguments in place of type parameters on instantiated signatures
       return emitTypeArguments(parentNode, parentNode.typeArguments);
@@ -3941,7 +3941,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       //          2
       //          /* end of element 2 */
       //       ];
-      if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(qu.getEmitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
+      if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(qu.getEmitFlags(previousSibling) & qt.EmitFlags.NoTrailingComments)) {
         emitLeadingCommentsOfPosition(previousSibling.end);
       }
 
@@ -4061,7 +4061,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function writeLineOrSpace(node: qt.Node) {
-    if (qu.getEmitFlags(node) & EmitFlags.SingleLine) {
+    if (qu.getEmitFlags(node) & qt.EmitFlags.SingleLine) {
       writeSpace();
     } else {
       writeLine();
@@ -4230,7 +4230,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function getLinesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
-    if (qu.getEmitFlags(parent) & EmitFlags.NoIndentation) {
+    if (qu.getEmitFlags(parent) & qt.EmitFlags.NoIndentation) {
       return 0;
     }
 
@@ -4279,12 +4279,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return getSourceTextOfNodeFromSourceFile(currentSourceFile!, node, includeTrivia);
   }
 
-  function getLiteralTextOfNode(node: LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
+  function getLiteralTextOfNode(node: qt.LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
     if (node.kind === qt.SyntaxKind.StringLiteral && node.textSourceNode) {
       const textSourceNode = node.textSourceNode!;
       if (isIdentifier(textSourceNode) || isNumericLiteral(textSourceNode)) {
         const text = isNumericLiteral(textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
-        return jsxAttributeEscape ? `"${escapeJsxAttributeString(text)}"` : neverAsciiEscape || qu.getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? `"${escapeString(text)}"` : `"${escapeNonAsciiString(text)}"`;
+        return jsxAttributeEscape ? `"${escapeJsxAttributeString(text)}"` : neverAsciiEscape || qu.getEmitFlags(node) & qt.EmitFlags.NoAsciiEscaping ? `"${escapeString(text)}"` : `"${escapeNonAsciiString(text)}"`;
       } else {
         return getLiteralTextOfNode(textSourceNode, neverAsciiEscape, jsxAttributeEscape);
       }
@@ -4297,7 +4297,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Push a new name generation scope.
    */
   function pushNameGenerationScope(node: qt.Node | undefined) {
-    if (node && qu.getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+    if (node && qu.getEmitFlags(node) & qt.EmitFlags.ReuseTempVariableScope) {
       return;
     }
     tempFlagsStack.push(tempFlags);
@@ -4309,7 +4309,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Pop the current name generation scope.
    */
   function popNameGenerationScope(node: qt.Node | undefined) {
-    if (node && qu.getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+    if (node && qu.getEmitFlags(node) & qt.EmitFlags.ReuseTempVariableScope) {
       return;
     }
     tempFlags = tempFlagsStack.pop()!;
@@ -4378,7 +4378,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         break;
       case qt.SyntaxKind.FunctionDeclaration:
         generateNameIfNeeded((<qt.FunctionDeclaration>node).name);
-        if (qu.getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+        if (qu.getEmitFlags(node) & qt.EmitFlags.ReuseTempVariableScope) {
           forEach((<qt.FunctionDeclaration>node).parameters, generateNames);
           generateNames((<qt.FunctionDeclaration>node).body);
         }
@@ -4437,7 +4437,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Generate the text for a generated identifier.
    */
   function generateName(name: GeneratedIdentifier) {
-    if ((name.autoGenerateFlags & GeneratedIdentifierFlags.KindMask) === GeneratedIdentifierFlags.Node) {
+    if ((name.autoGenerateFlags & qt.GeneratedIdentifierFlags.KindMask) === qt.GeneratedIdentifierFlags.Node) {
       // Node names generate unique names based on their original node
       // and are cached based on that node's id.
       return generateNameCached(getNodeForGeneratedName(name), name.autoGenerateFlags);
@@ -4449,7 +4449,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
 
-  function generateNameCached(node: qt.Node, flags?: GeneratedIdentifierFlags) {
+  function generateNameCached(node: qt.Node, flags?: qt.GeneratedIdentifierFlags) {
     const nodeId = getNodeId(node);
     return nodeIdToGeneratedName[nodeId] || (nodeIdToGeneratedName[nodeId] = generateNameForNode(node, flags));
   }
@@ -4559,9 +4559,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   /**
-   * Generates a unique name for a ModuleDeclaration or EnumDeclaration.
+   * Generates a unique name for a ModuleDeclaration or qt.EnumDeclaration.
    */
-  function generateNameForModuleOrEnum(node: ModuleDeclaration | EnumDeclaration) {
+  function generateNameForModuleOrEnum(node: ModuleDeclaration | qt.EnumDeclaration) {
     const name = getTextOfNode(node.name);
     // Use module/enum name itself if it is unique, otherwise make a unique variation
     return isUniqueLocalName(name, node) ? name : makeUniqueName(name);
@@ -4600,13 +4600,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   /**
    * Generates a unique name from a node.
    */
-  function generateNameForNode(node: qt.Node, flags?: GeneratedIdentifierFlags): string {
+  function generateNameForNode(node: qt.Node, flags?: qt.GeneratedIdentifierFlags): string {
     switch (node.kind) {
       case qt.SyntaxKind.Identifier:
-        return makeUniqueName(getTextOfNode(node), isUniqueName, !!(flags & GeneratedIdentifierFlags.Optimistic), !!(flags & GeneratedIdentifierFlags.ReservedInNestedScopes));
+        return makeUniqueName(getTextOfNode(node), isUniqueName, !!(flags & qt.GeneratedIdentifierFlags.Optimistic), !!(flags & qt.GeneratedIdentifierFlags.ReservedInNestedScopes));
       case qt.SyntaxKind.ModuleDeclaration:
       case qt.SyntaxKind.EnumDeclaration:
-        return generateNameForModuleOrEnum(<ModuleDeclaration | EnumDeclaration>node);
+        return generateNameForModuleOrEnum(<ModuleDeclaration | qt.EnumDeclaration>node);
       case qt.SyntaxKind.ImportDeclaration:
       case qt.SyntaxKind.ExportDeclaration:
         return generateNameForImportOrExportDeclaration(<ImportDeclaration | ExportDeclaration>node);
@@ -4631,13 +4631,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Generates a unique identifier for a node.
    */
   function makeName(name: GeneratedIdentifier) {
-    switch (name.autoGenerateFlags & GeneratedIdentifierFlags.KindMask) {
-      case GeneratedIdentifierFlags.Auto:
-        return makeTempVariableName(TempFlags.Auto, !!(name.autoGenerateFlags & GeneratedIdentifierFlags.ReservedInNestedScopes));
-      case GeneratedIdentifierFlags.Loop:
-        return makeTempVariableName(TempFlags._i, !!(name.autoGenerateFlags & GeneratedIdentifierFlags.ReservedInNestedScopes));
-      case GeneratedIdentifierFlags.Unique:
-        return makeUniqueName(idText(name), name.autoGenerateFlags & GeneratedIdentifierFlags.FileLevel ? isFileLevelUniqueName : isUniqueName, !!(name.autoGenerateFlags & GeneratedIdentifierFlags.Optimistic), !!(name.autoGenerateFlags & GeneratedIdentifierFlags.ReservedInNestedScopes));
+    switch (name.autoGenerateFlags & qt.GeneratedIdentifierFlags.KindMask) {
+      case qt.GeneratedIdentifierFlags.Auto:
+        return makeTempVariableName(TempFlags.Auto, !!(name.autoGenerateFlags & qt.GeneratedIdentifierFlags.ReservedInNestedScopes));
+      case qt.GeneratedIdentifierFlags.Loop:
+        return makeTempVariableName(TempFlags._i, !!(name.autoGenerateFlags & qt.GeneratedIdentifierFlags.ReservedInNestedScopes));
+      case qt.GeneratedIdentifierFlags.Unique:
+        return makeUniqueName(idText(name), name.autoGenerateFlags & qt.GeneratedIdentifierFlags.FileLevel ? isFileLevelUniqueName : isUniqueName, !!(name.autoGenerateFlags & qt.GeneratedIdentifierFlags.Optimistic), !!(name.autoGenerateFlags & qt.GeneratedIdentifierFlags.ReservedInNestedScopes));
     }
 
     return Debug.fail('Unsupported GeneratedIdentifierKind.');
@@ -4655,7 +4655,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
       // if "node" is a different generated name (having a different
       // "autoGenerateId"), use it and stop traversing.
-      if (isIdentifier(node) && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
+      if (isIdentifier(node) && !!(node.autoGenerateFlags! & qt.GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
         break;
       }
 
@@ -4678,8 +4678,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
     // We have to explicitly check that the node is JsxText because if the compilerOptions.jsx is "preserve" we will not do any transformation.
     // It is expensive to walk entire tree just to set one kind of node to have no comments.
-    const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0 || node.kind === qt.SyntaxKind.JsxText;
-    const skipTrailingComments = end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0 || node.kind === qt.SyntaxKind.JsxText;
+    const skipLeadingComments = pos < 0 || (emitFlags & qt.EmitFlags.NoLeadingComments) !== 0 || node.kind === qt.SyntaxKind.JsxText;
+    const skipTrailingComments = end < 0 || (emitFlags & qt.EmitFlags.NoTrailingComments) !== 0 || node.kind === qt.SyntaxKind.JsxText;
 
     // Save current container state on the stack.
     const savedContainerPos = containerPos;
@@ -4692,12 +4692,12 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         emitLeadingComments(pos, isEmittedNode);
       }
 
-      if (!skipLeadingComments || (pos >= 0 && (emitFlags & EmitFlags.NoLeadingComments) !== 0)) {
+      if (!skipLeadingComments || (pos >= 0 && (emitFlags & qt.EmitFlags.NoLeadingComments) !== 0)) {
         // Advance the container position if comments get emitted or if they've been disabled explicitly using NoLeadingComments.
         containerPos = pos;
       }
 
-      if (!skipTrailingComments || (end >= 0 && (emitFlags & EmitFlags.NoTrailingComments) !== 0)) {
+      if (!skipTrailingComments || (end >= 0 && (emitFlags & qt.EmitFlags.NoTrailingComments) !== 0)) {
         // As above.
         containerEnd = end;
 
@@ -4712,7 +4712,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     exitComment();
 
     const pipelinePhase = getNextPipelinePhase(PipelinePhase.Comments, hint, node);
-    if (emitFlags & EmitFlags.NoNestedComments) {
+    if (emitFlags & qt.EmitFlags.NoNestedComments) {
       commentsDisabled = true;
       pipelinePhase(hint, node);
       commentsDisabled = false;
@@ -4774,14 +4774,14 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     enterComment();
     const { pos, end } = detachedRange;
     const emitFlags = qu.getEmitFlags(node);
-    const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0;
-    const skipTrailingComments = commentsDisabled || end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0;
+    const skipLeadingComments = pos < 0 || (emitFlags & qt.EmitFlags.NoLeadingComments) !== 0;
+    const skipTrailingComments = commentsDisabled || end < 0 || (emitFlags & qt.EmitFlags.NoTrailingComments) !== 0;
     if (!skipLeadingComments) {
       emitDetachedCommentsAndUpdateCommentsInfo(detachedRange);
     }
 
     exitComment();
-    if (emitFlags & EmitFlags.NoNestedComments && !commentsDisabled) {
+    if (emitFlags & qt.EmitFlags.NoNestedComments && !commentsDisabled) {
       commentsDisabled = true;
       emitCallback(node);
       commentsDisabled = false;
@@ -4984,11 +4984,11 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else {
       const { pos, end, source = sourceMapSource } = getSourceMapRange(node);
       const emitFlags = qu.getEmitFlags(node);
-      if (node.kind !== qt.SyntaxKind.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
+      if (node.kind !== qt.SyntaxKind.NotEmittedStatement && (emitFlags & qt.EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
         emitSourcePos(source, skipSourceTrivia(source, pos));
       }
 
-      if (emitFlags & EmitFlags.NoNestedSourceMaps) {
+      if (emitFlags & qt.EmitFlags.NoNestedSourceMaps) {
         sourceMapsDisabled = true;
         pipelinePhase(hint, node);
         sourceMapsDisabled = false;
@@ -4996,7 +4996,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         pipelinePhase(hint, node);
       }
 
-      if (node.kind !== qt.SyntaxKind.NotEmittedStatement && (emitFlags & EmitFlags.NoTrailingSourceMap) === 0 && end >= 0) {
+      if (node.kind !== qt.SyntaxKind.NotEmittedStatement && (emitFlags & qt.EmitFlags.NoTrailingSourceMap) === 0 && end >= 0) {
         emitSourcePos(source, end);
       }
     }
@@ -5052,19 +5052,19 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
 
     const emitNode = node && node.emitNode;
-    const emitFlags = (emitNode && emitNode.flags) || EmitFlags.None;
+    const emitFlags = (emitNode && emitNode.flags) || qt.EmitFlags.None;
     const range = emitNode && emitNode.tokenSourceMapRanges && emitNode.tokenSourceMapRanges[token];
     const source = (range && range.source) || sourceMapSource;
 
     tokenPos = skipSourceTrivia(source, range ? range.pos : tokenPos);
-    if ((emitFlags & EmitFlags.NoTokenLeadingSourceMaps) === 0 && tokenPos >= 0) {
+    if ((emitFlags & qt.EmitFlags.NoTokenLeadingSourceMaps) === 0 && tokenPos >= 0) {
       emitSourcePos(source, tokenPos);
     }
 
     tokenPos = emitCallback(token, writer, tokenPos);
 
     if (range) tokenPos = range.end;
-    if ((emitFlags & EmitFlags.NoTokenTrailingSourceMaps) === 0 && tokenPos >= 0) {
+    if ((emitFlags & qt.EmitFlags.NoTokenTrailingSourceMaps) === 0 && tokenPos >= 0) {
       emitSourcePos(source, tokenPos);
     }
 

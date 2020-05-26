@@ -144,11 +144,11 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
   const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(SyntaxKind.Count);
   let lexicalEnvironmentVariableDeclarations: qt.VariableDeclaration[];
   let lexicalEnvironmentFunctionDeclarations: FunctionDeclaration[];
-  let lexicalEnvironmentStatements: Statement[];
+  let lexicalEnvironmentStatements: qt.Statement[];
   let lexicalEnvironmentFlags = LexicalEnvironmentFlags.None;
   let lexicalEnvironmentVariableDeclarationsStack: qt.VariableDeclaration[][] = [];
   let lexicalEnvironmentFunctionDeclarationsStack: FunctionDeclaration[][] = [];
-  let lexicalEnvironmentStatementsStack: Statement[][] = [];
+  let lexicalEnvironmentStatementsStack: qt.Statement[][] = [];
   let lexicalEnvironmentFlagsStack: LexicalEnvironmentFlags[] = [];
   let lexicalEnvironmentStackOffset = 0;
   let lexicalEnvironmentSuspended = false;
@@ -253,7 +253,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * Determines whether expression substitutions are enabled for the provided node.
    */
   function isSubstitutionEnabled(node: qt.Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.Substitution) !== 0 && (qu.getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
+    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.Substitution) !== 0 && (qu.getEmitFlags(node) & qt.EmitFlags.NoSubstitution) === 0;
   }
 
   /**
@@ -281,7 +281,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * printer when it emits a node.
    */
   function isEmitNotificationEnabled(node: qt.Node) {
-    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qu.getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+    return (enabledSyntaxKindFeatures[node.kind] & qt.SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qu.getEmitFlags(node) & qt.EmitFlags.AdviseOnEmitNode) !== 0;
   }
 
   /**
@@ -310,7 +310,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
   function hoistVariableDeclaration(name: Identifier): void {
     Debug.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     Debug.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    const decl = setEmitFlags(createVariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
+    const decl = setEmitFlags(createVariableDeclaration(name), qt.EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) {
       lexicalEnvironmentVariableDeclarations = [decl];
     } else {
@@ -327,7 +327,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
   function hoistFunctionDeclaration(func: FunctionDeclaration): void {
     Debug.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     Debug.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    setEmitFlags(func, EmitFlags.CustomPrologue);
+    setEmitFlags(func, qt.EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentFunctionDeclarations) {
       lexicalEnvironmentFunctionDeclarations = [func];
     } else {
@@ -338,10 +338,10 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
   /**
    * Adds an initialization statement to the top of the lexical environment.
    */
-  function addInitializationStatement(node: Statement): void {
+  function addInitializationStatement(node: qt.Statement): void {
     Debug.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     Debug.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    setEmitFlags(node, EmitFlags.CustomPrologue);
+    setEmitFlags(node, qt.EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentStatements) {
       lexicalEnvironmentStatements = [node];
     } else {
@@ -393,12 +393,12 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
    * Ends a lexical environment. The previous set of hoisted declarations are restored and
    * any hoisted declarations added in this environment are returned.
    */
-  function endLexicalEnvironment(): Statement[] | undefined {
+  function endLexicalEnvironment(): qt.Statement[] | undefined {
     Debug.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     Debug.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     Debug.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
 
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     if (lexicalEnvironmentVariableDeclarations || lexicalEnvironmentFunctionDeclarations || lexicalEnvironmentStatements) {
       if (lexicalEnvironmentFunctionDeclarations) {
         statements = [...lexicalEnvironmentFunctionDeclarations];
@@ -407,7 +407,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
       if (lexicalEnvironmentVariableDeclarations) {
         const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(lexicalEnvironmentVariableDeclarations));
 
-        setEmitFlags(statement, EmitFlags.CustomPrologue);
+        setEmitFlags(statement, qt.EmitFlags.CustomPrologue);
 
         if (!statements) {
           statements = [statement];

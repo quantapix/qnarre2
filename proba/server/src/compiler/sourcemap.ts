@@ -580,7 +580,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
   const generatedAbsoluteFilePath = getNormalizedAbsolutePath(map.file, mapDirectory);
   const generatedFile = host.getSourceFileLike(generatedAbsoluteFilePath);
   const sourceFileAbsolutePaths = map.sources.map((source) => getNormalizedAbsolutePath(source, sourceRoot));
-  const sourceToSourceIndexMap = createMapFromEntries(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
+  const sourceToSourceIndexMap = qc.createMapFromEntries(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
   let decodedMappings: readonly MappedPosition[] | undefined;
   let generatedMappings: qpc.SortedReadonlyArray<MappedPosition> | undefined;
   let sourceMappings: readonly qpc.SortedReadonlyArray<SourceMappedPosition>[] | undefined;
@@ -611,7 +611,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
   function getDecodedMappings() {
     if (decodedMappings === undefined) {
       const decoder = decodeMappings(map.mappings);
-      const mappings = arrayFrom(decoder, processMapping);
+      const mappings = qc.arrayFrom(decoder, processMapping);
       if (decoder.error !== undefined) {
         if (host.log) {
           host.log(`Encountered error while decoding sourcemap: ${decoder.error}`);

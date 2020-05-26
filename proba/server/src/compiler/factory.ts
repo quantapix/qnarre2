@@ -26,30 +26,30 @@ export const nullTransformationContext: TransformationContext = {
 
 export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol' | 'object' | 'function';
 
-export function createTypeCheck(value: Expression, tag: TypeOfTag) {
+export function createTypeCheck(value: qt.Expression, tag: TypeOfTag) {
   return tag === 'undefined' ? createStrictEquality(value, createVoidZero()) : createStrictEquality(createTypeOf(value), createLiteral(tag));
 }
 
-export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: qt.TextRange): MemberExpression {
+export function createMemberAccessForPropertyName(target: qt.Expression, memberName: PropertyName, location?: qt.TextRange): MemberExpression {
   if (isComputedPropertyName(memberName)) {
     return setTextRange(createElementAccess(target, memberName.expression), location);
   } else {
     const expression = setTextRange(isIdentifier(memberName) || isPrivateIdentifier(memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName), memberName);
-    getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
+    getOrCreateEmitNode(expression).flags |= qt.EmitFlags.NoNestedSourceMaps;
     return expression;
   }
 }
 
-export function createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: qt.TextRange) {
+export function createFunctionCall(func: qt.Expression, thisArg: qt.Expression, argumentsList: readonly qt.Expression[], location?: qt.TextRange) {
   return setTextRange(createCall(createPropertyAccess(func, 'call'), /*typeArguments*/ undefined, [thisArg, ...argumentsList]), location);
 }
 
-export function createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: qt.TextRange) {
+export function createFunctionApply(func: qt.Expression, thisArg: qt.Expression, argumentsExpression: qt.Expression, location?: qt.TextRange) {
   return setTextRange(createCall(createPropertyAccess(func, 'apply'), /*typeArguments*/ undefined, [thisArg, argumentsExpression]), location);
 }
 
-export function createArraySlice(array: Expression, start?: number | Expression) {
-  const argumentsList: Expression[] = [];
+export function createArraySlice(array: qt.Expression, start?: number | qt.Expression) {
+  const argumentsList: qt.Expression[] = [];
   if (start !== undefined) {
     argumentsList.push(typeof start === 'number' ? createLiteral(start) : start);
   }
@@ -57,11 +57,11 @@ export function createArraySlice(array: Expression, start?: number | Expression)
   return createCall(createPropertyAccess(array, 'slice'), /*typeArguments*/ undefined, argumentsList);
 }
 
-export function createArrayConcat(array: Expression, values: readonly Expression[]) {
+export function createArrayConcat(array: qt.Expression, values: readonly qt.Expression[]) {
   return createCall(createPropertyAccess(array, 'concat'), /*typeArguments*/ undefined, values);
 }
 
-export function createMathPow(left: Expression, right: Expression, location?: qt.TextRange) {
+export function createMathPow(left: qt.Expression, right: qt.Expression, location?: qt.TextRange) {
   return setTextRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), /*typeArguments*/ undefined, [left, right]), location);
 }
 
@@ -77,7 +77,7 @@ function createReactNamespace(reactNamespace: string, parent: JsxOpeningLikeElem
   return react;
 }
 
-function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
+function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): qt.Expression {
   if (isQualifiedName(jsxFactory)) {
     const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
     const right = createIdentifier(idText(jsxFactory.right));
@@ -88,11 +88,11 @@ function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent
   }
 }
 
-function createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
+function createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): qt.Expression {
   return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
 }
 
-export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, tagName: Expression, props: Expression, children: readonly Expression[], parentElement: JsxOpeningLikeElement, location: qt.TextRange): LeftHandSideExpression {
+export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, tagName: qt.Expression, props: qt.Expression, children: readonly qt.Expression[], parentElement: JsxOpeningLikeElement, location: qt.TextRange): LeftHandSideExpression {
   const argumentsList = [tagName];
   if (props) {
     argumentsList.push(props);
@@ -116,7 +116,7 @@ export function createExpressionForJsxElement(jsxFactoryEntity: EntityName | und
   return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
 }
 
-export function createExpressionForJsxFragment(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, children: readonly Expression[], parentElement: JsxOpeningFragment, location: qt.TextRange): LeftHandSideExpression {
+export function createExpressionForJsxFragment(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, children: readonly qt.Expression[], parentElement: JsxOpeningFragment, location: qt.TextRange): LeftHandSideExpression {
   const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
 
   const argumentsList = [tagName];
@@ -142,7 +142,7 @@ export function createExpressionForJsxFragment(jsxFactoryEntity: EntityName | un
  * Gets an identifier for the name of an *unscoped* emit helper.
  */
 export function getUnscopedHelperName(name: string) {
-  return setEmitFlags(createIdentifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
+  return setEmitFlags(createIdentifier(name), qt.EmitFlags.HelperName | qt.EmitFlags.AdviseOnEmitNode);
 }
 
 export const valuesHelper: UnscopedEmitHelper = {
@@ -163,7 +163,7 @@ export const valuesHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createValuesHelper(context: TransformationContext, expression: Expression, location?: qt.TextRange) {
+export function createValuesHelper(context: TransformationContext, expression: qt.Expression, location?: qt.TextRange) {
   context.requestEmitHelper(valuesHelper);
   return setTextRange(createCall(getUnscopedHelperName('__values'), /*typeArguments*/ undefined, [expression]), location);
 }
@@ -191,7 +191,7 @@ export const readHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: qt.TextRange) {
+export function createReadHelper(context: TransformationContext, iteratorRecord: qt.Expression, count: number | undefined, location?: qt.TextRange) {
   context.requestEmitHelper(readHelper);
   return setTextRange(createCall(getUnscopedHelperName('__read'), /*typeArguments*/ undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
 }
@@ -208,7 +208,7 @@ export const spreadHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createSpreadHelper(context: TransformationContext, argumentList: readonly Expression[], location?: qt.TextRange) {
+export function createSpreadHelper(context: TransformationContext, argumentList: readonly qt.Expression[], location?: qt.TextRange) {
   context.requestEmitHelper(spreadHelper);
   return setTextRange(createCall(getUnscopedHelperName('__spread'), /*typeArguments*/ undefined, argumentList), location);
 }
@@ -227,14 +227,14 @@ export const spreadArraysHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly Expression[], location?: qt.TextRange) {
+export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly qt.Expression[], location?: qt.TextRange) {
   context.requestEmitHelper(spreadArraysHelper);
   return setTextRange(createCall(getUnscopedHelperName('__spreadArrays'), /*typeArguments*/ undefined, argumentList), location);
 }
 
 // Utilities
 
-export function createForOfBindingStatement(node: ForInitializer, boundValue: Expression): Statement {
+export function createForOfBindingStatement(node: ForInitializer, boundValue: qt.Expression): qt.Statement {
   if (isVariableDeclarationList(node)) {
     const firstDeclaration = first(node.declarations);
     const updatedDeclaration = updateVariableDeclaration(firstDeclaration, firstDeclaration.name, /*typeNode*/ undefined, boundValue);
@@ -245,7 +245,7 @@ export function createForOfBindingStatement(node: ForInitializer, boundValue: Ex
   }
 }
 
-export function insertLeadingStatement(dest: Statement, source: Statement) {
+export function insertLeadingStatement(dest: qt.Statement, source: qt.Statement) {
   if (isBlock(dest)) {
     return updateBlock(dest, setTextRange(createNodeArray([source, ...dest.statements]), dest.statements));
   } else {
@@ -253,7 +253,7 @@ export function insertLeadingStatement(dest: Statement, source: Statement) {
   }
 }
 
-export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
+export function restoreEnclosingLabel(node: qt.Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): qt.Statement {
   if (!outermostLabeledStatement) {
     return node;
   }
@@ -266,10 +266,10 @@ export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement
 
 export interface CallBinding {
   target: LeftHandSideExpression;
-  thisArg: Expression;
+  thisArg: qt.Expression;
 }
 
-function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
+function shouldBeCapturedInTempVariable(node: qt.Expression, cacheIdentifiers: boolean): boolean {
   const target = skipParentheses(node);
   switch (target.kind) {
     case qt.SyntaxKind.Identifier:
@@ -292,9 +292,9 @@ function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: bool
   }
 }
 
-export function createCallBinding(expression: Expression, recordTempVariable: (temp: Identifier) => void, languageVersion?: qt.ScriptTarget, cacheIdentifiers = false): CallBinding {
+export function createCallBinding(expression: qt.Expression, recordTempVariable: (temp: Identifier) => void, languageVersion?: qt.ScriptTarget, cacheIdentifiers = false): CallBinding {
   const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
-  let thisArg: Expression;
+  let thisArg: qt.Expression;
   let target: LeftHandSideExpression;
   if (isSuperProperty(callee)) {
     thisArg = createThis();
@@ -302,7 +302,7 @@ export function createCallBinding(expression: Expression, recordTempVariable: (t
   } else if (callee.kind === qt.SyntaxKind.SuperKeyword) {
     thisArg = createThis();
     target = languageVersion < qt.ScriptTarget.ES2015 ? setTextRange(createIdentifier('_super'), callee) : callee;
-  } else if (qu.getEmitFlags(callee) & EmitFlags.HelperName) {
+  } else if (qu.getEmitFlags(callee) & qt.EmitFlags.HelperName) {
     thisArg = createVoidZero();
     target = parenthesizeForAccess(callee);
   } else {
@@ -346,13 +346,13 @@ export function createCallBinding(expression: Expression, recordTempVariable: (t
   return { target, thisArg };
 }
 
-export function inlineExpressions(expressions: readonly Expression[]) {
+export function inlineExpressions(expressions: readonly qt.Expression[]) {
   // Avoid deeply nested comma expressions as traversing them during emit can result in "Maximum call
   // stack size exceeded" errors.
   return expressions.length > 10 ? createCommaList(expressions) : reduceLeft(expressions, createComma)!;
 }
 
-export function createExpressionFromEntityName(node: EntityName | Expression): Expression {
+export function createExpressionFromEntityName(node: EntityName | qt.Expression): qt.Expression {
   if (isQualifiedName(node)) {
     const left = createExpressionFromEntityName(node.left);
     const right = getMutableClone(node.right);
@@ -362,7 +362,7 @@ export function createExpressionFromEntityName(node: EntityName | Expression): E
   }
 }
 
-export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
+export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): qt.Expression {
   if (isIdentifier(memberName)) {
     return createLiteral(memberName);
   } else if (isComputedPropertyName(memberName)) {
@@ -372,7 +372,7 @@ export function createExpressionForPropertyName(memberName: Exclude<PropertyName
   }
 }
 
-export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
+export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: qt.Expression): qt.Expression | undefined {
   if (property.name && isPrivateIdentifier(property.name)) {
     Debug.failBadSyntaxKind(property.name, 'Private identifiers are not allowed in object literals.');
   }
@@ -389,7 +389,7 @@ export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralE
   }
 }
 
-function createExpressionForAccessorDeclaration(properties: qt.NodeArray<Declaration>, property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver: Expression, multiLine: boolean) {
+function createExpressionForAccessorDeclaration(properties: qt.NodeArray<Declaration>, property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver: qt.Expression, multiLine: boolean) {
   const { firstAccessor, getAccessor, setAccessor } = getAllAccessorDeclarations(properties, property);
   if (property === firstAccessor) {
     const properties: ObjectLiteralElementLike[] = [];
@@ -436,15 +436,15 @@ function createExpressionForAccessorDeclaration(properties: qt.NodeArray<Declara
   return undefined;
 }
 
-function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
+function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: qt.Expression) {
   return aggregateTransformFlags(setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), property.initializer), property), property));
 }
 
-function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
+function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: qt.Expression) {
   return aggregateTransformFlags(setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), getSynthesizedClone(property.name)), /*location*/ property), /*original*/ property));
 }
 
-function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
+function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: qt.Expression) {
   return aggregateTransformFlags(
     setOriginalNode(
       setTextRange(
@@ -485,14 +485,14 @@ function createExpressionForMethodDeclaration(method: MethodDeclaration, receive
  * @param allowSourceMaps A value indicating whether source maps may be emitted for the name.
  */
 export function getInternalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
-  return getName(node, allowComments, allowSourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
+  return getName(node, allowComments, allowSourceMaps, qt.EmitFlags.LocalName | qt.EmitFlags.InternalName);
 }
 
 /**
  * Gets whether an identifier should only be referred to by its internal name.
  */
 export function isInternalName(node: Identifier) {
-  return (qu.getEmitFlags(node) & EmitFlags.InternalName) !== 0;
+  return (qu.getEmitFlags(node) & qt.EmitFlags.InternalName) !== 0;
 }
 
 /**
@@ -506,14 +506,14 @@ export function isInternalName(node: Identifier) {
  * @param allowSourceMaps A value indicating whether source maps may be emitted for the name.
  */
 export function getLocalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
-  return getName(node, allowComments, allowSourceMaps, EmitFlags.LocalName);
+  return getName(node, allowComments, allowSourceMaps, qt.EmitFlags.LocalName);
 }
 
 /**
  * Gets whether an identifier should only be referred to by its local name.
  */
 export function isLocalName(node: Identifier) {
-  return (qu.getEmitFlags(node) & EmitFlags.LocalName) !== 0;
+  return (qu.getEmitFlags(node) & qt.EmitFlags.LocalName) !== 0;
 }
 
 /**
@@ -527,7 +527,7 @@ export function isLocalName(node: Identifier) {
  * @param allowSourceMaps A value indicating whether source maps may be emitted for the name.
  */
 export function getExportName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean): Identifier {
-  return getName(node, allowComments, allowSourceMaps, EmitFlags.ExportName);
+  return getName(node, allowComments, allowSourceMaps, qt.EmitFlags.ExportName);
 }
 
 /**
@@ -535,7 +535,7 @@ export function getExportName(node: Declaration, allowComments?: boolean, allowS
  * name points to an exported symbol.
  */
 export function isExportName(node: Identifier) {
-  return (qu.getEmitFlags(node) & EmitFlags.ExportName) !== 0;
+  return (qu.getEmitFlags(node) & qt.EmitFlags.ExportName) !== 0;
 }
 
 /**
@@ -549,13 +549,13 @@ export function getDeclarationName(node: Declaration, allowComments?: boolean, a
   return getName(node, allowComments, allowSourceMaps);
 }
 
-function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
+function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: qt.EmitFlags = 0) {
   const nodeName = getNameOfDeclaration(node);
   if (nodeName && isIdentifier(nodeName) && !isGeneratedIdentifier(nodeName)) {
     const name = getMutableClone(nodeName);
     emitFlags |= qu.getEmitFlags(nodeName);
-    if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-    if (!allowComments) emitFlags |= EmitFlags.NoComments;
+    if (!allowSourceMaps) emitFlags |= qt.EmitFlags.NoSourceMap;
+    if (!allowComments) emitFlags |= qt.EmitFlags.NoComments;
     if (emitFlags) setEmitFlags(name, emitFlags);
     return name;
   }
@@ -591,9 +591,9 @@ export function getExternalModuleOrNamespaceExportName(ns: Identifier | undefine
 export function getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
   const qualifiedName = createPropertyAccess(ns, nodeIsSynthesized(name) ? name : getSynthesizedClone(name));
   setTextRange(qualifiedName, name);
-  let emitFlags: EmitFlags = 0;
-  if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-  if (!allowComments) emitFlags |= EmitFlags.NoComments;
+  let emitFlags: qt.EmitFlags = 0;
+  if (!allowSourceMaps) emitFlags |= qt.EmitFlags.NoSourceMap;
+  if (!allowComments) emitFlags |= qt.EmitFlags.NoComments;
   if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
   return qualifiedName;
 }
@@ -614,7 +614,7 @@ export function convertFunctionDeclarationToExpression(node: FunctionDeclaration
   return updated;
 }
 
-function isUseStrictPrologue(node: ExpressionStatement): boolean {
+function isUseStrictPrologue(node: qt.ExpressionStatement): boolean {
   return isStringLiteral(node.expression) && node.expression.text === 'use strict';
 }
 
@@ -629,7 +629,7 @@ function isUseStrictPrologue(node: ExpressionStatement): boolean {
  * @param ensureUseStrict: boolean determining whether the function need to add prologue-directives
  * @param visitor: Optional callback used to visit any custom prologue directives.
  */
-export function addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: qt.Node) => VisitResult<Node>): number {
+export function addPrologue(target: qt.Statement[], source: readonly qt.Statement[], ensureUseStrict?: boolean, visitor?: (node: qt.Node) => VisitResult<Node>): number {
   const offset = addStandardPrologue(target, source, ensureUseStrict);
   return addCustomPrologue(target, source, offset, visitor);
 }
@@ -640,7 +640,7 @@ export function addPrologue(target: Statement[], source: readonly Statement[], e
  * This function needs to be called whenever we transform the statement
  * list of a source file, namespace, or function-like body.
  */
-export function addStandardPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean): number {
+export function addStandardPrologue(target: qt.Statement[], source: readonly qt.Statement[], ensureUseStrict?: boolean): number {
   Debug.assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
   let foundUseStrict = false;
   let statementOffset = 0;
@@ -669,13 +669,13 @@ export function addStandardPrologue(target: Statement[], source: readonly Statem
  * This function needs to be called whenever we transform the statement
  * list of a source file, namespace, or function-like body.
  */
-export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: qt.Node) => VisitResult<Node>, filter?: (node: qt.Node) => boolean): number;
-export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: qt.Node) => VisitResult<Node>, filter?: (node: qt.Node) => boolean): number | undefined;
-export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number | undefined, visitor?: (node: qt.Node) => VisitResult<Node>, filter: (node: qt.Node) => boolean = returnTrue): number | undefined {
+export function addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], statementOffset: number, visitor?: (node: qt.Node) => VisitResult<Node>, filter?: (node: qt.Node) => boolean): number;
+export function addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], statementOffset: number | undefined, visitor?: (node: qt.Node) => VisitResult<Node>, filter?: (node: qt.Node) => boolean): number | undefined;
+export function addCustomPrologue(target: qt.Statement[], source: readonly qt.Statement[], statementOffset: number | undefined, visitor?: (node: qt.Node) => VisitResult<Node>, filter: (node: qt.Node) => boolean = returnTrue): number | undefined {
   const numStatements = source.length;
   while (statementOffset !== undefined && statementOffset < numStatements) {
     const statement = source[statementOffset];
-    if (qu.getEmitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
+    if (qu.getEmitFlags(statement) & qt.EmitFlags.CustomPrologue && filter(statement)) {
       append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
     } else {
       break;
@@ -685,7 +685,7 @@ export function addCustomPrologue(target: Statement[], source: readonly Statemen
   return statementOffset;
 }
 
-export function findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
+export function findUseStrictPrologue(statements: readonly qt.Statement[]): qt.Statement | undefined {
   for (const statement of statements) {
     if (isPrologueDirective(statement)) {
       if (isUseStrictPrologue(statement)) {
@@ -698,7 +698,7 @@ export function findUseStrictPrologue(statements: readonly Statement[]): Stateme
   return undefined;
 }
 
-export function startsWithUseStrict(statements: readonly Statement[]) {
+export function startsWithUseStrict(statements: readonly qt.Statement[]) {
   const firstStatement = firstOrUndefined(statements);
   return firstStatement !== undefined && isPrologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
 }
@@ -722,15 +722,15 @@ export function ensureUseStrict(statements: qt.NodeArray<Statement>): qt.NodeArr
 }
 
 /**
- * Wraps the operand to a BinaryExpression in parentheses if they are needed to preserve the intended
+ * Wraps the operand to a qt.BinaryExpression in parentheses if they are needed to preserve the intended
  * order of operations.
  *
- * @param binaryOperator The operator for the BinaryExpression.
- * @param operand The operand for the BinaryExpression.
+ * @param binaryOperator The operator for the qt.BinaryExpression.
+ * @param operand The operand for the qt.BinaryExpression.
  * @param isLeftSideOfBinary A value indicating whether the operand is the left side of the
- *                           BinaryExpression.
+ *                           qt.BinaryExpression.
  */
-export function parenthesizeBinaryOperand(binaryOperator: qt.SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
+export function parenthesizeBinaryOperand(binaryOperator: qt.SyntaxKind, operand: qt.Expression, isLeftSideOfBinary: boolean, leftOperand?: qt.Expression) {
   const skipped = skipPartiallyEmittedExpressions(operand);
 
   // If the resulting expression is already parenthesized, we do not need to do any further processing.
@@ -742,14 +742,14 @@ export function parenthesizeBinaryOperand(binaryOperator: qt.SyntaxKind, operand
 }
 
 /**
- * Determines whether the operand to a BinaryExpression needs to be parenthesized.
+ * Determines whether the operand to a qt.BinaryExpression needs to be parenthesized.
  *
- * @param binaryOperator The operator for the BinaryExpression.
- * @param operand The operand for the BinaryExpression.
+ * @param binaryOperator The operator for the qt.BinaryExpression.
+ * @param operand The operand for the qt.BinaryExpression.
  * @param isLeftSideOfBinary A value indicating whether the operand is the left side of the
- *                           BinaryExpression.
+ *                           qt.BinaryExpression.
  */
-function binaryOperandNeedsParentheses(binaryOperator: qt.SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
+function binaryOperandNeedsParentheses(binaryOperator: qt.SyntaxKind, operand: qt.Expression, isLeftSideOfBinary: boolean, leftOperand: qt.Expression | undefined) {
   // If the operand has lower precedence, then it needs to be parenthesized to preserve the
   // intent of the expression. For example, if the operand is `a + b` and the operator is
   // `*`, then we need to parenthesize the operand to preserve the intended order of
@@ -859,7 +859,7 @@ function operatorHasAssociativeProperty(binaryOperator: qt.SyntaxKind) {
   return binaryOperator === qt.SyntaxKind.AsteriskToken || binaryOperator === qt.SyntaxKind.BarToken || binaryOperator === qt.SyntaxKind.AmpersandToken || binaryOperator === qt.SyntaxKind.CaretToken;
 }
 
-interface BinaryPlusExpression extends BinaryExpression {
+interface BinaryPlusExpression extends qt.BinaryExpression {
   cachedLiteralKind: qt.SyntaxKind;
 }
 
@@ -869,7 +869,7 @@ interface BinaryPlusExpression extends BinaryExpression {
  * It is used to determine whether the right-hand operand of a binary plus expression can be
  * emitted without parentheses.
  */
-function getLiteralKindOfBinaryPlusOperand(node: Expression): qt.SyntaxKind {
+function getLiteralKindOfBinaryPlusOperand(node: qt.Expression): qt.SyntaxKind {
   node = skipPartiallyEmittedExpressions(node);
 
   if (isLiteralKind(node.kind)) {
@@ -891,7 +891,7 @@ function getLiteralKindOfBinaryPlusOperand(node: Expression): qt.SyntaxKind {
   return qt.SyntaxKind.Unknown;
 }
 
-export function parenthesizeForConditionalHead(condition: Expression) {
+export function parenthesizeForConditionalHead(condition: qt.Expression) {
   const conditionalPrecedence = getOperatorPrecedence(SyntaxKind.ConditionalExpression, qt.SyntaxKind.QuestionToken);
   const emittedCondition = skipPartiallyEmittedExpressions(condition);
   const conditionPrecedence = getExpressionPrecedence(emittedCondition);
@@ -901,7 +901,7 @@ export function parenthesizeForConditionalHead(condition: Expression) {
   return condition;
 }
 
-export function parenthesizeSubexpressionOfConditionalExpression(e: Expression): Expression {
+export function parenthesizeSubexpressionOfConditionalExpression(e: qt.Expression): qt.Expression {
   // per ES grammar both 'whenTrue' and 'whenFalse' parts of conditional expression are assignment expressions
   // so in case when comma expression is introduced as a part of previous transformations
   // if should be wrapped in parens since comma operator has the lowest precedence
@@ -915,12 +915,12 @@ export function parenthesizeSubexpressionOfConditionalExpression(e: Expression):
  *
  * Basically, that means we need to parenthesize in the following cases:
  *
- * - BinaryExpression of CommaToken
+ * - qt.BinaryExpression of CommaToken
  * - CommaList (synthetic list of multiple comma expressions)
  * - FunctionExpression
  * - ClassExpression
  */
-export function parenthesizeDefaultExpression(e: Expression) {
+export function parenthesizeDefaultExpression(e: qt.Expression) {
   const check = skipPartiallyEmittedExpressions(e);
   let needsParens = isCommaSequence(check);
   if (!needsParens) {
@@ -937,9 +937,9 @@ export function parenthesizeDefaultExpression(e: Expression) {
  * Wraps an expression in parentheses if it is needed in order to use the expression
  * as the expression of a NewExpression node.
  *
- * @param expression The Expression node.
+ * @param expression The qt.Expression node.
  */
-export function parenthesizeForNew(expression: Expression): LeftHandSideExpression {
+export function parenthesizeForNew(expression: qt.Expression): LeftHandSideExpression {
   const leftmostExpr = getLeftmostExpression(expression, /*stopAtCallExpressions*/ true);
   switch (leftmostExpr.kind) {
     case qt.SyntaxKind.CallExpression:
@@ -958,7 +958,7 @@ export function parenthesizeForNew(expression: Expression): LeftHandSideExpressi
  *
  * @param expr The expression node.
  */
-export function parenthesizeForAccess(expression: Expression): LeftHandSideExpression {
+export function parenthesizeForAccess(expression: qt.Expression): LeftHandSideExpression {
   // isLeftHandSideExpression is almost the correct criterion for when it is not necessary
   // to parenthesize the expression before a dot. The known exception is:
   //
@@ -973,16 +973,16 @@ export function parenthesizeForAccess(expression: Expression): LeftHandSideExpre
   return setTextRange(createParen(expression), expression);
 }
 
-export function parenthesizePostfixOperand(operand: Expression) {
+export function parenthesizePostfixOperand(operand: qt.Expression) {
   return isLeftHandSideExpression(operand) ? operand : setTextRange(createParen(operand), operand);
 }
 
-export function parenthesizePrefixOperand(operand: Expression) {
+export function parenthesizePrefixOperand(operand: qt.Expression) {
   return isUnaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
 }
 
 export function parenthesizeListElements(elements: qt.NodeArray<Expression>) {
-  let result: Expression[] | undefined;
+  let result: qt.Expression[] | undefined;
   for (let i = 0; i < elements.length; i++) {
     const element = parenthesizeExpressionForList(elements[i]);
     if (result !== undefined || element !== elements[i]) {
@@ -1001,14 +1001,14 @@ export function parenthesizeListElements(elements: qt.NodeArray<Expression>) {
   return elements;
 }
 
-export function parenthesizeExpressionForList(expression: Expression) {
+export function parenthesizeExpressionForList(expression: qt.Expression) {
   const emittedExpression = skipPartiallyEmittedExpressions(expression);
   const expressionPrecedence = getExpressionPrecedence(emittedExpression);
   const commaPrecedence = getOperatorPrecedence(SyntaxKind.BinaryExpression, qt.SyntaxKind.CommaToken);
   return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
 }
 
-export function parenthesizeExpressionForExpressionStatement(expression: Expression) {
+export function parenthesizeExpressionForExpressionStatement(expression: qt.Expression) {
   const emittedExpression = skipPartiallyEmittedExpressions(expression);
   if (isCallExpression(emittedExpression)) {
     const callee = emittedExpression.expression;
@@ -1069,7 +1069,7 @@ export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] |
   }
 }
 
-export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
+export function getLeftmostExpression(node: qt.Expression, stopAtCallExpressions: boolean) {
   while (true) {
     switch (node.kind) {
       case qt.SyntaxKind.PostfixUnaryExpression:
@@ -1098,7 +1098,7 @@ export function getLeftmostExpression(node: Expression, stopAtCallExpressions: b
       case qt.SyntaxKind.PropertyAccessExpression:
       case qt.SyntaxKind.NonNullExpression:
       case qt.SyntaxKind.PartiallyEmittedExpression:
-        node = (<CallExpression | PropertyAccessExpression | ElementAccessExpression | AsExpression | NonNullExpression | PartiallyEmittedExpression>node).expression;
+        node = (<CallExpression | PropertyAccessExpression | qt.ElementAccessExpression | AsExpression | NonNullExpression | qt.PartiallyEmittedExpression>node).expression;
         continue;
     }
 
@@ -1114,7 +1114,7 @@ export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
   return body;
 }
 
-export function isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<SyntaxKind.CommaToken> }) | CommaListExpression {
+export function isCommaSequence(node: qt.Expression): node is (BinaryExpression & { operatorToken: Token<SyntaxKind.CommaToken> }) | CommaListExpression {
   return (node.kind === qt.SyntaxKind.BinaryExpression && node.operatorToken.kind === qt.SyntaxKind.CommaToken) || node.kind === qt.SyntaxKind.CommaListExpression;
 }
 
@@ -1122,13 +1122,13 @@ export const enum OuterExpressionKinds {
   Parentheses = 1 << 0,
   TypeAssertions = 1 << 1,
   NonNullAssertions = 1 << 2,
-  PartiallyEmittedExpressions = 1 << 3,
+  qt.PartiallyEmittedExpressions = 1 << 3,
 
   Assertions = TypeAssertions | NonNullAssertions,
-  All = Parentheses | Assertions | PartiallyEmittedExpressions,
+  All = Parentheses | Assertions | qt.PartiallyEmittedExpressions,
 }
 
-export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
+export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | qt.PartiallyEmittedExpression;
 
 export function isOuterExpression(node: qt.Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
   switch (node.kind) {
@@ -1145,7 +1145,7 @@ export function isOuterExpression(node: qt.Node, kinds = OuterExpressionKinds.Al
   return false;
 }
 
-export function skipOuterExpressions(node: Expression, kinds?: OuterExpressionKinds): Expression;
+export function skipOuterExpressions(node: qt.Expression, kinds?: OuterExpressionKinds): qt.Expression;
 export function skipOuterExpressions(node: qt.Node, kinds?: OuterExpressionKinds): Node;
 export function skipOuterExpressions(node: qt.Node, kinds = OuterExpressionKinds.All) {
   while (isOuterExpression(node, kinds)) {
@@ -1154,13 +1154,13 @@ export function skipOuterExpressions(node: qt.Node, kinds = OuterExpressionKinds
   return node;
 }
 
-export function skipAssertions(node: Expression): Expression;
+export function skipAssertions(node: qt.Expression): qt.Expression;
 export function skipAssertions(node: qt.Node): Node;
 export function skipAssertions(node: qt.Node): Node {
   return skipOuterExpressions(node, OuterExpressionKinds.Assertions);
 }
 
-function updateOuterExpression(outerExpression: OuterExpression, expression: Expression) {
+function updateOuterExpression(outerExpression: OuterExpression, expression: qt.Expression) {
   switch (outerExpression.kind) {
     case qt.SyntaxKind.ParenthesizedExpression:
       return updateParen(outerExpression, expression);
@@ -1189,11 +1189,11 @@ function updateOuterExpression(outerExpression: OuterExpression, expression: Exp
  * the expression to maintain precedence, a new parenthesized expression should be created automatically when
  * the containing expression is created/updated.
  */
-function isIgnorableParen(node: Expression) {
+function isIgnorableParen(node: qt.Expression) {
   return node.kind === qt.SyntaxKind.ParenthesizedExpression && nodeIsSynthesized(node) && nodeIsSynthesized(getSourceMapRange(node)) && nodeIsSynthesized(getCommentRange(node)) && !some(getSyntheticLeadingComments(node)) && !some(getSyntheticTrailingComments(node));
 }
 
-export function recreateOuterExpressions(outerExpression: Expression | undefined, innerExpression: Expression, kinds = OuterExpressionKinds.All): Expression {
+export function recreateOuterExpressions(outerExpression: qt.Expression | undefined, innerExpression: qt.Expression, kinds = OuterExpressionKinds.All): qt.Expression {
   if (outerExpression && isOuterExpression(outerExpression, kinds) && !isIgnorableParen(outerExpression)) {
     return updateOuterExpression(outerExpression, recreateOuterExpressions(outerExpression.expression, innerExpression));
   }
@@ -1252,7 +1252,7 @@ export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: Sourc
     }
     if (namedBindings) {
       const externalHelpersImportDeclaration = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*name*/ undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
-      addEmitFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
+      addEmitFlags(externalHelpersImportDeclaration, qt.EmitFlags.NeverApplyImportHelper);
       return externalHelpersImportDeclaration;
     }
   }
@@ -1356,9 +1356,9 @@ function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | 
 }
 
 /**
- * Gets the initializer of an BindingOrAssignmentElement.
+ * Gets the initializer of an qt.BindingOrAssignmentElement.
  */
-export function getInitializerOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Expression | undefined {
+export function getInitializerOfBindingOrAssignmentElement(bindingElement: qt.BindingOrAssignmentElement): qt.Expression | undefined {
   if (isDeclarationBindingElement(bindingElement)) {
     // `1` in `let { a = 1 } = ...`
     // `1` in `let { a: b = 1 } = ...`
@@ -1397,9 +1397,9 @@ export function getInitializerOfBindingOrAssignmentElement(bindingElement: Bindi
 }
 
 /**
- * Gets the name of an BindingOrAssignmentElement.
+ * Gets the name of an qt.BindingOrAssignmentElement.
  */
-export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementTarget | undefined {
+export function getTargetOfBindingOrAssignmentElement(bindingElement: qt.BindingOrAssignmentElement): qt.BindingOrAssignmentElementTarget | undefined {
   if (isDeclarationBindingElement(bindingElement)) {
     // `a` in `let { a } = ...`
     // `a` in `let { a = 1 } = ...`
@@ -1472,9 +1472,9 @@ export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrA
 }
 
 /**
- * Determines whether an BindingOrAssignmentElement is a rest element.
+ * Determines whether an qt.BindingOrAssignmentElement is a rest element.
  */
-export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementRestIndicator | undefined {
+export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: qt.BindingOrAssignmentElement): qt.BindingOrAssignmentElementRestIndicator | undefined {
   switch (bindingElement.kind) {
     case qt.SyntaxKind.Parameter:
     case qt.SyntaxKind.BindingElement:
@@ -1491,15 +1491,15 @@ export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: Bin
 }
 
 /**
- * Gets the property name of a BindingOrAssignmentElement
+ * Gets the property name of a qt.BindingOrAssignmentElement
  */
-export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
+export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: qt.BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement);
   Debug.assert(!!propertyName || isSpreadAssignment(bindingElement), 'Invalid property name for binding element.');
   return propertyName;
 }
 
-export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
+export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: qt.BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
   switch (bindingElement.kind) {
     case qt.SyntaxKind.BindingElement:
       // `a` in `let { a: b } = ...`
@@ -1551,24 +1551,24 @@ function isStringOrNumericLiteral(node: qt.Node): node is StringLiteral | Numeri
 }
 
 /**
- * Gets the elements of a BindingOrAssignmentPattern
+ * Gets the elements of a qt.BindingOrAssignmentPattern
  */
-export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
+export function getElementsOfBindingOrAssignmentPattern(name: qt.BindingOrAssignmentPattern): readonly qt.BindingOrAssignmentElement[] {
   switch (name.kind) {
     case qt.SyntaxKind.ObjectBindingPattern:
     case qt.SyntaxKind.ArrayBindingPattern:
     case qt.SyntaxKind.ArrayLiteralExpression:
       // `a` in `{a}`
       // `a` in `[a]`
-      return <readonly BindingOrAssignmentElement[]>name.elements;
+      return <readonly qt.BindingOrAssignmentElement[]>name.elements;
 
     case qt.SyntaxKind.ObjectLiteralExpression:
       // `a` in `{a}`
-      return <readonly BindingOrAssignmentElement[]>name.properties;
+      return <readonly qt.BindingOrAssignmentElement[]>name.properties;
   }
 }
 
-export function convertToArrayAssignmentElement(element: BindingOrAssignmentElement) {
+export function convertToArrayAssignmentElement(element: qt.BindingOrAssignmentElement) {
   if (isBindingElement(element)) {
     if (element.dotDotDotToken) {
       Debug.assertNode(element.name, isIdentifier);
@@ -1581,7 +1581,7 @@ export function convertToArrayAssignmentElement(element: BindingOrAssignmentElem
   return element;
 }
 
-export function convertToObjectAssignmentElement(element: BindingOrAssignmentElement) {
+export function convertToObjectAssignmentElement(element: qt.BindingOrAssignmentElement) {
   if (isBindingElement(element)) {
     if (element.dotDotDotToken) {
       Debug.assertNode(element.name, isIdentifier);
@@ -1598,7 +1598,7 @@ export function convertToObjectAssignmentElement(element: BindingOrAssignmentEle
   return element;
 }
 
-export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): AssignmentPattern {
+export function convertToAssignmentPattern(node: qt.BindingOrAssignmentPattern): AssignmentPattern {
   switch (node.kind) {
     case qt.SyntaxKind.ArrayBindingPattern:
     case qt.SyntaxKind.ArrayLiteralExpression:
@@ -1610,7 +1610,7 @@ export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): As
   }
 }
 
-export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
+export function convertToObjectAssignmentPattern(node: qt.ObjectBindingOrAssignmentPattern) {
   if (isObjectBindingPattern(node)) {
     return setOriginalNode(setTextRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
   }
@@ -1618,7 +1618,7 @@ export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignment
   return node;
 }
 
-export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
+export function convertToArrayAssignmentPattern(node: qt.ArrayBindingOrAssignmentPattern) {
   if (isArrayBindingPattern(node)) {
     return setOriginalNode(setTextRange(createArrayLiteral(map(node.elements, convertToArrayAssignmentElement)), node), node);
   }
@@ -1626,7 +1626,7 @@ export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPa
   return node;
 }
 
-export function convertToAssignmentElementTarget(node: BindingOrAssignmentElementTarget): Expression {
+export function convertToAssignmentElementTarget(node: qt.BindingOrAssignmentElementTarget): qt.Expression {
   if (isBindingPattern(node)) {
     return convertToAssignmentPattern(node);
   }

@@ -212,7 +212,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
     directory = newDirectory;
   }
   if (allFileNames.size) {
-    const remainingPaths = arrayFrom(allFileNames.values());
+    const remainingPaths = qc.arrayFrom(allFileNames.values());
     if (remainingPaths.length > 1) remainingPaths.sort(comparePathsByNumberOfDirectorySeparators);
     sortedPaths.push(...remainingPaths);
   }
@@ -464,7 +464,7 @@ function getJSExtensionForFile(fileName: string, options: qt.CompilerOptions): E
 
 function getRelativePathIfInDirectory(path: string, directoryPath: string, getCanonicalFileName: qc.GetCanonicalFileName): string | undefined {
   const relativePath = getRelativePathToDirectoryOrUrl(directoryPath, path, directoryPath, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
-  return isRootedDiskPath(relativePath) ? undefined : relativePath;
+  return qp.isRootedDiskPath(relativePath) ? undefined : relativePath;
 }
 
 function isPathRelativeToParent(path: string): boolean {

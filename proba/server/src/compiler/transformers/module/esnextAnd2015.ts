@@ -29,7 +29,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
   function updateExternalModule(node: SourceFile) {
     const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(node, compilerOptions);
     if (externalHelpersImportDeclaration) {
-      const statements: Statement[] = [];
+      const statements: qt.Statement[] = [];
       const statementOffset = addPrologue(statements, node.statements);
       append(statements, externalHelpersImportDeclaration);
 
@@ -55,7 +55,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
     return node;
   }
 
-  function visitExportAssignment(node: ExportAssignment): VisitResult<ExportAssignment> {
+  function visitExportAssignment(node: qt.ExportAssignment): VisitResult<ExportAssignment> {
     // Elide `export=` as it is not legal with --module ES6
     return node.isExportEquals ? undefined : node;
   }
@@ -117,14 +117,14 @@ export function transformECMAScriptModule(context: TransformationContext) {
    */
   function onSubstituteNode(hint: EmitHint, node: qt.Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (helperNameSubstitutions && isIdentifier(node) && qu.getEmitFlags(node) & EmitFlags.HelperName) {
+    if (helperNameSubstitutions && isIdentifier(node) && qu.getEmitFlags(node) & qt.EmitFlags.HelperName) {
       return substituteHelperName(node);
     }
 
     return node;
   }
 
-  function substituteHelperName(node: Identifier): Expression {
+  function substituteHelperName(node: Identifier): qt.Expression {
     const name = idText(node);
     let substitution = helperNameSubstitutions!.get(name);
     if (!substitution) {

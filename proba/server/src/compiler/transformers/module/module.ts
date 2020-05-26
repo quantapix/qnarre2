@@ -1,7 +1,7 @@
 export function transformModule(context: TransformationContext) {
   interface AsynchronousDependencies {
-    aliasedModuleNames: Expression[];
-    unaliasedModuleNames: Expression[];
+    aliasedModuleNames: qt.Expression[];
+    unaliasedModuleNames: qt.Expression[];
     importAliasNames: ParameterDeclaration[];
   }
 
@@ -82,7 +82,7 @@ export function transformModule(context: TransformationContext) {
   function transformCommonJSModule(node: SourceFile) {
     startLexicalEnvironment();
 
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !isJsonSourceFile(node), sourceElementVisitor);
 
@@ -194,7 +194,7 @@ export function transformModule(context: TransformationContext) {
               createLogicalAnd(createTypeCheck(createIdentifier('module'), 'object'), createTypeCheck(createPropertyAccess(createIdentifier('module'), 'exports'), 'object')),
               createBlock([
                 createVariableStatement(/*modifiers*/ undefined, [createVariableDeclaration('v', /*type*/ undefined, createCall(createIdentifier('factory'), /*typeArguments*/ undefined, [createIdentifier('require'), createIdentifier('exports')]))]),
-                setEmitFlags(createIf(createStrictInequality(createIdentifier('v'), createIdentifier('undefined')), createExpressionStatement(createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), createIdentifier('v')))), EmitFlags.SingleLine),
+                setEmitFlags(createIf(createStrictInequality(createIdentifier('v'), createIdentifier('undefined')), createExpressionStatement(createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), createIdentifier('v')))), qt.EmitFlags.SingleLine),
               ]),
               createIf(
                 createLogicalAnd(createTypeCheck(createIdentifier('define'), 'function'), createPropertyAccess(createIdentifier('define'), 'amd')),
@@ -258,10 +258,10 @@ export function transformModule(context: TransformationContext) {
    */
   function collectAsynchronousDependencies(node: SourceFile, includeNonAmdDependencies: boolean): AsynchronousDependencies {
     // names of modules with corresponding parameter in the factory function
-    const aliasedModuleNames: Expression[] = [];
+    const aliasedModuleNames: qt.Expression[] = [];
 
     // names of modules with no corresponding parameters in factory function
-    const unaliasedModuleNames: Expression[] = [];
+    const unaliasedModuleNames: qt.Expression[] = [];
 
     // names of the parameters in the factory function; these
     // parameters need to match the indexes of the corresponding
@@ -291,7 +291,7 @@ export function transformModule(context: TransformationContext) {
         if (includeNonAmdDependencies && importAliasName) {
           // Set emitFlags on the name of the classDeclaration
           // This is so that when printer will not substitute the identifier
-          setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
+          setEmitFlags(importAliasName, qt.EmitFlags.NoSubstitution);
           aliasedModuleNames.push(externalModuleName);
           importAliasNames.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, importAliasName));
         } else {
@@ -323,7 +323,7 @@ export function transformModule(context: TransformationContext) {
   function transformAsynchronousModuleBody(node: SourceFile) {
     startLexicalEnvironment();
 
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const statementOffset = addPrologue(statements, node.statements, /*ensureUseStrict*/ !compilerOptions.noImplicitUseStrict, sourceElementVisitor);
 
     if (shouldEmitUnderscoreUnderscoreESModule()) {
@@ -359,24 +359,24 @@ export function transformModule(context: TransformationContext) {
    * Adds the down-level representation of `export=` to the statement list if one exists
    * in the source file.
    *
-   * @param statements The Statement list to modify.
+   * @param statements The qt.Statement list to modify.
    * @param emitAsReturn A value indicating whether to emit the `export=` statement as a
    * return statement.
    */
-  function addExportEqualsIfNeeded(statements: Statement[], emitAsReturn: boolean) {
+  function addExportEqualsIfNeeded(statements: qt.Statement[], emitAsReturn: boolean) {
     if (currentModuleInfo.exportEquals) {
       const expressionResult = visitNode(currentModuleInfo.exportEquals.expression, moduleExpressionElementVisitor);
       if (expressionResult) {
         if (emitAsReturn) {
           const statement = createReturn(expressionResult);
           setTextRange(statement, currentModuleInfo.exportEquals);
-          setEmitFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
+          setEmitFlags(statement, qt.EmitFlags.NoTokenSourceMaps | qt.EmitFlags.NoComments);
           statements.push(statement);
         } else {
           const statement = createExpressionStatement(createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), expressionResult));
 
           setTextRange(statement, currentModuleInfo.exportEquals);
-          setEmitFlags(statement, EmitFlags.NoComments);
+          setEmitFlags(statement, qt.EmitFlags.NoComments);
           statements.push(statement);
         }
       }
@@ -426,7 +426,7 @@ export function transformModule(context: TransformationContext) {
     }
   }
 
-  function moduleExpressionElementVisitor(node: Expression): VisitResult<Expression> {
+  function moduleExpressionElementVisitor(node: qt.Expression): VisitResult<Expression> {
     // This visitor does not need to descend into the tree if there is no dynamic import or destructuring assignment,
     // as export/import statements are only transformed at the top level of a file.
     if (!(node.transformFlags & TransformFlags.ContainsDynamicImport) && !(node.transformFlags & TransformFlags.ContainsDestructuringAssignment)) {
@@ -442,7 +442,7 @@ export function transformModule(context: TransformationContext) {
     }
   }
 
-  function destructuringNeedsFlattening(node: Expression): boolean {
+  function destructuringNeedsFlattening(node: qt.Expression): boolean {
     if (isObjectLiteralExpression(node)) {
       for (const elem of node.properties) {
         switch (elem.kind) {
@@ -485,14 +485,14 @@ export function transformModule(context: TransformationContext) {
     return false;
   }
 
-  function visitDestructuringAssignment(node: DestructuringAssignment): Expression {
+  function visitDestructuringAssignment(node: DestructuringAssignment): qt.Expression {
     if (destructuringNeedsFlattening(node.left)) {
       return flattenDestructuringAssignment(node, moduleExpressionElementVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
     }
     return visitEachChild(node, moduleExpressionElementVisitor, context);
   }
 
-  function visitImportCallExpression(node: ImportCall): Expression {
+  function visitImportCallExpression(node: ImportCall): qt.Expression {
     const argument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElementVisitor);
     const containsLexicalThis = !!(node.transformFlags & TransformFlags.ContainsLexicalThis);
     switch (compilerOptions.module) {
@@ -506,7 +506,7 @@ export function transformModule(context: TransformationContext) {
     }
   }
 
-  function createImportCallExpressionUMD(arg: Expression, containsLexicalThis: boolean): Expression {
+  function createImportCallExpressionUMD(arg: qt.Expression, containsLexicalThis: boolean): qt.Expression {
     // (function (factory) {
     //      ... (regular UMD)
     // }
@@ -522,7 +522,7 @@ export function transformModule(context: TransformationContext) {
     // });
     needUMDDynamicImportHelper = true;
     if (isSimpleCopiableExpression(arg)) {
-      const argClone = isGeneratedIdentifier(arg) ? arg : isStringLiteral(arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
+      const argClone = isGeneratedIdentifier(arg) ? arg : isStringLiteral(arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), qt.EmitFlags.NoComments);
       return createConditional(/*condition*/ createIdentifier('__syncRequire'), /*whenTrue*/ createImportCallExpressionCommonJS(arg, containsLexicalThis), /*whenFalse*/ createImportCallExpressionAMD(argClone, containsLexicalThis));
     } else {
       const temp = createTempVariable(hoistVariableDeclaration);
@@ -530,7 +530,7 @@ export function transformModule(context: TransformationContext) {
     }
   }
 
-  function createImportCallExpressionAMD(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
+  function createImportCallExpressionAMD(arg: qt.Expression | undefined, containsLexicalThis: boolean): qt.Expression {
     // improt("./blah")
     // emit as
     // define(["require", "exports", "blah"], function (require, exports) {
@@ -552,7 +552,7 @@ export function transformModule(context: TransformationContext) {
       // that this new function expression indicates it captures 'this' so that the
       // es2015 transformer will properly substitute 'this' with '_this'.
       if (containsLexicalThis) {
-        setEmitFlags(func, EmitFlags.CapturesThis);
+        setEmitFlags(func, qt.EmitFlags.CapturesThis);
       }
     }
 
@@ -564,7 +564,7 @@ export function transformModule(context: TransformationContext) {
     return promise;
   }
 
-  function createImportCallExpressionCommonJS(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
+  function createImportCallExpressionCommonJS(arg: qt.Expression | undefined, containsLexicalThis: boolean): qt.Expression {
     // import("./blah")
     // emit as
     // Promise.resolve().then(function () { return require(x); }) /*CommonJs Require*/
@@ -587,15 +587,15 @@ export function transformModule(context: TransformationContext) {
       // that this new function expression indicates it captures 'this' so that the
       // es2015 transformer will properly substitute 'this' with '_this'.
       if (containsLexicalThis) {
-        setEmitFlags(func, EmitFlags.CapturesThis);
+        setEmitFlags(func, qt.EmitFlags.CapturesThis);
       }
     }
 
     return createCall(createPropertyAccess(promiseResolveCall, 'then'), /*typeArguments*/ undefined, [func]);
   }
 
-  function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
-    if (!compilerOptions.esModuleInterop || qu.getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+  function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: qt.Expression) {
+    if (!compilerOptions.esModuleInterop || qu.getEmitFlags(node) & qt.EmitFlags.NeverApplyImportHelper) {
       return innerExpr;
     }
     if (getExportNeedsImportStarHelper(node)) {
@@ -605,8 +605,8 @@ export function transformModule(context: TransformationContext) {
     return innerExpr;
   }
 
-  function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: Expression) {
-    if (!compilerOptions.esModuleInterop || qu.getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+  function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: qt.Expression) {
+    if (!compilerOptions.esModuleInterop || qu.getEmitFlags(node) & qt.EmitFlags.NeverApplyImportHelper) {
       return innerExpr;
     }
     if (getImportNeedsImportStarHelper(node)) {
@@ -626,7 +626,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     const namespaceDeclaration = getNamespaceDeclarationNode(node);
     if (moduleKind !== ModuleKind.AMD) {
       if (!node.importClause) {
@@ -674,7 +674,7 @@ export function transformModule(context: TransformationContext) {
    */
   function createRequireCall(importNode: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration) {
     const moduleName = getExternalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
-    const args: Expression[] = [];
+    const args: qt.Expression[] = [];
     if (moduleName) {
       args.push(moduleName);
     }
@@ -690,7 +690,7 @@ export function transformModule(context: TransformationContext) {
   function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
     Debug.assert(isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     if (moduleKind !== ModuleKind.AMD) {
       if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node));
@@ -729,7 +729,7 @@ export function transformModule(context: TransformationContext) {
     const generatedName = getGeneratedNameForNode(node);
 
     if (node.exportClause && isNamedExports(node.exportClause)) {
-      const statements: Statement[] = [];
+      const statements: qt.Statement[] = [];
       // export { x, y } from "mod";
       if (moduleKind !== ModuleKind.AMD) {
         statements.push(setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(generatedName, /*type*/ undefined, createRequireCall(node))])), /*location*/ node), /* original */ node));
@@ -745,7 +745,7 @@ export function transformModule(context: TransformationContext) {
 
       return singleOrMany(statements);
     } else if (node.exportClause) {
-      const statements: Statement[] = [];
+      const statements: qt.Statement[] = [];
       // export * as ns from "mod";
       statements.push(setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(getSynthesizedClone(node.exportClause.name), moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : createIdentifier(idText(node.exportClause.name)))), node), node));
 
@@ -757,16 +757,16 @@ export function transformModule(context: TransformationContext) {
   }
 
   /**
-   * Visits an ExportAssignment node.
+   * Visits an qt.ExportAssignment node.
    *
    * @param node The node to visit.
    */
-  function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
+  function visitExportAssignment(node: qt.ExportAssignment): VisitResult<Statement> {
     if (node.isExportEquals) {
       return undefined;
     }
 
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     const original = node.original;
     if (original && hasAssociatedEndOfDeclarationMarker(original)) {
       // Defer exports until we encounter an EndOfDeclarationMarker node
@@ -785,7 +785,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       statements = append(statements, setOriginalNode(setTextRange(createFunctionDeclaration(/*decorators*/ undefined, visitNodes(node.modifiers, modifierVisitor, isModifier), node.asteriskToken, getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true), /*typeParameters*/ undefined, visitNodes(node.parameters, moduleExpressionElementVisitor), /*type*/ undefined, visitEachChild(node.body, moduleExpressionElementVisitor, context)), /*location*/ node), /*original*/ node));
     } else {
@@ -809,7 +809,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       statements = append(statements, setOriginalNode(setTextRange(createClassDeclaration(/*decorators*/ undefined, visitNodes(node.modifiers, modifierVisitor, isModifier), getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true), /*typeParameters*/ undefined, visitNodes(node.heritageClauses, moduleExpressionElementVisitor), visitNodes(node.members, moduleExpressionElementVisitor)), node), node));
     } else {
@@ -833,9 +833,9 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
-    let statements: Statement[] | undefined;
+    let statements: qt.Statement[] | undefined;
     let variables: qt.VariableDeclaration[] | undefined;
-    let expressions: Expression[] | undefined;
+    let expressions: qt.Expression[] | undefined;
 
     if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
       let modifiers: qt.NodeArray<Modifier> | undefined;
@@ -875,14 +875,14 @@ export function transformModule(context: TransformationContext) {
     return singleOrMany(statements);
   }
 
-  function createAllExportExpressions(name: Identifier, value: Expression, location?: qt.TextRange) {
+  function createAllExportExpressions(name: Identifier, value: qt.Expression, location?: qt.TextRange) {
     const exportedNames = getExports(name);
     if (exportedNames) {
       // For each additional export of the declaration, apply an export assignment.
-      let expression: Expression = isExportName(name) ? value : createAssignment(name, value);
+      let expression: qt.Expression = isExportName(name) ? value : createAssignment(name, value);
       for (const exportName of exportedNames) {
         // Mark the node to prevent triggering substitution.
-        setEmitFlags(expression, EmitFlags.NoSubstitution);
+        setEmitFlags(expression, qt.EmitFlags.NoSubstitution);
         expression = createExportExpression(exportName, expression, /*location*/ location);
       }
 
@@ -896,7 +896,7 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to transform.
    */
-  function transformInitializedVariable(node: qt.VariableDeclaration): Expression {
+  function transformInitializedVariable(node: qt.VariableDeclaration): qt.Expression {
     if (isBindingPattern(node.name)) {
       return flattenDestructuringAssignment(visitNode(node, moduleExpressionElementVisitor), /*visitor*/ undefined, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
     } else {
@@ -911,7 +911,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to visit.
    */
   function visitMergeDeclarationMarker(node: MergeDeclarationMarker): VisitResult<Statement> {
-    // For an EnumDeclaration or ModuleDeclaration that merges with a preceeding
+    // For an qt.EnumDeclaration or ModuleDeclaration that merges with a preceeding
     // declaration we do not emit a leading variable declaration. To preserve the
     // begin/end semantics of the declararation and to properly handle exports
     // we wrapped the leading variable declaration in a `MergeDeclarationMarker`.
@@ -932,7 +932,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The node to test.
    */
   function hasAssociatedEndOfDeclarationMarker(node: qt.Node) {
-    return (qu.getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
+    return (qu.getEmitFlags(node) & qt.EmitFlags.HasEndOfDeclarationMarker) !== 0;
   }
 
   /**
@@ -964,7 +964,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param decl The declaration whose exports are to be recorded.
    */
-  function appendExportsOfImportDeclaration(statements: Statement[] | undefined, decl: ImportDeclaration): Statement[] | undefined {
+  function appendExportsOfImportDeclaration(statements: qt.Statement[] | undefined, decl: ImportDeclaration): qt.Statement[] | undefined {
     if (currentModuleInfo.exportEquals) {
       return statements;
     }
@@ -1006,7 +1006,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param decl The declaration whose exports are to be recorded.
    */
-  function appendExportsOfImportEqualsDeclaration(statements: Statement[] | undefined, decl: ImportEqualsDeclaration): Statement[] | undefined {
+  function appendExportsOfImportEqualsDeclaration(statements: qt.Statement[] | undefined, decl: ImportEqualsDeclaration): qt.Statement[] | undefined {
     if (currentModuleInfo.exportEquals) {
       return statements;
     }
@@ -1023,7 +1023,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param node The VariableStatement whose exports are to be recorded.
    */
-  function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement): Statement[] | undefined {
+  function appendExportsOfVariableStatement(statements: qt.Statement[] | undefined, node: VariableStatement): qt.Statement[] | undefined {
     if (currentModuleInfo.exportEquals) {
       return statements;
     }
@@ -1044,7 +1044,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param decl The declaration whose exports are to be recorded.
    */
-  function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElement): Statement[] | undefined {
+  function appendExportsOfBindingElement(statements: qt.Statement[] | undefined, decl: qt.VariableDeclaration | qt.BindingElement): qt.Statement[] | undefined {
     if (currentModuleInfo.exportEquals) {
       return statements;
     }
@@ -1071,7 +1071,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param decl The declaration whose exports are to be recorded.
    */
-  function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
+  function appendExportsOfHoistedDeclaration(statements: qt.Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): qt.Statement[] | undefined {
     if (currentModuleInfo.exportEquals) {
       return statements;
     }
@@ -1096,7 +1096,7 @@ export function transformModule(context: TransformationContext) {
    * appended.
    * @param decl The declaration to export.
    */
-  function appendExportsOfDeclaration(statements: Statement[] | undefined, decl: Declaration, liveBinding?: boolean): Statement[] | undefined {
+  function appendExportsOfDeclaration(statements: qt.Statement[] | undefined, decl: Declaration, liveBinding?: boolean): qt.Statement[] | undefined {
     const name = getDeclarationName(decl);
     const exportSpecifiers = currentModuleInfo.exportSpecifiers.get(idText(name));
     if (exportSpecifiers) {
@@ -1119,19 +1119,19 @@ export function transformModule(context: TransformationContext) {
    * @param location The location to use for source maps and comments for the export.
    * @param allowComments Whether to allow comments on the export.
    */
-  function appendExportStatement(statements: Statement[] | undefined, exportName: Identifier, expression: Expression, location?: qt.TextRange, allowComments?: boolean, liveBinding?: boolean): Statement[] | undefined {
+  function appendExportStatement(statements: qt.Statement[] | undefined, exportName: Identifier, expression: qt.Expression, location?: qt.TextRange, allowComments?: boolean, liveBinding?: boolean): qt.Statement[] | undefined {
     statements = append(statements, createExportStatement(exportName, expression, location, allowComments, liveBinding));
     return statements;
   }
 
   function createUnderscoreUnderscoreESModule() {
-    let statement: Statement;
+    let statement: qt.Statement;
     if (languageVersion === qt.ScriptTarget.ES3) {
       statement = createExpressionStatement(createExportExpression(createIdentifier('__esModule'), createLiteral(/*value*/ true)));
     } else {
       statement = createExpressionStatement(createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [createIdentifier('exports'), createLiteral('__esModule'), createObjectLiteral([createPropertyAssignment('value', createLiteral(/*value*/ true))])]));
     }
-    setEmitFlags(statement, EmitFlags.CustomPrologue);
+    setEmitFlags(statement, qt.EmitFlags.CustomPrologue);
     return statement;
   }
 
@@ -1143,11 +1143,11 @@ export function transformModule(context: TransformationContext) {
    * @param location The location to use for source maps and comments for the export.
    * @param allowComments An optional value indicating whether to emit comments for the statement.
    */
-  function createExportStatement(name: Identifier, value: Expression, location?: qt.TextRange, allowComments?: boolean, liveBinding?: boolean) {
+  function createExportStatement(name: Identifier, value: qt.Expression, location?: qt.TextRange, allowComments?: boolean, liveBinding?: boolean) {
     const statement = setTextRange(createExpressionStatement(createExportExpression(name, value, /* location */ undefined, liveBinding)), location);
     startOnNewLine(statement);
     if (!allowComments) {
-      setEmitFlags(statement, EmitFlags.NoComments);
+      setEmitFlags(statement, qt.EmitFlags.NoComments);
     }
 
     return statement;
@@ -1160,7 +1160,7 @@ export function transformModule(context: TransformationContext) {
    * @param value The exported value.
    * @param location The location to use for source maps and comments for the export.
    */
-  function createExportExpression(name: Identifier, value: Expression, location?: qt.TextRange, liveBinding?: boolean) {
+  function createExportExpression(name: Identifier, value: qt.Expression, location?: qt.TextRange, liveBinding?: boolean) {
     return setTextRange(
       liveBinding && languageVersion !== qt.ScriptTarget.ES3
         ? createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
@@ -1267,11 +1267,11 @@ export function transformModule(context: TransformationContext) {
   }
 
   /**
-   * Substitution for an Expression that may contain an imported or exported symbol.
+   * Substitution for an qt.Expression that may contain an imported or exported symbol.
    *
    * @param node The node to substitute.
    */
-  function substituteExpression(node: Expression) {
+  function substituteExpression(node: qt.Expression) {
     switch (node.kind) {
       case qt.SyntaxKind.Identifier:
         return substituteExpressionIdentifier(node);
@@ -1279,7 +1279,7 @@ export function transformModule(context: TransformationContext) {
         return substituteBinaryExpression(node);
       case qt.SyntaxKind.PostfixUnaryExpression:
       case qt.SyntaxKind.PrefixUnaryExpression:
-        return substituteUnaryExpression(<PrefixUnaryExpression | PostfixUnaryExpression>node);
+        return substituteUnaryExpression(<PrefixUnaryExpression | qt.PostfixUnaryExpression>node);
     }
 
     return node;
@@ -1291,8 +1291,8 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to substitute.
    */
-  function substituteExpressionIdentifier(node: Identifier): Expression {
-    if (qu.getEmitFlags(node) & EmitFlags.HelperName) {
+  function substituteExpressionIdentifier(node: Identifier): qt.Expression {
+    if (qu.getEmitFlags(node) & qt.EmitFlags.HelperName) {
       const externalHelpersModuleName = getExternalHelpersModuleName(currentSourceFile);
       if (externalHelpersModuleName) {
         return createPropertyAccess(externalHelpersModuleName, node);
@@ -1321,11 +1321,11 @@ export function transformModule(context: TransformationContext) {
   }
 
   /**
-   * Substitution for a BinaryExpression that may contain an imported or exported symbol.
+   * Substitution for a qt.BinaryExpression that may contain an imported or exported symbol.
    *
    * @param node The node to substitute.
    */
-  function substituteBinaryExpression(node: BinaryExpression): Expression {
+  function substituteBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     // When we see an assignment expression whose left-hand side is an exported symbol,
     // we should ensure all exports of that symbol are updated with the correct value.
     //
@@ -1338,7 +1338,7 @@ export function transformModule(context: TransformationContext) {
       const exportedNames = getExports(node.left);
       if (exportedNames) {
         // For each additional export of the declaration, apply an export assignment.
-        let expression: Expression = node;
+        let expression: qt.Expression = node;
         for (const exportName of exportedNames) {
           // Mark the node to prevent triggering this rule again.
           noSubstitution[getNodeId(expression)] = true;
@@ -1357,7 +1357,7 @@ export function transformModule(context: TransformationContext) {
    *
    * @param node The node to substitute.
    */
-  function substituteUnaryExpression(node: PrefixUnaryExpression | PostfixUnaryExpression): Expression {
+  function substituteUnaryExpression(node: qt.PrefixUnaryExpression | qt.PostfixUnaryExpression): qt.Expression {
     // When we see a prefix or postfix increment expression whose operand is an exported
     // symbol, we should ensure all exports of that symbol are updated with the correct
     // value.
@@ -1370,7 +1370,7 @@ export function transformModule(context: TransformationContext) {
     if ((node.operator === qt.SyntaxKind.PlusPlusToken || node.operator === qt.SyntaxKind.MinusMinusToken) && isIdentifier(node.operand) && !isGeneratedIdentifier(node.operand) && !isLocalName(node.operand) && !isDeclarationNameOfEnumOrNamespace(node.operand)) {
       const exportedNames = getExports(node.operand);
       if (exportedNames) {
-        let expression: Expression = node.kind === qt.SyntaxKind.PostfixUnaryExpression ? setTextRange(createBinary(node.operand, createToken(node.operator === qt.SyntaxKind.PlusPlusToken ? qt.SyntaxKind.PlusEqualsToken : qt.SyntaxKind.MinusEqualsToken), createLiteral(1)), /*location*/ node) : node;
+        let expression: qt.Expression = node.kind === qt.SyntaxKind.PostfixUnaryExpression ? setTextRange(createBinary(node.operand, createToken(node.operator === qt.SyntaxKind.PlusPlusToken ? qt.SyntaxKind.PlusEqualsToken : qt.SyntaxKind.MinusEqualsToken), createLiteral(1)), /*location*/ node) : node;
         for (const exportName of exportedNames) {
           // Mark the node to prevent triggering this rule again.
           noSubstitution[getNodeId(expression)] = true;
@@ -1414,7 +1414,7 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 }));`,
 };
 
-function createCreateBindingHelper(context: TransformationContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
+function createCreateBindingHelper(context: TransformationContext, module: qt.Expression, inputName: qt.Expression, outputName: qt.Expression | undefined) {
   context.requestEmitHelper(createBindingHelper);
   return createCall(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [createIdentifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
 }
@@ -1445,7 +1445,7 @@ const exportStarHelper: UnscopedEmitHelper = {
             };`,
 };
 
-function createExportStarHelper(context: TransformationContext, module: Expression) {
+function createExportStarHelper(context: TransformationContext, module: qt.Expression) {
   context.requestEmitHelper(exportStarHelper);
   return createCall(getUnscopedHelperName('__exportStar'), /*typeArguments*/ undefined, [module, createIdentifier('exports')]);
 }

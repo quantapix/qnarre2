@@ -99,7 +99,7 @@ export function getWatchErrorSummaryDiagnosticMessage(errorCount: number) {
 
 export function getErrorSummaryText(errorCount: number, newLine: string) {
   if (errorCount === 0) return '';
-  const d = createCompilerDiagnostic(errorCount === 1 ? Diagnostics.Found_1_error : Diagnostics.Found_0_errors, errorCount);
+  const d = qu.createCompilerDiagnostic(errorCount === 1 ? Diagnostics.Found_1_error : Diagnostics.Found_0_errors, errorCount);
   return `${newLine}${flattenDiagnosticMessageText(d.messageText, newLine)}${newLine}${newLine}`;
 }
 
@@ -393,7 +393,7 @@ export interface CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T extends
   rootFiles: string[];
   options: qt.CompilerOptions;
   watchOptions: WatchOptions | undefined;
-  projectReferences?: readonly ProjectReference[];
+  projectReferences?: readonly qt.ProjectReference[];
 }
 /**
  * Creates the watch compiler host from system for compiling root files and options in watch mode
@@ -411,7 +411,7 @@ export interface IncrementalCompilationOptions {
   rootNames: readonly string[];
   options: qt.CompilerOptions;
   configFileParsingDiagnostics?: readonly Diagnostic[];
-  projectReferences?: readonly ProjectReference[];
+  projectReferences?: readonly qt.ProjectReference[];
   host?: CompilerHost;
   reportDiagnostic?: DiagnosticReporter;
   reportErrorSummary?: ReportEmitErrorSummary;

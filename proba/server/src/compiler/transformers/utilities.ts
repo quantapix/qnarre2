@@ -9,7 +9,7 @@ export interface ExternalModuleInfo {
   exportSpecifiers: Map<ExportSpecifier[]>; // export specifiers by name
   exportedBindings: Identifier[][]; // exported names of local declarations
   exportedNames: Identifier[] | undefined; // all exported names local to module
-  exportEquals: ExportAssignment | undefined; // an export= declaration if one was present
+  exportEquals: qt.ExportAssignment | undefined; // an export= declaration if one was present
   hasExportStarsToExportValues: boolean; // whether this module contains export*
 }
 
@@ -70,7 +70,7 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
   const uniqueExports = qc.createMap<boolean>();
   let exportedNames: Identifier[] | undefined;
   let hasExportDefault = false;
-  let exportEquals: ExportAssignment | undefined;
+  let exportEquals: qt.ExportAssignment | undefined;
   let hasExportStarsToExportValues = false;
   let hasImportStar = false;
   let hasImportDefault = false;
@@ -228,7 +228,7 @@ function multiMapSparseArrayAdd<V>(map: V[][], key: number, value: V): V[] {
  *  and thus better to copy into multiple places rather than to cache in a temporary variable
  *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
  */
-export function isSimpleCopiableExpression(expression: Expression) {
+export function isSimpleCopiableExpression(expression: qt.Expression) {
   return isStringLiteralLike(expression) || expression.kind === qt.SyntaxKind.NumericLiteral || isKeyword(expression.kind) || isIdentifier(expression);
 }
 
@@ -237,7 +237,7 @@ export function isSimpleCopiableExpression(expression: Expression) {
  * without risk of repeating any sideeffects and whose value could not possibly change between
  * any such locations
  */
-export function isSimpleInlineableExpression(expression: Expression) {
+export function isSimpleInlineableExpression(expression: qt.Expression) {
   return (!isIdentifier(expression) && isSimpleCopiableExpression(expression)) || isWellKnownSymbolSyntactically(expression);
 }
 
@@ -282,7 +282,7 @@ export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssi
  * @param visitor The visitor to apply to each node added to the result array.
  * @returns index of the statement that follows super call
  */
-export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDeclaration, result: Statement[], visitor: Visitor): number {
+export function addPrologueDirectivesAndInitialSuperCall(ctor: qt.ConstructorDeclaration, result: qt.Statement[], visitor: Visitor): number {
   if (ctor.body) {
     const statements = ctor.body.statements;
     // add prologue directives to the list (if any)
@@ -348,6 +348,6 @@ function isInitializedOrStaticProperty(member: ClassElement, requireInitializer:
  * @param member The class element node.
  * @param isStatic A value indicating whether the member should be a static or instance member.
  */
-export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initializer: Expression } {
+export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initializer: qt.Expression } {
   return member.kind === qt.SyntaxKind.PropertyDeclaration && member.initializer !== undefined;
 }

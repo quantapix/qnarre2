@@ -54,7 +54,7 @@ export function transformDeclarations(context: TransformationContext) {
   let enclosingDeclaration: Node;
   let necessaryTypeReferences: Map<true> | undefined;
   let lateMarkedStatements: LateVisibilityPaintedStatement[] | undefined;
-  let lateStatementReplacementMap: Map<VisitResult<LateVisibilityPaintedStatement | ExportAssignment>>;
+  let lateStatementReplacementMap: Map<VisitResult<LateVisibilityPaintedStatement | qt.ExportAssignment>>;
   let suppressNewDiagnosticContexts: boolean;
   let exportedModulesFromDeclarationEmit: symbol[] | undefined;
 
@@ -474,7 +474,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
 
-  function isDeclarationAndNotVisible(node: NamedDeclaration) {
+  function isDeclarationAndNotVisible(node: qt.NamedDeclaration) {
     node = getParseTreeNode(node);
     switch (node.kind) {
       case qt.SyntaxKind.FunctionDeclaration:
@@ -565,7 +565,7 @@ export function transformDeclarations(context: TransformationContext) {
     return setCommentRange(updated, getCommentRange(original));
   }
 
-  function rewriteModuleSpecifier<T extends Node>(parent: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode, input: T | undefined): T | StringLiteral {
+  function rewriteModuleSpecifier<T extends Node>(parent: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | qt.ImportTypeNode, input: T | undefined): T | StringLiteral {
     if (!input) return undefined!; // TODO: GH#18217
     resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || (parent.kind !== qt.SyntaxKind.ModuleDeclaration && parent.kind !== qt.SyntaxKind.ImportType);
     if (isStringLiteralLike(input)) {
@@ -658,7 +658,7 @@ export function transformDeclarations(context: TransformationContext) {
     // (and remove them from the set to examine for outter declarations)
     return visitNodes(statements, visitLateVisibilityMarkedStatements);
 
-    function visitLateVisibilityMarkedStatements(statement: Statement) {
+    function visitLateVisibilityMarkedStatements(statement: qt.Statement) {
       if (isLateVisibilityPaintedStatement(statement)) {
         const key = '' + getOriginalNodeId(statement);
         if (lateStatementReplacementMap.has(key)) {
@@ -838,7 +838,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
 
     if (isTupleTypeNode(input) && getLineAndCharacterOfPosition(currentSourceFile, input.pos).line === getLineAndCharacterOfPosition(currentSourceFile, input.end).line) {
-      setEmitFlags(input, EmitFlags.SingleLine);
+      setEmitFlags(input, qt.EmitFlags.SingleLine);
     }
 
     return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
@@ -911,7 +911,7 @@ export function transformDeclarations(context: TransformationContext) {
     return input;
   }
 
-  function stripExportModifiers(statement: Statement): Statement {
+  function stripExportModifiers(statement: qt.Statement): qt.Statement {
     if (isImportEqualsDeclaration(statement) || hasEffectiveModifier(statement, qt.ModifierFlags.Default)) {
       // `export import` statements should remain as-is, as imports are _not_ implicitly exported in an ambient namespace
       // Likewise, `export default` classes and the like and just be `default`, so we preserve their `export` modifiers, too
@@ -1208,12 +1208,12 @@ export function transformDeclarations(context: TransformationContext) {
     return isExportAssignment(node) || isExportDeclaration(node);
   }
 
-  function hasScopeMarker(statements: readonly Statement[]) {
+  function hasScopeMarker(statements: readonly qt.Statement[]) {
     return some(statements, isScopeMarker);
   }
 
   function ensureModifiers(node: qt.Node): readonly Modifier[] | undefined {
-    const currentFlags = getEffectiveModifierFlags(node);
+    const currentFlags = qu.getEffectiveModifierFlags(node);
     const newFlags = ensureModifierFlags(node);
     if (currentFlags === newFlags) {
       return node.modifiers;
@@ -1317,7 +1317,7 @@ function canHaveLiteralInitializer(node: qt.Node): boolean {
   return false;
 }
 
-type ProcessedDeclarationStatement = FunctionDeclaration | ModuleDeclaration | ImportEqualsDeclaration | InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration | EnumDeclaration | VariableStatement | ImportDeclaration | ExportDeclaration | ExportAssignment;
+type ProcessedDeclarationStatement = FunctionDeclaration | ModuleDeclaration | ImportEqualsDeclaration | InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration | qt.EnumDeclaration | VariableStatement | ImportDeclaration | ExportDeclaration | qt.ExportAssignment;
 
 function isPreservedDeclarationStatement(node: qt.Node): node is ProcessedDeclarationStatement {
   switch (node.kind) {
@@ -1337,7 +1337,7 @@ function isPreservedDeclarationStatement(node: qt.Node): node is ProcessedDeclar
   return false;
 }
 
-type ProcessedComponent = ConstructSignatureDeclaration | qt.ConstructorDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | PropertyDeclaration | PropertySignature | MethodSignature | CallSignatureDeclaration | IndexSignatureDeclaration | qt.VariableDeclaration | TypeParameterDeclaration | ExpressionWithTypeArguments | TypeReferenceNode | ConditionalTypeNode | FunctionTypeNode | ConstructorTypeNode | ImportTypeNode;
+type ProcessedComponent = ConstructSignatureDeclaration | qt.ConstructorDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | PropertyDeclaration | PropertySignature | MethodSignature | CallSignatureDeclaration | IndexSignatureDeclaration | qt.VariableDeclaration | TypeParameterDeclaration | qt.ExpressionWithTypeArguments | TypeReferenceNode | ConditionalTypeNode | FunctionTypeNode | ConstructorTypeNode | qt.ImportTypeNode;
 
 function isProcessedComponent(node: qt.Node): node is ProcessedComponent {
   switch (node.kind) {

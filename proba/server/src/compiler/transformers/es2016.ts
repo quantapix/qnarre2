@@ -23,7 +23,7 @@ export function transformES2016(context: TransformationContext) {
     }
   }
 
-  function visitBinaryExpression(node: BinaryExpression): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     switch (node.operatorToken.kind) {
       case qt.SyntaxKind.AsteriskAsteriskEqualsToken:
         return visitExponentiationAssignmentExpression(node);
@@ -34,9 +34,9 @@ export function transformES2016(context: TransformationContext) {
     }
   }
 
-  function visitExponentiationAssignmentExpression(node: BinaryExpression) {
-    let target: Expression;
-    let value: Expression;
+  function visitExponentiationAssignmentExpression(node: qt.BinaryExpression) {
+    let target: qt.Expression;
+    let value: qt.Expression;
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);
     if (isElementAccessExpression(left)) {
@@ -58,7 +58,7 @@ export function transformES2016(context: TransformationContext) {
     return setTextRange(createAssignment(target, createMathPow(value, right, /*location*/ node)), node);
   }
 
-  function visitExponentiationExpression(node: BinaryExpression) {
+  function visitExponentiationExpression(node: qt.BinaryExpression) {
     // Transforms `a ** b` into `Math.pow(a, b)`
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);

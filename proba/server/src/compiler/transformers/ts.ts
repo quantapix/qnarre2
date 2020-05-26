@@ -226,13 +226,13 @@ export function transformTypeScript(context: TransformationContext) {
       case qt.SyntaxKind.ImportEqualsDeclaration:
       case qt.SyntaxKind.ExportAssignment:
       case qt.SyntaxKind.ExportDeclaration:
-        return visitEllidableStatement(<ImportDeclaration | ImportEqualsDeclaration | ExportAssignment | ExportDeclaration>node);
+        return visitEllidableStatement(<ImportDeclaration | ImportEqualsDeclaration | qt.ExportAssignment | ExportDeclaration>node);
       default:
         return visitorWorker(node);
     }
   }
 
-  function visitEllidableStatement(node: ImportDeclaration | ImportEqualsDeclaration | ExportAssignment | ExportDeclaration): VisitResult<Node> {
+  function visitEllidableStatement(node: ImportDeclaration | ImportEqualsDeclaration | qt.ExportAssignment | ExportDeclaration): VisitResult<Node> {
     const parsed = getParseTreeNode(node);
     if (parsed !== node) {
       // If the node has been transformed by a `before` transformer, perform no ellision on it
@@ -608,7 +608,7 @@ export function transformTypeScript(context: TransformationContext) {
     const name = node.name || (facts & ClassFacts.NeedsName ? getGeneratedNameForNode(node) : undefined);
     const classStatement = facts & ClassFacts.HasConstructorDecorators ? createClassDeclarationHeadWithDecorators(node, name) : createClassDeclarationHeadWithoutDecorators(node, name, facts);
 
-    let statements: Statement[] = [classStatement];
+    let statements: qt.Statement[] = [classStatement];
 
     // Write any decorators of the node.
     addClassElementDecorationStatements(statements, node, /*isStatic*/ false);
@@ -634,17 +634,17 @@ export function transformTypeScript(context: TransformationContext) {
       // emit with the original emitter.
       const outer = createPartiallyEmittedExpression(localName);
       outer.end = closingBraceLocation.end;
-      setEmitFlags(outer, EmitFlags.NoComments);
+      setEmitFlags(outer, qt.EmitFlags.NoComments);
 
       const statement = createReturn(outer);
       statement.pos = closingBraceLocation.pos;
-      setEmitFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
+      setEmitFlags(statement, qt.EmitFlags.NoComments | qt.EmitFlags.NoTokenSourceMaps);
       statements.push(statement);
 
       insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
 
       const iife = createImmediatelyInvokedArrowFunction(statements);
-      setEmitFlags(iife, EmitFlags.TypeScriptClassWrapper);
+      setEmitFlags(iife, qt.EmitFlags.TypeScriptClassWrapper);
 
       const varStatement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ false), /*type*/ undefined, iife)]));
 
@@ -671,7 +671,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (statements.length > 1) {
       // Add a DeclarationMarker as a marker for the end of the declaration
       statements.push(createEndOfDeclarationMarker(node));
-      setEmitFlags(classStatement, qu.getEmitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
+      setEmitFlags(classStatement, qu.getEmitFlags(classStatement) | qt.EmitFlags.HasEndOfDeclarationMarker);
     }
 
     return singleOrMany(statements);
@@ -698,7 +698,7 @@ export function transformTypeScript(context: TransformationContext) {
     // entry if the class has static properties.
     let emitFlags = qu.getEmitFlags(node);
     if (facts & ClassFacts.HasStaticInitializedProperties) {
-      emitFlags |= EmitFlags.NoTrailingSourceMap;
+      emitFlags |= qt.EmitFlags.NoTrailingSourceMap;
     }
 
     aggregateTransformFlags(classDeclaration);
@@ -822,7 +822,7 @@ export function transformTypeScript(context: TransformationContext) {
     return statement;
   }
 
-  function visitClassExpression(node: ClassExpression): Expression {
+  function visitClassExpression(node: ClassExpression): qt.Expression {
     if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) {
       return visitEachChild(node, visitor, context);
     }
@@ -914,7 +914,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The function-like node.
    */
-  function getDecoratorsOfParameters(node: FunctionLikeDeclaration | undefined) {
+  function getDecoratorsOfParameters(node: qt.FunctionLikeDeclaration | undefined) {
     let decorators: (readonly Decorator[] | undefined)[] | undefined;
     if (node) {
       const parameters = node.parameters;
@@ -1048,7 +1048,7 @@ export function transformTypeScript(context: TransformationContext) {
       return undefined;
     }
 
-    const decoratorExpressions: Expression[] = [];
+    const decoratorExpressions: qt.Expression[] = [];
     addRange(decoratorExpressions, map(allDecorators.decorators, transformDecorator));
     addRange(decoratorExpressions, flatMap(allDecorators.parameters, transformDecoratorsOfParameter));
     addTypeMetadata(node, container, decoratorExpressions);
@@ -1063,7 +1063,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param isStatic A value indicating whether to generate statements for static or
    *                 instance members.
    */
-  function addClassElementDecorationStatements(statements: Statement[], node: ClassDeclaration, isStatic: boolean) {
+  function addClassElementDecorationStatements(statements: qt.Statement[], node: ClassDeclaration, isStatic: boolean) {
     addRange(statements, map(generateClassElementDecorationExpressions(node, isStatic), expressionToStatement));
   }
 
@@ -1077,7 +1077,7 @@ export function transformTypeScript(context: TransformationContext) {
    */
   function generateClassElementDecorationExpressions(node: ClassExpression | ClassDeclaration, isStatic: boolean) {
     const members = getDecoratedClassElements(node, isStatic);
-    let expressions: Expression[] | undefined;
+    let expressions: qt.Expression[] | undefined;
     for (const member of members) {
       const expression = generateClassElementDecorationExpression(node, member);
       if (expression) {
@@ -1150,7 +1150,7 @@ export function transformTypeScript(context: TransformationContext) {
 
     const helper = createDecorateHelper(context, decoratorExpressions, prefix, memberName, descriptor, moveRangePastDecorators(member));
 
-    setEmitFlags(helper, EmitFlags.NoComments);
+    setEmitFlags(helper, qt.EmitFlags.NoComments);
     return helper;
   }
 
@@ -1159,7 +1159,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The class node.
    */
-  function addConstructorDecorationStatement(statements: Statement[], node: ClassDeclaration) {
+  function addConstructorDecorationStatement(statements: qt.Statement[], node: ClassDeclaration) {
     const expression = generateConstructorDecorationExpression(node);
     if (expression) {
       statements.push(setOriginalNode(createExpressionStatement(expression), node));
@@ -1182,7 +1182,7 @@ export function transformTypeScript(context: TransformationContext) {
     const localName = getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ true);
     const decorate = createDecorateHelper(context, decoratorExpressions, localName);
     const expression = createAssignment(localName, classAlias ? createAssignment(classAlias, decorate) : decorate);
-    setEmitFlags(expression, EmitFlags.NoComments);
+    setEmitFlags(expression, qt.EmitFlags.NoComments);
     setSourceMapRange(expression, moveRangePastDecorators(node));
     return expression;
   }
@@ -1203,12 +1203,12 @@ export function transformTypeScript(context: TransformationContext) {
    * @param parameterOffset The offset of the parameter.
    */
   function transformDecoratorsOfParameter(decorators: Decorator[], parameterOffset: number) {
-    let expressions: Expression[] | undefined;
+    let expressions: qt.Expression[] | undefined;
     if (decorators) {
       expressions = [];
       for (const decorator of decorators) {
         const helper = createParamHelper(context, transformDecorator(decorator), parameterOffset, /*location*/ decorator.expression);
-        setEmitFlags(helper, EmitFlags.NoComments);
+        setEmitFlags(helper, qt.EmitFlags.NoComments);
         expressions.push(helper);
       }
     }
@@ -1222,7 +1222,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param node The declaration node.
    * @param decoratorExpressions The destination array to which to add new decorator expressions.
    */
-  function addTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: Expression[]) {
+  function addTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: qt.Expression[]) {
     if (USE_NEW_TYPE_METADATA_FORMAT) {
       addNewTypeMetadata(node, container, decoratorExpressions);
     } else {
@@ -1230,7 +1230,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
 
-  function addOldTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: Expression[]) {
+  function addOldTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: qt.Expression[]) {
     if (compilerOptions.emitDecoratorMetadata) {
       if (shouldAddTypeMetadata(node)) {
         decoratorExpressions.push(createMetadataHelper(context, 'design:type', serializeTypeOfNode(node)));
@@ -1244,7 +1244,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
 
-  function addNewTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: Expression[]) {
+  function addNewTypeMetadata(node: Declaration, container: ClassLikeDeclaration, decoratorExpressions: qt.Expression[]) {
     if (compilerOptions.emitDecoratorMetadata) {
       let properties: ObjectLiteralElementLike[] | undefined;
       if (shouldAddTypeMetadata(node)) {
@@ -1305,7 +1305,7 @@ export function transformTypeScript(context: TransformationContext) {
     return false;
   }
 
-  type SerializedEntityNameAsExpression = Identifier | BinaryExpression | PropertyAccessExpression;
+  type SerializedEntityNameAsExpression = Identifier | qt.BinaryExpression | PropertyAccessExpression;
   type SerializedTypeNode = SerializedEntityNameAsExpression | VoidExpression | ConditionalExpression;
 
   function getAccessorTypeNode(node: AccessorDeclaration) {
@@ -1363,7 +1363,7 @@ export function transformTypeScript(context: TransformationContext) {
     return createArrayLiteral(expressions);
   }
 
-  function getParametersOfDecoratedDeclaration(node: SignatureDeclaration, container: ClassLikeDeclaration) {
+  function getParametersOfDecoratedDeclaration(node: qt.SignatureDeclaration, container: ClassLikeDeclaration) {
     if (container && node.kind === qt.SyntaxKind.GetAccessor) {
       const { setAccessor } = getAllAccessorDeclarations(container.members, node);
       if (setAccessor) {
@@ -1607,7 +1607,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
 
-  function createCheckedValue(left: Expression, right: Expression) {
+  function createCheckedValue(left: qt.Expression, right: qt.Expression) {
     return createLogicalAnd(createStrictInequality(createTypeOf(left), createLiteral('undefined')), right);
   }
 
@@ -1616,7 +1616,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The entity name to serialize.
    */
-  function serializeEntityNameAsExpressionFallback(node: EntityName): BinaryExpression {
+  function serializeEntityNameAsExpressionFallback(node: EntityName): qt.BinaryExpression {
     if (node.kind === qt.SyntaxKind.Identifier) {
       // A -> typeof A !== undefined && A
       const copied = serializeEntityNameAsExpression(node);
@@ -1661,7 +1661,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param useFallback A value indicating whether to use logical operators to test for the
    *                    qualified name at runtime.
    */
-  function serializeQualifiedNameAsExpression(node: QualifiedName): SerializedEntityNameAsExpression {
+  function serializeQualifiedNameAsExpression(node: qt.QualifiedName): SerializedEntityNameAsExpression {
     return createPropertyAccess(serializeEntityNameAsExpression(node.left), node.right);
   }
 
@@ -1687,7 +1687,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param member The member whose name should be converted into an expression.
    */
-  function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): Expression {
+  function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): qt.Expression {
     const name = member.name!;
     if (isPrivateIdentifier(name)) {
       return createIdentifier('');
@@ -1743,14 +1743,14 @@ export function transformTypeScript(context: TransformationContext) {
   }
 
   /**
-   * Transforms an ExpressionWithTypeArguments with TypeScript syntax.
+   * Transforms an qt.ExpressionWithTypeArguments with TypeScript syntax.
    *
    * This function will only be called when one of the following conditions are met:
    * - The node contains type arguments that should be elided.
    *
-   * @param node The ExpressionWithTypeArguments to transform.
+   * @param node The qt.ExpressionWithTypeArguments to transform.
    */
-  function visitExpressionWithTypeArguments(node: ExpressionWithTypeArguments): ExpressionWithTypeArguments {
+  function visitExpressionWithTypeArguments(node: qt.ExpressionWithTypeArguments): qt.ExpressionWithTypeArguments {
     return updateExpressionWithTypeArguments(node, /*typeArguments*/ undefined, visitNode(node.expression, visitor, isLeftHandSideExpression));
   }
 
@@ -1760,7 +1760,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The declaration node.
    */
-  function shouldEmitFunctionLikeDeclaration<T extends FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
+  function shouldEmitFunctionLikeDeclaration<T extends qt.FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
     return !nodeIsMissing(node.body);
   }
 
@@ -1792,7 +1792,7 @@ export function transformTypeScript(context: TransformationContext) {
       return visitFunctionBody(body, visitor, context);
     }
 
-    let statements: Statement[] = [];
+    let statements: qt.Statement[] = [];
     let indexOfFirstStatement = 0;
 
     resumeLexicalEnvironment();
@@ -1836,10 +1836,10 @@ export function transformTypeScript(context: TransformationContext) {
     }
 
     const propertyName = getMutableClone(name);
-    setEmitFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoSourceMap);
+    setEmitFlags(propertyName, qt.EmitFlags.NoComments | qt.EmitFlags.NoSourceMap);
 
     const localName = getMutableClone(name);
-    setEmitFlags(localName, EmitFlags.NoComments);
+    setEmitFlags(localName, qt.EmitFlags.NoComments);
 
     return startOnNewLine(removeAllComments(setTextRange(setOriginalNode(createExpressionStatement(createAssignment(setTextRange(createPropertyAccess(createThis(), propertyName), node.name), localName)), node), moveRangePos(node, -1))));
   }
@@ -1902,14 +1902,14 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const updated = updateFunctionDeclaration(node, /*decorators*/ undefined, visitNodes(node.modifiers, modifierVisitor, isModifier), node.asteriskToken, node.name, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, visitFunctionBody(node.body, visitor, context) || createBlock([]));
     if (isExportOfNamespace(node)) {
-      const statements: Statement[] = [updated];
+      const statements: qt.Statement[] = [updated];
       addExportMemberAssignment(statements, node);
       return statements;
     }
     return updated;
   }
 
-  function visitFunctionExpression(node: FunctionExpression): Expression {
+  function visitFunctionExpression(node: FunctionExpression): qt.Expression {
     if (!shouldEmitFunctionLikeDeclaration(node)) {
       return createOmittedExpression();
     }
@@ -1934,12 +1934,12 @@ export function transformTypeScript(context: TransformationContext) {
       setCommentRange(updated, node);
       setTextRange(updated, moveRangePastModifiers(node));
       setSourceMapRange(updated, moveRangePastModifiers(node));
-      setEmitFlags(updated.name, EmitFlags.NoTrailingSourceMap);
+      setEmitFlags(updated.name, qt.EmitFlags.NoTrailingSourceMap);
     }
     return updated;
   }
 
-  function visitVariableStatement(node: VariableStatement): Statement | undefined {
+  function visitVariableStatement(node: VariableStatement): qt.Statement | undefined {
     if (isExportOfNamespace(node)) {
       const variables = getInitializedVariables(node.declarationList);
       if (variables.length === 0) {
@@ -1953,7 +1953,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
 
-  function transformInitializedVariable(node: qt.VariableDeclaration): Expression {
+  function transformInitializedVariable(node: qt.VariableDeclaration): qt.Expression {
     const name = node.name;
     if (isBindingPattern(name)) {
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, /*needsValue*/ false, createNamespaceExportExpression);
@@ -1966,7 +1966,7 @@ export function transformTypeScript(context: TransformationContext) {
     return updateTypeScriptVariableDeclaration(node, visitNode(node.name, visitor, isBindingName), /*exclaimationToken*/ undefined, /*type*/ undefined, visitNode(node.initializer, visitor, isExpression));
   }
 
-  function visitParenthesizedExpression(node: ParenthesizedExpression): Expression {
+  function visitParenthesizedExpression(node: ParenthesizedExpression): qt.Expression {
     const innerExpression = skipOuterExpressions(node.expression, ~OuterExpressionKinds.Assertions);
     if (isAssertionExpression(innerExpression)) {
       // Make sure we consider all nested cast expressions, e.g.:
@@ -1997,12 +1997,12 @@ export function transformTypeScript(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitAssertionExpression(node: AssertionExpression): Expression {
+  function visitAssertionExpression(node: AssertionExpression): qt.Expression {
     const expression = visitNode(node.expression, visitor, isExpression);
     return createPartiallyEmittedExpression(expression, node);
   }
 
-  function visitNonNullExpression(node: NonNullExpression): Expression {
+  function visitNonNullExpression(node: NonNullExpression): qt.Expression {
     const expression = visitNode(node.expression, visitor, isLeftHandSideExpression);
     return createPartiallyEmittedExpression(expression, node);
   }
@@ -2032,7 +2032,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The enum declaration node.
    */
-  function shouldEmitEnumDeclaration(node: EnumDeclaration) {
+  function shouldEmitEnumDeclaration(node: qt.EnumDeclaration) {
     return !isEnumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
   }
 
@@ -2043,16 +2043,16 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The enum declaration node.
    */
-  function visitEnumDeclaration(node: EnumDeclaration): VisitResult<Statement> {
+  function visitEnumDeclaration(node: qt.EnumDeclaration): VisitResult<Statement> {
     if (!shouldEmitEnumDeclaration(node)) {
       return createNotEmittedStatement(node);
     }
 
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
 
     // We request to be advised when the printer is about to print this node. This allows
     // us to set up the correct state for later substitutions.
-    let emitFlags = EmitFlags.AdviseOnEmitNode;
+    let emitFlags = qt.EmitFlags.AdviseOnEmitNode;
 
     // If needed, we should emit a variable declaration for the enum. If we emit
     // a leading variable declaration, we should not emit leading comments for the
@@ -2061,7 +2061,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (varAdded) {
       // We should still emit the comments if we are emitting a system module.
       if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
-        emitFlags |= EmitFlags.NoLeadingComments;
+        emitFlags |= qt.EmitFlags.NoLeadingComments;
       }
     }
 
@@ -2113,11 +2113,11 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The enum declaration node.
    */
-  function transformEnumBody(node: EnumDeclaration, localName: Identifier): Block {
+  function transformEnumBody(node: qt.EnumDeclaration, localName: Identifier): Block {
     const savedCurrentNamespaceLocalName = currentNamespaceContainerName;
     currentNamespaceContainerName = localName;
 
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     startLexicalEnvironment();
     const members = map(node.members, transformEnumMember);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
@@ -2132,7 +2132,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param member The enum member node.
    */
-  function transformEnumMember(member: EnumMember): Statement {
+  function transformEnumMember(member: EnumMember): qt.Statement {
     // enums don't support computed properties
     // we pass false as 'generateNameForComputedPropertyName' for a backward compatibility purposes
     // old emitter always generate 'expression' part of the name as-is.
@@ -2148,7 +2148,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param member The enum member node.
    */
-  function transformEnumMemberDeclarationValue(member: EnumMember): Expression {
+  function transformEnumMemberDeclarationValue(member: EnumMember): qt.Expression {
     const value = resolver.getConstantValue(member);
     if (value !== undefined) {
       return createLiteral(value);
@@ -2188,7 +2188,7 @@ export function transformTypeScript(context: TransformationContext) {
    * Records that a declaration was emitted in the current scope, if it was the first
    * declaration for the provided symbol.
    */
-  function recordEmittedDeclarationInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | EnumDeclaration) {
+  function recordEmittedDeclarationInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | qt.EnumDeclaration) {
     if (!currentScopeFirstDeclarationsOfName) {
       currentScopeFirstDeclarationsOfName = createUnderscoreEscapedMap<Node>();
     }
@@ -2203,7 +2203,7 @@ export function transformTypeScript(context: TransformationContext) {
    * Determines whether a declaration is the first declaration with
    * the same name emitted in the current scope.
    */
-  function isFirstEmittedDeclarationInScope(node: ModuleDeclaration | EnumDeclaration) {
+  function isFirstEmittedDeclarationInScope(node: ModuleDeclaration | qt.EnumDeclaration) {
     if (currentScopeFirstDeclarationsOfName) {
       const name = declaredNameInScope(node);
       return currentScopeFirstDeclarationsOfName.get(name) === node;
@@ -2211,7 +2211,7 @@ export function transformTypeScript(context: TransformationContext) {
     return true;
   }
 
-  function declaredNameInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | EnumDeclaration): qt.__String {
+  function declaredNameInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | qt.EnumDeclaration): qt.__String {
     Debug.assertNode(node.name, isIdentifier);
     return node.name.escapedText;
   }
@@ -2219,7 +2219,7 @@ export function transformTypeScript(context: TransformationContext) {
   /**
    * Adds a leading VariableStatement for a enum or module declaration.
    */
-  function addVarForEnumOrModuleDeclaration(statements: Statement[], node: ModuleDeclaration | EnumDeclaration) {
+  function addVarForEnumOrModuleDeclaration(statements: qt.Statement[], node: ModuleDeclaration | qt.EnumDeclaration) {
     // Emit a variable statement for the module. We emit top-level enums as a `var`
     // declaration to avoid static errors in global scripts scripts due to redeclaration.
     // enums in any other scope are emitted as a `let` declaration.
@@ -2255,16 +2255,16 @@ export function transformTypeScript(context: TransformationContext) {
       //     })(m1 || (m1 = {})); // trailing comment module
       //
       setCommentRange(statement, node);
-      addEmitFlags(statement, EmitFlags.NoTrailingComments | EmitFlags.HasEndOfDeclarationMarker);
+      addEmitFlags(statement, qt.EmitFlags.NoTrailingComments | qt.EmitFlags.HasEndOfDeclarationMarker);
       statements.push(statement);
       return true;
     } else {
-      // For an EnumDeclaration or ModuleDeclaration that merges with a preceeding
+      // For an qt.EnumDeclaration or ModuleDeclaration that merges with a preceeding
       // declaration we do not emit a leading variable declaration. To preserve the
       // begin/end semantics of the declararation and to properly handle exports
       // we wrap the leading variable declaration in a `MergeDeclarationMarker`.
       const mergeMarker = createMergeDeclarationMarker(statement);
-      setEmitFlags(mergeMarker, EmitFlags.NoComments | EmitFlags.HasEndOfDeclarationMarker);
+      setEmitFlags(mergeMarker, qt.EmitFlags.NoComments | qt.EmitFlags.HasEndOfDeclarationMarker);
       statements.push(mergeMarker);
       return false;
     }
@@ -2285,11 +2285,11 @@ export function transformTypeScript(context: TransformationContext) {
     Debug.assertNode(node.name, isIdentifier, 'A TypeScript namespace should have an Identifier name.');
     enableSubstitutionForNamespaceExports();
 
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
 
     // We request to be advised when the printer is about to print this node. This allows
     // us to set up the correct state for later substitutions.
-    let emitFlags = EmitFlags.AdviseOnEmitNode;
+    let emitFlags = qt.EmitFlags.AdviseOnEmitNode;
 
     // If needed, we should emit a variable declaration for the module. If we emit
     // a leading variable declaration, we should not emit leading comments for the
@@ -2298,7 +2298,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (varAdded) {
       // We should still emit the comments if we are emitting a system module.
       if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
-        emitFlags |= EmitFlags.NoLeadingComments;
+        emitFlags |= qt.EmitFlags.NoLeadingComments;
       }
     }
 
@@ -2357,7 +2357,7 @@ export function transformTypeScript(context: TransformationContext) {
     currentNamespace = node;
     currentScopeFirstDeclarationsOfName = undefined;
 
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     startLexicalEnvironment();
 
     let statementsLocation: qt.TextRange | undefined;
@@ -2411,7 +2411,7 @@ export function transformTypeScript(context: TransformationContext) {
     // })(hello || (hello = {}));
     // We only want to emit comment on the namespace which contains block body itself, not the containing namespaces.
     if (!node.body || node.body.kind !== qt.SyntaxKind.ModuleBlock) {
-      setEmitFlags(block, qu.getEmitFlags(block) | EmitFlags.NoComments);
+      setEmitFlags(block, qu.getEmitFlags(block) | qt.EmitFlags.NoComments);
     }
     return block;
   }
@@ -2491,7 +2491,7 @@ export function transformTypeScript(context: TransformationContext) {
    *
    * @param node The export assignment node.
    */
-  function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
+  function visitExportAssignment(node: qt.ExportAssignment): VisitResult<Statement> {
     // Elide the export assignment if it does not reference a value.
     return resolver.isValueAliasDeclaration(node) ? visitEachChild(node, visitor, context) : undefined;
   }
@@ -2587,7 +2587,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
 
     const moduleReference = createExpressionFromEntityName(node.moduleReference);
-    setEmitFlags(moduleReference, EmitFlags.NoComments | EmitFlags.NoNestedComments);
+    setEmitFlags(moduleReference, qt.EmitFlags.NoComments | qt.EmitFlags.NoNestedComments);
 
     if (isNamedExternalModuleExport(node) || !isExportOfNamespace(node)) {
       //  export var ${name} = ${moduleReference};
@@ -2638,11 +2638,11 @@ export function transformTypeScript(context: TransformationContext) {
   /**
    * Creates a statement for the provided expression. This is used in calls to `map`.
    */
-  function expressionToStatement(expression: Expression) {
+  function expressionToStatement(expression: qt.Expression) {
     return createExpressionStatement(expression);
   }
 
-  function addExportMemberAssignment(statements: Statement[], node: ClassDeclaration | FunctionDeclaration) {
+  function addExportMemberAssignment(statements: qt.Statement[], node: ClassDeclaration | FunctionDeclaration) {
     const expression = createAssignment(getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, /*allowComments*/ false, /*allowSourceMaps*/ true), getLocalName(node));
     setSourceMapRange(expression, createRange(node.name ? node.name.pos : node.pos, node.end));
 
@@ -2651,11 +2651,11 @@ export function transformTypeScript(context: TransformationContext) {
     statements.push(statement);
   }
 
-  function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: qt.TextRange) {
+  function createNamespaceExport(exportName: Identifier, exportValue: qt.Expression, location?: qt.TextRange) {
     return setTextRange(createExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, /*allowComments*/ false, /*allowSourceMaps*/ true), exportValue)), location);
   }
 
-  function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: qt.TextRange) {
+  function createNamespaceExportExpression(exportName: Identifier, exportValue: qt.Expression, location?: qt.TextRange) {
     return setTextRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(exportName), exportValue), location);
   }
 
@@ -2666,7 +2666,7 @@ export function transformTypeScript(context: TransformationContext) {
   /**
    * Gets the declaration name used inside of a namespace or enum.
    */
-  function getNamespaceParameterName(node: ModuleDeclaration | EnumDeclaration) {
+  function getNamespaceParameterName(node: ModuleDeclaration | qt.EnumDeclaration) {
     const name = getGeneratedNameForNode(node);
     setSourceMapRange(name, node.name);
     return name;
@@ -2676,7 +2676,7 @@ export function transformTypeScript(context: TransformationContext) {
    * Gets the expression used to refer to a namespace or enum within the body
    * of its declaration.
    */
-  function getNamespaceContainerName(node: ModuleDeclaration | EnumDeclaration) {
+  function getNamespaceContainerName(node: ModuleDeclaration | qt.EnumDeclaration) {
     return getGeneratedNameForNode(node);
   }
 
@@ -2808,7 +2808,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node;
   }
 
-  function substituteExpression(node: Expression) {
+  function substituteExpression(node: qt.Expression) {
     switch (node.kind) {
       case qt.SyntaxKind.Identifier:
         return substituteExpressionIdentifier(node);
@@ -2821,11 +2821,11 @@ export function transformTypeScript(context: TransformationContext) {
     return node;
   }
 
-  function substituteExpressionIdentifier(node: Identifier): Expression {
+  function substituteExpressionIdentifier(node: Identifier): qt.Expression {
     return trySubstituteClassAlias(node) || trySubstituteNamespaceExportedName(node) || node;
   }
 
-  function trySubstituteClassAlias(node: Identifier): Expression | undefined {
+  function trySubstituteClassAlias(node: Identifier): qt.Expression | undefined {
     if (enabledSubstitutions & TypeScriptSubstitutionFlags.ClassAliases) {
       if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ConstructorReferenceInClass) {
         // Due to the emit for class decorators, any reference to the class from inside of the class body
@@ -2849,7 +2849,7 @@ export function transformTypeScript(context: TransformationContext) {
     return undefined;
   }
 
-  function trySubstituteNamespaceExportedName(node: Identifier): Expression | undefined {
+  function trySubstituteNamespaceExportedName(node: Identifier): qt.Expression | undefined {
     // If this is explicitly a local name, do not substitute.
     if (enabledSubstitutions & applicableSubstitutions && !isGeneratedIdentifier(node) && !isLocalName(node)) {
       // If we are nested within a namespace declaration, we may need to qualifiy
@@ -2870,11 +2870,11 @@ export function transformTypeScript(context: TransformationContext) {
     return substituteConstantValue(node);
   }
 
-  function substituteElementAccessExpression(node: ElementAccessExpression) {
+  function substituteElementAccessExpression(node: qt.ElementAccessExpression) {
     return substituteConstantValue(node);
   }
 
-  function substituteConstantValue(node: PropertyAccessExpression | ElementAccessExpression): LeftHandSideExpression {
+  function substituteConstantValue(node: PropertyAccessExpression | qt.ElementAccessExpression): LeftHandSideExpression {
     const constantValue = tryGetConstEnumValue(node);
     if (constantValue !== undefined) {
       // track the constant value on the node for the printer in needsDotDotForPropertyAccess
@@ -2882,7 +2882,7 @@ export function transformTypeScript(context: TransformationContext) {
 
       const substitute = createLiteral(constantValue);
       if (!compilerOptions.removeComments) {
-        const originalNode = getOriginalNode(node, isAccessExpression);
+        const originalNode = getOriginalNode(node, qu.isAccessExpression);
         const propertyName = isPropertyAccessExpression(originalNode) ? declarationNameToString(originalNode.name) : getTextOfNode(originalNode.argumentExpression);
 
         addSyntheticTrailingComment(substitute, qt.SyntaxKind.MultiLineCommentTrivia, ` ${propertyName} `);
@@ -2903,8 +2903,8 @@ export function transformTypeScript(context: TransformationContext) {
   }
 }
 
-function createDecorateHelper(context: TransformationContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: qt.TextRange) {
-  const argumentsArray: Expression[] = [];
+function createDecorateHelper(context: TransformationContext, decoratorExpressions: qt.Expression[], target: qt.Expression, memberName?: qt.Expression, descriptor?: qt.Expression, location?: qt.TextRange) {
+  const argumentsArray: qt.Expression[] = [];
   argumentsArray.push(createArrayLiteral(decoratorExpressions, /*multiLine*/ true));
   argumentsArray.push(target);
   if (memberName) {
@@ -2932,7 +2932,7 @@ export const decorateHelper: UnscopedEmitHelper = {
             };`,
 };
 
-function createMetadataHelper(context: TransformationContext, metadataKey: string, metadataValue: Expression) {
+function createMetadataHelper(context: TransformationContext, metadataKey: string, metadataValue: qt.Expression) {
   context.requestEmitHelper(metadataHelper);
   return createCall(getUnscopedHelperName('__metadata'), /*typeArguments*/ undefined, [createLiteral(metadataKey), metadataValue]);
 }
@@ -2948,7 +2948,7 @@ export const metadataHelper: UnscopedEmitHelper = {
             };`,
 };
 
-function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: qt.TextRange) {
+function createParamHelper(context: TransformationContext, expression: qt.Expression, parameterOffset: number, location?: qt.TextRange) {
   context.requestEmitHelper(paramHelper);
   return setTextRange(createCall(getUnscopedHelperName('__param'), /*typeArguments*/ undefined, [createLiteral(parameterOffset), expression]), location);
 }

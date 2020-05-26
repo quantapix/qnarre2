@@ -7,7 +7,7 @@ export function findConfigFile(searchPath: string, fileExists: (fileName: string
 
 export function resolveTripleslashReference(moduleName: string, containingFile: string): string {
   const basePath = qp.getDirectoryPath(containingFile);
-  const referencedFileName = isRootedDiskPath(moduleName) ? moduleName : combinePaths(basePath, moduleName);
+  const referencedFileName = qp.isRootedDiskPath(moduleName) ? moduleName : combinePaths(basePath, moduleName);
   return normalizePath(referencedFileName);
 }
 
@@ -531,7 +531,7 @@ interface RefFile extends qt.TextRange {
  * Determines if program structure is upto date or needs to be recreated
  */
 
-export function isProgramUptoDate(program: Program | undefined, rootFileNames: string[], newOptions: qt.CompilerOptions, getSourceVersion: (path: Path, fileName: string) => string | undefined, fileExists: (fileName: string) => boolean, hasInvalidatedResolution: HasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames: boolean, projectReferences: readonly ProjectReference[] | undefined): boolean {
+export function isProgramUptoDate(program: Program | undefined, rootFileNames: string[], newOptions: qt.CompilerOptions, getSourceVersion: (path: Path, fileName: string) => string | undefined, fileExists: (fileName: string) => boolean, hasInvalidatedResolution: HasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames: boolean, projectReferences: readonly qt.ProjectReference[] | undefined): boolean {
   // If we haven't created a program yet or have changed automatic type directives, then it is not up-to-date
   if (!program || hasChangedAutomaticTypeDirectiveNames) {
     return false;
@@ -581,14 +581,14 @@ export function isProgramUptoDate(program: Program | undefined, rootFileNames: s
     return sourceFile.version === getSourceVersion(sourceFile.resolvedPath, sourceFile.fileName);
   }
 
-  function projectReferenceUptoDate(oldRef: ProjectReference, newRef: ProjectReference, index: number) {
+  function projectReferenceUptoDate(oldRef: qt.ProjectReference, newRef: qt.ProjectReference, index: number) {
     if (!projectReferenceIsEqualTo(oldRef, newRef)) {
       return false;
     }
     return resolvedProjectReferenceUptoDate(program.getResolvedProjectReferences()![index], oldRef);
   }
 
-  function resolvedProjectReferenceUptoDate(oldResolvedRef: ResolvedProjectReference | undefined, oldRef: ProjectReference): boolean {
+  function resolvedProjectReferenceUptoDate(oldResolvedRef: ResolvedProjectReference | undefined, oldRef: qt.ProjectReference): boolean {
     if (oldResolvedRef) {
       if (contains(seenResolvedRefs, oldResolvedRef)) {
         // Assume true
@@ -749,7 +749,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     actualResolveTypeReferenceDirectiveNamesWorker = (typeReferenceDirectiveNames, containingFile, redirectedReference) => loadWithLocalCache<ResolvedTypeReferenceDirective>(Debug.checkEachDefined(typeReferenceDirectiveNames), containingFile, redirectedReference, loader);
   }
 
-  // Map from a stringified PackageId to the source file with that id.
+  // Map from a stringified qt.PackageId to the source file with that id.
   // Only one source file may have a given packageId. Others become redirects (see createRedirectSourceFile).
   // `packageIdToSourceFile` is only used while building the program, while `sourceFileToPackageName` and `isSourceFileTargetOfRedirect` are kept around.
   const packageIdToSourceFile = qc.createMap<SourceFile>();
@@ -856,7 +856,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       }
     }
 
-    missingFilePaths = arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as Path) : undefined)));
+    missingFilePaths = qc.arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as Path) : undefined)));
     files = stableSort(processingDefaultLibFiles, compareDefaultLibFiles).concat(processingOtherFiles);
     processingDefaultLibFiles = undefined;
     processingOtherFiles = undefined;
@@ -1701,7 +1701,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
    * Creates a map of comment directives along with the diagnostics immediately preceded by one of them.
    * Comments that match to any of those diagnostics are marked as used.
    */
-  function getDiagnosticsWithPrecedingDirectives(sourceFile: SourceFile, commentDirectives: CommentDirective[], flatDiagnostics: Diagnostic[]) {
+  function getDiagnosticsWithPrecedingDirectives(sourceFile: SourceFile, commentDirectives: qt.CommentDirective[], flatDiagnostics: Diagnostic[]) {
     // Diagnostics are only reported if there is no comment directive preceding them
     // This will modify the directives map by marking "used" ones with a corresponding diagnostic
     const directives = createCommentDirectivesMap(sourceFile, commentDirectives);
@@ -1719,7 +1719,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   /**
    * @returns The line index marked as preceding the diagnostic, or -1 if none was.
    */
-  function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: CommentDirectivesMap) {
+  function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: qt.CommentDirectivesMap) {
     const { file, start } = diagnostic;
     if (!file) {
       return -1;
@@ -2030,7 +2030,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       // synthesize 'import "tslib"' declaration
       const externalHelpersModuleReference = createLiteral(externalHelpersModuleNameText);
       const importDecl = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*importClause*/ undefined, externalHelpersModuleReference);
-      addEmitFlags(importDecl, EmitFlags.NeverApplyImportHelper);
+      addEmitFlags(importDecl, qt.EmitFlags.NeverApplyImportHelper);
       externalHelpersModuleReference.parent = importDecl;
       importDecl.parent = file;
       imports = [externalHelpersModuleReference];
@@ -2049,7 +2049,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
     return;
 
-    function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
+    function collectModuleReferences(node: qt.Statement, inAmbientModule: boolean): void {
       if (isAnyImportOrReExport(node)) {
         const moduleNameExpr = getExternalModuleName(node);
         // TypeScript 1.0 spec (April 2014): 12.1.6
@@ -2182,7 +2182,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   /** This has side effects through `findSourceFile`. */
-  function processSourceFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, packageId: PackageId | undefined, refFile?: RefFile): void {
+  function processSourceFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, packageId: qt.PackageId | undefined, refFile?: RefFile): void {
     getSourceFileFromReferenceWorker(
       fileName,
       (fileName) => findSourceFile(fileName, toPath(fileName), isDefaultLib, ignoreNoDefaultLib, refFile, packageId), // TODO: GH#18217
@@ -2227,7 +2227,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   // Get source file from normalized fileName
-  function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: RefFile | undefined, packageId: PackageId | undefined): SourceFile | undefined {
+  function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: RefFile | undefined, packageId: qt.PackageId | undefined): SourceFile | undefined {
     if (useSourceOfProjectReferenceRedirect) {
       let source = getSourceOfProjectReferenceRedirect(fileName);
       // If preserveSymlinks is true, module resolution wont jump the symlink
@@ -2469,17 +2469,17 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return useSourceOfProjectReferenceRedirect && !!getResolvedProjectReferenceToRedirect(fileName);
   }
 
-  function forEachProjectReference<T>(projectReferences: readonly ProjectReference[] | undefined, resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined, cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined, cbRef?: (projectReferences: readonly ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined): T | undefined {
+  function forEachProjectReference<T>(projectReferences: readonly qt.ProjectReference[] | undefined, resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined, cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined, cbRef?: (projectReferences: readonly qt.ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined): T | undefined {
     let seenResolvedRefs: ResolvedProjectReference[] | undefined;
 
     return worker(projectReferences, resolvedProjectReferences, /*parent*/ undefined, cbResolvedRef, cbRef);
 
     function worker(
-      projectReferences: readonly ProjectReference[] | undefined,
+      projectReferences: readonly qt.ProjectReference[] | undefined,
       resolvedProjectReferences: readonly (ResolvedProjectReference | undefined)[] | undefined,
       parent: ResolvedProjectReference | undefined,
       cbResolvedRef: (resolvedRef: ResolvedProjectReference | undefined, index: number, parent: ResolvedProjectReference | undefined) => T | undefined,
-      cbRef?: (projectReferences: readonly ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined
+      cbRef?: (projectReferences: readonly qt.ProjectReference[] | undefined, parent: ResolvedProjectReference | undefined) => T | undefined
     ): T | undefined {
       // Visit project references first
       if (cbRef) {
@@ -2622,7 +2622,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   function createRefFileDiagnostic(refFile: RefFile | undefined, message: qt.DiagnosticMessage, ...args: any[]): Diagnostic {
     if (!refFile) {
-      return createCompilerDiagnostic(message, ...args);
+      return qu.createCompilerDiagnostic(message, ...args);
     } else {
       return createFileDiagnostic(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
     }
@@ -2721,7 +2721,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return allFilesBelongToPath;
   }
 
-  function parseProjectReferenceConfigFile(ref: ProjectReference): ResolvedProjectReference | undefined {
+  function parseProjectReferenceConfigFile(ref: qt.ProjectReference): ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
       projectReferenceRedirects = qc.createMap<ResolvedProjectReference | false>();
     }
@@ -3016,14 +3016,14 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             chain = chainDiagnosticMessages(/*details*/ undefined, Diagnostics.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig);
           }
           chain = chainDiagnosticMessages(chain, Diagnostics.Cannot_write_file_0_because_it_would_overwrite_input_file, emitFileName);
-          blockEmittingOfFile(emitFileName, createCompilerDiagnosticFromMessageChain(chain));
+          blockEmittingOfFile(emitFileName, qu.createCompilerDiagnosticFromMessageChain(chain));
         }
 
         const emitFileKey = !host.useCaseSensitiveFileNames() ? toFileNameLowerCase(emitFilePath) : emitFilePath;
         // Report error if multiple files write into same file
         if (emitFilesSeen.has(emitFileKey)) {
           // Already seen the same emit file - report error
-          blockEmittingOfFile(emitFileName, createCompilerDiagnostic(Diagnostics.Cannot_write_file_0_because_it_would_be_overwritten_by_multiple_input_files, emitFileName));
+          blockEmittingOfFile(emitFileName, qu.createCompilerDiagnostic(Diagnostics.Cannot_write_file_0_because_it_would_be_overwritten_by_multiple_input_files, emitFileName));
         } else {
           emitFilesSeen.set(emitFileKey, true);
         }
@@ -3055,7 +3055,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: qt.DiagnosticMessage, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
     const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elementAt(refPaths, 0);
-    programDiagnostics.add(refPathToReportErrorOn ? createFileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
+    programDiagnostics.add(refPathToReportErrorOn ? createFileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : qu.createCompilerDiagnostic(message, ...args));
   }
 
   function verifyProjectReferences() {
@@ -3451,7 +3451,7 @@ export function parseConfigHostFromCompilerHostLike(host: CompilerHostLike, dire
   fileExists(fileName: string): boolean;
 }
 
-export function createPrependNodes(projectReferences: readonly ProjectReference[] | undefined, getCommandLine: (ref: ProjectReference, index: number) => ParsedCommandLine | undefined, readFile: (path: string) => string | undefined) {
+export function createPrependNodes(projectReferences: readonly qt.ProjectReference[] | undefined, getCommandLine: (ref: qt.ProjectReference, index: number) => ParsedCommandLine | undefined, readFile: (path: string) => string | undefined) {
   if (!projectReferences) return emptyArray;
   let nodes: InputFiles[] | undefined;
   for (let i = 0; i < projectReferences.length; i++) {
@@ -3473,10 +3473,10 @@ export function createPrependNodes(projectReferences: readonly ProjectReference[
  * Returns the target config filename of a project reference.
  * Note: The file might not exist.
  */
-export function resolveProjectReferencePath(ref: ProjectReference): ResolvedConfigFileName;
-/** @deprecated */ export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: ProjectReference): ResolvedConfigFileName;
-export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | ProjectReference, ref?: ProjectReference): ResolvedConfigFileName {
-  const passedInRef = ref ? ref : (hostOrRef as ProjectReference);
+export function resolveProjectReferencePath(ref: qt.ProjectReference): ResolvedConfigFileName;
+/** @deprecated */ export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: qt.ProjectReference): ResolvedConfigFileName;
+export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | qt.ProjectReference, ref?: qt.ProjectReference): ResolvedConfigFileName {
+  const passedInRef = ref ? ref : (hostOrRef as qt.ProjectReference);
   return resolveConfigFileProjectName(passedInRef.path);
 }
 

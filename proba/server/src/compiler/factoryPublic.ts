@@ -129,7 +129,7 @@ export function createIdentifier(text: string, typeArguments?: readonly (TypeNod
   const node = <Identifier>createSynthesizedNode(SyntaxKind.Identifier);
   node.escapedText = escapeLeadingUnderscores(text);
   node.originalKeywordKind = text ? stringToToken(text) : qt.SyntaxKind.Unknown;
-  node.autoGenerateFlags = GeneratedIdentifierFlags.None;
+  node.autoGenerateFlags = qt.GeneratedIdentifierFlags.None;
   node.autoGenerateId = 0;
   if (typeArguments) {
     node.typeArguments = createNodeArray(typeArguments as readonly TypeNode[]);
@@ -151,14 +151,14 @@ export function createTempVariable(recordTempVariable: ((node: Identifier) => vo
 export function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined, reservedInNestedScopes: boolean): GeneratedIdentifier;
 export function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined, reservedInNestedScopes?: boolean): GeneratedIdentifier {
   const name = createIdentifier('');
-  name.autoGenerateFlags = GeneratedIdentifierFlags.Auto;
+  name.autoGenerateFlags = qt.GeneratedIdentifierFlags.Auto;
   name.autoGenerateId = nextAutoGenerateId;
   nextAutoGenerateId++;
   if (recordTempVariable) {
     recordTempVariable(name);
   }
   if (reservedInNestedScopes) {
-    name.autoGenerateFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
+    name.autoGenerateFlags |= qt.GeneratedIdentifierFlags.ReservedInNestedScopes;
   }
   return name;
 }
@@ -166,7 +166,7 @@ export function createTempVariable(recordTempVariable: ((node: Identifier) => vo
 /** Create a unique temporary variable for use in a loop. */
 export function createLoopVariable(): Identifier {
   const name = createIdentifier('');
-  name.autoGenerateFlags = GeneratedIdentifierFlags.Loop;
+  name.autoGenerateFlags = qt.GeneratedIdentifierFlags.Loop;
   name.autoGenerateId = nextAutoGenerateId;
   nextAutoGenerateId++;
   return name;
@@ -175,7 +175,7 @@ export function createLoopVariable(): Identifier {
 /** Create a unique name based on the supplied text. */
 export function createUniqueName(text: string): Identifier {
   const name = createIdentifier(text);
-  name.autoGenerateFlags = GeneratedIdentifierFlags.Unique;
+  name.autoGenerateFlags = qt.GeneratedIdentifierFlags.Unique;
   name.autoGenerateId = nextAutoGenerateId;
   nextAutoGenerateId++;
   return name;
@@ -186,7 +186,7 @@ export function createOptimisticUniqueName(text: string): GeneratedIdentifier;
 export function createOptimisticUniqueName(text: string): Identifier;
 export function createOptimisticUniqueName(text: string): GeneratedIdentifier {
   const name = createIdentifier(text);
-  name.autoGenerateFlags = GeneratedIdentifierFlags.Unique | GeneratedIdentifierFlags.Optimistic;
+  name.autoGenerateFlags = qt.GeneratedIdentifierFlags.Unique | qt.GeneratedIdentifierFlags.Optimistic;
   name.autoGenerateId = nextAutoGenerateId;
   nextAutoGenerateId++;
   return name;
@@ -195,16 +195,16 @@ export function createOptimisticUniqueName(text: string): GeneratedIdentifier {
 /** Create a unique name based on the supplied text. This does not consider names injected by the transformer. */
 export function createFileLevelUniqueName(text: string): Identifier {
   const name = createOptimisticUniqueName(text);
-  name.autoGenerateFlags |= GeneratedIdentifierFlags.FileLevel;
+  name.autoGenerateFlags |= qt.GeneratedIdentifierFlags.FileLevel;
   return name;
 }
 
 /** Create a unique name generated for a node. */
 export function getGeneratedNameForNode(node: qt.Node | undefined): Identifier;
-export function getGeneratedNameForNode(node: qt.Node | undefined, flags: GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
-export function getGeneratedNameForNode(node: qt.Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
+export function getGeneratedNameForNode(node: qt.Node | undefined, flags: qt.GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
+export function getGeneratedNameForNode(node: qt.Node | undefined, flags?: qt.GeneratedIdentifierFlags): Identifier {
   const name = createIdentifier(node && isIdentifier(node) ? idText(node) : '');
-  name.autoGenerateFlags = GeneratedIdentifierFlags.Node | flags;
+  name.autoGenerateFlags = qt.GeneratedIdentifierFlags.Node | flags;
   name.autoGenerateId = nextAutoGenerateId;
   name.original = node;
   nextAutoGenerateId++;
@@ -302,21 +302,21 @@ export function createQualifiedName(left: EntityName, right: string | Identifier
   return node;
 }
 
-export function updateQualifiedName(node: QualifiedName, left: EntityName, right: Identifier) {
+export function updateQualifiedName(node: qt.QualifiedName, left: EntityName, right: Identifier) {
   return node.left !== left || node.right !== right ? updateNode(createQualifiedName(left, right), node) : node;
 }
 
-function parenthesizeForComputedName(expression: Expression): Expression {
+function parenthesizeForComputedName(expression: qt.Expression): qt.Expression {
   return isCommaSequence(expression) ? createParen(expression) : expression;
 }
 
-export function createComputedPropertyName(expression: Expression) {
+export function createComputedPropertyName(expression: qt.Expression) {
   const node = <ComputedPropertyName>createSynthesizedNode(SyntaxKind.ComputedPropertyName);
   node.expression = parenthesizeForComputedName(expression);
   return node;
 }
 
-export function updateComputedPropertyName(node: ComputedPropertyName, expression: Expression) {
+export function updateComputedPropertyName(node: ComputedPropertyName, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createComputedPropertyName(expression), node) : node;
 }
 
@@ -334,7 +334,7 @@ export function updateTypeParameterDeclaration(node: TypeParameterDeclaration, n
   return node.name !== name || node.constraint !== constraint || node.default !== defaultType ? updateNode(createTypeParameterDeclaration(name, constraint, defaultType), node) : node;
 }
 
-export function createParameter(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, dotDotDotToken: DotDotDotToken | undefined, name: string | qt.BindingName, questionToken?: QuestionToken, type?: TypeNode, initializer?: Expression) {
+export function createParameter(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, dotDotDotToken: DotDotDotToken | undefined, name: string | qt.BindingName, questionToken?: QuestionToken, type?: TypeNode, initializer?: qt.Expression) {
   const node = <qt.ParameterDeclaration>createSynthesizedNode(SyntaxKind.Parameter);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
@@ -346,23 +346,23 @@ export function createParameter(decorators: readonly Decorator[] | undefined, mo
   return node;
 }
 
-export function updateParameter(node: ParameterDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, dotDotDotToken: DotDotDotToken | undefined, name: string | qt.BindingName, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined) {
+export function updateParameter(node: ParameterDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, dotDotDotToken: DotDotDotToken | undefined, name: string | qt.BindingName, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: qt.Expression | undefined) {
   return node.decorators !== decorators || node.modifiers !== modifiers || node.dotDotDotToken !== dotDotDotToken || node.name !== name || node.questionToken !== questionToken || node.type !== type || node.initializer !== initializer ? updateNode(createParameter(decorators, modifiers, dotDotDotToken, name, questionToken, type, initializer), node) : node;
 }
 
-export function createDecorator(expression: Expression) {
+export function createDecorator(expression: qt.Expression) {
   const node = <qt.Decorator>createSynthesizedNode(SyntaxKind.Decorator);
   node.expression = parenthesizeForAccess(expression);
   return node;
 }
 
-export function updateDecorator(node: Decorator, expression: Expression) {
+export function updateDecorator(node: Decorator, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createDecorator(expression), node) : node;
 }
 
 // Type Elements
 
-export function createPropertySignature(modifiers: readonly Modifier[] | undefined, name: PropertyName | string, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined): PropertySignature {
+export function createPropertySignature(modifiers: readonly Modifier[] | undefined, name: PropertyName | string, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: qt.Expression | undefined): PropertySignature {
   const node = createSynthesizedNode(SyntaxKind.PropertySignature) as PropertySignature;
   node.modifiers = asNodeArray(modifiers);
   node.name = asName(name);
@@ -372,11 +372,11 @@ export function createPropertySignature(modifiers: readonly Modifier[] | undefin
   return node;
 }
 
-export function updatePropertySignature(node: PropertySignature, modifiers: readonly Modifier[] | undefined, name: PropertyName, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined) {
+export function updatePropertySignature(node: PropertySignature, modifiers: readonly Modifier[] | undefined, name: PropertyName, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: qt.Expression | undefined) {
   return node.modifiers !== modifiers || node.name !== name || node.questionToken !== questionToken || node.type !== type || node.initializer !== initializer ? updateNode(createPropertySignature(modifiers, name, questionToken, type, initializer), node) : node;
 }
 
-export function createProperty(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, questionOrExclamationToken: QuestionToken | ExclamationToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined) {
+export function createProperty(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, questionOrExclamationToken: QuestionToken | ExclamationToken | undefined, type: TypeNode | undefined, initializer: qt.Expression | undefined) {
   const node = <qt.PropertyDeclaration>createSynthesizedNode(SyntaxKind.PropertyDeclaration);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
@@ -388,7 +388,7 @@ export function createProperty(decorators: readonly Decorator[] | undefined, mod
   return node;
 }
 
-export function updateProperty(node: PropertyDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, questionOrExclamationToken: QuestionToken | ExclamationToken | undefined, type: TypeNode | undefined, initializer: Expression | undefined) {
+export function updateProperty(node: PropertyDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | PropertyName, questionOrExclamationToken: QuestionToken | ExclamationToken | undefined, type: TypeNode | undefined, initializer: qt.Expression | undefined) {
   return node.decorators !== decorators ||
     node.modifiers !== modifiers ||
     node.name !== name ||
@@ -425,19 +425,19 @@ export function createMethod(decorators: readonly Decorator[] | undefined, modif
   return node;
 }
 
-function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
+function createMethodCall(object: qt.Expression, methodName: string | Identifier, argumentsList: readonly qt.Expression[]) {
   return createCall(createPropertyAccess(object, asName(methodName)), /*typeArguments*/ undefined, argumentsList);
 }
 
-function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
+function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly qt.Expression[]) {
   return createMethodCall(createIdentifier(globalObjectName), methodName, argumentsList);
 }
 
-export function createObjectDefinePropertyCall(target: Expression, propertyName: string | Expression, attributes: Expression) {
+export function createObjectDefinePropertyCall(target: qt.Expression, propertyName: string | qt.Expression, attributes: qt.Expression) {
   return createGlobalMethodCall('Object', 'defineProperty', [target, asExpression(propertyName), attributes]);
 }
 
-function tryAddPropertyAssignment(properties: qpc.Push<PropertyAssignment>, propertyName: string, expression: Expression | undefined) {
+function tryAddPropertyAssignment(properties: qpc.Push<PropertyAssignment>, propertyName: string, expression: qt.Expression | undefined) {
   if (expression) {
     properties.push(createPropertyAssignment(propertyName, expression));
     return true;
@@ -540,7 +540,7 @@ export function updateIndexSignature(node: IndexSignatureDeclaration, decorators
 }
 
 export function createSignatureDeclaration(kind: qt.SyntaxKind, typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined, typeArguments?: readonly TypeNode[] | undefined) {
-  const node = createSynthesizedNode(kind) as SignatureDeclaration;
+  const node = createSynthesizedNode(kind) as qt.SignatureDeclaration;
   node.typeParameters = asNodeArray(typeParameters);
   node.parameters = asNodeArray(parameters);
   node.type = type;
@@ -548,7 +548,7 @@ export function createSignatureDeclaration(kind: qt.SyntaxKind, typeParameters: 
   return node;
 }
 
-function updateSignatureDeclaration<T extends SignatureDeclaration>(node: T, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined): T {
+function updateSignatureDeclaration<T extends qt.SignatureDeclaration>(node: T, typeParameters: qt.NodeArray<TypeParameterDeclaration> | undefined, parameters: qt.NodeArray<qt.ParameterDeclaration>, type: TypeNode | undefined): T {
   return node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type ? updateNode(<T>createSignatureDeclaration(node.kind, typeParameters, parameters, type), node) : node;
 }
 
@@ -723,7 +723,7 @@ export function createImportTypeNode(argument: TypeNode, qualifier?: EntityName,
   return node;
 }
 
-export function updateImportTypeNode(node: ImportTypeNode, argument: TypeNode, qualifier?: EntityName, typeArguments?: readonly TypeNode[], isTypeOf?: boolean) {
+export function updateImportTypeNode(node: qt.ImportTypeNode, argument: TypeNode, qualifier?: EntityName, typeArguments?: readonly TypeNode[], isTypeOf?: boolean) {
   return node.argument !== argument || node.qualifier !== qualifier || node.typeArguments !== typeArguments || node.isTypeOf !== isTypeOf ? updateNode(createImportTypeNode(argument, qualifier, typeArguments, isTypeOf), node) : node;
 }
 
@@ -823,7 +823,7 @@ export function updateArrayBindingPattern(node: ArrayBindingPattern, elements: r
   return node.elements !== elements ? updateNode(createArrayBindingPattern(elements), node) : node;
 }
 
-export function createBindingElement(dotDotDotToken: DotDotDotToken | undefined, propertyName: string | PropertyName | undefined, name: string | qt.BindingName, initializer?: Expression) {
+export function createBindingElement(dotDotDotToken: DotDotDotToken | undefined, propertyName: string | PropertyName | undefined, name: string | qt.BindingName, initializer?: qt.Expression) {
   const node = <BindingElement>createSynthesizedNode(SyntaxKind.BindingElement);
   node.dotDotDotToken = dotDotDotToken;
   node.propertyName = asName(propertyName);
@@ -832,20 +832,20 @@ export function createBindingElement(dotDotDotToken: DotDotDotToken | undefined,
   return node;
 }
 
-export function updateBindingElement(node: qt.BindingElement, dotDotDotToken: DotDotDotToken | undefined, propertyName: PropertyName | undefined, name: qt.BindingName, initializer: Expression | undefined) {
+export function updateBindingElement(node: qt.BindingElement, dotDotDotToken: DotDotDotToken | undefined, propertyName: PropertyName | undefined, name: qt.BindingName, initializer: qt.Expression | undefined) {
   return node.propertyName !== propertyName || node.dotDotDotToken !== dotDotDotToken || node.name !== name || node.initializer !== initializer ? updateNode(createBindingElement(dotDotDotToken, propertyName, name, initializer), node) : node;
 }
 
-// Expression
+// qt.Expression
 
-export function createArrayLiteral(elements?: readonly Expression[], multiLine?: boolean) {
+export function createArrayLiteral(elements?: readonly qt.Expression[], multiLine?: boolean) {
   const node = <ArrayLiteralExpression>createSynthesizedNode(SyntaxKind.ArrayLiteralExpression);
   node.elements = parenthesizeListElements(createNodeArray(elements));
   if (multiLine) node.multiLine = true;
   return node;
 }
 
-export function updateArrayLiteral(node: ArrayLiteralExpression, elements: readonly Expression[]) {
+export function updateArrayLiteral(node: ArrayLiteralExpression, elements: readonly qt.Expression[]) {
   return node.elements !== elements ? updateNode(createArrayLiteral(elements, node.multiLine), node) : node;
 }
 
@@ -860,15 +860,15 @@ export function updateObjectLiteral(node: ObjectLiteralExpression, properties: r
   return node.properties !== properties ? updateNode(createObjectLiteral(properties, node.multiLine), node) : node;
 }
 
-export function createPropertyAccess(expression: Expression, name: string | Identifier | PrivateIdentifier) {
+export function createPropertyAccess(expression: qt.Expression, name: string | Identifier | PrivateIdentifier) {
   const node = <PropertyAccessExpression>createSynthesizedNode(SyntaxKind.PropertyAccessExpression);
   node.expression = parenthesizeForAccess(expression);
   node.name = asName(name);
-  setEmitFlags(node, EmitFlags.NoIndentation);
+  setEmitFlags(node, qt.EmitFlags.NoIndentation);
   return node;
 }
 
-export function updatePropertyAccess(node: PropertyAccessExpression, expression: Expression, name: Identifier | PrivateIdentifier) {
+export function updatePropertyAccess(node: PropertyAccessExpression, expression: qt.Expression, name: Identifier | PrivateIdentifier) {
   if (isPropertyAccessChain(node)) {
     return updatePropertyAccessChain(node, expression, node.questionDotToken, cast(name, isIdentifier));
   }
@@ -877,38 +877,38 @@ export function updatePropertyAccess(node: PropertyAccessExpression, expression:
   return node.expression !== expression || node.name !== name ? updateNode(setEmitFlags(createPropertyAccess(expression, name), qu.getEmitFlags(node)), node) : node;
 }
 
-export function createPropertyAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
+export function createPropertyAccessChain(expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
   const node = <PropertyAccessChain>createSynthesizedNode(SyntaxKind.PropertyAccessExpression);
   node.flags |= NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
   node.questionDotToken = questionDotToken;
   node.name = asName(name);
-  setEmitFlags(node, EmitFlags.NoIndentation);
+  setEmitFlags(node, qt.EmitFlags.NoIndentation);
   return node;
 }
 
-export function updatePropertyAccessChain(node: PropertyAccessChain, expression: Expression, questionDotToken: QuestionDotToken | undefined, name: Identifier) {
+export function updatePropertyAccessChain(node: PropertyAccessChain, expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, name: Identifier) {
   Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a PropertyAccessExpression using updatePropertyAccessChain. Use updatePropertyAccess instead.');
   // Because we are updating an existing PropertyAccessChain we want to inherit its emitFlags
   // instead of using the default from createPropertyAccess
   return node.expression !== expression || node.questionDotToken !== questionDotToken || node.name !== name ? updateNode(setEmitFlags(createPropertyAccessChain(expression, questionDotToken, name), qu.getEmitFlags(node)), node) : node;
 }
 
-export function createElementAccess(expression: Expression, index: number | Expression) {
+export function createElementAccess(expression: qt.Expression, index: number | qt.Expression) {
   const node = <ElementAccessExpression>createSynthesizedNode(SyntaxKind.ElementAccessExpression);
   node.expression = parenthesizeForAccess(expression);
   node.argumentExpression = asExpression(index);
   return node;
 }
 
-export function updateElementAccess(node: ElementAccessExpression, expression: Expression, argumentExpression: Expression) {
+export function updateElementAccess(node: qt.ElementAccessExpression, expression: qt.Expression, argumentExpression: qt.Expression) {
   if (isOptionalChain(node)) {
     return updateElementAccessChain(node, expression, node.questionDotToken, argumentExpression);
   }
   return node.expression !== expression || node.argumentExpression !== argumentExpression ? updateNode(createElementAccess(expression, argumentExpression), node) : node;
 }
 
-export function createElementAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, index: number | Expression) {
+export function createElementAccessChain(expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, index: number | qt.Expression) {
   const node = <ElementAccessChain>createSynthesizedNode(SyntaxKind.ElementAccessExpression);
   node.flags |= NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
@@ -917,12 +917,12 @@ export function createElementAccessChain(expression: Expression, questionDotToke
   return node;
 }
 
-export function updateElementAccessChain(node: ElementAccessChain, expression: Expression, questionDotToken: QuestionDotToken | undefined, argumentExpression: Expression) {
-  Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update an ElementAccessExpression using updateElementAccessChain. Use updateElementAccess instead.');
+export function updateElementAccessChain(node: qt.ElementAccessChain, expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, argumentExpression: qt.Expression) {
+  Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update an qt.ElementAccessExpression using updateElementAccessChain. Use updateElementAccess instead.');
   return node.expression !== expression || node.questionDotToken !== questionDotToken || node.argumentExpression !== argumentExpression ? updateNode(createElementAccessChain(expression, questionDotToken, argumentExpression), node) : node;
 }
 
-export function createCall(expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
+export function createCall(expression: qt.Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[] | undefined) {
   const node = <CallExpression>createSynthesizedNode(SyntaxKind.CallExpression);
   node.expression = parenthesizeForAccess(expression);
   node.typeArguments = asNodeArray(typeArguments);
@@ -930,14 +930,14 @@ export function createCall(expression: Expression, typeArguments: readonly TypeN
   return node;
 }
 
-export function updateCall(node: CallExpression, expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[]) {
+export function updateCall(node: CallExpression, expression: qt.Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[]) {
   if (isOptionalChain(node)) {
     return updateCallChain(node, expression, node.questionDotToken, typeArguments, argumentsArray);
   }
   return node.expression !== expression || node.typeArguments !== typeArguments || node.arguments !== argumentsArray ? updateNode(createCall(expression, typeArguments, argumentsArray), node) : node;
 }
 
-export function createCallChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
+export function createCallChain(expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[] | undefined) {
   const node = <CallChain>createSynthesizedNode(SyntaxKind.CallExpression);
   node.flags |= NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
@@ -947,12 +947,12 @@ export function createCallChain(expression: Expression, questionDotToken: Questi
   return node;
 }
 
-export function updateCallChain(node: CallChain, expression: Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[]) {
+export function updateCallChain(node: qt.CallChain, expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[]) {
   Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
   return node.expression !== expression || node.questionDotToken !== questionDotToken || node.typeArguments !== typeArguments || node.arguments !== argumentsArray ? updateNode(createCallChain(expression, questionDotToken, typeArguments, argumentsArray), node) : node;
 }
 
-export function createNew(expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
+export function createNew(expression: qt.Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[] | undefined) {
   const node = <NewExpression>createSynthesizedNode(SyntaxKind.NewExpression);
   node.expression = parenthesizeForNew(expression);
   node.typeArguments = asNodeArray(typeArguments);
@@ -960,15 +960,15 @@ export function createNew(expression: Expression, typeArguments: readonly TypeNo
   return node;
 }
 
-export function updateNew(node: NewExpression, expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
+export function updateNew(node: NewExpression, expression: qt.Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[] | undefined) {
   return node.expression !== expression || node.typeArguments !== typeArguments || node.arguments !== argumentsArray ? updateNode(createNew(expression, typeArguments, argumentsArray), node) : node;
 }
 
-/** @deprecated */ export function createTaggedTemplate(tag: Expression, template: TemplateLiteral): TaggedTemplateExpression;
-export function createTaggedTemplate(tag: Expression, typeArguments: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
+/** @deprecated */ export function createTaggedTemplate(tag: qt.Expression, template: TemplateLiteral): TaggedTemplateExpression;
+export function createTaggedTemplate(tag: qt.Expression, typeArguments: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
 
-export function createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral): TaggedTemplateExpression;
-export function createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
+export function createTaggedTemplate(tag: qt.Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral): TaggedTemplateExpression;
+export function createTaggedTemplate(tag: qt.Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
   const node = <TaggedTemplateExpression>createSynthesizedNode(SyntaxKind.TaggedTemplateExpression);
   node.tag = parenthesizeForAccess(tag);
   if (template) {
@@ -981,30 +981,30 @@ export function createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: r
   return node;
 }
 
-/** @deprecated */ export function updateTaggedTemplate(node: TaggedTemplateExpression, tag: Expression, template: TemplateLiteral): TaggedTemplateExpression;
-export function updateTaggedTemplate(node: TaggedTemplateExpression, tag: Expression, typeArguments: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
-export function updateTaggedTemplate(node: TaggedTemplateExpression, tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
+/** @deprecated */ export function updateTaggedTemplate(node: TaggedTemplateExpression, tag: qt.Expression, template: TemplateLiteral): TaggedTemplateExpression;
+export function updateTaggedTemplate(node: TaggedTemplateExpression, tag: qt.Expression, typeArguments: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
+export function updateTaggedTemplate(node: TaggedTemplateExpression, tag: qt.Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
   return node.tag !== tag || (template ? node.typeArguments !== typeArgumentsOrTemplate || node.template !== template : node.typeArguments !== undefined || node.template !== typeArgumentsOrTemplate) ? updateNode(createTaggedTemplate(tag, typeArgumentsOrTemplate, template), node) : node;
 }
 
-export function createTypeAssertion(type: TypeNode, expression: Expression) {
+export function createTypeAssertion(type: TypeNode, expression: qt.Expression) {
   const node = <TypeAssertion>createSynthesizedNode(SyntaxKind.TypeAssertionExpression);
   node.type = type;
   node.expression = parenthesizePrefixOperand(expression);
   return node;
 }
 
-export function updateTypeAssertion(node: TypeAssertion, type: TypeNode, expression: Expression) {
+export function updateTypeAssertion(node: TypeAssertion, type: TypeNode, expression: qt.Expression) {
   return node.type !== type || node.expression !== expression ? updateNode(createTypeAssertion(type, expression), node) : node;
 }
 
-export function createParen(expression: Expression) {
+export function createParen(expression: qt.Expression) {
   const node = <ParenthesizedExpression>createSynthesizedNode(SyntaxKind.ParenthesizedExpression);
   node.expression = expression;
   return node;
 }
 
-export function updateParen(node: ParenthesizedExpression, expression: Expression) {
+export function updateParen(node: ParenthesizedExpression, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createParen(expression), node) : node;
 }
 
@@ -1038,69 +1038,69 @@ export function updateArrowFunction(node: ArrowFunction, modifiers: readonly Mod
   return node.modifiers !== modifiers || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.equalsGreaterThanToken !== equalsGreaterThanToken || node.body !== body ? updateNode(createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body), node) : node;
 }
 
-export function createDelete(expression: Expression) {
+export function createDelete(expression: qt.Expression) {
   const node = <DeleteExpression>createSynthesizedNode(SyntaxKind.DeleteExpression);
   node.expression = parenthesizePrefixOperand(expression);
   return node;
 }
 
-export function updateDelete(node: DeleteExpression, expression: Expression) {
+export function updateDelete(node: DeleteExpression, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createDelete(expression), node) : node;
 }
 
-export function createTypeOf(expression: Expression) {
+export function createTypeOf(expression: qt.Expression) {
   const node = <TypeOfExpression>createSynthesizedNode(SyntaxKind.TypeOfExpression);
   node.expression = parenthesizePrefixOperand(expression);
   return node;
 }
 
-export function updateTypeOf(node: TypeOfExpression, expression: Expression) {
+export function updateTypeOf(node: TypeOfExpression, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createTypeOf(expression), node) : node;
 }
 
-export function createVoid(expression: Expression) {
+export function createVoid(expression: qt.Expression) {
   const node = <VoidExpression>createSynthesizedNode(SyntaxKind.VoidExpression);
   node.expression = parenthesizePrefixOperand(expression);
   return node;
 }
 
-export function updateVoid(node: VoidExpression, expression: Expression) {
+export function updateVoid(node: VoidExpression, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createVoid(expression), node) : node;
 }
 
-export function createAwait(expression: Expression) {
+export function createAwait(expression: qt.Expression) {
   const node = <AwaitExpression>createSynthesizedNode(SyntaxKind.AwaitExpression);
   node.expression = parenthesizePrefixOperand(expression);
   return node;
 }
 
-export function updateAwait(node: AwaitExpression, expression: Expression) {
+export function updateAwait(node: AwaitExpression, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createAwait(expression), node) : node;
 }
 
-export function createPrefix(operator: PrefixUnaryOperator, operand: Expression) {
+export function createPrefix(operator: PrefixUnaryOperator, operand: qt.Expression) {
   const node = <PrefixUnaryExpression>createSynthesizedNode(SyntaxKind.PrefixUnaryExpression);
   node.operator = operator;
   node.operand = parenthesizePrefixOperand(operand);
   return node;
 }
 
-export function updatePrefix(node: PrefixUnaryExpression, operand: Expression) {
+export function updatePrefix(node: qt.PrefixUnaryExpression, operand: qt.Expression) {
   return node.operand !== operand ? updateNode(createPrefix(node.operator, operand), node) : node;
 }
 
-export function createPostfix(operand: Expression, operator: PostfixUnaryOperator) {
+export function createPostfix(operand: qt.Expression, operator: PostfixUnaryOperator) {
   const node = <PostfixUnaryExpression>createSynthesizedNode(SyntaxKind.PostfixUnaryExpression);
   node.operand = parenthesizePostfixOperand(operand);
   node.operator = operator;
   return node;
 }
 
-export function updatePostfix(node: PostfixUnaryExpression, operand: Expression) {
+export function updatePostfix(node: qt.PostfixUnaryExpression, operand: qt.Expression) {
   return node.operand !== operand ? updateNode(createPostfix(operand, node.operator), node) : node;
 }
 
-export function createBinary(left: Expression, operator: BinaryOperator | BinaryOperatorToken, right: Expression) {
+export function createBinary(left: qt.Expression, operator: BinaryOperator | BinaryOperatorToken, right: qt.Expression) {
   const node = <BinaryExpression>createSynthesizedNode(SyntaxKind.BinaryExpression);
   const operatorToken = asToken(operator);
   const operatorKind = operatorToken.kind;
@@ -1110,13 +1110,13 @@ export function createBinary(left: Expression, operator: BinaryOperator | Binary
   return node;
 }
 
-export function updateBinary(node: BinaryExpression, left: Expression, right: Expression, operator: BinaryOperator | BinaryOperatorToken = node.operatorToken) {
+export function updateBinary(node: qt.BinaryExpression, left: qt.Expression, right: qt.Expression, operator: BinaryOperator | BinaryOperatorToken = node.operatorToken) {
   return node.left !== left || node.right !== right || node.operatorToken !== operator ? updateNode(createBinary(left, operator, right), node) : node;
 }
 
-/** @deprecated */ export function createConditional(condition: Expression, whenTrue: Expression, whenFalse: Expression): ConditionalExpression;
-export function createConditional(condition: Expression, questionToken: QuestionToken, whenTrue: Expression, colonToken: ColonToken, whenFalse: Expression): ConditionalExpression;
-export function createConditional(condition: Expression, questionTokenOrWhenTrue: QuestionToken | Expression, whenTrueOrWhenFalse: Expression, colonToken?: ColonToken, whenFalse?: Expression) {
+/** @deprecated */ export function createConditional(condition: qt.Expression, whenTrue: qt.Expression, whenFalse: qt.Expression): ConditionalExpression;
+export function createConditional(condition: qt.Expression, questionToken: QuestionToken, whenTrue: qt.Expression, colonToken: ColonToken, whenFalse: qt.Expression): ConditionalExpression;
+export function createConditional(condition: qt.Expression, questionTokenOrWhenTrue: QuestionToken | qt.Expression, whenTrueOrWhenFalse: qt.Expression, colonToken?: ColonToken, whenFalse?: qt.Expression) {
   const node = <ConditionalExpression>createSynthesizedNode(SyntaxKind.ConditionalExpression);
   node.condition = parenthesizeForConditionalHead(condition);
   node.questionToken = whenFalse ? <QuestionToken>questionTokenOrWhenTrue : createToken(SyntaxKind.QuestionToken);
@@ -1125,7 +1125,7 @@ export function createConditional(condition: Expression, questionTokenOrWhenTrue
   node.whenFalse = parenthesizeSubexpressionOfConditionalExpression(whenFalse ? whenFalse : whenTrueOrWhenFalse);
   return node;
 }
-export function updateConditional(node: ConditionalExpression, condition: Expression, questionToken: Token<SyntaxKind.QuestionToken>, whenTrue: Expression, colonToken: Token<SyntaxKind.ColonToken>, whenFalse: Expression): ConditionalExpression {
+export function updateConditional(node: ConditionalExpression, condition: qt.Expression, questionToken: Token<SyntaxKind.QuestionToken>, whenTrue: qt.Expression, colonToken: Token<SyntaxKind.ColonToken>, whenFalse: qt.Expression): ConditionalExpression {
   return node.condition !== condition || node.questionToken !== questionToken || node.whenTrue !== whenTrue || node.colonToken !== colonToken || node.whenFalse !== whenFalse ? updateNode(createConditional(condition, questionToken, whenTrue, colonToken, whenFalse), node) : node;
 }
 
@@ -1231,9 +1231,9 @@ export function createNoSubstitutionTemplateLiteral(text: string, rawText?: stri
   return node;
 }
 
-export function createYield(expression?: Expression): YieldExpression;
-export function createYield(asteriskToken: AsteriskToken | undefined, expression: Expression): YieldExpression;
-export function createYield(asteriskTokenOrExpression?: AsteriskToken | undefined | Expression, expression?: Expression) {
+export function createYield(expression?: qt.Expression): YieldExpression;
+export function createYield(asteriskToken: AsteriskToken | undefined, expression: qt.Expression): YieldExpression;
+export function createYield(asteriskTokenOrExpression?: AsteriskToken | undefined | qt.Expression, expression?: qt.Expression) {
   const asteriskToken = asteriskTokenOrExpression && asteriskTokenOrExpression.kind === qt.SyntaxKind.AsteriskToken ? <AsteriskToken>asteriskTokenOrExpression : undefined;
   expression = asteriskTokenOrExpression && asteriskTokenOrExpression.kind !== qt.SyntaxKind.AsteriskToken ? asteriskTokenOrExpression : expression;
   const node = <YieldExpression>createSynthesizedNode(SyntaxKind.YieldExpression);
@@ -1242,17 +1242,17 @@ export function createYield(asteriskTokenOrExpression?: AsteriskToken | undefine
   return node;
 }
 
-export function updateYield(node: YieldExpression, asteriskToken: AsteriskToken | undefined, expression: Expression) {
+export function updateYield(node: YieldExpression, asteriskToken: AsteriskToken | undefined, expression: qt.Expression) {
   return node.expression !== expression || node.asteriskToken !== asteriskToken ? updateNode(createYield(asteriskToken, expression), node) : node;
 }
 
-export function createSpread(expression: Expression) {
+export function createSpread(expression: qt.Expression) {
   const node = <SpreadElement>createSynthesizedNode(SyntaxKind.SpreadElement);
   node.expression = parenthesizeExpressionForList(expression);
   return node;
 }
 
-export function updateSpread(node: SpreadElement, expression: Expression) {
+export function updateSpread(node: SpreadElement, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createSpread(expression), node) : node;
 }
 
@@ -1275,49 +1275,49 @@ export function createOmittedExpression() {
   return <OmittedExpression>createSynthesizedNode(SyntaxKind.OmittedExpression);
 }
 
-export function createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
+export function createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: qt.Expression) {
   const node = <ExpressionWithTypeArguments>createSynthesizedNode(SyntaxKind.ExpressionWithTypeArguments);
   node.expression = parenthesizeForAccess(expression);
   node.typeArguments = asNodeArray(typeArguments);
   return node;
 }
 
-export function updateExpressionWithTypeArguments(node: ExpressionWithTypeArguments, typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
+export function updateExpressionWithTypeArguments(node: qt.ExpressionWithTypeArguments, typeArguments: readonly TypeNode[] | undefined, expression: qt.Expression) {
   return node.typeArguments !== typeArguments || node.expression !== expression ? updateNode(createExpressionWithTypeArguments(typeArguments, expression), node) : node;
 }
 
-export function createAsExpression(expression: Expression, type: TypeNode) {
+export function createAsExpression(expression: qt.Expression, type: TypeNode) {
   const node = <AsExpression>createSynthesizedNode(SyntaxKind.AsExpression);
   node.expression = expression;
   node.type = type;
   return node;
 }
 
-export function updateAsExpression(node: AsExpression, expression: Expression, type: TypeNode) {
+export function updateAsExpression(node: AsExpression, expression: qt.Expression, type: TypeNode) {
   return node.expression !== expression || node.type !== type ? updateNode(createAsExpression(expression, type), node) : node;
 }
 
-export function createNonNullExpression(expression: Expression) {
+export function createNonNullExpression(expression: qt.Expression) {
   const node = <NonNullExpression>createSynthesizedNode(SyntaxKind.NonNullExpression);
   node.expression = parenthesizeForAccess(expression);
   return node;
 }
 
-export function updateNonNullExpression(node: NonNullExpression, expression: Expression) {
+export function updateNonNullExpression(node: NonNullExpression, expression: qt.Expression) {
   if (isNonNullChain(node)) {
     return updateNonNullChain(node, expression);
   }
   return node.expression !== expression ? updateNode(createNonNullExpression(expression), node) : node;
 }
 
-export function createNonNullChain(expression: Expression) {
+export function createNonNullChain(expression: qt.Expression) {
   const node = <NonNullChain>createSynthesizedNode(SyntaxKind.NonNullExpression);
   node.flags |= NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
   return node;
 }
 
-export function updateNonNullChain(node: NonNullChain, expression: Expression) {
+export function updateNonNullChain(node: qt.NonNullChain, expression: qt.Expression) {
   Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a NonNullExpression using updateNonNullChain. Use updateNonNullExpression instead.');
   return node.expression !== expression ? updateNode(createNonNullChain(expression), node) : node;
 }
@@ -1335,14 +1335,14 @@ export function updateMetaProperty(node: MetaProperty, name: Identifier) {
 
 // Misc
 
-export function createTemplateSpan(expression: Expression, literal: TemplateMiddle | TemplateTail) {
+export function createTemplateSpan(expression: qt.Expression, literal: TemplateMiddle | TemplateTail) {
   const node = <TemplateSpan>createSynthesizedNode(SyntaxKind.TemplateSpan);
   node.expression = expression;
   node.literal = literal;
   return node;
 }
 
-export function updateTemplateSpan(node: TemplateSpan, expression: Expression, literal: TemplateMiddle | TemplateTail) {
+export function updateTemplateSpan(node: TemplateSpan, expression: qt.Expression, literal: TemplateMiddle | TemplateTail) {
   return node.expression !== expression || node.literal !== literal ? updateNode(createTemplateSpan(expression, literal), node) : node;
 }
 
@@ -1352,14 +1352,14 @@ export function createSemicolonClassElement() {
 
 // Element
 
-export function createBlock(statements: readonly Statement[], multiLine?: boolean): Block {
+export function createBlock(statements: readonly qt.Statement[], multiLine?: boolean): Block {
   const block = <Block>createSynthesizedNode(SyntaxKind.Block);
   block.statements = createNodeArray(statements);
   if (multiLine) block.multiLine = multiLine;
   return block;
 }
 
-export function updateBlock(node: Block, statements: readonly Statement[]) {
+export function updateBlock(node: Block, statements: readonly qt.Statement[]) {
   return node.statements !== statements ? updateNode(createBlock(statements, node.multiLine), node) : node;
 }
 
@@ -1379,13 +1379,13 @@ export function createEmptyStatement() {
   return <EmptyStatement>createSynthesizedNode(SyntaxKind.EmptyStatement);
 }
 
-export function createExpressionStatement(expression: Expression): ExpressionStatement {
+export function createExpressionStatement(expression: qt.Expression): qt.ExpressionStatement {
   const node = <ExpressionStatement>createSynthesizedNode(SyntaxKind.ExpressionStatement);
   node.expression = parenthesizeExpressionForExpressionStatement(expression);
   return node;
 }
 
-export function updateExpressionStatement(node: ExpressionStatement, expression: Expression) {
+export function updateExpressionStatement(node: qt.ExpressionStatement, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createExpressionStatement(expression), node) : node;
 }
 
@@ -1394,7 +1394,7 @@ export const createStatement = createExpressionStatement;
 /** @deprecated Use `updateExpressionStatement` instead.  */
 export const updateStatement = updateExpressionStatement;
 
-export function createIf(expression: Expression, thenStatement: Statement, elseStatement?: Statement) {
+export function createIf(expression: qt.Expression, thenStatement: qt.Statement, elseStatement?: qt.Statement) {
   const node = <IfStatement>createSynthesizedNode(SyntaxKind.IfStatement);
   node.expression = expression;
   node.thenStatement = asEmbeddedStatement(thenStatement);
@@ -1402,33 +1402,33 @@ export function createIf(expression: Expression, thenStatement: Statement, elseS
   return node;
 }
 
-export function updateIf(node: IfStatement, expression: Expression, thenStatement: Statement, elseStatement: Statement | undefined) {
+export function updateIf(node: IfStatement, expression: qt.Expression, thenStatement: qt.Statement, elseStatement: qt.Statement | undefined) {
   return node.expression !== expression || node.thenStatement !== thenStatement || node.elseStatement !== elseStatement ? updateNode(createIf(expression, thenStatement, elseStatement), node) : node;
 }
 
-export function createDo(statement: Statement, expression: Expression) {
+export function createDo(statement: qt.Statement, expression: qt.Expression) {
   const node = <DoStatement>createSynthesizedNode(SyntaxKind.DoStatement);
   node.statement = asEmbeddedStatement(statement);
   node.expression = expression;
   return node;
 }
 
-export function updateDo(node: DoStatement, statement: Statement, expression: Expression) {
+export function updateDo(node: DoStatement, statement: qt.Statement, expression: qt.Expression) {
   return node.statement !== statement || node.expression !== expression ? updateNode(createDo(statement, expression), node) : node;
 }
 
-export function createWhile(expression: Expression, statement: Statement) {
+export function createWhile(expression: qt.Expression, statement: qt.Statement) {
   const node = <WhileStatement>createSynthesizedNode(SyntaxKind.WhileStatement);
   node.expression = expression;
   node.statement = asEmbeddedStatement(statement);
   return node;
 }
 
-export function updateWhile(node: WhileStatement, expression: Expression, statement: Statement) {
+export function updateWhile(node: WhileStatement, expression: qt.Expression, statement: qt.Statement) {
   return node.expression !== expression || node.statement !== statement ? updateNode(createWhile(expression, statement), node) : node;
 }
 
-export function createFor(initializer: ForInitializer | undefined, condition: Expression | undefined, incrementor: Expression | undefined, statement: Statement) {
+export function createFor(initializer: ForInitializer | undefined, condition: qt.Expression | undefined, incrementor: qt.Expression | undefined, statement: qt.Statement) {
   const node = <ForStatement>createSynthesizedNode(SyntaxKind.ForStatement);
   node.initializer = initializer;
   node.condition = condition;
@@ -1437,11 +1437,11 @@ export function createFor(initializer: ForInitializer | undefined, condition: Ex
   return node;
 }
 
-export function updateFor(node: ForStatement, initializer: ForInitializer | undefined, condition: Expression | undefined, incrementor: Expression | undefined, statement: Statement) {
+export function updateFor(node: ForStatement, initializer: ForInitializer | undefined, condition: qt.Expression | undefined, incrementor: qt.Expression | undefined, statement: qt.Statement) {
   return node.initializer !== initializer || node.condition !== condition || node.incrementor !== incrementor || node.statement !== statement ? updateNode(createFor(initializer, condition, incrementor, statement), node) : node;
 }
 
-export function createForIn(initializer: ForInitializer, expression: Expression, statement: Statement) {
+export function createForIn(initializer: ForInitializer, expression: qt.Expression, statement: qt.Statement) {
   const node = <ForInStatement>createSynthesizedNode(SyntaxKind.ForInStatement);
   node.initializer = initializer;
   node.expression = expression;
@@ -1449,11 +1449,11 @@ export function createForIn(initializer: ForInitializer, expression: Expression,
   return node;
 }
 
-export function updateForIn(node: ForInStatement, initializer: ForInitializer, expression: Expression, statement: Statement) {
+export function updateForIn(node: ForInStatement, initializer: ForInitializer, expression: qt.Expression, statement: qt.Statement) {
   return node.initializer !== initializer || node.expression !== expression || node.statement !== statement ? updateNode(createForIn(initializer, expression, statement), node) : node;
 }
 
-export function createForOf(awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: Expression, statement: Statement) {
+export function createForOf(awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: qt.Expression, statement: qt.Statement) {
   const node = <ForOfStatement>createSynthesizedNode(SyntaxKind.ForOfStatement);
   node.awaitModifier = awaitModifier;
   node.initializer = initializer;
@@ -1462,7 +1462,7 @@ export function createForOf(awaitModifier: AwaitKeywordToken | undefined, initia
   return node;
 }
 
-export function updateForOf(node: ForOfStatement, awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: Expression, statement: Statement) {
+export function updateForOf(node: ForOfStatement, awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: qt.Expression, statement: qt.Statement) {
   return node.awaitModifier !== awaitModifier || node.initializer !== initializer || node.expression !== expression || node.statement !== statement ? updateNode(createForOf(awaitModifier, initializer, expression, statement), node) : node;
 }
 
@@ -1486,56 +1486,56 @@ export function updateBreak(node: BreakStatement, label: Identifier | undefined)
   return node.label !== label ? updateNode(createBreak(label), node) : node;
 }
 
-export function createReturn(expression?: Expression): ReturnStatement {
+export function createReturn(expression?: qt.Expression): ReturnStatement {
   const node = <ReturnStatement>createSynthesizedNode(SyntaxKind.ReturnStatement);
   node.expression = expression;
   return node;
 }
 
-export function updateReturn(node: ReturnStatement, expression: Expression | undefined) {
+export function updateReturn(node: ReturnStatement, expression: qt.Expression | undefined) {
   return node.expression !== expression ? updateNode(createReturn(expression), node) : node;
 }
 
-export function createWith(expression: Expression, statement: Statement) {
+export function createWith(expression: qt.Expression, statement: qt.Statement) {
   const node = <WithStatement>createSynthesizedNode(SyntaxKind.WithStatement);
   node.expression = expression;
   node.statement = asEmbeddedStatement(statement);
   return node;
 }
 
-export function updateWith(node: WithStatement, expression: Expression, statement: Statement) {
+export function updateWith(node: WithStatement, expression: qt.Expression, statement: qt.Statement) {
   return node.expression !== expression || node.statement !== statement ? updateNode(createWith(expression, statement), node) : node;
 }
 
-export function createSwitch(expression: Expression, caseBlock: CaseBlock): SwitchStatement {
+export function createSwitch(expression: qt.Expression, caseBlock: CaseBlock): SwitchStatement {
   const node = <SwitchStatement>createSynthesizedNode(SyntaxKind.SwitchStatement);
   node.expression = parenthesizeExpressionForList(expression);
   node.caseBlock = caseBlock;
   return node;
 }
 
-export function updateSwitch(node: SwitchStatement, expression: Expression, caseBlock: CaseBlock) {
+export function updateSwitch(node: SwitchStatement, expression: qt.Expression, caseBlock: CaseBlock) {
   return node.expression !== expression || node.caseBlock !== caseBlock ? updateNode(createSwitch(expression, caseBlock), node) : node;
 }
 
-export function createLabel(label: string | Identifier, statement: Statement) {
+export function createLabel(label: string | Identifier, statement: qt.Statement) {
   const node = <LabeledStatement>createSynthesizedNode(SyntaxKind.LabeledStatement);
   node.label = asName(label);
   node.statement = asEmbeddedStatement(statement);
   return node;
 }
 
-export function updateLabel(node: LabeledStatement, label: Identifier, statement: Statement) {
+export function updateLabel(node: LabeledStatement, label: Identifier, statement: qt.Statement) {
   return node.label !== label || node.statement !== statement ? updateNode(createLabel(label, statement), node) : node;
 }
 
-export function createThrow(expression: Expression) {
+export function createThrow(expression: qt.Expression) {
   const node = <ThrowStatement>createSynthesizedNode(SyntaxKind.ThrowStatement);
   node.expression = expression;
   return node;
 }
 
-export function updateThrow(node: ThrowStatement, expression: Expression) {
+export function updateThrow(node: ThrowStatement, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createThrow(expression), node) : node;
 }
 
@@ -1555,7 +1555,7 @@ export function createDebuggerStatement() {
   return <DebuggerStatement>createSynthesizedNode(SyntaxKind.DebuggerStatement);
 }
 
-export function createVariableDeclaration(name: string | qt.BindingName, type?: TypeNode, initializer?: Expression) {
+export function createVariableDeclaration(name: string | qt.BindingName, type?: TypeNode, initializer?: qt.Expression) {
   /* Internally, one should probably use createTypeScriptVariableDeclaration instead and handle definite assignment assertions */
   const node = <VariableDeclaration>createSynthesizedNode(SyntaxKind.VariableDeclaration);
   node.name = asName(name);
@@ -1564,12 +1564,12 @@ export function createVariableDeclaration(name: string | qt.BindingName, type?: 
   return node;
 }
 
-export function updateVariableDeclaration(node: qt.VariableDeclaration, name: qt.BindingName, type: TypeNode | undefined, initializer: Expression | undefined) {
+export function updateVariableDeclaration(node: qt.VariableDeclaration, name: qt.BindingName, type: TypeNode | undefined, initializer: qt.Expression | undefined) {
   /* Internally, one should probably use updateTypeScriptVariableDeclaration instead and handle definite assignment assertions */
   return node.name !== name || node.type !== type || node.initializer !== initializer ? updateNode(createVariableDeclaration(name, type, initializer), node) : node;
 }
 
-export function createTypeScriptVariableDeclaration(name: string | qt.BindingName, exclaimationToken?: Token<SyntaxKind.ExclamationToken>, type?: TypeNode, initializer?: Expression) {
+export function createTypeScriptVariableDeclaration(name: string | qt.BindingName, exclaimationToken?: Token<SyntaxKind.ExclamationToken>, type?: TypeNode, initializer?: qt.Expression) {
   const node = <VariableDeclaration>createSynthesizedNode(SyntaxKind.VariableDeclaration);
   node.name = asName(name);
   node.type = type;
@@ -1578,7 +1578,7 @@ export function createTypeScriptVariableDeclaration(name: string | qt.BindingNam
   return node;
 }
 
-export function updateTypeScriptVariableDeclaration(node: qt.VariableDeclaration, name: qt.BindingName, exclaimationToken: Token<SyntaxKind.ExclamationToken> | undefined, type: TypeNode | undefined, initializer: Expression | undefined) {
+export function updateTypeScriptVariableDeclaration(node: qt.VariableDeclaration, name: qt.BindingName, exclaimationToken: Token<SyntaxKind.ExclamationToken> | undefined, type: TypeNode | undefined, initializer: qt.Expression | undefined) {
   return node.name !== name || node.type !== type || node.initializer !== initializer || node.exclamationToken !== exclaimationToken ? updateNode(createTypeScriptVariableDeclaration(name, exclaimationToken, type, initializer), node) : node;
 }
 
@@ -1610,7 +1610,7 @@ export function updateFunctionDeclaration(node: FunctionDeclaration, decorators:
   return node.decorators !== decorators || node.modifiers !== modifiers || node.asteriskToken !== asteriskToken || node.name !== name || node.typeParameters !== typeParameters || node.parameters !== parameters || node.type !== type || node.body !== body ? updateNode(createFunctionDeclaration(decorators, modifiers, asteriskToken, name, typeParameters, parameters, type, body), node) : node;
 }
 
-export function updateFunctionLikeBody(declaration: FunctionLikeDeclaration, body: Block): FunctionLikeDeclaration {
+export function updateFunctionLikeBody(declaration: qt.FunctionLikeDeclaration, body: Block): qt.FunctionLikeDeclaration {
   switch (declaration.kind) {
     case qt.SyntaxKind.FunctionDeclaration:
       return createFunctionDeclaration(declaration.decorators, declaration.modifiers, declaration.asteriskToken, declaration.name, declaration.typeParameters, declaration.parameters, declaration.type, body);
@@ -1682,7 +1682,7 @@ export function createEnumDeclaration(decorators: readonly Decorator[] | undefin
   return node;
 }
 
-export function updateEnumDeclaration(node: EnumDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: Identifier, members: readonly EnumMember[]) {
+export function updateEnumDeclaration(node: qt.EnumDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: Identifier, members: readonly EnumMember[]) {
   return node.decorators !== decorators || node.modifiers !== modifiers || node.name !== name || node.members !== members ? updateNode(createEnumDeclaration(decorators, modifiers, name, members), node) : node;
 }
 
@@ -1700,13 +1700,13 @@ export function updateModuleDeclaration(node: ModuleDeclaration, decorators: rea
   return node.decorators !== decorators || node.modifiers !== modifiers || node.name !== name || node.body !== body ? updateNode(createModuleDeclaration(decorators, modifiers, name, body, node.flags), node) : node;
 }
 
-export function createModuleBlock(statements: readonly Statement[]) {
+export function createModuleBlock(statements: readonly qt.Statement[]) {
   const node = <ModuleBlock>createSynthesizedNode(SyntaxKind.ModuleBlock);
   node.statements = createNodeArray(statements);
   return node;
 }
 
-export function updateModuleBlock(node: ModuleBlock, statements: readonly Statement[]) {
+export function updateModuleBlock(node: ModuleBlock, statements: readonly qt.Statement[]) {
   return node.statements !== statements ? updateNode(createModuleBlock(statements), node) : node;
 }
 
@@ -1743,7 +1743,7 @@ export function updateImportEqualsDeclaration(node: ImportEqualsDeclaration, dec
   return node.decorators !== decorators || node.modifiers !== modifiers || node.name !== name || node.moduleReference !== moduleReference ? updateNode(createImportEqualsDeclaration(decorators, modifiers, name, moduleReference), node) : node;
 }
 
-export function createImportDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, importClause: ImportClause | undefined, moduleSpecifier: Expression): ImportDeclaration {
+export function createImportDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, importClause: ImportClause | undefined, moduleSpecifier: qt.Expression): ImportDeclaration {
   const node = <ImportDeclaration>createSynthesizedNode(SyntaxKind.ImportDeclaration);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
@@ -1752,7 +1752,7 @@ export function createImportDeclaration(decorators: readonly Decorator[] | undef
   return node;
 }
 
-export function updateImportDeclaration(node: ImportDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, importClause: ImportClause | undefined, moduleSpecifier: Expression) {
+export function updateImportDeclaration(node: ImportDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, importClause: ImportClause | undefined, moduleSpecifier: qt.Expression) {
   return node.decorators !== decorators || node.modifiers !== modifiers || node.importClause !== importClause || node.moduleSpecifier !== moduleSpecifier ? updateNode(createImportDeclaration(decorators, modifiers, importClause, moduleSpecifier), node) : node;
 }
 
@@ -1809,7 +1809,7 @@ export function updateImportSpecifier(node: ImportSpecifier, propertyName: Ident
   return node.propertyName !== propertyName || node.name !== name ? updateNode(createImportSpecifier(propertyName, name), node) : node;
 }
 
-export function createExportAssignment(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, isExportEquals: boolean | undefined, expression: Expression) {
+export function createExportAssignment(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, isExportEquals: boolean | undefined, expression: qt.Expression) {
   const node = <ExportAssignment>createSynthesizedNode(SyntaxKind.ExportAssignment);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
@@ -1818,11 +1818,11 @@ export function createExportAssignment(decorators: readonly Decorator[] | undefi
   return node;
 }
 
-export function updateExportAssignment(node: ExportAssignment, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, expression: Expression) {
+export function updateExportAssignment(node: qt.ExportAssignment, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, expression: qt.Expression) {
   return node.decorators !== decorators || node.modifiers !== modifiers || node.expression !== expression ? updateNode(createExportAssignment(decorators, modifiers, node.isExportEquals, expression), node) : node;
 }
 
-export function createExportDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, exportClause: NamedExportBindings | undefined, moduleSpecifier?: Expression, isTypeOnly = false) {
+export function createExportDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, exportClause: NamedExportBindings | undefined, moduleSpecifier?: qt.Expression, isTypeOnly = false) {
   const node = <ExportDeclaration>createSynthesizedNode(SyntaxKind.ExportDeclaration);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
@@ -1832,7 +1832,7 @@ export function createExportDeclaration(decorators: readonly Decorator[] | undef
   return node;
 }
 
-export function updateExportDeclaration(node: ExportDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, exportClause: NamedExportBindings | undefined, moduleSpecifier: Expression | undefined, isTypeOnly: boolean) {
+export function updateExportDeclaration(node: ExportDeclaration, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, exportClause: NamedExportBindings | undefined, moduleSpecifier: qt.Expression | undefined, isTypeOnly: boolean) {
   return node.decorators !== decorators || node.modifiers !== modifiers || node.isTypeOnly !== isTypeOnly || node.exportClause !== exportClause || node.moduleSpecifier !== moduleSpecifier ? updateNode(createExportDeclaration(decorators, modifiers, exportClause, moduleSpecifier, isTypeOnly), node) : node;
 }
 
@@ -1863,13 +1863,13 @@ export function updateExportSpecifier(node: ExportSpecifier, propertyName: Ident
 
 // Module references
 
-export function createExternalModuleReference(expression: Expression) {
+export function createExternalModuleReference(expression: qt.Expression) {
   const node = <ExternalModuleReference>createSynthesizedNode(SyntaxKind.ExternalModuleReference);
   node.expression = expression;
   return node;
 }
 
-export function updateExternalModuleReference(node: ExternalModuleReference, expression: Expression) {
+export function updateExternalModuleReference(node: ExternalModuleReference, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createExternalModuleReference(expression), node) : node;
 }
 
@@ -2115,14 +2115,14 @@ export function updateJsxFragment(node: JsxFragment, openingFragment: JsxOpening
   return node.openingFragment !== openingFragment || node.children !== children || node.closingFragment !== closingFragment ? updateNode(createJsxFragment(openingFragment, children, closingFragment), node) : node;
 }
 
-export function createJsxAttribute(name: Identifier, initializer: StringLiteral | JsxExpression) {
+export function createJsxAttribute(name: Identifier, initializer: StringLiteral | qt.JsxExpression) {
   const node = <JsxAttribute>createSynthesizedNode(SyntaxKind.JsxAttribute);
   node.name = name;
   node.initializer = initializer;
   return node;
 }
 
-export function updateJsxAttribute(node: JsxAttribute, name: Identifier, initializer: StringLiteral | JsxExpression) {
+export function updateJsxAttribute(node: JsxAttribute, name: Identifier, initializer: StringLiteral | qt.JsxExpression) {
   return node.name !== name || node.initializer !== initializer ? updateNode(createJsxAttribute(name, initializer), node) : node;
 }
 
@@ -2136,58 +2136,58 @@ export function updateJsxAttributes(node: JsxAttributes, properties: readonly Js
   return node.properties !== properties ? updateNode(createJsxAttributes(properties), node) : node;
 }
 
-export function createJsxSpreadAttribute(expression: Expression) {
+export function createJsxSpreadAttribute(expression: qt.Expression) {
   const node = <JsxSpreadAttribute>createSynthesizedNode(SyntaxKind.JsxSpreadAttribute);
   node.expression = expression;
   return node;
 }
 
-export function updateJsxSpreadAttribute(node: JsxSpreadAttribute, expression: Expression) {
+export function updateJsxSpreadAttribute(node: JsxSpreadAttribute, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createJsxSpreadAttribute(expression), node) : node;
 }
 
-export function createJsxExpression(dotDotDotToken: DotDotDotToken | undefined, expression: Expression | undefined) {
+export function createJsxExpression(dotDotDotToken: DotDotDotToken | undefined, expression: qt.Expression | undefined) {
   const node = <JsxExpression>createSynthesizedNode(SyntaxKind.JsxExpression);
   node.dotDotDotToken = dotDotDotToken;
   node.expression = expression;
   return node;
 }
 
-export function updateJsxExpression(node: JsxExpression, expression: Expression | undefined) {
+export function updateJsxExpression(node: qt.JsxExpression, expression: qt.Expression | undefined) {
   return node.expression !== expression ? updateNode(createJsxExpression(node.dotDotDotToken, expression), node) : node;
 }
 
 // Clauses
 
-export function createCaseClause(expression: Expression, statements: readonly Statement[]) {
+export function createCaseClause(expression: qt.Expression, statements: readonly qt.Statement[]) {
   const node = <CaseClause>createSynthesizedNode(SyntaxKind.CaseClause);
   node.expression = parenthesizeExpressionForList(expression);
   node.statements = createNodeArray(statements);
   return node;
 }
 
-export function updateCaseClause(node: CaseClause, expression: Expression, statements: readonly Statement[]) {
+export function updateCaseClause(node: CaseClause, expression: qt.Expression, statements: readonly qt.Statement[]) {
   return node.expression !== expression || node.statements !== statements ? updateNode(createCaseClause(expression, statements), node) : node;
 }
 
-export function createDefaultClause(statements: readonly Statement[]) {
+export function createDefaultClause(statements: readonly qt.Statement[]) {
   const node = <DefaultClause>createSynthesizedNode(SyntaxKind.DefaultClause);
   node.statements = createNodeArray(statements);
   return node;
 }
 
-export function updateDefaultClause(node: DefaultClause, statements: readonly Statement[]) {
+export function updateDefaultClause(node: DefaultClause, statements: readonly qt.Statement[]) {
   return node.statements !== statements ? updateNode(createDefaultClause(statements), node) : node;
 }
 
-export function createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
+export function createHeritageClause(token: HeritageClause['token'], types: readonly qt.ExpressionWithTypeArguments[]) {
   const node = <HeritageClause>createSynthesizedNode(SyntaxKind.HeritageClause);
   node.token = token;
   node.types = createNodeArray(types);
   return node;
 }
 
-export function updateHeritageClause(node: HeritageClause, types: readonly ExpressionWithTypeArguments[]) {
+export function updateHeritageClause(node: HeritageClause, types: readonly qt.ExpressionWithTypeArguments[]) {
   return node.types !== types ? updateNode(createHeritageClause(node.token, types), node) : node;
 }
 
@@ -2204,7 +2204,7 @@ export function updateCatchClause(node: CatchClause, variableDeclaration: qt.Var
 
 // Property assignments
 
-export function createPropertyAssignment(name: string | PropertyName, initializer: Expression) {
+export function createPropertyAssignment(name: string | PropertyName, initializer: qt.Expression) {
   const node = <PropertyAssignment>createSynthesizedNode(SyntaxKind.PropertyAssignment);
   node.name = asName(name);
   node.questionToken = undefined;
@@ -2212,47 +2212,47 @@ export function createPropertyAssignment(name: string | PropertyName, initialize
   return node;
 }
 
-export function updatePropertyAssignment(node: PropertyAssignment, name: PropertyName, initializer: Expression) {
+export function updatePropertyAssignment(node: PropertyAssignment, name: PropertyName, initializer: qt.Expression) {
   return node.name !== name || node.initializer !== initializer ? updateNode(createPropertyAssignment(name, initializer), node) : node;
 }
 
-export function createShorthandPropertyAssignment(name: string | Identifier, objectAssignmentInitializer?: Expression) {
+export function createShorthandPropertyAssignment(name: string | Identifier, objectAssignmentInitializer?: qt.Expression) {
   const node = <ShorthandPropertyAssignment>createSynthesizedNode(SyntaxKind.ShorthandPropertyAssignment);
   node.name = asName(name);
   node.objectAssignmentInitializer = objectAssignmentInitializer !== undefined ? parenthesizeExpressionForList(objectAssignmentInitializer) : undefined;
   return node;
 }
 
-export function updateShorthandPropertyAssignment(node: ShorthandPropertyAssignment, name: Identifier, objectAssignmentInitializer: Expression | undefined) {
+export function updateShorthandPropertyAssignment(node: ShorthandPropertyAssignment, name: Identifier, objectAssignmentInitializer: qt.Expression | undefined) {
   return node.name !== name || node.objectAssignmentInitializer !== objectAssignmentInitializer ? updateNode(createShorthandPropertyAssignment(name, objectAssignmentInitializer), node) : node;
 }
 
-export function createSpreadAssignment(expression: Expression) {
+export function createSpreadAssignment(expression: qt.Expression) {
   const node = <SpreadAssignment>createSynthesizedNode(SyntaxKind.SpreadAssignment);
   node.expression = parenthesizeExpressionForList(expression);
   return node;
 }
 
-export function updateSpreadAssignment(node: SpreadAssignment, expression: Expression) {
+export function updateSpreadAssignment(node: SpreadAssignment, expression: qt.Expression) {
   return node.expression !== expression ? updateNode(createSpreadAssignment(expression), node) : node;
 }
 
 // Enum
 
-export function createEnumMember(name: string | PropertyName, initializer?: Expression) {
+export function createEnumMember(name: string | PropertyName, initializer?: qt.Expression) {
   const node = <EnumMember>createSynthesizedNode(SyntaxKind.EnumMember);
   node.name = asName(name);
   node.initializer = initializer && parenthesizeExpressionForList(initializer);
   return node;
 }
 
-export function updateEnumMember(node: EnumMember, name: PropertyName, initializer: Expression | undefined) {
+export function updateEnumMember(node: EnumMember, name: PropertyName, initializer: qt.Expression | undefined) {
   return node.name !== name || node.initializer !== initializer ? updateNode(createEnumMember(name, initializer), node) : node;
 }
 
 // Top-level nodes
 
-export function updateSourceFileNode(node: SourceFile, statements: readonly Statement[], isDeclarationFile?: boolean, referencedFiles?: SourceFile['referencedFiles'], typeReferences?: SourceFile['typeReferenceDirectives'], hasNoDefaultLib?: boolean, libReferences?: SourceFile['libReferenceDirectives']) {
+export function updateSourceFileNode(node: SourceFile, statements: readonly qt.Statement[], isDeclarationFile?: boolean, referencedFiles?: SourceFile['referencedFiles'], typeReferences?: SourceFile['typeReferenceDirectives'], hasNoDefaultLib?: boolean, libReferences?: SourceFile['libReferenceDirectives']) {
   if (node.statements !== statements || (isDeclarationFile !== undefined && node.isDeclarationFile !== isDeclarationFile) || (referencedFiles !== undefined && node.referencedFiles !== referencedFiles) || (typeReferences !== undefined && node.typeReferenceDirectives !== typeReferences) || (libReferences !== undefined && node.libReferenceDirectives !== libReferences) || (hasNoDefaultLib !== undefined && node.hasNoDefaultLib !== hasNoDefaultLib)) {
     const updated = <SourceFile>createSynthesizedNode(SyntaxKind.SourceFile);
     updated.flags |= node.flags;
@@ -2354,7 +2354,7 @@ export function createMergeDeclarationMarker(original: Node) {
  * @param original The original outer expression.
  * @param location The location for the expression. Defaults to the positions from "original" if provided.
  */
-export function createPartiallyEmittedExpression(expression: Expression, original?: Node) {
+export function createPartiallyEmittedExpression(expression: qt.Expression, original?: Node) {
   const node = <PartiallyEmittedExpression>createSynthesizedNode(SyntaxKind.PartiallyEmittedExpression);
   node.expression = expression;
   node.original = original;
@@ -2362,14 +2362,14 @@ export function createPartiallyEmittedExpression(expression: Expression, origina
   return node;
 }
 
-export function updatePartiallyEmittedExpression(node: PartiallyEmittedExpression, expression: Expression) {
+export function updatePartiallyEmittedExpression(node: qt.PartiallyEmittedExpression, expression: qt.Expression) {
   if (node.expression !== expression) {
     return updateNode(createPartiallyEmittedExpression(expression, node.original), node);
   }
   return node;
 }
 
-function flattenCommaElements(node: Expression): Expression | readonly Expression[] {
+function flattenCommaElements(node: qt.Expression): qt.Expression | readonly qt.Expression[] {
   if (nodeIsSynthesized(node) && !qpu.isParseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
     if (node.kind === qt.SyntaxKind.CommaListExpression) {
       return node.elements;
@@ -2381,24 +2381,24 @@ function flattenCommaElements(node: Expression): Expression | readonly Expressio
   return node;
 }
 
-export function createCommaList(elements: readonly Expression[]) {
+export function createCommaList(elements: readonly qt.Expression[]) {
   const node = <CommaListExpression>createSynthesizedNode(SyntaxKind.CommaListExpression);
   node.elements = createNodeArray(sameFlatMap(elements, flattenCommaElements));
   return node;
 }
 
-export function updateCommaList(node: CommaListExpression, elements: readonly Expression[]) {
+export function updateCommaList(node: CommaListExpression, elements: readonly qt.Expression[]) {
   return node.elements !== elements ? updateNode(createCommaList(elements), node) : node;
 }
 
-export function createSyntheticReferenceExpression(expression: Expression, thisArg: Expression) {
+export function createSyntheticReferenceExpression(expression: qt.Expression, thisArg: qt.Expression) {
   const node = <SyntheticReferenceExpression>createSynthesizedNode(SyntaxKind.SyntheticReferenceExpression);
   node.expression = expression;
   node.thisArg = thisArg;
   return node;
 }
 
-export function updateSyntheticReferenceExpression(node: SyntheticReferenceExpression, expression: Expression, thisArg: Expression) {
+export function updateSyntheticReferenceExpression(node: SyntheticReferenceExpression, expression: qt.Expression, thisArg: qt.Expression) {
   return node.expression !== expression || node.thisArg !== thisArg ? updateNode(createSyntheticReferenceExpression(expression, thisArg), node) : node;
 }
 
@@ -2690,65 +2690,65 @@ export function updateBundle(node: Bundle, sourceFiles: readonly SourceFile[], p
 
 // Compound nodes
 
-export function createImmediatelyInvokedFunctionExpression(statements: readonly Statement[]): CallExpression;
-export function createImmediatelyInvokedFunctionExpression(statements: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
-export function createImmediatelyInvokedFunctionExpression(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
+export function createImmediatelyInvokedFunctionExpression(statements: readonly qt.Statement[]): CallExpression;
+export function createImmediatelyInvokedFunctionExpression(statements: readonly qt.Statement[], param: ParameterDeclaration, paramValue: qt.Expression): CallExpression;
+export function createImmediatelyInvokedFunctionExpression(statements: readonly qt.Statement[], param?: ParameterDeclaration, paramValue?: qt.Expression) {
   return createCall(createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], /*type*/ undefined, createBlock(statements, /*multiLine*/ true)), /*typeArguments*/ undefined, /*argumentsArray*/ paramValue ? [paramValue] : []);
 }
 
-export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[]): CallExpression;
-export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
-export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
+export function createImmediatelyInvokedArrowFunction(statements: readonly qt.Statement[]): CallExpression;
+export function createImmediatelyInvokedArrowFunction(statements: readonly qt.Statement[], param: ParameterDeclaration, paramValue: qt.Expression): CallExpression;
+export function createImmediatelyInvokedArrowFunction(statements: readonly qt.Statement[], param?: ParameterDeclaration, paramValue?: qt.Expression) {
   return createCall(createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, createBlock(statements, /*multiLine*/ true)), /*typeArguments*/ undefined, /*argumentsArray*/ paramValue ? [paramValue] : []);
 }
 
-export function createComma(left: Expression, right: Expression) {
+export function createComma(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.CommaToken, right);
 }
 
-export function createLessThan(left: Expression, right: Expression) {
+export function createLessThan(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.LessThanToken, right);
 }
 
-export function createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: Expression): DestructuringAssignment;
-export function createAssignment(left: Expression, right: Expression): BinaryExpression;
-export function createAssignment(left: Expression, right: Expression) {
+export function createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: qt.Expression): DestructuringAssignment;
+export function createAssignment(left: qt.Expression, right: qt.Expression): qt.BinaryExpression;
+export function createAssignment(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.EqualsToken, right);
 }
 
-export function createStrictEquality(left: Expression, right: Expression) {
+export function createStrictEquality(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.EqualsEqualsEqualsToken, right);
 }
 
-export function createStrictInequality(left: Expression, right: Expression) {
+export function createStrictInequality(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.ExclamationEqualsEqualsToken, right);
 }
 
-export function createAdd(left: Expression, right: Expression) {
+export function createAdd(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.PlusToken, right);
 }
 
-export function createSubtract(left: Expression, right: Expression) {
+export function createSubtract(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.MinusToken, right);
 }
 
-export function createPostfixIncrement(operand: Expression) {
+export function createPostfixIncrement(operand: qt.Expression) {
   return createPostfix(operand, qt.SyntaxKind.PlusPlusToken);
 }
 
-export function createLogicalAnd(left: Expression, right: Expression) {
+export function createLogicalAnd(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.AmpersandAmpersandToken, right);
 }
 
-export function createLogicalOr(left: Expression, right: Expression) {
+export function createLogicalOr(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.BarBarToken, right);
 }
 
-export function createNullishCoalesce(left: Expression, right: Expression) {
+export function createNullishCoalesce(left: qt.Expression, right: qt.Expression) {
   return createBinary(left, qt.SyntaxKind.QuestionQuestionToken, right);
 }
 
-export function createLogicalNot(operand: Expression) {
+export function createLogicalNot(operand: qt.Expression) {
   return createPrefix(SyntaxKind.ExclamationToken, operand);
 }
 
@@ -2756,7 +2756,7 @@ export function createVoidZero() {
   return createVoid(createLiteral(0));
 }
 
-export function createExportDefault(expression: Expression) {
+export function createExportDefault(expression: qt.Expression) {
   return createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, expression);
 }
 
@@ -2770,7 +2770,7 @@ function asName<T extends Identifier | qt.BindingName | PropertyName | EntityNam
   return isString(name) ? createIdentifier(name) : name;
 }
 
-function asExpression<T extends Expression | undefined>(value: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
+function asExpression<T extends qt.Expression | undefined>(value: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
   return typeof value === 'string' ? createStringLiteral(value) : typeof value === 'number' ? createNumericLiteral('' + value) : typeof value === 'boolean' ? (value ? createTrue() : createFalse()) : value;
 }
 
@@ -2842,7 +2842,7 @@ export function getOrCreateEmitNode(node: qt.Node): EmitNode {
  */
 export function removeAllComments<T extends Node>(node: T): T {
   const emitNode = getOrCreateEmitNode(node);
-  emitNode.flags |= EmitFlags.NoComments;
+  emitNode.flags |= qt.EmitFlags.NoComments;
   emitNode.leadingComments = undefined;
   emitNode.trailingComments = undefined;
   return node;
@@ -2859,7 +2859,7 @@ export function setTextRange<T extends qt.TextRange>(range: T, location: qt.Text
 /**
  * Sets flags that control emit behavior of a node.
  */
-export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
+export function setEmitFlags<T extends Node>(node: T, emitFlags: qt.EmitFlags) {
   getOrCreateEmitNode(node).flags = emitFlags;
   return node;
 }
@@ -2868,7 +2868,7 @@ export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
  * Sets flags that control emit behavior of a node.
  */
 
-export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
+export function addEmitFlags<T extends Node>(node: T, emitFlags: qt.EmitFlags) {
   const emitNode = getOrCreateEmitNode(node);
   emitNode.flags = emitNode.flags | emitFlags;
   return node;
@@ -2896,7 +2896,7 @@ let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: num
  * Create an external source map source file reference
  */
 export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-  return new (SourceMapSource || (SourceMapSource = objectAllocator.getSourceMapSourceConstructor()))(fileName, text, skipTrivia);
+  return new (SourceMapSource || (SourceMapSource = qu.objectAllocator.getSourceMapSourceConstructor()))(fileName, text, skipTrivia);
 }
 
 /**
@@ -2994,14 +2994,14 @@ export function moveSyntheticComments<T extends Node>(node: T, original: Node): 
 }
 
 export function ignoreSourceNewlines<T extends Node>(node: T): T {
-  getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
+  getOrCreateEmitNode(node).flags |= qt.EmitFlags.IgnoreSourceNewlines;
   return node;
 }
 
 /**
  * Gets the constant value to emit for an expression.
  */
-export function getConstantValue(node: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
+export function getConstantValue(node: PropertyAccessExpression | qt.ElementAccessExpression): string | number | undefined {
   const emitNode = node.emitNode;
   return emitNode && emitNode.constantValue;
 }
@@ -3009,7 +3009,7 @@ export function getConstantValue(node: PropertyAccessExpression | ElementAccessE
 /**
  * Sets the constant value to emit for an expression.
  */
-export function setConstantValue(node: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
+export function setConstantValue(node: PropertyAccessExpression | qt.ElementAccessExpression, value: string | number): PropertyAccessExpression | qt.ElementAccessExpression {
   const emitNode = getOrCreateEmitNode(node);
   emitNode.constantValue = value;
   return node;

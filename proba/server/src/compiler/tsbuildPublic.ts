@@ -375,7 +375,7 @@ function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedCo
   let parsed: ParsedCommandLine | undefined;
   if (host.getParsedCommandLine) {
     parsed = host.getParsedCommandLine(configFileName);
-    if (!parsed) diagnostic = createCompilerDiagnostic(Diagnostics.File_0_not_found, configFileName);
+    if (!parsed) diagnostic = qu.createCompilerDiagnostic(Diagnostics.File_0_not_found, configFileName);
   } else {
     parseConfigFileHost.onUnRecoverableConfigFileDiagnostic = (d) => (diagnostic = d);
     parsed = getParsedCommandLineOfConfigFile(configFileName, baseCompilerOptions, parseConfigFileHost, extendedConfigCache, baseWatchOptions);
@@ -1659,7 +1659,7 @@ function createSolutionBuilderWorker<T extends BuilderProgram>(watch: boolean, h
     },
     invalidateProject: (configFilePath, reloadLevel) => invalidateProject(state, configFilePath, reloadLevel || ConfigFileProgramReloadLevel.None),
     buildNextInvalidatedProject: () => buildNextInvalidatedProject(state),
-    getAllParsedConfigs: () => arrayFrom(mapDefinedIterator(state.configFileCache.values(), (config) => (isParsedCommandLine(config) ? config : undefined))),
+    getAllParsedConfigs: () => qc.arrayFrom(mapDefinedIterator(state.configFileCache.values(), (config) => (isParsedCommandLine(config) ? config : undefined))),
     close: () => stopWatching(state),
   };
 }

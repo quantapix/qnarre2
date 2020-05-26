@@ -3,11 +3,11 @@ interface FlattenContext {
   level: FlattenLevel;
   downlevelIteration: boolean;
   hoistTempVariables: boolean;
-  emitExpression: (value: Expression) => void;
-  emitBindingOrAssignment: (target: BindingOrAssignmentElementTarget, value: Expression, location: qt.TextRange, original: Node | undefined) => void;
-  createArrayBindingOrAssignmentPattern: (elements: BindingOrAssignmentElement[]) => ArrayBindingOrAssignmentPattern;
-  createObjectBindingOrAssignmentPattern: (elements: BindingOrAssignmentElement[]) => ObjectBindingOrAssignmentPattern;
-  createArrayBindingOrAssignmentElement: (node: Identifier) => BindingOrAssignmentElement;
+  emitExpression: (value: qt.Expression) => void;
+  emitBindingOrAssignment: (target: qt.BindingOrAssignmentElementTarget, value: qt.Expression, location: qt.TextRange, original: Node | undefined) => void;
+  createArrayBindingOrAssignmentPattern: (elements: qt.BindingOrAssignmentElement[]) => qt.ArrayBindingOrAssignmentPattern;
+  createObjectBindingOrAssignmentPattern: (elements: qt.BindingOrAssignmentElement[]) => qt.ObjectBindingOrAssignmentPattern;
+  createArrayBindingOrAssignmentElement: (node: Identifier) => qt.BindingOrAssignmentElement;
   visitor?: (node: qt.Node) => VisitResult<Node>;
 }
 
@@ -27,9 +27,9 @@ export const enum FlattenLevel {
  * the destructuring assignment is needed as part of a larger expression.
  * @param createAssignmentCallback An optional callback used to create the assignment expression.
  */
-export function flattenDestructuringAssignment(node: qt.VariableDeclaration | DestructuringAssignment, visitor: ((node: qt.Node) => VisitResult<Node>) | undefined, context: TransformationContext, level: FlattenLevel, needsValue?: boolean, createAssignmentCallback?: (name: Identifier, value: Expression, location?: qt.TextRange) => Expression): Expression {
+export function flattenDestructuringAssignment(node: qt.VariableDeclaration | DestructuringAssignment, visitor: ((node: qt.Node) => VisitResult<Node>) | undefined, context: TransformationContext, level: FlattenLevel, needsValue?: boolean, createAssignmentCallback?: (name: Identifier, value: qt.Expression, location?: qt.TextRange) => qt.Expression): qt.Expression {
   let location: qt.TextRange = node;
-  let value: Expression | undefined;
+  let value: qt.Expression | undefined;
   if (isDestructuringAssignment(node)) {
     value = node.right;
     while (isEmptyArrayLiteral(node.left) || isEmptyObjectLiteral(node.left)) {
@@ -42,7 +42,7 @@ export function flattenDestructuringAssignment(node: qt.VariableDeclaration | De
     }
   }
 
-  let expressions: Expression[] | undefined;
+  let expressions: qt.Expression[] | undefined;
   const flattenContext: FlattenContext = {
     context,
     level,
@@ -94,12 +94,12 @@ export function flattenDestructuringAssignment(node: qt.VariableDeclaration | De
 
   return aggregateTransformFlags(inlineExpressions(expressions!)) || createOmittedExpression();
 
-  function emitExpression(expression: Expression) {
+  function emitExpression(expression: qt.Expression) {
     aggregateTransformFlags(expression);
     expressions = append(expressions, expression);
   }
 
-  function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: qt.TextRange, original: Node) {
+  function emitBindingOrAssignment(target: qt.BindingOrAssignmentElementTarget, value: qt.Expression, location: qt.TextRange, original: Node) {
     Debug.assertNode(target, createAssignmentCallback ? isIdentifier : isExpression);
     const expression = createAssignmentCallback ? createAssignmentCallback(target, value, location) : setTextRange(createAssignment(visitNode(target, visitor, isExpression), value), location);
     expression.original = original;
@@ -107,7 +107,7 @@ export function flattenDestructuringAssignment(node: qt.VariableDeclaration | De
   }
 }
 
-function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escapedName: qt.__String): boolean {
+function bindingOrAssignmentElementAssignsToName(element: qt.BindingOrAssignmentElement, escapedName: qt.__String): boolean {
   const target = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
   if (isBindingOrAssignmentPattern(target)) {
     return bindingOrAssignmentPatternAssignsToName(target, escapedName);
@@ -117,7 +117,7 @@ function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentEle
   return false;
 }
 
-function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escapedName: qt.__String): boolean {
+function bindingOrAssignmentPatternAssignsToName(pattern: qt.BindingOrAssignmentPattern, escapedName: qt.__String): boolean {
   const elements = getElementsOfBindingOrAssignmentPattern(pattern);
   for (const element of elements) {
     if (bindingOrAssignmentElementAssignsToName(element, escapedName)) {
@@ -127,7 +127,7 @@ function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPat
   return false;
 }
 
-function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
+function bindingOrAssignmentElementContainsNonLiteralComputedName(element: qt.BindingOrAssignmentElement): boolean {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
   if (propertyName && isComputedPropertyName(propertyName) && !isLiteralExpression(propertyName.expression)) {
     return true;
@@ -136,7 +136,7 @@ function bindingOrAssignmentElementContainsNonLiteralComputedName(element: Bindi
   return !!target && isBindingOrAssignmentPattern(target) && bindingOrAssignmentPatternContainsNonLiteralComputedName(target);
 }
 
-function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: BindingOrAssignmentPattern): boolean {
+function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: qt.BindingOrAssignmentPattern): boolean {
   return !!forEach(getElementsOfBindingOrAssignmentPattern(pattern), bindingOrAssignmentElementContainsNonLiteralComputedName);
 }
 
@@ -151,9 +151,9 @@ function bindingOrAssignmentPatternContainsNonLiteralComputedName(pattern: Bindi
  * @param hoistTempVariables Indicates whether temporary variables should not be recorded in-line.
  * @param level Indicates the extent to which flattening should occur.
  */
-export function flattenDestructuringBinding(node: qt.VariableDeclaration | ParameterDeclaration, visitor: (node: qt.Node) => VisitResult<Node>, context: TransformationContext, level: FlattenLevel, rval?: Expression, hoistTempVariables = false, skipInitializer?: boolean): qt.VariableDeclaration[] {
-  let pendingExpressions: Expression[] | undefined;
-  const pendingDeclarations: { pendingExpressions?: Expression[]; name: qt.BindingName; value: Expression; location?: qt.TextRange; original?: Node }[] = [];
+export function flattenDestructuringBinding(node: qt.VariableDeclaration | ParameterDeclaration, visitor: (node: qt.Node) => VisitResult<Node>, context: TransformationContext, level: FlattenLevel, rval?: qt.Expression, hoistTempVariables = false, skipInitializer?: boolean): qt.VariableDeclaration[] {
+  let pendingExpressions: qt.Expression[] | undefined;
+  const pendingDeclarations: { pendingExpressions?: qt.Expression[]; name: qt.BindingName; value: qt.Expression; location?: qt.TextRange; original?: Node }[] = [];
   const declarations: qt.VariableDeclaration[] = [];
   const flattenContext: FlattenContext = {
     context,
@@ -202,11 +202,11 @@ export function flattenDestructuringBinding(node: qt.VariableDeclaration | Param
   }
   return declarations;
 
-  function emitExpression(value: Expression) {
+  function emitExpression(value: qt.Expression) {
     pendingExpressions = append(pendingExpressions, value);
   }
 
-  function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: qt.TextRange | undefined, original: Node | undefined) {
+  function emitBindingOrAssignment(target: qt.BindingOrAssignmentElementTarget, value: qt.Expression, location: qt.TextRange | undefined, original: Node | undefined) {
     Debug.assertNode(target, isBindingName);
     if (pendingExpressions) {
       value = inlineExpressions(append(pendingExpressions, value));
@@ -217,7 +217,7 @@ export function flattenDestructuringBinding(node: qt.VariableDeclaration | Param
 }
 
 /**
- * Flattens a BindingOrAssignmentElement into zero or more bindings or assignments.
+ * Flattens a qt.BindingOrAssignmentElement into zero or more bindings or assignments.
  *
  * @param flattenContext Options used to control flattening.
  * @param element The element to flatten.
@@ -226,7 +226,7 @@ export function flattenDestructuringBinding(node: qt.VariableDeclaration | Param
  * @param skipInitializer An optional value indicating whether to include the initializer
  * for the element.
  */
-function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, element: BindingOrAssignmentElement, value: Expression | undefined, location: qt.TextRange, skipInitializer?: boolean) {
+function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, element: qt.BindingOrAssignmentElement, value: qt.Expression | undefined, location: qt.TextRange, skipInitializer?: boolean) {
   if (!skipInitializer) {
     const initializer = visitNode(getInitializerOfBindingOrAssignmentElement(element), flattenContext.visitor, isExpression);
     if (initializer) {
@@ -248,15 +248,15 @@ function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, eleme
 }
 
 /**
- * Flattens an ObjectBindingOrAssignmentPattern into zero or more bindings or assignments.
+ * Flattens an qt.ObjectBindingOrAssignmentPattern into zero or more bindings or assignments.
  *
  * @param flattenContext Options used to control flattening.
  * @param parent The parent element of the pattern.
- * @param pattern The ObjectBindingOrAssignmentPattern to flatten.
+ * @param pattern The qt.ObjectBindingOrAssignmentPattern to flatten.
  * @param value The current RHS value to assign to the element.
  * @param location The location to use for source maps and comments.
  */
-function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElement, pattern: ObjectBindingOrAssignmentPattern, value: Expression, location: qt.TextRange) {
+function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: qt.BindingOrAssignmentElement, pattern: qt.ObjectBindingOrAssignmentPattern, value: qt.Expression, location: qt.TextRange) {
   const elements = getElementsOfBindingOrAssignmentPattern(pattern);
   const numElements = elements.length;
   if (numElements !== 1) {
@@ -267,8 +267,8 @@ function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext,
     const reuseIdentifierExpressions = !isDeclarationBindingElement(parent) || numElements !== 0;
     value = ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location);
   }
-  let bindingElements: BindingOrAssignmentElement[] | undefined;
-  let computedTempVariables: Expression[] | undefined;
+  let bindingElements: qt.BindingOrAssignmentElement[] | undefined;
+  let computedTempVariables: qt.Expression[] | undefined;
   for (let i = 0; i < numElements; i++) {
     const element = elements[i];
     if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
@@ -301,15 +301,15 @@ function flattenObjectBindingOrAssignmentPattern(flattenContext: FlattenContext,
 }
 
 /**
- * Flattens an ArrayBindingOrAssignmentPattern into zero or more bindings or assignments.
+ * Flattens an qt.ArrayBindingOrAssignmentPattern into zero or more bindings or assignments.
  *
  * @param flattenContext Options used to control flattening.
  * @param parent The parent element of the pattern.
- * @param pattern The ArrayBindingOrAssignmentPattern to flatten.
+ * @param pattern The qt.ArrayBindingOrAssignmentPattern to flatten.
  * @param value The current RHS value to assign to the element.
  * @param location The location to use for source maps and comments.
  */
-function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: BindingOrAssignmentElement, pattern: ArrayBindingOrAssignmentPattern, value: Expression, location: qt.TextRange) {
+function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, parent: qt.BindingOrAssignmentElement, pattern: qt.ArrayBindingOrAssignmentPattern, value: qt.Expression, location: qt.TextRange) {
   const elements = getElementsOfBindingOrAssignmentPattern(pattern);
   const numElements = elements.length;
   if (flattenContext.level < FlattenLevel.ObjectRest && flattenContext.downlevelIteration) {
@@ -325,8 +325,8 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
     const reuseIdentifierExpressions = !isDeclarationBindingElement(parent) || numElements !== 0;
     value = ensureIdentifier(flattenContext, value, reuseIdentifierExpressions, location);
   }
-  let bindingElements: BindingOrAssignmentElement[] | undefined;
-  let restContainingElements: [Identifier, BindingOrAssignmentElement][] | undefined;
+  let bindingElements: qt.BindingOrAssignmentElement[] | undefined;
+  let restContainingElements: [Identifier, qt.BindingOrAssignmentElement][] | undefined;
   for (let i = 0; i < numElements; i++) {
     const element = elements[i];
     if (flattenContext.level >= FlattenLevel.ObjectRest) {
@@ -338,7 +338,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
           flattenContext.context.hoistVariableDeclaration(temp);
         }
 
-        restContainingElements = append(restContainingElements, <[Identifier, BindingOrAssignmentElement]>[temp, element]);
+        restContainingElements = append(restContainingElements, <[Identifier, qt.BindingOrAssignmentElement]>[temp, element]);
         bindingElements = append(bindingElements, flattenContext.createArrayBindingOrAssignmentElement(temp));
       } else {
         bindingElements = append(bindingElements, element);
@@ -371,13 +371,13 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
  * @param defaultValue The default value to use if `value` is `undefined` at runtime.
  * @param location The location to use for source maps and comments.
  */
-function createDefaultValueCheck(flattenContext: FlattenContext, value: Expression, defaultValue: Expression, location: qt.TextRange): Expression {
+function createDefaultValueCheck(flattenContext: FlattenContext, value: qt.Expression, defaultValue: qt.Expression, location: qt.TextRange): qt.Expression {
   value = ensureIdentifier(flattenContext, value, /*reuseIdentifierExpressions*/ true, location);
   return createConditional(createTypeCheck(value, 'undefined'), defaultValue, value);
 }
 
 /**
- * Creates either a PropertyAccessExpression or an ElementAccessExpression for the
+ * Creates either a PropertyAccessExpression or an qt.ElementAccessExpression for the
  * right-hand side of a transformed destructuring assignment.
  *
  * @link https://tc39.github.io/ecma262/#sec-runtime-semantics-keyeddestructuringassignmentevaluation
@@ -386,7 +386,7 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: Expressi
  * @param value The RHS value that is the source of the property.
  * @param propertyName The destructuring property name.
  */
-function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
+function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: qt.Expression, propertyName: PropertyName): LeftHandSideExpression {
   if (isComputedPropertyName(propertyName)) {
     const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), /*reuseIdentifierExpressions*/ false, /*location*/ propertyName);
     return createElementAccess(value, argumentExpression);
@@ -411,7 +411,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
  * false if it is necessary to always emit an identifier.
  * @param location The location to use for source maps and comments.
  */
-function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: qt.TextRange) {
+function ensureIdentifier(flattenContext: FlattenContext, value: qt.Expression, reuseIdentifierExpressions: boolean, location: qt.TextRange) {
   if (isIdentifier(value) && reuseIdentifierExpressions) {
     return value;
   } else {
@@ -426,21 +426,21 @@ function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reu
   }
 }
 
-function makeArrayBindingPattern(elements: BindingOrAssignmentElement[]) {
+function makeArrayBindingPattern(elements: qt.BindingOrAssignmentElement[]) {
   Debug.assertEachNode(elements, isArrayBindingElement);
   return createArrayBindingPattern(elements);
 }
 
-function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
+function makeArrayAssignmentPattern(elements: qt.BindingOrAssignmentElement[]) {
   return createArrayLiteral(map(elements, convertToArrayAssignmentElement));
 }
 
-function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
+function makeObjectBindingPattern(elements: qt.BindingOrAssignmentElement[]) {
   Debug.assertEachNode(elements, isBindingElement);
   return createObjectBindingPattern(elements);
 }
 
-function makeObjectAssignmentPattern(elements: BindingOrAssignmentElement[]) {
+function makeObjectAssignmentPattern(elements: qt.BindingOrAssignmentElement[]) {
   return createObjectLiteral(map(elements, convertToObjectAssignmentElement));
 }
 
@@ -473,9 +473,9 @@ export const restHelper: UnscopedEmitHelper = {
 /** Given value: o, propName: p, pattern: { a, b, ...p } from the original statement
  * `{ a, b, ...p } = o`, create `p = __rest(o, ["a", "b"]);`
  */
-function createRestCall(context: TransformationContext, value: Expression, elements: readonly BindingOrAssignmentElement[], computedTempVariables: readonly Expression[], location: qt.TextRange): Expression {
+function createRestCall(context: TransformationContext, value: qt.Expression, elements: readonly qt.BindingOrAssignmentElement[], computedTempVariables: readonly qt.Expression[], location: qt.TextRange): qt.Expression {
   context.requestEmitHelper(restHelper);
-  const propertyNames: Expression[] = [];
+  const propertyNames: qt.Expression[] = [];
   let computedTempVariableOffset = 0;
   for (let i = 0; i < elements.length - 1; i++) {
     const propertyName = getPropertyNameOfBindingOrAssignmentElement(elements[i]);

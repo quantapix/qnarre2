@@ -677,27 +677,27 @@ function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCa
   };
   if (state.referencedMap) {
     const referencedMap: qpc.MapLike<string[]> = {};
-    for (const key of arrayFrom(state.referencedMap.keys()).sort(qc.compareStringsCaseSensitive)) {
-      referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
+    for (const key of qc.arrayFrom(state.referencedMap.keys()).sort(qc.compareStringsCaseSensitive)) {
+      referencedMap[relativeToBuildInfo(key)] = qc.arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
     }
     result.referencedMap = referencedMap;
   }
 
   if (state.exportedModulesMap) {
     const exportedModulesMap: qpc.MapLike<string[]> = {};
-    for (const key of arrayFrom(state.exportedModulesMap.keys()).sort(qc.compareStringsCaseSensitive)) {
+    for (const key of qc.arrayFrom(state.exportedModulesMap.keys()).sort(qc.compareStringsCaseSensitive)) {
       const newValue = state.currentAffectedFilesExportedModulesMap && state.currentAffectedFilesExportedModulesMap.get(key);
       // Not in temporary cache, use existing value
-      if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
+      if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = qc.arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
       // Value in cache and has updated value map, use that
-      else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
+      else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = qc.arrayFrom(newValue.keys(), relativeToBuildInfo).sort(qc.compareStringsCaseSensitive);
     }
     result.exportedModulesMap = exportedModulesMap;
   }
 
   if (state.semanticDiagnosticsPerFile) {
     const semanticDiagnosticsPerFile: ProgramBuildInfoDiagnostic[] = [];
-    for (const key of arrayFrom(state.semanticDiagnosticsPerFile.keys()).sort(qc.compareStringsCaseSensitive)) {
+    for (const key of qc.arrayFrom(state.semanticDiagnosticsPerFile.keys()).sort(qc.compareStringsCaseSensitive)) {
       const value = state.semanticDiagnosticsPerFile.get(key)!;
       semanticDiagnosticsPerFile.push(value.length ? [relativeToBuildInfo(key), state.hasReusableDiagnostic ? (value as readonly ReusableDiagnostic[]) : convertToReusableDiagnostics(value as readonly Diagnostic[], relativeToBuildInfo)] : relativeToBuildInfo(key));
     }
@@ -776,7 +776,7 @@ export interface BuilderCreationParameters {
   configFileParsingDiagnostics: readonly Diagnostic[];
 }
 
-export function getBuilderCreationParameters(newProgramOrRootNames: Program | readonly string[] | undefined, hostOrOptions: BuilderProgramHost | qt.CompilerOptions | undefined, oldProgramOrHost?: BuilderProgram | CompilerHost, configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly ProjectReference[]): BuilderCreationParameters {
+export function getBuilderCreationParameters(newProgramOrRootNames: Program | readonly string[] | undefined, hostOrOptions: BuilderProgramHost | qt.CompilerOptions | undefined, oldProgramOrHost?: BuilderProgram | CompilerHost, configFileParsingDiagnosticsOrOldProgram?: readonly Diagnostic[] | BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly qt.ProjectReference[]): BuilderCreationParameters {
   let host: BuilderProgramHost;
   let newProgram: Program;
   let oldProgram: BuilderProgram;

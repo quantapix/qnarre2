@@ -8,7 +8,7 @@ export function isTraceEnabled(compilerOptions: qt.CompilerOptions, host: Module
 }
 
 function withPackageId(packageInfo: PackageJsonInfo | undefined, r: PathAndExtension | undefined): Resolved | undefined {
-  let packageId: PackageId | undefined;
+  let packageId: qt.PackageId | undefined;
   if (r && packageInfo) {
     const packageJsonContent = packageInfo.packageJsonContent as PackageJson;
     if (typeof packageJsonContent.name === 'string' && typeof packageJsonContent.version === 'string') {
@@ -37,7 +37,7 @@ function removeIgnoredPackageId(r: Resolved | undefined): PathAndExtension | und
 interface Resolved {
   path: string;
   extension: Extension;
-  packageId: PackageId | undefined;
+  packageId: qt.PackageId | undefined;
   /**
    * When the resolved is not created from cache, the value is
    *  - string if original Path if it is symbolic link to the resolved path
@@ -70,7 +70,7 @@ enum Extensions {
 
 interface PathAndPackageId {
   readonly fileName: string;
-  readonly packageId: PackageId | undefined;
+  readonly packageId: qt.PackageId | undefined;
 }
 /** Used with `Extensions.DtsOnly` to extract the path from TypeScript results. */
 function resolvedTypeScriptOnly(resolved: Resolved | undefined): PathAndPackageId | undefined {

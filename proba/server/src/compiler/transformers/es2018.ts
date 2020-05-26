@@ -31,8 +31,8 @@ const enum HierarchyFacts {
   ArrowFunctionIncludes = None,
   ArrowFunctionExcludes = ClassOrFunctionExcludes,
 
-  IterationStatementIncludes = IterationContainer,
-  IterationStatementExcludes = None,
+  qt.IterationStatementIncludes = IterationContainer,
+  qt.IterationStatementExcludes = None,
 }
 
 export function transformES2018(context: TransformationContext) {
@@ -210,7 +210,7 @@ export function transformES2018(context: TransformationContext) {
     }
   }
 
-  function visitAwaitExpression(node: AwaitExpression): Expression {
+  function visitAwaitExpression(node: AwaitExpression): qt.Expression {
     if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
       return setOriginalNode(setTextRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), /*location*/ node), node);
     }
@@ -250,9 +250,9 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function chunkObjectLiteralElements(elements: readonly ObjectLiteralElementLike[]): Expression[] {
+  function chunkObjectLiteralElements(elements: readonly ObjectLiteralElementLike[]): qt.Expression[] {
     let chunkObject: ObjectLiteralElementLike[] | undefined;
-    const objects: Expression[] = [];
+    const objects: qt.Expression[] = [];
     for (const e of elements) {
       if (e.kind === qt.SyntaxKind.SpreadAssignment) {
         if (chunkObject) {
@@ -272,7 +272,7 @@ export function transformES2018(context: TransformationContext) {
     return objects;
   }
 
-  function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression {
+  function visitObjectLiteralExpression(node: ObjectLiteralExpression): qt.Expression {
     if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       // spread elements emit like so:
       // non-spread elements are chunked together into object literals, and then all are passed to __assign:
@@ -299,7 +299,7 @@ export function transformES2018(context: TransformationContext) {
       if (objects.length && objects[0].kind !== qt.SyntaxKind.ObjectLiteralExpression) {
         objects.unshift(createObjectLiteral());
       }
-      let expression: Expression = objects[0];
+      let expression: qt.Expression = objects[0];
       if (objects.length > 1) {
         for (let i = 1; i < objects.length; i++) {
           expression = createAssignHelper(context, [expression, objects[i]]);
@@ -312,7 +312,7 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitExpressionStatement(node: ExpressionStatement): ExpressionStatement {
+  function visitExpressionStatement(node: qt.ExpressionStatement): qt.ExpressionStatement {
     return visitEachChild(node, visitorNoDestructuringValue, context);
   }
 
@@ -335,11 +335,11 @@ export function transformES2018(context: TransformationContext) {
   }
 
   /**
-   * Visits a BinaryExpression that contains a destructuring assignment.
+   * Visits a qt.BinaryExpression that contains a destructuring assignment.
    *
-   * @param node A BinaryExpression node.
+   * @param node A qt.BinaryExpression node.
    */
-  function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression, noDestructuringValue: boolean): qt.Expression {
     if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
     } else if (node.operatorToken.kind === qt.SyntaxKind.CommaToken) {
@@ -426,7 +426,7 @@ export function transformES2018(context: TransformationContext) {
       let bodyLocation: qt.TextRange | undefined;
       let statementsLocation: qt.TextRange | undefined;
       const temp = createTempVariable(/*recordTempVariable*/ undefined);
-      const statements: Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
+      const statements: qt.Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
       if (isBlock(node.statement)) {
         addRange(statements, node.statement.statements);
         bodyLocation = node.statement;
@@ -441,12 +441,12 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
 
-  function convertForOfStatementHead(node: ForOfStatement, boundValue: Expression) {
+  function convertForOfStatementHead(node: ForOfStatement, boundValue: qt.Expression) {
     const binding = createForOfBindingStatement(node.initializer, boundValue);
 
     let bodyLocation: qt.TextRange | undefined;
     let statementsLocation: qt.TextRange | undefined;
-    const statements: Statement[] = [visitNode(binding, visitor, isStatement)];
+    const statements: qt.Statement[] = [visitNode(binding, visitor, isStatement)];
     const statement = visitNode(node.statement, visitor, isStatement);
     if (isBlock(statement)) {
       addRange(statements, statement.statements);
@@ -456,10 +456,10 @@ export function transformES2018(context: TransformationContext) {
       statements.push(statement);
     }
 
-    return setEmitFlags(setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+    return setEmitFlags(setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation), qt.EmitFlags.NoSourceMap | qt.EmitFlags.NoTokenSourceMaps);
   }
 
-  function createDownlevelAwait(expression: Expression) {
+  function createDownlevelAwait(expression: qt.Expression) {
     return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(/*asteriskToken*/ undefined, createAwaitHelper(context, expression)) : createAwait(expression);
   }
 
@@ -483,18 +483,18 @@ export function transformES2018(context: TransformationContext) {
     const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), callValues]) : callValues;
 
     const forStatement = setEmitFlags(
-      setTextRange(createFor(/*initializer*/ setEmitFlags(setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression), EmitFlags.NoHoisting), /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), createLogicalNot(getDone)), /*incrementor*/ undefined, /*statement*/ convertForOfStatementHead(node, getValue)), /*location*/ node),
-      EmitFlags.NoTokenTrailingSourceMaps
+      setTextRange(createFor(/*initializer*/ setEmitFlags(setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression), qt.EmitFlags.NoHoisting), /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), createLogicalNot(getDone)), /*incrementor*/ undefined, /*statement*/ convertForOfStatementHead(node, getValue)), /*location*/ node),
+      qt.EmitFlags.NoTokenTrailingSourceMaps
     );
 
     return createTry(
       createBlock([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
-      createCatchClause(createVariableDeclaration(catchVariable), setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)),
+      createCatchClause(createVariableDeclaration(catchVariable), setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), qt.EmitFlags.SingleLine)),
       createBlock([
         createTry(
-          /*tryBlock*/ createBlock([setEmitFlags(createIf(createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))), createExpressionStatement(createDownlevelAwait(callReturn))), EmitFlags.SingleLine)]),
+          /*tryBlock*/ createBlock([setEmitFlags(createIf(createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))), createExpressionStatement(createDownlevelAwait(callReturn))), qt.EmitFlags.SingleLine)]),
           /*catchClause*/ undefined,
-          /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+          /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), qt.EmitFlags.SingleLine)]), qt.EmitFlags.SingleLine)
         ),
       ])
     );
@@ -597,7 +597,7 @@ export function transformES2018(context: TransformationContext) {
 
   function transformAsyncGeneratorFunctionBody(node: MethodDeclaration | AccessorDeclaration | FunctionDeclaration | FunctionExpression): FunctionBody {
     resumeLexicalEnvironment();
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const statementOffset = addPrologue(statements, node.body!.statements, /*ensureUseStrict*/ false, visitor);
     appendObjectRestAssignmentsIfNeeded(statements, node);
 
@@ -640,10 +640,10 @@ export function transformES2018(context: TransformationContext) {
 
   function transformFunctionBody(node: FunctionDeclaration | FunctionExpression | qt.ConstructorDeclaration | MethodDeclaration | AccessorDeclaration): FunctionBody;
   function transformFunctionBody(node: ArrowFunction): ConciseBody;
-  function transformFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
+  function transformFunctionBody(node: qt.FunctionLikeDeclaration): ConciseBody {
     resumeLexicalEnvironment();
     let statementOffset = 0;
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const body = visitNode(node.body, visitor, isConciseBody);
     if (isBlock(body)) {
       statementOffset = addPrologue(statements, body.statements, /*ensureUseStrict*/ false, visitor);
@@ -659,14 +659,14 @@ export function transformES2018(context: TransformationContext) {
     return body;
   }
 
-  function appendObjectRestAssignmentsIfNeeded(statements: Statement[] | undefined, node: FunctionLikeDeclaration): Statement[] | undefined {
+  function appendObjectRestAssignmentsIfNeeded(statements: qt.Statement[] | undefined, node: qt.FunctionLikeDeclaration): qt.Statement[] | undefined {
     for (const parameter of node.parameters) {
       if (parameter.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         const temp = getGeneratedNameForNode(parameter);
         const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, /*doNotRecordTempVariablesInLine*/ false, /*skipInitializer*/ true);
         if (some(declarations)) {
           const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(declarations));
-          setEmitFlags(statement, EmitFlags.CustomPrologue);
+          setEmitFlags(statement, qt.EmitFlags.CustomPrologue);
           statements = append(statements, statement);
         }
       }
@@ -741,7 +741,7 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
 
-  function substituteExpression(node: Expression) {
+  function substituteExpression(node: qt.Expression) {
     switch (node.kind) {
       case qt.SyntaxKind.PropertyAccessExpression:
         return substitutePropertyAccessExpression(node);
@@ -760,14 +760,14 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
 
-  function substituteElementAccessExpression(node: ElementAccessExpression) {
+  function substituteElementAccessExpression(node: qt.ElementAccessExpression) {
     if (node.expression.kind === qt.SyntaxKind.SuperKeyword) {
       return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
     }
     return node;
   }
 
-  function substituteCallExpression(node: CallExpression): Expression {
+  function substituteCallExpression(node: CallExpression): qt.Expression {
     const expression = node.expression;
     if (isSuperProperty(expression)) {
       const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
@@ -781,7 +781,7 @@ export function transformES2018(context: TransformationContext) {
     return kind === qt.SyntaxKind.ClassDeclaration || kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.MethodDeclaration || kind === qt.SyntaxKind.GetAccessor || kind === qt.SyntaxKind.SetAccessor;
   }
 
-  function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: qt.TextRange): LeftHandSideExpression {
+  function createSuperElementAccessInAsyncMethod(argumentExpression: qt.Expression, location: qt.TextRange): LeftHandSideExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
       return setTextRange(createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
     } else {
@@ -809,7 +809,7 @@ export const assignHelper: UnscopedEmitHelper = {
             };`,
 };
 
-export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
+export function createAssignHelper(context: TransformationContext, attributesSegments: qt.Expression[]) {
   if (context.getCompilerOptions().target! >= qt.ScriptTarget.ES2015) {
     return createCall(createPropertyAccess(createIdentifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
   }
@@ -825,7 +825,7 @@ export const awaitHelper: UnscopedEmitHelper = {
             var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }`,
 };
 
-function createAwaitHelper(context: TransformationContext, expression: Expression) {
+function createAwaitHelper(context: TransformationContext, expression: qt.Expression) {
   context.requestEmitHelper(awaitHelper);
   return createCall(getUnscopedHelperName('__await'), /*typeArguments*/ undefined, [expression]);
 }
@@ -853,7 +853,7 @@ function createAsyncGeneratorHelper(context: TransformationContext, generatorFun
   context.requestEmitHelper(asyncGeneratorHelper);
 
   // Mark this node as originally an async function
-  (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
+  (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= qt.EmitFlags.AsyncFunctionBody | qt.EmitFlags.ReuseTempVariableScope;
 
   return createCall(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [hasLexicalThis ? createThis() : createVoidZero(), createIdentifier('arguments'), generatorFunc]);
 }
@@ -871,7 +871,7 @@ export const asyncDelegator: UnscopedEmitHelper = {
             };`,
 };
 
-function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: qt.TextRange) {
+function createAsyncDelegatorHelper(context: TransformationContext, expression: qt.Expression, location?: qt.TextRange) {
   context.requestEmitHelper(asyncDelegator);
   return setTextRange(createCall(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
 }
@@ -890,7 +890,7 @@ export const asyncValues: UnscopedEmitHelper = {
             };`,
 };
 
-function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: qt.TextRange) {
+function createAsyncValuesHelper(context: TransformationContext, expression: qt.Expression, location?: qt.TextRange) {
   context.requestEmitHelper(asyncValues);
   return setTextRange(createCall(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
 }

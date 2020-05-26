@@ -47,7 +47,7 @@ export function transformJsx(context: TransformationContext) {
     }
   }
 
-  function transformJsxChildToExpression(node: JsxChild): Expression | undefined {
+  function transformJsxChildToExpression(node: JsxChild): qt.Expression | undefined {
     switch (node.kind) {
       case qt.SyntaxKind.JsxText:
         return visitJsxText(node);
@@ -83,7 +83,7 @@ export function transformJsx(context: TransformationContext) {
 
   function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: qt.TextRange) {
     const tagName = getTagName(node);
-    let objectProperties: Expression | undefined;
+    let objectProperties: qt.Expression | undefined;
     const attrs = node.attributes.properties;
     if (attrs.length === 0) {
       // When there are no attributes, React wants "null"
@@ -150,7 +150,7 @@ export function transformJsx(context: TransformationContext) {
     return createPropertyAssignment(name, expression);
   }
 
-  function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
+  function transformJsxAttributeInitializer(node: StringLiteral | qt.JsxExpression | undefined): qt.Expression {
     if (node === undefined) {
       return createTrue();
     } else if (node.kind === qt.SyntaxKind.StringLiteral) {
@@ -257,7 +257,7 @@ export function transformJsx(context: TransformationContext) {
     return decoded === text ? undefined : decoded;
   }
 
-  function getTagName(node: JsxElement | JsxOpeningLikeElement): Expression {
+  function getTagName(node: JsxElement | JsxOpeningLikeElement): qt.Expression {
     if (node.kind === qt.SyntaxKind.JsxElement) {
       return getTagName(node.openingElement);
     } else {
@@ -285,7 +285,7 @@ export function transformJsx(context: TransformationContext) {
     }
   }
 
-  function visitJsxExpression(node: JsxExpression) {
+  function visitJsxExpression(node: qt.JsxExpression) {
     return visitNode(node.expression, visitor, isExpression);
   }
 }

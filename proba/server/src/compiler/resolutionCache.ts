@@ -433,7 +433,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function getDirectoryToWatchFailedLookupLocation(failedLookupLocation: string, failedLookupLocationPath: Path): DirectoryOfFailedLookupWatch | undefined {
     if (isInDirectoryPath(rootPath, failedLookupLocationPath)) {
       // Ensure failed look up is normalized path
-      failedLookupLocation = isRootedDiskPath(failedLookupLocation) ? normalizePath(failedLookupLocation) : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
+      failedLookupLocation = qp.isRootedDiskPath(failedLookupLocation) ? normalizePath(failedLookupLocation) : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
       const failedLookupPathSplit = failedLookupLocationPath.split(directorySeparator);
       const failedLookupSplit = failedLookupLocation.split(directorySeparator);
       Debug.assert(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);

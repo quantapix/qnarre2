@@ -3,7 +3,7 @@ export type GetSymbolAccessibilityDiagnostic = (symbolAccessibilityResult: Symbo
 export interface SymbolAccessibilityDiagnostic {
   errorNode: Node;
   diagnosticMessage: qt.DiagnosticMessage;
-  typeName?: DeclarationName | QualifiedName;
+  typeName?: DeclarationName | qt.QualifiedName;
 }
 
 export type DeclarationDiagnosticProducing =
@@ -20,7 +20,7 @@ export type DeclarationDiagnosticProducing =
   | FunctionDeclaration
   | ParameterDeclaration
   | TypeParameterDeclaration
-  | ExpressionWithTypeArguments
+  | qt.ExpressionWithTypeArguments
   | ImportEqualsDeclaration
   | TypeAliasDeclaration
   | qt.ConstructorDeclaration
@@ -65,7 +65,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as NamedDeclaration).name,
+          typeName: (node as qt.NamedDeclaration).name,
         }
       : undefined;
   }
@@ -86,7 +86,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as NamedDeclaration).name,
+          typeName: (node as qt.NamedDeclaration).name,
         }
       : undefined;
   }
@@ -151,7 +151,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as NamedDeclaration).name,
+          typeName: (node as qt.NamedDeclaration).name,
         }
       : undefined;
   }
@@ -179,8 +179,8 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     }
     return {
       diagnosticMessage,
-      errorNode: (node as NamedDeclaration).name!,
-      typeName: (node as NamedDeclaration).name,
+      errorNode: (node as qt.NamedDeclaration).name!,
+      typeName: (node as qt.NamedDeclaration).name,
     };
   }
 
@@ -228,7 +228,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
 
     return {
       diagnosticMessage,
-      errorNode: (node as NamedDeclaration).name || node,
+      errorNode: (node as qt.NamedDeclaration).name || node,
     };
   }
 
@@ -238,7 +238,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
       ? {
           diagnosticMessage,
           errorNode: node,
-          typeName: (node as NamedDeclaration).name,
+          typeName: (node as qt.NamedDeclaration).name,
         }
       : undefined;
   }
@@ -336,7 +336,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     return {
       diagnosticMessage,
       errorNode: node,
-      typeName: (node as NamedDeclaration).name,
+      typeName: (node as qt.NamedDeclaration).name,
     };
   }
 
@@ -362,7 +362,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(node: DeclarationD
     return {
       diagnosticMessage: Diagnostics.Import_declaration_0_is_using_private_name_1,
       errorNode: node,
-      typeName: (node as NamedDeclaration).name,
+      typeName: (node as qt.NamedDeclaration).name,
     };
   }
 

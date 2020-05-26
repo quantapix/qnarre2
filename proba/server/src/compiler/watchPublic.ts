@@ -27,7 +27,7 @@ export interface IncrementalProgramOptions<T extends BuilderProgram> {
   rootNames: readonly string[];
   options: qt.CompilerOptions;
   configFileParsingDiagnostics?: readonly Diagnostic[];
-  projectReferences?: readonly ProjectReference[];
+  projectReferences?: readonly qt.ProjectReference[];
   host?: CompilerHost;
   createProgram?: CreateProgram<T>;
 }
@@ -41,7 +41,7 @@ export function createIncrementalProgram<T extends BuilderProgram = EmitAndSeman
 
 export type WatchStatusReporter = (diagnostic: Diagnostic, newLine: string, options: qt.CompilerOptions, errorCount?: number) => void;
 /** Create the program with rootNames and options, if they are undefined, oldProgram and new configFile diagnostics create new program */
-export type CreateProgram<T extends BuilderProgram> = (rootNames: readonly string[] | undefined, options: qt.CompilerOptions | undefined, host?: CompilerHost, oldProgram?: T, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly ProjectReference[] | undefined) => T;
+export type CreateProgram<T extends BuilderProgram> = (rootNames: readonly string[] | undefined, options: qt.CompilerOptions | undefined, host?: CompilerHost, oldProgram?: T, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly qt.ProjectReference[] | undefined) => T;
 
 /** Host that has watch functionality used in --watch mode */
 export interface WatchHost {
@@ -130,7 +130,7 @@ export interface WatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderPro
   watchOptions?: WatchOptions;
 
   /** Project References */
-  projectReferences?: readonly ProjectReference[];
+  projectReferences?: readonly qt.ProjectReference[];
 }
 
 /**
@@ -187,7 +187,7 @@ export interface WatchOfFilesAndCompilerOptions<T> extends Watch<T> {
  * Create the watch compiler host for either configFile or fileNames and its options
  */
 export function createWatchCompilerHost<T extends BuilderProgram>(configFileName: string, optionsToExtend: qt.CompilerOptions | undefined, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, watchOptionsToExtend?: WatchOptions, extraFileExtensions?: readonly FileExtensionInfo[]): WatchCompilerHostOfConfigFile<T>;
-export function createWatchCompilerHost<T extends BuilderProgram>(rootFiles: string[], options: qt.CompilerOptions, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, projectReferences?: readonly ProjectReference[], watchOptions?: WatchOptions): WatchCompilerHostOfFilesAndCompilerOptions<T>;
+export function createWatchCompilerHost<T extends BuilderProgram>(rootFiles: string[], options: qt.CompilerOptions, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, projectReferences?: readonly qt.ProjectReference[], watchOptions?: WatchOptions): WatchCompilerHostOfFilesAndCompilerOptions<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFilesOrConfigFileName: string | string[],
   options: qt.CompilerOptions | undefined,
@@ -195,7 +195,7 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  projectReferencesOrWatchOptionsToExtend?: readonly ProjectReference[] | WatchOptions,
+  projectReferencesOrWatchOptionsToExtend?: readonly qt.ProjectReference[] | WatchOptions,
   watchOptionsOrExtraFileExtensions?: WatchOptions | readonly FileExtensionInfo[]
 ): WatchCompilerHostOfFilesAndCompilerOptions<T> | WatchCompilerHostOfConfigFile<T> {
   if (isArray(rootFilesOrConfigFileName)) {
@@ -203,7 +203,7 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
       rootFiles: rootFilesOrConfigFileName,
       options: options,
       watchOptions: watchOptionsOrExtraFileExtensions as WatchOptions,
-      projectReferences: projectReferencesOrWatchOptionsToExtend as readonly ProjectReference[],
+      projectReferences: projectReferencesOrWatchOptionsToExtend as readonly qt.ProjectReference[],
       system,
       createProgram,
       reportDiagnostic,

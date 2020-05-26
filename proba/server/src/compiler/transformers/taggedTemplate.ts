@@ -10,9 +10,9 @@ export function processTaggedTemplateExpression(context: TransformationContext, 
   // Build up the template arguments and the raw and cooked strings for the template.
   // We start out with 'undefined' for the first argument and revisit later
   // to avoid walking over the template string twice and shifting all our arguments over after the fact.
-  const templateArguments: Expression[] = [undefined!];
-  const cookedStrings: Expression[] = [];
-  const rawStrings: Expression[] = [];
+  const templateArguments: qt.Expression[] = [undefined!];
+  const cookedStrings: qt.Expression[] = [];
+  const rawStrings: qt.Expression[] = [];
   const template = node.template;
 
   if (level === ProcessLevel.LiftRestriction && !hasInvalidEscape(template)) {

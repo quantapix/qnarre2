@@ -415,7 +415,7 @@ export namespace BuilderState {
       }
     }
 
-    return arrayFrom(
+    return qc.arrayFrom(
       mapDefinedIterator(seenMap.keys(), (path) => {
         const file = programOfThisState.getSourceFileByPath(path as Path);
         return file ? file.fileName : path;
@@ -438,7 +438,7 @@ export namespace BuilderState {
    * Gets the files referenced by the the file path
    */
   export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: Path) {
-    return arrayFrom(mapDefinedIterator(state.referencedMap.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined)));
+    return qc.arrayFrom(mapDefinedIterator(state.referencedMap.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined)));
   }
 
   /**
@@ -545,7 +545,7 @@ export namespace BuilderState {
 
     // Return array of values that needs emit
     // Return array of values that needs emit
-    return arrayFrom(mapDefinedIterator(seenFileNamesMap.values(), (value) => value));
+    return qc.arrayFrom(mapDefinedIterator(seenFileNamesMap.values(), (value) => value));
   }
 }
 

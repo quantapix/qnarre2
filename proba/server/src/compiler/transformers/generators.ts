@@ -121,7 +121,7 @@ type Label = number;
 
 const enum OpCode {
   Nop, // No operation, used to force a new case in the state machine
-  Statement, // A regular javascript statement
+  qt.Statement, // A regular javascript statement
   Assign, // An assignment
   Break, // A break instruction used to jump to a label
   BreakWhenTrue, // A break instruction used to jump to a label if a condition evaluates to true
@@ -133,7 +133,7 @@ const enum OpCode {
   Endfinally, // Marks the end of a `finally` block
 }
 
-type OperationArguments = [Label] | [Label, Expression] | [Statement] | [Expression | undefined] | [Expression, Expression];
+type OperationArguments = [Label] | [Label, qt.Expression] | [Statement] | [Expression | undefined] | [Expression, qt.Expression];
 
 // whether a generated code block is opening or closing at the current operation for a FunctionBuilder
 const enum BlockAction {
@@ -284,7 +284,7 @@ export function transformGenerators(context: TransformationContext) {
   let lastOperationWasAbrupt: boolean; // Indicates whether the last operation was abrupt (break/continue).
   let lastOperationWasCompletion: boolean; // Indicates whether the last operation was a completion (return/throw).
   let clauses: CaseClause[] | undefined; // The case clauses generated for labels.
-  let statements: Statement[] | undefined; // The statements for the current label.
+  let statements: qt.Statement[] | undefined; // The statements for the current label.
   let exceptionBlockStack: ExceptionBlock[] | undefined; // A stack of containing exception blocks.
   let currentExceptionBlock: ExceptionBlock | undefined; // The current exception block.
   let withBlockStack: WithBlock[] | undefined; // A stack containing `with` blocks.
@@ -433,7 +433,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitFunctionDeclaration(node: FunctionDeclaration): Statement | undefined {
+  function visitFunctionDeclaration(node: FunctionDeclaration): qt.Statement | undefined {
     // Currently, we only support generators that were originally async functions.
     if (node.asteriskToken) {
       node = setOriginalNode(setTextRange(createFunctionDeclaration(/*decorators*/ undefined, node.modifiers, /*asteriskToken*/ undefined, node.name, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, transformGeneratorFunctionBody(node.body!)), /*location*/ node), node);
@@ -466,7 +466,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitFunctionExpression(node: FunctionExpression): Expression {
+  function visitFunctionExpression(node: FunctionExpression): qt.Expression {
     // Currently, we only support generators that were originally async functions.
     if (node.asteriskToken) {
       node = setOriginalNode(setTextRange(createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, node.name, /*typeParameters*/ undefined, visitParameterList(node.parameters, visitor, context), /*type*/ undefined, transformGeneratorFunctionBody(node.body)), /*location*/ node), node);
@@ -509,7 +509,7 @@ export function transformGenerators(context: TransformationContext) {
    */
   function transformGeneratorFunctionBody(body: Block) {
     // Save existing generator state
-    const statements: Statement[] = [];
+    const statements: qt.Statement[] = [];
     const savedInGeneratorFunctionBody = inGeneratorFunctionBody;
     const savedInStatementContainingYield = inStatementContainingYield;
     const savedBlocks = blocks;
@@ -576,13 +576,13 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitVariableStatement(node: VariableStatement): Statement | undefined {
+  function visitVariableStatement(node: VariableStatement): qt.Statement | undefined {
     if (node.transformFlags & TransformFlags.ContainsYield) {
       transformAndEmitVariableDeclarationList(node.declarationList);
       return undefined;
     } else {
       // Do not hoist custom prologues.
-      if (qu.getEmitFlags(node) & EmitFlags.CustomPrologue) {
+      if (qu.getEmitFlags(node) & qt.EmitFlags.CustomPrologue) {
         return node;
       }
 
@@ -607,7 +607,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitBinaryExpression(node: BinaryExpression): Expression {
+  function visitBinaryExpression(node: qt.BinaryExpression): qt.Expression {
     const assoc = getExpressionAssociativity(node);
     switch (assoc) {
       case Associativity.Left:
@@ -624,10 +624,10 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitRightAssociativeBinaryExpression(node: BinaryExpression) {
+  function visitRightAssociativeBinaryExpression(node: qt.BinaryExpression) {
     const { left, right } = node;
     if (containsYield(right)) {
-      let target: Expression;
+      let target: qt.Expression;
       switch (left.kind) {
         case qt.SyntaxKind.PropertyAccessExpression:
           // [source]
@@ -674,7 +674,7 @@ export function transformGenerators(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitLeftAssociativeBinaryExpression(node: BinaryExpression) {
+  function visitLeftAssociativeBinaryExpression(node: qt.BinaryExpression) {
     if (containsYield(node.right)) {
       if (isLogicalOperator(node.operatorToken.kind)) {
         return visitLogicalBinaryExpression(node);
@@ -705,7 +705,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node A node to visit.
    */
-  function visitLogicalBinaryExpression(node: BinaryExpression) {
+  function visitLogicalBinaryExpression(node: qt.BinaryExpression) {
     // Logical binary expressions (`&&` and `||`) are shortcutting expressions and need
     // to be transformed as such:
     //
@@ -757,7 +757,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitCommaExpression(node: BinaryExpression) {
+  function visitCommaExpression(node: qt.BinaryExpression) {
     // [source]
     //      x = a(), yield, b();
     //
@@ -767,12 +767,12 @@ export function transformGenerators(context: TransformationContext) {
     //  .mark resumeLabel
     //      x = %sent%, b();
 
-    let pendingExpressions: Expression[] = [];
+    let pendingExpressions: qt.Expression[] = [];
     visit(node.left);
     visit(node.right);
     return inlineExpressions(pendingExpressions);
 
-    function visit(node: Expression) {
+    function visit(node: qt.Expression) {
       if (isBinaryExpression(node) && node.operatorToken.kind === qt.SyntaxKind.CommaToken) {
         visit(node.left);
         visit(node.right);
@@ -792,7 +792,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param node The node to visit.
    */
-  function visitConditionalExpression(node: ConditionalExpression): Expression {
+  function visitConditionalExpression(node: ConditionalExpression): qt.Expression {
     // [source]
     //      x = a() ? yield : b();
     //
@@ -844,7 +844,7 @@ export function transformGenerators(context: TransformationContext) {
     const resumeLabel = defineLabel();
     const expression = visitNode(node.expression, visitor, isExpression);
     if (node.asteriskToken) {
-      const iterator = (qu.getEmitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
+      const iterator = (qu.getEmitFlags(node.expression!) & qt.EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
       emitYieldStar(iterator, /*location*/ node);
     } else {
       emitYield(expression, /*location*/ node);
@@ -870,7 +870,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param elements The elements to visit.
    * @param multiLine Whether array literals created should be emitted on multiple lines.
    */
-  function visitElements(elements: qt.NodeArray<Expression>, leadingElement?: Expression, location?: qt.TextRange, multiLine?: boolean) {
+  function visitElements(elements: qt.NodeArray<Expression>, leadingElement?: qt.Expression, location?: qt.TextRange, multiLine?: boolean) {
     // [source]
     //      ar = [1, yield, 2];
     //
@@ -894,7 +894,7 @@ export function transformGenerators(context: TransformationContext) {
     const expressions = reduceLeft(elements, reduceElement, <Expression[]>[], numInitialElements);
     return temp ? createArrayConcat(temp, [createArrayLiteral(expressions, multiLine)]) : setTextRange(createArrayLiteral(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine), location);
 
-    function reduceElement(expressions: Expression[], element: Expression) {
+    function reduceElement(expressions: qt.Expression[], element: qt.Expression) {
       if (containsYield(element) && expressions.length > 0) {
         const hasAssignedTemp = temp !== undefined;
         if (!temp) {
@@ -941,7 +941,7 @@ export function transformGenerators(context: TransformationContext) {
     expressions.push(multiLine ? startOnNewLine(getMutableClone(temp)) : temp);
     return inlineExpressions(expressions);
 
-    function reduceProperty(expressions: Expression[], property: ObjectLiteralElementLike) {
+    function reduceProperty(expressions: qt.Expression[], property: ObjectLiteralElementLike) {
       if (containsYield(property) && expressions.length > 0) {
         emitStatement(createExpressionStatement(inlineExpressions(expressions)));
         expressions = [];
@@ -960,11 +960,11 @@ export function transformGenerators(context: TransformationContext) {
   }
 
   /**
-   * Visits an ElementAccessExpression that contains a YieldExpression.
+   * Visits an qt.ElementAccessExpression that contains a YieldExpression.
    *
    * @param node The node to visit.
    */
-  function visitElementAccessExpression(node: ElementAccessExpression) {
+  function visitElementAccessExpression(node: qt.ElementAccessExpression) {
     if (containsYield(node.argumentExpression)) {
       // [source]
       //      a = x[yield];
@@ -1023,14 +1023,14 @@ export function transformGenerators(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function transformAndEmitStatements(statements: readonly Statement[], start = 0) {
+  function transformAndEmitStatements(statements: readonly qt.Statement[], start = 0) {
     const numStatements = statements.length;
     for (let i = start; i < numStatements; i++) {
       transformAndEmitStatement(statements[i]);
     }
   }
 
-  function transformAndEmitEmbeddedStatement(node: Statement) {
+  function transformAndEmitEmbeddedStatement(node: qt.Statement) {
     if (isBlock(node)) {
       transformAndEmitStatements(node.statements);
     } else {
@@ -1038,7 +1038,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
 
-  function transformAndEmitStatement(node: Statement): void {
+  function transformAndEmitStatement(node: qt.Statement): void {
     const savedInStatementContainingYield = inStatementContainingYield;
     if (!inStatementContainingYield) {
       inStatementContainingYield = containsYield(node);
@@ -1048,7 +1048,7 @@ export function transformGenerators(context: TransformationContext) {
     inStatementContainingYield = savedInStatementContainingYield;
   }
 
-  function transformAndEmitStatementWorker(node: Statement): void {
+  function transformAndEmitStatementWorker(node: qt.Statement): void {
     switch (node.kind) {
       case qt.SyntaxKind.Block:
         return transformAndEmitBlock(node);
@@ -1093,7 +1093,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
 
-  function transformAndEmitExpressionStatement(node: ExpressionStatement) {
+  function transformAndEmitExpressionStatement(node: qt.ExpressionStatement) {
     emitStatement(visitNode(node, visitor, isStatement));
   }
 
@@ -1107,7 +1107,7 @@ export function transformGenerators(context: TransformationContext) {
     const variables = getInitializedVariables(node);
     const numVariables = variables.length;
     let variablesWritten = 0;
-    let pendingExpressions: Expression[] = [];
+    let pendingExpressions: qt.Expression[] = [];
     while (variablesWritten < numVariables) {
       for (let i = variablesWritten; i < numVariables; i++) {
         const variable = variables[i];
@@ -1363,7 +1363,7 @@ export function transformGenerators(context: TransformationContext) {
       markLabel(conditionLabel);
       emitBreakWhenFalse(endLabel, createLessThan(keysIndex, createPropertyAccess(keysArray, 'length')));
 
-      let variable: Expression;
+      let variable: qt.Expression;
       if (isVariableDeclarationList(initializer)) {
         for (const variable of initializer.declarations) {
           hoistVariableDeclaration(variable.name);
@@ -1434,7 +1434,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
 
-  function visitContinueStatement(node: ContinueStatement): Statement {
+  function visitContinueStatement(node: ContinueStatement): qt.Statement {
     if (inStatementContainingYield) {
       const label = findContinueTarget(node.label && idText(node.label));
       if (label > 0) {
@@ -1455,7 +1455,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
 
-  function visitBreakStatement(node: BreakStatement): Statement {
+  function visitBreakStatement(node: BreakStatement): qt.Statement {
     if (inStatementContainingYield) {
       const label = findBreakTarget(node.label && idText(node.label));
       if (label > 0) {
@@ -1717,7 +1717,7 @@ export function transformGenerators(context: TransformationContext) {
     return node;
   }
 
-  function substituteExpression(node: Expression): Expression {
+  function substituteExpression(node: qt.Expression): qt.Expression {
     if (isIdentifier(node)) {
       return substituteExpressionIdentifier(node);
     }
@@ -1744,8 +1744,8 @@ export function transformGenerators(context: TransformationContext) {
     return node;
   }
 
-  function cacheExpression(node: Expression): Identifier {
-    if (isGeneratedIdentifier(node) || qu.getEmitFlags(node) & EmitFlags.HelperName) {
+  function cacheExpression(node: qt.Expression): Identifier {
+    if (isGeneratedIdentifier(node) || qu.getEmitFlags(node) & qt.EmitFlags.HelperName) {
       return node;
     }
 
@@ -2169,7 +2169,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param label A label.
    */
-  function createLabel(label: Label | undefined): Expression {
+  function createLabel(label: Label | undefined): qt.Expression {
     if (label !== undefined && label > 0) {
       if (labelExpressions === undefined) {
         labelExpressions = [];
@@ -2214,7 +2214,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression The expression for the return statement.
    * @param location An optional source map location for the statement.
    */
-  function createInlineReturn(expression?: Expression, location?: qt.TextRange): ReturnStatement {
+  function createInlineReturn(expression?: qt.Expression, location?: qt.TextRange): ReturnStatement {
     return setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
   }
 
@@ -2233,11 +2233,11 @@ export function transformGenerators(context: TransformationContext) {
   }
 
   /**
-   * Emits a Statement.
+   * Emits a qt.Statement.
    *
    * @param node A statement.
    */
-  function emitStatement(node: Statement): void {
+  function emitStatement(node: qt.Statement): void {
     if (node) {
       emitWorker(OpCode.Statement, [node]);
     } else {
@@ -2252,7 +2252,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param right The right-hand side of the assignment.
    * @param location An optional source map location for the assignment.
    */
-  function emitAssignment(left: Expression, right: Expression, location?: qt.TextRange): void {
+  function emitAssignment(left: qt.Expression, right: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.Assign, [left, right], location);
   }
 
@@ -2274,7 +2274,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param condition The condition.
    * @param location An optional source map location for the assignment.
    */
-  function emitBreakWhenTrue(label: Label, condition: Expression, location?: qt.TextRange): void {
+  function emitBreakWhenTrue(label: Label, condition: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.BreakWhenTrue, [label, condition], location);
   }
 
@@ -2286,7 +2286,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param condition The condition.
    * @param location An optional source map location for the assignment.
    */
-  function emitBreakWhenFalse(label: Label, condition: Expression, location?: qt.TextRange): void {
+  function emitBreakWhenFalse(label: Label, condition: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.BreakWhenFalse, [label, condition], location);
   }
 
@@ -2296,7 +2296,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression An optional value for the yield operation.
    * @param location An optional source map location for the assignment.
    */
-  function emitYieldStar(expression?: Expression, location?: qt.TextRange): void {
+  function emitYieldStar(expression?: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.YieldStar, [expression], location);
   }
 
@@ -2306,7 +2306,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression An optional value for the yield operation.
    * @param location An optional source map location for the assignment.
    */
-  function emitYield(expression?: Expression, location?: qt.TextRange): void {
+  function emitYield(expression?: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.Yield, [expression], location);
   }
 
@@ -2316,7 +2316,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression An optional value for the operation.
    * @param location An optional source map location for the assignment.
    */
-  function emitReturn(expression?: Expression, location?: qt.TextRange): void {
+  function emitReturn(expression?: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.Return, [expression], location);
   }
 
@@ -2326,7 +2326,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression A value for the operation.
    * @param location An optional source map location for the assignment.
    */
-  function emitThrow(expression: Expression, location?: qt.TextRange): void {
+  function emitThrow(expression: qt.Expression, location?: qt.TextRange): void {
     emitWorker(OpCode.Throw, [expression], location);
   }
 
@@ -2377,13 +2377,13 @@ export function transformGenerators(context: TransformationContext) {
     withBlockStack = undefined;
 
     const buildResult = buildStatements();
-    return createGeneratorHelper(context, setEmitFlags(createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, state)], /*type*/ undefined, createBlock(buildResult, /*multiLine*/ buildResult.length > 0)), EmitFlags.ReuseTempVariableScope));
+    return createGeneratorHelper(context, setEmitFlags(createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, state)], /*type*/ undefined, createBlock(buildResult, /*multiLine*/ buildResult.length > 0)), qt.EmitFlags.ReuseTempVariableScope));
   }
 
   /**
    * Builds the statements for the generator function body.
    */
-  function buildStatements(): Statement[] {
+  function buildStatements(): qt.Statement[] {
     if (operations) {
       for (let operationIndex = 0; operationIndex < operations.length; operationIndex++) {
         writeOperation(operationIndex);
@@ -2652,7 +2652,7 @@ export function transformGenerators(context: TransformationContext) {
    *
    * @param statement A statement to write.
    */
-  function writeStatement(statement: Statement): void {
+  function writeStatement(statement: qt.Statement): void {
     if (statement) {
       if (!statements) {
         statements = [statement];
@@ -2669,7 +2669,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param right The right-hand side of the assignment.
    * @param operationLocation The source map location for the operation.
    */
-  function writeAssign(left: Expression, right: Expression, operationLocation: qt.TextRange | undefined): void {
+  function writeAssign(left: qt.Expression, right: qt.Expression, operationLocation: qt.TextRange | undefined): void {
     writeStatement(setTextRange(createExpressionStatement(createAssignment(left, right)), operationLocation));
   }
 
@@ -2679,7 +2679,7 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression The value to throw.
    * @param operationLocation The source map location for the operation.
    */
-  function writeThrow(expression: Expression, operationLocation: qt.TextRange | undefined): void {
+  function writeThrow(expression: qt.Expression, operationLocation: qt.TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     lastOperationWasCompletion = true;
     writeStatement(setTextRange(createThrow(expression), operationLocation));
@@ -2691,10 +2691,10 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression The value to return.
    * @param operationLocation The source map location for the operation.
    */
-  function writeReturn(expression: Expression | undefined, operationLocation: qt.TextRange | undefined): void {
+  function writeReturn(expression: qt.Expression | undefined, operationLocation: qt.TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     lastOperationWasCompletion = true;
-    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation), qt.EmitFlags.NoTokenSourceMaps));
   }
 
   /**
@@ -2705,7 +2705,7 @@ export function transformGenerators(context: TransformationContext) {
    */
   function writeBreak(label: Label, operationLocation: qt.TextRange | undefined): void {
     lastOperationWasAbrupt = true;
-    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), qt.EmitFlags.NoTokenSourceMaps));
   }
 
   /**
@@ -2715,8 +2715,8 @@ export function transformGenerators(context: TransformationContext) {
    * @param condition The condition for the Break.
    * @param operationLocation The source map location for the operation.
    */
-  function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: qt.TextRange | undefined): void {
-    writeStatement(setEmitFlags(createIf(condition, setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)), EmitFlags.SingleLine));
+  function writeBreakWhenTrue(label: Label, condition: qt.Expression, operationLocation: qt.TextRange | undefined): void {
+    writeStatement(setEmitFlags(createIf(condition, setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), qt.EmitFlags.NoTokenSourceMaps)), qt.EmitFlags.SingleLine));
   }
 
   /**
@@ -2726,8 +2726,8 @@ export function transformGenerators(context: TransformationContext) {
    * @param condition The condition for the Break.
    * @param operationLocation The source map location for the operation.
    */
-  function writeBreakWhenFalse(label: Label, condition: Expression, operationLocation: qt.TextRange | undefined): void {
-    writeStatement(setEmitFlags(createIf(createLogicalNot(condition), setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)), EmitFlags.SingleLine));
+  function writeBreakWhenFalse(label: Label, condition: qt.Expression, operationLocation: qt.TextRange | undefined): void {
+    writeStatement(setEmitFlags(createIf(createLogicalNot(condition), setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), qt.EmitFlags.NoTokenSourceMaps)), qt.EmitFlags.SingleLine));
   }
 
   /**
@@ -2736,9 +2736,9 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression The expression to yield.
    * @param operationLocation The source map location for the operation.
    */
-  function writeYield(expression: Expression, operationLocation: qt.TextRange | undefined): void {
+  function writeYield(expression: qt.Expression, operationLocation: qt.TextRange | undefined): void {
     lastOperationWasAbrupt = true;
-    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation), qt.EmitFlags.NoTokenSourceMaps));
   }
 
   /**
@@ -2747,9 +2747,9 @@ export function transformGenerators(context: TransformationContext) {
    * @param expression The expression to yield.
    * @param operationLocation The source map location for the operation.
    */
-  function writeYieldStar(expression: Expression, operationLocation: qt.TextRange | undefined): void {
+  function writeYieldStar(expression: qt.Expression, operationLocation: qt.TextRange | undefined): void {
     lastOperationWasAbrupt = true;
-    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.YieldStar), expression])), operationLocation), qt.EmitFlags.NoTokenSourceMaps));
   }
 
   /**
