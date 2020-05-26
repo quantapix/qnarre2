@@ -201,7 +201,7 @@ interface CompilerHostLikeForCache {
   writeFile?: WriteFileCallback;
 }
 
-export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => Path, getSourceFile?: CompilerHost['getSourceFile']) {
+export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) =>  qt.Path, getSourceFile?: CompilerHost['getSourceFile']) {
   const originalReadFile = host.readFile;
   const originalFileExists = host.fileExists;
   const originalDirectoryExists = host.directoryExists;
@@ -218,7 +218,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     if (value !== undefined) return value !== false ? value : undefined;
     return setReadFileCache(key, fileName);
   };
-  const setReadFileCache = (key: Path, fileName: string) => {
+  const setReadFileCache = (key:  qt.Path, fileName: string) => {
     const newValue = originalReadFile.call(host, fileName);
     readFileCache.set(key, newValue !== undefined ? newValue : false);
     return newValue;
@@ -539,7 +539,7 @@ interface RefFile extends qt.TextRange {
  * Determines if program structure is upto date or needs to be recreated
  */
 
-export function isProgramUptoDate(program: Program | undefined, rootFileNames: string[], newOptions: qt.CompilerOptions, getSourceVersion: (path: Path, fileName: string) => string | undefined, fileExists: (fileName: string) => boolean, hasInvalidatedResolution: HasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames: boolean, projectReferences: readonly qt.ProjectReference[] | undefined): boolean {
+export function isProgramUptoDate(program: Program | undefined, rootFileNames: string[], newOptions: qt.CompilerOptions, getSourceVersion: (path:  qt.Path, fileName: string) => string | undefined, fileExists: (fileName: string) => boolean, hasInvalidatedResolution: HasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames: boolean, projectReferences: readonly qt.ProjectReference[] | undefined): boolean {
   // If we haven't created a program yet or have changed automatic type directives, then it is not up-to-date
   if (!program || hasChangedAutomaticTypeDirectiveNames) {
     return false;
@@ -773,7 +773,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
    * - undefined otherwise
    */
   const filesByName = qc.createMap<SourceFile | false | undefined>();
-  let missingFilePaths: readonly Path[] | undefined;
+  let missingFilePaths: readonly  qt.Path[] | undefined;
   // stores 'filename -> file association' ignoring case
   // used to track cases when two file names differ only in casing
   const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? qc.createMap<SourceFile>() : undefined;
@@ -864,7 +864,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       }
     }
 
-    missingFilePaths = qc.arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as Path) : undefined)));
+    missingFilePaths = qc.arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as  qt.Path) : undefined)));
     files = stableSort(processingDefaultLibFiles, compareDefaultLibFiles).concat(processingOtherFiles);
     processingDefaultLibFiles = undefined;
     processingOtherFiles = undefined;
@@ -993,7 +993,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return moduleResolutionCache && resolveModuleNameFromCache(moduleName, containingFile, moduleResolutionCache);
   }
 
-  function toPath(fileName: string): Path {
+  function toPath(fileName: string):  qt.Path {
     return ts.toPath(fileName, currentDirectory, getCanonicalFileName);
   }
 
@@ -1320,7 +1320,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
           // moduleAugmentations has changed
           oldProgram.structureIsReused = StructureIsReused.SafeModules;
         }
-        if ((oldSourceFile.flags & NodeFlags.PermanentlySetIncrementalFlags) !== (newSourceFile.flags & NodeFlags.PermanentlySetIncrementalFlags)) {
+        if ((oldSourceFile.flags &  qt.NodeFlags.PermanentlySetIncrementalFlags) !== (newSourceFile.flags &  qt.NodeFlags.PermanentlySetIncrementalFlags)) {
           // dynamicImport has changed
           oldProgram.structureIsReused = StructureIsReused.SafeModules;
         }
@@ -1567,7 +1567,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return getSourceFileByPath(toPath(fileName));
   }
 
-  function getSourceFileByPath(path: Path): SourceFile | undefined {
+  function getSourceFileByPath(path:  qt.Path): SourceFile | undefined {
     return filesByName.get(path) || undefined;
   }
 
@@ -1825,7 +1825,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             diagnostics.push(qu.createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
             return 'skip';
           case qt.SyntaxKind.ModuleDeclaration:
-            const moduleKeyword = node.flags & NodeFlags.Namespace ? qs.tokenToString(SyntaxKind.NamespaceKeyword) : qs.tokenToString(SyntaxKind.ModuleKeyword);
+            const moduleKeyword = node.flags &  qt.NodeFlags.Namespace ? qs.tokenToString(SyntaxKind.NamespaceKeyword) : qs.tokenToString(SyntaxKind.ModuleKeyword);
             Debug.assertIsDefined(moduleKeyword);
             diagnostics.push(qu.createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
             return 'skip';
@@ -2047,7 +2047,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     for (const node of file.statements) {
       collectModuleReferences(node, /*inAmbientModule*/ false);
     }
-    if (file.flags & NodeFlags.PossiblyContainsDynamicImport || isJavaScriptFile) {
+    if (file.flags &  qt.NodeFlags.PossiblyContainsDynamicImport || isJavaScriptFile) {
       collectDynamicImportOrRequireCalls(file);
     }
 
@@ -2205,7 +2205,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     fileProcessingDiagnostics.add(refToReportErrorOn ? createFileDiagnosticAtReference(refToReportErrorOn, Diagnostics.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName) : createRefFileDiagnostic(refFile, Diagnostics.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName));
   }
 
-  function createRedirectSourceFile(redirectTarget: SourceFile, unredirected: SourceFile, fileName: string, path: Path, resolvedPath: Path, originalFileName: string): SourceFile {
+  function createRedirectSourceFile(redirectTarget: SourceFile, unredirected: SourceFile, fileName: string, path:  qt.Path, resolvedPath:  qt.Path, originalFileName: string): SourceFile {
     const redirect: SourceFile = Object.create(redirectTarget);
     redirect.fileName = fileName;
     redirect.path = path;
@@ -2235,7 +2235,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   // Get source file from normalized fileName
-  function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: RefFile | undefined, packageId: qt.PackageId | undefined): SourceFile | undefined {
+  function findSourceFile(fileName: string, path:  qt.Path, isDefaultLib: boolean, ignoreNoDefaultLib: boolean, refFile: RefFile | undefined, packageId: qt.PackageId | undefined): SourceFile | undefined {
     if (useSourceOfProjectReferenceRedirect) {
       let source = getSourceOfProjectReferenceRedirect(fileName);
       // If preserveSymlinks is true, module resolution wont jump the symlink
@@ -2298,7 +2298,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       return file || undefined;
     }
 
-    let redirectedPath: Path | undefined;
+    let redirectedPath:  qt.Path | undefined;
     if (refFile && !useSourceOfProjectReferenceRedirect) {
       const redirectProject = getProjectReferenceRedirectProject(fileName);
       if (redirectProject) {
@@ -2392,7 +2392,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function addFileToFilesByName(file: SourceFile | undefined, path: Path, redirectedPath: Path | undefined) {
+  function addFileToFilesByName(file: SourceFile | undefined, path:  qt.Path, redirectedPath:  qt.Path | undefined) {
     if (redirectedPath) {
       filesByName.set(redirectedPath, file);
       filesByName.set(path, file || false);
@@ -2440,7 +2440,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return referencedProjectPath && getResolvedProjectReferenceByPath(referencedProjectPath);
   }
 
-  function forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined {
+  function forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath:  qt.Path) => T | undefined): T | undefined {
     return forEachProjectReference(projectReferences, resolvedProjectReferences, (resolvedRef, index, parent) => {
       const ref = (parent ? parent.commandLine.projectReferences : projectReferences)![index];
       const resolvedRefPath = toPath(resolveProjectReferencePath(ref));
@@ -2516,7 +2516,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
   }
 
-  function getResolvedProjectReferenceByPath(projectReferencePath: Path): ResolvedProjectReference | undefined {
+  function getResolvedProjectReferenceByPath(projectReferencePath:  qt.Path): ResolvedProjectReference | undefined {
     if (!projectReferenceRedirects) {
       return undefined;
     }
@@ -2672,7 +2672,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         const elideImport = isJsFileFromNodeModules && currentNodeModulesDepth > maxNodeModuleJsDepth;
         // Don't add the file if it has a bad extension (e.g. 'tsx' if we don't have '--allowJs')
         // This may still end up being an untyped module -- the file won't be included but imports will be allowed.
-        const shouldAddFile = resolvedFileName && !getResolutionDiagnostic(options, resolution) && !options.noResolve && i < file.imports.length && !elideImport && !(isJsFile && !options.allowJs) && (isInJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.JSDoc));
+        const shouldAddFile = resolvedFileName && !getResolutionDiagnostic(options, resolution) && !options.noResolve && i < file.imports.length && !elideImport && !(isJsFile && !options.allowJs) && (isInJSFile(file.imports[i]) || !(file.imports[i].flags &  qt.NodeFlags.JSDoc));
 
         if (elideImport) {
           modulesWithElidedImports.set(file.path, true);
@@ -3249,16 +3249,16 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
 interface SymlinkedDirectory {
   real: string;
-  realPath: Path;
+  realPath:  qt.Path;
 }
 
 interface HostForUseSourceOfProjectReferenceRedirect {
   compilerHost: CompilerHost;
   useSourceOfProjectReferenceRedirect: boolean;
-  toPath(fileName: string): Path;
+  toPath(fileName: string):  qt.Path;
   getResolvedProjectReferences(): readonly (ResolvedProjectReference | undefined)[] | undefined;
   getSourceOfProjectReferenceRedirect(fileName: string): SourceOfProjectReferenceRedirect | undefined;
-  forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined;
+  forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath:  qt.Path) => T | undefined): T | undefined;
 }
 
 function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSourceOfProjectReferenceRedirect) {
@@ -3369,7 +3369,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     if (symlinkedDirectories.has(directoryPath)) return;
 
     const real = qp.normalizePath(originalRealpath.call(host.compilerHost, directory));
-    let realPath: Path;
+    let realPath:  qt.Path;
     if (real === directory || (realPath = qp.ensureTrailingDirectorySeparator(host.toPath(real))) === directoryPath) {
       // not symlinked
       symlinkedDirectories.set(directoryPath, false);

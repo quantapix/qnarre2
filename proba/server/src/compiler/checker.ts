@@ -637,7 +637,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
         diagnostics = addRange(diagnostics, suggestionDiagnostics.getDiagnostics(file.fileName));
         checkUnusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
-          if (!qu.containsParseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient))) {
+          if (!qu.containsParseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags &  qt.NodeFlags.Ambient))) {
             (diagnostics || (diagnostics = [])).push({ ...diag, category: DiagnosticCategory.Suggestion });
           }
         });
@@ -1207,7 +1207,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     } else {
       // find a module that about to be augmented
       // do not validate names of augmentations that are defined in ambient context
-      const moduleNotFoundError = !(moduleName.parent.parent.flags & NodeFlags.Ambient) ? Diagnostics.Invalid_module_name_in_augmentation_module_0_cannot_be_found : undefined;
+      const moduleNotFoundError = !(moduleName.parent.parent.flags &  qt.NodeFlags.Ambient) ? Diagnostics.Invalid_module_name_in_augmentation_module_0_cannot_be_found : undefined;
       let mainModule = resolveExternalModuleNameWorker(moduleName, moduleName, moduleNotFoundError, /*isForAugmentation*/ true);
       if (!mainModule) {
         return;
@@ -1322,7 +1322,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const useFile = qu.getSourceFileOfNode(usage);
     const declContainer = qu.getEnclosingBlockScopeContainer(declaration);
     if (declarationFile !== useFile) {
-      if ((moduleKind && (declarationFile.externalModuleIndicator || useFile.externalModuleIndicator)) || (!compilerOptions.outFile && !compilerOptions.out) || isInTypeQuery(usage) || declaration.flags & NodeFlags.Ambient) {
+      if ((moduleKind && (declarationFile.externalModuleIndicator || useFile.externalModuleIndicator)) || (!compilerOptions.outFile && !compilerOptions.out) || isInTypeQuery(usage) || declaration.flags &  qt.NodeFlags.Ambient) {
         // nodes are in different files and order cannot be determined
         return true;
       }
@@ -1380,7 +1380,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return true;
     }
 
-    if (!!(usage.flags & NodeFlags.JSDoc) || isInTypeQuery(usage) || usageInTypeDeclaration()) {
+    if (!!(usage.flags &  qt.NodeFlags.JSDoc) || isInTypeQuery(usage) || usageInTypeDeclaration()) {
       return true;
     }
     if (isUsedInFunctionOrInstanceProperty(usage, declaration)) {
@@ -1611,7 +1611,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         // falls through
         case qt.SyntaxKind.ModuleDeclaration:
           const moduleExports = getSymbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
-          if (location.kind === qt.SyntaxKind.SourceFile || (isModuleDeclaration(location) && location.flags & NodeFlags.Ambient && !qu.isGlobalScopeAugmentation(location))) {
+          if (location.kind === qt.SyntaxKind.SourceFile || (isModuleDeclaration(location) && location.flags &  qt.NodeFlags.Ambient && !qu.isGlobalScopeAugmentation(location))) {
             // It's an external module. First see if the module has an export default and if the local
             // name of that export default matches.
             if ((result = moduleExports.get(InternalSymbolName.Default))) {
@@ -1908,7 +1908,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
 
       // If we're in an external module, we can't reference value symbols created from UMD export declarations
-      if (result && isInExternalModule && (meaning & SymbolFlags.Value) === SymbolFlags.Value && !(originalLocation!.flags & NodeFlags.JSDoc)) {
+      if (result && isInExternalModule && (meaning & SymbolFlags.Value) === SymbolFlags.Value && !(originalLocation!.flags &  qt.NodeFlags.JSDoc)) {
         const merged = getMergedSymbol(result);
         if (length(merged.declarations) && every(merged.declarations, (d) => isNamespaceExportDeclaration(d) || (isSourceFile(d) && !!d.symbol.globalExports))) {
           errorOrSuggestion(!compilerOptions.allowUmdGlobalAccess, errorLocation!, Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead, unescapeLeadingUnderscores(name));
@@ -2161,7 +2161,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
     if (declaration === undefined) return Debug.fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
 
-    if (!(declaration.flags & NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(declaration, errorLocation)) {
+    if (!(declaration.flags &  qt.NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(declaration, errorLocation)) {
       let diagnosticMessage;
       const declarationName = qu.declarationNameToString(getNameOfDeclaration(declaration));
       if (result.flags & SymbolFlags.BlockScopedVariable) {
@@ -2841,7 +2841,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getAssignmentDeclarationLocation(node: TypeReferenceNode): Node | undefined {
-    const typeAlias =qu.findAncestor(node, (node) => (!(isJSDocNode(node) || node.flags & NodeFlags.JSDoc) ? 'quit' : isJSDocTypeAlias(node)));
+    const typeAlias =qu.findAncestor(node, (node) => (!(isJSDocNode(node) || node.flags &  qt.NodeFlags.JSDoc) ? 'quit' : isJSDocTypeAlias(node)));
     if (typeAlias) {
       return;
     }
@@ -3943,7 +3943,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     };
 
     function withContext<T>(enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker: SymbolTracker | undefined, cb: (context: NodeBuilderContext) => T): T | undefined {
-      Debug.assert(enclosingDeclaration === undefined || (enclosingDeclaration.flags & NodeFlags.Synthesized) === 0);
+      Debug.assert(enclosingDeclaration === undefined || (enclosingDeclaration.flags &  qt.NodeFlags.Synthesized) === 0);
       const context: NodeBuilderContext = {
         enclosingDeclaration,
         flags: flags || NodeBuilderFlags.None,
@@ -5670,7 +5670,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           // Classes, namespaces, variables, functions, interfaces, and types should all be `export`ed in a module context if not private
           newModifierFlags |= qt.ModifierFlags.Export;
         }
-        if (addingDeclare && !(newModifierFlags & qt.ModifierFlags.Export) && (!enclosingDeclaration || !(enclosingDeclaration.flags & NodeFlags.Ambient)) && (isEnumDeclaration(node) || isVariableStatement(node) || isFunctionDeclaration(node) || isClassDeclaration(node) || isModuleDeclaration(node))) {
+        if (addingDeclare && !(newModifierFlags & qt.ModifierFlags.Export) && (!enclosingDeclaration || !(enclosingDeclaration.flags &  qt.NodeFlags.Ambient)) && (isEnumDeclaration(node) || isVariableStatement(node) || isFunctionDeclaration(node) || isClassDeclaration(node) || isModuleDeclaration(node))) {
           // Classes, namespaces, variables, enums, and functions all need `declare` modifiers to be valid in a declaration file top-level scope
           newModifierFlags |= qt.ModifierFlags.Ambient;
         }
@@ -5766,7 +5766,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
               )
             ),
           ]);
-          addResult(createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody, NodeFlags.Namespace), qt.ModifierFlags.None);
+          addResult(createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody,  qt.NodeFlags.Namespace), qt.ModifierFlags.None);
         }
       }
 
@@ -5804,7 +5804,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           } else {
             // A Class + Property merge is made for a `module.exports.Member = class {}`, and it doesn't serialize well as either a class _or_ a property symbol - in fact, _it behaves like an alias!_
             // `var` is `FunctionScopedVariable`, `const` and `let` are `BlockScopedVariable`, and `module.exports.thing =` is `Property`
-            const flags = !(symbol.flags & SymbolFlags.BlockScopedVariable) ? undefined : isConstVariable(symbol) ? NodeFlags.Const : NodeFlags.Let;
+            const flags = !(symbol.flags & SymbolFlags.BlockScopedVariable) ? undefined : isConstVariable(symbol) ?  qt.NodeFlags.Const :  qt.NodeFlags.Let;
             const name = needsPostExportDefault || !(symbol.flags & SymbolFlags.Property) ? localName : getUnusedName(localName, symbol);
             let textRange: Node | undefined = symbol.declarations && find(symbol.declarations, (d) => isVariableDeclaration(d));
             if (textRange && isVariableDeclarationList(textRange.parent) && textRange.parent.declarations.length === 1) {
@@ -5876,8 +5876,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           // emit akin to the above would be needed.
 
           // Add a namespace
-          const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), createModuleBlock([]), NodeFlags.Namespace);
-          fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
+          const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), createModuleBlock([]),  qt.NodeFlags.Namespace);
+          fakespace.flags ^=  qt.NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
           fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
           fakespace.locals =qu.createSymbolTable(props);
           fakespace.symbol = props[0].parent!;
@@ -5894,7 +5894,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           addingDeclare = oldAddingDeclare;
           const declarations = results;
           results = oldResults;
-          fakespace.flags ^= NodeFlags.Synthesized; // reset synthesized
+          fakespace.flags ^=  qt.NodeFlags.Synthesized; // reset synthesized
           fakespace.parent = undefined!;
           fakespace.locals = undefined!;
           fakespace.symbol = undefined!;
@@ -6115,7 +6115,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             // If there are no index signatures and `typeToSerialize` is an object type, emit as a namespace instead of a const
             serializeAsFunctionNamespaceMerge(typeToSerialize, symbol, varName, isExportAssignment ? qt.ModifierFlags.None : qt.ModifierFlags.Export);
           } else {
-            const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(varName, serializeTypeForDeclaration(context, typeToSerialize, symbol, enclosingDeclaration, includePrivateSymbol, bundled))], NodeFlags.Const));
+            const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(varName, serializeTypeForDeclaration(context, typeToSerialize, symbol, enclosingDeclaration, includePrivateSymbol, bundled))],  qt.NodeFlags.Const));
             addResult(statement, name === varName ? qt.ModifierFlags.Export : qt.ModifierFlags.None);
           }
           if (isExportAssignment) {
@@ -6291,7 +6291,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           return ref;
         }
         const tempName = getUnusedName(`${rootName}_base`);
-        const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(tempName, typeToTypeNodeHelper(staticType, context))], NodeFlags.Const));
+        const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(tempName, typeToTypeNodeHelper(staticType, context))],  qt.NodeFlags.Const));
         addResult(statement, qt.ModifierFlags.None);
         return createExpressionWithTypeArguments(/*typeArgs*/ undefined, createIdentifier(tempName));
       }
@@ -6571,7 +6571,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           }
           const parent = getDeclarationContainer(node);
           // If the node is not exported or it is not ambient module element (except import declaration)
-          if (!(getCombinedModifierFlags(node as Declaration) & qt.ModifierFlags.Export) && !(node.kind !== qt.SyntaxKind.ImportEqualsDeclaration && parent.kind !== qt.SyntaxKind.SourceFile && parent.flags & NodeFlags.Ambient)) {
+          if (!(getCombinedModifierFlags(node as Declaration) & qt.ModifierFlags.Export) && !(node.kind !== qt.SyntaxKind.ImportEqualsDeclaration && parent.kind !== qt.SyntaxKind.SourceFile && parent.flags &  qt.NodeFlags.Ambient)) {
             return isGlobalSourceFile(parent);
           }
           // Exported members/ambient module elements (exception import declaration) are visible if parent is visible
@@ -6900,7 +6900,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return parentType;
     }
     // Relax null check on ambient destructuring parameters, since the parameters have no implementation and are just documentation
-    if (strictNullChecks && declaration.flags & NodeFlags.Ambient && isParameterDeclaration(declaration)) {
+    if (strictNullChecks && declaration.flags &  qt.NodeFlags.Ambient && isParameterDeclaration(declaration)) {
       parentType = getNonNullableType(parentType);
     }
     // Filter `undefined` from the type we check against if the parent has an initializer and that initializer is not possibly `undefined`
@@ -7013,11 +7013,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return addOptionality(declaredType, isOptional);
     }
 
-    if ((noImplicitAny || isInJSFile(declaration)) && declaration.kind === qt.SyntaxKind.VariableDeclaration && !isBindingPattern(declaration.name) && !(getCombinedModifierFlags(declaration) & qt.ModifierFlags.Export) && !(declaration.flags & NodeFlags.Ambient)) {
+    if ((noImplicitAny || isInJSFile(declaration)) && declaration.kind === qt.SyntaxKind.VariableDeclaration && !isBindingPattern(declaration.name) && !(getCombinedModifierFlags(declaration) & qt.ModifierFlags.Export) && !(declaration.flags &  qt.NodeFlags.Ambient)) {
       // If --noImplicitAny is on or the declaration is in a Javascript file,
       // use control flow tracked 'any' type for non-ambient, non-exported var or let variables with no
       // initializer or a 'null' or 'undefined' initializer.
-      if (!(getCombinedNodeFlags(declaration) & NodeFlags.Const) && (!declaration.initializer || isNullOrUndefined(declaration.initializer))) {
+      if (!(getCombinedNodeFlags(declaration) &  qt.NodeFlags.Const) && (!declaration.initializer || isNullOrUndefined(declaration.initializer))) {
         return autoType;
       }
       // Use control flow tracked 'any[]' type for non-ambient, non-exported variables with an empty array
@@ -8176,7 +8176,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function isThislessInterface(symbol: symbol): boolean {
     for (const declaration of symbol.declarations) {
       if (declaration.kind === qt.SyntaxKind.InterfaceDeclaration) {
-        if (declaration.flags & NodeFlags.ContainsThis) {
+        if (declaration.flags &  qt.NodeFlags.ContainsThis) {
           return false;
         }
         const baseTypeNodes = getInterfaceBaseTypeNodes(declaration);
@@ -8275,7 +8275,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function isLiteralEnumMember(member: EnumMember) {
     const expr = member.initializer;
     if (!expr) {
-      return !(member.flags & NodeFlags.Ambient);
+      return !(member.flags &  qt.NodeFlags.Ambient);
     }
     switch (expr.kind) {
       case qt.SyntaxKind.StringLiteral:
@@ -11036,7 +11036,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function isJSDocTypeReference(node: qt.Node): node is TypeReferenceNode {
-    return !!(node.flags & NodeFlags.JSDoc) && (node.kind === qt.SyntaxKind.TypeReference || node.kind === qt.SyntaxKind.ImportType);
+    return !!(node.flags &  qt.NodeFlags.JSDoc) && (node.kind === qt.SyntaxKind.TypeReference || node.kind === qt.SyntaxKind.ImportType);
   }
 
   function checkNoTypeArguments(node: qt.NodeWithTypeArguments, symbol?: symbol) {
@@ -12619,7 +12619,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         links.resolvedSymbol = unknownSymbol;
         return (links.resolvedType = errorType);
       }
-      const targetMeaning = node.isTypeOf ? SymbolFlags.Value : node.flags & NodeFlags.JSDoc ? SymbolFlags.Value | SymbolFlags.Type : SymbolFlags.Type;
+      const targetMeaning = node.isTypeOf ? SymbolFlags.Value : node.flags &  qt.NodeFlags.JSDoc ? SymbolFlags.Value | SymbolFlags.Type : SymbolFlags.Type;
       // TODO: Future work: support unions/generics/whatever via a deferred import-type
       const innerModuleSymbol = resolveExternalModuleName(node, node.argument.literal);
       if (!innerModuleSymbol) {
@@ -12959,7 +12959,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
     // /** @return {this} */
     // x.prototype.m = function() { ... }
-    const host = node.flags & NodeFlags.JSDoc ? getHostSignatureFromJSDoc(node) : undefined;
+    const host = node.flags &  qt.NodeFlags.JSDoc ? getHostSignatureFromJSDoc(node) : undefined;
     if (host && isFunctionExpression(host) && isBinaryExpression(host.parent) && getAssignmentDeclarationKind(host.parent) === qt.AssignmentDeclarationKind.PrototypeProperty) {
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(host.parent.left)!.parent!).thisType!;
     }
@@ -13025,7 +13025,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       case qt.SyntaxKind.NeverKeyword:
         return neverType;
       case qt.SyntaxKind.ObjectKeyword:
-        return node.flags & NodeFlags.JavaScriptFile && !noImplicitAny ? anyType : nonPrimitiveType;
+        return node.flags &  qt.NodeFlags.JavaScriptFile && !noImplicitAny ? anyType : nonPrimitiveType;
       case qt.SyntaxKind.ThisType:
       case qt.SyntaxKind.ThisKeyword:
         return getTypeFromThisTypeNode(node as ThisExpression | ThisTypeNode);
@@ -14301,11 +14301,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
     const id = getSymbolId(sourceSymbol) + ',' + getSymbolId(targetSymbol);
     const entry = enumRelation.get(id);
-    if (entry !== undefined && !(!(entry & RelationComparisonResult.Reported) && entry & RelationComparisonResult.Failed && errorReporter)) {
-      return !!(entry & RelationComparisonResult.Succeeded);
+    if (entry !== undefined && !(!(entry &  qt.RelationComparisonResult.Reported) && entry &  qt.RelationComparisonResult.Failed && errorReporter)) {
+      return !!(entry &  qt.RelationComparisonResult.Succeeded);
     }
     if (sourceSymbol.escapedName !== targetSymbol.escapedName || !(sourceSymbol.flags & SymbolFlags.RegularEnum) || !(targetSymbol.flags & SymbolFlags.RegularEnum)) {
-      enumRelation.set(id, RelationComparisonResult.Failed | RelationComparisonResult.Reported);
+      enumRelation.set(id,  qt.RelationComparisonResult.Failed |  qt.RelationComparisonResult.Reported);
       return false;
     }
     const targetEnumType = getTypeOfSymbol(targetSymbol);
@@ -14315,15 +14315,15 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (!targetProperty || !(targetProperty.flags & SymbolFlags.EnumMember)) {
           if (errorReporter) {
             errorReporter(Diagnostics.Property_0_is_missing_in_type_1, symbolName(property), typeToString(getDeclaredTypeOfSymbol(targetSymbol), /*enclosingDeclaration*/ undefined, TypeFormatFlags.UseFullyQualifiedType));
-            enumRelation.set(id, RelationComparisonResult.Failed | RelationComparisonResult.Reported);
+            enumRelation.set(id,  qt.RelationComparisonResult.Failed |  qt.RelationComparisonResult.Reported);
           } else {
-            enumRelation.set(id, RelationComparisonResult.Failed);
+            enumRelation.set(id,  qt.RelationComparisonResult.Failed);
           }
           return false;
         }
       }
     }
-    enumRelation.set(id, RelationComparisonResult.Succeeded);
+    enumRelation.set(id,  qt.RelationComparisonResult.Succeeded);
     return true;
   }
 
@@ -14377,7 +14377,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (source.flags & TypeFlags.Object && target.flags & TypeFlags.Object) {
       const related = relation.get(getRelationKey(source, target, IntersectionState.None, relation));
       if (related !== undefined) {
-        return !!(related & RelationComparisonResult.Succeeded);
+        return !!(related &  qt.RelationComparisonResult.Succeeded);
       }
     }
     if (source.flags & TypeFlags.StructuredOrInstantiable || target.flags & TypeFlags.StructuredOrInstantiable) {
@@ -15125,21 +15125,21 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const id = getRelationKey(source, target, intersectionState | (inPropertyCheck ? IntersectionState.InPropertyCheck : 0), relation);
       const entry = relation.get(id);
       if (entry !== undefined) {
-        if (reportErrors && entry & RelationComparisonResult.Failed && !(entry & RelationComparisonResult.Reported)) {
+        if (reportErrors && entry &  qt.RelationComparisonResult.Failed && !(entry &  qt.RelationComparisonResult.Reported)) {
           // We are elaborating errors and the cached result is an unreported failure. The result will be reported
           // as a failure, and should be updated as a reported failure by the bottom of this function.
         } else {
           if (outofbandVarianceMarkerHandler) {
             // We're in the middle of variance checking - integrate any unmeasurable/unreliable flags from this cached component
-            const saved = entry & RelationComparisonResult.ReportsMask;
-            if (saved & RelationComparisonResult.ReportsUnmeasurable) {
+            const saved = entry &  qt.RelationComparisonResult.ReportsMask;
+            if (saved &  qt.RelationComparisonResult.ReportsUnmeasurable) {
               instantiateType(source, makeFunctionTypeMapper(reportUnmeasurableMarkers));
             }
-            if (saved & RelationComparisonResult.ReportsUnreliable) {
+            if (saved &  qt.RelationComparisonResult.ReportsUnreliable) {
               instantiateType(source, makeFunctionTypeMapper(reportUnreliableMarkers));
             }
           }
-          return entry & RelationComparisonResult.Succeeded ? Ternary.True : Ternary.False;
+          return entry &  qt.RelationComparisonResult.Succeeded ? Ternary.True : Ternary.False;
         }
       }
       if (!maybeKeys) {
@@ -15168,11 +15168,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (!(expandingFlags & ExpandingFlags.Source) && isDeeplyNestedType(source, sourceStack, depth)) expandingFlags |= ExpandingFlags.Source;
       if (!(expandingFlags & ExpandingFlags.Target) && isDeeplyNestedType(target, targetStack, depth)) expandingFlags |= ExpandingFlags.Target;
       let originalHandler: typeof outofbandVarianceMarkerHandler;
-      let propagatingVarianceFlags: RelationComparisonResult = 0;
+      let propagatingVarianceFlags:  qt.RelationComparisonResult = 0;
       if (outofbandVarianceMarkerHandler) {
         originalHandler = outofbandVarianceMarkerHandler;
         outofbandVarianceMarkerHandler = (onlyUnreliable) => {
-          propagatingVarianceFlags |= onlyUnreliable ? RelationComparisonResult.ReportsUnreliable : RelationComparisonResult.ReportsUnmeasurable;
+          propagatingVarianceFlags |= onlyUnreliable ?  qt.RelationComparisonResult.ReportsUnreliable :  qt.RelationComparisonResult.ReportsUnmeasurable;
           return originalHandler!(onlyUnreliable);
         };
       }
@@ -15186,14 +15186,14 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (result === Ternary.True || depth === 0) {
           // If result is definitely true, record all maybe keys as having succeeded
           for (let i = maybeStart; i < maybeCount; i++) {
-            relation.set(maybeKeys[i], RelationComparisonResult.Succeeded | propagatingVarianceFlags);
+            relation.set(maybeKeys[i],  qt.RelationComparisonResult.Succeeded | propagatingVarianceFlags);
           }
           maybeCount = maybeStart;
         }
       } else {
         // A false result goes straight into global cache (when something is false under
         // assumptions it will also be false without assumptions)
-        relation.set(id, (reportErrors ? RelationComparisonResult.Reported : 0) | RelationComparisonResult.Failed | propagatingVarianceFlags);
+        relation.set(id, (reportErrors ?  qt.RelationComparisonResult.Reported : 0) |  qt.RelationComparisonResult.Failed | propagatingVarianceFlags);
         maybeCount = maybeStart;
       }
       return result;
@@ -18689,7 +18689,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   // parameter symbols with declarations that have explicit type annotations. Such references are
   // resolvable with no possibility of triggering circularities in control flow analysis.
   function getTypeOfDottedName(node: qt.Expression, diagnostic: Diagnostic | undefined): Type | undefined {
-    if (!(node.flags & NodeFlags.InWithStatement)) {
+    if (!(node.flags &  qt.NodeFlags.InWithStatement)) {
       switch (node.kind) {
         case qt.SyntaxKind.Identifier:
           const symbol = getExportSymbolOfValueSymbolIfExported(getResolvedSymbol(node));
@@ -19866,7 +19866,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function isConstVariable(symbol: symbol) {
-    return symbol.flags & SymbolFlags.Variable && (getDeclarationNodeFlagsFromSymbol(symbol) & NodeFlags.Const) !== 0 && getTypeOfSymbol(symbol) !== autoArrayType;
+    return symbol.flags & SymbolFlags.Variable && (getDeclarationNodeFlagsFromSymbol(symbol) &  qt.NodeFlags.Const) !== 0 && getTypeOfSymbol(symbol) !== autoArrayType;
   }
 
   /** remove undefined from the annotated type of a parameter when there is an initializer (that doesn't include undefined) */
@@ -20053,7 +20053,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       (type !== autoType && type !== autoArrayType && (!strictNullChecks || (type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void)) !== 0 || isInTypeQuery(node) || node.parent.kind === qt.SyntaxKind.ExportSpecifier)) ||
       node.parent.kind === qt.SyntaxKind.NonNullExpression ||
       (declaration.kind === qt.SyntaxKind.VariableDeclaration && (<VariableDeclaration>declaration).exclamationToken) ||
-      declaration.flags & NodeFlags.Ambient;
+      declaration.flags &  qt.NodeFlags.Ambient;
     const initialType = assumeInitialized ? (isParameter ? removeOptionalityFromDeclaredType(type, declaration as VariableLikeDeclaration) : type) : type === autoType || type === autoArrayType ? undefinedType : getOptionalType(type);
     const flowType = getFlowTypeOfReference(node, type, initialType, flowContainer, !assumeInitialized);
     // A variable is considered uninitialized when it is possible to analyze the entire control flow graph
@@ -21002,7 +21002,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   // exists. Otherwise, it is the type of the string index signature in T, if one exists.
   function getContextualTypeForObjectLiteralMethod(node: MethodDeclaration, contextFlags?: ContextFlags): Type | undefined {
     Debug.assert(qu.isObjectLiteralMethod(node));
-    if (node.flags & NodeFlags.InWithStatement) {
+    if (node.flags &  qt.NodeFlags.InWithStatement) {
       // We cannot answer semantic questions within a with block, do not proceed any further
       return undefined;
     }
@@ -21216,7 +21216,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
    * @returns the contextual type of an expression.
    */
   function getContextualType(node: qt.Expression, contextFlags?: ContextFlags): Type | undefined {
-    if (node.flags & NodeFlags.InWithStatement) {
+    if (node.flags &  qt.NodeFlags.InWithStatement) {
       // We cannot answer semantic questions within a with block, do not proceed any further
       return undefined;
     }
@@ -22102,14 +22102,14 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (!isIdentifier(node.tagName)) return Debug.fail();
         const intrinsicProp = getPropertyOfType(intrinsicElementsType, node.tagName.escapedText);
         if (intrinsicProp) {
-          links.jsxFlags |= JsxFlags.IntrinsicNamedElement;
+          links.jsxFlags |=  qt.JsxFlags.IntrinsicNamedElement;
           return (links.resolvedSymbol = intrinsicProp);
         }
 
         // Intrinsic string indexer case
         const indexSignatureType = getIndexTypeOfType(intrinsicElementsType, IndexKind.String);
         if (indexSignatureType) {
-          links.jsxFlags |= JsxFlags.IntrinsicIndexedElement;
+          links.jsxFlags |=  qt.JsxFlags.IntrinsicIndexedElement;
           return (links.resolvedSymbol = intrinsicElementsType.symbol);
         }
 
@@ -22288,9 +22288,9 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const links = getNodeLinks(node);
     if (!links.resolvedJsxElementAttributesType) {
       const symbol = getIntrinsicTagSymbol(node);
-      if (links.jsxFlags & JsxFlags.IntrinsicNamedElement) {
+      if (links.jsxFlags &  qt.JsxFlags.IntrinsicNamedElement) {
         return (links.resolvedJsxElementAttributesType = getTypeOfSymbol(symbol));
-      } else if (links.jsxFlags & JsxFlags.IntrinsicIndexedElement) {
+      } else if (links.jsxFlags &  qt.JsxFlags.IntrinsicIndexedElement) {
         return (links.resolvedJsxElementAttributesType = getIndexTypeOfType(getDeclaredTypeOfSymbol(symbol), IndexKind.String)!);
       } else {
         return (links.resolvedJsxElementAttributesType = errorType);
@@ -22415,7 +22415,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
   }
 
-  function getDeclarationNodeFlagsFromSymbol(s: symbol): NodeFlags {
+  function getDeclarationNodeFlagsFromSymbol(s: symbol):  qt.NodeFlags {
     return s.valueDeclaration ? getCombinedNodeFlags(s.valueDeclaration) : 0;
   }
 
@@ -22600,7 +22600,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkPropertyAccessExpression(node: PropertyAccessExpression) {
-    return node.flags & NodeFlags.OptionalChain ? checkPropertyAccessChain(node) : checkPropertyAccessExpressionOrQualifiedName(node, node.expression, checkNonNullExpression(node.expression), node.name);
+    return node.flags &  qt.NodeFlags.OptionalChain ? checkPropertyAccessChain(node) : checkPropertyAccessExpressionOrQualifiedName(node, node.expression, checkNonNullExpression(node.expression), node.name);
   }
 
   function checkPropertyAccessChain(node: PropertyAccessChain) {
@@ -22776,7 +22776,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const declaration = prop && prop.valueDeclaration;
       if (declaration && isInstancePropertyWithoutInitializer(declaration)) {
         const flowContainer = getControlFlowContainer(node);
-        if (flowContainer.kind === qt.SyntaxKind.Constructor && flowContainer.parent === declaration.parent && !(declaration.flags & NodeFlags.Ambient)) {
+        if (flowContainer.kind === qt.SyntaxKind.Constructor && flowContainer.parent === declaration.parent && !(declaration.flags &  qt.NodeFlags.Ambient)) {
           assumeUninitialized = true;
         }
       }
@@ -22802,7 +22802,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const declarationName = idText(right);
     if (isInPropertyInitializer(node) && !(qu.isAccessExpression(node) && qu.isAccessExpression(node.expression)) && !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right) && !isPropertyDeclaredInAncestorClass(prop)) {
       diagnosticMessage = error(right, Diagnostics.Property_0_is_used_before_its_initialization, declarationName);
-    } else if (valueDeclaration.kind === qt.SyntaxKind.ClassDeclaration && node.parent.kind !== qt.SyntaxKind.TypeReference && !(valueDeclaration.flags & NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right)) {
+    } else if (valueDeclaration.kind === qt.SyntaxKind.ClassDeclaration && node.parent.kind !== qt.SyntaxKind.TypeReference && !(valueDeclaration.flags &  qt.NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right)) {
       diagnosticMessage = error(right, Diagnostics.Class_0_used_before_its_declaration, declarationName);
     }
 
@@ -23111,7 +23111,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkIndexedAccess(node: qt.ElementAccessExpression): Type {
-    return node.flags & NodeFlags.OptionalChain ? checkElementAccessChain(node) : checkElementAccessExpression(node, checkNonNullExpression(node.expression));
+    return node.flags &  qt.NodeFlags.OptionalChain ? checkElementAccessChain(node) : checkElementAccessExpression(node, checkNonNullExpression(node.expression));
   }
 
   function checkElementAccessChain(node: qt.ElementAccessChain) {
@@ -25059,7 +25059,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (targetDeclarationKind !== qt.SyntaxKind.Unknown) {
       const decl = qu.getDeclarationOfKind(resolvedRequire, targetDeclarationKind)!;
       // function/variable declaration should be ambient
-      return !!decl && !!(decl.flags & NodeFlags.Ambient);
+      return !!decl && !!(decl.flags &  qt.NodeFlags.Ambient);
     }
     return false;
   }
@@ -25134,7 +25134,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkNonNullAssertion(node: NonNullExpression) {
-    return node.flags & NodeFlags.OptionalChain ? checkNonNullChain(node) : getNonNullableType(checkExpression(node.expression));
+    return node.flags &  qt.NodeFlags.OptionalChain ? checkNonNullChain(node) : getNonNullableType(checkExpression(node.expression));
   }
 
   function checkMetaProperty(node: MetaProperty): Type {
@@ -25170,7 +25170,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       error(node, Diagnostics.The_import_meta_meta_property_is_only_allowed_when_the_module_option_is_esnext_or_system);
     }
     const file = qu.getSourceFileOfNode(node);
-    Debug.assert(!!(file.flags & NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta node flag.');
+    Debug.assert(!!(file.flags &  qt.NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta node flag.');
     Debug.assert(!!file.externalModuleIndicator, 'Containing file should be a module.');
     return node.name.escapedText === 'meta' ? getGlobalImportMetaType() : errorType;
   }
@@ -25752,7 +25752,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return;
     }
 
-    const hasExplicitReturn = func.flags & NodeFlags.HasExplicitReturn;
+    const hasExplicitReturn = func.flags &  qt.NodeFlags.HasExplicitReturn;
 
     if (type && type.flags & TypeFlags.Never) {
       error(getEffectiveReturnTypeNode(func), Diagnostics.A_function_returning_never_cannot_have_a_reachable_end_point);
@@ -25943,7 +25943,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     // Enum members
     // Object.defineProperty assignments with writable false or no setter
     // Unions and intersections of the above (unions and intersections eagerly set isReadonly on creation)
-    return !!(getCheckFlags(symbol) & CheckFlags.Readonly || (symbol.flags & SymbolFlags.Property && getDeclarationModifierFlagsFromSymbol(symbol) & qt.ModifierFlags.Readonly) || (symbol.flags & SymbolFlags.Variable && getDeclarationNodeFlagsFromSymbol(symbol) & NodeFlags.Const) || (symbol.flags & SymbolFlags.Accessor && !(symbol.flags & SymbolFlags.SetAccessor)) || symbol.flags & SymbolFlags.EnumMember || some(symbol.declarations, isReadonlyAssignmentDeclaration));
+    return !!(getCheckFlags(symbol) & CheckFlags.Readonly || (symbol.flags & SymbolFlags.Property && getDeclarationModifierFlagsFromSymbol(symbol) & qt.ModifierFlags.Readonly) || (symbol.flags & SymbolFlags.Variable && getDeclarationNodeFlagsFromSymbol(symbol) &  qt.NodeFlags.Const) || (symbol.flags & SymbolFlags.Accessor && !(symbol.flags & SymbolFlags.SetAccessor)) || symbol.flags & SymbolFlags.EnumMember || some(symbol.declarations, isReadonlyAssignmentDeclaration));
   }
 
   function isAssignmentToReadonlyEntity(expr: qt.Expression, symbol: symbol, assignmentKind: AssignmentKind) {
@@ -25992,7 +25992,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       error(expr, invalidReferenceMessage);
       return false;
     }
-    if (node.flags & NodeFlags.OptionalChain) {
+    if (node.flags &  qt.NodeFlags.OptionalChain) {
       error(expr, invalidOptionalChainMessage);
       return false;
     }
@@ -26046,7 +26046,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function checkAwaitExpression(node: AwaitExpression): Type {
     // Grammar checking
     if (produceDiagnostics) {
-      if (!(node.flags & NodeFlags.AwaitContext)) {
+      if (!(node.flags &  qt.NodeFlags.AwaitContext)) {
         if (isTopLevelAwait(node)) {
           const sourceFile = qu.getSourceFileOfNode(node);
           if (!hasParseDiagnostics(sourceFile)) {
@@ -26907,7 +26907,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function checkYieldExpression(node: YieldExpression): Type {
     // Grammar checking
     if (produceDiagnostics) {
-      if (!(node.flags & NodeFlags.YieldContext)) {
+      if (!(node.flags &  qt.NodeFlags.YieldContext)) {
         grammarErrorOnFirstToken(node, Diagnostics.A_yield_expression_is_only_allowed_in_a_generator_body);
       }
 
@@ -27040,7 +27040,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     return node.kind === qt.SyntaxKind.TypeAssertionExpression || node.kind === qt.SyntaxKind.AsExpression;
   }
 
-  function checkDeclarationInitializer(declaration: HasExpressionInitializer, contextualType?: Type | undefined) {
+  function checkDeclarationInitializer(declaration:  qt.HasExpressionInitializer, contextualType?: Type | undefined) {
     const initializer = getEffectiveInitializer(declaration)!;
     const type = getQuickTypeOfExpression(initializer) || (contextualType ? checkExpressionWithContextualType(initializer, contextualType, /*inferenceContext*/ undefined, CheckMode.Normal) : checkExpressionCached(initializer));
     return isParameter(declaration) && declaration.name.kind === qt.SyntaxKind.ArrayBindingPattern && isTupleType(type) && !type.target.hasRestElement && getTypeReferenceArity(type) < declaration.name.elements.length ? padTupleType(type, declaration.name) : type;
@@ -27062,8 +27062,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     return createTupleType(elementTypes, type.target.minLength, /*hasRestElement*/ false, type.target.readonly);
   }
 
-  function widenTypeInferredFromInitializer(declaration: HasExpressionInitializer, type: Type) {
-    const widened = getCombinedNodeFlags(declaration) & NodeFlags.Const || qu.isDeclarationReadonly(declaration) ? type : getWidenedLiteralType(type);
+  function widenTypeInferredFromInitializer(declaration:  qt.HasExpressionInitializer, type: Type) {
+    const widened = getCombinedNodeFlags(declaration) &  qt.NodeFlags.Const || qu.isDeclarationReadonly(declaration) ? type : getWidenedLiteralType(type);
     if (isInJSFile(declaration)) {
       if (widened.flags & TypeFlags.Nullable) {
         reportImplicitAny(declaration, anyType);
@@ -27300,7 +27300,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return quickType;
     }
     // If a type has been cached for the node, return it.
-    if (node.flags & NodeFlags.TypeCached && flowTypeCache) {
+    if (node.flags &  qt.NodeFlags.TypeCached && flowTypeCache) {
       const cachedType = flowTypeCache[getNodeId(node)];
       if (cachedType) {
         return cachedType;
@@ -27312,7 +27312,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (flowInvocationCount !== startInvocationCount) {
       const cache = flowTypeCache || (flowTypeCache = []);
       cache[getNodeId(node)] = type;
-      node.flags |= NodeFlags.TypeCached;
+      node.flags |=  qt.NodeFlags.TypeCached;
     }
     return type;
   }
@@ -27391,7 +27391,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (compilerOptions.isolatedModules) {
       Debug.assert(!!(type.symbol.flags & SymbolFlags.ConstEnum));
       const constEnumDeclaration = type.symbol.valueDeclaration;
-      if (constEnumDeclaration.flags & NodeFlags.Ambient) {
+      if (constEnumDeclaration.flags &  qt.NodeFlags.Ambient) {
         error(node, Diagnostics.Cannot_access_ambient_const_enums_when_the_isolatedModules_flag_is_provided);
       }
     }
@@ -28027,8 +28027,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       checkDecorators(node);
       checkSignatureDeclaration(node);
       if (node.kind === qt.SyntaxKind.GetAccessor) {
-        if (!(node.flags & NodeFlags.Ambient) && qu.nodeIsPresent(node.body) && node.flags & NodeFlags.HasImplicitReturn) {
-          if (!(node.flags & NodeFlags.HasExplicitReturn)) {
+        if (!(node.flags &  qt.NodeFlags.Ambient) && qu.nodeIsPresent(node.body) && node.flags &  qt.NodeFlags.HasImplicitReturn) {
+          if (!(node.flags &  qt.NodeFlags.HasExplicitReturn)) {
             error(node.name, Diagnostics.A_get_accessor_must_return_a_value);
           }
         }
@@ -28288,7 +28288,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function isPrivateWithinAmbient(node: qt.Node): boolean {
-    return (hasEffectiveModifier(node, qt.ModifierFlags.Private) || isPrivateIdentifierPropertyDeclaration(node)) && !!(node.flags & NodeFlags.Ambient);
+    return (hasEffectiveModifier(node, qt.ModifierFlags.Private) || isPrivateIdentifierPropertyDeclaration(node)) && !!(node.flags &  qt.NodeFlags.Ambient);
   }
 
   function getEffectiveDeclarationFlags(n: Declaration, flagsToCheck: qt.ModifierFlags): qt.ModifierFlags {
@@ -28296,7 +28296,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
     // children of classes (even ambient classes) should not be marked as ambient or export
     // because those flags have no useful semantics there.
-    if (n.parent.kind !== qt.SyntaxKind.InterfaceDeclaration && n.parent.kind !== qt.SyntaxKind.ClassDeclaration && n.parent.kind !== qt.SyntaxKind.ClassExpression && n.flags & NodeFlags.Ambient) {
+    if (n.parent.kind !== qt.SyntaxKind.InterfaceDeclaration && n.parent.kind !== qt.SyntaxKind.ClassDeclaration && n.parent.kind !== qt.SyntaxKind.ClassExpression && n.flags &  qt.NodeFlags.Ambient) {
       if (!(flags & qt.ModifierFlags.Ambient) && !(isModuleBlock(n.parent) && isModuleDeclaration(n.parent.parent) && qu.isGlobalScopeAugmentation(n.parent.parent))) {
         // It is nested in an ambient context, which means it is automatically exported
         flags |= qt.ModifierFlags.Export;
@@ -28435,7 +28435,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     let hasNonAmbientClass = false;
     for (const current of declarations) {
       const node = <SignatureDeclaration | ClassDeclaration | ClassExpression>current;
-      const inAmbientContext = node.flags & NodeFlags.Ambient;
+      const inAmbientContext = node.flags &  qt.NodeFlags.Ambient;
       const inAmbientContextOrInterface = node.parent.kind === qt.SyntaxKind.InterfaceDeclaration || node.parent.kind === qt.SyntaxKind.TypeLiteral || inAmbientContext;
       if (inAmbientContextOrInterface) {
         // check if declarations are consecutive only if they are non-ambient
@@ -29280,7 +29280,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const firstDeclaration = find(
         localSymbol.declarations,
         // Get first non javascript function declaration
-        (declaration) => declaration.kind === node.kind && !(declaration.flags & NodeFlags.JavaScriptFile)
+        (declaration) => declaration.kind === node.kind && !(declaration.flags &  qt.NodeFlags.JavaScriptFile)
       );
 
       // Only type check the symbol once
@@ -29412,7 +29412,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             break;
           }
           const symbol = getSymbolOfNode(member);
-          if (!symbol.isReferenced && (hasEffectiveModifier(member, qt.ModifierFlags.Private) || (isNamedDeclaration(member) && isPrivateIdentifier(member.name))) && !(member.flags & NodeFlags.Ambient)) {
+          if (!symbol.isReferenced && (hasEffectiveModifier(member, qt.ModifierFlags.Private) || (isNamedDeclaration(member) && isPrivateIdentifier(member.name))) && !(member.flags &  qt.NodeFlags.Ambient)) {
             addDiagnostic(member, UnusedKind.Local, qu.createDiagnosticForNode(member.name!, Diagnostics._0_is_declared_but_its_value_is_never_read, symbolToString(symbol)));
           }
           break;
@@ -29609,7 +29609,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
   function checkCollisionWithArgumentsInGeneratedCode(node: qt.SignatureDeclaration) {
     // no rest parameters \ declaration context \ overload - no codegen impact
-    if (languageVersion >= qt.ScriptTarget.ES2015 || compilerOptions.noEmit || !hasRestParameter(node) || node.flags & NodeFlags.Ambient || qu.nodeIsMissing(node.body)) {
+    if (languageVersion >= qt.ScriptTarget.ES2015 || compilerOptions.noEmit || !hasRestParameter(node) || node.flags &  qt.NodeFlags.Ambient || qu.nodeIsMissing(node.body)) {
       return;
     }
 
@@ -29630,7 +29630,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return false;
     }
 
-    if (node.flags & NodeFlags.Ambient) {
+    if (node.flags &  qt.NodeFlags.Ambient) {
       // ambient context - no codegen impact
       return false;
     }
@@ -29717,7 +29717,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
     // In case of variable declaration, node.parent is variable statement so look at the variable statement's parent
     const parent = getDeclarationContainer(node);
-    if (parent.kind === qt.SyntaxKind.SourceFile && qu.isExternalOrCommonJsModule(<SourceFile>parent) && parent.flags & NodeFlags.HasAsyncFunctions) {
+    if (parent.kind === qt.SyntaxKind.SourceFile && qu.isExternalOrCommonJsModule(<SourceFile>parent) && parent.flags &  qt.NodeFlags.HasAsyncFunctions) {
       // If the declaration happens to be in external module, report error that Promise is a reserved identifier.
       error(name, Diagnostics.Duplicate_identifier_0_Compiler_reserves_name_1_in_top_level_scope_of_a_module_containing_async_functions, qu.declarationNameToString(name), qu.declarationNameToString(name));
     }
@@ -29750,7 +29750,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     //      }
 
     // skip block-scoped variables and parameters
-    if ((getCombinedNodeFlags(node) & NodeFlags.BlockScoped) !== 0 || isParameterDeclaration(node)) {
+    if ((getCombinedNodeFlags(node) &  qt.NodeFlags.BlockScoped) !== 0 || isParameterDeclaration(node)) {
       return;
     }
 
@@ -29766,7 +29766,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (!isIdentifier(node.name)) return Debug.fail();
       const localDeclarationSymbol = resolveName(node, node.name.escapedText, SymbolFlags.Variable, /*nodeNotFoundErrorMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false);
       if (localDeclarationSymbol && localDeclarationSymbol !== symbol && localDeclarationSymbol.flags & SymbolFlags.BlockScopedVariable) {
-        if (getDeclarationNodeFlagsFromSymbol(localDeclarationSymbol) & NodeFlags.BlockScoped) {
+        if (getDeclarationNodeFlagsFromSymbol(localDeclarationSymbol) &  qt.NodeFlags.BlockScoped) {
           const varDeclList = getAncestor(localDeclarationSymbol.valueDeclaration, qt.SyntaxKind.VariableDeclarationList)!;
           const container = varDeclList.parent.kind === qt.SyntaxKind.VariableStatement && varDeclList.parent.parent ? varDeclList.parent.parent : undefined;
 
@@ -30401,11 +30401,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     return noIterationTypes;
   }
 
-  function getCachedIterationTypes(type: Type, cacheKey: MatchingKeys<IterableOrIteratorType, IterationTypes | undefined>) {
+  function getCachedIterationTypes(type: Type, cacheKey:  qt.MatchingKeys<IterableOrIteratorType, IterationTypes | undefined>) {
     return type[cacheKey];
   }
 
-  function setCachedIterationTypes(type: Type, cacheKey: MatchingKeys<IterableOrIteratorType, IterationTypes | undefined>, cachedTypes: IterationTypes) {
+  function setCachedIterationTypes(type: Type, cacheKey:  qt.MatchingKeys<IterableOrIteratorType, IterationTypes | undefined>, cachedTypes: IterationTypes) {
     return (type[cacheKey] = cachedTypes);
   }
 
@@ -30918,7 +30918,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function checkWithStatement(node: WithStatement) {
     // Grammar checking for withStatement
     if (!checkGrammarStatementInAmbientContext(node)) {
-      if (node.flags & NodeFlags.AwaitContext) {
+      if (node.flags &  qt.NodeFlags.AwaitContext) {
         grammarErrorOnFirstToken(node, Diagnostics.with_statements_are_not_allowed_in_an_async_function_block);
       }
     }
@@ -31300,7 +31300,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       checkTypeNameIsReserved(node.name, Diagnostics.Class_name_cannot_be_0);
       checkCollisionWithRequireExportsInGeneratedCode(node, node.name);
       checkCollisionWithGlobalPromiseInGeneratedCode(node, node.name);
-      if (!(node.flags & NodeFlags.Ambient)) {
+      if (!(node.flags &  qt.NodeFlags.Ambient)) {
         checkClassNameCollisionWithObject(node.name);
       }
     }
@@ -31314,7 +31314,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     checkClassForDuplicateDeclarations(node);
 
     // Only check for reserved static identifiers on non-ambient context.
-    if (!(node.flags & NodeFlags.Ambient)) {
+    if (!(node.flags &  qt.NodeFlags.Ambient)) {
       checkClassForStaticPropertyNameConflicts(node);
     }
 
@@ -31534,7 +31534,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             error(getNameOfDeclaration(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, symbolToString(base), typeToString(baseType), typeToString(type));
           } else {
             const uninitialized = find(derived.declarations, (d) => d.kind === qt.SyntaxKind.PropertyDeclaration && !(d as PropertyDeclaration).initializer);
-            if (uninitialized && !(derived.flags & SymbolFlags.Transient) && !(baseDeclarationFlags & qt.ModifierFlags.Abstract) && !(derivedDeclarationFlags & qt.ModifierFlags.Abstract) && !derived.declarations.some((d) => !!(d.flags & NodeFlags.Ambient))) {
+            if (uninitialized && !(derived.flags & SymbolFlags.Transient) && !(baseDeclarationFlags & qt.ModifierFlags.Abstract) && !(derivedDeclarationFlags & qt.ModifierFlags.Abstract) && !derived.declarations.some((d) => !!(d.flags &  qt.NodeFlags.Ambient))) {
               const constructor = findConstructorDeclaration(getClassLikeDeclarationOfSymbol(type.symbol)!);
               const propName = uninitialized.name;
               if (uninitialized.exclamationToken || !constructor || !isIdentifier(propName) || !strictNullChecks || !isPropertyInitializedInConstructor(propName, type, constructor)) {
@@ -31629,7 +31629,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkPropertyInitialization(node: ClassLikeDeclaration) {
-    if (!strictNullChecks || !strictPropertyInitialization || node.flags & NodeFlags.Ambient) {
+    if (!strictNullChecks || !strictPropertyInitialization || node.flags &  qt.NodeFlags.Ambient) {
       return;
     }
     const constructor = findConstructorDeclaration(node);
@@ -31744,7 +31744,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
     // In ambient non-const numeric enum declarations, enum members without initializers are
     // considered computed members (as opposed to having auto-incremented values).
-    if (member.parent.flags & NodeFlags.Ambient && !qu.isEnumConst(member.parent) && getEnumKind(getSymbolOfNode(member.parent)) === EnumKind.Numeric) {
+    if (member.parent.flags &  qt.NodeFlags.Ambient && !qu.isEnumConst(member.parent) && getEnumKind(getSymbolOfNode(member.parent)) === EnumKind.Numeric) {
       return undefined;
     }
     // If the member declaration specifies no value, the member is considered a constant enum member.
@@ -31772,7 +31772,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return 0;
     } else if (isConstEnum) {
       error(initializer, Diagnostics.const_enum_member_initializers_can_only_contain_literal_values_and_other_computed_enum_values);
-    } else if (member.parent.flags & NodeFlags.Ambient) {
+    } else if (member.parent.flags &  qt.NodeFlags.Ambient) {
       error(initializer, Diagnostics.In_ambient_enum_declarations_member_initializer_must_be_constant_expression);
     } else {
       // Only here do we need to check that the initializer is assignable to the enum type.
@@ -31958,7 +31958,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function getFirstNonAmbientClassOrFunctionDeclaration(symbol: symbol): Declaration | undefined {
     const declarations = symbol.declarations;
     for (const declaration of declarations) {
-      if ((declaration.kind === qt.SyntaxKind.ClassDeclaration || (declaration.kind === qt.SyntaxKind.FunctionDeclaration && qu.nodeIsPresent(declaration.body))) && !(declaration.flags & NodeFlags.Ambient)) {
+      if ((declaration.kind === qt.SyntaxKind.ClassDeclaration || (declaration.kind === qt.SyntaxKind.FunctionDeclaration && qu.nodeIsPresent(declaration.body))) && !(declaration.flags &  qt.NodeFlags.Ambient)) {
         return declaration;
       }
     }
@@ -31981,7 +31981,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (produceDiagnostics) {
       // Grammar checking
       const isGlobalAugmentation = qu.isGlobalScopeAugmentation(node);
-      const inAmbientContext = node.flags & NodeFlags.Ambient;
+      const inAmbientContext = node.flags &  qt.NodeFlags.Ambient;
       if (isGlobalAugmentation && !inAmbientContext) {
         error(node.name, Diagnostics.Augmentations_for_the_global_scope_should_have_declare_modifier_unless_they_appear_in_already_ambient_context);
       }
@@ -32187,7 +32187,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
 
       // Don't allow to re-export something with no value side when `--isolatedModules` is set.
-      if (compilerOptions.isolatedModules && node.kind === qt.SyntaxKind.ExportSpecifier && !node.parent.parent.isTypeOnly && !(target.flags & SymbolFlags.Value) && !(node.flags & NodeFlags.Ambient)) {
+      if (compilerOptions.isolatedModules && node.kind === qt.SyntaxKind.ExportSpecifier && !node.parent.parent.isTypeOnly && !(target.flags & SymbolFlags.Value) && !(node.flags &  qt.NodeFlags.Ambient)) {
         error(node, Diagnostics.Re_exporting_a_type_when_the_isolatedModules_flag_is_provided_requires_using_export_type);
       }
     }
@@ -32254,7 +32254,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           }
         }
       } else {
-        if (moduleKind >= qt. ModuleKind.ES2015 && !(node.flags & NodeFlags.Ambient)) {
+        if (moduleKind >= qt. ModuleKind.ES2015 && !(node.flags &  qt.NodeFlags.Ambient)) {
           // Import equals declaration is deprecated in es6 or above
           grammarErrorOnNode(node, Diagnostics.Import_assignment_cannot_be_used_when_targeting_ECMAScript_modules_Consider_using_import_Asterisk_as_ns_from_mod_import_a_from_mod_import_d_from_mod_or_another_module_format_instead);
         }
@@ -32283,7 +32283,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         // export { x, y } from "foo"
         forEach(node.exportClause.elements, checkExportSpecifier);
         const inAmbientExternalModule = node.parent.kind === qt.SyntaxKind.ModuleBlock && qu.isAmbientModule(node.parent.parent);
-        const inAmbientNamespaceDeclaration = !inAmbientExternalModule && node.parent.kind === qt.SyntaxKind.ModuleBlock && !node.moduleSpecifier && node.flags & NodeFlags.Ambient;
+        const inAmbientNamespaceDeclaration = !inAmbientExternalModule && node.parent.kind === qt.SyntaxKind.ModuleBlock && !node.moduleSpecifier && node.flags &  qt.NodeFlags.Ambient;
         if (node.parent.kind !== qt.SyntaxKind.SourceFile && !inAmbientExternalModule && !inAmbientNamespaceDeclaration) {
           error(node, Diagnostics.Export_declarations_are_not_permitted_in_a_namespace);
         }
@@ -32401,11 +32401,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
     checkExternalModuleExports(container);
 
-    if (node.flags & NodeFlags.Ambient && !isEntityNameExpression(node.expression)) {
+    if (node.flags &  qt.NodeFlags.Ambient && !isEntityNameExpression(node.expression)) {
       grammarErrorOnNode(node.expression, Diagnostics.The_expression_of_an_export_assignment_must_be_an_identifier_or_qualified_name_in_an_ambient_context);
     }
 
-    if (node.isExportEquals && !(node.flags & NodeFlags.Ambient)) {
+    if (node.isExportEquals && !(node.flags &  qt.NodeFlags.Ambient)) {
       if (moduleKind >= qt. ModuleKind.ES2015) {
         // export assignment is not supported in es6 modules
         grammarErrorOnNode(node, Diagnostics.Export_assignment_cannot_be_used_when_targeting_ECMAScript_modules_Consider_using_export_default_or_another_module_format_instead);
@@ -32474,7 +32474,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
   function checkSourceElementWorker(node: qt.Node): void {
     if (isInJSFile(node)) {
-      forEach((node as JSDocContainer).jsDoc, ({ tags }) => forEach(tags, checkSourceElement));
+      forEach((node as  qt.JSDocContainer).jsDoc, ({ tags }) => forEach(tags, checkSourceElement));
     }
 
     const kind = node.kind;
@@ -32834,7 +32834,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
       if (!node.isDeclarationFile && (compilerOptions.noUnusedLocals || compilerOptions.noUnusedParameters)) {
         checkUnusedIdentifiers(getPotentiallyUnusedIdentifiers(node), (containingNode, kind, diag) => {
-          if (!qu.containsParseError(containingNode) && unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient))) {
+          if (!qu.containsParseError(containingNode) && unusedIsError(kind, !!(containingNode.flags &  qt.NodeFlags.Ambient))) {
             diagnostics.add(diag);
           }
         });
@@ -32926,7 +32926,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   // Language service support
 
   function getSymbolsInScope(location: Node, meaning: SymbolFlags): symbol[] {
-    if (location.flags & NodeFlags.InWithStatement) {
+    if (location.flags &  qt.NodeFlags.InWithStatement) {
       // We cannot answer semantic questions within a with block, do not proceed any further
       return [];
     }
@@ -33251,7 +33251,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const { parent } = node;
     const grandParent = parent.parent;
 
-    if (node.flags & NodeFlags.InWithStatement) {
+    if (node.flags &  qt.NodeFlags.InWithStatement) {
       // We cannot answer semantic questions within a with block, do not proceed any further
       return undefined;
     }
@@ -33365,7 +33365,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getTypeOfNode(node: qt.Node): Type {
-    if (node.flags & NodeFlags.InWithStatement) {
+    if (node.flags &  qt.NodeFlags.InWithStatement) {
       // We cannot answer semantic questions within a with block, do not proceed any further
       return errorType;
     }
@@ -34391,7 +34391,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function checkExternalEmitHelpers(location: Node, helpers: ExternalEmitHelpers) {
     if ((requestedExternalEmitHelpers & helpers) !== helpers && compilerOptions.importHelpers) {
       const sourceFile = qu.getSourceFileOfNode(location);
-      if (qu.isEffectiveExternalModule(sourceFile, compilerOptions) && !(location.flags & NodeFlags.Ambient)) {
+      if (qu.isEffectiveExternalModule(sourceFile, compilerOptions) && !(location.flags &  qt.NodeFlags.Ambient)) {
         const helpersModule = resolveHelpersModule(sourceFile, location);
         if (helpersModule !== unknownSymbol) {
           const uncheckedHelpers = helpers & ~requestedExternalEmitHelpers;
@@ -34604,7 +34604,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_class_element, 'declare');
           } else if (node.kind === qt.SyntaxKind.Parameter) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'declare');
-          } else if (node.parent.flags & NodeFlags.Ambient && node.parent.kind === qt.SyntaxKind.ModuleBlock) {
+          } else if (node.parent.flags &  qt.NodeFlags.Ambient && node.parent.kind === qt.SyntaxKind.ModuleBlock) {
             return grammarErrorOnNode(modifier, Diagnostics.A_declare_modifier_cannot_be_used_in_an_already_ambient_context);
           } else if (isPrivateIdentifierPropertyDeclaration(node)) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_with_a_private_identifier, 'declare');
@@ -34641,7 +34641,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         case qt.SyntaxKind.AsyncKeyword:
           if (flags & qt.ModifierFlags.Async) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'async');
-          } else if (flags & qt.ModifierFlags.Ambient || node.parent.flags & NodeFlags.Ambient) {
+          } else if (flags & qt.ModifierFlags.Ambient || node.parent.flags &  qt.NodeFlags.Ambient) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_in_an_ambient_context, 'async');
           } else if (node.kind === qt.SyntaxKind.Parameter) {
             return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'async');
@@ -34766,7 +34766,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (i !== parameterCount - 1) {
           return grammarErrorOnNode(parameter.dotDotDotToken, Diagnostics.A_rest_parameter_must_be_last_in_a_parameter_list);
         }
-        if (!(parameter.flags & NodeFlags.Ambient)) {
+        if (!(parameter.flags &  qt.NodeFlags.Ambient)) {
           // Allow `...foo,` in ambient declarations; see GH#23070
           checkGrammarForDisallowedTrailingComma(parameters, Diagnostics.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
         }
@@ -34898,7 +34898,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkGrammarTaggedTemplateChain(node: TaggedTemplateExpression): boolean {
-    if (node.questionDotToken || node.flags & NodeFlags.OptionalChain) {
+    if (node.questionDotToken || node.flags &  qt.NodeFlags.OptionalChain) {
       return grammarErrorOnNode(node.template, Diagnostics.Tagged_template_expressions_are_not_permitted_in_an_optional_chain);
     }
     return false;
@@ -35009,7 +35009,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function checkGrammarForGenerator(node: qt.FunctionLikeDeclaration) {
     if (node.asteriskToken) {
       Debug.assert(node.kind === qt.SyntaxKind.FunctionDeclaration || node.kind === qt.SyntaxKind.FunctionExpression || node.kind === qt.SyntaxKind.MethodDeclaration);
-      if (node.flags & NodeFlags.Ambient) {
+      if (node.flags &  qt.NodeFlags.Ambient) {
         return grammarErrorOnNode(node.asteriskToken, Diagnostics.Generators_are_not_allowed_in_an_ambient_context);
       }
       if (!node.body) {
@@ -35161,7 +35161,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
 
     if (forInOrOfStatement.kind === qt.SyntaxKind.ForOfStatement && forInOrOfStatement.awaitModifier) {
-      if ((forInOrOfStatement.flags & NodeFlags.AwaitContext) === NodeFlags.None) {
+      if ((forInOrOfStatement.flags &  qt.NodeFlags.AwaitContext) ===  qt.NodeFlags.None) {
         // use of 'for-await-of' in non-async function
         const sourceFile = qu.getSourceFileOfNode(forInOrOfStatement);
         if (!hasParseDiagnostics(sourceFile)) {
@@ -35216,7 +35216,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkGrammarAccessor(accessor: AccessorDeclaration): boolean {
-    if (!(accessor.flags & NodeFlags.Ambient)) {
+    if (!(accessor.flags &  qt.NodeFlags.Ambient)) {
       if (languageVersion < qt.ScriptTarget.ES5) {
         return grammarErrorOnNode(accessor.name, Diagnostics.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher);
       }
@@ -35288,7 +35288,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           if (!qu.isVariableDeclarationInVariableStatement(decl)) {
             return grammarErrorOnNode(node, Diagnostics.unique_symbol_types_are_only_allowed_on_variables_in_a_variable_statement);
           }
-          if (!(decl.parent.flags & NodeFlags.Const)) {
+          if (!(decl.parent.flags &  qt.NodeFlags.Const)) {
             return grammarErrorOnNode(parent.name, Diagnostics.A_variable_whose_type_is_a_unique_symbol_type_must_be_const);
           }
           break;
@@ -35350,7 +35350,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       // However, property declarations disallow computed names in general,
       // and accessors are not allowed in ambient contexts in general,
       // so this error only really matters for methods.
-      if (node.flags & NodeFlags.Ambient) {
+      if (node.flags &  qt.NodeFlags.Ambient) {
         return checkGrammarForInvalidDynamicName(node.name, Diagnostics.A_computed_property_name_in_an_ambient_context_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type);
       } else if (node.kind === qt.SyntaxKind.MethodDeclaration && !node.body) {
         return checkGrammarForInvalidDynamicName(node.name, Diagnostics.A_computed_property_name_in_a_method_overload_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type);
@@ -35463,7 +35463,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
   function checkGrammarVariableDeclaration(node: qt.VariableDeclaration) {
     if (node.parent.parent.kind !== qt.SyntaxKind.ForInStatement && node.parent.parent.kind !== qt.SyntaxKind.ForOfStatement) {
-      if (node.flags & NodeFlags.Ambient) {
+      if (node.flags &  qt.NodeFlags.Ambient) {
         checkAmbientInitializer(node);
       } else if (!node.initializer) {
         if (isBindingPattern(node.name) && !isBindingPattern(node.parent)) {
@@ -35475,13 +35475,13 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
     }
 
-    if (node.exclamationToken && (node.parent.parent.kind !== qt.SyntaxKind.VariableStatement || !node.type || node.initializer || node.flags & NodeFlags.Ambient)) {
+    if (node.exclamationToken && (node.parent.parent.kind !== qt.SyntaxKind.VariableStatement || !node.type || node.initializer || node.flags &  qt.NodeFlags.Ambient)) {
       return grammarErrorOnNode(node.exclamationToken, Diagnostics.Definite_assignment_assertions_can_only_be_used_along_with_a_type_annotation);
     }
 
     const moduleKind = getEmitModuleKind(compilerOptions);
 
-    if (moduleKind < qt. ModuleKind.ES2015 && moduleKind !== qt. ModuleKind.System && !compilerOptions.noEmit && !(node.parent.parent.flags & NodeFlags.Ambient) && qu.hasSyntacticModifier(node.parent.parent, qt.ModifierFlags.Export)) {
+    if (moduleKind < qt. ModuleKind.ES2015 && moduleKind !== qt. ModuleKind.System && !compilerOptions.noEmit && !(node.parent.parent.flags &  qt.NodeFlags.Ambient) && qu.hasSyntacticModifier(node.parent.parent, qt.ModifierFlags.Export)) {
       checkESModuleMarker(node.name);
     }
 
@@ -35659,11 +35659,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
     }
 
-    if (node.flags & NodeFlags.Ambient) {
+    if (node.flags &  qt.NodeFlags.Ambient) {
       checkAmbientInitializer(node);
     }
 
-    if (isPropertyDeclaration(node) && node.exclamationToken && (!isClassLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || qu.hasSyntacticModifier(node, qt.ModifierFlags.Static | qt.ModifierFlags.Abstract))) {
+    if (isPropertyDeclaration(node) && node.exclamationToken && (!isClassLike(node.parent) || !node.type || node.initializer || node.flags &  qt.NodeFlags.Ambient || qu.hasSyntacticModifier(node, qt.ModifierFlags.Static | qt.ModifierFlags.Abstract))) {
       return grammarErrorOnNode(node.exclamationToken, Diagnostics.A_definite_assignment_assertion_is_not_permitted_in_this_context);
     }
   }
@@ -35700,11 +35700,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function checkGrammarSourceFile(node: SourceFile): boolean {
-    return !!(node.flags & NodeFlags.Ambient) && checkGrammarTopLevelElementsForRequiredDeclareModifier(node);
+    return !!(node.flags &  qt.NodeFlags.Ambient) && checkGrammarTopLevelElementsForRequiredDeclareModifier(node);
   }
 
   function checkGrammarStatementInAmbientContext(node: qt.Node): boolean {
-    if (node.flags & NodeFlags.Ambient) {
+    if (node.flags &  qt.NodeFlags.Ambient) {
       // Find containing block which is either Block, ModuleBlock, SourceFile
       const links = getNodeLinks(node);
       if (!links.hasReportedStatementInAmbientContext && (isFunctionLike(node.parent) || isAccessor(node.parent))) {

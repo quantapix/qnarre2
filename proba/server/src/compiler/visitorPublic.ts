@@ -443,19 +443,19 @@ export function visitEachChild(node: qt.Node | undefined, visitor: Visitor, cont
       return updateObjectLiteral(<ObjectLiteralExpression>node, nodesVisitor((<ObjectLiteralExpression>node).properties, visitor, isObjectLiteralElementLike));
 
     case qt.SyntaxKind.PropertyAccessExpression:
-      if (node.flags & NodeFlags.OptionalChain) {
+      if (node.flags & qt.NodeFlags.OptionalChain) {
         return updatePropertyAccessChain(<PropertyAccessChain>node, visitNode((<PropertyAccessChain>node).expression, visitor, isExpression), visitNode((<PropertyAccessChain>node).questionDotToken, tokenVisitor, isToken), visitNode((<PropertyAccessChain>node).name, visitor, isIdentifier));
       }
       return updatePropertyAccess(<PropertyAccessExpression>node, visitNode((<PropertyAccessExpression>node).expression, visitor, isExpression), visitNode((<PropertyAccessExpression>node).name, visitor, isIdentifierOrPrivateIdentifier));
 
     case qt.SyntaxKind.ElementAccessExpression:
-      if (node.flags & NodeFlags.OptionalChain) {
+      if (node.flags & qt.NodeFlags.OptionalChain) {
         return updateElementAccessChain(<ElementAccessChain>node, visitNode((<ElementAccessChain>node).expression, visitor, isExpression), visitNode((<ElementAccessChain>node).questionDotToken, tokenVisitor, isToken), visitNode((<ElementAccessChain>node).argumentExpression, visitor, isExpression));
       }
       return updateElementAccess(<ElementAccessExpression>node, visitNode((<ElementAccessExpression>node).expression, visitor, isExpression), visitNode((<ElementAccessExpression>node).argumentExpression, visitor, isExpression));
 
     case qt.SyntaxKind.CallExpression:
-      if (node.flags & NodeFlags.OptionalChain) {
+      if (node.flags & qt.NodeFlags.OptionalChain) {
         return updateCallChain(<CallChain>node, visitNode((<CallChain>node).expression, visitor, isExpression), visitNode((<CallChain>node).questionDotToken, tokenVisitor, isToken), nodesVisitor((<CallChain>node).typeArguments, visitor, isTypeNode), nodesVisitor((<CallChain>node).arguments, visitor, isExpression));
       }
       return updateCall(<CallExpression>node, visitNode((<CallExpression>node).expression, visitor, isExpression), nodesVisitor((<CallExpression>node).typeArguments, visitor, isTypeNode), nodesVisitor((<CallExpression>node).arguments, visitor, isExpression));

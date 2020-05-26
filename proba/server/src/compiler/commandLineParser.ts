@@ -2087,7 +2087,7 @@ function convertToOptionValueWithAbsolutePaths(option: qt.CommandLineOption | un
  * @param basePath A root directory to resolve relative path entries in the config
  *    file to. e.g. outDir
  */
-export function parseJsonConfigFileContent(json: any, host: qt.ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, existingWatchOptions?: qt.WatchOptions): ParsedCommandLine {
+export function parseJsonConfigFileContent(json: any, host: qt.ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: qt.Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, existingWatchOptions?: qt.WatchOptions): ParsedCommandLine {
   return parseJsonConfigFileContentWorker(json, /*sourceFile*/ undefined, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
 }
 
@@ -2098,7 +2098,7 @@ export function parseJsonConfigFileContent(json: any, host: qt.ParseConfigHost, 
  * @param basePath A root directory to resolve relative path entries in the config
  *    file to. e.g. outDir
  */
-export function parseJsonSourceFileConfigFileContent(sourceFile: qt.TsConfigSourceFile, host: qt.ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, existingWatchOptions?: qt.WatchOptions): ParsedCommandLine {
+export function parseJsonSourceFileConfigFileContent(sourceFile: qt.TsConfigSourceFile, host: qt.ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: qt.Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, existingWatchOptions?: qt.WatchOptions): ParsedCommandLine {
   return parseJsonConfigFileContentWorker(/*json*/ undefined, sourceFile, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
 }
 
@@ -2127,7 +2127,7 @@ function directoryOfCombinedPath(fileName: string, basePath: string) {
  *    file to. e.g. outDir
  * @param resolutionStack Only present for backwards-compatibility. Should be empty.
  */
-function parseJsonConfigFileContentWorker(json: any, sourceFile: qt.TsConfigSourceFile | undefined, host: qt.ParseConfigHost, basePath: string, existingOptions: qt.CompilerOptions = {}, existingWatchOptions: qt.WatchOptions | undefined, configFileName?: string, resolutionStack: Path[] = [], extraFileExtensions: readonly FileExtensionInfo[] = [], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>): ParsedCommandLine {
+function parseJsonConfigFileContentWorker(json: any, sourceFile: qt.TsConfigSourceFile | undefined, host: qt.ParseConfigHost, basePath: string, existingOptions: qt.CompilerOptions = {}, existingWatchOptions: qt.WatchOptions | undefined, configFileName?: string, resolutionStack: qt.Path[] = [], extraFileExtensions: readonly FileExtensionInfo[] = [], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>): ParsedCommandLine {
   Debug.assert((json === undefined && sourceFile !== undefined) || (json !== undefined && sourceFile === undefined));
   const errors: qt.Diagnostic[] = [];
 
@@ -2248,7 +2248,7 @@ function getErrorForNoInputFiles({ includeSpecs, excludeSpecs }: ConfigFileSpecs
   return qu.createCompilerDiagnostic(Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2, configFileName || 'tsconfig.json', JSON.stringify(includeSpecs || []), JSON.stringify(excludeSpecs || []));
 }
 
-function shouldReportNoInputFiles(result: ExpandResult, canJsonReportNoInutFiles: boolean, resolutionStack?: Path[]) {
+function shouldReportNoInputFiles(result: ExpandResult, canJsonReportNoInutFiles: boolean, resolutionStack?: qt.Path[]) {
   return result.fileNames.length === 0 && canJsonReportNoInutFiles && (!resolutionStack || resolutionStack.length === 0);
 }
 

@@ -815,7 +815,7 @@ export function transformTypeScript(context: TransformationContext) {
 
     //  let ${name} = ${classExpression} where name is either declaredName if the class doesn't contain self-reference
     //                                         or decoratedClassAlias if the class contain self-reference.
-    const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(declName, /*type*/ undefined, classAlias ? createAssignment(classAlias, classExpression) : classExpression)], NodeFlags.Let));
+    const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(declName, /*type*/ undefined, classAlias ? createAssignment(classAlias, classExpression) : classExpression)], qt.NodeFlags.Let));
     setOriginalNode(statement, node);
     setTextRange(statement, location);
     setCommentRange(statement, node);
@@ -1765,7 +1765,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
 
   function visitPropertyDeclaration(node: PropertyDeclaration) {
-    if (node.flags & NodeFlags.Ambient) {
+    if (node.flags & qt.NodeFlags.Ambient) {
       return undefined;
     }
     const updated = updateProperty(node, /*decorators*/ undefined, visitNodes(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElement(node), /*questionOrExclamationToken*/ undefined, /*type*/ undefined, visitNode(node.initializer, visitor));
@@ -2223,7 +2223,7 @@ export function transformTypeScript(context: TransformationContext) {
     // Emit a variable statement for the module. We emit top-level enums as a `var`
     // declaration to avoid static errors in global scripts scripts due to redeclaration.
     // enums in any other scope are emitted as a `let` declaration.
-    const statement = createVariableStatement(visitNodes(node.modifiers, modifierVisitor, isModifier), createVariableDeclarationList([createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ true))], currentLexicalScope.kind === qt.SyntaxKind.SourceFile ? NodeFlags.None : NodeFlags.Let));
+    const statement = createVariableStatement(visitNodes(node.modifiers, modifierVisitor, isModifier), createVariableDeclarationList([createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ true))], currentLexicalScope.kind === qt.SyntaxKind.SourceFile ? qt.NodeFlags.None : qt.NodeFlags.Let));
 
     setOriginalNode(statement, node);
 

@@ -8,7 +8,7 @@ import { Diagnostics } from './diagnostics';
 
 function createSynthesizedNode(kind: qt.SyntaxKind): Node {
   const node = createNode(kind, -1, -1);
-  node.flags |= NodeFlags.Synthesized;
+  node.flags |= qt.NodeFlags.Synthesized;
   return node;
 }
 
@@ -887,7 +887,7 @@ export function updatePropertyAccess(node: PropertyAccessExpression, expression:
 
 export function createPropertyAccessChain(expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
   const node = <PropertyAccessChain>createSynthesizedNode(SyntaxKind.PropertyAccessExpression);
-  node.flags |= NodeFlags.OptionalChain;
+  node.flags |= qt.NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
   node.questionDotToken = questionDotToken;
   node.name = asName(name);
@@ -896,7 +896,7 @@ export function createPropertyAccessChain(expression: qt.Expression, questionDot
 }
 
 export function updatePropertyAccessChain(node: PropertyAccessChain, expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, name: Identifier) {
-  Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a PropertyAccessExpression using updatePropertyAccessChain. Use updatePropertyAccess instead.');
+  Debug.assert(!!(node.flags & qt.NodeFlags.OptionalChain), 'Cannot update a PropertyAccessExpression using updatePropertyAccessChain. Use updatePropertyAccess instead.');
   // Because we are updating an existing PropertyAccessChain we want to inherit its emitFlags
   // instead of using the default from createPropertyAccess
   return node.expression !== expression || node.questionDotToken !== questionDotToken || node.name !== name ? updateNode(setEmitFlags(createPropertyAccessChain(expression, questionDotToken, name), qu.getEmitFlags(node)), node) : node;
@@ -918,7 +918,7 @@ export function updateElementAccess(node: qt.ElementAccessExpression, expression
 
 export function createElementAccessChain(expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, index: number | qt.Expression) {
   const node = <ElementAccessChain>createSynthesizedNode(SyntaxKind.ElementAccessExpression);
-  node.flags |= NodeFlags.OptionalChain;
+  node.flags |= qt.NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
   node.questionDotToken = questionDotToken;
   node.argumentExpression = asExpression(index);
@@ -926,7 +926,7 @@ export function createElementAccessChain(expression: qt.Expression, questionDotT
 }
 
 export function updateElementAccessChain(node: qt.ElementAccessChain, expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, argumentExpression: qt.Expression) {
-  Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update an qt.ElementAccessExpression using updateElementAccessChain. Use updateElementAccess instead.');
+  Debug.assert(!!(node.flags & qt.NodeFlags.OptionalChain), 'Cannot update an qt.ElementAccessExpression using updateElementAccessChain. Use updateElementAccess instead.');
   return node.expression !== expression || node.questionDotToken !== questionDotToken || node.argumentExpression !== argumentExpression ? updateNode(createElementAccessChain(expression, questionDotToken, argumentExpression), node) : node;
 }
 
@@ -947,7 +947,7 @@ export function updateCall(node: CallExpression, expression: qt.Expression, type
 
 export function createCallChain(expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[] | undefined) {
   const node = <CallChain>createSynthesizedNode(SyntaxKind.CallExpression);
-  node.flags |= NodeFlags.OptionalChain;
+  node.flags |= qt.NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
   node.questionDotToken = questionDotToken;
   node.typeArguments = asNodeArray(typeArguments);
@@ -956,7 +956,7 @@ export function createCallChain(expression: qt.Expression, questionDotToken: Que
 }
 
 export function updateCallChain(node: qt.CallChain, expression: qt.Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly qt.Expression[]) {
-  Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
+  Debug.assert(!!(node.flags & qt.NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
   return node.expression !== expression || node.questionDotToken !== questionDotToken || node.typeArguments !== typeArguments || node.arguments !== argumentsArray ? updateNode(createCallChain(expression, questionDotToken, typeArguments, argumentsArray), node) : node;
 }
 
@@ -1320,13 +1320,13 @@ export function updateNonNullExpression(node: NonNullExpression, expression: qt.
 
 export function createNonNullChain(expression: qt.Expression) {
   const node = <NonNullChain>createSynthesizedNode(SyntaxKind.NonNullExpression);
-  node.flags |= NodeFlags.OptionalChain;
+  node.flags |= qt.NodeFlags.OptionalChain;
   node.expression = parenthesizeForAccess(expression);
   return node;
 }
 
 export function updateNonNullChain(node: qt.NonNullChain, expression: qt.Expression) {
-  Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a NonNullExpression using updateNonNullChain. Use updateNonNullExpression instead.');
+  Debug.assert(!!(node.flags & qt.NodeFlags.OptionalChain), 'Cannot update a NonNullExpression using updateNonNullChain. Use updateNonNullExpression instead.');
   return node.expression !== expression ? updateNode(createNonNullChain(expression), node) : node;
 }
 
@@ -1590,9 +1590,9 @@ export function updateTypeScriptVariableDeclaration(node: qt.VariableDeclaration
   return node.name !== name || node.type !== type || node.initializer !== initializer || node.exclamationToken !== exclaimationToken ? updateNode(createTypeScriptVariableDeclaration(name, exclaimationToken, type, initializer), node) : node;
 }
 
-export function createVariableDeclarationList(declarations: readonly qt.VariableDeclaration[], flags = NodeFlags.None) {
+export function createVariableDeclarationList(declarations: readonly qt.VariableDeclaration[], flags = qt.NodeFlags.None) {
   const node = <VariableDeclarationList>createSynthesizedNode(SyntaxKind.VariableDeclarationList);
-  node.flags |= flags & NodeFlags.BlockScoped;
+  node.flags |= flags & qt.NodeFlags.BlockScoped;
   node.declarations = createNodeArray(declarations);
   return node;
 }
@@ -1694,9 +1694,9 @@ export function updateEnumDeclaration(node: qt.EnumDeclaration, decorators: read
   return node.decorators !== decorators || node.modifiers !== modifiers || node.name !== name || node.members !== members ? updateNode(createEnumDeclaration(decorators, modifiers, name, members), node) : node;
 }
 
-export function createModuleDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: ModuleName, body: ModuleBody | undefined, flags = NodeFlags.None) {
+export function createModuleDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: ModuleName, body: ModuleBody | undefined, flags = qt.NodeFlags.None) {
   const node = <ModuleDeclaration>createSynthesizedNode(SyntaxKind.ModuleDeclaration);
-  node.flags |= flags & (NodeFlags.Namespace | NodeFlags.NestedNamespace | NodeFlags.GlobalAugmentation);
+  node.flags |= flags & (NodeFlags.Namespace | qt.NodeFlags.NestedNamespace | qt.NodeFlags.GlobalAugmentation);
   node.decorators = asNodeArray(decorators);
   node.modifiers = asNodeArray(modifiers);
   node.name = name;
@@ -2029,7 +2029,7 @@ export function createJSDocReadonlyTag() {
   return createJSDocTag<JSDocReadonlyTag>(SyntaxKind.JSDocReadonlyTag, 'readonly');
 }
 
-export function appendJSDocToContainer(node: JSDocContainer, jsdoc: JSDoc) {
+export function appendJSDocToContainer(node: qt.JSDocContainer, jsdoc: JSDoc) {
   node.jsDoc = append(node.jsDoc, jsdoc);
   return node;
 }

@@ -56,8 +56,8 @@ enum BuildResultFlags {
   AnyErrors = ConfigFileErrors | SyntaxErrors | TypeErrors | DeclarationEmitErrors | EmitErrors,
 }
 
-export type ResolvedConfigFilePath = ResolvedConfigFileName & Path;
-interface FileMap<T, U extends Path = Path> extends Map<T> {
+export type ResolvedConfigFilePath = ResolvedConfigFileName & qt.Path;
+interface FileMap<T, U extends qt.Path = qt.Path> extends Map<T> {
   get(key: U): T | undefined;
   has(key: U): boolean;
   forEach(action: (value: T, key: U) => void): void;
@@ -1612,7 +1612,7 @@ function watchInputFiles(state: SolutionBuilderState, resolved: ResolvedConfigFi
     getOrCreateValueMapFromConfigFileMap(state.allWatchedInputFiles, resolvedPath),
     arrayToMap(parsed.fileNames, (fileName) => toPath(state, fileName)),
     {
-      createNewValue: (path, input) => state.watchFilePath(state.hostWithWatch, input, () => invalidateProjectAndScheduleBuilds(state, resolvedPath, ConfigFileProgramReloadLevel.None), PollingInterval.Low, parsed?.watchOptions, path as Path, WatchType.SourceFile, resolved),
+      createNewValue: (path, input) => state.watchFilePath(state.hostWithWatch, input, () => invalidateProjectAndScheduleBuilds(state, resolvedPath, ConfigFileProgramReloadLevel.None), PollingInterval.Low, parsed?.watchOptions, path as qt.Path, WatchType.SourceFile, resolved),
       onDeleteValue: closeFileWatcher,
     }
   );

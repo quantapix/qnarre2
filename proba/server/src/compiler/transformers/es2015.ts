@@ -1662,7 +1662,7 @@ export function transformES2015(context: TransformationContext) {
   function visitVariableStatement(node: VariableStatement): qt.Statement | undefined {
     const ancestorFacts = enterSubtree(HierarchyFacts.None, qu.hasSyntacticModifier(node, qt.ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None);
     let updated: qt.Statement | undefined;
-    if (convertedLoopState && (node.declarationList.flags & NodeFlags.BlockScoped) === 0 && !isVariableStatementOfTypeScriptClassWrapper(node)) {
+    if (convertedLoopState && (node.declarationList.flags &  qt.NodeFlags.BlockScoped) === 0 && !isVariableStatementOfTypeScriptClassWrapper(node)) {
       // we are inside a converted loop - hoist variable declarations
       let assignments: qt.Expression[] | undefined;
       for (const decl of node.declarationList.declarations) {
@@ -1699,12 +1699,12 @@ export function transformES2015(context: TransformationContext) {
    * @param node A qt.VariableDeclarationList node.
    */
   function visitVariableDeclarationList(node: qt.VariableDeclarationList): qt.VariableDeclarationList {
-    if (node.flags & NodeFlags.BlockScoped || node.transformFlags & TransformFlags.ContainsBindingPattern) {
-      if (node.flags & NodeFlags.BlockScoped) {
+    if (node.flags &  qt.NodeFlags.BlockScoped || node.transformFlags & TransformFlags.ContainsBindingPattern) {
+      if (node.flags &  qt.NodeFlags.BlockScoped) {
         enableSubstitutionsForBlockScopedBindings();
       }
 
-      const declarations = flatMap(node.declarations, node.flags & NodeFlags.Let ? visitVariableDeclarationInLetDeclarationList : visitVariableDeclaration);
+      const declarations = flatMap(node.declarations, node.flags &  qt.NodeFlags.Let ? visitVariableDeclarationInLetDeclarationList : visitVariableDeclaration);
 
       const declarationList = createVariableDeclarationList(declarations);
       setOriginalNode(declarationList, node);
@@ -1889,7 +1889,7 @@ export function transformES2015(context: TransformationContext) {
     const statements: qt.Statement[] = [];
     const initializer = node.initializer;
     if (isVariableDeclarationList(initializer)) {
-      if (node.initializer.flags & NodeFlags.BlockScoped) {
+      if (node.initializer.flags &  qt.NodeFlags.BlockScoped) {
         enableSubstitutionsForBlockScopedBindings();
       }
 
@@ -2261,7 +2261,7 @@ export function transformES2015(context: TransformationContext) {
     const loopParameters: ParameterDeclaration[] = [];
     // variables declared in the loop initializer that will be changed inside the loop
     const loopOutParameters: LoopOutParameter[] = [];
-    if (loopInitializer && getCombinedNodeFlags(loopInitializer) & NodeFlags.BlockScoped) {
+    if (loopInitializer && getCombinedNodeFlags(loopInitializer) &  qt.NodeFlags.BlockScoped) {
       const hasCapturedBindingsInForInitializer = shouldConvertInitializerOfForStatement(node);
       for (const decl of loopInitializer.declarations) {
         processLoopVariableDeclaration(node, decl, loopParameters, loopOutParameters, hasCapturedBindingsInForInitializer);

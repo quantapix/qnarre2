@@ -26,7 +26,7 @@ export type ReusableDiagnosticMessageChain = qt.DiagnosticMessageChain;
 
 export interface ReusableBuilderProgramState extends ReusableBuilderState {
   /**
-   * Cache of bind and check diagnostics for files with their Path being the key
+   * Cache of bind and check diagnostics for files with their  qt.Path being the key
    */
   semanticDiagnosticsPerFile?: qpc.ReadonlyMap<readonly ReusableDiagnostic[] | readonly Diagnostic[]> | undefined;
   /**
@@ -40,7 +40,7 @@ export interface ReusableBuilderProgramState extends ReusableBuilderState {
   /**
    * Current changed file for iterating over affected files
    */
-  currentChangedFilePath?: Path | undefined;
+  currentChangedFilePath?: qt.Path | undefined;
   /**
    * Map of file signatures, with key being file path, calculated while getting current changed file's affected files
    * These will be committed whenever the iteration through affected files of current changed file is complete
@@ -65,7 +65,7 @@ export interface ReusableBuilderProgramState extends ReusableBuilderState {
   /**
    * Files pending to be emitted
    */
-  affectedFilesPendingEmit?: readonly Path[] | undefined;
+  affectedFilesPendingEmit?: readonly qt.Path[] | undefined;
   /**
    * Files pending to be emitted kind.
    */
@@ -91,7 +91,7 @@ export const enum BuilderFileEmit {
 // TODO: GH#18217 Properties of this interface are frequently asserted to be defined.
 export interface BuilderProgramState extends BuilderState {
   /**
-   * Cache of bind and check diagnostics for files with their Path being the key
+   * Cache of bind and check diagnostics for files with their  qt.Path being the key
    */
   semanticDiagnosticsPerFile: Map<readonly Diagnostic[]> | undefined;
   /**
@@ -109,7 +109,7 @@ export interface BuilderProgramState extends BuilderState {
   /**
    * Current changed file for iterating over affected files
    */
-  currentChangedFilePath: Path | undefined;
+  currentChangedFilePath: qt.Path | undefined;
   /**
    * Map of file signatures, with key being file path, calculated while getting current changed file's affected files
    * These will be committed whenever the iteration through affected files of current changed file is complete
@@ -142,7 +142,7 @@ export interface BuilderProgramState extends BuilderState {
   /**
    * Files pending to be emitted
    */
-  affectedFilesPendingEmit: Path[] | undefined;
+  affectedFilesPendingEmit: qt.Path[] | undefined;
   /**
    * Files pending to be emitted kind.
    */
@@ -234,7 +234,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc
       // Register file as changed file and do not copy semantic diagnostics, since all changed files need to be re-evaluated
       state.changedFilesSet.set(sourceFilePath, true);
     } else if (canCopySemanticDiagnostics) {
-      const sourceFile = newProgram.getSourceFileByPath(sourceFilePath as Path)!;
+      const sourceFile = newProgram.getSourceFileByPath(sourceFilePath as qt.Path)!;
 
       if (sourceFile.isDeclarationFile && !copyDeclarationFileDiagnostics) {
         return;
@@ -286,7 +286,7 @@ function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newPro
   }
 }
 
-function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: Program, toPath: (path: string) => Path): DiagnosticRelatedInformation {
+function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: Program, toPath: (path: string) => qt.Path): DiagnosticRelatedInformation {
   const { file } = diagnostic;
   return {
     ...diagnostic,
@@ -448,7 +448,7 @@ function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFi
  * Handle the dts may change, so they need to be added to pending emit if dts emit is enabled,
  * Also we need to make sure signature is updated for these files
  */
-function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
+function handleDtsMayChangeOf(state: BuilderProgramState, path: qt.Path, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
   removeSemanticDiagnosticsOf(state, path);
 
   if (!state.changedFilesSet.has(path)) {
@@ -474,7 +474,7 @@ function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellati
  * Removes semantic diagnostics for path and
  * returns true if there are no more semantic diagnostics from the old state
  */
-function removeSemanticDiagnosticsOf(state: BuilderProgramState, path: Path) {
+function removeSemanticDiagnosticsOf(state: BuilderProgramState, path: qt.Path) {
   if (!state.semanticDiagnosticsFromOldState) {
     return true;
   }
@@ -483,7 +483,7 @@ function removeSemanticDiagnosticsOf(state: BuilderProgramState, path: Path) {
   return !state.semanticDiagnosticsFromOldState.size;
 }
 
-function isChangedSignagure(state: BuilderProgramState, path: Path) {
+function isChangedSignagure(state: BuilderProgramState, path: qt.Path) {
   const newSignature = Debug.checkDefined(state.currentAffectedFilesSignatures).get(path);
   const oldSignagure = Debug.checkDefined(state.fileInfos.get(path)).signature;
   return newSignature !== oldSignagure;
@@ -492,7 +492,7 @@ function isChangedSignagure(state: BuilderProgramState, path: Path) {
 /**
  * Iterate on referencing modules that export entities from affected file
  */
-function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: SourceFile, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
+function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: SourceFile, fn: (state: BuilderProgramState, filePath: qt.Path) => boolean) {
   // If there was change in signature (dts output) for the changed file,
   // then only we need to handle pending file emit
   if (!state.exportedModulesMap || !state.changedFilesSet.has(affectedFile.resolvedPath)) {
@@ -524,7 +524,7 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
   const seenFileAndExportsOfFile = qc.createMap<true>();
   // Go through exported modules from cache first
   // If exported modules has path, all files referencing file exported from are affected
-  if (qu.forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
+  if (qu.forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn))) {
     return;
   }
 
@@ -534,21 +534,21 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
     (exportedModules, exportedFromPath) =>
       !state.currentAffectedFilesExportedModulesMap.has(exportedFromPath) && // If we already iterated this through cache, ignore it
       exportedModules.has(affectedFile.resolvedPath) &&
-      forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+      forEachFilesReferencingPath(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn)
   );
 }
 
 /**
  * Iterate on files referencing referencedPath
  */
-function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
-  return qu.forEachEntry(state.referencedMap!, (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as Path, seenFileAndExportsOfFile, fn));
+function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath: qt.Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: qt.Path) => boolean) {
+  return qu.forEachEntry(state.referencedMap!, (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as qt.Path, seenFileAndExportsOfFile, fn));
 }
 
 /**
  * fn on file and iterate on anything that exports this file
  */
-function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean): boolean {
+function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: qt.Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: qt.Path) => boolean): boolean {
   if (!addToSeen(seenFileAndExportsOfFile, filePath)) {
     return false;
   }
@@ -561,7 +561,7 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
   Debug.assert(!!state.currentAffectedFilesExportedModulesMap);
   // Go through exported modules from cache first
   // If exported modules has path, all files referencing file exported from are affected
-  if (qu.forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
+  if (qu.forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn))) {
     return true;
   }
 
@@ -572,7 +572,7 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
       (exportedModules, exportedFromPath) =>
         !state.currentAffectedFilesExportedModulesMap.has(exportedFromPath) && // If we already iterated this through cache, ignore it
         exportedModules.has(filePath) &&
-        forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+        forEachFileAndExportsOfFile(state, exportedFromPath as qt.Path, seenFileAndExportsOfFile, fn)
     )
   ) {
     return true;
@@ -584,7 +584,7 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
     (referencesInFile, referencingFilePath) =>
       referencesInFile.has(filePath) &&
       !seenFileAndExportsOfFile.has(referencingFilePath) && // Not already removed diagnostic file
-      fn(state, referencingFilePath as Path) // Dont add to seen since this is not yet done with the export removal
+      fn(state, referencingFilePath as qt.Path) // Dont add to seen since this is not yet done with the export removal
   );
 }
 
@@ -1026,7 +1026,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   }
 }
 
-function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFilePendingEmit: Path, kind: BuilderFileEmit) {
+function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFilePendingEmit: qt.Path, kind: BuilderFileEmit) {
   if (!state.affectedFilesPendingEmit) state.affectedFilesPendingEmit = [];
   if (!state.affectedFilesPendingEmitKind) state.affectedFilesPendingEmitKind = createMap();
 
@@ -1043,7 +1043,7 @@ function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFileP
   }
 }
 
-function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefined, toPath: (path: string) => Path): qpc.ReadonlyMap<BuilderState.ReferencedSet> | undefined {
+function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefined, toPath: (path: string) => qt.Path): qpc.ReadonlyMap<BuilderState.ReferencedSet> | undefined {
   if (!mapLike) return undefined;
   const map = qc.createMap<BuilderState.ReferencedSet>();
   // Copies keys/values from template. Note that for..in will not throw if

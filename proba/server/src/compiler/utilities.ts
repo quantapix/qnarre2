@@ -1148,7 +1148,7 @@ export function isPartOfTypeNode(node: qt.Node): boolean {
         case qt.SyntaxKind.PropertySignature:
         case qt.SyntaxKind.Parameter:
         case qt.SyntaxKind.VariableDeclaration:
-          return node === (parent as HasType).type;
+          return node === (parent as qt.HasType).type;
         case qt.SyntaxKind.FunctionDeclaration:
         case qt.SyntaxKind.FunctionExpression:
         case qt.SyntaxKind.ArrowFunction:
@@ -1719,7 +1719,7 @@ export function isInExpressionContext(node: qt.Node): boolean {
     case qt.SyntaxKind.EnumMember:
     case qt.SyntaxKind.PropertyAssignment:
     case qt.SyntaxKind.BindingElement:
-      return (parent as HasInitializer).initializer === node;
+      return (parent as qt.HasInitializer).initializer === node;
     case qt.SyntaxKind.ExpressionStatement:
     case qt.SyntaxKind.IfStatement:
     case qt.SyntaxKind.DoStatement:
@@ -1896,7 +1896,7 @@ export function isAssignmentDeclaration(decl: qt.Declaration) {
 }
 
 /** Get the initializer, taking into account defaulted Javascript initializers */
-export function getEffectiveInitializer(node: HasExpressionInitializer) {
+export function getEffectiveInitializer(node: qt.HasExpressionInitializer) {
   if (isInJSFile(node) && node.initializer && isBinaryExpression(node.initializer) && (node.initializer.operatorToken.kind === qt.SyntaxKind.BarBarToken || node.initializer.operatorToken.kind === qt.SyntaxKind.QuestionQuestionToken) && node.name && isEntityNameExpression(node.name) && isSameEntityName(node.name, node.initializer.left)) {
     return node.initializer.right;
   }
@@ -1904,7 +1904,7 @@ export function getEffectiveInitializer(node: HasExpressionInitializer) {
 }
 
 /** Get the declaration initializer when it is container-like (See getExpandoInitializer). */
-export function getDeclaredExpandoInitializer(node: HasExpressionInitializer) {
+export function getDeclaredExpandoInitializer(node: qt.HasExpressionInitializer) {
   const init = getEffectiveInitializer(node);
   return init && getExpandoInitializer(init, isPrototypeAccess(node.name));
 }
@@ -2390,7 +2390,7 @@ export function getEffectiveJSDocHost(node: qt.Node): qt.Node | undefined {
 }
 
 /** Use getEffectiveJSDocHost if you additionally need to look for jsdoc on parent nodes, like assignments.  */
-export function getJSDocHost(node: qt.Node): HasJSDoc {
+export function getJSDocHost(node: qt.Node): qt.HasJSDoc {
   return Debug.checkDefined(findAncestor(node.parent, isJSDoc)).parent;
 }
 
@@ -2410,8 +2410,8 @@ export function isRestParameter(node: ParameterDeclaration | JSDocParameterTag):
   return (node as ParameterDeclaration).dotDotDotToken !== undefined || (!!type && type.kind === qt.SyntaxKind.JSDocVariadicType);
 }
 
-export function hasTypeArguments(node: qt.Node): node is HasTypeArguments {
-  return !!(node as HasTypeArguments).typeArguments;
+export function hasTypeArguments(node: qt.Node): node is qt.HasTypeArguments {
+  return !!(node as qt.HasTypeArguments).typeArguments;
 }
 
 export const enum AssignmentKind {
@@ -3797,13 +3797,13 @@ export function getAllAccessorDeclarations(declarations: readonly qt.Declaration
  */
 export function getEffectiveTypeAnnotationNode(node: qt.Node): qt.TypeNode | undefined {
   if (!isInJSFile(node) && isFunctionDeclaration(node)) return undefined;
-  const type = (node as HasType).type;
+  const type = (node as qt.HasType).type;
   if (type || !isInJSFile(node)) return type;
   return isJSDocPropertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : getJSDocType(node);
 }
 
 export function getTypeAnnotationNode(node: qt.Node): qt.TypeNode | undefined {
-  return (node as HasType).type;
+  return (node as qt.HasType).type;
 }
 
 /**
@@ -5769,7 +5769,7 @@ export function removeExtension(path: string, extension: string): string {
   return path.substring(0, path.length - extension.length);
 }
 
-export function changeExtension<T extends string | Path>(path: T, newExtension: string): T {
+export function changeExtension<T extends string | qt.Path>(path: T, newExtension: string): T {
   return <T>qp.changeAnyExtension(path, newExtension, extensionsToRemove, /*ignoreCase*/ false);
 }
 
@@ -5802,7 +5802,7 @@ export function resolutionExtensionIsTSOrJson(ext: Extension) {
 
 /**
  * Gets the extension from a path.
- * Path must have a valid extension.
+ *  qt.Path must have a valid extension.
  */
 export function extensionFromPath(path: string): Extension {
   const ext = tryGetExtensionFromPath(path);

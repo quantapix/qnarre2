@@ -52,24 +52,24 @@ function getPreferencesForUpdate(compilerOptions: qt.CompilerOptions, oldImportS
   };
 }
 
-export function updateModuleSpecifier(compilerOptions: qt.CompilerOptions, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, oldImportSpecifier: string): string | undefined {
+export function updateModuleSpecifier(compilerOptions: qt.CompilerOptions, importingSourceFileName: qt.Path, toFileName: string, host: ModuleSpecifierResolutionHost, oldImportSpecifier: string): string | undefined {
   const res = getModuleSpecifierWorker(compilerOptions, importingSourceFileName, toFileName, host, getPreferencesForUpdate(compilerOptions, oldImportSpecifier));
   if (res === oldImportSpecifier) return undefined;
   return res;
 }
 
 // Note: importingSourceFile is just for usesJsExtensionOnImports
-export function getModuleSpecifier(compilerOptions: qt.CompilerOptions, importingSourceFile: SourceFile, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: UserPreferences = {}): string {
+export function getModuleSpecifier(compilerOptions: qt.CompilerOptions, importingSourceFile: SourceFile, importingSourceFileName: qt.Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: UserPreferences = {}): string {
   return getModuleSpecifierWorker(compilerOptions, importingSourceFileName, toFileName, host, getPreferences(preferences, compilerOptions, importingSourceFile));
 }
 
-export function getNodeModulesPackageName(compilerOptions: qt.CompilerOptions, importingSourceFileName: Path, nodeModulesFileName: string, host: ModuleSpecifierResolutionHost): string | undefined {
+export function getNodeModulesPackageName(compilerOptions: qt.CompilerOptions, importingSourceFileName: qt.Path, nodeModulesFileName: string, host: ModuleSpecifierResolutionHost): string | undefined {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, nodeModulesFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions, /*packageNameOnly*/ true));
 }
 
-function getModuleSpecifierWorker(compilerOptions: qt.CompilerOptions, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: Preferences): string {
+function getModuleSpecifierWorker(compilerOptions: qt.CompilerOptions, importingSourceFileName: qt.Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: Preferences): string {
   const info = getInfo(importingSourceFileName, host);
   const modulePaths = getAllModulePaths(importingSourceFileName, toFileName, host);
   return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions)) || getLocalModuleSpecifier(toFileName, info, compilerOptions, preferences);
@@ -91,10 +91,10 @@ export function getModuleSpecifiers(moduleSymbol: symbol, compilerOptions: qt.Co
 
 interface Info {
   readonly getCanonicalFileName: qc.GetCanonicalFileName;
-  readonly sourceDirectory: Path;
+  readonly sourceDirectory: qt.Path;
 }
 // importingSourceFileName is separate because getEditsForFileRename may need to specify an updated path
-function getInfo(importingSourceFileName: Path, host: ModuleSpecifierResolutionHost): Info {
+function getInfo(importingSourceFileName: qt.Path, host: ModuleSpecifierResolutionHost): Info {
   const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : true);
   const sourceDirectory = qp.getDirectoryPath(importingSourceFileName);
   return { getCanonicalFileName, sourceDirectory };

@@ -19,7 +19,7 @@ export function transformES2020(context: TransformationContext) {
       case qt.SyntaxKind.PropertyAccessExpression:
       case qt.SyntaxKind.ElementAccessExpression:
       case qt.SyntaxKind.CallExpression:
-        if (node.flags & NodeFlags.OptionalChain) {
+        if (node.flags & qt.NodeFlags.OptionalChain) {
           const updated = visitOptionalExpression(node, /*captureThisArg*/ false, /*isDelete*/ false);
           Debug.assertNotNode(updated, isSyntheticReference);
           return updated;

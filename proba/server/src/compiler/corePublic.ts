@@ -42,12 +42,7 @@ export function tryGetNativeMap(): MapConstructor | undefined {
   return typeof Map !== 'undefined' && 'entries' in Map.prototype ? Map : undefined;
 }
 
-export const Map: MapConstructor =
-  tryGetNativeMap() ||
-  (() => {
-    if (typeof createMapShim === 'function') return createMapShim();
-    throw new Error('TypeScript requires an environment that provides a compatible native Map implementation.');
-  })();
+export const Map: MapConstructor = tryGetNativeMap() || createMapShim();
 
 export interface Iterator<T> {
   next(): { value: T; done?: false } | { value: never; done: true };

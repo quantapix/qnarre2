@@ -899,7 +899,7 @@ export function transformDeclarations(context: TransformationContext) {
             errorNode: input,
           });
           const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), /*initializer*/ undefined);
-          const statement = createVariableStatement(needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
+          const statement = createVariableStatement(needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], qt.NodeFlags.Const));
           return [statement, updateExportAssignment(input, input.decorators, input.modifiers, newId)];
         }
       }
@@ -962,8 +962,8 @@ export function transformDeclarations(context: TransformationContext) {
         const clean = cleanup(updateFunctionDeclaration(input, /*decorators*/ undefined, ensureModifiers(input), /*asteriskToken*/ undefined, input.name, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), /*body*/ undefined));
         if (clean && resolver.isExpandoFunctionDeclaration(input)) {
           const props = resolver.getPropertiesOfContainerFunction(input);
-          const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
-          fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
+          const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), qt.NodeFlags.Namespace);
+          fakespace.flags ^= qt.NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
           fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
           fakespace.locals = qu.createSymbolTable(props);
           fakespace.symbol = props[0].parent!;
@@ -977,7 +977,7 @@ export function transformDeclarations(context: TransformationContext) {
             const varDecl = createVariableDeclaration(unescapeLeadingUnderscores(p.escapedName), type, /*initializer*/ undefined);
             return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
           });
-          const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
+          const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), qt.NodeFlags.Namespace);
 
           if (!hasEffectiveModifier(clean, qt.ModifierFlags.Default)) {
             return [clean, namespaceDecl];
@@ -1010,7 +1010,7 @@ export function transformDeclarations(context: TransformationContext) {
           needsScopeFixMarker = false;
           const statements = visitNodes(inner.statements, visitDeclarationStatements);
           let lateStatements = transformAndReplaceLatePaintedStatements(statements);
-          if (input.flags & NodeFlags.Ambient) {
+          if (input.flags & qt.NodeFlags.Ambient) {
             needsScopeFixMarker = false; // If it was `declare`'d everything is implicitly exported already, ignore late printed "privates"
           }
           // With the final list of statements, there are 3 possibilities:
@@ -1094,7 +1094,7 @@ export function transformDeclarations(context: TransformationContext) {
             typeName: input.name,
           });
           const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), /*initializer*/ undefined);
-          const statement = createVariableStatement(needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
+          const statement = createVariableStatement(needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], qt.NodeFlags.Const));
           const heritageClauses = createNodeArray(
             map(input.heritageClauses, (clause) => {
               if (clause.token === qt.SyntaxKind.ExtendsKeyword) {

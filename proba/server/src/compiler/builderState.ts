@@ -111,7 +111,7 @@ export namespace BuilderState {
   /**
    * Gets the path to reference file from file name, it could be resolvedPath if present otherwise path
    */
-  function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: qc.GetCanonicalFileName): Path {
+  function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: qt.Path, getCanonicalFileName: qc.GetCanonicalFileName): qt.Path {
     return qp.toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
   }
 
@@ -123,7 +123,7 @@ export namespace BuilderState {
 
     // We need to use a set here since the code can contain the same import twice,
     // but that will only be one dependency.
-    // To avoid invernal conversion, the key of the referencedFiles map must be of type Path
+    // To avoid invernal conversion, the key of the referencedFiles map must be of type  qt.Path
     if (sourceFile.imports && sourceFile.imports.length > 0) {
       const checker: TypeChecker = program.getTypeChecker();
       for (const importName of sourceFile.imports) {
@@ -192,7 +192,7 @@ export namespace BuilderState {
       }
     }
 
-    function addReferencedFile(referencedPath: Path) {
+    function addReferencedFile(referencedPath: qt.Path) {
       if (!referencedFiles) {
         referencedFiles = qc.createMap<true>();
       }
@@ -273,7 +273,7 @@ export namespace BuilderState {
   /**
    * Gets the files affected by the path from the program
    */
-  export function getFilesAffectedBy(state: BuilderState, programOfThisState: Program, path: Path, cancellationToken: CancellationToken | undefined, computeHash: ComputeHash, cacheToUpdateSignature?: Map<string>, exportedModulesMapCache?: ComputingExportedModulesMap): readonly SourceFile[] {
+  export function getFilesAffectedBy(state: BuilderState, programOfThisState: Program, path: qt.Path, cancellationToken: CancellationToken | undefined, computeHash: ComputeHash, cacheToUpdateSignature?: Map<string>, exportedModulesMapCache?: ComputingExportedModulesMap): readonly SourceFile[] {
     // Since the operation could be cancelled, the signatures are always stored in the cache
     // They will be committed once it is safe to use them
     // eg when calling this api from tsserver, if there is no cancellation of the operation
@@ -301,10 +301,10 @@ export namespace BuilderState {
    * This should be called whenever it is safe to commit the state of the builder
    */
   export function updateSignaturesFromCache(state: BuilderState, signatureCache: Map<string>) {
-    signatureCache.forEach((signature, path) => updateSignatureOfFile(state, signature, path as Path));
+    signatureCache.forEach((signature, path) => updateSignatureOfFile(state, signature, path as qt.Path));
   }
 
-  export function updateSignatureOfFile(state: BuilderState, signature: string | undefined, path: Path) {
+  export function updateSignatureOfFile(state: BuilderState, signature: string | undefined, path: qt.Path) {
     state.fileInfos.get(path)!.signature = signature;
     state.hasCalledUpdateShapeSignature.set(path, true);
   }
@@ -364,7 +364,7 @@ export namespace BuilderState {
     exportedModulesFromDeclarationEmit.forEach((symbol) => addExportedModule(getReferencedFileFromImportedModuleSymbol(symbol)));
     exportedModulesMapCache.set(sourceFile.resolvedPath, exportedModules || false);
 
-    function addExportedModule(exportedModulePath: Path | undefined) {
+    function addExportedModule(exportedModulePath: qt.Path | undefined) {
       if (exportedModulePath) {
         if (!exportedModules) {
           exportedModules = qc.createMap<true>();
@@ -417,7 +417,7 @@ export namespace BuilderState {
         if (references) {
           const iterator = references.keys();
           for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
-            queue.push(iterResult.value as Path);
+            queue.push(iterResult.value as qt.Path);
           }
         }
       }
@@ -425,7 +425,7 @@ export namespace BuilderState {
 
     return qc.arrayFrom(
       mapDefinedIterator(seenMap.keys(), (path) => {
-        const file = programOfThisState.getSourceFileByPath(path as Path);
+        const file = programOfThisState.getSourceFileByPath(path as qt.Path);
         return file ? file.fileName : path;
       })
     );
@@ -445,8 +445,8 @@ export namespace BuilderState {
   /**
    * Gets the files referenced by the the file path
    */
-  export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: Path) {
-    return qc.arrayFrom(mapDefinedIterator(state.referencedMap.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined)));
+  export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: qt.Path) {
+    return qc.arrayFrom(mapDefinedIterator(state.referencedMap.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as qt.Path) : undefined)));
   }
 
   /**

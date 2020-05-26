@@ -436,7 +436,7 @@ export function transformES2018(context: TransformationContext) {
         bodyLocation = node.statement;
         statementsLocation = node.statement;
       }
-      return updateForOf(node, node.awaitModifier, setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer), node.expression, setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation));
+      return updateForOf(node, node.awaitModifier, setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)],  qt.NodeFlags.Let), node.initializer), node.expression, setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation));
     }
     return node;
   }

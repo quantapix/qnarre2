@@ -210,7 +210,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   let hasExplicitReturn: boolean;
 
   // state used for emit helpers
-  let emitFlags: NodeFlags;
+  let emitFlags:  qt.NodeFlags;
 
   // If this file is an external module, then it is automatically in strict-mode according to
   // ES6.  If it is not an external module, then we'll determine if it is in strict mode or
@@ -280,7 +280,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     currentExceptionTarget = undefined;
     activeLabelList = undefined;
     hasExplicitReturn = false;
-    emitFlags = NodeFlags.None;
+    emitFlags =  qt.NodeFlags.None;
     subtreeTransformFlags = TransformFlags.None;
   }
 
@@ -493,8 +493,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
             } else {
               // This is to properly report an error in the case "export default { }" is after export default of class declaration or function declaration.
               // Error on multiple export default in the following case:
-              // 1. multiple export default of class declaration or function declaration by checking NodeFlags.Default
-              // 2. multiple export default of export assignment. This one doesn't have NodeFlags.Default on (as export default doesn't considered as modifiers)
+              // 1. multiple export default of class declaration or function declaration by checking  qt.NodeFlags.Default
+              // 2. multiple export default of export assignment. This one doesn't have  qt.NodeFlags.Default on (as export default doesn't considered as modifiers)
               if (symbol.declarations && symbol.declarations.length && node.kind === qt.SyntaxKind.ExportAssignment && !node.isExportEquals) {
                 message = Diagnostics.A_module_cannot_have_multiple_default_exports;
                 messageNeedsName = false;
@@ -562,7 +562,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       //       and this case is specially handled. Module augmentations should only be merged with original module definition
       //       and should never be merged directly with other augmentation, and the latter case would be possible if automatic merge is allowed.
       if (isJSDocTypeAlias(node)) Debug.assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
-      if ((!qu.isAmbientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
+      if ((!qu.isAmbientModule(node) && (hasExportModifier || container.flags &  qt.NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
         if (!container.locals || (hasSyntacticModifier(node, qt.ModifierFlags.Default) && !getDeclarationName(node))) {
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes); // No local symbol for an unnamed default!
         }
@@ -647,8 +647,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       // Reset all reachability check related flags on node (for incremental scenarios)
       node.flags &= ~NodeFlags.ReachabilityAndEmitFlags;
       if (!(currentFlow.flags & FlowFlags.Unreachable) && containerFlags & ContainerFlags.IsFunctionLike && qu.nodeIsPresent(node.body)) {
-        node.flags |= NodeFlags.HasImplicitReturn;
-        if (hasExplicitReturn) node.flags |= NodeFlags.HasExplicitReturn;
+        node.flags |=  qt.NodeFlags.HasImplicitReturn;
+        if (hasExplicitReturn) node.flags |=  qt.NodeFlags.HasExplicitReturn;
         node.endFlowNode = currentFlow;
       }
       if (node.kind === qt.SyntaxKind.SourceFile) {
@@ -674,7 +674,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     } else if (containerFlags & ContainerFlags.IsInterface) {
       seenThisKeyword = false;
       bindChildren(node);
-      node.flags = seenThisKeyword ? node.flags | NodeFlags.ContainsThis : node.flags & ~NodeFlags.ContainsThis;
+      node.flags = seenThisKeyword ? node.flags |  qt.NodeFlags.ContainsThis : node.flags & ~NodeFlags.ContainsThis;
     } else {
       bindChildren(node);
     }
@@ -1871,8 +1871,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function setExportContextFlag(node: qt.ModuleDeclaration | SourceFile) {
     // A declaration source file or ambient module declaration that contains no export declarations (but possibly regular
     // declarations with export modifiers) is an export context in which declarations are implicitly exported.
-    if (node.flags & NodeFlags.Ambient && !hasExportDeclarations(node)) {
-      node.flags |= NodeFlags.ExportContext;
+    if (node.flags &  qt.NodeFlags.Ambient && !hasExportDeclarations(node)) {
+      node.flags |=  qt.NodeFlags.ExportContext;
     } else {
       node.flags &= ~NodeFlags.ExportContext;
     }
@@ -2083,7 +2083,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   // The binder visits every node in the syntax tree so it is a convenient place to perform a single localized
   // check for reserved words used as identifiers in strict mode code.
   function checkStrictModeIdentifier(node: Identifier) {
-    if (inStrictMode && node.originalKeywordKind! >= qt.SyntaxKind.FirstFutureReservedWord && node.originalKeywordKind! <= qt.SyntaxKind.LastFutureReservedWord && !isIdentifierName(node) && !(node.flags & NodeFlags.Ambient) && !(node.flags & NodeFlags.JSDoc)) {
+    if (inStrictMode && node.originalKeywordKind! >= qt.SyntaxKind.FirstFutureReservedWord && node.originalKeywordKind! <= qt.SyntaxKind.LastFutureReservedWord && !isIdentifierName(node) && !(node.flags &  qt.NodeFlags.Ambient) && !(node.flags &  qt.NodeFlags.JSDoc)) {
       // Report error only if there are no parse errors in file
       if (!file.parseDiagnostics.length) {
         file.bindDiagnostics.push(qu.createDiagnosticForNode(node, getStrictModeIdentifierMessage(node), qu.declarationNameToString(node)));
@@ -3104,7 +3104,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     if (node.kind === qt.SyntaxKind.JSDocParameterTag && container.kind !== qt.SyntaxKind.JSDocSignature) {
       return;
     }
-    if (inStrictMode && !(node.flags & NodeFlags.Ambient)) {
+    if (inStrictMode && !(node.flags &  qt.NodeFlags.Ambient)) {
       // It is a SyntaxError if the identifier eval or arguments appears within a FormalParameterList of a
       // strict mode qt.FunctionLikeDeclaration or FunctionExpression(13.1)
       checkStrictModeEvalOrArguments(node, node.name);
@@ -3125,9 +3125,9 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function bindFunctionDeclaration(node: FunctionDeclaration) {
-    if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient)) {
+    if (!file.isDeclarationFile && !(node.flags &  qt.NodeFlags.Ambient)) {
       if (isAsyncFunction(node)) {
-        emitFlags |= NodeFlags.HasAsyncFunctions;
+        emitFlags |=  qt.NodeFlags.HasAsyncFunctions;
       }
     }
 
@@ -3141,9 +3141,9 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function bindFunctionExpression(node: FunctionExpression) {
-    if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient)) {
+    if (!file.isDeclarationFile && !(node.flags &  qt.NodeFlags.Ambient)) {
       if (isAsyncFunction(node)) {
-        emitFlags |= NodeFlags.HasAsyncFunctions;
+        emitFlags |=  qt.NodeFlags.HasAsyncFunctions;
       }
     }
     if (currentFlow) {
@@ -3155,8 +3155,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function bindPropertyOrMethodOrAccessor(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
-    if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient) && isAsyncFunction(node)) {
-      emitFlags |= NodeFlags.HasAsyncFunctions;
+    if (!file.isDeclarationFile && !(node.flags &  qt.NodeFlags.Ambient) && isAsyncFunction(node)) {
+      emitFlags |=  qt.NodeFlags.HasAsyncFunctions;
     }
 
     if (currentFlow && qu.isObjectLiteralOrClassExpressionMethod(node)) {
@@ -3230,7 +3230,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           //   - node is not block scoped variable statement and at least one variable declaration has initializer
           //   Rationale: we don't want to report errors on non-initialized var's since they are hoisted
           //   On the other side we do want to report errors on non-initialized 'lets' because of TDZ
-          const isError = unreachableCodeIsError(options) && !(node.flags & NodeFlags.Ambient) && (!isVariableStatement(node) || !!(getCombinedNodeFlags(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
+          const isError = unreachableCodeIsError(options) && !(node.flags &  qt.NodeFlags.Ambient) && (!isVariableStatement(node) || !!(getCombinedNodeFlags(node.declarationList) &  qt.NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
 
           eachUnreachableRange(node, (start, end) => errorOrSuggestionOnRange(isError, start, end, Diagnostics.Unreachable_code_detected));
         }
@@ -3257,7 +3257,7 @@ function isExecutableStatement(s: qt.Statement): boolean {
     !isPurelyTypeDeclaration(s) &&
     !isEnumDeclaration(s) &&
     // `var x;` may declare a variable used above
-    !(isVariableStatement(s) && !(getCombinedNodeFlags(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
+    !(isVariableStatement(s) && !(getCombinedNodeFlags(s) & (NodeFlags.Let |  qt.NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
   );
 }
 
@@ -3411,7 +3411,7 @@ function computeCallExpression(node: CallExpression, subtreeFlags: TransformFlag
   const callee = skipOuterExpressions(node.expression);
   const expression = node.expression;
 
-  if (node.flags & NodeFlags.OptionalChain) {
+  if (node.flags &  qt.NodeFlags.OptionalChain) {
     transformFlags |= TransformFlags.ContainsES2020;
   }
 
@@ -3795,7 +3795,7 @@ function computeArrowFunction(node: ArrowFunction, subtreeFlags: TransformFlags)
 function computePropertyAccess(node: PropertyAccessExpression, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
 
-  if (node.flags & NodeFlags.OptionalChain) {
+  if (node.flags &  qt.NodeFlags.OptionalChain) {
     transformFlags |= TransformFlags.ContainsES2020;
   }
 
@@ -3814,7 +3814,7 @@ function computePropertyAccess(node: PropertyAccessExpression, subtreeFlags: Tra
 function computeElementAccess(node: qt.ElementAccessExpression, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
 
-  if (node.flags & NodeFlags.OptionalChain) {
+  if (node.flags &  qt.NodeFlags.OptionalChain) {
     transformFlags |= TransformFlags.ContainsES2020;
   }
 
@@ -3917,7 +3917,7 @@ function computeVariableDeclarationList(node: qt.VariableDeclarationList, subtre
   }
 
   // If a qt.VariableDeclarationList is `let` or `const`, then it is ES6 syntax.
-  if (node.flags & NodeFlags.BlockScoped) {
+  if (node.flags &  qt.NodeFlags.BlockScoped) {
     transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBlockScopedBinding;
   }
 

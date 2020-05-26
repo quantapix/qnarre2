@@ -611,7 +611,7 @@ export function transformSystemModule(context: TransformationContext) {
    */
   function shouldHoistVariableDeclarationList(node: qt.VariableDeclarationList) {
     // hoist only non-block scoped declarations or block scoped declarations parented by source file
-    return (qu.getEmitFlags(node) & qt.EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === qt.SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
+    return (qu.getEmitFlags(node) & qt.EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === qt.SyntaxKind.SourceFile || (getOriginalNode(node).flags & qt.NodeFlags.BlockScoped) === 0);
   }
 
   /**

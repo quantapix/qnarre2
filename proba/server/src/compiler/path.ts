@@ -1,5 +1,5 @@
-import * as qpc from './corePublic';
 import * as qc from './core';
+import * as qpc from './corePublic';
 import * as qt from './types';
 import { Debug } from './debug';
 

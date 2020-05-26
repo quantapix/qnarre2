@@ -15,7 +15,7 @@ export function isTraceEnabled(compilerOptions: qt.CompilerOptions, host: Module
   return !!compilerOptions.traceResolution && host.trace !== undefined;
 }
 
-function withPackageId(packageInfo: PackageJsonInfo | undefined, r: PathAndExtension | undefined): Resolved | undefined {
+function withPackageId(packageInfo: PackageJsonInfo | undefined, r:  qt.PathAndExtension | undefined): Resolved | undefined {
   let packageId: qt.PackageId | undefined;
   if (r && packageInfo) {
     const packageJsonContent = packageInfo.packageJsonContent as PackageJson;
@@ -30,11 +30,11 @@ function withPackageId(packageInfo: PackageJsonInfo | undefined, r: PathAndExten
   return r && { path: r.path, extension: r.ext, packageId };
 }
 
-function noPackageId(r: PathAndExtension | undefined): Resolved | undefined {
+function noPackageId(r:  qt.PathAndExtension | undefined): Resolved | undefined {
   return withPackageId(/*packageInfo*/ undefined, r);
 }
 
-function removeIgnoredPackageId(r: Resolved | undefined): PathAndExtension | undefined {
+function removeIgnoredPackageId(r: Resolved | undefined):  qt.PathAndExtension | undefined {
   if (r) {
     Debug.assert(r.packageId === undefined);
     return { path: r.path, ext: r.extension };
@@ -48,19 +48,19 @@ interface Resolved {
   packageId: qt.PackageId | undefined;
   /**
    * When the resolved is not created from cache, the value is
-   *  - string if original Path if it is symbolic link to the resolved path
+   *  - string if original  qt.Path if it is symbolic link to the resolved path
    *  - undefined if path is not a symbolic link
    * When the resolved is created using value from cache of ResolvedModuleWithFailedLookupLocations, the value is:
-   *  - string if original Path if it is symbolic link to the resolved path
+   *  - string if original  qt.Path if it is symbolic link to the resolved path
    *  - true if path is not a symbolic link - this indicates that the originalPath calculation is already done and needs to be skipped
    */
   originalPath?: string | true;
 }
 
 /** Result of trying to resolve a module at a file. Needs to have 'packageId' added later. */
-interface PathAndExtension {
+interface  qt.PathAndExtension {
   path: string;
-  // (Use a different name than `extension` to make sure Resolved isn't assignable to PathAndExtension.)
+  // (Use a different name than `extension` to make sure Resolved isn't assignable to  qt.PathAndExtension.)
   ext: Extension;
 }
 
@@ -76,12 +76,12 @@ enum Extensions {
   DtsOnly /** Only '.d.ts' */,
 }
 
-interface PathAndPackageId {
+interface  qt.PathAndPackageId {
   readonly fileName: string;
   readonly packageId: qt.PackageId | undefined;
 }
 /** Used with `Extensions.DtsOnly` to extract the path from TypeScript results. */
-function resolvedTypeScriptOnly(resolved: Resolved | undefined): PathAndPackageId | undefined {
+function resolvedTypeScriptOnly(resolved: Resolved | undefined):  qt.PathAndPackageId | undefined {
   if (!resolved) {
     return undefined;
   }
@@ -128,8 +128,8 @@ interface PackageJson extends PackageJsonPathFields {
   version?: string;
 }
 
-function readPackageJsonField<TMatch, K extends MatchingKeys<PackageJson, string | undefined>>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'string', state: ModuleResolutionState): PackageJson[K] | undefined;
-function readPackageJsonField<K extends MatchingKeys<PackageJson, object | undefined>>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'object', state: ModuleResolutionState): PackageJson[K] | undefined;
+function readPackageJsonField<TMatch, K extends  qt.MatchingKeys<PackageJson, string | undefined>>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'string', state: ModuleResolutionState): PackageJson[K] | undefined;
+function readPackageJsonField<K extends  qt.MatchingKeys<PackageJson, object | undefined>>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'object', state: ModuleResolutionState): PackageJson[K] | undefined;
 function readPackageJsonField<K extends keyof PackageJson>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'string' | 'object', state: ModuleResolutionState): PackageJson[K] | undefined {
   if (!hasProperty(jsonContent, fieldName)) {
     if (state.traceEnabled) {
@@ -341,7 +341,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
 
   return { resolvedTypeReferenceDirective, failedLookupLocations };
 
-  function primaryLookup(): PathAndPackageId | undefined {
+  function primaryLookup():  qt.PathAndPackageId | undefined {
     // Check primary library paths
     if (typeRoots && typeRoots.length) {
       if (traceEnabled) {
@@ -363,7 +363,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
     }
   }
 
-  function secondaryLookup(): PathAndPackageId | undefined {
+  function secondaryLookup():  qt.PathAndPackageId | undefined {
     const initialLocationForSecondaryLookup = containingFile && qp.getDirectoryPath(containingFile);
 
     if (initialLocationForSecondaryLookup !== undefined) {
@@ -583,7 +583,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
       }
     }
 
-    function getCommonPrefix(directory: Path, resolution: string) {
+    function getCommonPrefix(directory:  qt.Path, resolution: string) {
       const resolutionDirectory = qp.toPath(qp.getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
 
       // find first position where directory and resolution differs
@@ -998,7 +998,7 @@ export function pathContainsNodeModules(path: string): boolean {
  *   For `/node_modules/@types/foo/bar/index.d.ts` this is packageDirectory: "@types/foo"
  *   For `/node_modules/foo/bar/index.d.ts` this is packageDirectory: "foo"
  */
-function parseNodeModuleFromPath(resolved: PathAndExtension): string | undefined {
+function parseNodeModuleFromPath(resolved:  qt.PathAndExtension): string | undefined {
   const path = qp.normalizePath(resolved.path);
   const idx = path.lastIndexOf(nodeModulesPathPart);
   if (idx === -1) {
@@ -1026,7 +1026,7 @@ function loadModuleFromFileNoPackageId(extensions: Extensions, candidate: string
  * @param {boolean} onlyRecordFailures - if true then function won't try to actually load files but instead record all attempts as failures. This flag is necessary
  * in cases when we know upfront that all load attempts will fail (because containing folder does not exists) however we still need to record all failed lookup locations.
  */
-function loadModuleFromFile(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState): PathAndExtension | undefined {
+function loadModuleFromFile(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState):  qt.PathAndExtension | undefined {
   if (extensions === Extensions.Json || extensions === Extensions.TSConfig) {
     const extensionLess = tryRemoveExtension(candidate, Extension.Json);
     return extensionLess === undefined && extensions === Extensions.Json ? undefined : tryAddingExtensions(extensionLess || candidate, extensions, onlyRecordFailures, state);
@@ -1051,7 +1051,7 @@ function loadModuleFromFile(extensions: Extensions, candidate: string, onlyRecor
 }
 
 /** Try to return an existing file that adds one of the `extensions` to `candidate`. */
-function tryAddingExtensions(candidate: string, extensions: Extensions, onlyRecordFailures: boolean, state: ModuleResolutionState): PathAndExtension | undefined {
+function tryAddingExtensions(candidate: string, extensions: Extensions, onlyRecordFailures: boolean, state: ModuleResolutionState):  qt.PathAndExtension | undefined {
   if (!onlyRecordFailures) {
     // check if containing folder exists - if it doesn't then just record failures for all supported extensions without disk probing
     const directory = qp.getDirectoryPath(candidate);
@@ -1072,7 +1072,7 @@ function tryAddingExtensions(candidate: string, extensions: Extensions, onlyReco
       return tryExtension(Extension.Json);
   }
 
-  function tryExtension(ext: Extension): PathAndExtension | undefined {
+  function tryExtension(ext: Extension):  qt.PathAndExtension | undefined {
     const path = tryFile(candidate + ext, onlyRecordFailures, state);
     return path === undefined ? undefined : { path, ext };
   }
@@ -1130,7 +1130,7 @@ function getPackageJsonInfo(packageDirectory: string, onlyRecordFailures: boolea
   }
 }
 
-function loadNodeModuleFromDirectoryWorker(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState, jsonContent: PackageJsonPathFields | undefined, versionPaths: VersionPaths | undefined): PathAndExtension | undefined {
+function loadNodeModuleFromDirectoryWorker(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState, jsonContent: PackageJsonPathFields | undefined, versionPaths: VersionPaths | undefined):  qt.PathAndExtension | undefined {
   let packageFile: string | undefined;
   if (jsonContent) {
     switch (extensions) {
@@ -1194,7 +1194,7 @@ function loadNodeModuleFromDirectoryWorker(extensions: Extensions, candidate: st
 }
 
 /** Resolve from an arbitrarily specified file. Return `undefined` if it has an unsupported extension. */
-function resolvedIfExtensionMatches(extensions: Extensions, path: string): PathAndExtension | undefined {
+function resolvedIfExtensionMatches(extensions: Extensions, path: string):  qt.PathAndExtension | undefined {
   const ext = tryGetExtensionFromPath(path);
   return ext !== undefined && extensionIsOk(extensions, ext) ? { path, ext } : undefined;
 }

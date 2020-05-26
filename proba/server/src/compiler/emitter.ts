@@ -2930,8 +2930,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitModuleDeclaration(node: ModuleDeclaration) {
     emitModifiers(node, node.modifiers);
-    if (~node.flags & NodeFlags.GlobalAugmentation) {
-      writeKeyword(node.flags & NodeFlags.Namespace ? 'namespace' : 'module');
+    if (~node.flags &  qt.NodeFlags.GlobalAugmentation) {
+      writeKeyword(node.flags &  qt.NodeFlags.Namespace ? 'namespace' : 'module');
       writeSpace();
     }
     emit(node.name);

@@ -649,11 +649,11 @@ export function transformModule(context: TransformationContext) {
           }
         }
 
-        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(variables, languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), /*location*/ node), /*original*/ node));
+        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(variables, languageVersion >= qt.ScriptTarget.ES2015 ? qt.NodeFlags.Const : qt.NodeFlags.None)), /*location*/ node), /*original*/ node));
       }
     } else if (namespaceDeclaration && isDefaultImport(node)) {
       // import d, * as n from "mod";
-      statements = append(statements, createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([setOriginalNode(setTextRange(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)), /*location*/ node), /*original*/ node)], languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)));
+      statements = append(statements, createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([setOriginalNode(setTextRange(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)), /*location*/ node), /*original*/ node)], languageVersion >= qt.ScriptTarget.ES2015 ? qt.NodeFlags.Const : qt.NodeFlags.None)));
     }
 
     if (hasAssociatedEndOfDeclarationMarker(node)) {
@@ -695,7 +695,7 @@ export function transformModule(context: TransformationContext) {
       if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node));
       } else {
-        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(getSynthesizedClone(node.name), /*type*/ undefined, createRequireCall(node))], /*flags*/ languageVersion >= qt.ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node), node));
+        statements = append(statements, setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(getSynthesizedClone(node.name), /*type*/ undefined, createRequireCall(node))], /*flags*/ languageVersion >= qt.ScriptTarget.ES2015 ? qt.NodeFlags.Const : qt.NodeFlags.None)), node), node));
       }
     } else {
       if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {

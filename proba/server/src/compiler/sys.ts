@@ -509,7 +509,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     };
   }
 
-  function invokeCallbacks(dirPath: Path, fileNameOrInvokeMap: string | Map<true>) {
+  function invokeCallbacks(dirPath:  qt.Path, fileNameOrInvokeMap: string | Map<true>) {
     let fileName: string | undefined;
     let invokeMap: Map<true> | undefined;
     if (isString(fileNameOrInvokeMap)) {
@@ -530,7 +530,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     });
   }
 
-  function nonSyncUpdateChildWatches(dirName: string, dirPath: Path, fileName: string, options: qt.WatchOptions | undefined) {
+  function nonSyncUpdateChildWatches(dirName: string, dirPath:  qt.Path, fileName: string, options: qt.WatchOptions | undefined) {
     // Iterate through existing children and update the watches if needed
     const parentWatcher = cache.get(dirPath);
     if (parentWatcher && host.directoryExists(dirName)) {
@@ -544,7 +544,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     removeChildWatches(parentWatcher);
   }
 
-  function scheduleUpdateChildWatches(dirName: string, dirPath: Path, options: qt.WatchOptions | undefined) {
+  function scheduleUpdateChildWatches(dirName: string, dirPath:  qt.Path, options: qt.WatchOptions | undefined) {
     if (!cacheToUpdateChildWatches.has(dirPath)) {
       cacheToUpdateChildWatches.set(dirPath, { dirName, options });
     }
@@ -570,8 +570,8 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
       cacheToUpdateChildWatches.delete(dirPath);
       // Because the child refresh is fresh, we would need to invalidate whole root directory being watched
       // to ensure that all the changes are reflected at this time
-      invokeCallbacks(dirPath as Path, invokeMap);
-      updateChildWatches(dirName, dirPath as Path, options);
+      invokeCallbacks(dirPath as  qt.Path, invokeMap);
+      updateChildWatches(dirName, dirPath as  qt.Path, options);
     }
 
     sysLog(`sysLog:: invokingWatchers:: ${timestamp() - start}ms:: ${cacheToUpdateChildWatches.size}`);
@@ -595,7 +595,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     }
   }
 
-  function updateChildWatches(dirName: string, dirPath: Path, options: qt.WatchOptions | undefined) {
+  function updateChildWatches(dirName: string, dirPath:  qt.Path, options: qt.WatchOptions | undefined) {
     // Iterate through existing children and update the watches if needed
     const parentWatcher = cache.get(dirPath);
     if (parentWatcher) {

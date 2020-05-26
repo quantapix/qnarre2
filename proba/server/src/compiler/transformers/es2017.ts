@@ -298,7 +298,7 @@ export function transformES2017(context: TransformationContext) {
   }
 
   function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is qt.VariableDeclarationList {
-    return !!node && isVariableDeclarationList(node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
+    return !!node && isVariableDeclarationList(node) && !(node.flags & qt.NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
   }
 
   function visitVariableDeclarationListWithCollidingNames(node: qt.VariableDeclarationList, hasReceiver: boolean) {
@@ -596,7 +596,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
     }
     accessors.push(createPropertyAssignment(name, createObjectLiteral(getterAndSetter)));
   });
-  return createVariableStatement(/* modifiers */ undefined, createVariableDeclarationList([createVariableDeclaration(createFileLevelUniqueName('_super'), /* type */ undefined, createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)]))], NodeFlags.Const));
+  return createVariableStatement(/* modifiers */ undefined, createVariableDeclarationList([createVariableDeclaration(createFileLevelUniqueName('_super'), /* type */ undefined, createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)]))], qt.NodeFlags.Const));
 }
 
 export const awaiterHelper: UnscopedEmitHelper = {

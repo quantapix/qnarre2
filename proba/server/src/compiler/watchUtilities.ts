@@ -35,8 +35,8 @@ export interface CachedDirectoryStructureHost extends DirectoryStructureHost {
   readDirectory(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
 
   /** Returns the queried result for the file exists and directory exists if at all it was done */
-  addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: Path): FileAndDirectoryExistence | undefined;
-  addOrDeleteFile(fileName: string, filePath: Path, eventKind: FileWatcherEventKind): void;
+  addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: qt.Path): FileAndDirectoryExistence | undefined;
+  addOrDeleteFile(fileName: string, filePath: qt.Path, eventKind: FileWatcherEventKind): void;
   clearCache(): void;
 }
 
@@ -71,11 +71,11 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     return ts.toPath(fileName, currentDirectory, getCanonicalFileName);
   }
 
-  function getCachedFileSystemEntries(rootDirPath: Path): MutableFileSystemEntries | undefined {
+  function getCachedFileSystemEntries(rootDirPath: qt.Path): MutableFileSystemEntries | undefined {
     return cachedReadDirectoryResult.get(qp.ensureTrailingDirectorySeparator(rootDirPath));
   }
 
-  function getCachedFileSystemEntriesForBaseDir(path: Path): MutableFileSystemEntries | undefined {
+  function getCachedFileSystemEntriesForBaseDir(path: qt.Path): MutableFileSystemEntries | undefined {
     return getCachedFileSystemEntries(qp.getDirectoryPath(path));
   }
 
@@ -83,7 +83,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     return qp.getBaseFileName(qp.normalizePath(fileName));
   }
 
-  function createCachedFileSystemEntries(rootDir: string, rootDirPath: Path) {
+  function createCachedFileSystemEntries(rootDir: string, rootDirPath: qt.Path) {
     const resultFromHost: MutableFileSystemEntries = {
       files: map(host.readDirectory!(rootDir, /*extensions*/ undefined, /*exclude*/ undefined, /*include*/ ['*.*']), getBaseNameOfFileName) || [],
       directories: host.getDirectories!(rootDir) || [],
@@ -98,7 +98,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
    * Otherwise gets result from host and caches it.
    * The host request is done under try catch block to avoid caching incorrect result
    */
-  function tryReadDirectory(rootDir: string, rootDirPath: Path): MutableFileSystemEntries | undefined {
+  function tryReadDirectory(rootDir: string, rootDirPath: qt.Path): MutableFileSystemEntries | undefined {
     rootDirPath = qp.ensureTrailingDirectorySeparator(rootDirPath);
     const cachedResult = getCachedFileSystemEntries(rootDirPath);
     if (cachedResult) {
@@ -192,7 +192,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     return host.realpath ? host.realpath(s) : s;
   }
 
-  function addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: Path) {
+  function addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: qt.Path) {
     const existingResult = getCachedFileSystemEntries(fileOrDirectoryPath);
     if (existingResult) {
       // Just clear the cache for now
@@ -230,7 +230,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
     return fsQueryResult;
   }
 
-  function addOrDeleteFile(fileName: string, filePath: Path, eventKind: FileWatcherEventKind) {
+  function addOrDeleteFile(fileName: string, filePath: qt.Path, eventKind: FileWatcherEventKind) {
     if (eventKind === FileWatcherEventKind.Changed) {
       return;
     }
@@ -261,7 +261,7 @@ export enum ConfigFileProgramReloadLevel {
 /**
  * Updates the existing missing file watches with the new set of missing files after new program is created
  */
-export function updateMissingFilePathsWatch(program: Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
+export function updateMissingFilePathsWatch(program: Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: qt.Path) => FileWatcher) {
   const missingFilePaths = program.getMissingFilePaths();
   const newMissingFilePathMap = qu.arrayToSet(missingFilePaths);
   // Update the missing file paths watcher
@@ -335,8 +335,8 @@ export interface WatchDirectoryHost {
   watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: qt.WatchOptions): FileWatcher;
 }
 export type WatchFile<X, Y> = (host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
-export type FilePathWatcherCallback = (fileName: string, eventKind: FileWatcherEventKind, filePath: Path) => void;
-export type WatchFilePath<X, Y> = (host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, path: Path, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
+export type FilePathWatcherCallback = (fileName: string, eventKind: FileWatcherEventKind, filePath: qt.Path) => void;
+export type WatchFilePath<X, Y> = (host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, path: qt.Path, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
 export type WatchDirectory<X, Y> = (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: qt.WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
 
 export interface WatchFactory<X, Y> {
@@ -357,7 +357,7 @@ function getWatchFactoryWith<X, Y = undefined>(
   watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: qt.WatchOptions | undefined) => FileWatcher
 ): WatchFactory<X, Y> {
   const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchFile);
-  const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
+  const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, qt.Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
   const createDirectoryWatcher: CreateFileWatcher<WatchDirectoryHost, WatchDirectoryFlags, undefined, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchDirectory);
   if (watchLogLevel === WatchLogLevel.Verbose && sysLog === noop) {
     setSysLog((s) => log(s));
@@ -373,7 +373,7 @@ function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallb
   return host.watchFile(file, callback, pollingInterval, options);
 }
 
-function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, path: Path): FileWatcher {
+function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, path: qt.Path): FileWatcher {
   return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, options);
 }
 

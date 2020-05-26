@@ -260,7 +260,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
   let timerToUpdateProgram: any; // timer callback to recompile the program
 
   const sourceFilesCache = qc.createMap<HostFileInfo>(); // Cache that stores the source file and version info
-  let missingFilePathsRequestedForRelease: Path[] | undefined; // These paths are held temparirly so that we can remove the entry from source file cache if the file is not tracked by missing files
+  let missingFilePathsRequestedForRelease: qt.Path[] | undefined; // These paths are held temparirly so that we can remove the entry from source file cache if the file is not tracked by missing files
   let hasChangedCompilerOptions = false; // True if the compiler options have changed between compilations
   let hasChangedAutomaticTypeDirectiveNames = false; // True if the automatic type directives have changed
 
@@ -469,7 +469,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     return directoryStructureHost.fileExists(fileName);
   }
 
-  function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined {
+  function getVersionedSourceFileByPath(fileName: string, path: qt.Path, languageVersion: qt.ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     // No source file on the host
     if (isFileMissingOnHost(hostSourceFile)) {
@@ -507,7 +507,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     return hostSourceFile.sourceFile;
   }
 
-  function nextSourceFileVersion(path: Path) {
+  function nextSourceFileVersion(path: qt.Path) {
     const hostSourceFile = sourceFilesCache.get(path);
     if (hostSourceFile !== undefined) {
       if (isFileMissingOnHost(hostSourceFile)) {
@@ -519,7 +519,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     }
   }
 
-  function getSourceVersion(path: Path): string | undefined {
+  function getSourceVersion(path: qt.Path): string | undefined {
     const hostSourceFile = sourceFilesCache.get(path);
     return !hostSourceFile || !hostSourceFile.version ? undefined : hostSourceFile.version;
   }
@@ -640,7 +640,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     hasChangedConfigFileParsingErrors = true;
   }
 
-  function onSourceFileChange(fileName: string, eventKind: FileWatcherEventKind, path: Path) {
+  function onSourceFileChange(fileName: string, eventKind: FileWatcherEventKind, path: qt.Path) {
     updateCachedSystemWithFile(fileName, path, eventKind);
 
     // Update the source file cache
@@ -654,17 +654,17 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     scheduleProgramUpdate();
   }
 
-  function updateCachedSystemWithFile(fileName: string, path: Path, eventKind: FileWatcherEventKind) {
+  function updateCachedSystemWithFile(fileName: string, path: qt.Path, eventKind: FileWatcherEventKind) {
     if (cachedDirectoryStructureHost) {
       cachedDirectoryStructureHost.addOrDeleteFile(fileName, path, eventKind);
     }
   }
 
-  function watchMissingFilePath(missingFilePath: Path) {
+  function watchMissingFilePath(missingFilePath: qt.Path) {
     return watchFilePath(host, missingFilePath, onMissingFileChange, PollingInterval.Medium, watchOptions, missingFilePath, WatchType.MissingFile);
   }
 
-  function onMissingFileChange(fileName: string, eventKind: FileWatcherEventKind, missingFilePath: Path) {
+  function onMissingFileChange(fileName: string, eventKind: FileWatcherEventKind, missingFilePath: qt.Path) {
     updateCachedSystemWithFile(fileName, missingFilePath, eventKind);
 
     if (eventKind === FileWatcherEventKind.Created && missingFilesMap.has(missingFilePath)) {
@@ -694,7 +694,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
       (fileOrDirectory) => {
         Debug.assert(!!configFileName);
 
-        let fileOrDirectoryPath: Path | undefined = toPath(fileOrDirectory);
+        let fileOrDirectoryPath: qt.Path | undefined = toPath(fileOrDirectory);
 
         // Since the file existence changed, update the sourceFiles cache
         if (cachedDirectoryStructureHost) {
