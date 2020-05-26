@@ -1,3 +1,11 @@
+import * as qpc from '../corePublic';
+import * as qc from '../core';
+import * as qt from '../types';
+import * as qu from './utilities';
+import * as qpu from '../utilitiesPublic';
+import { Debug } from '../debug';
+import { Diagnostics } from './diagnostics';
+
 const enum ClassPropertySubstitutionFlags {
   /**
    * Enables substitutions for class expressions with static fields
@@ -233,7 +241,7 @@ export function transformClassFields(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
 
-  function visitPostfixUnaryExpression(node: PostfixUnaryExpression, valueIsDiscarded: boolean) {
+  function visitPostfixUnaryExpression(node: qt.PostfixUnaryExpression, valueIsDiscarded: boolean) {
     if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
       const operator = node.operator === qt.SyntaxKind.PlusPlusToken ? qt.SyntaxKind.PlusToken : node.operator === qt.SyntaxKind.MinusMinusToken ? qt.SyntaxKind.MinusToken : undefined;
       let info: PrivateIdentifierInfo | undefined;
