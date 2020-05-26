@@ -722,7 +722,7 @@ export function transformES2015(context: TransformationContext) {
     setEmitFlags(inner, qt.EmitFlags.NoComments);
 
     const outer = createPartiallyEmittedExpression(inner);
-    outer.end = skipTrivia(currentText, node.pos);
+    outer.end = qs.skipTrivia(currentText, node.pos);
     setEmitFlags(outer, qt.EmitFlags.NoComments);
 
     const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
@@ -744,7 +744,7 @@ export function transformES2015(context: TransformationContext) {
     addClassMembers(statements, node);
 
     // Create a synthetic text range for the return statement.
-    const closingBraceLocation = createTokenRange(skipTrivia(currentText, node.members.end), qt.SyntaxKind.CloseBraceToken);
+    const closingBraceLocation = createTokenRange(qs.skipTrivia(currentText, node.members.end), qt.SyntaxKind.CloseBraceToken);
     const localName = getInternalName(node);
 
     // The following partially-emitted expression exists purely to align our sourcemap
@@ -758,7 +758,7 @@ export function transformES2015(context: TransformationContext) {
     setEmitFlags(statement, qt.EmitFlags.NoComments | qt.EmitFlags.NoTokenSourceMaps);
     statements.push(statement);
 
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
     const block = createBlock(setTextRange(createNodeArray(statements), /*location*/ node.members), /*multiLine*/ true);
     setEmitFlags(block, qt.EmitFlags.NoComments);
@@ -892,7 +892,7 @@ export function transformES2015(context: TransformationContext) {
       superCallExpression = createDefaultSuperCallOrThis();
     } else if (isDerivedClass && statementOffset < constructor.body.statements.length) {
       const firstStatement = constructor.body.statements[statementOffset];
-      if (isExpressionStatement(firstStatement) && isSuperCall(firstStatement.expression)) {
+      if (isExpressionStatement(firstStatement) && qu.isSuperCall(firstStatement.expression)) {
         superCallExpression = visitImmediateSuperCallInBody(firstStatement.expression);
       }
     }
@@ -1096,10 +1096,10 @@ export function transformES2015(context: TransformationContext) {
     // we usually don't want to emit a var declaration; however, in the presence
     // of an initializer, we must emit that expression to preserve side effects.
     if (name.elements.length > 0) {
-      insertStatementAfterCustomPrologue(statements, setEmitFlags(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter)))), qt.EmitFlags.CustomPrologue));
+      qu.insertStatementAfterCustomPrologue(statements, setEmitFlags(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter)))), qt.EmitFlags.CustomPrologue));
       return true;
     } else if (initializer) {
-      insertStatementAfterCustomPrologue(statements, setEmitFlags(createExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))), qt.EmitFlags.CustomPrologue));
+      qu.insertStatementAfterCustomPrologue(statements, setEmitFlags(createExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))), qt.EmitFlags.CustomPrologue));
       return true;
     }
     return false;
@@ -1123,7 +1123,7 @@ export function transformES2015(context: TransformationContext) {
     startOnNewLine(statement);
     setTextRange(statement, parameter);
     setEmitFlags(statement, qt.EmitFlags.NoTokenSourceMaps | qt.EmitFlags.NoTrailingSourceMap | qt.EmitFlags.CustomPrologue | qt.EmitFlags.NoComments);
-    insertStatementAfterCustomPrologue(statements, statement);
+    qu.insertStatementAfterCustomPrologue(statements, statement);
   }
 
   /**
@@ -1185,7 +1185,7 @@ export function transformES2015(context: TransformationContext) {
       prologueStatements.push(setEmitFlags(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, expressionName))), parameter), qt.EmitFlags.CustomPrologue));
     }
 
-    insertStatementsAfterCustomPrologue(statements, prologueStatements);
+    qu.insertStatementsAfterCustomPrologue(statements, prologueStatements);
     return true;
   }
 
@@ -1209,7 +1209,7 @@ export function transformES2015(context: TransformationContext) {
     const captureThisStatement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(createFileLevelUniqueName('_this'), /*type*/ undefined, initializer)]));
     setEmitFlags(captureThisStatement, qt.EmitFlags.NoComments | qt.EmitFlags.CustomPrologue);
     setSourceMapRange(captureThisStatement, node);
-    insertStatementAfterCustomPrologue(statements, captureThisStatement);
+    qu.insertStatementAfterCustomPrologue(statements, captureThisStatement);
   }
 
   function insertCaptureNewTargetIfNeeded(statements: qt.Statement[], node: qt.FunctionLikeDeclaration, copyOnWrite: boolean): qt.Statement[] {
@@ -1252,7 +1252,7 @@ export function transformES2015(context: TransformationContext) {
         statements = statements.slice();
       }
 
-      insertStatementAfterCustomPrologue(statements, captureNewTargetStatement);
+      qu.insertStatementAfterCustomPrologue(statements, captureNewTargetStatement);
     }
 
     return statements;
@@ -1844,7 +1844,7 @@ export function transformES2015(context: TransformationContext) {
     if (convertedLoopState && !convertedLoopState.labels) {
       convertedLoopState.labels = qc.createMap<boolean>();
     }
-    const statement = unwrapInnermostStatementOfLabel(node, convertedLoopState && recordLabel);
+    const statement = qu.unwrapInnermostStatementOfLabel(node, convertedLoopState && recordLabel);
     return isIterationStatement(statement, /*lookInLabeledStatements*/ false) ? visitIterationStatement(statement, /*outermostLabeledStatement*/ node) : restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node, convertedLoopState && resetLabel);
   }
 
@@ -2484,7 +2484,7 @@ export function transformES2015(context: TransformationContext) {
     }
 
     copyOutParameters(currentState.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOutParameter, statements);
-    insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
+    qu.insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
 
     const loopBody = createBlock(statements, /*multiLine*/ true);
     if (isBlock(statement)) setOriginalNode(loopBody, statement);
@@ -2845,7 +2845,7 @@ export function transformES2015(context: TransformationContext) {
     }
 
     const expression = skipOuterExpressions(node.expression);
-    if (expression.kind === qt.SyntaxKind.SuperKeyword || isSuperProperty(expression) || some(node.arguments, isSpreadElement)) {
+    if (expression.kind === qt.SyntaxKind.SuperKeyword || qu.isSuperProperty(expression) || some(node.arguments, isSpreadElement)) {
       return visitCallExpressionWithPotentialCapturedThisAssignment(node, /*assignToCapturedThis*/ true);
     }
 
@@ -2984,7 +2984,7 @@ export function transformES2015(context: TransformationContext) {
   function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpression, assignToCapturedThis: boolean): CallExpression | qt.BinaryExpression {
     // We are here either because SuperKeyword was used somewhere in the expression, or
     // because we contain a SpreadElementExpression.
-    if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === qt.SyntaxKind.SuperKeyword || isSuperProperty(skipOuterExpressions(node.expression))) {
+    if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === qt.SyntaxKind.SuperKeyword || qu.isSuperProperty(skipOuterExpressions(node.expression))) {
       const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration);
       if (node.expression.kind === qt.SyntaxKind.SuperKeyword) {
         setEmitFlags(thisArg, qt.EmitFlags.NoSubstitution);
@@ -3419,7 +3419,7 @@ export function transformES2015(context: TransformationContext) {
       // definitely not part of the body.
       return false;
     }
-    const blockScope = getEnclosingBlockScopeContainer(declaration);
+    const blockScope = qu.getEnclosingBlockScopeContainer(declaration);
     while (currentNode) {
       if (currentNode === blockScope || currentNode === declaration) {
         // if we are in the enclosing block scope of the declaration, we are definitely

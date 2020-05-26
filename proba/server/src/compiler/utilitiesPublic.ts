@@ -2178,12 +2178,12 @@ export function hasScopeMarker(statements: readonly qt.Statement[]) {
 }
 
 export function needsScopeMarker(result: qt.Statement) {
-  return !isAnyImportOrReExport(result) && !isExportAssignment(result) && !hasSyntacticModifier(result, qt.ModifierFlags.Export) && !isAmbientModule(result);
+  return !qu.isAnyImportOrReExport(result) && !isExportAssignment(result) && !hasSyntacticModifier(result, qt.ModifierFlags.Export) && !qu.isAmbientModule(result);
 }
 
 export function isExternalModuleIndicator(result: qt.Statement) {
   // Exported top-level member indicates moduleness
-  return isAnyImportOrReExport(result) || isExportAssignment(result) || qu.hasSyntacticModifier(result, qt.ModifierFlags.Export);
+  return qu.isAnyImportOrReExport(result) || isExportAssignment(result) || qu.hasSyntacticModifier(result, qt.ModifierFlags.Export);
 }
 
 export function isForInOrOfStatement(n: qt.Node): n is qt.ForInOrOfStatement {
@@ -2467,7 +2467,7 @@ export function guessIndentation(lines: string[]) {
     }
     let i = 0;
     for (; i < line.length && i < indentation; i++) {
-      if (!isWhiteSpaceLike(line.charCodeAt(i))) {
+      if (!qs.isWhiteSpaceLike(line.charCodeAt(i))) {
         break;
       }
     }

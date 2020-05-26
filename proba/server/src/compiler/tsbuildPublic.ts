@@ -449,7 +449,7 @@ function createStateBuildOrder(state: SolutionBuilderState) {
 
   // Clear all to ResolvedConfigFilePaths cache to start fresh
   state.resolvedConfigFilePaths.clear();
-  const currentProjects = arrayToSet(getBuildOrderFromAnyBuildOrder(buildOrder), (resolved) => toResolvedConfigFilePath(state, resolved)) as ConfigFileMap<true>;
+  const currentProjects = qu.arrayToSet(getBuildOrderFromAnyBuildOrder(buildOrder), (resolved) => toResolvedConfigFilePath(state, resolved)) as ConfigFileMap<true>;
 
   const noopOnDelete = { onDeleteValue: noop };
   // Config file cache

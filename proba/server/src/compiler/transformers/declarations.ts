@@ -1,5 +1,5 @@
 export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): qt.DiagnosticWithLocation[] | undefined {
-  if (file && isJsonSourceFile(file)) {
+  if (file && qu.isJsonSourceFile(file)) {
     return []; // No declaration diagnostics for json for now
   }
   const compilerOptions = host.getCompilerOptions();
@@ -23,13 +23,13 @@ export function isInternalDeclaration(node: qt.Node, currentSourceFile: SourceFi
           // to handle
           // ... parameters,
           // public param: string
-          getTrailingCommentRanges(text, skipTrivia(text, previousSibling.end + 1, /* stopAfterLineBreak */ false, /* stopAtComments */ true)),
-          getLeadingCommentRanges(text, node.pos)
+          qs.getTrailingCommentRanges(text, qs.skipTrivia(text, previousSibling.end + 1, /* stopAfterLineBreak */ false, /* stopAtComments */ true)),
+          qs.getLeadingCommentRanges(text, node.pos)
         )
-      : getTrailingCommentRanges(text, skipTrivia(text, node.pos, /* stopAfterLineBreak */ false, /* stopAtComments */ true));
+      : qs.getTrailingCommentRanges(text, qs.skipTrivia(text, node.pos, /* stopAfterLineBreak */ false, /* stopAtComments */ true));
     return commentRanges && commentRanges.length && hasInternalAnnotation(last(commentRanges), currentSourceFile);
   }
-  const leadingCommentRanges = parseTreeNode && getLeadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
+  const leadingCommentRanges = parseTreeNode && qu.getLeadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
   return !!forEach(leadingCommentRanges, (range) => {
     return hasInternalAnnotation(range, currentSourceFile);
   });
@@ -98,7 +98,7 @@ export function transformDeclarations(context: TransformationContext) {
       return recordTypeReferenceDirectivesIfNecessary(directives);
     }
     // Otherwise we should emit a path-based reference
-    const container = getSourceFileOfNode(node);
+    const container = qu.getSourceFileOfNode(node);
     refs.set('' + getOriginalNodeId(container), container);
   }
 
@@ -121,9 +121,9 @@ export function transformDeclarations(context: TransformationContext) {
       const errorInfo = getSymbolAccessibilityDiagnostic(symbolAccessibilityResult);
       if (errorInfo) {
         if (errorInfo.typeName) {
-          context.addDiagnostic(createDiagnosticForNode(symbolAccessibilityResult.errorNode || errorInfo.errorNode, errorInfo.diagnosticMessage, getTextOfNode(errorInfo.typeName), symbolAccessibilityResult.errorSymbolName, symbolAccessibilityResult.errorModuleName));
+          context.addDiagnostic(qu.createDiagnosticForNode(symbolAccessibilityResult.errorNode || errorInfo.errorNode, errorInfo.diagnosticMessage, qu.getTextOfNode(errorInfo.typeName), symbolAccessibilityResult.errorSymbolName, symbolAccessibilityResult.errorModuleName));
         } else {
-          context.addDiagnostic(createDiagnosticForNode(symbolAccessibilityResult.errorNode || errorInfo.errorNode, errorInfo.diagnosticMessage, symbolAccessibilityResult.errorSymbolName, symbolAccessibilityResult.errorModuleName));
+          context.addDiagnostic(qu.createDiagnosticForNode(symbolAccessibilityResult.errorNode || errorInfo.errorNode, errorInfo.diagnosticMessage, symbolAccessibilityResult.errorSymbolName, symbolAccessibilityResult.errorModuleName));
         }
       }
     }
@@ -143,33 +143,33 @@ export function transformDeclarations(context: TransformationContext) {
 
   function reportPrivateInBaseOfClassExpression(propertyName: string) {
     if (errorNameNode) {
-      context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
+      context.addDiagnostic(qu.createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
     }
   }
 
   function reportInaccessibleUniqueSymbolError() {
     if (errorNameNode) {
-      context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'unique symbol'));
+      context.addDiagnostic(qu.createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, qu.declarationNameToString(errorNameNode), 'unique symbol'));
     }
   }
 
   function reportInaccessibleThisError() {
     if (errorNameNode) {
-      context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this'));
+      context.addDiagnostic(qu.createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, qu.declarationNameToString(errorNameNode), 'this'));
     }
   }
 
   function reportLikelyUnsafeImportRequiredError(specifier: string) {
     if (errorNameNode) {
-      context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), specifier));
+      context.addDiagnostic(qu.createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary, qu.declarationNameToString(errorNameNode), specifier));
     }
   }
 
   function reportNonlocalAugmentation(containingFile: SourceFile, parentSymbol: symbol, symbol: symbol) {
-    const primaryDeclaration = find(parentSymbol.declarations, (d) => getSourceFileOfNode(d) === containingFile)!;
-    const augmentingDeclarations = filter(symbol.declarations, (d) => getSourceFileOfNode(d) !== containingFile);
+    const primaryDeclaration = find(parentSymbol.declarations, (d) => qu.getSourceFileOfNode(d) === containingFile)!;
+    const augmentingDeclarations = filter(symbol.declarations, (d) => qu.getSourceFileOfNode(d) !== containingFile);
     for (const augmentations of augmentingDeclarations) {
-      context.addDiagnostic(addRelatedInfo(createDiagnosticForNode(augmentations, Diagnostics.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized), createDiagnosticForNode(primaryDeclaration, Diagnostics.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)));
+      context.addDiagnostic(addRelatedInfo(qu.createDiagnosticForNode(augmentations, Diagnostics.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized), qu.createDiagnosticForNode(primaryDeclaration, Diagnostics.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)));
     }
   }
 
@@ -211,7 +211,7 @@ export function transformDeclarations(context: TransformationContext) {
           resultHasScopeMarker = false;
           collectReferences(sourceFile, refs);
           collectLibs(sourceFile, libs);
-          if (isExternalOrCommonJsModule(sourceFile) || isJsonSourceFile(sourceFile)) {
+          if (qu.isExternalOrCommonJsModule(sourceFile) || qu.isJsonSourceFile(sourceFile)) {
             resultHasExternalModuleIndicator = false; // unused in external module bundle emit (all external modules are within module blocks, therefore are known to be modules)
             needsDeclare = false;
             const statements = isSourceFileJS(sourceFile) ? createNodeArray(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : visitNodes(sourceFile.statements, visitDeclarationStatements);
@@ -644,7 +644,7 @@ export function transformDeclarations(context: TransformationContext) {
     // dependent imports and allowing a valid declaration file output. Today, this dependent alias marking only happens for internal import aliases.
     while (length(lateMarkedStatements)) {
       const i = lateMarkedStatements!.shift()!;
-      if (!isLateVisibilityPaintedStatement(i)) {
+      if (!qu.isLateVisibilityPaintedStatement(i)) {
         return Debug.fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[i.kind] : i.kind}`);
       }
       const priorNeedsDeclare = needsDeclare;
@@ -659,7 +659,7 @@ export function transformDeclarations(context: TransformationContext) {
     return visitNodes(statements, visitLateVisibilityMarkedStatements);
 
     function visitLateVisibilityMarkedStatements(statement: qt.Statement) {
-      if (isLateVisibilityPaintedStatement(statement)) {
+      if (qu.isLateVisibilityPaintedStatement(statement)) {
         const key = '' + getOriginalNodeId(statement);
         if (lateStatementReplacementMap.has(key)) {
           const result = lateStatementReplacementMap.get(key);
@@ -829,7 +829,7 @@ export function transformDeclarations(context: TransformationContext) {
           return cleanup(updateConstructorTypeNode(input, visitNodes(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree)));
         }
         case qt.SyntaxKind.ImportType: {
-          if (!isLiteralImportTypeNode(input)) return cleanup(input);
+          if (!qu.isLiteralImportTypeNode(input)) return cleanup(input);
           return cleanup(updateImportTypeNode(input, updateLiteralTypeNode(input.argument, rewriteModuleSpecifier(input, input.argument.literal)), input.qualifier, visitNodes(input.typeArguments, visitDeclarationSubtree, isTypeNode), input.isTypeOf));
         }
         default:
@@ -837,7 +837,7 @@ export function transformDeclarations(context: TransformationContext) {
       }
     }
 
-    if (isTupleTypeNode(input) && getLineAndCharacterOfPosition(currentSourceFile, input.pos).line === getLineAndCharacterOfPosition(currentSourceFile, input.end).line) {
+    if (isTupleTypeNode(input) && qs.getLineAndCharacterOfPosition(currentSourceFile, input.pos).line === qs.getLineAndCharacterOfPosition(currentSourceFile, input.end).line) {
       setEmitFlags(input, qt.EmitFlags.SingleLine);
     }
 
@@ -965,7 +965,7 @@ export function transformDeclarations(context: TransformationContext) {
           const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
           fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
           fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
-          fakespace.locals = createSymbolTable(props);
+          fakespace.locals = qu.createSymbolTable(props);
           fakespace.symbol = props[0].parent!;
           const declarations = mapDefined(props, (p) => {
             if (!isPropertyAccessExpression(p.valueDeclaration)) {
@@ -1017,7 +1017,7 @@ export function transformDeclarations(context: TransformationContext) {
           // 1. There's an export assignment or export declaration in the namespace - do nothing
           // 2. Everything is exported and there are no export assignments or export declarations - strip all export modifiers
           // 3. Some things are exported, some are not, and there's no marker - add an empty marker
-          if (!isGlobalScopeAugmentation(input) && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
+          if (!qu.isGlobalScopeAugmentation(input) && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
             if (needsScopeFixMarker) {
               lateStatements = createNodeArray([...lateStatements, createEmptyExports()]);
             } else {
@@ -1029,7 +1029,7 @@ export function transformDeclarations(context: TransformationContext) {
           needsScopeFixMarker = oldNeedsScopeFix;
           resultHasScopeMarker = oldHasScopeFix;
           const mods = ensureModifiers(input);
-          return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
+          return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, qu.isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
         } else {
           needsDeclare = previousNeedsDeclare;
           const mods = ensureModifiers(input);

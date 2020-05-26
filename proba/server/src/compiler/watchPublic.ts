@@ -376,7 +376,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
     const program = getCurrentBuilderProgram();
     if (hasChangedCompilerOptions) {
       newLine = updateNewLine();
-      if (program && changesAffectModuleResolution(program.getCompilerOptions(), compilerOptions)) {
+      if (program && qu.changesAffectModuleResolution(program.getCompilerOptions(), compilerOptions)) {
         resolutionCache.clear();
       }
     }

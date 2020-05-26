@@ -201,7 +201,7 @@ export function transformJsx(context: TransformationContext) {
 
     for (let i = 0; i < text.length; i++) {
       const c = text.charCodeAt(i);
-      if (isLineBreak(c)) {
+      if (qs.isLineBreak(c)) {
         // If we've seen any non-whitespace characters on this line, add the 'trim' of the line.
         // (lastNonWhitespace === -1 is a special flag to detect whether the first line is all whitespace.)
         if (firstNonWhitespace !== -1 && lastNonWhitespace !== -1) {
@@ -211,7 +211,7 @@ export function transformJsx(context: TransformationContext) {
         // Reset firstNonWhitespace for the next line.
         // Don't bother to reset lastNonWhitespace because we ignore it if firstNonWhitespace = -1.
         firstNonWhitespace = -1;
-      } else if (!isWhiteSpaceSingleLine(c)) {
+      } else if (!qs.isWhiteSpaceSingleLine(c)) {
         lastNonWhitespace = i;
         if (firstNonWhitespace === -1) {
           firstNonWhitespace = i;
@@ -240,13 +240,13 @@ export function transformJsx(context: TransformationContext) {
   function decodeEntities(text: string): string {
     return text.replace(/&((#((\d+)|x([\da-fA-F]+)))|(\w+));/g, (match, _all, _number, _digits, decimal, hex, word) => {
       if (decimal) {
-        return utf16EncodeAsString(parseInt(decimal, 10));
+        return qs.utf16EncodeAsString(parseInt(decimal, 10));
       } else if (hex) {
-        return utf16EncodeAsString(parseInt(hex, 16));
+        return qs.utf16EncodeAsString(parseInt(hex, 16));
       } else {
         const ch = entities.get(word);
         // If this is not a valid entity, then just use `match` (replace it with itself, i.e. don't replace)
-        return ch ? utf16EncodeAsString(ch) : match;
+        return ch ? qs.utf16EncodeAsString(ch) : match;
       }
     });
   }

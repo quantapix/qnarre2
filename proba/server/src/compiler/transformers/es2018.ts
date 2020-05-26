@@ -241,7 +241,7 @@ export function transformES2018(context: TransformationContext) {
 
   function visitLabeledStatement(node: LabeledStatement) {
     if (enclosingFunctionFlags & FunctionFlags.Async) {
-      const statement = unwrapInnermostStatementOfLabel(node);
+      const statement = qu.unwrapInnermostStatementOfLabel(node);
       if (statement.kind === qt.SyntaxKind.ForOfStatement && statement.awaitModifier) {
         return visitForOfStatement(statement, node);
       }
@@ -321,7 +321,7 @@ export function transformES2018(context: TransformationContext) {
   }
 
   function visitSourceFile(node: SourceFile): SourceFile {
-    const ancestorFacts = enterSubtree(HierarchyFacts.SourceFileExcludes, isEffectiveStrictModeSourceFile(node, compilerOptions) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes);
+    const ancestorFacts = enterSubtree(HierarchyFacts.SourceFileExcludes, qu.isEffectiveStrictModeSourceFile(node, compilerOptions) ? HierarchyFacts.StrictModeSourceFileIncludes : HierarchyFacts.SourceFileIncludes);
     exportedVariableStatement = false;
     const visited = visitEachChild(node, visitor, context);
     const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]);
@@ -603,7 +603,7 @@ export function transformES2018(context: TransformationContext) {
 
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
-    capturedSuperProperties = createUnderscoreEscapedMap<true>();
+    capturedSuperProperties = qu.createUnderscoreEscapedMap<true>();
     hasSuperElementAccess = false;
 
     const returnStatement = createReturn(createAsyncGeneratorHelper(context, createFunctionExpression(/*modifiers*/ undefined, createToken(SyntaxKind.AsteriskToken), node.name && getGeneratedNameForNode(node.name), /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, updateBlock(node.body!, visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))), !!(hierarchyFacts & HierarchyFacts.HasLexicalThis)));
@@ -616,12 +616,12 @@ export function transformES2018(context: TransformationContext) {
       enableSubstitutionForAsyncMethodsWithSuper();
       const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
       substitutedSuperAccessors[getNodeId(variableStatement)] = true;
-      insertStatementsAfterStandardPrologue(statements, [variableStatement]);
+      qu.insertStatementsAfterStandardPrologue(statements, [variableStatement]);
     }
 
     statements.push(returnStatement);
 
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const block = updateBlock(node.body!, statements);
 
     if (emitSuperHelpers && hasSuperElementAccess) {
@@ -652,7 +652,7 @@ export function transformES2018(context: TransformationContext) {
     const leadingStatements = endLexicalEnvironment();
     if (statementOffset > 0 || some(statements) || some(leadingStatements)) {
       const block = convertToFunctionBody(body, /*multiLine*/ true);
-      insertStatementsAfterStandardPrologue(statements, leadingStatements);
+      qu.insertStatementsAfterStandardPrologue(statements, leadingStatements);
       addRange(statements, block.statements.slice(statementOffset));
       return updateBlock(block, setTextRange(createNodeArray(statements), block.statements));
     }
@@ -769,7 +769,7 @@ export function transformES2018(context: TransformationContext) {
 
   function substituteCallExpression(node: CallExpression): qt.Expression {
     const expression = node.expression;
-    if (isSuperProperty(expression)) {
+    if (qu.isSuperProperty(expression)) {
       const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
       return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
     }

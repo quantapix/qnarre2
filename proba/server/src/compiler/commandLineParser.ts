@@ -1628,25 +1628,25 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
     const result: any = returnValue ? {} : undefined;
     for (const element of node.properties) {
       if (element.kind !== qt.SyntaxKind.PropertyAssignment) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element, Diagnostics.Property_assignment_expected));
+        errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, element, Diagnostics.Property_assignment_expected));
         continue;
       }
 
       if (element.questionToken) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.questionToken, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
+        errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, element.questionToken, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
       }
       if (!isDoubleQuotedString(element.name)) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, Diagnostics.String_literal_with_double_quotes_expected));
+        errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, element.name, Diagnostics.String_literal_with_double_quotes_expected));
       }
 
-      const textOfKey = isComputedNonLiteralName(element.name) ? undefined : getTextOfPropertyName(element.name);
+      const textOfKey = qu.isComputedNonLiteralName(element.name) ? undefined : qu.getTextOfPropertyName(element.name);
       const keyText = textOfKey && unescapeLeadingUnderscores(textOfKey);
       const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
         if (knownOptions) {
-          errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => createDiagnosticForNodeInSourceFile(sourceFile, element.name, message, arg0, arg1)));
+          errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => qu.createDiagnosticForNodeInSourceFile(sourceFile, element.name, message, arg0, arg1)));
         } else {
-          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyDiagnostics.unknownOptionDiagnostic, keyText));
+          errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyDiagnostics.unknownOptionDiagnostic, keyText));
         }
       }
       const value = convertPropertyValueToJson(element.initializer, option);
@@ -1709,7 +1709,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
 
       case qt.SyntaxKind.StringLiteral:
         if (!isDoubleQuotedString(valueExpression)) {
-          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.String_literal_with_double_quotes_expected));
+          errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.String_literal_with_double_quotes_expected));
         }
         reportInvalidOptionValue(option && isString(option.type) && option.type !== 'string');
         const text = valueExpression.text;
@@ -1717,7 +1717,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
           const customOption = <CommandLineOptionOfCustomType>option;
           // Validate custom option type
           if (!customOption.type.has(text.toLowerCase())) {
-            errors.push(createDiagnosticForInvalidCustomType(customOption, (message, arg0, arg1) => createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, message, arg0, arg1)));
+            errors.push(createDiagnosticForInvalidCustomType(customOption, (message, arg0, arg1) => qu.createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, message, arg0, arg1)));
           }
         }
         return text;
@@ -1759,14 +1759,14 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
     if (option) {
       reportInvalidOptionValue(/*isError*/ true);
     } else {
-      errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal));
+      errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal));
     }
 
     return undefined;
 
     function reportInvalidOptionValue(isError: boolean | undefined) {
       if (isError) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Compiler_option_0_requires_a_value_of_type_1, option.name, getCompilerOptionValueTypeString(option)));
+        errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Compiler_option_0_requires_a_value_of_type_1, option.name, getCompilerOptionValueTypeString(option)));
       }
     }
   }
@@ -1894,7 +1894,7 @@ function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOpt
 
 function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customTypeMap: qpc.Map<string | number>): string | undefined {
   // There is a typeMap associated with this command-line option so use it to map value back to its name
-  return forEachEntry(customTypeMap, (mapValue, key) => {
+  return qu.forEachEntry(customTypeMap, (mapValue, key) => {
     if (mapValue === value) {
       return key;
     }
@@ -2166,8 +2166,8 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: qt.TsConfigSour
           if (sourceFile) {
             const fileName = configFileName || 'tsconfig.json';
             const diagnosticMessage = Diagnostics.The_files_list_in_config_file_0_is_empty;
-            const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initializer);
-            const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : qu.createCompilerDiagnostic(diagnosticMessage, fileName);
+            const nodeValue = firstDefined(qu.getTsConfigPropArray(sourceFile, 'files'), (property) => property.initializer);
+            const error = nodeValue ? qu.createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : qu.createCompilerDiagnostic(diagnosticMessage, fileName);
             errors.push(error);
           } else {
             createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
@@ -2381,13 +2381,13 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: qt.TsConfigSourceFile, host:
       switch (key) {
         case 'extends':
           const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
-          extendedConfigPath = getExtendsConfigPath(<string>value, host, newBase, errors, (message, arg0) => createDiagnosticForNodeInSourceFile(sourceFile, valueNode, message, arg0));
+          extendedConfigPath = getExtendsConfigPath(<string>value, host, newBase, errors, (message, arg0) => qu.createDiagnosticForNodeInSourceFile(sourceFile, valueNode, message, arg0));
           return;
       }
     },
     onSetUnknownOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, _value: qt.CompilerOptionsValue, _valueNode: qt.Expression) {
       if (key === 'excludes') {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, keyNode, Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
+        errors.push(qu.createDiagnosticForNodeInSourceFile(sourceFile, keyNode, Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
       }
     },
   };
@@ -2817,8 +2817,8 @@ function validateSpecs(specs: readonly string[], errors: qpc.Push<qt.Diagnostic>
   });
 
   function createDiagnostic(message: qt.DiagnosticMessage, spec: string): qt.Diagnostic {
-    const element = getTsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
-    return element ? createDiagnosticForNodeInSourceFile(jsonSourceFile, element, message, spec) : qu.createCompilerDiagnostic(message, spec);
+    const element = qu.getTsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
+    return element ? qu.createDiagnosticForNodeInSourceFile(jsonSourceFile, element, message, spec) : qu.createCompilerDiagnostic(message, spec);
   }
 }
 
@@ -2972,7 +2972,7 @@ function getOptionValueWithEmptyStrings(value: any, option: qt.CommandLineOption
       const elementType = option.element;
       return isArray(value) ? value.map((v) => getOptionValueWithEmptyStrings(v, elementType)) : '';
     default:
-      return forEachEntry(option.type, (optionEnumValue, optionStringValue) => {
+      return qu.forEachEntry(option.type, (optionEnumValue, optionStringValue) => {
         if (optionEnumValue === value) {
           return optionStringValue;
         }

@@ -593,13 +593,13 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
   };
 
   function processMapping(mapping: Mapping): MappedPosition {
-    const generatedPosition = generatedFile !== undefined ? getPositionOfLineAndCharacter(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
+    const generatedPosition = generatedFile !== undefined ? qs.getPositionOfLineAndCharacter(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
     let source: string | undefined;
     let sourcePosition: number | undefined;
     if (isSourceMapping(mapping)) {
       const sourceFile = host.getSourceFileLike(sourceFileAbsolutePaths[mapping.sourceIndex]);
       source = map.sources[mapping.sourceIndex];
-      sourcePosition = sourceFile !== undefined ? getPositionOfLineAndCharacter(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
+      sourcePosition = sourceFile !== undefined ? qs.getPositionOfLineAndCharacter(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
     }
     return {
       generatedPosition,

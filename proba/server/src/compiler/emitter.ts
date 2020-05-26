@@ -82,11 +82,11 @@ export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHos
     return getOutputPathsForBundle(options, forceDtsPaths);
   } else {
     const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
-    const isJsonFile = isJsonSourceFile(sourceFile);
+    const isJsonFile = qu.isJsonSourceFile(sourceFile);
     // If json file emits to the same location skip writing it, if emitDeclarationOnly skip writing it
     const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
     const jsFilePath = options.emitDeclarationOnly || isJsonEmittedToSameLocation ? undefined : ownOutputFilePath;
-    const sourceMapFilePath = !jsFilePath || isJsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
+    const sourceMapFilePath = !jsFilePath || qu.isJsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
     const declarationFilePath = forceDtsPaths || (getEmitDeclarations(options) && !isJsonFile) ? getDeclarationEmitOutputFilePath(sourceFile.fileName, host) : undefined;
     const declarationMapPath = declarationFilePath && getAreDeclarationMapsEnabled(options) ? declarationFilePath + '.map' : undefined;
     return { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath: undefined };
@@ -102,7 +102,7 @@ function getSourceMapFilePath(jsFilePath: string, options: qt.CompilerOptions) {
 // For TypeScript, the only time to emit with a '.jsx' extension, is on JSX input, and qt.JsxEmit.Preserve
 
 export function getOutputExtension(sourceFile: SourceFile, options: qt.CompilerOptions): Extension {
-  if (isJsonSourceFile(sourceFile)) {
+  if (qu.isJsonSourceFile(sourceFile)) {
     return Extension.Json;
   }
 
@@ -1019,7 +1019,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function getCurrentLineMap() {
-    return currentLineMap || (currentLineMap = getLineStarts(currentSourceFile!));
+    return currentLineMap || (currentLineMap = qs.getLineStarts(currentSourceFile!));
   }
 
   function emit(node: qt.Node): Node;
@@ -1709,7 +1709,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitIdentifier(node: Identifier) {
     const writeText = node.symbol ? writeSymbol : write;
-    writeText(getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
+    writeText(qu.getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
     emitList(node, node.typeArguments, ListFormat.TypeParameters); // Call emitList directly since it could be an array of TypeParameterDeclarations _or_ type arguments
   }
 
@@ -1719,7 +1719,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitPrivateIdentifier(node: PrivateIdentifier) {
     const writeText = node.symbol ? writeSymbol : write;
-    writeText(getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
+    writeText(qu.getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
   }
 
   function emitQualifiedName(node: qt.QualifiedName) {
@@ -2152,7 +2152,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
 
     const preferNewLine = node.multiLine ? ListFormat.PreferNewLine : ListFormat.None;
-    const allowTrailingComma = currentSourceFile!.languageVersion >= qt.ScriptTarget.ES5 && !isJsonSourceFile(currentSourceFile!) ? ListFormat.AllowTrailingComma : ListFormat.None;
+    const allowTrailingComma = currentSourceFile!.languageVersion >= qt.ScriptTarget.ES5 && !qu.isJsonSourceFile(currentSourceFile!) ? ListFormat.AllowTrailingComma : ListFormat.None;
     emitList(node, node.properties, ListFormat.ObjectLiteralExpressionProperties | allowTrailingComma | preferNewLine);
 
     if (indentedFlag) {
@@ -2193,7 +2193,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       const text = getLiteralTextOfNode(expression, /*neverAsciiEscape*/ true, /*jsxAttributeEscape*/ false);
       // If he number will be printed verbatim and it doesn't already contain a dot, add one
       // if the expression doesn't have any comments that will be emitted.
-      return !expression.numericLiteralFlags && !qc.stringContains(text, tokenToString(SyntaxKind.DotToken)!);
+      return !expression.numericLiteralFlags && !qc.stringContains(text, qs.tokenToString(SyntaxKind.DotToken)!);
     } else if (qu.isAccessExpression(expression)) {
       // check if constant enum value is integer
       const constantValue = getConstantValue(expression);
@@ -2512,7 +2512,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitExpression(node.expression);
     // Emit semicolon in non json files
     // or if json file that created synthesized expression(eg.define expression statement when --out and amd code generation)
-    if (!isJsonSourceFile(currentSourceFile!) || nodeIsSynthesized(node.expression)) {
+    if (!qu.isJsonSourceFile(currentSourceFile!) || nodeIsSynthesized(node.expression)) {
       writeTrailingSemicolon();
     }
   }
@@ -2629,7 +2629,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const isSimilarNode = node && node.kind === contextNode.kind;
     const startPos = pos;
     if (isSimilarNode && currentSourceFile) {
-      pos = skipTrivia(currentSourceFile.text, pos);
+      pos = qs.skipTrivia(currentSourceFile.text, pos);
     }
     if (emitLeadingCommentsOfPosition && isSimilarNode && contextNode.pos !== startPos) {
       const needsIndent = indentLeading && currentSourceFile && !positionsAreOnSameLine(startPos, pos, currentSourceFile);
@@ -2719,7 +2719,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function emitVariableDeclarationList(node: qt.VariableDeclarationList) {
-    writeKeyword(isLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
+    writeKeyword(qu.isLet(node) ? 'let' : qu.isVarConst(node) ? 'const' : 'var');
     writeSpace();
     emitList(node, node.declarations, ListFormat.VariableDeclarationList);
   }
@@ -3459,7 +3459,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (emitBodyWithDetachedComments) {
       // Emit detached comment if there are no prologue directives or if the first node is synthesized.
       // The synthesized node will have no leading comment so some comments may be missed.
-      const shouldEmitDetachedComment = statements.length === 0 || !isPrologueDirective(statements[0]) || nodeIsSynthesized(statements[0]);
+      const shouldEmitDetachedComment = statements.length === 0 || !qu.isPrologueDirective(statements[0]) || nodeIsSynthesized(statements[0]);
       if (shouldEmitDetachedComment) {
         emitBodyWithDetachedComments(node, statements, emitSourceFileWorker);
         return;
@@ -3530,7 +3530,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     pushNameGenerationScope(node);
     forEach(node.statements, generateNames);
     emitHelpers(node);
-    const index = findIndex(statements, (statement) => !isPrologueDirective(statement));
+    const index = findIndex(statements, (statement) => !qu.isPrologueDirective(statement));
     emitTripleSlashDirectivesIfNeeded(node);
     emitList(node, statements, ListFormat.MultiLine, index === -1 ? statements.length : index);
     popNameGenerationScope(node);
@@ -3554,7 +3554,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     let needsToSetSourceFile = !!sourceFile;
     for (let i = 0; i < statements.length; i++) {
       const statement = statements[i];
-      if (isPrologueDirective(statement)) {
+      if (qu.isPrologueDirective(statement)) {
         const shouldEmitPrologueDirective = seenPrologueDirectives ? !seenPrologueDirectives.has(statement.expression.text) : true;
         if (shouldEmitPrologueDirective) {
           if (needsToSetSourceFile) {
@@ -3615,7 +3615,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       let directives: SourceFilePrologueDirective[] | undefined;
       let end = 0;
       for (const statement of sourceFile.statements) {
-        if (!isPrologueDirective(statement)) break;
+        if (!qu.isPrologueDirective(statement)) break;
         if (seenPrologueDirectives.has(statement.expression.text)) continue;
         seenPrologueDirectives.set(statement.expression.text, true);
         (directives || (directives = [])).push({
@@ -3636,7 +3636,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function emitShebangIfNeeded(sourceFileOrBundle: Bundle | SourceFile | UnparsedSource) {
     if (isSourceFile(sourceFileOrBundle) || isUnparsedSource(sourceFileOrBundle)) {
-      const shebang = getShebang(sourceFileOrBundle.text);
+      const shebang = qs.getShebang(sourceFileOrBundle.text);
       if (shebang) {
         writeComment(shebang);
         writeLine();
@@ -4054,7 +4054,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (onBeforeEmitToken) {
       onBeforeEmitToken(node);
     }
-    writer(tokenToString(node.kind)!);
+    writer(qs.tokenToString(node.kind)!);
     if (onAfterEmitToken) {
       onAfterEmitToken(node);
     }
@@ -4063,7 +4063,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function writeTokenText(token: qt.SyntaxKind, writer: (s: string) => void): void;
   function writeTokenText(token: qt.SyntaxKind, writer: (s: string) => void, pos: number): number;
   function writeTokenText(token: qt.SyntaxKind, writer: (s: string) => void, pos?: number): number {
-    const tokenString = tokenToString(token)!;
+    const tokenString = qs.tokenToString(token)!;
     writer(tokenString);
     return pos! < 0 ? pos! : pos! + tokenString.length;
   }
@@ -4273,32 +4273,32 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return node;
   }
 
-  function getTextOfNode(node: qt.Node, includeTrivia?: boolean): string {
+  function qu.getTextOfNode(node: qt.Node, includeTrivia?: boolean): string {
     if (isGeneratedIdentifier(node)) {
       return generateName(node);
-    } else if ((isIdentifier(node) || isPrivateIdentifier(node)) && (nodeIsSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && getSourceFileOfNode(node) !== getOriginalNode(currentSourceFile)))) {
+    } else if ((isIdentifier(node) || isPrivateIdentifier(node)) && (nodeIsSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && qu.getSourceFileOfNode(node) !== getOriginalNode(currentSourceFile)))) {
       return idText(node);
     } else if (node.kind === qt.SyntaxKind.StringLiteral && node.textSourceNode) {
-      return getTextOfNode(node.textSourceNode!, includeTrivia);
+      return qu.getTextOfNode(node.textSourceNode!, includeTrivia);
     } else if (isLiteralExpression(node) && (nodeIsSynthesized(node) || !node.parent)) {
       return node.text;
     }
 
-    return getSourceTextOfNodeFromSourceFile(currentSourceFile!, node, includeTrivia);
+    return qu.getSourceTextOfNodeFromSourceFile(currentSourceFile!, node, includeTrivia);
   }
 
   function getLiteralTextOfNode(node: qt.LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
     if (node.kind === qt.SyntaxKind.StringLiteral && node.textSourceNode) {
       const textSourceNode = node.textSourceNode!;
       if (isIdentifier(textSourceNode) || isNumericLiteral(textSourceNode)) {
-        const text = isNumericLiteral(textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
+        const text = isNumericLiteral(textSourceNode) ? textSourceNode.text : qu.getTextOfNode(textSourceNode);
         return jsxAttributeEscape ? `"${escapeJsxAttributeString(text)}"` : neverAsciiEscape || qu.getEmitFlags(node) & qt.EmitFlags.NoAsciiEscaping ? `"${escapeString(text)}"` : `"${escapeNonAsciiString(text)}"`;
       } else {
         return getLiteralTextOfNode(textSourceNode, neverAsciiEscape, jsxAttributeEscape);
       }
     }
 
-    return getLiteralText(node, currentSourceFile!, neverAsciiEscape, jsxAttributeEscape);
+    return qu.getLiteralText(node, currentSourceFile!, neverAsciiEscape, jsxAttributeEscape);
   }
 
   /**
@@ -4467,14 +4467,14 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * or within the NameGenerator.
    */
   function isUniqueName(name: string): boolean {
-    return isFileLevelUniqueName(name) && !generatedNames.has(name) && !(reservedNames && reservedNames.has(name));
+    return qu.isFileLevelUniqueName(name) && !generatedNames.has(name) && !(reservedNames && reservedNames.has(name));
   }
 
   /**
    * Returns a value indicating whether a name is unique globally or within the current file.
    */
-  function isFileLevelUniqueName(name: string) {
-    return currentSourceFile ? ts.isFileLevelUniqueName(currentSourceFile, name, hasGlobalName) : true;
+  function qu.isFileLevelUniqueName(name: string) {
+    return currentSourceFile ? ts.qu.isFileLevelUniqueName(currentSourceFile, name, hasGlobalName) : true;
   }
 
   /**
@@ -4570,7 +4570,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Generates a unique name for a ModuleDeclaration or qt.EnumDeclaration.
    */
   function generateNameForModuleOrEnum(node: ModuleDeclaration | qt.EnumDeclaration) {
-    const name = getTextOfNode(node.name);
+    const name = qu.getTextOfNode(node.name);
     // Use module/enum name itself if it is unique, otherwise make a unique variation
     return isUniqueLocalName(name, node) ? name : makeUniqueName(name);
   }
@@ -4580,7 +4580,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    */
   function generateNameForImportOrExportDeclaration(node: ImportDeclaration | ExportDeclaration) {
     const expr = getExternalModuleName(node)!; // TODO: GH#18217
-    const baseName = isStringLiteral(expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
+    const baseName = isStringLiteral(expr) ? qu.makeIdentifierFromModuleName(expr.text) : 'module';
     return makeUniqueName(baseName);
   }
 
@@ -4611,7 +4611,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function generateNameForNode(node: qt.Node, flags?: qt.GeneratedIdentifierFlags): string {
     switch (node.kind) {
       case qt.SyntaxKind.Identifier:
-        return makeUniqueName(getTextOfNode(node), isUniqueName, !!(flags & qt.GeneratedIdentifierFlags.Optimistic), !!(flags & qt.GeneratedIdentifierFlags.ReservedInNestedScopes));
+        return makeUniqueName(qu.getTextOfNode(node), isUniqueName, !!(flags & qt.GeneratedIdentifierFlags.Optimistic), !!(flags & qt.GeneratedIdentifierFlags.ReservedInNestedScopes));
       case qt.SyntaxKind.ModuleDeclaration:
       case qt.SyntaxKind.EnumDeclaration:
         return generateNameForModuleOrEnum(<ModuleDeclaration | qt.EnumDeclaration>node);
@@ -4770,7 +4770,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function writeSynthesizedComment(comment: SynthesizedComment) {
     const text = formatSynthesizedComment(comment);
-    const lineMap = comment.kind === qt.SyntaxKind.MultiLineCommentTrivia ? computeLineStarts(text) : undefined;
+    const lineMap = comment.kind === qt.SyntaxKind.MultiLineCommentTrivia ? qs.computeLineStarts(text) : undefined;
     writeCommentRange(text, lineMap, writer, 0, text.length, newLine);
   }
 
@@ -4833,7 +4833,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function shouldWriteComment(text: string, pos: number) {
     if (printerOptions.onlyPrintJsDocStyle) {
-      return isJSDocLikeText(text, pos) || isPinnedComment(text, pos);
+      return isJSDocLikeText(text, pos) || qu.isPinnedComment(text, pos);
     }
     return true;
   }
@@ -4914,7 +4914,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       if (hasDetachedComments(pos)) {
         forEachLeadingCommentWithoutDetachedComments(cb);
       } else {
-        forEachLeadingCommentRange(currentSourceFile.text, pos, cb, /*state*/ pos);
+        qs.forEachLeadingCommentRange(currentSourceFile.text, pos, cb, /*state*/ pos);
       }
     }
   }
@@ -4922,7 +4922,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function forEachTrailingCommentToEmit(end: number, cb: (commentPos: number, commentEnd: number, kind: qt.SyntaxKind, hasTrailingNewLine: boolean) => void) {
     // Emit the trailing comments only if the container's end doesn't match because the container should take care of emitting these comments
     if (currentSourceFile && (containerEnd === -1 || (end !== containerEnd && end !== declarationListContainerEnd))) {
-      forEachTrailingCommentRange(currentSourceFile.text, end, cb);
+      qs.forEachTrailingCommentRange(currentSourceFile.text, end, cb);
     }
   }
 
@@ -4939,7 +4939,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       detachedCommentsInfo = undefined;
     }
 
-    forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, /*state*/ pos);
+    qs.forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, /*state*/ pos);
   }
 
   function emitDetachedCommentsAndUpdateCommentsInfo(range: qt.TextRange) {
@@ -4966,7 +4966,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * @return true if the comment is a triple-slash comment else false
    */
   function isTripleSlashComment(commentPos: number, commentEnd: number) {
-    return isRecognizedTripleSlashComment(currentSourceFile!.text, commentPos, commentEnd);
+    return qu.isRecognizedTripleSlashComment(currentSourceFile!.text, commentPos, commentEnd);
   }
 
   // Source Maps
@@ -4986,7 +4986,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else if (isUnparsedNode(node)) {
       const parsed = getParsedSourceMap(node.parent);
       if (parsed && sourceMapGenerator) {
-        sourceMapGenerator.appendSourceMap(writer.getLine(), writer.getColumn(), parsed, node.parent.sourceMapPath!, node.parent.getLineAndCharacterOfPosition(node.pos), node.parent.getLineAndCharacterOfPosition(node.end));
+        sourceMapGenerator.appendSourceMap(writer.getLine(), writer.getColumn(), parsed, node.parent.sourceMapPath!, node.parent.qs.getLineAndCharacterOfPosition(node.pos), node.parent.qs.getLineAndCharacterOfPosition(node.end));
       }
       pipelinePhase(hint, node);
     } else {
@@ -5015,7 +5015,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
    * Skips trivia such as comments and white-space that can be optionally overridden by the source-map source
    */
   function skipSourceTrivia(source: SourceMapSource, pos: number): number {
-    return source.skipTrivia ? source.skipTrivia(pos) : skipTrivia(source.text, pos);
+    return source.skipTrivia ? source.qs.skipTrivia(pos) : qs.skipTrivia(source.text, pos);
   }
 
   /**
@@ -5031,7 +5031,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       return;
     }
 
-    const { line: sourceLine, character: sourceCharacter } = getLineAndCharacterOfPosition(sourceMapSource, pos);
+    const { line: sourceLine, character: sourceCharacter } = qs.getLineAndCharacterOfPosition(sourceMapSource, pos);
     sourceMapGenerator!.addMapping(writer.getLine(), writer.getColumn(), sourceMapSourceIndex, sourceLine, sourceCharacter, /*nameIndex*/ undefined);
   }
 

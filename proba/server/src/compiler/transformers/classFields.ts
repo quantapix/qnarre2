@@ -747,11 +747,11 @@ export function transformClassFields(context: TransformationContext) {
   }
 
   function addPrivateIdentifierToEnvironment(name: PrivateIdentifier) {
-    const text = getTextOfPropertyName(name) as string;
+    const text = qu.getTextOfPropertyName(name) as string;
     const weakMapName = createOptimisticUniqueName('_' + text.substring(1));
     weakMapName.autoGenerateFlags |= qt.GeneratedIdentifierFlags.ReservedInNestedScopes;
     hoistVariableDeclaration(weakMapName);
-    (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = createUnderscoreEscapedMap())).set(name.escapedText, {
+    (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = qu.createUnderscoreEscapedMap())).set(name.escapedText, {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });
@@ -787,7 +787,7 @@ export function transformClassFields(context: TransformationContext) {
     let receiver = node.expression;
     // We cannot copy `this` or `super` into the function because they will be bound
     // differently inside the function.
-    if (isThisProperty(node) || isSuperProperty(node) || !isSimpleCopiableExpression(node.expression)) {
+    if (qu.isThisProperty(node) || qu.isSuperProperty(node) || !isSimpleCopiableExpression(node.expression)) {
       receiver = createTempVariable(hoistVariableDeclaration);
       receiver.autoGenerateFlags! |= qt.GeneratedIdentifierFlags.ReservedInNestedScopes;
       (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, qt.SyntaxKind.EqualsToken, node.expression));

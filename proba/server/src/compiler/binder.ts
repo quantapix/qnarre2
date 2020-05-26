@@ -48,7 +48,7 @@ function getModuleInstanceStateWorker(node: qt.Node, visited: Map<ModuleInstance
       return ModuleInstanceState.NonInstantiated;
     // 2. const enum declarations
     case qt.SyntaxKind.EnumDeclaration:
-      if (isEnumConst(node)) {
+      if (qu.isEnumConst(node)) {
         return ModuleInstanceState.ConstEnumOnly;
       }
       break;
@@ -235,8 +235,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
    * If so, the node _must_ be in the current file (as that's the only way anything could have traversed to it to yield it as the error node)
    * This version of `createDiagnosticForNode` uses the binder's context to account for this, and always yields correct diagnostics even in these situations.
    */
-  function createDiagnosticForNode(node: qt.Node, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): qt.DiagnosticWithLocation {
-    return createDiagnosticForNodeInSourceFile(getSourceFileOfNode(node) || file, node, message, arg0, arg1, arg2);
+  function qu.createDiagnosticForNode(node: qt.Node, message: qt.DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): qt.DiagnosticWithLocation {
+    return qu.createDiagnosticForNodeInSourceFile(qu.getSourceFileOfNode(node) || file, node, message, arg0, arg1, arg2);
   }
 
   function bindSourceFile(f: SourceFile, opts: qt.CompilerOptions) {
@@ -244,7 +244,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     options = opts;
     languageVersion = getEmitScriptTarget(options);
     inStrictMode = bindInStrictMode(file, opts);
-    classifiableNames = createUnderscoreEscapedMap<true>();
+    classifiableNames = qu.createUnderscoreEscapedMap<true>();
     symbolCount = 0;
     skipTransformFlagAggregation = file.isDeclarationFile;
 
@@ -307,11 +307,11 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     symbol.declarations = appendIfUnique(symbol.declarations, node);
 
     if (symbolFlags & (SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.Module | SymbolFlags.Variable) && !symbol.exports) {
-      symbol.exports = createSymbolTable();
+      symbol.exports = qu.createSymbolTable();
     }
 
     if (symbolFlags & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeLiteral | SymbolFlags.ObjectLiteral) && !symbol.members) {
-      symbol.members = createSymbolTable();
+      symbol.members = qu.createSymbolTable();
     }
 
     // On merge of const enum module with class or function, reset const enum only flag (namespaces will already recalculate)
@@ -333,9 +333,9 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
     const name = getNameOfDeclaration(node);
     if (name) {
-      if (isAmbientModule(node)) {
+      if (qu.isAmbientModule(node)) {
         const moduleName = getTextOfIdentifierOrLiteral(name as Identifier | StringLiteral);
-        return (isGlobalScopeAugmentation(node) ? '__global' : `"${moduleName}"`) as qt.__String;
+        return (qu.isGlobalScopeAugmentation(node) ? '__global' : `"${moduleName}"`) as qt.__String;
       }
       if (name.kind === qt.SyntaxKind.ComputedPropertyName) {
         const nameExpression = name.expression;
@@ -344,7 +344,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           return escapeLeadingUnderscores(nameExpression.text);
         }
         if (isSignedNumericLiteral(nameExpression)) {
-          return tokenToString(nameExpression.operator) + nameExpression.operand.text;
+          return qs.tokenToString(nameExpression.operator) + nameExpression.operand.text;
         }
 
         Debug.assert(isWellKnownSymbolSyntactically(nameExpression));
@@ -355,7 +355,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       }
       if (isPrivateIdentifier(name)) {
         // containingClass exists because private names only allowed inside classes
-        const containingClass = getContainingClass(node);
+        const containingClass = qu.getContainingClass(node);
         if (!containingClass) {
           // we can get here in cases where there is already a parse error.
           return undefined;
@@ -403,7 +403,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function getDisplayName(node: Declaration): string {
-    return isNamedDeclaration(node) ? declarationNameToString(node.name) : unescapeLeadingUnderscores(Debug.checkDefined(getDeclarationName(node)));
+    return isNamedDeclaration(node) ? qu.declarationNameToString(node.name) : unescapeLeadingUnderscores(Debug.checkDefined(getDeclarationName(node)));
   }
 
   /**
@@ -504,22 +504,22 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           }
 
           const relatedInformation: DiagnosticRelatedInformation[] = [];
-          if (isTypeAliasDeclaration(node) && nodeIsMissing(node.type) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Export) && symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)) {
+          if (isTypeAliasDeclaration(node) && qu.nodeIsMissing(node.type) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Export) && symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)) {
             // export type T; - may have meant export type { T }?
-            relatedInformation.push(createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${unescapeLeadingUnderscores(node.name.escapedText)} }`));
+            relatedInformation.push(qu.createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${unescapeLeadingUnderscores(node.name.escapedText)} }`));
           }
 
           const declarationName = getNameOfDeclaration(node) || node;
           forEach(symbol.declarations, (declaration, index) => {
             const decl = getNameOfDeclaration(declaration) || declaration;
-            const diag = createDiagnosticForNode(decl, message, messageNeedsName ? getDisplayName(declaration) : undefined);
-            file.bindDiagnostics.push(multipleDefaultExports ? addRelatedInfo(diag, createDiagnosticForNode(declarationName, index === 0 ? Diagnostics.Another_export_default_is_here : Diagnostics.and_here)) : diag);
+            const diag = qu.createDiagnosticForNode(decl, message, messageNeedsName ? getDisplayName(declaration) : undefined);
+            file.bindDiagnostics.push(multipleDefaultExports ? addRelatedInfo(diag, qu.createDiagnosticForNode(declarationName, index === 0 ? Diagnostics.Another_export_default_is_here : Diagnostics.and_here)) : diag);
             if (multipleDefaultExports) {
-              relatedInformation.push(createDiagnosticForNode(decl, Diagnostics.The_first_export_default_is_here));
+              relatedInformation.push(qu.createDiagnosticForNode(decl, Diagnostics.The_first_export_default_is_here));
             }
           });
 
-          const diag = createDiagnosticForNode(declarationName, message, messageNeedsName ? getDisplayName(node) : undefined);
+          const diag = qu.createDiagnosticForNode(declarationName, message, messageNeedsName ? getDisplayName(node) : undefined);
           file.bindDiagnostics.push(addRelatedInfo(diag, ...relatedInformation));
 
           symbol = createSymbol(SymbolFlags.None, name);
@@ -562,7 +562,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       //       and this case is specially handled. Module augmentations should only be merged with original module definition
       //       and should never be merged directly with other augmentation, and the latter case would be possible if automatic merge is allowed.
       if (isJSDocTypeAlias(node)) Debug.assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
-      if ((!isAmbientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
+      if ((!qu.isAmbientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
         if (!container.locals || (hasSyntacticModifier(node, qt.ModifierFlags.Default) && !getDeclarationName(node))) {
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes); // No local symbol for an unnamed default!
         }
@@ -611,7 +611,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       }
       container = blockScopeContainer = node;
       if (containerFlags & ContainerFlags.HasLocals) {
-        container.locals = createSymbolTable();
+        container.locals = qu.createSymbolTable();
       }
       addToContainerChain(container);
     } else if (containerFlags & ContainerFlags.IsBlockScopedContainer) {
@@ -626,7 +626,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       const saveExceptionTarget = currentExceptionTarget;
       const saveActiveLabelList = activeLabelList;
       const saveHasExplicitReturn = hasExplicitReturn;
-      const isIIFE = containerFlags & ContainerFlags.IsFunctionExpression && !hasSyntacticModifier(node, qt.ModifierFlags.Async) && !node.asteriskToken && !!getImmediatelyInvokedFunctionExpression(node);
+      const isIIFE = containerFlags & ContainerFlags.IsFunctionExpression && !hasSyntacticModifier(node, qt.ModifierFlags.Async) && !node.asteriskToken && !!qu.getImmediatelyInvokedFunctionExpression(node);
       // A non-async, non-generator IIFE is considered part of the containing control flow. Return statements behave
       // similarly to break statements that exit to a label just past the statement body.
       if (!isIIFE) {
@@ -646,7 +646,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       bindChildren(node);
       // Reset all reachability check related flags on node (for incremental scenarios)
       node.flags &= ~NodeFlags.ReachabilityAndEmitFlags;
-      if (!(currentFlow.flags & FlowFlags.Unreachable) && containerFlags & ContainerFlags.IsFunctionLike && nodeIsPresent(node.body)) {
+      if (!(currentFlow.flags & FlowFlags.Unreachable) && containerFlags & ContainerFlags.IsFunctionLike && qu.nodeIsPresent(node.body)) {
         node.flags |= NodeFlags.HasImplicitReturn;
         if (hasExplicitReturn) node.flags |= NodeFlags.HasExplicitReturn;
         node.endFlowNode = currentFlow;
@@ -1730,7 +1730,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
         return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals;
 
       case qt.SyntaxKind.MethodDeclaration:
-        if (isObjectLiteralOrClassExpressionMethod(node)) {
+        if (qu.isObjectLiteralOrClassExpressionMethod(node)) {
           return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike | ContainerFlags.IsObjectLiteralOrClassExpressionMethod;
         }
       // falls through
@@ -1880,11 +1880,11 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
   function bindModuleDeclaration(node: ModuleDeclaration) {
     setExportContextFlag(node);
-    if (isAmbientModule(node)) {
+    if (qu.isAmbientModule(node)) {
       if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         errorOnFirstToken(node, Diagnostics.export_modifier_cannot_be_applied_to_ambient_modules_and_module_augmentations_since_they_are_always_visible);
       }
-      if (isModuleAugmentationExternal(node)) {
+      if (qu.isModuleAugmentationExternal(node)) {
         declareModuleSymbol(node);
       } else {
         let pattern: qc.Pattern | undefined;
@@ -1934,7 +1934,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
     const typeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
     addDeclarationToSymbol(typeLiteralSymbol, node, SymbolFlags.TypeLiteral);
-    typeLiteralSymbol.members = createSymbolTable();
+    typeLiteralSymbol.members = qu.createSymbolTable();
     typeLiteralSymbol.members.set(symbol.escapedName, symbol);
   }
 
@@ -1945,7 +1945,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
 
     if (inStrictMode && !isAssignmentTarget(node)) {
-      const seen = createUnderscoreEscapedMap<ElementKind>();
+      const seen = qu.createUnderscoreEscapedMap<ElementKind>();
 
       for (const prop of node.properties) {
         if (prop.kind === qt.SyntaxKind.SpreadAssignment || prop.name.kind !== qt.SyntaxKind.Identifier) {
@@ -1971,7 +1971,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
         }
 
         if (currentKind === ElementKind.Property && existingKind === ElementKind.Property) {
-          const span = getErrorSpanForNode(file, identifier);
+          const span = qu.getErrorSpanForNode(file, identifier);
           file.bindDiagnostics.push(createFileDiagnostic(file, span.start, span.length, Diagnostics.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode));
         }
       }
@@ -2003,14 +2003,14 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
         declareModuleMember(node, symbolFlags, symbolExcludes);
         break;
       case qt.SyntaxKind.SourceFile:
-        if (isExternalOrCommonJsModule(<SourceFile>container)) {
+        if (qu.isExternalOrCommonJsModule(<SourceFile>container)) {
           declareModuleMember(node, symbolFlags, symbolExcludes);
           break;
         }
       // falls through
       default:
         if (!blockScopeContainer.locals) {
-          blockScopeContainer.locals = createSymbolTable();
+          blockScopeContainer.locals = qu.createSymbolTable();
           addToContainerChain(blockScopeContainer);
         }
         declareSymbol(blockScopeContainer.locals, /*parent*/ undefined, node, symbolFlags, symbolExcludes);
@@ -2028,8 +2028,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     const saveCurrentFlow = currentFlow;
     for (const typeAlias of delayedTypeAliases) {
       const host = getJSDocHost(typeAlias);
-      container = findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
-      blockScopeContainer = getEnclosingBlockScopeContainer(host) || file;
+      container = qu.findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
+      blockScopeContainer = qu.getEnclosingBlockScopeContainer(host) || file;
       currentFlow = initFlowNode({ flags: FlowFlags.Start });
       parent = typeAlias;
       bind(typeAlias.typeExpression);
@@ -2043,7 +2043,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           switch (getAssignmentDeclarationPropertyAccessKind(declName.parent)) {
             case qt.AssignmentDeclarationKind.ExportsProperty:
             case qt.AssignmentDeclarationKind.ModuleExports:
-              if (!isExternalOrCommonJsModule(file)) {
+              if (!qu.isExternalOrCommonJsModule(file)) {
                 container = undefined!;
               } else {
                 container = file;
@@ -2086,7 +2086,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     if (inStrictMode && node.originalKeywordKind! >= qt.SyntaxKind.FirstFutureReservedWord && node.originalKeywordKind! <= qt.SyntaxKind.LastFutureReservedWord && !isIdentifierName(node) && !(node.flags & NodeFlags.Ambient) && !(node.flags & NodeFlags.JSDoc)) {
       // Report error only if there are no parse errors in file
       if (!file.parseDiagnostics.length) {
-        file.bindDiagnostics.push(createDiagnosticForNode(node, getStrictModeIdentifierMessage(node), declarationNameToString(node)));
+        file.bindDiagnostics.push(qu.createDiagnosticForNode(node, getStrictModeIdentifierMessage(node), qu.declarationNameToString(node)));
       }
     }
   }
@@ -2094,7 +2094,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function getStrictModeIdentifierMessage(node: qt.Node) {
     // Provide specialized messages to help the user understand why we think they're in
     // strict mode.
-    if (getContainingClass(node)) {
+    if (qu.getContainingClass(node)) {
       return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode;
     }
 
@@ -2111,7 +2111,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     if (node.escapedText === '#constructor') {
       // Report error only if there are no parse errors in file
       if (!file.parseDiagnostics.length) {
-        file.bindDiagnostics.push(createDiagnosticForNode(node, Diagnostics.constructor_is_a_reserved_word, declarationNameToString(node)));
+        file.bindDiagnostics.push(qu.createDiagnosticForNode(node, Diagnostics.constructor_is_a_reserved_word, qu.declarationNameToString(node)));
       }
     }
   }
@@ -2137,7 +2137,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     if (inStrictMode && node.expression.kind === qt.SyntaxKind.Identifier) {
       // When a delete operator occurs within strict mode code, a SyntaxError is thrown if its
       // UnaryExpression is a direct reference to a variable, function argument, or function name
-      const span = getErrorSpanForNode(file, node.expression);
+      const span = qu.getErrorSpanForNode(file, node.expression);
       file.bindDiagnostics.push(createFileDiagnostic(file, span.start, span.length, Diagnostics.delete_cannot_be_called_on_an_identifier_in_strict_mode));
     }
   }
@@ -2152,7 +2152,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       if (isEvalOrArgumentsIdentifier(identifier)) {
         // We check first if the name is inside class declaration or class expression; if so give explicit message
         // otherwise report generic error message.
-        const span = getErrorSpanForNode(file, name);
+        const span = qu.getErrorSpanForNode(file, name);
         file.bindDiagnostics.push(createFileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgumentsMessage(contextNode), idText(identifier)));
       }
     }
@@ -2161,7 +2161,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function getStrictModeEvalOrArgumentsMessage(node: qt.Node) {
     // Provide specialized messages to help the user understand why we think they're in
     // strict mode.
-    if (getContainingClass(node)) {
+    if (qu.getContainingClass(node)) {
       return Diagnostics.Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode;
     }
 
@@ -2182,7 +2182,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function getStrictModeBlockScopeFunctionDeclarationMessage(node: qt.Node) {
     // Provide specialized messages to help the user understand why we think they're in
     // strict mode.
-    if (getContainingClass(node)) {
+    if (qu.getContainingClass(node)) {
       return Diagnostics.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Class_definitions_are_automatically_in_strict_mode;
     }
 
@@ -2199,7 +2199,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       if (blockScopeContainer.kind !== qt.SyntaxKind.SourceFile && blockScopeContainer.kind !== qt.SyntaxKind.ModuleDeclaration && !isFunctionLike(blockScopeContainer)) {
         // We check first if the name is inside class declaration or class expression; if so give explicit message
         // otherwise report generic error message.
-        const errorSpan = getErrorSpanForNode(file, node);
+        const errorSpan = qu.getErrorSpanForNode(file, node);
         file.bindDiagnostics.push(createFileDiagnostic(file, errorSpan.start, errorSpan.length, getStrictModeBlockScopeFunctionDeclarationMessage(node)));
       }
     }
@@ -2207,7 +2207,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
   function checkStrictModeNumericLiteral(node: NumericLiteral) {
     if (inStrictMode && node.numericLiteralFlags & TokenFlags.Octal) {
-      file.bindDiagnostics.push(createDiagnosticForNode(node, Diagnostics.Octal_literals_are_not_allowed_in_strict_mode));
+      file.bindDiagnostics.push(qu.createDiagnosticForNode(node, Diagnostics.Octal_literals_are_not_allowed_in_strict_mode));
     }
   }
 
@@ -2247,7 +2247,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function errorOnFirstToken(node: qt.Node, message: qt.DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any) {
-    const span = getSpanOfTokenAtPosition(file, node.pos);
+    const span = qu.getSpanOfTokenAtPosition(file, node.pos);
     file.bindDiagnostics.push(createFileDiagnostic(file, span.start, span.length, message, arg0, arg1, arg2));
   }
 
@@ -2256,7 +2256,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function errorOrSuggestionOnRange(isError: boolean, startNode: Node, endNode: Node, message: qt.DiagnosticMessage): void {
-    addErrorOrSuggestionDiagnostic(isError, { pos: getTokenPosOfNode(startNode, file), end: endNode.end }, message);
+    addErrorOrSuggestionDiagnostic(isError, { pos: qu.getTokenPosOfNode(startNode, file), end: endNode.end }, message);
   }
 
   function addErrorOrSuggestionDiagnostic(isError: boolean, range: qt.TextRange, message: qt.DiagnosticMessage): void {
@@ -2338,7 +2338,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   function updateStrictModeStatementList(statements: qt.NodeArray<Statement>) {
     if (!inStrictMode) {
       for (const statement of statements) {
-        if (!isPrologueDirective(statement)) {
+        if (!qu.isPrologueDirective(statement)) {
           return;
         }
 
@@ -2350,9 +2350,9 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  /// Should be called only on prologue directives (isPrologueDirective(node) should be true)
+  /// Should be called only on prologue directives (qu.isPrologueDirective(node) should be true)
   function isUseStrictPrologueDirective(node: qt.ExpressionStatement): boolean {
-    const nodeText = getSourceTextOfNodeFromSourceFile(file, node.expression);
+    const nodeText = qu.getSourceTextOfNodeFromSourceFile(file, node.expression);
 
     // Note: the node text must be exactly "use strict" or 'use strict'.  It is not ok for the
     // string to contain unicode escapes (as per ES5).
@@ -2473,7 +2473,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
         // as other properties in the object literal.  So we use SymbolFlags.PropertyExcludes
         // so that it will conflict with any other object literal members with the same
         // name.
-        return bindPropertyOrMethodOrAccessor(node, SymbolFlags.Method | (node.questionToken ? SymbolFlags.Optional : SymbolFlags.None), isObjectLiteralMethod(node) ? SymbolFlags.PropertyExcludes : SymbolFlags.MethodExcludes);
+        return bindPropertyOrMethodOrAccessor(node, SymbolFlags.Method | (node.questionToken ? SymbolFlags.Optional : SymbolFlags.None), qu.isObjectLiteralMethod(node) ? SymbolFlags.PropertyExcludes : SymbolFlags.MethodExcludes);
       case qt.SyntaxKind.FunctionDeclaration:
         return bindFunctionDeclaration(node);
       case qt.SyntaxKind.Constructor:
@@ -2594,7 +2594,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     setExportContextFlag(file);
     if (isExternalModule(file)) {
       bindSourceFileAsExternalModule();
-    } else if (isJsonSourceFile(file)) {
+    } else if (qu.isJsonSourceFile(file)) {
       bindSourceFileAsExternalModule();
       // Create symbol equivalent for the module.exports = {}
       const originalSymbol = file.symbol;
@@ -2630,13 +2630,13 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
   function bindNamespaceExportDeclaration(node: NamespaceExportDeclaration) {
     if (node.modifiers && node.modifiers.length) {
-      file.bindDiagnostics.push(createDiagnosticForNode(node, Diagnostics.Modifiers_cannot_appear_here));
+      file.bindDiagnostics.push(qu.createDiagnosticForNode(node, Diagnostics.Modifiers_cannot_appear_here));
     }
     const diag = !isSourceFile(node.parent) ? Diagnostics.Global_module_exports_may_only_appear_at_top_level : !isExternalModule(node.parent) ? Diagnostics.Global_module_exports_may_only_appear_in_module_files : !node.parent.isDeclarationFile ? Diagnostics.Global_module_exports_may_only_appear_in_declaration_files : undefined;
     if (diag) {
-      file.bindDiagnostics.push(createDiagnosticForNode(node, diag));
+      file.bindDiagnostics.push(qu.createDiagnosticForNode(node, diag));
     } else {
-      file.symbol.globalExports = file.symbol.globalExports || createSymbolTable();
+      file.symbol.globalExports = file.symbol.globalExports || qu.createSymbolTable();
       declareSymbol(file.symbol.globalExports, file.symbol, node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
     }
   }
@@ -2735,7 +2735,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     if (hasPrivateIdentifier) {
       return;
     }
-    const thisContainer = getThisContainer(node, /*includeArrowFunctions*/ false);
+    const thisContainer = qu.getThisContainer(node, /*includeArrowFunctions*/ false);
     switch (thisContainer.kind) {
       case qt.SyntaxKind.FunctionDeclaration:
       case qt.SyntaxKind.FunctionExpression:
@@ -2750,7 +2750,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
         if (constructorSymbol && constructorSymbol.valueDeclaration) {
           // Declare a 'member' if the container is an ES5 class or ES6 constructor
-          constructorSymbol.members = constructorSymbol.members || createSymbolTable();
+          constructorSymbol.members = constructorSymbol.members || qu.createSymbolTable();
           // It's acceptable for multiple 'this' assignments of the same identifier to occur
           if (hasDynamicName(node)) {
             bindDynamicallyNamedThisPropertyAssignment(node, constructorSymbol);
@@ -2900,7 +2900,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           addDeclarationToSymbol(symbol, id, flags);
           return symbol;
         } else {
-          const table = parent ? parent.exports! : file.jsGlobalAugmentations || (file.jsGlobalAugmentations = createSymbolTable());
+          const table = parent ? parent.exports! : file.jsGlobalAugmentations || (file.jsGlobalAugmentations = qu.createSymbolTable());
           return declareSymbol(table, parent, id, flags, excludeFlags);
         }
       });
@@ -2917,7 +2917,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
 
     // Set up the members collection if it doesn't exist already
-    const symbolTable = isPrototypeProperty ? namespaceSymbol.members || (namespaceSymbol.members = createSymbolTable()) : namespaceSymbol.exports || (namespaceSymbol.exports = createSymbolTable());
+    const symbolTable = isPrototypeProperty ? namespaceSymbol.members || (namespaceSymbol.members = qu.createSymbolTable()) : namespaceSymbol.exports || (namespaceSymbol.exports = qu.createSymbolTable());
 
     let includes = SymbolFlags.None;
     let excludes = SymbolFlags.None;
@@ -3065,14 +3065,14 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       if (node.name) {
         node.name.parent = node;
       }
-      file.bindDiagnostics.push(createDiagnosticForNode(symbolExport.declarations[0], Diagnostics.Duplicate_identifier_0, symbolName(prototypeSymbol)));
+      file.bindDiagnostics.push(qu.createDiagnosticForNode(symbolExport.declarations[0], Diagnostics.Duplicate_identifier_0, symbolName(prototypeSymbol)));
     }
     symbol.exports!.set(prototypeSymbol.escapedName, prototypeSymbol);
     prototypeSymbol.parent = symbol;
   }
 
   function bindEnumDeclaration(node: qt.EnumDeclaration) {
-    return isEnumConst(node) ? bindBlockScopedDeclaration(node, SymbolFlags.ConstEnum, SymbolFlags.ConstEnumExcludes) : bindBlockScopedDeclaration(node, SymbolFlags.RegularEnum, SymbolFlags.RegularEnumExcludes);
+    return qu.isEnumConst(node) ? bindBlockScopedDeclaration(node, SymbolFlags.ConstEnum, SymbolFlags.ConstEnumExcludes) : bindBlockScopedDeclaration(node, SymbolFlags.RegularEnum, SymbolFlags.RegularEnumExcludes);
   }
 
   function bindVariableDeclarationOrBindingElement(node: qt.VariableDeclaration | qt.BindingElement) {
@@ -3081,7 +3081,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
 
     if (!isBindingPattern(node.name)) {
-      if (isBlockOrCatchScoped(node)) {
+      if (qu.isBlockOrCatchScoped(node)) {
         bindBlockScopedDeclaration(node, SymbolFlags.BlockScopedVariable, SymbolFlags.BlockScopedVariableExcludes);
       } else if (isParameterDeclaration(node)) {
         // It is safe to walk up parent chain to find whether the node is a destructuring parameter declaration
@@ -3159,7 +3159,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       emitFlags |= NodeFlags.HasAsyncFunctions;
     }
 
-    if (currentFlow && isObjectLiteralOrClassExpressionMethod(node)) {
+    if (currentFlow && qu.isObjectLiteralOrClassExpressionMethod(node)) {
       node.flowNode = currentFlow;
     }
 
@@ -3167,7 +3167,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function getInferTypeContainer(node: qt.Node): ConditionalTypeNode | undefined {
-    const extendsType = findAncestor(node, (n) => n.parent && isConditionalTypeNode(n.parent) && n.parent.extendsType === n);
+    const extendsType = qu.findAncestor(node, (n) => n.parent && isConditionalTypeNode(n.parent) && n.parent.extendsType === n);
     return extendsType && extendsType.parent;
   }
 
@@ -3176,7 +3176,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       const container = find(node.parent.parent.tags!, isJSDocTypeAlias) || getHostSignatureFromJSDoc(node.parent); // TODO: GH#18217
       if (container) {
         if (!container.locals) {
-          container.locals = createSymbolTable();
+          container.locals = qu.createSymbolTable();
         }
         declareSymbol(container.locals, /*parent*/ undefined, node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
       } else {
@@ -3186,7 +3186,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
       const container = getInferTypeContainer(node.parent);
       if (container) {
         if (!container.locals) {
-          container.locals = createSymbolTable();
+          container.locals = qu.createSymbolTable();
         }
         declareSymbol(container.locals, /*parent*/ undefined, node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
       } else {
@@ -3419,11 +3419,11 @@ function computeCallExpression(node: CallExpression, subtreeFlags: TransformFlag
     transformFlags |= TransformFlags.AssertTypeScript;
   }
 
-  if (subtreeFlags & TransformFlags.ContainsRestOrSpread || isSuperOrSuperProperty(callee)) {
+  if (subtreeFlags & TransformFlags.ContainsRestOrSpread || qu.isSuperOrSuperProperty(callee)) {
     // If the this node contains a SpreadExpression, or is a super call, then it is an ES6
     // node.
     transformFlags |= TransformFlags.AssertES2015;
-    if (isSuperProperty(callee)) {
+    if (qu.isSuperProperty(callee)) {
       transformFlags |= TransformFlags.ContainsLexicalThis;
     }
   }

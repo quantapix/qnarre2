@@ -263,7 +263,7 @@ export enum ConfigFileProgramReloadLevel {
  */
 export function updateMissingFilePathsWatch(program: Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
   const missingFilePaths = program.getMissingFilePaths();
-  const newMissingFilePathMap = arrayToSet(missingFilePaths);
+  const newMissingFilePathMap = qu.arrayToSet(missingFilePaths);
   // Update the missing file paths watcher
   mutateMap(missingFileWatches, newMissingFilePathMap, {
     // Watch the missing files

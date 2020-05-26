@@ -81,7 +81,7 @@ export function getModuleSpecifiers(moduleSymbol: symbol, compilerOptions: qt.Co
   if (ambient) return [ambient];
 
   const info = getInfo(importingSourceFile.path, host);
-  const moduleSourceFile = getSourceFileOfNode(moduleSymbol.valueDeclaration || getNonAugmentationDeclaration(moduleSymbol));
+  const moduleSourceFile = qu.getSourceFileOfNode(moduleSymbol.valueDeclaration || qu.getNonAugmentationDeclaration(moduleSymbol));
   const modulePaths = getAllModulePaths(importingSourceFile.path, moduleSourceFile.originalFileName, host);
 
   const preferences = getPreferences(userPreferences, compilerOptions, importingSourceFile);
@@ -162,7 +162,7 @@ export function forEachFileNameOfModule<T>(importingFileName: string, importedFi
   const links = host.getProbableSymlinks ? host.getProbableSymlinks(host.getSourceFiles()) : discoverProbableSymlinks(host.getSourceFiles(), getCanonicalFileName, cwd);
 
   const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? qc.compareStringsCaseSensitive : qc.compareStringsCaseInsensitive;
-  const result = forEachEntry(links, (resolved, path) => {
+  const result = qu.forEachEntry(links, (resolved, path) => {
     if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
       return undefined; // Don't want to a package to globally import from itself
     }
@@ -228,7 +228,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
 }
 
 function tryGetModuleNameFromAmbientModule(moduleSymbol: symbol): string | undefined {
-  const decl = find(moduleSymbol.declarations, (d) => isNonGlobalAmbientModule(d) && (!isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
+  const decl = find(moduleSymbol.declarations, (d) => qu.isNonGlobalAmbientModule(d) && (!qu.isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
   if (decl) {
     return decl.name.text;
   }

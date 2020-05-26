@@ -331,7 +331,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
     const resolvedFileName = options.preserveSymlinks ? fileName : realPath(fileName, host, traceEnabled);
     if (traceEnabled) {
       if (packageId) {
-        trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_with_Package_ID_2_primary_Colon_3, typeReferenceDirectiveName, resolvedFileName, packageIdToString(packageId), primary);
+        trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_with_Package_ID_2_primary_Colon_3, typeReferenceDirectiveName, resolvedFileName, qu.packageIdToString(packageId), primary);
       } else {
         trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_primary_Colon_2, typeReferenceDirectiveName, resolvedFileName, primary);
       }
@@ -501,7 +501,7 @@ export function createCacheWithRedirects<T>(options?: qt.CompilerOptions): Cache
     let redirects = redirectsMap.get(path);
     if (!redirects) {
       // Reuse map if redirected reference map uses same resolution
-      redirects = !options || optionsHaveModuleResolutionChanges(options, redirectedReference.commandLine.options) ? createMap() : ownMap;
+      redirects = !options || qu.optionsHaveModuleResolutionChanges(options, redirectedReference.commandLine.options) ? createMap() : ownMap;
       redirectsMap.set(path, redirects);
     }
     return redirects;
@@ -672,7 +672,7 @@ export function resolveModuleName(moduleName: string, containingFile: string, co
   if (traceEnabled) {
     if (result.resolvedModule) {
       if (result.resolvedModule.packageId) {
-        trace(host, Diagnostics.Module_name_0_was_successfully_resolved_to_1_with_Package_ID_2, moduleName, result.resolvedModule.resolvedFileName, packageIdToString(result.resolvedModule.packageId));
+        trace(host, Diagnostics.Module_name_0_was_successfully_resolved_to_1_with_Package_ID_2, moduleName, result.resolvedModule.resolvedFileName, qu.packageIdToString(result.resolvedModule.packageId));
       } else {
         trace(host, Diagnostics.Module_name_0_was_successfully_resolved_to_1, moduleName, result.resolvedModule.resolvedFileName);
       }

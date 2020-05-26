@@ -547,7 +547,7 @@ export function transformGenerators(context: TransformationContext) {
     transformAndEmitStatements(body.statements, statementOffset);
 
     const buildResult = build();
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     statements.push(createReturn(buildResult));
 
     // Restore previous generator state
@@ -986,7 +986,7 @@ export function transformGenerators(context: TransformationContext) {
   }
 
   function visitCallExpression(node: CallExpression) {
-    if (!isImportCall(node) && forEach(node.arguments, containsYield)) {
+    if (!qu.isImportCall(node) && forEach(node.arguments, containsYield)) {
       // [source]
       //      a.b(1, yield, 2);
       //

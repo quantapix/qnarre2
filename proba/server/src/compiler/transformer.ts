@@ -210,7 +210,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
 
   // Ensure the parse tree is clean before applying transformations
   for (const node of nodes) {
-    disposeEmitNodes(getSourceFileOfNode(getParseTreeNode(node)));
+    disposeEmitNodes(qu.getSourceFileOfNode(getParseTreeNode(node)));
   }
 
   performance.mark('beforeTransform');
@@ -480,7 +480,7 @@ export function transformNodes<T extends Node>(resolver: EmitResolver | undefine
     if (state < TransformationState.Disposed) {
       // Clean up emit nodes on parse tree
       for (const node of nodes) {
-        disposeEmitNodes(getSourceFileOfNode(getParseTreeNode(node)));
+        disposeEmitNodes(qu.getSourceFileOfNode(getParseTreeNode(node)));
       }
 
       // Release references to external entries for GC purposes.

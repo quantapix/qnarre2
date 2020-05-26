@@ -304,7 +304,7 @@ export function createCallBinding(expression: qt.Expression, recordTempVariable:
   const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
   let thisArg: qt.Expression;
   let target: LeftHandSideExpression;
-  if (isSuperProperty(callee)) {
+  if (qu.isSuperProperty(callee)) {
     thisArg = createThis();
     target = callee;
   } else if (callee.kind === qt.SyntaxKind.SuperKeyword) {
@@ -655,7 +655,7 @@ export function addStandardPrologue(target: qt.Statement[], source: readonly qt.
   const numStatements = source.length;
   while (statementOffset < numStatements) {
     const statement = source[statementOffset];
-    if (isPrologueDirective(statement)) {
+    if (qu.isPrologueDirective(statement)) {
       if (isUseStrictPrologue(statement)) {
         foundUseStrict = true;
       }
@@ -695,7 +695,7 @@ export function addCustomPrologue(target: qt.Statement[], source: readonly qt.St
 
 export function findUseStrictPrologue(statements: readonly qt.Statement[]): qt.Statement | undefined {
   for (const statement of statements) {
-    if (isPrologueDirective(statement)) {
+    if (qu.isPrologueDirective(statement)) {
       if (isUseStrictPrologue(statement)) {
         return statement;
       }
@@ -708,7 +708,7 @@ export function findUseStrictPrologue(statements: readonly qt.Statement[]): qt.S
 
 export function startsWithUseStrict(statements: readonly qt.Statement[]) {
   const firstStatement = firstOrUndefined(statements);
-  return firstStatement !== undefined && isPrologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
+  return firstStatement !== undefined && qu.isPrologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
 }
 
 /**
@@ -1225,7 +1225,7 @@ export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
 }
 
 export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: SourceFile, compilerOptions: qt.CompilerOptions, hasExportStarsToExportValues?: boolean, hasImportStar?: boolean, hasImportDefault?: boolean) {
-  if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
+  if (compilerOptions.importHelpers && qu.isEffectiveExternalModule(sourceFile, compilerOptions)) {
     let namedBindings: NamedImportBindings | undefined;
     const moduleKind = getEmitModuleKind(compilerOptions);
     if (moduleKind >= qt. ModuleKind.ES2015 && moduleKind <= qt. ModuleKind.ESNext) {
@@ -1245,7 +1245,7 @@ export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: Sourc
           helperNames.sort(qc.compareStringsCaseSensitive);
           // Alias the imports if the names are used somewhere in the file.
           // NOTE: We don't need to care about global import collisions as this is a module.
-          namedBindings = createNamedImports(map(helperNames, (name) => (isFileLevelUniqueName(sourceFile, name) ? createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name)) : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name)))));
+          namedBindings = createNamedImports(map(helperNames, (name) => (qu.isFileLevelUniqueName(sourceFile, name) ? createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name)) : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name)))));
           const parseNode = getOriginalNode(sourceFile, isSourceFile);
           const emitNode = getOrCreateEmitNode(parseNode);
           emitNode.externalHelpers = true;
@@ -1267,7 +1267,7 @@ export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: Sourc
 }
 
 export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, compilerOptions: qt.CompilerOptions, hasExportStarsToExportValues?: boolean, hasImportStarOrImportDefault?: boolean) {
-  if (compilerOptions.importHelpers && isEffectiveExternalModule(node, compilerOptions)) {
+  if (compilerOptions.importHelpers && qu.isEffectiveExternalModule(node, compilerOptions)) {
     const externalHelpersModuleName = getExternalHelpersModuleName(node);
     if (externalHelpersModuleName) {
       return externalHelpersModuleName;
@@ -1302,7 +1302,7 @@ export function getLocalNameForExternalImport(node: ImportDeclaration | ExportDe
   const namespaceDeclaration = getNamespaceDeclarationNode(node);
   if (namespaceDeclaration && !isDefaultImport(node)) {
     const name = namespaceDeclaration.name;
-    return isGeneratedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
+    return isGeneratedIdentifier(name) ? name : createIdentifier(qu.getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
   }
   if (node.kind === qt.SyntaxKind.ImportDeclaration && node.importClause) {
     return getGeneratedNameForNode(node);

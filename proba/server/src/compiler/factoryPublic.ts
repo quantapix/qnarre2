@@ -136,7 +136,7 @@ export function createIdentifier(text: string, typeArguments: readonly (TypeNode
 export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
   const node = <Identifier>createSynthesizedNode(SyntaxKind.Identifier);
   node.escapedText = escapeLeadingUnderscores(text);
-  node.originalKeywordKind = text ? stringToToken(text) : qt.SyntaxKind.Unknown;
+  node.originalKeywordKind = text ? qs.stringToToken(text) : qt.SyntaxKind.Unknown;
   node.autoGenerateFlags = qt.GeneratedIdentifierFlags.None;
   node.autoGenerateId = 0;
   if (typeArguments) {
@@ -1153,7 +1153,7 @@ const invalidValueSentinel: object = {};
 
 function getCookedText(kind: TemplateLiteralToken['kind'], rawText: string) {
   if (!rawTextScanner) {
-    rawTextScanner = createScanner(ScriptTarget.Latest, /*skipTrivia*/ false, LanguageVariant.Standard);
+    rawTextScanner = qs.createScanner(ScriptTarget.Latest, /*skipTrivia*/ false, LanguageVariant.Standard);
   }
   switch (kind) {
     case qt.SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -2429,7 +2429,7 @@ function createUnparsedSource() {
   node.prologues = emptyArray;
   node.referencedFiles = emptyArray;
   node.libReferenceDirectives = emptyArray;
-  node.getLineAndCharacterOfPosition = (pos) => getLineAndCharacterOfPosition(node, pos);
+  node.getLineAndCharacterOfPosition = (pos) => qs.getLineAndCharacterOfPosition(node, pos);
   return node;
 }
 
@@ -2809,7 +2809,7 @@ export function disposeEmitNodes(sourceFile: SourceFile) {
   // from these nodes to ensure we do not hold onto entire subtrees just for position
   // information. We also need to reset these nodes to a pre-transformation state
   // for incremental parsing scenarios so that we do not impact later emit.
-  sourceFile = getSourceFileOfNode(getParseTreeNode(sourceFile));
+  sourceFile = qu.getSourceFileOfNode(getParseTreeNode(sourceFile));
   const emitNode = sourceFile && sourceFile.emitNode;
   const annotatedNodes = emitNode && emitNode.annotatedNodes;
   if (annotatedNodes) {
@@ -2834,7 +2834,7 @@ export function getOrCreateEmitNode(node: qt.Node): EmitNode {
         return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
       }
 
-      const sourceFile = getSourceFileOfNode(getParseTreeNode(getSourceFileOfNode(node)));
+      const sourceFile = qu.getSourceFileOfNode(getParseTreeNode(qu.getSourceFileOfNode(node)));
       getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
     }
 

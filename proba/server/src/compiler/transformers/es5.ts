@@ -108,7 +108,7 @@ export function transformES5(context: TransformationContext) {
    * @param name An Identifier
    */
   function trySubstituteReservedName(name: Identifier) {
-    const token = name.originalKeywordKind || (nodeIsSynthesized(name) ? stringToToken(idText(name)) : undefined);
+    const token = name.originalKeywordKind || (nodeIsSynthesized(name) ? qs.stringToToken(idText(name)) : undefined);
     if (token !== undefined && token >= qt.SyntaxKind.FirstReservedWord && token <= qt.SyntaxKind.LastReservedWord) {
       return setTextRange(createLiteral(name), name);
     }

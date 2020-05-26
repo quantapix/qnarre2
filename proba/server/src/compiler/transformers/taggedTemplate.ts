@@ -63,7 +63,7 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
   // Examples: `\n` is converted to "\\n", a template string with a newline to "\n".
   let text = node.rawText;
   if (text === undefined) {
-    text = getSourceTextOfNodeFromSourceFile(currentSourceFile, node);
+    text = qu.getSourceTextOfNodeFromSourceFile(currentSourceFile, node);
 
     // text contains the original source, it will also contain quotes ("`"), dolar signs and braces ("${" and "}"),
     // thus we need to remove those characters.

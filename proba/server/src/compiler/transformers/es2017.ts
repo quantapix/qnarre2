@@ -58,7 +58,7 @@ export function transformES2017(context: TransformationContext) {
     }
 
     setContextFlag(ContextFlags.NonTopLevel, false);
-    setContextFlag(ContextFlags.HasLexicalThis, !isEffectiveStrictModeSourceFile(node, compilerOptions));
+    setContextFlag(ContextFlags.HasLexicalThis, !qu.isEffectiveStrictModeSourceFile(node, compilerOptions));
     const visited = visitEachChild(node, visitor, context);
     addEmitHelpers(visited, context.readEmitHelpers());
     return visited;
@@ -176,7 +176,7 @@ export function transformES2017(context: TransformationContext) {
   }
 
   function visitCatchClauseInAsyncBody(node: CatchClause) {
-    const catchClauseNames = createUnderscoreEscapedMap<true>();
+    const catchClauseNames = qu.createUnderscoreEscapedMap<true>();
     recordDeclarationName(node.variableDeclaration!, catchClauseNames); // TODO: GH#18217
 
     // names declared in a catch variable are block scoped
@@ -184,7 +184,7 @@ export function transformES2017(context: TransformationContext) {
     catchClauseNames.forEach((_, escapedName) => {
       if (enclosingFunctionParameterNames.has(escapedName)) {
         if (!catchClauseUnshadowedNames) {
-          catchClauseUnshadowedNames = cloneMap(enclosingFunctionParameterNames);
+          catchClauseUnshadowedNames = qu.cloneMap(enclosingFunctionParameterNames);
         }
         catchClauseUnshadowedNames.delete(escapedName);
       }
@@ -367,7 +367,7 @@ export function transformES2017(context: TransformationContext) {
     // promise constructor.
 
     const savedEnclosingFunctionParameterNames = enclosingFunctionParameterNames;
-    enclosingFunctionParameterNames = createUnderscoreEscapedMap<true>();
+    enclosingFunctionParameterNames = qu.createUnderscoreEscapedMap<true>();
     for (const parameter of node.parameters) {
       recordDeclarationName(parameter, enclosingFunctionParameterNames);
     }
@@ -375,7 +375,7 @@ export function transformES2017(context: TransformationContext) {
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
     if (!isArrowFunction) {
-      capturedSuperProperties = createUnderscoreEscapedMap<true>();
+      capturedSuperProperties = qu.createUnderscoreEscapedMap<true>();
       hasSuperElementAccess = false;
     }
 
@@ -385,7 +385,7 @@ export function transformES2017(context: TransformationContext) {
       const statementOffset = addPrologue(statements, node.body.statements, /*ensureUseStrict*/ false, visitor);
       statements.push(createReturn(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(node.body, statementOffset))));
 
-      insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+      qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
       // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
       // This step isn't needed if we eventually transform this to ES5.
@@ -393,10 +393,10 @@ export function transformES2017(context: TransformationContext) {
 
       if (emitSuperHelpers) {
         enableSubstitutionForAsyncMethodsWithSuper();
-        if (hasEntries(capturedSuperProperties)) {
+        if (qu.hasEntries(capturedSuperProperties)) {
           const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
           substitutedSuperAccessors[getNodeId(variableStatement)] = true;
-          insertStatementsAfterStandardPrologue(statements, [variableStatement]);
+          qu.insertStatementsAfterStandardPrologue(statements, [variableStatement]);
         }
       }
 
@@ -442,7 +442,7 @@ export function transformES2017(context: TransformationContext) {
   }
 
   function getPromiseConstructor(type: TypeNode | undefined) {
-    const typeName = type && getEntityNameFromTypeNode(type);
+    const typeName = type && qu.getEntityNameFromTypeNode(type);
     if (typeName && isEntityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
       if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) {
@@ -548,7 +548,7 @@ export function transformES2017(context: TransformationContext) {
 
   function substituteCallExpression(node: CallExpression): qt.Expression {
     const expression = node.expression;
-    if (isSuperProperty(expression)) {
+    if (qu.isSuperProperty(expression)) {
       const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
       return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
     }

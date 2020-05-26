@@ -543,7 +543,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
 
   function visitSourceFile(node: SourceFile) {
-    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(isExternalModule(node) && moduleKind >= qt.ModuleKind.ES2015) && !isJsonSourceFile(node);
+    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(isExternalModule(node) && moduleKind >= qt.ModuleKind.ES2015) && !qu.isJsonSourceFile(node);
 
     return updateSourceFileNode(node, visitLexicalEnvironment(node.statements, sourceElementVisitor, context, /*start*/ 0, alwaysStrict));
   }
@@ -577,7 +577,7 @@ export function transformTypeScript(context: TransformationContext) {
     const extendsClauseElement = getEffectiveBaseTypeNode(node);
     if (extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== qt.SyntaxKind.NullKeyword) facts |= ClassFacts.IsDerivedClass;
     if (shouldEmitDecorateCallForClass(node)) facts |= ClassFacts.HasConstructorDecorators;
-    if (childIsDecorated(node)) facts |= ClassFacts.HasMemberDecorators;
+    if (qu.childIsDecorated(node)) facts |= ClassFacts.HasMemberDecorators;
     if (isExportOfNamespace(node)) facts |= ClassFacts.IsExportOfNamespace;
     else if (isDefaultExternalModuleExport(node)) facts |= ClassFacts.IsDefaultExternalExport;
     else if (isNamedExternalModuleExport(node)) facts |= ClassFacts.IsNamedExternalExport;
@@ -627,7 +627,7 @@ export function transformTypeScript(context: TransformationContext) {
       //      return C;
       //  }();
       //
-      const closingBraceLocation = createTokenRange(skipTrivia(currentSourceFile.text, node.members.end), qt.SyntaxKind.CloseBraceToken);
+      const closingBraceLocation = createTokenRange(qs.skipTrivia(currentSourceFile.text, node.members.end), qt.SyntaxKind.CloseBraceToken);
       const localName = getInternalName(node);
 
       // The following partially-emitted expression exists purely to align our sourcemap
@@ -641,7 +641,7 @@ export function transformTypeScript(context: TransformationContext) {
       setEmitFlags(statement, qt.EmitFlags.NoComments | qt.EmitFlags.NoTokenSourceMaps);
       statements.push(statement);
 
-      insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
+      qu.insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
 
       const iife = createImmediatelyInvokedArrowFunction(statements);
       setEmitFlags(iife, qt.EmitFlags.TypeScriptClassWrapper);
@@ -897,7 +897,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param member The class member.
    */
   function isDecoratedClassElement(member: ClassElement, isStatic: boolean, parent: ClassLikeDeclaration) {
-    return nodeOrChildIsDecorated(member, parent) && isStatic === qu.hasSyntacticModifier(member, qt.ModifierFlags.Static);
+    return qu.nodeOrChildIsDecorated(member, parent) && isStatic === qu.hasSyntacticModifier(member, qt.ModifierFlags.Static);
   }
 
   /**
@@ -1341,7 +1341,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param node The node that should have its parameter types serialized.
    */
   function serializeParameterTypesOfNode(node: qt.Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
-    const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike(node) && nodeIsPresent(node.body) ? node : undefined;
+    const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike(node) && qu.nodeIsPresent(node.body) ? node : undefined;
 
     const expressions: SerializedTypeNode[] = [];
     if (valueDeclaration) {
@@ -1353,7 +1353,7 @@ export function transformTypeScript(context: TransformationContext) {
           continue;
         }
         if (parameter.dotDotDotToken) {
-          expressions.push(serializeTypeNode(getRestParameterElementType(parameter.type)));
+          expressions.push(serializeTypeNode(qu.getRestParameterElementType(parameter.type)));
         } else {
           expressions.push(serializeTypeOfNode(parameter));
         }
@@ -1761,7 +1761,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param node The declaration node.
    */
   function shouldEmitFunctionLikeDeclaration<T extends qt.FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
-    return !nodeIsMissing(node.body);
+    return !qu.nodeIsMissing(node.body);
   }
 
   function visitPropertyDeclaration(node: PropertyDeclaration) {
@@ -1865,7 +1865,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param node The declaration node.
    */
   function shouldEmitAccessorDeclaration(node: AccessorDeclaration) {
-    return !(nodeIsMissing(node.body) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Abstract));
+    return !(qu.nodeIsMissing(node.body) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Abstract));
   }
 
   function visitGetAccessor(node: GetAccessorDeclaration) {
@@ -1988,7 +1988,7 @@ export function transformTypeScript(context: TransformationContext) {
       // aggressively.
       // HOWEVER - if there are leading comments on the expression itself, to handle ASI
       // correctly for return and throw, we must keep the parenthesis
-      if (length(getLeadingCommentRangesOfNode(expression, currentSourceFile))) {
+      if (length(qu.getLeadingCommentRangesOfNode(expression, currentSourceFile))) {
         return updateParen(node, expression);
       }
       return createPartiallyEmittedExpression(expression, node);
@@ -2033,7 +2033,7 @@ export function transformTypeScript(context: TransformationContext) {
    * @param node The enum declaration node.
    */
   function shouldEmitEnumDeclaration(node: qt.EnumDeclaration) {
-    return !isEnumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
+    return !qu.isEnumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
   }
 
   /**
@@ -2120,7 +2120,7 @@ export function transformTypeScript(context: TransformationContext) {
     const statements: qt.Statement[] = [];
     startLexicalEnvironment();
     const members = map(node.members, transformEnumMember);
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     addRange(statements, members);
 
     currentNamespaceContainerName = savedCurrentNamespaceLocalName;
@@ -2190,7 +2190,7 @@ export function transformTypeScript(context: TransformationContext) {
    */
   function recordEmittedDeclarationInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | qt.EnumDeclaration) {
     if (!currentScopeFirstDeclarationsOfName) {
-      currentScopeFirstDeclarationsOfName = createUnderscoreEscapedMap<Node>();
+      currentScopeFirstDeclarationsOfName = qu.createUnderscoreEscapedMap<Node>();
     }
 
     const name = declaredNameInScope(node);
@@ -2382,7 +2382,7 @@ export function transformTypeScript(context: TransformationContext) {
       }
     }
 
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     currentNamespaceContainerName = savedCurrentNamespaceContainerName;
     currentNamespace = savedCurrentNamespace;
     currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
@@ -2883,7 +2883,7 @@ export function transformTypeScript(context: TransformationContext) {
       const substitute = createLiteral(constantValue);
       if (!compilerOptions.removeComments) {
         const originalNode = getOriginalNode(node, qu.isAccessExpression);
-        const propertyName = isPropertyAccessExpression(originalNode) ? declarationNameToString(originalNode.name) : getTextOfNode(originalNode.argumentExpression);
+        const propertyName = isPropertyAccessExpression(originalNode) ? qu.declarationNameToString(originalNode.name) : qu.getTextOfNode(originalNode.argumentExpression);
 
         addSyntheticTrailingComment(substitute, qt.SyntaxKind.MultiLineCommentTrivia, ` ${propertyName} `);
       }

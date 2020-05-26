@@ -43,7 +43,7 @@ export function transformSystemModule(context: TransformationContext) {
    * @param node The SourceFile node.
    */
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport)) {
+    if (node.isDeclarationFile || !(qu.isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport)) {
       return node;
     }
 
@@ -210,7 +210,7 @@ export function transformSystemModule(context: TransformationContext) {
     // We emit hoisted variables early to align roughly with our previous emit output.
     // Two key differences in this approach are:
     // - Temporary variables will appear at the top rather than at the bottom of the file
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
     const exportStarFunction = addExportStarIfNeeded(statements)!; // TODO: GH#18217
     const modifiers = node.transformFlags & TransformFlags.ContainsAwait ? createModifiersFromModifierFlags(ModifierFlags.Async) : undefined;
@@ -1212,7 +1212,7 @@ export function transformSystemModule(context: TransformationContext) {
   function destructuringAndImportCallVisitor(node: qt.Node): VisitResult<Node> {
     if (isDestructuringAssignment(node)) {
       return visitDestructuringAssignment(node);
-    } else if (isImportCall(node)) {
+    } else if (qu.isImportCall(node)) {
       return visitImportCallExpression(node);
     } else if (node.transformFlags & TransformFlags.ContainsDestructuringAssignment || node.transformFlags & TransformFlags.ContainsDynamicImport) {
       return visitEachChild(node, destructuringAndImportCallVisitor, context);
@@ -1508,7 +1508,7 @@ export function transformSystemModule(context: TransformationContext) {
   }
 
   function substituteMetaProperty(node: MetaProperty) {
-    if (isImportMeta(node)) {
+    if (qu.isImportMeta(node)) {
       return createPropertyAccess(contextObject, createIdentifier('meta'));
     }
     return node;

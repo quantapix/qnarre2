@@ -167,7 +167,7 @@ export interface BuilderProgramState extends BuilderState {
 
 function hasSameKeys<T, U>(map1: qpc.ReadonlyMap<T> | undefined, map2: qpc.ReadonlyMap<U> | undefined): boolean {
   // Has same size and every key is present in both maps
-  return (map1 as qpc.ReadonlyMap<T | U>) === map2 || (map1 !== undefined && map2 !== undefined && map1.size === map2.size && !forEachKey(map1, (key) => !map2.has(key)));
+  return (map1 as qpc.ReadonlyMap<T | U>) === map2 || (map1 !== undefined && map2 !== undefined && map1.size === map2.size && !qu.forEachKey(map1, (key) => !map2.has(key)));
 }
 
 /**
@@ -195,12 +195,12 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc
     }
     const changedFilesSet = oldState!.changedFilesSet;
     if (canCopySemanticDiagnostics) {
-      Debug.assert(!changedFilesSet || !forEachKey(changedFilesSet, (path) => oldState!.semanticDiagnosticsPerFile.has(path)), 'Semantic diagnostics shouldnt be available for changed files');
+      Debug.assert(!changedFilesSet || !qu.forEachKey(changedFilesSet, (path) => oldState!.semanticDiagnosticsPerFile.has(path)), 'Semantic diagnostics shouldnt be available for changed files');
     }
 
     // Copy old state's changed files set
     if (changedFilesSet) {
-      copyEntries(changedFilesSet, state.changedFilesSet);
+      qu.copyEntries(changedFilesSet, state.changedFilesSet);
     }
     if (!compilerOptions.outFile && !compilerOptions.out && oldState!.affectedFilesPendingEmit) {
       state.affectedFilesPendingEmit = oldState!.affectedFilesPendingEmit.slice();
@@ -229,7 +229,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc
       // Referenced files changed
       !hasSameKeys((newReferences = referencedMap && referencedMap.get(sourceFilePath)), oldReferencedMap && oldReferencedMap.get(sourceFilePath)) ||
       // Referenced file was deleted in the new program
-      (newReferences && forEachKey(newReferences, (path) => !state.fileInfos.has(path) && oldState!.fileInfos.has(path)))
+      (newReferences && qu.forEachKey(newReferences, (path) => !state.fileInfos.has(path) && oldState!.fileInfos.has(path)))
     ) {
       // Register file as changed file and do not copy semantic diagnostics, since all changed files need to be re-evaluated
       state.changedFilesSet.set(sourceFilePath, true);
@@ -256,7 +256,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc
   });
 
   // If the global file is removed, add all files as changed
-  if (useOldState && forEachEntry(oldState!.fileInfos, (info, sourceFilePath) => info.affectsGlobalScope && !state.fileInfos.has(sourceFilePath))) {
+  if (useOldState && qu.forEachEntry(oldState!.fileInfos, (info, sourceFilePath) => info.affectsGlobalScope && !state.fileInfos.has(sourceFilePath))) {
     BuilderState.getAllFilesExcludingDefaultLibraryFile(state, newProgram, /*firstSourceFile*/ undefined).forEach((file) => state.changedFilesSet.set(file.resolvedPath, true));
   } else if (oldCompilerOptions && compilerOptionsAffectEmit(compilerOptions, oldCompilerOptions)) {
     // Add all files to affectedFilesPendingEmit since emit changed
@@ -308,7 +308,7 @@ function releaseCache(state: BuilderProgramState) {
 function cloneBuilderProgramState(state: Readonly<BuilderProgramState>): BuilderProgramState {
   const newState = BuilderState.clone(state) as BuilderProgramState;
   newState.semanticDiagnosticsPerFile = cloneMapOrUndefined(state.semanticDiagnosticsPerFile);
-  newState.changedFilesSet = cloneMap(state.changedFilesSet);
+  newState.changedFilesSet = qu.cloneMap(state.changedFilesSet);
   newState.affectedFiles = state.affectedFiles;
   newState.affectedFilesIndex = state.affectedFilesIndex;
   newState.currentChangedFilePath = state.currentChangedFilePath;
@@ -524,12 +524,12 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
   const seenFileAndExportsOfFile = qc.createMap<true>();
   // Go through exported modules from cache first
   // If exported modules has path, all files referencing file exported from are affected
-  if (forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
+  if (qu.forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
     return;
   }
 
   // If exported from path is not from cache and exported modules has path, all files referencing file exported from are affected
-  forEachEntry(
+  qu.forEachEntry(
     state.exportedModulesMap,
     (exportedModules, exportedFromPath) =>
       !state.currentAffectedFilesExportedModulesMap.has(exportedFromPath) && // If we already iterated this through cache, ignore it
@@ -542,7 +542,7 @@ function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramSt
  * Iterate on files referencing referencedPath
  */
 function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
-  return forEachEntry(state.referencedMap!, (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as Path, seenFileAndExportsOfFile, fn));
+  return qu.forEachEntry(state.referencedMap!, (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as Path, seenFileAndExportsOfFile, fn));
 }
 
 /**
@@ -561,13 +561,13 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
   Debug.assert(!!state.currentAffectedFilesExportedModulesMap);
   // Go through exported modules from cache first
   // If exported modules has path, all files referencing file exported from are affected
-  if (forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
+  if (qu.forEachEntry(state.currentAffectedFilesExportedModulesMap, (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn))) {
     return true;
   }
 
   // If exported from path is not from cache and exported modules has path, all files referencing file exported from are affected
   if (
-    forEachEntry(
+    qu.forEachEntry(
       state.exportedModulesMap!,
       (exportedModules, exportedFromPath) =>
         !state.currentAffectedFilesExportedModulesMap.has(exportedFromPath) && // If we already iterated this through cache, ignore it
@@ -579,7 +579,7 @@ function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path,
   }
 
   // Remove diagnostics of files that import this file (without going to exports of referencing files)
-  return !!forEachEntry(
+  return !!qu.forEachEntry(
     state.referencedMap!,
     (referencesInFile, referencingFilePath) =>
       referencesInFile.has(filePath) &&
@@ -1050,7 +1050,7 @@ function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefin
   // template is undefined, and instead will just exit the loop.
   for (const key in mapLike) {
     if (hasProperty(mapLike, key)) {
-      map.set(toPath(key), arrayToSet(mapLike[key], toPath));
+      map.set(toPath(key), qu.arrayToSet(mapLike[key], toPath));
     }
   }
   return map;

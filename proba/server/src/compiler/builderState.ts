@@ -95,7 +95,7 @@ export namespace BuilderState {
    */
   function getReferencedFileFromImportedModuleSymbol(symbol: symbol) {
     if (symbol.declarations && symbol.declarations[0]) {
-      const declarationSourceFile = getSourceFileOfNode(symbol.declarations[0]);
+      const declarationSourceFile = qu.getSourceFileOfNode(symbol.declarations[0]);
       return declarationSourceFile && declarationSourceFile.resolvedPath;
     }
   }
@@ -185,7 +185,7 @@ export namespace BuilderState {
     function addReferenceFromAmbientModule(symbol: symbol) {
       // Add any file other than our own as reference
       for (const declaration of symbol.declarations) {
-        const declarationSourceFile = getSourceFileOfNode(declaration);
+        const declarationSourceFile = qu.getSourceFileOfNode(declaration);
         if (declarationSourceFile && declarationSourceFile !== sourceFile) {
           addReferencedFile(declarationSourceFile.resolvedPath);
         }
@@ -266,7 +266,7 @@ export namespace BuilderState {
       fileInfos,
       referencedMap: cloneMapOrUndefined(state.referencedMap),
       exportedModulesMap: cloneMapOrUndefined(state.exportedModulesMap),
-      hasCalledUpdateShapeSignature: cloneMap(state.hasCalledUpdateShapeSignature),
+      hasCalledUpdateShapeSignature: qu.cloneMap(state.hasCalledUpdateShapeSignature),
     };
   }
 
@@ -457,7 +457,7 @@ export namespace BuilderState {
    */
   function containsOnlyAmbientModules(sourceFile: SourceFile) {
     for (const statement of sourceFile.statements) {
-      if (!isModuleWithStringLiteralName(statement)) {
+      if (!qu.isModuleWithStringLiteralName(statement)) {
         return false;
       }
     }
@@ -469,7 +469,7 @@ export namespace BuilderState {
    * they are global files as well as module
    */
   function containsGlobalScopeAugmentation(sourceFile: SourceFile) {
-    return some(sourceFile.moduleAugmentations, (augmentation) => isGlobalScopeAugmentation(augmentation.parent as ModuleDeclaration));
+    return some(sourceFile.moduleAugmentations, (augmentation) => qu.isGlobalScopeAugmentation(augmentation.parent as ModuleDeclaration));
   }
 
   /**
@@ -558,5 +558,5 @@ export namespace BuilderState {
 }
 
 export function cloneMapOrUndefined<T>(map: qpc.ReadonlyMap<T> | undefined) {
-  return map ? cloneMap(map) : undefined;
+  return map ? qu.cloneMap(map) : undefined;
 }

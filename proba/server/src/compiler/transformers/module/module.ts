@@ -50,7 +50,7 @@ export function transformModule(context: TransformationContext) {
    * @param node The SourceFile node.
    */
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport || (isJsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && (compilerOptions.out || compilerOptions.outFile)))) {
+    if (node.isDeclarationFile || !(qu.isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport || (qu.isJsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && (compilerOptions.out || compilerOptions.outFile)))) {
       return node;
     }
 
@@ -84,7 +84,7 @@ export function transformModule(context: TransformationContext) {
 
     const statements: qt.Statement[] = [];
     const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
-    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !isJsonSourceFile(node), sourceElementVisitor);
+    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !qu.isJsonSourceFile(node), sourceElementVisitor);
 
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
@@ -96,7 +96,7 @@ export function transformModule(context: TransformationContext) {
     append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
     addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
     addExportEqualsIfNeeded(statements, /*emitAsReturn*/ false);
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
     const updated = updateSourceFileNode(node, setTextRange(createNodeArray(statements), node.statements));
     addEmitHelpers(updated, context.readEmitHelpers());
@@ -111,7 +111,7 @@ export function transformModule(context: TransformationContext) {
   function transformAMDModule(node: SourceFile) {
     const define = createIdentifier('define');
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
-    const jsonSourceFile = isJsonSourceFile(node) && node;
+    const jsonSourceFile = qu.isJsonSourceFile(node) && node;
 
     // An AMD define function has the following shape:
     //
@@ -345,7 +345,7 @@ export function transformModule(context: TransformationContext) {
 
     // End the lexical environment for the module body
     // and merge any new lexical declarations.
-    insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
+    qu.insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
     const body = createBlock(statements, /*multiLine*/ true);
     if (needUMDDynamicImportHelper) {
@@ -433,7 +433,7 @@ export function transformModule(context: TransformationContext) {
       return node;
     }
 
-    if (isImportCall(node)) {
+    if (qu.isImportCall(node)) {
       return visitImportCallExpression(node);
     } else if (isDestructuringAssignment(node)) {
       return visitDestructuringAssignment(node);
