@@ -281,7 +281,7 @@ export namespace BuilderState {
     const signatureCache = cacheToUpdateSignature || createMap();
     const sourceFile = programOfThisState.getSourceFileByPath(path);
     if (!sourceFile) {
-      return emptyArray;
+      return qc.emptyArray;
     }
 
     if (!updateShapeSignature(state, programOfThisState, sourceFile, signatureCache, cancellationToken, computeHash, exportedModulesMapCache)) {
@@ -424,7 +424,7 @@ export namespace BuilderState {
     }
 
     return qc.arrayFrom(
-      mapDefinedIterator(seenMap.keys(), (path) => {
+      qc.mapDefinedIterator(seenMap.keys(), (path) => {
         const file = programOfThisState.getSourceFileByPath(path as qt.Path);
         return file ? file.fileName : path;
       })
@@ -437,7 +437,7 @@ export namespace BuilderState {
   function getAllFileNames(state: BuilderState, programOfThisState: Program): readonly string[] {
     if (!state.allFileNames) {
       const sourceFiles = programOfThisState.getSourceFiles();
-      state.allFileNames = sourceFiles === emptyArray ? emptyArray : sourceFiles.map((file) => file.fileName);
+      state.allFileNames = sourceFiles === qc.emptyArray ? qc.emptyArray : sourceFiles.map((file) => file.fileName);
     }
     return state.allFileNames;
   }
@@ -446,7 +446,7 @@ export namespace BuilderState {
    * Gets the files referenced by the the file path
    */
   export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: qt.Path) {
-    return qc.arrayFrom(mapDefinedIterator(state.referencedMap.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as qt.Path) : undefined)));
+    return qc.arrayFrom(qc.mapDefinedIterator(state.referencedMap.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as qt.Path) : undefined)));
   }
 
   /**
@@ -495,7 +495,7 @@ export namespace BuilderState {
         addSourceFile(sourceFile);
       }
     }
-    state.allFilesExcludingDefaultLibraryFile = result || emptyArray;
+    state.allFilesExcludingDefaultLibraryFile = result || qc.emptyArray;
     return state.allFilesExcludingDefaultLibraryFile;
 
     function addSourceFile(sourceFile: SourceFile) {
@@ -553,7 +553,7 @@ export namespace BuilderState {
 
     // Return array of values that needs emit
     // Return array of values that needs emit
-    return qc.arrayFrom(mapDefinedIterator(seenFileNamesMap.values(), (value) => value));
+    return qc.arrayFrom(qc.mapDefinedIterator(seenFileNamesMap.values(), (value) => value));
   }
 }
 

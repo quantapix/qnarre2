@@ -112,7 +112,7 @@ export function transformJsx(context: TransformationContext) {
       compilerOptions.reactNamespace!, // TODO: GH#18217
       tagName,
       objectProperties,
-      mapDefined(children, transformJsxChildToExpression),
+      qc.mapDefined(children, transformJsxChildToExpression),
       node,
       location
     );
@@ -128,7 +128,7 @@ export function transformJsx(context: TransformationContext) {
     const element = createExpressionForJsxFragment(
       context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
       compilerOptions.reactNamespace!, // TODO: GH#18217
-      mapDefined(children, transformJsxChildToExpression),
+      qc.mapDefined(children, transformJsxChildToExpression),
       node,
       location
     );

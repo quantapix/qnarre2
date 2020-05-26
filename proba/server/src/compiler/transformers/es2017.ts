@@ -576,7 +576,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
   const hasBinding = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) !== 0;
   const accessors: PropertyAssignment[] = [];
   names.forEach((_, key) => {
-    const name = unescapeLeadingUnderscores(key);
+    const name = unqpu.escapeLeadingUnderscores(key);
     const getterAndSetter: PropertyAssignment[] = [];
     getterAndSetter.push(createPropertyAssignment('get', createArrowFunction(/* modifiers */ undefined, /* typeParameters */ undefined, /* parameters */ [], /* type */ undefined, /* equalsGreaterThanToken */ undefined, setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), qt.EmitFlags.NoSubstitution), name), qt.EmitFlags.NoSubstitution))));
     if (hasBinding) {

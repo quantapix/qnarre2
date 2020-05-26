@@ -31,7 +31,7 @@ const enum qt.SyntaxKindFeatureFlags {
   EmitNotifications = 1 << 1,
 }
 
-export const noTransformers: EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
+export const noTransformers: EmitTransformers = { scriptTransformers: qc.emptyArray, declarationTransformers: qc.emptyArray };
 
 export function getTransformers(compilerOptions: qt.CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
   return {
@@ -41,7 +41,7 @@ export function getTransformers(compilerOptions: qt.CompilerOptions, customTrans
 }
 
 function getScriptTransformers(compilerOptions: qt.CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
-  if (emitOnlyDtsFiles) return emptyArray;
+  if (emitOnlyDtsFiles) return qc.emptyArray;
 
   const jsx = compilerOptions.jsx;
   const languageVersion = getEmitScriptTarget(compilerOptions);

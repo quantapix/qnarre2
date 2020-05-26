@@ -407,7 +407,7 @@ function createBuildOrder(state: SolutionBuilderState, roots: readonly ResolvedC
     visit(root);
   }
 
-  return circularDiagnostics ? { buildOrder: buildOrder || emptyArray, circularDiagnostics } : buildOrder || emptyArray;
+  return circularDiagnostics ? { buildOrder: buildOrder || qc.emptyArray, circularDiagnostics } : buildOrder || qc.emptyArray;
 
   function visit(configFileName: ResolvedConfigFileName, inCircularContext?: boolean) {
     const projPath = toResolvedConfigFilePath(state, configFileName);
@@ -727,7 +727,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(kind: Inv
   }
 
   function withProgramOrEmptyArray<U>(action: (program: T) => readonly U[]): readonly U[] {
-    return withProgramOrUndefined(action) || emptyArray;
+    return withProgramOrUndefined(action) || qc.emptyArray;
   }
 
   function createProgram() {
@@ -1258,7 +1258,7 @@ function getUpToDateStatusWorker(state: SolutionBuilderState, project: ParsedCom
     if (configStatus) return configStatus;
 
     // Check extended config time
-    const extendedConfigStatus = forEach(project.options.configFile!.extendedSourceFiles || emptyArray, (configFile) => checkConfigFileUpToDateStatus(state, configFile, oldestOutputFileTime, oldestOutputFileName));
+    const extendedConfigStatus = forEach(project.options.configFile!.extendedSourceFiles || qc.emptyArray, (configFile) => checkConfigFileUpToDateStatus(state, configFile, oldestOutputFileTime, oldestOutputFileName));
     if (extendedConfigStatus) return extendedConfigStatus;
   }
 
@@ -1667,7 +1667,7 @@ function createSolutionBuilderWorker<T extends BuilderProgram>(watch: boolean, h
     },
     invalidateProject: (configFilePath, reloadLevel) => invalidateProject(state, configFilePath, reloadLevel || ConfigFileProgramReloadLevel.None),
     buildNextInvalidatedProject: () => buildNextInvalidatedProject(state),
-    getAllParsedConfigs: () => qc.arrayFrom(mapDefinedIterator(state.configFileCache.values(), (config) => (isParsedCommandLine(config) ? config : undefined))),
+    getAllParsedConfigs: () => qc.arrayFrom(qc.mapDefinedIterator(state.configFileCache.values(), (config) => (isParsedCommandLine(config) ? config : undefined))),
     close: () => stopWatching(state),
   };
 }
@@ -1717,7 +1717,7 @@ function reportErrorSummary(state: SolutionBuilderState, buildOrder: AnyBuildOrd
     buildOrder.forEach((project) => {
       const projectPath = toResolvedConfigFilePath(state, project);
       if (!state.projectErrorsReported.has(projectPath)) {
-        reportErrors(state, diagnostics.get(projectPath) || emptyArray);
+        reportErrors(state, diagnostics.get(projectPath) || qc.emptyArray);
       }
     });
     if (canReportSummary) diagnostics.forEach((singleProjectErrors) => (totalErrors += getErrorCountForSummary(singleProjectErrors)));

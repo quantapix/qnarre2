@@ -648,7 +648,7 @@ export function transformClassFields(context: TransformationContext) {
       const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ propertyName);
       return createAssignment(memberAccess, initializer);
     } else {
-      const name = isComputedPropertyName(propertyName) ? propertyName.expression : isIdentifier(propertyName) ? createStringLiteral(unescapeLeadingUnderscores(propertyName.escapedText)) : propertyName;
+      const name = isComputedPropertyName(propertyName) ? propertyName.expression : isIdentifier(propertyName) ? createStringLiteral(unqpu.escapeLeadingUnderscores(propertyName.escapedText)) : propertyName;
       const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
       return createObjectDefinePropertyCall(receiver, name, descriptor);
     }

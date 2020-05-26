@@ -319,7 +319,7 @@ export function getPreEmitDiagnostics(program: Program | BuilderProgram, sourceF
     diagnostics = addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancellationToken));
   }
 
-  return sortAndDeduplicateDiagnostics(diagnostics || emptyArray);
+  return sortAndDeduplicateDiagnostics(diagnostics || qc.emptyArray);
 }
 
 export interface FormatDiagnosticsHost {
@@ -835,7 +835,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     forEach(rootNames, (name) => processRootFile(name, /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false));
 
     // load type declarations specified via 'types' argument or implicitly from types/ and node_modules/@types folders
-    const typeReferences: string[] = rootNames.length ? getAutomaticTypeDirectiveNames(options, host) : emptyArray;
+    const typeReferences: string[] = rootNames.length ? getAutomaticTypeDirectiveNames(options, host) : qc.emptyArray;
 
     if (typeReferences.length) {
       // This containingFilename needs to match with the one used in managed-side
@@ -864,7 +864,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       }
     }
 
-    missingFilePaths = qc.arrayFrom(mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as  qt.Path) : undefined)));
+    missingFilePaths = qc.arrayFrom(qc.mapDefinedIterator(filesByName.entries(), ([path, file]) => (file === undefined ? (path as  qt.Path) : undefined)));
     files = stableSort(processingDefaultLibFiles, compareDefaultLibFiles).concat(processingOtherFiles);
     processingDefaultLibFiles = undefined;
     processingOtherFiles = undefined;
@@ -1116,7 +1116,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       }
     }
 
-    const resolutions = unknownModuleNames && unknownModuleNames.length ? resolveModuleNamesWorker(unknownModuleNames, containingFile, reusedNames, getResolvedProjectReferenceToRedirect(file.originalFileName)) : emptyArray;
+    const resolutions = unknownModuleNames && unknownModuleNames.length ? resolveModuleNamesWorker(unknownModuleNames, containingFile, reusedNames, getResolvedProjectReferenceToRedirect(file.originalFileName)) : qc.emptyArray;
 
     // Combine results of resolutions and predicted results
     if (!result) {
@@ -1599,7 +1599,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   function getProgramDiagnostics(sourceFile: SourceFile): readonly Diagnostic[] {
     if (skipTypeChecking(sourceFile, options, program)) {
-      return emptyArray;
+      return qc.emptyArray;
     }
 
     const fileProcessingDiagnosticsInFile = fileProcessingDiagnostics.getDiagnostics(sourceFile.fileName);
@@ -1672,7 +1672,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: SourceFile, cancellationToken: CancellationToken | undefined): readonly Diagnostic[] {
     return runWithCancellationToken(() => {
       if (skipTypeChecking(sourceFile, options, program)) {
-        return emptyArray;
+        return qc.emptyArray;
       }
 
       const typeChecker = getDiagnosticsProducingTypeChecker();
@@ -1683,8 +1683,8 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
       // By default, only type-check .ts, .tsx, 'Deferred' and 'External' files (external files are added by plugins)
       const includeBindAndCheckDiagnostics = !isTsNoCheck && (sourceFile.scriptKind === ScriptKind.TS || sourceFile.scriptKind === ScriptKind.TSX || sourceFile.scriptKind === ScriptKind.External || isCheckJs || sourceFile.scriptKind === ScriptKind.Deferred);
-      const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : emptyArray;
-      const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancellationToken) : emptyArray;
+      const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : qc.emptyArray;
+      const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancellationToken) : qc.emptyArray;
 
       return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.jsDocDiagnostics : undefined);
     });
@@ -1956,7 +1956,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     return runWithCancellationToken(() => {
       const resolver = getDiagnosticsProducingTypeChecker().getEmitResolver(sourceFile, cancellationToken);
       // Don't actually write any files since we're just getting diagnostics.
-      return ts.getDeclarationDiagnostics(getEmitHost(noop), resolver, sourceFile) || emptyArray;
+      return ts.getDeclarationDiagnostics(getEmitHost(noop), resolver, sourceFile) || qc.emptyArray;
     });
   }
 
@@ -1988,7 +1988,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   function getOptionsDiagnosticsOfConfigFile() {
     if (!options.configFile) {
-      return emptyArray;
+      return qc.emptyArray;
     }
     let diagnostics = programDiagnostics.getDiagnostics(options.configFile.fileName);
     forEachResolvedProjectReference((resolvedRef) => {
@@ -2000,11 +2000,11 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function getGlobalDiagnostics(): qpc.SortedReadonlyArray<Diagnostic> {
-    return rootNames.length ? sortAndDeduplicateDiagnostics(getDiagnosticsProducingTypeChecker().getGlobalDiagnostics().slice()) : ((emptyArray as any) as qpc.SortedReadonlyArray<Diagnostic>);
+    return rootNames.length ? sortAndDeduplicateDiagnostics(getDiagnosticsProducingTypeChecker().getGlobalDiagnostics().slice()) : ((qc.emptyArray as any) as qpc.SortedReadonlyArray<Diagnostic>);
   }
 
   function getConfigFileParsingDiagnostics(): readonly Diagnostic[] {
-    return configFileParsingDiagnostics || emptyArray;
+    return configFileParsingDiagnostics || qc.emptyArray;
   }
 
   function processRootFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean) {
@@ -2051,9 +2051,9 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       collectDynamicImportOrRequireCalls(file);
     }
 
-    file.imports = imports || emptyArray;
-    file.moduleAugmentations = moduleAugmentations || emptyArray;
-    file.ambientModuleNames = ambientModules || emptyArray;
+    file.imports = imports || qc.emptyArray;
+    file.moduleAugmentations = moduleAugmentations || qc.emptyArray;
+    file.ambientModuleNames = ambientModules || qc.emptyArray;
 
     return;
 
@@ -2706,7 +2706,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function computeCommonSourceDirectory(sourceFiles: SourceFile[]): string {
-    const fileNames = mapDefined(sourceFiles, (file) => (file.isDeclarationFile ? undefined : file.fileName));
+    const fileNames = qc.mapDefined(sourceFiles, (file) => (file.isDeclarationFile ? undefined : file.fileName));
     return computeCommonSourceDirectoryOfFilenames(fileNames, currentDirectory, getCanonicalFileName);
   }
 
@@ -3142,7 +3142,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function getOptionPathsSyntax(): PropertyAssignment[] {
-    return (getOptionsSyntaxByName('paths') as PropertyAssignment[]) || emptyArray;
+    return (getOptionsSyntaxByName('paths') as PropertyAssignment[]) || qc.emptyArray;
   }
 
   function createDiagnosticForOptionName(message: qt.DiagnosticMessage, option1: string, option2?: string, option3?: string) {
@@ -3413,7 +3413,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
 export function handleNoEmitOptions(program: ProgramToEmitFilesAndReportErrors, sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): EmitResult | undefined {
   const options = program.getCompilerOptions();
   if (options.noEmit) {
-    return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
+    return { diagnostics: qc.emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
   }
 
   // If the noEmitOnError flag is set, then check if we have any errors so far.  If so,
@@ -3460,7 +3460,7 @@ export function parseConfigHostFromCompilerHostLike(host: CompilerHostLike, dire
 }
 
 export function createPrependNodes(projectReferences: readonly qt.ProjectReference[] | undefined, getCommandLine: (ref: qt.ProjectReference, index: number) => ParsedCommandLine | undefined, readFile: (path: string) => string | undefined) {
-  if (!projectReferences) return emptyArray;
+  if (!projectReferences) return qc.emptyArray;
   let nodes: InputFiles[] | undefined;
   for (let i = 0; i < projectReferences.length; i++) {
     const ref = projectReferences[i];
@@ -3475,7 +3475,7 @@ export function createPrependNodes(projectReferences: readonly qt.ProjectReferen
       (nodes || (nodes = [])).push(node);
     }
   }
-  return nodes || emptyArray;
+  return nodes || qc.emptyArray;
 }
 /**
  * Returns the target config filename of a project reference.

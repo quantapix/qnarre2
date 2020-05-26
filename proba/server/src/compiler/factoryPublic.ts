@@ -27,7 +27,7 @@ export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrai
  * Make `elements` into a `NodeArray<T>`. If `elements` is `undefined`, returns an empty `NodeArray<T>`.
  */
 export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): qt.NodeArray<T> {
-  if (!elements || elements === emptyArray) {
+  if (!elements || elements === qc.emptyArray) {
     elements = [];
   } else if (isNodeArray(elements)) {
     return elements;
@@ -135,7 +135,7 @@ export function createIdentifier(text: string): Identifier;
 export function createIdentifier(text: string, typeArguments: readonly (TypeNode | TypeParameterDeclaration)[] | undefined): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
 export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
   const node = <Identifier>createSynthesizedNode(SyntaxKind.Identifier);
-  node.escapedText = escapeLeadingUnderscores(text);
+  node.escapedText = qpu.escapeLeadingUnderscores(text);
   node.originalKeywordKind = text ? qs.stringToToken(text) : qt.SyntaxKind.Unknown;
   node.autoGenerateFlags = qt.GeneratedIdentifierFlags.None;
   node.autoGenerateId = 0;
@@ -225,7 +225,7 @@ export function createPrivateIdentifier(text: string): PrivateIdentifier {
     Debug.fail('First character of private identifier must be #: ' + text);
   }
   const node = createSynthesizedNode(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
-  node.escapedText = escapeLeadingUnderscores(text);
+  node.escapedText = qpu.escapeLeadingUnderscores(text);
   return node;
 }
 
@@ -2410,7 +2410,7 @@ export function updateSyntheticReferenceExpression(node: SyntheticReferenceExpre
   return node.expression !== expression || node.thisArg !== thisArg ? updateNode(createSyntheticReferenceExpression(expression, thisArg), node) : node;
 }
 
-export function createBundle(sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = emptyArray) {
+export function createBundle(sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = qc.emptyArray) {
   const node = createNode(SyntaxKind.Bundle);
   node.prepends = prepends;
   node.sourceFiles = sourceFiles;
@@ -2426,9 +2426,9 @@ function getAllUnscopedEmitHelpers() {
 
 function createUnparsedSource() {
   const node = createNode(SyntaxKind.UnparsedSource);
-  node.prologues = emptyArray;
-  node.referencedFiles = emptyArray;
-  node.libReferenceDirectives = emptyArray;
+  node.prologues = qc.emptyArray;
+  node.referencedFiles = qc.emptyArray;
+  node.libReferenceDirectives = qc.emptyArray;
   node.getLineAndCharacterOfPosition = (pos) => qs.getLineAndCharacterOfPosition(node, pos);
   return node;
 }
@@ -2486,7 +2486,7 @@ function parseUnparsedSourceFile(node: UnparsedSource, bundleFileInfo: BundleFil
   let libReferenceDirectives: FileReference[] | undefined;
   let texts: UnparsedSourceText[] | undefined;
 
-  for (const section of bundleFileInfo ? bundleFileInfo.sections : emptyArray) {
+  for (const section of bundleFileInfo ? bundleFileInfo.sections : qc.emptyArray) {
     switch (section.kind) {
       case BundleFileSectionKind.Prologue:
         (prologues || (prologues = [])).push(createUnparsedNode(section, node));
@@ -2514,7 +2514,7 @@ function parseUnparsedSourceFile(node: UnparsedSource, bundleFileInfo: BundleFil
             (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, node));
           }
         }
-        prependNode.texts = prependTexts || emptyArray;
+        prependNode.texts = prependTexts || qc.emptyArray;
         (texts || (texts = [])).push(prependNode);
         break;
       case BundleFileSectionKind.Internal:
@@ -2532,11 +2532,11 @@ function parseUnparsedSourceFile(node: UnparsedSource, bundleFileInfo: BundleFil
     }
   }
 
-  node.prologues = prologues || emptyArray;
+  node.prologues = prologues || qc.emptyArray;
   node.helpers = helpers;
-  node.referencedFiles = referencedFiles || emptyArray;
+  node.referencedFiles = referencedFiles || qc.emptyArray;
   node.typeReferenceDirectives = typeReferenceDirectives;
-  node.libReferenceDirectives = libReferenceDirectives || emptyArray;
+  node.libReferenceDirectives = libReferenceDirectives || qc.emptyArray;
   node.texts = texts || [createUnparsedNode({ kind: BundleFileSectionKind.Text, pos: 0, end: node.text.length }, node)];
 }
 
@@ -2568,7 +2568,7 @@ function parseOldFileOfCurrentEmit(node: UnparsedSource, bundleFileInfo: BundleF
         Debug.assertNever(section);
     }
   }
-  node.texts = texts || emptyArray;
+  node.texts = texts || qc.emptyArray;
   node.helpers = map(bundleFileInfo.sources && bundleFileInfo.sources.helpers, (name) => getAllUnscopedEmitHelpers().get(name)!);
   node.syntheticReferences = syntheticReferences;
   return node;
@@ -2689,7 +2689,7 @@ export function createInputFiles(javascriptTextOrReadFileText: string | ((path: 
   return node;
 }
 
-export function updateBundle(node: Bundle, sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = emptyArray) {
+export function updateBundle(node: Bundle, sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = qc.emptyArray) {
   if (node.sourceFiles !== sourceFiles || node.prepends !== prepends) {
     return createBundle(sourceFiles, prepends);
   }

@@ -341,7 +341,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
         const nameExpression = name.expression;
         // treat computed property names where expression is string/numeric literal as just string/numeric literal
         if (isStringOrNumericLiteralLike(nameExpression)) {
-          return escapeLeadingUnderscores(nameExpression.text);
+          return qpu.escapeLeadingUnderscores(nameExpression.text);
         }
         if (isSignedNumericLiteral(nameExpression)) {
           return qs.tokenToString(nameExpression.operator) + nameExpression.operand.text;
@@ -403,7 +403,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   }
 
   function getDisplayName(node: Declaration): string {
-    return isNamedDeclaration(node) ? qu.declarationNameToString(node.name) : unescapeLeadingUnderscores(Debug.checkDefined(getDeclarationName(node)));
+    return isNamedDeclaration(node) ? qu.declarationNameToString(node.name) : unqpu.escapeLeadingUnderscores(Debug.checkDefined(getDeclarationName(node)));
   }
 
   /**
@@ -506,7 +506,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
           const relatedInformation: DiagnosticRelatedInformation[] = [];
           if (isTypeAliasDeclaration(node) && qu.nodeIsMissing(node.type) && qu.hasSyntacticModifier(node, qt.ModifierFlags.Export) && symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)) {
             // export type T; - may have meant export type { T }?
-            relatedInformation.push(qu.createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${unescapeLeadingUnderscores(node.name.escapedText)} }`));
+            relatedInformation.push(qu.createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${unqpu.escapeLeadingUnderscores(node.name.escapedText)} }`));
           }
 
           const declarationName = getNameOfDeclaration(node) || node;

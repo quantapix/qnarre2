@@ -600,7 +600,7 @@ function getJSDocParameterTagsWorker(param: qt.ParameterDeclaration, noCache?: b
     }
   }
   // return empty array for: out-of-order binding patterns and JSDoc function syntax, which has un-named parameters
-  return emptyArray;
+  return qc.emptyArray;
 }
 
 /**
@@ -826,7 +826,7 @@ export function getAllJSDocTagsOfKind(n: qt.Node, kind: qt.SyntaxKind): readonly
  */
 export function getEffectiveTypeParameterDeclarations(n: qt.DeclarationWithTypeParameters): readonly qt.TypeParameterDeclaration[] {
   if (isJSDocSignature(n)) {
-    return emptyArray;
+    return qc.emptyArray;
   }
   if (isJSDocTypeAlias(n)) {
     Debug.assert(n.parent.kind === qt.SyntaxKind.JSDocComment);
@@ -845,7 +845,7 @@ export function getEffectiveTypeParameterDeclarations(n: qt.DeclarationWithTypeP
       return typeTag.typeParameters;
     }
   }
-  return emptyArray;
+  return qc.emptyArray;
 }
 
 export function getEffectiveConstraintOfTypeParameter(n: qt.TypeParameterDeclaration): qt.TypeNode | undefined {

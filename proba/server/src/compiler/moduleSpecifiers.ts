@@ -85,7 +85,7 @@ export function getModuleSpecifiers(moduleSymbol: symbol, compilerOptions: qt.Co
   const modulePaths = getAllModulePaths(importingSourceFile.path, moduleSourceFile.originalFileName, host);
 
   const preferences = getPreferences(userPreferences, compilerOptions, importingSourceFile);
-  const global = mapDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions));
+  const global = qc.mapDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions));
   return global.length ? global : modulePaths.map((moduleFileName) => getLocalModuleSpecifier(moduleFileName, info, compilerOptions, preferences));
 }
 
@@ -152,8 +152,8 @@ export function forEachFileNameOfModule<T>(importingFileName: string, importedFi
   const getCanonicalFileName = hostGetCanonicalFileName(host);
   const cwd = host.getCurrentDirectory();
   const referenceRedirect = host.isSourceOfProjectReferenceRedirect(importedFileName) ? host.getProjectReferenceRedirect(importedFileName) : undefined;
-  const redirects = host.redirectTargetsMap.get(qp.toPath(importedFileName, cwd, getCanonicalFileName)) || emptyArray;
-  const importedFileNames = [...(referenceRedirect ? [referenceRedirect] : emptyArray), importedFileName, ...redirects];
+  const redirects = host.redirectTargetsMap.get(qp.toPath(importedFileName, cwd, getCanonicalFileName)) || qc.emptyArray;
+  const importedFileNames = [...(referenceRedirect ? [referenceRedirect] : qc.emptyArray), importedFileName, ...redirects];
   const targets = importedFileNames.map((f) => qp.getNormalizedAbsolutePath(f, cwd));
   if (!preferSymlinks) {
     const result = forEach(targets, cb);

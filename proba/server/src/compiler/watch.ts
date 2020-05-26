@@ -161,7 +161,7 @@ export function emitFilesAndReportErrors(program: ProgramToEmitFilesAndReportErr
   }
 
   // Emit and report any errors we ran into.
-  const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: emptyArray } : program.emit(/*targetSourceFile*/ undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
+  const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: qc.emptyArray } : program.emit(/*targetSourceFile*/ undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
   const { emittedFiles, diagnostics: emitDiagnostics } = emitResult;
   addRange(allDiagnostics, emitDiagnostics);
 

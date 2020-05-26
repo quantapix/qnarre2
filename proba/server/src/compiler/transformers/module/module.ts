@@ -151,7 +151,7 @@ export function transformModule(context: TransformationContext) {
               // Add the dependency array argument:
               //
               //     ["require", "exports", module1", "module2", ...]
-              createArrayLiteral(jsonSourceFile ? emptyArray : [createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
+              createArrayLiteral(jsonSourceFile ? qc.emptyArray : [createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
 
               // Add the module body function argument:
               //
@@ -336,7 +336,7 @@ export function transformModule(context: TransformationContext) {
     // Visit each statement of the module body.
     append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
     if (moduleKind === qt.ModuleKind.AMD) {
-      addRange(statements, mapDefined(currentModuleInfo.externalImports, getAMDImportExpressionForImport));
+      addRange(statements, qc.mapDefined(currentModuleInfo.externalImports, getAMDImportExpressionForImport));
     }
     addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
 

@@ -1151,7 +1151,7 @@ export function parseListTypeOption(opt: qt.CommandLineOptionOfListType, value =
     case 'string':
       return qc.map(values, (v) => v || '');
     default:
-      return qc.mapDefined(values, (v) => parseCustomTypeOption(opt.element, v, errors));
+      return qc.qc.mapDefined(values, (v) => parseCustomTypeOption(opt.element, v, errors));
   }
 }
 
@@ -1640,7 +1640,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
       }
 
       const textOfKey = qu.isComputedNonLiteralName(element.name) ? undefined : qu.getTextOfPropertyName(element.name);
-      const keyText = textOfKey && unescapeLeadingUnderscores(textOfKey);
+      const keyText = textOfKey && unqpu.escapeLeadingUnderscores(textOfKey);
       const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {
         if (knownOptions) {
@@ -2762,7 +2762,7 @@ export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: str
         if (!jsonOnlyIncludeRegexes) {
           const includes = validatedIncludeSpecs.filter((s) => qc.endsWith(s, Extension.Json));
           const includeFilePatterns = map(getRegularExpressionsForWildcards(includes, basePath, 'files'), (pattern) => `^${pattern}$`);
-          jsonOnlyIncludeRegexes = includeFilePatterns ? includeFilePatterns.map((pattern) => getRegexFromPattern(pattern, host.useCaseSensitiveFileNames)) : emptyArray;
+          jsonOnlyIncludeRegexes = includeFilePatterns ? includeFilePatterns.map((pattern) => getRegexFromPattern(pattern, host.useCaseSensitiveFileNames)) : qc.emptyArray;
         }
         const includeIndex = findIndex(jsonOnlyIncludeRegexes, (re) => re.test(file));
         if (includeIndex !== -1) {

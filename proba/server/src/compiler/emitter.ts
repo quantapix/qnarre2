@@ -148,7 +148,7 @@ function createAddOutput() {
     }
   }
   function getOutputs(): readonly string[] {
-    return outputs || emptyArray;
+    return outputs || qc.emptyArray;
   }
 }
 
@@ -4483,7 +4483,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function isUniqueLocalName(name: string, container: Node): boolean {
     for (let node = container; isNodeDescendantOf(node, container); node = node.nextContainer!) {
       if (node.locals) {
-        const local = node.locals.get(escapeLeadingUnderscores(name));
+        const local = node.locals.get(qpu.escapeLeadingUnderscores(name));
         // We conservatively include alias symbols to cover cases where they're emitted as locals
         if (local && local.flags & (SymbolFlags.Value | SymbolFlags.ExportValue | SymbolFlags.Alias)) {
           return false;

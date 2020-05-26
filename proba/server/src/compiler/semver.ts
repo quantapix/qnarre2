@@ -60,8 +60,8 @@ export class Version {
     this.major = major;
     this.minor = minor;
     this.patch = patch;
-    this.prerelease = prerelease ? prerelease.split('.') : emptyArray;
-    this.build = build ? build.split('.') : emptyArray;
+    this.prerelease = prerelease ? prerelease.split('.') : qc.emptyArray;
+    this.build = build ? build.split('.') : qc.emptyArray;
   }
 
   static tryParse(text: string) {
@@ -177,7 +177,7 @@ export class VersionRange {
   private _alternatives: readonly (readonly Comparator[])[];
 
   constructor(spec: string) {
-    this._alternatives = spec ? Debug.checkDefined(parseRange(spec), 'Invalid range spec.') : emptyArray;
+    this._alternatives = spec ? Debug.checkDefined(parseRange(spec), 'Invalid range spec.') : qc.emptyArray;
   }
 
   static tryParse(text: string) {

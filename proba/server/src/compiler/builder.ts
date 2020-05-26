@@ -270,14 +270,14 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc
 }
 
 function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: Program, getCanonicalFileName: qc.GetCanonicalFileName): readonly Diagnostic[] {
-  if (!diagnostics.length) return emptyArray;
+  if (!diagnostics.length) return qc.emptyArray;
   const buildInfoDirectory = qp.getDirectoryPath(qp.getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory()));
   return diagnostics.map((diagnostic) => {
     const result: Diagnostic = convertToDiagnosticRelatedInformation(diagnostic, newProgram, toPath);
     result.reportsUnnecessary = diagnostic.reportsUnnecessary;
     result.source = diagnostic.source;
     const { relatedInformation } = diagnostic;
-    result.relatedInformation = relatedInformation ? (relatedInformation.length ? relatedInformation.map((r) => convertToDiagnosticRelatedInformation(r, newProgram, toPath)) : emptyArray) : undefined;
+    result.relatedInformation = relatedInformation ? (relatedInformation.length ? relatedInformation.map((r) => convertToDiagnosticRelatedInformation(r, newProgram, toPath)) : qc.emptyArray) : undefined;
     return result;
   });
 
@@ -759,7 +759,7 @@ function convertToReusableDiagnostics(diagnostics: readonly Diagnostic[], relati
     result.reportsUnnecessary = diagnostic.reportsUnnecessary;
     result.source = diagnostic.source;
     const { relatedInformation } = diagnostic;
-    result.relatedInformation = relatedInformation ? (relatedInformation.length ? relatedInformation.map((r) => convertToReusableDiagnosticRelatedInformation(r, relativeToBuildInfo)) : emptyArray) : undefined;
+    result.relatedInformation = relatedInformation ? (relatedInformation.length ? relatedInformation.map((r) => convertToReusableDiagnosticRelatedInformation(r, relativeToBuildInfo)) : qc.emptyArray) : undefined;
     return result;
   });
 }
@@ -811,7 +811,7 @@ export function getBuilderCreationParameters(newProgramOrRootNames: Program | re
     oldProgram = oldProgramOrHost as BuilderProgram;
     configFileParsingDiagnostics = configFileParsingDiagnosticsOrOldProgram as readonly Diagnostic[];
   }
-  return { host, newProgram, oldProgram, configFileParsingDiagnostics: configFileParsingDiagnostics || emptyArray };
+  return { host, newProgram, oldProgram, configFileParsingDiagnostics: configFileParsingDiagnostics || qc.emptyArray };
 }
 
 export function createBuilderProgram(kind: BuilderProgramKind.SemanticDiagnosticsBuilderProgram, builderCreationParameters: BuilderCreationParameters): SemanticDiagnosticsBuilderProgram;
@@ -952,7 +952,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
         }
         return {
           emitSkipped,
-          diagnostics: diagnostics || emptyArray,
+          diagnostics: diagnostics || qc.emptyArray,
           emittedFiles,
           sourceMaps,
         };
@@ -1022,7 +1022,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
     for (const sourceFile of Debug.checkDefined(state.program).getSourceFiles()) {
       diagnostics = addRange(diagnostics, getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken));
     }
-    return diagnostics || emptyArray;
+    return diagnostics || qc.emptyArray;
   }
 }
 
@@ -1077,7 +1077,7 @@ export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInf
       arrayToMap(
         program.semanticDiagnosticsPerFile,
         (value) => toPath(isString(value) ? value : value[0]),
-        (value) => (isString(value) ? emptyArray : value[1])
+        (value) => (isString(value) ? qc.emptyArray : value[1])
       ),
     hasReusableDiagnostic: true,
   };

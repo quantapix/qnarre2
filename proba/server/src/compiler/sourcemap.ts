@@ -618,7 +618,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
         if (host.log) {
           host.log(`Encountered error while decoding sourcemap: ${decoder.error}`);
         }
-        decodedMappings = emptyArray;
+        decodedMappings = qc.emptyArray;
       } else {
         decodedMappings = mappings;
       }

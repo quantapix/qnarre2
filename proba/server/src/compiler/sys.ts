@@ -482,7 +482,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
           options
         ),
         refCount: 1,
-        childWatches: emptyArray,
+        childWatches: qc.emptyArray,
       };
       cache.set(dirPath, directoryWatcher);
       updateChildWatches(dirName, dirPath, options);
@@ -588,7 +588,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
   function removeChildWatches(parentWatcher: HostDirectoryWatcher | undefined) {
     if (!parentWatcher) return;
     const existingChildWatches = parentWatcher.childWatches;
-    parentWatcher.childWatches = emptyArray;
+    parentWatcher.childWatches = qc.emptyArray;
     for (const childWatcher of existingChildWatches) {
       childWatcher.close();
       removeChildWatches(cache.get(toCanonicalFilePath(childWatcher.dirName)));
@@ -610,13 +610,13 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     let newChildWatches: ChildDirectoryWatcher[] | undefined;
     enumerateInsertsAndDeletes<string, ChildDirectoryWatcher>(
       host.directoryExists(parentDir)
-        ? mapDefined(host.getAccessibleSortedChildDirectories(parentDir), (child) => {
+        ? qc.mapDefined(host.getAccessibleSortedChildDirectories(parentDir), (child) => {
             const childFullName = qp.getNormalizedAbsolutePath(child, parentDir);
             // Filter our the symbolic link directories since those arent included in recursive watch
             // which is same behaviour when recursive: true is passed to fs.watch
             return !isIgnoredPath(childFullName) && filePathComparer(childFullName, qp.normalizePath(host.realpath(childFullName))) === qpc.Comparison.EqualTo ? childFullName : undefined;
           })
-        : emptyArray,
+        : qc.emptyArray,
       existingChildWatches,
       (child, childWatcher) => filePathComparer(child, childWatcher.dirName),
       createAndAddChildDirectoryWatcher,
@@ -624,7 +624,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
       addChildDirectoryWatcher
     );
 
-    return newChildWatches || emptyArray;
+    return newChildWatches || qc.emptyArray;
 
     /**
      * Create new childDirectoryWatcher and add it to the new ChildDirectoryWatcher list

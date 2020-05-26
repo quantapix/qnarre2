@@ -1318,7 +1318,7 @@ export function transformES2015(context: TransformationContext) {
     const propertyName = visitNode(member.name, visitor, isPropertyName);
     let e: qt.Expression;
     if (!isPrivateIdentifier(propertyName) && context.getCompilerOptions().useDefineForClassFields) {
-      const name = isComputedPropertyName(propertyName) ? propertyName.expression : isIdentifier(propertyName) ? createStringLiteral(unescapeLeadingUnderscores(propertyName.escapedText)) : propertyName;
+      const name = isComputedPropertyName(propertyName) ? propertyName.expression : isIdentifier(propertyName) ? createStringLiteral(unqpu.escapeLeadingUnderscores(propertyName.escapedText)) : propertyName;
       e = createObjectDefinePropertyCall(receiver, name, createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
     } else {
       const memberName = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ member.name);

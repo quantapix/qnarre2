@@ -382,21 +382,21 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
       const parameter = getParseTreeNode(parameterIn, isParameter);
       if (parameter === undefined) return Debug.fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
-      return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName));
+      return getSymbolsOfParameterPropertyDeclaration(parameter, qpu.escapeLeadingUnderscores(parameterName));
     },
     getDeclaredTypeOfSymbol,
     getPropertiesOfType,
-    getPropertyOfType: (type, name) => getPropertyOfType(type, escapeLeadingUnderscores(name)),
+    getPropertyOfType: (type, name) => getPropertyOfType(type, qpu.escapeLeadingUnderscores(name)),
     getPrivateIdentifierPropertyOfType: (leftType: Type, name: string, location: Node) => {
       const node = getParseTreeNode(location);
       if (!node) {
         return undefined;
       }
-      const propName = escapeLeadingUnderscores(name);
+      const propName = qpu.escapeLeadingUnderscores(name);
       const lexicallyScopedIdentifier = lookupSymbolForPrivateIdentifierDeclaration(propName, node);
       return lexicallyScopedIdentifier ? getPrivateIdentifierPropertyOfType(leftType, lexicallyScopedIdentifier) : undefined;
     },
-    getTypeOfPropertyOfType: (type, name) => getTypeOfPropertyOfType(type, escapeLeadingUnderscores(name)),
+    getTypeOfPropertyOfType: (type, name) => getTypeOfPropertyOfType(type, qpu.escapeLeadingUnderscores(name)),
     getIndexInfoOfType,
     getSignaturesOfType,
     getIndexTypeOfType,
@@ -532,7 +532,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     },
     isValidPropertyAccess: (nodeIn, propertyName) => {
       const node = getParseTreeNode(nodeIn, isPropertyAccessOrQualifiedNameOrImportTypeNode);
-      return !!node && isValidPropertyAccess(node, escapeLeadingUnderscores(propertyName));
+      return !!node && isValidPropertyAccess(node, qpu.escapeLeadingUnderscores(propertyName));
     },
     isValidPropertyAccessForCompletions: (nodeIn, type, property) => {
       const node = getParseTreeNode(nodeIn, isPropertyAccessExpression);
@@ -558,8 +558,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const node = getParseTreeNode(nodeIn, isParameter);
       return node ? isOptionalParameter(node) : false;
     },
-    tryGetMemberInModuleExports: (name, symbol) => tryGetMemberInModuleExports(escapeLeadingUnderscores(name), symbol),
-    tryGetMemberInModuleExportsAndProperties: (name, symbol) => tryGetMemberInModuleExportsAndProperties(escapeLeadingUnderscores(name), symbol),
+    tryGetMemberInModuleExports: (name, symbol) => tryGetMemberInModuleExports(qpu.escapeLeadingUnderscores(name), symbol),
+    tryGetMemberInModuleExportsAndProperties: (name, symbol) => tryGetMemberInModuleExportsAndProperties(qpu.escapeLeadingUnderscores(name), symbol),
     tryFindAmbientModuleWithoutAugmentations: (moduleName) => {
       // we deliberately exclude augmentations
       // since we are only interested in declarations of the module itself
@@ -595,16 +595,16 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     getAllPossiblePropertiesOfTypes,
     getSuggestedSymbolForNonexistentProperty,
     getSuggestionForNonexistentProperty,
-    getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, escapeLeadingUnderscores(name), meaning),
-    getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, escapeLeadingUnderscores(name), meaning),
+    getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, qpu.escapeLeadingUnderscores(name), meaning),
+    getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, qpu.escapeLeadingUnderscores(name), meaning),
     getSuggestedSymbolForNonexistentModule,
     getSuggestionForNonexistentExport,
     getBaseConstraintOfType,
     getDefaultFromTypeParameter: (type) => (type && type.flags & TypeFlags.TypeParameter ? getDefaultFromTypeParameter(type as TypeParameter) : undefined),
     resolveName(name, location, meaning, excludeGlobals) {
-      return resolveName(location, escapeLeadingUnderscores(name), meaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false, excludeGlobals);
+      return resolveName(location, qpu.escapeLeadingUnderscores(name), meaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false, excludeGlobals);
     },
-    getJsxNamespace: (n) => unescapeLeadingUnderscores(getJsxNamespace(n)),
+    getJsxNamespace: (n) => unqpu.escapeLeadingUnderscores(getJsxNamespace(n)),
     getAccessibleSymbolChain,
     getTypePredicateOfSignature,
     resolveExternalModuleName: (moduleSpecifier) => {
@@ -621,7 +621,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     },
     getSuggestionDiagnostics: (file, ct) => {
       if (skipTypeChecking(file, compilerOptions, host)) {
-        return emptyArray;
+        return qc.emptyArray;
       }
 
       let diagnostics: qt.DiagnosticWithLocation[] | undefined;
@@ -642,7 +642,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           }
         });
 
-        return diagnostics || emptyArray;
+        return diagnostics || qc.emptyArray;
       } finally {
         cancellationToken = undefined;
       }
@@ -728,25 +728,25 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   const restrictiveMapper: TypeMapper = makeFunctionTypeMapper((t) => (t.flags & TypeFlags.TypeParameter ? getRestrictiveTypeParameter(t) : t));
   const permissiveMapper: TypeMapper = makeFunctionTypeMapper((t) => (t.flags & TypeFlags.TypeParameter ? wildcardType : t));
 
-  const emptyObjectType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
-  const emptyJsxObjectType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+  const emptyObjectType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
+  const emptyJsxObjectType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
   emptyJsxObjectType.objectFlags |= ObjectFlags.JsxAttributes;
 
   const emptyTypeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
   emptyTypeLiteralSymbol.members =qu.createSymbolTable();
-  const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+  const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
 
-  const emptyGenericType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+  const emptyGenericType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
   emptyGenericType.instantiations = qc.createMap<TypeReference>();
 
-  const anyFunctionType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+  const anyFunctionType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
   // The anyFunctionType contains the anyFunctionType by definition. The flag is further propagated
   // in getPropagatingFlagsOfTypes, and it is checked in inferFromTypes.
   anyFunctionType.objectFlags |= ObjectFlags.NonInferrableType;
 
-  const noConstraintType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
-  const circularConstraintType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
-  const resolvingDefaultType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+  const noConstraintType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
+  const circularConstraintType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
+  const resolvingDefaultType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
 
   const markerSuperType = createTypeParameter();
   const markerSubType = createTypeParameter();
@@ -755,10 +755,10 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
   const noTypePredicate = createTypePredicate(TypePredicateKind.Identifier, '<<unresolved>>', 0, anyType);
 
-  const anySignature = createSignature(undefined, undefined, undefined, emptyArray, anyType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
-  const unknownSignature = createSignature(undefined, undefined, undefined, emptyArray, errorType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
-  const resolvingSignature = createSignature(undefined, undefined, undefined, emptyArray, anyType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
-  const silentNeverSignature = createSignature(undefined, undefined, undefined, emptyArray, silentNeverType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
+  const anySignature = createSignature(undefined, undefined, undefined, qc.emptyArray, anyType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
+  const unknownSignature = createSignature(undefined, undefined, undefined, qc.emptyArray, errorType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
+  const resolvingSignature = createSignature(undefined, undefined, undefined, qc.emptyArray, anyType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
+  const silentNeverSignature = createSignature(undefined, undefined, undefined, qc.emptyArray, silentNeverType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
 
   const enumNumberIndexInfo = createIndexInfo(stringType, /*isReadonly*/ true);
 
@@ -968,11 +968,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           _jsxNamespace = getFirstIdentifier(_jsxFactoryEntity).escapedText;
         }
       } else if (compilerOptions.reactNamespace) {
-        _jsxNamespace = escapeLeadingUnderscores(compilerOptions.reactNamespace);
+        _jsxNamespace = qpu.escapeLeadingUnderscores(compilerOptions.reactNamespace);
       }
     }
     if (!_jsxFactoryEntity) {
-      _jsxFactoryEntity = createQualifiedName(createIdentifier(unescapeLeadingUnderscores(_jsxNamespace)), 'createElement');
+      _jsxFactoryEntity = createQualifiedName(createIdentifier(unqpu.escapeLeadingUnderscores(_jsxNamespace)), 'createElement');
     }
     return _jsxNamespace;
 
@@ -1165,7 +1165,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function addDuplicateDeclarationError(node: Declaration, message: qt.DiagnosticMessage, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
     const errorNode = (getExpandoInitializer(node, /*isPrototypeAssignment*/ false) ? getNameOfExpando(node) : getNameOfDeclaration(node)) || node;
     const err = lookupOrIssueError(errorNode, message, symbolName);
-    for (const relatedNode of relatedNodes || emptyArray) {
+    for (const relatedNode of relatedNodes || qc.emptyArray) {
       const adjustedNode = (getExpandoInitializer(relatedNode, /*isPrototypeAssignment*/ false) ? getNameOfExpando(relatedNode) : getNameOfDeclaration(relatedNode)) || relatedNode;
       if (adjustedNode === errorNode) continue;
       err.relatedInformation = err.relatedInformation || [];
@@ -1251,7 +1251,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const targetSymbol = target.get(id);
       if (targetSymbol) {
         // Error on redeclarations
-        forEach(targetSymbol.declarations, addDeclarationDiagnostic(unescapeLeadingUnderscores(id), message));
+        forEach(targetSymbol.declarations, addDeclarationDiagnostic(unqpu.escapeLeadingUnderscores(id), message));
       } else {
         target.set(id, sourceSymbol);
       }
@@ -1911,7 +1911,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (result && isInExternalModule && (meaning & SymbolFlags.Value) === SymbolFlags.Value && !(originalLocation!.flags &  qt.NodeFlags.JSDoc)) {
         const merged = getMergedSymbol(result);
         if (length(merged.declarations) && every(merged.declarations, (d) => isNamespaceExportDeclaration(d) || (isSourceFile(d) && !!d.symbol.globalExports))) {
-          errorOrSuggestion(!compilerOptions.allowUmdGlobalAccess, errorLocation!, Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead, unescapeLeadingUnderscores(name));
+          errorOrSuggestion(!compilerOptions.allowUmdGlobalAccess, errorLocation!, Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead, unqpu.escapeLeadingUnderscores(name));
         }
       }
 
@@ -1942,7 +1942,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         const isExport = typeOnlyDeclarationIsExport(typeOnlyDeclaration);
         const message = isExport ? Diagnostics._0_cannot_be_used_as_a_value_because_it_was_exported_using_export_type : Diagnostics._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type;
         const relatedMessage = isExport ? Diagnostics._0_was_exported_here : Diagnostics._0_was_imported_here;
-        const unescapedName = unescapeLeadingUnderscores(name);
+        const unescapedName = unqpu.escapeLeadingUnderscores(name);
         addRelatedInfo(error(useSite, message, unescapedName), qu.createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, unescapedName));
       }
     }
@@ -1978,7 +1978,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function diagnosticName(nameArg: qt.__String | Identifier | PrivateIdentifier) {
-    return isString(nameArg) ? unescapeLeadingUnderscores(nameArg as qt.__String) : qu.declarationNameToString(nameArg as Identifier);
+    return isString(nameArg) ? unqpu.escapeLeadingUnderscores(nameArg as qt.__String) : qu.declarationNameToString(nameArg as Identifier);
   }
 
   function isTypeParameterSymbolDeclaredInContainer(symbol: symbol, container: Node) {
@@ -2069,11 +2069,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           const propName = parent.right.escapedText;
           const propType = getPropertyOfType(getDeclaredTypeOfSymbol(symbol), propName);
           if (propType) {
-            error(parent, Diagnostics.Cannot_access_0_1_because_0_is_a_type_but_not_a_namespace_Did_you_mean_to_retrieve_the_type_of_the_property_1_in_0_with_0_1, unescapeLeadingUnderscores(name), unescapeLeadingUnderscores(propName));
+            error(parent, Diagnostics.Cannot_access_0_1_because_0_is_a_type_but_not_a_namespace_Did_you_mean_to_retrieve_the_type_of_the_property_1_in_0_with_0_1, unqpu.escapeLeadingUnderscores(name), unqpu.escapeLeadingUnderscores(propName));
             return true;
           }
         }
-        error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_namespace_here, unescapeLeadingUnderscores(name));
+        error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_namespace_here, unqpu.escapeLeadingUnderscores(name));
         return true;
       }
     }
@@ -2085,7 +2085,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (meaning & (SymbolFlags.Type & ~SymbolFlags.Namespace)) {
       const symbol = resolveSymbol(resolveName(errorLocation, name, ~SymbolFlags.Type & SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
       if (symbol && !(symbol.flags & SymbolFlags.Namespace)) {
-        error(errorLocation, Diagnostics._0_refers_to_a_value_but_is_being_used_as_a_type_here_Did_you_mean_typeof_0, unescapeLeadingUnderscores(name));
+        error(errorLocation, Diagnostics._0_refers_to_a_value_but_is_being_used_as_a_type_here_Did_you_mean_typeof_0, unqpu.escapeLeadingUnderscores(name));
         return true;
       }
     }
@@ -2107,13 +2107,13 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function checkAndReportErrorForUsingTypeAsValue(errorLocation: Node, name: qt.__String, meaning: SymbolFlags): boolean {
     if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule)) {
       if (isPrimitiveTypeName(name)) {
-        error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, unescapeLeadingUnderscores(name));
+        error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, unqpu.escapeLeadingUnderscores(name));
         return true;
       }
       const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.Type & ~SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
       if (symbol && !(symbol.flags & SymbolFlags.NamespaceModule)) {
         const message = isES2015OrLaterConstructorName(name) ? Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here_Do_you_need_to_change_your_target_library_Try_changing_the_lib_compiler_option_to_es2015_or_later : Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here;
-        error(errorLocation, message, unescapeLeadingUnderscores(name));
+        error(errorLocation, message, unqpu.escapeLeadingUnderscores(name));
         return true;
       }
     }
@@ -2137,13 +2137,13 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Type)) {
       const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.NamespaceModule & ~SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
       if (symbol) {
-        error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_value, unescapeLeadingUnderscores(name));
+        error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_value, unqpu.escapeLeadingUnderscores(name));
         return true;
       }
     } else if (meaning & (SymbolFlags.Type & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Value)) {
       const symbol = resolveSymbol(resolveName(errorLocation, name, (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) & ~SymbolFlags.Type, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
       if (symbol) {
-        error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_type, unescapeLeadingUnderscores(name));
+        error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_type, unqpu.escapeLeadingUnderscores(name));
         return true;
       }
     }
@@ -2266,7 +2266,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
       // Non-null assertion is safe because the optionality comes from ImportClause,
       // but if an ImportClause was the typeOnlyDeclaration, it had to have a `name`.
-      const name = unescapeLeadingUnderscores(typeOnlyDeclaration.name!.escapedText);
+      const name = unqpu.escapeLeadingUnderscores(typeOnlyDeclaration.name!.escapedText);
       addRelatedInfo(error(node.moduleReference, message), qu.createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
     }
   }
@@ -2299,7 +2299,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
       // It _might_ still be incorrect to assume there is no __esModule marker on the import at runtime, even if there is no `default` member
       // So we check a bit more,
-      if (resolveExportByName(moduleSymbol, escapeLeadingUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias)) {
+      if (resolveExportByName(moduleSymbol, qpu.escapeLeadingUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias)) {
         // If there is an `__esModule` specified in the declaration (meaning someone explicitly added it or wrote it in their code),
         // it definitely is a module and does not have a synthetic default
         return false;
@@ -2314,7 +2314,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return hasExportAssignmentSymbol(moduleSymbol);
     }
     // JS files have a synthetic default if they do not contain ES2015+ module syntax (export = is not valid in js) _and_ do not have an __esModule marker
-    return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, escapeLeadingUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias);
+    return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, qpu.escapeLeadingUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias);
   }
 
   function getTargetOfImportClause(node: ImportClause, dontResolveAlias: boolean): symbol | undefined {
@@ -3069,7 +3069,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             if (symbol.members) result.members = qu.cloneMap(symbol.members);
             if (symbol.exports) result.exports = qu.cloneMap(symbol.exports);
             const resolvedModuleType = resolveStructuredTypeMembers(moduleType); // Should already be resolved from the signature checks above
-            result.type = createAnonymousType(result, resolvedModuleType.members, emptyArray, emptyArray, resolvedModuleType.stringIndexInfo, resolvedModuleType.numberIndexInfo);
+            result.type = createAnonymousType(result, resolvedModuleType.members, qc.emptyArray, qc.emptyArray, resolvedModuleType.stringIndexInfo, resolvedModuleType.numberIndexInfo);
             return result;
           }
         }
@@ -3192,7 +3192,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             return;
           }
           for (const node of exportsWithDuplicate) {
-            diagnostics.add(qu.createDiagnosticForNode(node, Diagnostics.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity, lookupTable.get(id)!.specifierText, unescapeLeadingUnderscores(id)));
+            diagnostics.add(qu.createDiagnosticForNode(node, Diagnostics.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity, lookupTable.get(id)!.specifierText, unqpu.escapeLeadingUnderscores(id)));
           }
         });
         extendExportSymbols(symbols, nestedSymbols);
@@ -3253,7 +3253,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (!ref) continue;
       results = append(results, sym);
     }
-    return (links.extendedContainers = results || emptyArray);
+    return (links.extendedContainers = results || qc.emptyArray);
   }
 
   /**
@@ -3264,7 +3264,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const container = getParentOfSymbol(symbol);
     // Type parameters end up in the `members` lists but are not externally visible
     if (container && !(symbol.flags & SymbolFlags.TypeParameter)) {
-      const additionalContainers = mapDefined(container.declarations, fileSymbolIfFileSymbolExportEqualsContainer);
+      const additionalContainers = qc.mapDefined(container.declarations, fileSymbolIfFileSymbolExportEqualsContainer);
       const reexportContainers = enclosingDeclaration && getAlternativeContainingModules(symbol, enclosingDeclaration);
       if (enclosingDeclaration && getAccessibleSymbolChain(container, enclosingDeclaration, SymbolFlags.Namespace, /*externalOnly*/ false)) {
         return concatenate(concatenate([container], additionalContainers), reexportContainers); // This order expresses a preference for the real container if it is in scope
@@ -3272,7 +3272,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const res = append(additionalContainers, container);
       return concatenate(res, reexportContainers);
     }
-    const candidates = mapDefined(symbol.declarations, (d) => {
+    const candidates = qc.mapDefined(symbol.declarations, (d) => {
       if (!qu.isAmbientModule(d) && d.parent && hasNonGlobalAugmentationExternalModuleSymbol(d.parent)) {
         return getSymbolOfNode(d.parent);
       }
@@ -3287,7 +3287,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (!length(candidates)) {
       return undefined;
     }
-    return mapDefined(candidates, (candidate) => (getAliasForSymbolInContainer(candidate, symbol) ? candidate : undefined));
+    return qc.mapDefined(candidates, (candidate) => (getAliasForSymbolInContainer(candidate, symbol) ? candidate : undefined));
 
     function fileSymbolIfFileSymbolExportEqualsContainer(d: Declaration) {
       return container && getFileSymbolIfFileSymbolExportEqualsContainer(d, container);
@@ -3410,12 +3410,12 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         (result || (result = [])).push(symbol);
       }
     });
-    return result || emptyArray;
+    return result || qc.emptyArray;
   }
 
   function setStructuredTypeMembers(type: StructuredType, members: SymbolTable, callSignatures: readonly Signature[], constructSignatures: readonly Signature[], stringIndexInfo: IndexInfo | undefined, numberIndexInfo: IndexInfo | undefined): ResolvedType {
     type.members = members;
-    type.properties = members === emptySymbols ? emptyArray : getNamedMembers(members);
+    type.properties = members === emptySymbols ? qc.emptyArray : getNamedMembers(members);
     type.callSignatures = callSignatures;
     type.constructSignatures = constructSignatures;
     type.stringIndexInfo = stringIndexInfo;
@@ -4325,7 +4325,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
                   const isOptionalOrRest = i >= type.target.minLength;
                   const isRest = isOptionalOrRest && hasRestElement && i === arity - 1;
                   const isOptional = isOptionalOrRest && !isRest;
-                  tupleConstituentNodes[i] = createNamedTupleMember(isRest ? createToken(SyntaxKind.DotDotDotToken) : undefined, createIdentifier(unescapeLeadingUnderscores(getTupleElementLabel(type.target.labeledElementDeclarations![i]))), isOptional ? createToken(SyntaxKind.QuestionToken) : undefined, isRest ? createArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]);
+                  tupleConstituentNodes[i] = createNamedTupleMember(isRest ? createToken(SyntaxKind.DotDotDotToken) : undefined, createIdentifier(unqpu.escapeLeadingUnderscores(getTupleElementLabel(type.target.labeledElementDeclarations![i]))), isOptional ? createToken(SyntaxKind.QuestionToken) : undefined, isRest ? createArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]);
                 }
               } else {
                 for (let i = type.target.minLength; i < Math.min(arity, tupleConstituentNodes.length); i++) {
@@ -4371,7 +4371,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           }
           let typeArgumentNodes: readonly TypeNode[] | undefined;
           if (typeArguments.length > 0) {
-            const typeParameterCount = (type.target.typeParameters || emptyArray).length;
+            const typeParameterCount = (type.target.typeParameters || qc.emptyArray).length;
             typeArgumentNodes = mapToTypeNodes(typeArguments.slice(i, typeParameterCount), context);
           }
           const flags = context.flags;
@@ -4459,7 +4459,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
               continue;
             }
             if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | qt.ModifierFlags.Protected) && context.tracker.reportPrivateInBaseOfClassExpression) {
-              context.tracker.reportPrivateInBaseOfClassExpression(unescapeLeadingUnderscores(propertySymbol.escapedName));
+              context.tracker.reportPrivateInBaseOfClassExpression(unqpu.escapeLeadingUnderscores(propertySymbol.escapedName));
             }
           }
           if (checkTruncationLength(context) && i + 2 < properties.length - 1) {
@@ -4961,7 +4961,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             const exports = getExportsOfSymbol(parent);
             qu.forEachEntry(exports, (ex, name) => {
               if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbolName.ExportEquals) {
-                symbolName = unescapeLeadingUnderscores(name);
+                symbolName = unqpu.escapeLeadingUnderscores(name);
                 return true;
               }
             });
@@ -5129,7 +5129,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (isKnownSymbol(symbol)) {
         return createComputedPropertyName(createPropertyAccess(createIdentifier('Symbol'), (symbol.escapedName as string).substr(3)));
       }
-      const rawName = unescapeLeadingUnderscores(symbol.escapedName);
+      const rawName = unqpu.escapeLeadingUnderscores(symbol.escapedName);
       return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
     }
 
@@ -5285,7 +5285,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             let newTypeNode: TypeNode | undefined;
             return createConstructorTypeNode(
               visitNodes(node.typeParameters, visitExistingNodeTreeSymbols),
-              mapDefined(node.parameters, (p, i) => (p.name && isIdentifier(p.name) && p.name.escapedText === 'new' ? ((newTypeNode = p.type), undefined) : createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, getEffectiveDotDotDotForParameter(p), p.name || getEffectiveDotDotDotForParameter(p) ? `args` : `arg${i}`, p.questionToken, visitNode(p.type, visitExistingNodeTreeSymbols), /*initializer*/ undefined))),
+              qc.mapDefined(node.parameters, (p, i) => (p.name && isIdentifier(p.name) && p.name.escapedText === 'new' ? ((newTypeNode = p.type), undefined) : createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, getEffectiveDotDotDotForParameter(p), p.name || getEffectiveDotDotDotForParameter(p) ? `args` : `arg${i}`, p.questionToken, visitNode(p.type, visitExistingNodeTreeSymbols), /*initializer*/ undefined))),
               visitNode(newTypeNode || node.type, visitExistingNodeTreeSymbols)
             );
           } else {
@@ -5404,7 +5404,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         });
       }
       qu.forEachEntry(symbolTable, (symbol, name) => {
-        const baseName = unescapeLeadingUnderscores(name);
+        const baseName = unqpu.escapeLeadingUnderscores(name);
         void getInternalSymbolName(symbol, baseName); // Called to cache values into `usedSymbolNames` and `remappedSymbolNames`
       });
       let addingDeclare = !bundled;
@@ -5492,7 +5492,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         // Pass 3: Move all `export {}`'s to `export` modifiers where possible
         const exportDecl = find(statements, (d) => isExportDeclaration(d) && !d.moduleSpecifier && !!d.exportClause) as ExportDeclaration | undefined;
         if (exportDecl && exportDecl.exportClause && isNamedExports(exportDecl.exportClause)) {
-          const replacements = mapDefined(exportDecl.exportClause.elements, (e) => {
+          const replacements = qc.mapDefined(exportDecl.exportClause.elements, (e) => {
             if (!e.propertyName) {
               // export {name} - look thru `statements` for `name`, and if all results can take an `export` modifier, do so and filter it
               const associated = filter(statements, (s) => nodeHasName(s, e.name));
@@ -5586,7 +5586,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       // If it's a class/interface/function: emit a class/interface/function with a `default` modifier
       // These forms can merge, eg (`export default 12; export default interface A {}`)
       function serializeSymbolWorker(symbol: symbol, isPrivate: boolean, propertyAsAlias: boolean) {
-        const symbolName = unescapeLeadingUnderscores(symbol.escapedName);
+        const symbolName = unqpu.escapeLeadingUnderscores(symbol.escapedName);
         const isDefault = symbol.escapedName === InternalSymbolName.Default;
         if (!(context.flags & NodeBuilderFlags.AllowAnonymousIdentifier) && isStringANonContextualKeyword(symbolName) && !isDefault) {
           // Oh no. We cannot use this symbol's name as it's name... It's likely some jsdoc had an invalid name like `export` or `default` :(
@@ -5654,7 +5654,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       function includePrivateSymbol(symbol: symbol) {
         if (some(symbol.declarations, isParameterDeclaration)) return;
         Debug.assertIsDefined(deferredPrivates);
-        getUnusedName(unescapeLeadingUnderscores(symbol.escapedName), symbol); // Call to cache unique name for symbol
+        getUnusedName(unqpu.escapeLeadingUnderscores(symbol.escapedName), symbol); // Call to cache unique name for symbol
         deferredPrivates.set('' + getSymbolId(symbol), symbol);
       }
 
@@ -5712,7 +5712,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           : [
               createHeritageClause(
                 qt.SyntaxKind.ExtendsKeyword,
-                mapDefined(baseTypes, (b) => trySerializeAsTypeReference(b))
+                qc.mapDefined(baseTypes, (b) => trySerializeAsTypeReference(b))
               ),
             ];
         addResult(createInterfaceDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, getInternalSymbolName(symbol, symbolName), typeParamDecls, heritageClauses, [...indexSignatures, ...constructSignatures, ...callSignatures, ...members]), modifierFlags);
@@ -5730,8 +5730,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         const members = getNamespaceMembersForSerialization(symbol);
         // Split NS members up by declaration - members whose parent symbol is the ns symbol vs those whose is not (but were added in later via merging)
         const locationMap = arrayToMultiMap(members, (m) => (m.parent && m.parent === symbol ? 'real' : 'merged'));
-        const realMembers = locationMap.get('real') || emptyArray;
-        const mergedMembers = locationMap.get('merged') || emptyArray;
+        const realMembers = locationMap.get('real') || qc.emptyArray;
+        const mergedMembers = locationMap.get('merged') || qc.emptyArray;
         // TODO: `suppressNewPrivateContext` is questionable -we need to simply be emitting privates in whatever scope they were declared in, rather
         // than whatever scope we traverse to them in. That's a bit of a complex rewrite, since we're not _actually_ tracking privates at all in advance,
         // so we don't even have placeholders to fill in.
@@ -5747,10 +5747,10 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
               /*decorators*/ undefined,
               /*modifiers*/ undefined,
               createNamedExports(
-                mapDefined(
+                qc.mapDefined(
                   filter(mergedMembers, (n) => n.escapedName !== InternalSymbolName.ExportEquals),
                   (s) => {
-                    const name = unescapeLeadingUnderscores(s.escapedName);
+                    const name = unqpu.escapeLeadingUnderscores(s.escapedName);
                     const localName = getInternalSymbolName(s, name);
                     const aliasDecl = s.declarations && getDeclarationOfAliasSymbol(s);
                     if (containingFile && (aliasDecl ? containingFile !== qu.getSourceFileOfNode(aliasDecl) : !some(s.declarations, (d) => qu.getSourceFileOfNode(d) === containingFile))) {
@@ -5759,7 +5759,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
                     }
                     const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, /*dontRecursivelyResolve*/ true);
                     includePrivateSymbol(target || s);
-                    const targetName = target ? getInternalSymbolName(target, unescapeLeadingUnderscores(target.escapedName)) : localName;
+                    const targetName = target ? getInternalSymbolName(target, unqpu.escapeLeadingUnderscores(target.escapedName)) : localName;
                     return createExportSpecifier(name === targetName ? undefined : targetName, name);
                   }
                 )
@@ -5784,7 +5784,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
                 // other way to get the possible const value of an enum member that I'm aware of, as the value is cached
                 // _on the declaration_, not on the declaration's symbol...
                 const initializedValue = p.declarations && p.declarations[0] && isEnumMember(p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
-                return createEnumMember(unescapeLeadingUnderscores(p.escapedName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
+                return createEnumMember(unqpu.escapeLeadingUnderscores(p.escapedName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
               }
             )
           ),
@@ -5859,7 +5859,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       function serializeAsNamespaceDeclaration(props: readonly symbol[], localName: string, modifierFlags: qt.ModifierFlags, suppressNewPrivateContext: boolean) {
         if (length(props)) {
           const localVsRemoteMap = arrayToMultiMap(props, (p) => (!length(p.declarations) || some(p.declarations, (d) => qu.getSourceFileOfNode(d) === qu.getSourceFileOfNode(context.enclosingDeclaration!)) ? 'local' : 'remote'));
-          const localProps = localVsRemoteMap.get('local') || emptyArray;
+          const localProps = localVsRemoteMap.get('local') || qc.emptyArray;
           // handle remote props first - we need to make an `import` declaration that points at the module containing each remote
           // prop in the outermost scope (TODO: a namespace within a namespace would need to be appropriately handled by this)
           // Example:
@@ -5950,7 +5950,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           return valueDecl && isNamedDeclaration(valueDecl) && isPrivateIdentifier(valueDecl.name);
         });
         // Boil down all private properties into a single one.
-        const privateProperties = hasPrivateIdentifier ? [createProperty(/*decorators*/ undefined, /*modifiers*/ undefined, createPrivateIdentifier('#private'), /*questionOrExclamationToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)] : emptyArray;
+        const privateProperties = hasPrivateIdentifier ? [createProperty(/*decorators*/ undefined, /*modifiers*/ undefined, createPrivateIdentifier('#private'), /*questionOrExclamationToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)] : qc.emptyArray;
         const publicProperties = flatMap<symbol, ClassElement>(publicSymbolProps, (p) => serializePropertySymbolForClass(p, /*isStatic*/ false, baseTypes[0]));
         // Consider static members empty if symbol also has function or module meaning - function namespacey emit will handle statics
         const staticMembers = flatMap(
@@ -5982,7 +5982,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (!target) {
           return;
         }
-        let verbatimTargetName = unescapeLeadingUnderscores(target.escapedName);
+        let verbatimTargetName = unqpu.escapeLeadingUnderscores(target.escapedName);
         if (verbatimTargetName === InternalSymbolName.ExportEquals && (compilerOptions.esModuleInterop || compilerOptions.allowSyntheticDefaultImports)) {
           // target refers to an `export=` symbol that was hoisted into a synthetic default - rename here to match
           verbatimTargetName = InternalSymbolName.Default;
@@ -6031,7 +6031,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             const specifier = (node.parent.parent as ExportDeclaration).moduleSpecifier;
             // targetName is only used when the target is local, as otherwise the target is an alias that points at
             // another file
-            serializeExportSpecifier(unescapeLeadingUnderscores(symbol.escapedName), specifier ? verbatimTargetName : targetName, specifier && isStringLiteralLike(specifier) ? createLiteral(specifier.text) : undefined);
+            serializeExportSpecifier(unqpu.escapeLeadingUnderscores(symbol.escapedName), specifier ? verbatimTargetName : targetName, specifier && isStringLiteralLike(specifier) ? createLiteral(specifier.text) : undefined);
             break;
           case qt.SyntaxKind.ExportAssignment:
             serializeMaybeAliasAssignment(symbol);
@@ -6060,7 +6060,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (symbol.flags & SymbolFlags.Prototype) {
           return;
         }
-        const name = unescapeLeadingUnderscores(symbol.escapedName);
+        const name = unqpu.escapeLeadingUnderscores(symbol.escapedName);
         const isExportEquals = name === InternalSymbolName.ExportEquals;
         const isDefault = name === InternalSymbolName.Default;
         const isExportAssignment = isExportEquals || isDefault;
@@ -6823,7 +6823,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
     const stringIndexInfo = getIndexInfoOfType(source, IndexKind.String);
     const numberIndexInfo = getIndexInfoOfType(source, IndexKind.Number);
-    const result = createAnonymousType(symbol, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
+    const result = createAnonymousType(symbol, members, qc.emptyArray, qc.emptyArray, stringIndexInfo, numberIndexInfo);
     result.objectFlags |= ObjectFlags.ObjectRestType;
     return result;
   }
@@ -7124,7 +7124,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getFlowTypeInConstructor(symbol: symbol, constructor: qt.ConstructorDeclaration) {
-    const reference = createPropertyAccess(createThis(), unescapeLeadingUnderscores(symbol.escapedName));
+    const reference = createPropertyAccess(createThis(), unqpu.escapeLeadingUnderscores(symbol.escapedName));
     reference.expression.parent = reference;
     reference.parent = constructor;
     reference.flowNode = constructor.returnFlowNode;
@@ -7226,7 +7226,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (s && qu.hasEntries(s.exports)) {
       mergeSymbolTable(exports, s.exports);
     }
-    const type = createAnonymousType(symbol, exports, emptyArray, emptyArray, undefined, undefined);
+    const type = createAnonymousType(symbol, exports, qc.emptyArray, qc.emptyArray, undefined, undefined);
     type.objectFlags |= ObjectFlags.JSLiteral;
     return type;
   }
@@ -7304,7 +7304,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             // declaring an `export const a: number`. In that case, we issue a duplicate identifier error, because
             // it's unclear what that's supposed to mean, so it's probably a mistake.
             if (qu.getSourceFileOfNode(s.valueDeclaration) !== qu.getSourceFileOfNode(exportedMember.valueDeclaration)) {
-              const unescapedName = unescapeLeadingUnderscores(s.escapedName);
+              const unescapedName = unqpu.escapeLeadingUnderscores(s.escapedName);
               const exportedMemberName = tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
               addRelatedInfo(error(s.valueDeclaration, Diagnostics.Duplicate_identifier_0, unescapedName), qu.createDiagnosticForNode(exportedMemberName, Diagnostics._0_was_also_declared_here, unescapedName));
               addRelatedInfo(error(exportedMemberName, Diagnostics.Duplicate_identifier_0, unescapedName), qu.createDiagnosticForNode(s.valueDeclaration, Diagnostics._0_was_also_declared_here, unescapedName));
@@ -7401,7 +7401,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       symbol.bindingElement = e;
       members.set(symbol.escapedName, symbol);
     });
-    const result = createAnonymousType(undefined, members, emptyArray, emptyArray, stringIndexInfo, undefined);
+    const result = createAnonymousType(undefined, members, qc.emptyArray, qc.emptyArray, stringIndexInfo, undefined);
     result.objectFlags |= objectFlags;
     if (includePatternInType) {
       result.pattern = pattern;
@@ -7519,7 +7519,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const fileSymbol = getSymbolOfNode(qu.getSourceFileOfNode(symbol.valueDeclaration));
       const members =qu.createSymbolTable();
       members.set('exports' as qt.__String, fileSymbol);
-      return createAnonymousType(symbol, members, emptyArray, emptyArray, undefined, undefined);
+      return createAnonymousType(symbol, members, qc.emptyArray, qc.emptyArray, undefined, undefined);
     }
     // Handle catch clause variables
     const declaration = symbol.valueDeclaration;
@@ -8026,14 +8026,14 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getImplementsTypes(type: InterfaceType): BaseType[] {
-    let resolvedImplementsTypes: BaseType[] = emptyArray;
+    let resolvedImplementsTypes: BaseType[] = qc.emptyArray;
     for (const declaration of type.symbol.declarations) {
       const implementsTypeNodes = getEffectiveImplementsTypeNodes(declaration);
       if (!implementsTypeNodes) continue;
       for (const node of implementsTypeNodes) {
         const implementsType = getTypeFromTypeNode(node);
         if (implementsType !== errorType) {
-          if (resolvedImplementsTypes === emptyArray) {
+          if (resolvedImplementsTypes === qc.emptyArray) {
             resolvedImplementsTypes = [implementsType];
           } else {
             resolvedImplementsTypes.push(implementsType);
@@ -8047,7 +8047,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function getBaseTypes(type: InterfaceType): BaseType[] {
     if (!type.resolvedBaseTypes) {
       if (type.objectFlags & ObjectFlags.Tuple) {
-        type.resolvedBaseTypes = [createArrayType(getUnionType(type.typeParameters || emptyArray), type.readonly)];
+        type.resolvedBaseTypes = [createArrayType(getUnionType(type.typeParameters || qc.emptyArray), type.readonly)];
       } else if (type.symbol.flags & (SymbolFlags.Class | SymbolFlags.Interface)) {
         if (type.symbol.flags & SymbolFlags.Class) {
           resolveBaseTypesOfClass(type);
@@ -8066,7 +8066,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     type.resolvedBaseTypes = resolvingEmptyArray;
     const baseConstructorType = getApparentType(getBaseConstructorTypeOfClass(type));
     if (!(baseConstructorType.flags & (TypeFlags.Object | TypeFlags.Intersection | TypeFlags.Any))) {
-      return (type.resolvedBaseTypes = emptyArray);
+      return (type.resolvedBaseTypes = qc.emptyArray);
     }
     const baseTypeNode = getBaseTypeNodeOfClass(type)!;
     let baseType: Type;
@@ -8085,24 +8085,24 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const constructors = getInstantiatedConstructorsForTypeArguments(baseConstructorType, baseTypeNode.typeArguments, baseTypeNode);
       if (!constructors.length) {
         error(baseTypeNode.expression, Diagnostics.No_base_constructor_has_the_specified_number_of_type_arguments);
-        return (type.resolvedBaseTypes = emptyArray);
+        return (type.resolvedBaseTypes = qc.emptyArray);
       }
       baseType = getReturnTypeOfSignature(constructors[0]);
     }
 
     if (baseType === errorType) {
-      return (type.resolvedBaseTypes = emptyArray);
+      return (type.resolvedBaseTypes = qc.emptyArray);
     }
     const reducedBaseType = getReducedType(baseType);
     if (!isValidBaseType(reducedBaseType)) {
       const elaboration = elaborateNeverIntersection(/*errorInfo*/ undefined, baseType);
       const diagnostic = chainDiagnosticMessages(elaboration, Diagnostics.Base_constructor_return_type_0_is_not_an_object_type_or_intersection_of_object_types_with_statically_known_members, typeToString(reducedBaseType));
       diagnostics.add(qu.createDiagnosticForNodeFromMessageChain(baseTypeNode.expression, diagnostic));
-      return (type.resolvedBaseTypes = emptyArray);
+      return (type.resolvedBaseTypes = qc.emptyArray);
     }
     if (type === reducedBaseType || hasBaseType(reducedBaseType, type)) {
       error(type.symbol.valueDeclaration, Diagnostics.Type_0_recursively_references_itself_as_a_base_type, typeToString(type, /*enclosingDeclaration*/ undefined, TypeFormatFlags.WriteArrayAsGenericType));
-      return (type.resolvedBaseTypes = emptyArray);
+      return (type.resolvedBaseTypes = qc.emptyArray);
     }
     if (type.resolvedBaseTypes === resolvingEmptyArray) {
       // Circular reference, likely through instantiation of default parameters
@@ -8141,7 +8141,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function resolveBaseTypesOfInterface(type: InterfaceType): void {
-    type.resolvedBaseTypes = type.resolvedBaseTypes || emptyArray;
+    type.resolvedBaseTypes = type.resolvedBaseTypes || qc.emptyArray;
     for (const declaration of type.symbol.declarations) {
       if (declaration.kind === qt.SyntaxKind.InterfaceDeclaration && getInterfaceBaseTypeNodes(declaration)) {
         for (const node of getInterfaceBaseTypeNodes(declaration)!) {
@@ -8149,7 +8149,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           if (baseType !== errorType) {
             if (isValidBaseType(baseType)) {
               if (type !== baseType && !hasBaseType(baseType, type)) {
-                if (type.resolvedBaseTypes === emptyArray) {
+                if (type.resolvedBaseTypes === qc.emptyArray) {
                   type.resolvedBaseTypes = [baseType];
                 } else {
                   type.resolvedBaseTypes.push(baseType);
@@ -8507,8 +8507,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const members = getMembersOfSymbol(symbol);
       type.declaredProperties = getNamedMembers(members);
       // Start with signatures at empty array in case of recursive types
-      type.declaredCallSignatures = emptyArray;
-      type.declaredConstructSignatures = emptyArray;
+      type.declaredCallSignatures = qc.emptyArray;
+      type.declaredConstructSignatures = qc.emptyArray;
 
       type.declaredCallSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.Call));
       type.declaredConstructSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.New));
@@ -8575,7 +8575,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return (<UniqueESSymbolType>type).escapedName;
     }
     if (type.flags & (TypeFlags.StringLiteral | TypeFlags.NumberLiteral)) {
-      return escapeLeadingUnderscores('' + type.value);
+      return qpu.escapeLeadingUnderscores('' + type.value);
     }
     return Debug.fail();
   }
@@ -8654,7 +8654,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           // If we have an existing early-bound member, combine its declarations so that we can
           // report an error at each declaration.
           const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
-          const name = (!(type.flags & TypeFlags.UniqueESSymbol) && unescapeLeadingUnderscores(memberName)) || qu.declarationNameToString(declName);
+          const name = (!(type.flags & TypeFlags.UniqueESSymbol) && unqpu.escapeLeadingUnderscores(memberName)) || qu.declarationNameToString(declName);
           forEach(declarations, (declaration) => error(getNameOfDeclaration(declaration) || declaration, Diagnostics.Property_0_was_also_declared_here, name));
           error(declName || decl, Diagnostics.Duplicate_property_0, name);
           lateSymbol = createSymbol(SymbolFlags.None, memberName, CheckFlags.Late);
@@ -8802,7 +8802,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function resolveClassOrInterfaceMembers(type: InterfaceType): void {
-    resolveObjectTypeMembers(type, resolveDeclaredMembers(type), emptyArray, emptyArray);
+    resolveObjectTypeMembers(type, resolveDeclaredMembers(type), qc.emptyArray, qc.emptyArray);
   }
 
   function resolveTypeReferenceMembers(type: TypeReference): void {
@@ -8896,7 +8896,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const baseConstructorType = getBaseConstructorTypeOfClass(classType);
     const baseSignatures = getSignaturesOfType(baseConstructorType, SignatureKind.Construct);
     if (baseSignatures.length === 0) {
-      return [createSignature(undefined, classType.localTypeParameters, undefined, emptyArray, classType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None)];
+      return [createSignature(undefined, classType.localTypeParameters, undefined, qc.emptyArray, classType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None)];
     }
     const baseTypeNode = getBaseTypeNodeOfClass(classType)!;
     const isJavaScript = isInJSFile(baseTypeNode);
@@ -8959,7 +8959,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     let result: Signature[] | undefined;
     let indexWithLengthOverOne: number | undefined;
     for (let i = 0; i < signatureLists.length; i++) {
-      if (signatureLists[i].length === 0) return emptyArray;
+      if (signatureLists[i].length === 0) return qc.emptyArray;
       if (signatureLists[i].length > 1) {
         indexWithLengthOverOne = indexWithLengthOverOne === undefined ? i : -1; // -1 is a signal there are multiple overload sets
       }
@@ -8974,7 +8974,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
               let thisParameter = signature.thisParameter;
               const firstThisParameterOfUnionSignatures = forEach(unionSignatures, (sig) => sig.thisParameter);
               if (firstThisParameterOfUnionSignatures) {
-                const thisType = getIntersectionType(mapDefined(unionSignatures, (sig) => sig.thisParameter && getTypeOfSymbol(sig.thisParameter)));
+                const thisType = getIntersectionType(qc.mapDefined(unionSignatures, (sig) => sig.thisParameter && getTypeOfSymbol(sig.thisParameter)));
                 thisParameter = createSymbolWithType(firstThisParameterOfUnionSignatures, thisType);
               }
               s = createUnionSignature(signature, unionSignatures);
@@ -9004,7 +9004,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
       result = results;
     }
-    return result || emptyArray;
+    return result || qc.emptyArray;
   }
 
   function combineUnionThisParam(left: symbol | undefined, right: symbol | undefined): symbol | undefined {
@@ -9151,7 +9151,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       stringIndexInfo = intersectIndexInfos(stringIndexInfo, getIndexInfoOfType(t, IndexKind.String));
       numberIndexInfo = intersectIndexInfos(numberIndexInfo, getIndexInfoOfType(t, IndexKind.Number));
     }
-    setStructuredTypeMembers(type, emptySymbols, callSignatures || emptyArray, constructSignatures || emptyArray, stringIndexInfo, numberIndexInfo);
+    setStructuredTypeMembers(type, emptySymbols, callSignatures || qc.emptyArray, constructSignatures || qc.emptyArray, stringIndexInfo, numberIndexInfo);
   }
 
   function appendSignatures(signatures: Signature[] | undefined, newSignatures: readonly Signature[]) {
@@ -9169,7 +9169,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function resolveAnonymousTypeMembers(type: AnonymousType) {
     const symbol = getMergedSymbol(type.symbol);
     if (type.target) {
-      setStructuredTypeMembers(type, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+      setStructuredTypeMembers(type, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
       const members = createInstantiatedSymbolTable(getPropertiesOfObjectType(type.target), type.mapper!, /*mappingThisOnly*/ false);
       const callSignatures = instantiateSignatures(getSignaturesOfType(type.target, SignatureKind.Call), type.mapper!);
       const constructSignatures = instantiateSignatures(getSignaturesOfType(type.target, SignatureKind.Construct), type.mapper!);
@@ -9177,7 +9177,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const numberIndexInfo = instantiateIndexInfo(getIndexInfoOfType(type.target, IndexKind.Number), type.mapper!);
       setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
     } else if (symbol.flags & SymbolFlags.TypeLiteral) {
-      setStructuredTypeMembers(type, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+      setStructuredTypeMembers(type, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
       const members = getMembersOfSymbol(symbol);
       const callSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.Call));
       const constructSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.New));
@@ -9200,7 +9200,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           members = varsOnly;
         }
       }
-      setStructuredTypeMembers(type, members, emptyArray, emptyArray, undefined, undefined);
+      setStructuredTypeMembers(type, members, qc.emptyArray, qc.emptyArray, undefined, undefined);
       if (symbol.flags & SymbolFlags.Class) {
         const classType = getDeclaredTypeOfClassOrInterface(symbol);
         const baseConstructorType = getBaseConstructorTypeOfClass(classType);
@@ -9212,7 +9212,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         }
       }
       const numberIndexInfo = symbol.flags & SymbolFlags.Enum && (getDeclaredTypeOfSymbol(symbol).flags & TypeFlags.Enum || some(type.properties, (prop) => !!(getTypeOfSymbol(prop).flags & TypeFlags.NumberLike))) ? enumNumberIndexInfo : undefined;
-      setStructuredTypeMembers(type, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
+      setStructuredTypeMembers(type, members, qc.emptyArray, qc.emptyArray, stringIndexInfo, numberIndexInfo);
       // We resolve the members before computing the signatures because a signature may use
       // typeof with a qualified name expression that circularly references the type we are
       // in the process of resolving (see issue #6072). The temporarily empty signature list
@@ -9223,11 +9223,11 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       // And likewise for construct signatures for classes
       if (symbol.flags & SymbolFlags.Class) {
         const classType = getDeclaredTypeOfClassOrInterface(symbol);
-        let constructSignatures = symbol.members ? getSignaturesOfSymbol(symbol.members.get(InternalSymbolName.Constructor)) : emptyArray;
+        let constructSignatures = symbol.members ? getSignaturesOfSymbol(symbol.members.get(InternalSymbolName.Constructor)) : qc.emptyArray;
         if (symbol.flags & SymbolFlags.Function) {
           constructSignatures = addRange(
             constructSignatures.slice(),
-            mapDefined(type.callSignatures, (sig) => (isJSConstructor(sig.declaration) ? createSignature(sig.declaration, sig.typeParameters, sig.thisParameter, sig.parameters, classType, /*resolvedTypePredicate*/ undefined, sig.minArgumentCount, sig.flags & SignatureFlags.PropagatingFlags) : undefined))
+            qc.mapDefined(type.callSignatures, (sig) => (isJSConstructor(sig.declaration) ? createSignature(sig.declaration, sig.typeParameters, sig.thisParameter, sig.parameters, classType, /*resolvedTypePredicate*/ undefined, sig.minArgumentCount, sig.flags & SignatureFlags.PropagatingFlags) : undefined))
           );
         }
         if (!constructSignatures.length) {
@@ -9255,7 +9255,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       inferredProp.constraintType = type.constraintType;
       members.set(prop.escapedName, inferredProp);
     }
-    setStructuredTypeMembers(type, members, emptyArray, emptyArray, stringIndexInfo, undefined);
+    setStructuredTypeMembers(type, members, qc.emptyArray, qc.emptyArray, stringIndexInfo, undefined);
   }
 
   // Return the lower bound of the key type in a mapped type. Intuitively, the lower
@@ -9293,7 +9293,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     let stringIndexInfo: IndexInfo | undefined;
     let numberIndexInfo: IndexInfo | undefined;
     // Resolve upfront such that recursive references see an empty object type.
-    setStructuredTypeMembers(type, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+    setStructuredTypeMembers(type, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
     // In { [P in K]: T }, we refer to P as the type parameter type, K as the constraint type,
     // and T as the template type.
     const typeParameter = getTypeParameterFromMappedType(type);
@@ -9316,7 +9316,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     } else {
       forEachType(getLowerBoundOfKeyType(constraintType), addMemberForKeyType);
     }
-    setStructuredTypeMembers(type, members, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
+    setStructuredTypeMembers(type, members, qc.emptyArray, qc.emptyArray, stringIndexInfo, numberIndexInfo);
 
     function addMemberForKeyType(t: Type) {
       // Create a mapper from T to the current iteration type constituent. Then, if the
@@ -9465,7 +9465,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (type.flags & TypeFlags.Object) {
       return resolveStructuredTypeMembers(type).properties;
     }
-    return emptyArray;
+    return qc.emptyArray;
   }
 
   /** If the given type is an object type and that type has a property by the given name,
@@ -10096,7 +10096,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const resolved = resolveStructuredTypeMembers(type);
       return kind === SignatureKind.Call ? resolved.callSignatures : resolved.constructSignatures;
     }
-    return emptyArray;
+    return qc.emptyArray;
   }
 
   /**
@@ -10401,7 +10401,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getSignaturesOfSymbol(symbol: symbol | undefined): Signature[] {
-    if (!symbol) return emptyArray;
+    if (!symbol) return qc.emptyArray;
     const result: Signature[] = [];
     for (let i = 0; i < symbol.declarations.length; i++) {
       const decl = symbol.declarations[i];
@@ -10629,9 +10629,9 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const isConstructor = kind === qt.SyntaxKind.Constructor || kind === qt.SyntaxKind.ConstructSignature || kind === qt.SyntaxKind.ConstructorType;
       const type = createObjectType(ObjectFlags.Anonymous);
       type.members = emptySymbols;
-      type.properties = emptyArray;
-      type.callSignatures = !isConstructor ? [signature] : emptyArray;
-      type.constructSignatures = isConstructor ? [signature] : emptyArray;
+      type.properties = qc.emptyArray;
+      type.callSignatures = !isConstructor ? [signature] : qc.emptyArray;
+      type.constructSignatures = isConstructor ? [signature] : qc.emptyArray;
       signature.isolatedSignatureType = type;
     }
 
@@ -10673,7 +10673,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getConstraintDeclaration(type: TypeParameter): TypeNode | undefined {
-    return mapDefined(filter(type.symbol && type.symbol.declarations, isTypeParameterDeclaration), getEffectiveConstraintOfTypeParameter)[0];
+    return qc.mapDefined(filter(type.symbol && type.symbol.declarations, isTypeParameterDeclaration), getEffectiveConstraintOfTypeParameter)[0];
   }
 
   function getInferredTypeParameterConstraint(typeParameter: TypeParameter) {
@@ -10826,14 +10826,14 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function getTypeArguments(type: TypeReference): readonly Type[] {
     if (!type.resolvedTypeArguments) {
       if (!pushTypeResolution(type, TypeSystemPropertyName.ResolvedTypeArguments)) {
-        return type.target.localTypeParameters?.map(() => errorType) || emptyArray;
+        return type.target.localTypeParameters?.map(() => errorType) || qc.emptyArray;
       }
       const node = type.node;
-      const typeArguments = !node ? emptyArray : node.kind === qt.SyntaxKind.TypeReference ? concatenate(type.target.outerTypeParameters, getEffectiveTypeArguments(node, type.target.localTypeParameters!)) : node.kind === qt.SyntaxKind.ArrayType ? [getTypeFromTypeNode(node.elementType)] : map(node.elements, getTypeFromTypeNode);
+      const typeArguments = !node ? qc.emptyArray : node.kind === qt.SyntaxKind.TypeReference ? concatenate(type.target.outerTypeParameters, getEffectiveTypeArguments(node, type.target.localTypeParameters!)) : node.kind === qt.SyntaxKind.ArrayType ? [getTypeFromTypeNode(node.elementType)] : map(node.elements, getTypeFromTypeNode);
       if (popTypeResolution()) {
         type.resolvedTypeArguments = type.mapper ? instantiateTypes(typeArguments, type.mapper) : typeArguments;
       } else {
-        type.resolvedTypeArguments = type.target.localTypeParameters?.map(() => errorType) || emptyArray;
+        type.resolvedTypeArguments = type.target.localTypeParameters?.map(() => errorType) || qc.emptyArray;
         error(type.node || currentNode, type.target.symbol ? Diagnostics.Type_arguments_for_0_circularly_reference_themselves : Diagnostics.Tuple_type_arguments_circularly_reference_themselves, type.target.symbol && symbolToString(type.target.symbol));
       }
     }
@@ -11083,7 +11083,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
               const indexed = getTypeFromTypeNode(typeArgs[0]);
               const target = getTypeFromTypeNode(typeArgs[1]);
               const index = createIndexInfo(target, /*isReadonly*/ false);
-              return createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, indexed === stringType ? index : undefined, indexed === numberType ? index : undefined);
+              return createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, indexed === stringType ? index : undefined, indexed === numberType ? index : undefined);
             }
             return anyType;
           }
@@ -11449,8 +11449,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     type.thisType.isThisType = true;
     type.thisType.constraint = type;
     type.declaredProperties = properties;
-    type.declaredCallSignatures = emptyArray;
-    type.declaredConstructSignatures = emptyArray;
+    type.declaredCallSignatures = qc.emptyArray;
+    type.declaredConstructSignatures = qc.emptyArray;
     type.declaredStringIndexInfo = undefined;
     type.declaredNumberIndexInfo = undefined;
     type.minLength = minLength;
@@ -11952,7 +11952,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (isPrivateIdentifier(name)) {
       return neverType;
     }
-    return isIdentifier(name) ? getLiteralType(unescapeLeadingUnderscores(name.escapedText)) : getRegularTypeOfLiteralType(isComputedPropertyName(name) ? checkComputedPropertyName(name) : checkExpression(name));
+    return isIdentifier(name) ? getLiteralType(unqpu.escapeLeadingUnderscores(name.escapedText)) : getRegularTypeOfLiteralType(isComputedPropertyName(name) ? checkComputedPropertyName(name) : checkExpression(name));
   }
 
   function getBigIntLiteralType(node: BigIntLiteral): LiteralType {
@@ -12122,9 +12122,9 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (accessNode && everyType(objectType, (t) => !t.target.hasRestElement) && !(accessFlags & AccessFlags.NoTupleBoundsCheck)) {
           const indexNode = getIndexNodeForAccessExpression(accessNode);
           if (isTupleType(objectType)) {
-            error(indexNode, Diagnostics.Tuple_type_0_of_length_1_has_no_element_at_index_2, typeToString(objectType), getTypeReferenceArity(objectType), unescapeLeadingUnderscores(propName));
+            error(indexNode, Diagnostics.Tuple_type_0_of_length_1_has_no_element_at_index_2, typeToString(objectType), getTypeReferenceArity(objectType), unqpu.escapeLeadingUnderscores(propName));
           } else {
-            error(indexNode, Diagnostics.Property_0_does_not_exist_on_type_1, unescapeLeadingUnderscores(propName), typeToString(objectType));
+            error(indexNode, Diagnostics.Property_0_does_not_exist_on_type_1, unqpu.escapeLeadingUnderscores(propName), typeToString(objectType));
           }
         }
         errorIfWritingToReadonlyIndex(getIndexInfoOfType(objectType, IndexKind.Number));
@@ -12160,7 +12160,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
       if (accessExpression && !isConstEnumObjectType(objectType)) {
         if (objectType.symbol === globalThisSymbol && propName !== undefined && globalThisSymbol.exports!.has(propName) && globalThisSymbol.exports!.get(propName)!.flags & SymbolFlags.BlockScoped) {
-          error(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, unescapeLeadingUnderscores(propName), typeToString(objectType));
+          error(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, unqpu.escapeLeadingUnderscores(propName), typeToString(objectType));
         } else if (noImplicitAny && !compilerOptions.suppressImplicitAnyIndexErrors && !suppressNoImplicitAnyError) {
           if (propName !== undefined && typeHasStaticProperty(propName, objectType)) {
             error(accessExpression, Diagnostics.Property_0_is_a_static_member_of_type_1, propName as string, typeToString(objectType));
@@ -12745,7 +12745,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           members.set(prop.escapedName, result);
         }
       }
-      const spread = createAnonymousType(type.symbol, members, emptyArray, emptyArray, getIndexInfoOfType(type, IndexKind.String), getIndexInfoOfType(type, IndexKind.Number));
+      const spread = createAnonymousType(type.symbol, members, qc.emptyArray, qc.emptyArray, getIndexInfoOfType(type, IndexKind.String), getIndexInfoOfType(type, IndexKind.Number));
       spread.objectFlags |= ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
       return spread;
     }
@@ -12848,7 +12848,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
     }
 
-    const spread = createAnonymousType(symbol, members, emptyArray, emptyArray, getIndexInfoWithReadonly(stringIndexInfo, readonly), getIndexInfoWithReadonly(numberIndexInfo, readonly));
+    const spread = createAnonymousType(symbol, members, qc.emptyArray, qc.emptyArray, getIndexInfoWithReadonly(stringIndexInfo, readonly), getIndexInfoWithReadonly(numberIndexInfo, readonly));
     spread.objectFlags |= ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral | ObjectFlags.ContainsSpread | objectFlags;
     return spread;
   }
@@ -13282,7 +13282,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         const templateTagParameters = getTypeParametersFromDeclaration(declaration as DeclarationWithTypeParameters);
         outerTypeParameters = addRange(outerTypeParameters, templateTagParameters);
       }
-      typeParameters = outerTypeParameters || emptyArray;
+      typeParameters = outerTypeParameters || qc.emptyArray;
       typeParameters = (target.objectFlags & ObjectFlags.Reference || target.symbol.flags & SymbolFlags.TypeLiteral) && !target.aliasTypeArguments ? filter(typeParameters, (tp) => isTypeParameterPossiblyReferenced(tp, declaration)) : typeParameters;
       links.outerTypeParameters = typeParameters;
       if (typeParameters.length) {
@@ -13634,8 +13634,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         const result = createObjectType(ObjectFlags.Anonymous, type.symbol);
         result.members = resolved.members;
         result.properties = resolved.properties;
-        result.callSignatures = emptyArray;
-        result.constructSignatures = emptyArray;
+        result.callSignatures = qc.emptyArray;
+        result.constructSignatures = qc.emptyArray;
         return result;
       }
     } else if (type.flags & TypeFlags.Intersection) {
@@ -13895,7 +13895,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             if (!issuedElaboration && ((targetProp && length(targetProp.declarations)) || (target.symbol && length(target.symbol.declarations)))) {
               const targetNode = targetProp && length(targetProp.declarations) ? targetProp.declarations[0] : target.symbol.declarations[0];
               if (!qu.getSourceFileOfNode(targetNode).hasNoDefaultLib) {
-                addRelatedInfo(reportedDiag, qu.createDiagnosticForNode(targetNode, Diagnostics.The_expected_type_comes_from_property_0_which_is_declared_here_on_type_1, propertyName && !(nameType.flags & TypeFlags.UniqueESSymbol) ? unescapeLeadingUnderscores(propertyName) : typeToString(nameType), typeToString(target)));
+                addRelatedInfo(reportedDiag, qu.createDiagnosticForNode(targetNode, Diagnostics.The_expected_type_comes_from_property_0_which_is_declared_here_on_type_1, propertyName && !(nameType.flags & TypeFlags.UniqueESSymbol) ? unqpu.escapeLeadingUnderscores(propertyName) : typeToString(nameType), typeToString(target)));
               }
             }
           }
@@ -13960,7 +13960,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (isJsxOpeningElement(node.parent) && isJsxElement(node.parent.parent)) {
       const containingElement = node.parent.parent;
       const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
-      const childrenPropName = childPropName === undefined ? 'children' : unescapeLeadingUnderscores(childPropName);
+      const childrenPropName = childPropName === undefined ? 'children' : unqpu.escapeLeadingUnderscores(childPropName);
       const childrenNameType = getLiteralType(childrenPropName);
       const childrenTargetType = getIndexedAccessType(target, childrenNameType);
       const validChildren = getSemanticJsxChildren(containingElement.children);
@@ -14016,7 +14016,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (!invalidTextDiagnostic) {
         const tagNameText = qu.getTextOfNode(node.parent.tagName);
         const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
-        const childrenPropName = childPropName === undefined ? 'children' : unescapeLeadingUnderscores(childPropName);
+        const childrenPropName = childPropName === undefined ? 'children' : unqpu.escapeLeadingUnderscores(childPropName);
         const childrenTargetType = getIndexedAccessType(target, getLiteralType(childrenPropName));
         const diagnostic = Diagnostics._0_components_don_t_accept_text_as_child_elements_Text_in_JSX_has_the_type_string_but_the_expected_type_of_1_is_2;
         invalidTextDiagnostic = {
@@ -14197,7 +14197,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       }
       if (!related) {
         if (reportErrors) {
-          errorReporter!(Diagnostics.Types_of_parameters_0_and_1_are_incompatible, unescapeLeadingUnderscores(getParameterNameAtPosition(source, i)), unescapeLeadingUnderscores(getParameterNameAtPosition(target, i)));
+          errorReporter!(Diagnostics.Types_of_parameters_0_and_1_are_incompatible, unqpu.escapeLeadingUnderscores(getParameterNameAtPosition(source, i)), unqpu.escapeLeadingUnderscores(getParameterNameAtPosition(target, i)));
         }
         return Ternary.False;
       }
@@ -14902,7 +14902,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         const propType = (prop && getTypeOfSymbol(prop)) || (isNumericLiteralName(name) && getIndexTypeOfType(type, IndexKind.Number)) || getIndexTypeOfType(type, IndexKind.String) || undefinedType;
         return append(propTypes, propType);
       };
-      return getUnionType(reduceLeft(types, appendPropType, /*initial*/ undefined) || emptyArray);
+      return getUnionType(reduceLeft(types, appendPropType, /*initial*/ undefined) || qc.emptyArray);
     }
 
     function hasExcessProperties(source: FreshObjectLiteralType, target: Type, reportErrors: boolean): boolean {
@@ -15060,7 +15060,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return result;
     }
 
-    function typeArgumentsRelatedTo(sources: readonly Type[] = emptyArray, targets: readonly Type[] = emptyArray, variances: readonly VarianceFlags[] = emptyArray, reportErrors: boolean, intersectionState: IntersectionState): Ternary {
+    function typeArgumentsRelatedTo(sources: readonly Type[] = qc.emptyArray, targets: readonly Type[] = qc.emptyArray, variances: readonly VarianceFlags[] = qc.emptyArray, reportErrors: boolean, intersectionState: IntersectionState): Ternary {
       if (sources.length !== targets.length && relation === qc.identityRelation) {
         return Ternary.False;
       }
@@ -15245,7 +15245,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       // the order in which things were checked.
       if (source.flags & (TypeFlags.Object | TypeFlags.Conditional) && source.aliasSymbol && source.aliasTypeArguments && source.aliasSymbol === target.aliasSymbol && !(source.aliasTypeArgumentsContainsMarker || target.aliasTypeArgumentsContainsMarker)) {
         const variances = getAliasVariances(source.aliasSymbol);
-        if (variances === emptyArray) {
+        if (variances === qc.emptyArray) {
           return Ternary.Maybe;
         }
         const varianceResult = relateVariances(source.aliasTypeArguments, target.aliasTypeArguments, variances, intersectionState);
@@ -15434,10 +15434,10 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           // type references (which are intended by be compared structurally). Obtain the variance
           // information for the type parameters and relate the type arguments accordingly.
           const variances = getVariances(source.target);
-          // We return Ternary.Maybe for a recursive invocation of getVariances (signalled by emptyArray). This
+          // We return Ternary.Maybe for a recursive invocation of getVariances (signalled by qc.emptyArray). This
           // effectively means we measure variance only from type parameter occurrences that aren't nested in
           // recursive instantiations of the generic type.
-          if (variances === emptyArray) {
+          if (variances === qc.emptyArray) {
             return Ternary.Maybe;
           }
           const varianceResult = relateVariances(getTypeArguments(source), getTypeArguments(<TypeReference>target), variances, intersectionState);
@@ -15523,7 +15523,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         // (in which case any type argument is permitted on the source side). In those cases we proceed
         // with a structural comparison. Otherwise, we know for certain the instantiations aren't
         // related and we can return here.
-        if (variances !== emptyArray && !allowStructuralFallback) {
+        if (variances !== qc.emptyArray && !allowStructuralFallback) {
           // In some cases generic types that are covariant in regular type checking mode become
           // invariant in --strictFunctionTypes mode because one or more type parameters are used in
           // both co- and contravariant positions. In order to make it easier to diagnose *why* such
@@ -16218,12 +16218,12 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   // a digest of the type comparisons that occur for each type argument when instantiations of the
   // generic type are structurally compared. We infer the variance information by comparing
   // instantiations of the generic type for type arguments with known relations. The function
-  // returns the emptyArray singleton when invoked recursively for the given generic type.
-  function getVariancesWorker<TCache extends { variances?: VarianceFlags[] }>(typeParameters: readonly TypeParameter[] = emptyArray, cache: TCache, createMarkerType: (input: TCache, param: TypeParameter, marker: Type) => Type): VarianceFlags[] {
+  // returns the qc.emptyArray singleton when invoked recursively for the given generic type.
+  function getVariancesWorker<TCache extends { variances?: VarianceFlags[] }>(typeParameters: readonly TypeParameter[] = qc.emptyArray, cache: TCache, createMarkerType: (input: TCache, param: TypeParameter, marker: Type) => Type): VarianceFlags[] {
     let variances = cache.variances;
     if (!variances) {
-      // The emptyArray singleton is used to signal a recursive invocation.
-      cache.variances = emptyArray;
+      // The qc.emptyArray singleton is used to signal a recursive invocation.
+      cache.variances = qc.emptyArray;
       variances = [];
       for (const tp of typeParameters) {
         let unmeasurable = false;
@@ -16956,7 +16956,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
     const stringIndexInfo = getIndexInfoOfType(type, IndexKind.String);
     const numberIndexInfo = getIndexInfoOfType(type, IndexKind.Number);
-    const result = createAnonymousType(type.symbol, members, emptyArray, emptyArray, stringIndexInfo && createIndexInfo(getWidenedType(stringIndexInfo.type), stringIndexInfo.isReadonly), numberIndexInfo && createIndexInfo(getWidenedType(numberIndexInfo.type), numberIndexInfo.isReadonly));
+    const result = createAnonymousType(type.symbol, members, qc.emptyArray, qc.emptyArray, stringIndexInfo && createIndexInfo(getWidenedType(stringIndexInfo.type), stringIndexInfo.isReadonly), numberIndexInfo && createIndexInfo(getWidenedType(numberIndexInfo.type), numberIndexInfo.isReadonly));
     result.objectFlags |= getObjectFlags(type) & (ObjectFlags.JSLiteral | ObjectFlags.NonInferrableType); // Retain js literal flag through widening
     return result;
   }
@@ -17257,7 +17257,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (!(t.flags & TypeFlags.StringLiteral)) {
         return;
       }
-      const name = escapeLeadingUnderscores(t.value);
+      const name = qpu.escapeLeadingUnderscores(t.value);
       const literalProp = createSymbol(SymbolFlags.Property, name);
       literalProp.type = anyType;
       if (t.symbol) {
@@ -17267,7 +17267,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       members.set(name, literalProp);
     });
     const indexInfo = type.flags & TypeFlags.String ? createIndexInfo(emptyObjectType, /*isReadonly*/ false) : undefined;
-    return createAnonymousType(undefined, members, emptyArray, emptyArray, indexInfo, undefined);
+    return createAnonymousType(undefined, members, qc.emptyArray, qc.emptyArray, indexInfo, undefined);
   }
 
   /**
@@ -18140,7 +18140,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getAccessedPropertyName(access: AccessExpression): qt.__String | undefined {
-    return access.kind === qt.SyntaxKind.PropertyAccessExpression ? access.name.escapedText : isStringOrNumericLiteralLike(access.argumentExpression) ? escapeLeadingUnderscores(access.argumentExpression.text) : undefined;
+    return access.kind === qt.SyntaxKind.PropertyAccessExpression ? access.name.escapedText : isStringOrNumericLiteralLike(access.argumentExpression) ? qpu.escapeLeadingUnderscores(access.argumentExpression.text) : undefined;
   }
 
   function containsMatchingReference(source: Node, target: Node) {
@@ -18483,7 +18483,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           witnesses.push(clause.expression.text);
           continue;
         }
-        return emptyArray;
+        return qc.emptyArray;
       }
       if (retainDefault) witnesses.push(/*explicitDefaultStatement*/ undefined);
     }
@@ -19330,7 +19330,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
 
     function narrowByInKeyword(type: Type, literal: LiteralExpression, assumeTrue: boolean) {
       if (type.flags & (TypeFlags.Union | TypeFlags.Object) || isThisTypeParameter(type)) {
-        const propName = escapeLeadingUnderscores(literal.text);
+        const propName = qpu.escapeLeadingUnderscores(literal.text);
         return filterType(type, (t) => isTypePresencePossible(t, propName, assumeTrue));
       }
       return type;
@@ -20970,7 +20970,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (isGenericMappedType(t)) {
           const constraint = getConstraintTypeFromMappedType(t);
           const constraintOfConstraint = getBaseConstraintOfType(constraint) || constraint;
-          const propertyNameType = getLiteralType(unescapeLeadingUnderscores(name));
+          const propertyNameType = getLiteralType(unqpu.escapeLeadingUnderscores(name));
           if (isTypeAssignableTo(propertyNameType, constraintOfConstraint)) {
             return substituteIndexedMappedType(t, propertyNameType);
           }
@@ -21386,7 +21386,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (!attributesType) {
       // There is no property named 'props' on this instance type
       if (!!forcedLookupLocation && !!length(context.attributes.properties)) {
-        error(context, Diagnostics.JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property, unescapeLeadingUnderscores(forcedLookupLocation));
+        error(context, Diagnostics.JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property, unqpu.escapeLeadingUnderscores(forcedLookupLocation));
       }
       return unknownType;
     }
@@ -21843,7 +21843,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     function createObjectLiteralType() {
       const stringIndexInfo = hasComputedStringProperty ? getObjectLiteralIndexInfo(node, offset, propertiesArray, IndexKind.String) : undefined;
       const numberIndexInfo = hasComputedNumberProperty ? getObjectLiteralIndexInfo(node, offset, propertiesArray, IndexKind.Number) : undefined;
-      const result = createAnonymousType(node.symbol, propertiesTable, emptyArray, emptyArray, stringIndexInfo, numberIndexInfo);
+      const result = createAnonymousType(node.symbol, propertiesTable, qc.emptyArray, qc.emptyArray, stringIndexInfo, numberIndexInfo);
       result.objectFlags |= objectFlags | ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
       if (isJSObjectLiteral) {
         result.objectFlags |= ObjectFlags.JSLiteral;
@@ -22005,7 +22005,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         // This is because children element will overwrite the value from attributes.
         // Note: we will not warn "children" attribute overwritten if "children" attribute is specified in object spread.
         if (explicitlySpecifyChildrenAttribute) {
-          error(attributes, Diagnostics._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, unescapeLeadingUnderscores(jsxChildrenPropertyName));
+          error(attributes, Diagnostics._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, unqpu.escapeLeadingUnderscores(jsxChildrenPropertyName));
         }
 
         const contextualType = getApparentTypeOfContextualType(openingLikeElement.attributes);
@@ -22014,12 +22014,12 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         const childrenPropSymbol = createSymbol(SymbolFlags.Property | SymbolFlags.Transient, jsxChildrenPropertyName);
         childrenPropSymbol.type = childrenTypes.length === 1 ? childrenTypes[0] : getArrayLiteralTupleTypeIfApplicable(childrenTypes, childrenContextualType, /*hasRestElement*/ false) || createArrayType(getUnionType(childrenTypes));
         // Fake up a property declaration for the children
-        childrenPropSymbol.valueDeclaration = createPropertySignature(/*modifiers*/ undefined, unescapeLeadingUnderscores(jsxChildrenPropertyName), /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined);
+        childrenPropSymbol.valueDeclaration = createPropertySignature(/*modifiers*/ undefined, unqpu.escapeLeadingUnderscores(jsxChildrenPropertyName), /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined);
         childrenPropSymbol.valueDeclaration.parent = attributes;
         childrenPropSymbol.valueDeclaration.symbol = childrenPropSymbol;
         const childPropMap =qu.createSymbolTable();
         childPropMap.set(jsxChildrenPropertyName, childrenPropSymbol);
-        spread = getSpreadType(spread, createAnonymousType(attributes.symbol, childPropMap, emptyArray, emptyArray, /*stringIndexInfo*/ undefined, /*numberIndexInfo*/ undefined), attributes.symbol, objectFlags, /*readonly*/ false);
+        spread = getSpreadType(spread, createAnonymousType(attributes.symbol, childPropMap, qc.emptyArray, qc.emptyArray, /*stringIndexInfo*/ undefined, /*numberIndexInfo*/ undefined), attributes.symbol, objectFlags, /*readonly*/ false);
       }
     }
 
@@ -22038,7 +22038,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
      */
     function createJsxAttributesType() {
       objectFlags |= freshObjectLiteralFlag;
-      const result = createAnonymousType(attributes.symbol, attributesTable, emptyArray, emptyArray, /*stringIndexInfo*/ undefined, /*numberIndexInfo*/ undefined);
+      const result = createAnonymousType(attributes.symbol, attributesTable, qc.emptyArray, qc.emptyArray, /*stringIndexInfo*/ undefined, /*numberIndexInfo*/ undefined);
       result.objectFlags |= objectFlags | ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
       return result;
     }
@@ -22065,7 +22065,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const left = props.get(right.escapedName);
       const rightType = getTypeOfSymbol(right);
       if (left && !maybeTypeOfKind(rightType, TypeFlags.Nullable) && !(maybeTypeOfKind(rightType, TypeFlags.AnyOrUnknown) && right.flags & SymbolFlags.Optional)) {
-        const diagnostic = error(left.valueDeclaration, Diagnostics._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, unescapeLeadingUnderscores(left.escapedName));
+        const diagnostic = error(left.valueDeclaration, Diagnostics._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, unqpu.escapeLeadingUnderscores(left.escapedName));
         addRelatedInfo(diagnostic, qu.createDiagnosticForNode(spread, Diagnostics.This_spread_always_overwrites_this_property));
       }
     }
@@ -22118,7 +22118,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         return (links.resolvedSymbol = unknownSymbol);
       } else {
         if (noImplicitAny) {
-          error(node, Diagnostics.JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists, unescapeLeadingUnderscores(JsxNames.IntrinsicElements));
+          error(node, Diagnostics.JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists, unqpu.escapeLeadingUnderscores(JsxNames.IntrinsicElements));
         }
         return (links.resolvedSymbol = unknownSymbol);
       }
@@ -22176,7 +22176,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         return propertiesOfJsxElementAttribPropInterface[0].escapedName;
       } else if (propertiesOfJsxElementAttribPropInterface.length > 1) {
         // More than one property on ElementAttributesProperty is an error
-        error(jsxElementAttribPropInterfaceSym!.declarations[0], Diagnostics.The_global_type_JSX_0_may_not_have_more_than_one_property, unescapeLeadingUnderscores(nameOfAttribPropContainer));
+        error(jsxElementAttribPropInterfaceSym!.declarations[0], Diagnostics.The_global_type_JSX_0_may_not_have_more_than_one_property, unqpu.escapeLeadingUnderscores(nameOfAttribPropContainer));
       }
     }
     return undefined;
@@ -22207,7 +22207,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const intrinsicType = getIntrinsicAttributesTypeFromStringLiteralType(elementType, caller);
       if (!intrinsicType) {
         error(caller, Diagnostics.Property_0_does_not_exist_on_type_1, elementType.value, 'JSX.' + JsxNames.IntrinsicElements);
-        return emptyArray;
+        return qc.emptyArray;
       } else {
         const fakeSignature = createSignatureForJSXIntrinsic(caller, intrinsicType);
         return [fakeSignature];
@@ -22235,7 +22235,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, location);
     if (intrinsicElementsType !== errorType) {
       const stringLiteralTypeName = type.value;
-      const intrinsicProp = getPropertyOfType(intrinsicElementsType, escapeLeadingUnderscores(stringLiteralTypeName));
+      const intrinsicProp = getPropertyOfType(intrinsicElementsType, qpu.escapeLeadingUnderscores(stringLiteralTypeName));
       if (intrinsicProp) {
         return getTypeOfSymbol(intrinsicProp);
       }
@@ -22321,7 +22321,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
    */
   function getJsxIntrinsicTagNamesAt(location: Node): symbol[] {
     const intrinsics = getJsxType(JsxNames.IntrinsicElements, location);
-    return intrinsics ? getPropertiesOfType(intrinsics) : emptyArray;
+    return intrinsics ? getPropertiesOfType(intrinsics) : qc.emptyArray;
   }
 
   function checkJsxPreconditions(errorNode: Node) {
@@ -22727,7 +22727,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         }
         if (leftType.symbol === globalThisSymbol) {
           if (globalThisSymbol.exports!.has(right.escapedText) && globalThisSymbol.exports!.get(right.escapedText)!.flags & SymbolFlags.BlockScoped) {
-            error(right, Diagnostics.Property_0_does_not_exist_on_type_1, unescapeLeadingUnderscores(right.escapedText), typeToString(leftType));
+            error(right, Diagnostics.Property_0_does_not_exist_on_type_1, unqpu.escapeLeadingUnderscores(right.escapedText), typeToString(leftType));
           } else if (noImplicitAny) {
             error(right, Diagnostics.Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature, typeToString(leftType));
           }
@@ -22924,7 +22924,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       // Sometimes the symbol is found when location is a return type of a function: `typeof x` and `x` is declared in the body of the function
       // So the table *contains* `x` but `x` isn't actually in scope.
       // However, resolveNameHelper will continue and call this callback again, so we'll eventually get a correct suggestion.
-      return symbol || getSpellingSuggestionForName(unescapeLeadingUnderscores(name), qc.arrayFrom(symbols.values()), meaning);
+      return symbol || getSpellingSuggestionForName(unqpu.escapeLeadingUnderscores(name), qc.arrayFrom(symbols.values()), meaning);
     });
     return result;
   }
@@ -23631,7 +23631,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (isJsxOpeningLikeElement(node)) {
       if (!checkApplicableSignatureForJsxOpeningLikeElement(node, signature, relation, checkMode, reportErrors, containingMessageChain, errorOutputContainer)) {
         Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'jsx should have errors when reporting errors');
-        return errorOutputContainer.errors || emptyArray;
+        return errorOutputContainer.errors || qc.emptyArray;
       }
       return undefined;
     }
@@ -23657,7 +23657,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       const headMessage = Diagnostics.The_this_context_of_type_0_is_not_assignable_to_method_s_this_of_type_1;
       if (!checkTypeRelatedTo(thisArgumentType, thisType, relation, errorNode, headMessage, containingMessageChain, errorOutputContainer)) {
         Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'this parameter should have errors when reporting errors');
-        return errorOutputContainer.errors || emptyArray;
+        return errorOutputContainer.errors || qc.emptyArray;
       }
     }
     const headMessage = Diagnostics.Argument_of_type_0_is_not_assignable_to_parameter_of_type_1;
@@ -23675,7 +23675,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         if (!checkTypeRelatedToAndOptionallyElaborate(checkArgType, paramType, relation, reportErrors ? arg : undefined, arg, headMessage, containingMessageChain, errorOutputContainer)) {
           Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'parameter should have errors when reporting errors');
           maybeAddMissingAwaitInfo(arg, checkArgType, paramType);
-          return errorOutputContainer.errors || emptyArray;
+          return errorOutputContainer.errors || qc.emptyArray;
         }
       }
     }
@@ -23685,7 +23685,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (!checkTypeRelatedTo(spreadType, restType, relation, errorNode, headMessage, /*containingMessageChain*/ undefined, errorOutputContainer)) {
         Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'rest parameter should have errors when reporting errors');
         maybeAddMissingAwaitInfo(errorNode, spreadType, restType);
-        return errorOutputContainer.errors || emptyArray;
+        return errorOutputContainer.errors || qc.emptyArray;
       }
     }
     return undefined;
@@ -23743,9 +23743,9 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return getEffectiveDecoratorArguments(node);
     }
     if (isJsxOpeningLikeElement(node)) {
-      return node.attributes.properties.length > 0 || (isJsxOpeningElement(node) && node.parent.children.length > 0) ? [node.attributes] : emptyArray;
+      return node.attributes.properties.length > 0 || (isJsxOpeningElement(node) && node.parent.children.length > 0) ? [node.attributes] : qc.emptyArray;
     }
-    const args = node.arguments || emptyArray;
+    const args = node.arguments || qc.emptyArray;
     const length = args.length;
     if (length && isSpreadArgument(args[length - 1]) && getSpreadArgumentIndex(args) === length - 1) {
       // We have a spread argument in the last position and no other spread arguments. If the type
@@ -24198,7 +24198,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function createUnionOfSignaturesForOverloadFailure(candidates: readonly Signature[]): Signature {
-    const thisParameters = mapDefined(candidates, (c) => c.thisParameter);
+    const thisParameters = qc.mapDefined(candidates, (c) => c.thisParameter);
     let thisParameter: symbol | undefined;
     if (thisParameters.length) {
       thisParameter = createCombinedSymbolFromTypes(thisParameters, thisParameters.map(getTypeOfParameter));
@@ -24206,19 +24206,19 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     const { min: minArgumentCount, max: maxNonRestParam } = minAndMax(candidates, getNumNonRestParameters);
     const parameters: symbol[] = [];
     for (let i = 0; i < maxNonRestParam; i++) {
-      const symbols = mapDefined(candidates, (s) => (signatureHasRestParameter(s) ? (i < s.parameters.length - 1 ? s.parameters[i] : last(s.parameters)) : i < s.parameters.length ? s.parameters[i] : undefined));
+      const symbols = qc.mapDefined(candidates, (s) => (signatureHasRestParameter(s) ? (i < s.parameters.length - 1 ? s.parameters[i] : last(s.parameters)) : i < s.parameters.length ? s.parameters[i] : undefined));
       Debug.assert(symbols.length !== 0);
       parameters.push(
         createCombinedSymbolFromTypes(
           symbols,
-          mapDefined(candidates, (candidate) => tryGetTypeAtPosition(candidate, i))
+          qc.mapDefined(candidates, (candidate) => tryGetTypeAtPosition(candidate, i))
         )
       );
     }
-    const restParameterSymbols = mapDefined(candidates, (c) => (signatureHasRestParameter(c) ? last(c.parameters) : undefined));
+    const restParameterSymbols = qc.mapDefined(candidates, (c) => (signatureHasRestParameter(c) ? last(c.parameters) : undefined));
     let flags = SignatureFlags.None;
     if (restParameterSymbols.length !== 0) {
-      const type = createArrayType(getUnionType(mapDefined(candidates, tryGetRestTypeOfSignature), UnionReduction.Subtype));
+      const type = createArrayType(getUnionType(qc.mapDefined(candidates, tryGetRestTypeOfSignature), UnionReduction.Subtype));
       parameters.push(createCombinedSymbolForOverloadFailure(restParameterSymbols, type));
       flags |= SignatureFlags.HasRestParameter;
     }
@@ -24956,7 +24956,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (decl) {
         const jsSymbol = getSymbolOfNode(decl);
         if (jsSymbol && qu.hasEntries(jsSymbol.exports)) {
-          const jsAssignmentType = createAnonymousType(jsSymbol, jsSymbol.exports, emptyArray, emptyArray, undefined, undefined);
+          const jsAssignmentType = createAnonymousType(jsSymbol, jsSymbol.exports, qc.emptyArray, qc.emptyArray, undefined, undefined);
           jsAssignmentType.objectFlags |= ObjectFlags.JSLiteral;
           return getIntersectionType([returnType, jsAssignmentType]);
         }
@@ -25027,7 +25027,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           newSymbol.target = resolveSymbol(symbol);
           memberTable.set(InternalSymbolName.Default, newSymbol);
           const anonymousSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
-          const defaultContainingObject = createAnonymousType(anonymousSymbol, memberTable, emptyArray, emptyArray, /*stringIndexInfo*/ undefined, /*numberIndexInfo*/ undefined);
+          const defaultContainingObject = createAnonymousType(anonymousSymbol, memberTable, qc.emptyArray, qc.emptyArray, /*stringIndexInfo*/ undefined, /*numberIndexInfo*/ undefined);
           anonymousSymbol.type = defaultContainingObject;
           synthType.syntheticType = isValidSpreadType(type) ? getSpreadType(type, defaultContainingObject, anonymousSymbol, /*objectFlags*/ 0, /*readonly*/ false) : defaultContainingObject;
         } else {
@@ -25796,8 +25796,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             return links.contextFreeType;
           }
           const returnType = getReturnTypeFromBody(node, checkMode);
-          const returnOnlySignature = createSignature(undefined, undefined, undefined, emptyArray, returnType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
-          const returnOnlyType = createAnonymousType(node.symbol, emptySymbols, [returnOnlySignature], emptyArray, undefined, undefined);
+          const returnOnlySignature = createSignature(undefined, undefined, undefined, qc.emptyArray, returnType, /*resolvedTypePredicate*/ undefined, 0, SignatureFlags.None);
+          const returnOnlyType = createAnonymousType(node.symbol, emptySymbols, [returnOnlySignature], qc.emptyArray, undefined, undefined);
           returnOnlyType.objectFlags |= ObjectFlags.NonInferrableType;
           return (links.contextFreeType = returnOnlyType);
         }
@@ -26768,8 +26768,8 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
             const name = prop.escapedName;
             const symbol = resolveName(prop.valueDeclaration, name, SymbolFlags.Type, undefined, name, /*isUse*/ false);
             if (symbol && symbol.declarations.some(isJSDocTypedefTag)) {
-              addDuplicateDeclarationErrorsForSymbols(symbol, Diagnostics.Duplicate_identifier_0, unescapeLeadingUnderscores(name), prop);
-              addDuplicateDeclarationErrorsForSymbols(prop, Diagnostics.Duplicate_identifier_0, unescapeLeadingUnderscores(name), symbol);
+              addDuplicateDeclarationErrorsForSymbols(symbol, Diagnostics.Duplicate_identifier_0, unqpu.escapeLeadingUnderscores(name), prop);
+              addDuplicateDeclarationErrorsForSymbols(prop, Diagnostics.Duplicate_identifier_0, unqpu.escapeLeadingUnderscores(name), symbol);
             }
           }
         }
@@ -26817,7 +26817,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
         // A compound assignment furthermore requires VarExpr to be classified as a reference (section 4.1)
         // and the type of the non-compound operation to be assignable to the type of VarExpr.
 
-        if (checkReferenceExpression(left, Diagnostics.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access, Diagnostics.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access) && (!isIdentifier(left) || unescapeLeadingUnderscores(left.escapedText) !== 'exports')) {
+        if (checkReferenceExpression(left, Diagnostics.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access, Diagnostics.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access) && (!isIdentifier(left) || unqpu.escapeLeadingUnderscores(left.escapedText) !== 'exports')) {
           // to avoid cascading errors check assignability only if 'isReference' check succeeded and no errors were reported
           checkTypeAssignableToAndOptionallyElaborate(valueType, leftType, left, right);
         }
@@ -28219,7 +28219,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       if (propertyName) {
         const propertySymbol = forEachType(apparentObjectType, (t) => getPropertyOfType(t, propertyName));
         if (propertySymbol && getDeclarationModifierFlagsFromSymbol(propertySymbol) & qt.ModifierFlags.NonPublicAccessibilityModifier) {
-          error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, unescapeLeadingUnderscores(propertyName));
+          error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, unqpu.escapeLeadingUnderscores(propertyName));
           return errorType;
         }
       }
@@ -28685,7 +28685,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       return undefined;
     }
 
-    const thenSignatures = thenFunction ? getSignaturesOfType(thenFunction, SignatureKind.Call) : emptyArray;
+    const thenSignatures = thenFunction ? getSignaturesOfType(thenFunction, SignatureKind.Call) : qc.emptyArray;
     if (thenSignatures.length === 0) {
       if (errorNode) {
         error(errorNode, Diagnostics.A_promise_must_have_a_then_method);
@@ -30763,7 +30763,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     }
 
     // Both async and non-async iterators *must* have a `next` method.
-    const methodSignatures = methodType ? getSignaturesOfType(methodType, SignatureKind.Call) : emptyArray;
+    const methodSignatures = methodType ? getSignaturesOfType(methodType, SignatureKind.Call) : qc.emptyArray;
     if (methodSignatures.length === 0) {
       if (errorNode) {
         const diagnostic = methodName === 'next' ? resolver.mustHaveANextMethodDiagnostic : resolver.mustBeAMethodDiagnostic;
@@ -31858,7 +31858,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
               if (ex.kind === qt.SyntaxKind.PropertyAccessExpression) {
                 name = ex.name.escapedText;
               } else {
-                name = escapeLeadingUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
+                name = qpu.escapeLeadingUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
               }
               return evaluateEnumMember(expr, type.symbol, name);
             }
@@ -32452,7 +32452,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           if (exportedDeclarationsCount > 1) {
             for (const declaration of declarations) {
               if (isNotOverload(declaration)) {
-                diagnostics.add(qu.createDiagnosticForNode(declaration, Diagnostics.Cannot_redeclare_exported_variable_0, unescapeLeadingUnderscores(id)));
+                diagnostics.add(qu.createDiagnosticForNode(declaration, Diagnostics.Cannot_redeclare_exported_variable_0, unqpu.escapeLeadingUnderscores(id)));
               }
             }
           }
@@ -32805,7 +32805,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function getPotentiallyUnusedIdentifiers(sourceFile: SourceFile): readonly PotentiallyUnusedIdentifier[] {
-    return allPotentiallyUnusedIdentifiers.get(sourceFile.path) || emptyArray;
+    return allPotentiallyUnusedIdentifiers.get(sourceFile.path) || qc.emptyArray;
   }
 
   // Fully type check a source file and collect the relevant diagnostics.
@@ -33334,7 +33334,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
       case qt.SyntaxKind.NumericLiteral:
         // index access
         const objectType = isElementAccessExpression(parent) ? (parent.argumentExpression === node ? getTypeOfExpression(parent.expression) : undefined) : isLiteralTypeNode(parent) && isIndexedAccessTypeNode(grandParent) ? getTypeFromTypeNode(grandParent.objectType) : undefined;
-        return objectType && getPropertyOfType(objectType, escapeLeadingUnderscores((node as StringLiteral | NumericLiteral).text));
+        return objectType && getPropertyOfType(objectType, qpu.escapeLeadingUnderscores((node as StringLiteral | NumericLiteral).text));
 
       case qt.SyntaxKind.DefaultKeyword:
       case qt.SyntaxKind.FunctionKeyword:
@@ -33535,7 +33535,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
   function getImmediateRootSymbols(symbol: symbol): readonly symbol[] | undefined {
     if (getCheckFlags(symbol) & CheckFlags.Synthetic) {
-      return mapDefined(getSymbolLinks(symbol).containingType!.types, (type) => getPropertyOfType(type, symbol.escapedName));
+      return qc.mapDefined(getSymbolLinks(symbol).containingType!.types, (type) => getPropertyOfType(type, symbol.escapedName));
     } else if (symbol.flags & SymbolFlags.Transient) {
       const { leftSpread, rightSpread, syntheticOrigin } = symbol as TransientSymbol;
       return leftSpread ? [leftSpread, rightSpread] : syntheticOrigin ? [syntheticOrigin] : singleElementArray(tryGetAliasTarget(symbol));
@@ -33834,10 +33834,10 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   function getPropertiesOfContainerFunction(node: Declaration): symbol[] {
     const declaration = getParseTreeNode(node, isFunctionDeclaration);
     if (!declaration) {
-      return emptyArray;
+      return qc.emptyArray;
     }
     const symbol = getSymbolOfNode(declaration);
-    return (symbol && getPropertiesOfType(getTypeOfSymbol(symbol))) || emptyArray;
+    return (symbol && getPropertiesOfType(getTypeOfSymbol(symbol))) || qc.emptyArray;
   }
 
   function getNodeCheckFlags(node: qt.Node): NodeCheckFlags {
@@ -33975,7 +33975,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
   }
 
   function hasGlobalName(name: string): boolean {
-    return globals.has(escapeLeadingUnderscores(name));
+    return globals.has(qpu.escapeLeadingUnderscores(name));
   }
 
   function getReferencedValueSymbol(reference: Identifier, startInDeclarationContainer?: boolean): symbol | undefined {
@@ -34348,7 +34348,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     autoArrayType = createArrayType(autoType);
     if (autoArrayType === emptyObjectType) {
       // autoArrayType is used as a marker, so even if global Array type is not defined, it needs to be a unique type
-      autoArrayType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+      autoArrayType = createAnonymousType(undefined, emptySymbols, qc.emptyArray, qc.emptyArray, undefined, undefined);
     }
 
     globalReadonlyArrayType = <GenericType>getGlobalTypeOrUndefined('ReadonlyArray' as qt.__String, /*arity*/ 1) || globalArrayType;
@@ -34398,7 +34398,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
           for (let helper = ExternalEmitHelpers.FirstEmitHelper; helper <= ExternalEmitHelpers.LastEmitHelper; helper <<= 1) {
             if (uncheckedHelpers & helper) {
               const name = getHelperName(helper);
-              const symbol = getSymbol(helpersModule.exports!, escapeLeadingUnderscores(name), SymbolFlags.Value);
+              const symbol = getSymbol(helpersModule.exports!, qpu.escapeLeadingUnderscores(name), SymbolFlags.Value);
               if (!symbol) {
                 error(location, Diagnostics.This_syntax_requires_an_imported_helper_named_1_which_does_not_exist_in_0_Consider_upgrading_your_version_of_0, externalHelpersModuleNameText, name);
               }
@@ -35801,7 +35801,7 @@ export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: 
     if (!ambientModulesCache) {
       ambientModulesCache = [];
       globals.forEach((global, sym) => {
-        // No need to `unescapeLeadingUnderscores`, an escaped symbol is never an ambient module.
+        // No need to `unqpu.escapeLeadingUnderscores`, an escaped symbol is never an ambient module.
         if (ambientModuleSymbolRegex.test(sym as string)) {
           ambientModulesCache!.push(global);
         }

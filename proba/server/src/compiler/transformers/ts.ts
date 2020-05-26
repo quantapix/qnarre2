@@ -89,7 +89,7 @@ export function transformTypeScript(context: TransformationContext) {
   function transformBundle(node: Bundle) {
     return createBundle(
       node.sourceFiles.map(transformSourceFile),
-      mapDefined(node.prepends, (prepend) => {
+      qc.mapDefined(node.prepends, (prepend) => {
         if (prepend.kind === qt.SyntaxKind.InputFiles) {
           return createUnparsedSourceFile(prepend, 'js');
         }

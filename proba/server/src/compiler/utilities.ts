@@ -854,9 +854,9 @@ export function getTextOfPropertyName(name: qt.PropertyName | qt.NoSubstitutionT
     case qt.SyntaxKind.StringLiteral:
     case qt.SyntaxKind.NumericLiteral:
     case qt.SyntaxKind.NoSubstitutionTemplateLiteral:
-      return escapeLeadingUnderscores(name.text);
+      return qpu.escapeLeadingUnderscores(name.text);
     case qt.SyntaxKind.ComputedPropertyName:
-      if (isStringOrNumericLiteralLike(name.expression)) return escapeLeadingUnderscores(name.expression.text);
+      if (isStringOrNumericLiteralLike(name.expression)) return qpu.escapeLeadingUnderscores(name.expression.text);
       return Debug.fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
     default:
       return Debug.assertNever(name);
@@ -1378,7 +1378,7 @@ export function getTsConfigPropArrayElementValue(tsConfigSourceFile: qt.TsConfig
 
 export function getTsConfigPropArray(tsConfigSourceFile: qt.TsConfigSourceFile | undefined, propKey: string): readonly qt.PropertyAssignment[] {
   const jsonObjectLiteral = getTsConfigObjectLiteralExpression(tsConfigSourceFile);
-  return jsonObjectLiteral ? getPropertyAssignment(jsonObjectLiteral, propKey) : emptyArray;
+  return jsonObjectLiteral ? getPropertyAssignment(jsonObjectLiteral, propKey) : qc.emptyArray;
 }
 
 export function getContainingFunction(node: qt.Node): qt.SignatureDeclaration | undefined {
@@ -2121,7 +2121,7 @@ export function getElementOrPropertyAccessName(node: AccessExpression): qt.__Str
       return name.escapedText;
     }
     if (isStringLiteralLike(name) || isNumericLiteral(name)) {
-      return escapeLeadingUnderscores(name.text);
+      return qpu.escapeLeadingUnderscores(name.text);
     }
   }
   if (isElementAccessExpression(node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
@@ -2340,7 +2340,7 @@ export function getJSDocCommentsAndTags(hostNode: qt.Node, noCache?: boolean): r
     }
     node = getNextJSDocCommentLocation(node);
   }
-  return result || emptyArray;
+  return result || qc.emptyArray;
 }
 
 function getNextJSDocCommentLocation(node: qt.Node) {
@@ -2709,7 +2709,7 @@ export function getEffectiveImplementsTypeNodes(node: qt.ClassLikeDeclaration): 
 
 /** Returns the node in an `extends` or `implements` clause of a class or interface. */
 export function getAllSuperTypeNodes(node: qt.Node): readonly qt.TypeNode[] {
-  return isInterfaceDeclaration(node) ? getInterfaceBaseTypeNodes(node) || emptyArray : isClassLike(node) ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray : emptyArray;
+  return isInterfaceDeclaration(node) ? getInterfaceBaseTypeNodes(node) || qc.emptyArray : isClassLike(node) ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || qc.emptyArray : qc.emptyArray;
 }
 
 export function getInterfaceBaseTypeNodes(node: InterfaceDeclaration) {
@@ -2870,13 +2870,13 @@ export function getPropertyNameForPropertyNameNode(name: qt.PropertyName): qt.__
       return name.escapedText;
     case qt.SyntaxKind.StringLiteral:
     case qt.SyntaxKind.NumericLiteral:
-      return escapeLeadingUnderscores(name.text);
+      return qpu.escapeLeadingUnderscores(name.text);
     case qt.SyntaxKind.ComputedPropertyName:
       const nameExpression = name.expression;
       if (isWellKnownSymbolSyntactically(nameExpression)) {
         return getPropertyNameForKnownSymbolName(idText(nameExpression.name));
       } else if (isStringOrNumericLiteralLike(nameExpression)) {
-        return escapeLeadingUnderscores(nameExpression.text);
+        return qpu.escapeLeadingUnderscores(nameExpression.text);
       } else if (isSignedNumericLiteral(nameExpression)) {
         if (nameExpression.operator === qt.SyntaxKind.MinusToken) {
           return (qs.tokenToString(nameExpression.operator) + nameExpression.operand.text) as qt.__String;
@@ -2906,7 +2906,7 @@ export function getTextOfIdentifierOrLiteral(node: qt.PropertyNameLiteral): stri
 }
 
 export function getEscapedTextOfIdentifierOrLiteral(node: qt.PropertyNameLiteral): qt.__String {
-  return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : escapeLeadingUnderscores(node.text);
+  return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : qpu.escapeLeadingUnderscores(node.text);
 }
 
 export function getPropertyNameForUniqueESSymbol(symbol: qt.Symbol): qt.__String {
@@ -4246,7 +4246,7 @@ export function tryGetPropertyAccessOrIdentifierToString(expr: qt.Expression): s
       return baseStr + '.' + expr.name;
     }
   } else if (isIdentifier(expr)) {
-    return unescapeLeadingUnderscores(expr.escapedText);
+    return unqpu.escapeLeadingUnderscores(expr.escapedText);
   }
   return undefined;
 }
@@ -5272,7 +5272,7 @@ export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
 
 export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCanonicalFileName: qc.GetCanonicalFileName, cwd: string): qpc.ReadonlyMap<string> {
   const result = qc.createMap<string>();
-  const symlinks = flatten<readonly [string, string]>(mapDefined(files, (sf) => sf.resolvedModules && compact(arrayFrom(mapIterator(sf.resolvedModules.values(), (res) => (res && res.originalPath && res.resolvedFileName !== res.originalPath ? ([res.resolvedFileName, res.originalPath] as const) : undefined))))));
+  const symlinks = flatten<readonly [string, string]>(qc.mapDefined(files, (sf) => sf.resolvedModules && compact(arrayFrom(mapIterator(sf.resolvedModules.values(), (res) => (res && res.originalPath && res.resolvedFileName !== res.originalPath ? ([res.resolvedFileName, res.originalPath] as const) : undefined))))));
   for (const [resolvedPath, originalPath] of symlinks) {
     const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, getCanonicalFileName);
     result.set(commonOriginal, commonResolved);
@@ -5658,7 +5658,7 @@ export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileEx
     return needJsExtensions ? allSupportedExtensions : supportedTSExtensions;
   }
 
-  const extensions = [...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions), ...mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined))];
+  const extensions = [...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions), ...qc.mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined))];
 
   return deduplicate<string>(extensions, qc.equateStringsCaseSensitive, qc.compareStringsCaseSensitive);
 }
@@ -5822,8 +5822,8 @@ export function isCheckJsEnabledForFile(sourceFile: qt.SourceFile, compilerOptio
 }
 
 export const emptyFileSystemEntries: FileSystemEntries = {
-  files: emptyArray,
-  directories: emptyArray,
+  files: qc.emptyArray,
+  directories: qc.emptyArray,
 };
 
 /**

@@ -222,7 +222,7 @@ export function transformDeclarations(context: TransformationContext) {
           const updated = isSourceFileJS(sourceFile) ? createNodeArray(transformDeclarationsForJS(sourceFile)) : visitNodes(sourceFile.statements, visitDeclarationStatements);
           return updateSourceFileNode(sourceFile, transformAndReplaceLatePaintedStatements(updated), /*isDeclarationFile*/ true, /*referencedFiles*/ [], /*typeReferences*/ [], /*hasNoDefaultLib*/ false, /*libReferences*/ []);
         }),
-        mapDefined(node.prepends, (prepend) => {
+        qc.mapDefined(node.prepends, (prepend) => {
           if (prepend.kind === qt.SyntaxKind.InputFiles) {
             const sourceFile = createUnparsedSourceFile(prepend, 'dts', stripInternal);
             hasNoDefaultLib = hasNoDefaultLib || !!sourceFile.hasNoDefaultLib;
@@ -285,7 +285,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
 
     function getFileReferencesForUsedTypeReferences() {
-      return necessaryTypeReferences ? mapDefined(arrayFrom(necessaryTypeReferences.keys()), getFileReferenceForTypeName) : [];
+      return necessaryTypeReferences ? qc.mapDefined(arrayFrom(necessaryTypeReferences.keys()), getFileReferenceForTypeName) : [];
     }
 
     function getFileReferenceForTypeName(typeName: string): FileReference | undefined {
@@ -541,7 +541,7 @@ export function transformDeclarations(context: TransformationContext) {
       }
       newParams = append(newParams, newValueParameter);
     }
-    return createNodeArray(newParams || emptyArray);
+    return createNodeArray(newParams || qc.emptyArray);
   }
 
   function ensureTypeParams(node: qt.Node, params: qt.NodeArray<TypeParameterDeclaration> | undefined) {
@@ -616,7 +616,7 @@ export function transformDeclarations(context: TransformationContext) {
       return visibleDefaultBinding || namedBindings ? updateImportDeclaration(decl, /*decorators*/ undefined, decl.modifiers, updateImportClause(decl.importClause, visibleDefaultBinding, namedBindings, decl.importClause.isTypeOnly), rewriteModuleSpecifier(decl, decl.moduleSpecifier)) : undefined;
     }
     // Named imports (optionally with visible default)
-    const bindingList = mapDefined(decl.importClause.namedBindings.elements, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
+    const bindingList = qc.mapDefined(decl.importClause.namedBindings.elements, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
     if ((bindingList && bindingList.length) || visibleDefaultBinding) {
       return updateImportDeclaration(decl, /*decorators*/ undefined, decl.modifiers, updateImportClause(decl.importClause, visibleDefaultBinding, bindingList && bindingList.length ? updateNamedImports(decl.importClause.namedBindings, bindingList) : undefined, decl.importClause.isTypeOnly), rewriteModuleSpecifier(decl, decl.moduleSpecifier));
     }
@@ -967,14 +967,14 @@ export function transformDeclarations(context: TransformationContext) {
           fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
           fakespace.locals = qu.createSymbolTable(props);
           fakespace.symbol = props[0].parent!;
-          const declarations = mapDefined(props, (p) => {
+          const declarations = qc.mapDefined(props, (p) => {
             if (!isPropertyAccessExpression(p.valueDeclaration)) {
               return undefined; // TODO GH#33569: Handle element access expressions that created late bound names (rather than silently omitting them)
             }
             getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
             const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
             getSymbolAccessibilityDiagnostic = oldDiag;
-            const varDecl = createVariableDeclaration(unescapeLeadingUnderscores(p.escapedName), type, /*initializer*/ undefined);
+            const varDecl = createVariableDeclaration(unqpu.escapeLeadingUnderscores(p.escapedName), type, /*initializer*/ undefined);
             return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
           });
           const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), qt.NodeFlags.Namespace);
@@ -1086,7 +1086,7 @@ export function transformDeclarations(context: TransformationContext) {
         if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== qt.SyntaxKind.NullKeyword) {
           // We must add a temporary declaration for the extends clause expression
 
-          const oldId = input.name ? unescapeLeadingUnderscores(input.name.escapedText) : 'default';
+          const oldId = input.name ? unqpu.escapeLeadingUnderscores(input.name.escapedText) : 'default';
           const newId = createOptimisticUniqueName(`${oldId}_base`);
           getSymbolAccessibilityDiagnostic = () => ({
             diagnosticMessage: Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,
@@ -1127,7 +1127,7 @@ export function transformDeclarations(context: TransformationContext) {
             createNodeArray(ensureModifiers(input)),
             input.name,
             createNodeArray(
-              mapDefined(input.members, (m) => {
+              qc.mapDefined(input.members, (m) => {
                 if (shouldStripInternal(m)) return;
                 // Rewrite enum values to their constants, if available
                 const constValue = resolver.getConstantValue(m);
@@ -1166,7 +1166,7 @@ export function transformDeclarations(context: TransformationContext) {
   }
 
   function recreateBindingPattern(d: qt.BindingPattern): qt.VariableDeclaration[] {
-    return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => recreateBindingElement(e)));
+    return flatten<VariableDeclaration>(qc.mapDefined(d.elements, (e) => recreateBindingElement(e)));
   }
 
   function recreateBindingElement(e: ArrayBindingElement) {

@@ -211,7 +211,7 @@ export namespace Debug {
   }
 
   export function formatSymbol(symbol: symbol): string {
-    return `{ name: ${qpu.unescapeLeadingUnderscores(symbol.escapedName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntaxKind(node.kind))} }`;
+    return `{ name: ${qpu.unqpu.escapeLeadingUnderscores(symbol.escapedName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntaxKind(node.kind))} }`;
   }
 
   /**
