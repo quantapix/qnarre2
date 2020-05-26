@@ -1,11 +1,11 @@
-import * as qpc from './corePublic';
-import * as qc from './core';
-import * as qp from './path';
-import * as qt from './types';
-import * as qu from './utilities';
-import * as qs from './scanner';
 import { Debug } from './debug';
 import { Diagnostics } from './diagnostics';
+import * as qc from './core';
+import * as qp from './path';
+import * as qpc from './corePublic';
+import * as qs from './scanner';
+import * as qt from './types';
+import * as qu from './utilities';
 
 export const resolvingEmptyArray: never[] = [] as never[];
 export const emptyMap = qc.createMap<never>() as qpc.ReadonlyMap<never> & qt.ReadonlyPragmaMap;
@@ -611,7 +611,7 @@ function getTextOfConstantValue(value: string | number) {
 // Make an identifier from an external module name by extracting the string after the last "/" and replacing
 // all non-alphanumeric characters with underscores
 export function makeIdentifierFromModuleName(moduleName: string): string {
-  return getBaseFileName(moduleName).replace(/^(\d)/, '_$1').replace(/\W/g, '_');
+  return qp.getBaseFileName(moduleName).replace(/^(\d)/, '_$1').replace(/\W/g, '_');
 }
 
 export function isBlockOrCatchScoped(declaration: qt.Declaration) {
@@ -3588,11 +3588,11 @@ export function getExternalModuleNameFromDeclaration(host: ResolveModuleNameReso
  */
 export function getExternalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
   const getCanonicalFileName = (f: string) => host.getCanonicalFileName(f);
-  const dir = toPath(referencePath ? qp.getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
-  const filePath = getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
-  const relativePath = getRelativePathToDirectoryOrUrl(dir, filePath, dir, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
+  const dir = qp.toPath(referencePath ? qp.getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
+  const filePath = qp.getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
+  const relativePath = qp.getRelativePathToDirectoryOrUrl(dir, filePath, dir, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
   const extensionless = removeFileExtension(relativePath);
-  return referencePath ? ensurePathIsNonModuleName(extensionless) : extensionless;
+  return referencePath ? qp.ensurePathIsNonModuleName(extensionless) : extensionless;
 }
 
 export function getOwnEmitOutputFilePath(fileName: string, host: EmitHost, extension: string) {
@@ -3659,10 +3659,10 @@ export function getSourceFilePathInNewDir(fileName: string, host: EmitHost, newD
 }
 
 export function getSourceFilePathInNewDirWorker(fileName: string, newDirPath: string, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: qc.GetCanonicalFileName): string {
-  let sourceFilePath = getNormalizedAbsolutePath(fileName, currentDirectory);
+  let sourceFilePath = qp.getNormalizedAbsolutePath(fileName, currentDirectory);
   const isSourceFileInCommonSourceDirectory = getCanonicalFileName(sourceFilePath).indexOf(getCanonicalFileName(commonSourceDirectory)) === 0;
   sourceFilePath = isSourceFileInCommonSourceDirectory ? sourceFilePath.substring(commonSourceDirectory.length) : sourceFilePath;
-  return combinePaths(newDirPath, sourceFilePath);
+  return qp.combinePaths(newDirPath, sourceFilePath);
 }
 
 export function writeFile(host: { writeFile: WriteFileCallback }, diagnostics: DiagnosticCollection, fileName: string, data: string, writeByteOrderMark: boolean, sourceFiles?: readonly qt.SourceFile[]) {
@@ -3678,7 +3678,7 @@ export function writeFile(host: { writeFile: WriteFileCallback }, diagnostics: D
 }
 
 function ensureDirectoriesExist(directoryPath: string, createDirectory: (path: string) => void, directoryExists: (path: string) => boolean): void {
-  if (directoryPath.length > getRootLength(directoryPath) && !directoryExists(directoryPath)) {
+  if (directoryPath.length > qp.getRootLength(directoryPath) && !directoryExists(directoryPath)) {
     const parentDirectory = qp.getDirectoryPath(directoryPath);
     ensureDirectoriesExist(parentDirectory, createDirectory, directoryExists);
     createDirectory(directoryPath);
@@ -3691,7 +3691,7 @@ export function writeFileEnsuringDirectories(path: string, data: string, writeBy
   try {
     writeFile(path, data, writeByteOrderMark);
   } catch {
-    ensureDirectoriesExist(qp.getDirectoryPath(normalizePath(path)), createDirectory, directoryExists);
+    ensureDirectoriesExist(qp.getDirectoryPath(qp.normalizePath(path)), createDirectory, directoryExists);
     writeFile(path, data, writeByteOrderMark);
   }
 }
@@ -4277,7 +4277,7 @@ function isExportDefaultSymbol(symbol: qt.Symbol): boolean {
 
 /** Return ".ts", ".d.ts", or ".tsx", if that is the extension. */
 export function tryExtractTSExtension(fileName: string): string | undefined {
-  return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
+  return find(supportedTSExtensionsForExtractExtension, (extension) => qp.fileExtensionIs(fileName, extension));
 }
 /**
  * Replace each instance of non-ascii characters by one, two, three, or four escape sequences
@@ -4814,7 +4814,7 @@ export function typeHasCallOrConstructSignatures(type: Type, checker: TypeChecke
 }
 
 export function forSomeAncestorDirectory(directory: string, callback: (directory: string) => boolean): boolean {
-  return !!forEachAncestorDirectory(directory, (d) => (callback(d) ? true : undefined));
+  return !!qp.forEachAncestorDirectory(directory, (d) => (callback(d) ? true : undefined));
 }
 
 export function isUMDExportSymbol(symbol: qt.Symbol | undefined): boolean {
@@ -5281,13 +5281,13 @@ export function discoverProbableSymlinks(files: readonly qt.SourceFile[], getCan
 }
 
 function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: qc.GetCanonicalFileName): [string, string] {
-  const aParts = getPathComponents(toPath(a, cwd, getCanonicalFileName));
-  const bParts = getPathComponents(toPath(b, cwd, getCanonicalFileName));
+  const aParts = qp.getPathComponents(qp.toPath(a, cwd, getCanonicalFileName));
+  const bParts = qp.getPathComponents(qp.toPath(b, cwd, getCanonicalFileName));
   while (!isNodeModulesOrScopedPackageDirectory(aParts[aParts.length - 2], getCanonicalFileName) && !isNodeModulesOrScopedPackageDirectory(bParts[bParts.length - 2], getCanonicalFileName) && getCanonicalFileName(aParts[aParts.length - 1]) === getCanonicalFileName(bParts[bParts.length - 1])) {
     aParts.pop();
     bParts.pop();
   }
-  return [getPathFromPathComponents(aParts), getPathFromPathComponents(bParts)];
+  return [qp.getPathFromPathComponents(aParts), qp.getPathFromPathComponents(bParts)];
 }
 
 // KLUDGE: Don't assume one 'node_modules' links to another. More likely a single directory inside the node_modules is the symlink.
@@ -5297,7 +5297,7 @@ function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: 
 }
 
 function stripLeadingDirectorySeparator(s: string): string | undefined {
-  return isAnyDirectorySeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
+  return qp.isAnyDirectorySeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
 }
 
 export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: qc.GetCanonicalFileName): string | undefined {
@@ -5399,7 +5399,7 @@ export function isImplicitGlob(lastPathComponent: string): boolean {
 function getSubPatternFromSpec(spec: string, basePath: string, usage: 'files' | 'directories' | 'exclude', { singleAsteriskRegexFragment, doubleAsteriskRegexFragment, replaceWildcardCharacter }: WildcardMatcher): string | undefined {
   let subpattern = '';
   let hasWrittenComponent = false;
-  const components = getNormalizedPathComponents(spec, basePath);
+  const components = qp.getNormalizedPathComponents(spec, basePath);
   const lastComponent = last(components);
   if (usage !== 'exclude' && lastComponent === '**') {
     return undefined;
@@ -5407,7 +5407,7 @@ function getSubPatternFromSpec(spec: string, basePath: string, usage: 'files' | 
 
   // getNormalizedPathComponents includes the separator for the root component.
   // We need to remove to create our regex correctly.
-  components[0] = removeTrailingDirectorySeparator(components[0]);
+  components[0] = qp.removeTrailingDirectorySeparator(components[0]);
 
   if (isImplicitGlob(lastComponent)) {
     components.push('**', '*');
@@ -5490,9 +5490,9 @@ export interface FileMatcherPatterns {
 
 /** @param path directory of the tsconfig.json */
 export function getFileMatcherPatterns(path: string, excludes: readonly string[] | undefined, includes: readonly string[] | undefined, useCaseSensitiveFileNames: boolean, currentDirectory: string): FileMatcherPatterns {
-  path = normalizePath(path);
-  currentDirectory = normalizePath(currentDirectory);
-  const absolutePath = combinePaths(currentDirectory, path);
+  path = qp.normalizePath(path);
+  currentDirectory = qp.normalizePath(currentDirectory);
+  const absolutePath = qp.combinePaths(currentDirectory, path);
 
   return {
     includeFilePatterns: map(getRegularExpressionsForWildcards(includes, absolutePath, 'files'), (pattern) => `^${pattern}$`),
@@ -5509,8 +5509,8 @@ export function getRegexFromPattern(pattern: string, useCaseSensitiveFileNames: 
 
 /** @param path directory of the tsconfig.json */
 export function matchFiles(path: string, extensions: readonly string[] | undefined, excludes: readonly string[] | undefined, includes: readonly string[] | undefined, useCaseSensitiveFileNames: boolean, currentDirectory: string, depth: number | undefined, getFileSystemEntries: (path: string) => FileSystemEntries, realpath: (path: string) => string): string[] {
-  path = normalizePath(path);
-  currentDirectory = normalizePath(currentDirectory);
+  path = qp.normalizePath(path);
+  currentDirectory = qp.normalizePath(currentDirectory);
 
   const patterns = getFileMatcherPatterns(path, excludes, includes, useCaseSensitiveFileNames, currentDirectory);
 
@@ -5524,7 +5524,7 @@ export function matchFiles(path: string, extensions: readonly string[] | undefin
   const visited = qc.createMap<true>();
   const toCanonical = qc.createGetCanonicalFileName(useCaseSensitiveFileNames);
   for (const basePath of patterns.basePaths) {
-    visitDirectory(basePath, combinePaths(currentDirectory, basePath), depth);
+    visitDirectory(basePath, qp.combinePaths(currentDirectory, basePath), depth);
   }
 
   return flatten(results);
@@ -5536,8 +5536,8 @@ export function matchFiles(path: string, extensions: readonly string[] | undefin
     const { files, directories } = getFileSystemEntries(path);
 
     for (const current of sort<string>(files, qc.compareStringsCaseSensitive)) {
-      const name = combinePaths(path, current);
-      const absoluteName = combinePaths(absolutePath, current);
+      const name = qp.combinePaths(path, current);
+      const absoluteName = qp.combinePaths(absolutePath, current);
       if (extensions && !fileExtensionIsOneOf(name, extensions)) continue;
       if (excludeRegex && excludeRegex.test(absoluteName)) continue;
       if (!includeFileRegexes) {
@@ -5558,8 +5558,8 @@ export function matchFiles(path: string, extensions: readonly string[] | undefin
     }
 
     for (const current of sort<string>(directories, qc.compareStringsCaseSensitive)) {
-      const name = combinePaths(path, current);
-      const absoluteName = combinePaths(absolutePath, current);
+      const name = qp.combinePaths(path, current);
+      const absoluteName = qp.combinePaths(absolutePath, current);
       if ((!includeDirectoryRegex || includeDirectoryRegex.test(absoluteName)) && (!excludeRegex || !excludeRegex.test(absoluteName))) {
         visitDirectory(name, absoluteName, depth);
       }
@@ -5580,7 +5580,7 @@ function getBasePaths(path: string, includes: readonly string[] | undefined, use
     for (const include of includes) {
       // We also need to check the relative paths by converting them to absolute and normalizing
       // in case they escape the base path (e.g "..\somedirectory")
-      const absolute: string = qp.isRootedDiskPath(include) ? include : normalizePath(combinePaths(path, include));
+      const absolute: string = qp.isRootedDiskPath(include) ? include : qp.normalizePath(qp.combinePaths(path, include));
       // Append the literal and canonical candidate base paths.
       includeBasePaths.push(getIncludeBasePath(absolute));
     }
@@ -5591,7 +5591,7 @@ function getBasePaths(path: string, includes: readonly string[] | undefined, use
     // Iterate over each include base path and include unique base paths that are not a
     // subpath of an existing base path
     for (const includeBasePath of includeBasePaths) {
-      if (every(basePaths, (basePath) => !containsPath(basePath, includeBasePath, path, !useCaseSensitiveFileNames))) {
+      if (every(basePaths, (basePath) => !qp.containsPath(basePath, includeBasePath, path, !useCaseSensitiveFileNames))) {
         basePaths.push(includeBasePath);
       }
     }
@@ -5604,7 +5604,7 @@ function getIncludeBasePath(absolute: string): string {
   const wildcardOffset = indexOfAnyCharCode(absolute, wildcardCharCodes);
   if (wildcardOffset < 0) {
     // No "*" or "?" in the path
-    return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(qp.getDirectoryPath(absolute));
+    return !qp.hasExtension(absolute) ? absolute : qp.removeTrailingDirectorySeparator(qp.getDirectoryPath(absolute));
   }
   return absolute.substring(0, absolute.lastIndexOf(directorySeparator, wildcardOffset));
 }
@@ -5681,11 +5681,11 @@ function isJSLike(scriptKind: ScriptKind | undefined): boolean {
 }
 
 export function hasJSFileExtension(fileName: string): boolean {
-  return some(supportedJSExtensions, (extension) => fileExtensionIs(fileName, extension));
+  return some(supportedJSExtensions, (extension) => qp.fileExtensionIs(fileName, extension));
 }
 
 export function hasTSFileExtension(fileName: string): boolean {
-  return some(supportedTSExtensions, (extension) => fileExtensionIs(fileName, extension));
+  return some(supportedTSExtensions, (extension) => qp.fileExtensionIs(fileName, extension));
 }
 
 export function isSupportedSourceFileName(fileName: string, compilerOptions?: qt.CompilerOptions, extraFileExtensions?: readonly FileExtensionInfo[]) {
@@ -5695,7 +5695,7 @@ export function isSupportedSourceFileName(fileName: string, compilerOptions?: qt
 
   const supportedExtensions = getSupportedExtensions(compilerOptions, extraFileExtensions);
   for (const extension of getSuppoertedExtensionsWithJsonIfResolveJsonModule(compilerOptions, supportedExtensions)) {
-    if (fileExtensionIs(fileName, extension)) {
+    if (qp.fileExtensionIs(fileName, extension)) {
       return true;
     }
   }
@@ -5716,7 +5716,7 @@ export const enum ExtensionPriority {
 
 export function getExtensionPriority(path: string, supportedExtensions: readonly string[]): ExtensionPriority {
   for (let i = supportedExtensions.length - 1; i >= 0; i--) {
-    if (fileExtensionIs(path, supportedExtensions[i])) {
+    if (qp.fileExtensionIs(path, supportedExtensions[i])) {
       return adjustExtensionPriority(<ExtensionPriority>i, supportedExtensions);
     }
   }
@@ -5762,7 +5762,7 @@ export function removeFileExtension(path: string): string {
 }
 
 export function tryRemoveExtension(path: string, extension: string): string | undefined {
-  return fileExtensionIs(path, extension) ? removeExtension(path, extension) : undefined;
+  return qp.fileExtensionIs(path, extension) ? removeExtension(path, extension) : undefined;
 }
 
 export function removeExtension(path: string, extension: string): string {
@@ -5770,7 +5770,7 @@ export function removeExtension(path: string, extension: string): string {
 }
 
 export function changeExtension<T extends string | Path>(path: T, newExtension: string): T {
-  return <T>changeAnyExtension(path, newExtension, extensionsToRemove, /*ignoreCase*/ false);
+  return <T>qp.changeAnyExtension(path, newExtension, extensionsToRemove, /*ignoreCase*/ false);
 }
 
 export function tryParsePattern(pattern: string): qc.Pattern | undefined {
@@ -5814,7 +5814,7 @@ export function isAnySupportedFileExtension(path: string): boolean {
 }
 
 export function tryGetExtensionFromPath(path: string): Extension | undefined {
-  return find<Extension>(extensionsToRemove, (e) => fileExtensionIs(path, e));
+  return find<Extension>(extensionsToRemove, (e) => qp.fileExtensionIs(path, e));
 }
 
 export function isCheckJsEnabledForFile(sourceFile: qt.SourceFile, compilerOptions: qt.CompilerOptions) {

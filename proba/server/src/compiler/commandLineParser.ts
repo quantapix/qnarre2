@@ -4,7 +4,7 @@ import * as qp from './path';
 import * as qt from './types';
 import * as qu from './utilities';
 import { Debug } from './debug';
-import { qt.Diagnostics } from './diagnostics';
+import { Diagnostics } from './diagnostics';
 
 export const compileOnSaveCommandLineOption: qt.CommandLineOption = { name: 'compileOnSave', type: 'boolean' };
 
@@ -1387,7 +1387,7 @@ export function getDiagnosticText(_message: qt.DiagnosticMessage, ..._args: any[
   return <string>diagnostic.messageText;
 }
 
-export type qt.DiagnosticReporter = (diagnostic: qt.Diagnostic) => void;
+export type DiagnosticReporter = (diagnostic: qt.Diagnostic) => void;
 /**
  * Reports config file diagnostics
  */
@@ -1395,7 +1395,7 @@ export interface ConfigFileDiagnosticsReporter {
   /**
    * Reports unrecoverable error when parsing config file
    */
-  onUnRecoverableConfigFileDiagnostic: qt.DiagnosticReporter;
+  onUnRecoverableConfigFileDiagnostic: DiagnosticReporter;
 }
 
 /**
@@ -1417,10 +1417,10 @@ export function getParsedCommandLineOfConfigFile(configFileName: string, options
 
   const result = parseJsonText(configFileName, configFileText);
   const cwd = host.getCurrentDirectory();
-  result.path = toPath(configFileName, cwd, qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames));
+  result.path = qp.toPath(configFileName, cwd, qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames));
   result.resolvedPath = result.path;
   result.originalFileName = result.fileName;
-  return parseJsonSourceFileConfigFileContent(result, host, getNormalizedAbsolutePath(qp.getDirectoryPath(configFileName), cwd), optionsToExtend, getNormalizedAbsolutePath(configFileName, cwd), /*resolutionStack*/ undefined, extraFileExtensions, extendedConfigCache, watchOptionsToExtend);
+  return parseJsonSourceFileConfigFileContent(result, host, qp.getNormalizedAbsolutePath(qp.getDirectoryPath(configFileName), cwd), optionsToExtend, qp.getNormalizedAbsolutePath(configFileName, cwd), /*resolutionStack*/ undefined, extraFileExtensions, extendedConfigCache, watchOptionsToExtend);
 }
 
 /**
@@ -1816,10 +1816,10 @@ export interface ConvertToTSConfigHost {
 export function convertToTSConfig(configParseResult: ParsedCommandLine, configFileName: string, host: ConvertToTSConfigHost): TSConfig {
   const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames);
   const files = map(filter(configParseResult.fileNames, !configParseResult.configFileSpecs || !configParseResult.configFileSpecs.validatedIncludeSpecs ? (_) => true : matchesSpecs(configFileName, configParseResult.configFileSpecs.validatedIncludeSpecs, configParseResult.configFileSpecs.validatedExcludeSpecs, host)), (f) =>
-    getRelativePathFromFile(getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()), getNormalizedAbsolutePath(f, host.getCurrentDirectory()), getCanonicalFileName)
+    qp.getRelativePathFromFile(qp.getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()), qp.getNormalizedAbsolutePath(f, host.getCurrentDirectory()), getCanonicalFileName)
   );
   const optionMap = serializeCompilerOptions(configParseResult.options, {
-    configFilePath: getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()),
+    configFilePath: qp.getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()),
     useCaseSensitiveFileNames: host.useCaseSensitiveFileNames,
   });
   const watchOptionMap = configParseResult.watchOptions && serializeWatchOptions(configParseResult.watchOptions);
@@ -1883,7 +1883,6 @@ function matchesSpecs(path: string, includeSpecs: readonly string[] | undefined,
 
 function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOption): qpc.Map<string | number> | undefined {
   if (optionDefinition.type === 'string' || optionDefinition.type === 'number' || optionDefinition.type === 'boolean' || optionDefinition.type === 'object') {
-    // this is of a type qt. CommandLineOptionOfPrimitiveType
     return undefined;
   } else if (optionDefinition.type === 'list') {
     return getCustomTypeMapOfCommandLineOption(optionDefinition.element);
@@ -1928,7 +1927,7 @@ function serializeOptionBaseObject(options: OptionsBase, { optionsNameMap }: Opt
           // There is no map associated with this compiler option then use the value as-is
           // This is the case if the value is expect to be string, number, boolean or list of string
           if (pathOptions && optionDefinition.isFilePath) {
-            result.set(name, getRelativePathFromFile(pathOptions.configFilePath, getNormalizedAbsolutePath(value as string, qp.getDirectoryPath(pathOptions.configFilePath)), getCanonicalFileName));
+            result.set(name, qp.getRelativePathFromFile(pathOptions.configFilePath, qp.getNormalizedAbsolutePath(value as string, qp.getDirectoryPath(pathOptions.configFilePath)), getCanonicalFileName));
           } else {
             result.set(name, value);
           }
@@ -2116,7 +2115,7 @@ function isNullOrUndefined(x: any): x is null | undefined {
 function directoryOfCombinedPath(fileName: string, basePath: string) {
   // Use the `getNormalizedAbsolutePath` function to avoid canonicalizing the path, as it must remain noncanonical
   // until consistent casing errors are reported
-  return qp.getDirectoryPath(getNormalizedAbsolutePath(fileName, basePath));
+  return qp.getDirectoryPath(qp.getNormalizedAbsolutePath(fileName, basePath));
 }
 
 /**
@@ -2137,7 +2136,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: qt.TsConfigSour
   const options = extend(existingOptions, parsedConfig.options || {});
   const watchOptions = existingWatchOptions && parsedConfig.watchOptions ? extend(existingWatchOptions, parsedConfig.watchOptions) : parsedConfig.watchOptions || existingWatchOptions;
 
-  options.configFilePath = configFileName && normalizeSlashes(configFileName);
+  options.configFilePath = configFileName && qp.normalizeSlashes(configFileName);
   setConfigFileInOptions(options, sourceFile);
   let projectReferences: qt.ProjectReference[] | undefined;
   const { fileNames, wildcardDirectories, spec } = getFileNames();
@@ -2219,7 +2218,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: qt.TsConfigSour
             createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
           } else {
             (projectReferences || (projectReferences = [])).push({
-              path: getNormalizedAbsolutePath(ref.path, basePath),
+              path: qp.getNormalizedAbsolutePath(ref.path, basePath),
               originalPath: ref.path,
               prepend: ref.prepend,
               circular: ref.circular,
@@ -2287,8 +2286,8 @@ function isSuccessfulParsedTsconfig(value: ParsedTsconfig) {
  * It does *not* resolve the included files.
  */
 function parseConfig(json: any, sourceFile: qt.TsConfigSourceFile | undefined, host: qt.ParseConfigHost, basePath: string, configFileName: string | undefined, resolutionStack: string[], errors: qpc.Push<qt.Diagnostic>, extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>): ParsedTsconfig {
-  basePath = normalizeSlashes(basePath);
-  const resolvedPath = getNormalizedAbsolutePath(configFileName || '', basePath);
+  basePath = qp.normalizeSlashes(basePath);
+  const resolvedPath = qp.getNormalizedAbsolutePath(configFileName || '', basePath);
 
   if (resolutionStack.indexOf(resolvedPath) >= 0) {
     errors.push(qu.createCompilerDiagnostic(Diagnostics.Circularity_detected_while_resolving_configuration_Colon_0, [...resolutionStack, resolvedPath].join(' -> ')));
@@ -2412,9 +2411,9 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: qt.TsConfigSourceFile, host:
 }
 
 function getExtendsConfigPath(extendedConfig: string, host: qt.ParseConfigHost, basePath: string, errors: qpc.Push<qt.Diagnostic>, createDiagnostic: (message: qt.DiagnosticMessage, arg1?: string) => qt.Diagnostic) {
-  extendedConfig = normalizeSlashes(extendedConfig);
+  extendedConfig = qp.normalizeSlashes(extendedConfig);
   if (isRootedDiskPath(extendedConfig) || qc.startsWith(extendedConfig, './') || qc.startsWith(extendedConfig, '../')) {
-    let extendedConfigPath = getNormalizedAbsolutePath(extendedConfig, basePath);
+    let extendedConfigPath = qp.getNormalizedAbsolutePath(extendedConfig, basePath);
     if (!host.fileExists(extendedConfigPath) && !qc.endsWith(extendedConfigPath, Extension.Json)) {
       extendedConfigPath = `${extendedConfigPath}.json`;
       if (!host.fileExists(extendedConfigPath)) {
@@ -2425,7 +2424,7 @@ function getExtendsConfigPath(extendedConfig: string, host: qt.ParseConfigHost, 
     return extendedConfigPath;
   }
   // If the path isn't a rooted or relative path, resolve like a module
-  const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: qt.ModuleResolutionKind.NodeJs }, host, /*cache*/ undefined, /*projectRefs*/ undefined, /*lookupConfig*/ true);
+  const resolved = nodeModuleNameResolver(extendedConfig, qp.combinePaths(basePath, 'tsconfig.json'), { moduleResolution: qt.ModuleResolutionKind.NodeJs }, host, /*cache*/ undefined, /*projectRefs*/ undefined, /*lookupConfig*/ true);
   if (resolved.resolvedModule) {
     return resolved.resolvedModule.resolvedFileName;
   }
@@ -2449,12 +2448,12 @@ function getExtendedConfig(sourceFile: qt.TsConfigSourceFile | undefined, extend
     extendedResult = readJsonConfigFile(extendedConfigPath, (path) => host.readFile(path));
     if (!extendedResult.parseDiagnostics.length) {
       const extendedDirname = qp.getDirectoryPath(extendedConfigPath);
-      extendedConfig = parseConfig(/*json*/ undefined, extendedResult, host, extendedDirname, getBaseFileName(extendedConfigPath), resolutionStack, errors, extendedConfigCache);
+      extendedConfig = parseConfig(/*json*/ undefined, extendedResult, host, extendedDirname, qp.getBaseFileName(extendedConfigPath), resolutionStack, errors, extendedConfigCache);
 
       if (isSuccessfulParsedTsconfig(extendedConfig)) {
         // Update the paths to reflect base path
-        const relativeDifference = convertToRelativePath(extendedDirname, basePath, qc.identity);
-        const updatePath = (path: string) => (isRootedDiskPath(path) ? path : combinePaths(relativeDifference, path));
+        const relativeDifference = qp.convertToRelativePath(extendedDirname, basePath, qc.identity);
+        const updatePath = (path: string) => (isRootedDiskPath(path) ? path : qp.combinePaths(relativeDifference, path));
         const mapPropertiesInRawIfNotUndefined = (propertyName: string) => {
           if (raw[propertyName]) {
             raw[propertyName] = map(raw[propertyName], updatePath);
@@ -2505,7 +2504,7 @@ export function convertTypeAcquisitionFromJson(jsonOptions: any, basePath: strin
 }
 
 function getDefaultCompilerOptions(configFileName?: string) {
-  const options: qt.CompilerOptions = configFileName && getBaseFileName(configFileName) === 'jsconfig.json' ? { allowJs: true, maxNodeModuleJsDepth: 2, allowSyntheticDefaultImports: true, skipLibCheck: true, noEmit: true } : {};
+  const options: qt.CompilerOptions = configFileName && qp.getBaseFileName(configFileName) === 'jsconfig.json' ? { allowJs: true, maxNodeModuleJsDepth: 2, allowSyntheticDefaultImports: true, skipLibCheck: true, noEmit: true } : {};
   return options;
 }
 
@@ -2513,13 +2512,13 @@ function convertCompilerOptionsFromJsonWorker(jsonOptions: any, basePath: string
   const options = getDefaultCompilerOptions(configFileName);
   convertOptionsFromJson(getCommandLineCompilerOptionsMap(), jsonOptions, basePath, options, compilerOptionsDidYouMeanDiagnostics, errors);
   if (configFileName) {
-    options.configFilePath = normalizeSlashes(configFileName);
+    options.configFilePath = qp.normalizeSlashes(configFileName);
   }
   return options;
 }
 
 function getDefaultTypeAcquisition(configFileName?: string): qt.TypeAcquisition {
-  return { enable: !!configFileName && getBaseFileName(configFileName) === 'jsconfig.json', include: [], exclude: [] };
+  return { enable: !!configFileName && qp.getBaseFileName(configFileName) === 'jsconfig.json', include: [], exclude: [] };
 }
 
 function convertTypeAcquisitionFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<qt.Diagnostic>, configFileName?: string): qt.TypeAcquisition {
@@ -2585,7 +2584,7 @@ function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, va
 
 function normalizeNonListOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
   if (option.isFilePath) {
-    value = getNormalizedAbsolutePath(value, basePath);
+    value = qp.getNormalizedAbsolutePath(value, basePath);
     if (value === '') {
       value = '.';
     }
@@ -2685,7 +2684,7 @@ const wildcardDirectoryPattern = /^[^*?]*(?=\/[^/]*[*?])/;
  * @param errors An array for diagnostic reporting.
  */
 function matchFileNames(filesSpecs: readonly string[] | undefined, includeSpecs: readonly string[] | undefined, excludeSpecs: readonly string[] | undefined, basePath: string, options: qt.CompilerOptions, host: qt.ParseConfigHost, errors: qpc.Push<qt.Diagnostic>, extraFileExtensions: readonly FileExtensionInfo[], jsonSourceFile: qt.TsConfigSourceFile | undefined): ExpandResult {
-  basePath = normalizePath(basePath);
+  basePath = qp.normalizePath(basePath);
   let validatedIncludeSpecs: readonly string[] | undefined, validatedExcludeSpecs: readonly string[] | undefined;
 
   // The exclude spec list is converted into a regular expression, which allows us to quickly
@@ -2721,7 +2720,7 @@ function matchFileNames(filesSpecs: readonly string[] | undefined, includeSpecs:
  */
 
 export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: string, options: qt.CompilerOptions, host: qt.ParseConfigHost, extraFileExtensions: readonly FileExtensionInfo[] = []): ExpandResult {
-  basePath = normalizePath(basePath);
+  basePath = qp.normalizePath(basePath);
 
   const keyMapper = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames);
 
@@ -2750,7 +2749,7 @@ export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: str
   // remove a literal file.
   if (filesSpecs) {
     for (const fileName of filesSpecs) {
-      const file = getNormalizedAbsolutePath(fileName, basePath);
+      const file = qp.getNormalizedAbsolutePath(fileName, basePath);
       literalFileMap.set(keyMapper(file), file);
     }
   }
@@ -2758,7 +2757,7 @@ export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: str
   let jsonOnlyIncludeRegexes: readonly RegExp[] | undefined;
   if (validatedIncludeSpecs && validatedIncludeSpecs.length > 0) {
     for (const file of host.readDirectory(basePath, supportedExtensionsWithJsonIfResolveJsonModule, validatedExcludeSpecs, validatedIncludeSpecs, /*depth*/ undefined)) {
-      if (fileExtensionIs(file, Extension.Json)) {
+      if (qp.fileExtensionIs(file, Extension.Json)) {
         // Valid only if *.json specified
         if (!jsonOnlyIncludeRegexes) {
           const includes = validatedIncludeSpecs.filter((s) => qc.endsWith(s, Extension.Json));
@@ -2852,7 +2851,7 @@ function getWildcardDirectories(include: readonly string[] | undefined, exclude:
   if (include !== undefined) {
     const recursiveKeys: string[] = [];
     for (const file of include) {
-      const spec = normalizePath(combinePaths(path, file));
+      const spec = qp.normalizePath(qp.combinePaths(path, file));
       if (excludeRegex && excludeRegex.test(spec)) {
         continue;
       }
@@ -2874,7 +2873,7 @@ function getWildcardDirectories(include: readonly string[] | undefined, exclude:
     for (const key in wildcardDirectories) {
       if (hasProperty(wildcardDirectories, key)) {
         for (const recursiveKey of recursiveKeys) {
-          if (key !== recursiveKey && containsPath(recursiveKey, key, path, !useCaseSensitiveFileNames)) {
+          if (key !== recursiveKey && qp.containsPath(recursiveKey, key, path, !useCaseSensitiveFileNames)) {
             delete wildcardDirectories[key];
           }
         }

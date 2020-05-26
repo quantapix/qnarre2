@@ -271,7 +271,7 @@ function createBuilderProgramState(newProgram: Program, getCanonicalFileName: qc
 
 function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: Program, getCanonicalFileName: qc.GetCanonicalFileName): readonly Diagnostic[] {
   if (!diagnostics.length) return emptyArray;
-  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory()));
+  const buildInfoDirectory = qp.getDirectoryPath(qp.getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory()));
   return diagnostics.map((diagnostic) => {
     const result: Diagnostic = convertToDiagnosticRelatedInformation(diagnostic, newProgram, toPath);
     result.reportsUnnecessary = diagnostic.reportsUnnecessary;
@@ -672,7 +672,7 @@ export interface ProgramBuildInfo {
 function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCanonicalFileName: qc.GetCanonicalFileName): ProgramBuildInfo | undefined {
   if (state.compilerOptions.outFile || state.compilerOptions.out) return undefined;
   const currentDirectory = Debug.checkDefined(state.program).getCurrentDirectory();
-  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory));
+  const buildInfoDirectory = qp.getDirectoryPath(qp.getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory));
   const fileInfos: qpc.MapLike<BuilderState.FileInfo> = {};
   state.fileInfos.forEach((value, key) => {
     const signature = state.currentAffectedFilesSignatures && state.currentAffectedFilesSignatures.get(key);
@@ -715,11 +715,11 @@ function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCa
   return result;
 
   function relativeToBuildInfoEnsuringAbsolutePath(path: string) {
-    return relativeToBuildInfo(getNormalizedAbsolutePath(path, currentDirectory));
+    return relativeToBuildInfo(qp.getNormalizedAbsolutePath(path, currentDirectory));
   }
 
   function relativeToBuildInfo(path: string) {
-    return ensurePathIsNonModuleName(getRelativePathFromDirectory(buildInfoDirectory, path, getCanonicalFileName));
+    return qp.ensurePathIsNonModuleName(qp.getRelativePathFromDirectory(buildInfoDirectory, path, getCanonicalFileName));
   }
 }
 
@@ -1057,7 +1057,7 @@ function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefin
 }
 
 export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInfo, buildInfoPath: string, host: ReadBuildProgramHost): EmitAndSemanticDiagnosticsBuilderProgram {
-  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
+  const buildInfoDirectory = qp.getDirectoryPath(qp.getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
   const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
   const fileInfos = qc.createMap<BuilderState.FileInfo>();
@@ -1110,7 +1110,7 @@ export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInf
   }
 
   function toAbsolutePath(path: string) {
-    return getNormalizedAbsolutePath(path, buildInfoDirectory);
+    return qp.getNormalizedAbsolutePath(path, buildInfoDirectory);
   }
 }
 

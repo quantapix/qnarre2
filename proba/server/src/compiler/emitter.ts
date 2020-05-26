@@ -10,7 +10,7 @@ const brackets = createBracketsMap();
 const syntheticParent: qt.TextRange = { pos: -1, end: -1 };
 
 export function isBuildInfoFile(file: string) {
-  return fileExtensionIs(file, Extension.TsBuildInfo);
+  return qp.fileExtensionIs(file, Extension.TsBuildInfo);
 }
 
 /**
@@ -61,7 +61,7 @@ export function getTsBuildInfoEmitOutputFilePath(options: qt.CompilerOptions) {
   } else {
     if (!configFile) return undefined;
     const configFileExtensionLess = removeFileExtension(configFile);
-    buildInfoExtensionLess = options.outDir ? (options.rootDir ? qp.resolvePath(options.outDir, getRelativePathFromDirectory(options.rootDir, configFileExtensionLess, /*ignoreCase*/ true)) : combinePaths(options.outDir, getBaseFileName(configFileExtensionLess))) : configFileExtensionLess;
+    buildInfoExtensionLess = options.outDir ? (options.rootDir ? qp.resolvePath(options.outDir, qp.getRelativePathFromDirectory(options.rootDir, configFileExtensionLess, /*ignoreCase*/ true)) : qp.combinePaths(options.outDir, qp.getBaseFileName(configFileExtensionLess))) : configFileExtensionLess;
   }
   return buildInfoExtensionLess + Extension.TsBuildInfo;
 }
@@ -84,7 +84,7 @@ export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHos
     const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
     const isJsonFile = qu.isJsonSourceFile(sourceFile);
     // If json file emits to the same location skip writing it, if emitDeclarationOnly skip writing it
-    const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
+    const isJsonEmittedToSameLocation = isJsonFile && qp.comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
     const jsFilePath = options.emitDeclarationOnly || isJsonEmittedToSameLocation ? undefined : ownOutputFilePath;
     const sourceMapFilePath = !jsFilePath || qu.isJsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
     const declarationFilePath = forceDtsPaths || (getEmitDeclarations(options) && !isJsonFile) ? getDeclarationEmitOutputFilePath(sourceFile.fileName, host) : undefined;
@@ -108,7 +108,7 @@ export function getOutputExtension(sourceFile: SourceFile, options: qt.CompilerO
 
   if (options.jsx === qt.JsxEmit.Preserve) {
     if (isSourceFileJS(sourceFile)) {
-      if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) {
+      if (qp.fileExtensionIs(sourceFile.fileName, Extension.Jsx)) {
         return Extension.Jsx;
       }
     } else if (sourceFile.languageVariant === LanguageVariant.JSX) {
@@ -124,19 +124,19 @@ function rootDirOfOptions(configFile: ParsedCommandLine) {
 }
 
 function getOutputPathWithoutChangingExt(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean, outputDir: string | undefined) {
-  return outputDir ? qp.resolvePath(outputDir, getRelativePathFromDirectory(rootDirOfOptions(configFile), inputFileName, ignoreCase)) : inputFileName;
+  return outputDir ? qp.resolvePath(outputDir, qp.getRelativePathFromDirectory(rootDirOfOptions(configFile), inputFileName, ignoreCase)) : inputFileName;
 }
 
 export function getOutputDeclarationFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
-  Debug.assert(!fileExtensionIs(inputFileName, Extension.Dts) && !fileExtensionIs(inputFileName, Extension.Json));
+  Debug.assert(!qp.fileExtensionIs(inputFileName, Extension.Dts) && !qp.fileExtensionIs(inputFileName, Extension.Json));
   return changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.declarationDir || configFile.options.outDir), Extension.Dts);
 }
 
 function getOutputJSFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
   if (configFile.options.emitDeclarationOnly) return undefined;
-  const isJsonFile = fileExtensionIs(inputFileName, Extension.Json);
-  const outputFileName = changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir), isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.options.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js);
-  return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.options.configFilePath), ignoreCase) !== qpc.Comparison.EqualTo ? outputFileName : undefined;
+  const isJsonFile = qp.fileExtensionIs(inputFileName, Extension.Json);
+  const outputFileName = changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir), isJsonFile ? Extension.Json : qp.fileExtensionIs(inputFileName, Extension.Tsx) && configFile.options.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js);
+  return !isJsonFile || qp.comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.options.configFilePath), ignoreCase) !== qpc.Comparison.EqualTo ? outputFileName : undefined;
 }
 
 function createAddOutput() {
@@ -162,10 +162,10 @@ function getSingleOutputFileNames(configFile: ParsedCommandLine, addOutput: Retu
 }
 
 function getOwnOutputFileNames(configFile: ParsedCommandLine, inputFileName: string, ignoreCase: boolean, addOutput: ReturnType<typeof createAddOutput>['addOutput']) {
-  if (fileExtensionIs(inputFileName, Extension.Dts)) return;
+  if (qp.fileExtensionIs(inputFileName, Extension.Dts)) return;
   const js = getOutputJSFileName(inputFileName, configFile, ignoreCase);
   addOutput(js);
-  if (fileExtensionIs(inputFileName, Extension.Json)) return;
+  if (qp.fileExtensionIs(inputFileName, Extension.Json)) return;
   if (js && configFile.options.sourceMap) {
     addOutput(`${js}.map`);
   }
@@ -192,7 +192,7 @@ export function getAllProjectOutputs(configFile: ParsedCommandLine, ignoreCase: 
 }
 
 export function getOutputFileNames(commandLine: ParsedCommandLine, inputFileName: string, ignoreCase: boolean): readonly string[] {
-  inputFileName = normalizePath(inputFileName);
+  inputFileName = qp.normalizePath(inputFileName);
   Debug.assert(contains(commandLine.fileNames, inputFileName), `Expected fileName to be present in command line`);
   const { addOutput, getOutputs } = createAddOutput();
   if (commandLine.options.outFile || commandLine.options.out) {
@@ -210,10 +210,10 @@ export function getFirstProjectOutput(configFile: ParsedCommandLine, ignoreCase:
   }
 
   for (const inputFileName of configFile.fileNames) {
-    if (fileExtensionIs(inputFileName, Extension.Dts)) continue;
+    if (qp.fileExtensionIs(inputFileName, Extension.Dts)) continue;
     const jsFilePath = getOutputJSFileName(inputFileName, configFile, ignoreCase);
     if (jsFilePath) return jsFilePath;
-    if (fileExtensionIs(inputFileName, Extension.Json)) continue;
+    if (qp.fileExtensionIs(inputFileName, Extension.Json)) continue;
     if (getEmitDeclarations(configFile.options)) {
       return getOutputDeclarationFileName(inputFileName, configFile, ignoreCase);
     }
@@ -252,10 +252,10 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
   function emitSourceFileOrBundle({ jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath }: EmitFileNames, sourceFileOrBundle: SourceFile | Bundle | undefined) {
     let buildInfoDirectory: string | undefined;
     if (buildInfoPath && sourceFileOrBundle && isBundle(sourceFileOrBundle)) {
-      buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
+      buildInfoDirectory = qp.getDirectoryPath(qp.getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
       bundleBuildInfo = {
         commonSourceDirectory: relativeToBuildInfo(host.getCommonSourceDirectory()),
-        sourceFiles: sourceFileOrBundle.sourceFiles.map((file) => relativeToBuildInfo(getNormalizedAbsolutePath(file.fileName, host.getCurrentDirectory()))),
+        sourceFiles: sourceFileOrBundle.sourceFiles.map((file) => relativeToBuildInfo(qp.getNormalizedAbsolutePath(file.fileName, host.getCurrentDirectory()))),
       };
     }
     emitJsFileOrBundle(sourceFileOrBundle, jsFilePath, sourceMapFilePath, relativeToBuildInfo);
@@ -283,7 +283,7 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
     }
 
     function relativeToBuildInfo(path: string) {
-      return ensurePathIsNonModuleName(getRelativePathFromDirectory(buildInfoDirectory!, path, host.getCanonicalFileName));
+      return qp.ensurePathIsNonModuleName(qp.getRelativePathFromDirectory(buildInfoDirectory!, path, host.getCanonicalFileName));
     }
   }
 
@@ -431,7 +431,7 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
 
     let sourceMapGenerator: SourceMapGenerator | undefined;
     if (shouldEmitSourceMaps(mapOptions, sourceFileOrBundle)) {
-      sourceMapGenerator = createSourceMapGenerator(host, getBaseFileName(normalizeSlashes(jsFilePath)), getSourceRoot(mapOptions), getSourceMapDirectory(mapOptions, jsFilePath, sourceFile), mapOptions);
+      sourceMapGenerator = createSourceMapGenerator(host, qp.getBaseFileName(qp.normalizeSlashes(jsFilePath)), getSourceRoot(mapOptions), getSourceMapDirectory(mapOptions, jsFilePath, sourceFile), mapOptions);
     }
 
     if (bundle) {
@@ -481,32 +481,32 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
   }
 
   function shouldEmitSourceMaps(mapOptions: SourceMapOptions, sourceFileOrBundle: SourceFile | Bundle) {
-    return (mapOptions.sourceMap || mapOptions.inlineSourceMap) && (sourceFileOrBundle.kind !== qt.SyntaxKind.SourceFile || !fileExtensionIs(sourceFileOrBundle.fileName, Extension.Json));
+    return (mapOptions.sourceMap || mapOptions.inlineSourceMap) && (sourceFileOrBundle.kind !== qt.SyntaxKind.SourceFile || !qp.fileExtensionIs(sourceFileOrBundle.fileName, Extension.Json));
   }
 
   function getSourceRoot(mapOptions: SourceMapOptions) {
     // Normalize source root and make sure it has trailing "/" so that it can be used to combine paths with the
     // relative paths of the sources list in the sourcemap
-    const sourceRoot = normalizeSlashes(mapOptions.sourceRoot || '');
-    return sourceRoot ? ensureTrailingDirectorySeparator(sourceRoot) : sourceRoot;
+    const sourceRoot = qp.normalizeSlashes(mapOptions.sourceRoot || '');
+    return sourceRoot ? qp.ensureTrailingDirectorySeparator(sourceRoot) : sourceRoot;
   }
 
   function getSourceMapDirectory(mapOptions: SourceMapOptions, filePath: string, sourceFile: SourceFile | undefined) {
     if (mapOptions.sourceRoot) return host.getCommonSourceDirectory();
     if (mapOptions.mapRoot) {
-      let sourceMapDir = normalizeSlashes(mapOptions.mapRoot);
+      let sourceMapDir = qp.normalizeSlashes(mapOptions.mapRoot);
       if (sourceFile) {
         // For modules or multiple emit files the mapRoot will have directory structure like the sources
         // So if src\a.ts and src\lib\b.ts are compiled together user would be moving the maps into mapRoot\a.js.map and mapRoot\lib\b.js.map
         sourceMapDir = qp.getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
       }
-      if (getRootLength(sourceMapDir) === 0) {
+      if (qp.getRootLength(sourceMapDir) === 0) {
         // The relative paths are relative to the common directory
-        sourceMapDir = combinePaths(host.getCommonSourceDirectory(), sourceMapDir);
+        sourceMapDir = qp.combinePaths(host.getCommonSourceDirectory(), sourceMapDir);
       }
       return sourceMapDir;
     }
-    return qp.getDirectoryPath(normalizePath(filePath));
+    return qp.getDirectoryPath(qp.normalizePath(filePath));
   }
 
   function getSourceMappingURL(mapOptions: SourceMapOptions, sourceMapGenerator: SourceMapGenerator, filePath: string, sourceMapFilePath: string | undefined, sourceFile: SourceFile | undefined) {
@@ -517,26 +517,26 @@ export function emitFiles(resolver: EmitResolver, host: EmitHost, targetSourceFi
       return `data:application/json;base64,${base64SourceMapText}`;
     }
 
-    const sourceMapFile = getBaseFileName(normalizeSlashes(Debug.checkDefined(sourceMapFilePath)));
+    const sourceMapFile = qp.getBaseFileName(qp.normalizeSlashes(Debug.checkDefined(sourceMapFilePath)));
     if (mapOptions.mapRoot) {
-      let sourceMapDir = normalizeSlashes(mapOptions.mapRoot);
+      let sourceMapDir = qp.normalizeSlashes(mapOptions.mapRoot);
       if (sourceFile) {
         // For modules or multiple emit files the mapRoot will have directory structure like the sources
         // So if src\a.ts and src\lib\b.ts are compiled together user would be moving the maps into mapRoot\a.js.map and mapRoot\lib\b.js.map
         sourceMapDir = qp.getDirectoryPath(getSourceFilePathInNewDir(sourceFile.fileName, host, sourceMapDir));
       }
-      if (getRootLength(sourceMapDir) === 0) {
+      if (qp.getRootLength(sourceMapDir) === 0) {
         // The relative paths are relative to the common directory
-        sourceMapDir = combinePaths(host.getCommonSourceDirectory(), sourceMapDir);
-        return getRelativePathToDirectoryOrUrl(
-          qp.getDirectoryPath(normalizePath(filePath)), // get the relative sourceMapDir path based on jsFilePath
-          combinePaths(sourceMapDir, sourceMapFile), // this is where user expects to see sourceMap
+        sourceMapDir = qp.combinePaths(host.getCommonSourceDirectory(), sourceMapDir);
+        return qp.getRelativePathToDirectoryOrUrl(
+          qp.getDirectoryPath(qp.normalizePath(filePath)), // get the relative sourceMapDir path based on jsFilePath
+          qp.combinePaths(sourceMapDir, sourceMapFile), // this is where user expects to see sourceMap
           host.getCurrentDirectory(),
           host.getCanonicalFileName,
           /*isAbsolutePathAnUrl*/ true
         );
       } else {
-        return combinePaths(sourceMapDir, sourceMapFile);
+        return qp.combinePaths(sourceMapDir, sourceMapFile);
       }
     }
     return sourceMapFile;
@@ -607,7 +607,7 @@ export interface EmitUsingBuildInfoHost extends ModuleResolutionHost {
 function createSourceFilesFromBundleBuildInfo(bundle: BundleBuildInfo, buildInfoDirectory: string, host: EmitUsingBuildInfoHost): readonly SourceFile[] {
   const sourceFiles = bundle.sourceFiles.map((fileName) => {
     const sourceFile = createNode(SyntaxKind.SourceFile, 0, 0);
-    sourceFile.fileName = getRelativePathFromDirectory(host.getCurrentDirectory(), getNormalizedAbsolutePath(fileName, buildInfoDirectory), !host.useCaseSensitiveFileNames());
+    sourceFile.fileName = qp.getRelativePathFromDirectory(host.getCurrentDirectory(), qp.getNormalizedAbsolutePath(fileName, buildInfoDirectory), !host.useCaseSensitiveFileNames());
     sourceFile.text = '';
     sourceFile.statements = createNodeArray();
     return sourceFile;
@@ -647,7 +647,7 @@ export function emitUsingBuildInfo(config: ParsedCommandLine, host: EmitUsingBui
 
   const buildInfo = getBuildInfo(buildInfoText);
   if (!buildInfo.bundle || !buildInfo.bundle.js || (declarationText && !buildInfo.bundle.dts)) return buildInfoPath;
-  const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
+  const buildInfoDirectory = qp.getDirectoryPath(qp.getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
   const ownPrependInput = createInputFiles(jsFileText, declarationText, sourceMapFilePath, sourceMapText, declarationMapPath, declarationMapText, jsFilePath, declarationFilePath, buildInfoPath, buildInfo, /*onlyOwnText*/ true);
   const outputFiles: OutputFile[] = [];
   const prependNodes = createPrependNodes(config.projectReferences, getCommandLine, (f) => host.readFile(f));
@@ -655,7 +655,7 @@ export function emitUsingBuildInfo(config: ParsedCommandLine, host: EmitUsingBui
   const emitHost: EmitHost = {
     getPrependNodes: memoize(() => [...prependNodes, ownPrependInput]),
     getCanonicalFileName: host.getCanonicalFileName,
-    getCommonSourceDirectory: () => getNormalizedAbsolutePath(buildInfo.bundle!.commonSourceDirectory, buildInfoDirectory),
+    getCommonSourceDirectory: () => qp.getNormalizedAbsolutePath(buildInfo.bundle!.commonSourceDirectory, buildInfoDirectory),
     getCompilerOptions: () => config.options,
     getCurrentDirectory: () => host.getCurrentDirectory(),
     getNewLine: () => host.getNewLine(),
@@ -5097,7 +5097,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
 
   function isJsonSourceMapSource(sourceFile: SourceMapSource) {
-    return fileExtensionIs(sourceFile.fileName, Extension.Json);
+    return qp.fileExtensionIs(sourceFile.fileName, Extension.Json);
   }
 }
 

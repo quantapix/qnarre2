@@ -170,7 +170,7 @@ export function emitFilesAndReportErrors(program: ProgramToEmitFilesAndReportErr
   if (writeFileName) {
     const currentDir = program.getCurrentDirectory();
     forEach(emittedFiles, (file) => {
-      const filepath = getNormalizedAbsolutePath(file, currentDir);
+      const filepath = qp.getNormalizedAbsolutePath(file, currentDir);
       writeFileName(`TSFILE: ${filepath}`);
     });
     listFiles(program, writeFileName);
@@ -324,13 +324,13 @@ export function setGetSourceFileAsHashVersioned(compilerHost: CompilerHost, host
  * Creates the watch compiler host that can be extended with config file or root file names and options host
  */
 export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(system: System, createProgram: CreateProgram<T> | undefined): ProgramHost<T> {
-  const getDefaultLibLocation = memoize(() => qp.getDirectoryPath(normalizePath(system.getExecutingFilePath())));
+  const getDefaultLibLocation = memoize(() => qp.getDirectoryPath(qp.normalizePath(system.getExecutingFilePath())));
   return {
     useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
     getNewLine: () => system.newLine,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     getDefaultLibLocation,
-    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
+    getDefaultLibFileName: (options) => qp.combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
     fileExists: (path) => system.fileExists(path),
     readFile: (path, encoding) => system.readFile(path, encoding),
     directoryExists: (path) => system.directoryExists(path),

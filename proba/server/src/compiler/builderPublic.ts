@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as qpc from './corePublic';
 import * as qc from './core';
 import * as qp from './path';

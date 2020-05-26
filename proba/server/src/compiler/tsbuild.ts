@@ -138,9 +138,9 @@ export namespace Status {
 }
 
 export function resolveConfigFileProjectName(project: string): qt.ResolvedConfigFileName {
-  if (fileExtensionIs(project, Extension.Json)) {
+  if (qp.fileExtensionIs(project, Extension.Json)) {
     return project as qt.ResolvedConfigFileName;
   }
 
-  return combinePaths(project, 'tsconfig.json');
+  return qp.combinePaths(project, 'tsconfig.json');
 }

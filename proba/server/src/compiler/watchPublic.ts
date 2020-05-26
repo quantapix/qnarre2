@@ -326,7 +326,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
   compilerHost.writeLog = writeLog;
 
   // Cache for the module resolution
-  const resolutionCache = createResolutionCache(compilerHost, configFileName ? qp.getDirectoryPath(getNormalizedAbsolutePath(configFileName, currentDirectory)) : currentDirectory, /*logChangesWhenResolvingModule*/ false);
+  const resolutionCache = createResolutionCache(compilerHost, configFileName ? qp.getDirectoryPath(qp.getNormalizedAbsolutePath(configFileName, currentDirectory)) : currentDirectory, /*logChangesWhenResolvingModule*/ false);
   // Resolve module using host module resolution strategy if provided otherwise use resolution cache to resolve module names
   compilerHost.resolveModuleNames = host.resolveModuleNames ? (...args) => host.resolveModuleNames!(...args) : (moduleNames, containingFile, reusedNames, redirectedReference) => resolutionCache.resolveModuleNames(moduleNames, containingFile, reusedNames, redirectedReference);
   compilerHost.resolveTypeReferenceDirectives = host.resolveTypeReferenceDirectives ? (...args) => host.resolveTypeReferenceDirectives!(...args) : (typeDirectiveNames, containingFile, redirectedReference) => resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
@@ -600,8 +600,8 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
 
   function reloadFileNamesFromConfigFile() {
     writeLog('Reloading new file names and options');
-    const result = getFileNamesFromConfigSpecs(configFileSpecs, getNormalizedAbsolutePath(qp.getDirectoryPath(configFileName), currentDirectory), compilerOptions, parseConfigFileHost);
-    if (updateErrorForNoInputFiles(result, getNormalizedAbsolutePath(configFileName, currentDirectory), configFileSpecs, configFileParsingDiagnostics!, canConfigFileJsonReportNoInputFiles)) {
+    const result = getFileNamesFromConfigSpecs(configFileSpecs, qp.getNormalizedAbsolutePath(qp.getDirectoryPath(configFileName), currentDirectory), compilerOptions, parseConfigFileHost);
+    if (updateErrorForNoInputFiles(result, qp.getNormalizedAbsolutePath(configFileName, currentDirectory), configFileSpecs, configFileParsingDiagnostics!, canConfigFileJsonReportNoInputFiles)) {
       hasChangedConfigFileParsingErrors = true;
     }
     rootFileNames = result.fileNames;
@@ -707,7 +707,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
 
         // If the the added or created file or directory is not supported file name, ignore the file
         // But when watched directory is added/removed, we need to reload the file list
-        if (fileOrDirectoryPath !== directory && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, compilerOptions)) {
+        if (fileOrDirectoryPath !== directory && qp.hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, compilerOptions)) {
           writeLog(`Project: ${configFileName} Detected file add/remove of non supported extension: ${fileOrDirectory}`);
           return;
         }

@@ -7,23 +7,23 @@ import { Debug } from './debug';
 import { Diagnostics } from './diagnostics';
 
 export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
-  return forEachAncestorDirectory(searchPath, (ancestor) => {
-    const fileName = combinePaths(ancestor, configName);
+  return qp.forEachAncestorDirectory(searchPath, (ancestor) => {
+    const fileName = qp.combinePaths(ancestor, configName);
     return fileExists(fileName) ? fileName : undefined;
   });
 }
 
 export function resolveTripleslashReference(moduleName: string, containingFile: string): string {
   const basePath = qp.getDirectoryPath(containingFile);
-  const referencedFileName = qp.isRootedDiskPath(moduleName) ? moduleName : combinePaths(basePath, moduleName);
-  return normalizePath(referencedFileName);
+  const referencedFileName = qp.isRootedDiskPath(moduleName) ? moduleName : qp.combinePaths(basePath, moduleName);
+  return qp.normalizePath(referencedFileName);
 }
 
 export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], currentDirectory: string, getCanonicalFileName: qc.GetCanonicalFileName): string {
   let commonPathComponents: string[] | undefined;
   const failed = forEach(fileNames, (sourceFile) => {
     // Each file contributes into common source file path
-    const sourcePathComponents = getNormalizedPathComponents(sourceFile, currentDirectory);
+    const sourcePathComponents = qp.getNormalizedPathComponents(sourceFile, currentDirectory);
     sourcePathComponents.pop(); // The base file name is not part of the common directory path
 
     if (!commonPathComponents) {
@@ -62,7 +62,7 @@ export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], cur
     return currentDirectory;
   }
 
-  return getPathFromPathComponents(commonPathComponents);
+  return qp.getPathFromPathComponents(commonPathComponents);
 }
 
 interface OutputFingerprint {
@@ -165,7 +165,7 @@ export function createCompilerHostWorker(options: qt.CompilerOptions, setParentN
   }
 
   function getDefaultLibLocation(): string {
-    return qp.getDirectoryPath(normalizePath(system.getExecutingFilePath()));
+    return qp.getDirectoryPath(qp.normalizePath(system.getExecutingFilePath()));
   }
 
   const newLine = getNewLineCharacter(options, () => system.newLine);
@@ -173,7 +173,7 @@ export function createCompilerHostWorker(options: qt.CompilerOptions, setParentN
   const compilerHost: CompilerHost = {
     getSourceFile,
     getDefaultLibLocation,
-    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
+    getDefaultLibFileName: (options) => qp.combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
     writeFile,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
@@ -228,7 +228,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     const value = readFileCache.get(key);
     if (value !== undefined) return value !== false ? value : undefined; // could be .d.ts from output
     // Cache json or buildInfo
-    if (!fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) {
+    if (!qp.fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) {
       return originalReadFile.call(host, fileName);
     }
 
@@ -242,7 +242,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
         if (value) return value;
 
         const sourceFile = getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
-        if (sourceFile && (isDeclarationFileName(fileName) || fileExtensionIs(fileName, Extension.Json))) {
+        if (sourceFile && (isDeclarationFileName(fileName) || qp.fileExtensionIs(fileName, Extension.Json))) {
           sourceFileCache.set(key, sourceFile);
         }
         return sourceFile;
@@ -343,7 +343,7 @@ export function formatDiagnostic(diagnostic: Diagnostic, host: FormatDiagnostics
   if (diagnostic.file) {
     const { line, character } = qs.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!); // TODO: GH#18217
     const fileName = diagnostic.file.fileName;
-    const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
+    const relativeFileName = qp.convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
     return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
   }
 
@@ -434,7 +434,7 @@ function formatCodeSpan(file: SourceFile, start: number, length: number, indent:
 
 export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
   const { line: firstLine, character: firstLineChar } = qs.getLineAndCharacterOfPosition(file, start); // TODO: GH#18217
-  const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
+  const relativeFileName = host ? qp.convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
 
   let output = '';
   output += color(relativeFileName, ForegroundColorEscapeSequences.Cyan);
@@ -822,7 +822,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
               processSourceFile(changeExtension(out, '.d.ts'), /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false, /*packageId*/ undefined);
             } else if (getEmitModuleKind(parsedRef.commandLine.options) === qt.ModuleKind.None) {
               for (const fileName of parsedRef.commandLine.fileNames) {
-                if (!fileExtensionIs(fileName, Extension.Dts) && !fileExtensionIs(fileName, Extension.Json)) {
+                if (!qp.fileExtensionIs(fileName, Extension.Dts) && !qp.fileExtensionIs(fileName, Extension.Json)) {
                   processSourceFile(getOutputDeclarationFileName(fileName, parsedRef.commandLine, !host.useCaseSensitiveFileNames()), /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false, /*packageId*/ undefined);
                 }
               }
@@ -840,7 +840,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     if (typeReferences.length) {
       // This containingFilename needs to match with the one used in managed-side
       const containingDirectory = options.configFilePath ? qp.getDirectoryPath(options.configFilePath) : host.getCurrentDirectory();
-      const containingFilename = combinePaths(containingDirectory, inferredTypesContainingFile);
+      const containingFilename = qp.combinePaths(containingDirectory, inferredTypesContainingFile);
       const resolutions = resolveTypeReferenceDirectiveNamesWorker(typeReferences, containingFilename);
       for (let i = 0; i < typeReferences.length; i++) {
         processTypeReferenceDirective(typeReferences[i], resolutions[i]);
@@ -859,7 +859,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         processRootFile(defaultLibraryFileName, /*isDefaultLib*/ true, /*ignoreNoDefaultLib*/ false);
       } else {
         forEach(options.lib, (libFileName) => {
-          processRootFile(combinePaths(defaultLibraryPath, libFileName), /*isDefaultLib*/ true, /*ignoreNoDefaultLib*/ false);
+          processRootFile(qp.combinePaths(defaultLibraryPath, libFileName), /*isDefaultLib*/ true, /*ignoreNoDefaultLib*/ false);
         });
       }
     }
@@ -979,8 +979,8 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function getDefaultLibFilePriority(a: SourceFile) {
-    if (containsPath(defaultLibraryPath, a.fileName, /*ignoreCase*/ false)) {
-      const basename = getBaseFileName(a.fileName);
+    if (qp.containsPath(defaultLibraryPath, a.fileName, /*ignoreCase*/ false)) {
+      const basename = qp.getBaseFileName(a.fileName);
       if (basename === 'lib.d.ts' || basename === 'lib.es6.d.ts') return 0;
       const name = removeSuffix(removePrefix(basename, 'lib.'), '.d.ts');
       const index = libs.indexOf(name);
@@ -1002,10 +1002,10 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       const emittedFiles = filter(files, (file) => sourceFileMayBeEmitted(file, program));
       if (options.rootDir && checkSourceFilesBelongToPath(emittedFiles, options.rootDir)) {
         // If a rootDir is specified use it as the commonSourceDirectory
-        commonSourceDirectory = getNormalizedAbsolutePath(options.rootDir, currentDirectory);
+        commonSourceDirectory = qp.getNormalizedAbsolutePath(options.rootDir, currentDirectory);
       } else if (options.composite && options.configFilePath) {
         // Project compilations never infer their root from the input source paths
-        commonSourceDirectory = qp.getDirectoryPath(normalizeSlashes(options.configFilePath));
+        commonSourceDirectory = qp.getDirectoryPath(qp.normalizeSlashes(options.configFilePath));
         checkSourceFilesBelongToPath(emittedFiles, commonSourceDirectory);
       } else {
         commonSourceDirectory = computeCommonSourceDirectory(emittedFiles);
@@ -1358,7 +1358,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
     // try to verify results of module resolution
     for (const { oldFile: oldSourceFile, newFile: newSourceFile } of modifiedSourceFiles) {
-      const newSourceFilePath = getNormalizedAbsolutePath(newSourceFile.originalFileName, currentDirectory);
+      const newSourceFilePath = qp.getNormalizedAbsolutePath(newSourceFile.originalFileName, currentDirectory);
       const moduleNames = getModuleNames(newSourceFile);
       const resolutions = resolveModuleNamesReusingOldState(moduleNames, newSourceFilePath, newSourceFile);
       // ensure that module resolution results are still correct
@@ -1514,7 +1514,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     if (!options.lib) {
       return equalityComparer(file.fileName, getDefaultLibraryFileName());
     } else {
-      return some(options.lib, (libFileName) => equalityComparer(file.fileName, combinePaths(defaultLibraryPath, libFileName)));
+      return some(options.lib, (libFileName) => equalityComparer(file.fileName, qp.combinePaths(defaultLibraryPath, libFileName)));
     }
   }
 
@@ -2008,7 +2008,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function processRootFile(fileName: string, isDefaultLib: boolean, ignoreNoDefaultLib: boolean) {
-    processSourceFile(normalizePath(fileName), isDefaultLib, ignoreNoDefaultLib, /*packageId*/ undefined);
+    processSourceFile(qp.normalizePath(fileName), isDefaultLib, ignoreNoDefaultLib, /*packageId*/ undefined);
   }
 
   function fileReferenceIsEqualTo(a: FileReference, b: FileReference): boolean {
@@ -2137,7 +2137,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     const libName = toFileNameLowerCase(ref.fileName);
     const libFileName = libMap.get(libName);
     if (libFileName) {
-      return getSourceFile(combinePaths(defaultLibraryPath, libFileName));
+      return getSourceFile(qp.combinePaths(defaultLibraryPath, libFileName));
     }
   }
 
@@ -2147,9 +2147,9 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function getSourceFileFromReferenceWorker(fileName: string, getSourceFile: (fileName: string) => SourceFile | undefined, fail?: (diagnostic: qt.DiagnosticMessage, ...argument: string[]) => void, refFile?: SourceFile): SourceFile | undefined {
-    if (hasExtension(fileName)) {
+    if (qp.hasExtension(fileName)) {
       const canonicalFileName = host.getCanonicalFileName(fileName);
-      if (!options.allowNonTsExtensions && !forEach(supportedExtensionsWithJsonIfResolveJsonModule, (extension) => fileExtensionIs(canonicalFileName, extension))) {
+      if (!options.allowNonTsExtensions && !forEach(supportedExtensionsWithJsonIfResolveJsonModule, (extension) => qp.fileExtensionIs(canonicalFileName, extension))) {
         if (fail) {
           if (hasJSFileExtension(canonicalFileName)) {
             fail(Diagnostics.File_0_is_a_JavaScript_file_Did_you_mean_to_enable_the_allowJs_option, fileName);
@@ -2265,8 +2265,8 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
           fileName = getProjectReferenceRedirect(fileName) || fileName;
         }
         // Check if it differs only in drive letters its ok to ignore that error:
-        const checkedAbsolutePath = getNormalizedAbsolutePathWithoutRoot(checkedName, currentDirectory);
-        const inputAbsolutePath = getNormalizedAbsolutePathWithoutRoot(fileName, currentDirectory);
+        const checkedAbsolutePath = qp.getNormalizedAbsolutePathWithoutRoot(checkedName, currentDirectory);
+        const inputAbsolutePath = qp.getNormalizedAbsolutePathWithoutRoot(fileName, currentDirectory);
         if (checkedAbsolutePath !== inputAbsolutePath) {
           reportFileNamesDifferOnlyInCasingError(fileName, file, refFile);
         }
@@ -2408,7 +2408,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   function getProjectReferenceRedirectProject(fileName: string) {
     // Ignore dts or any json files
-    if (!resolvedProjectReferences || !resolvedProjectReferences.length || fileExtensionIs(fileName, Extension.Dts) || fileExtensionIs(fileName, Extension.Json)) {
+    if (!resolvedProjectReferences || !resolvedProjectReferences.length || qp.fileExtensionIs(fileName, Extension.Dts) || qp.fileExtensionIs(fileName, Extension.Json)) {
       return undefined;
     }
 
@@ -2461,7 +2461,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
             mapFromToProjectReferenceRedirectSource!.set(toPath(outputDts), true);
           } else {
             forEach(resolvedRef.commandLine.fileNames, (fileName) => {
-              if (!fileExtensionIs(fileName, Extension.Dts) && !fileExtensionIs(fileName, Extension.Json)) {
+              if (!qp.fileExtensionIs(fileName, Extension.Dts) && !qp.fileExtensionIs(fileName, Extension.Json)) {
                 const outputDts = getOutputDeclarationFileName(fileName, resolvedRef.commandLine, host.useCaseSensitiveFileNames());
                 mapFromToProjectReferenceRedirectSource!.set(toPath(outputDts), fileName);
               }
@@ -2618,7 +2618,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       const libFileName = libMap.get(libName);
       if (libFileName) {
         // we ignore any 'no-default-lib' reference set on this file.
-        processRootFile(combinePaths(defaultLibraryPath, libFileName), /*isDefaultLib*/ true, /*ignoreNoDefaultLib*/ true);
+        processRootFile(qp.combinePaths(defaultLibraryPath, libFileName), /*isDefaultLib*/ true, /*ignoreNoDefaultLib*/ true);
       } else {
         const unqualifiedLibName = removeSuffix(removePrefix(libName, 'lib.'), '.d.ts');
         const suggestion = getSpellingSuggestion(unqualifiedLibName, libs, qc.identity);
@@ -2645,7 +2645,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     if (file.imports.length || file.moduleAugmentations.length) {
       // Because global augmentation doesn't have string literal name, we can check for global augmentation as such.
       const moduleNames = getModuleNames(file);
-      const resolutions = resolveModuleNamesReusingOldState(moduleNames, getNormalizedAbsolutePath(file.originalFileName, currentDirectory), file);
+      const resolutions = resolveModuleNamesReusingOldState(moduleNames, qp.getNormalizedAbsolutePath(file.originalFileName, currentDirectory), file);
       Debug.assert(resolutions.length === moduleNames.length);
       for (let i = 0; i < moduleNames.length; i++) {
         const resolution = resolutions[i];
@@ -2712,12 +2712,12 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
   function checkSourceFilesBelongToPath(sourceFiles: readonly SourceFile[], rootDirectory: string): boolean {
     let allFilesBelongToPath = true;
-    const absoluteRootDirectoryPath = host.getCanonicalFileName(getNormalizedAbsolutePath(rootDirectory, currentDirectory));
+    const absoluteRootDirectoryPath = host.getCanonicalFileName(qp.getNormalizedAbsolutePath(rootDirectory, currentDirectory));
     let rootPaths: Map<true> | undefined;
 
     for (const sourceFile of sourceFiles) {
       if (!sourceFile.isDeclarationFile) {
-        const absoluteSourceFilePath = host.getCanonicalFileName(getNormalizedAbsolutePath(sourceFile.fileName, currentDirectory));
+        const absoluteSourceFilePath = host.getCanonicalFileName(qp.getNormalizedAbsolutePath(sourceFile.fileName, currentDirectory));
         if (absoluteSourceFilePath.indexOf(absoluteRootDirectoryPath) !== 0) {
           if (!rootPaths) rootPaths = qu.arrayToSet(rootNames, toPath);
           addProgramDiagnosticAtRefPath(sourceFile, rootPaths, Diagnostics.File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files, sourceFile.fileName, rootDirectory);
@@ -2756,7 +2756,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       addFileToFilesByName(sourceFile, sourceFilePath, /*redirectedPath*/ undefined);
     } else {
       // An absolute path pointing to the containing directory of the config file
-      const basePath = getNormalizedAbsolutePath(qp.getDirectoryPath(refPath), host.getCurrentDirectory());
+      const basePath = qp.getNormalizedAbsolutePath(qp.getDirectoryPath(refPath), host.getCurrentDirectory());
       sourceFile = host.getSourceFile(refPath, qt.ScriptTarget.JSON);
       addFileToFilesByName(sourceFile, sourceFilePath, /*redirectedPath*/ undefined);
       if (sourceFile === undefined) {
@@ -2962,7 +2962,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
       const dir = getCommonSourceDirectory();
 
       // If we failed to find a good common directory, but outDir is specified and at least one of our files is on a windows drive/URL/other resource, add a failure
-      if (options.outDir && dir === '' && files.some((file) => getRootLength(file.fileName) > 1)) {
+      if (options.outDir && dir === '' && files.some((file) => qp.getRootLength(file.fileName) > 1)) {
         createDiagnosticForOptionName(Diagnostics.Cannot_find_the_common_subdirectory_path_for_the_input_files, 'outDir');
       }
     }
@@ -3218,16 +3218,16 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
 
     // If declarationDir is specified, return if its a file in that directory
-    if (options.declarationDir && containsPath(options.declarationDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames())) {
+    if (options.declarationDir && qp.containsPath(options.declarationDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames())) {
       return true;
     }
 
     // If --outDir, check if file is in that directory
     if (options.outDir) {
-      return containsPath(options.outDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames());
+      return qp.containsPath(options.outDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames());
     }
 
-    if (fileExtensionIsOneOf(filePath, supportedJSExtensions) || fileExtensionIs(filePath, Extension.Dts)) {
+    if (fileExtensionIsOneOf(filePath, supportedJSExtensions) || qp.fileExtensionIs(filePath, Extension.Dts)) {
       // Otherwise just check if sourceFile with the name exists
       const filePathWithoutExtension = removeFileExtension(filePath);
       return !!getSourceFileByPath(filePathWithoutExtension + Extension.Ts) || !!getSourceFileByPath(filePathWithoutExtension + Extension.Tsx);
@@ -3236,7 +3236,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
   }
 
   function isSameFile(file1: string, file2: string) {
-    return comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
+    return qp.comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
   }
 
   function getProbableSymlinks(): qpc.ReadonlyMap<string> {
@@ -3365,19 +3365,19 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
     // Because we already watch node_modules, handle symlinks in there
     if (!originalRealpath || !qc.stringContains(directory, nodeModulesPathPart)) return;
     if (!symlinkedDirectories) symlinkedDirectories = createMap();
-    const directoryPath = ensureTrailingDirectorySeparator(host.toPath(directory));
+    const directoryPath = qp.ensureTrailingDirectorySeparator(host.toPath(directory));
     if (symlinkedDirectories.has(directoryPath)) return;
 
-    const real = normalizePath(originalRealpath.call(host.compilerHost, directory));
+    const real = qp.normalizePath(originalRealpath.call(host.compilerHost, directory));
     let realPath: Path;
-    if (real === directory || (realPath = ensureTrailingDirectorySeparator(host.toPath(real))) === directoryPath) {
+    if (real === directory || (realPath = qp.ensureTrailingDirectorySeparator(host.toPath(real))) === directoryPath) {
       // not symlinked
       symlinkedDirectories.set(directoryPath, false);
       return;
     }
 
     symlinkedDirectories.set(directoryPath, {
-      real: ensureTrailingDirectorySeparator(real),
+      real: qp.ensureTrailingDirectorySeparator(real),
       realPath,
     });
   }
@@ -3401,7 +3401,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
         if (isFile && result) {
           if (!symlinkedFiles) symlinkedFiles = createMap();
           // Store the real path for the file'
-          const absolutePath = getNormalizedAbsolutePath(fileOrDirectory, host.compilerHost.getCurrentDirectory());
+          const absolutePath = qp.getNormalizedAbsolutePath(fileOrDirectory, host.compilerHost.getCurrentDirectory());
           symlinkedFiles.set(fileOrDirectoryPath, `${symlinkedDirectory.real}${absolutePath.replace(new RegExp(directoryPath, 'i'), '')}`);
         }
         return result;

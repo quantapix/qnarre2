@@ -238,7 +238,7 @@ export function transformDeclarations(context: TransformationContext) {
       bundle.syntheticTypeReferences = getFileReferencesForUsedTypeReferences();
       bundle.syntheticLibReferences = getLibReferences();
       bundle.hasNoDefaultLib = hasNoDefaultLib;
-      const outputFilePath = qp.getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
+      const outputFilePath = qp.getDirectoryPath(qp.normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
       const referenceVisitor = mapReferencesIntoArray(bundle.syntheticFileReferences as FileReference[], outputFilePath);
       refs.forEach(referenceVisitor);
       return bundle;
@@ -260,7 +260,7 @@ export function transformDeclarations(context: TransformationContext) {
     refs = collectReferences(currentSourceFile, createMap());
     libs = collectLibs(currentSourceFile, createMap());
     const references: FileReference[] = [];
-    const outputFilePath = qp.getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
+    const outputFilePath = qp.getDirectoryPath(qp.normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
     const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
     let combinedStatements: qt.NodeArray<Statement>;
     if (isSourceFileJS(currentSourceFile)) {
@@ -321,14 +321,14 @@ export function transformDeclarations(context: TransformationContext) {
           const specifier = moduleSpecifiers.getModuleSpecifier(
             // We pathify the baseUrl since we pathify the other paths here, so we can still easily check if the other paths are within the baseUrl
             // TODO: Should we _always_ be pathifying the baseUrl as we read it in?
-            { ...options, baseUrl: options.baseUrl && toPath(options.baseUrl, host.getCurrentDirectory(), host.getCanonicalFileName) },
+            { ...options, baseUrl: options.baseUrl && qp.toPath(options.baseUrl, host.getCurrentDirectory(), host.getCanonicalFileName) },
             currentSourceFile,
-            toPath(outputFilePath, host.getCurrentDirectory(), host.getCanonicalFileName),
-            toPath(declFileName, host.getCurrentDirectory(), host.getCanonicalFileName),
+            qp.toPath(outputFilePath, host.getCurrentDirectory(), host.getCanonicalFileName),
+            qp.toPath(declFileName, host.getCurrentDirectory(), host.getCanonicalFileName),
             host,
             /*preferences*/ undefined
           );
-          if (!pathIsRelative(specifier)) {
+          if (!qp.pathIsRelative(specifier)) {
             // If some compiler option/symlink/whatever allows access to the file containing the ambient module declaration
             // via a non-relative name, emit a type reference directive to that non-relative name, rather than
             // a relative path to the declaration file
@@ -336,8 +336,8 @@ export function transformDeclarations(context: TransformationContext) {
             return;
           }
 
-          let fileName = getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
-          if (qc.startsWith(fileName, './') && hasExtension(fileName)) {
+          let fileName = qp.getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
+          if (qc.startsWith(fileName, './') && qp.hasExtension(fileName)) {
             fileName = fileName.substring(2);
           }
 

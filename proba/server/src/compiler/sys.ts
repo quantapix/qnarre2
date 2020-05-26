@@ -336,7 +336,7 @@ function createUseFsEventsOnParentDirectoryWatchFile(fsWatch: FsWatch, useCaseSe
         if (!isString(relativeFileName)) {
           return;
         }
-        const fileName = getNormalizedAbsolutePath(relativeFileName, dirName);
+        const fileName = qp.getNormalizedAbsolutePath(relativeFileName, dirName);
         // Some applications save a working file via rename operations
         const callbacks = fileName && fileWatcherCallbacks.get(toCanonicalName(fileName));
         if (callbacks) {
@@ -611,10 +611,10 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     enumerateInsertsAndDeletes<string, ChildDirectoryWatcher>(
       host.directoryExists(parentDir)
         ? mapDefined(host.getAccessibleSortedChildDirectories(parentDir), (child) => {
-            const childFullName = getNormalizedAbsolutePath(child, parentDir);
+            const childFullName = qp.getNormalizedAbsolutePath(child, parentDir);
             // Filter our the symbolic link directories since those arent included in recursive watch
             // which is same behaviour when recursive: true is passed to fs.watch
-            return !isIgnoredPath(childFullName) && filePathComparer(childFullName, normalizePath(host.realpath(childFullName))) === qpc.Comparison.EqualTo ? childFullName : undefined;
+            return !isIgnoredPath(childFullName) && filePathComparer(childFullName, qp.normalizePath(host.realpath(childFullName))) === qpc.Comparison.EqualTo ? childFullName : undefined;
           })
         : emptyArray,
       existingChildWatches,
@@ -683,7 +683,7 @@ function createFsWatchCallbackForDirectoryWatcherCallback(directoryName: string,
     // event name is "change")
     if (eventName === 'rename') {
       // When deleting a file, the passed baseFileName is null
-      callback(!relativeFileName ? directoryName : normalizePath(combinePaths(directoryName, relativeFileName)));
+      callback(!relativeFileName ? directoryName : qp.normalizePath(qp.combinePaths(directoryName, relativeFileName)));
     }
   };
 }
@@ -940,7 +940,7 @@ export interface System {
    */
   watchFile?(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: qt.WatchOptions): FileWatcher;
   watchDirectory?(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: qt.WatchOptions): FileWatcher;
-  resolvePath(path: string): string;
+  qp.resolvePath(path: string): string;
   fileExists(path: string): boolean;
   directoryExists(path: string): boolean;
   createDirectory(path: string): void;
@@ -1195,14 +1195,14 @@ export let sys: System = (() => {
     function cleanupPaths(profile: import('inspector').Profiler.Profile) {
       let externalFileCounter = 0;
       const remappedPaths = qc.createMap<string>();
-      const normalizedDir = normalizeSlashes(__dirname);
+      const normalizedDir = qp.normalizeSlashes(__dirname);
       // Windows rooted dir names need an extra `/` prepended to be valid file:/// urls
-      const fileUrlRoot = `file://${getRootLength(normalizedDir) === 1 ? '' : '/'}${normalizedDir}`;
+      const fileUrlRoot = `file://${qp.getRootLength(normalizedDir) === 1 ? '' : '/'}${normalizedDir}`;
       for (const node of profile.nodes) {
         if (node.callFrame.url) {
-          const url = normalizeSlashes(node.callFrame.url);
-          if (containsPath(fileUrlRoot, url, useCaseSensitiveFileNames)) {
-            node.callFrame.url = getRelativePathToDirectoryOrUrl(fileUrlRoot, url, fileUrlRoot, qc.createGetCanonicalFileName(useCaseSensitiveFileNames), /*isAbsolutePathAnUrl*/ true);
+          const url = qp.normalizeSlashes(node.callFrame.url);
+          if (qp.containsPath(fileUrlRoot, url, useCaseSensitiveFileNames)) {
+            node.callFrame.url = qp.getRelativePathToDirectoryOrUrl(fileUrlRoot, url, fileUrlRoot, qc.createGetCanonicalFileName(useCaseSensitiveFileNames), /*isAbsolutePathAnUrl*/ true);
           } else if (!nativePattern.test(url)) {
             node.callFrame.url = (remappedPaths.has(url) ? remappedPaths : remappedPaths.set(url, `external${externalFileCounter}.js`)).get(url)!;
             externalFileCounter++;
@@ -1468,7 +1468,7 @@ export let sys: System = (() => {
 
           let stat: any;
           if (typeof dirent === 'string' || dirent.isSymbolicLink()) {
-            const name = combinePaths(path, entry);
+            const name = qp.combinePaths(path, entry);
 
             try {
               stat = _fs.statSync(name);

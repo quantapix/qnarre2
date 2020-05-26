@@ -112,7 +112,7 @@ export namespace BuilderState {
    * Gets the path to reference file from file name, it could be resolvedPath if present otherwise path
    */
   function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: qc.GetCanonicalFileName): Path {
-    return toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
+    return qp.toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
   }
 
   /**
@@ -337,7 +337,7 @@ export namespace BuilderState {
       const emitOutput = getFileEmitOutput(programOfThisState, sourceFile, /*emitOnlyDtsFiles*/ true, cancellationToken, /*customTransformers*/ undefined, /*forceDtsEmit*/ true);
       const firstDts = emitOutput.outputFiles && programOfThisState.getCompilerOptions().declarationMap ? (emitOutput.outputFiles.length > 1 ? emitOutput.outputFiles[1] : undefined) : emitOutput.outputFiles.length > 0 ? emitOutput.outputFiles[0] : undefined;
       if (firstDts) {
-        Debug.assert(fileExtensionIs(firstDts.name, Extension.Dts), 'File extension for signature expected to be dts', () => `Found: ${getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(emitOutput.outputFiles.map((f) => f.name))}`);
+        Debug.assert(qp.fileExtensionIs(firstDts.name, Extension.Dts), 'File extension for signature expected to be dts', () => `Found: ${qp.getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(emitOutput.outputFiles.map((f) => f.name))}`);
         latestSignature = computeHash(firstDts.text);
         if (exportedModulesMapCache && latestSignature !== prevSignature) {
           updateExportedModules(sourceFile, emitOutput.exportedModulesFromDeclarationEmit, exportedModulesMapCache);

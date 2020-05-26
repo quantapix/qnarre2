@@ -160,7 +160,7 @@ function readPackageJsonPathField<K extends 'typings' | 'types' | 'main' | 'tsco
     }
     return;
   }
-  const path = normalizePath(combinePaths(baseDirectory, fileName));
+  const path = qp.normalizePath(qp.combinePaths(baseDirectory, fileName));
   if (state.traceEnabled) {
     trace(state.host, Diagnostics.package_json_has_0_field_1_that_references_2, fieldName, fileName, path);
   }
@@ -269,13 +269,13 @@ export function getEffectiveTypeRoots(options: qt.CompilerOptions, host: GetEffe
  */
 function getDefaultTypeRoots(currentDirectory: string, host: { directoryExists?: (directoryName: string) => boolean }): string[] | undefined {
   if (!host.directoryExists) {
-    return [combinePaths(currentDirectory, nodeModulesAtTypes)];
+    return [qp.combinePaths(currentDirectory, nodeModulesAtTypes)];
     // And if it doesn't exist, tough.
   }
 
   let typeRoots: string[] | undefined;
-  forEachAncestorDirectory(normalizePath(currentDirectory), (directory) => {
-    const atTypes = combinePaths(directory, nodeModulesAtTypes);
+  qp.forEachAncestorDirectory(qp.normalizePath(currentDirectory), (directory) => {
+    const atTypes = qp.combinePaths(directory, nodeModulesAtTypes);
     if (host.directoryExists!(atTypes)) {
       (typeRoots || (typeRoots = [])).push(atTypes);
     }
@@ -283,7 +283,7 @@ function getDefaultTypeRoots(currentDirectory: string, host: { directoryExists?:
   });
   return typeRoots;
 }
-const nodeModulesAtTypes = combinePaths('node_modules', '@types');
+const nodeModulesAtTypes = qp.combinePaths('node_modules', '@types');
 
 /**
  * @param {string | undefined} containingFile - file that contains type reference directive, can be undefined if containing file is unknown.
@@ -348,7 +348,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
         trace(host, Diagnostics.Resolving_with_primary_search_path_0, typeRoots.join(', '));
       }
       return firstDefined(typeRoots, (typeRoot) => {
-        const candidate = combinePaths(typeRoot, typeReferenceDirectiveName);
+        const candidate = qp.combinePaths(typeRoot, typeReferenceDirectiveName);
         const candidateDirectory = qp.getDirectoryPath(candidate);
         const directoryExists = directoryProbablyExists(candidateDirectory, host);
         if (!directoryExists && traceEnabled) {
@@ -376,7 +376,7 @@ export function resolveTypeReferenceDirective(typeReferenceDirectiveName: string
         const searchResult = loadModuleFromNearestNodeModulesDirectory(Extensions.DtsOnly, typeReferenceDirectiveName, initialLocationForSecondaryLookup, moduleResolutionState, /*cache*/ undefined, /*redirectedReference*/ undefined);
         result = searchResult && searchResult.value;
       } else {
-        const { path: candidate } = normalizePathAndParts(combinePaths(initialLocationForSecondaryLookup, typeReferenceDirectiveName));
+        const { path: candidate } = qp.normalizePathAndParts(qp.combinePaths(initialLocationForSecondaryLookup, typeReferenceDirectiveName));
         result = nodeLoadModuleByRelativeName(Extensions.DtsOnly, candidate, /*onlyRecordFailures*/ false, moduleResolutionState, /*considerPackageJson*/ true);
       }
       const resolvedFile = resolvedTypeScriptOnly(result);
@@ -414,14 +414,14 @@ export function getAutomaticTypeDirectiveNames(options: qt.CompilerOptions, host
       for (const root of typeRoots) {
         if (host.directoryExists(root)) {
           for (const typeDirectivePath of host.getDirectories(root)) {
-            const normalized = normalizePath(typeDirectivePath);
-            const packageJsonPath = combinePaths(root, normalized, 'package.json');
+            const normalized = qp.normalizePath(typeDirectivePath);
+            const packageJsonPath = qp.combinePaths(root, normalized, 'package.json');
             // `types-publisher` sometimes creates packages with `"typings": null` for packages that don't provide their own types.
             // See `createNotNeededPackageJSON` in the types-publisher` repo.
             // eslint-disable-next-line no-null/no-null
             const isNotNeededPackage = host.fileExists(packageJsonPath) && (readJson(packageJsonPath, host) as PackageJson).typings === null;
             if (!isNotNeededPackage) {
-              const baseFileName = getBaseFileName(normalized);
+              const baseFileName = qp.getBaseFileName(normalized);
 
               // At this stage, skip results with leading dot.
               if (baseFileName.charCodeAt(0) !== qt.CharacterCodes.dot) {
@@ -517,7 +517,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
   return { getOrCreateCacheForDirectory, getOrCreateCacheForModuleName, directoryToModuleNameMap, moduleNameToDirectoryMap };
 
   function getOrCreateCacheForDirectory(directoryName: string, redirectedReference?: ResolvedProjectReference) {
-    const path = toPath(directoryName, currentDirectory, getCanonicalFileName);
+    const path = qp.toPath(directoryName, currentDirectory, getCanonicalFileName);
     return getOrCreateCache<Map<ResolvedModuleWithFailedLookupLocations>>(directoryToModuleNameMap, redirectedReference, path, createMap);
   }
 
@@ -542,7 +542,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
     return { get, set };
 
     function get(directory: string): ResolvedModuleWithFailedLookupLocations | undefined {
-      return directoryPathMap.get(toPath(directory, currentDirectory, getCanonicalFileName));
+      return directoryPathMap.get(qp.toPath(directory, currentDirectory, getCanonicalFileName));
     }
 
     /**
@@ -557,7 +557,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
      * this means that request for module resolution from file in any of these folder will be immediately found in cache.
      */
     function set(directory: string, result: ResolvedModuleWithFailedLookupLocations): void {
-      const path = toPath(directory, currentDirectory, getCanonicalFileName);
+      const path = qp.toPath(directory, currentDirectory, getCanonicalFileName);
       // if entry is already in cache do nothing
       if (directoryPathMap.has(path)) {
         return;
@@ -584,7 +584,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
     }
 
     function getCommonPrefix(directory: Path, resolution: string) {
-      const resolutionDirectory = toPath(qp.getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
+      const resolutionDirectory = qp.toPath(qp.getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
 
       // find first position where directory and resolution differs
       let i = 0;
@@ -595,7 +595,7 @@ export function createModuleResolutionCacheWithMaps(directoryToModuleNameMap: Ca
       if (i === directory.length && (resolutionDirectory.length === i || resolutionDirectory[i] === directorySeparator)) {
         return directory;
       }
-      const rootLength = getRootLength(directory);
+      const rootLength = qp.getRootLength(directory);
       if (i < rootLength) {
         return undefined;
       }
@@ -767,7 +767,7 @@ function tryLoadModuleUsingOptionalResolutionSettings(extensions: Extensions, mo
 
 function tryLoadModuleUsingPathsIfEligible(extensions: Extensions, moduleName: string, loader: ResolutionKindSpecificLoader, state: ModuleResolutionState) {
   const { baseUrl, paths } = state.compilerOptions;
-  if (baseUrl && paths && !pathIsRelative(moduleName)) {
+  if (baseUrl && paths && !qp.pathIsRelative(moduleName)) {
     if (state.traceEnabled) {
       trace(state.host, Diagnostics.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
       trace(state.host, Diagnostics.paths_option_is_specified_looking_for_a_pattern_to_match_module_name_0, moduleName);
@@ -785,7 +785,7 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
     trace(state.host, Diagnostics.rootDirs_option_is_set_using_it_to_resolve_relative_module_name_0, moduleName);
   }
 
-  const candidate = normalizePath(combinePaths(containingDirectory, moduleName));
+  const candidate = qp.normalizePath(qp.combinePaths(containingDirectory, moduleName));
 
   let matchedRootDir: string | undefined;
   let matchedNormalizedPrefix: string | undefined;
@@ -793,7 +793,7 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
     // rootDirs are expected to be absolute
     // in case of tsconfig.json this will happen automatically - compiler will expand relative names
     // using location of tsconfig.json as base location
-    let normalizedRoot = normalizePath(rootDir);
+    let normalizedRoot = qp.normalizePath(rootDir);
     if (!qc.endsWith(normalizedRoot, directorySeparator)) {
       normalizedRoot += directorySeparator;
     }
@@ -832,7 +832,7 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
         // skip the initially matched entry
         continue;
       }
-      const candidate = combinePaths(normalizePath(rootDir), suffix);
+      const candidate = qp.combinePaths(qp.normalizePath(rootDir), suffix);
       if (state.traceEnabled) {
         trace(state.host, Diagnostics.Loading_0_from_the_root_dir_1_candidate_location_2, suffix, rootDir, candidate);
       }
@@ -857,7 +857,7 @@ function tryLoadModuleUsingBaseUrl(extensions: Extensions, moduleName: string, l
   if (state.traceEnabled) {
     trace(state.host, Diagnostics.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
   }
-  const candidate = normalizePath(combinePaths(baseUrl, moduleName));
+  const candidate = qp.normalizePath(qp.combinePaths(baseUrl, moduleName));
   if (state.traceEnabled) {
     trace(state.host, Diagnostics.Resolving_module_name_0_relative_to_base_url_1_2, moduleName, baseUrl, candidate);
   }
@@ -929,7 +929,7 @@ function nodeModuleNameResolverWorker(moduleName: string, containingDirectory: s
       // For node_modules lookups, get the real path so that multiple accesses to an `npm link`-ed module do not create duplicate files.
       return { value: resolvedValue && { resolved: resolvedValue, isExternalLibraryImport: true } };
     } else {
-      const { path: candidate, parts } = normalizePathAndParts(combinePaths(containingDirectory, moduleName));
+      const { path: candidate, parts } = qp.normalizePathAndParts(qp.combinePaths(containingDirectory, moduleName));
       const resolved = nodeLoadModuleByRelativeName(extensions, candidate, /*onlyRecordFailures*/ false, state, /*considerPackageJson*/ true);
       // Treat explicit "node_modules" import as an external library import.
       return resolved && toSearchResult({ resolved, isExternalLibraryImport: contains(parts, 'node_modules') });
@@ -942,7 +942,7 @@ function realPath(path: string, host: ModuleResolutionHost, traceEnabled: boolea
     return path;
   }
 
-  const real = normalizePath(host.realpath(path));
+  const real = qp.normalizePath(host.realpath(path));
   if (traceEnabled) {
     trace(host, Diagnostics.Resolving_real_path_for_0_result_1, path, real);
   }
@@ -954,7 +954,7 @@ function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string,
   if (state.traceEnabled) {
     trace(state.host, Diagnostics.Loading_module_as_file_Slash_folder_candidate_module_location_0_target_file_type_1, candidate, Extensions[extensions]);
   }
-  if (!hasTrailingDirectorySeparator(candidate)) {
+  if (!qp.hasTrailingDirectorySeparator(candidate)) {
     if (!onlyRecordFailures) {
       const parentOfCandidate = qp.getDirectoryPath(candidate);
       if (!directoryProbablyExists(parentOfCandidate, state.host)) {
@@ -999,7 +999,7 @@ export function pathContainsNodeModules(path: string): boolean {
  *   For `/node_modules/foo/bar/index.d.ts` this is packageDirectory: "foo"
  */
 function parseNodeModuleFromPath(resolved: PathAndExtension): string | undefined {
-  const path = normalizePath(resolved.path);
+  const path = qp.normalizePath(resolved.path);
   const idx = path.lastIndexOf(nodeModulesPathPart);
   if (idx === -1) {
     return undefined;
@@ -1112,7 +1112,7 @@ interface PackageJsonInfo {
 function getPackageJsonInfo(packageDirectory: string, onlyRecordFailures: boolean, state: ModuleResolutionState): PackageJsonInfo | undefined {
   const { host, traceEnabled } = state;
   const directoryExists = !onlyRecordFailures && directoryProbablyExists(packageDirectory, host);
-  const packageJsonPath = combinePaths(packageDirectory, 'package.json');
+  const packageJsonPath = qp.combinePaths(packageDirectory, 'package.json');
   if (directoryExists && host.fileExists(packageJsonPath)) {
     const packageJsonContent = readJson(packageJsonPath, host) as PackageJson;
     if (traceEnabled) {
@@ -1173,10 +1173,10 @@ function loadNodeModuleFromDirectoryWorker(extensions: Extensions, candidate: st
 
   const onlyRecordFailuresForPackageFile = packageFile ? !directoryProbablyExists(qp.getDirectoryPath(packageFile), state.host) : undefined;
   const onlyRecordFailuresForIndex = onlyRecordFailures || !directoryProbablyExists(candidate, state.host);
-  const indexPath = combinePaths(candidate, extensions === Extensions.TSConfig ? 'tsconfig' : 'index');
+  const indexPath = qp.combinePaths(candidate, extensions === Extensions.TSConfig ? 'tsconfig' : 'index');
 
-  if (versionPaths && (!packageFile || containsPath(candidate, packageFile))) {
-    const moduleName = getRelativePathFromDirectory(candidate, packageFile || indexPath, /*ignoreCase*/ false);
+  if (versionPaths && (!packageFile || qp.containsPath(candidate, packageFile))) {
+    const moduleName = qp.getRelativePathFromDirectory(candidate, packageFile || indexPath, /*ignoreCase*/ false);
     if (state.traceEnabled) {
       trace(state.host, Diagnostics.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2, versionPaths.version, version, moduleName);
     }
@@ -1233,8 +1233,8 @@ function loadModuleFromNearestNodeModulesDirectoryTypesScope(moduleName: string,
 
 function loadModuleFromNearestNodeModulesDirectoryWorker(extensions: Extensions, moduleName: string, directory: string, state: ModuleResolutionState, typesScopeOnly: boolean, cache: NonRelativeModuleNameResolutionCache | undefined, redirectedReference: ResolvedProjectReference | undefined): SearchResult<Resolved> {
   const perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName, redirectedReference);
-  return forEachAncestorDirectory(normalizeSlashes(directory), (ancestorDirectory) => {
-    if (getBaseFileName(ancestorDirectory) !== 'node_modules') {
+  return qp.forEachAncestorDirectory(qp.normalizeSlashes(directory), (ancestorDirectory) => {
+    if (qp.getBaseFileName(ancestorDirectory) !== 'node_modules') {
       const resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, ancestorDirectory, state);
       if (resolutionFromCache) {
         return resolutionFromCache;
@@ -1245,7 +1245,7 @@ function loadModuleFromNearestNodeModulesDirectoryWorker(extensions: Extensions,
 }
 
 function loadModuleFromImmediateNodeModulesDirectory(extensions: Extensions, moduleName: string, directory: string, state: ModuleResolutionState, typesScopeOnly: boolean): Resolved | undefined {
-  const nodeModulesFolder = combinePaths(directory, 'node_modules');
+  const nodeModulesFolder = qp.combinePaths(directory, 'node_modules');
   const nodeModulesFolderExists = directoryProbablyExists(nodeModulesFolder, state.host);
   if (!nodeModulesFolderExists && state.traceEnabled) {
     trace(state.host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, nodeModulesFolder);
@@ -1256,7 +1256,7 @@ function loadModuleFromImmediateNodeModulesDirectory(extensions: Extensions, mod
     return packageResult;
   }
   if (extensions === Extensions.TypeScript || extensions === Extensions.DtsOnly) {
-    const nodeModulesAtTypes = combinePaths(nodeModulesFolder, '@types');
+    const nodeModulesAtTypes = qp.combinePaths(nodeModulesFolder, '@types');
     let nodeModulesAtTypesExists = nodeModulesFolderExists;
     if (nodeModulesFolderExists && !directoryProbablyExists(nodeModulesAtTypes, state.host)) {
       if (state.traceEnabled) {
@@ -1269,7 +1269,7 @@ function loadModuleFromImmediateNodeModulesDirectory(extensions: Extensions, mod
 }
 
 function loadModuleFromSpecificNodeModulesDirectory(extensions: Extensions, moduleName: string, nodeModulesDirectory: string, nodeModulesDirectoryExists: boolean, state: ModuleResolutionState): Resolved | undefined {
-  const candidate = normalizePath(combinePaths(nodeModulesDirectory, moduleName));
+  const candidate = qp.normalizePath(qp.combinePaths(nodeModulesDirectory, moduleName));
 
   // First look for a nested package.json, as in `node_modules/foo/bar/package.json`.
   let packageInfo = getPackageJsonInfo(candidate, !nodeModulesDirectoryExists, state);
@@ -1291,7 +1291,7 @@ function loadModuleFromSpecificNodeModulesDirectory(extensions: Extensions, modu
   const { packageName, rest } = parsePackageName(moduleName);
   if (rest !== '') {
     // If "rest" is empty, we just did this search above.
-    const packageDirectory = combinePaths(nodeModulesDirectory, packageName);
+    const packageDirectory = qp.combinePaths(nodeModulesDirectory, packageName);
 
     // Don't use a "types" or "main" from here because we're not loading the root, but a subdirectory -- just here for the packageId and path mappings.
     packageInfo = getPackageJsonInfo(packageDirectory, !nodeModulesDirectoryExists, state);
@@ -1320,7 +1320,7 @@ function tryLoadModuleUsingPaths(extensions: Extensions, moduleName: string, bas
     }
     const resolved = forEach(paths[matchedPatternText], (subst) => {
       const path = matchedStar ? subst.replace('*', matchedStar) : subst;
-      const candidate = normalizePath(combinePaths(baseDirectory, path));
+      const candidate = qp.normalizePath(qp.combinePaths(baseDirectory, path));
       if (state.traceEnabled) {
         trace(state.host, Diagnostics.Trying_substitution_0_candidate_module_location_Colon_1, subst, path);
       }
@@ -1413,12 +1413,12 @@ export function classicNameResolver(moduleName: string, containingFile: string, 
     if (!isExternalModuleNameRelative(moduleName)) {
       const perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName, redirectedReference);
       // Climb up parent directories looking for a module.
-      const resolved = forEachAncestorDirectory(containingDirectory, (directory) => {
+      const resolved = qp.forEachAncestorDirectory(containingDirectory, (directory) => {
         const resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, directory, state);
         if (resolutionFromCache) {
           return resolutionFromCache;
         }
-        const searchName = normalizePath(combinePaths(directory, moduleName));
+        const searchName = qp.normalizePath(qp.combinePaths(directory, moduleName));
         return toSearchResult(loadModuleFromFileNoPackageId(extensions, searchName, /*onlyRecordFailures*/ false, state));
       });
       if (resolved) {
@@ -1429,7 +1429,7 @@ export function classicNameResolver(moduleName: string, containingFile: string, 
         return loadModuleFromNearestNodeModulesDirectoryTypesScope(moduleName, containingDirectory, state);
       }
     } else {
-      const candidate = normalizePath(combinePaths(containingDirectory, moduleName));
+      const candidate = qp.normalizePath(qp.combinePaths(containingDirectory, moduleName));
       return toSearchResult(loadModuleFromFileNoPackageId(extensions, candidate, /*onlyRecordFailures*/ false, state));
     }
   }

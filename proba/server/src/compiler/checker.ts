@@ -48,10 +48,10 @@ interface IterationTypesResolver {
   iterableCacheKey: 'iterationTypesOfAsyncIterable' | 'iterationTypesOfIterable';
   iteratorCacheKey: 'iterationTypesOfAsyncIterator' | 'iterationTypesOfIterator';
   iteratorSymbolName: 'asyncIterator' | 'iterator';
-  getGlobalIteratorType: (reportErrors: boolean) => GenericType;
-  getGlobalIterableType: (reportErrors: boolean) => GenericType;
-  getGlobalIterableIteratorType: (reportErrors: boolean) => GenericType;
-  getGlobalGeneratorType: (reportErrors: boolean) => GenericType;
+  getGlobalIteratorType: (reportErrors: boolean) => qt.GenericType;
+  getGlobalIterableType: (reportErrors: boolean) => qt.GenericType;
+  getGlobalIterableIteratorType: (reportErrors: boolean) => qt.GenericType;
+  getGlobalGeneratorType: (reportErrors: boolean) => qt.GenericType;
   resolveIterationType: (type: Type, errorNode: Node | undefined) => Type | undefined;
   mustHaveANextMethodDiagnostic: qt.DiagnosticMessage;
   mustBeAMethodDiagnostic: qt.DiagnosticMessage;
@@ -279,7 +279,7 @@ export function isInstantiatedModule(node: ModuleDeclaration, preserveConstEnums
   return moduleState === ModuleInstanceState.Instantiated || (preserveConstEnums && moduleState === ModuleInstanceState.ConstEnumOnly);
 }
 
-export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boolean): TypeChecker {
+export function createTypeChecker(host: qt.TypeCheckerHost, produceDiagnostics: boolean): qt.TypeChecker {
   const getPackagesSet: () => Map<true> = memoize(() => {
     const set = qc.createMap<true>();
     host.getSourceFiles().forEach((sf) => {
@@ -296,7 +296,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // In general cancelling is *not* safe for the type checker.  We might be in the middle of
   // computing something, and we will leave our internals in an inconsistent state.  Callers
   // who set the cancellation token should catch if a cancellation exception occurs, and
-  // should throw away and create a new TypeChecker.
+  // should throw away and create a new qt.TypeChecker.
   //
   // Currently we only support setting the cancellation token when getting diagnostics.  This
   // is because diagnostics can be quite expensive, and we want to allow hosts to bail out if
@@ -357,7 +357,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // for most of these, we perform the guard only on `checker` to avoid any possible
   // extra cost of calling `getParseTreeNode` when calling these functions from inside the
   // checker.
-  const checker: TypeChecker = {
+  const checker: qt.TypeChecker = {
     getNodeCount: () => sum(host.getSourceFiles(), 'nodeCount'),
     getIdentifierCount: () => sum(host.getSourceFiles(), 'identifierCount'),
     getSymbolCount: () => sum(host.getSourceFiles(), 'symbolCount') + symbolCount,
@@ -835,13 +835,13 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   let globalFunctionType: ObjectType;
   let globalCallableFunctionType: ObjectType;
   let globalNewableFunctionType: ObjectType;
-  let globalArrayType: GenericType;
-  let globalReadonlyArrayType: GenericType;
+  let globalArrayType: qt.GenericType;
+  let globalReadonlyArrayType: qt.GenericType;
   let globalStringType: ObjectType;
   let globalNumberType: ObjectType;
   let globalBooleanType: ObjectType;
   let globalRegExpType: ObjectType;
-  let globalThisType: GenericType;
+  let globalThisType: qt.GenericType;
   let anyArrayType: Type;
   let autoArrayType: Type;
   let anyReadonlyArrayType: Type;
@@ -852,21 +852,21 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   // and they will not get an error from not having unrelated library files
   let deferredGlobalESSymbolConstructorSymbol: symbol | undefined;
   let deferredGlobalESSymbolType: ObjectType;
-  let deferredGlobalTypedPropertyDescriptorType: GenericType;
-  let deferredGlobalPromiseType: GenericType;
-  let deferredGlobalPromiseLikeType: GenericType;
+  let deferredGlobalTypedPropertyDescriptorType: qt.GenericType;
+  let deferredGlobalPromiseType: qt.GenericType;
+  let deferredGlobalPromiseLikeType: qt.GenericType;
   let deferredGlobalPromiseConstructorSymbol: symbol | undefined;
   let deferredGlobalPromiseConstructorLikeType: ObjectType;
-  let deferredGlobalIterableType: GenericType;
-  let deferredGlobalIteratorType: GenericType;
-  let deferredGlobalIterableIteratorType: GenericType;
-  let deferredGlobalGeneratorType: GenericType;
-  let deferredGlobalIteratorYieldResultType: GenericType;
-  let deferredGlobalIteratorReturnResultType: GenericType;
-  let deferredGlobalAsyncIterableType: GenericType;
-  let deferredGlobalAsyncIteratorType: GenericType;
-  let deferredGlobalAsyncIterableIteratorType: GenericType;
-  let deferredGlobalAsyncGeneratorType: GenericType;
+  let deferredGlobalIterableType: qt.GenericType;
+  let deferredGlobalIteratorType: qt.GenericType;
+  let deferredGlobalIterableIteratorType: qt.GenericType;
+  let deferredGlobalGeneratorType: qt.GenericType;
+  let deferredGlobalIteratorYieldResultType: qt.GenericType;
+  let deferredGlobalIteratorReturnResultType: qt.GenericType;
+  let deferredGlobalAsyncIterableType: qt.GenericType;
+  let deferredGlobalAsyncIteratorType: qt.GenericType;
+  let deferredGlobalAsyncIterableIteratorType: qt.GenericType;
+  let deferredGlobalAsyncGeneratorType: qt.GenericType;
   let deferredGlobalTemplateStringsArrayType: ObjectType;
   let deferredGlobalImportMetaType: ObjectType;
   let deferredGlobalExtractSymbol: symbol;
@@ -1132,7 +1132,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
       // Collect top-level duplicate identifier errors into one mapping, so we can then merge their diagnostics if there are a bunch
       if (sourceSymbolFile && targetSymbolFile && amalgamatedDuplicates && !isEitherEnum && sourceSymbolFile !== targetSymbolFile) {
-        const firstFile = comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === qpc.Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
+        const firstFile = qp.comparePaths(sourceSymbolFile.path, targetSymbolFile.path) === qpc.Comparison.LessThan ? sourceSymbolFile : targetSymbolFile;
         const secondFile = firstFile === sourceSymbolFile ? targetSymbolFile : sourceSymbolFile;
         const filesDuplicates = getOrUpdate<DuplicateInfoForFiles>(amalgamatedDuplicates, `${firstFile.path}|${secondFile.path}`, () => ({ firstFile, secondFile, conflictingSymbols: createMap() }));
         const conflictingSymbolInfo = getOrUpdate<DuplicateInfoForSymbol>(filesDuplicates.conflictingSymbols, symbolName, () => ({
@@ -2978,7 +2978,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (tsExtension) {
           const diag = Diagnostics.An_import_path_cannot_end_with_a_0_extension_Consider_importing_1_instead;
           error(errorNode, diag, tsExtension, removeExtension(moduleReference, tsExtension));
-        } else if (!compilerOptions.resolveJsonModule && fileExtensionIs(moduleReference, Extension.Json) && getEmitModuleResolutionKind(compilerOptions) === qt.ModuleResolutionKind.NodeJs && hasJsonModuleEmitEnabled(compilerOptions)) {
+        } else if (!compilerOptions.resolveJsonModule && qp.fileExtensionIs(moduleReference, Extension.Json) && getEmitModuleResolutionKind(compilerOptions) === qt.ModuleResolutionKind.NodeJs && hasJsonModuleEmitEnabled(compilerOptions)) {
           error(errorNode, Diagnostics.Cannot_find_module_0_Consider_using_resolveJsonModule_to_import_module_with_json_extension, moduleReference);
         } else {
           error(errorNode, moduleNotFoundError, moduleReference);
@@ -4789,7 +4789,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           const specifierB = parentSpecifiers[b];
           if (specifierA && specifierB) {
             const isBRelative = qp.pathIsRelative(specifierB);
-            if (pathIsRelative(specifierA) === isBRelative) {
+            if (qp.pathIsRelative(specifierA) === isBRelative) {
               // Both relative or both non-relative, sort by number of parts
               return moduleSpecifiers.countPathComponents(specifierA) - moduleSpecifiers.countPathComponents(specifierB);
             }
@@ -10789,7 +10789,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return result & ObjectFlags.PropagatingFlags;
   }
 
-  function createTypeReference(target: GenericType, typeArguments: readonly Type[] | undefined): TypeReference {
+  function createTypeReference(target: qt.GenericType, typeArguments: readonly Type[] | undefined): TypeReference {
     const id = getTypeListId(typeArguments);
     let type = target.instantiations.get(id);
     if (!type) {
@@ -10811,7 +10811,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return type;
   }
 
-  function createDeferredTypeReference(target: GenericType, node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode, mapper?: TypeMapper): DeferredTypeReference {
+  function createDeferredTypeReference(target: qt.GenericType, node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode, mapper?: TypeMapper): DeferredTypeReference {
     const aliasSymbol = getAliasSymbolForTypeNode(node);
     const aliasTypeArguments = getTypeArgumentsForAliasSymbol(aliasSymbol);
     const type = createObjectType(ObjectFlags.Reference, target.symbol);
@@ -11191,7 +11191,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function getGlobalType(name: qt.__String, arity: 0, reportErrors: boolean): ObjectType;
-  function getGlobalType(name: qt.__String, arity: number, reportErrors: boolean): GenericType;
+  function getGlobalType(name: qt.__String, arity: number, reportErrors: boolean): qt.GenericType;
   function getGlobalType(name: qt.__String, arity: number, reportErrors: boolean): ObjectType | undefined {
     const symbol = getGlobalTypeSymbol(name, reportErrors);
     return symbol || reportErrors ? getTypeOfGlobalSymbol(symbol, arity) : undefined;
@@ -11293,7 +11293,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   /**
    * Instantiates a global type that is generic with some element type, and returns that instantiation.
    */
-  function createTypeFromGenericGlobalType(genericGlobalType: GenericType, typeArguments: readonly Type[]): ObjectType {
+  function createTypeFromGenericGlobalType(genericGlobalType: qt.GenericType, typeArguments: readonly Type[]): ObjectType {
     return genericGlobalType !== emptyGenericType ? createTypeReference(genericGlobalType, typeArguments) : emptyObjectType;
   }
 
@@ -11317,7 +11317,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return node.kind === qt.SyntaxKind.OptionalType || (node.kind === qt.SyntaxKind.NamedTupleMember && !!node.questionToken);
   }
 
-  function getArrayOrTupleTargetType(node: ArrayTypeNode | TupleTypeNode): GenericType {
+  function getArrayOrTupleTargetType(node: ArrayTypeNode | TupleTypeNode): qt.GenericType {
     const readonly = isReadonlyTypeOperator(node.parent);
     if (node.kind === qt.SyntaxKind.ArrayType || (node.elements.length === 1 && isTupleRestElement(node.elements[0]))) {
       return readonly ? globalReadonlyArrayType : globalArrayType;
@@ -11460,7 +11460,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return type;
   }
 
-  function getTupleTypeOfArity(arity: number, minLength: number, hasRestElement: boolean, readonly: boolean, namedMemberDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[]): GenericType {
+  function getTupleTypeOfArity(arity: number, minLength: number, hasRestElement: boolean, readonly: boolean, namedMemberDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[]): qt.GenericType {
     const key = arity + (hasRestElement ? '+' : ',') + minLength + (readonly ? 'R' : '') + (namedMemberDeclarations && namedMemberDeclarations.length ? ',' + map(namedMemberDeclarations, getNodeId).join(',') : '');
     let type = tupleTypes.get(key);
     if (!type) {
@@ -16196,7 +16196,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   // Return a type reference where the source type parameter is replaced with the target marker
   // type, and flag the result as a marker type reference.
-  function getMarkerTypeReference(type: GenericType, source: TypeParameter, target: Type) {
+  function getMarkerTypeReference(type: qt.GenericType, source: TypeParameter, target: Type) {
     const result = createTypeReference(
       type,
       map(type.typeParameters, (t) => (t === source ? target : t))
@@ -16259,7 +16259,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return variances;
   }
 
-  function getVariances(type: GenericType): VarianceFlags[] {
+  function getVariances(type: qt.GenericType): VarianceFlags[] {
     // Arrays and tuples are known to be covariant, no need to spend time computing this.
     if (type === globalArrayType || type === globalReadonlyArrayType || type.objectFlags & ObjectFlags.Tuple) {
       return arrayVariances;

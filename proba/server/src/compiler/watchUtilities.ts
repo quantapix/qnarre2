@@ -72,7 +72,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   }
 
   function getCachedFileSystemEntries(rootDirPath: Path): MutableFileSystemEntries | undefined {
-    return cachedReadDirectoryResult.get(ensureTrailingDirectorySeparator(rootDirPath));
+    return cachedReadDirectoryResult.get(qp.ensureTrailingDirectorySeparator(rootDirPath));
   }
 
   function getCachedFileSystemEntriesForBaseDir(path: Path): MutableFileSystemEntries | undefined {
@@ -80,7 +80,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   }
 
   function getBaseNameOfFileName(fileName: string) {
-    return getBaseFileName(normalizePath(fileName));
+    return qp.getBaseFileName(qp.normalizePath(fileName));
   }
 
   function createCachedFileSystemEntries(rootDir: string, rootDirPath: Path) {
@@ -89,7 +89,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
       directories: host.getDirectories!(rootDir) || [],
     };
 
-    cachedReadDirectoryResult.set(ensureTrailingDirectorySeparator(rootDirPath), resultFromHost);
+    cachedReadDirectoryResult.set(qp.ensureTrailingDirectorySeparator(rootDirPath), resultFromHost);
     return resultFromHost;
   }
 
@@ -99,7 +99,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
    * The host request is done under try catch block to avoid caching incorrect result
    */
   function tryReadDirectory(rootDir: string, rootDirPath: Path): MutableFileSystemEntries | undefined {
-    rootDirPath = ensureTrailingDirectorySeparator(rootDirPath);
+    rootDirPath = qp.ensureTrailingDirectorySeparator(rootDirPath);
     const cachedResult = getCachedFileSystemEntries(rootDirPath);
     if (cachedResult) {
       return cachedResult;
@@ -109,7 +109,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
       return createCachedFileSystemEntries(rootDir, rootDirPath);
     } catch (_e) {
       // If there is exception to read directories, dont cache the result and direct the calls to host
-      Debug.assert(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
+      Debug.assert(!cachedReadDirectoryResult.has(qp.ensureTrailingDirectorySeparator(rootDirPath)));
       return undefined;
     }
   }
@@ -149,7 +149,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
 
   function directoryExists(dirPath: string): boolean {
     const path = toPath(dirPath);
-    return cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(path)) || host.directoryExists!(dirPath);
+    return cachedReadDirectoryResult.has(qp.ensureTrailingDirectorySeparator(path)) || host.directoryExists!(dirPath);
   }
 
   function createDirectory(dirPath: string) {

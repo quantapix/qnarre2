@@ -47,7 +47,7 @@ interface CachedResolvedModuleWithFailedLookupLocations extends ResolvedModuleWi
 interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends qt.ResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
 
 export interface ResolutionCacheHost extends ModuleResolutionHost {
-  toPath(fileName: string): Path;
+  qp.toPath(fileName: string): Path;
   getCanonicalFileName: qc.GetCanonicalFileName;
   getCompilationSettings(): qt.CompilerOptions;
   watchDirectoryOfFailedLookupLocation(directory: string, cb: DirectoryWatcherCallback, flags: WatchDirectoryFlags): FileWatcher;
@@ -95,7 +95,7 @@ export function removeIgnoredPath(path: Path): Path | undefined {
  * @param dirPath
  */
 export function canWatchDirectory(dirPath: Path) {
-  const rootLength = getRootLength(dirPath);
+  const rootLength = qp.getRootLength(dirPath);
   if (dirPath.length === rootLength) {
     // Ignore "/", "c:/"
     return false;
@@ -174,8 +174,8 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   const customFailedLookupPaths = qc.createMap<number>();
 
   const directoryWatchesOfFailedLookups = qc.createMap<DirectoryWatchesOfFailedLookup>();
-  const rootDir = rootDirForResolution && removeTrailingDirectorySeparator(getNormalizedAbsolutePath(rootDirForResolution, getCurrentDirectory()));
-  const rootPath = (rootDir && resolutionHost.toPath(rootDir)) as Path; // TODO: GH#18217
+  const rootDir = rootDirForResolution && qp.removeTrailingDirectorySeparator(qp.getNormalizedAbsolutePath(rootDirForResolution, getCurrentDirectory()));
+  const rootPath = (rootDir && resolutionHost.qp.toPath(rootDir)) as Path; // TODO: GH#18217
   const rootSplitLength = rootPath !== undefined ? rootPath.split(directorySeparator).length : 0;
 
   // TypeRoot watches for the types that get added as part of getAutomaticTypeDirectiveNames
@@ -318,7 +318,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     logChanges?: boolean;
   }
   function resolveNamesWithLocalCache<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>({ names, containingFile, redirectedReference, cache, perDirectoryCacheWithRedirects, loader, getResolutionWithResolvedFileName, shouldRetryResolution, reusedNames, logChanges }: ResolveNamesWithLocalCacheInput<T, R>): (R | undefined)[] {
-    const path = resolutionHost.toPath(containingFile);
+    const path = resolutionHost.qp.toPath(containingFile);
     const resolutionsInFile = cache.get(path) || cache.set(path, createMap()).get(path)!;
     const dirPath = qp.getDirectoryPath(path);
     const perDirectoryCache = perDirectoryCacheWithRedirects.getOrCreateMapOfCacheRedirects(redirectedReference);
@@ -430,7 +430,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   }
 
   function getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): CachedResolvedModuleWithFailedLookupLocations | undefined {
-    const cache = resolvedModuleNames.get(resolutionHost.toPath(containingFile));
+    const cache = resolvedModuleNames.get(resolutionHost.qp.toPath(containingFile));
     return cache && cache.get(moduleName);
   }
 
@@ -441,7 +441,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   function getDirectoryToWatchFailedLookupLocation(failedLookupLocation: string, failedLookupLocationPath: Path): DirectoryOfFailedLookupWatch | undefined {
     if (isInDirectoryPath(rootPath, failedLookupLocationPath)) {
       // Ensure failed look up is normalized path
-      failedLookupLocation = qp.isRootedDiskPath(failedLookupLocation) ? normalizePath(failedLookupLocation) : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
+      failedLookupLocation = qp.isRootedDiskPath(failedLookupLocation) ? qp.normalizePath(failedLookupLocation) : qp.getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
       const failedLookupPathSplit = failedLookupLocationPath.split(directorySeparator);
       const failedLookupSplit = failedLookupLocation.split(directorySeparator);
       Debug.assert(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);
@@ -461,7 +461,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       }
     }
 
-    return getDirectoryToWatchFromFailedLookupLocationDirectory(qp.getDirectoryPath(getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory())), qp.getDirectoryPath(failedLookupLocationPath));
+    return getDirectoryToWatchFromFailedLookupLocationDirectory(qp.getDirectoryPath(qp.getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory())), qp.getDirectoryPath(failedLookupLocationPath));
   }
 
   function getDirectoryToWatchFromFailedLookupLocationDirectory(dir: string, dirPath: Path): DirectoryOfFailedLookupWatch | undefined {
@@ -472,7 +472,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     }
 
     // If the directory is node_modules use it to watch, always watch it recursively
-    if (isNodeModulesDirectory(dirPath)) {
+    if (qp.isNodeModulesDirectory(dirPath)) {
       return canWatchDirectory(qp.getDirectoryPath(dirPath)) ? { dir, dirPath } : undefined;
     }
 
@@ -514,7 +514,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       }
       const resolved = getResolutionWithResolvedFileName(resolution);
       if (resolved && resolved.resolvedFileName) {
-        resolvedFileToResolution.add(resolutionHost.toPath(resolved.resolvedFileName), resolution);
+        resolvedFileToResolution.add(resolutionHost.qp.toPath(resolved.resolvedFileName), resolution);
       }
     }
     (resolution.files || (resolution.files = [])).push(filePath);
@@ -529,7 +529,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
 
     let setAtRoot = false;
     for (const failedLookupLocation of failedLookupLocations) {
-      const failedLookupLocationPath = resolutionHost.toPath(failedLookupLocation);
+      const failedLookupLocationPath = resolutionHost.qp.toPath(failedLookupLocation);
       const toWatch = getDirectoryToWatchFailedLookupLocation(failedLookupLocation, failedLookupLocationPath);
       if (toWatch) {
         const { dir, dirPath, nonRecursive } = toWatch;
@@ -579,7 +579,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     }
     const resolved = getResolutionWithResolvedFileName(resolution);
     if (resolved && resolved.resolvedFileName) {
-      resolvedFileToResolution.remove(resolutionHost.toPath(resolved.resolvedFileName), resolution);
+      resolvedFileToResolution.remove(resolutionHost.qp.toPath(resolved.resolvedFileName), resolution);
     }
 
     if (!unorderedRemoveItem(resolutionsWithFailedLookups, resolution)) {
@@ -590,7 +590,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const { failedLookupLocations } = resolution;
     let removeAtRoot = false;
     for (const failedLookupLocation of failedLookupLocations) {
-      const failedLookupLocationPath = resolutionHost.toPath(failedLookupLocation);
+      const failedLookupLocationPath = resolutionHost.qp.toPath(failedLookupLocation);
       const toWatch = getDirectoryToWatchFailedLookupLocation(failedLookupLocation, failedLookupLocationPath);
       if (toWatch) {
         const { dirPath } = toWatch;
@@ -626,7 +626,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     return resolutionHost.watchDirectoryOfFailedLookupLocation(
       directory,
       (fileOrDirectory) => {
-        const fileOrDirectoryPath = resolutionHost.toPath(fileOrDirectory);
+        const fileOrDirectoryPath = resolutionHost.qp.toPath(fileOrDirectory);
         if (cachedDirectoryStructureHost) {
           // Since the file existence changed, update the sourceFiles cache
           cachedDirectoryStructureHost.addOrDeleteFileOrDirectory(fileOrDirectory, fileOrDirectoryPath);
@@ -650,7 +650,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
   }
 
   function removeResolutionsFromProjectReferenceRedirects(filePath: Path) {
-    if (!fileExtensionIs(filePath, Extension.Json)) {
+    if (!qp.fileExtensionIs(filePath, Extension.Json)) {
       return;
     }
 
@@ -666,7 +666,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     }
 
     // filePath is for the projectReference and the containing file is from this project reference, invalidate the resolution
-    resolvedProjectReference.commandLine.fileNames.forEach((f) => removeResolutionsOfFile(resolutionHost.toPath(f)));
+    resolvedProjectReference.commandLine.fileNames.forEach((f) => removeResolutionsOfFile(resolutionHost.qp.toPath(f)));
   }
 
   function removeResolutionsOfFile(filePath: Path) {
@@ -703,7 +703,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     if (isCreatingWatchedDirectory) {
       // Watching directory is created
       // Invalidate any resolution has failed lookup in this directory
-      isChangedFailedLookupLocation = (location) => isInDirectoryPath(fileOrDirectoryPath, resolutionHost.toPath(location));
+      isChangedFailedLookupLocation = (location) => isInDirectoryPath(fileOrDirectoryPath, resolutionHost.qp.toPath(location));
     } else {
       // If something to do with folder/file starting with "." in node_modules folder, skip it
       const updatedPath = removeIgnoredPath(fileOrDirectoryPath);
@@ -718,11 +718,11 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       // Some file or directory in the watching directory is created
       // Return early if it does not have any of the watching extension or not the custom failed lookup path
       const dirOfFileOrDirectory = qp.getDirectoryPath(fileOrDirectoryPath);
-      if (isNodeModulesAtTypesDirectory(fileOrDirectoryPath) || isNodeModulesDirectory(fileOrDirectoryPath) || isNodeModulesAtTypesDirectory(dirOfFileOrDirectory) || isNodeModulesDirectory(dirOfFileOrDirectory)) {
+      if (isNodeModulesAtTypesDirectory(fileOrDirectoryPath) || qp.isNodeModulesDirectory(fileOrDirectoryPath) || isNodeModulesAtTypesDirectory(dirOfFileOrDirectory) || qp.isNodeModulesDirectory(dirOfFileOrDirectory)) {
         // Invalidate any resolution from this directory
         isChangedFailedLookupLocation = (location) => {
-          const locationPath = resolutionHost.toPath(location);
-          return locationPath === fileOrDirectoryPath || qc.startsWith(resolutionHost.toPath(location), fileOrDirectoryPath);
+          const locationPath = resolutionHost.qp.toPath(location);
+          return locationPath === fileOrDirectoryPath || qc.startsWith(resolutionHost.qp.toPath(location), fileOrDirectoryPath);
         };
       } else {
         if (!isPathWithDefaultFailedLookupExtension(fileOrDirectoryPath) && !customFailedLookupPaths.has(fileOrDirectoryPath)) {
@@ -733,7 +733,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           return false;
         }
         // Resolution need to be invalidated if failed lookup location is same as the file or directory getting created
-        isChangedFailedLookupLocation = (location) => resolutionHost.toPath(location) === fileOrDirectoryPath;
+        isChangedFailedLookupLocation = (location) => resolutionHost.qp.toPath(location) === fileOrDirectoryPath;
       }
     }
     let invalidated = false;
@@ -764,7 +764,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     return resolutionHost.watchTypeRootsDirectory(
       typeRoot,
       (fileOrDirectory) => {
-        const fileOrDirectoryPath = resolutionHost.toPath(fileOrDirectory);
+        const fileOrDirectoryPath = resolutionHost.qp.toPath(fileOrDirectory);
         if (cachedDirectoryStructureHost) {
           // Since the file existence changed, update the sourceFiles cache
           cachedDirectoryStructureHost.addOrDeleteFileOrDirectory(fileOrDirectory, fileOrDirectoryPath);
@@ -805,7 +805,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     if (typeRoots) {
       mutateMap(
         typeRootsWatches,
-        arrayToMap(typeRoots, (tr) => resolutionHost.toPath(tr)),
+        arrayToMap(typeRoots, (tr) => resolutionHost.qp.toPath(tr)),
         {
           createNewValue: createTypeRootsWatch,
           onDeleteValue: closeFileWatcher,
@@ -823,7 +823,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
    */
   function directoryExistsForTypeRootWatch(nodeTypesDirectory: string) {
     const dir = qp.getDirectoryPath(qp.getDirectoryPath(nodeTypesDirectory));
-    const dirPath = resolutionHost.toPath(dir);
+    const dirPath = resolutionHost.qp.toPath(dir);
     return dirPath === rootPath || canWatchDirectory(dirPath);
   }
 }

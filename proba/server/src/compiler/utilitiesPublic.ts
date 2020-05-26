@@ -325,7 +325,7 @@ export function getCombinedNodeFlags(n: qt.Node): qt.NodeFlags {
  * Checks to see if the locale is in the appropriate format,
  * and if it is, attempts to set the appropriate language.
  */
-export function validateLocaleAndSetLanguage(locale: string, sys: { getExecutingFilePath(): string; resolvePath(path: string): string; fileExists(fileName: string): boolean; readFile(fileName: string): string | undefined }, errors?: qpc.Push<qt.Diagnostic>) {
+export function validateLocaleAndSetLanguage(locale: string, sys: { getExecutingFilePath(): string; qp.resolvePath(path: string): string; fileExists(fileName: string): boolean; readFile(fileName: string): string | undefined }, errors?: qpc.Push<qt.Diagnostic>) {
   const matchResult = /^([a-z]+)([_\-]([a-z]+))?$/.exec(locale.toLowerCase());
 
   if (!matchResult) {
@@ -348,7 +348,7 @@ export function validateLocaleAndSetLanguage(locale: string, sys: { getExecuting
   setUILocale(locale);
 
   function trySetLanguageAndTerritory(language: string, territory: string | undefined, errors?: qpc.Push<Diagnostic>): boolean {
-    const compilerFilePath = normalizePath(sys.getExecutingFilePath());
+    const compilerFilePath = qp.normalizePath(sys.getExecutingFilePath());
     const containingDirectoryPath = qp.getDirectoryPath(compilerFilePath);
 
     let filePath = qp.combinePaths(containingDirectoryPath, language);
@@ -357,7 +357,7 @@ export function validateLocaleAndSetLanguage(locale: string, sys: { getExecuting
       filePath = filePath + '-' + territory;
     }
 
-    filePath = sys.resolvePath(qp.combinePaths(filePath, 'diagnosticMessages.generated.json'));
+    filePath = sys.qp.resolvePath(qp.combinePaths(filePath, 'diagnosticMessages.generated.json'));
 
     if (!sys.fileExists(filePath)) {
       return false;

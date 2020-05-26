@@ -93,7 +93,7 @@ function newer(date1: Date, date2: Date): Date {
 }
 
 function isDeclarationFile(fileName: string) {
-  return fileExtensionIs(fileName, Extension.Dts);
+  return qp.fileExtensionIs(fileName, Extension.Dts);
 }
 
 export type ReportEmitErrorSummary = (errorCount: number) => void;
@@ -1548,14 +1548,14 @@ function watchConfigFile(state: SolutionBuilderState, resolved: ResolvedConfigFi
 }
 
 function isSameFile(state: SolutionBuilderState, file1: string, file2: string) {
-  return comparePaths(file1, file2, state.currentDirectory, !state.host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
+  return qp.comparePaths(file1, file2, state.currentDirectory, !state.host.useCaseSensitiveFileNames()) === qpc.Comparison.EqualTo;
 }
 
 function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: ParsedCommandLine) {
   if (configFile.options.noEmit) return false;
 
   // ts or tsx files are not output
-  if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) {
+  if (!qp.fileExtensionIs(fileName, Extension.Dts) && (qp.fileExtensionIs(fileName, Extension.Ts) || qp.fileExtensionIs(fileName, Extension.Tsx))) {
     return false;
   }
 
@@ -1566,12 +1566,12 @@ function isOutputFile(state: SolutionBuilderState, fileName: string, configFile:
   }
 
   // If declarationDir is specified, return if its a file in that directory
-  if (configFile.options.declarationDir && containsPath(configFile.options.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
+  if (configFile.options.declarationDir && qp.containsPath(configFile.options.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
     return true;
   }
 
   // If --outDir, check if file is in that directory
-  if (configFile.options.outDir && containsPath(configFile.options.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
+  if (configFile.options.outDir && qp.containsPath(configFile.options.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
     return true;
   }
 
@@ -1586,7 +1586,7 @@ function watchWildCardDirectories(state: SolutionBuilderState, resolved: Resolve
       dir,
       (fileOrDirectory) => {
         const fileOrDirectoryPath = toPath(state, fileOrDirectory);
-        if (fileOrDirectoryPath !== toPath(state, dir) && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, parsed.options)) {
+        if (fileOrDirectoryPath !== toPath(state, dir) && qp.hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, parsed.options)) {
           state.writeLog(`Project: ${resolved} Detected file add/remove of non supported extension: ${fileOrDirectory}`);
           return;
         }
@@ -1673,7 +1673,7 @@ function createSolutionBuilderWorker<T extends BuilderProgram>(watch: boolean, h
 }
 
 function relName(state: SolutionBuilderState, path: string): string {
-  return convertToRelativePath(path, state.currentDirectory, (f) => state.getCanonicalFileName(f));
+  return qp.convertToRelativePath(path, state.currentDirectory, (f) => state.getCanonicalFileName(f));
 }
 
 function reportStatus(state: SolutionBuilderState, message: qt.DiagnosticMessage, ...args: string[]) {

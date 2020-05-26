@@ -56,7 +56,7 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
 
   function addSource(fileName: string) {
     enter();
-    const source = getRelativePathToDirectoryOrUrl(sourcesDirectoryPath, fileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ true);
+    const source = qp.getRelativePathToDirectoryOrUrl(sourcesDirectoryPath, fileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ true);
 
     let sourceIndex = sourceToSourceIndexMap.get(source);
     if (sourceIndex === undefined) {
@@ -159,8 +159,8 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
         if (newSourceIndex === undefined) {
           // Apply offsets to each position and fixup source entries
           const rawPath = map.sources[raw.sourceIndex];
-          const relativePath = map.sourceRoot ? combinePaths(map.sourceRoot, rawPath) : rawPath;
-          const combinedPath = combinePaths(qp.getDirectoryPath(sourceMapPath), relativePath);
+          const relativePath = map.sourceRoot ? qp.combinePaths(map.sourceRoot, rawPath) : rawPath;
+          const combinedPath = qp.combinePaths(qp.getDirectoryPath(sourceMapPath), relativePath);
           sourceIndexToNewSourceIndexMap[raw.sourceIndex] = newSourceIndex = addSource(combinedPath);
           if (map.sourcesContent && typeof map.sourcesContent[raw.sourceIndex] === 'string') {
             setSourceContent(newSourceIndex, map.sourcesContent[raw.sourceIndex]);
@@ -578,10 +578,10 @@ function getGeneratedPositionOfMapping(value: MappedPosition) {
 
 export function createDocumentPositionMapper(host: DocumentPositionMapperHost, map: RawSourceMap, mapPath: string): DocumentPositionMapper {
   const mapDirectory = qp.getDirectoryPath(mapPath);
-  const sourceRoot = map.sourceRoot ? getNormalizedAbsolutePath(map.sourceRoot, mapDirectory) : mapDirectory;
-  const generatedAbsoluteFilePath = getNormalizedAbsolutePath(map.file, mapDirectory);
+  const sourceRoot = map.sourceRoot ? qp.getNormalizedAbsolutePath(map.sourceRoot, mapDirectory) : mapDirectory;
+  const generatedAbsoluteFilePath = qp.getNormalizedAbsolutePath(map.file, mapDirectory);
   const generatedFile = host.getSourceFileLike(generatedAbsoluteFilePath);
-  const sourceFileAbsolutePaths = map.sources.map((source) => getNormalizedAbsolutePath(source, sourceRoot));
+  const sourceFileAbsolutePaths = map.sources.map((source) => qp.getNormalizedAbsolutePath(source, sourceRoot));
   const sourceToSourceIndexMap = qc.createMapFromEntries(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
   let decodedMappings: readonly MappedPosition[] | undefined;
   let generatedMappings: qpc.SortedReadonlyArray<MappedPosition> | undefined;

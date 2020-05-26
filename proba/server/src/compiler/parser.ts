@@ -814,7 +814,7 @@ export namespace Parser {
     sourceFile.bindDiagnostics = [];
     sourceFile.bindSuggestionDiagnostics = undefined;
     sourceFile.languageVersion = languageVersion;
-    sourceFile.fileName = normalizePath(fileName);
+    sourceFile.fileName = qp.normalizePath(fileName);
     sourceFile.languageVariant = getLanguageVariant(scriptKind);
     sourceFile.isDeclarationFile = isDeclarationFile;
     sourceFile.scriptKind = scriptKind;
@@ -7975,7 +7975,7 @@ namespace IncrementalParser {
 }
 
 export function isDeclarationFileName(fileName: string): boolean {
-  return fileExtensionIs(fileName, Extension.Dts);
+  return qp.fileExtensionIs(fileName, Extension.Dts);
 }
 
 export interface PragmaContext {

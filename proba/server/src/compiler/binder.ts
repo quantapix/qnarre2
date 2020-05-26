@@ -15,12 +15,12 @@ export const enum ModuleInstanceState {
 interface ActiveLabel {
   next: ActiveLabel | undefined;
   name: qt.__String;
-  breakTarget: FlowLabel;
-  continueTarget: FlowLabel | undefined;
+  breakTarget: qt.FlowLabel;
+  continueTarget: qt.FlowLabel | undefined;
   referenced: boolean;
 }
 
-export function getModuleInstanceState(node: ModuleDeclaration, visited?: Map<ModuleInstanceState | undefined>): ModuleInstanceState {
+export function getModuleInstanceState(node: qt.ModuleDeclaration, visited?: Map<ModuleInstanceState | undefined>): ModuleInstanceState {
   if (node.body && !node.body.parent) {
     // getModuleInstanceStateForAliasTarget needs to walk up the parent chain, so parent pointers must be set on this tree already
     setParentPointers(node, node.body);
@@ -199,12 +199,12 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
   // state used by control flow analysis
   let currentFlow: qt.FlowNode;
-  let currentBreakTarget: FlowLabel | undefined;
-  let currentContinueTarget: FlowLabel | undefined;
-  let currentReturnTarget: FlowLabel | undefined;
-  let currentTrueTarget: FlowLabel | undefined;
-  let currentFalseTarget: FlowLabel | undefined;
-  let currentExceptionTarget: FlowLabel | undefined;
+  let currentBreakTarget: qt.FlowLabel | undefined;
+  let currentContinueTarget: qt.FlowLabel | undefined;
+  let currentReturnTarget: qt.FlowLabel | undefined;
+  let currentTrueTarget: qt.FlowLabel | undefined;
+  let currentFalseTarget: qt.FlowLabel | undefined;
+  let currentExceptionTarget: qt.FlowLabel | undefined;
   let preSwitchCaseFlow: qt.FlowNode | undefined;
   let activeLabelList: ActiveLabel | undefined;
   let hasExplicitReturn: boolean;
@@ -916,15 +916,15 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return containsNarrowableReference(expr);
   }
 
-  function createBranchLabel(): FlowLabel {
+  function createBranchLabel(): qt.FlowLabel {
     return initFlowNode({ flags: FlowFlags.BranchLabel, antecedents: undefined });
   }
 
-  function createLoopLabel(): FlowLabel {
+  function createLoopLabel(): qt.FlowLabel {
     return initFlowNode({ flags: FlowFlags.LoopLabel, antecedents: undefined });
   }
 
-  function createReduceLabel(target: FlowLabel, antecedents: qt.FlowNode[], antecedent: qt.FlowNode): FlowReduceLabel {
+  function createReduceLabel(target: qt.FlowLabel, antecedents: qt.FlowNode[], antecedent: qt.FlowNode): FlowReduceLabel {
     return initFlowNode({ flags: FlowFlags.ReduceLabel, target, antecedents, antecedent });
   }
 
@@ -933,7 +933,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     flow.flags |= flow.flags & FlowFlags.Referenced ? FlowFlags.Shared : FlowFlags.Referenced;
   }
 
-  function addAntecedent(label: FlowLabel, antecedent: qt.FlowNode): void {
+  function addAntecedent(label: qt.FlowLabel, antecedent: qt.FlowNode): void {
     if (!(antecedent.flags & FlowFlags.Unreachable) && !contains(label.antecedents, antecedent)) {
       (label.antecedents || (label.antecedents = [])).push(antecedent);
       setFlowNodeReferenced(antecedent);
@@ -976,7 +976,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return initFlowNode({ flags: FlowFlags.Call, antecedent, node });
   }
 
-  function finishFlowLabel(flow: FlowLabel): qt.FlowNode {
+  function finishFlowLabel(flow: qt.FlowLabel): qt.FlowNode {
     const antecedents = flow.antecedents;
     if (!antecedents) {
       return unreachableFlow;
@@ -1020,7 +1020,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(isOptionalChain(node.parent) && node.parent.expression === node);
   }
 
-  function doWithConditionalBranches<T>(action: (value: T) => void, value: T, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function doWithConditionalBranches<T>(action: (value: T) => void, value: T, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     const savedTrueTarget = currentTrueTarget;
     const savedFalseTarget = currentFalseTarget;
     currentTrueTarget = trueTarget;
@@ -1030,7 +1030,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     currentFalseTarget = savedFalseTarget;
   }
 
-  function bindCondition(node: qt.Expression | undefined, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindCondition(node: qt.Expression | undefined, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     doWithConditionalBranches(bind, node, trueTarget, falseTarget);
     if (!node || (!isLogicalExpression(node) && !(isOptionalChain(node) && isOutermostOptionalChain(node)))) {
       addAntecedent(trueTarget, createFlowCondition(FlowFlags.TrueCondition, currentFlow, node));
@@ -1038,7 +1038,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindIterativeStatement(node: qt.Statement, breakTarget: FlowLabel, continueTarget: FlowLabel): void {
+  function bindIterativeStatement(node: qt.Statement, breakTarget: qt.FlowLabel, continueTarget: qt.FlowLabel): void {
     const saveBreakTarget = currentBreakTarget;
     const saveContinueTarget = currentContinueTarget;
     currentBreakTarget = breakTarget;
@@ -1048,7 +1048,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     currentContinueTarget = saveContinueTarget;
   }
 
-  function setContinueTarget(node: qt.Node, target: FlowLabel) {
+  function setContinueTarget(node: qt.Node, target: qt.FlowLabel) {
     let label = activeLabelList;
     while (label && node.parent.kind === qt.SyntaxKind.LabeledStatement) {
       label.continueTarget = target;
@@ -1152,7 +1152,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return undefined;
   }
 
-  function bindBreakOrContinueFlow(node: BreakOrContinueStatement, breakTarget: FlowLabel | undefined, continueTarget: FlowLabel | undefined) {
+  function bindBreakOrContinueFlow(node: BreakOrContinueStatement, breakTarget: qt.FlowLabel | undefined, continueTarget: qt.FlowLabel | undefined) {
     const flowLabel = node.kind === qt.SyntaxKind.BreakStatement ? breakTarget : continueTarget;
     if (flowLabel) {
       addAntecedent(flowLabel, currentFlow);
@@ -1364,7 +1364,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindLogicalExpression(node: qt.BinaryExpression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindLogicalExpression(node: qt.BinaryExpression, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     const preRightLabel = createBranchLabel();
     if (node.operatorToken.kind === qt.SyntaxKind.AmpersandAmpersandToken) {
       bindCondition(node.left, preRightLabel, falseTarget);
@@ -1604,7 +1604,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindOptionalExpression(node: qt.Expression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindOptionalExpression(node: qt.Expression, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     doWithConditionalBranches(bind, node, trueTarget, falseTarget);
     if (!isOptionalChain(node) || isOutermostOptionalChain(node)) {
       addAntecedent(trueTarget, createFlowCondition(FlowFlags.TrueCondition, currentFlow, node));
@@ -1630,7 +1630,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindOptionalChain(node: qt.OptionalChain, trueTarget: FlowLabel, falseTarget: FlowLabel) {
+  function bindOptionalChain(node: qt.OptionalChain, trueTarget: qt.FlowLabel, falseTarget: qt.FlowLabel) {
     // For an optional chain, we emulate the behavior of a logical expression:
     //
     // a?.b         -> a && a.b
@@ -1863,12 +1863,12 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return isExternalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, /*parent*/ undefined, node, symbolFlags, symbolExcludes);
   }
 
-  function hasExportDeclarations(node: ModuleDeclaration | SourceFile): boolean {
+  function hasExportDeclarations(node: qt.ModuleDeclaration | SourceFile): boolean {
     const body = isSourceFile(node) ? node : tryCast(node.body, isModuleBlock);
     return !!body && body.statements.some((s) => isExportDeclaration(s) || isExportAssignment(s));
   }
 
-  function setExportContextFlag(node: ModuleDeclaration | SourceFile) {
+  function setExportContextFlag(node: qt.ModuleDeclaration | SourceFile) {
     // A declaration source file or ambient module declaration that contains no export declarations (but possibly regular
     // declarations with export modifiers) is an export context in which declarations are implicitly exported.
     if (node.flags & NodeFlags.Ambient && !hasExportDeclarations(node)) {
@@ -1878,7 +1878,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function bindModuleDeclaration(node: ModuleDeclaration) {
+  function bindModuleDeclaration(node: qt.ModuleDeclaration) {
     setExportContextFlag(node);
     if (qu.isAmbientModule(node)) {
       if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
@@ -1915,7 +1915,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     }
   }
 
-  function declareModuleSymbol(node: ModuleDeclaration): ModuleInstanceState {
+  function declareModuleSymbol(node: qt.ModuleDeclaration): ModuleInstanceState {
     const state = getModuleInstanceState(node);
     const instantiated = state !== ModuleInstanceState.NonInstantiated;
     declareSymbolAndAddToSymbolTable(node, instantiated ? SymbolFlags.ValueModule : SymbolFlags.NamespaceModule, instantiated ? SymbolFlags.ValueModuleExcludes : SymbolFlags.NamespaceModuleExcludes);
@@ -3199,7 +3199,7 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
 
   // reachability checks
 
-  function shouldReportErrorOnModuleDeclaration(node: ModuleDeclaration): boolean {
+  function shouldReportErrorOnModuleDeclaration(node: qt.ModuleDeclaration): boolean {
     const instanceState = getModuleInstanceState(node);
     return instanceState === ModuleInstanceState.Instantiated || (instanceState === ModuleInstanceState.ConstEnumOnly && !!options.preserveConstEnums);
   }
@@ -3897,7 +3897,7 @@ function computeExpressionStatement(node: qt.ExpressionStatement, subtreeFlags: 
   return transformFlags & ~TransformFlags.NodeExcludes;
 }
 
-function computeModuleDeclaration(node: ModuleDeclaration, subtreeFlags: TransformFlags) {
+function computeModuleDeclaration(node: qt.ModuleDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = TransformFlags.AssertTypeScript;
   const modifierFlags = getSyntacticModifierFlags(node);
 
